@@ -443,42 +443,64 @@ on.player.Thorns = THORNS
 Update()
 
 -------------------------------------------------------------------------------
---  The window
+--  Edit auras: the list's Reminder tick, the chosen aura's reminder under it
 -------------------------------------------------------------------------------
-local function Kind(kind, template)
+local Editor, Lists = ns.ReminderEditor, ns.AuraLists
+local function Inside(widget, parent)
+    while widget do
+        if widget == parent then return true end
+        widget = widget._parent
+    end
+    return false
+end
+local function Kind(kind, template, within, outside)
     local found = {}
     for _, widget in ipairs(W.frames) do
-        if widget._kind == kind and widget._template == template then found[#found + 1] = widget end
+        if widget._kind == kind and widget._template == template and (not within or Inside(widget, within))
+            and not (outside and Inside(widget, outside)) then
+            found[#found + 1] = widget
+        end
     end
     return found
 end
-local ticks, menus = Kind("CheckButton", "UICheckButtonTemplate"), Kind("DropdownButton", "WowStyle1DropdownTemplate")
-check(#ticks == 4 and #menus == 3, "four ticks and three dropdowns: the bar looked at, its bar, combat")
+local function Said(text)
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._text == text and widget:IsVisible() then return true end
+    end
+    return false
+end
+-- The list's line of an aura.
+local function Of(name)
+    for _, widget in ipairs(W.frames) do
+        if widget.row and widget.remind and widget._shown and widget.row.name == name then return widget end
+    end
+end
+Editor.Open(reminder)
+local panel = Editor.panel
+check(panel and panel:IsVisible() and Said(TEXT.listsTitle), "the reminder's settings are a part of Edit auras, open")
+check(Of("Thorns") and Of("Thorns").remind:GetChecked() and Of("Thorns").mark._shown,
+    "its aura on the list, its Reminder ticked, chosen")
+local ticks, menus = Kind("CheckButton", "UICheckButtonTemplate", panel), Kind("DropdownButton", "WowStyle1DropdownTemplate", panel)
+check(#ticks == 4 and #menus == 3, "under the list: four ticks and three dropdowns: where it shows, on whom, combat")
 check(ticks[1]:GetChecked() == true and ticks[2]:GetChecked() == false, "as the reminder is set")
 ticks[2]:SetChecked(true)
 ticks[2]._scripts.OnClick(ticks[2])
 check(reminder.active == true, "a tick takes effect at once")
 local function Pressed(word)
-    for _, button in ipairs(Kind("Button", "UIPanelButtonTemplate")) do
+    for _, button in ipairs(Kind("Button", "UIPanelButtonTemplate", panel)) do
         if button:GetText() == word then return button end
     end
 end
 local newBar, takeBar = Pressed(TEXT.reminderNewBar), Pressed(TEXT.reminderDeleteBar)
-ns.ReminderEditor.Open(reminder)
 check(takeBar._disabled, "one bar: it cannot be deleted")
 newBar._scripts.OnClick(newBar)
-check(#Reminders.Bars() == 2 and not takeBar._disabled, "a new bar by its button")
-ns.ReminderEditor.Open(reminder)
-check(#menus[2]._items == 3 and #menus[1]._items == 3 and menus[2]._items[3].text == TEXT.reminderGroup,
-    "a line for each bar, in both dropdowns, and the party and raid frames last")
-menus[2]._items[3].fn()
-check(reminder.bar == Reminders.GROUP and takeBar._disabled, "on the frames: no bar of it to delete")
-ns.ReminderEditor.Open(reminder)
-local said
-for _, widget in ipairs(W.frames) do
-    if widget._kind == "FontString" and widget._text == TEXT.reminderOnGroup then said = true end
-end
-check(said, "and the window says where it watches")
+check(#Reminders.Bars() == 2 and reminder.bar == Reminders.Bars()[2] and not takeBar._disabled,
+    "a new bar by its button, the reminder on it")
+check(#menus[1]._items == 3 and menus[1]._items[3].text == TEXT.reminderGroup,
+    "a line for each bar, and the party and raid frames last")
+menus[1]._items[3].fn()
+check(reminder.bar == Reminders.GROUP and takeBar._disabled and menus[2]._disabled, "on the frames: no bar of it to delete, no unit")
+check(Said(TEXT.reminderOnGroup), "and the window says where it watches")
 Update()
 check(row._width == 1, "and it is off its bar")
 ticks[4]:SetChecked(true)
@@ -486,22 +508,63 @@ ticks[4]._scripts.OnClick(ticks[4])
 check(reminder.own == true, "only yours, ticked")
 ticks[4]:SetChecked(false)
 ticks[4]._scripts.OnClick(ticks[4])
-menus[2]._items[2].fn()
-check(reminder.bar == Reminders.Bars()[2], "on the new bar")
+menus[1]._items[2].fn()
+check(reminder.bar == Reminders.Bars()[2] and not menus[2]._disabled, "on the new bar")
 takeBar._scripts.OnClick(takeBar)
 check(#Reminders.Bars() == 1 and reminder.bar == Reminders.Bars()[1], "the bar deleted by its button, the reminder kept")
-ns.ReminderEditor.Open(reminder)
+check(menus[2]._items[2].text == TEXT.reminderUnits.target, "watched on you, your target or your focus")
+menus[2]._items[3].fn()
+check(reminder.unit == "focus", "chosen")
+menus[2]._items[1].fn()
 check(menus[3]._items[2].text == TEXT.reminderCombat.out, "only outside of combat, in its words")
 menus[3]._items[3].fn()
 check(reminder.combat == "in", "chosen")
 menus[3]._items[1].fn()
-local box = Kind("EditBox", "InputBoxTemplate")[1]
-box:SetText("12")
-box._scripts.OnTextChanged(box, true)
+local early = Kind("EditBox", "InputBoxTemplate", panel)[1]
+early:SetText("12")
+early._scripts.OnTextChanged(early, true)
 check(reminder.early == 12, "the offset typed")
-local delete = Pressed(TEXT.reminderDelete)
-delete._scripts.OnClick(delete)
+reminder.early, reminder.active = 0, false
+-- The line's tick: the reminder deleted, the panel says how to make one; ticked again, made.
+local thornsLine = Of("Thorns")
+thornsLine.remind:SetChecked(false)
+thornsLine.remind._scripts.OnClick(thornsLine.remind)
+check(#Reminders.List() == 0 and Of("Thorns") and Said(TEXT.reminderPick), "unticked: deleted, the aura stays on the list")
+Of("Thorns").remind:SetChecked(true)
+Of("Thorns").remind._scripts.OnClick(Of("Thorns").remind)
+reminder = Reminders.List()[1]
+check(reminder and reminder.name == "Thorns" and reminder.unit == "player" and reminder.missing and Said("Thorns")
+    and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, a buff on you, its settings shown")
+-- Any spell by the search: on the list, chosen; its tick, a reminder; on the party and raid frames.
+W.spells[1126] = { name = "Mark of the Wild" }
+C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
+local search = Kind("EditBox", "InputBoxTemplate", nil, panel)
+search = search[#search]
+search:SetText("1126")
+search._scripts.OnTextChanged(search, true)
+W.Wait(1)
+search._scripts.OnEnterPressed(search)
+local markLine = Of("Mark of the Wild")
+check(markLine and markLine.mark._shown and not markLine.remind:GetChecked() and Said(TEXT.reminderPick),
+    "a spell searched, Enter: on the list, chosen, no reminder yet")
+markLine.remind:SetChecked(true)
+markLine.remind._scripts.OnClick(markLine.remind)
+local mark = Reminders.Named("Mark of the Wild")
+check(mark and mark.id == 1126 and mark.bar == Reminders.Bars()[1], "its Reminder ticked: made, on the first bar")
+menus[1]._items[2].fn()
+check(mark.bar == Reminders.GROUP, "and put on the party and raid frames")
+-- Its X: off the list, every mark and its reminder.
+local take
+for _, widget in ipairs(W.frames) do
+    if widget._parent == Of("Mark of the Wild") and widget._template == "UIPanelCloseButton" then take = widget end
+end
+take._scripts.OnClick(take)
+check(not Reminders.Named("Mark of the Wild") and not Of("Mark of the Wild") and #Reminders.List() == 1,
+    "its X: off the list and its reminder gone")
+check(#Kind("DropdownButton", "WowStyle1DropdownTemplate") == 3, "one window: no other dropdowns made")
+Reminders.Take(reminder)
 check(#Reminders.List() == 0, "deleted")
+Lists.Hide()
 
 -------------------------------------------------------------------------------
 --  Off, standing down

@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Edit auras: one window for every aura's setup, its marks and its
+  reminder (/sane auras, /sane reminders, or the button on the
+  Reminders settings). Search any spell, tick its Reminder, and set
+  where it shows and on whom right under the list.
 - Aura lists (/sane auras): one list of every aura you set up, a tick
   for each mark and the X in front to take it off, and a search over
   every class's auras, the enemies' and food, potions and items, grouped

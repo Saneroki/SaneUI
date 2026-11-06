@@ -1,4 +1,5 @@
--- Aura lists: Core and the module Combat from their TOCs with Core's real spell sets, the aura lists window with marks and a search typed
+-- Edit auras: Core and the module Combat from their TOCs with Core's real spell sets, the window with marks, two reminders
+-- (Rejuvenation's chosen, on the party and raid frames) and a search typed
 -- The sets are the built ones (BUILD/SaneUI/Sets: dev/build makes them). In the console: LabSearch("rejuv") types into
 -- the search box, LabSearch() empties it; LabCombat is the module's table.
 for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "PlayerCastingBarFrame",
@@ -37,5 +38,10 @@ Lab.OnLogin(function()
     Lists.Put("hide", { id = 430, name = "Drink" })
     Lists.Put("hidden", { id = 1126, name = "Mark of the Wild" })
     Lists.Put("white", { id = 7386, name = "Sunder Armor" })
+    local Reminders = LabCombat.Reminders
+    Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
+    local rejuvenation = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
+    rejuvenation.bar, rejuvenation.own = Reminders.GROUP, true
+    Lists.Open(nil, "Rejuvenation")
     LabSearch("re")
 end)

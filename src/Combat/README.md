@@ -110,14 +110,17 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
-    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Aura lists...*, a window
-    with one long list of every aura you set up: in front of each its red X (off the list and every mark), then its icon,
-    name and number, and a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*, *Hide from unit
-    frames* and *Prioritize on unit frames*. A spell stays on the list with no tick until its X. Over the list a search:
+    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Edit auras...*, the one window
+    for every aura's setup, its marks and its reminder (Saneroki: "one Edit Auras window where I can handle all the aura
+    configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
+    reminder), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
+    *Hide from unit frames* and *Prioritize on unit frames*, and last *Reminder* (below, *Reminders*). Click a line to
+    choose it: its reminder's settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
     order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
-    first; click one, or Enter for the first, and it is on the list, lit, to tick. A spell's number finds that spell.
-    `/sane auras` opens it too, `/sane auras rejuv` with that searched. The game lets the lists act here on the buffs of you, your group and friendly units and
+    first; click one, or Enter for the first, and it is on the list, lit and chosen, to tick. A spell's number finds that spell.
+    `/sane auras` and `/sane reminders` open it too, `/sane auras rejuv` with that searched, and the button *Edit auras*
+    in the page's section *Reminders*. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (in a fight, that is; out of one your marks act on all of them).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health, in the light yellow the nameplates give a neutral creature, and its
@@ -255,16 +258,19 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - **In a fight** the game hides what a button shows: an aura you had before the fight keeps its mark, and its menu opens,
     where the game tells its instance; what came during the fight the menu cannot name, and says so. Where the game does not
     tell the instance, the list shows plain from its first change until the fight ends.
-- **Reminders** (the page's tick *Reminder bars*, `/sane reminders`):
-  - **Making one:** click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of a
-    fight), or right click a spell in the spellbook, and choose *Create reminder*; the window opens on it. An aura with a reminder says *Edit reminder*
-    and *Delete reminder*.
-  - **Its settings**, each at once: which bar, or *Party and raid frames*; *Display when missing*; *Display when active*;
+- **Reminders** (the page's tick *Reminder bars*; set in *Edit auras*, `/sane reminders`):
+  - **Making one:** in *Edit auras* search any spell (any class's, an enemy's, an item's, or its number), and tick its
+    *Reminder*; or click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of a
+    fight), or right click a spell in the spellbook, and choose *Create reminder*: *Edit auras* opens on it. An aura with a
+    reminder says *Edit reminder* and *Delete reminder*; unticking *Reminder*, or the line's X, deletes it too.
+  - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar or *Party and raid frames*, with
+    *New bar* (the reminder on it) and *Delete bar*; *Watch on* you, your target or your focus (one made in the window:
+    a debuff on your target, a buff on you); *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help). Never
-    while you are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on you or on the
-    unit it was made on (your target, your focus). A group's version counts for the one: a Gift of the Wild for a Mark of
+    while you are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on whom
+    *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
     your blessings for a blessing (which starts with *Only yours*).
   - **On the party and raid frames** (the place *Party and raid frames*, last in the dropdowns; the switch *Your reminders on
@@ -272,8 +278,8 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     its icon floats over that member's name, from the health leftwards, four at most in the order made. Not on the dead or
     the offline; a shout on your own party only. The class buffs no longer show by themselves: make a reminder of each one
     you want there.
-  - **The bars:** one at first, more by *New bar* in the window, each with its own reminders (the dropdown on top shows a
-    bar's, *Bar* moves a reminder to another). *Delete bar* puts its reminders on the first bar left; the last bar stays.
+  - **The bars:** one at first, more by *New bar*, each with its own reminders (*Shows on* moves a reminder to another).
+    *Delete bar* deletes the chosen reminder's bar and puts its reminders on the first bar left; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
     every bar stands with all it holds. Nothing on them takes the mouse.
   - **In a fight** the game hides most auras from addons. What was on stays known: when it goes the reminder shows at once
@@ -518,13 +524,15 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     (`Auras.Set` at `face.auraAsked`). `Auras.Set` sets each container's unit (`none` while ours show), `UpdateAllAuras` at every fill.
   - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden`, and `auraShow`, `auraHide` (`{ [spell number] = name }`), one list of
     each side per spell (`Lists.SIDE`; `Put`, `Take`, `Unmark(which, name)`, `Forget(name)`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; and `auraKept`, the window's own list: every spell put on a mark or picked
-    in the search, with a mark or none, until its X (`Forget`: off every list). The window a `Core.Window` panel (`auraListsPlace`, not
-    sizable, no full screen): one scroll list of every name on any of them (`Rows`), each line the game's close button
-    (its template stands at frame level 510: set to its line's), icon, name, number and a `UICheckButtonTemplate` per mark
-    in `Lists.COLUMNS` (Hidden, Unimportant, Important, Hide, Prioritize), their words over the columns; the search box
-    (`InputBoxTemplate`, searched `Lists.WAIT` after the last key) and under it the suggestions, a frame of their own
-    over the list (`Lists.FIND`: 16 lines at most, each group its title and its best, at least `per`); Enter takes the
-    first, Escape empties it. `Open(text)` searches at once. `/sane auras [words]` (`Core.Command`).
+    in the search, with a mark or none, until its X (`Forget`: off every list, and its reminders `Reminders.Take`). The
+    window *Edit auras* a `Core.Window` panel (`auraListsPlace`, not sizable, no full screen): one scroll list of every
+    name on any of them or a reminder's (`Rows`), each line the game's close button (its template stands at frame level 510:
+    set to its line's), icon, name, number, a `UICheckButtonTemplate` per mark in `Lists.COLUMNS` (Hidden, Unimportant,
+    Important, Hide, Prioritize) and `line.remind` (Reminder: `Reminders.Make` of the line's spell, a debuff on your
+    target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`), their words over the columns; `OnMouseUp`
+    chooses the line (`chosen`, by name), and `ReminderEditor.Show` puts `Reminders.Named(chosen)` in the panel under the
+    list (`Reminders/Editor.lua`); the search box `AuraSearch.Box` over all. `Open(text, name)` searches at once, chooses
+    that name. `/sane auras [words]` and `/sane reminders` (`Core.Command`).
   - `AuraSearch.lua` (`ns.AuraSearch`): what the search finds, read once at the first search from Core's sets: each class
     (`Classes`, 1 to `CLASSES`) its class lines' spells (`SkillLines` by `byClass`, kind `class`) that put an aura on
     (`Spells`' effects with an aura; one without effects counts), the enemies' (`CreatureSpells`) and the items' (`Auras`)
@@ -532,6 +540,9 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     over the names, then the groups by their best rank, your own class first where two are as good; a spell's number
     first (`C_Spell.GetSpellName`); without the sets (Retail for now) a name finds a spell of your own (`C_Spell.GetSpellInfo`).
     While the sets are read `done` gets what the game found with `reading`, then again. `Lit(entry, text)` the name with what was typed in gold.
+    `Box(parent, x, y, opts)` the search box (`InputBoxTemplate`, searched `WAIT` after the last key) and under it the
+    suggestions, a frame of their own over what lies below (`FIND`: 16 lines at most, each group its title and its best,
+    at least `per`); Enter takes the first, Escape empties it; `opts.pick(entry)`. `Icon(id)`, `Tip(owner, id, name)`.
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
     children `TotemFrame` and the class bars stay the game's; `PetFrame` (which the game's layout re-parents) alpha 0
@@ -703,8 +714,8 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
-| `Units/AuraSearch.lua` | What the aura lists' search finds: every class's auras, the enemies', the items', from Core's sets, in groups |
-| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and their window (`/sane auras`): one list with a tick per mark, the search |
+| `Units/AuraSearch.lua` | What Edit auras' search finds: every class's auras, the enemies', the items', from Core's sets, in groups; its box and suggestions |
+| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and the window Edit auras (`/sane auras`, `/sane reminders`): one list with a tick per mark and Reminder, the search, the chosen line's reminder under it |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: the game's outline, fade, hidden last, the left click |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
@@ -727,9 +738,10 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Reminders/Reminders.lua` | The reminders and bars: kept per character, the families of names, what is known of an aura, in a fight too, whether one shows, the looks |
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Editor.lua` | The window: your bars and the party and raid frames, the reminders there and the settings of the one chosen |
+| `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-06:** one window, *Edit auras*, for every aura's marks and its reminder (Saneroki: "merge the Reminder and edit aura window"); any spell searched there can be a reminder.
 - **2026-11-06:** the aura lists one long list, a tick per mark in Saneroki's order and the red X in front of the name, and a search over every class's auras, the enemies' and the items', in groups (Saneroki: "can I search for all spells across classes and maybe even enemies?"); *Show on unit frames* is *Prioritize on unit frames*.
 - **2026-11-06:** reminders on the party and raid frames, in place of the fixed buffs of your class (Saneroki: "add those buffs or spells or hots to the party bar manually"); *Only yours*; a group's version counts for the one.
 - **2026-11-06:** a Sane Macro on a bar button acts as the game's buttons do: a spell or item dropped or clicked onto it takes its place, and dragged with the pick-up key it goes to another button or off the bars (Saneroki: it could not be removed).

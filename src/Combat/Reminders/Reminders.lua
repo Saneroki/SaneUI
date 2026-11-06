@@ -109,6 +109,14 @@ function Reminders.Find(spell)
     return nil
 end
 
+-- The first reminder of an aura of that name, if it has one (Edit auras holds an aura by its name).
+function Reminders.Named(name)
+    for _, reminder in ipairs(Reminders.List()) do
+        if reminder.name == name then return reminder end
+    end
+    return nil
+end
+
 -- The reminder of that aura, made if it has none: a buff shown when it is missing, a debuff on you when it is there,
 -- a debuff on another (yours on a foe) when it is missing; only yours counting where its family says so (a blessing).
 function Reminders.Make(spell)

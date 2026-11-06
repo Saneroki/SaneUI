@@ -17,6 +17,11 @@ local _, ns = ...
 --  A search is Core's (Fuzzy): forgiving, ranked. The groups come in the order
 --  of their best find, your own class first where two are as good, and within a
 --  group the best first.
+--
+--  The box that asks it (Search.Box) is the aura lists' window's and the
+--  reminders' window's: what is typed searched a moment after the last key, the
+--  finds under it in their groups, over everything below it; a click on one, or
+--  Enter for the first, picks it; the mouse on one shows its tooltip.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -25,6 +30,8 @@ ns.AuraSearch = Search
 
 Search.CLASSES = 20 -- the class numbers looked at, from 1: the game's, and room for more
 Search.ENEMIES, Search.ITEMS = 100, 101 -- the two groups' places after the classes
+Search.WAIT = 0.15  -- seconds after the last key before a box's search runs
+Search.FIND = { line = 20, icon = 16, lines = 16, per = 5 } -- a box's suggestions: a group shows per at least
 
 local entries, groups -- what is searched: { id, name, icon, group } each; the groups by key
 local reading = 0     -- the jobs still reading a set
@@ -186,4 +193,168 @@ function Search.Lit(entry, text)
         end
     end
     return Core.Fuzzy.Highlight(entry.name, all)
+end
+
+-- A spell's picture, by its number.
+function Search.Icon(id)
+    local spells = rawget(_G, "C_Spell")
+    return spells and id and Core.Ask(spells.GetSpellTexture, id) or "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
+-- A spell's tooltip by owner; its name alone where the game does not know it.
+function Search.Tip(owner, id, name)
+    if not id then return end
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    if not pcall(GameTooltip.SetSpellByID, GameTooltip, id) then GameTooltip:SetText(name) end
+    GameTooltip:Show()
+end
+
+-------------------------------------------------------------------------------
+--  The box
+-------------------------------------------------------------------------------
+local Box = {}
+Box.__index = Box
+
+-- One of the suggestions' lines.
+function Box:Line(index)
+    local F = Search.FIND
+    local line = CreateFrame("Button", nil, self.finder)
+    line:SetHeight(F.line)
+    line:SetPoint("TOPLEFT", self.finder, "TOPLEFT", 4, -4 - (index - 1) * F.line)
+    line:SetPoint("RIGHT", self.finder, "RIGHT", -4, 0)
+    line.glow = line:CreateTexture(nil, "HIGHLIGHT")
+    line.glow:SetAllPoints(line)
+    line.glow:SetColorTexture(1, 1, 1, 0.1)
+    line.icon = line:CreateTexture(nil, "ARTWORK")
+    line.icon:SetSize(F.icon, F.icon)
+    line.icon:SetPoint("LEFT", 14, 0)
+    line.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    line.text = line:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    line.text:SetPoint("RIGHT", line, "RIGHT", -4, 0)
+    line.text:SetJustifyH("LEFT")
+    line.text:SetWordWrap(false)
+    line:SetScript("OnClick", ns.Guard(function(button) self:Pick(button.entry) end))
+    line:SetScript("OnEnter", ns.Guard(function(button)
+        if button.entry then Search.Tip(button, button.entry.id, button.entry.name) end
+    end))
+    line:SetScript("OnLeave", GameTooltip_Hide)
+    self.lines[index] = line
+    return line
+end
+
+-- A suggestions' line: a group's title (its class's colour, how many it found) or one of its finds.
+function Box:Fill(index, entry, text, colour)
+    local line = self.lines[index] or self:Line(index)
+    line.entry = entry
+    line:EnableMouse(entry ~= nil)
+    line.glow:SetShown(entry ~= nil)
+    line.icon:SetShown(entry ~= nil)
+    line.text:ClearAllPoints()
+    line.text:SetPoint("RIGHT", line, "RIGHT", -4, 0)
+    if entry then
+        line.icon:SetTexture(entry.icon or Search.Icon(entry.id))
+        line.text:SetFontObject("GameFontHighlight")
+        line.text:SetPoint("LEFT", line.icon, "RIGHT", 6, 0)
+    else
+        line.text:SetFontObject("GameFontNormalSmall")
+        line.text:SetPoint("LEFT", line, "LEFT", 2, 0)
+    end
+    line.text:SetText(colour and ("|cff%s%s|r"):format(colour, text) or text)
+    line:Show()
+end
+
+-- What the search found under the box: each group's title, then its best finds; nil: none of it.
+function Box:Show(list)
+    self.first = nil
+    if not list then return self.finder:Hide() end
+    local F = Search.FIND
+    local typed = self.box:GetText()
+    local at = 0
+    local per = math.max(F.per, math.floor((F.lines - math.max(#list, 1)) / math.max(#list, 1)))
+    for _, group in ipairs(list) do
+        local room = F.lines - at - 1
+        if room < 1 then break end
+        local count = math.min(#group.entries, per, room)
+        local title = group.title or ""
+        if #group.entries > count then title = ns.TEXT.searchMore:format(title, #group.entries) end
+        at = at + 1
+        self:Fill(at, nil, title, group.colour)
+        for index = 1, count do
+            local entry = group.entries[index]
+            at = at + 1
+            self:Fill(at, entry, Search.Lit(entry, typed))
+            self.first = self.first or entry
+        end
+    end
+    if list.reading or at == 0 then
+        at = at + 1
+        self:Fill(at, nil, list.reading and ns.TEXT.searchReading or ns.TEXT.searchNothing, "808080")
+    end
+    for index = at + 1, #self.lines do self.lines[index]:Hide() end
+    self.finder:SetHeight(at * F.line + 8)
+    self.finder:Show()
+end
+
+-- What is typed now, searched; the answer shown while the box is in sight and it is still what is typed.
+function Box:Run()
+    if Plain(self.box:IsVisible()) ~= true then return end
+    local text = self.box:GetText()
+    Search.Find(text, function(list)
+        if Plain(self.box:IsVisible()) == true and self.box:GetText() == text then self:Show(list) end
+    end)
+end
+
+-- Nothing typed, nothing suggested.
+function Box:Clear()
+    self.box:SetText("")
+    self.box:ClearFocus()
+    self:Show(nil)
+end
+
+-- A suggestion taken: the box empty again, then its window's pick.
+function Box:Pick(entry)
+    if not (entry and entry.id and entry.name) then return end
+    self:Clear()
+    self.pick(entry)
+end
+
+-- Searched at once, as if typed.
+function Box:Search(text)
+    self.box:SetText(text)
+    self:Run()
+end
+
+-- A search box on parent, its words over it with their top left at (x, y) from the parent's: opts = { words, width,
+-- pick(entry): a suggestion taken, label: a name for an error's place }. Returns it: { box, words, finder, ... }.
+function Search.Box(parent, x, y, opts)
+    local self = setmetatable({ lines = {}, pick = opts.pick }, Box)
+    local words = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    words:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    words:SetText(opts.words)
+    local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    box:SetSize(opts.width - 6, 22)
+    box:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 6, -4)
+    box:SetAutoFocus(false)
+    local later = Core.Later(function() ns.Safe(opts.label, Box.Run, self) end, Search.WAIT, "Combat: " .. opts.label)
+    box:SetScript("OnTextChanged", ns.Guard(function(_, typed) if typed then later() end end))
+    box:SetScript("OnEnterPressed", ns.Guard(function(edit)
+        if self.first then return self:Pick(self.first) end
+        edit:ClearFocus()
+    end))
+    box:SetScript("OnEscapePressed", ns.Guard(function() self:Clear() end))
+    local finder = CreateFrame("Frame", nil, parent)
+    finder:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -6, -2)
+    finder:SetWidth(opts.width)
+    finder:SetFrameLevel((Plain(parent:GetFrameLevel()) or 1) + 20)
+    finder:EnableMouse(true)
+    local edge = finder:CreateTexture(nil, "BACKGROUND", nil, -1)
+    edge:SetPoint("TOPLEFT", -1, 1)
+    edge:SetPoint("BOTTOMRIGHT", 1, -1)
+    edge:SetColorTexture(0.45, 0.4, 0.3, 1)
+    local ground = finder:CreateTexture(nil, "BACKGROUND")
+    ground:SetAllPoints(finder)
+    ground:SetColorTexture(0.03, 0.03, 0.03, 0.97)
+    finder:Hide()
+    self.box, self.words, self.finder = box, words, finder
+    return self
 end

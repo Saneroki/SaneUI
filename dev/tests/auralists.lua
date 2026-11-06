@@ -195,6 +195,8 @@ check(Lists.COLUMNS[1] == "hidden" and Lists.COLUMNS[3] == "white" and Lists.COL
       and xs[1] < xs[2] and xs[2] < xs[3] and xs[3] < xs[4] and xs[4] < xs[5],
     "the ticks: Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, left to right")
 check(TEXT.auraFramesShow == "Prioritize on unit frames", "Show on unit frames is now Prioritize on unit frames")
+check(thorns.remind and thorns.remind._points[1][4] > xs[5] and not thorns.remind:GetChecked(),
+    "last, right of the marks, the tick Reminder: none yet")
 
 -- A tick of a side takes the place of the other of that side; the other side stays.
 thorns.ticks.black:SetChecked(true)

@@ -79,7 +79,7 @@ ns.TEXT = {
     unitRest = "Hide the unit frames at rest",
     unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
     unitAuras = "Auras on the frames",
-    unitAurasTip = "The auras that matter most above a frame: four buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Prioritize on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open your aura lists (/sane auras).",
+    unitAurasTip = "The auras that matter most above a frame: four buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Prioritize on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open Edit auras (/sane auras).",
     auraImportant = "Important",
     auraUnimportant = "Unimportant",
     auraHidden = "Hidden",
@@ -88,9 +88,9 @@ ns.TEXT = {
     buffList = "Your buffs and debuffs",
     buffListOn = "Marks and menu on the game's list",
     buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Create reminder, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Prioritize on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
-    auraLists = "Aura lists...",
+    auraLists = "Edit auras...",
     auraFight = "In a fight the game keeps this aura from addons: after it",
-    listsTitle = "Aura lists",
+    listsTitle = "Edit auras",
     listsInput = "Search any class's auras, an enemy's or an item's, or type a spell's number:",
     listsEmpty = "None yet. Search for an aura above, or click one on your frames or a spell in the spellbook.",
     listsPut = "%s: %s.",
@@ -193,18 +193,21 @@ ns.TEXT = {
     meterBack = "Back to the fights",
     reminders = "Reminders",
     remindersOn = "Reminder bars",
-    remindersTip = "Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. /sane reminders opens the list, with your bars: make as many as you like, and give each spell its bar, or the party and raid frames, where it shows on each member's frame. Off: no bars, nothing on the frames.",
+    remindersTip = "Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. Or open Edit auras (/sane auras or /sane reminders), search any spell there and tick its Reminder. There each reminder gets its bar (make as many as you like), or the party and raid frames, where it shows on each member's frame. Off: no bars, nothing on the frames.",
+    aurasOpen = "Edit auras",
+    aurasOpenTip = "Every aura's setup in one window: search any class's spells, an enemy's or an item's, and tick what it should be, Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, and a Reminder, whose settings stand under the list.",
     reminderCreate = "Create reminder",
     reminderEdit = "Edit reminder",
     reminderBar = "Reminder bar %d",
     reminderNewBar = "New bar",
     reminderDeleteBar = "Delete bar",
-    reminderNone = "None yet. Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder.",
-    reminderOnYou = "On you",
-    reminderOnOther = "On the unit it was made on",
+    reminderColumn = "Reminder",
+    reminderPick = "Click an aura's line for its reminder's settings here; tick its Reminder to be reminded of it, on a bar or on the party and raid frames.",
+    reminderWatch = "Watch on",
+    reminderUnits = { player = "You", target = "Your target", focus = "Your focus" },
     reminderOnGroup = "On each member of your party or raid",
     reminderGroup = "Party and raid frames",
-    reminderOnBar = "Bar",
+    reminderOnBar = "Shows on",
     reminderMissing = "Display when missing",
     reminderActive = "Display when active",
     reminderWhen = "Combat",
@@ -295,6 +298,7 @@ local OPTIONS = {
     { key = "meterOrder", default = "dps" },
     { key = "buffList", default = true, text = ns.TEXT.buffListOn, tip = ns.TEXT.buffListTip, header = ns.TEXT.buffList },
     { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
+    { key = "aurasOpen", text = ns.TEXT.aurasOpen, tip = ns.TEXT.aurasOpenTip, button = function() ns.Guarded(ns.AuraLists.Open) end },
 }
 if ns.Serves() then
     table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
@@ -346,13 +350,13 @@ function ns.OnLoad()
     ns.Macros.Load()
 end
 
-Core.Command("auras", "your aura lists: how they look, and on the unit frames (/sane auras rejuv searches)", function(rest)
+Core.Command("auras", "Edit auras: every aura's marks and reminders (/sane auras rejuv searches)", function(rest)
     if type(rest) == "string" and rest:find("%S") then return ns.Guarded(ns.AuraLists.Open, rest) end
     ns.Guarded(ns.AuraLists.Toggle)
 end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
-Core.Command("reminders", "your reminders of buffs and debuffs", function() ns.Guarded(ns.ReminderEditor.Toggle) end)
+Core.Command("reminders", "Edit auras, for your reminders of buffs and debuffs", function() ns.Guarded(ns.AuraLists.Toggle) end)
 
 function ns.OnLogin()
     ns.Window.Build()
