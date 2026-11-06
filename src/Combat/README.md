@@ -33,9 +33,9 @@ it; the mouse on it brings its buttons.
 
 Click a buff or debuff, or right click a spell in the spellbook, and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
-with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or choose *Create reminder*: its
-icon then shows on an invisible reminder bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
-shows on it, and you make as many bars as you like. Or give the reminder the place *Party and raid frames*: its icon then
+with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or choose *Track this aura*: its
+icon then shows on an invisible tracking bar, placed in Edit Mode, while its settings want it; a bar is as wide as what
+shows on it, and you make as many bars as you like. Or give the tracked aura the place *Party and raid frames*: its icon then
 shows on each member's frame while they lack it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
 
 ## How to use
@@ -56,7 +56,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - Each spell as in the game's book: its icon in the game's frame (round for a passive), name and rank, a
     spell still to learn greyed with the level it comes at or *Trainable*, the cooldown, the glow of a spell on
     none of your action bars, a pet ability's autocast, the tooltip.
-  - **Click** to cast it, **right click** for its menu, as a buff's (below, *Your buffs and debuffs*: a reminder and your marks of its aura; on a pet ability it switches its autocast), **drag** it onto an action
+  - **Click** to cast it, **right click** for its menu, as a buff's (below, *Your buffs and debuffs*: tracking it and your marks of its aura; on a pet ability it switches its autocast), **drag** it onto an action
     bar, **Shift-click** to link it in chat (or to pick it up, as your game's modified clicks say).
   - **In a fight** the book shows, pages and drags as always, but a click does not cast (it says so): cast from
     your action bars then. After the fight, a click casts again.
@@ -111,16 +111,16 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
     rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Edit auras...*, the one window
-    for every aura's setup, its marks and its reminder (Saneroki: "one Edit Auras window where I can handle all the aura
+    for every aura's setup, its marks and its tracking (Saneroki: "one Edit Auras window where I can handle all the aura
     configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
-    reminder), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
-    *Hide from unit frames* and *Prioritize on unit frames*, and last *Reminder* (below, *Reminders*). Click a line to
-    choose it: its reminder's settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
+    tracking), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
+    *Hide from unit frames* and *Prioritize on unit frames*, and last *Track* (below, *Tracked auras*). Click a line to
+    choose it: its tracking settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
     order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
     first; click one, or Enter for the first, and it is on the list, lit and chosen, to tick. A spell's number finds that spell.
     `/sane auras` and `/sane reminders` open it too, `/sane auras rejuv` with that searched, and the button *Edit auras*
-    in the page's section *Reminders*. The game lets the lists act here on the buffs of you, your group and friendly units and
+    in the page's section *Tracked auras*. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (in a fight, that is; out of one your marks act on all of them).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
     your target's frame with that one's health, in the light yellow the nameplates give a neutral creature, and its
@@ -184,8 +184,8 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
   one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
   tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
-  tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each of your reminders
-  placed on these frames that wants it, four at most (*Your reminders on the frames*, below, *Reminders*: a buff or HoT the member is
+  tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each aura you track
+  on these frames whose settings want it, four at most (*Tracked auras on the frames*, below, *Tracked auras*: a buff or HoT the member is
   missing, say). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
@@ -198,7 +198,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   game's rule. Esc or its close button closes it. *Restrict pings* and the game's filters for its own raid frames are not in it.
 - **Its sizes and preview:** in Edit Mode, click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
   and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
-  markers, ready checks, aggro, the dead and offline, your reminders' icons, barriers, lost health and dispels; they stay the same while you
+  markers, ready checks, aggro, the dead and offline, your tracked auras' icons, barriers, lost health and dispels; they stay the same while you
   slide the sizes. A slot is a fifth of the max height high, whoever is there, so five fill the window even with three in the party. It is as
   wide as the max unit width (at first as wide as your unit frames), and only where the columns in use would not fit into the max width do all
   share that width evenly. Sizes change out of a fight: in one, a member who joins shows at the size in use.
@@ -243,7 +243,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - **In a fight** the game hides these numbers from addons: they show, but the list goes by the places on the game's
     own list. On a boss it hides threat too: there you see the share alone, and threat is neither added up nor sorted.
 - **Your buffs and debuffs** (the page's tick *Marks and menu on the game's list*): the game's own lists at the top of the
-  screen stay, with your marks on them. **Click** one for its menu: *Create reminder*, and a tick each:
+  screen stay, with your marks on them. **Click** one for its menu: *Track this aura*, and a tick each:
   - **Important:** the game's golden animated outline around it, as on a spell it wants you to see; on the unit frames it comes first, with the same outline.
   - **Unimportant:** faded to 25% of its strength; never on the unit frames.
   - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
@@ -258,34 +258,34 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
   - **In a fight** the game hides what a button shows: an aura you had before the fight keeps its mark, and its menu opens,
     where the game tells its instance; what came during the fight the menu cannot name, and says so. Where the game does not
     tell the instance, the list shows plain from its first change until the fight ends.
-- **Reminders** (the page's tick *Reminder bars*; set in *Edit auras*, `/sane reminders`):
-  - **Making one:** in *Edit auras* search any spell (any class's, an enemy's, an item's, or its number), and tick its
-    *Reminder*; or click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of a
-    fight), or right click a spell in the spellbook, and choose *Create reminder*: *Edit auras* opens on it. An aura with a
-    reminder says *Edit reminder* and *Delete reminder*; unticking *Reminder*, or the line's X, deletes it too.
+- **Tracked auras** (Saneroki: *Track*, once *Reminders*; the page's tick *Tracking bars*; set in *Edit auras*, `/sane auras`, `/sane reminders`):
+  - **Tracking one:** in *Edit auras* search any spell (any class's, an enemy's, an item's, or its number), and tick its
+    *Track*; or click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of a
+    fight), or right click a spell in the spellbook, and choose *Track this aura*: *Edit auras* opens on it. A tracked aura's
+    menu says *Edit tracking* and *Stop tracking*; unticking *Track*, or the line's X, stops it too.
   - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar or *Party and raid frames*, with
-    *New bar* (the reminder on it) and *Delete bar*; *Watch on* you, your target or your focus (one made in the window:
+    *New bar* (the aura on it) and *Delete bar*; *Watch on* you, your target or your focus (one made in the window:
     a debuff on your target, a buff on you); *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help). Never
-    while you are dead. A reminder belongs to the character and watches the aura by name, so any rank of it, on whom
+    while you are dead. What you track belongs to the character, watched by the aura's name, so any rank of it, on whom
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
     your blessings for a blessing (which starts with *Only yours*).
-  - **On the party and raid frames** (the place *Party and raid frames*, last in the dropdowns; the switch *Your reminders on
-    the frames* on the page's group section): the reminder watches every member the frames show, your own slot too, and
+  - **On the party and raid frames** (the place *Party and raid frames*, last in the dropdowns; the switch *Tracked auras on
+    the frames* on the page's group section): the aura is watched on every member the frames show, your own slot too, and
     its icon floats over that member's name, from the health leftwards, four at most in the order made. Not on the dead or
-    the offline; a shout on your own party only. The class buffs no longer show by themselves: make a reminder of each one
+    the offline; a shout on your own party only. The class buffs no longer show by themselves: track each one
     you want there.
-  - **The bars:** one at first, more by *New bar*, each with its own reminders (*Shows on* moves a reminder to another).
-    *Delete bar* deletes the chosen reminder's bar and puts its reminders on the first bar left; the last bar stays.
+  - **The bars:** one at first, more by *New bar*, each with its own tracked auras (*Shows on* moves one to another).
+    *Delete bar* deletes the chosen aura's bar and puts what it held on the first bar left; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
     every bar stands with all it holds. Nothing on them takes the mouse.
-  - **In a fight** the game hides most auras from addons. What was on stays known: when it goes the reminder shows at once
+  - **In a fight** the game hides most auras from addons. What was on stays known: when it goes its icon shows at once
     and the offset counts on. What comes during a fight the game does not tell, except your own cast where it lets that
     through; on the party and raid frames your cast goes with the member who gets a new aura of yours that moment, so a
-    Rejuvenation you cast on the tank takes its icon off the tank's frame. Else a reminder that shows stays until the fight ends.
+    Rejuvenation you cast on the tank takes its icon off the tank's frame. Else an icon that shows stays until the fight ends.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -741,6 +741,7 @@ shows on each member's frame while they lack it (your Mark of the Wild, your Rej
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-06:** *Reminder* is now *Track* wherever you read it: the column, *Track this aura*, *Tracking bar*, *Tracked auras* (Saneroki).
 - **2026-11-06:** one window, *Edit auras*, for every aura's marks and its reminder (Saneroki: "merge the Reminder and edit aura window"); any spell searched there can be a reminder.
 - **2026-11-06:** the aura lists one long list, a tick per mark in Saneroki's order and the red X in front of the name, and a search over every class's auras, the enemies' and the items', in groups (Saneroki: "can I search for all spells across classes and maybe even enemies?"); *Show on unit frames* is *Prioritize on unit frames*.
 - **2026-11-06:** reminders on the party and raid frames, in place of the fixed buffs of your class (Saneroki: "add those buffs or spells or hots to the party bar manually"); *Only yours*; a group's version counts for the one.

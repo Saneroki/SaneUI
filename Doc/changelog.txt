@@ -9,9 +9,10 @@ The bigger changes of each version, newest first.
 - Routes never use your hearthstone. When it would get you to the
   map pin sooner, the chat tells you once, with the minutes it saves.
 - Edit auras: one window for every aura's setup, its marks and its
-  reminder (/sane auras, /sane reminders, or the button on the
-  Reminders settings). Search any spell, tick its Reminder, and set
-  where it shows and on whom right under the list.
+  tracking (/sane auras, /sane reminders, or the button on the Tracked
+  auras settings). Search any spell, tick its Track, and set where its
+  icon shows and on whom right under the list. What was called a
+  reminder is now tracking an aura.
 - Aura lists (/sane auras): one list of every aura you set up, a tick
   for each mark and the X in front to take it off, and a search over
   every class's auras, the enemies' and food, potions and items, grouped
@@ -21,8 +22,8 @@ The bigger changes of each version, newest first.
   that has no quest for you opens its window at once, without the talk
   before it. Hold Shift as you talk to them to see the talk and its
   choices (Lore, on by default).
-- Reminders on your party and raid frames: give a reminder the place
-  Party and raid frames (/sane reminders) and its icon shows on each
+- Tracked auras on your party and raid frames: track an aura on the
+  Party and raid frames (/sane auras) and its icon shows on each
   member who lacks it, your Mark of the Wild or your Rejuvenation, say.
   Only yours counts your own cast alone. In a fight a HoT that runs out
   shows at once, and one you cast on someone goes from their frame. The

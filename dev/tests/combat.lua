@@ -302,7 +302,7 @@ if RETAIL then
     check(Core.Lent(game), "(the game's window seated as the module stands down)")
     ns.StandDown("a test")
     check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "the bottom edge no longer fills the screen; no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars",
+        and ns.GIVEN_BACK == "the bottom edge no longer fills the screen; no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no tracking bars",
         "standing down: the quest marks go, and what is told says so")
     check(not Core.Lent(game) and game:IsShown() and not click._shown and not frame._shown,
         "the game's window given back, open, the click and the window gone")

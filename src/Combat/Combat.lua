@@ -87,7 +87,7 @@ ns.TEXT = {
     auraFramesHide = "Hide from unit frames",
     buffList = "Your buffs and debuffs",
     buffListOn = "Marks and menu on the game's list",
-    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Create reminder, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Prioritize on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
+    buffListTip = "The game's list of your buffs and debuffs at the top of the screen. Click one for its menu: Track this aura, Important (the game's golden animated outline around it, and first on the unit frames), Unimportant (faded, and never on the unit frames), Hidden (out of sight until the mouse is on the list), and for the unit frames alone, with the list as it is: Prioritize on unit frames (first there, no glow) and Hide from unit frames. In a fight the game keeps what came during it from addons. A right click cancels a buff, as in the game. Off: the game's list as it is. The spellbook's right click opens the same menu.",
     auraLists = "Edit auras...",
     auraFight = "In a fight the game keeps this aura from addons: after it",
     listsTitle = "Edit auras",
@@ -124,8 +124,8 @@ ns.TEXT = {
     groupGround = "Ground",
     groupMenu = "Group menu",
     groupLeave = Core.Word("PARTY_LEAVE", "Leave Group"),
-    groupBuffs = "Your reminders on the frames",
-    groupBuffsTip = "On the party and raid frames, the icons of your reminders placed there: give a reminder the place Party and raid frames in /sane reminders, and its icon shows on each member's frame while its settings want it, a buff they are missing, say. A group's version counts for the one (a Gift of the Wild for a Mark of the Wild); Only yours counts your own cast alone, for your HoTs. In a fight the game hides most auras from addons: one that runs out or is taken off shows at once, one you cast on someone goes, the rest is read again when the fight ends.",
+    groupBuffs = "Tracked auras on the frames",
+    groupBuffsTip = "On the party and raid frames, the icons of the auras you track there: in Edit auras (/sane auras) tick an aura's Track and set Shows on to Party and raid frames, and its icon shows on each member's frame while its settings want it, a buff they are missing, say. A group's version counts for the one (a Gift of the Wild for a Mark of the Wild); Only yours counts your own cast alone, for your HoTs. In a fight the game hides most auras from addons: one that runs out or is taken off shows at once, one you cast on someone goes, the rest is read again when the fight ends.",
     groupWidth = "Max width",
     groupHeight = "Max height",
     groupUnitWidth = "Max unit width",
@@ -191,18 +191,18 @@ ns.TEXT = {
     meterSaveLater = "Your fight is saved as %s when it is over: the game hides its numbers until then.",
     meterLoad = "Load",
     meterBack = "Back to the fights",
-    reminders = "Reminders",
-    remindersOn = "Reminder bars",
-    remindersTip = "Click a buff or debuff, or right click a spell in the spellbook, and choose Create reminder: its icon then shows on an invisible reminder bar while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out. A bar is as wide as what shows on it, and is placed in Edit Mode. Or open Edit auras (/sane auras or /sane reminders), search any spell there and tick its Reminder. There each reminder gets its bar (make as many as you like), or the party and raid frames, where it shows on each member's frame. Off: no bars, nothing on the frames.",
+    reminders = "Tracked auras",
+    remindersOn = "Tracking bars",
+    remindersTip = "Track an aura and its icon shows while its settings want it, when the aura is missing or active, in or out of a fight, or some seconds before it runs out: on an invisible tracking bar, as wide as what shows on it and placed in Edit Mode, or on the party and raid frames, on each member's. Click a buff or debuff, or right click a spell in the spellbook, and choose Track this aura; or open Edit auras (/sane auras), search any spell and tick its Track. There each tracked aura gets its bar (make as many as you like) or the party and raid frames. Off: no bars, nothing on the frames.",
     aurasOpen = "Edit auras",
-    aurasOpenTip = "Every aura's setup in one window: search any class's spells, an enemy's or an item's, and tick what it should be, Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, and a Reminder, whose settings stand under the list.",
-    reminderCreate = "Create reminder",
-    reminderEdit = "Edit reminder",
-    reminderBar = "Reminder bar %d",
+    aurasOpenTip = "Every aura's setup in one window: search any class's spells, an enemy's or an item's, and tick what it should be, Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, and Track: its icon on a tracking bar or the party and raid frames, its settings under the list.",
+    reminderCreate = "Track this aura",
+    reminderEdit = "Edit tracking",
+    reminderBar = "Tracking bar %d",
     reminderNewBar = "New bar",
     reminderDeleteBar = "Delete bar",
-    reminderColumn = "Reminder",
-    reminderPick = "Click an aura's line for its reminder's settings here; tick its Reminder to be reminded of it, on a bar or on the party and raid frames.",
+    reminderColumn = "Track",
+    reminderPick = "Click an aura's line for its tracking settings here; tick its Track to show its icon on a tracking bar or on the party and raid frames.",
     reminderWatch = "Watch on",
     reminderUnits = { player = "You", target = "Your target", focus = "Your focus" },
     reminderOnGroup = "On each member of your party or raid",
@@ -215,7 +215,7 @@ ns.TEXT = {
     reminderRest = "Don't show in resting areas",
     reminderOwn = "Only yours",
     reminderEarly = "Offset time (seconds)",
-    reminderDelete = "Delete reminder",
+    reminderDelete = "Stop tracking",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -240,7 +240,7 @@ end
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the bottom edge no longer fills the screen; " .. (ns.Serves()
     and "your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no reminder bars"
+    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no tracking bars"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -350,13 +350,13 @@ function ns.OnLoad()
     ns.Macros.Load()
 end
 
-Core.Command("auras", "Edit auras: every aura's marks and reminders (/sane auras rejuv searches)", function(rest)
+Core.Command("auras", "Edit auras: every aura's marks and tracking (/sane auras rejuv searches)", function(rest)
     if type(rest) == "string" and rest:find("%S") then return ns.Guarded(ns.AuraLists.Open, rest) end
     ns.Guarded(ns.AuraLists.Toggle)
 end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
-Core.Command("reminders", "Edit auras, for your reminders of buffs and debuffs", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("reminders", "Edit auras, for the buffs and debuffs you track", function() ns.Guarded(ns.AuraLists.Toggle) end)
 
 function ns.OnLogin()
     ns.Window.Build()
