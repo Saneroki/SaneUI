@@ -356,9 +356,9 @@ Contents.Read(0, 2, "bags")
 -------------------------------------------------------------------------------
 check(sword.category == "sets" and ring.category == "finger" and linen.category == "trade" and potion.category == "consumables",
     "set gear, a ring in Rings (gear by its slot), trade goods, consumables")
-check(fang.category == "junk" and fang.junk and pelt.category == "misc" and arrows.category == "special"
+check(fang.category == "junk" and fang.junk and pelt.category == "quest" and arrows.category == "special"
     and herb.category == "reagent" and key.category == "special",
-    "grey: junk; a quest item in Miscellaneous while Quest Items is off; the special bags' and the reagent bag's")
+    "grey: junk; a quest item in Quest Items, on at first; the special bags' and the reagent bag's")
 check(table.concat(Categories.order, ",") ==
     "pinned,recent,head,neck,shoulder,back,chest,wrist,hands,waist,legs,feet,finger,trinket,weapons,offhand,ranged,armor,sets,"
     .. "potions,enhance,camp,consumables,trade,professions,containers,reagent,misc,quest,special,junk",
@@ -413,14 +413,16 @@ check(not helm.unusable, "a level later, the bags hidden meanwhile: asked anew")
 W.level = 1
 bags[0][8] = nil
 Contents.Scan({ 0 }, "bags", {}, Contents.ClearFree({}))
+Categories.SwitchOff("quest", true)
+Reclassify()
+check(pelt.category == "misc", "Quest Items switched off: the quest item in Miscellaneous")
 Categories.SwitchOff("quest", false)
 Reclassify()
-check(pelt.category == "quest", "Quest Items switched on: the quest item there")
+check(pelt.category == "quest", "Quest Items switched on again: the quest item there")
 Categories.SwitchOff("consumables", true)
 Reclassify()
 check(potion.category == "misc" and Categories.Off("consumables"), "a category switched off: its items in Miscellaneous")
 Categories.SwitchOff("consumables", false)
-Categories.SwitchOff("quest", true)
 Reclassify()
 -- Pins, assignments, junk marks.
 Categories.Pin(118, true)
@@ -583,7 +585,7 @@ local function Words(blocks)
 end
 local blocks = Views.Build("all", { section }, nil, "default", options)
 check(Words(blocks) == "Pinned Items=0,The Armory=0,Rings=1,Item Set Gear=1,?=0,Consumables=0,Food=1,?=0,Trade Goods=1,"
-    .. "Professions=0,Containers=0,Reagent Bag=1,Miscellaneous=1,Quest Items=0,Special Bags=2,Junk=1",
+    .. "Professions=0,Containers=0,Reagent Bag=1,Miscellaneous=0,Quest Items=1,Special Bags=2,Junk=1",
     "All Items: Pinned (with its +, empty too), a block per category, a group's title over its members that hold "
     .. "something, the empty categories shown too (a slot to drop into): " .. Words(blocks))
 check(blocks[1].plus and blocks[9].plus and blocks[9].key == "trade" and not blocks[12].plus and blocks[2].title
@@ -826,7 +828,7 @@ Categories.Fold("prep", false)
 Bags.Refresh()
 check(RowNamed("All Items") and RowNamed("One Bag") and RowNamed("Each Bag") and RowNamed("Pinned Items")
     and RowNamed("The Armory") and RowNamed("Head") and RowNamed("Weapons") and RowNamed("Potions") and RowNamed("Professions")
-    and RowNamed("Add Category") and not RowNamed("Quest Items"),
+    and RowNamed("Add Category") and RowNamed("Quest Items"),
     "the sidebar: the views, Pinned, every category switched on (empty ones too), a group's members, Add Category")
 do
     local ART = Categories.ART

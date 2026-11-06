@@ -30,7 +30,8 @@ local _, ns = ...
 --                           and what a right click opens (a lockbox, a
 --                           satchel: the game's hasLoot) (Saneroki, 2026-10-23)
 --      Miscellaneous        what no other category takes
---      Quest Items          off at first (they are in Miscellaneous then)
+--      Quest Items          what the game calls a quest item, and what
+--                           starts a quest (on at first: Saneroki, 2026-11-06)
 --      Special Bags         what is in a bag for one kind of item that is
 --                           worn (a quiver, a soul or herb bag: the game's bag
 --                           family)
@@ -68,7 +69,8 @@ local _, ns = ...
 --      member    { [key] = group }     a category's group (false: none)
 --      groups    { [group] = { word } } a group's own name (none: its
 --                                      members')
---      off       { [key] = true }      switched off (nil: Quest Items off)
+--      off       { [key] = true }      switched off (false: on; nil: as at first,
+--                                      Categories.OFF)
 --      hidden    { [key or group] = true }   not in All Items
 --      whole     { [group] = true }  a group shown as one part in All Items,
 --                                      not divided into its members
@@ -190,7 +192,8 @@ Categories.DEF = {}
 for _, def in ipairs(Categories.LIST) do Categories.DEF[def.key] = def end
 -- The groups at first, and their names.
 Categories.GROUPS = { armory = ns.TEXT.bagsArmory, prep = ns.TEXT.bagsPrep }
-Categories.OFF = { quest = true }
+-- The categories switched off at first: none (Saneroki, 2026-11-06: Quest Items on).
+Categories.OFF = {}
 -- The groups folded into their rows at first (Saneroki, 2026-10-30: the sidebar short).
 Categories.FOLDED = { armory = true, prep = true }
 
