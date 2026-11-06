@@ -512,6 +512,11 @@ the game's own art and the game's own API.
   (Saneroki, 2026-10-22: a curve of each corner and its two neighbours, not short straight lines).
 - **Its colours (Saneroki, 2026-10-23):** the walks golden, the flights between flight masters **white**, the ships,
   zeppelins and the tram **light blue** (red before), the portals violet, the hearthstone and the teleports pale blue.
+- **The hearthstone told, not taken (Saneroki, 2026-11-06):** in Stormwind with the pin in Darkshore and his
+  hearthstone bound at Auberdine, the line went straight from him to the inn; he expected the walk to the boat, the
+  boat and the walk on. "Turn it off but just show a ingame message to use the heartstone to speed it up." So the line
+  never takes the hearthstone (nor Astral Recall, to the same place): where it would bring the player to the pin at
+  least two minutes sooner, the chat says so once for that pin, and from home the line leads on.
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 - **A way for the guide's arrow (Saneroki, 2026-10-31):** the guide's arrow follows the routing to the guide's next
@@ -1225,7 +1230,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
 
 1. **The journey:** a small graph whose nodes are the known flight points, piers, portals, lifts, the
    hearthstone's place and the two ends; its edges are flights (times from Core's data), ships and
-   zeppelins (their timetable: the wait and the trip), the hearthstone (its cooldown as a wait), and
+   zeppelins (their timetable: the wait and the trip), the hearthstone (its cooldown as a wait; since 2026-11-06 only
+   in the second journey that tells whether it is quicker, never the line's), and
    walking between nodes (guessed at `Planner.DETOUR` times the straight line and its climb; the walking
    data's regions rule a walk out or make it cost `Planner.APART` more). A few hundred nodes: a
    shortest-path search in well under a millisecond. Run speed from the game.
@@ -1268,9 +1274,9 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   - **The line from the player:** where along it the player is (the cut) is found at every step of the canvas'
     tracker, from where they were on (a part from one plane onto another, the hearthstone's, at its end on theirs);
     the parts behind are not drawn, and a line runs from the arrow to it (`Route.Cut`).
-  - **Every plane:** the graph holds every plane's known flight points, docks, the tram and the hearthstone, so a
-    journey crosses a third plane where that is quickest (the hearthstone home, then a ship; Zephras Isle by way of
-    a continent). A flight point is two places, on the ground and in the air (the air reached by a flight only since
+  - **Every plane:** the graph holds every plane's known flight points, docks, the tram and the teleports' places, so
+    a journey crosses a third plane where that is quickest (Zephras Isle by way of a continent; the hearthstone home,
+    then a ship, only told since 2026-11-06). A flight point is two places, on the ground and in the air (the air reached by a flight only since
     2026-10-22, *No walk after a walk at a flight point*): a flight over many takes off and lands once, and is one
     leg. Aboard a ship the plan does not have (Core's `Data.Trips`), a new pin is planned
     from the pier of the dock it comes to; a ship's landing plans anew. The tram's wait is the time to its next

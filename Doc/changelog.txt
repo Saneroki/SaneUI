@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Routes never use your hearthstone. When it would get you to the
+  map pin sooner, the chat tells you once, with the minutes it saves.
 - Edit auras: one window for every aura's setup, its marks and its
   reminder (/sane auras, /sane reminders, or the button on the
   Reminders settings). Search any spell, tick its Reminder, and set

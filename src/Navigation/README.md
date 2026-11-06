@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, through portals, by the hearthstone and by the teleports a character has; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, through portals and by the teleports a character has (the hearthstone told in the chat where it is quicker); the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -253,12 +253,15 @@ is small, and the maps of the dungeons and raids. The plan is in
   perk *Frequent Flier* the flights count 20 % faster; the line white along them). The
   line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
   leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
-  over as many seas as it takes (by way of the other continent, or the hearthstone home first, where that is
-  quickest), your side's or both sides' (not the other side's harbours and zeppelin towers), the line light blue
+  over as many seas as it takes (by way of the other continent where that is quickest), your side's or both
+  sides' (not the other side's harbours and zeppelin towers), the line light blue
   from pier to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
-  quicker, the line light blue from one city's entrance to it to the other's; and the hearthstone is taken where it is
-  quickest (the map learns its place where you bind it, or the first time you use it; a shaman's Astral Recall
-  brings you there too). So are the teleports your character has, the line pale blue to where each brings you, then
+  quicker, the line light blue from one city's entrance to it to the other's. The line never takes your hearthstone:
+  it is yours to spend. Where it would bring you to the pin at least two minutes sooner, the chat says so once for
+  that pin ("use your hearthstone (Auberdine) to get to the map pin about 7 min sooner."); once you are home, the
+  line leads on from there (the map learns its place where you bind it, or the first time you use it; a shaman's
+  Astral Recall, which brings you there too, is told the same way). The teleports your character has are taken
+  where they are quickest, the line pale blue to where each brings you, then
   on foot: a mage's to the capitals and Dalaran (with a Rune of Teleportation in the bags), a druid's to Moonglade, an
   engineer's transporters to Gadgetzan, Everlook and Mount Hyjal and the Crumbling Hearthstone (while in the bags
   and usable; one cooling down counts its wait). Where one brings you the map knows from the original game (not yet confirmed by the
@@ -696,8 +699,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   (a layer made from other blocks). A walk many times its straight line is priced at once, and a long one looks at a
   band of rectangles along its way, not at everything as near as its length.
 - **Planner** (`Planner.lua`, no frames): the way to the map pin, a graph over the player, the pin, the known
-  flight points, the docks, the tram's entrances, the lifts' and portals' ends and the hearthstone's place on every
-  plane (the continents and
+  flight points, the docks, the tram's entrances, the lifts' and portals' ends and where the teleports bring one on
+  every plane (the continents and
   Zephras Isle, so a journey may cross a third; the canvas' tracker hands it the player's place): walks (guessed,
   at least as long as the steepest floor needs to climb between them, `Planner.SLOPE`) between the places of one
   plane, `Planner.APART` seconds more between two that share no region of the walking
@@ -714,8 +717,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   `dev/tools/travel-data`), its portals (the game's area triggers, and its portal objects one uses: batch 13, their
   places as Forever's servers sent them) from their trigger to where they bring one, those of the player's side or
   of both (`Planner.PORTAL` seconds; with
-  walking data only one with a floor at both ends, within `Planner.ARRIVE` yards at their height), the hearthstone
-  from the player (its cooldown, or Astral Recall's, `Planner.RECALL`, whichever is sooner), the teleports this
+  walking data only one with a floor at both ends, within `Planner.ARRIVE` yards at their height), the teleports this
   character has from the player to where each brings one (`Teleports`: Core's set *Travel*, kind `teleport`, of the
   player's side or of both; a spell it knows, `C_SpellBook.IsSpellKnown`, with its reagent in the bags, or one of its
   items in the bags that the game lets it use, `C_Item.IsUsableItem`; its cooldown, `C_Spell.GetSpellCooldown` or
@@ -782,8 +784,12 @@ is small, and the maps of the dungeons and raids. The plan is in
   once a flight master was opened this session); kept per character as `flightPoints` (the older `flights` held every
   point a flight master listed, found or not, and goes), `Planner.Knows`; only those are flown, and the map's pins of
   the others are red (`Pins.lua`); a pin set before is planned again when they changed. The hearthstone's place is
-  learnt where it is bound (`HEARTHSTONE_BOUND`) or where it (or Astral Recall) brought the character, kept per character; the hearthstone counts while it is in the bags and bound there (`GetBindLocation`), its
-  cooldown as a wait. Where a teleport brings one is the set's: the original game's (batch 14, unverified) or where
+  learnt where it is bound (`HEARTHSTONE_BOUND`) or where it (or Astral Recall) brought the character, kept per character. The hearthstone is no way of the line (Saneroki, 2026-11-06: the player's to spend): where it
+  is in the bags and bound there (`GetBindLocation`), or Astral Recall known (`Planner.RECALL`; the sooner of their
+  cooldowns, as a wait, and the cast, `Planner.HEARTH`), and that alone leaves time to reach the pin
+  `Planner.SOONER` seconds sooner, a second journey is made with it a way from the player (`Quicker`: `Find` with
+  `home`, priced only, no lines searched); where that one begins with it and is that much quicker, the chat tells
+  once a pin (`Tell`, `Planner.TEXT.sooner`; `only` where nothing else goes). Where a teleport brings one is the set's: the original game's (batch 14, unverified) or where
   one brought a character, learnt by Core (`src/Core/Data/Teleports.lua`, Core's learned data); the plan is made
   again when Core learnt one (*Travel*'s stamp). Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
   line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
@@ -910,7 +916,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
-| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the hearthstone, by the teleports it has; where along it the player is. No frames |
+| `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the teleports it has (the hearthstone told in the chat where it is quicker); where along it the player is. No frames |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
@@ -942,6 +948,14 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-06, the hearthstone told, not taken:** Saneroki stood in the middle of Stormwind with the map pin in
+  Darkshore: the line in Darkshore was right, but "it shows the blue route from the middle of the city where I
+  stand"; he expected "a golden route to the ship, a blue ship line and a golden route in darkdshore from the boat
+  to the marker". Both his characters are bound at Auberdine, so the planner took the hearthstone (ready, or ready
+  within about five minutes), its pale blue line straight from him to the inn. Run on the real data, the boat came
+  out as he expected once the hearthstone was further off. His word: "Turn it off but just show a ingame message to
+  use the heartstone to speed it up." Now the line never takes the hearthstone (nor Astral Recall); where it would
+  be `Planner.SOONER` (two minutes) quicker, the chat tells once a pin (`Quicker`, `Tell`).
 - **2026-11-06, quest areas on the small map ours alone, lighter:** Saneroki saw a white circle on the small map,
   "sometimes shows, sometimes not and sometimes only partly", with the quest areas, and an area "way to opaque.
   Much more solid than it normally is"; "I thought we replaced the native blobs with our own so we have more control

@@ -6,10 +6,11 @@ local _, ns = ...
 --  setting Route to the map pin is on. Knows no frames.
 --
 --      the journey   a graph over the player, the pin, the flight points this character knows, the docks of the
---                    boats and zeppelins, the cities' entrances to the tram, the hearthstone's place and where the
---                    teleports this character has bring one, on every
+--                    boats and zeppelins, the cities' entrances to the tram and where the teleports this character
+--                    has bring one, on every
 --                    plane (a continent, or a map of its own on the world map: Zephras Isle, Coords.Planes), so
---                    a journey may cross a third one (the hearthstone home, then a ship over the sea); its ways:
+--                    a journey may cross a third one (from the isle to a continent, then a ship over the sea); its
+--                    ways:
 --                    on foot between two places of one plane (guessed at Planner.DETOUR times the straight line;
 --                    between places that share no region of the walking data Planner.APART seconds more: a tower,
 --                    a gap in the walking data, taken only where nothing else goes; at the character's own speed,
@@ -26,8 +27,7 @@ local _, ns = ...
 --                    its landing, Lifts.lua: the wait for the car, half the time between two departures, and its
 --                    ride), the portals from their trigger to where they bring one (Core's set Travel, Portals:
 --                    Planner.PORTAL seconds; with walking data only one with a floor at both ends), the
---                    hearthstone from the player to its place (its cooldown and the cast; or the shaman's Astral
---                    Recall, which brings one there too), the teleports this character has (Core's set Travel,
+--                    teleports this character has (Core's set Travel,
 --                    Teleports: a spell it knows, with its reagent in the bags, or an item it holds that the game
 --                    lets it use) from the player to where each brings one (its cooldown and the cast); the quickest
 --                    taken (Dijkstra). Between two levels a lift joins (Thunder Bluff's mesa and Mulgore), or a
@@ -35,6 +35,11 @@ local _, ns = ...
 --                    the two share a region), no walk: the lift is the way. No ride brings one back to where the
 --                    rides since the last walk began (up a lift and straight down again, so that a walk follows a
 --                    walk)
+--      the hearthstone  no way of the line (Saneroki, 2026-11-06): it is the player's to spend. Where it (or the
+--                    shaman's Astral Recall, which brings one to its place too) would bring the player to the pin
+--                    Planner.SOONER seconds sooner (its cooldown and the cast, then on from its place: a second
+--                    journey, made only where it could be quicker, Quicker), they are told so in the chat, once a
+--                    pin
 --      the walks     then priced on the walking data by its coarse layer (Search.Price): the first from the floor
 --                    the player stands on, the others from the floor they start on where it is known (a lift's
 --                    landing, a portal's end, a teleport's landing), else from every floor at the place they start;
@@ -127,6 +132,7 @@ Planner.SLACK = 5        -- yards a part further on must be nearer than the firs
 Planner.SAME = 1         -- yards apart two places are one: the pin on the place asked for leads there
 Planner.LEAD = 15        -- yards along the line ahead of the player the way asked for turns to (Ahead)
 Planner.THERE = 8        -- yards from a leg's end that count as at it: on with the next leg (Ahead)
+Planner.SOONER = 120     -- seconds sooner at the pin the hearthstone must bring the player to be told of it (Quicker)
 Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item, its spell
 Planner.RECALL = 556     -- the shaman's Astral Recall: to the hearthstone's place too, a spell with its own cooldown
 Planner.FLIER = 1225490  -- the Legacy perk Frequent Flier: its spell (flights 20 % faster, half price)
@@ -510,9 +516,9 @@ local function Item(item)
     return Left(Core.Ask(C_Item.GetItemCooldown, item))
 end
 
--- Its place ({ map, u, v }) and the seconds until it brings the character there (the cooldown of the hearthstone or
--- of Astral Recall, the sooner, and the cast); nil when it cannot: neither in the bags nor known, its place not known
--- (or saved in another shape), or bound elsewhere since.
+-- Its place ({ map, u, v, name }), the seconds until it brings the character there (the cooldown of the hearthstone
+-- or of Astral Recall, the sooner, and the cast) and which does ("stone" or "recall"); nil when it cannot: neither in
+-- the bags nor known, its place not known (or saved in another shape), or bound elsewhere since.
 local function Hearth()
     local place = Core.Character(ns.name).hearth
     if type(place) ~= "table" or type(place.map) ~= "number" or type(place.u) ~= "number" or type(place.v) ~= "number"
@@ -520,9 +526,9 @@ local function Hearth()
     local bound = rawget(_G, "GetBindLocation") and Core.Ask(GetBindLocation)
     if bound and place.name and bound ~= place.name then return nil end
     local stone, recall = Item(Planner.HEARTHSTONE), Spell(Planner.RECALL)
-    local left = stone and recall and math.min(stone, recall) or stone or recall
-    if not left then return nil end
-    return place, left + Planner.HEARTH
+    if not stone and not recall then return nil end
+    local by = stone and (not recall or stone <= recall) and "stone" or "recall"
+    return place, (by == "stone" and stone or recall) + Planner.HEARTH, by
 end
 
 -- The seconds until this character can take a teleport of Core's set Travel (its cooldown left); nil when it cannot:
@@ -743,20 +749,21 @@ end
 -- another (one walk straight on is a way of its own), and no ride brings one back to where the rides since the last
 -- walk began (up a lift and straight down: a walk would go on from where one walked to).
 -- measured: { [from] = { [to] = seconds } } walks searched already, in place of their guesses; cut: { [region] = {
--- [region] = true } } regions no walk was found between (Find), none walked between. A flight point is two places: on
+-- [region] = true } } regions no walk was found between (Find), none walked between; home: the hearthstone home from
+-- the start is a way too (Quicker's journey alone: the line never takes it). A flight point is two places: on
 -- the ground (its node's ID) and in the air over it (minus that), the air reached by a flight only (taking off is its
 -- first's), so a flight over many flight points takes off and lands once, and one comes down at a flight point only
 -- after a flight (no walk follows another there); the flights one after the other are one step (hops: each flight's
 -- record and ends, in order).
-local function Journey(start, goal, measured, cut)
+local function Journey(start, goal, measured, cut, home)
     local known = Known()
     -- A boat, zeppelin or tram of one side (Core's set Travel: its towns'): none for the other side (their guards).
     local faction = Core.Plain(UnitFactionGroup("player"))
     faction = type(faction) == "string" and faction:lower() or nil
     local now = Ships.Now()
     local useData = Walk.Ready()
-    -- The places: the two ends, and on every plane the known flight points, the docks, the lifts' ends, the
-    -- hearthstone's, where the teleports bring one. A place's floor and height where they are known: the player's, a
+    -- The places: the two ends, and on every plane the known flight points, the docks, the lifts' ends, where the
+    -- teleports bring one (and the hearthstone's place, home). A place's floor and height where they are known: the player's, a
     -- lift's end's, a portal's and a teleport's ends'.
     local places = {
         start = { map = start.map, u = start.u, v = start.v, floor = start.from, z = start.from and start.from.z },
@@ -794,7 +801,8 @@ local function Journey(start, goal, measured, cut)
                                        floor = ends and ends[2] or nil }
         end
     end
-    local hearth, homeSeconds = Hearth()
+    local hearth, homeSeconds
+    if home then hearth, homeSeconds = Hearth() end
     if hearth then places.hearth = { map = hearth.map, u = hearth.u, v = hearth.v } end
     -- Where the teleports this character has bring one (on its floor there, where known).
     local teleports = Teleports(faction)
@@ -952,7 +960,7 @@ local function Journey(start, goal, measured, cut)
             -- Through a portal (one of the player's side or of both): from its trigger to where it brings one.
             local portal = here.portal
             if portal and (not portal.side or portal.side == faction) then Reach(here.out, low + Planner.PORTAL, portal) end
-            -- Home: the hearthstone from where the player is; and the teleports this character has.
+            -- Home: the hearthstone from where the player is (home); and the teleports this character has.
             if current == "start" then
                 if places.hearth then Reach("hearth", low + homeSeconds, "hearth") end
                 for _, teleport in ipairs(teleports) do Reach(teleport.name, low + teleport.seconds, teleport.way) end
@@ -1035,8 +1043,9 @@ end
 -- quickest as priced stays (one chosen again by its guesses may come out dearer than one before it: a walk found up to
 -- Planner.WORSE times its guess, or the tries spent), each walk searched along its coarse way for its line. Where
 -- nothing else goes, the walk not found stays: drawn as near as one walks, then straight, where its search came that
--- near (a place nobody walks onto, a plateau no lift reaches), else straight.
-local function Find(start, goal)
+-- near (a place nobody walks onto, a plateau no lift reaches), else straight. The journey's steps and its seconds;
+-- home: the hearthstone a way too (Journey), the journey priced only (never drawn: no lines searched).
+local function Find(start, goal, home)
     local measured, walked, cut, memo = {}, {}, {}, {}
     local tries, spent = Planner.TRIES, Search.looked
     local kept, keptSeconds -- the quickest journey priced whole so far, and its seconds so
@@ -1044,8 +1053,8 @@ local function Find(start, goal)
     land, swim = Speeds()
     local water = math.max(1, land / swim) -- a yard swum costs so many on land
     while true do
-        local steps, seconds = Journey(start, goal, measured, cut)
-        if not steps or not Walk.Ready() then return steps end
+        local steps, seconds = Journey(start, goal, measured, cut, home)
+        if not steps or not Walk.Ready() then return steps, seconds end
         local again = false
         for _, step in ipairs(steps) do
             if step.kind == "walk" then
@@ -1085,6 +1094,7 @@ local function Find(start, goal)
             if step.kind == "walk" and step.walked == nil then whole = false end
         end
         if whole and (not kept or seconds < keptSeconds) then kept, keptSeconds = steps, seconds end
+        if not again and home then return kept, keptSeconds end
         if not again then
             -- The journey stays, or a quicker one priced whole before it: its walks' lines, each along its coarse way.
             steps = kept
@@ -1098,7 +1108,7 @@ local function Find(start, goal)
                     step.points = found.points or nil
                 end
             end
-            return steps
+            return steps, keptSeconds
         end
         tries = tries - 1
     end
@@ -1197,17 +1207,48 @@ local function Draw(way, steps, keep)
     Show(way, legs)
 end
 
+-- Whether two places are one.
+local function Same(a, b)
+    return a ~= nil and b ~= nil and a.map == b.map and Distance(a.u, a.v, b.u, b.v) <= Planner.SAME
+end
+
+-- Whether the hearthstone (or Astral Recall) home would bring the player from the start to the goal at least
+-- Planner.SOONER seconds sooner than the journey found (seconds; nil: none found): { by ("stone" or "recall"), name (its
+-- place's, the game's; may be nil), saves (seconds; nil where nothing else goes) }, else nil. A second journey, the
+-- hearthstone a way of it, made only where its cooldown and cast alone leave time to be quicker.
+local function Quicker(start, goal, seconds)
+    local place, home, by = Hearth()
+    if not place or (seconds and home + Planner.SOONER > seconds) then return nil end
+    local steps, total = Find(start, goal, true)
+    if not steps or not steps[1] or steps[1].kind ~= "hearth" or not total
+        or (seconds and total + Planner.SOONER > seconds) then return nil end
+    return { by = by, name = place.name, saves = seconds and seconds - total }
+end
+
+-- The player told in the chat that the hearthstone (or Astral Recall) brings them to the map pin sooner (Quicker), once
+-- a pin.
+local function Tell(goal, home)
+    if Same(told.home, goal) then return end
+    told.home = goal
+    local by = home.by == "recall" and Planner.TEXT.recall or Planner.TEXT.stone
+    if home.name then by = Planner.TEXT.to:format(by, home.name) end
+    if not home.saves then return ns.Print(Planner.TEXT.only:format(by)) end
+    ns.Print(Planner.TEXT.sooner:format(by, math.max(1, math.floor(home.saves / 60 + 0.5))))
+end
+
 -- The plan made as a job (Find), drawn once found; start: { map, u, v, from (the player's floor), keep (the leg drawn
--- in front of it) }. None found: the leg in front stays, or the way goes (the pin's across the sea, told once).
+-- in front of it) }. None found: the leg in front stays, or the way goes (the pin's across the sea, told once). The
+-- pin's from where the player stands: told where the hearthstone would be quicker (Quicker, Tell).
 local function Make(way, start)
     Stop(way)
     made = made + 1
-    local goal, steps = way.target, nil
+    local goal, steps, home = way.target, nil, nil
     way.job = Core.Steps.Run({ name = "navigation: route " .. made, label = "navigation: route", done = function(problem)
         way.job = nil
         if problem or goal ~= way.target then return end -- failed (noted by the scheduler), or another place since
+        if home then Tell(goal, home) end
         if steps then return Draw(way, steps, start.keep) end
-        if way == pin and start.map ~= goal.map and Travel:Ready() and not told.sea then
+        if way == pin and start.map ~= goal.map and Travel:Ready() and not told.sea and not home then
             told.sea = true
             ns.Print(Planner.TEXT.sea)
         end
@@ -1218,7 +1259,9 @@ local function Make(way, start)
             Settle()
         end
     end }, function()
-        steps = Find(start, goal)
+        local seconds
+        steps, seconds = Find(start, goal)
+        if way == pin and not start.keep and not Same(told.home, goal) then home = Quicker(start, goal, seconds) end
     end)
 end
 
@@ -1335,11 +1378,6 @@ local function Replan()
     end
 end
 
--- Whether two places are one.
-local function Same(a, b)
-    return a ~= nil and b ~= nil and a.map == b.map and Distance(a.u, a.v, b.u, b.v) <= Planner.SAME
-end
-
 -- A point of a map (0 to 1) in its plane: { map, u, v, at (the map) }, or nil.
 local function InPlane(map, x, y)
     local plane = map and Coords.PlaneOf(map)
@@ -1379,6 +1417,9 @@ end
 -------------------------------------------------------------------------------
 Planner.TEXT = {
     sea = "no way to the map pin's continent is known yet: no line.",
+    stone = "your hearthstone", recall = "Astral Recall", to = "%s (%s)",
+    sooner = "use %s to get to the map pin about %d min sooner.",
+    only = "use %s to get to the map pin: no other way there is known yet.",
 }
 
 -- The game's map pin in its plane, or nil.

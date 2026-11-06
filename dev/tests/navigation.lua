@@ -5184,26 +5184,40 @@ W.Fire("HEARTHSTONE_BOUND")
 local home = Core.Character(ns.name).hearth
 check(home and home.map == 1415 and near(home.u, 500) and near(home.v, -8950) and home.name == bindName,
     "the hearthstone's place: learnt where it is bound")
--- Bound near the pin (Kalimdor, u 9400, v 6400): the hearthstone, then on foot; not while it cools down, nor once bound
--- elsewhere.
+-- Bound near the pin (Kalimdor, u 9400, v 6400): the line never takes the hearthstone (the player's to spend: Saneroki,
+-- 2026-11-06), the boat; the chat tells once a pin that the hearthstone is quicker; nothing while it cools down, nor
+-- once bound elsewhere (each a pin of its own, 20 yards on).
 Core.Character(ns.name).hearth = { map = 1414, u = 9400, v = 6400, name = bindName }
 local cooldown = 0
 C_Item.GetItemCount = function(id) return id == Planner.HEARTHSTONE and 1 or 0 end
 C_Item.GetItemCooldown = function() return cooldown > 0 and GetTime() or 0, cooldown, 1 end
-waypoint = { uiMapID = 1414, position = CreateVector2D(21500 / 24000, 0.3375) }
-W.Fire("USER_WAYPOINT_UPDATED")
-W.Wait(0)
-Frames(8)
-check(shownWay and #shownWay.legs == 2 and shownWay.legs[1].kind == "hearth" and shownWay.legs[1].points[2].map == 1414
-    and shownWay.legs[2].kind == "walk", "a pin near the hearthstone's place: the hearthstone, then on foot")
-cooldown = 1800
-Planner.Update()
-Frames(8)
-check(shownWay and shownWay.legs[2] and shownWay.legs[2].kind == "boat", "while the hearthstone cools down: the boat")
-cooldown, bindName = 0, "Harbour Inn"
-Planner.Update()
-Frames(8)
-check(shownWay and shownWay.legs[2] and shownWay.legs[2].kind == "boat", "bound elsewhere since: the boat")
+;(function()
+    local before = #W.printed
+    local function Pin(u)
+        waypoint = { uiMapID = 1414, position = CreateVector2D(u / 24000, 0.3375) }
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        Frames(8)
+        local kinds = {}
+        for index, leg in ipairs(shownWay and shownWay.legs or {}) do kinds[index] = leg.kind end
+        return table.concat(kinds, " ")
+    end
+    local kinds = Pin(21500)
+    local said = W.printed[#W.printed] or ""
+    check(kinds:find("boat") and not kinds:find("hearth"), "a pin near the hearthstone's place: the line by the boat, never the hearthstone")
+    check(#W.printed == before + 1 and said:find(Planner.TEXT.to:format(Planner.TEXT.stone, bindName), 1, true)
+        and said:find(" min sooner.", 1, true), "the chat tells that the hearthstone is quicker, and how much")
+    Planner.Update()
+    Frames(8)
+    check(#W.printed == before + 1, "told once a pin")
+    cooldown = 1800
+    kinds = Pin(21480)
+    check(kinds:find("boat") and not kinds:find("hearth") and #W.printed == before + 1,
+        "while the hearthstone cools down: the boat, nothing told")
+    cooldown, bindName = 0, "Harbour Inn"
+    kinds = Pin(21460)
+    check(kinds:find("boat") and not kinds:find("hearth") and #W.printed == before + 1, "bound elsewhere since: the boat, nothing told")
+end)()
 -- Used: its place is where it brought the character (x 0.5, y 0.5 of Elwynn).
 W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-1", Planner.HOMEWARD)
 player.x, player.y = 0.5, 0.5
@@ -5248,6 +5262,16 @@ player.x, player.y = 0.75, 0.3
     check(kinds == "teleport walk" and there.map == 1414 and near(there.u, 9400) and near(there.v, 6400),
         "with its reagent: the teleport to where it brings one, then on foot to the pin")
     check(shownWay.legs[1].points[1].map == 1415, "the teleport's line from where the player is")
+    -- Its line from one plane onto another: where it begins, the player is on it; brought there by it, on it there.
+    local planned = shownWay
+    Planner.Track(1415, 500, -8950, GetTime() + 250)
+    Frames(8)
+    local cut = shownWay and shownWay.cut
+    check(shownWay == planned and cut.leg == 1 and cut.gap < 1, "where the teleport's line begins: on it, no new plan")
+    Planner.Track(1414, 9400, 6400, GetTime() + 260)
+    Frames(8)
+    check(shownWay == planned and cut.gap < 1 and (cut.leg == 2 or cut.t == 1),
+        "brought there by it, on the other plane: on the line there, no new plan")
     known[3561] = nil
     known[3567] = true
     kinds = Route()
@@ -5284,17 +5308,24 @@ player.x, player.y = 0.75, 0.3
     check(kinds == "teleport walk" and there.map == 1414 and near(there.u, 9300) and near(there.v, 6400),
         "learnt where it brought the character (Core's learned data): the teleport there, then on foot")
     known[1297659] = nil
-    -- A shaman's Astral Recall: to the hearthstone's place, without the hearthstone; its cooldown counted
+    -- A shaman's Astral Recall: to the hearthstone's place, without the hearthstone: never the line's, the chat tells
+    -- that it is quicker; nothing while it cools down (each a pin of its own)
     Core.Character(ns.name).hearth = { map = 1414, u = 9400, v = 6400, name = bindName }
     known[Planner.RECALL] = true
+    local before = #W.printed
+    waypoint = { uiMapID = 1414, position = CreateVector2D(21440 / 24000, 0.3375) }
     kinds = Route()
-    check(kinds == "hearth walk", "Astral Recall known, no hearthstone: home by it, then on foot")
+    check(kinds:find("boat") and not kinds:find("hearth") and #W.printed == before + 1
+        and (W.printed[#W.printed] or ""):find(Planner.TEXT.to:format(Planner.TEXT.recall, bindName), 1, true),
+        "Astral Recall known, no hearthstone: the boat; the chat tells that Astral Recall is quicker")
     local spellCooldown = C_Spell.GetSpellCooldown
     C_Spell.GetSpellCooldown = function(id)
         if id == Planner.RECALL then return { startTime = GetTime(), duration = 900, isEnabled = true } end
     end
+    waypoint = { uiMapID = 1414, position = CreateVector2D(21420 / 24000, 0.3375) }
     kinds = Route()
-    check(kinds:find("boat") and not kinds:find("hearth"), "while Astral Recall cools down: the boat")
+    check(kinds:find("boat") and not kinds:find("hearth") and #W.printed == before + 1,
+        "while Astral Recall cools down: the boat, nothing told")
     C_Spell.GetSpellCooldown, known[Planner.RECALL] = spellCooldown, nil
     C_SpellBook.IsSpellKnown, C_Item.GetItemCount, C_Item.GetItemCooldown, C_Item.IsUsableItem = isKnown, count, itemCooldown, nil
     Core.Character(ns.name).hearth = hearth
@@ -5604,7 +5635,7 @@ end)()
     W.Wait(0)
 end)()
 -- Journeys: a pin nobody can walk to still gets its line (as near as one walks, then straight); across three planes
--- (the isle, the Eastern Kingdoms, Kalimdor), by the hearthstone or the zeppelin, then the boat; a flight over two
+-- (the isle, the Eastern Kingdoms, Kalimdor), by the zeppelin (never the hearthstone), then the boat; a flight over two
 -- flight points one leg; a new pin while aboard a boat the plan did not have: planned from where it lands.
 ;(function()
     local s = Walk.SAMPLE
@@ -5628,30 +5659,15 @@ end)()
     local edge = points[#points - 1]
     check(#legs == 1 and walk.kind == "walk" and near(points[1].u, 500) and edge and math.abs((-8533.33 - edge.v) / s - 240) < 0.1
         and near(points[#points].v, -8533.33 - 252 * s), "a pin nobody can walk to: as near as one walks, then straight to it")
-    -- From the isle to Kalimdor: the hearthstone home to the Eastern Kingdoms, on foot to the boat, the boat, on foot;
-    -- without it, the zeppelin to the Eastern Kingdoms first.
+    -- From the isle to Kalimdor: the zeppelin to the Eastern Kingdoms, on foot to the boat, the boat, on foot; the
+    -- hearthstone home to the Eastern Kingdoms first is quicker, but by less than Planner.SOONER: nothing told.
     player.map, player.x, player.y = 2521, 0.5, 0.4
+    local before = #W.printed
     legs = Pin(1414, 0.875, 0.325)
-    check(Kinds(legs) == "hearth walk boat walk" and legs[1].points[2].map == 1415 and legs[3].points[#legs[3].points].map == 1414,
-        "from the isle to Kalimdor: the hearthstone to a third plane, the Eastern Kingdoms, then the boat")
-    -- Its line from one plane onto another: where it begins, the player is on it; brought home, on it there.
-    local planned = shownWay
-    Planner.Track(2521, 0, 0, GetTime() + 600)
-    Frames(8)
-    local cut = shownWay and shownWay.cut
-    check(shownWay == planned and cut.leg == 1 and cut.gap < 1, "where the hearthstone's line begins: on it, no new plan")
-    Planner.Track(1415, 0, -9250, GetTime() + 610)
-    Frames(8)
-    check(shownWay == planned and cut.gap < 1 and (cut.leg == 2 or cut.t == 1),
-        "brought home by it, on the other plane: on the line there, no new plan")
-    local count = C_Item.GetItemCount
-    C_Item.GetItemCount = function() return 0 end
-    Planner.Update()
-    Frames(8)
-    legs = shownWay and shownWay.legs or {}
-    check(Kinds(legs) == "walk zeppelin walk boat walk" and legs[2].points[#legs[2].points].map == 1415,
-        "without the hearthstone: the zeppelin to the Eastern Kingdoms, on foot to the boat, the boat")
-    C_Item.GetItemCount = count
+    check(Kinds(legs) == "walk zeppelin walk boat walk" and legs[2].points[#legs[2].points].map == 1415
+        and legs[4].points[#legs[4].points].map == 1414,
+        "from the isle to Kalimdor: the zeppelin to a third plane, the Eastern Kingdoms, then the boat; never the hearthstone")
+    check(#W.printed == before, "the hearthstone home a minute quicker: nothing told (not worth its cooldown)")
     -- Two flights one after the other (Alpha to Beta to Gamma, the set's flights 5 and 6): one leg, along both ways.
     local nodes = C_TaxiMap.GetTaxiNodesForMap
     C_TaxiMap.GetTaxiNodesForMap = function(map)
