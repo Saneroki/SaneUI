@@ -293,11 +293,27 @@ local function Held()
     return dragging or binding or seated or Ridden()
 end
 
+-- What stands beside a bar, out of its layout (the game marks it so: ignoreInLayout), holds the mouse as the bar does:
+-- the main bar's page number and arrows, and what a module puts there (a druid's Bar 6 has its number, arrows and
+-- checkbox, Abilities). Asked each time, so what comes later counts too.
+local function Beside(bar)
+    local area = {}
+    function area.IsVisible() return Plain(bar:IsVisible()) end
+    function area.IsMouseOver()
+        for _, child in ipairs({ bar:GetChildren() }) do
+            if rawget(child, "ignoreInLayout") and Plain(child:IsVisible()) and Plain(child:IsMouseOver()) then return true end
+        end
+        return false
+    end
+    return area
+end
+
 -- The bars as one set: any of them, or a button on one, under the mouse shows them all.
 local function Rests()
     rest = Core.Rest.New({ label = "action bars", frames = { unpack(Find()) }, hold = Held })
     for _, bar in ipairs(rest.frames) do
         rest:Hot(bar)
+        rest:Area(Beside(bar))
         for _, button in pairs(rawget(bar, "actionButtons") or {}) do rest:Door(button) end
     end
     local registry = rawget(_G, "EventRegistry")

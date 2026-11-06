@@ -6,6 +6,16 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A druid's Action Bar 6 swaps with your form: Bar 9 in Bear Form, Bar 10
+  in Cat, Aquatic and Travel Form, Bar 6 itself as a human. Beside it, as
+  beside Action Bar 1, the number of the bar it shows, arrows up and down
+  to show Bars 6, 9 and 10 without shifting (to fill them, say), and a
+  checkbox whether it swaps with your form.
+- Sane Macros on your action bars act like any button: drop a spell or an
+  item on one to put that there instead, or drag the macro with Shift to
+  another button or off the bars.
+- The game's message "You have unopened items in your collection", once
+  closed, no longer comes back at every login until something new waits.
 - Speed Leveling in a party: one guide for all of you. Two of you on the
   same guide now get the same steps by the same numbers, every quest of
   the guide for both, whatever your classes. A class's own steps (its

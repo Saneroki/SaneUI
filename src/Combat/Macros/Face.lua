@@ -9,6 +9,14 @@ local Macros = ns.Macros
 --  keeps what it holds underneath. It shows the step that comes next, that
 --  step's cooldown by the game's duration object (a hidden value in a fight is
 --  taken as it is), dimmed while the game says it cannot be used.
+--
+--  As a game's button does (Saneroki, 2026-11-06: no spell would take its place,
+--  and Shift-dragging it off did nothing): a spell, an item or anything else of
+--  the game's dropped on it, or clicked onto it, takes the macro off and goes onto
+--  the game's button beneath, whose own goes onto the cursor, as when two swap.
+--  Dragged with the bars unlocked or the pick-up key (Shift) held, the macro
+--  follows the mouse (Place.lua): let go on another button, it is there; on none,
+--  it is off the bars. Out of a fight, as the game's buttons change.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Face = {}
@@ -60,7 +68,48 @@ local function Enter(face)
     tip:SetText(macro.name, 1, 0.82, 0)
     local turn = Macros.Press.Next(macro)
     if turn then tip:AddLine(turn.line, 1, 1, 1, true) end
+    tip:AddLine(Macros.TEXT.faceTip, 0.6, 0.6, 0.6, true)
     tip:Show()
+end
+
+-- Something of the game's on the cursor let go on the face, or clicked onto it: the macro comes off, and the game's own
+-- PlaceAction puts it on the button beneath (what that held goes onto the cursor).
+local function Dropped(face)
+    if not Core.Ask(rawget(_G, "GetCursorInfo")) then return end
+    if InCombatLockdown() then return ns.Print(Macros.TEXT.noCombat) end
+    local action = Core.Plain(rawget(face.slot, "action"))
+    Macros.TakeOff(face.place)
+    if type(action) == "number" then Core.Ask(rawget(_G, "PlaceAction"), action) end
+end
+
+local function Down(face, mouse)
+    if mouse == "LeftButton" then Dropped(face) end
+end
+
+-- Whether a drag may lift it, as the game's buttons say: the bars unlocked, or the pick-up key held.
+local function Liftable()
+    return not GetCVarBool("lockActionBars") or IsModifiedClick("PICKUPACTION")
+end
+
+local lifted -- the face whose macro follows the mouse now
+
+local function Lift(face)
+    if not (face.macro and Liftable()) then return end
+    if InCombatLockdown() then return ns.Print(Macros.TEXT.noCombat) end
+    Core.HideTip()
+    local macro = face.macro
+    lifted = face
+    Macros.Place.Start(function(place)
+        Macros.Reach.SetPlace(macro, place)
+        ns.Safe("macros", Macros.Editor.Refresh)
+    end, face.icon:GetTexture())
+end
+
+-- Let go: on a button it is there now; on none, off the bars.
+local function Land(face)
+    if lifted ~= face then return end
+    lifted = nil
+    if Macros.Place.Drop() == false then Macros.TakeOff(face.place) end
 end
 
 -- What shows follows the game's own news, only once a macro lies on a bar.
@@ -90,11 +139,18 @@ function Face.Get(place, slot, name)
         face.lit:SetColorTexture(1, 1, 1, 0.15)
         face:SetScript("OnEnter", ns.Guard(Enter))
         face:SetScript("OnLeave", ns.Guard(Core.HideTip))
+        face:RegisterForDrag("LeftButton")
+        face:SetScript("OnReceiveDrag", ns.Guard(Dropped))
+        face:SetScript("OnMouseDown", ns.Guard(Down))
+        face:SetScript("OnDragStart", ns.Guard(Lift))
+        face:SetScript("OnDragStop", ns.Guard(Land))
         face:Hide()
+        face.place = place
         faces[place] = face
         Macros.Press.Ready(face, true)
         Listen()
     end
+    face.slot = slot
     face:SetAllPoints(slot)
     face:SetFrameLevel(slot:GetFrameLevel() + 10)
     return face

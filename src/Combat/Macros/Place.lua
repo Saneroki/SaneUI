@@ -153,12 +153,17 @@ function Place.Start(done, picture)
     Core.Escape(owner, Stop)
 end
 
--- A drag ended: the square under the mouse, if any.
+-- A drag ended: the square under the mouse, if any. True when one was chosen, false when the drag ended on none; nil when
+-- nothing was being placed (it was ended before: Esc, a right click, a fight).
 function Place.Drop()
-    if not wanted then return end
+    if not wanted then return nil end
     local square = Under()
-    if square then return Choose(square) end
+    if square then
+        Choose(square)
+        return true
+    end
     Stop()
+    return false
 end
 
 -- For the test: the square the gold frame is round; the picture at the mouse.

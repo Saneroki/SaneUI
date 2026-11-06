@@ -92,6 +92,7 @@ Macros.TEXT = {
     placeTip = "Click, or drag the macro's picture, and choose a button on your action bars. What that button holds stays underneath. On this character.",
     placed = "On a bar",
     placedTip = "On %s, button %d. Click to choose another. Right click takes it off.",
+    faceTip = "Drag it with the pick-up key (Shift) to another button, or off the bars. A spell or item dropped on it takes its place.",
     placeAsk = "Click the action bar button for %s. Esc or a right click cancels.",
     picture = "The macro's picture. Click: choose another. Drag it onto an action bar to place the macro; there it shows the step that comes next.",
 

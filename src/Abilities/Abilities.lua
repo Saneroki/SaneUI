@@ -27,7 +27,7 @@ local ADDON, ns = ...
 --  The reservations, their grey icons on the bars and the saved layouts serve both.
 --
 --  Action Bar 1 keeps the page you chose (Bar1.lua) and the buttons of every action bar
---  touch (Spacing.lua), in both games. A character can let Action Bar 7 follow its form (FormBar.lua).
+--  touch (Spacing.lua), in both games. A druid's Action Bar 6 swaps with its form (FormBar.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -63,7 +63,6 @@ ns.RESERVED_MARK = "auctionhouse-icon-clock" -- waiting for something: a button 
 ns.TEXT = {
     -- Bars and slots (here), in chat, tooltips and menus
     slot = "Bar %d, button %d", formSlot = "Bar 1 (%s), button %d", actionSlot = "action slot %d",
-    formBarSlot = "Bar 7 (%s), button %d",
     normalRow = "normal", formRow = "form or stance %d", pageRow = "page %d", -- Bar 1's rows
     -- The spellbook's pages change hands at a /reload only
     pagesOn = "the spellbook shows your unlearned spells again after /reload.",
@@ -79,7 +78,7 @@ ns.TEXT = {
         "/sane ab add <spell ID or link> - list a spell the addon does not know about",
         "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
         "/sane ab pages off - leave the spellbook's pages to the game (and /sane ab pages on)",
-        "/sane ab formbar on - this character's Action Bar 7 follows its form (and /sane ab formbar off)",
+        "/sane ab formbar on - a druid's Action Bar 6 swaps with its form (and /sane ab formbar off)",
         "/sane ab window reset - the spellbook's own size and place again",
         "/sane ab debug - what the lists were built from",
     },
@@ -88,7 +87,7 @@ ns.TEXT = {
         "/sane ab list - your reservations     /sane ab clear - remove them all",
         "/sane ab save <name>, /sane ab load <name>, /sane ab delete <name>, /sane ab layouts - saved bar layouts",
         "/sane ab item <item ID or link> <bar> <button> - reserve a button for an item",
-        "/sane ab formbar on - this character's Action Bar 7 follows its form (and /sane ab formbar off)",
+        "/sane ab formbar on - a druid's Action Bar 6 swaps with its form (and /sane ab formbar off)",
         "/sane ab debug - your reservations and Bar 1's slots",
     },
     debugSpells = "spells: %d learned, %d still to learn (trainer list %d, weapon skills %d, talents %d, read at the trainer %d, added by hand %d).",
@@ -101,10 +100,16 @@ ns.TEXT = {
     noLayouts = "no saved layouts yet. Save one with /sane ab save <name>.", layouts = "saved layouts: %s",
     addUsage = "type: /sane ab add <spell ID or link>", windowUsage = "type: /sane ab window reset",
     pagesUsage = "type: /sane ab pages on  or  /sane ab pages off",
-    -- This character's Action Bar 7 (FormBar.lua): its line in the spellbook's menu, and /sane ab formbar
-    formBarText = "Action Bar 7 follows this character's form",
-    formBarTip = "For this character alone: Action Bar 7 and its keys show another row of buttons in each form or stance, in a fight too. A druid has a row for Cat Form, Prowl included, and one for Bear Form.",
-    formBarOn = "this character's Action Bar 7 follows its form.", formBarOff = "this character's Action Bar 7 stays as it is.",
+    -- A druid's Action Bar 6 (FormBar.lua): the checkbox and arrows beside it, its line in the spellbook's menu, and
+    -- /sane ab formbar
+    formBarText = "Swap with your form",
+    formBarTip = "For this druid alone: Action Bar 6 and its keys show Bar 9 in Bear Form and Bar 10 in Cat, Aquatic and Travel Form, in a fight too, and Bar 6 itself as a human and in Moonkin Form. Not ticked, the bar stays on the one its arrows show.",
+    formBarUp = "Next bar", formBarDown = "Previous bar",
+    formBarArrowTip = "Action Bar 6 shows Bar 6, 9 or 10, whatever your form, to set them up. 9 is Bear Form's, 10 Cat, Aquatic and Travel Form's. The next change of form swaps it again while the box is ticked.",
+    formBarMenu = "Action Bar 6 swaps with this druid's form",
+    formBarOn = "this druid's Action Bar 6 swaps with its form.", formBarOff = "this druid's Action Bar 6 stays on the bar its arrows show.",
+    formBarDruid = "only a druid's Action Bar 6 swaps with its form.",
+    formBarFight = "You are in combat: the bar swaps with your form or stays after the fight.",
     formBarUsage = "type: /sane ab formbar on  or  /sane ab formbar off",
     -- The trainer's list, a spell added by hand (Sources.lua)
     trainerRead = "read your class trainer's list. Every spell now sits in its own spellbook tab.",
@@ -340,10 +345,10 @@ function ns.SlotLabel(slot)
     end
     local offset = slot - 1 - ((slot - 1) % ns.NUM_BUTTONS)
     if offset == ns.SECOND_PAGE then return TEXT.formSlot:format(ns.PageName(offset), slot - offset) end
+    local number = ns.FormBar.Number(slot) -- a druid's Bar 9 or 10
+    if number then return TEXT.slot:format(number, slot - offset) end
     for page = 2, #ns.PAGES do
-        if ns.PAGES[page] == offset then
-            return (ns.FormBar.Held() and TEXT.formBarSlot or TEXT.formSlot):format(ns.PageName(offset), slot - offset)
-        end
+        if ns.PAGES[page] == offset then return TEXT.formSlot:format(ns.PageName(offset), slot - offset) end
     end
     return TEXT.actionSlot:format(slot)
 end
@@ -360,7 +365,7 @@ end
 local function LearnPageName()
     if not (GetShapeshiftForm and GetShapeshiftFormInfo) then return end
     local form = ns.Plain(GetShapeshiftForm())
-    local offset = ns.FormBar.Row() or ns.Bar1Offset()
+    local offset = ns.Bar1Offset()
     if not form or form < 1 or offset < ns.PAGES[2] then return end
     local _, _, _, spellID = GetShapeshiftFormInfo(form)
     spellID = ns.Plain(spellID)
@@ -510,7 +515,7 @@ end)
 
 -- An error that no step caught stands the module down (Core's StandDown): the spellbook's pages
 -- and its window go back to the game, the reservations' marks leave the bars, the class trainer's
--- filter is put back, Bars 1 and 7 follow the game again and the buttons go back to their places on the bars. The
+-- filter is put back, Bars 1 and 6 follow the game again and the buttons go back to their places on the bars. The
 -- reservations stay saved for the next session.
 -- Each step on its own, the quick ones first, so one that fails keeps none of the others.
 ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
@@ -616,6 +621,7 @@ local commands = {
     end,
     formbar = function(rest)
         if rest ~= "on" and rest ~= "off" then return ns.Print(TEXT.formBarUsage) end
+        if not ns.FormBar.For() then return ns.Print(TEXT.formBarDruid) end
         ns.FormBar.Set(rest == "on")
         ns.Print(rest == "on" and TEXT.formBarOn or TEXT.formBarOff)
     end,

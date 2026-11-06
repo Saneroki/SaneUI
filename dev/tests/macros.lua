@@ -190,7 +190,7 @@ C_Item.GetItemInfo = function(what) return what == "Hearthstone" and "Hearthston
 C_Item.GetItemCount = function(what) return what == 6948 and 1 or 0 end
 C_Item.GetItemIconByID = function() return 134414 end
 C_Item.GetItemNameByID = function() return "Hearthstone" end
-GetCVarBool = function(name) return name == "ActionButtonUseKeyDown" end
+GetCVarBool = function(name) return name == "ActionButtonUseKeyDown" or (name == "lockActionBars" and W.cvars.lockActionBars == "1") end
 GetBindingKey = function(name) if name == "ACTIONBUTTON3" then return "3", "SHIFT-3" end end
 GetBindingText = function(key) return key end
 GetBindingAction = function() return "JUMP" end
@@ -641,6 +641,82 @@ check(Book.PlaceOf(dragged) == "ActionButton3:1" and not square:IsShown(), "let 
 Reach.TakePlace(dragged)
 Book.Delete(dragged)
 Editor.Choose(inner)
+
+-- A macro on a bar button acts as the game's button does (Saneroki, 2026-11-06: no spell from the spellbook took its
+-- place, and Shift-dragging it off did nothing): something let go on it, or clicked onto it, goes onto the game's button
+-- beneath in its place; dragged with the bars unlocked or the pick-up key held, it goes to another button, or off the bars.
+do
+    local cursor, placed = nil, nil
+    GetCursorInfo = function() return cursor end
+    PlaceAction = function(at) placed, cursor = at, nil end
+    local moved = Macro(Spell("Rend"))
+    state["bar:1"] = true
+    slot.action = 3
+    Reach.SetPlace(moved, "ActionButton3:1")
+    local face = _G.SaneUIMacroFace_ActionButton3_1
+    check(face._shown and face.slot == slot, "(on Bar 1, button 3)")
+    face:GetScript("OnReceiveDrag")(face)
+    check(Book.PlaceOf(moved) == "ActionButton3:1" and placed == nil, "nothing on the cursor: nothing happens")
+    cursor = "spell"
+    W.Combat(true)
+    W.printed = {}
+    face:GetScript("OnReceiveDrag")(face)
+    check(Book.PlaceOf(moved) == "ActionButton3:1" and placed == nil and cursor == "spell" and #W.printed == 1,
+        "in a fight it stays, says so, and the cursor keeps the spell")
+    W.Combat(false)
+    face:GetScript("OnReceiveDrag")(face)
+    check(Book.PlaceOf(moved) == nil and not face._shown and placed == 3 and cursor == nil,
+        "a spell let go on it: the macro off, the spell on the game's button beneath")
+    Reach.SetPlace(moved, "ActionButton3:1")
+    placed, cursor = nil, "item"
+    face:GetScript("OnMouseDown")(face, "RightButton")
+    check(Book.PlaceOf(moved) == "ActionButton3:1" and placed == nil, "a right click with something on the cursor: nothing")
+    face:GetScript("OnMouseDown")(face, "LeftButton")
+    check(Book.PlaceOf(moved) == nil and placed == 3 and cursor == nil, "an item clicked onto it: the same")
+
+    -- Picked up and moved, or taken off.
+    Reach.SetPlace(moved, "ActionButton3:1")
+    W.cvars.lockActionBars = "1"
+    face:GetScript("OnDragStart")(face)
+    check(not Macros.Place.Carried():IsShown(), "the bars locked and no pick-up key: a drag lifts nothing")
+    face:GetScript("OnDragStop")(face)
+    check(Book.PlaceOf(moved) == "ActionButton3:1", "and it stays")
+    W.modifier = "PICKUPACTION"
+    face:GetScript("OnDragStart")(face)
+    local carried = Macros.Place.Carried()
+    check(carried:IsShown() and carried.icon:GetTexture() == face.icon:GetTexture(), "with the pick-up key its picture follows the mouse")
+    local fourth = rawget(_G, "MultiBar5Button4") or CreateFrame("Button", "MultiBar5Button4", bars)
+    fourth:Show()
+    W.foci = {}
+    for _, each in ipairs(Macros.Place.squares) do
+        if each.place == "MultiBar5Button4" and each:IsShown() then W.foci = { each } end
+    end
+    face:GetScript("OnDragStop")(face)
+    W.foci = {}
+    check(Book.PlaceOf(moved) == "MultiBar5Button4" and not carried:IsShown(), "let go on another button: it stands there")
+    local there = _G.SaneUIMacroFace_MultiBar5Button4
+    there:GetScript("OnDragStart")(there)
+    there:GetScript("OnDragStop")(there)
+    check(Book.PlaceOf(moved) == nil and not there._shown, "let go on none: off the bars")
+    W.modifier = nil
+    W.cvars.lockActionBars = nil
+    Reach.SetPlace(moved, "ActionButton3:1")
+    face:GetScript("OnDragStart")(face)
+    check(carried:IsShown(), "the bars unlocked: a drag lifts it without the key")
+    W.Combat(true)
+    face:GetScript("OnDragStop")(face)
+    W.Combat(false)
+    check(Book.PlaceOf(moved) == "ActionButton3:1", "a fight ends the lifting: it stays where it was")
+    W.Combat(true)
+    W.printed = {}
+    face:GetScript("OnDragStart")(face)
+    check(not carried:IsShown() and #W.printed == 1, "in a fight nothing lifts, and it says so")
+    W.Combat(false)
+    Reach.TakePlace(moved)
+    Book.Delete(moved)
+    state["bar:1"] = nil
+    GetCursorInfo, PlaceAction = nil, nil
+end
 
 -- A game's macro taken over.
 local taken = Book.FromGame("Mount", "/use Horse")

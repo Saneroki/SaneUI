@@ -9,7 +9,9 @@ they will end up. Drag a grey spell onto an action bar button: the button is *re
 real spell the moment you learn it. A **Home** page, the first tab of the spellbook, says what your
 trainer can teach you right now and which spells you get from quests.
 **Action Bar 1 keeps the page you chose:** no stance, form or stealth changes it, and bars 6 to 8 stand beside
-its pages, so every page and bar holds buttons of its own. **The buttons of every bar touch,** with no space between them.
+its pages, so every page and bar holds buttons of its own. **A druid's Bar 6 swaps with the form:** Bar 9 in Bear
+Form, Bar 10 in Cat, Aquatic and Travel Form, with arrows and a checkbox beside it. **The buttons of every bar touch,**
+with no space between them.
 In Retail the game's spellbook lists the spells still to come itself and stays the game's own; there the
 module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons that touch.
 
@@ -88,12 +90,17 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   on a bar that is off is named by its page: *Bar 1 (page 3), button 2*.
   The setup this is made for, from the bottom of the screen up: Bar 1 with its pages on Alt + 1 to =, Bar 8 on Ctrl,
   Bar 7 on Shift, and at the top Bar 6, the main bar, on the plain keys.
-- **Action Bar 7 can follow your form** (a switch of this character alone, off at first: the line *Action Bar 7 follows
-  this character's form* in the spellbook's menu, or `/sane ab formbar on`). The same keys then show another row of
-  buttons in each form or stance, in a fight too, while another character on the same profile keeps a fixed Bar 7. The
-  rows are the ones the game keeps for Bar 1's forms, free because Bar 1 keeps its page; a druid has one for Cat Form,
-  which Prowl keeps, and one for Bear Form, and as a human or in Moonkin Form the bar is itself. Drag to a button in the form, or reserve and save
-  them in a layout, as on any bar. A spell the game drops on a form's row stays there while this is on.
+- **A druid's Action Bar 6 swaps with the form** (Saneroki, 2026-11-06). The same keys show **Bar 9** in Bear Form and
+  **Bar 10** in Cat, Aquatic and Travel Form (Prowl included), in a fight too; as a human and in Moonkin Form Bar 6 is
+  itself. Bars 9 and 10 are buttons of their own (slots 97–120), on none of Bar 1's pages and of no other bar. Beside
+  Bar 6, where Bar 1 has its page number and arrows: the number of the bar it shows (6, 9 or 10), an **arrow up** and
+  an **arrow down** that turn it through the three without a change of form (to fill Bar 9 as a human, say; in a fight
+  too), and between them a **checkbox**, *Swap with your form*: ticked (at first), the next change of form shows that
+  form's bar again; not ticked, the bar stays on the one the arrows show. The checkbox is this druid's alone (another
+  character on the same profile keeps its own) and changes out of a fight; also the line *Action Bar 6 swaps with this
+  druid's form* in the spellbook's menu, or `/sane ab formbar on` / `off`. Drag to a button of Bar 9 or 10 while it
+  shows, reserve and save them in a layout, as on any bar; in chat they are *Bar 9, button 3*. Other classes keep a
+  plain Bar 6, and the rows of Bar 1's other forms (Cat Form's 73–84, Prowl's 85–96) stay out of sight.
 - **Buttons that touch** (switch *Action bar buttons touch*, on). No space between the buttons of any action bar,
   the stance, pet and possess bars too, side by side or between the rows of a bar: the icons stand directly against
   each other, and the mouse has no gap to fall in. Edit Mode's *Icon Padding* stops at 2, so its slider does nothing
@@ -154,6 +161,18 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   after the arrows. A wrap of the main bar's `OnAttributeChanged` is no way: the game runs a wrap only on a frame
   that is explicitly protected, which the main bar is not. With the switch off or standing down the driver goes and `state-page` is
   cleared, which lets go of the buttons and the keys; out of a fight. Without the twelve buttons the bar stays the game's.
+- **A druid's Bar 6 (`FormBar.lua`).** The same way, a header of ours holds Bar 6's twelve buttons (`MultiBar5ButtonN`),
+  with two states. The game's state driver gives `form`: `[bonusbar:3] 9; [bonusbar:4] own; [form] 10; own` (Bear Form's
+  row, Moonkin Form's none, every other form 10, so Retail's Prowl row too); its snippet sets `state-row` to it while the
+  attribute `swap` is on. The snippet of `row` writes that page to each button's `actionpage` (none for `own`). The arrows
+  are secure buttons of ours (`SecureHandlerClickTemplate`) with the header as a frame reference: a click's snippet sets
+  `state-row` to the next or the one before of `row1`..`rowN` (`own`, `9`, `10`), round past the ends, so they turn the
+  bar in a fight too. The checkbox (`UICheckButtonTemplate`, insecure) writes `swap` out of a fight and, ticked, sets
+  the form's row at once; in a fight it says it waits. A hook after the header's `OnAttributeChanged` writes the number.
+  The pager is a child of the bar (so it rests, fades and is seated with it), `ignoreInLayout` as the game's page number
+  is, at the left of its first button, wherever Edit Mode puts the bar; the arrows are the game's page arrows of Bar 1
+  (`ui-hud-actionbar-pageuparrow-*`, `-pagedownarrow-*`). `ns.char.formBar` is `false` when unticked. With the module
+  standing down, or another class, the driver goes, `state-row` is `own` and the pager hides.
 - **Buttons that touch (`Spacing.lua`).** `ActionBar_OnLoad` gives each button a small frame of its own (`button.container`,
   parented to the bar), `UpdateGridLayout` lays out those frames with `max(minButtonPadding, buttonPadding)` between
   them, and Edit Mode's icon size is the frames' scale. `minButtonPadding` is the game's field and stays unwritten:
@@ -278,7 +297,7 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   module's: with `/sane ab pages off`, a controller, or after a fallback, the tab is not there.
   What does not fit on the pages (about 21 spells each) is counted in a line at the bottom, not shown.
 - **Slots, not buttons:** Bar 1 = slots 1–12 (73–120 in a form or stance), Bar 2 = 61–72, Bar 3 = 49–60,
-  Bar 4 = 25–36, Bar 5 = 37–48, Bars 6–8 = 145–180. A button's slot is read from its secure attribute `action`
+  Bar 4 = 25–36, Bar 5 = 37–48, Bars 6–8 = 145–180, a druid's Bars 9 and 10 = 97–108 and 109–120. A button's slot is read from its secure attribute `action`
   (`ns.ActionOf`), then from its field. A bar addon's own buttons may keep the slot only in that
   attribute: dragging finds any button under the mouse that carries a slot.
 - **Bar ghosts** (`Ghosts.lua`) hang on the button's bar in the button's place, so a reservation shows also
@@ -368,7 +387,7 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `Ghosts.lua` | Grey icons on the real bars, their clock and tooltip |
 | `Presets.lua` | Save and load bar layouts |
 | `Bar1.lua` | Action Bar 1 keeps the page you chose; its buttons and the keys of Bar 6 under the game's own bars |
-| `FormBar.lua` | One character's Action Bar 7 follows its form |
+| `FormBar.lua` | A druid's Action Bar 6 swaps with its form (Bars 9 and 10); its number, arrows and checkbox |
 | `Spacing.lua` | The buttons of every action bar touch, and bars snapped together |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
 | `Book/Item.lua` | One grey spellbook entry: look, the two marks, tooltip, link, menu |
@@ -380,6 +399,10 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-06 — A druid's Action Bar 6 swaps with the form: Bar 9 in Bear Form, Bar 10 in Cat, Aquatic and Travel Form,
+  Bar 6 as a human and in Moonkin Form. Beside it the bar's number, arrows up and down that turn it through 6, 9 and 10
+  without a change of form, and a checkbox whether it swaps (ticked at first). Replaces the switch of 2026-11-01 that
+  let any character's Bar 7 follow its form, which no character had on.
 - 2026-11-02 — Bars snapped together in Edit Mode touch, on top of each other or side by side: the 4 the game's snap
   leaves is closed, and the layout keeps the game's place.
 - 2026-10-31 — The buttons of every action bar touch (switch *Action bar buttons touch*, on), the stance, pet and possess

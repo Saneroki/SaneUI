@@ -18,7 +18,7 @@ marker on the left, then the name (none on your own), the health and how much is
 target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours your
 pet, with its health and its resource. Directly above each health bar its unit's cast while it casts. Your breath
 lies over your health bar, in the game's bubbles, half see-through, the game's other timers on you stand above your
-cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone. Its experience and stance bars are gone, and its menu bar shows only while the mouse is on it. At rest your unit frames and the action bars are out of sight: they show with the mouse on them, while your health or your resource is not full, in a fight and in a group.
+cast: none of the game's own bars is left. The game's action bars are clean: only the buttons that hold something, each its icon alone. Its experience and stance bars are gone, and its menu bar shows only while the mouse is on it; its alert *You have unopened items in your collection*, once closed, stays closed until more come. At rest your unit frames and the action bars are out of sight: they show with the mouse on them, while your health or your resource is not full, in a fight and in a group.
 
 Your party and your raid are one frame of ours, in place of the game's two: unit frames edge to edge, up to forty, in the
 nameplates' look, sized to fit the limits you set in Edit Mode. On every health bar of ours, these and the unit frames, you see
@@ -521,13 +521,25 @@ shows on it, and you make as many bars as you like.
   Your stance keys run `StanceBar:Select`, which works hidden. The menu bar (`menuHover`) keeps its place: in
   WoW: Forever `MainActionBar` hangs on `MicroMenuContainer`. `MicroMenu`'s alpha is lent, a hook after each button's
   `OnEnter` fades it in (`Core.Motion.Fade`), a frame of ours looks each frame for `MicroMenu:IsMouseOver()` while
-  it shows. In Edit Mode it shows, to be placed.
+  it shows. In Edit Mode it shows, to be placed. Its alert of unopened collection items (Saneroki, 2026-11-06: it came
+  back at every login, under the minimap where his menu bar rests): the game shows it at each login while
+  `C_MountJournal.GetNumMountsNeedingFanfare` or `C_PetJournal.GetNumPetsNeedingFanfare` is above its count of the
+  session (0 at first). A hook after the tip's `HandleAcknowledge` (its close button) keeps both counts in
+  `ns.store.unopened`, the account's; a hook after `MainMenuMicroButton_ShowAlert` finds the tip in `HelpTip.framePool`
+  by its `info` (system `MicroButtons`, `CollectionsMicroButton`, the game's `COLLECTION_UNOPENED_*` words) and, while
+  neither count is higher, takes its alpha and the mouse (its own and its close button's), given back by a hook after
+  its `OnHide`. No function of the game's that writes its state is called: the alert system and the tip pool stay
+  untainted, and to the game the alert still shows, so lower ones of the menu bar wait behind it, as before it is
+  closed. Hooks after `ClearFanfare` (an item opened in the collections window) lower the counts kept to those
+  waiting.
 - **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first): what
   shows when, and why your health is told from its changes, stands in `src/Core/Rest.lua`. Your frames are a set each
   (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
   or a timer on it does too (`Running`; `Bar.Fit` looks again as they come and go), since nothing else shows them and
   you need your breath under water. The action bars are one set (`ActionBars.lua`): `Bars.BARS`, each hot, each of
-  their buttons a door, so the mouse on one shows them all; held in a vehicle (`HasVehicleActionBar`,
+  their buttons a door, so the mouse on one shows them all; what stands beside a bar out of its layout (a child marked
+  `ignoreInLayout`: the main bar's page number and arrows, a druid's Bar 6 pager of Abilities) holds the mouse as the bar
+  does, asked each time (`Beside`); held in a vehicle (`HasVehicleActionBar`,
   `HasOverrideActionBar`: its actions stand on them), while something is dragged and in the game's Quick Keybind mode,
   which show every button too. Only alpha changes: out of sight they take the mouse as ever, and that is how the mouse
   is seen on them. Having a target does not show a frame: the plate shows it (Saneroki's list names no target).
@@ -673,7 +685,7 @@ shows on it, and you make as many bars as you like.
 | `ErrorText.lua` | The game's red error text off, by a switch |
 | `Macros/` | Sane Macros: macros and sequences, keys and bar buttons, the + list, the checks ([its README](Macros/README.md)) |
 | `ActionBars.lua` | The game's action bars clean: only the buttons that hold something, each its icon alone; out of sight at rest, as one set |
-| `GameBars.lua` | The game's experience and stance bars out of sight, its menu bar on mouseover |
+| `GameBars.lua` | The game's experience and stance bars out of sight, its menu bar on mouseover, its alert of unopened collection items closed for good |
 | `Meter/Threat.lua` | The meter's threat: every member's share of the mob, its gains added up per fight |
 | `Meter/Read.lua` | Who is in the group, and a fight's numbers from the game's meter, hidden or not; what the list can be sorted by |
 | `Meter/Shows.lua` | Which bars a character has: the window's ticks, or their own |
@@ -686,6 +698,8 @@ shows on it, and you make as many bars as you like.
 | `Reminders/Editor.lua` | The window: your bars, a bar's reminders and the settings of the one chosen |
 
 ## History
+- **2026-11-06:** a Sane Macro on a bar button acts as the game's buttons do: a spell or item dropped or clicked onto it takes its place, and dragged with the pick-up key it goes to another button or off the bars (Saneroki: it could not be removed).
+- **2026-11-06:** the menu bar's alert *You have unopened items in your collection*, once closed, stays closed until more come (Saneroki: it came back at every login).
 - **2026-11-02:** the unit frames' auras out of a fight on icons of ours, as the game runs no addon's script on its own (Saneroki: tooltip and clicks).
 - **2026-11-02:** the unit frames' auras four, two and four, in blocks of icons that touch, no borders (Saneroki).
 - **2026-11-02:** the aura's menu on a left click, in a fight where the game tells which aura it is, and on a right click in the spellbook (Saneroki).

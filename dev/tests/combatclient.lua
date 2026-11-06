@@ -272,6 +272,35 @@ function Client.Install(W)
     StanceBar = W.NewWidget("Frame", "StanceBar", UIParent)
     MicroMenu = W.NewWidget("Frame", "MicroMenu", UIParent)
     MicroMenu.Button = W.NewWidget("Button", nil, MicroMenu)
+    -- Its alerts as the game's code has them (MainMenuBarMicroButtons.lua, HelpTip.lua): a tip of the pool with what it
+    -- was given, its close button acknowledging it, then hidden and given back; the items waiting to be opened.
+    CollectionsMicroButton = W.NewWidget("Button", "CollectionsMicroButton", MicroMenu)
+    COLLECTION_UNOPENED_SINGULAR = "You have an unopened item in your collection."
+    COLLECTION_UNOPENED_PLURAL = "You have unopened items in your collection."
+    W.fanfare = { mounts = 0, pets = 0 }
+    C_MountJournal = { GetNumMountsNeedingFanfare = function() return W.fanfare.mounts end,
+                       ClearFanfare = function() W.fanfare.mounts = W.fanfare.mounts - 1 end }
+    C_PetJournal = { GetNumPetsNeedingFanfare = function() return W.fanfare.pets end,
+                     ClearFanfare = function() W.fanfare.pets = W.fanfare.pets - 1 end }
+    local tips = {} -- [tip] = true while it shows
+    HelpTip = { framePool = { EnumerateActive = function() return pairs(tips) end } }
+    function MainMenuMicroButton_ShowAlert(button, text)
+        local tip = W.NewWidget("Frame", nil, UIParent)
+        tip.CloseButton = W.NewWidget("Button", nil, tip)
+        tip.info = { text = text, system = "MicroButtons", callbackArg = button }
+        function tip:EnableMouse(on) self._mouse = on end
+        function tip.CloseButton:EnableMouse(on) self._mouse = on end
+        function tip:HandleAcknowledge() self.acknowledged = true end
+        function tip:Acknowledge()
+            self:HandleAcknowledge()
+            self:Hide()
+        end
+        tip:SetScript("OnHide", function(self)
+            tips[self], self.info = nil, nil
+        end)
+        tips[tip], W.alert = true, tip
+        return true
+    end
     -- The game's cast bars and its timers' bars, hearing what its code registers. Your cast (W.cast, W.channel: name,
     -- icon, starts, ends, id, spell, locked, craft; a channel's empowered, stages), another unit's (W.casts[unit]) and
     -- your timers (W.mirror[index]: as the game gives them; W.mirrorLeft[timer]: milliseconds).

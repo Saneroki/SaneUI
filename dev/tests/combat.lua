@@ -1790,6 +1790,37 @@ do
     Core.Set(ns.name, "menuHover", true)
     check(MicroMenu._alpha == 0, "on again")
 
+    -- Its alert of unopened collection items: closed once, it stays out of sight until more come.
+    local function Alert(count)
+        W.fanfare.mounts = count
+        MainMenuMicroButton_ShowAlert(CollectionsMicroButton, count > 1 and COLLECTION_UNOPENED_PLURAL or COLLECTION_UNOPENED_SINGULAR)
+        return W.alert
+    end
+    ns.store.unopened = nil
+    local alert = Alert(2)
+    check(alert._alpha == 1 and alert._mouse ~= false, "the game's alert shows as ever while it was never closed")
+    alert:Acknowledge()
+    check(ns.store.unopened and ns.store.unopened.mounts == 2 and ns.store.unopened.pets == 0, "closed: the counts waiting are kept")
+    alert = Alert(2)
+    check(alert._alpha == 0 and alert._mouse == false and alert.CloseButton._mouse == false,
+        "at the next login it is out of sight, the mouse goes through it")
+    alert:Hide()
+    check(alert._alpha == 1 and alert._mouse == true, "given back to the game's pool, its look and the mouse again")
+    alert = Alert(3)
+    check(alert._alpha == 1, "one more waiting: told again")
+    alert:Acknowledge()
+    C_MountJournal.ClearFanfare()
+    C_MountJournal.ClearFanfare()
+    C_MountJournal.ClearFanfare()
+    check(ns.store.unopened.mounts == 0, "each one opened lowers the counts kept")
+    check(Alert(1)._alpha == 1, "so a new one is told")
+    local other = W.alert
+    MainMenuMicroButton_ShowAlert(MicroMenu.Button, COLLECTION_UNOPENED_SINGULAR)
+    check(W.alert._alpha == 1, "another button's alert is left alone")
+    W.alert:Hide()
+    other:Hide()
+    W.fanfare.mounts, ns.store.unopened = 0, nil
+
     -- Out of sight at rest (Core.Rest): your frames and the game's action bars. The rest of what it does: window.lua.
     local bars, you, foe = ns.ActionBars.Rest(), ns.Units.KINDS[1], ns.Units.KINDS[2]
     local health, power, most = units.player.health, units.player.power, units.player.powerMost
@@ -1835,6 +1866,18 @@ do
     MainActionBar._mouseOver = false
     Look(bars)
     check(Rested(), "off every bar: out of sight")
+    -- What stands beside a bar out of its layout (its page arrows; a druid's Bar 6 its own) holds the mouse too.
+    local beside = W.NewWidget("Frame", nil, MainActionBar)
+    beside.ignoreInLayout = true
+    key:GetScript("OnEnter")(key)
+    key:GetScript("OnLeave")(key)
+    beside._mouseOver = true
+    Look(bars)
+    check(MainActionBar._alpha == 1, "the mouse on to the page arrows beside the bar: in sight still")
+    beside._mouseOver = false
+    Look(bars)
+    check(Rested(), "and off them: out of sight")
+    beside:Hide()
     you.button:GetScript("OnEnter")(you.button)
     check(you.button._alpha == 1 and foe.button._alpha == 0 and MainActionBar._alpha == 0, "the mouse on your frame: it alone in sight")
     you.button:GetScript("OnLeave")(you.button)

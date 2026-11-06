@@ -20,7 +20,7 @@ local _, ns = ...
 --
 --  All of it runs in the game's secure state driver, so it works in a fight.
 --  Bars 6 to 8 need nothing here: their slots are on none of Bar 1's pages and
---  no form changes them, unless a character lets Bar 7 follow its form (FormBar.lua).
+--  no form changes them, but a druid's Bar 6 swaps with its form (FormBar.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Bar1 = {}
@@ -51,8 +51,8 @@ local header       -- the driver's frame, made once and out of a fight
 local held = false -- the buttons hold their page now
 
 -- A frame of the game's secure code that knows a bar's twelve buttons and runs snippet on each change of its state
--- "page". Nil where the game has the buttons no more: the bar then stays the game's.
-function Bar1.Header(prefix, snippet)
+-- (state, "page" if none). Nil where the game has the buttons no more: the bar then stays the game's.
+function Bar1.Header(prefix, snippet, state)
     local buttons = {}
     for index = 1, ns.NUM_BUTTONS do
         buttons[index] = rawget(_G, prefix .. index)
@@ -60,7 +60,7 @@ function Bar1.Header(prefix, snippet)
     end
     local frame = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
     for index, button in ipairs(buttons) do frame:SetFrameRef("button" .. index, button) end
-    frame:SetAttribute("_onstate-page", snippet)
+    frame:SetAttribute("_onstate-" .. (state or "page"), snippet)
     return frame
 end
 
@@ -83,9 +83,10 @@ function Bar1.Apply()
     Core.AfterCombat("Abilities: Bar 1", Apply)
 end
 
--- Whether a slot is on a form's row while the bar keeps its page: that row never shows, unless Bar 7 shows it.
+-- Whether a slot is on a form's row while the bar keeps its page: that row never shows, unless it is a druid's Bar 9
+-- or 10, which Bar 6 shows (FormBar.lua).
 function Bar1.Unseen(slot)
-    return held and not ns.FormBar.Held() and slot > ns.PAGES[2] and slot <= ns.PAGES[#ns.PAGES] + ns.NUM_BUTTONS
+    return held and slot > ns.PAGES[2] and slot <= ns.PAGES[#ns.PAGES] + ns.NUM_BUTTONS and not ns.FormBar.Number(slot)
 end
 
 -- For the test: whether the buttons hold their page now.

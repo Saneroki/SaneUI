@@ -1797,23 +1797,43 @@ do
     local drivers, holds = {}, { ["bar:1"] = true } -- the frames driven, and the conditions that hold now
     local page, bonus, instead = 1, 0, nil          -- the page you chose, a form's number, a row of the game's own
 
+    -- A snippet runs for real, given a handle on its frame as the game's secure code gives one: the frame's attributes,
+    -- its frame references (the frames themselves, whose attributes it may set) and its keys.
+    local function Run(frame, head, body, ...)
+        local handle = {}
+        function handle:GetAttribute(name) return frame:GetAttribute(name) end
+        function handle:SetAttribute(name, value) frame:SetAttribute(name, value) end
+        function handle:GetFrameRef(label) return frame.refs[label] end
+        function handle:ClearBindings() wipe(frame.keys) end
+        function handle:SetBinding(priority, key, command)
+            assert(priority == true)
+            frame.keys[key] = command
+        end
+        local run = assert(loadstring(head .. "\n" .. body))
+        setfenv(run, { tonumber = tonumber, tostring = tostring,
+                       GetBindingKey = function(command) return unpack(bound[command] or {}) end })
+        run(handle, ...)
+    end
+    local function Secure(frame)
+        Attributes(frame)
+        frame.refs, frame.keys = {}, {}
+        function frame:SetFrameRef(label, other) self.refs[label] = other end
+    end
+    -- A state's snippet on each change of that state.
     W.templates.SecureHandlerStateTemplate = function(header)
-        Attributes(header)
-        header.refs, header.keys = {}, {}
-        function header:SetFrameRef(label, frame) self.refs[label] = frame end
+        Secure(header)
         header:SetScript("OnAttributeChanged", function(self, name, value)
-            local body = name == "state-page" and self:GetAttribute("_onstate-page")
-            if not body then return end
-            local handle = {}
-            function handle:GetFrameRef(label) return header.refs[label] end
-            function handle:ClearBindings() wipe(header.keys) end
-            function handle:SetBinding(priority, key, command)
-                assert(priority == true)
-                header.keys[key] = command
-            end
-            local run = assert(loadstring("local self, stateid, newstate = ...\n" .. body))
-            setfenv(run, { tonumber = tonumber, GetBindingKey = function(command) return unpack(bound[command] or {}) end })
-            run(handle, "page", value)
+            local state = name:match("^state%-(.+)")
+            local body = state and self:GetAttribute("_onstate-" .. state)
+            if body then Run(self, "local self, stateid, newstate = ...", body, state, value) end
+        end)
+    end
+    -- The click's snippet on each click.
+    W.templates.SecureHandlerClickTemplate = function(button)
+        Secure(button)
+        button:SetScript("OnClick", function(self, mouse, down)
+            local body = self:GetAttribute("_onclick")
+            if body then Run(self, "local self, button, down = ...", body, mouse, down) end
         end)
     end
 
@@ -1828,15 +1848,16 @@ do
         end
     end
     local function Drive()
-        for frame, values in pairs(drivers) do
-            local value = Parse(values)
+        for frame, driver in pairs(drivers) do
+            local value = Parse(driver.values)
             value = tonumber(value) or value
-            if frame:GetAttribute("state-page") ~= value then frame:SetAttribute("state-page", value) end
+            local name = "state-" .. driver.state
+            if frame:GetAttribute(name) ~= value then frame:SetAttribute(name, value) end
         end
     end
     RegisterStateDriver = function(frame, state, values)
-        assert(state == "page" and not W.combat)
-        drivers[frame] = values
+        assert(not W.combat)
+        drivers[frame] = { state = state, values = values }
         Drive()
     end
     UnregisterStateDriver = function(frame)
@@ -1947,99 +1968,130 @@ do
     check(ns.Bar1.Unseen(73) and ns.Bar1.Unseen(120) and not ns.Bar1.Unseen(72) and not ns.Bar1.Unseen(121), "the four rows of the forms are out of sight")
     Form(0)
 
-    -- One character's Bar 7 can follow its form (FormBar.lua).
-    local seven, barSeven = W.NewWidget("Frame", "MultiBar6"), {}
-    Attributes(seven)
-    seven.attributes.actionpage = 14
-    local function Slot7(button)
-        return button.id + ((button:GetAttribute("actionpage") or seven:GetAttribute("actionpage")) - 1) * 12
+    -- A druid's Bar 6 swaps with its form (FormBar.lua): Bar 9 in Bear Form, Bar 10 in Cat, Aquatic and Travel Form.
+    local six, barSix = W.NewWidget("Frame", "MultiBar5"), {}
+    _G.MultiBar5 = six
+    Attributes(six)
+    six.attributes.actionpage = 13
+    local function Slot6(button)
+        return button.id + ((button:GetAttribute("actionpage") or six:GetAttribute("actionpage")) - 1) * 12
     end
-    local function Shown(number, condition)
-        holds["bonusbar:" .. number] = condition
+    -- The conditions of a form as the game has them: every form [form], and some a row of Bar 1's ([bonusbar:n]).
+    local function InForm(...)
+        for _, condition in ipairs({ "form", "bonusbar:1", "bonusbar:2", "bonusbar:3", "bonusbar:4" }) do holds[condition] = nil end
+        for _, condition in ipairs({ ... }) do holds[condition] = true end
         Drive()
     end
-    ns.FormBar.Set(true)
-    check(ns.FormBar.On() and not ns.FormBar.Held(), "without the game's twelve buttons the bar stays the game's")
-    ns.FormBar.Set(false)
+    local function Number(pager) return tostring(pager.number:GetText()) end
+    local function Press(button, mouse) button:GetScript("OnClick")(button, mouse or "LeftButton", false) end
+    local class = ns.class
+    ns.class = "DRUID"
+    ns.FormBar.Apply()
+    check(not ns.FormBar.Held() and not ns.FormBar.Pager(), "without the game's twelve buttons the bar stays the game's")
     for index = 1, 12 do
-        local button = W.NewWidget("CheckButton", "MultiBar6Button" .. index, seven)
+        local button = W.NewWidget("CheckButton", "MultiBar5Button" .. index, six)
         Attributes(button)
         button.id = index
-        button:SetScript("OnAttributeChanged", function(self) self.action = Slot7(self) end)
-        button.action = Slot7(button)
-        _G["MultiBar6Button" .. index], barSeven[index] = button, button
+        button:SetScript("OnAttributeChanged", function(self) self.action = Slot6(self) end)
+        button.action = Slot6(button)
+        _G["MultiBar5Button" .. index], barSix[index] = button, button
     end
-    check(barSeven[1].action == 157 and barSeven[12].action == 168, "(Bar 7 on its own slots)")
-    check(not ns.FormBar.On() and not ns.FormBar.Held() and ns.char.formBar == nil, "off by itself")
-    Shown(1, true)
-    check(barSeven[1].action == 157, "and off, no form changes the bar")
-    Shown(1, nil)
+    check(barSix[1].action == 145 and barSix[12].action == 156, "(Bar 6 on its own slots)")
+    ns.class = class
+    ns.FormBar.Apply()
+    InForm("form", "bonusbar:3")
+    check(not ns.FormBar.Held() and barSix[1].action == 145, "another class's Bar 6 stays as it is in a form")
+    InForm()
 
+    ns.class = "DRUID"
     W.combat = true
-    ns.FormBar.Set(true)
-    check(ns.char.formBar == true and not ns.FormBar.Held(), "in a fight the switch waits")
+    ns.FormBar.Apply()
+    check(not ns.FormBar.Held(), "in a fight it waits")
     W.combat = false
     W.Fire("PLAYER_REGEN_ENABLED")
-    check(ns.FormBar.Held(), "and then does as it says")
-    check(barSeven[1].action == 157 and ns.FormBar.Row() == nil, "out of a form the bar's own slots")
-    check(not ns.Bar1.Unseen(73), "a form's row is seen now")
-    for number, row in pairs({ [1] = 73, [2] = 85, [3] = 97, [4] = 109 }) do
-        Shown(number, true)
-        check(barSeven[1].action == row and barSeven[12].action == row + 11 and ns.FormBar.Row() == row - 1, "each form has its row")
+    local pager = ns.FormBar.Pager()
+    check(ns.FormBar.Held() and pager and pager:IsShown() and ns.FormBar.On() and ns.char.formBar == nil and pager.box:GetChecked(),
+        "and then a druid's Bar 6 swaps with its form, ticked at first")
+    check(barSix[1].action == 145 and Number(pager) == "6", "as a human the bar's own slots")
+    local forms = {
+        { "Bear Form", { "form", "bonusbar:3" }, 97, "9" },
+        { "Cat Form", { "form", "bonusbar:1" }, 109, "10" },
+        { "Prowl, a row of its own in Retail", { "form", "bonusbar:2" }, 109, "10" },
+        { "Aquatic and Travel Form", { "form" }, 109, "10" },
+        { "Moonkin Form", { "form", "bonusbar:4" }, 145, "6" },
+    }
+    for _, form in ipairs(forms) do
+        InForm(unpack(form[2]))
+        check(barSix[1].action == form[3] and barSix[12].action == form[3] + 11 and Number(pager) == form[4], form[1] .. ": its bar")
         check(barOne[1].action == 1, "and Bar 1 keeps its page")
-        Shown(number, nil)
-        check(barSeven[1].action == 157, "and back on the bar's own")
     end
+    InForm()
+    check(barSix[1].action == 145 and Number(pager) == "6", "a human has Bar 6 again")
+    check(ns.SlotLabel(97) == "Bar 9, button 1" and ns.SlotLabel(120) == "Bar 10, button 12", "Bars 9 and 10 by their numbers")
+    check(not ns.Bar1.Unseen(97) and not ns.Bar1.Unseen(120) and ns.Bar1.Unseen(73) and ns.Bar1.Unseen(96),
+        "Bars 9 and 10 are seen, the other forms' rows not")
+
+    -- The arrows turn the bar without a change of form, in a fight too; the next change of form swaps it again.
     W.combat = true
-    Shown(3, true)
-    check(barSeven[1].action == 97, "also in a fight")
-    Shown(3, nil)
+    InForm("form", "bonusbar:3")
+    check(barSix[1].action == 97, "a form swaps it in a fight too")
+    Press(pager.up)
+    check(barSix[1].action == 109 and Number(pager) == "10", "the arrow up shows the next bar, in a fight too")
+    Press(pager.up)
+    check(barSix[1].action == 145 and Number(pager) == "6", "past the last, the first again")
+    Press(pager.down)
+    check(barSix[1].action == 109 and Number(pager) == "10", "the arrow down the one before")
+    InForm("form", "bonusbar:1")
+    InForm("form", "bonusbar:3")
+    check(barSix[1].action == 97, "the next change of form swaps it again")
+    W.printed = {}
+    pager.box:SetChecked(false)
+    Press(pager.box)
+    check(pager.box:GetChecked() and ns.FormBar.On() and printedMatch("after the fight"), "in a fight the checkbox waits")
     W.combat = false
-    ns.DB.pageNames.MAGE = { [72] = "Cat Form" }
-    check(ns.SlotLabel(73) == "Bar 7 (Cat Form), button 1", "a form's row is named as Bar 7's")
-    ns.DB.pageNames.MAGE = nil
+    W.Fire("PLAYER_REGEN_ENABLED")
 
-    -- A druid has Cat Form's row, which Prowl keeps, and Bear Form's; a human and Moonkin Form have the bar's own.
-    local class = ns.class
-    ns.FormBar.Set(false)
-    check(not ns.FormBar.Held() and barSeven[1]:GetAttribute("actionpage") == nil and barSeven[1].action == 157, "off again, the bar is the game's")
-    check(ns.Bar1.Unseen(73), "and a form's row is unseen again")
-    ns.class = "DRUID"
-    ns.FormBar.Set(true)
-    Shown(1, true)
-    check(barSeven[1].action == 73, "a druid's Cat Form has its row")
-    Shown(1, nil)
-    Shown(2, true)
-    check(barSeven[1].action == 73, "and Prowl stays on it, should the game tell it as a row of its own")
-    Shown(2, nil)
-    Shown(3, true)
-    check(barSeven[1].action == 97, "Bear Form has its row")
-    Shown(3, nil)
-    Shown(4, true)
-    check(barSeven[1].action == 157, "Moonkin Form has the bar's own")
-    Shown(4, nil)
-    check(barSeven[1].action == 157, "and so has a human")
-    ns.FormBar.Set(false)
-    ns.class = class
+    -- Not ticked, the bar stays on the one its arrows show.
+    pager.box:SetChecked(false)
+    Press(pager.box)
+    check(not ns.FormBar.On() and ns.char.formBar == false, "unticked")
+    InForm("form", "bonusbar:1")
+    check(barSix[1].action == 97 and Number(pager) == "9", "a change of form leaves the bar as it is")
+    Press(pager.down)
+    check(barSix[1].action == 145, "and the arrows still turn it")
+    pager.box:SetChecked(true)
+    Press(pager.box)
+    check(ns.FormBar.On() and ns.char.formBar == nil and barSix[1].action == 109 and Number(pager) == "10",
+        "ticked again, it takes the form's bar at once")
+    InForm()
 
-    -- /sane ab formbar
-    sane("formbar on")
-    check(ns.FormBar.Held() and printedMatch("Action Bar 7 follows its form"), "by the command")
+    -- /sane ab formbar, and the line in the spellbook's menu
     sane("formbar off")
-    check(not ns.FormBar.Held(), "and off")
+    check(not ns.FormBar.On() and not pager.box:GetChecked() and printedMatch("stays on the bar its arrows show"), "by the command")
+    sane("formbar on")
+    check(ns.FormBar.On() and pager.box:GetChecked() and printedMatch("swaps with its form"), "and on")
     sane("formbar")
     check(printedMatch("/sane ab formbar on"), "the command's words")
 
-    -- A module stood down leaves the bar to the game; the switch stays.
-    ns.FormBar.Set(true)
+    -- A module stood down leaves the bar to the game; the checkbox stays.
+    InForm("form", "bonusbar:3")
     ns.off = true
     ns.FormBar.Apply()
-    check(not ns.FormBar.Held() and barSeven[1].action == 157 and ns.FormBar.On(), "standing down gives the bar back")
+    check(not ns.FormBar.Held() and barSix[1]:GetAttribute("actionpage") == nil and barSix[1].action == 145
+        and not pager:IsShown() and ns.FormBar.On(), "standing down gives the bar back")
+    check(ns.Bar1.Unseen(97), "and Bar 9 is out of sight again")
     ns.off = nil
     ns.FormBar.Apply()
-    check(ns.FormBar.Held(), "back with the module")
-    ns.FormBar.Set(false)
-    for index = 1, 12 do _G["MultiBar6Button" .. index] = nil end
+    check(ns.FormBar.Held() and barSix[1].action == 97 and pager:IsShown(), "back with the module, in the form's bar at once")
+    InForm()
+    ns.class = class
+    ns.FormBar.Apply()
+    check(not ns.FormBar.Held() and barSix[1].action == 145 and not pager:IsShown(), "a character of another class: a plain Bar 6")
+    W.printed = {}
+    sane("formbar on")
+    check(printedMatch("only a druid's"), "and the command says so")
+    for index = 1, 12 do _G["MultiBar5Button" .. index] = nil end
+    _G.MultiBar5 = nil
 
     -- Every page is yours: page 2 in layouts and reservations, the bars that are off seen as pages
     check(ns.SlotLabel(13) == "Bar 1 (page 2), button 1" and ns.SlotLabel(24) == "Bar 1 (page 2), button 12", "page 2 has a name")

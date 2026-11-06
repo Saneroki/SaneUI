@@ -43,6 +43,10 @@ of your normal action bar buttons. The macros are your account's, on every chara
   bar* and choose one. Its picture follows the mouse and the button under it gets a gold frame; the bars stay clear. It works and
   looks like a normal button, with that button's keys, on that page of Bar 1. What the button holds stays underneath and is
   back when the macro is taken off (a right click on the same button in the window). One button a macro, for this character.
+  On the bar it acts as the game's buttons do (Saneroki, 2026-11-06): drag a spell from the spellbook, an item or an action
+  onto it, or click one onto it, and that takes its place (the macro comes off; what the button held underneath goes onto
+  your cursor, as when two buttons swap). Drag the macro itself with the pick-up key (Shift) held, or with the bars
+  unlocked: let go on another button and it stands there, on no button and it is off the bars. Out of a fight.
 - **Order:**
   - *Each press takes the next step:* a sequence. Every press goes on to the next step and comes round again.
   - *Every press starts at the top:* a normal macro. A press takes the first step whose conditions hold.
@@ -82,6 +86,13 @@ of your normal action bar buttons. The macros are your account's, on every chara
   button is never touched. A state driver per place says `ours` while the bar shows that button; a snippet then shows ours
   and takes the button's keys by override bindings, and gives them back on another page of Bar 1, in a vehicle or on a bar the
   game puts in place of yours, in a fight too. Keys read from the game's bindings; `UPDATE_BINDINGS` takes a change.
+- **A bar button, as the game's** (`Face.lua`). Something on the game's cursor (`GetCursorInfo`) let go on our button
+  (`OnReceiveDrag`) or clicked onto it (`OnMouseDown`, left: the button hides at once, so the click runs no step) takes the
+  macro off (`Macros.TakeOff`), and the game's own `PlaceAction` puts it on the game's button beneath, by that button's
+  `action`; what it held goes onto the cursor, as the game swaps two. A drag (`RegisterForDrag`) lifts the macro where the
+  game's button would lift its action (`lockActionBars` off, or `IsModifiedClick("PICKUPACTION")`): `Place.Start` with
+  its picture, and at `OnDragStop` `Place.Drop` says where: a button (true: `Reach.SetPlace`), none (false: off the
+  bars), or the placing ended before (nil: Esc, a fight; it stays). In a fight nothing changes, and it says so.
 - **Choosing a bar button** (`Place.lua`). An unseen square over every button of every bar that shows takes the click, so a click
   casts nothing; nothing is drawn over the bars (Saneroki, 2026-11-04: a gold wash over every button hid them). The button under
   the mouse comes from the frames the game says are under it (`GetMouseFoci`), only then from each square's `IsMouseOver`: a
@@ -140,7 +151,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Write.lua` | A macro as lines, conditions and turns |
 | `Check.lua` | What would not work as it stands |
 | `Press.lua` | The hub, the snippet, loading a macro, the turn that comes next, a step's picture |
-| `Face.lua` | Our button over a bar button: picture, swirl, dimming, key |
+| `Face.lua` | Our button over a bar button: picture, swirl, dimming, key; something dropped on it, the macro dragged off it |
 | `Reach.lua` | Keys and bar buttons, the state drivers, what is given back |
 | `Place.lua` | Choosing a bar button with the mouse: unseen squares, the picture at the mouse, the gold frame |
 | `Icons.lua` | The picture window: the game's icons by group, searched, a macro's picture chosen |
