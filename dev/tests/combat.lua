@@ -501,6 +501,21 @@ do
     check(second.face.big == 24 and second.face.rez._shown and second.face.rez._width == 24 and second.face.rez._height == 24
         and second.face.rez._atlas == Face.REZ and second.face.rez._parent == second.face.floating,
         "one on its way: the game's icon, big, floating over the name")
+    do
+        local container = second.face.marks.container
+        check(container and container._scale == 24 / Face.ICON and container._groups[Marks.GROUP].icon._width == Face.ICON,
+            "the dispel icon as big: its container scaled, the game's icon at the size it was made")
+        -- Someone joined in a fight: the header lays its buttons out anew, a face gets another height. The game's icon
+        -- refuses every touch of an addon's then, so only its container's scale may change.
+        W.combat = true
+        second.face._height = 20
+        local ok, problem = pcall(Face.Fit, second.face)
+        W.combat = false
+        check(ok and second.face.big == 16 and container._scale == 16 / Face.ICON,
+            "laid out anew in a fight: the dispel icon follows by its container's scale alone " .. tostring(problem or ""))
+        second.face._height = 28
+        Face.Fit(second.face)
+    end
     incoming = nil
     on(second.face, "INCOMING_RESURRECT_CHANGED", "party1")
     check(not second.face.rez._shown and second.face.rez._width == Core.HealthMarks.NONE, "it came or stopped: gone")

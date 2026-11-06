@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Someone joining your group no longer breaks Sane UI's party frames,
+  bars and unit frames, which then gave way to the game's own.
 - Quest areas on the small map are Sane UI's alone and lighter: the
   game's minimap no longer draws its own over them, nor the white ring
   that showed round them.

@@ -33,6 +33,8 @@ local Core = SaneUI.Core
 --  it has an aura group (its forbidden aspect UntrustedLayoutScriptExecution:
 --  it sizes itself by what it shows), so nothing can step aside for it: what
 --  shares its line stands before it, and it stands by that (marks:Place).
+--  Its frame refuses every call of an addon's while auras are secret, so a
+--  new size is the container's scale (marks:Resize).
 --  No mouse on any of it: the unit's button under it keeps clicks and @mouseover.
 --
 --      local marks = Core.HealthMarks.New(host, health, {
@@ -131,13 +133,15 @@ local function Lost(host, health, level)
     return lost, mask
 end
 
--- The frame the container makes for its aura: above the words, the type's icon alone, set and shown by the game.
+-- The frame the container makes for its aura: above the words, the type's icon alone, set and shown by the game. Here
+-- only: right after this the game locks it from addon code while auras are secret (its access restriction
+-- DenyTaintedAccessWhenAurasAreSecret, in a fight), so it keeps the size it was made at and marks:Resize scales
+-- the container instead.
 local function Dress(marks, frame)
-    local size = marks.options.size or Marks.SIZE
+    local size = marks.base
     frame:SetSize(size, size)
     pcall(frame.EnableMouse, frame, false)
     frame:SetFrameLevel(marks.above)
-    marks.frames[#marks.frames + 1] = frame
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetAllPoints(frame)
     local styles = rawget(_G, "Enum") and Enum.CustomAuraButtonDispelTypeTextureStyle
@@ -181,8 +185,8 @@ end
 
 function Marks.New(host, health, options)
     local level = Plain(health:GetFrameLevel()) or 1
-    local marks = setmetatable({ host = host, health = health, options = options, width = 0, share = 0, frames = {},
-                                 barrierOn = true, lostOn = true, dispelOn = true, above = options.above or level + 4 },
+    local marks = setmetatable({ host = host, health = health, options = options, width = 0, share = 0,
+                                 base = options.size or Marks.SIZE, barrierOn = true, lostOn = true, dispelOn = true, above = options.above or level + 4 },
                                { __index = methods })
     local fill = health:GetStatusBarTexture()
     local barrier = Strip(health, options.masks)
@@ -294,11 +298,11 @@ function methods:Place(point, relative, relativePoint, x, y)
     self.lead:SetPoint(point, relative, relativePoint, x, y)
 end
 
--- The icon's size anew; the game lays its frame out with the next auras it reads.
+-- The icon's size anew, in a fight too: the container's scale over the size its frame was made at (Dress), which the
+-- game lets no addon touch then.
 function methods:Resize(size)
     self.options.size = size
-    for _, frame in ipairs(self.frames) do frame:SetSize(size, size) end
-    if not self.icon then return end
+    if self.container then return self.container:SetScale(size / self.base) end
     self.icon:SetSize(size, size)
     self.lead:SetHeight(size)
     if self.icon:IsShown() then self.lead:SetWidth(size) end

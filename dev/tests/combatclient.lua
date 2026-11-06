@@ -135,6 +135,17 @@ function Client.Install(W)
             self._groups[key] = { filter = filter, options = options, enabled = true, icon = icon }
             self._sizesItself = true
             if options.initializeFrame then options.initializeFrame(icon) end
+            -- Locked once made (its access restriction DenyTaintedAccessWhenAurasAreSecret): while auras are secret, in
+            -- a fight, every method of it refuses an addon's call.
+            local open = getmetatable(icon).__index
+            setmetatable(icon, { __index = function(widget, name)
+                local found = open(widget, name)
+                if not (W.combat and type(found) == "function") then return found end
+                return function()
+                    error(("calling '%s' on bad self (Attempt to access forbidden object from code tainted by an AddOn)")
+                        :format(name), 2)
+                end
+            end })
         end
         function container:SetAuraGroupFilterString(key, filter) self._groups[key].filter = filter end
         function container:SetAuraGroupCandidateFilters(key, filters) self._groups[key].candidates = filters end
