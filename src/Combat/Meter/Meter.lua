@@ -2,10 +2,9 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Meter
---  The threat and damage meter, a window of Core's on the screen and over Combat's
---  full screen, each look with its own place and size, kept, as the quest log's.
---  At first right of the quest log's first place at the very top of the screen; on the
---  full screen in its top left corner.
+--  The threat and damage meter, a window of Core's on the screen, its place and size
+--  kept; at first right of the quest log's first place at the very top of the screen.
+--  Never on or over Combat's full screen: out of sight while that is up (Cover).
 --
 --  The list of your party or raid, you on top (Row.lua), as many as fit whole: the mouse
 --  wheel over the window takes the others a character at a time under your own line,
@@ -13,8 +12,8 @@ local _, ns = ...
 --  differ in height. Sorted by what the flyout says (Read.ORDERS); in a fight, where the
 --  game hides the numbers, by the places on its own list, and threat not at all on a boss.
 --
---  Hide outside combat and Hide when not in group take it out of sight (Seen), but on
---  the full screen, in Edit Mode and with a saved fight loaded. With Show on mouseover
+--  Hide outside combat and Hide when not in group take it out of sight (Seen), but in
+--  Edit Mode and with a saved fight loaded. With Show on mouseover
 --  the window stays there empty, so the mouse coming onto its place brings it back;
 --  without, it is hidden whole.
 --
@@ -22,9 +21,9 @@ local _, ns = ...
 --  all of it. Only while the mouse is on it the buttons stand at the right end of the
 --  first line (Controls.lua), the first line drags the window and its corner's grip
 --  sizes it (Core's grip = "hover"). Edit Mode's box moves and sizes it too. Lock window
---  (the cog's, and on the page Combat) holds it in both looks: then neither the line nor
---  a grip is there to move or size it, but Edit Mode's box still is, as Edit Mode
---  arranges the game's own meter (Free).
+--  (the cog's, and on the page Combat) holds it: then neither the line nor a grip is
+--  there to move or size it, but Edit Mode's box still is, as Edit Mode arranges the
+--  game's own meter (Free).
 --
 --  In the screen's top half the list hangs from the window's top and grows down, in the
 --  bottom half it stands on the window's bottom and grows up.
@@ -46,18 +45,13 @@ ns.Meter = Meter
 Meter.WIDTH, Meter.HEIGHT = 260, 400 -- its first size
 Meter.LEAST_WIDTH, Meter.LEAST_HEIGHT = 170, 60 -- its least
 Meter.QUEST_LOG = 320       -- the quest log's first width: it stands at the top left corner, the meter right of it
-Meter.FULL_X, Meter.FULL_Y = 12, -40 -- on the full screen, from its top left corner, under its title bar
 Meter.EVERY = 0.5           -- seconds between two looks in a fight
 Meter.ASK = 4               -- out of a fight, looks between two questions for an item level
 Meter.MARGIN = 6            -- how far around the window the mouse still counts as on it
 Meter.LINGER = 0.3          -- seconds the buttons stay after the mouse left
 Meter.CVAR = "damageMeterEnabled" -- the game's meter's switch
 
-local KEY = { [true] = "meterFullPlace", [false] = "meterPlace" } -- where each look's place is kept
-local FIRST = {
-    [true] = { point = "TOPLEFT", x = Meter.FULL_X, y = Meter.FULL_Y, width = Meter.WIDTH, height = Meter.HEIGHT },
-    [false] = { point = "TOPLEFT", x = Meter.QUEST_LOG, y = 0, width = Meter.WIDTH, height = Meter.HEIGHT },
-}
+local FIRST = { point = "TOPLEFT", x = Meter.QUEST_LOG, y = 0, width = Meter.WIDTH, height = Meter.HEIGHT }
 
 local frame, handle, hover, watch
 local block, mine, box, view -- what holds the rows, your own, the list of the others
@@ -65,7 +59,7 @@ local shown = {}             -- [person] = their bars, this round
 local worth = {}             -- [person] = what the list is sorted by, this round
 local read                   -- the fight read last
 local leader                 -- who stands on the first line of the list: without your own line, the buttons stand there
-local full = false           -- the look over the full screen
+local covered = false        -- Combat's full screen is up: the meter is out of sight meanwhile
 local line                   -- what the list holds, as guids and bars in order: drawn anew only when that changed
 local first = 1              -- the first of the list that shows: the wheel moves it
 local stale                  -- something changed while out of sight
@@ -213,7 +207,7 @@ end
 
 -- Whether it stands in sight by itself, the mouse aside.
 local function Wanted()
-    if full or Core.EditMode.active or ns.MeterFights.Loaded() then return true end
+    if Core.EditMode.active or ns.MeterFights.Loaded() then return true end
     if ns.options.meterHideRest and not ns.MeterFights.Fighting() then return false end
     if ns.options.meterHideAlone and not Core.Ask(IsInGroup) then return false end
     return true
@@ -222,7 +216,7 @@ end
 -- In sight or not. With Show on mouseover the empty window stays, for the mouse's coming; its wheel is the game's then.
 local function Seen()
     if not frame then return end
-    local on = ns.options.meter and not ns.off
+    local on = ns.options.meter and not ns.off and not covered
     local wanted = Wanted()
     frame:SetShown((on and (wanted or ns.options.meterHover)) and true or false)
     local seen = (wanted or hovered) and true or false
@@ -330,18 +324,17 @@ function Meter.Apply()
     Watching()
 end
 
--- Its look: over Combat's full screen (on), above the board, or on the screen. Each at its own place, kept.
-function Meter.Dress(on)
+-- Combat's full screen is up (on, from as it begins to fill) or gone: never on or over it, the meter is out of sight
+-- meanwhile, and back at its place after.
+function Meter.Cover(on)
     on = on and true or false
-    if not frame or on == full then return end
-    full = on
-    frame:SetFrameStrata(on and "DIALOG" or "LOW")
-    handle:Use(KEY[on], FIRST[on])
-    Sided()
+    if not frame or on == covered then return end
+    covered = on
     Again()
+    Watching()
 end
 
--- On or off, as the button on the full screen's bar and /sane meter say.
+-- On or off, as /sane meter says.
 function Meter.Toggle()
     Core.Set(ns.name, "meter", not ns.options.meter)
 end
@@ -363,7 +356,7 @@ function Meter.Build()
     frame:SetFrameStrata("LOW")
     frame:Hide()
     handle = Core.Window.New(frame, {
-        store = ns.store, key = KEY[false], title = ns.TEXT.meter, first = FIRST[false],
+        store = ns.store, key = "meterPlace", title = ns.TEXT.meter, first = FIRST,
         dock = true, dragDocked = true, sizable = true, grip = "hover",
         minWidth = Meter.LEAST_WIDTH, minHeight = Meter.LEAST_HEIGHT, usable = Free,
         docked = function() ns.Guarded(Sided) end,
@@ -423,7 +416,7 @@ function Meter.Build()
     Core.EditMode.Watch(ns.Guard(Meter.Apply))
     if InCombatLockdown() then ns.MeterFights.Began() end -- a /reload in a fight
     Meter.Apply()
-    Meter.Dress(ns.Window.Full())
+    Meter.Cover(ns.Window.Full())
 end
 
 local function Began()

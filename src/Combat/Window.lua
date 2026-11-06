@@ -9,8 +9,8 @@ local _, ns = ...
 --  half the screen's width, however wide the window is) fills the screen with
 --  it; pushed there again, or Esc, it goes back. Full, it holds your talents and
 --  your spellbook on Core's board (Board.lua): laid out once it stands
---  (docked), gone as soon as it starts back. The threat and damage meter stands over
---  it (Meter/), with a button of its own on the full screen's bar.
+--  (docked), gone as soon as it starts back. The threat and damage meter is never on
+--  or over it: out of sight from as it begins to fill until it is back (Meter.Cover).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Window = {}
@@ -18,7 +18,6 @@ ns.Window = Window
 
 Window.WIDTH, Window.HEIGHT = 400, 32 -- small: an empty strip over the bottom middle, its box in Edit Mode
 Window.STRIP = 0.5                    -- the share of the bottom edge, in its middle, that fills the screen
-Window.METER = "Interface\\ICONS\\Ability_DualWield" -- the button of the threat and damage meter on the full screen's bar
 
 local frame, handle
 local wanted, tab -- a window a key asked for while the full screen was on its way (and the book's tab with it)
@@ -27,7 +26,7 @@ local wanted, tab -- a window a key asked for while the full screen was on its w
 -- key asked for comes on the layout once it stands (Core's board adds one only then).
 local function Placed()
     if handle.edge and handle.edge.full then
-        ns.Meter.Dress(true)
+        ns.Meter.Cover(true)
         ns.Board.Show(handle.inside, frame:GetWidth(), frame:GetHeight() - (handle.top or 0))
         if wanted then
             local key = wanted
@@ -39,15 +38,16 @@ local function Placed()
             tab = nil
         end
     else
-        ns.Meter.Dress(false)
+        ns.Meter.Cover(false)
         ns.Board.Hide()
     end
 end
 
--- On its way back: the board goes at once, and what is seated there is given back; the meter is back on the screen.
+-- On its way: filling, the meter goes at once; back, the board goes at once, what is seated there is given back, and
+-- the meter is back on the screen.
 local function Filled(full)
+    ns.Meter.Cover(full)
     if full then return end
-    ns.Meter.Dress(false)
     ns.Board.Hide()
 end
 
@@ -85,8 +85,6 @@ function Window.Build()
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
         first = { dock = "BOTTOM" }, sizable = false, classic = Classic,
         strip = Window.STRIP,
-        buttons = { { texture = Window.METER, tip = ns.TEXT.meter, text = ns.TEXT.meterPin,
-                      click = function() ns.Guarded(ns.Meter.Toggle) end } },
         filled = function(full) ns.Guarded(Filled, full) end,
         docked = function() ns.Guarded(Placed) end,
         search = function(text) ns.Guarded(ns.Board.Search, text) end, -- typed into the full screen's search box

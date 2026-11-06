@@ -216,17 +216,17 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   in white, fills while the global cooldown runs; the outer one, in your class's colour, fills while you cast and empties while you channel, a bright
   line with a soft glow at its head. See-through, there only while they run, gone at once when the cast is interrupted. They stand around the cursor
   you see, start and end on the line to its tip, and grow with the game's *Cursor Size* (Accessibility).
-- **The threat and damage meter** (*Threat and damage meter* on the page Combat, the button on the full screen's bar or
-  `/sane meter` switch it, on at first), in place of the game's own damage meter:
+- **The threat and damage meter** (*Threat and damage meter* on the page Combat or `/sane meter` switch it, on at first),
+  in place of the game's own damage meter. Never on or over Combat's full screen: out of sight while that is up.
   - **When it shows:** the cog's section of that name, all three on at first. *Hide outside combat*, *Hide when not in
     group*: out of sight while that is so. *Show on mouseover*: while it is hidden, the mouse on its place brings it,
-    buttons and all; off, it comes only with a fight or a group. On Combat's full screen, in Edit Mode and with a saved
-    fight loaded it always shows.
-  - **Where:** at first at the very top of the screen, right of the quest log's first place. On Combat's full screen in
-    its top left corner, each with its own place and size, kept. In Edit Mode, or with the mouse on it: drag the first
+    buttons and all; off, it comes only with a fight or a group. In Edit Mode and with a saved fight loaded it always
+    shows.
+  - **Where:** at first at the very top of the screen, right of the quest log's first place; its place and size are
+    kept. In Edit Mode, or with the mouse on it: drag the first
     line to move it, as the quest log's title bar does, it docks at the edges too; its corner's grip sizes it.
   - **Lock window** (last in the cog's flyout, and on the page Combat under the meter, off at first): it stays where it
-    is and at its size, on the screen and on the full screen; the first line no longer moves it and its corner has no
+    is and at its size; the first line no longer moves it and its corner has no
     grip. Edit Mode still moves and sizes it, as it arranges the game's own meter.
   - **The list:** a line per character with the class's icon, level, item level (`-` until it could be read: the game
     gives it only near a player, out of a fight) and name, and under it the bars. You stand on top, always in sight;
@@ -681,8 +681,10 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     a calculator, `Fit` takes whole rows from `first` (the wheel moves it, a character a notch), and the scroll box is exactly as
     high as they are, scrolled by `ScrollToElementDataIndex`. A row's `line`, a button over its name that only shows on hover,
     takes the right click; on the first line `drag` lies over it and takes it. `Types` reads what anybody has (`Shows.Wanted`).
-  - **In sight:** `Wanted()` (the full screen, Edit Mode, a saved fight, or both Hide ticks satisfied). With *Show on mouseover*
+  - **In sight:** `Wanted()` (Edit Mode, a saved fight, or both Hide ticks satisfied). With *Show on mouseover*
     the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
+    Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
+    nothing of it, not even the mouse's coming, is on or over the full screen; its old second place `meterFullPlace` is no longer read.
 - **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders on bars and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
@@ -758,13 +760,14 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Meter/Fights.lua` | Which fight is shown: the pages, the live page, the saved fights |
 | `Meter/Row.lua` | One character: their line and a bar per thing shown |
 | `Meter/Controls.lua` | The buttons at the end of the first line, and the flyouts |
-| `Meter/Meter.lua` | The window: its two places, the list of whole rows, grown down or up, when it shows, the game's meter out of sight, the looks in a fight |
+| `Meter/Meter.lua` | The window: its place, out of sight under the full screen, the list of whole rows, grown down or up, when it shows, the game's meter out of sight, the looks in a fight |
 | `Reminders/Reminders.lua` | The reminders and bars: kept per character, the families of names, what is known of an aura, in a fight too, whether one shows, the looks |
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-06:** the meter is never on or over Combat's full screen, and its button on the full screen's bar is gone (Saneroki: "The meeter should not show in or over the full screen").
 - **2026-11-06:** the meter's *Lock window*: neither moved nor sized out of Edit Mode (Saneroki: "lock it in its settings so it is fixed and doesn't let you drag to resize or move it").
 - **2026-11-06:** *Show on healthbars* (first *Show on raid frames*): an aura's icon on your unit frames and the party and raid frames; beside each member of a party their target and their pet, small, their names alone (Saneroki).
 - **2026-11-06:** in a party a column beside it with each member's pet, else their target; the party and raid frames' health in class colours (Saneroki).

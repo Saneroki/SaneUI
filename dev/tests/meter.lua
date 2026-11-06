@@ -374,11 +374,6 @@ check(frame.drag._shown and not handle:Draggable(), "locked, the first line stil
 frame.drag:GetScript("OnDragStart")(frame.drag)
 check(not handle.moving, "a drag there begins nothing")
 check(not handle.grip._shown, "and its corner has no grip to size it by, the mouse on it or not")
-if not RETAIL then
-    Meter.Dress(true)
-    check(not handle:Draggable() and not handle.grip._shown, "on the full screen it is locked too")
-    Meter.Dress(false)
-end
 EventRegistry:TriggerEvent("EditMode.Enter")
 check(handle.grip._shown and handle.usable(), "Edit Mode still moves and sizes it, as the game's own meter")
 EventRegistry:TriggerEvent("EditMode.Exit")
@@ -602,27 +597,27 @@ check(block._shown, "a saved fight loaded stays in sight, in a group or not")
 Fights.Unload()
 Meter.Refresh()
 check(not block._shown, "back to the fights it goes")
-if not RETAIL then
-    Meter.Dress(true)
-    check(block._shown, "on the full screen it always shows")
-    Meter.Dress(false)
-    check(not block._shown, "and not back on the screen")
-end
 Set("meterHideRest", false)
 Set("meterHideAlone", false)
 
 -------------------------------------------------------------------------------
---  Its other look, on or off, standing down
+--  Never on or over the full screen; on or off, standing down
 -------------------------------------------------------------------------------
-if not RETAIL then
-    Meter.Dress(true)
-    check(frame:GetFrameStrata() == "DIALOG", "over the full screen, above the board")
-    local _, _, _, fullX, fullY = frame:GetPoint(1)
-    check(fullX == Meter.FULL_X and fullY == Meter.FULL_Y, "in its top left corner, its own place")
-    Meter.Dress(false)
-    local _, _, _, screenX = frame:GetPoint(1)
-    check(frame:GetFrameStrata() == "LOW" and screenX ~= Meter.FULL_X, "and back at its place on the screen")
-end
+local screen = ns.Window.handle -- Combat's window, whose full screen it is
+check(screen.options.buttons == nil, "no button of the meter on the full screen's bar")
+check(frame:IsShown() and frame:GetFrameStrata() == "LOW", "on the screen, in the layer of the quest log")
+local _, _, _, placeX, placeY = frame:GetPoint(1)
+screen.options.filled(true) -- Core's Edge tells it as the full screen begins to fill
+check(not frame:IsShown(), "as Combat's full screen begins to fill, the meter is gone, mouse and all")
+Fights.Load(record)
+W.Combat(true)
+check(not frame:IsShown(), "neither a fight nor a saved fight brings it over the full screen")
+W.Combat(false)
+W.Wait(0)
+Fights.Unload()
+screen.options.filled(false)
+local _, _, _, backX, backY = frame:GetPoint(1)
+check(frame:IsShown() and block._shown and backX == placeX and backY == placeY, "the full screen on its way back: there again, at its place")
 
 Meter.Toggle()
 check(not frame:IsShown() and W.cvars.damageMeterEnabled == "0", "off: gone, the game's setting as it was")

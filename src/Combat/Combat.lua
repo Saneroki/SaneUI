@@ -25,7 +25,7 @@ local ADDON, ns = ...
 --  clean, their buttons' icons alone, and out of sight at rest with those frames (ActionBars.lua, Units/, Core.Rest);
 --  its experience and stance bars gone, its menu bar on
 --  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
---  game's two (Units/Group.lua). The threat and damage meter, a window on the screen and on the full screen
+--  game's two (Units/Group.lua). The threat and damage meter, a window on the screen, never on the full screen
 --  (Meter/). Reminders of buffs and debuffs on bars of their own (Reminders/). Each part falls back to the game's own when it fails
 --  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
 --  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
@@ -171,9 +171,8 @@ ns.TEXT = {
     mouseCastTip = "The outer ring, in your class's colour, fills while you cast and empties while you channel, a bright line with a soft glow at its head. Interrupted, it goes at once.",
     meter = "Threat and damage meter",
     meterTip = "Your party or raid, you on top, each with their class, level, item level and name and a bar each for threat, damage, healing and interrupts. No background, and clicks go through it. With the mouse on it the buttons show at the end of the first line, that line drags it and its corner sizes it, unless it is locked; the mouse wheel scrolls the others; a right click on a name chooses that character's own bars. At first out of sight out of a fight and alone, and the mouse on its place brings it. Instead of the game's own damage meter.",
-    meterPin = "The threat and damage meter on or off: here and on the screen.",
     meterLocked = "Lock window",
-    meterLockedTip = "The meter stays where it is and at its size, on the screen and on the full screen: its first line no longer moves it and its corner no longer sizes it. Also in the cog of its first line. Edit Mode still arranges it, as it does the game's own meter.",
+    meterLockedTip = "The meter stays where it is and at its size: its first line no longer moves it and its corner no longer sizes it. Also in the cog of its first line. Edit Mode still arranges it, as it does the game's own meter.",
     meterKinds = { threat = "Threat", damage = "Damage", healing = "Healing", interrupts = "Interrupts" },
     meterTicks = { meterMine = "My self on top", meterThreat = "Show Threat", meterDamage = "Show Damage",
                    meterHealing = "Show Healing", meterInterrupts = "Show Interrupts",

@@ -181,7 +181,9 @@ told by its flags.
 
 **Damage, healing, interrupts:** the game's own meter, in both games: `C_DamageMeter` keeps the fights (sessions) and each
 one's lists of sources, best first, `SecretWhenInCombat`: built on it 2026-11-01 (`src/Combat/Meter/`, Saneroki), threat by
-`UnitDetailedThreatSituation`, whose values are plain but on a boss. Sorting in a fight goes by the list's places.
+`UnitDetailedThreatSituation`, whose values are plain but on a boss. Sorting in a fight goes by the list's places. The meter stands on the screen
+alone, never on or over Combat's full screen (Saneroki, 2026-11-06); a meter as an extra window on a full screen is a
+card of its own (#376).
 
 ## How every part works
 
