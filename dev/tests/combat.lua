@@ -1753,6 +1753,145 @@ do
 end
 
 -------------------------------------------------------------------------------
+--  Look out for: in your focus's place while you have none, a click makes who it found your focus
+-------------------------------------------------------------------------------
+do
+    local LookOut = ns.LookOut
+    local _, _, _, _, spot = LookOut.State()
+    local look, focus = spot and spot.look, unitButtons.focus
+    check(spot and spot._template == "SecureActionButtonTemplate" and SaneUILookOut == spot
+        and spot:GetAttribute("*type1") == "macro" and spot:GetAttribute("*type-Key") == "macro"
+        and spot:GetAttribute("*type2") == nil and spot:GetAttribute("macrotext") == "",
+        "a secure button of the game's: its left click and its key run a line of the game's, none yet; the right runs nothing")
+    check(W.drivers[spot] and W.drivers[spot].values == LookOut.DRIVER and LookOut.DRIVER == "[@focus,exists] hide; show"
+        and spot._points[1][2] == focus and spot._points[2][2] == focus,
+        "over your focus's frame, shown by the game while you have no focus (in a fight too)")
+    check(spot._alpha == 0, "out of sight at rest")
+    spot._scripts.OnEnter(spot)
+    check(spot._alpha == 1 and look.label._text == ns.TEXT.lookOut and look._width == LookOut.WIDTH,
+        "the mouse on its place: the button Look out for")
+    spot._scripts.PostClick(spot, "LeftButton", true)
+    check(not look.opened, "the press opens nothing")
+    spot._scripts.PostClick(spot, "LeftButton", false)
+    check(look.opened and look.box._shown and look.take._shown and look.plus._shown and not look.label._shown,
+        "the release opens it into a field, with its X and its +")
+    look.grower._scripts.OnUpdate(look.grower, LookOut.OPEN / 2)
+    check(look._width > LookOut.WIDTH and look._width < ns.Units.WIDTH, "it grows")
+    look.grower._scripts.OnUpdate(look.grower, LookOut.OPEN)
+    check(near(look._width, ns.Units.WIDTH) and not look.grower._shown, "to the frame's width, and stops")
+
+    look.box._text = "  Hogger "
+    look.box._scripts.OnEnterPressed(look.box)
+    local watched, found, armed = LookOut.State()
+    check(watched.name == "Hogger" and armed == "/focus [@focus,noexists] Hogger" and spot:GetAttribute("macrotext") == armed
+        and Core.Character(ns.name).lookOut == "Hogger" and not look.opened
+        and look.label._text == ns.TEXT.lookOutWatching:format("Hogger"),
+        "Enter: Hogger looked out for, kept for the character; the line focuses him while you have no focus")
+    spot._scripts.OnLeave(spot)
+    check(spot._alpha == 0, "not found: out of sight again")
+    units.nameplate3 = { name = "Hogger", foe = true, health = 800, most = 1000 }
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate3")
+    _, found = LookOut.State()
+    check(found == "nameplate3" and spot._alpha == 1 and look.label._text == ns.TEXT.lookOutFound
+        and look.border[1]._vertex[1] == ns.UnitBar.RANKS.elite.colour[1],
+        "his nameplate comes: \"Focus found: Add it now\", in sight, framed in gold")
+    spot._scripts.PostClick(spot, "LeftButton", false)
+    check(not look.opened, "a click on it: the game's line focuses him, no field opens")
+    spot._scripts.PostClick(spot, "RightButton", false)
+    check(look.opened and look.box._text == "Hogger", "a right click opens the field to change it")
+    look.box._scripts.OnEscapePressed(look.box)
+    check(not look.opened and LookOut.State().name == "Hogger", "Esc closes it, nothing changed")
+    spot._scripts.PostClick(spot, "Key", false)
+    check(not look.opened, "its key opens nothing")
+
+    -- In a fight the game hides creatures' names: one found before stays found, a new one cannot be told.
+    W.Combat(true)
+    units.nameplate3.name = W.Secret()
+    units.nameplate5 = { name = W.Secret(), foe = true, health = 10, most = 10 }
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate5")
+    _, found = LookOut.State()
+    check(found == "nameplate3" and look.label._text == ns.TEXT.lookOutFound and not ns.off,
+        "in a fight the names are hidden: found before, still found")
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate3")
+    units.nameplate3 = nil
+    _, found = LookOut.State()
+    check(found == nil and spot._alpha == 0 and look.label._text == ns.TEXT.lookOutTry:format("Hogger"),
+        "his plate gone: one coming in the fight cannot be told, a click still tries his name")
+    spot._scripts.PostClick(spot, "RightButton", false)
+    look.box._text = "Kobold Miner"
+    look.box._scripts.OnEnterPressed(look.box)
+    local _, _, line, wanted = LookOut.State()
+    check(line == "/focus [@focus,noexists] Hogger" and wanted == "/focus [@focus,noexists] Kobold Miner"
+        and look.label._text == ns.TEXT.lookOutLater:format("Kobold Miner") and not ns.off,
+        "changed in a fight: the button keeps its line to the fight's end (the game takes no change in one)")
+    W.Combat(false)
+    _, _, line = LookOut.State()
+    check(line == "/focus [@focus,noexists] Kobold Miner" and spot:GetAttribute("macrotext") == line, "after it: armed")
+    units.nameplate5 = nil
+
+    -- Its +: a role or one of your group, watched at once.
+    local roles = rawget(_G, "UnitGroupRolesAssigned")
+    UnitGroupRolesAssigned = function(unit) return unit == "party2" and "TANK" or "NONE" end
+    units.party2 = { name = "Brakk", player = true, health = 900, most = 1000 }
+    W.menus = {}
+    spot._scripts.PostClick(spot, "RightButton", false)
+    look.plus._scripts.OnClick(look.plus)
+    local menu = W.menus[1]
+    check(menu and menu[1].title == ns.TEXT.lookOutGroup and menu[2].text == ns.TEXT.lookOutTank
+        and menu[3].text == ns.TEXT.lookOutHealer and #menu[4].sub == 4 and #menu[5].sub == 40 and menu[5].sub[12].text == "@raid12",
+        "its +: tank, healer, a party member 1-4, a raid member 1-40")
+    menu[2].fn()
+    watched, found, line = LookOut.State()
+    check(watched.role == "TANK" and found == "party2" and line == "/focus [@focus,noexists] party2"
+        and look.label._text == ns.TEXT.lookOutFound and Core.Character(ns.name).lookOut == "@tank" and not look.opened,
+        "@tank: your party's tank, found at once, the line focuses party2")
+    UnitGroupRolesAssigned = function(unit) return unit == "party3" and "TANK" or "NONE" end
+    units.party3 = { name = "Grom", player = true, health = 900, most = 1000 }
+    W.Fire("GROUP_ROSTER_UPDATE")
+    _, found, line = LookOut.State()
+    check(found == "party3" and line == "/focus [@focus,noexists] party3", "another tank: looked up again as the group changes")
+    LookOut.Watch("@raid12")
+    watched, found, line = LookOut.State()
+    check(watched.unit == "raid12" and found == nil and line == "/focus [@focus,noexists] raid12",
+        "a member of your raid: by its unit, not there now")
+    check(LookOut.Parse("@Healer").role == "HEALER" and LookOut.Parse("@party4").unit == "party4"
+        and LookOut.Parse("@raid41").name == "raid41" and LookOut.Parse("[Hog;ger]").name == "Hogger"
+        and LookOut.Parse("   ") == nil, "what may be typed: @tank, @healer, @party1-4, @raid1-40, else a name")
+    UnitGroupRolesAssigned = roles
+    units.party2, units.party3 = nil, nil
+
+    -- A focus taken: the game hides the place (its driver), the field closes.
+    spot._scripts.PostClick(spot, "RightButton", false)
+    units.focus = { name = "Brakk", player = true, health = 900, most = 1000 }
+    W.Fire("PLAYER_FOCUS_CHANGED")
+    check(not look.opened, "you got a focus: the field closes")
+    units.focus = nil
+    W.Fire("PLAYER_FOCUS_CHANGED")
+
+    -- Its X: stopped, nothing on the button.
+    spot._scripts.PostClick(spot, "RightButton", false)
+    look.take._scripts.OnClick(look.take)
+    watched, found, line = LookOut.State()
+    check(watched == nil and line == "" and spot:GetAttribute("macrotext") == "" and Core.Character(ns.name).lookOut == nil
+        and not look.opened and look.label._text == ns.TEXT.lookOut, "its X: stopped, nothing on the button")
+
+    Core.Set(ns.name, "unitLookOut", false)
+    check(not W.drivers[spot] and not spot._shown, "Look out for off: gone")
+    Core.Set(ns.name, "unitLookOut", true)
+    check(W.drivers[spot] ~= nil, "on again")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(not W.drivers[spot] and not spot._shown, "out of sight in Edit Mode, where your focus's frame shows")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(W.drivers[spot] ~= nil, "and back after it")
+    if not handle.edge.full then -- Edit Mode put the full screen back to its place: full again for what follows
+        Push()
+        Stand()
+    end
+    check(_G["BINDING_NAME_CLICK SaneUILookOut:Key"] == ns.TEXT.lookOutKey, "its key in the game's key bindings")
+    check(not ns.off, "and nothing failed")
+end
+
+-------------------------------------------------------------------------------
 --  Auras on the frames: the game's containers, three of each kind; your lists
 -------------------------------------------------------------------------------
 do

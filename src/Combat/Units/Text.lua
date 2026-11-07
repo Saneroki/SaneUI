@@ -73,6 +73,7 @@ local function Font()
     font = {} -- no font object of the game's here: the template's own
     return font
 end
+Text.Font = Font -- for a field in the frames' look (LookOut.lua)
 
 local function Line(host, justify, size)
     local look = Font()

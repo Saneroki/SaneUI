@@ -157,6 +157,17 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     not its three timers at the top of the screen.
   - **Click** one to target the unit, **right click** for the game's menu of it, the mouse over it for its
     tooltip; in a fight too. Your target's and focus's frames come and go with them.
+  - **Look out for**, in your focus's place while you have no focus (Saneroki, 2026-11-07; switch *Look out for*,
+    under *Your focus's frame*): out of sight at rest, the mouse on that place shows the button *Look out for*. Click
+    it and it grows into a field as wide as the frame: type a name and Enter, or pick by its **+** *Tank (@tank)*,
+    *Healer (@healer)*, a *Party member* (@party1 to 4) or a *Raid member* (@raid1 to 40); its **X** stops it, Esc
+    closes it. What you look out for is watched on the nameplates, among your group and as your target, in a fight
+    too, and kept for the character. Once found, the place shows *Focus found: Add it now* in a gold edge, and a click
+    on it, or its key (*Focus who you look out for*, under Sane UI in the game's key bindings), makes that one your
+    focus. The game lets no addon set a focus by itself, so that click is yours; it focuses only while you have none.
+    In a fight the game hides creatures' names from addons: one found before stays found, one that comes in the
+    fight cannot be told, and the place says *Looking out for Hogger: click to try* (the click still finds him by name
+    if he is near). What you change in a fight is taken at its end. A right click opens the field again.
   - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
     middle, your target right of it, your focus above your target. A frame or row whose unit is not there shows
     a sample there (your own, named *Target*, *Focus*, *Target's target*, *Focus's target* or *Pet*); the rows
@@ -639,6 +650,30 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   untainted, and to the game the alert still shows, so lower ones of the menu bar wait behind it, as before it is
   closed. Hooks after `ClearFanfare` (an item opened in the collections window) lower the counts kept to those
   waiting.
+- **Look out for** (`Units/LookOut.lua`, `ns.LookOut`; setting `unitLookOut`, under `unitFocus`): `FocusUnit` is
+  restricted (`HasRestrictions` in the newest export), so the place is the game's secure button `SaneUILookOut`
+  (`SecureActionButtonTemplate`) anchored over the focus button's top, as high as its health bar, at its scale:
+  `*type1` and `*type-Key` run `macrotext` `/focus [@focus,noexists] <name or unit>` (`LookOut.LINE`; the game's
+  `/focus` hands the name to `FocusUnit`), set out of a fight only (`Arm` through `Core.AfterCombat("look out")`;
+  `wanted` the line for what is watched now, `armed` the one on the button: while they differ the words say
+  *after the fight*). `RegisterForClicks("AnyUp", "AnyDown")` with `useOnKeyDown` from `ActionButtonUseKeyDown` (again
+  at `CVAR_UPDATE`): a mouse click acts on its release, a key on the edge the setting says. The right button has
+  no type: `PostClick` opens the field; the left opens it while nothing is found; a press (`down`) and the key's
+  click (`Key`, `Bindings.xml`: `CLICK SaneUILookOut:Key`) never. A state driver shows it (`LookOut.DRIVER`,
+  `[@focus,exists] hide; show`); in Edit Mode and while off it is unregistered and hidden. Its look is a frame of
+  ours on it (`spot.look`: `UnitBar.Plate` outline and dark, `Around` rounded as the frames, the plates' font by
+  `UnitText.Font`), `LookOut.WIDTH` wide as the button, `Units.WIDTH` while something is watched or the field is
+  open (it grows in `LookOut.OPEN` seconds, an `OnUpdate` on a frame shown only while growing); the edge gold
+  (`UnitBar.RANKS.elite`) while found; its alpha 1 while found, open or under the mouse. The field is an `EditBox`
+  (`Core.Caret`) with the game's close button (X) and plus button (+, `AuraLists.PLUS_ART`; a menu of
+  `MenuUtil.CreateContextMenu`, the raid in a grid of four). `LookOut.Parse`: `@tank` and `@healer` a role (the first
+  of your group with it by `UnitGroupRolesAssigned`, not you, again at `GROUP_ROSTER_UPDATE` and
+  `PLAYER_ROLES_ASSIGNED`), `@party1-4` and `@raid1-40` a unit, else a name without brackets or semicolons. A name is
+  found (`Find`) on `nameplate1-40`, then your group, then `target`, by `UnitName` or `Core.FullName`, any case; a
+  name the game answers hidden is neither (`Matches` gives nil), so one found stays found while its token stays
+  (`NAME_PLATE_UNIT_REMOVED`, a new target, the roster drop it). Its events hear only while something is watched.
+  Kept per character (`Core.Character(ns.name).lookOut`, the text). Standing down: alpha 0 at once, off after the
+  fight (`LookOut.GiveBack`, from `Units.GiveBack`).
 - **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first; under
   them `unitRestGroup`, `barsRestGroup`, off at first: at rest in a group too, `rest:InGroup`, 2026-11-07): what
   shows when, and why your health is told from its changes, stands in `src/Core/Rest.lua`. Your frames are a set each
@@ -830,6 +865,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
+| `Units/LookOut.lua` | Look out for, in your focus's place while you have none: the field, its + and X, the watch on nameplates, group and target, the game's secure button that focuses who it found on your click or key |
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, beside a party each member's target and pet, sizes, Edit Mode's settings and preview |
@@ -852,6 +888,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** *Look out for* in your focus's place while you have no focus: a name or @tank, @healer, @party1-4, @raid1-40 watched in a fight too; found, the place says *Focus found: Add it now* and a click or its key makes it your focus (Saneroki: "Is it possible to have a {add} button instead of the focus target if and only if there is no focus target selected", then "the button add is now called 'Look out for' instead" and "Focus found: Add it now").
 - **2026-11-07:** *Watch on* takes several units at once: its dropdown's lines are ticks (you, your target, your focus), its words name those watched, the last one ticked stays; a reminder on a bar shows as one icon while any of them wants it, in a fight each unit known on its own (Saneroki: "Can we have watch on have several targets where we can select multiple targets in its dropdown with checkboxes to show what we watch it on."). The health bars and the nameplates as before.
 - **2026-11-07:** your target's and your focus's health bars red while you can attack the unit, green otherwise (Saneroki: "The target unit frame. Can we make it red if it is an enemy, otherwise green like we have it now.", then of the focus: "Yes, focus too"); your own stays green.
 - **2026-11-07:** *When class in group* counts your own class too (Saneroki: "I meant my own included").

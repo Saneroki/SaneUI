@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Look out for: while you have no focus, move the mouse to your focus
+  frame's place and click Look out for. Type a name, or pick @tank,
+  @healer or one of your party or raid by its +. Once that one is
+  found, even in a fight, the place says Focus found: Add it now, and
+  a click (or its key) makes it your focus. Its X stops it.
 - Edit tracked: Watch on now takes several at once. Tick you, your
   target and your focus in its dropdown, which names those watched;
   the aura's icon shows while any of them needs the reminder.

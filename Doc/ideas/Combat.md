@@ -68,6 +68,10 @@ Decided (Saneroki, 2026-10-16):
   the target's frame while the target has a target, and the only text in its health bar is the name; the same for
   the focus's target and, under your own frame, your pet. All unit frames green, not in class colours; the names
   anchored left, after the level and raid marker; your own frame without a name.
+- **Look out for** (Saneroki, 2026-11-07; built, `src/Combat/README.md`): in the focus's place while there is no
+  focus, hidden unless the mouse is on it, a button that opens into a field: a name, or by its + @tank, @healer, a
+  party or raid member; watched for in a fight too, and once found the place says "Focus found: Add it now" and a
+  click makes it the focus (the game lets no addon set a focus by itself), its X stops it.
 - **Casts and timers part of the frames** (Saneroki, 2026-10-30; built): the cast bars of all unit frames directly
   above the health bars, as part of them, while active, in place of the game's bars (yours, your target's, your
   focus's). Your breath over your health bar, 50 % transparent so the health shows underneath, in the bubble art of

@@ -74,6 +74,8 @@ Units\Cast.lua
 Units\Timers.lua
 # The frames and their rows (their targets, your pet): the game's secure unit buttons, placed in Edit Mode
 Units\Units.lua
+# Look out for, in your focus's place while you have none: a name or one of your group, focused by a click
+Units\LookOut.lua
 # Your party and raid: one member's frame, the tools behind your own slot, and the one window for them all
 Units\GroupFace.lua
 Units\GroupTools.lua

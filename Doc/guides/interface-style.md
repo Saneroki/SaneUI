@@ -406,6 +406,11 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
 - **Rows under them, like a nameplate's cast bar:** the target's target appears under the target's frame while
   there is one, inside its outline, its name the only text in its health bar, centred; its bar in the light yellow
   of a nameplate's neutral creature, not green; so too the focus's target, and your pet under your frame (green).
+- **Look out for (Saneroki, 2026-11-07):** in the focus's place while there is no focus, "always hidden unless mouse
+  over"; pressed, it "will expand to a input field with animation", a field in the unit frames' look (their round
+  outline and dark, the plates' font) with an X and a + in it ("The X will stop the watcher and the + will have target
+  conditions like @tank or @healer"). Its name "Look out for" (Saneroki: "the button add is now called 'Look out for'
+  instead"); once found the place shows "Focus found: Add it now" and can be clicked, its edge gold like an elite's line.
 - **Party and raid, one frame (Saneroki, 2026-10-30):** no party frame at all: "no matter if I am in a party or a raid the
   window should look the same, just with more slots." Unit frames like the nameplates, a bit shorter and taller. Up from the bottom
   left, five to a column, a column to the right for each group, forty at most. Five slots always fill the window's height, even with three

@@ -442,6 +442,7 @@ local function Apply()
         box:Hide()
     end
     for _, kind in ipairs(Units.KINDS) do ns.Guarded(Kind, kind) end
+    ns.Guarded(ns.LookOut.Apply) -- in your focus's place while you have none (LookOut.lua)
 end
 
 -- As the settings say, now or once the fight is over.
@@ -525,4 +526,5 @@ function Units.GiveBack()
             ns.Safe("unit frames", button.face.marks.Set, button.face.marks, nil)
         end
     end
+    ns.Safe("look out", ns.LookOut.GiveBack)
 end

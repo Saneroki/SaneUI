@@ -14,4 +14,7 @@
 	<Binding name="SANEUI_COMBAT_MACROS" category="BINDING_HEADER_SANEUI">
 		SaneUI.Combat.Safe("keys", SaneUI.Combat.Macros.Editor.Toggle)
 	</Binding>
+	<!-- Look out for's button, clicked by the key as the mouse button "Key": the game focuses who it found (its
+	     words in Units/LookOut.lua). -->
+	<Binding name="CLICK SaneUILookOut:Key" category="BINDING_HEADER_SANEUI"/>
 </Bindings>
