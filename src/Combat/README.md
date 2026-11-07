@@ -298,10 +298,10 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help);
-    *When class in group*: *Not needed*, or one of the game's classes: shown only while one of the others in your party
-    or raid is of that class, in every place (Saneroki, 2026-11-07: "if a druid is in the party or raid it will then
-    show that spell"; you yourself do not count, by his word: "Others only"; the group's classes read again as it
-    changes). Never
+    *When class in group*: *Not needed*, or one of the game's classes: shown only while you or one of your party or raid
+    is of that class, in every place (Saneroki, 2026-11-07: "if a druid is in the party or raid it will then show that
+    spell"; your own class counts too, "my own included", so a druid's *Druid* shows alone as well; the group's classes
+    read again as it changes). Never
     while you are dead. What you show belongs to the character, watched by the aura's name, so any rank of it, on whom
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
@@ -753,7 +753,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
     Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
     nothing of it, not even the mouse's coming, is on or over the full screen; its old second place `meterFullPlace` is no longer read.
-- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of the others in your party or raid (`UnitExists`, not `UnitIsUnit` player, `UnitClass`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
+- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of you and your party or raid (`UnitClass` of `player`, and of each `party`/`raid` unit that `UnitExists`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders on bars or the nameplates and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
   with *Only yours*) and hands each bar what shows. `Hidden` asks
@@ -836,6 +836,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** *When class in group* counts your own class too (Saneroki: "I meant my own included").
 - **2026-11-07:** an aura tracked more than once: a + beside each line's X copies its tracking onto a line of its own, with its own place and conditions; the X on one of several lines deletes that one alone (Saneroki: "Sometimes I want to show it on multiple places or have different conditions"). A condition *When class in group* (Saneroki: "It only shows that spell / buff on the bars when that class is in the party").
 - **2026-11-07:** the window *Edit auras* is now *Edit tracked*: its title, its button on Combat's settings page, the tips and the commands' words (Saneroki).
 - **2026-11-07:** the aura menu: the marks first, then *Edit tracked...* (was *Edit auras...*), last *Add tracking*, there only while the aura is not tracked (Saneroki: "put the add tracked down to the bottom and change the name from edit aura to edit tracked"); *Edit tracking* gone, *Edit tracked...* does the same.

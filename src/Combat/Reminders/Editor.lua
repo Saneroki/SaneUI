@@ -15,9 +15,9 @@ local _, ns = ...
 --      Display when missing, Display when active, Combat, Don't show in
 --      resting areas, Only yours, Offset time
 --      When class in group   Not needed, or a class of the game's: shown only
---                 while one of the others in your party or raid is of it
---                 (Saneroki, 2026-11-07: "if a druid is in the party or raid
---                 it will then show that spell")
+--                 while you or one of your party or raid is of it (Saneroki,
+--                 2026-11-07: "if a druid is in the party or raid it will
+--                 then show that spell", "my own included")
 --  A line's tick Tracked makes or deletes one; a line chosen without
 --  one has the button Add tracking (Lists.Track: made on the first bar, its
 --  settings here at once; Saneroki, 2026-11-07: a spell searched could not be

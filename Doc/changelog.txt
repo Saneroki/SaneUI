@@ -20,7 +20,7 @@ The bigger changes of each version, newest first.
   The window is now called Edit tracked. The + beside a line tracks
   an aura once more, so it can show in several places or under other
   conditions, and a new condition, When class in group, shows it only
-  while someone of that class is in your party or raid.
+  while you or someone in your party or raid is of that class.
 - Chat: messages from your guild's Discord now stand on the left like
   every other player's, under the name their writer goes by.
 - Nameplates: a new slider, Nameplate transparency, lets you see

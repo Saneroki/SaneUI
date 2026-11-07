@@ -364,21 +364,24 @@ check(row._width == 1, "don't show in resting areas")
 resting, reminder.noRest = false, false
 Update()
 check(row._width == Bars.SIZE, "out of them it shows")
--- When class in group: a druid among the others of your party or raid, you aside (a druid yourself).
-reminder.class = "DRUID"
+-- When class in group: you or one of your party or raid (a druid yourself).
+reminder.class = "WARRIOR"
 W.Fire("GROUP_ROSTER_UPDATE")
 Update()
-check(row._width == 1, "When class in group, a druid: no other druid in your group, not shown")
-units.party1 = { name = "Leafy", class = "DRUID", level = 60, health = 900, most = 900 }
+check(row._width == 1, "When class in group, a warrior: none in your group, not shown")
+units.party1 = { name = "Brakk", class = "WARRIOR", level = 60, health = 900, most = 900 }
 W.Fire("GROUP_ROSTER_UPDATE")
 Update()
-check(row._width == Bars.SIZE, "a druid in your party: shown")
-units.party1.class = "WARRIOR"
+check(row._width == Bars.SIZE, "a warrior in your party: shown")
+units.party1.class = "PRIEST"
 Update()
 check(row._width == Bars.SIZE, "read again at most once a second")
 W.Wait(1)
 Update()
-check(row._width == 1, "then a warrior in the druid's place: not shown")
+check(row._width == 1, "then a priest in the warrior's place: not shown")
+reminder.class = "DRUID"
+Update()
+check(row._width == Bars.SIZE, "a druid: you are one, your own class counts")
 units.party1, reminder.class = nil, nil
 W.Fire("GROUP_ROSTER_UPDATE")
 Update()

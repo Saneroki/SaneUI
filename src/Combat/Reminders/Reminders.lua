@@ -17,9 +17,10 @@ local _, ns = ...
 --      combat    "any", "out" (only out of a fight), "in" (only in one)
 --      noRest    not shown in resting areas (cities, inns)
 --      own       only your own cast of it counts
---      class     shown only while one of the others in your party or raid is
---                of that class (its token, "DRUID"); nil: any, no group needed
---                (When class in group, Saneroki, 2026-11-07)
+--      class     shown only while you or one of your party or raid is of
+--                that class (its token, "DRUID"); nil: any, no group needed
+--                (When class in group, Saneroki, 2026-11-07: "my own
+--                included")
 --  An aura may have more than one: a copy (Reminders.Copy, the + in the
 --  window) with its own place and settings.
 --  A name of a family (Reminders.FAMILIES) counts all its names: a Gift of the
@@ -60,7 +61,7 @@ Reminders.FAMILIES = {
 local seen = setmetatable({}, { __mode = "k" }) -- [a reminder] = what was last known: { on, instance, ends, left }
 local families = {} -- [a name] = its family
 local ticker
-local classes, looked = {}, nil -- the classes of the others in your party or raid ([token] = true), when last read
+local classes, looked = {}, nil -- your class and your party's or raid's ([token] = true), when last read
 
 for _, family in ipairs(Reminders.FAMILIES) do
     for _, name in ipairs(family) do families[name] = family end
@@ -83,18 +84,20 @@ function Reminders.Reaches(reminder, unit)
     return not (family and family.party) or Core.Ask(UnitInParty, unit) or Core.Ask(UnitIsUnit, unit, "player")
 end
 
--- Whether one of the others in your party or raid is of that class (its token, "DRUID"): read again at most once a
--- second, and anew as the group changes.
+-- Whether you or one of your party or raid is of that class (its token, "DRUID"): read again at most once a second, and
+-- anew as the group changes.
 function Reminders.InGroup(class)
     local now = GetTime()
     if not looked or now - looked >= 1 then
         looked = now
         wipe(classes)
+        local _, own = Core.Ask(UnitClass, "player")
+        if type(own) == "string" then classes[own] = true end
         local raid = Core.Ask(IsInRaid)
         local count = raid and (Core.Ask(GetNumGroupMembers) or 0) or 4
         for index = 1, count do
             local unit = (raid and "raid" or "party") .. index
-            if Core.Ask(UnitExists, unit) and not Core.Ask(UnitIsUnit, unit, "player") then
+            if Core.Ask(UnitExists, unit) then
                 local _, token = Core.Ask(UnitClass, unit)
                 if type(token) == "string" then classes[token] = true end
             end
