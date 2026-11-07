@@ -10,6 +10,8 @@ local Core = SaneUI.Core
 --                         rests (Rest.Busy)
 --      Edit Mode is open  to be placed
 --      its module holds it (hold)
+--  A set may rest in a group too (InGroup; Saneroki, 2026-11-07): a group then
+--  counts for nothing, the rest as above.
 --
 --  Your resource: mana, energy and focus rest full, rage, runic power and
 --  combo points rest empty, so a warrior at rest does not count as out of rage.
@@ -39,9 +41,10 @@ local Core = SaneUI.Core
 --      rest:Door(frame)        -- only a way in, and on while the mouse is on it: its OnEnter and OnLeave (a button)
 --      rest:Enter()            -- the mouse came, told by a module that hears it itself; it goes off the hot frames
 --      rest:Switch(on)         -- on: at rest as said above; off: the frames as they were
+--      rest:InGroup(on)        -- on: at rest in a group too; off (as made): in sight in a group
 --      rest:Look()             -- hold's answer may have changed
 --      rest:Resting()          -- whether it is out of sight now, or going
---      Core.Rest.Busy()        -- whether something goes on
+--      Core.Rest.Busy(inGroup) -- whether something goes on; inGroup: a group does not count
 --  Nothing is heard and nothing runs while no set is on.
 -------------------------------------------------------------------------------
 local Rest = {}
@@ -63,7 +66,8 @@ local ears = CreateFrame("Frame")
 local live = {}         -- [a set switched on] = true
 local following = false -- something is heard
 local fighting = false  -- you are in a fight
-local busy = false      -- something goes on, as last looked at
+local busy = false      -- something but a group goes on, as last looked at
+local grouped = false   -- you are in a group, as last looked at
 local changed = 0       -- the game's time your health last changed
 local again             -- looks again while that time runs out
 
@@ -97,16 +101,25 @@ local function Hurt()
     return GetTime() < changed + Rest.HEALTH
 end
 
-function Rest.Busy()
-    if fighting or Core.Ask(IsInGroup) or Core.Ask(UnitIsDeadOrGhost, "player") then return true end
+-- Whether something but a group goes on.
+local function Going()
+    if fighting or Core.Ask(UnitIsDeadOrGhost, "player") then return true end
     return Hurt() or Spent()
+end
+
+local function Grouped()
+    return Core.Ask(IsInGroup) == true
+end
+
+function Rest.Busy(inGroup)
+    return Going() or (not inGroup and Grouped())
 end
 
 -- Every set looks again, once what goes on changed.
 local function Look()
-    local now = Rest.Busy() and true or false
-    if now == busy then return end
-    busy = now
+    local now, group = Going() and true or false, Grouped()
+    if now == busy and group == grouped then return end
+    busy, grouped = now, group
     for set in pairs(live) do set:Look() end
 end
 
@@ -148,7 +161,7 @@ local function Follow()
     for _, event in ipairs(UNIT_EVENTS) do ears:RegisterUnitEvent(event, "player") end
     fighting = Fight()
     Renew()
-    busy = Rest.Busy() and true or false
+    busy, grouped = Going() and true or false, Grouped()
 end
 
 -------------------------------------------------------------------------------
@@ -157,7 +170,8 @@ end
 local sets = {}
 
 local function Wanted(set)
-    return busy or set.over or Core.EditMode.active or (set.hold and Core.Safe(set.label, set.hold))
+    return busy or (grouped and not set.inGroup) or set.over or Core.EditMode.active
+        or (set.hold and Core.Safe(set.label, set.hold))
 end
 
 local function Step(set, progress)
@@ -203,6 +217,11 @@ function sets:Resting()
     return self.on and self.to == 0
 end
 
+function sets:InGroup(on)
+    self.inGroup = on and true or false
+    self:Look()
+end
+
 function sets:Switch(on)
     on = on and true or false
     if on == self.on then return self:Look() end
@@ -239,7 +258,8 @@ end
 
 function Rest.New(options)
     local set = setmetatable({ label = options.label or "rest", frames = options.frames, hold = options.hold, hot = {},
-                               lends = {}, on = false, over = false, alpha = 1, from = 1, to = 1 }, { __index = sets })
+                               lends = {}, on = false, over = false, inGroup = false, alpha = 1, from = 1, to = 1 },
+                             { __index = sets })
     -- A frame of ours for the clock and the mouse's watch: the game's own are left alone. Above the screen's top
     -- edge, so the mouse is never on it.
     local host = CreateFrame("Frame", nil, UIParent)

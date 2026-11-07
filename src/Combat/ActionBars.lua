@@ -30,7 +30,8 @@ local _, ns = ...
 --  bar shows them all, their buttons take it as ever and their keys work. They
 --  stay in sight in a vehicle (its actions stand on them), on the full screen
 --  (BarsWindow.lua, Seated) and while something is dragged or your keys are set
---  (the game's Quick Keybind mode), whatever goes on.
+--  (the game's Quick Keybind mode), whatever goes on. With In a group too they
+--  rest in a group as well (Saneroki, 2026-11-07).
 --  This goes for how they look or as the game has them alike.
 --
 --  Hooks after the game's own (each button's Update and UpdateButtonArt, a
@@ -268,6 +269,7 @@ local function Apply()
     if want ~= on then
         if want then Clean() else Restore() end
     end
+    rest:InGroup((ns.options or {}).barsRestGroup == true)
     rest:Switch(not ns.off and (ns.options or {}).barsRest ~= false)
 end
 

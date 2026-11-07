@@ -183,7 +183,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   border or a line under its title, only the list over the game, clicked through but its title bar and its words.
   There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, on at first): it
   shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
-  group (`Core.Rest`, the tray of its items with it). Over the full map it always shows.
+  group (`Core.Rest`, the tray of its items with it); with *In a group too* under it (off at first) it rests in a
+  group as well. Over the full map it always shows.
   **A timed quest's time left stands at its top,** under its title bar and over the list, a line for each, the soonest
   first: *2:05  Wolves Across the Border*, counting down, red in its last minute. It stays in sight while the rest of
   the log rests out of sight, is folded or switched off, so you always know a timer runs (the game's own timers go with
@@ -962,6 +963,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-07, the quest log at rest in a group too:** Saneroki found the quest log, unit frames and action bars hidden
+  alone but always in sight in a party. *In a group too* under *Hide the quest log at rest* (`questLogRestGroup`, off
+  at first) keeps it out of sight there as well, by Core's `rest:InGroup`.
 - **2026-11-06, quest timers always in sight:** Saneroki asked whether the quest log shows a timed quest's time. It
   showed none, and it hides the game's quest tracker, on which Forever's own Quest Timers panel stands, so no timer
   showed anywhere until *Failed*. His word: "The timer should always show even when the quest tracker / log is hidden.

@@ -169,9 +169,9 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 - **Settings:** *Sane UI > Combat*: *Your spellbook and talents keys open ours*; the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
-  rest*, *Auras on the frames*); the section *Action bars* (*Clean action bars*, off for the game's look; *Hide the
-  action bars at rest*; *Hide the game's experience and reputation
-  bars*, *Hide the game's stance bar*, *Menu bar on mouseover*); *Quest marks on nameplates*; the section
+  rest* with *In a group too* under it, *Auras on the frames*); the section *Action bars* (*Clean action bars*, off
+  for the game's look; *Hide the action bars at rest* with *In a group too* under it; *Hide the game's experience and
+  reputation bars*, *Hide the game's stance bar*, *Menu bar on mouseover*); *Quest marks on nameplates*; the section
   *Expand window* (whether it fills the screen, its kind of motion, the background's opacity and texture) and
   *Window corners*.
 - **In Retail:** our spellbook and talents are made after WoW: Forever's, which Retail has not, so neither is
@@ -609,7 +609,8 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   untainted, and to the game the alert still shows, so lower ones of the menu bar wait behind it, as before it is
   closed. Hooks after `ClearFanfare` (an item opened in the collections window) lower the counts kept to those
   waiting.
-- **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first): what
+- **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first; under
+  them `unitRestGroup`, `barsRestGroup`, off at first: at rest in a group too, `rest:InGroup`, 2026-11-07): what
   shows when, and why your health is told from its changes, stands in `src/Core/Rest.lua`. Your frames are a set each
   (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
   or a timer on it does too (`Running`; `Bar.Fit` looks again as they come and go), since nothing else shows them and
@@ -801,6 +802,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-07:** *In a group too* under *Hide the unit frames at rest* and *Hide the action bars at rest*: they rest out of sight in a party or raid as well (Saneroki: "I have no way to autohide then while i don't hover over them in party").
 - **2026-11-07:** the aura menu's *Show on healthbars* tick is now *Add tracking* (*Edit tracking* once tracked): tracked on the health bars, put on *Edit auras*' list and the window opened on it; a spell searched there has *Add tracking* under the list; the chosen and new lines lit only behind their names, *Watch on* and *Delete bar* out of sight on the health bars (Saneroki: "I need a add Tracking that will add that spell to the edit auras window and open the edit auras window", "When I search for a spell in Edit auras I can't edit them. They are greyed out").
 - **2026-11-07:** in a fight an aura on the health bars and the reminder bars counts from your cast for as long as it lasted when last seen, on the member it was aimed at, and runs out by the clock (Saneroki: "Inside combat i have the hots showing up but they never disappear"; Forever's client hides every aura's number in a fight, which the casts were matched to).
 - **2026-11-06:** with Abilities on, the spellbook shows its spells still to learn in grey, the weapon skills, Home first, the reservations by drag, the checkbox *Show unlearned spells* and its menu lines, through Core (`Core.Spellbook`) (Saneroki: "it looks like it is not part of the combat fullscreen").

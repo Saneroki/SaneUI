@@ -3888,6 +3888,10 @@ end)()
         IsInGroup = function() return true end
         W.Fire("GROUP_ROSTER_UPDATE")
         check(log.frame._alpha == 1, "in a group in sight")
+        Core.Set(ns.name, "questLogRestGroup", true)
+        check(log.frame._alpha == 0, "In a group too: out of sight in a group as well")
+        Core.Set(ns.name, "questLogRestGroup", false)
+        check(log.frame._alpha == 1, "off again: in sight in a group")
         IsInGroup = function() return false end
         W.Fire("GROUP_ROSTER_UPDATE")
         check(log.frame._alpha == 0, "alone out of sight")

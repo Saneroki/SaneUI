@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Unit frames, action bars and the quest log: a new switch, In a group
+  too, under each Hide ... at rest keeps them out of sight in a party or
+  raid as well, until you need them or move the mouse over them.
 - Bags: drag an item onto any item of a category (Pinned, your own
   ones too) and it goes into that category and is remembered, instead
   of swapping places in your bags. A pinned item put into one of your

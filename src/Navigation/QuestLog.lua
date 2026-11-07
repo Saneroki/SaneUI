@@ -72,7 +72,7 @@ local _, ns = ...
 --                           headers without their fold marks
 --  On the screen alone it rests out of sight (Core.Rest, the setting Hide the quest log at rest; Saneroki, 2026-11-01):
 --  it shows with the mouse on its words, title bar or items, and as your unit frames and action bars do while something
---  goes on. Its items' tray goes with it.
+--  goes on. Its items' tray goes with it. With In a group too it rests in a group as well (Saneroki, 2026-11-07).
 --  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker),
 --  but in Edit Mode, where it is the game's to place. Its quest timers with it: ours stand at the top of the log, over
 --  the list, in sight while one runs, the log at rest, folded or off (The quest timers; Saneroki, 2026-11-06).
@@ -1634,7 +1634,9 @@ end
 
 -- At rest out of sight, as the setting says: only on the screen alone, over the full map it is opened to be seen.
 function QuestLog.Rested()
-    if rest then rest:Switch(not ns.off and not full and (ns.options or {}).questLogRest ~= false) end
+    if not rest then return end
+    rest:InGroup((ns.options or {}).questLogRestGroup == true)
+    rest:Switch(not ns.off and not full and (ns.options or {}).questLogRest ~= false)
 end
 
 -- Core's title bar comes with the first look: the mouse on it, or on the words in it, brings the log into sight.

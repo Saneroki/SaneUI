@@ -2335,6 +2335,15 @@ end
     IsInGroup = function() return true end
     W.Fire("GROUP_ROSTER_UPDATE")
     check(Seen(), "in a group in sight")
+    check(Rest.Busy() and not Rest.Busy(true), "a group goes on, but not for a set at rest in a group too")
+    rest:InGroup(true)
+    check(Rested(), "at rest in a group too: the group counts for nothing, at once")
+    W.Combat(true)
+    check(Seen(), "a fight in a group in sight still")
+    W.Combat(false)
+    check(Rested(), "and after it at rest again")
+    rest:InGroup(false)
+    check(Seen(), "back to in sight in a group, at once")
     IsInGroup = grouped
     W.Fire("GROUP_ROSTER_UPDATE")
     check(Rested(), "and alone again out of it")

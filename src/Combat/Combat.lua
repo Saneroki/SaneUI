@@ -77,7 +77,9 @@ ns.TEXT = {
     unitSize = "Unit frame size",
     unitSizeTip = "How large the three frames and their rows are.",
     unitRest = "Hide the unit frames at rest",
-    unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
+    unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too) and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
+    unitRestGroup = "In a group too",
+    unitRestGroupTip = "Your frame, your target's and your focus's rest out of sight in a party or raid as well: there too only the mouse, a cast or a timer, your health or your resource, a fight and Edit Mode bring them. The party and raid frames stay as they are. Off: always in sight in a group.",
     unitAuras = "Auras on the frames",
     unitAurasTip = "The auras that matter most above a frame: four buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Prioritize on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open Edit auras (/sane auras).",
     auraImportant = "Important",
@@ -156,7 +158,9 @@ ns.TEXT = {
     hideErrors = "Hide the red error text",
     hideErrorsTip = "The game's red line at the top of the screen, like Spell is not ready yet or Not enough rage, and its sound. Yellow lines, like a quest's progress, stay.",
     barsRest = "Hide the action bars at rest",
-    barsRestTip = "The game's action bars are out of sight while nothing goes on. The mouse on any of them shows them all, and they show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group, in a vehicle, while something is dragged onto them, while you set your keys and in Edit Mode. Out of sight they still take the mouse, and their keys work. Off: always in sight.",
+    barsRestTip = "The game's action bars are out of sight while nothing goes on. The mouse on any of them shows them all, and they show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too), in a vehicle, while something is dragged onto them, while you set your keys and in Edit Mode. Out of sight they still take the mouse, and their keys work. Off: always in sight.",
+    barsRestGroup = "In a group too",
+    barsRestGroupTip = "The game's action bars rest out of sight in a party or raid as well: there too only the mouse, your health or your resource, a fight, a vehicle, a drag, setting your keys and Edit Mode bring them. Their keys work all the same. Off: always in sight in a group.",
     hideTracking = "Hide the game's experience and reputation bars",
     hideTrackingTip = "The game's experience and reputation bars are gone from the screen. Off: the game's own.",
     hideStance = "Hide the game's stance bar",
@@ -261,6 +265,7 @@ local OPTIONS = {
     { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip },
     { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip },
     { key = "unitRest", default = true, text = ns.TEXT.unitRest, tip = ns.TEXT.unitRestTip },
+    { key = "unitRestGroup", default = false, text = ns.TEXT.unitRestGroup, tip = ns.TEXT.unitRestGroupTip, parent = "unitRest" },
     { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip },
     { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip },
     { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip },
@@ -282,6 +287,7 @@ local OPTIONS = {
     { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
     { key = "barsRest", default = true, text = ns.TEXT.barsRest, tip = ns.TEXT.barsRestTip },
+    { key = "barsRestGroup", default = false, text = ns.TEXT.barsRestGroup, tip = ns.TEXT.barsRestGroupTip, parent = "barsRest" },
     { key = "hideErrors", default = true, text = ns.TEXT.hideErrors, tip = ns.TEXT.hideErrorsTip },
     { key = "macroChecks", default = true, text = ns.TEXT.macroChecks, header = ns.TEXT.macros, tip = ns.TEXT.macroChecksTip },
     { key = "macroDim", default = true, text = ns.TEXT.macroDim, tip = ns.TEXT.macroDimTip },
@@ -324,7 +330,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key:match("^group") or key == "unitBarrier" or key == "unitLost" or key == "unitDispel" then
         ns.Guarded(ns.Group.Apply)
     end
-    if key == "cleanBars" or key == "barsRest" then ns.Guarded(ns.ActionBars.Apply) end
+    if key == "cleanBars" or key:match("^barsRest") then ns.Guarded(ns.ActionBars.Apply) end
     if key == "hideErrors" then ns.Guarded(ns.ErrorText.Apply) end
     if key:find("^macro") then ns.Macros.Changed(key) end
     if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end

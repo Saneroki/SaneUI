@@ -48,8 +48,9 @@ local _, ns = ...
 --  Saneroki, 2026-11-01): each frame goes by its alpha, its button still taking
 --  the mouse, so the mouse on a frame, its row or its auras shows that frame
 --  alone; a cast or a timer running on it shows it too (the game's own bars for
---  those are gone, and you need your breath under water). A fight, a group, your
---  health and your resource show them all.
+--  those are gone, and you need your breath under water). A fight, your health
+--  and your resource show them all, and a group unless In a group too is on
+--  (Saneroki, 2026-11-07).
 --
 --  Secure frames are made, shown, moved, sized and given back out of a fight
 --  only: what is asked for in one waits for its end (Core.AfterCombat). Off
@@ -424,6 +425,7 @@ local function Kind(kind)
     Rowed(button.face)
     Fit(button.face)
     Fill(button.face)
+    kind.rest:InGroup(ns.options.unitRestGroup == true)
     kind.rest:Switch(ns.options.unitRest ~= false)
 end
 

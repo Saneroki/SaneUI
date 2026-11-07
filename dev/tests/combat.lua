@@ -2101,6 +2101,21 @@ do
     check(Seen(), "in a fight all in sight")
     W.Combat(false)
     check(Rested(), "after it out of sight")
+    local grouped = IsInGroup
+    IsInGroup = function() return true end
+    W.Fire("GROUP_ROSTER_UPDATE")
+    check(Seen(), "in a group all in sight")
+    Core.Set(ns.name, "unitRestGroup", true)
+    check(you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 1,
+        "In a group too under Hide the unit frames at rest: the frames rest in a group, the bars not")
+    Core.Set(ns.name, "barsRestGroup", true)
+    check(Rested(), "and under Hide the action bars at rest: the bars too")
+    Core.Set(ns.name, "unitRestGroup", false)
+    Core.Set(ns.name, "barsRestGroup", false)
+    check(Seen(), "both off again: all in sight in a group")
+    IsInGroup = grouped
+    W.Fire("GROUP_ROSTER_UPDATE")
+    check(Rested(), "alone out of sight")
 
     -- The mouse: one bar shows them all, one frame itself.
     local function Look(rest, seconds)

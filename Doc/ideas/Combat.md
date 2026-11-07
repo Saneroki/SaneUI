@@ -88,6 +88,8 @@ Decided (Saneroki, 2026-10-16):
   shows that frame alone; a cast or a timer on a frame shows it; a vehicle, a drag and Quick Keybind mode hold the
   bars; the game hides your health at all times, so it counts as not full for some seconds after it last changed;
   rage and combo points rest empty. Having a target shows nothing: it is not on the list, and the plate shows it.
+  **In a group too** (Saneroki, 2026-11-07; built): "I have no way to autohide then while i don't hover over them in
+  party." Under each of the three switches its own, off by default (`rest:InGroup`): a group then counts for nothing.
 - **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
   mouseover (`GameBars.lua`). Around the mouse, only while they run, rings for the global cooldown and your cast, centred on
   the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). Sane UI's own experience and stance bars are still to come; the game's stance keys and
