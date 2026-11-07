@@ -118,10 +118,11 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   *One guide for the party* in the module's README, the switch *Together with the party*.
 - **Not yet:** the routes and their planner (below).
 
-- **The arrow by the route (Saneroki, 2026-10-31; built):** the arrow goes by Navigation's routes to the guide's place,
-  not straight at it, and by its own way wherever the map pin stands, for a pin may stand elsewhere for other reasons;
-  the ride that comes next in its words and picture (`Core.Ways`). It stands where the toast of a new level and the travel
-  overlay stand, out of sight while those show.
+- **The arrow straight at the place (Saneroki, 2026-11-07; built), replacing the arrow by the route of 2026-10-31:**
+  "Can you make it back to where it points towards the end goal instead of following the route?" The arrow turns to
+  the guide's place as the crow flies, with the straight yards; the way there is the golden line to the guide's map pin.
+  It no longer asks Navigation for a way (`Core.Ways`) and tells no ride. It stands where the travel overlay stands,
+  out of sight while that shows.
 - **The map pin on the guide's place (Saneroki, 2026-10-30; built):** as a step becomes active the game's map pin goes on
   its place, so the route in Forever leads there. The game's own pin, so Speed Leveling needs nothing of Navigation.
 

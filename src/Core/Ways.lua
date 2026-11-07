@@ -3,9 +3,10 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Ways
 --  The way to a place, between a module that leads the player and the one that
---  finds ways (Saneroki, 2026-10-31: the guide's arrow goes by Navigation's
---  routes), so neither needs the other. With nobody to find it there is no way:
---  the one who asked points as the crow flies.
+--  finds ways (Saneroki, 2026-10-31, for the guide's arrow, which points
+--  straight at its place again since 2026-11-07: nobody asks now), so neither
+--  needs the other. With nobody to find it there is no way: the one who asked
+--  points as the crow flies.
 --
 --      Core.Ways.Serve(finder)    finder = { Aim = fn(map, x, y), Ahead = fn() -> ahead }
 --      Core.Ways.Aim(map, x, y)   lead there from now on (a map of the game's, x and y 0 to 1); no map: nowhere

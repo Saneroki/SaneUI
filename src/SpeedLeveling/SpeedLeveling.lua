@@ -223,9 +223,6 @@ ns.TEXT = {
     tame = "Tame the beast",
     -- The arrow and the icons (Arrow.lua, Icons.lua).
     arrowView = "Guide's arrow",
-    rides = { flight = "Fly to %s", boat = "Boat to %s", zeppelin = "Zeppelin to %s", tram = "Tram to %s",
-              lift = "Take the lift", portal = "Portal to %s", hearth = "Hearth to %s", teleport = "Teleport to %s" },
-    ridesThere = "the next place",
     seconds = "%d s",
     minutes = "%d:%02d",
     goToStep = "Go to step %d",

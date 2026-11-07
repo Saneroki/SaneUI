@@ -88,7 +88,7 @@ the words of its text format and the recipe its bought guides are locked by (`Co
 | Together with the party | on | In a group, those who follow the same guide follow it as one: the same steps by the same numbers for each, read for all your classes (a class's own steps only for it, faint in the others' list); whoever is through with a step first waits on it, its creatures still wanted (its NPCs no more), and its card says for whom, until the others are through with it too; then all go on together. A right click on it goes on without them (*In a party*, below) |
 | Show the guide | on | The guide's steps over the world (*The guide over the world*) |
 | Professions along the way | off | Your professions level up where the guide takes you anyway: where it passes the most nodes, a check before a harder zone, a detour to a node close to your way, a little more killing for cloth (*Professions along the way*, below). Off in *Speedleveling* too (Saneroki, 2026-11-05: "don't do the profession steps") |
-| Show the arrow | on | The way to the guide's place, along Navigation's route, a part of its own placed in Edit Mode (*The arrow*) |
+| Show the arrow | on | The way to the guide's place, straight at it, a part of its own placed in Edit Mode (*The arrow*) |
 | Map pin on the guide's place | on | The game's map pin on each place the guide sends you to, so Navigation's golden line leads there (*The map pin*) |
 | Targets and items with the guide | off | The items the steps want used and the names to target, as icons past the guide's head, with the mouse on the guide (*The icons*) |
 | Steps in the list | 10 | How many steps the list shows at least that the wheel brings up over the guide (1 to 20); it fills the steps' place and scrolls through the whole guide |
@@ -206,15 +206,11 @@ A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide, at fi
 arrow stays in sight (Saneroki, 2026-11-04). Shown while the guide is and has a place to go to:
 
 - **Sane UI's leather ring that runs out into a point** (the far herbs' mark, `Art/mark-pointed`), turned the way to
-  go (up: ahead), a step every 0.05 s.
-- **The way is Navigation's route, not a straight line** (Saneroki, 2026-10-31): the arrow follows the line to the
-  guide's place, round what stands in the way, by flight, boat, zeppelin, tram, lift, portal, hearthstone and teleport,
-  whatever the map pin says: a pin of your own elsewhere keeps its golden line, the arrow its own way, and neither the
-  pin nor the setting *Route to the map pin* is needed for it (`Core.Ways`; Speed Leveling asks Core, not Navigation).
-  The ring turns to the line a little ahead of you; the yards are along the line. A ride that comes next stands in for
-  the step: its picture and its words (*Fly to Crossroads*), the yards to it; at a ride that starts where you stand the
-  ring goes, as nothing is left to point at, and the picture and the words stay. Without Navigation, until it has found
-  the way (a search waits out a fight), or where no way is known, straight to the place, as a last resort.
+  the place (up: ahead), a step every 0.05 s.
+- **Straight at the place, as the crow flies** (Saneroki, 2026-11-07: "back to where it points towards the end goal
+  instead of following the route"): the ring turns to the guide's place and the yards are the straight line to it,
+  wherever the way there runs. From 2026-10-31 it went by Navigation's route (`Core.Ways`), ride by ride; now the way
+  there is the golden line to the map pin the guide puts on the place (*The map pin*).
 - **In its hole, what to do there** (`Guide.Doing`), the game's own cursor pictures: a speech bubble to talk, a sword
   to kill, a bag to loot, an open hand to use or pick something, the quest's yellow *!* to take one and *?* to hand
   one in, a coin bag to buy, a book to train, the Hearthstone at an inn or to hearth, a winged boot to fly, a map when

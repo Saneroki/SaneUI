@@ -525,9 +525,11 @@ the game's own art and the game's own API.
   least two minutes sooner, the chat says so once for that pin, and from home the line leads on.
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
-- **A way for the guide's arrow (Saneroki, 2026-10-31):** the guide's arrow follows the routing to the guide's next
-  goal, never a straight line, also when the map pin stands elsewhere: the planner finds a second way, not drawn, for
-  whoever asks through Core (`Core.Ways`); where the pin stands on that place the pin's way is the one.
+- **A way for the guide's arrow (Saneroki, 2026-10-31; replaced 2026-11-07):** the guide's arrow followed the routing
+  to the guide's next goal: the planner finds a second way, not drawn, for whoever asks through Core (`Core.Ways`);
+  where the pin stands on that place the pin's way is the one. Since 2026-11-07 the arrow points straight at its
+  place again ("back to where it points towards the end goal instead of following the route"); the second way stays,
+  unasked.
 
 ## Leveling guide
 

@@ -40,7 +40,7 @@ end (`dev/build`, from `assets/data/`).
 | `Bar.lua` | A progress bar in the game's experience bar art: `Core.Bar.New(parent, options)`, `ART`, `CURVE` |
 | `Neighbours.lua` | The known addons, the one file that names them: `Core.Neighbours.KNOWN`, `Window(key)`, `Format`, `Lock` |
 | `Switches.lua` | Quick switches the modules offer: `Core.Offer(key, switch)`, `Switches()`, `OnSwitches(fn)`, `SwitchChanged` |
-| `Ways.lua` | The way to a place, between a leader and a finder: `Core.Ways.Serve`/`Aim`/`Ahead` (Speed Leveling's arrow by Navigation's routes) |
+| `Ways.lua` | The way to a place, between a leader and a finder: `Core.Ways.Serve`/`Aim`/`Ahead` (Navigation serves; nobody asks since Speed Leveling's arrow points straight again, 2026-11-07) |
 | `Sight.lua` | Herbs and ore in sight now: `Core.Sight.Serve`/`Nodes` (Navigation's Found, for Speed Leveling's detours) |
 | `Spellbook.lua` | What a spellbook shows beyond the game's spells: `Core.Spellbook.Serve(module, offer)`/`Offer`/`Changed`/`Watch` (Abilities' spells still to learn, Home and menu lines in Combat's book; the offer's parts in the file's header) |
 | `Stats.lua` | The stats' short words: `Core.StatWord`, `StatLine` |

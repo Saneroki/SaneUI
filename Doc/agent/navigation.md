@@ -30,8 +30,9 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    boats, zeppelins, the tram, lifts, portals, the hearthstone and the teleports it has (Core's set *Travel*,
    `Data.Ships`, `Data.Trips`). The trip underway and the docks' times: `TripView.lua`, `DockWatch.lua`.
 6. The leveling guide is not Navigation's: Speed Leveling runs text guides with its own engine
-   (`src/SpeedLeveling/Guide.lua`, `Guides.lua`, `Run.lua`). Its arrow goes by Navigation's routes through `Core.Ways`
-   (`Planner.lua`'s second way, `guide`, never drawn; `Core.Ways.Serve` at its end) and its detours by Navigation's
+   (`src/SpeedLeveling/Guide.lua`, `Guides.lua`, `Run.lua`). Its arrow points straight at its place (2026-11-07); the
+   planner still serves a way through `Core.Ways` (its second way, `guide`, never drawn; `Core.Ways.Serve` at its end),
+   unasked now. Its detours go by Navigation's
    found herbs and ore through `Core.Sight` (`Found.lua`). Core's set *Guides* is unused (its folder holds only the
    schema).
 7. The game's minimap and map are hidden by default (settings `nativeMinimap`, `nativeMap`, both off; `Native.lua`

@@ -3,7 +3,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Speed Leveling - Arrow
 --  The way to the guide's place (Saneroki, 2026-10-25): Sane UI's leather ring
---  that runs out into a point, turned the way to go (up: ahead), in its
+--  that runs out into a point, turned the way to the place (up: ahead), in its
 --  hole the game's own picture of what to do there (its cursors': a speech
 --  bubble to talk, a sword to kill, a bag to loot, an open hand to use, the
 --  quest's ! and ?, a coin bag to buy, a book to train, the Hearthstone, a
@@ -12,12 +12,9 @@ local _, ns = ...
 --  yards, and the time to get there at the pace you have been closing in. Within
 --  the place's reach the ring and the yards go, the words stay.
 --
---  The way is Navigation's route where there is one (Saneroki, 2026-10-31;
---  Core.Ways): along the line to the guide's place, wherever the map pin
---  stands, by flight and boat too: the ride that comes next stands in for the step
---  (its picture and words, the yards to it), and at a ride that starts where you
---  stand the ring goes, as nothing is left to point at. Without Navigation, or
---  until it has found the way, straight to the place.
+--  Straight at the place, as the crow flies, the yards too (Saneroki,
+--  2026-11-07: "back to where it points towards the end goal instead of
+--  following the route"); Navigation's golden line shows the way there.
 --
 --  A part of its own, placed in Edit Mode apart from the guide (Core.Window), at
 --  first where the travel overlay stands (Core.TOAST_TOP), making way for it
@@ -63,14 +60,10 @@ local PICTURES = {
 }
 local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local SOFT = { 0.8, 0.8, 0.8 }
--- What a ride of the way wants, among the pictures; else the map's.
-local RIDES = { flight = "fly", hearth = "hearth", teleport = "use", portal = "use" }
 
 local frame, window, holder, ring, picture, backing, words, far
 local following     -- the guide is shown (Update)
 local target, step  -- where it points, the step there
-local aimed         -- the place the way was last asked to
-local ahead         -- the way there as last told (Core.Ways.Ahead); nil: none known, straight to the place
 local pace          -- { yards, at, speed }: how fast you have been closing in
 
 local function Font(name, size)
@@ -118,25 +111,14 @@ local function Words(at)
     return (chosen:gsub("|T.-|t%s*", ""):gsub("^%s+", ""))
 end
 
--- The way asked to a place, once for each place.
-local function Aim(place)
-    if place == aimed or ns.Run.SamePlace(place, aimed) then return end
-    aimed, ahead = place, nil
-    if place then Core.Ways.Aim(ns.Run.Point(place)) else Core.Ways.Aim() end
-end
-
--- The ring turned the way to go, the words and the yards under it; at a ride that starts here the picture and the
--- words, within the place's reach only the words.
+-- The ring turned the way to the place, the words and the yards under it; within the place's reach only the words.
 local function Turn()
     if not target then return end
-    ahead = Core.Ways.Ahead()
-    local yards, way
-    if ahead then yards, way = ahead.yards, ahead.way else yards, way = ns.Run.Way(target) end
+    local yards, way = ns.Run.Way(target)
     local facing = Core.Plain(Core.Ask(rawget(_G, "GetPlayerFacing")))
     local near = target.near and target.near > 0 and target.near or ns.Format.FAR
-    local here = ahead and ahead.here or false
     local turn = 0
-    if yards and way and facing and not here and ((ahead and ahead.ride) or yards > near) then
+    if yards and way and facing and yards > near then
         turn = way - facing
         ring:SetRotation(turn)
         ring:Show()
@@ -147,8 +129,8 @@ local function Turn()
         far:SetText(time and (text .. "  \194\183  " .. time) or text)
     else
         ring:Hide()
-        picture:SetShown(here)
-        backing:SetShown(here)
+        picture:Hide()
+        backing:Hide()
         far:SetText("")
         pace = nil
     end
@@ -159,14 +141,12 @@ local function Turn()
     words:SetPoint("TOP", holder, "CENTER", 0, -low - 2)
 end
 
--- What to do: the ride the way comes to first, else what the step wants there: in the ring's hole and in words.
+-- What the step wants there: in the ring's hole and in words.
 local function Tell()
-    local ride = ahead and ahead.ride
-    local doing = ride and PICTURES[RIDES[ride] or "go"] or PICTURES[ns.Guide.Doing(step)] or PICTURES.go
+    local doing = PICTURES[ns.Guide.Doing(step)] or PICTURES.go
     picture:SetTexture(doing[1])
     picture:SetTexCoord(unpack(doing[2]))
-    local text = ride and ns.TEXT.rides[ride]
-    words:SetText(text and text:format(ahead.to or ns.TEXT.ridesThere) or Words(step))
+    words:SetText(Words(step))
 end
 
 local function Build()
@@ -213,7 +193,6 @@ local function Build()
             if not ns.Run.SamePlace(place, target) then pace = nil end
             target, step = place, at
             if not target then return Arrow.Update(true) end
-            Aim(target)
             Tell()
         end
         if turned >= Arrow.LOOK then
@@ -235,7 +214,6 @@ function Arrow.Update(shown)
     following = shown
     target, step = nil, nil
     if shown and not ns.off and ns.options.showArrow then target, step = ns.Guide.Target() end
-    Aim(target)
     if not target or Core.TopTaken() then
         if frame then frame:Hide() end
         pace = nil
