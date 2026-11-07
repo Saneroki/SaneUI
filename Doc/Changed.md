@@ -12,6 +12,12 @@ Saneroki: "Can we add a tab on the mail window that opens automatically first. I
 - **`src/Economy/Economy.lua`:** the words, the sizes (`SIZE.banker`), the option *Open on Banker* (on), `ns.store`, `ns.NameOf` and `ns.Color` (from `Tab.lua`, for both tabs), standing down gives the mail window back too.
 - **Tests:** `dev/tests/economy.lua` (104): what goes; opening first and when not; the name typed and kept; a line unticked; 17 stacks in two mails, the second by itself; a refusal, a slow mail and Send again, the player's attachment, the cursor, the postage, a stack the game refuses; the game's tabs; standing down. README, `Doc/ideas/Economy.md`, `Doc/agent/README.md`, card #385.
 
+### Combat: the aura menu's Add tracking last, Edit tracked... above it (Saneroki, 2026-11-07)
+Saneroki: "in the flyout when you click a spell. Can you put the add tracked down to the bottom and change the name from edit aura to edit tracked."
+- **`src/Combat/Units/Lists.lua`, `src/Combat/Reminders/Reminders.lua`:** the menu of an aura or a spell (the game's buff list, the unit frames' icons, the spellbook): the marks, *Edit tracked...*, then *Add tracking* (`Reminders.Entry` after `Lists.Entries`). Once the aura is tracked the line goes: *Edit tracking* opened the same window as the line above it, so it is gone, and so is its word `trackEdit`.
+- **`src/Combat/Combat.lua`:** `auraLists` *Edit tracked...* (was *Edit auras...*; also the line of the menu in a fight, where the game keeps the aura); the tip of *Marks and menu on the game's list* in the new order. The window itself is still *Edit auras*.
+- **Tests:** `dev/tests/reminders.lua` (1034), `dev/tests/combat.lua`, `dev/tests/book.lua`: the menu's order and its last line, none once tracked. Combat's README, card #386.
+
 ### Combat: tracked auras on Aura bar 1 at first, and on the nameplates (Saneroki, 2026-11-07)
 Saneroki: "At the aura tracker where you choose the bars. Can you make the reminder bar 1 the default one and add on Nameplates as well. On those nameplates the trackers are shown directly underneath with no gaps on the nameplates."
 - **`src/Combat/Units/Lists.lua`:** *Add tracking* (the aura menu's, the button under Edit auras' list) and the list's tick make the reminder on the first aura bar (`Reminders.Make(spell)`), no longer on the health bars; the column's word *Tracked* (was *Show on healthbars*, which it no longer only does).

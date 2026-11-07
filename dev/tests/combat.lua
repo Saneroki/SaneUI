@@ -1837,12 +1837,12 @@ do
     W.menus = {}
     top._scripts.OnMouseUp(top, "LeftButton")
     local menu = W.menus[1]
-    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.trackAdd
-        and menu[3].text == ns.TEXT.auraImportant and menu[4].text == ns.TEXT.auraUnimportant
-        and menu[5].text == ns.TEXT.auraHidden and menu[6].text == ns.TEXT.auraFramesShow
-        and menu[7].text == ns.TEXT.auraFramesHide and menu[8].text == ns.TEXT.auraLists,
-        "its menu: Add tracking, Important, Unimportant, Hidden, the unit frames alone, Aura lists")
-    menu[3].fn()
+    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.auraImportant
+        and menu[3].text == ns.TEXT.auraUnimportant and menu[4].text == ns.TEXT.auraHidden
+        and menu[5].text == ns.TEXT.auraFramesShow and menu[6].text == ns.TEXT.auraFramesHide
+        and menu[7].text == ns.TEXT.auraLists and menu[8].text == ns.TEXT.trackAdd and #menu == 8,
+        "its menu: Important, Unimportant, Hidden, the unit frames alone, Edit tracked..., last Add tracking")
+    menu[2].fn()
     local shining
     for _, each in ipairs(row) do
         if each:IsShown() and each.spell.id == 7386 then shining = each end
@@ -1869,7 +1869,7 @@ do
         ns.AuraLists.Menu(top, spell) -- an aura marked away leaves the row: its menu stands for the game's list's
     end
     Open()
-    W.menus[1][4].fn()
+    W.menus[1][3].fn()
     for _, each in ipairs(row) do
         check(not (each:IsShown() and each.spell.id == 7386), "Unimportant: gone from our row")
     end
@@ -1881,24 +1881,24 @@ do
         Open()
         W.menus[1][index].fn()
     end
-    Tick(6)
+    Tick(5)
     check(ns.options.auraShow[7386] and ns.options.auraBlack[7386], "Show on unit frames: a side of its own, the look stays")
     check(groups.shown.enabled and groups.shown.candidates.includeSpellIDs[7386] and groups.auto.candidates.excludeSpellIDs[7386],
         "first on the frame, over Unimportant, and not twice")
     check(not (control._groups.auto.candidates and control._groups.auto.candidates.excludeSpellIDs),
         "nothing left of it never showing")
     check(Shines(groups.listed.icon) and not Shines(groups.shown.icon), "and no glow")
-    Tick(7)
+    Tick(6)
     check(ns.options.auraHide[7386] and not ns.options.auraShow[7386] and not groups.shown.enabled
         and control._groups.auto.candidates.excludeSpellIDs[7386], "Hide from unit frames: off Show, never shown")
-    Tick(3)
+    Tick(2)
     check(ns.options.auraWhite[7386] and ns.options.auraHide[7386] and not groups.listed.enabled
         and groups.auto.candidates.excludeSpellIDs[7386], "over Important too: glowing in your list, not on the frame")
-    Tick(6)
+    Tick(5)
     check(ns.options.auraShow[7386] and groups.listed.enabled and not groups.shown.enabled,
         "Important and Show: once, with its glow, as you marked it important")
-    Tick(6)
-    Tick(4)
+    Tick(5)
+    Tick(3)
     check(not ns.options.auraShow[7386] and ns.options.auraBlack[7386] and not ns.options.auraWhite[7386],
         "taken off by its tick")
     W.menus = {}

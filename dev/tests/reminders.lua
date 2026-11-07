@@ -150,11 +150,12 @@ DebuffFrame.auraFrames[1].auraType = "Debuff"
 check(Click(thorns, "RightButton") == nil, "a right click is the game's alone: it cancels")
 check(Click(BuffFrame.auraFrames[2]) == nil, "a weapon enchant is no aura: no menu")
 local menu = Click(thorns)
-check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.trackAdd and menu[3].text == TEXT.auraImportant
-    and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraFramesShow
-    and menu[7].text == TEXT.auraFramesHide and menu[8].text == TEXT.auraLists,
-    "a left click: its menu, the spell, Add tracking, the marks")
-menu[2].fn()
+check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.auraImportant and menu[3].text == TEXT.auraUnimportant
+    and menu[4].text == TEXT.auraHidden and menu[5].text == TEXT.auraFramesShow and menu[6].text == TEXT.auraFramesHide
+    and menu[7].text == TEXT.auraLists and menu[8].text == TEXT.trackAdd and #menu == 8,
+    "a left click: its menu, the spell, the marks, Edit tracked..., last Add tracking")
+check(TEXT.auraLists == "Edit tracked...", "the window's line in the menu, in its words")
+menu[8].fn()
 local list = Reminders.List()
 local reminder = list[1]
 check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player"
@@ -163,13 +164,13 @@ check(reminder.missing and not reminder.active and reminder.early == 0 and remin
 check(ns.options.auraKept[782] == "Thorns" and ns.ReminderEditor.panel and ns.ReminderEditor.panel:IsVisible(),
     "and Edit auras opens on it, the aura on its list")
 menu = Click(thorns)
-check(menu[2].text == TEXT.trackEdit, "tracked: the menu says Edit tracking")
+check(#menu == 7 and menu[7].text == TEXT.auraLists, "tracked: no Add tracking, Edit tracked... last")
 ns.AuraLists.Hide()
-menu[2].fn()
+menu[7].fn()
 check(#Reminders.List() == 1 and ns.ReminderEditor.panel:IsVisible(), "which opens the window on it, nothing made twice")
 ns.AuraLists.Hide()
 Reminders.Take(reminder)
-Click(thorns)[2].fn()
+Click(thorns)[8].fn()
 reminder = Reminders.List()[1]
 check(#Reminders.List() == 1 and reminder.bar == Reminders.Bars()[1], "deleted, then added again")
 ns.AuraLists.Hide()
@@ -260,13 +261,13 @@ secret = true
 Rebuilt()
 check(thorns.Icon._alpha == 0, "in a fight it stays by its instance")
 local inFight = Click(thorns)
-check(inFight[1].title == "Thorns" and inFight[2].text == TEXT.trackEdit,
+check(inFight[1].title == "Thorns" and inFight[7].text == TEXT.auraLists,
     "and its menu opens: it was on before the fight")
 inFight = Click(bear)
-inFight[3].fn()
+inFight[2].fn()
 check(ns.options.auraWhite[5487] == "Bear" and Glows(bear), "and marks it in the fight")
 inFight = Click(bear)
-inFight[3].fn()
+inFight[2].fn()
 local info = thorns.buttonInfo
 thorns.buttonInfo = { index = 1, auraInstanceID = W.Secret() }
 Rebuilt()

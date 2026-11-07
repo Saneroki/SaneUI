@@ -184,7 +184,8 @@ function Lists.Forget(name)
     if status then status:SetText(ns.TEXT.listsGone:format(name)) end
 end
 
--- A menu's lines for an aura: the marks by side, one of each at most, a tick taken off again by a click; then the window.
+-- A menu's lines for an aura: the marks by side, one of each at most, a tick taken off again by a click; then the window
+-- (Edit tracked...: Saneroki, 2026-11-07, "change the name from edit aura to edit tracked").
 function Lists.Entries(root, spell)
     local last
     for _, which in ipairs(Lists.ORDER) do
@@ -201,14 +202,14 @@ function Lists.Entries(root, spell)
     root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() Lists.Open(nil, spell.name) end))
 end
 
--- The menu of an aura or a spell ({ id, name, icon, harmful, unit }): a reminder, the marks, the window. Without one (the
--- game hides which aura it is, in a fight) it says so, and offers the window.
+-- The menu of an aura or a spell ({ id, name, icon, harmful, unit }): the marks, the window, last Add tracking where it is
+-- not tracked yet. Without one (the game hides which aura it is, in a fight) it says so, and offers the window.
 function Lists.Menu(owner, spell)
     MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
         if spell then
             root:CreateTitle(spell.name)
-            ns.Reminders.Entry(root, spell)
             Lists.Entries(root, spell)
+            ns.Reminders.Entry(root, spell)
         else
             root:CreateTitle(ns.TEXT.auraFight)
             root:CreateDivider()

@@ -295,14 +295,14 @@ function Reminders.Update()
     ns.PlateReminders.Update()
 end
 
--- A menu's line for an aura ({ id, name, icon, harmful, unit }): Add tracking, its reminder made on the first aura bar,
--- the aura on Edit auras' list and the window opened on it, its settings under the list (Saneroki, 2026-11-07: "a add
--- Tracking that will add that spell to the edit auras window and open the edit auras window"); Edit tracking where it
--- has one, the window on it (Units/Lists.lua: Lists.Track).
+-- A menu's last line for an aura ({ id, name, icon, harmful, unit }): Add tracking, its reminder made on the first aura
+-- bar, the aura on Edit auras' list and the window opened on it, its settings under the list (Saneroki, 2026-11-07: "a
+-- add Tracking that will add that spell to the edit auras window and open the edit auras window"; "put the add tracked
+-- down to the bottom"); none where it is tracked: the line above it, Edit tracked..., opens the window on it
+-- (Units/Lists.lua: Lists.Track, Lists.Entries).
 function Reminders.Entry(root, spell)
-    if ns.options.reminders == false then return end
-    local word = Reminders.Named(spell.name) and ns.TEXT.trackEdit or ns.TEXT.trackAdd
-    root:CreateButton(word, ns.Guard(function() ns.AuraLists.Track(spell) end))
+    if ns.options.reminders == false or Reminders.Named(spell.name) then return end
+    root:CreateButton(ns.TEXT.trackAdd, ns.Guard(function() ns.AuraLists.Track(spell) end))
 end
 
 local sentCast, sentTarget -- your last cast sent: its GUID, the name of whom it was aimed at
