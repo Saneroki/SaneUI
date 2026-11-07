@@ -604,6 +604,18 @@ ns.options.macroKey = false
 Face.Paint()
 check(face.key:GetText() == "", "unless it should not")
 ns.options.macroKey = true
+-- Its name along the bottom (Saneroki, 2026-11-07: "show the name of the macro on the icon in the bottom").
+check(face.name:GetText() == keyed.name, "the macro's name on the button: " .. tostring(face.name:GetText()))
+local named = keyed.name
+keyed.name = "Rotation"
+Face.Paint()
+check(face.name:GetText() == "Rotation", "renamed: the new name")
+ns.options.macroName = false
+Face.Paint()
+check(face.name:GetText() == "", "unless it should not")
+ns.options.macroName = true
+keyed.name = named
+Face.Paint()
 -- A step cast once a target that waits shows dimmed, and says why; a new target paints it a frame later.
 keyed.steps[1].when = { { word = "once" } }
 Press.Load(keyed)

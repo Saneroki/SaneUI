@@ -9,7 +9,10 @@ local Macros = ns.Macros
 --  keeps what it holds underneath. It shows the step that comes next, that
 --  step's cooldown by the game's duration object (a hidden value in a fight is
 --  taken as it is), dimmed while the game says it cannot be used, or while a
---  step cast once a target waits for the next one (Press.Waits).
+--  step cast once a target waits for the next one (Press.Waits); the macro's
+--  name along its bottom (Saneroki, 2026-11-07), as the game's button shows a
+--  macro's name (ActionButtonTemplate's Name: GameFontHighlightSmallOutline,
+--  10 high, 2 up from the bottom; one line, cut where it is too long).
 --
 --  As a game's button does (Saneroki, 2026-11-06: no spell would take its place,
 --  and Shift-dragging it off did nothing): a spell, an item or anything else of
@@ -56,6 +59,7 @@ local function PaintOne(face)
     face.icon:SetVertexColor(dim and 0.4 or 1, dim and 0.4 or 1, dim and 0.4 or 1)
     Cooldown(face, spell)
     face.key:SetText(ns.options.macroKey and face.keyText or "")
+    face.name:SetText(ns.options.macroName and macro and macro.name or "")
 end
 
 -- Every face, or the one given.
@@ -144,6 +148,12 @@ function Face.Get(place, slot, name)
         face.cooldown:SetAllPoints()
         face.key = face:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmallGray")
         face.key:SetPoint("TOPRIGHT", -2, -3)
+        face.name = face:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmallOutline")
+        face.name:SetPoint("BOTTOMLEFT", 2, 2)
+        face.name:SetPoint("BOTTOMRIGHT", -2, 2)
+        face.name:SetHeight(10)
+        face.name:SetWordWrap(false)
+        face.name:SetJustifyH("CENTER")
         face.lit = face:CreateTexture(nil, "HIGHLIGHT")
         face.lit:SetAllPoints()
         face.lit:SetColorTexture(1, 1, 1, 0.15)

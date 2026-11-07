@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Combat: a Sane Macro's name on its bar button (Saneroki, 2026-11-07)
+Saneroki: "When we have macros on the actionbar, can the icon on the actionbar show the name of the macro on the icon in the bottom?"
+- **`src/Combat/Macros/Face.lua`:** our button over a bar button shows the macro's name along its bottom, as the game's button shows a macro's name (`ActionButtonTemplate`'s `Name`: `GameFontHighlightSmallOutline`, 10 high, 2 up; one line), renamed at once.
+- **`src/Combat/Combat.lua`:** the switch *Show the macro's name on the button* (`macroName`, on), under Sane Macros' others.
+- **Tests:** `dev/tests/macros.lua` (370): the name, a new name, the switch off. README.
+
 ### Combat: Sane Macros' commands behind the macro text box's + (Saneroki, 2026-11-07)
 Saneroki: "Are there other macro commands we are missing?", then "Yes, add it" to a Commands list behind the macro text box's +.
 - **`src/Combat/Macros/Picker.lua`:** `Picker.COMMANDS`, the game's secure macro commands by group (Fighting, Casting, Targeting, Pet, Gear and bars, Group), each with its key, the English word and a tip; `Picker.Word` takes the game's own `SLASH_<key>1` and leaves out one `IsSecureCmd` does not know; `Picker.Open`'s `command` puts them over the conditions.

@@ -41,7 +41,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
   as it was; a right click takes it away. For this character, and it stays out of the game's own key settings.
 - **Its bar button:** drag the macro from the list, or its picture, onto a button of your action bars, or click *Place on
   bar* and choose one. Its picture follows the mouse and the button under it gets a gold frame; the bars stay clear. It works and
-  looks like a normal button, with that button's keys, on that page of Bar 1. What the button holds stays underneath and is
+  looks like a normal button, with that button's keys, on that page of Bar 1, the macro's name along its bottom as the
+  game shows a macro's name (Saneroki, 2026-11-07; Combat's switch *Show the macro's name on the button*). What the button holds stays underneath and is
   back when the macro is taken off (a right click on the same button in the window). One button a macro, for this character.
   On the bar it acts as the game's buttons do (Saneroki, 2026-11-06): drag a spell from the spellbook, an item or an action
   onto it, or click one onto it, and that takes its place (the macro comes off; what the button held underneath goes onto
@@ -181,7 +182,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
   group chosen. A tooltip's spells and items by the game's names (`C_Spell.GetSpellName`, `C_Item.GetItemNameByID`;
   an item not read yet is asked for). Without the set (refused), the game's own lists (`GetMacroIcons`,
   `GetMacroItemIcons`) stand in, by file number. It closes when Sane Macros goes, at Esc, and at standing down.
-- **What shows.** The picture of the turn the next press would take (`Press.Next`, the game's parser answers plainly in a fight),
+- **What shows.** The macro's name along the bottom in the game's own way (`ActionButtonTemplate`'s `Name`:
+  `GameFontHighlightSmallOutline`, 10 high, 2 up; one line, cut where too long; `macroName`). The picture of the turn the next press would take (`Press.Next`, the game's parser answers plainly in a fight),
   its cooldown by the game's duration object (a hidden value is taken as it is), dimmed by `C_Spell.IsSpellUsable` (plain in a
   fight). `isActive` of a cooldown is true during the GCD too.
 - **The list of conditions** (`Conditions.lua`). The game takes a word it does not know as true, without a sound, and a word
