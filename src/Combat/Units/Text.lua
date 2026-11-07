@@ -10,7 +10,7 @@ local _, ns = ...
 --             short beyond it); none on your own frame
 --    right    its health, short ("850", "1.2k", "1.32m"), and how much is
 --             left ("| 100%"); Dead or Offline instead where it is
---  in each power bar under it, at its right, the power as the health is
+--  in each power bar under it, at its left, the power as the health is
 --  written ("3.2k | 85%", in a smaller size); in the row under them (your
 --  target's target, your focus's target, your pet) its unit's name alone, in
 --  its middle; and in your pet's power under that, the power again.
@@ -154,9 +154,10 @@ end
 
 function Text.Make(face)
     Text.MakeLine(face)
+    -- A power's words on its bar's left (Saneroki, 2026-11-07), under the level, clear of the health's on the right.
     for _, power in ipairs({ face.powers[1], face.powers[2], face.rowPower }) do
-        power.value = Line(Text.Over(power), "RIGHT", Text.SMALL)
-        power.value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
+        power.value = Line(Text.Over(power), "LEFT", Text.SMALL)
+        power.value:SetPoint("LEFT", power, "LEFT", Text.INSET - 1, 0)
     end
     face.rowName = Line(Text.Over(face.row), "CENTER")
     face.rowName:SetPoint("LEFT", face.row, "LEFT", Text.INSET - 1, 0)

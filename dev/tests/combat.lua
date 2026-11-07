@@ -1462,6 +1462,14 @@ do
     check(player._height == Units.HEIGHT + 2 * Units.POWER and face.powersShown == 2
         and face.powers[1].value._text == "2.4k | 80%" and face.powers[2].value._text == "80 | 80%" and face.powers[2]._shown,
         "a druid in cat form: mana in the first bar, energy under it")
+    do -- a power's words on its bar's left, the health's on its right (Saneroki, 2026-11-07)
+        local left = true
+        for _, power in ipairs({ face.powers[1], face.powers[2], face.rowPower }) do
+            local point = power.value._points[1]
+            left = left and power.value._justify == "LEFT" and point[1] == "LEFT" and point[2] == power and point[3] == "LEFT"
+        end
+        check(left and face.value._justify == "RIGHT", "each power's words on its bar's left")
+    end
     local kinds = face.kinds
     units.player.power = 60
     W.Fire("UNIT_POWER_UPDATE", "player")

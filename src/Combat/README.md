@@ -573,7 +573,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     `AbbreviateNumbers` in `Text.STEPS` and `UnitHealthPercent` by its curve), the name from the left side's end up
     to the health's room (`Text.Layout`; the health's room as wide as its most, measured on a ruler of ours,
     `Text.SAMPLE` while a creature's most is hidden), none on your own frame (`face.noName`); each power's words at
-    its bar's right in `Text.SMALL` 9 (`Text.Powers`; hidden: `AbbreviateNumbers` and `UnitPowerPercent` by its
+    its bar's left in `Text.SMALL` 9 (`Text.Powers`; hidden: `AbbreviateNumbers` and `UnitPowerPercent` by its
     curve); the row's name alone, centred (`Text.Row`). A row's bar is the colour of its kind's `row.colour`: the
     targets' rows `Bar.CALM` (the nameplates' light yellow for a creature that does not attack on sight), the pet's
     green.

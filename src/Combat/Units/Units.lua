@@ -8,7 +8,7 @@ local _, ns = ...
 --  the level and the raid marker on its left, the name after them
 --  (a player's first name and surname; none on your own frame), the health and
 --  how much is left on its right; under it the unit's power at half its height
---  with the same words on the right (on your own frame, where you may have two
+--  with the same words on its left (on your own frame, where you may have two
 --  powers, a druid's in a form, two slots: mana always, the form's under it);
 --  around it the auras that matter most (Auras.lua). Under each, as a cast bar
 --  under a nameplate, a row while its unit is there, with that unit's name

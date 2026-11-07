@@ -10,7 +10,7 @@ local _, ns = ...
 --  bar's middle, where your own frame has no name. Any other, while it runs, is
 --  a bar in the frame's stack, above your health bar and your cast, at a power
 --  bar's height: the game's name for it on the left, the seconds left on the
---  right, as the powers are written. So none of the game's three bars is left.
+--  right, as the health is written. So none of the game's three bars is left.
 --  Breath may fill again once you are back up: the bar
 --  follows the game (GetMirrorTimerProgress, on the bar's own OnUpdate while
 --  it shows) until the game says it stopped.
