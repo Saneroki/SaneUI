@@ -34,7 +34,7 @@ it; the mouse on it brings its buttons.
 
 Click a buff or debuff, or right click a spell in the spellbook, and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
-with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or tick *Show on healthbars*: its
+with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or choose *Add tracking*: its
 icon then shows on the health bars of your unit frames and the party and raid frames, or on an invisible aura bar placed in
 Edit Mode, while its settings want it; a bar is as wide as what shows on it, and you make as many bars as you like. On the
 health bars its icon then shows on each frame whose unit lacks it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
@@ -57,7 +57,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   - Each spell as in the game's book: its icon in the game's frame (round for a passive), name and rank, a
     spell still to learn greyed with the level it comes at or *Trainable*, the cooldown, the glow of a spell on
     none of your action bars, a pet ability's autocast, the tooltip.
-  - **Click** to cast it, **right click** for its menu, as a buff's (below, *Your buffs and debuffs*: *Show on healthbars* and your marks of its aura; on a pet ability it switches its autocast), **drag** it onto an action
+  - **Click** to cast it, **right click** for its menu, as a buff's (below, *Your buffs and debuffs*: *Add tracking* and your marks of its aura; on a pet ability it switches its autocast), **drag** it onto an action
     bar, **Shift-click** to link it in chat (or to pick it up, as your game's modified clicks say).
   - **In a fight** the book shows, pages and drags as always, but a click does not cast (it says so): cast from
     your action bars then. After the fight, a click casts again.
@@ -119,7 +119,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   - **Auras:** those that matter most, in one line above the frame: four buffs, two crowd control, four debuffs, each kind a block of icons that touch, no borders, the time gone darkening the icon as it passes, no numbers on them: buffs on the left, from its
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
-    friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
+    friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Add tracking* (below, *Aura icons*), *Important* (in front of the
     rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames* and *Edit auras...*, the one window
     for every aura's setup, its marks and where its icon shows (Saneroki: "one Edit Auras window where I can handle all the aura
     configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
@@ -260,7 +260,8 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   - **In a fight** the game hides these numbers from addons: they show, but the list goes by the places on the game's
     own list. On a boss it hides threat too: there you see the share alone, and threat is neither added up nor sorted.
 - **Your buffs and debuffs** (the page's tick *Marks and menu on the game's list*): the game's own lists at the top of the
-  screen stay, with your marks on them. **Click** one for its menu: *Show on healthbars*, and a tick each:
+  screen stay, with your marks on them. **Click** one for its menu: *Add tracking* (*Edit tracking* once it is tracked;
+  below, *Aura icons*), and a tick each:
   - **Important:** the game's golden animated outline around it, as on a spell it wants you to see; on the unit frames it comes first, with the same outline.
   - **Unimportant:** faded to 25% of its strength; never on the unit frames.
   - **Hidden:** out of sight, and last in the list, so it leaves no hole; it shows while the mouse is on the list.
@@ -277,14 +278,15 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     tell the instance, the list shows plain from its first change until the fight ends.
 - **Aura icons** (Saneroki: *Show on healthbars*, once *Reminders*, then *Track*, then *Show on raid frames*; the page's tick
   *Aura icons and bars*; set in *Edit auras*, `/sane auras`, `/sane reminders`):
-  - **Showing one:** in *Edit auras* search any spell (any class's, an enemy's, an item's, or its number), and tick its
-    *Show on healthbars*; or click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame
-    (out of a fight), or right click a spell in the spellbook, and tick *Show on healthbars* in its menu. It shows on the
-    health bars at once; its settings are under *Edit auras*' list (the menu's *Edit auras...*). Unticking it,
-    or the line's X, takes it off.
-  - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar or *Party and raid frames*, with
-    *New bar* (the aura on it) and *Delete bar*; *Watch on* you, your target or your focus (one made in the window:
-    a debuff on your target, a buff on you); *Display when missing*; *Display when active*;
+  - **Showing one:** click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of
+    a fight), or right click a spell in the spellbook, and choose *Add tracking* in its menu (Saneroki, 2026-11-07): it
+    shows on the health bars at once, and *Edit auras* opens on it, its settings under the list (*Edit tracking* in
+    the menu once it is tracked). Or in *Edit auras* search any spell (any class's, an enemy's, an item's, or its
+    number): it comes onto the list, chosen, and under the list *Add tracking*; or tick the line's *Show on healthbars*.
+    Unticking that, or the line's X, takes it off.
+  - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar or *Health bars*, with
+    *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on* you, your target or your focus (one
+    made in the window: a debuff on your target, a buff on you); on the health bars those two are out of sight; *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help). Never
@@ -563,10 +565,15 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     name on any of them or a reminder's (`Rows`), each line the game's close button (its template stands at frame level 510:
     set to its line's), icon, name, number, a `UICheckButtonTemplate` per mark in `Lists.COLUMNS` (Hidden, Unimportant,
     Important, Hide, Prioritize) and `line.remind` (Reminder: `Reminders.Make` of the line's spell, a debuff on your
-    target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`), their words over the columns; `OnMouseUp`
-    chooses the line (`chosen`, by name), and `ReminderEditor.Show` puts `Reminders.Named(chosen)` in the panel under the
-    list (`Reminders/Editor.lua`); the search box `AuraSearch.Box` over all. `Open(text, name)` searches at once, chooses
-    that name. `/sane auras [words]` and `/sane reminders` (`Core.Command`).
+    target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`; the line kept), their words over the
+    columns; `OnMouseUp` chooses the line (`chosen`, by name), and `ReminderEditor.Show(reminder, name, icon)` puts
+    `Reminders.Named(chosen)` in the panel under the list (`Reminders/Editor.lua`; none: the button *Add tracking* and
+    `reminderNone` beside it, both anchored by their tops; *Watch on* and *Delete bar* hidden on `GROUP`). `line.mark`
+    (chosen) and `line.lit` (just picked) stop where the ticks start: under them a tick looked greyed out.
+    `Track(spell)`: *Add tracking*, the menu's (`Reminders.Entry`, a button: `trackAdd`, or `trackEdit` where a reminder
+    of that name is) and the panel's (nil: the line chosen): kept, `Reminders.Make(spell, GROUP)` where none is, `Open`
+    on it. The search box `AuraSearch.Box` over all. `Open(text, name)` searches at once, chooses that name. `/sane
+    auras [words]` and `/sane reminders` (`Core.Command`).
   - `AuraSearch.lua` (`ns.AuraSearch`): what the search finds, read once at the first search from Core's sets: each class
     (`Classes`, 1 to `CLASSES`) its class lines' spells (`SkillLines` by `byClass`, kind `class`) that put an aura on
     (`Spells`' effects with an aura; one without effects counts), the enemies' (`CreatureSpells`) and the items' (`Auras`)
@@ -794,6 +801,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-07:** the aura menu's *Show on healthbars* tick is now *Add tracking* (*Edit tracking* once tracked): tracked on the health bars, put on *Edit auras*' list and the window opened on it; a spell searched there has *Add tracking* under the list; the chosen and new lines lit only behind their names, *Watch on* and *Delete bar* out of sight on the health bars (Saneroki: "I need a add Tracking that will add that spell to the edit auras window and open the edit auras window", "When I search for a spell in Edit auras I can't edit them. They are greyed out").
 - **2026-11-07:** in a fight an aura on the health bars and the reminder bars counts from your cast for as long as it lasted when last seen, on the member it was aimed at, and runs out by the clock (Saneroki: "Inside combat i have the hots showing up but they never disappear"; Forever's client hides every aura's number in a fight, which the casts were matched to).
 - **2026-11-06:** with Abilities on, the spellbook shows its spells still to learn in grey, the weapon skills, Home first, the reservations by drag, the checkbox *Show unlearned spells* and its menu lines, through Core (`Core.Spellbook`) (Saneroki: "it looks like it is not part of the combat fullscreen").
 - **2026-11-06:** the meter is never on or over Combat's full screen, and its button on the full screen's bar is gone (Saneroki: "The meeter should not show in or over the full screen").

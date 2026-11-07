@@ -34,9 +34,10 @@ The bigger changes of each version, newest first.
   class's colour.
 - Edit auras: one window for every aura's setup, its marks and its icon
   on the health bars (/sane auras, /sane reminders, or the button on the
-  Aura icons settings). Search any spell, tick its Show on healthbars,
-  and set where its icon shows and on whom right under the list. What was
-  called a reminder is now Show on healthbars.
+  Aura icons settings). Click an aura, or right click a spell in the
+  spellbook, and choose Add tracking: Edit auras opens on it with its
+  settings under the list. Or search any spell there and Add tracking
+  under the list. What was called a reminder is now tracking.
 - Aura lists (/sane auras): one list of every aura you set up, a tick
   for each mark and the X in front to take it off, and a search over
   every class's auras, the enemies' and food, potions and items, grouped
@@ -46,8 +47,8 @@ The bigger changes of each version, newest first.
   that has no quest for you opens its window at once, without the talk
   before it. Hold Shift as you talk to them to see the talk and its
   choices (Lore, on by default).
-- Aura icons on your health bars: tick an aura's Show on healthbars
-  (/sane auras) and its icon shows on your own frame, your target's,
+- Aura icons on your health bars: Add tracking on an aura (its menu,
+  or /sane auras) and its icon shows on your own frame, your target's,
   your focus's and each party or raid member's while they lack it, your
   Mark of the Wild or your Rejuvenation, say. Only yours counts your own
   cast alone. In a fight a HoT you cast on someone goes from their frame

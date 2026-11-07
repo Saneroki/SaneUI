@@ -103,7 +103,8 @@ end
 -- The window's list as it is now.
 local function Fill()
     if not frame then return end
-    rows = Rows()
+    local by
+    rows, by = Rows()
     for index, row in ipairs(rows) do
         local line = lines[index] or Lists.Line(index)
         line.row = row
@@ -119,7 +120,8 @@ local function Fill()
     for index = #rows + 1, #lines do lines[index]:Hide() end
     empty:SetShown(rows[1] == nil)
     child:SetHeight(math.max(#rows * Lists.LINE, 1))
-    ns.ReminderEditor.Show(chosen and ns.Reminders.Named(chosen), chosen)
+    local row = chosen and by[chosen]
+    ns.ReminderEditor.Show(chosen and ns.Reminders.Named(chosen), row and row.name, row and Icon(row.id))
 end
 
 -- The list as it is now, from outside (a reminder made or deleted elsewhere).
@@ -260,16 +262,39 @@ local function Spell(row)
     return { id = row.id, name = row.name, icon = Icon(row.id), harmful = harmful, unit = harmful and "target" or "player" }
 end
 
--- A line's tick Show on healthbars: its reminder made there, or deleted; the line chosen.
+-- A spell kept on the window's list, though it has no mark and no reminder (left by its X).
+local function Keep(id, name)
+    id = tonumber(id)
+    if id and name then List("kept")[id] = List("kept")[id] or name end
+end
+
+-- A line's tick Show on healthbars: its reminder made there, or deleted (the line stays); the line chosen.
 local function Remind(row, on)
     local reminder = ns.Reminders.Named(row.name)
     chosen = row.name
+    Keep(row.id, row.name)
     if on and not reminder then
         ns.Reminders.Make(Spell(row), ns.Reminders.GROUP)
     elseif not on and reminder then
         ns.Reminders.Take(reminder)
     end
     Fill()
+end
+
+-- Add tracking (an aura's menu, ns.Reminders.Entry; the button under the list, Reminders/Editor.lua: spell nil, the
+-- line chosen): the aura on the window's list, its reminder made on the health bars where it has none, the window open
+-- on it with its settings under the list.
+function Lists.Track(spell)
+    if not spell then
+        local _, by = Rows()
+        local row = chosen and by[chosen]
+        if not row then return end
+        spell = Spell(row)
+    end
+    if not spell.name then return end
+    Keep(spell.id, spell.name)
+    if not ns.Reminders.Named(spell.name) then ns.Reminders.Make(spell, ns.Reminders.GROUP) end
+    Lists.Open(nil, spell.name)
 end
 
 -------------------------------------------------------------------------------
@@ -291,12 +316,14 @@ function Lists.Line(index)
     line:SetScript("OnEnter", ns.Guard(function(self) if self.row then Tip(self, self.row.id, self.row.name) end end))
     line:SetScript("OnLeave", GameTooltip_Hide)
     line:SetScript("OnMouseUp", ns.Guard(function(self) if self.row then Choose(self.row.name) end end))
+    -- Chosen and lit (just put on the list), the name's part only: under the ticks they made them look greyed out.
     line.mark = line:CreateTexture(nil, "BACKGROUND")
-    line.mark:SetAllPoints(line)
+    line.mark:SetPoint("TOPLEFT", line, "TOPLEFT", 0, 0)
+    line.mark:SetPoint("BOTTOMRIGHT", line, "BOTTOMRIGHT", Middle(1) - Lists.COLUMN / 2, 0)
     line.mark:SetColorTexture(1, 1, 1, 0.1)
     line.mark:Hide()
     line.lit = line:CreateTexture(nil, "BACKGROUND")
-    line.lit:SetAllPoints(line)
+    line.lit:SetAllPoints(line.mark)
     line.lit:SetColorTexture(1, 0.82, 0, 0.14)
     line.lit:Hide()
     if index % 2 == 0 then

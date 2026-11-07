@@ -1837,11 +1837,11 @@ do
     W.menus = {}
     top._scripts.OnMouseUp(top, "LeftButton")
     local menu = W.menus[1]
-    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.reminderCreate
+    check(menu and menu[1].title == "Sunder Armor" and menu[2].text == ns.TEXT.trackAdd
         and menu[3].text == ns.TEXT.auraImportant and menu[4].text == ns.TEXT.auraUnimportant
         and menu[5].text == ns.TEXT.auraHidden and menu[6].text == ns.TEXT.auraFramesShow
         and menu[7].text == ns.TEXT.auraFramesHide and menu[8].text == ns.TEXT.auraLists,
-        "its menu: Create reminder, Important, Unimportant, Hidden, the unit frames alone, Aura lists")
+        "its menu: Add tracking, Important, Unimportant, Hidden, the unit frames alone, Aura lists")
     menu[3].fn()
     local shining
     for _, each in ipairs(row) do

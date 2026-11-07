@@ -273,17 +273,14 @@ function Reminders.Update()
     for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
 end
 
--- A menu's line for an aura ({ id, name, icon, harmful, unit }): Show on healthbars, ticked while it has a reminder
--- (there or on a bar); a click makes one on the health bars, or deletes it. Its settings are Edit auras',
--- the menu's last line (Units/Lists.lua).
+-- A menu's line for an aura ({ id, name, icon, harmful, unit }): Add tracking, its reminder made on the health bars,
+-- the aura on Edit auras' list and the window opened on it, its settings under the list (Saneroki, 2026-11-07: "a add
+-- Tracking that will add that spell to the edit auras window and open the edit auras window"); Edit tracking where it
+-- has one, the window on it (Units/Lists.lua: Lists.Track).
 function Reminders.Entry(root, spell)
     if ns.options.reminders == false then return end
-    root:CreateCheckbox(ns.TEXT.reminderCreate, ns.Guard(function() return Reminders.Named(spell.name) ~= nil end),
-        ns.Guard(function()
-            local reminder = Reminders.Named(spell.name)
-            if reminder then return Reminders.Take(reminder) end
-            Reminders.Make(spell, Reminders.GROUP)
-        end))
+    local word = Reminders.Named(spell.name) and ns.TEXT.trackEdit or ns.TEXT.trackAdd
+    root:CreateButton(word, ns.Guard(function() ns.AuraLists.Track(spell) end))
 end
 
 local sentCast, sentTarget -- your last cast sent: its GUID, the name of whom it was aimed at

@@ -9,9 +9,13 @@ local _, ns = ...
 --                 reminder on it), Delete bar (its reminders on the first bar
 --                 left; the last bar stays)
 --      Watch on   you, your target or your focus; on the frames each member
+--                 (then it and Delete bar are out of sight)
 --      Display when missing, Display when active, Combat, Don't show in
 --      resting areas, Only yours, Offset time
---  A line's tick Reminder makes or deletes one; without one the panel says how.
+--  A line's tick Show on healthbars makes or deletes one; a line chosen without
+--  one has the button Add tracking (Lists.Track: made on the health bars, its
+--  settings here at once; Saneroki, 2026-11-07: a spell searched could not be
+--  set up).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Editor = {}
@@ -23,10 +27,12 @@ Editor.ROW = 30     -- from one row of settings to the next
 Editor.RIGHT = 470  -- where the settings' right half starts
 Editor.WORD = 80    -- a dropdown's words before it
 Editor.MENU = 170   -- a dropdown's width
+Editor.TRACK = 130  -- the button Add tracking's width
+Editor.HINT = 5     -- the words beside it, down from its top
 Editor.COMBAT = { "any", "out", "in" }
 Editor.UNITS = { "player", "target", "focus" }
 
-local panel, controls, face, head, on, hint, place, unit, combat, early, takeBar
+local panel, controls, face, head, on, hint, track, place, unit, combat, early, takeBar
 local ticks = {}
 local chosen -- the reminder whose settings show
 
@@ -50,12 +56,23 @@ end
 
 function Fill()
     if not panel then return end
+    local untracked = chosen == nil and panel.name ~= nil
     controls:SetShown(chosen ~= nil)
-    face:SetShown(chosen ~= nil)
+    face:SetShown(chosen ~= nil or panel.icon ~= nil)
     hint:SetShown(chosen == nil)
+    track:SetShown(untracked)
     if not chosen then
+        face:SetTexture(panel.icon)
         head:SetText(panel.name or "")
         on:SetText("")
+        hint:ClearAllPoints() -- beside Add tracking, else where the settings stand; both points by their tops
+        if untracked then
+            hint:SetPoint("TOPLEFT", track, "TOPRIGHT", 10, -Editor.HINT)
+        else
+            hint:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
+        end
+        hint:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, untracked and -32 - Editor.HINT or -32)
+        hint:SetText(untracked and ns.TEXT.reminderNone or ns.TEXT.reminderPick)
         return
     end
     local frames = chosen.bar == ns.Reminders.GROUP
@@ -63,8 +80,11 @@ function Fill()
     head:SetText(chosen.name)
     on:SetText(frames and ns.TEXT.reminderOnGroup or "")
     for key, tick in pairs(ticks) do tick:SetChecked(chosen[key] and true or false) end
-    takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil and not frames)
-    unit:SetEnabled(not frames)
+    -- On the health bars no bar to delete and no unit to choose (each member): out of sight, not greyed out.
+    takeBar:SetShown(not frames)
+    takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil)
+    unit:SetShown(not frames)
+    unit.words:SetShown(not frames)
     place:GenerateMenu()
     unit:GenerateMenu()
     combat:GenerateMenu()
@@ -93,8 +113,9 @@ end
 
 -- A dropdown of one setting, its words before it: entries as { word, value } (or a function that gives them).
 local function Choice(key, x, row, word, entries)
-    Words(x, row, word)
+    local words = Words(x, row, word)
     local menu = CreateFrame("DropdownButton", nil, controls, "WowStyle1DropdownTemplate")
+    menu.words = words
     menu:SetWidth(Editor.MENU)
     menu:SetPoint("TOPLEFT", controls, "TOPLEFT", x + Editor.WORD, -row * Editor.ROW)
     menu:SetupMenu(ns.Guard(function(_, root)
@@ -139,10 +160,12 @@ function Editor.Build(parent)
     on = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     on:SetPoint("LEFT", head, "RIGHT", 10, 0)
     hint = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    hint:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
-    hint:SetPoint("RIGHT", panel, "RIGHT", 0, 0)
     hint:SetJustifyH("LEFT")
-    hint:SetText(ns.TEXT.reminderPick)
+    track = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    track:SetSize(Editor.TRACK, 22)
+    track:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
+    track:SetText(ns.TEXT.trackAdd)
+    track:SetScript("OnClick", ns.Guard(function() ns.AuraLists.Track() end))
 
     controls = CreateFrame("Frame", nil, panel)
     controls:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
@@ -181,10 +204,10 @@ function Editor.Build(parent)
     return panel
 end
 
--- The panel for that reminder; nil: none, the aura of that name (if any) chosen without one.
-function Editor.Show(reminder, name)
+-- The panel for that reminder; nil: none, the aura of that name and icon (if any) chosen without one.
+function Editor.Show(reminder, name, icon)
     chosen = reminder
-    if panel then panel.name = name end
+    if panel then panel.name, panel.icon = name, icon end
     Fill()
 end
 

@@ -288,7 +288,7 @@ W.menus = {}
 covers[1]._scripts.PostClick(covers[1], "LeftButton")
 check(W.menus[1] == nil, "a left click casts, no menu")
 covers[1]._scripts.PostClick(covers[1], "RightButton")
-check(W.menus[1] and W.menus[1][2].text == ns.TEXT.reminderCreate, "a right click casts nothing and opens the spell's menu")
+check(W.menus[1] and W.menus[1][2].text == ns.TEXT.trackAdd, "a right click casts nothing and opens the spell's menu")
 local spellsCovered = { [covers[1]._attributes.spell] = true, [covers[2]._attributes.spell] = true }
 check(spellsCovered[205] and spellsCovered[122], "each casts its spell by its ID (the rank it is)")
 -- The game locks the secure buttons only after PLAYER_REGEN_DISABLED's handlers ran (the buttons' last chance to
@@ -306,7 +306,7 @@ nova.Button:GetScript("OnClick")(nova.Button, "LeftButton")
 check(W.errors[1] == Item.TEXT.fight, "a click in a fight says the book casts again after it")
 W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
-check(W.menus[1] and W.menus[1][1].title == "Frost Nova" and W.menus[1][2].text == ns.TEXT.reminderCreate
+check(W.menus[1] and W.menus[1][1].title == "Frost Nova" and W.menus[1][2].text == ns.TEXT.trackAdd
     and W.menus[1][3].text == ns.TEXT.auraImportant, "a right click opens the spell's menu, in a fight too: the book knows its spells")
 W.menus[1][3].fn()
 check(ns.options.auraWhite[nova.info.spellID] == "Frost Nova", "and marks it there")
@@ -319,7 +319,7 @@ nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][2].fn()
 local made = ns.Reminders.List()[1]
 check(made and made.name == "Frost Nova" and not made.harmful and made.missing and made.bar == ns.Reminders.GROUP,
-    "shown on raid frames: a buff, while it is missing")
+    "Add tracking: on the health bars, a buff, while it is missing")
 ns.Reminders.Take(made)
 C_Spell.IsSpellHarmful = function() return true end
 W.menus = {}
@@ -447,8 +447,13 @@ local function Shown(list)
     return out
 end
 local toggle, dropdown
+local function Top(widget) -- the window a widget is in: its ancestor right under UIParent
+    while widget._parent and widget._parent ~= UIParent do widget = widget._parent end
+    return widget
+end
+local auraWindow = ns.ReminderEditor.panel and Top(ns.ReminderEditor.panel) -- Edit auras, opened by Add tracking above
 for _, widget in ipairs(W.frames) do
-    if widget._template == "UICheckButtonTemplate" then toggle = widget end
+    if widget._template == "UICheckButtonTemplate" and Top(widget) ~= auraWindow then toggle = widget end
     if widget._template == "UIPanelArrowDropdownButtonTemplate" then dropdown = widget end
 end
 bar = Tabs()

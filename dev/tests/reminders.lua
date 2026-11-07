@@ -150,24 +150,29 @@ DebuffFrame.auraFrames[1].auraType = "Debuff"
 check(Click(thorns, "RightButton") == nil, "a right click is the game's alone: it cancels")
 check(Click(BuffFrame.auraFrames[2]) == nil, "a weapon enchant is no aura: no menu")
 local menu = Click(thorns)
-check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.reminderCreate and menu[3].text == TEXT.auraImportant
+check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.trackAdd and menu[3].text == TEXT.auraImportant
     and menu[4].text == TEXT.auraUnimportant and menu[5].text == TEXT.auraHidden and menu[6].text == TEXT.auraFramesShow
     and menu[7].text == TEXT.auraFramesHide and menu[8].text == TEXT.auraLists,
-    "a left click: its menu, the spell, Show on raid frames, the marks")
-check(menu[2].checked() == false, "not shown there yet: no tick")
+    "a left click: its menu, the spell, Add tracking, the marks")
 menu[2].fn()
 local list = Reminders.List()
 local reminder = list[1]
 check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player"
-    and reminder.bar == Reminders.GROUP, "ticked: the reminder is made, on the party and raid frames, of your own aura")
+    and reminder.bar == Reminders.GROUP, "Add tracking: the reminder is made, on the health bars, of your own aura")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
+check(ns.options.auraKept[782] == "Thorns" and ns.ReminderEditor.panel and ns.ReminderEditor.panel:IsVisible(),
+    "and Edit auras opens on it, the aura on its list")
 menu = Click(thorns)
-check(menu[2].text == TEXT.reminderCreate and menu[2].checked() == true, "made once: the menu ticks it")
+check(menu[2].text == TEXT.trackEdit, "tracked: the menu says Edit tracking")
+ns.AuraLists.Hide()
 menu[2].fn()
-check(#Reminders.List() == 0, "clicked again: deleted")
+check(#Reminders.List() == 1 and ns.ReminderEditor.panel:IsVisible(), "which opens the window on it, nothing made twice")
+ns.AuraLists.Hide()
+Reminders.Take(reminder)
 Click(thorns)[2].fn()
 reminder = Reminders.List()[1]
-check(#Reminders.List() == 1 and reminder.bar == Reminders.GROUP, "and made again")
+check(#Reminders.List() == 1 and reminder.bar == Reminders.GROUP, "deleted, then added again")
+ns.AuraLists.Hide()
 reminder.bar = Reminders.Bars()[1] -- on its bar for what follows
 
 -------------------------------------------------------------------------------
@@ -256,7 +261,7 @@ secret = true
 Rebuilt()
 check(thorns.Icon._alpha == 0, "in a fight it stays by its instance")
 local inFight = Click(thorns)
-check(inFight[1].title == "Thorns" and inFight[2].text == TEXT.reminderCreate and inFight[2].checked() == true,
+check(inFight[1].title == "Thorns" and inFight[2].text == TEXT.trackEdit,
     "and its menu opens: it was on before the fight")
 inFight = Click(bear)
 inFight[3].fn()
@@ -513,7 +518,8 @@ check(#Reminders.Bars() == 2 and reminder.bar == Reminders.Bars()[2] and not tak
 check(#menus[1]._items == 3 and menus[1]._items[3].text == TEXT.reminderGroup,
     "a line for each bar, and the party and raid frames last")
 menus[1]._items[3].fn()
-check(reminder.bar == Reminders.GROUP and takeBar._disabled and menus[2]._disabled, "on the frames: no bar of it to delete, no unit")
+check(reminder.bar == Reminders.GROUP and not takeBar._shown and not menus[2]._shown and not menus[2].words._shown,
+    "on the health bars: no bar of it to delete, no unit, out of sight")
 check(Said(TEXT.reminderOnGroup), "and the window says where it watches")
 Update()
 check(row._width == 1, "and it is off its bar")
@@ -523,7 +529,8 @@ check(reminder.own == true, "only yours, ticked")
 ticks[4]:SetChecked(false)
 ticks[4]._scripts.OnClick(ticks[4])
 menus[1]._items[2].fn()
-check(reminder.bar == Reminders.Bars()[2] and not menus[2]._disabled, "on the new bar")
+check(reminder.bar == Reminders.Bars()[2] and menus[2]._shown and takeBar._shown and not takeBar._disabled,
+    "on the new bar: its unit and Delete bar back")
 takeBar._scripts.OnClick(takeBar)
 check(#Reminders.Bars() == 1 and reminder.bar == Reminders.Bars()[1], "the bar deleted by its button, the reminder kept")
 check(menus[2]._items[2].text == TEXT.reminderUnits.target, "watched on you, your target or your focus")
@@ -543,7 +550,13 @@ reminder.early, reminder.active = 0, false
 local thornsLine = Of("Thorns")
 thornsLine.remind:SetChecked(false)
 thornsLine.remind._scripts.OnClick(thornsLine.remind)
-check(#Reminders.List() == 0 and Of("Thorns") and Said(TEXT.reminderPick), "unticked: deleted, the aura stays on the list")
+local function Pressable(word) -- a button of the window in sight, by its words
+    for _, widget in ipairs(W.frames) do
+        if widget._template == "UIPanelButtonTemplate" and widget._text == word and widget:IsVisible() then return widget end
+    end
+end
+check(#Reminders.List() == 0 and Of("Thorns") and Said(TEXT.reminderNone) and Pressable(TEXT.trackAdd),
+    "unticked: deleted, the aura stays on the list, chosen, with Add tracking under it")
 Of("Thorns").remind:SetChecked(true)
 Of("Thorns").remind._scripts.OnClick(Of("Thorns").remind)
 reminder = Reminders.List()[1]
@@ -560,12 +573,16 @@ search._scripts.OnTextChanged(search, true)
 W.Wait(1)
 search._scripts.OnEnterPressed(search)
 local markLine = Of("Mark of the Wild")
-check(markLine and markLine.mark._shown and not markLine.remind:GetChecked() and Said(TEXT.reminderPick),
+check(markLine and markLine.mark._shown and not markLine.remind:GetChecked() and Said(TEXT.reminderNone),
     "a spell searched, Enter: on the list, chosen, no reminder yet")
-markLine.remind:SetChecked(true)
-markLine.remind._scripts.OnClick(markLine.remind)
+local track = Pressable(TEXT.trackAdd)
+check(track and markLine.lit._shown and markLine.lit._points[1][2] == markLine.mark
+    and markLine.mark._points[2][4] < Lists.COLUMN * -5, "its Add tracking under the list; the line lit up to its ticks")
+track._scripts.OnClick(track)
 local mark = Reminders.Named("Mark of the Wild")
-check(mark and mark.id == 1126 and mark.bar == Reminders.GROUP, "its Show on raid frames ticked: made there")
+check(mark and mark.id == 1126 and mark.bar == Reminders.GROUP and markLine.remind:GetChecked()
+    and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4 and not track:IsVisible(),
+    "Add tracking: made on the health bars, its settings there at once")
 menus[1]._items[1].fn()
 check(mark.bar == Reminders.Bars()[1], "and put on an aura bar instead")
 -- Its X: off the list, every mark and its reminder.
