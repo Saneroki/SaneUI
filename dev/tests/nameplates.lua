@@ -1049,6 +1049,33 @@ check(Near(Scale.SHOW * 7, 5), "within the time a run takes from 60 yards to 55"
 Settle()
 check(far._alpha == 1 and far.showing == nil, "then seen")
 W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
+-- The setting Nameplate transparency: every plate but your target's that much seen through, the game's unit frame
+-- under ours too; a plate appearing fades in up to it; your target's whole.
+;(function()
+    Core.Set(ns.name, "transparency", 40)
+    check(Near(dress._alpha, 0.6) and Near(plates.nameplate1.UnitFrame._alpha, 0.6),
+        "40%: a plate and the game's unit frame under it seen through")
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate7")
+    check(far._alpha == 0, "a plate appearing: unseen")
+    for _ = 1, 5 do tick(Scale.driver, 0.02) end
+    check(Near(far._alpha, 0.6 * 5 * 0.02 / Scale.SHOW), "fading in towards the setting's")
+    Settle()
+    check(Near(far._alpha, 0.6) and far.showing == nil, "then at the setting's")
+    units.target, plates.target = units.nameplate1, plates.nameplate1
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(dress._alpha == 1 and plates.nameplate1.UnitFrame._alpha == 1 and Near(far._alpha, 0.6),
+        "your target's plate whole, the others still seen through")
+    units.target, plates.target = nil, nil
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(Near(dress._alpha, 0.6), "let go: seen through again")
+    Core.Set(ns.name, "distance", false)
+    check(Near(dress._alpha, 0.6) and Near(far._alpha, 0.6), "without size by distance too")
+    Core.Set(ns.name, "distance", true)
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
+    Core.Set(ns.name, "transparency", 0)
+    Settle()
+    check(dress._alpha == 1 and plates.nameplate1.UnitFrame._alpha == 1, "0%: solid")
+end)()
 units.nameplate7, plates.nameplate7, yards.nameplate7 = nil, nil, nil
 -- Walking away: the plate follows eased, quick at first and slower as it arrives, never past its size, there in a moment.
 yards.nameplate1 = 22

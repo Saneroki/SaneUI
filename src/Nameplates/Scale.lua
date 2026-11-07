@@ -10,7 +10,9 @@ local _, ns = ...
 --  larger, and fades in from unseen in a straight line (Scale.SHOW): as long
 --  as running takes from 60 yards, where the game first shows plates, to 55.
 --  The game tells addons no distance that far (Range.lua), so the fade is
---  timed. No transparency of ours besides.
+--  timed. Besides, every plate but your target's is as transparent as the
+--  setting Nameplate transparency says (Scale.Seen; 0% at first), the fade
+--  in reaching that.
 --
 --  The distance is Range.lua's (from your character, never the camera). The
 --  game's own scaling of plates (by the camera's distance, a larger target,
@@ -96,6 +98,17 @@ local function Put(name, value)
     return Core.Ask(C_CVar.SetCVar, name, value) ~= false
 end
 
+-- How much of a plate shows (the setting Nameplate transparency): your target's whole, any other's less by the setting.
+function Scale.Seen(dress)
+    if dress.unit and Plain(UnitIsUnit(dress.unit, "target")) == true then return 1 end
+    return 1 - ((ns.options or {}).transparency or 0) / 100
+end
+
+-- A dress at what shows of it now: its fade in (dress.showing, from 0 to 1) times that.
+function Scale.Fade(dress)
+    dress:SetAlpha((dress.showing or 1) * Scale.Seen(dress))
+end
+
 -- The values the CVars had before ours (the game's, a profile's, the player's), kept with the module's settings so a
 -- logout can put them back: [name] = value.
 local function Found()
@@ -175,8 +188,8 @@ function Scale.Step(dress, elapsed)
     end
     if dress.showing then
         dress.showing = math.min(dress.showing + elapsed / Scale.SHOW, 1)
-        dress:SetAlpha(dress.showing)
         if dress.showing >= 1 then dress.showing = nil end
+        Scale.Fade(dress)
     end
     -- Laid out anew when its size settled or moved on by a tenth since: the border one screen pixel at this size.
     if not dress.fitted then dress.fitted = now end
@@ -230,26 +243,30 @@ function Scale.Again()
 end
 
 -- A plate that has just appeared: at its size at once (its unit's distance asked now, not at the next look; your
--- target's full), unseen, fading in. Laid out at that size at its first step (fitted 0).
+-- target's full), unseen, fading in. Laid out at that size at its first step (fitted 0). Without our curve, at once
+-- as transparent as the setting says.
 function Scale.Born(dress)
-    if not active or ns.off then return end
+    if not active or ns.off then
+        Scale.Fade(dress)
+        return
+    end
     ns.Range.One(dress.unit, dress)
     local target = Plain(UnitIsUnit(dress.unit, "target")) == true
     local size = target and 1 or Scale.Size(dress.yards or 0)
     dress.now, dress.aim, dress.target, dress.moving, dress.fitted, dress.measured = size, size, target, true, 0, nil
     dress.showing = 0
-    dress:SetAlpha(0)
+    Scale.Fade(dress)
     Show(dress, size)
     Scale.Again()
 end
 
--- A dress without our curve: the full size over the game's own scaling, seen, the game's unit frame at its own
--- scale (a plate taken back, the setting off, standing down).
+-- A dress without our curve: the full size over the game's own scaling, seen (as the setting Nameplate transparency
+-- says), the game's unit frame at its own scale (a plate taken back, the setting off, standing down).
 function Scale.Leave(dress)
     if dress.frame then dress.frame:SetScale(1) end
     dress:SetScale(Scale.Full())
-    dress:SetAlpha(1)
     dress.now, dress.aim, dress.moving, dress.showing, dress.yards = nil, nil, nil, nil, nil
+    Scale.Fade(dress)
     dress.least, dress.most, dress.pace, dress.mark, dress.markAt, dress.rung = nil, nil, nil, nil, nil, nil
     dress.quick, dress.target, dress.fitted, dress.measured = nil, nil, nil, nil
 end

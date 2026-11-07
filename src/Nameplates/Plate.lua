@@ -231,7 +231,9 @@ end
 -- A plate of a stranger or a critter out of sight altogether; else ours shown and the game's parts out of sight
 -- while the game shows its health bar on the plate, the game's own plate as it is otherwise. Ours filled anew when
 -- it comes back in sight: its texts measured while they show (a hidden one may not measure). How you know its
--- player found anew, the border lit anew where that changed.
+-- player found anew, the border lit anew where that changed. Ours and the rest of the game's unit frame under it
+-- (its widgets, its cast bar with the setting Cast bar off) as transparent as the setting says (Scale.Seen: your
+-- target's whole, so this runs at each change of target too).
 local function Wear(dress)
     local frame = dress.frame
     local row = frame and rawget(frame, "HealthBarsContainer")
@@ -244,12 +246,13 @@ local function Wear(dress)
     local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit, dress)
     local on = wanted and not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
     if frame then
-        frame:SetAlpha(wanted and 1 or 0)
+        frame:SetAlpha(wanted and (on and ns.Scale.Seen(dress) or 1) or 0)
         Parts(frame, on and 0 or 1)
     end
     local back = on and dress.away
     dress.away = not on
     dress:SetShown(on)
+    if on then ns.Scale.Fade(dress) end
     if back then Fill(dress) end
 end
 

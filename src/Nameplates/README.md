@@ -19,8 +19,9 @@ fails, every plate is the game's own again.
 - **Switch it on or off:** tick or untick *Nameplates* under *Sane UI* in the game's addon list (the game
   needs a restart when it was not in the list before).
 - **Which plates:** every plate the game shows with a health bar: creatures and players, foes and friends.
-  A plate the game shows with widgets only stays the game's own; so do the plates the game keeps from addons in
-  some places, and your own. Friendly players are never shown by name only while the module is on (the game's
+  A plate the game shows with widgets only stays the game's own; so do the plates the game keeps from addons (inside
+  dungeons and raids every friendly plate, your group's too: there it gives addons neither the plate nor its unit, so
+  they are its own whatever the key or a /reload), and your own. Friendly players are never shown by name only while the module is on (the game's
   setting *Show only names for friendly players* is off meanwhile and back as it was when the module is off).
 - **Players:** dressed exactly like the creatures: the bar, the power line, the line inside it, auras, cast bar. A
   player's plate shows while a fight with the player can start (the player may attack you, or you the player), and
@@ -95,8 +96,11 @@ fails, every plate is the game's own again.
   unit all the way, not in a step at each. A plate appears at the size of its distance, never larger, and fades in
   from unseen in a straight line, in about 0.7 seconds: as long as running takes from 60 yards, where the game first
   shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
-  at 60 yards is taken by the game at once. No other transparency of ours. The game's
+  at 60 yards is taken by the game at once. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
+- **Transparency:** every plate but your target's as see-through as *Nameplate transparency* says (0% at first, up
+  to 90%): ours with all on it (auras, cast bar, combat text) and what the game still shows of its own plate there
+  (widgets, its cast bar with *Cast bar* off). Your target's is always whole; a plate appearing fades in up to it.
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
   (Kalam Bold, outlined): auto attacks and physical damage in white, spell damage in red, a critical hit larger with a short
   swell, a glancing blow smaller, heals in green with a "+". What did no harm is the game's word in white ("Miss", "Parry",
@@ -112,7 +116,7 @@ fails, every plate is the game's own again.
   its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
   client lacks those for its numbers over units, those numbers stay as the game has them.
 - **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
+  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*, *Nameplate transparency*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
@@ -321,7 +325,9 @@ fails, every plate is the game's own again.
   `exp(-elapsed / Scale.EASE)` (0.08 s) with its distance, `Scale.QUICK` (0.05 s) when selected or let go; within
   `Scale.SNAP` of its size, there).
   `Scale.Born`: a plate appearing is asked about at once (`Range.One`, not at the next look) and shows at the size of its
-  distance (your target's full), never larger; its alpha from 0 to 1 in a straight line within `Scale.SHOW` (5/7 s:
+  distance (your target's full), never larger; its alpha from 0 to what it shows at (`Scale.Fade`: times `Scale.Seen`,
+  1 on your target, else 1 minus *Nameplate transparency*, key `transparency`; `Plate.lua`'s `Wear` runs it too, so at
+  each change of target, and sets the game's unit frame under ours to `Scale.Seen`) in a straight line within `Scale.SHOW` (5/7 s:
   running at 7 yards a second from 60 yards to 55; no item or spell reaches a foe at 55 or 60 yards, so nothing tells
   the two apart).
   Off, a plate taken back, standing down (`Scale.Leave`): the dress at `Scale.Full()` over the game's own scaling,
@@ -492,3 +498,6 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
   after the level, as on the unit frames (Saneroki).
 - **2026-10-29:** sizes follow a moving unit every frame (Saneroki): between two range checks the distance moves on
   at the pace its unit passed the last two; looked at twice as often, two questions a look while it stays.
+- **2026-11-07:** *Nameplate transparency* (Saneroki): every plate but your target's seen through, 0 to 90%.
+  Friendly plates the game's own in a group: inside dungeons and raids the game keeps them from addons (no error, no
+  setting of ours behind it).

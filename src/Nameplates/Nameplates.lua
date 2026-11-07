@@ -72,6 +72,8 @@ ns.TEXT = {
     castBarTip = "Under a nameplate's bar: what its unit casts, with the seconds left in the spell's icon and the name of its target. Off: the game's own cast bar.",
     size = "Nameplate size",
     sizeTip = "How large nameplates are within " .. Core.Distance(10) .. ".",
+    transparency = "Nameplate transparency",
+    transparencyTip = "How much you see through every nameplate but your target's: 0% solid, 90% barely there. Your target's plate always shows whole.",
     combatHeader = "Combat text",
     combatText = "Over nameplates",
     combatTextTip = "What a creature or player takes rises over its nameplate and fades: auto attacks and physical damage in white, spell damage in red, heals in green, critical hits larger; a miss, dodge, parry, block, evade or immunity in words. The game says what a unit took, not from whom: in a group it is everybody's damage.",
@@ -106,6 +108,7 @@ local OPTIONS = {
     { key = "foundCVars", default = {} }, -- the game's nameplate CVars as they were before ours (Scale.lua)
     { key = "castBar", default = true, text = ns.TEXT.castBar, tip = ns.TEXT.castBarTip },
     { key = "plateSize", default = 125, min = 50, max = 300, step = 5, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
+    { key = "transparency", default = 0, min = 0, max = 90, step = 5, unit = "%", text = ns.TEXT.transparency, tip = ns.TEXT.transparencyTip },
     { key = "combatText", default = true, text = ns.TEXT.combatText, tip = ns.TEXT.combatTextTip, header = ns.TEXT.combatHeader },
     { key = "combatSelf", default = true, text = ns.TEXT.combatSelf, tip = ns.TEXT.combatSelfTip },
     { key = "combatHeals", default = true, text = ns.TEXT.combatHeals, tip = ns.TEXT.combatHealsTip },
