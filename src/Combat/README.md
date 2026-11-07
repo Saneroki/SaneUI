@@ -300,7 +300,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help);
     *When class in group*: *Not needed*, or one of the game's classes: shown only while one of the others in your party
     or raid is of that class, in every place (Saneroki, 2026-11-07: "if a druid is in the party or raid it will then
-    show that spell"; you yourself do not count, the group's classes read again as it changes). Never
+    show that spell"; you yourself do not count, by his word: "Others only"; the group's classes read again as it
+    changes). Never
     while you are dead. What you show belongs to the character, watched by the aura's name, so any rank of it, on whom
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
