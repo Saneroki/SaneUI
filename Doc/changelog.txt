@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Chat: messages from your guild's Discord now stand on the left like
+  every other player's, under the name their writer goes by.
 - Nameplates: a new slider, Nameplate transparency, lets you see
   through every nameplate but your target's, from solid to 90%.
 - Unit frames, action bars and the quest log: a new switch, In a group

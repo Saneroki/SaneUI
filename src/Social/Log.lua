@@ -42,7 +42,7 @@ Log.EVENTS = {
     CHAT_MSG_PARTY = true, CHAT_MSG_PARTY_LEADER = true,
     CHAT_MSG_RAID = true, CHAT_MSG_RAID_LEADER = true, CHAT_MSG_RAID_WARNING = true,
     CHAT_MSG_INSTANCE_CHAT = true, CHAT_MSG_INSTANCE_CHAT_LEADER = true,
-    CHAT_MSG_GUILD = true, CHAT_MSG_OFFICER = true,
+    CHAT_MSG_GUILD = true, CHAT_MSG_GUILD_DISCORD = true, CHAT_MSG_OFFICER = true,
     CHAT_MSG_CHANNEL = true,
     CHAT_MSG_MONSTER_SAY = true, CHAT_MSG_MONSTER_YELL = true, CHAT_MSG_MONSTER_WHISPER = true,
     CHAT_MSG_EMOTE = NOTE, CHAT_MSG_TEXT_EMOTE = NOTE, CHAT_MSG_MONSTER_EMOTE = NOTE,
@@ -181,15 +181,53 @@ local function Link(kind, sender, name, lineID, account)
     return GetPlayerLink and GetPlayerLink(sender, name, lineID, kind) or nil
 end
 
+-- A message written on Discord, in the guild's chat or in the guild's Discord stream of its own
+-- (CHAT_MSG_GUILD_DISCORD): the event's discordInfo says so. nil for one written in the game.
+local function FromDiscord(info)
+    info = ns.Plain(info)
+    if type(info) ~= "table" then return nil end
+    if ns.Plain(info.fromDiscord) then return info end
+    local id = ns.Plain(info.userID)
+    return id ~= nil and id ~= 0 and info or nil
+end
+
+-- Who wrote it on Discord, as the game's chat names them (ChatFrameUtil.GetDecoratedSenderName): by
+-- their Discord name where they chose that, else by the character they last played (and its GUID,
+-- for the class); the event's sender if neither is there.
+local function DiscordName(info, sender)
+    local names = Enum and Enum.DiscordDisplayNameType
+    local global = ns.Plain(info.globalName)
+    global = type(global) == "string" and global ~= "" and global or nil
+    if not (global and names and ns.Plain(info.type) == names.GlobalName) then
+        local name, guid = ns.Plain(info.lastOnlineName), ns.Plain(info.lastOnlineGUID)
+        if type(name) == "string" and name ~= "" then
+            return Short(name), type(guid) == "string" and guid ~= "" and guid or nil
+        end
+    end
+    return global or Short(sender), nil
+end
+
+-- The game's words for what came with it besides text (an attachment, a poll, a sticker), in front
+-- (ChatFrameUtil.FormatDiscordMessage): a picture alone has only those.
+local function DiscordText(info, text)
+    local util = ChatFrameUtil
+    local shown = util and Core.Ask(util.FormatDiscordMessage, info, text)
+    return type(shown) == "string" and shown or text
+end
+
 -- What a chat event says; nil for one that cannot be shown. The arguments are the game's:
 -- text, sender, language, channel ("2. Trade - City"), ..., 8 channel number, 9 channel name, ..., 11 the line's
 -- number, 12 sender's GUID, 13 a Battle.net friend's account, 16 the sender hidden in a letterbox (a
--- cinematic's: the game's chat does not show it either), 17 raid marks ({skull}) left as words.
-function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName, _, lineID, guid, account, _, _, letterbox, noIcons)
+-- cinematic's: the game's chat does not show it either), 17 raid marks ({skull}) left as words,
+-- 18 discordInfo (a message written on Discord).
+function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName, _, lineID, guid, account, _, _, letterbox, noIcons, discordInfo)
     local side = Log.EVENTS[event]
     -- In a fight the game may hide a message from addons; its own chat still shows it.
     text, sender, guid = ns.Plain(text), ns.Plain(sender), ns.Plain(guid)
-    if not side or type(text) ~= "string" or text == "" or ns.Plain(letterbox) then return nil end
+    if not side or type(text) ~= "string" or ns.Plain(letterbox) then return nil end
+    local discord = side == true and FromDiscord(discordInfo) or nil
+    if discord then text = DiscordText(discord, text) end
+    if text == "" then return nil end
 
     local kind = event:sub(10) -- after "CHAT_MSG_"
     local name = Short(sender)
@@ -221,7 +259,13 @@ function Log.Read(event, text, sender, _, _, _, _, _, channelIndex, channelName,
     local channelText = channel and ns.Channels.Name(ns.Plain(channelName))
     entry.label = channelText or ns.Channels.Word(kind)
     entry.short = ns.Channels.Brief(channel and ns.Channels.Base(channelText) or entry.label)
-    if guid and guid == Core.charKey then
+    if discord then
+        -- Written on Discord: always somebody else's, on the left, under the name its writer goes by.
+        -- No link: a click would whisper a character of that name (the game's own link to a Discord
+        -- writer carries their Discord ID, which the saved history does not keep).
+        local who, played = DiscordName(discord, sender)
+        entry.side, entry.name, entry.class, entry.tie = "left", who, Class(played), Tie(played, kind)
+    elseif guid and guid == Core.charKey then
         entry.side = MINE
     elseif kind:find("^MONSTER") or kind:find("^RAID_BOSS") then
         -- A creature: no player to whisper to or to know, so no link and nothing asked (the game's chat links none).

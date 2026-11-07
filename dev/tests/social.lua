@@ -495,6 +495,39 @@ check(entry.side == "left" and entry.name == "Thrall" and entry.class == "SHAMAN
 check(entry.label == "Guild" and entry.g == 1 and entry.r == 0.25 and entry.time:match("^%d%d:%d%d$"), "with the game's word and colour for the chat, and the time")
 entry = Log.Read("CHAT_MSG_GUILD", "hello", "Tester", "", "", "", "", 0, 0, "", 0, 1, ME)
 check(entry.side == "right" and entry.name == nil and entry.label == "Guild", "your own is on the right, without your name")
+-- A message written on Discord (discordInfo, the 18th value), in the guild's Discord stream or in its chat.
+do
+    rawset(_G, "CHAT_MSG_GUILD_DISCORD", "Guild Discord")
+    Enum.DiscordDisplayNameType = { Default = 0, LastOnline = 1, GlobalName = 2 }
+    ChatFrameUtil.FormatDiscordMessage = function(info, text) -- the game's, for an attachment
+        return info.fromDiscord and info.hasAttachment and "[Attachment] " .. text or text
+    end
+    local function discord(fields)
+        local info = { userID = 7, globalName = "Saner", type = 0, lastOnlineGUID = "", lastOnlineName = "", fromDiscord = true }
+        for key, value in pairs(fields or {}) do info[key] = value end
+        return info
+    end
+    entry = Log.Read("CHAT_MSG_GUILD_DISCORD", "hi from Discord", "Saner", "", "", "", "DISCORD", 0, 0, "", 0, 1, ME, nil, nil, nil, nil, nil, discord())
+    check(entry.side == "left" and entry.name == "Saner" and entry.class == nil and entry.link == nil and entry.group == "GUILD"
+        and entry.label == "Guild Discord" and entry.text == "hi from Discord",
+        "a message from the guild's Discord stream is on the left, under its writer's Discord name, shown with the guild; no link whispers a character of that name")
+    entry = Log.Read("CHAT_MSG_GUILD", "hi", "Saner", "", "", "", "DISCORD", 0, 0, "", 0, 1, ME, nil, nil, nil, nil, nil,
+        discord({ lastOnlineGUID = THRALL, lastOnlineName = "Thrall-Stub" }))
+    check(entry.side == "left" and entry.name == "Thrall" and entry.class == "SHAMAN" and entry.link == nil and entry.label == "Guild",
+        "one from Discord in the guild's chat too, by the character its writer last played, with its class")
+    entry = Log.Read("CHAT_MSG_GUILD", "hi", "Saner", "", "", "", "DISCORD", 0, 0, "", 0, 1, ME, nil, nil, nil, nil, nil,
+        discord({ lastOnlineGUID = ME, lastOnlineName = "Tester", type = 2 }))
+    check(entry.side == "left" and entry.name == "Saner" and entry.class == nil,
+        "under the Discord name where its writer chose that; on the left even when written by the one playing")
+    entry = Log.Read("CHAT_MSG_GUILD_DISCORD", "", "Saner", "", "", "", "DISCORD", 0, 0, "", 0, 1, ME, nil, nil, nil, nil, nil, discord({ hasAttachment = true }))
+    check(entry and entry.side == "left" and entry.text == "[Attachment] ", "a picture alone is there, with the game's word for it")
+    check(Log.Read("CHAT_MSG_GUILD_DISCORD", "", "Saner", "", "", "", "DISCORD", 0, 0, "", 0, 1, ME, nil, nil, nil, nil, nil, discord()) == nil,
+        "one with nothing in it is left out")
+    entry = Log.Read("CHAT_MSG_GUILD_DISCORD", "hello", "Tester", "", "", "", "", 0, 0, "", 0, 1, ME, nil, nil, nil, nil, nil,
+        discord({ userID = 0, fromDiscord = false }))
+    check(entry.side == "right" and entry.label == "Guild Discord", "your own line in the Discord stream, written in the game, is yours, on the right")
+    ChatFrameUtil.FormatDiscordMessage = nil
+end
 entry = Log.Read("CHAT_MSG_WHISPER_INFORM", "psst", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 1, THRALL)
 check(entry.side == "right" and entry.label == "To Thrall", "a whisper you sent is yours, and says to whom")
 entry = Log.Read("CHAT_MSG_CHANNEL", "wts", "Thrall", "", "2. Trade - City", "", "", 0, 2, "Trade - City", 0, 1, THRALL)

@@ -290,6 +290,14 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   The oldest go 25 at a time (`Log.PRUNE`, marked `gone`), so the window's list drops them in
   one update (`RemoveIndexRange`) instead of one per message. Which events are read, and on which side
   they land, is the table `Log.EVENTS`.
+- **Discord:** with a guild linked to a Discord channel, its messages come in the guild's chat or in a
+  Discord stream of its own (`CHAT_MSG_GUILD_DISCORD`, read too, shown with the guild); the event's 18th value
+  (`discordInfo`) tells one written on Discord. Such a message is always on the left, even one its writer
+  wrote as the character playing: under their Discord name where they chose that, else the character they
+  last played, with its class (as `ChatFrameUtil.GetDecoratedSenderName`), with the game's words for an
+  attachment, a poll or a sticker in front (`ChatFrameUtil.FormatDiscordMessage`; a picture alone has only
+  those). It has no link: a click would whisper a character of that name, and the game's own link to a
+  Discord writer carries their Discord ID, which the saved history does not keep (board #327).
 - **Forever and Retail:** one code for both. What differs is asked for where it is used: the group finder
   (`ns.RetailFinder`, Retail's `PVEFrame`: the tab *Group Finder* and its switch stand down there, the switch's
   `hidden`), blocking invites (`Contacts.Blocker`: `C_BattleNet.SetBlocked` or Retail's `BNSetBlocked`), extending a
@@ -813,6 +821,9 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-07 — Discord's messages on the left, as a speaker's (Saneroki): the guild's Discord stream is read
+  from its event (`CHAT_MSG_GUILD_DISCORD`), not taken as a note in the middle; one from Discord in the guild's
+  chat is never yours.
 - 2026-11-01 — The game's channels in the list: a tick each, joined or left, instead of three choices; a leave the
   game refuses is not asked for at every click (Saneroki).
 - 2026-10-30 — Defaults (Saneroki): the game's chat out of sight, whole chat names; a character starts in no public
