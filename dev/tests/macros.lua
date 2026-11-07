@@ -1444,6 +1444,58 @@ do
     Editor.Choose(inner)
 end
 
+-- The macro text box's + (Saneroki, 2026-11-07: "Are there other macro commands we are missing?"): the game's commands
+-- by group over the conditions, each written on a line of its own where the cursor stands.
+do
+    function methods:GetCursorPosition() return self._cursor or #(self._text or "") end
+    function methods:Insert(text)
+        local was = self._text or ""
+        local at = self._cursor or #was
+        self._text = was:sub(1, at) .. text .. was:sub(at + 1)
+        self._cursor = at + #text
+    end
+    local macro = Book.New("Commanded")
+    macro.steps[1] = Book.Step("text", "/cast Rend")
+    Editor.Choose(macro)
+    local parts = Macros.Detail.Parts()
+    local area = parts.area
+    IsSecureCmd = function(word) return word ~= "/yield" end
+    SLASH_STARTATTACK1 = "/startattack"
+    parts.insert:GetScript("OnClick")(parts.insert)
+    local menu = W.menus[#W.menus]
+    local function Group(name)
+        for _, item in ipairs(menu) do
+            if item.text == name then return item end
+        end
+    end
+    check(menu[1].title == TEXT.commandsTitle, "macro text's +: the commands first")
+    local fighting = Group("Fighting")
+    check(fighting and fighting.sub[1].text == "/startattack" and #fighting.sub == 8, "by group, in the game's words")
+    local titled = false
+    for _, item in ipairs(menu) do titled = titled or item.title == TEXT.whenAdd end
+    check(titled and Group("Keys and mouse") ~= nil and Group("Cast sequence") == nil, "then the game's conditions")
+    local yielded = false
+    for _, item in ipairs(Group("Group").sub) do yielded = yielded or item.text == "/yield" end
+    check(not yielded and #Group("Group").sub == 7, "a command the game does not run stays out")
+    area:SetText("/cast Rend")
+    area._cursor = #"/cast Rend"
+    fighting.sub[1].fn()
+    check(area:GetText() == "/cast Rend\n/startattack" and macro.steps[1].what == area:GetText(),
+          "written on a line of its own, and the step's: " .. area:GetText())
+    area:SetText("/cast Rend")
+    area._cursor = 0
+    fighting.sub[1].fn()
+    check(area:GetText() == "/startattack\n/cast Rend", "before a line: the line goes on under it")
+    area:SetText("")
+    area._cursor = 0
+    Group("Casting").sub[1].fn()
+    check(area:GetText() == "/cast " and macro.steps[1].what == "/cast ", "one that takes a name: a space for it")
+    area._cursor = nil
+    IsSecureCmd, SLASH_STARTATTACK1 = nil, nil
+    Book.Delete(macro)
+    Editor.Choose(inner)
+end
+
 -------------------------------------------------------------------------------
 --  Whose a macro is, the list's filter, and bar buttons set by other code
 --  (Saneroki, 2026-11-04: "only the relevant ones for each class", "a dropdown

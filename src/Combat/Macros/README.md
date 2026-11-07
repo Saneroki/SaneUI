@@ -72,6 +72,10 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **Only when:** the **+** lists the conditions by group, each explained. Click a condition for its opposite, right click
   to take it away. A step whose conditions do not hold is skipped in that same press. In macro text the **+** beside the box
   writes the condition where the cursor stands.
+- **Commands in macro text** (Saneroki, 2026-11-07): the **+** beside the macro text box lists the game's macro commands
+  first, by group (Fighting, Casting, Targeting, Pet, Gear and bars, Group), each explained, then the conditions. A click
+  writes the command on a line of its own where the cursor stands; one that takes a name or a number gets a space after
+  it to type that in. Only those the game runs in a fight are listed, by the game's own words.
 - **Cast sequence** (Saneroki, 2026-11-07: "/cast [if no rend] Rend", "not only Rend", "add The cast sequence
   conditions"): the **+**'s group *Cast sequence*, for a spell's or an item's step; it works with *Each press takes the
   next step*. Any of them makes the step cast once, and after the cast its turn does nothing (no global cooldown, no rage)
@@ -183,6 +187,11 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **The list of conditions** (`Conditions.lua`). The game takes a word it does not know as true, without a sound, and a word
   that is always true cannot be told from an unknown one by asking it. So the words stand here, for the + and for the check of
   macro text.
+- **Commands** (`Picker.COMMANDS`, `Picker.Word`). The game's secure commands (`Blizzard_ChatFrameBase`,
+  `SlashCommands.lua`'s `CheckAddSecureSlashCommand`, and `/castsequence`, `/castrandom`, `/userandom`) but logging out,
+  quitting and the guild's: each by its key, its word the game's `SLASH_<key>1` (the English one where it is missing), shown
+  only where `IsSecureCmd` knows it. Written by `Detail`'s `Command`: a line break before it unless the cursor stands at a
+  line's start, a space after one that takes a name, a line break after one that does not where the line goes on.
 - **The checks** (`Check.lua`) run at an edit, on opening, and at `SPELLS_CHANGED` and `BAG_UPDATE_DELAYED` while the window shows.
   They say what can be known ahead; a clean check does not mean a spell is ready.
 - **On the full screen.** The part `macros` of Combat's board (`Board.Part`). One page, made once, goes where it is shown: the panel's
@@ -224,7 +233,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Place.lua` | Choosing a bar button with the mouse: unseen squares, the picture at the mouse, the gold frame |
 | `Icons.lua` | The picture window: the game's icons by group, searched, a macro's picture chosen |
 | `Spells.lua` | The spell window behind a spell's +: your spells, your spellbook's tabs and every class's, searched; the spells flying out under a step's name |
-| `Picker.lua` | The list behind the + |
+| `Picker.lua` | The list behind the +; macro text's commands |
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
 | `Detail.lua` | The chosen step's settings; a spell's + and the fly-out under its name |
 | `Editor.lua` | The window, the macros' list as squares (yours, then the game's marked W), its head, the key's capture, the game's window |

@@ -22,6 +22,7 @@ Detail.FINDS = 10   -- spells flying out over the steps, titles and finds, at mo
 
 local panel, kindMenu, unitMenu, unitWord, oftenMenu, oftenWord, what, whatWord, area, letters, insert, plus
 local whenWord, writes, writesWord, choose, finder
+local Written, Command
 local chips = {}
 local macro, step
 local field = 540   -- the width of a line to fill in
@@ -137,6 +138,26 @@ local function Typed(box, typed)
     step.what = box:GetText()
     step.id = nil
     Macros.Editor.Changed()
+end
+
+-- Macro text written into from the + list: the step's as the box holds it.
+Written = function()
+    if not (step and step.kind == "text") then return end
+    step.what = area.EditBox:GetText()
+    Macros.Editor.Changed()
+end
+
+-- A command from the + list, on a line of its own where the cursor stands: one that takes a name or a number with a
+-- space after it to type that in.
+Command = function(word, takes)
+    local box = area.EditBox
+    box:SetFocus()
+    local text = box:GetText() or ""
+    local at = Core.Plain(box:GetCursorPosition()) or #text
+    if at > 0 and text:sub(at, at) ~= "\n" then box:Insert("\n") end
+    local after = text:sub(at + 1, at + 1)
+    box:Insert(word .. (takes and " " or ((after ~= "" and after ~= "\n") and "\n" or "")))
+    Written()
 end
 
 -- A spell chosen in the spell window or under the box: the step's, and its name in the box.
@@ -268,7 +289,7 @@ end
 
 -- For the test: the spell's name box, the + beside it, the fly-out's search box.
 function Detail.Parts()
-    return { what = what, choose = choose, finder = finder, units = unitMenu }
+    return { what = what, choose = choose, finder = finder, units = unitMenu, area = area.EditBox, insert = insert }
 end
 
 -- The panel is that wide now.
@@ -338,9 +359,10 @@ function Detail.Build(parent)
         Macros.Picker.Open(self, function(word, value)
             area.EditBox:SetFocus()
             area.EditBox:Insert("[" .. word .. (value and ":" .. value or "") .. "] ")
-        end)
+            Written()
+        end, nil, Command)
     end))
-    Core.Tip(insert, Macros.TEXT.whenAdd, Macros.TEXT.textTip)
+    Core.Tip(insert, Macros.TEXT.textAdd, Macros.TEXT.textTip)
     letters = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     letters:SetPoint("TOPLEFT", insert, "BOTTOMLEFT", 0, -6)
 

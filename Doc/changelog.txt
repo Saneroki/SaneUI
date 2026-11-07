@@ -24,6 +24,9 @@ The bigger changes of each version, newest first.
   new group, Cast sequence, with the game's other ways to cast it
   again: Once per fight, at a new target, with Shift, Ctrl or Alt
   held, or after a pause.
+- Sane Macros: the + beside a macro text box lists the game's macro
+  commands too (/startattack, /petattack, /stopcasting and the rest),
+  each explained; a click writes it on a line of its own.
 - Sane Macros: a + beside a spell's name opens a large spell window
   (your spells, your spellbook's tabs, every class's, with a search),
   and typing a name shows the best matching spells to pick from.

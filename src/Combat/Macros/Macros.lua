@@ -145,7 +145,7 @@ Macros.TEXT = {
     item = "Item's name",
     itemTip = "The item's name, or drop it here from your bags.",
     text = "Macro text",
-    textTip = "Up to 255 characters in a step. The + button adds a condition where the cursor stands.",
+    textTip = "Up to 255 characters in a step. The + button adds one of the game's commands on a line of its own, or a condition where the cursor stands.",
     letters = "%d of 255",
 
     target = "Cast on",
@@ -175,6 +175,8 @@ Macros.TEXT = {
     whenNone = "Always",
     whenFlip = "Click: the opposite. Right click: take it away.",
     whenTake = "Right click: take it away.",
+    textAdd = "Add a command or a condition",
+    commandsTitle = "Add a command",
     spellPick = "Choose a spell",
     spellPickTip = "Opens a large window: your spells, your spellbook's tabs and every class's spells, with a search. A click puts one in this step. Typing in the box shows the best matches under it too.",
     spellsTitle = "Spells",
