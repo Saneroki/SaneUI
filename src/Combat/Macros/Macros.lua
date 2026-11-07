@@ -16,6 +16,7 @@ local _, ns = ...
 --    Reach.lua       keys and bar buttons
 --    Place.lua       choosing a bar button with the mouse
 --    Icons.lua       the picture window: the game's icons by group, searched
+--    Spells.lua      the spell window: your spells and every class's by group, searched
 --    Picker.lua      the list of conditions behind the + button
 --    Steps.lua       a macro's steps in a list
 --    Detail.lua      the chosen step's settings
@@ -173,6 +174,15 @@ Macros.TEXT = {
     whenNone = "Always",
     whenFlip = "Click: the opposite. Right click: take it away.",
     whenTake = "Right click: take it away.",
+    spellPick = "Choose a spell",
+    spellPickTip = "Opens a large window: your spells, your spellbook's tabs and every class's spells, with a search. A click puts one in this step. Typing in the box shows the best matches under it too.",
+    spellsTitle = "Spells",
+    spellsSearch = "Search spells",
+    spellsYours = "Your spells",
+    spellsAll = "All",
+    spellsCount = "%d spells",
+    spellsNone = "No spell found.",
+    spellsClick = "Click: put it in the step.",
     onceWaits = "Cast on this target already: a press of it does nothing until you change target or the fight ends.",
     whenAsk = "Which %s?",
 
@@ -313,6 +323,7 @@ end
 
 function Macros.GiveBack()
     ns.Safe("macros", Macros.Icons.Close)
+    ns.Safe("macros", Macros.Spells.Close)
     ns.Safe("macros", Macros.Place.Stop)
     ns.Safe("macros", Macros.Reach.GiveBack)
     ns.Safe("macros", Macros.Editor.GiveBack)

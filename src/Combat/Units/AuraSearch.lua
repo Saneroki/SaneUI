@@ -21,7 +21,9 @@ local _, ns = ...
 --  The box that asks it (Search.Box) is the aura lists' window's and the
 --  reminders' window's: what is typed searched a moment after the last key, the
 --  finds under it in their groups, over everything below it; a click on one, or
---  Enter for the first, picks it; the mouse on one shows its tooltip.
+--  Enter for the first, picks it; the mouse on one shows its tooltip. Sane
+--  Macros' step hands it a box of its own and its own search (any spell), the
+--  finds flying up over the steps (Macros/Detail.lua, Macros/Spells.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -140,7 +142,8 @@ local function First(a, b)
     return a.group.order < b.group.order
 end
 
--- The entries found, by group: { title, colour, entries } each, in the order they come.
+-- The entries found, by group: { title, colour, entries } each, in the order they come. Each entry's group: { title,
+-- colour, order, own }; Sane Macros' spell search groups its own the same way (Search.Grouped).
 local function Grouped(found, ranks, typed)
     local list, by = {}, {}
     for index, entry in ipairs(found or {}) do
@@ -160,6 +163,7 @@ local function Grouped(found, ranks, typed)
     if typed then table.insert(list, 1, typed) end
     return list
 end
+Search.Grouped = Grouped
 
 -- A search: done(list) with the groups found (an empty list: nothing; nil: nothing typed). While the sets are read
 -- the list holds what the game found by itself, list.reading is true, and done is told again once they are read.
@@ -269,10 +273,10 @@ function Box:Show(list)
     if not list then return self.finder:Hide() end
     local F = Search.FIND
     local typed = self.box:GetText()
-    local at = 0
-    local per = math.max(F.per, math.floor((F.lines - math.max(#list, 1)) / math.max(#list, 1)))
+    local at, most = 0, self.most
+    local per = math.max(F.per, math.floor((most - math.max(#list, 1)) / math.max(#list, 1)))
     for _, group in ipairs(list) do
-        local room = F.lines - at - 1
+        local room = most - at - 1
         if room < 1 then break end
         local count = math.min(#group.entries, per, room)
         local title = group.title or ""
@@ -299,7 +303,7 @@ end
 function Box:Run()
     if Plain(self.box:IsVisible()) ~= true then return end
     local text = self.box:GetText()
-    Search.Find(text, function(list)
+    self.find(text, function(list)
         if Plain(self.box:IsVisible()) == true and self.box:GetText() == text then self:Show(list) end
     end)
 end
@@ -311,10 +315,10 @@ function Box:Clear()
     self:Show(nil)
 end
 
--- A suggestion taken: the box empty again, then its window's pick.
+-- A suggestion taken: the box empty again (one handed over keeps its text: its pick writes it), then its window's pick.
 function Box:Pick(entry)
     if not (entry and entry.id and entry.name) then return end
-    self:Clear()
+    if self.own then self:Clear() else self:Show(nil) end
     self.pick(entry)
 end
 
@@ -326,24 +330,40 @@ end
 
 -- A search box on parent, its words over it with their top left at (x, y) from the parent's: opts = { words, width,
 -- pick(entry): a suggestion taken, label: a name for an error's place }. Returns it: { box, words, finder, ... }.
+-- Or a box of the caller's (opts.box; no words, x and y unused), whose own scripts stay and whose text a pick does not
+-- empty: opts.find(text, done) its search (as Search.Find), opts.up the finds over it, opts.lines how many at most.
 function Search.Box(parent, x, y, opts)
-    local self = setmetatable({ lines = {}, pick = opts.pick }, Box)
-    local words = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    words:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
-    words:SetText(opts.words)
-    local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-    box:SetSize(opts.width - 6, 22)
-    box:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 6, -4)
-    box:SetAutoFocus(false)
+    local self = setmetatable({ lines = {}, pick = opts.pick, find = opts.find or Search.Find,
+                                most = opts.lines or Search.FIND.lines, own = opts.box == nil }, Box)
+    local box, words = opts.box, nil
+    -- A box of its own takes the scripts; one handed over keeps its own and gets these after them.
+    local Script = function(frame, name, fn) frame:SetScript(name, fn) end -- guarded: every fn below is ns.Guard's
+    if box then
+        Script = function(frame, name, fn) frame:HookScript(name, fn) end -- guarded: every fn below is ns.Guard's
+    else
+        words = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        words:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+        words:SetText(opts.words)
+        box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+        box:SetSize(opts.width - 6, 22)
+        box:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 6, -4)
+        box:SetAutoFocus(false)
+    end
     local later = Core.Later(function() ns.Safe(opts.label, Box.Run, self) end, Search.WAIT, "Combat: " .. opts.label)
-    box:SetScript("OnTextChanged", ns.Guard(function(_, typed) if typed then later() end end))
-    box:SetScript("OnEnterPressed", ns.Guard(function(edit)
+    Script(box, "OnTextChanged", ns.Guard(function(_, typed) if typed then later() end end))
+    Script(box, "OnEnterPressed", ns.Guard(function(edit)
         if self.first then return self:Pick(self.first) end
         edit:ClearFocus()
     end))
-    box:SetScript("OnEscapePressed", ns.Guard(function() self:Clear() end))
+    Script(box, "OnEscapePressed", ns.Guard(function()
+        if self.own then self:Clear() else self:Show(nil) end
+    end))
     local finder = CreateFrame("Frame", nil, parent)
-    finder:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -6, -2)
+    if opts.up then
+        finder:SetPoint("BOTTOMLEFT", box, "TOPLEFT", -6, 2)
+    else
+        finder:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -6, -2)
+    end
     finder:SetWidth(opts.width)
     finder:SetFrameLevel((Plain(parent:GetFrameLevel()) or 1) + 20)
     finder:EnableMouse(true)

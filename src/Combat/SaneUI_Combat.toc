@@ -117,6 +117,8 @@ Macros\Steps.lua
 Macros\Detail.lua
 # The picture window: every icon of the game's (Core's set Icons) by group, searched
 Macros\Icons.lua
+# The spell window: your spells, your spellbook's tabs and every class's, searched; the fly-out under a step's name
+Macros\Spells.lua
 # Sane Macros on the full screen, and its own window
 Macros\Editor.lua
 # The game's experience and stance bars out of sight, its menu bar on mouseover

@@ -731,6 +731,7 @@ end
 
 local function Hidden()
     Macros.Icons.Close()
+    Macros.Spells.Close()
     Macros.Place.Stop()
     StopKey()
     if frame.moved then
@@ -755,6 +756,7 @@ function Part.Show(on)
         return Into(body, body:GetWidth())
     end
     Macros.Icons.Close()
+    Macros.Spells.Close()
     Macros.Place.Stop()
     StopKey()
 end

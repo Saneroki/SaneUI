@@ -1197,6 +1197,142 @@ do
 end
 
 -------------------------------------------------------------------------------
+--  The spell window behind a spell step's + and the spells flying out under its
+--  name (Saneroki, 2026-11-07: "big spell window on the plus", "a fuzzy search
+--  with [a fly-out] there to select spells")
+-------------------------------------------------------------------------------
+do
+    local Spells = Macros.Spells
+    -- Core's sets as the compiler writes them: two classes, a class line each and a profession's, Rend in two ranks,
+    -- a passive.
+    local file = os.tmpname() .. "-Spells.lua"
+    local out = assert(io.open(file, "w"))
+    out:write('local S = SaneUI.Core.Data.Add(1, "Classes", { game = "forever", hash = "00000002", build = 70755, key = "int", '
+        .. 'fields = { "name", "file", "description", "icon", "power", "color", "armor" }, '
+        .. 'types = { "text", "text", "text", "int", "int", "text", "int" }, patches = {} })\n'
+        .. 'if S then S.rows[1] = "0\\t\\tWarrior\\tWARRIOR\\t\\t\\t\\tc69b6d"; S.rows[11] = "0\\t\\tDruid\\tDRUID\\t\\t\\t\\tff7c0a" end\n'
+        .. 'S = SaneUI.Core.Data.Add(1, "SkillLines", { game = "forever", hash = "00000003", build = 70755, key = "int", '
+        .. 'fields = { "name", "kind", "class", "tree", "spells" }, types = { "text", "text", "int", "int", "list int" }, patches = {} })\n'
+        .. 'if S then S.rows[26] = "0\\t\\tArms\\tclass\\t1\\t\\t772\\0306546\\030100\\03012296"; '
+        .. 'S.rows[574] = "0\\t\\tBalance\\tclass\\t11\\t\\t5176"; S.rows[333] = "0\\t\\tEnchanting\\tprofession\\t\\t\\t7411"; '
+        .. 'S.index.byClass = { [1] = "26", [11] = "574" } end\n'
+        .. 'S = SaneUI.Core.Data.Add(1, "Spells", { game = "forever", hash = "00000004", build = 70755, key = "int", '
+        .. 'fields = { "name", "rank", "description", "icon" }, types = { "text", "text", "text", "int" }, patches = {} })\n'
+        .. 'if S then S.rows[772] = "0\\t\\tRend\\tRank 1\\t\\t132155"; S.rows[6546] = "0\\t\\tRend\\tRank 2\\t\\t132155"; '
+        .. 'S.rows[100] = "0\\t\\tCharge\\tRank 1\\t\\t132337"; S.rows[12296] = "0\\t\\tAnger Management\\t\\t\\t135881"; '
+        .. 'S.rows[5176] = "0\\t\\tWrath\\tRank 1\\t\\t136006"; S.rows[7411] = "0\\t\\tEnchanting\\tApprentice\\t\\t136244" end\n')
+    out:close()
+    W.AddSets(file)
+    os.remove(file)
+    local function Frames()
+        for _ = 1, 30 do
+            local steps = Core.Steps.frame
+            local run = steps:GetScript("OnUpdate")
+            if run then run(steps, 0.02) end
+            W.Wait(0.05)
+        end
+    end
+    Frames()
+    check(Core.Data.Set("Spells"):Ready() and Core.Data.Set("SkillLines"):Ready() and Core.Data.Set("Classes"):Ready(),
+          "the sets are there: " .. table.concat(W.fileErrors or {}, "; "))
+    -- The spellbook: Battle Stance in General; Heroic Strike, Rend and a passive in Arms.
+    local oldBook, oldLines = W.book, W.lines
+    W.book, W.lines = {}, { "General", "Arms" }
+    W.spells[2457] = { name = "Battle Stance" }
+    W.spells[78] = { name = "Heroic Strike" }
+    W.spells[772] = { name = "Rend" }
+    W.spells[12296] = { name = "Anger Management", passive = true }
+    W.Learn(2457, 1)
+    W.Learn(78, 2)
+    W.Learn(772, 2)
+    W.Learn(12296, 2)
+    Spells.Forget()
+    Spells.Gather()
+    local by = {}
+    local function Names(list)
+        local names = {}
+        for index, entry in ipairs(list) do names[index] = entry.name end
+        return table.concat(names, ", ")
+    end
+    for _, group in ipairs(Spells.Groups()) do by[group.key] = group end
+    local keys = {}
+    for index, group in ipairs(Spells.Groups()) do keys[index] = group.key end
+    local classOrder = Core.class == "DRUID" and "class11 class1" or "class1 class11"
+    check(table.concat(keys, " ") == "known line1 line2 " .. classOrder .. " all",
+          "yours, the book's tabs, each class (your own first), all: " .. table.concat(keys, " "))
+    check(Names(by.known.list) == "Battle Stance, Heroic Strike, Rend", "yours: no passive, by name: " .. Names(by.known.list))
+    check(Names(by.line1.list) == "Battle Stance" and Names(by.line2.list) == "Heroic Strike, Rend", "each tab its own")
+    check(Names(by.class1.list) == "Charge, Rend" and by.class1.list[2].id == 6546, "a class's: no passive, the highest rank")
+    check(Names(by.class11.list) == "Wrath" and by.class11.colour == "ff7c0a", "another class, its colour; no profession")
+    check(Names(by.all.list) == "Battle Stance, Charge, Heroic Strike, Rend, Wrath", "all, each name once: " .. Names(by.all.list))
+
+    -- The + beside a spell's name: the window, a click puts the spell in the step.
+    local macro = Book.New("Spelled")
+    macro.steps[1] = Book.Step("spell", "")
+    Editor.Choose(macro)
+    local parts = Macros.Detail.Parts()
+    check(parts.choose:IsShown(), "a spell's step has the +")
+    parts.choose:GetScript("OnClick")(parts.choose)
+    check(Spells.Shown() and Spells.Frame():GetFrameStrata() == "FULLSCREEN_DIALOG", "the + opens the spell window, over the full screen")
+    local box = Spells.Box()
+    check(#box.lines == 3 and box.rows[2].name:GetText() == "Heroic Strike", "your spells at first, picture and name")
+    local warriorLine = Core.class == "DRUID" and 5 or 4
+    Spells.GroupLine(warriorLine):GetScript("OnClick")(Spells.GroupLine(warriorLine))
+    check(#box.lines == 2 and box.lines[1].name == "Charge", "a class chosen: its spells")
+    local search = Spells.Search()
+    Spells.GroupLine(6):GetScript("OnClick")(Spells.GroupLine(6))
+    search:SetText("wrth")
+    search:GetScript("OnTextChanged")(search, true)
+    Frames()
+    check(#box.lines == 1 and box.lines[1].name == "Wrath", "searched, forgiving: " .. #box.lines)
+    box.rows[1]:GetScript("OnEnter")(box.rows[1])
+    check(table.concat(GameTooltip._lines or {}, "|"):find(TEXT.spellsClick, 1, true), "the mouse on one: its tooltip")
+    GameTooltip._lines = nil
+    box.rows[1]:GetScript("OnClick")(box.rows[1])
+    check(macro.steps[1].what == "Wrath" and macro.steps[1].id == 5176 and not Spells.Shown()
+          and parts.what:GetText() == "Wrath", "clicked: the step's spell, in its box, the window closed")
+    search:SetText("")
+    search:GetScript("OnTextChanged")(search, true)
+    Frames()
+
+    -- Typed in the name's box: the best spells fly out, yours first; a click or Enter takes one.
+    parts.what:SetText("rend")
+    parts.what:GetScript("OnTextChanged")(parts.what, true)
+    check(macro.steps[1].what == "rend" and macro.steps[1].id == nil, "typed: the step's name as typed")
+    Frames()
+    local finder = parts.finder
+    check(finder.finder:IsShown() and finder.lines[1].text:GetText():find(TEXT.spellsYours, 1, true)
+          and finder.lines[2].entry.name == "Rend" and finder.lines[2].entry.id == 772, "it flies out: yours first")
+    parts.what:GetScript("OnEnterPressed")(parts.what)
+    check(macro.steps[1].what == "Rend" and macro.steps[1].id == 772 and parts.what:GetText() == "Rend"
+          and not finder.finder:IsShown(), "Enter takes the first, the box keeps its name")
+    parts.what:SetText("chrge")
+    parts.what:GetScript("OnTextChanged")(parts.what, true)
+    Frames()
+    check(finder.lines[1].text:GetText():find("Warrior", 1, true) and finder.lines[2].entry.name == "Charge", "a class's spell to learn")
+    finder.lines[2]:GetScript("OnClick")(finder.lines[2])
+    check(macro.steps[1].what == "Charge" and macro.steps[1].id == 100, "a click takes it")
+    parts.what:SetText("wr")
+    parts.what:GetScript("OnTextChanged")(parts.what, true)
+    Frames()
+    parts.what:GetScript("OnEscapePressed")(parts.what)
+    check(not finder.finder:IsShown() and parts.what:GetText() == "wr", "Esc: the finds go, the box keeps what was typed")
+
+    -- An item's step: no +, nothing flies out.
+    macro.steps[1] = Book.Step("item", "")
+    Editor.Choose(macro)
+    check(not parts.choose:IsShown(), "an item's step has no +")
+    parts.what:SetText("rend")
+    parts.what:GetScript("OnTextChanged")(parts.what, true)
+    Frames()
+    check(not finder.finder:IsShown(), "and nothing flies out")
+    Book.Delete(macro)
+    Editor.Choose(inner)
+    W.book, W.lines = oldBook, oldLines
+    W.Fire("SPELLS_CHANGED")
+end
+
+-------------------------------------------------------------------------------
 --  Whose a macro is, the list's filter, and bar buttons set by other code
 --  (Saneroki, 2026-11-04: "only the relevant ones for each class", "a dropdown
 --  that is show all ..., a general one ... and a per character one")

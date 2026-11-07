@@ -5,7 +5,9 @@ local Macros = ns.Macros
 --  Sane UI - Combat - Macros - Detail
 --  The chosen step's settings, under the list: its kind, what it does, who it is
 --  cast on, how often it comes up, when it runs, and the line the game gets.
---  Only what the step's kind uses shows.
+--  Only what the step's kind uses shows. A spell's name has a + beside it, the
+--  spell window (Spells.lua), and while it is typed in the best spells fly out
+--  over the steps (the aura search's box).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Detail = {}
@@ -15,9 +17,11 @@ Detail.HEIGHT = 196
 Detail.WORD = 74    -- the width of a setting's word
 Detail.GAP = 4
 Detail.BESIDE = 90  -- of the panel's width, what is not a line to fill in
+Detail.CHOOSE = 30  -- of a name's line, the room of the + beside it
+Detail.FINDS = 10   -- spells flying out over the steps, titles and finds, at most
 
 local panel, kindMenu, unitMenu, unitWord, oftenMenu, oftenWord, what, whatWord, area, letters, insert, plus
-local whenWord, writes, writesWord
+local whenWord, writes, writesWord, choose, finder
 local chips = {}
 local macro, step
 local field = 540   -- the width of a line to fill in
@@ -81,6 +85,21 @@ local function Typed(box, typed)
     step.what = box:GetText()
     step.id = nil
     Macros.Editor.Changed()
+end
+
+-- A spell chosen in the spell window or under the box: the step's, and its name in the box.
+local function Chosen(entry)
+    if not (step and step.kind == "spell" and entry and entry.name) then return end
+    step.what, step.id = entry.name, entry.id
+    what:SetText(entry.name)
+    what:ClearFocus()
+    Macros.Editor.Changed()
+end
+
+-- What flies out under the name's box: spells, for a spell's step only.
+local function Find(text, done)
+    if not (step and step.kind == "spell") then return done(nil) end
+    return Macros.Spells.Find(text, done)
 end
 
 local function Dropped()
@@ -175,6 +194,8 @@ function Detail.Fill(chosenMacro, chosenStep)
     oftenWord:SetShown(not macro.top)
     what:SetShown(not text)
     whatWord:SetShown(not text)
+    choose:SetShown(step.kind == "spell")
+    finder:Show(nil)
     area:SetShown(text)
     letters:SetShown(text)
     insert:SetShown(text)
@@ -191,10 +212,15 @@ function Detail.Fill(chosenMacro, chosenStep)
     Chips()
 end
 
+-- For the test: the spell's name box, the + beside it, the fly-out's search box.
+function Detail.Parts()
+    return { what = what, choose = choose, finder = finder }
+end
+
 -- The panel is that wide now.
 function Detail.Width(wide)
     field = wide - Detail.BESIDE
-    what:SetWidth(field)
+    what:SetWidth(field - Detail.CHOOSE)
     area:SetWidth(field + 40)
     area.EditBox:SetWidth(field + 22)
     writes:SetWidth(field)
@@ -222,7 +248,7 @@ function Detail.Build(parent)
     whatWord = Word(Macros.TEXT.spell, Macros.TEXT.spellTip)
     whatWord:SetPoint("TOPLEFT", 0, -40)
     what = CreateFrame("EditBox", nil, panel, "InputBoxTemplate")
-    what:SetSize(field, 22)
+    what:SetSize(field - Detail.CHOOSE, 22)
     what:SetPoint("LEFT", whatWord, "RIGHT", 6, 0)
     what:SetAutoFocus(false)
     what:SetScript("OnTextChanged", ns.Guard(Typed))
@@ -230,6 +256,16 @@ function Detail.Build(parent)
     what:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
     what:SetScript("OnReceiveDrag", ns.Guard(Dropped))
     what:HookScript("OnMouseUp", ns.Guard(Dropped))
+    choose = Macros.Button(panel, "+", 24, 22)
+    choose:SetPoint("LEFT", what, "RIGHT", 6, 0)
+    choose:SetScript("OnClick", ns.Guard(function()
+        Core.HideTip()
+        local chosen = step
+        Macros.Spells.Open(function(entry) if step == chosen then Chosen(entry) end end)
+    end))
+    Core.Tip(choose, Macros.TEXT.spellPick, Macros.TEXT.spellPickTip)
+    finder = ns.AuraSearch.Box(panel, 0, 0, { box = what, find = Find, pick = Chosen, width = 380, up = true,
+                                              lines = Detail.FINDS, label = "macros" })
 
     area = CreateFrame("ScrollFrame", nil, panel, "InputScrollFrameTemplate")
     area:SetPoint("TOPLEFT", 4, -36)

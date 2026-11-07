@@ -56,6 +56,13 @@ of your normal action bar buttons. The macros are your account's, on every chara
   leave it out, X deletes it.
 - **A step:** a spell, an item, or macro text (any commands, up to 255 characters in a step), who it is cast on, and how
   often it comes up in a round (spread out evenly among the others).
+- **Choosing a spell** (Saneroki, 2026-11-07: "big spell window on the plus", "a fuzzy search with [a fly-out] there"): the
+  **+** beside a spell's name opens a large window over everything, the full screen too: on the left *Your spells*, each
+  tab of your spellbook, each class (yours first) and *All*; at the top a search, forgiving of typos; then the spells,
+  picture and name. The mouse on one shows its tooltip; a click puts it in the step. Typing in the name's box shows the best
+  spells over the steps as you type, yours first, then your class's still to learn, then the others'; a click or Enter
+  takes one, Esc only hides them. No passives, one line a name (a step casts the highest rank you know). In Retail, until its
+  data comes, only your spellbook's.
 - **Only when:** the **+** lists the conditions by group, each explained. Click a condition for its opposite, right click
   to take it away. A step whose conditions do not hold is skipped in that same press. In macro text the **+** beside the box
   writes the condition where the cursor stands.
@@ -126,6 +133,16 @@ of your normal action bar buttons. The macros are your account's, on every chara
   casts nothing; nothing is drawn over the bars (Saneroki, 2026-11-04: a gold wash over every button hid them). The button under
   the mouse comes from the frames the game says are under it (`GetMouseFoci`), only then from each square's `IsMouseOver`: a
   square hangs on the game's button, and where the game keeps that button's place to itself the answer is hidden (`Core.Plain`: no).
+- **The spell window** (`Spells.lua`). Built as the picture window is (its sizes, strata and ground), its grid of tiles
+  (picture and name, `Spells.TILE`). Groups: what the character knows, by its spellbook's tabs as the game's own book
+  makes them (`ns.BookData.Tabs`, `C_SpellBook.GetSpellBookItemInfo`; no passive, no other specialization's, no lower
+  rank, spells only), at every opening; each class's spells of its class lines from Core's sets `Classes`, `SkillLines`
+  (`byClass`, kind `class`) and `Spells`, once, the first time they are there, passives left out by `C_Spell.IsSpellPassive`,
+  one entry a name, its highest rank; *All*, each name once. The search is `Core.Fuzzy.Filter` over the names of the group
+  chosen. The fly-out under a spell's name is the aura search's box (`ns.AuraSearch.Box`, given the name's own box: it
+  keeps its scripts and its text, the finds fly up over the steps, ten lines) asking `Spells.Find`, whose finds are every
+  name once in its best group (yours, then your class's, then the others'), ranked and grouped by the aura search's own
+  `Search.Grouped`. It closes when Sane Macros goes and at standing down.
 - **The picture window** (`Icons.lua`). A Core window of kind panel at `FULLSCREEN_DIALOG` (over the full screen, HIGH,
   and its meter, DIALOG; tooltips above), most of the screen up to 1180 x 820, made at its first opening, with a dark
   ground under Core's plate. The icons are Core's set `Icons` (`Doc/guides/data.md`, *The icons*), read once a part per
@@ -184,7 +201,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Reach.lua` | Keys and bar buttons, the state drivers, what is given back |
 | `Place.lua` | Choosing a bar button with the mouse: unseen squares, the picture at the mouse, the gold frame |
 | `Icons.lua` | The picture window: the game's icons by group, searched, a macro's picture chosen |
+| `Spells.lua` | The spell window behind a spell's +: your spells, your spellbook's tabs and every class's, searched; the spells flying out under a step's name |
 | `Picker.lua` | The list behind the + |
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
-| `Detail.lua` | The chosen step's settings |
+| `Detail.lua` | The chosen step's settings; a spell's + and the fly-out under its name |
 | `Editor.lua` | The window, the macros' list as squares (yours, then the game's marked W), its head, the key's capture, the game's window |
