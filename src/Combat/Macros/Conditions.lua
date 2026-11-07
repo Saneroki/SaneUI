@@ -14,14 +14,19 @@ local Macros = ns.Macros
 --  of words stands here (WORDS), for the check of macro text too.
 --
 --  An entry with ours is Sane Macros' own, not the game's: it never stands
---  between the brackets and has no opposite. Once per target (Saneroki,
---  2026-11-07: "/cast [if no rend] Rend", and "not only Rend"): the press may not
---  read a target's auras, so the step is written as the game's own cast sequence
---  (Write.lua), which waits after the cast until the target changes.
+--  between the brackets and has no opposite. The group Cast sequence (Saneroki,
+--  2026-11-07: "/cast [if no rend] Rend", "not only Rend", "the cast sequence
+--  conditions"): the press may not read a target's auras, so the step is written
+--  as the game's own cast sequence (Write.lua), which waits after the cast until
+--  one of its resets: a new target, the fight's end, Shift, Ctrl or Alt held, a
+--  pause. Once per target is the first two. shows: how a value reads.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Conditions = {}
 Macros.Conditions = Conditions
+
+-- What every condition of the cast sequence says after its own words.
+local SEQUENCE = " After the cast its turn does nothing (no global cooldown, no rage) until then, and the next press goes on. Several of these together: whichever comes first. For a spell or an item, with Each press takes the next step."
 
 Conditions.GROUPS = {
     { name = "Fight", items = {
@@ -50,8 +55,25 @@ Conditions.GROUPS = {
         { word = "harm", on = "An enemy", off = "Not an enemy", tip = "True if the target can be attacked." },
         { word = "help", on = "A friend", off = "Not a friend", tip = "True if the target can be helped." },
         { word = "dead", on = "Dead", off = "Alive", tip = "True if the target is dead." },
+    } },
+    -- Sane Macros' own: the step becomes the game's cast sequence, cast once and then doing nothing until one of
+    -- these starts it over (Write.Resets; Saneroki, 2026-11-07: "the cast sequence conditions").
+    { name = "Cast sequence", items = {
         { word = "once", ours = true, on = "Once per target", off = "Once per target",
-          tip = "Cast once on each target, as a Rend, a Hunter's Mark or a Faerie Fire. After the cast its turn does nothing until you change target or the fight ends, and the next press goes on. The game does not say when it runs out or misses. For a spell or an item, with Each press takes the next step." },
+          tip = "Cast once on each target, as a Rend, a Hunter's Mark or a Faerie Fire: again when you change target or the fight ends. The game does not say when it runs out or misses." .. SEQUENCE },
+        { word = "reset:combat", ours = true, on = "Once per fight", off = "Once per fight",
+          tip = "Cast once a fight, as a Bloodrage or a trinket at the pull: again when the fight ends. A new target does not bring it back." .. SEQUENCE },
+        { word = "reset:target", ours = true, on = "Again at a new target", off = "Again at a new target",
+          tip = "Cast again when you change target; the fight's end does not bring it back." .. SEQUENCE },
+        { word = "reset:shift", ours = true, on = "Again with Shift", off = "Again with Shift",
+          tip = "Hold Shift as you press it and it is cast again at once." .. SEQUENCE },
+        { word = "reset:ctrl", ours = true, on = "Again with Ctrl", off = "Again with Ctrl",
+          tip = "Hold Ctrl as you press it and it is cast again at once." .. SEQUENCE },
+        { word = "reset:alt", ours = true, on = "Again with Alt", off = "Again with Alt",
+          tip = "Hold Alt as you press it and it is cast again at once." .. SEQUENCE },
+        { word = "reset", ask = "number", ours = true, on = "Again after a pause", off = "Again after a pause",
+          shows = "%s seconds",
+          tip = "Cast again once its turn has not been pressed for that many seconds. Each press of it counts the time anew, so while its turn keeps coming round sooner, it waits." .. SEQUENCE },
     } },
     { name = "Where you are", items = {
         { word = "indoors", on = "Indoors", off = "Not indoors", tip = "True inside a building or a cave, where mounts cannot go." },
@@ -142,7 +164,8 @@ function Conditions.Words(condition)
         for _, item in ipairs(group.items) do
             if item.word == condition.word and (item.ask ~= nil) == (condition.value ~= nil) then
                 local words = condition.no and item.off or item.on
-                return condition.value and words .. ": " .. condition.value or words, item.tip
+                local value = condition.value and item.shows and item.shows:format(condition.value) or condition.value
+                return value and words .. ": " .. value or words, item.tip
             end
         end
     end

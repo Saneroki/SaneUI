@@ -15,7 +15,10 @@ The bigger changes of each version, newest first.
 - Sane Macros: a new condition, Once per target, under the + of a
   spell or item step. In a sequence, Rend, Hunter's Mark and the like
   are cast once on each target; after that their turn does nothing
-  until you change target, and the next press goes on.
+  until you change target, and the next press goes on. It stands in a
+  new group, Cast sequence, with the game's other ways to cast it
+  again: Once per fight, at a new target, with Shift, Ctrl or Alt
+  held, or after a pause.
 - Sane Macros: a + beside a spell's name opens a large spell window
   (your spells, your spellbook's tabs, every class's, with a search),
   and typing a name shows the best matching spells to pick from.

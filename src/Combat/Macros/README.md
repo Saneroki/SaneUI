@@ -72,12 +72,16 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **Only when:** the **+** lists the conditions by group, each explained. Click a condition for its opposite, right click
   to take it away. A step whose conditions do not hold is skipped in that same press. In macro text the **+** beside the box
   writes the condition where the cursor stands.
-- **Once per target** (Saneroki, 2026-11-07: "/cast [if no rend] Rend", "not only Rend"): the **+**'s group *Target* holds
-  it for a spell's or an item's step; it works with *Each press takes the next step*. The step is cast once on each target: a Rend, a Hunter's Mark, a Faerie
-  Fire. After the cast its turn does nothing (no global cooldown, no rage) until you change target or the fight ends, so
-  the next press goes on; its bar button shows it dimmed meanwhile, and its tooltip says why. It only knows that it was
-  cast, not whether the aura is still on, missed or was taken off. It has no opposite; a right click takes it away. From
-  the top, or on macro text, it would not work: the check says so.
+- **Cast sequence** (Saneroki, 2026-11-07: "/cast [if no rend] Rend", "not only Rend", "add The cast sequence
+  conditions"): the **+**'s group *Cast sequence*, for a spell's or an item's step; it works with *Each press takes the
+  next step*. Any of them makes the step cast once, and after the cast its turn does nothing (no global cooldown, no rage)
+  until one of them brings it back, so the next press goes on; its bar button shows it dimmed meanwhile, and its tooltip
+  says why. *Once per target*: a new target or the fight's end (a Rend, a Hunter's Mark, a Faerie Fire). *Once per fight*:
+  the fight's end (a Bloodrage, a trinket). *Again at a new target*: the target alone. *Again with Shift*, *Ctrl*, *Alt*:
+  held as you press, it is cast again at once. *Again after a pause*: 3 to 60 seconds without a press of its turn (each
+  press counts anew, so while its turn keeps coming round sooner it waits). Several together: whichever comes first; death
+  always. It only knows that the spell was cast, not whether its aura is still on, missed or was taken off. None has an
+  opposite; a right click takes one away. From the top, or on macro text, they would not work: the check says so.
 - **Start over after a fight:** a tick, on at first.
 - **The checks:** a red **!** on a macro or a step says something would not work as it stands; the mouse on it says what. The
   switch *Check macros*. A spell not learnt yet or an item none of is held is said at its step but marks nothing in the
@@ -99,13 +103,16 @@ of your normal action bar buttons. The macros are your account's, on every chara
   press the hub (Saneroki, 2026-11-04). The game's Press and Hold Casting (`ActionButtonUseKeyHeldSpell`) stops a cast at
   the key's release, which it hands to its own buttons only (`typerelease`): while it is on, a macro that casts says so
   (`Check.lua`, a red **!**); Speed Leveling's profile has it off. Numbered attributes keep a snippet's text free of the game's bans (no closure's keyword, no brace) whatever a step says.
-- **Once per target** (`Write.lua`). The snippet cannot read auras (the newest export's `RestrictedEnvironment.lua` gives
+- **Cast sequence** (`Write.lua`). The snippet cannot read auras (the newest export's `RestrictedEnvironment.lua` gives
   it no aura call, the game's conditions have no aura word), and addon code that reads them may not write to the hub in a
   fight. The game's own cast sequence (`Blizzard_ChatFrameBase`, `CastSequenceManager.lua`) goes on to its next name only
-  at `UNIT_SPELLCAST_SUCCEEDED` of that spell, and starts over at `PLAYER_TARGET_CHANGED` and `PLAYER_REGEN_ENABLED` (and
-  at death), in a fight too. So the step's line is `/castsequence [@unit,conditions] reset=target/combat Rend, null`
-  (`Write.Sequence`, an item as `item:<number>`): Rend, then `null`, a name the game casts nothing for, until it starts
-  over. The word is Sane Macros' own (`Conditions.OURS`): never between the brackets, not asked by the press, no `no`
+  at `UNIT_SPELLCAST_SUCCEEDED` of that spell, and starts over at what its `reset=` names: `target`
+  (`PLAYER_TARGET_CHANGED`), `combat` (`PLAYER_REGEN_ENABLED`), `shift`, `ctrl`, `alt` (held as it is pressed), a number
+  (seconds since it was last pressed, counted once a second), joined by `/`; and at death; in a fight too. So the step's
+  line is `/castsequence [@unit,conditions] reset=target/combat Rend, null` (`Write.Resets` gathers the words: `once`
+  is `target/combat`, `reset:<word>` one each, `reset` with its seconds; `Write.Sequence`, an item as `item:<number>`):
+  Rend, then `null`, a name the game casts nothing for, until it starts over. The words are Sane Macros' own
+  (`Conditions.OURS`): never between the brackets, not asked by the press, no `no`
   (`Book` cleans one away), offered only for a spell's or an item's step (`Picker.Open`'s `ours`; from the top too, so
   it is found there, and the check says why it waits for a sequence). From the
   top the turn would be taken on every press and do nothing, so there it is written as a plain cast and `Check` says
@@ -207,7 +214,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | File | What it does |
 | --- | --- |
 | `Macros.lua` | Its table (`ns.Macros`), words, the plain button (`Macros.Button`), its start and standing down |
-| `Conditions.lua` | The game's conditions in plain words, and Sane Macros' own (Once per target); the words the game knows |
+| `Conditions.lua` | The game's conditions in plain words, and Sane Macros' own (the group Cast sequence); the words the game knows |
 | `Book.lua` | Macros and steps as data: cleaned, made, copied, moved, deleted; keys and places looked up |
 | `Write.lua` | A macro as lines, conditions and turns; a step cast once a target as the game's cast sequence |
 | `Check.lua` | What would not work as it stands |

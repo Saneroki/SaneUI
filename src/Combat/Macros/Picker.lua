@@ -12,7 +12,8 @@ local Core = SaneUI.Core
 local Picker = {}
 Macros.Picker = Picker
 
-Picker.NUMBERS = { stance = { 0, 1, 2, 3, 4, 5, 6 }, spec = { 1, 2, 3, 4 }, bar = { 1, 2, 3, 4, 5, 6 } }
+Picker.NUMBERS = { stance = { 0, 1, 2, 3, 4, 5, 6 }, spec = { 1, 2, 3, 4 }, bar = { 1, 2, 3, 4, 5, 6 },
+                   reset = { 3, 5, 10, 15, 20, 30, 60 } } -- reset: the cast sequence's pause, in seconds
 
 -- A number from a short list, as a menu under the line.
 local function Numbers(line, item, chosen)

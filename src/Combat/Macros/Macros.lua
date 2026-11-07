@@ -184,7 +184,7 @@ Macros.TEXT = {
     spellsCount = "%d spells",
     spellsNone = "No spell found.",
     spellsClick = "Click: put it in the step.",
-    onceWaits = "Cast on this target already: a press of it does nothing until you change target or the fight ends.",
+    onceWaits = "Cast already: a press of it does nothing until its cast sequence starts over (a new target, the fight's end, a key held, a pause: as its conditions say).",
     whenAsk = "Which %s?",
 
     writes = "The game gets",
@@ -209,8 +209,8 @@ Macros.TEXT = {
         afterOpen = "Never reached: after a ; with no condition, nothing more can be picked: %s",
         secondCast = "Only the first /cast of a step is sure to run. Make the second one a step of its own: %s",
         unitsAfter = "Never reached: %s is always there, so the step never goes on to those after it in Cast on.",
-        onceText = "Once per target works on a Spell or an Item step. In macro text, write the game's /castsequence reset=target yourself.",
-        onceTop = "Once per target works only with Each press takes the next step. From the top the step is cast as if it were not marked.",
+        onceText = "The cast sequence conditions (Once per target and the rest) work on a Spell or an Item step. In macro text, write the game's /castsequence reset=... yourself.",
+        onceTop = "The cast sequence conditions (Once per target and the rest) work only with Each press takes the next step. From the top the step is cast as if it had none.",
         heldCasting = "The game's Press and Hold Casting is on (Options, Gameplay, Combat): a cast of this macro stops when you let go of the key. Turn it off.",
     },
 

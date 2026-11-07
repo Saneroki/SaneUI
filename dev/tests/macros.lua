@@ -355,6 +355,26 @@ do
     sequence.top = true
     check(Write.Turns(sequence)[1].sequence == nil, "from the top there is none")
     Book.Delete(sequence)
+    -- The other cast sequence conditions (Saneroki, 2026-11-07: "add The cast sequence conditions"): each a reset.
+    local function Reset(...)
+        local when = {}
+        for index, word in ipairs({ ... }) do
+            local named, value = word:match("^(%a+)=(%d+)$")
+            when[index] = named and { word = named, value = value } or { word = word }
+        end
+        return Write.Line(Spell("Bloodrage", when))
+    end
+    check(Reset("reset:combat") == "/castsequence reset=combat Bloodrage, null", "once per fight: the fight's end alone")
+    check(Reset("reset:target") == "/castsequence reset=target Bloodrage, null", "again at a new target alone")
+    check(Reset("reset:shift", "reset:alt") == "/castsequence reset=shift/alt Bloodrage, null", "keys held, in the game's order")
+    check(Reset("reset=10") == "/castsequence reset=10 Bloodrage, null", "a pause in seconds")
+    check(Reset("reset:ctrl", "once", "reset=30") == "/castsequence reset=target/combat/ctrl/30 Bloodrage, null",
+          "together: whichever comes first")
+    check(Reset("reset:combat", "once") == "/castsequence reset=target/combat Bloodrage, null", "each reset once")
+    check(Write.When(Spell("Bloodrage", { { word = "reset:combat" }, { word = "combat" } })) == "[combat] 1",
+          "none of them is anything the press asks")
+    check((Macros.Conditions.Words({ word = "reset", value = "10" })) == "Again after a pause: 10 seconds", "a pause in words")
+    check((Macros.Conditions.Words({ word = "reset:combat" })) == "Once per fight", "once per fight in words")
 end
 
 -- Cast on, several in order (Saneroki, 2026-11-07: "if we have @mouseover as 1 and @Target as 2 fx it will try to
@@ -774,6 +794,17 @@ local function HasOnce(ours)
     end
 end
 check(HasOnce(true) and not HasOnce(), "Once per target in a spell's list, never in macro text's")
+do
+    local group
+    for _, each in ipairs(Macros.Conditions.Groups(true)) do
+        if each.name == "Cast sequence" then group = each end
+    end
+    local words = {}
+    for index, entry in ipairs(group and group.items or {}) do words[index] = entry.word end
+    check(table.concat(words, " ") == "once reset:combat reset:target reset:shift reset:ctrl reset:alt reset",
+          "the group Cast sequence: every reset of the game's: " .. table.concat(words, " "))
+    for _, each in ipairs(Macros.Conditions.Groups()) do check(each.name ~= "Cast sequence", "and not for macro text") end
+end
 check(not Macros.Conditions.WORDS.once, "and no word of the game's for macro text")
 check(Macros.Conditions.Text({ word = "mod:shift", no = true }) == "nomod:shift", "the opposite in the game's words")
 check(Macros.Conditions.Text({ word = "stance", value = "2" }) == "stance:2", "with its value")

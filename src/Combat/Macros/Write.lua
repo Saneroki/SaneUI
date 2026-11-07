@@ -12,12 +12,16 @@ local Macros = ns.Macros
 --  quarter and three quarters), and the marks are read in order. So the steps
 --  stay spread out whatever the numbers are.
 --
---  Once per target: the game's own cast sequence (CastSequenceManager.lua) goes
---  on to its next name only when the cast went off, and starts over when the
---  target changes or the fight ends, in a fight too. So the step is written as
---  "/castsequence reset=target/combat Rend, null": Rend, then a name the game
---  casts nothing for (no global cooldown, no rage) until it starts over. Only in
---  a sequence: from the top every press would stop at it (Check.lua says so).
+--  The cast sequence conditions (Once per target, Once per fight, again at a new
+--  target, with Shift, Ctrl or Alt, after a pause): the game's own cast sequence
+--  (CastSequenceManager.lua) goes on to its next name only when the cast went off,
+--  and starts over at what its reset names, in a fight too: target
+--  (PLAYER_TARGET_CHANGED), combat (PLAYER_REGEN_ENABLED), shift, ctrl or alt held
+--  as it is pressed, a number of seconds since it was last pressed; and at death.
+--  So the step is written as "/castsequence reset=target/combat Rend, null": Rend,
+--  then a name the game casts nothing for (no global cooldown, no rage) until it
+--  starts over. Only in a sequence: from the top every press would stop at it
+--  (Check.lua says so).
 --
 --  Cast on, several in order (Saneroki, 2026-11-07: "if we have @mouseover as 1
 --  and @Target as 2 fx it will try to cast it on mouseover first and if it
@@ -31,8 +35,8 @@ local Core = SaneUI.Core
 local Write = {}
 Macros.Write = Write
 
-Write.RESET = "reset=target/combat" -- when the game's cast sequence starts over
-Write.REST = "null"                 -- a name the game casts nothing for: the sequence waits on it
+Write.RESETS = { "target", "combat", "shift", "ctrl", "alt" } -- the game's words for a cast sequence's resets
+Write.REST = "null" -- a name the game casts nothing for: the sequence waits on it
 
 -- The step's conditions the game judges: Sane Macros' own (Once per target) never stand between the brackets.
 local function Game(step)
@@ -43,15 +47,36 @@ local function Game(step)
     return list
 end
 
--- Whether the step carries Once per target, whatever its kind.
-function Write.Marked(step)
+-- The resets the step's cast sequence conditions ask for, in the game's words ("target/combat/10"; "" for none of
+-- them, death alone); nil where the step carries none of those conditions.
+function Write.Resets(step)
+    local wanted, seconds, marked = {}, nil, false
     for _, condition in ipairs(step.when) do
-        if condition.word == "once" then return true end
+        local word = condition.word
+        local kind = word:match("^reset:(%a+)$")
+        if word == "once" then
+            wanted.target, wanted.combat, marked = true, true, true
+        elseif word == "reset" then
+            seconds, marked = tonumber(condition.value), true
+        elseif kind and Macros.Conditions.OURS[word] then
+            wanted[kind], marked = true, true
+        end
     end
-    return false
+    if not marked then return nil end
+    local parts = {}
+    for _, kind in ipairs(Write.RESETS) do
+        if wanted[kind] then parts[#parts + 1] = kind end
+    end
+    if seconds and seconds > 0 then parts[#parts + 1] = tostring(math.floor(seconds)) end
+    return table.concat(parts, "/")
 end
 
--- Whether the step is cast once a target: a spell's or an item's, marked so, in a sequence (top: from the top).
+-- Whether the step carries a cast sequence condition, whatever its kind.
+function Write.Marked(step)
+    return Write.Resets(step) ~= nil
+end
+
+-- Whether the step is a cast sequence: a spell's or an item's, with such a condition, in a sequence (top: from the top).
 function Write.Once(step, top)
     return not top and step.kind ~= "text" and Write.Marked(step)
 end
@@ -115,9 +140,10 @@ local function Thing(step)
     return step.what
 end
 
--- The game's cast sequence of a step cast once a target, as the game keeps it (without the brackets).
+-- The game's cast sequence of a step with cast sequence conditions, as the game keeps it (without the brackets).
 function Write.Sequence(step)
-    return Write.RESET .. " " .. Thing(step) .. ", " .. Write.REST
+    local resets = Write.Resets(step) or ""
+    return (resets ~= "" and "reset=" .. resets .. " " or "") .. Thing(step) .. ", " .. Write.REST
 end
 
 -- The step as a line of a macro; top: the macro starts at the top on every press.
