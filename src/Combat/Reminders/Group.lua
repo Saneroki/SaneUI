@@ -13,33 +13,34 @@ local _, ns = ...
 --  the order made. Off with the reminders, or with the switch groupBuffs.
 --
 --  In a fight the game hides most auras from addons (ShouldSpellAuraBeSecret;
---  a spell it never hides is read as ever). Then, for each member by their
---  GUID, what the last look saw counts: the aura's instance, which the game can
---  still say is there or not (GetAuraDuration fails on one gone), and when it
---  ends; so a HoT that runs out or is taken off shows at once. One that comes
---  in the fight is known from your own cast of a name watched and a new aura of
---  yours on a member (GetUnitAuraInstanceIDs with PLAYER: the game hides which
---  aura it is, not its number) within Members.WINDOW of it, either first: each
---  member who got one has it (a group's version reaches many). Anything else
---  waits for the fight's end, when every frame is read again (Group.lua).
+--  a spell it never hides is read as ever), Forever's client even their numbers
+--  and lists. Then, for each member by their GUID, what the last look saw
+--  counts, until it runs out by the clock (Reminders.Known); one that comes in
+--  the fight is known from your own cast of a name watched: on the member it
+--  was aimed at (UNIT_SPELLCAST_SENT's name), for as long as it lasted when
+--  last read (Reminders.Ends). A cast that reaches many (a group's version, a
+--  shout), or one aimed at no name of the frames, gives it to each member whose
+--  auras changed within Members.WINDOW of it, either first (UNIT_AURA: the
+--  game still tells that much). While a fight lasts the frames are looked at
+--  each Members.EVERY second, as nothing tells when a HoT ran out by the
+--  clock; at its end every frame is read again (Group.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Plain = Core.Plain
 local Reminders = ns.Reminders
 local Members = {}
 ns.GroupReminders = Members
 
 Members.MOST = 4     -- icons on a frame at most
-Members.WINDOW = 0.5 -- seconds between your cast and the new aura of yours it gave, either first
-Members.EVERY = 1    -- seconds between looks while a reminder on the frames shows early (its offset)
+Members.WINDOW = 0.5 -- seconds between your cast and a member's auras changing, either first
+Members.EVERY = 1    -- seconds between looks in a fight, and while a reminder on the frames shows early (its offset)
 -- For a preview while none is on the frames.
 Members.SAMPLES = { "Interface\\Icons\\Spell_Nature_Regeneration", "Interface\\Icons\\Spell_Nature_Rejuvenation",
                     "Interface\\Icons\\Spell_Nature_ResistNature" }
 
 local seen = setmetatable({}, { __mode = "k" }) -- [a reminder] = { [a member's GUID] = { on, instance, ends, left } }
-local mine = {}  -- [a member's GUID] = { [the instance of an aura of yours on them] = true }, in a fight
-local fresh = {} -- new auras of yours in a fight no cast was matched to yet: { key, id, at }
-local cast       -- your last cast of a name watched, in a fight: { name, at }
+local changed = {} -- [a member's GUID] = when their auras last changed, in a fight
+local cast         -- your last cast of a name watched, in a fight: { name, at, open (any member whose auras changed) }
+local fighting     -- from PLAYER_REGEN_DISABLED to _ENABLED (the game's lockdown starts only after the first)
 local ticker
 
 local function On()
@@ -128,25 +129,31 @@ local function Watched(name)
     return false
 end
 
--- Your cast of that name gave the member that aura of yours: every reminder on the frames watching it knows it is on.
-local function Gave(name, key, id)
+-- Your cast of that name gave the member that aura: every reminder on the frames watching it knows it is on, for as long
+-- as it lasted when last read.
+local function Gave(name, key)
     for _, reminder in ipairs(Reminders.List()) do
         if Placed(reminder) and not reminder.harmful and Named(reminder, name) and Reminders.Hidden(reminder) then
             seen[reminder] = seen[reminder] or {}
-            seen[reminder][key] = { on = true, instance = id }
+            seen[reminder][key] = { on = true, ends = Reminders.Ends(reminder, name) }
         end
     end
 end
 
--- The instances of your own buffs on the member, into found (emptied first).
-local function Yours(unit, found)
-    wipe(found)
-    local ids = Core.Ask(C_UnitAuras.GetUnitAuraInstanceIDs, unit, "HELPFUL|PLAYER")
-    if type(ids) ~= "table" then return found end
-    for _, id in ipairs(ids) do
-        id = Plain(id)
-        if id then found[id] = true end
+-- The member of the frames a cast was aimed at, by the name the game gave (a first name, or a whole one; a realm
+-- after it dropped): their key; nil where none has it.
+local function Aimed(target)
+    if type(target) ~= "string" then return nil end
+    target = target:match("^[^-]+")
+    if not target then return nil end
+    local found
+    local function Match(face)
+        local unit = face.unit
+        if found or not unit or face.small then return end
+        if Core.Ask(UnitName, unit) == target or Core.FullName(unit) == target then found = Key(unit) end
     end
+    ns.Group.Each(Match)
+    ns.Units.Each(Match)
     return found
 end
 
@@ -156,61 +163,45 @@ function Members.Refresh()
     ns.Units.Each(ns.Units.Buffs)
 end
 
--- A member's auras changed (UNIT_AURA, GroupFace.lua): in a fight a new one of yours is matched to your cast, or kept
--- a moment for the cast that comes after it.
+-- A member's auras changed (UNIT_AURA: GroupFace.lua, Units.lua): in a fight, when, for a cast open to any of them
+-- (just after it, or just before: Members.Cast).
 function Members.Heard(unit)
     if not Core.Restricted() then return end
-    local key = Key(unit)
-    local known = mine[key]
-    local now = Yours(unit, {})
-    mine[key] = now
-    if not known then return end
-    local at = GetTime()
-    for index = #fresh, 1, -1 do
-        if at - fresh[index].at > Members.WINDOW then table.remove(fresh, index) end
-    end
-    for id in pairs(now) do
-        if not known[id] then
-            if cast and at - cast.at <= Members.WINDOW then
-                Gave(cast.name, key, id)
-            else
-                fresh[#fresh + 1] = { key = key, id = id, at = at }
-            end
+    local key, at = Key(unit), GetTime()
+    changed[key] = at
+    if cast and cast.open and at - cast.at <= Members.WINDOW then Gave(cast.name, key) end
+end
+
+-- Your own cast of a spell, by its name and whom it was aimed at (a name, or nil), where the game tells it in a fight
+-- (Reminders.lua): that member has it; one that reaches many, or aimed at no member, each whose auras changed with it.
+function Members.Cast(name, target)
+    if not On() or not Watched(name) then return end
+    local at, aimed = GetTime(), Aimed(target)
+    cast = { name = name, at = at, open = aimed == nil or Reminders.Many(name) }
+    if aimed then Gave(name, aimed) end
+    if cast.open then
+        for key, when in pairs(changed) do
+            if at - when <= Members.WINDOW then Gave(name, key) end
         end
     end
-end
-
--- Your own cast of a spell, by its name, where the game tells it in a fight (Reminders.lua): the new auras of yours
--- just before it are its, and those just after.
-function Members.Cast(name)
-    if not On() or not Watched(name) then return end
-    local at = GetTime()
-    for _, new in ipairs(fresh) do
-        if at - new.at <= Members.WINDOW then Gave(name, new.key, new.id) end
-    end
-    wipe(fresh)
-    cast = { name = name, at = at }
     Members.Refresh()
 end
 
--- A fight began: your auras on each member as they are now, so that what is new in it can be told; the frames anew
--- (a reminder only out of a fight goes).
-local function Fight()
-    wipe(fresh)
+local Apply
+
+-- A fight began or ended: what changed in it is forgotten; the frames anew (a reminder only out of a fight goes), a
+-- look each second while it lasts.
+local function Fight(on)
+    fighting = on
+    wipe(changed)
     cast = nil
-    if not Members.Any() then return end
-    local function Snap(face)
-        if face.unit and not face.small then mine[Key(face.unit)] = Yours(face.unit, {}) end
-    end
-    ns.Group.Each(Snap)
-    ns.Units.Each(Snap)
-    Members.Refresh()
+    Apply()
 end
 
 -- Out of a group: nobody's auras are kept.
 local function Roster()
     if Core.Ask(IsInGroup) then return end
-    wipe(mine)
+    wipe(changed)
     for reminder in pairs(seen) do seen[reminder] = nil end
 end
 
@@ -221,10 +212,10 @@ local function Early()
     return false
 end
 
--- The frames as the reminders say; a look each second while one of them shows early, as no aura's event tells when
--- that is.
+-- The frames as the reminders say; a look each second in a fight, and while one of them shows early, as no aura's
+-- event tells when that is.
 function Members.Apply()
-    local timed = Members.Any() and Early()
+    local timed = Members.Any() and (fighting or Early())
     if timed and not ticker then
         ticker = C_Timer.NewTicker(Members.EVERY, ns.Guard(Members.Refresh))
     elseif ticker and not timed then
@@ -233,9 +224,11 @@ function Members.Apply()
     end
     Members.Refresh()
 end
+Apply = Members.Apply
 
 function Members.Start()
-    ns.On("PLAYER_REGEN_DISABLED", Fight)
+    ns.On("PLAYER_REGEN_DISABLED", function() Fight(true) end)
+    ns.On("PLAYER_REGEN_ENABLED", function() Fight(false) end)
     ns.On("PLAYER_UPDATE_RESTING", Members.Refresh)
     ns.On("GROUP_ROSTER_UPDATE", Roster)
 end

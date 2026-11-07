@@ -359,10 +359,11 @@ check(row._width == Bars.SIZE, "out of them it shows")
 --  A fight with the auras hidden by the game
 -------------------------------------------------------------------------------
 on.player.Thorns = THORNS
-THORNS.expirationTime = W.clock + 100
+THORNS.expirationTime, THORNS.duration = W.clock + 100, 600
 reminder.early = 10
 Update()
 check(row._width == 1, "on before the fight")
+check(reminder.lasts and reminder.lasts.Thorns == 600, "how long it lasts, kept for a fight")
 W.Combat(true)
 secret = true
 Update()
@@ -372,18 +373,26 @@ Update()
 check(row._width == Bars.SIZE, "its time as known before: the offset works in a fight")
 W.Wait(20)
 Update()
-check(row._width == 1, "past its end and still there: renewed in the fight, and hidden again")
-on.player.Thorns = nil
-Update()
-check(row._width == Bars.SIZE, "gone in the fight: the game tells that much, it shows")
+check(row._width == 1, "past its end and the game still has it: renewed in the fight, and hidden again")
 W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", W.Secret())
 Update()
-check(row._width == Bars.SIZE, "a cast the game hides tells nothing")
+check(row._width == 1, "a cast the game hides tells nothing")
+on.player.Thorns = nil
+reminder.early = 0
 W.spells[782] = { name = "Thorns" }
 C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
 W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 782)
+W.Wait(599)
 Update()
-check(row._width == 1, "your own cast of it, told: there again")
+check(row._width == 1, "your own cast of it, told: there again, as long as it lasted when last read")
+W.Wait(2)
+Update()
+check(row._width == Bars.SIZE, "then it ran out, by the clock")
+reminder.lasts = nil
+W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 782)
+W.Wait(1000)
+Update()
+check(row._width == 1, "how long not known: there until the fight ends")
 secret = false
 W.Combat(false)
 on.player.Thorns = THORNS

@@ -172,7 +172,7 @@ local function Heard(face, event)
     elseif event == "UNIT_THREAT_LIST_UPDATE" or event == "UNIT_THREAT_SITUATION_UPDATE" then
         Threat(face)
     elseif event == "UNIT_AURA" then
-        ns.GroupReminders.Heard(unit) -- in a fight: a new aura of yours, for your cast
+        ns.GroupReminders.Heard(unit) -- in a fight: when its auras changed, for your cast
         Buffs(face)
     else -- friend or foe, its rank, online
         Fill(face)

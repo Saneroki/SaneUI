@@ -302,10 +302,13 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     *Delete bar* deletes the chosen aura's bar and puts what it held on the first bar left; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
     every bar stands with all it holds. Nothing on them takes the mouse.
-  - **In a fight** the game hides most auras from addons. What was on stays known: when it goes its icon shows at once
-    and the offset counts on. What comes during a fight the game does not tell, except your own cast where it lets that
-    through; on the party and raid frames your cast goes with the member who gets a new aura of yours that moment, so a
-    Rejuvenation you cast on the tank takes its icon off the tank's frame. Else an icon that shows stays until the fight ends.
+  - **In a fight** the game hides most auras from addons, Forever's client all of them. What was on stays known until
+    its time is up, and the offset counts on; then its icon shows. What comes during a fight the game does not tell, but
+    your own casts: a cast of an aura watched counts as on for as long as that aura lasted when last seen out of a fight
+    (else until the fight ends), on the party and raid frames on the member it was aimed at, so a Rejuvenation you cast
+    on the tank takes its icon off the tank's frame until it runs out. A group's version (Gift of the Wild) or a shout
+    counts on each member whose auras changed with it. An aura taken off early (dispelled, cancelled) is not told: its
+    icon shows when its time would have been up.
 
 ## Technical details
 - **The window** (`Window.lua`): a `Core.Window` of the kind `screen`, docked at `BOTTOM` at first,
@@ -672,10 +675,14 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   `Buffs` asks `GroupReminders.Missing(unit, list)` on a fill, on `UNIT_AURA` (out of a fight only one that may change what is seen:
   `Buffed`), and `GroupReminders.Refresh` asks every face (`Group.Each`) when a reminder changes, a fight begins, resting changes, and
   each `GroupReminders.EVERY` second while one has an offset. What is known is kept per reminder and member GUID
-  (`Reminders.Known`, the bars' own look). In a fight `GroupReminders.Heard` keeps the instance numbers of your buffs on each member
-  (`C_UnitAuras.GetUnitAuraInstanceIDs(unit, "HELPFUL|PLAYER")`, taken at `PLAYER_REGEN_DISABLED`, not secret); a new one within
-  `GroupReminders.WINDOW` of your `UNIT_SPELLCAST_SUCCEEDED` of a name watched, before or after it, is that aura: on, its instance
-  known, so `GetAuraDuration` tells when it goes.
+  (`Reminders.Known`, the bars' own look). In a fight (Forever's client hides every aura, its instance, `GetAuraDuration` and
+  `GetUnitAuraInstanceIDs`' list from addons; your own casts are plain) a known state holds until `ends` by the clock (past it,
+  renewed only where `GetAuraDuration` still answers for its instance); `GroupReminders.EVERY` a look each second from
+  `PLAYER_REGEN_DISABLED` to `_ENABLED`. Your `UNIT_SPELLCAST_SUCCEEDED` of a name watched, its target's name from the
+  `UNIT_SPELLCAST_SENT` of the same cast GUID (`UnitName` or `Core.FullName` of a face's unit): that member on, `ends` from
+  `reminder.lasts[name]` (saved, learned at each plain read, `data.duration`: `Reminders.Ends`); no name of the frames, or
+  `Reminders.Many` (a family's later names, a greater blessing, a shout): each member whose `UNIT_AURA` came within
+  `GroupReminders.WINDOW` of it, before or after.
 
 - **The threat and damage meter** (`Meter/`): the combat log is closed to addons (`C_CombatLog.IsCombatLogRestricted`), so
   the numbers are the game's own meter's (`C_DamageMeter`, the same in both games). `Read.Fight(where, types, people)` reads one
@@ -787,6 +794,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
 
 ## History
+- **2026-11-07:** in a fight an aura on the health bars and the reminder bars counts from your cast for as long as it lasted when last seen, on the member it was aimed at, and runs out by the clock (Saneroki: "Inside combat i have the hots showing up but they never disappear"; Forever's client hides every aura's number in a fight, which the casts were matched to).
 - **2026-11-06:** with Abilities on, the spellbook shows its spells still to learn in grey, the weapon skills, Home first, the reservations by drag, the checkbox *Show unlearned spells* and its menu lines, through Core (`Core.Spellbook`) (Saneroki: "it looks like it is not part of the combat fullscreen").
 - **2026-11-06:** the meter is never on or over Combat's full screen, and its button on the full screen's bar is gone (Saneroki: "The meeter should not show in or over the full screen").
 - **2026-11-06:** the meter's *Lock window*: neither moved nor sized out of Edit Mode (Saneroki: "lock it in its settings so it is fixed and doesn't let you drag to resize or move it").

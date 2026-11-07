@@ -450,7 +450,7 @@ local function Heard(face, event, _, info)
         Rez(face, unit)
     elseif event == "UNIT_AURA" then
         if not ns.GroupReminders.Any() then return end
-        ns.GroupReminders.Heard(unit) -- in a fight: a new aura of yours, for your cast
+        ns.GroupReminders.Heard(unit) -- in a fight: when its auras changed, for your cast
         if Core.Restricted() or Buffed(info) then Buffs(face, unit) end
     elseif event == "UNIT_NAME_UPDATE" then
         Name(face, unit)

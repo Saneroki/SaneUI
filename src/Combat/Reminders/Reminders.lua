@@ -21,11 +21,12 @@ local _, ns = ...
 --  /sane reminders).
 --
 --  In a fight the game hides most auras from addons (ShouldSpellAuraBeSecret;
---  never-secret spells are read as ever). Then what the last look saw counts:
---  the aura's instance, which the game can still say is there or not
---  (GetAuraDuration fails on one gone), and when it ends. So an aura that goes
---  or runs out shows at once; one that comes in a fight is known only from your
---  own cast of that name, where the game tells it, else at the fight's end.
+--  never-secret spells are read as ever), Forever's client even their numbers
+--  and lists. Then what the last look saw counts, until it runs out by the
+--  clock; where the game still answers for the aura's instance (GetAuraDuration),
+--  that it is there. One that comes in a fight is known from your own cast of
+--  that name (the game tells your casts): on for as long as it lasted when last
+--  read (kept on the reminder, lasts), else until the fight ends.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -152,6 +153,41 @@ function Reminders.Hidden(reminder)
 end
 local Hidden = Reminders.Hidden
 
+-- Whether a cast of that name reaches many: a group's version of a family (its names after the first; a greater
+-- blessing), a shout.
+function Reminders.Many(name)
+    local family = families[name]
+    if not family then return false end
+    if family.party or name:find("^Greater ") then return true end
+    return not family.own and family[1] ~= name
+end
+
+-- When an aura of that name the reminder watches, given now, runs out: by how long it lasted when last read; nil
+-- where that is not known.
+function Reminders.Ends(reminder, name)
+    local lasts = reminder.lasts
+    local seconds = lasts and (lasts[name] or lasts[reminder.name])
+    return seconds and GetTime() + seconds or nil
+end
+
+-- How long an aura the reminder watches lasts, read where the game shows it, kept for a fight.
+local function Learn(reminder, data)
+    local name, seconds = Plain(data.name), Plain(data.duration)
+    if type(name) ~= "string" or type(seconds) ~= "number" or seconds <= 0 then return end
+    reminder.lasts = reminder.lasts or {}
+    reminder.lasts[name] = seconds
+end
+
+-- Whether the game still has that aura instance on the unit: true; nil where it will not say (it fails on one gone,
+-- and on any while it refuses addons auras: in a fight in Forever's client).
+local function Still(unit, instance)
+    local read = C_UnitAuras.GetAuraDuration
+    if not read then return nil end
+    local ok, duration = pcall(read, unit, instance)
+    if ok and type(duration) ~= "nil" then return true end
+    return nil
+end
+
 -- The reminder's aura on the unit, by any name of its family, only yours where it says so; nil where none is, or the
 -- game hides it.
 function Reminders.Aura(reminder, unit)
@@ -171,11 +207,13 @@ end
 function Reminders.Known(reminder, unit, state)
     if Hidden(reminder) then
         if not state then return nil end
-        local auras = C_UnitAuras
-        if state.instance and auras.GetAuraDuration and Core.Ask(auras.GetAuraDuration, unit, state.instance) == nil then
-            state.on, state.instance, state.ends = false, nil, nil
+        if state.ends and state.ends <= GetTime() then
+            if state.instance and Still(unit, state.instance) then
+                state.ends = nil -- past its end and still there: renewed
+            else
+                state.on, state.instance, state.ends = false, nil, nil -- run out
+            end
         end
-        if state.ends and state.ends <= GetTime() then state.ends = nil end -- past its end and still on: renewed
     else
         state = state or {}
         local data = Reminders.Aura(reminder, unit)
@@ -183,6 +221,7 @@ function Reminders.Known(reminder, unit, state)
         state.on = type(data) == "table"
         state.instance = state.on and Plain(data.auraInstanceID) or nil
         state.ends = ends and ends > 0 and ends or nil
+        if state.on then Learn(reminder, data) end
     end
     state.left = state.ends and math.max(0, state.ends - GetTime()) or nil
     return state
@@ -247,18 +286,25 @@ function Reminders.Entry(root, spell)
         end))
 end
 
--- Your own cast of a spell a reminder watches, where the game tells it in a fight: the aura is there, for how long
--- unknown.
-local function Cast(_, _, spell)
+local sentCast, sentTarget -- your last cast sent: its GUID, the name of whom it was aimed at
+
+local function Sent(_, target, cast)
+    sentCast, sentTarget = Plain(cast), Plain(target)
+end
+
+-- Your own cast of a spell a reminder watches, where the game tells it in a fight: the aura is there, as long as it
+-- lasted when last read (else until the fight ends).
+local function Cast(_, cast, spell)
     spell = Plain(spell)
     local name = spell and Core.Ask(C_Spell.GetSpellName, spell)
     if not name then return end
     for _, reminder in ipairs(Reminders.List()) do
         if reminder.name == name and reminder.bar ~= Reminders.GROUP and Hidden(reminder) then
-            seen[reminder] = { on = true }
+            seen[reminder] = { on = true, ends = Reminders.Ends(reminder, name) }
         end
     end
-    ns.GroupReminders.Cast(name)
+    cast = Plain(cast)
+    ns.GroupReminders.Cast(name, cast ~= nil and cast == sentCast and sentTarget or nil)
 end
 
 -- Another unit behind the token: what was known of it no longer counts.
@@ -291,6 +337,7 @@ function Reminders.Start()
     end
     Core.On("PLAYER_TARGET_CHANGED", Unit)
     Core.On("PLAYER_FOCUS_CHANGED", Unit)
+    Core.OnUnit("UNIT_SPELLCAST_SENT", "player", Sent)
     Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", Cast)
     Core.EditMode.Watch(ns.Guard(Reminders.Apply))
     ns.GroupReminders.Start()

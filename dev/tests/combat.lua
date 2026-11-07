@@ -570,13 +570,15 @@ do
         if data and filter:find("PLAYER", 1, true) and not data.mine then return nil end
         return data
     end
-    C_UnitAuras.GetAuraDuration = function(unit, id) -- the game fails on an instance that is gone
+    C_UnitAuras.GetAuraDuration = function(unit, id) -- the game fails on an instance that is gone, and in a fight on any
+        if secret then error("Auras cannot be accessed when secret") end
         for _, data in pairs(auras[unit] or {}) do
             if data.auraInstanceID == id then return {} end
         end
         error("invalid aura instance")
     end
     C_UnitAuras.GetUnitAuraInstanceIDs = function(unit, filter)
+        if secret then return W.Secret() end -- a list addons may not count or walk
         local ids = {}
         for _, data in pairs(auras[unit] or {}) do
             if data.mine or not filter:find("PLAYER", 1, true) then ids[#ids + 1] = data.auraInstanceID end
@@ -671,43 +673,64 @@ do
     Reminders.Take(mark)
     check(not Shows(third.face, 136078) and Members.Icons() == Members.SAMPLES, "deleted: gone, and the preview's samples")
 
-    -- Your HoT in a fight the game hides it in: what was known, a HoT gone at once, your cast matched to its new aura.
+    -- Your HoT in a fight the game hides it in (Forever's client: no aura, number or list to read): what was known, by the
+    -- clock; your cast on the member it was aimed at, as long as it lasted when last read.
     local rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
     rejuv.bar, rejuv.own = Reminders.GROUP, true
-    auras.party1 = { Rejuvenation = { auraInstanceID = 41, mine = true, expirationTime = W.clock + 30 } }
+    mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
+    mark.bar = Reminders.GROUP
+    auras.party1 = { Rejuvenation = { name = "Rejuvenation", auraInstanceID = 41, mine = true, duration = 15,
+                                      expirationTime = W.clock + 10 } }
     auras.party2 = {}
     Reminders.Apply()
     check(not Shows(second.face, 136081) and Shows(third.face, 136081), "your HoT: shown on whom it is not")
+    check(rejuv.lasts and rejuv.lasts.Rejuvenation == 15, "how long it lasts, kept for a fight")
     W.Combat(true)
     secret = true
     on(second.face, "UNIT_AURA", "party1", W.Secret())
-    check(not Shows(second.face, 136081), "in a fight the game hides it: known from before, still there")
-    auras.party1 = {}
-    on(second.face, "UNIT_AURA", "party1", W.Secret())
-    check(Shows(second.face, 136081), "it ran out in the fight: the game tells that much, it shows at once")
-    auras.party2 = { Rejuvenation = { auraInstanceID = 42, mine = true } }
-    on(third.face, "UNIT_AURA", "party2", W.Secret())
-    check(Shows(third.face, 136081), "a new aura of yours and no cast: which one is not known")
+    check(not Shows(second.face, 136081) and not ns.off, "in a fight the game hides it: known from before, still there")
+    W.Wait(11)
+    check(Shows(second.face, 136081), "its time up by the clock: it shows, with no event, by a look each second")
     W.spells[774] = { name = "Rejuvenation" }
-    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 774)
-    check(not Shows(third.face, 136081) and Shows(second.face, 136081), "your cast of it right after: that member has it")
-    W.Wait(1)
-    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 774)
-    auras.party1 = { Rejuvenation = { auraInstanceID = 43, mine = true } }
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "Rolf", "cast-1", 774)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", 774)
+    check(not Shows(third.face, 136081) and Shows(second.face, 136081), "your cast aimed at a member by name: they have it")
+    W.Wait(14)
+    check(not Shows(third.face, 136081), "as long as it lasted when last read")
+    W.Wait(2)
+    check(Shows(third.face, 136081), "then it ran out")
     on(second.face, "UNIT_AURA", "party1", W.Secret())
-    check(not Shows(second.face, 136081), "the cast first, then its aura: the same")
-    auras.party2 = { Rejuvenation = { auraInstanceID = 42, mine = true }, Thorns = { auraInstanceID = 44, mine = true } }
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "", "cast-2", 774)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-2", 774)
+    check(not Shows(second.face, 136081) and Shows(third.face, 136081),
+        "aimed at no name of the frames: the member whose auras changed just before it")
     W.Wait(1)
-    auras.party2.Rejuvenation = nil
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "", "cast-3", 774)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-3", 774)
     on(third.face, "UNIT_AURA", "party2", W.Secret())
-    check(Shows(third.face, 136081), "an aura of yours long after the cast is not its, and the HoT gone shows")
+    check(not Shows(third.face, 136081), "or just after it")
+    W.Wait(1)
+    on(first.face, "UNIT_AURA", "player", W.Secret())
+    check(Shows(first.face, 136081), "auras changed long after the cast: not its")
     W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", W.Secret())
-    check(Shows(third.face, 136081), "a cast the game hides tells nothing")
+    check(Shows(first.face, 136081), "a cast the game hides tells nothing")
+    W.spells[21849] = { name = "Gift of the Wild" }
+    W.Wait(1)
+    on(third.face, "UNIT_AURA", "party2", W.Secret())
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "Tess", "cast-4", 21849)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-4", 21849)
+    check(not Shows(second.face, 136078) and not Shows(third.face, 136078) and Shows(first.face, 136078),
+        "a group's version aimed at one: each whose auras changed with it has it too")
+    W.Wait(1000)
+    check(not Shows(second.face, 136078) and Shows(second.face, 136081),
+        "how long not known: on until the fight ends; a HoT known runs out")
+    Reminders.Take(mark)
     secret = false
+    auras.party1 = {}
     auras.party2 = { Rejuvenation = { auraInstanceID = 45, mine = true } }
     W.Combat(false)
     W.Wait(0)
-    check(not Shows(third.face, 136081) and not Shows(second.face, 136081), "after the fight every frame is read again")
+    check(not Shows(third.face, 136081) and Shows(second.face, 136081), "after the fight every frame is read again")
     -- The offset: shown already that long before it runs out, by a look each second.
     auras.party2.Rejuvenation.expirationTime = W.clock + 20
     rejuv.early = 5
