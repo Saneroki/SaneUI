@@ -2,8 +2,9 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Group
---  The reminders shown on the health bars (Reminders.GROUP, Health bars:
---  Saneroki, 2026-11-06): each watched on every member the party and raid
+--  The reminders shown on the health bars (Reminders.GROUP among their
+--  places, Health bars: Saneroki, 2026-11-06; on a bar or the nameplates too
+--  where it is ticked there): each watched on every member the party and raid
 --  frames show, your own slot too, and on your own frame, your target's and
 --  your focus's (Units.lua), its icon on that frame (from the health
 --  leftwards) while its settings want it, as on a bar: missing or active, the
@@ -48,7 +49,7 @@ local function On()
 end
 
 local function Placed(reminder)
-    return reminder.bar == Reminders.GROUP
+    return Reminders.At(reminder, Reminders.GROUP)
 end
 
 -- Whether any reminder is on the frames, and they are on.
@@ -86,7 +87,7 @@ function Members.Missing(unit, list)
     for _, reminder in ipairs(Reminders.List()) do
         if #list >= Members.MOST then break end
         if Placed(reminder) and (reminder.harmful or helped) and Reminders.Reaches(reminder, unit)
-            and Reminders.Wanted(reminder, Look(reminder, unit, key), unit) then
+            and Reminders.Wanted(reminder, Look(reminder, unit, key), unit, Reminders.GROUP) then
             list[#list + 1] = reminder.icon
         end
     end

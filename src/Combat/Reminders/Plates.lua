@@ -2,9 +2,10 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Plates
---  The reminders shown on the nameplates (Reminders.PLATES, the place
---  Nameplates; Saneroki, 2026-11-07: "On those nameplates the trackers are
---  shown directly underneath with no gaps"): each watched on the unit of every
+--  The reminders shown on the nameplates (Reminders.PLATES among their
+--  places, the place Nameplates; Saneroki, 2026-11-07: "On those nameplates
+--  the trackers are shown directly underneath with no gaps"; on a bar or the
+--  health bars too where it is ticked there): each watched on the unit of every
 --  plate the game shows, its icon in a row right under the plate, from the
 --  plate's left, side by side without a gap, while its settings want it, as
 --  on a bar: missing or active, the offset with the seconds left on the icon,
@@ -50,7 +51,7 @@ local function On()
 end
 
 local function Placed(reminder)
-    return reminder.bar == Reminders.PLATES
+    return Reminders.At(reminder, Reminders.PLATES)
 end
 
 -- Whether any reminder is on the nameplates, and they are on.
@@ -131,7 +132,7 @@ local function Want(unit)
         if count >= Plates.MOST then break end
         if Placed(reminder) and (reminder.harmful or helped) and Reminders.Reaches(reminder, unit) then
             local state = Look(reminder, unit, key)
-            if Reminders.Wanted(reminder, state, unit) then
+            if Reminders.Wanted(reminder, state, unit, Reminders.PLATES) then
                 count = count + 1
                 pictures[count] = reminder.icon
                 lefts[count] = state.on and state.left or false

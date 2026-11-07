@@ -132,6 +132,12 @@ check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
 local Reminders, Bars = ns.Reminders, ns.ReminderBars
 local Update = Reminders.Update
 local TEXT = ns.TEXT
+-- Whether the reminder shows at that place alone; its places, in order ("2 0 -1").
+local function Only(reminder, place)
+    local places = Reminders.Places(reminder)
+    return #places == 1 and places[1] == place
+end
+local function Where(reminder) return table.concat(Reminders.Places(reminder), " ") end
 
 local function Click(button, mouse)
     W.menus = {}
@@ -165,7 +171,7 @@ menu[8].fn()
 local list = Reminders.List()
 local reminder = list[1]
 check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and #reminder.units == 1
-    and reminder.units[1] == "player" and reminder.unit == nil and reminder.bar == Reminders.Bars()[1],
+    and reminder.units[1] == "player" and reminder.unit == nil and Only(reminder, Reminders.Bars()[1]),
     "Add tracking: the reminder is made, on the first aura bar, of your own aura, watched on you")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
 check(ns.options.auraKept[782] == "Thorns" and ns.ReminderEditor.panel and ns.ReminderEditor.panel:IsVisible(),
@@ -179,7 +185,7 @@ ns.AuraLists.Hide()
 Reminders.Take(reminder)
 Click(thorns)[8].fn()
 reminder = Reminders.List()[1]
-check(#Reminders.List() == 1 and reminder.bar == Reminders.Bars()[1], "deleted, then added again")
+check(#Reminders.List() == 1 and Only(reminder, Reminders.Bars()[1]), "deleted, then added again")
 ns.AuraLists.Hide()
 
 -------------------------------------------------------------------------------
@@ -505,6 +511,8 @@ do
     Update()
     check(old.unit == nil and #old.units == 1 and old.units[1] == "target"
         and ns.ReminderEditor.Watched(old) == TEXT.reminderUnits.target, "an older reminder's single unit: read into the list")
+    check(old.bar == nil and Only(old, Reminders.Bars()[1]) and ns.ReminderEditor.Where(old) == "Aura bar 1",
+        "its single bar too: its one place")
     check(row._width == 2 * Bars.SIZE + Bars.GAP, "and watched: your target lacks it")
     on.target.Thorns = THEIRS
     Update()
@@ -584,7 +592,7 @@ do
     check(Under(wolf) == nil and Under(friend) == nil, "nothing on the nameplates: no row made")
     local sunder = Reminders.Make({ id = 7386, name = "Sunder Armor", icon = 132363, harmful = true, unit = "target" },
                                   Reminders.PLATES)
-    check(sunder.bar == Reminders.PLATES and sunder.missing and not sunder.active, "a debuff on the nameplates: shown where missing")
+    check(Only(sunder, Reminders.PLATES) and sunder.missing and not sunder.active, "a debuff on the nameplates: shown where missing")
     Update()
     local row, count = Under(wolf)
     local point = row and row._points[1]
@@ -592,6 +600,9 @@ do
         and point[4] == 0 and point[5] == 0 and row._width == Plates.SIZE,
         "a foe without it: its icon right under the plate's health bar, no gap")
     check(select(2, Under(friend)) == 0, "a friend: none of your debuffs to miss")
+    check(Reminders.Wanted(sunder, { on = false }, "nameplate2", Reminders.GROUP)
+        and not Reminders.Wanted(sunder, { on = false }, "nameplate2", Reminders.PLATES),
+        "by the place asked: a debuff missing on a friend counts on the health bars, not on a plate")
     on.nameplate1["Sunder Armor"] = { name = "Sunder Armor", spellId = 7386, auraInstanceID = 30, expirationTime = 0 }
     Update()
     check(select(2, Under(wolf)) == 0, "with it: gone")
@@ -604,6 +615,14 @@ do
     check(count == 2 and row.icons[1]._points[1][4] == 0 and row.icons[2]._points[1][4] == Plates.SIZE
         and row._width == 2 * Plates.SIZE, "two missing: side by side, no gap between them; a buff not on a foe")
     check(select(2, Under(friend)) == 1, "the buff on a friend who misses it")
+    mark.places = { Reminders.Bars()[1], Reminders.PLATES }
+    on.player["Mark of the Wild"] = nil
+    Update()
+    check(select(2, Under(friend)) == 1 and Row()._width == Bars.SIZE,
+        "ticked on its bar and the nameplates at once: on both, by the same settings")
+    mark.places = { Reminders.PLATES }
+    Update()
+    check(select(2, Under(friend)) == 1 and Row()._width == 1, "the nameplates alone again: off the bar")
     units.nameplate1.dead = true
     Update()
     check(select(2, Under(wolf)) == 0, "none on the dead")
@@ -660,7 +679,7 @@ local second = Reminders.AddBar()
 local third = Reminders.AddBar()
 check(#Reminders.Bars() == 3 and second ~= third, "as many as you make, each its own")
 local rage = Reminders.Make({ id = 5487, name = "Bear", icon = 1, harmful = false, unit = "player" })
-rage.bar = second
+rage.places = { second }
 on.player.Thorns, on.player.Bear = nil, nil
 Update()
 local rowTwo = Row(2)
@@ -670,7 +689,7 @@ for _, widget in ipairs(W.frames) do
         "no glow on a reminder bar")
 end
 Reminders.TakeBar(second)
-check(#Reminders.Bars() == 2 and rage.bar == Reminders.Bars()[1], "a bar deleted: its reminders on the first bar left")
+check(#Reminders.Bars() == 2 and Only(rage, Reminders.Bars()[1]), "a bar deleted: its reminders on the first bar left")
 Update()
 check(Row()._width == 2 * Bars.SIZE + Bars.GAP and not rowTwo:IsVisible(), "and its frame gone")
 Reminders.TakeBar(third)
@@ -739,18 +758,33 @@ local function Pressed(word)
 end
 local newBar, takeBar = Pressed(TEXT.reminderNewBar), Pressed(TEXT.reminderDeleteBar)
 check(takeBar._disabled, "one bar: it cannot be deleted")
+local shows = menus[1]._items
+check(menus[1].words._text == TEXT.reminderOnBar and #shows == 3 and shows[1].checkbox and shows[3].checkbox
+    and shows[1].checked() and not shows[2].checked() and menus[1]._override == "Aura bar 1",
+    "Shows on: a tick for each place; the first aura bar ticked, and the dropdown says so")
 newBar._scripts.OnClick(newBar)
-check(#Reminders.Bars() == 2 and reminder.bar == Reminders.Bars()[2] and not takeBar._disabled,
-    "a new bar by its button, the reminder on it")
-check(#menus[1]._items == 4 and menus[1]._items[3].text == TEXT.reminderGroup and menus[1]._items[4].text == TEXT.reminderPlates,
-    "a line for each bar, then the party and raid frames, the nameplates last")
+shows = menus[1]._items
+check(#Reminders.Bars() == 2 and Only(reminder, Reminders.Bars()[2]) and not takeBar._disabled
+    and menus[1]._override == "Aura bar 2", "a new bar by its button, the reminder on it in place of the first")
+check(#shows == 4 and shows[3].text == TEXT.reminderGroup and shows[4].text == TEXT.reminderPlates and shows[2].checkbox
+    and shows[2].checked() and not shows[1].checked(), "a tick for each bar, then the party and raid frames, the nameplates last")
 menus[1]._items[3].fn()
-check(reminder.bar == Reminders.GROUP and not takeBar._shown and not menus[2]._shown and not menus[2].words._shown,
-    "on the health bars: no bar of it to delete, no unit, out of sight")
-check(Said(TEXT.reminderOnGroup), "and the window says where it watches")
+check(Where(reminder) == Reminders.Bars()[2] .. " 0" and takeBar._shown and menus[2]._shown and Said(TEXT.reminderOnGroup)
+    and menus[1]._override == "Aura bar 2, Health bars",
+    "the health bars ticked too: on both, Watch on still there for its bar, both named, the window says where it watches")
+menus[1]._items[2].fn()
+check(Only(reminder, Reminders.GROUP) and not takeBar._shown and not menus[2]._shown and not menus[2].words._shown,
+    "its bar unticked, on the health bars alone: no bar of it to delete, no unit, out of sight")
+menus[1]._items[3].fn()
+check(Only(reminder, Reminders.GROUP) and menus[1]._items[3].checked() and menus[1]._override == "Health bars",
+    "the last one unticked: it stays ticked, a reminder shows somewhere")
 menus[1]._items[4].fn()
-check(reminder.bar == Reminders.PLATES and not takeBar._shown and not menus[2]._shown and Said(TEXT.reminderOnPlates),
-    "on the nameplates: the same, each plate's unit watched")
+check(Where(reminder) == "0 -1" and menus[1]._override == "Health bars, Nameplates"
+    and Said(TEXT.reminderOnGroup .. "; " .. TEXT.reminderOnPlates:gsub("^%u", string.lower)),
+    "the nameplates ticked too: the window says both, one after the other")
+menus[1]._items[3].fn()
+check(Only(reminder, Reminders.PLATES) and not takeBar._shown and not menus[2]._shown and Said(TEXT.reminderOnPlates),
+    "on the nameplates alone: the same, each plate's unit watched")
 Update()
 check(row._width == 1, "and it is off its bar")
 ticks[4]:SetChecked(true)
@@ -759,10 +793,39 @@ check(reminder.own == true, "only yours, ticked")
 ticks[4]:SetChecked(false)
 ticks[4]._scripts.OnClick(ticks[4])
 menus[1]._items[2].fn()
-check(reminder.bar == Reminders.Bars()[2] and menus[2]._shown and takeBar._shown and not takeBar._disabled,
-    "on the new bar: its unit and Delete bar back")
+check(Where(reminder) == Reminders.Bars()[2] .. " -1" and menus[2]._shown and takeBar._shown and not takeBar._disabled,
+    "on the new bar too: its unit and Delete bar back")
+menus[1]._items[1].fn()
+check(Where(reminder) == "1 " .. Reminders.Bars()[2] .. " -1" and menus[1]._override == "Aura bar 1, Aura bar 2, Nameplates",
+    "and on the first: in their order whatever the order ticked")
+Update()
+local function Lit() -- the bars in sight with one icon on them
+    local count = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Frame" and widget._parent ~= UIParent and widget._height == Bars.SIZE and widget._points[1]
+            and widget._points[1][1] == "CENTER" and widget:IsVisible() and widget._width == Bars.SIZE then
+            count = count + 1
+        end
+    end
+    return count
+end
+check(row._width == Bars.SIZE and Lit() == 2, "one icon on each bar ticked")
+local before = #W.menus
 takeBar._scripts.OnClick(takeBar)
-check(#Reminders.Bars() == 1 and reminder.bar == Reminders.Bars()[1], "the bar deleted by its button, the reminder kept")
+local asks = W.menus[#W.menus]
+check(#W.menus == before + 1 and asks.owner == takeBar and asks[1].title == TEXT.reminderDeleteBar and #asks == 3
+    and asks[2].text == "Aura bar 1" and asks[3].text == "Aura bar 2" and #Reminders.Bars() == 2,
+    "on two bars, Delete bar asks which: a menu of them, nothing deleted yet")
+asks[3].fn()
+check(#Reminders.Bars() == 1 and Where(reminder) == "1 -1", "the bar picked deleted; the reminder on the first, and the nameplates")
+newBar._scripts.OnClick(newBar)
+check(#Reminders.Bars() == 2 and Where(reminder) == Reminders.Bars()[2] .. " -1",
+    "a new bar again: the reminder off the first bar onto it, the nameplates kept")
+takeBar._scripts.OnClick(takeBar)
+check(#W.menus == before + 1 and #Reminders.Bars() == 1 and Where(reminder) == "1 -1",
+    "on one bar, Delete bar deletes it at once: the reminder on the first bar left, the nameplates kept")
+menus[1]._items[3].fn()
+check(#Reminders.Bars() == 1 and Only(reminder, Reminders.Bars()[1]), "the bar deleted by its button, the reminder kept")
 local function Watched() return table.concat(reminder.units, " ") end
 local watch = menus[2]._items
 check(#watch == 3 and watch[1].text == TEXT.reminderUnits.player and watch[2].text == TEXT.reminderUnits.target
@@ -809,7 +872,7 @@ check(#Reminders.List() == 0 and Of("Thorns") and Said(TEXT.reminderNone) and Pr
 Of("Thorns").remind:SetChecked(true)
 Of("Thorns").remind._scripts.OnClick(Of("Thorns").remind)
 reminder = Reminders.List()[1]
-check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.Bars()[1] and reminder.missing and Said("Thorns")
+check(reminder and reminder.name == "Thorns" and Only(reminder, Reminders.Bars()[1]) and reminder.missing and Said("Thorns")
     and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, on the first aura bar, its settings shown")
 check(TEXT.reminderColumn == "Tracked", "the column's word")
 -- The +: the aura tracked once more, a line of its own under the first, chosen, with its own settings.
@@ -831,18 +894,19 @@ check(#thornsLines == 1 and thornsLines[1].copy and thornsLines[1].icon._points[
 thornsLines[1].copy._scripts.OnClick(thornsLines[1].copy)
 local copy = Reminders.List()[2]
 thornsLines = Lines("Thorns")
-check(#Reminders.List() == 2 and copy ~= reminder and copy.name == "Thorns" and copy.bar == reminder.bar
-    and copy.missing == reminder.missing and #thornsLines == 2 and thornsLines[2].row.reminder == copy
+check(#Reminders.List() == 2 and copy ~= reminder and copy.name == "Thorns" and copy.places ~= reminder.places
+    and Where(copy) == Where(reminder) and copy.missing == reminder.missing and #thornsLines == 2 and thornsLines[2].row.reminder == copy
     and thornsLines[2].mark._shown and not thornsLines[1].mark._shown and thornsLines[2].remind:GetChecked(),
     "the +: a copy of its tracking, on a line of its own under it, chosen")
 check(copy.units ~= reminder.units and #copy.units == 1 and copy.units[1] == "player", "whom it watches, its own too")
 menus[1]._items[2].fn()
-check(copy.bar == Reminders.GROUP and reminder.bar == Reminders.Bars()[1], "the copy's own place, the first's as it was")
+menus[1]._items[1].fn()
+check(Only(copy, Reminders.GROUP) and Only(reminder, Reminders.Bars()[1]), "the copy's own places, the first's as they were")
 thornsLines[1]._scripts.OnMouseUp(thornsLines[1])
 menus[1]._items[3].fn()
-check(reminder.bar == Reminders.PLATES and copy.bar == Reminders.GROUP and thornsLines[1].mark._shown,
-    "the first line chosen: its own settings under the list")
-menus[1]._items[1].fn()
+check(Where(reminder) == "1 -1" and Only(copy, Reminders.GROUP) and thornsLines[1].mark._shown
+    and menus[1]._override == "Aura bar 1, Nameplates", "the first line chosen: its own settings under the list")
+menus[1]._items[3].fn()
 local cross = Cross(thornsLines[2])
 cross._scripts.OnClick(cross)
 check(#Reminders.List() == 1 and Reminders.List()[1] == reminder and #Lines("Thorns") == 1 and Of("Thorns"),
@@ -853,7 +917,7 @@ thornsLines[1].remind._scripts.OnClick(thornsLines[1].remind)
 check(#Reminders.List() == 0 and #Lines("Thorns") == 1, "the last one unticked: the line stays, not tracked")
 thornsLines[1].copy._scripts.OnClick(thornsLines[1].copy)
 reminder = Reminders.List()[1]
-check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.Bars()[1] and Of("Thorns").remind:GetChecked(),
+check(reminder and reminder.name == "Thorns" and Only(reminder, Reminders.Bars()[1]) and Of("Thorns").remind:GetChecked(),
     "the + on an aura not tracked: its first tracking, on the first aura bar")
 -- Any spell by the search: on the list, chosen; its tick, a reminder; on the first aura bar, then the health bars.
 W.spells[1126] = { name = "Mark of the Wild" }
@@ -872,11 +936,13 @@ check(track and markLine.lit._shown and markLine.lit._points[1][2] == markLine.m
     and markLine.mark._points[2][4] < Lists.COLUMN * -5, "its Add tracking under the list; the line lit up to its ticks")
 track._scripts.OnClick(track)
 local mark = Reminders.Named("Mark of the Wild")
-check(mark and mark.id == 1126 and mark.bar == Reminders.Bars()[1] and markLine.remind:GetChecked()
+check(mark and mark.id == 1126 and Only(mark, Reminders.Bars()[1]) and markLine.remind:GetChecked()
     and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4 and not track:IsVisible(),
     "Add tracking: made on Aura bar 1, its settings there at once")
 menus[1]._items[2].fn()
-check(mark.bar == Reminders.GROUP, "and put on the health bars instead")
+check(Where(mark) == "1 0", "and on the health bars too")
+menus[1]._items[1].fn()
+check(Only(mark, Reminders.GROUP), "then on them alone")
 -- Its X: off the list, every mark and its reminder.
 local take
 for _, widget in ipairs(W.frames) do

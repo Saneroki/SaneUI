@@ -6,16 +6,20 @@ local _, ns = ...
 --  /sane reminders, an aura's menu), under its list, each setting taking effect
 --  at once (Saneroki, 2026-11-06: one window for every aura's setup):
 --      Shows on   a reminder bar (the first one for a new reminder), the
---                 party and raid frames, or the nameplates; New bar (the
---                 reminder on it), Delete bar (its reminders on the first bar
---                 left; the last bar stays)
+--                 party and raid frames, the nameplates: a tick on each line,
+--                 any number of them, one at least (the last stays ticked),
+--                 the dropdown's words naming them ("Aura bar 1, Nameplates";
+--                 Saneroki, 2026-11-07: "make the shows on also multiple
+--                 choice"); New bar (the reminder on it in place of its bars),
+--                 Delete bar (its reminders on the first bar left; the last
+--                 bar stays; on several bars a menu of them asks which)
 --      Watch on   you, your target, your focus: a tick on each line, any
 --                 number of them, one at least (the last stays ticked), the
 --                 dropdown's words naming those watched ("You, Your target";
 --                 Saneroki, 2026-11-07: "select multiple targets in its
 --                 dropdown with checkboxes"); on the frames each member, on
---                 the nameplates each plate's unit (then it and Delete bar
---                 are out of sight)
+--                 the nameplates each plate's unit (on none of the bars it and
+--                 Delete bar are out of sight)
 --      Display when missing, Display when active, Combat, Don't show in
 --      resting areas, Only yours, Offset time
 --      When class in group   Not needed, or a class of the game's: shown only
@@ -34,11 +38,11 @@ ns.ReminderEditor = Editor
 Editor.HEIGHT = 158 -- the panel under the list
 Editor.ICON = 20
 Editor.ROW = 30     -- from one row of settings to the next
-Editor.RIGHT = 470  -- where the settings' right half starts
+Editor.RIGHT = 520  -- where the settings' right half starts
 Editor.WORD = 80    -- a dropdown's words before it
 Editor.LONG = 140   -- longer words before it (When class in group)
 Editor.MENU = 170   -- a dropdown's width
-Editor.WATCH = 220  -- Watch on's: room for all three ("You, Your target, Your focus")
+Editor.WIDE = 220   -- Shows on's and Watch on's: room for three names ("You, Your target, Your focus")
 Editor.TRACK = 130  -- the button Add tracking's width
 Editor.HINT = 5     -- the words beside it, down from its top
 Editor.COMBAT = { "any", "out", "in" }
@@ -50,7 +54,7 @@ local chosen -- the reminder whose settings show
 
 local Fill
 
--- A setting of the reminder chosen changed: it counts now, on its bar or the frames.
+-- A setting of the reminder chosen changed: it counts now, on its bars, the frames, the plates.
 local function Set(key, value)
     if not chosen then return end
     chosen[key] = value
@@ -86,6 +90,34 @@ local function Places()
     return entries
 end
 
+-- The bars the reminder shows on, as Places gives them.
+local function OwnBars(reminder)
+    local entries = {}
+    for _, entry in ipairs(Places()) do
+        if ns.Reminders.IsBar(entry[2]) and ns.Reminders.At(reminder, entry[2]) then entries[#entries + 1] = entry end
+    end
+    return entries
+end
+
+-- Shows on's words: the places ticked, by name ("Aura bar 1, Nameplates").
+function Editor.Where(reminder)
+    local words = {}
+    for _, entry in ipairs(Places()) do
+        if ns.Reminders.At(reminder, entry[2]) then words[#words + 1] = entry[1] end
+    end
+    return table.concat(words, ", ")
+end
+
+-- What the window says of the places that watch each one there (the health bars, the nameplates), one after the other.
+local function Says(reminder)
+    local words = {}
+    if ns.Reminders.At(reminder, ns.Reminders.GROUP) then words[#words + 1] = ns.TEXT.reminderOnGroup end
+    if ns.Reminders.At(reminder, ns.Reminders.PLATES) then
+        words[#words + 1] = words[1] and ns.TEXT.reminderOnPlates:gsub("^%u", string.lower) or ns.TEXT.reminderOnPlates
+    end
+    return table.concat(words, "; ")
+end
+
 function Fill()
     if not panel then return end
     local untracked = chosen == nil and panel.name ~= nil
@@ -110,16 +142,16 @@ function Fill()
     local barless = not ns.Reminders.OnBar(chosen)
     face:SetTexture(chosen.icon)
     head:SetText(chosen.name)
-    on:SetText(chosen.bar == ns.Reminders.GROUP and ns.TEXT.reminderOnGroup
-               or chosen.bar == ns.Reminders.PLATES and ns.TEXT.reminderOnPlates or "")
+    on:SetText(Says(chosen))
     for key, tick in pairs(ticks) do tick:SetChecked(chosen[key] and true or false) end
-    -- On the health bars and the nameplates no bar to delete and no unit to choose (each member, each plate's): out of
-    -- sight, not greyed out.
+    -- On none of the bars (the health bars, the nameplates: each member, each plate's unit) no bar to delete and no unit
+    -- to choose: out of sight, not greyed out.
     takeBar:SetShown(not barless)
     takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil)
     unit:SetShown(not barless)
     unit.words:SetShown(not barless)
     place:GenerateMenu()
+    place:OverrideText(Editor.Where(chosen))
     unit:GenerateMenu()
     unit:OverrideText(Editor.Watched(chosen))
     combat:GenerateMenu()
@@ -188,6 +220,55 @@ function Editor.Watched(reminder)
     return table.concat(words, ", ")
 end
 
+-- Shows on: that place ticked or not, the others as they were, in Places' order; the last one ticked stays.
+local function Put(value)
+    if not chosen then return end
+    local list = {}
+    for _, entry in ipairs(Places()) do
+        local ticked = ns.Reminders.At(chosen, entry[2])
+        if entry[2] == value then ticked = not ticked end
+        if ticked then list[#list + 1] = entry[2] end
+    end
+    if list[1] then Set("places", list) else Fill() end
+end
+
+-- Shows on's lines: a tick for each place.
+local function Showing(root)
+    for _, entry in ipairs(Places()) do
+        local value = entry[2]
+        root:CreateCheckbox(entry[1], ns.Guard(function() return chosen ~= nil and ns.Reminders.At(chosen, value) end),
+                            ns.Guard(function() Put(value) end))
+    end
+end
+
+-- New bar: the reminder on it, off the bars it was on; the health bars and the nameplates as they were.
+local function NewBar()
+    if not chosen then return end
+    local list = { ns.Reminders.AddBar() }
+    for _, place in ipairs(ns.Reminders.Places(chosen)) do
+        if not ns.Reminders.IsBar(place) then list[#list + 1] = place end
+    end
+    Set("places", list)
+end
+
+-- Delete bar: the reminder's bar; on several, a menu of them asks which.
+local function TakeBar(button)
+    if not chosen then return end
+    local own = OwnBars(chosen)
+    local function Take(entry)
+        ns.Reminders.TakeBar(entry[2])
+        Fill()
+    end
+    if not own[2] then
+        if own[1] then Take(own[1]) end
+        return
+    end
+    MenuUtil.CreateContextMenu(button, ns.Guard(function(_, root)
+        root:CreateTitle(ns.TEXT.reminderDeleteBar)
+        for _, entry in ipairs(own) do root:CreateButton(entry[1], ns.Guard(function() Take(entry) end)) end
+    end))
+end
+
 -- Watch on's lines: a tick for each unit.
 local function Watching(root)
     for _, value in ipairs(Editor.UNITS) do
@@ -241,16 +322,10 @@ function Editor.Build(parent)
     controls:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
     controls:SetPoint("BOTTOMRIGHT")
     local R = Editor.RIGHT
-    place = Choice("bar", 0, 0, ns.TEXT.reminderOnBar, Places)
-    Button(ns.TEXT.reminderNewBar, Editor.WORD + Editor.MENU + 8, 0, function()
-        if chosen then Set("bar", ns.Reminders.AddBar()) end
-    end)
-    takeBar = Button(ns.TEXT.reminderDeleteBar, Editor.WORD + Editor.MENU + 102, 0, function()
-        if not chosen or not ns.Reminders.OnBar(chosen) then return end
-        ns.Reminders.TakeBar(chosen.bar)
-        Fill()
-    end)
-    unit = Dropdown(R, 0, ns.TEXT.reminderWatch, Watching, nil, Editor.WATCH)
+    place = Dropdown(0, 0, ns.TEXT.reminderOnBar, Showing, nil, Editor.WIDE)
+    Button(ns.TEXT.reminderNewBar, Editor.WORD + Editor.WIDE + 8, 0, NewBar)
+    takeBar = Button(ns.TEXT.reminderDeleteBar, Editor.WORD + Editor.WIDE + 102, 0, TakeBar)
+    unit = Dropdown(R, 0, ns.TEXT.reminderWatch, Watching, nil, Editor.WIDE)
     Tick("missing", 0, 1, ns.TEXT.reminderMissing)
     Tick("active", 200, 1, ns.TEXT.reminderActive)
     local combats = {}

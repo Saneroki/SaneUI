@@ -598,7 +598,7 @@ do
     local roomBefore = second.face.name._width
     local mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
     check(not Shows(second.face, 136078) and not mark.own, "on a bar: nothing on the frames")
-    mark.bar = Reminders.GROUP
+    mark.places = { Reminders.GROUP }
     Reminders.Apply()
     check(Shows(first.face, 136078) and Shows(second.face, 136078) and Shows(third.face, 136078),
         "on the frames: its icon on each member without it, your own slot too")
@@ -642,7 +642,7 @@ do
     check(might.own, "a blessing: only yours counts from the start")
     Reminders.Take(might)
     local shout = Reminders.Make({ id = 6673, name = "Battle Shout", icon = 132333, harmful = false, unit = "player" })
-    shout.bar = Reminders.GROUP
+    shout.places = { Reminders.GROUP }
     UnitInParty = function(unit) return unit == "party1" end
     Reminders.Apply()
     check(Shows(first.face, 132333) and Shows(second.face, 132333) and not Shows(third.face, 132333),
@@ -661,7 +661,7 @@ do
     local extra = {}
     for index, name in ipairs({ "Thorns", "Regrowth", "Renew", "Fear Ward" }) do
         extra[index] = Reminders.Make({ id = 900 + index, name = name, icon = 900 + index, harmful = false, unit = "player" })
-        extra[index].bar = Reminders.GROUP
+        extra[index].places = { Reminders.GROUP }
     end
     Reminders.Apply()
     local count = 0
@@ -676,9 +676,9 @@ do
     -- Your HoT in a fight the game hides it in (Forever's client: no aura, number or list to read): what was known, by the
     -- clock; your cast on the member it was aimed at, as long as it lasted when last read.
     local rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
-    rejuv.bar, rejuv.own = Reminders.GROUP, true
+    rejuv.places, rejuv.own = { Reminders.GROUP }, true
     mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
-    mark.bar = Reminders.GROUP
+    mark.places = { Reminders.GROUP }
     auras.party1 = { Rejuvenation = { name = "Rejuvenation", auraInstanceID = 41, mine = true, duration = 15,
                                       expirationTime = W.clock + 10 } }
     auras.party2 = {}
@@ -743,7 +743,7 @@ do
     auras.party2 = {}
     Core.Set(ns.name, "groupBuffs", false)
     rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
-    rejuv.bar = Reminders.GROUP
+    rejuv.places = { Reminders.GROUP }
     Reminders.Apply()
     check(not Shows(third.face, 136081) and not Members.Any(), "the frames' switch off: none")
     Core.Set(ns.name, "groupBuffs", true)

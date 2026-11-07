@@ -304,13 +304,17 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   - **More than once:** the line's + tracks the aura once more, a copy on a line of its own, set apart: on another bar,
     the health bars or the nameplates, or with other conditions (a Mark of the Wild missing on a bar in a fight, and on
     the health bars out of one). Each line is its own; the X on one of them deletes that one alone.
-  - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar, *Health bars* or *Nameplates*,
-    with *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on*: a tick for you, your target and
+  - **Its settings** under the list, for the line chosen, each at once: *Shows on*: a tick for each bar, *Health bars*
+    and *Nameplates*, any number of them ticked, the dropdown naming them ("Aura bar 1, Nameplates"; Saneroki,
+    2026-11-07: "make the shows on also multiple choice"); the last one ticked stays, as a tracking shows somewhere. On
+    each place ticked it shows by the same settings, as that place shows it. *New bar* puts the aura on a new bar in
+    place of the bars it was on (the health bars and the nameplates stay as ticked); on a bar, *Delete bar*, on several
+    bars a menu of them asks which; on a bar, *Watch on*: a tick for you, your target and
     your focus, any number of them ticked, the dropdown naming those watched ("You, Your target"; Saneroki, 2026-11-07:
     "select multiple targets in its dropdown with checkboxes"); the last one ticked stays, as a reminder watches someone
     (one made in the window: a debuff on your target, a buff on you). It shows while its settings want it on any unit
     ticked, as one icon however many want it: its seconds those of the one whose aura runs out first, none while one of
-    them lacks it. On the health bars and the nameplates *Watch on* and *Delete bar* are out of sight (each member, each
+    them lacks it (on the bars only). On none of the bars *Watch on* and *Delete bar* are out of sight (each member, each
     plate's unit watched); *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
@@ -337,8 +341,9 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     growing, shrinking and fading with the plate; without it, under the game's own health bar. A debuff only on a unit you
     can attack (your Sunder Armor missing on a foe), a buff only on one you can help; none on the dead; a shout on your own
     party only. Not on the plates the game keeps from addons (inside dungeons and raids every friendly plate) nor your own.
-  - **The bars:** one at first, more by *New bar*, each with its own aura icons (*Shows on* moves one to another).
-    *Delete bar* deletes the chosen aura's bar and puts what it held on the first bar left; the last bar stays.
+  - **The bars:** one at first, more by *New bar*, each with its own aura icons (*Shows on* ticks one on another, or on
+    several). *Delete bar* deletes the chosen aura's bar (on several: the one picked) and puts what it held on the first
+    bar left, its other places kept; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
     every bar stands with all it holds. Nothing on them takes the mouse.
   - **In a fight** the game hides most auras from addons, Forever's client all of them. What was on stays known until
@@ -609,7 +614,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`; the line kept), their words over the
     columns; `OnMouseUp` chooses the line (`chosen`, by name), and `ReminderEditor.Show(reminder, name, icon)` puts
     `Reminders.Named(chosen)` in the panel under the list (`Reminders/Editor.lua`; none: the button *Add tracking* and
-    `reminderNone` beside it, both anchored by their tops; *Watch on* and *Delete bar* hidden off a bar, `Reminders.OnBar`). `line.mark`
+    `reminderNone` beside it, both anchored by their tops; *Watch on* and *Delete bar* hidden on none of the bars, `Reminders.OnBar`). `line.mark`
     (chosen) and `line.lit` (just picked) stop where the ticks start: under them a tick looked greyed out.
     `Track(spell)`: *Add tracking*, the menu's (`Reminders.Entry`, its last line, a button `trackAdd`, none where a reminder
     of that name is: `Entries`' *Edit tracked...*, `auraLists`, opens it there) and the panel's (nil: the line chosen): kept, `Reminders.Make(spell)` (the first bar) where none is, `Open`
@@ -741,8 +746,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   `face.roomed` places your buffs' icons after each layout. `face.tint` (`Face.Tint`, at each fill): a player's class colour from the
   game's `RAID_CLASS_COLORS` (`groupClass`), a creature's by `UnitReaction` (4 `UnitBar.CALM`, under it `Face.HOSTILE`, the game's
   `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`.
-- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `bar == Reminders.GROUP` (0, no bar's number), *Health
-  bars*. `GroupReminders.Show(face, unit)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's, and a unit
+- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `Reminders.GROUP` (0, no bar's number) among its
+  `places` (`Reminders.At`), *Health bars*; `Wanted` asked with that place (no `foe` check: a member's debuff is on a friend). `GroupReminders.Show(face, unit)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's, and a unit
   frame's (`Units.lua`: `face.floating` over the words, `Units.ICON`, at each fill and its unit's `UNIT_AURA`, in `Units.EVENTS`;
   `Units.Each`); a buff only where `UnitCanAssist`. `GroupFace`'s
   `Buffs` asks `GroupReminders.Missing(unit, list)` on a fill, on `UNIT_AURA` (out of a fight only one that may change what is seen:
@@ -756,7 +761,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   `reminder.lasts[name]` (saved, learned at each plain read, `data.duration`: `Reminders.Ends`); no name of the frames, or
   `Reminders.Many` (a family's later names, a greater blessing, a shout): each member whose `UNIT_AURA` came within
   `GroupReminders.WINDOW` of it, before or after.
-- **Reminders on the nameplates (`Reminders/Plates.lua`):** a reminder with `bar == Reminders.PLATES` (-1), *Nameplates*.
+- **Reminders on the nameplates (`Reminders/Plates.lua`):** a reminder with `Reminders.PLATES` (-1) among its `places`,
+  *Nameplates*.
   `NAME_PLATE_UNIT_ADDED`, `_REMOVED` follow each plate's unit (`C_NamePlate.GetNamePlateForUnit`; none for a forbidden plate
   or `player`), its GUID taken as it comes; `PlateReminders.Update`, last in `Reminders.Update` on its ticker (which runs while
   any reminder is off the frames: `Looked`), fills each plate's row: `Reminders.Known` per reminder and GUID, `Wanted` on the
@@ -797,7 +803,15 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
     Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
     nothing of it, not even the mouse's coming, is on or over the full screen; its old second place `meterFullPlace` is no longer read.
-- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of you and your party or raid (`UnitClass` of `player`, and of each `party`/`raid` unit that `UnitExists`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
+- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. Where one shows: its `places` (*Shows on*), a
+  list of bar numbers, `Reminders.GROUP` and `Reminders.PLATES`, one at least, in Editor's `Places` order (`Put`, the last
+  one ticked staying); `Reminders.Places` reads an older one's single `bar` into it (at `Start`, which drops a bar there is
+  no more, and on any read), `Reminders.At` asks for one place, `IsBar` and `OnBar` for the bars. `Update` looks at a
+  reminder on the bars once (`Shown`) and puts its icon on each bar ticked; `Wanted` takes the place it is asked for
+  (`GROUP`: no `foe` check). `TakeBar` takes the bar out of each reminder's places, the first bar left in where it is
+  not already. Editor: `Editor.Where` the dropdown's words (`OverrideText`), `Says` the words beside the name (the
+  health bars' and the nameplates' in a row), `NewBar` the new bar in place of the reminder's bars, `TakeBar` a menu
+  of its bars (`MenuUtil.CreateContextMenu`, titled *Delete bar*) where it is on several. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of you and your party or raid (`UnitClass` of `player`, and of each `party`/`raid` unit that `UnitExists`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders on bars or the nameplates and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
   with *Only yours*) on each unit of the reminder's `units` (*Watch on*, Editor's checkboxes in `Editor.UNITS`'s order,
@@ -885,9 +899,10 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Plates.lua` | The reminders on the nameplates: a row right under each plate, on Nameplates' dress where it dresses it, in a fight your cast on your target's plate |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
+| `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (ticks for the bars, the party and raid frames, the nameplates; a new bar), on whom, its settings |
 
 ## History
+- **2026-11-07:** *Shows on* takes several places at once: its dropdown's lines are ticks (each aura bar, *Health bars*, *Nameplates*), its words name those ticked, the last one ticked stays; the aura shows on each by the same settings; *New bar* puts it on the new bar in place of its bars; *Delete bar* on several bars asks which (Saneroki: "We have the edit Tracked window we made the watch on multiple choice. Can we make the shows on also multiple choice").
 - **2026-11-07:** *Look out for* in your focus's place while you have no focus: a name or @tank, @healer, @party1-4, @raid1-40 watched in a fight too; found, the place says *Focus found: Add it now* and a click or its key makes it your focus (Saneroki: "Is it possible to have a {add} button instead of the focus target if and only if there is no focus target selected", then "the button add is now called 'Look out for' instead" and "Focus found: Add it now").
 - **2026-11-07:** *Watch on* takes several units at once: its dropdown's lines are ticks (you, your target, your focus), its words name those watched, the last one ticked stays; a reminder on a bar shows as one icon while any of them wants it, in a fight each unit known on its own (Saneroki: "Can we have watch on have several targets where we can select multiple targets in its dropdown with checkboxes to show what we watch it on."). The health bars and the nameplates as before.
 - **2026-11-07:** your target's and your focus's health bars red while you can attack the unit, green otherwise (Saneroki: "The target unit frame. Can we make it red if it is an enemy, otherwise green like we have it now.", then of the focus: "Yes, focus too"); your own stays green.

@@ -5,13 +5,16 @@ local _, ns = ...
 --  A reminder watches one buff or debuff, by its name (so any rank of it), on
 --  the units it watches (you, your target, your focus: any of them at once),
 --  and puts its icon on a reminder bar (Bars.lua) while its settings want it
---  on any of them; or, placed on the party and raid frames, on each member's
---  frame (Group.lua); or on the nameplates, under each plate (Plates.lua).
---  Kept per character, a buff being a character's, with the bars, one at
---  first; a bar made is yours until you delete it:
---      bar       which reminder bar: its number, which never changes; GROUP:
---                the party and raid frames; PLATES: the nameplates. A new
---                one goes on the first bar (Saneroki, 2026-11-07)
+--  on any of them; on the party and raid frames, on each member's frame
+--  (Group.lua); on the nameplates, under each plate (Plates.lua); on any of
+--  these at once. Kept per character, a buff being a character's, with the
+--  bars, one at first; a bar made is yours until you delete it:
+--      places    where it shows, one at least: { 1, PLATES }, a reminder
+--                bar by its number, which never changes; GROUP: the party
+--                and raid frames; PLATES: the nameplates (Shows on,
+--                Saneroki, 2026-11-07: "make the shows on also multiple
+--                choice"); an older reminder's single bar is read into it
+--                (Reminders.Places). A new one goes on the first bar
 --      units     on a bar, whom it watches: { "player", "target" }, one at
 --                least, the unit it was made on at first (Watch on, Saneroki,
 --                2026-11-07: "select multiple targets"); an older reminder's
@@ -131,9 +134,34 @@ function Reminders.On(reminder, unit)
     return false
 end
 
--- Whether the reminder is on a bar: not on the party and raid frames, nor on the nameplates.
+-- Where the reminder shows: { 1, Reminders.PLATES }, one place at least. An older one's single bar is read into the
+-- list (nil: the first bar).
+function Reminders.Places(reminder)
+    if reminder.bar ~= nil or type(reminder.places) ~= "table" or not reminder.places[1] then
+        reminder.places, reminder.bar = { reminder.bar or Reminders.Bars()[1] }, nil
+    end
+    return reminder.places
+end
+
+-- Whether the reminder shows at that place (a bar's number, GROUP, PLATES).
+function Reminders.At(reminder, place)
+    for _, each in ipairs(Reminders.Places(reminder)) do
+        if each == place then return true end
+    end
+    return false
+end
+
+-- Whether a place is a reminder bar: not the party and raid frames, nor the nameplates.
+function Reminders.IsBar(place)
+    return place ~= Reminders.GROUP and place ~= Reminders.PLATES
+end
+
+-- Whether the reminder shows on a bar, among its places.
 function Reminders.OnBar(reminder)
-    return reminder.bar ~= Reminders.GROUP and reminder.bar ~= Reminders.PLATES
+    for _, place in ipairs(Reminders.Places(reminder)) do
+        if Reminders.IsBar(place) then return true end
+    end
+    return false
 end
 
 -- This character's reminders, in the order made.
@@ -160,7 +188,8 @@ function Reminders.AddBar()
     return char.lastBar
 end
 
--- A bar gone, its reminders on the first of those left, so none is lost. The last bar stays.
+-- A bar gone, its reminders on the first of those left (once, where one is there too), so none is lost; their other
+-- places kept. The last bar stays.
 function Reminders.TakeBar(bar)
     local bars = Reminders.Bars()
     if not bars[2] then return end
@@ -168,7 +197,13 @@ function Reminders.TakeBar(bar)
         if bars[index] == bar then table.remove(bars, index) end
     end
     for _, reminder in ipairs(Reminders.List()) do
-        if reminder.bar == bar then reminder.bar = bars[1] end
+        if Reminders.At(reminder, bar) then
+            local places = Reminders.Places(reminder)
+            for index = #places, 1, -1 do
+                if places[index] == bar then table.remove(places, index) end
+            end
+            if not Reminders.At(reminder, bars[1]) then table.insert(places, 1, bars[1]) end
+        end
     end
     ns.ReminderBars.Drop(bar)
     Reminders.Apply()
@@ -192,7 +227,7 @@ function Reminders.Named(name)
     return nil
 end
 
--- The reminder of that aura, made if it has none, on bar (a bar's number, GROUP or PLATES; nil: the first bar): a buff shown
+-- The reminder of that aura, made if it has none, at one place (a bar's number, GROUP or PLATES; nil: the first bar): a buff shown
 -- when it is missing, a debuff on you or the party and raid frames when it is there, a debuff on another (yours on a
 -- foe) when it is missing; only yours counting where its family says so (a blessing).
 function Reminders.Make(spell, bar)
@@ -202,7 +237,7 @@ function Reminders.Make(spell, bar)
     local stays = spell.harmful and (spell.unit == "player" or bar == Reminders.GROUP)
     local family = families[spell.name]
     reminder = { id = spell.id, name = spell.name, icon = spell.icon, harmful = spell.harmful, units = { spell.unit },
-                 bar = bar, missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false,
+                 places = { bar }, missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false,
                  own = family and family.own or false }
     table.insert(Reminders.List(), reminder)
     Reminders.Apply()
@@ -333,8 +368,9 @@ local function Look(reminder, unit)
     return states[unit]
 end
 
--- Whether the reminder's settings want it shown, with the aura as known, on unit.
-function Reminders.Wanted(reminder, state, unit)
+-- Whether the reminder's settings want it shown, with the aura as known, on unit, at that place (GROUP: on the party and
+-- raid frames; PLATES, or nil: a bar, the nameplates).
+function Reminders.Wanted(reminder, state, unit, place)
     if not state then return false end
     local fighting = InCombatLockdown()
     if (reminder.combat == "out" and fighting) or (reminder.combat == "in" and not fighting) then return false end
@@ -343,7 +379,7 @@ function Reminders.Wanted(reminder, state, unit)
     if Core.Ask(UnitIsDeadOrGhost, "player") then return false end
     if unit ~= "player" then
         if not Core.Ask(UnitExists, unit) or Core.Ask(UnitIsDeadOrGhost, unit) then return false end
-        local foe = reminder.harmful and reminder.bar ~= Reminders.GROUP -- a member's debuff is on a friend; a plate's on a foe
+        local foe = reminder.harmful and place ~= Reminders.GROUP -- a member's debuff is on a friend; a plate's on a foe
         if foe and Core.Ask(UnitCanAttack, "player", unit) == false then return false end
     end
     if not state.on then return reminder.missing end
@@ -353,7 +389,9 @@ end
 -- Whether any reminder is on a bar or the nameplates: the looks run.
 local function Looked()
     for _, reminder in ipairs(Reminders.List()) do
-        if reminder.bar ~= Reminders.GROUP then return true end
+        for _, place in ipairs(Reminders.Places(reminder)) do
+            if place ~= Reminders.GROUP then return true end
+        end
     end
     return false
 end
@@ -376,17 +414,20 @@ local function Shown(reminder)
     return shown, not missing and left or nil
 end
 
--- Every reminder of a bar looked at, every bar filled, then every nameplate (Plates.lua). In Edit Mode a bar shows all
--- it holds, to be placed.
+-- Every reminder of a bar looked at (once, on as many bars as it is), every bar filled, then every nameplate
+-- (Plates.lua). In Edit Mode a bar shows all it holds, to be placed.
 function Reminders.Update()
     if ns.off then return end
     local bars = {}
     for _, bar in ipairs(Reminders.Bars()) do bars[bar] = {} end
     for _, reminder in ipairs(Reminders.List()) do
-        local list = bars[reminder.bar]
-        if list then
-            local shown, left = Shown(reminder)
-            if shown or Core.EditMode.active then list[#list + 1] = { icon = reminder.icon, left = left } end
+        local done, shown, left = false, false, nil
+        for _, place in ipairs(Reminders.Places(reminder)) do
+            local list = bars[place]
+            if list then
+                if not done then done, shown, left = true, Shown(reminder) end
+                if shown or Core.EditMode.active then list[#list + 1] = { icon = reminder.icon, left = left } end
+            end
         end
     end
     for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
@@ -482,10 +523,14 @@ function Reminders.Apply()
 end
 
 function Reminders.Start()
-    local bars, known = Reminders.Bars(), { [Reminders.GROUP] = true, [Reminders.PLATES] = true } -- on no bar there is: the first
+    local bars, known = Reminders.Bars(), { [Reminders.GROUP] = true, [Reminders.PLATES] = true }
     for _, bar in ipairs(bars) do known[bar] = true end
     for _, reminder in ipairs(Reminders.List()) do
-        if not known[reminder.bar] then reminder.bar = bars[1] end
+        local places = Reminders.Places(reminder) -- an older one's single bar into the list; a bar there is no more out
+        for index = #places, 1, -1 do
+            if not known[places[index]] then table.remove(places, index) end
+        end
+        if not places[1] then places[1] = bars[1] end -- on no bar there is: the first
         Reminders.Units(reminder) -- an older one's single unit into the list
     end
     Core.On("PLAYER_TARGET_CHANGED", Unit)
