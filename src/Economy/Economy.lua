@@ -15,7 +15,9 @@ local ADDON, ns = ...
 --    Live.lua    what the server says of the items in sight, a search at a time
 --    Trade.lua   a purchase and a post, each from a click of the player
 --    Tab.lua     the tab Deals, its two columns, the gold on sale in the corner
---  Standing down, the tab is gone and the window is as the game made it
+--  and to the game's mail window, which stays the game's too:
+--    Banker.lua  the tab Banker: the trade goods and reagents sent to your banker
+--  Standing down, the tabs are gone and the windows are as the game made them
 --  (GiveBack).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -62,10 +64,40 @@ ns.TEXT = {
     noScan = "Keep the auction house open: its first full scan is on the way.",
     dealsFirst = "Open on Deals",
     dealsFirstTip = "The auction house opens on the tab Deals. Off: on the game's own first tab.",
+
+    -- The tab Banker on the mail window
+    banker = "Banker",
+    bankerTo = Core.Word("MAIL_TO_LABEL", "To:"),
+    bankerKept = "Remembered for your %s characters on %s",
+    bankerNoName = "Type your banker's name above: every trade good and reagent in your bags goes to it with one Send.",
+    bankerMe = "This is your banker: your other characters send to it.",
+    bankerNothing = "No trade goods or reagents in your bags.",
+    bankerStacks = "%d stacks",
+    bankerStays = "stays with you",
+    bankerTick = "Goes to your banker",
+    bankerTickTip = "Untick what you keep: it stays in your bags at every mailbox until you tick it again.",
+    bankerCount = "%s in %s",
+    bankerOne = { "stack", "stacks" },
+    bankerMail = { "mail", "mails" },
+    bankerSend = Core.Word("SEND_LABEL", "Send"),
+    bankerSending = "Sending...",
+    bankerAgain = "Send again",
+    bankerSubject = "Trade goods and reagents",
+    bankerOf = "%s (%d/%d)",
+    bankerSent = "Sent to %s: %s",
+    bankerSlow = "The mail has not gone yet: Send tries again.",
+    bankerRefused = "Not sent: %s",
+    bankerFailed = "Not sent: the game refused the mail.",
+    bankerPostage = "Not sent: the postage is %s.",
+    bankerAttached = "Not sent: take the items off the Send Mail tab first.",
+    bankerCursor = "Not sent: put down what is on your cursor first.",
+    bankerNone = "Not sent: none of it could be put into a mail.",
+    bankerFirst = "Open on Banker",
+    bankerFirstTip = "The mailbox opens on the tab Banker, unless you play your banker or nothing would go to it. Off: on the inbox.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the auction house window is as the game made it"
+ns.GIVEN_BACK = "the auction house and mail windows are as the game made them"
 
 -- Sizes in UI units, one place for the module (Doc/guides/gui-development.md, Layout).
 ns.SIZE = {
@@ -83,23 +115,61 @@ ns.SIZE = {
     corner = 34,    -- the gold on sale, from the window's right end
     cornerHigh = 20, -- and how high it is
     scrollbar = 18, -- what a list leaves for its scroll bar
+    -- The tab Banker on the mail window
+    banker = {
+        top = 24,       -- from the window's top to our page
+        left = 4,       -- from its left side
+        right = 6,      -- from its right side
+        bottom = 4,     -- from its foot
+        portrait = 62,  -- how far the window's round portrait reaches in, past it the name's box
+        label = 26,     -- the room for "To:" before the box
+        box = 190,      -- the box's width
+        boxHigh = 20,   -- and height
+        head = 60,      -- from our page's top to the list: the box and two lines of its note
+        foot = 34,      -- under the list: the count, the words, the button
+        row = 30,       -- a line of the list
+        tick = 24,      -- its tick
+        icon = 24,      -- its picture
+        button = 90,    -- the button Send
+        buttonHigh = 22,
+    },
 }
+
+-- An item's name, asked of the game (loaded for later if it does not know it yet: "?" until then), and the
+-- colour of its quality; for the lines of both tabs.
+function ns.NameOf(id)
+    local name = Core.Plain(Core.Ask(C_Item.GetItemNameByID, id))
+    if not name and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(id) end
+    return name or "?"
+end
+
+function ns.Color(id)
+    local quality = Core.Plain(Core.Ask(C_Item.GetItemQualityByID, id))
+    local color = quality and rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
+    if color then return color.r, color.g, color.b end
+    return 1, 1, 1
+end
 
 Core.Options(ns.name, {
     { key = "dealsFirst", default = true, text = ns.TEXT.dealsFirst, tip = ns.TEXT.dealsFirstTip },
+    { key = "bankerFirst", default = true, text = ns.TEXT.bankerFirst, tip = ns.TEXT.bankerFirstTip },
 }, {})
 
--- Standing down: the tab is gone, the window as the game made it.
+-- Standing down: the tabs are gone, the windows as the game made them.
 function ns.GiveBack()
     ns.Safe("give back", ns.Tab.GiveBack)
+    ns.Safe("give back", ns.Banker.GiveBack)
 end
 
 function ns.OnLoad()
     ns.options = Core.Settings(ns.name)
+    -- What the module keeps besides its settings: the bankers' names and the items kept back (Banker.lua).
+    ns.store = Core.Store(ns.name)
 end
 
 function ns.OnLogin()
     ns.Live.Start()
     ns.Trade.Start()
     ns.Tab.Start()
+    ns.Banker.Start()
 end

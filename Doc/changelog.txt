@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Mail: a new tab, Banker, opens first at the mailbox. Type your
+  banker's name once and every trade good and reagent in your bags is
+  lined up for it; Send mails them all, twelve stacks a mail. Untick
+  what you want to keep.
 - Aura tracking: a newly tracked aura goes onto Aura bar 1 at first,
   and a new place, Nameplates, shows its icon right under every
   nameplate whose unit lacks it (your Sunder Armor on a foe, say).

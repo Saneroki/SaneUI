@@ -54,18 +54,7 @@ local function Away(side)
     return side == "neutral" and TEXT.neutral or TEXT.faction
 end
 
-local function NameOf(id)
-    local name = Core.Plain(Ask(C_Item.GetItemNameByID, id))
-    if not name and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(id) end
-    return name or "?"
-end
-
-local function Color(id)
-    local quality = Core.Plain(Ask(C_Item.GetItemQualityByID, id))
-    local color = quality and rawget(_G, "ITEM_QUALITY_COLORS") and ITEM_QUALITY_COLORS[quality]
-    if color then return color.r, color.g, color.b end
-    return 1, 1, 1
-end
+local NameOf, Color = ns.NameOf, ns.Color
 
 local function Told(key)
     local word = words[key]

@@ -20,7 +20,7 @@
 #   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
 #   loot.lua        the Loot module: its window and rules, the master looter's menu, full bags, roll cards, the feed
 #   economy.lua     the Economy module: what to buy and sell right now, the server asked item by item, a purchase and a post
-#                   from a click only, the tab on the game's window, the gold on sale
+#                   from a click only, the tab on the game's window, the gold on sale; the tab Banker on the mail window
 #   speedleveling.lua  the Speed Leveling key: what is wanted around you, Find's macro chain, the key's action in each
 #                      state, the hearth and quest items, the quest givers, the game's settings
 #   classquests.lua Speed Leveling's class quests over the guide, by class, race, side and level

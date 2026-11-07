@@ -427,7 +427,13 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
 *proposal*.
 
 - **Mailbox** (`MailFrame`, `Blizzard_MailFrame`, not loaded on demand; the interaction type *MailInfo*; the talk
-  ends with `MAIL_CLOSED`): the inbox with *Take all* (Blizzard's own *Open All* takes one mail after the
+  ends with `MAIL_CLOSED`). *Built first, 2026-11-07 (Saneroki): "a tab on the mail window that opens automatically
+  first. It is called Banker. Here you can save what the name of your banker is and it will remember it. All your trade
+  goods and reagents are automatically filled in a mail to that banker and you can press send to automatically send all
+  your tradegoods and reagents to your banker." The tab Banker on the game's own window, as Deals on the auction house
+  (`src/Economy/Banker.lua`): the name kept per realm and faction for the account; the bags' trade goods and reagents
+  (item classes Trade Goods and Reagent, not bound), an item unticked kept back; mails of twelve, the first on the
+  click, the next on `MAIL_SEND_SUCCESS`; open first except on the banker or with nothing to send.* Still to come: the inbox with *Take all* (Blizzard's own *Open All* takes one mail after the
   other, waiting for the game between them: `OpenAllMailMixin` in `MailFrame.lua`, the pattern to follow),
   the auction house's mails summed up (sold, bought, expired, with their amounts; the house's cut for
   *Price to post*), sending. The mailbox opens the bags in its show function, not in `OnShow`, so they open
@@ -450,6 +456,7 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
 - *Hide Blizzard's window*, one per window (Saneroki): *Auction house*, *Vendor*, *Trainer*, *Bank* (later
   *Mailbox*, *Guild bank*, *Bags*), each ticked by default.
 - *Undercut* for the price to post.
+- Built: *Open on Deals* and *Open on Banker* (each on by default): the auction house on Deals, the mailbox on Banker.
 - Core's section **Expand window** (`Edge.Options`, as on Social's page, made by Core, not by Economy):
   *Can expand to fullscreen*, *Animation type* (*Use global type* by default), the full screen's
   background, the corners. One section for all of Economy's windows (*proposal*: they are one kind of
@@ -616,7 +623,7 @@ The scan and the history are Core's (`Data/Scan.lua`, series *Prices*), not Econ
 5. **Bank and trainer windows.**
 6. **Movement and Sales,** and the price history, once *sold between two scans* guesses the player's own
    auctions right.
-7. **Mailbox, guild bank and bags.**
+7. **Mailbox, guild bank and bags.** The mailbox's tab Banker is built (2026-11-07, *More windows*).
 
 ## Open questions
 

@@ -1,6 +1,8 @@
 -- Runs the Economy module against the stand-in client (wowstub.lua): what is worth buying and selling right now from
 -- made-up prices, the server asked one item at a time, a purchase and a post from a click only, what is bought going by the
--- server's answer and never over the line's limit, the tab on the game's window and the gold on sale, and standing down.
+-- server's answer and never over the line's limit, the tab on the game's window and the gold on sale; the tab Banker on the
+-- mail window (what goes, the name kept, mails of twelve sent one after the other, a refusal, a slow mail, what stops one,
+-- when it opens first); and standing down.
 -- The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/economy.lua
 
@@ -430,8 +432,231 @@ check(opened and not page:IsShown() and not ns.off and not (page:IsProtected() o
     "in a fight the tab opens and closes as ever: none of ours is a protected frame, nothing for the game to block")
 W.Combat(false)
 
+-------------------------------------------------------------------------------
+--  The tab Banker on the mail window
+-------------------------------------------------------------------------------
+-- The bags: [bag][slot] = { id, count, bound, locked, refuse (the game will not put it into a mail) }
+local bagged = { [0] = {}, [1] = {} }
+local classes = { [2589] = 7, [2770] = 7, [2592] = 7, [17029] = 5, [6948] = 15, [2318] = 7 }
+W.items[2589] = { name = "Linen Cloth" }
+W.items[2770], W.items[2592], W.items[17029], W.items[2318] = { name = "Copper Ore" }, { name = "Wool Cloth" }, { name = "Holy Candle" }, { name = "Light Leather" }
+C_Item.GetItemInfoInstant = function(id) return id, "", "", "", 0, classes[id], 0 end
+C_Container = {
+    GetContainerNumSlots = function(bag) return bagged[bag] and 20 or 0 end,
+    GetContainerItemInfo = function(bag, slot)
+        local held = bagged[bag] and bagged[bag][slot]
+        if held then return { itemID = held.id, stackCount = held.count, isBound = held.bound or false, isLocked = held.locked or false } end
+    end,
+    PickupContainerItem = function(bag, slot)
+        local held = bagged[bag][slot]
+        if held and not held.locked then
+            held.locked = true
+            W.cursor = { kind = "item", bag = bag, slot = slot }
+        end
+    end,
+}
+ClearCursor = function()
+    if W.cursor and W.cursor.bag then bagged[W.cursor.bag][W.cursor.slot].locked = false end
+    W.cursor = nil
+end
+-- The mail: what is attached, every mail sent, and the server's answer when the test gives it
+ATTACHMENTS_MAX_SEND = 12
+local attached, mails = {}, {}
+local function Attached()
+    local count = 0
+    for _ in pairs(attached) do count = count + 1 end
+    return count
+end
+HasSendMailItem = function(slot) return attached[slot] ~= nil end
+ClickSendMailItemButton = function(slot, clear)
+    local held = attached[slot]
+    if clear then
+        if held then bagged[held.bag][held.slot].locked, attached[slot] = false, nil end
+        return
+    end
+    local cursor = W.cursor
+    if cursor and cursor.bag and not held and not bagged[cursor.bag][cursor.slot].refuse then
+        attached[slot], W.cursor = { bag = cursor.bag, slot = cursor.slot }, nil
+    end
+end
+GetSendMailPrice = function() return 30 * math.max(1, Attached()) end
+SendMail = function(name, subject, body) mails[#mails + 1] = { name = name, subject = subject, body = body, count = Attached() } end
+local function Delivered()
+    for _, held in pairs(attached) do bagged[held.bag][held.slot] = nil end
+    for slot in pairs(attached) do attached[slot] = nil end
+    W.Fire("MAIL_SEND_SUCCESS")
+end
+-- The game's mail window, its two tabs, and the function its tabs and its show call
+MailFrame = CreateFrame("Frame", "MailFrame", UIParent)
+MailFrame:SetSize(338, 424)
+MailFrame.numTabs = 2
+function MailFrame:SetTitle(title) self.title = title end
+MailFrameTab1 = CreateFrame("Button", "MailFrameTab1", MailFrame)
+MailFrameTab2 = CreateFrame("Button", "MailFrameTab2", MailFrame)
+MailFrameTab_OnClick = function(_, id)
+    MailFrame.selectedTab = id
+    MailFrame:SetTitle(id == 1 and "Inbox" or "Send Mail")
+end
+W.templates.InputBoxTemplate = noop
+local function OpenMail()
+    MailFrame:Show()
+    MailFrameTab_OnClick(nil, 1) -- the game's own show picks the inbox
+    W.Fire("MAIL_SHOW")
+    W.Wait(0.1)
+end
+local function CloseMail()
+    MailFrame:Hide()
+    W.Fire("MAIL_CLOSED")
+end
+
+-- What is in the bags: two stacks of cloth, ore, a reagent, fourteen stacks of wool, and what never goes
+bagged[0][1] = { id = 2589, count = 20 }
+bagged[0][2] = { id = 2589, count = 7 }
+bagged[0][3] = { id = 2770, count = 10 }
+bagged[0][4] = { id = 17029, count = 5 }
+bagged[0][5] = { id = 6948, count = 1 }               -- the hearthstone: no trade good
+bagged[0][6] = { id = 2318, count = 3, bound = true } -- bound: it cannot be mailed
+for slot = 1, 14 do bagged[1][slot] = { id = 2592, count = 1 } end
+local Banker = ns.Banker
+local lines, stacks = Banker.Goods()
+check(#lines == 4 and lines[1].id == 2589 and lines[1].count == 27 and lines[1].stacks == 2 and #stacks == 18,
+    "what goes: the trade goods and reagents, one line an item, not the hearthstone nor what is bound: " .. #lines .. ", " .. #stacks)
+
+OpenMail()
+local mailPage, mailTab, nameBox, sendButton, rows
+for _, frame in ipairs(W.frames) do
+    if frame._kind == "Button" and frame._parent and frame._parent._parent == MailFrame and frame:GetText() == TEXT.banker then mailTab = frame end
+    if frame._parent == MailFrame and frame._kind == "Frame" and frame:IsShown() and #(frame._children or {}) > 0 and not mailPage then mailPage = frame end
+end
+for _, frame in ipairs(W.frames) do
+    if frame._parent == mailPage and frame._kind == "EditBox" then nameBox = frame end
+    if frame._parent == mailPage and frame._kind == "Button" then sendButton = frame end
+    if rawget(frame, "rows") and frame._parent and frame._parent._parent == mailPage then rows = frame.rows end
+end
+check(mailTab and mailTab.chosen == true and mailPage and mailPage:IsShown() and MailFrame.title == TEXT.banker,
+    "no banker named yet: the mail window opens on the tab Banker, and is called so")
+check(MailFrameTab1.chosen == false and MailFrameTab2.chosen == false and rawget(MailFrame, "Tabs") == nil, "the game's tabs are not chosen, its list of tabs left alone")
+check(nameBox and sendButton and not sendButton:IsEnabled(), "without a name there is nothing to send to")
+check(rows and #rows == 4 and rows[1].name:GetText() == "Linen Cloth x27" and rows[1].note:GetText() == TEXT.bankerStacks:format(2),
+    "the list: an item a line, with its count and its stacks: " .. tostring(rows and rows[1] and rows[1].name:GetText()))
+
+nameBox:SetText("  Bank Alt ")
+nameBox._scripts.OnTextChanged(nameBox, true)
+W.Wait(0.2)
+check(Banker.Name() == "Bank Alt" and ns.store.bankers["Stub|Alliance"] == "Bank Alt", "the name typed is the banker, remembered for this realm and faction")
+check(sendButton:IsEnabled() and sendButton:GetText() == TEXT.bankerSend, "now Send is ready")
+local summary = TEXT.bankerCount:format("18 stacks", "2 mails")
+local said = {}
+for _, frame in ipairs(W.frames) do
+    if frame._parent == mailPage and frame._kind == "FontString" then said[#said + 1] = frame end
+end
+local function Says(text)
+    for _, words in ipairs(said) do
+        if words:GetText() == text then return true end
+    end
+    return false
+end
+check(Says(summary) and Says(TEXT.bankerKept:format("Alliance", "Stub Realm")), "it says how much goes in how many mails, and for whom the name is kept")
+
+local candle = rows[3]
+check(candle.line.id == 17029 and candle.tick:GetChecked() == true, "(the reagent is ticked)")
+candle.tick:SetChecked(false)
+candle.tick._scripts.OnClick(candle.tick)
+check(Banker.Kept(17029) and candle.note:GetText() == TEXT.bankerStays and #select(2, Banker.Goods()) == 17, "unticked, it stays with you, and is remembered")
+
+-- Send: the first mail on the click, the next when the game says the first went
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 1 and mails[1].name == "Bank Alt" and mails[1].count == 12 and mails[1].subject == TEXT.bankerOf:format(TEXT.bankerSubject, 1, 2),
+    "the click sends the first mail: twelve stacks to the banker, 1 of 2: " .. tostring(mails[1] and mails[1].subject))
+check(not sendButton:IsEnabled() and sendButton:GetText() == TEXT.bankerSending, "and waits for the game")
+Delivered()
+W.Wait(0.6)
+check(#mails == 2 and mails[2].count == 5 and mails[2].subject == TEXT.bankerOf:format(TEXT.bankerSubject, 2, 2), "it went: the rest goes by itself in the second mail")
+Delivered()
+W.Wait(0.6)
+check(#mails == 2 and Says(TEXT.bankerSent:format("Bank Alt", "2 mails")) and not sendButton:IsEnabled(), "all gone: it says so, and nothing is left to send")
+check(bagged[0][4] and not bagged[0][4].locked and bagged[0][5] and bagged[0][6], "what stays is still in the bags: the reagent unticked, the hearthstone, what is bound")
+
+-- The game refuses a mail: its reason on the line, the items back in the bags
+bagged[0][7] = { id = 2770, count = 4 }
+W.Fire("BAG_UPDATE_DELAYED")
+W.Wait(0.2)
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 3 and mails[3].count == 1 and mails[3].subject == TEXT.bankerSubject, "one mail of one stack: no count in its subject")
+W.Fire("UI_ERROR_MESSAGE", 50, "No player named that")
+W.Fire("MAIL_FAILED")
+check(Attached() == 0 and not bagged[0][7].locked and Says(TEXT.bankerRefused:format("No player named that")) and sendButton:IsEnabled(),
+    "refused: the stack is back in its bag, the game's reason on the line, Send ready again")
+
+-- A mail that neither goes nor is refused: the button is the player's again, and a click sends that mail again
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 4, "(sent)")
+W.Wait(11)
+check(sendButton:IsEnabled() and sendButton:GetText() == TEXT.bankerAgain and Says(TEXT.bankerSlow), "no answer in time: Send again, and why")
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 5 and mails[5].count == 1 and Attached() == 1, "a click sends the same mail once more")
+Delivered()
+W.Wait(0.6)
+check(Says(TEXT.bankerSent:format("Bank Alt", "1 mail")), "it went: one mail")
+
+-- What stops a mail before it is sent
+bagged[0][8] = { id = 2770, count = 2 }
+bagged[0][9] = { id = 2592, count = 1, refuse = true }
+attached[1] = { bag = 0, slot = 3 }
+bagged[0][3] = { id = 2770, count = 1, locked = true }
+W.Fire("BAG_UPDATE_DELAYED")
+W.Wait(0.2)
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 5 and Says(TEXT.bankerAttached) and attached[1].slot == 3, "something of the player's on the Send Mail tab: nothing is sent, nothing of theirs moved")
+attached[1], bagged[0][3] = nil, nil
+W.cursor = { kind = "spell" }
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 5 and Says(TEXT.bankerCursor), "something on the cursor: nothing is sent")
+W.cursor = nil
+money = 10
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 5 and Attached() == 0 and not bagged[0][8].locked and Says(TEXT.bankerPostage:format(Core.Coins(30) or "")),
+    "too little gold for the postage: nothing sent, the stack back in its bag, the postage named")
+money = 100000
+sendButton._scripts.OnClick(sendButton, "LeftButton")
+check(#mails == 6 and mails[6].count == 1 and not bagged[0][9].locked, "a stack the game will not put into a mail is left in its bag")
+Delivered()
+W.Wait(0.6)
+check(#mails == 6 and Says(TEXT.bankerSent:format("Bank Alt", "1 mail")), "and not tried again: the run ends as sent")
+bagged[0][9] = nil
+
+-- The game wants its page back
+MailFrameTab_OnClick(MailFrameTab2, 2)
+check(not mailPage:IsShown() and mailTab.chosen == false and MailFrame.title == "Send Mail", "the game's tab: ours goes, the game's page and title as they were")
+mailTab._scripts.OnClick(mailTab)
+check(mailPage:IsShown() and mailTab.chosen == true and MailFrame.title == TEXT.banker, "our tab brings it back")
+CloseMail()
+
+-- When it does not open first
+OpenMail()
+check(not mailPage:IsShown(), "a banker named and nothing to send: the inbox, as the game opens it")
+CloseMail()
+bagged[0][10] = { id = 2770, count = 3 }
+Banker.SetName(Core.FullName("player"))
+OpenMail()
+check(not mailPage:IsShown(), "on the banker itself: the inbox")
+mailTab._scripts.OnClick(mailTab)
+check(Says(TEXT.bankerMe) and not sendButton:IsEnabled(), "its tab says it is the banker, and sends nothing")
+CloseMail()
+Banker.SetName("Bank Alt")
+ns.options.bankerFirst = false
+OpenMail()
+check(not mailPage:IsShown(), "with the option off the window opens on the inbox")
+ns.options.bankerFirst = true
+OpenMail()
+check(mailPage:IsShown(), "on again, something to send: on Banker")
+CloseMail()
+
 ns.StandDown("a test")
 check(ns.off and not tab:IsShown() and not corner:IsShown() and not page:IsShown(), "standing down: no tab, no page, no corner")
+check(not mailTab:IsShown() and not mailPage:IsShown(), "and no tab Banker on the mail window")
+OpenMail()
+check(not mailPage:IsShown(), "which stays so")
 W.Fire("AUCTION_HOUSE_SHOW")
 W.Wait(0.1)
 check(not page:IsShown(), "and it stays so")
