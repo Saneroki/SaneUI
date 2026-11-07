@@ -326,7 +326,7 @@ W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][8].fn()
 made = ns.Reminders.List()[1]
-check(made.harmful and made.unit == "target" and made.bar == ns.Reminders.Bars()[1] and made.missing and not made.active,
+check(made.harmful and #made.units == 1 and made.units[1] == "target" and made.bar == ns.Reminders.Bars()[1] and made.missing and not made.active,
     "a spell that hurts: a debuff on your target, shown on the bar while it is missing")
 ns.Reminders.Take(made)
 ns.ReminderEditor.Hide()

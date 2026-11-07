@@ -39,6 +39,7 @@ function methods:RegisterForClicks(...) self._clicks = { ... } end
 function methods:IsProtected() return self._protected or false end
 function methods:SetTexture(texture, wrap) self._texture, self._wrap = texture, wrap return true end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
+function methods:OverrideText(text) self._override = text end -- a dropdown's own words
 function methods:SetAttribute(name, value) self._attributes = self._attributes or {}; self._attributes[name] = value end
 function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
 local function noop() end
@@ -163,8 +164,9 @@ check(TEXT.auraLists == "Edit tracked..." and TEXT.listsTitle == "Edit tracked" 
 menu[8].fn()
 local list = Reminders.List()
 local reminder = list[1]
-check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player"
-    and reminder.bar == Reminders.Bars()[1], "Add tracking: the reminder is made, on the first aura bar, of your own aura")
+check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and #reminder.units == 1
+    and reminder.units[1] == "player" and reminder.unit == nil and reminder.bar == Reminders.Bars()[1],
+    "Add tracking: the reminder is made, on the first aura bar, of your own aura, watched on you")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
 check(ns.options.auraKept[782] == "Thorns" and ns.ReminderEditor.panel and ns.ReminderEditor.panel:IsVisible(),
     "and Edit tracked opens on it, the aura on its list")
@@ -461,6 +463,94 @@ check(soul.active and not soul.missing, "a debuff on you: shown when active")
 Reminders.Take(soul)
 
 -------------------------------------------------------------------------------
+--  Watched on several units: you and your target at once, one icon
+-------------------------------------------------------------------------------
+do
+    local function Number() -- the seconds at the foot of the bar's first icon, "" for none
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == row and widget.left and widget._shown then return widget.left._text end
+        end
+    end
+    local hogger, attack = units.target, UnitCanAttack
+    units.target = { name = "Brakk", level = 60, health = 900, most = 900 }
+    UnitCanAttack = function() return false end
+    local THEIRS = { name = "Thorns", spellId = 782, icon = 136104, auraInstanceID = 21, expirationTime = 0, duration = 600 }
+    on.player.Thorns, on.target = THORNS, { Thorns = THEIRS }
+    THORNS.expirationTime = 0
+    reminder.units = { "player", "target" }
+    Update()
+    check(row._width == 1, "watched on you and your target, both have it: nothing to remind of")
+    check(Reminders.Find({ name = "Thorns", harmful = false, unit = "target" }) == reminder
+        and Reminders.Make({ id = 782, name = "Thorns", icon = 136104, harmful = false, unit = "target" }) == reminder
+        and #Reminders.List() == 1, "the aura on your target is the same reminder's: none made twice")
+    on.target.Thorns = nil
+    Update()
+    check(row._width == Bars.SIZE and Number() == "", "your target without it: shown, one icon")
+    on.player.Thorns = nil
+    Update()
+    check(row._width == Bars.SIZE, "both without it: still one icon")
+    on.player.Thorns, on.target.Thorns = THORNS, THEIRS
+    THORNS.expirationTime, THEIRS.expirationTime = W.clock + 20, W.clock + 30
+    reminder.early = 40
+    Update()
+    check(row._width == Bars.SIZE and Number() == "20", "both within the offset: the seconds of the one that runs out first")
+    on.player.Thorns = nil
+    Update()
+    check(row._width == Bars.SIZE and Number() == "", "one wants it for missing it: no seconds")
+    -- An older reminder of a single unit: read into the list, its one unit watched.
+    local old = { id = 782, name = "Thorns", icon = 136104, harmful = false, unit = "target", bar = Reminders.Bars()[1],
+                  missing = true, active = false, early = 0, combat = "any", noRest = false, own = false }
+    table.insert(Reminders.List(), old)
+    on.player.Thorns, on.target.Thorns = nil, nil
+    Update()
+    check(old.unit == nil and #old.units == 1 and old.units[1] == "target"
+        and ns.ReminderEditor.Watched(old) == TEXT.reminderUnits.target, "an older reminder's single unit: read into the list")
+    check(row._width == 2 * Bars.SIZE + Bars.GAP, "and watched: your target lacks it")
+    on.target.Thorns = THEIRS
+    Update()
+    check(row._width == Bars.SIZE, "your target has it: the older one goes, the other still misses yours")
+    Reminders.Take(old)
+    -- A fight: each unit as known before, on its own.
+    on.player.Thorns = THORNS
+    THORNS.expirationTime, THEIRS.expirationTime = W.clock + 100, W.clock + 50
+    reminder.early = 10
+    Update()
+    check(row._width == 1, "on both, far from their ends")
+    W.Combat(true)
+    secret = true
+    W.Wait(41)
+    Update()
+    check(row._width == Bars.SIZE and Number() == "9", "hidden in the fight: your target's as known before, within the offset")
+    W.Wait(10)
+    Update()
+    check(row._width == 1, "past its end on your target and the game still has it there: renewed, yours still running")
+    on.player.Thorns = nil
+    W.Wait(50)
+    Update()
+    check(row._width == Bars.SIZE and Number() == "", "past your end and gone from you: missing on you alone")
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "Brakk", "cast-9", 782)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-9", 782)
+    Update()
+    check(row._width == Bars.SIZE, "your Thorns cast at your target: on it, not on you")
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "Someone Else", "cast-10", 782)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-10", 782)
+    Update()
+    check(row._width == 1, "one cast at none of them: on each it watches, as with a single unit")
+    reminder.missing, reminder.active = false, true
+    W.Fire("PLAYER_TARGET_CHANGED")
+    Update()
+    check(row._width == Bars.SIZE and Number():match("m$"), "another target: what was known of it forgotten, yours kept")
+    reminder.missing, reminder.active, reminder.early = true, false, 0
+    secret = false
+    W.Combat(false)
+    units.target, UnitCanAttack, on.target = hogger, attack, {}
+    on.player.Thorns, THORNS.expirationTime = THORNS, 0
+    reminder.units = { "player" }
+    Update()
+    check(row._width == 1, "you alone again")
+end
+
+-------------------------------------------------------------------------------
 --  On the nameplates: right under each plate, side by side without a gap
 -------------------------------------------------------------------------------
 do
@@ -673,10 +763,29 @@ check(reminder.bar == Reminders.Bars()[2] and menus[2]._shown and takeBar._shown
     "on the new bar: its unit and Delete bar back")
 takeBar._scripts.OnClick(takeBar)
 check(#Reminders.Bars() == 1 and reminder.bar == Reminders.Bars()[1], "the bar deleted by its button, the reminder kept")
-check(menus[2]._items[2].text == TEXT.reminderUnits.target, "watched on you, your target or your focus")
-menus[2]._items[3].fn()
-check(reminder.unit == "focus", "chosen")
+local function Watched() return table.concat(reminder.units, " ") end
+local watch = menus[2]._items
+check(#watch == 3 and watch[1].text == TEXT.reminderUnits.player and watch[2].text == TEXT.reminderUnits.target
+    and watch[3].text == TEXT.reminderUnits.focus and watch[1].checkbox and watch[2].checkbox and watch[3].checkbox
+    and watch[1].checked() and not watch[2].checked() and menus[2]._override == "You",
+    "Watch on: a tick for you, your target and your focus; you ticked, and the dropdown says so")
+menus[2]._items[2].fn()
+watch = menus[2]._items
+check(Watched() == "player target" and watch[1].checked() and watch[2].checked() and not watch[3].checked()
+    and menus[2]._override == "You, Your target", "your target ticked too: both watched, both named")
 menus[2]._items[1].fn()
+check(Watched() == "target" and not menus[2]._items[1].checked() and menus[2]._override == "Your target",
+    "you unticked: your target alone")
+menus[2]._items[2].fn()
+check(Watched() == "target" and menus[2]._items[2].checked() and menus[2]._override == "Your target",
+    "the last one unticked: it stays ticked, a reminder watches someone")
+menus[2]._items[3].fn()
+menus[2]._items[1].fn()
+check(Watched() == "player target focus" and menus[2]._override == "You, Your target, Your focus",
+    "all three, in their order whatever the order ticked")
+menus[2]._items[2].fn()
+menus[2]._items[3].fn()
+check(Watched() == "player" and menus[2]._override == "You", "back to you alone")
 check(menus[3]._items[2].text == TEXT.reminderCombat.out, "only outside of combat, in its words")
 menus[3]._items[3].fn()
 check(reminder.combat == "in", "chosen")
@@ -726,6 +835,7 @@ check(#Reminders.List() == 2 and copy ~= reminder and copy.name == "Thorns" and 
     and copy.missing == reminder.missing and #thornsLines == 2 and thornsLines[2].row.reminder == copy
     and thornsLines[2].mark._shown and not thornsLines[1].mark._shown and thornsLines[2].remind:GetChecked(),
     "the +: a copy of its tracking, on a line of its own under it, chosen")
+check(copy.units ~= reminder.units and #copy.units == 1 and copy.units[1] == "player", "whom it watches, its own too")
 menus[1]._items[2].fn()
 check(copy.bar == Reminders.GROUP and reminder.bar == Reminders.Bars()[1], "the copy's own place, the first's as it was")
 thornsLines[1]._scripts.OnMouseUp(thornsLines[1])

@@ -294,9 +294,13 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     the health bars or the nameplates, or with other conditions (a Mark of the Wild missing on a bar in a fight, and on
     the health bars out of one). Each line is its own; the X on one of them deletes that one alone.
   - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar, *Health bars* or *Nameplates*,
-    with *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on* you, your target or your focus (one
-    made in the window: a debuff on your target, a buff on you); on the health bars and the nameplates those two are out
-    of sight; *Display when missing*; *Display when active*;
+    with *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on*: a tick for you, your target and
+    your focus, any number of them ticked, the dropdown naming those watched ("You, Your target"; Saneroki, 2026-11-07:
+    "select multiple targets in its dropdown with checkboxes"); the last one ticked stays, as a reminder watches someone
+    (one made in the window: a debuff on your target, a buff on you). It shows while its settings want it on any unit
+    ticked, as one icon however many want it: its seconds those of the one whose aura runs out first, none while one of
+    them lacks it. On the health bars and the nameplates *Watch on* and *Delete bar* are out of sight (each member, each
+    plate's unit watched); *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help);
@@ -329,7 +333,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   - **In a fight** the game hides most auras from addons, Forever's client all of them. What was on stays known until
     its time is up, and the offset counts on; then its icon shows. What comes during a fight the game does not tell, but
     your own casts: a cast of an aura watched counts as on for as long as that aura lasted when last seen out of a fight
-    (else until the fight ends), on the party and raid frames on the member it was aimed at, so a Rejuvenation you cast
+    (else until the fight ends); on a bar on the units ticked that it was aimed at, by name (each of them on all where it
+    reaches many or was aimed at none of them); on the party and raid frames on the member it was aimed at, so a Rejuvenation you cast
     on the tank takes its icon off the tank's frame until it runs out; on the nameplates on your target's plate (or a plate
     of the name it was aimed at). A plate that goes in a fight forgets what was known of its unit. A group's version (Gift of the Wild) or a shout
     counts on each member whose auras changed with it. An aura taken off early (dispelled, cancelled) is not told: its
@@ -760,7 +765,14 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 - **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of you and your party or raid (`UnitClass` of `player`, and of each `party`/`raid` unit that `UnitExists`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders on bars or the nameplates and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
-  with *Only yours*) and hands each bar what shows. `Hidden` asks
+  with *Only yours*) on each unit of the reminder's `units` (*Watch on*, Editor's checkboxes in `Editor.UNITS`'s order,
+  one at least; `Reminders.Units` reads an older reminder's single `unit` into the list, at `Reminders.Start` and on
+  any read; `Find` takes a reminder that watches the spell's unit too), and hands each bar what shows: one icon where
+  `Wanted` says so for any of them, the fewest seconds left of those, none while one is missing (`Shown`). What was
+  known is kept per reminder and unit (`seen`); a new target or focus forgets all but yours. A cast in a fight
+  (`Given`): on the units watched whose `UnitName` (or `Core.FullName`) is the name `UNIT_SPELLCAST_SENT` gave, on all
+  of them where none is, or the name reaches many (`Reminders.Many`). Editor's dropdown words: `Editor.Watched`,
+  set by `OverrideText`. `Hidden` asks
   `C_Secrets.ShouldAurasBeSecret` and `ShouldSpellAuraBeSecret`, `Core.Restricted` where they are not there. Hidden, `Look`
   keeps the last plain look: `auraInstanceID` and the end; `GetAuraDuration` is not secret and fails on an instance gone
   (*RequiresValidUnitAuraInstance*), which `Core.Ask` turns to `nil`: the aura went. Past its end and still there it was
@@ -840,6 +852,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** *Watch on* takes several units at once: its dropdown's lines are ticks (you, your target, your focus), its words name those watched, the last one ticked stays; a reminder on a bar shows as one icon while any of them wants it, in a fight each unit known on its own (Saneroki: "Can we have watch on have several targets where we can select multiple targets in its dropdown with checkboxes to show what we watch it on."). The health bars and the nameplates as before.
 - **2026-11-07:** your target's and your focus's health bars red while you can attack the unit, green otherwise (Saneroki: "The target unit frame. Can we make it red if it is an enemy, otherwise green like we have it now.", then of the focus: "Yes, focus too"); your own stays green.
 - **2026-11-07:** *When class in group* counts your own class too (Saneroki: "I meant my own included").
 - **2026-11-07:** an aura tracked more than once: a + beside each line's X copies its tracking onto a line of its own, with its own place and conditions; the X on one of several lines deletes that one alone (Saneroki: "Sometimes I want to show it on multiple places or have different conditions"). A condition *When class in group* (Saneroki: "It only shows that spell / buff on the bars when that class is in the party").

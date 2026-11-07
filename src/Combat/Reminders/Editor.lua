@@ -9,8 +9,12 @@ local _, ns = ...
 --                 party and raid frames, or the nameplates; New bar (the
 --                 reminder on it), Delete bar (its reminders on the first bar
 --                 left; the last bar stays)
---      Watch on   you, your target or your focus; on the frames each member,
---                 on the nameplates each plate's unit (then it and Delete bar
+--      Watch on   you, your target, your focus: a tick on each line, any
+--                 number of them, one at least (the last stays ticked), the
+--                 dropdown's words naming those watched ("You, Your target";
+--                 Saneroki, 2026-11-07: "select multiple targets in its
+--                 dropdown with checkboxes"); on the frames each member, on
+--                 the nameplates each plate's unit (then it and Delete bar
 --                 are out of sight)
 --      Display when missing, Display when active, Combat, Don't show in
 --      resting areas, Only yours, Offset time
@@ -34,6 +38,7 @@ Editor.RIGHT = 470  -- where the settings' right half starts
 Editor.WORD = 80    -- a dropdown's words before it
 Editor.LONG = 140   -- longer words before it (When class in group)
 Editor.MENU = 170   -- a dropdown's width
+Editor.WATCH = 220  -- Watch on's: room for all three ("You, Your target, Your focus")
 Editor.TRACK = 130  -- the button Add tracking's width
 Editor.HINT = 5     -- the words beside it, down from its top
 Editor.COMBAT = { "any", "out", "in" }
@@ -116,6 +121,7 @@ function Fill()
     unit.words:SetShown(not barless)
     place:GenerateMenu()
     unit:GenerateMenu()
+    unit:OverrideText(Editor.Watched(chosen))
     combat:GenerateMenu()
     class:GenerateMenu()
     if not early:HasFocus() then early:SetText(tostring(chosen.early or 0)) end
@@ -141,21 +147,54 @@ local function Tick(key, x, row, word)
     ticks[key] = tick
 end
 
--- A dropdown of one setting, its words before it (room: theirs, Editor.WORD where not said): entries as { word, value }
--- (or a function that gives them; no value: the setting none).
-local function Choice(key, x, row, word, entries, room)
+-- A dropdown on the panel's row at x, its words before it (room: theirs, Editor.WORD where not said), that wide
+-- (Editor.MENU where not said), its lines made by lines(root).
+local function Dropdown(x, row, word, lines, room, wide)
     local words = Words(x, row, word)
     local menu = CreateFrame("DropdownButton", nil, controls, "WowStyle1DropdownTemplate")
     menu.words = words
-    menu:SetWidth(Editor.MENU)
+    menu:SetWidth(wide or Editor.MENU)
     menu:SetPoint("TOPLEFT", controls, "TOPLEFT", x + (room or Editor.WORD), -row * Editor.ROW)
-    menu:SetupMenu(ns.Guard(function(_, root)
+    menu:SetupMenu(ns.Guard(function(_, root) lines(root) end))
+    return menu
+end
+
+-- A dropdown of one setting: entries as { word, value } (or a function that gives them; no value: the setting none).
+local function Choice(key, x, row, word, entries, room)
+    return Dropdown(x, row, word, function(root)
         for _, entry in ipairs(type(entries) == "function" and entries() or entries) do
             root:CreateRadio(entry[1], ns.Guard(function() return chosen ~= nil and chosen[key] == entry[2] end),
                              ns.Guard(function() Set(key, entry[2]) end))
         end
-    end))
-    return menu
+    end, room)
+end
+
+-- Watch on: that unit ticked or not, the others as they were, in Editor.UNITS's order; the last one ticked stays.
+local function Watch(value)
+    if not chosen then return end
+    local Watches, list = ns.Reminders.On, {}
+    for _, each in ipairs(Editor.UNITS) do
+        local ticked = Watches(chosen, each)
+        if each == value then ticked = not ticked end
+        if ticked then list[#list + 1] = each end
+    end
+    if list[1] then Set("units", list) else Fill() end
+end
+
+-- Watch on's words: the units watched, by name ("You, Your target").
+function Editor.Watched(reminder)
+    local words = {}
+    for at, each in ipairs(ns.Reminders.Units(reminder)) do words[at] = ns.TEXT.reminderUnits[each] or each end
+    return table.concat(words, ", ")
+end
+
+-- Watch on's lines: a tick for each unit.
+local function Watching(root)
+    for _, value in ipairs(Editor.UNITS) do
+        root:CreateCheckbox(ns.TEXT.reminderUnits[value],
+                            ns.Guard(function() return chosen ~= nil and ns.Reminders.On(chosen, value) end),
+                            ns.Guard(function() Watch(value) end))
+    end
 end
 
 local function Button(word, x, row, click)
@@ -211,9 +250,7 @@ function Editor.Build(parent)
         ns.Reminders.TakeBar(chosen.bar)
         Fill()
     end)
-    local units = {}
-    for index, value in ipairs(Editor.UNITS) do units[index] = { ns.TEXT.reminderUnits[value], value } end
-    unit = Choice("unit", R, 0, ns.TEXT.reminderWatch, units)
+    unit = Dropdown(R, 0, ns.TEXT.reminderWatch, Watching, nil, Editor.WATCH)
     Tick("missing", 0, 1, ns.TEXT.reminderMissing)
     Tick("active", 200, 1, ns.TEXT.reminderActive)
     local combats = {}

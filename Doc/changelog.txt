@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Edit tracked: Watch on now takes several at once. Tick you, your
+  target and your focus in its dropdown, which names those watched;
+  the aura's icon shows while any of them needs the reminder.
 - Unit frames: your target's and your focus's health bars are now red
   while they are an enemy you can attack, and green as before for
   everyone else.

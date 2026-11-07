@@ -3,14 +3,21 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders
 --  A reminder watches one buff or debuff, by its name (so any rank of it), on
---  you or the unit it was made on, and puts its icon on a reminder bar (Bars.lua)
---  while its settings want it; or, placed on the party and raid frames, on each
---  member's frame (Group.lua); or on the nameplates, under each plate
---  (Plates.lua). Kept per character, a buff being a character's, with the
---  bars, one at first; a bar made is yours until you delete it:
+--  the units it watches (you, your target, your focus: any of them at once),
+--  and puts its icon on a reminder bar (Bars.lua) while its settings want it
+--  on any of them; or, placed on the party and raid frames, on each member's
+--  frame (Group.lua); or on the nameplates, under each plate (Plates.lua).
+--  Kept per character, a buff being a character's, with the bars, one at
+--  first; a bar made is yours until you delete it:
 --      bar       which reminder bar: its number, which never changes; GROUP:
 --                the party and raid frames; PLATES: the nameplates. A new
 --                one goes on the first bar (Saneroki, 2026-11-07)
+--      units     on a bar, whom it watches: { "player", "target" }, one at
+--                least, the unit it was made on at first (Watch on, Saneroki,
+--                2026-11-07: "select multiple targets"); an older reminder's
+--                single unit is read into it (Reminders.Units). One icon
+--                however many want it: its seconds those of the one whose aura
+--                runs out first, none while one wants it for missing it
 --      missing   shown while the aura is not there
 --      active    shown while it is
 --      early     with missing: seconds before it runs out to show it already
@@ -32,9 +39,11 @@ local _, ns = ...
 --  never-secret spells are read as ever), Forever's client even their numbers
 --  and lists. Then what the last look saw counts, until it runs out by the
 --  clock; where the game still answers for the aura's instance (GetAuraDuration),
---  that it is there. One that comes in a fight is known from your own cast of
---  that name (the game tells your casts): on for as long as it lasted when last
---  read (kept on the reminder, lasts), else until the fight ends.
+--  that it is there; each unit watched on its own. One that comes in a fight is
+--  known from your own cast of that name (the game tells your casts): on for as
+--  long as it lasted when last read (kept on the reminder, lasts), else until
+--  the fight ends; on the units watched that it was aimed at, by name, or on
+--  all of them where it reaches many or was aimed at none of them.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -58,7 +67,7 @@ Reminders.FAMILIES = {
     { "Mark of the Wild", "Gift of the Wild" }, { "Battle Shout", party = true }, BLESSINGS,
 }
 
-local seen = setmetatable({}, { __mode = "k" }) -- [a reminder] = what was last known: { on, instance, ends, left }
+local seen = setmetatable({}, { __mode = "k" }) -- [a reminder] = { [a unit it watches] = { on, instance, ends, left } }
 local families = {} -- [a name] = its family
 local ticker
 local classes, looked = {}, nil -- your class and your party's or raid's ([token] = true), when last read
@@ -106,6 +115,22 @@ function Reminders.InGroup(class)
     return classes[class] == true
 end
 
+-- The units the reminder watches on a bar: { "player", "target" }. An older one's single unit is read into the list.
+function Reminders.Units(reminder)
+    if type(reminder.units) ~= "table" or not reminder.units[1] then
+        reminder.units, reminder.unit = { reminder.unit or "player" }, nil
+    end
+    return reminder.units
+end
+
+-- Whether the reminder watches that unit on a bar.
+function Reminders.On(reminder, unit)
+    for _, each in ipairs(Reminders.Units(reminder)) do
+        if each == unit then return true end
+    end
+    return false
+end
+
 -- Whether the reminder is on a bar: not on the party and raid frames, nor on the nameplates.
 function Reminders.OnBar(reminder)
     return reminder.bar ~= Reminders.GROUP and reminder.bar ~= Reminders.PLATES
@@ -149,10 +174,10 @@ function Reminders.TakeBar(bar)
     Reminders.Apply()
 end
 
--- The reminder of an aura ({ name, harmful, unit }), if it has one.
+-- The reminder of an aura ({ name, harmful, unit }), if it has one: one that watches its unit too.
 function Reminders.Find(spell)
     for _, reminder in ipairs(Reminders.List()) do
-        if reminder.name == spell.name and reminder.harmful == spell.harmful and reminder.unit == spell.unit then
+        if reminder.name == spell.name and reminder.harmful == spell.harmful and Reminders.On(reminder, spell.unit) then
             return reminder
         end
     end
@@ -176,7 +201,7 @@ function Reminders.Make(spell, bar)
     bar = bar or Reminders.Bars()[1]
     local stays = spell.harmful and (spell.unit == "player" or bar == Reminders.GROUP)
     local family = families[spell.name]
-    reminder = { id = spell.id, name = spell.name, icon = spell.icon, harmful = spell.harmful, unit = spell.unit,
+    reminder = { id = spell.id, name = spell.name, icon = spell.icon, harmful = spell.harmful, units = { spell.unit },
                  bar = bar, missing = not stays, active = stays or false, early = 0, combat = "any", noRest = false,
                  own = family and family.own or false }
     table.insert(Reminders.List(), reminder)
@@ -297,16 +322,20 @@ function Reminders.Known(reminder, unit, state)
     return state
 end
 
--- What is known of a bar's reminder's aura now.
-local function Look(reminder)
-    seen[reminder] = Reminders.Known(reminder, reminder.unit, seen[reminder])
-    return seen[reminder]
+-- What is known of a bar's reminder's aura on one of the units it watches now.
+local function Look(reminder, unit)
+    local states = seen[reminder]
+    if not states then
+        states = {}
+        seen[reminder] = states
+    end
+    states[unit] = Reminders.Known(reminder, unit, states[unit])
+    return states[unit]
 end
 
--- Whether the reminder's settings want it shown, with the aura as known, on unit (nil: the reminder's own).
+-- Whether the reminder's settings want it shown, with the aura as known, on unit.
 function Reminders.Wanted(reminder, state, unit)
     if not state then return false end
-    unit = unit or reminder.unit
     local fighting = InCombatLockdown()
     if (reminder.combat == "out" and fighting) or (reminder.combat == "in" and not fighting) then return false end
     if reminder.noRest and IsResting() then return false end
@@ -329,6 +358,24 @@ local function Looked()
     return false
 end
 
+-- Whether a bar's reminder shows now: while its settings want it on any unit it watches, one icon however many do. Its
+-- seconds: those of the one whose aura runs out first; none while one wants it for missing it.
+local function Shown(reminder)
+    local shown, left, missing = false, nil, false
+    for _, unit in ipairs(Reminders.Units(reminder)) do
+        local state = Look(reminder, unit)
+        if Reminders.Wanted(reminder, state, unit) then
+            shown = true
+            if not state.on then
+                missing = true
+            elseif state.left then
+                left = math.min(left or state.left, state.left)
+            end
+        end
+    end
+    return shown, not missing and left or nil
+end
+
 -- Every reminder of a bar looked at, every bar filled, then every nameplate (Plates.lua). In Edit Mode a bar shows all
 -- it holds, to be placed.
 function Reminders.Update()
@@ -337,9 +384,9 @@ function Reminders.Update()
     for _, bar in ipairs(Reminders.Bars()) do bars[bar] = {} end
     for _, reminder in ipairs(Reminders.List()) do
         local list = bars[reminder.bar]
-        local state = list and Look(reminder)
-        if list and (Core.EditMode.active or Reminders.Wanted(reminder, state)) then
-            list[#list + 1] = { icon = reminder.icon, left = state and state.on and state.left or nil }
+        if list then
+            local shown, left = Shown(reminder)
+            if shown or Core.EditMode.active then list[#list + 1] = { icon = reminder.icon, left = left } end
         end
     end
     for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
@@ -362,27 +409,48 @@ local function Sent(_, target, cast)
     sentCast, sentTarget = Plain(cast), Plain(target)
 end
 
+-- Whether a cast was aimed at the unit, by the name the game gave (a first name, or a whole one; a realm after it
+-- dropped).
+local function At(unit, aimed)
+    return aimed ~= nil and (Core.Ask(UnitName, unit) == aimed or Core.FullName(unit) == aimed)
+end
+
+-- Your cast of that name, in a fight, on a bar's reminder of it: the aura is on the units it watches that it was aimed
+-- at; on all of them where it reaches many (Reminders.Many), or was aimed at none of them (a reminder of one unit: on
+-- it, whoever the cast went to).
+local function Given(reminder, name, aimed)
+    local units, any = Reminders.Units(reminder), false
+    if Reminders.Many(name) then aimed = nil end
+    for _, unit in ipairs(units) do any = any or At(unit, aimed) end
+    local states = seen[reminder] or {}
+    seen[reminder] = states
+    for _, unit in ipairs(units) do
+        if not any or At(unit, aimed) then states[unit] = { on = true, ends = Reminders.Ends(reminder, name) } end
+    end
+end
+
 -- Your own cast of a spell a reminder watches, where the game tells it in a fight: the aura is there, as long as it
 -- lasted when last read (else until the fight ends).
 local function Cast(_, cast, spell)
     spell = Plain(spell)
     local name = spell and Core.Ask(C_Spell.GetSpellName, spell)
     if not name then return end
-    for _, reminder in ipairs(Reminders.List()) do
-        if reminder.name == name and Reminders.OnBar(reminder) and Hidden(reminder) then
-            seen[reminder] = { on = true, ends = Reminders.Ends(reminder, name) }
-        end
-    end
     cast = Plain(cast)
     local aimed = cast ~= nil and cast == sentCast and sentTarget or nil
+    local short = type(aimed) == "string" and aimed:match("^[^-]+") or nil
+    for _, reminder in ipairs(Reminders.List()) do
+        if reminder.name == name and Reminders.OnBar(reminder) and Hidden(reminder) then Given(reminder, name, short) end
+    end
     ns.GroupReminders.Cast(name, aimed)
     ns.PlateReminders.Cast(name, aimed)
 end
 
--- Another unit behind the token: what was known of it no longer counts.
+-- Another unit behind the token: what was known of your target and your focus no longer counts, yours does.
 local function Unit()
-    for _, reminder in ipairs(Reminders.List()) do
-        if reminder.unit ~= "player" then seen[reminder] = nil end
+    for _, states in pairs(seen) do
+        for unit in pairs(states) do
+            if unit ~= "player" then states[unit] = nil end
+        end
     end
 end
 
@@ -418,6 +486,7 @@ function Reminders.Start()
     for _, bar in ipairs(bars) do known[bar] = true end
     for _, reminder in ipairs(Reminders.List()) do
         if not known[reminder.bar] then reminder.bar = bars[1] end
+        Reminders.Units(reminder) -- an older one's single unit into the list
     end
     Core.On("PLAYER_TARGET_CHANGED", Unit)
     Core.On("PLAYER_FOCUS_CHANGED", Unit)
