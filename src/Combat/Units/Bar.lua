@@ -38,7 +38,8 @@ local _, ns = ...
 --  From the inside out:
 --    the bar      health as the game gives it (a hidden value in a fight: the
 --                 bar takes it as it is), green: the game's colour for health;
---                 on your target's frame red while you can attack it (Bar.HOSTILE)
+--                 on your target's and your focus's frames red while you
+--                 can attack the unit (Bar.HOSTILE)
 --    the powers   the unit's mana, rage or energy, in the game's colour for each
 --    the row      health again, its own unit's: a target's target in the light
 --                 yellow of a nameplate's neutral creature (Bar.CALM), your
@@ -73,7 +74,7 @@ Bar.GREEN = { 0, 1, 0 }
 local green = rawget(_G, "COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR")
 if type(green) == "table" and type(green.r) == "number" then Bar.GREEN = { green.r, green.g, green.b } end
 Bar.CALM = { 1, 0.93, 0.55 } -- a target's target: the light yellow of a nameplate's creature that does not attack on sight
-Bar.HOSTILE = { 1, 0, 0 } -- a foe's health on a frame that tells foes (frame.foes: your target's), a nameplate's red
+Bar.HOSTILE = { 1, 0, 0 } -- a foe's health where the frame tells foes (frame.foes: target, focus), a nameplate's red
 local GOLD = { 1, 0.82, 0, 1 }
 local gold = rawget(_G, "NORMAL_FONT_COLOR")
 if type(gold) == "table" and type(gold.r) == "number" then GOLD = { gold.r, gold.g, gold.b, 1 } end

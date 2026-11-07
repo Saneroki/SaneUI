@@ -1347,7 +1347,7 @@ do
     units.target.tanking = false
     W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
     check(foe.glow._alpha == 0, "and none while you do not")
-    -- A friend as your target: green again; a foe as your focus stays green (only your target's frame tells foes).
+    -- A friend as your target: green again; a foe as your focus: red too (your target's and focus's frames tell foes).
     local kobold = units.target
     units.target = { name = "Tess", surname = "Brook", player = true, class = "PRIEST", health = 500, most = 1000 }
     W.Fire("PLAYER_TARGET_CHANGED")
@@ -1355,8 +1355,9 @@ do
         and foe.health._barColor[3] == green[3], "a friend as your target: green, not in its class's colour")
     units.focus = kobold
     W.Fire("PLAYER_FOCUS_CHANGED")
-    check(focus.face.health._value == 30 and focus.face.health._barColor[1] == green[1]
-        and focus.face.health._barColor[2] == green[2], "a foe as your focus: green")
+    check(focus.face.health._value == 30 and focus.face.health._barColor[1] == red[1]
+        and focus.face.health._barColor[2] == red[2] and focus.face.health._barColor[3] == red[3],
+        "a foe as your focus: red too")
     units.focus, units.target = nil, kobold
     W.Fire("PLAYER_FOCUS_CHANGED")
     W.Fire("PLAYER_TARGET_CHANGED")

@@ -4,7 +4,8 @@ local _, ns = ...
 --  Sane UI - Combat - Units
 --  Our own frames for you, your target and your focus, each in place of the
 --  game's own, in the look of a nameplate (Bar.lua, Text.lua): a round green
---  health bar (your target's red while you can attack it), the level and the raid marker on its left, the name after them
+--  health bar (your target's and your focus's red while you can attack it),
+--  the level and the raid marker on its left, the name after them
 --  (a player's first name and surname; none on your own frame), the health and
 --  how much is left on its right; under it the unit's power at half its height
 --  with the same words on the right (on your own frame, where you may have two
@@ -83,7 +84,7 @@ Units.KINDS = {
     { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent", foes = true,
       place = "targetPlace", first = { point = "TOP", relative = "BOTTOM", x = 190, y = 269 },
       row = { unit = "targettarget", option = "unitTargetTarget", colour = ns.UnitBar.CALM } },
-    { unit = "focus", option = "unitFocus", game = "FocusFrame", away = "parent",
+    { unit = "focus", option = "unitFocus", game = "FocusFrame", away = "parent", foes = true,
       place = "focusPlace", first = { point = "TOP", relative = "BOTTOM", x = 190, y = 371 },
       row = { unit = "focustarget", option = "unitFocusTarget", colour = ns.UnitBar.CALM } },
 }
