@@ -2,7 +2,7 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Editor
---  The reminder of the aura chosen in Edit auras (Units/Lists.lua: /sane auras,
+--  The reminder of the aura chosen in Edit tracked (Units/Lists.lua: /sane auras,
 --  /sane reminders, an aura's menu), under its list, each setting taking effect
 --  at once (Saneroki, 2026-11-06: one window for every aura's setup):
 --      Shows on   a reminder bar (the first one for a new reminder), the
@@ -217,7 +217,7 @@ function Editor.Show(reminder, name, icon)
     Fill()
 end
 
--- Edit auras on that reminder's aura (nil: as it was left).
+-- Edit tracked on that reminder's aura (nil: as it was left).
 function Editor.Open(reminder)
     ns.AuraLists.Open(nil, reminder and reminder.name)
 end

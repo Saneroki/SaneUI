@@ -154,7 +154,8 @@ check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.auraImportant 
     and menu[4].text == TEXT.auraHidden and menu[5].text == TEXT.auraFramesShow and menu[6].text == TEXT.auraFramesHide
     and menu[7].text == TEXT.auraLists and menu[8].text == TEXT.trackAdd and #menu == 8,
     "a left click: its menu, the spell, the marks, Edit tracked..., last Add tracking")
-check(TEXT.auraLists == "Edit tracked...", "the window's line in the menu, in its words")
+check(TEXT.auraLists == "Edit tracked..." and TEXT.listsTitle == "Edit tracked" and TEXT.aurasOpen == "Edit tracked",
+    "the window's line in the menu, its title and its button on the settings page, in their words")
 menu[8].fn()
 local list = Reminders.List()
 local reminder = list[1]
@@ -162,7 +163,7 @@ check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and remind
     and reminder.bar == Reminders.Bars()[1], "Add tracking: the reminder is made, on the first aura bar, of your own aura")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
 check(ns.options.auraKept[782] == "Thorns" and ns.ReminderEditor.panel and ns.ReminderEditor.panel:IsVisible(),
-    "and Edit auras opens on it, the aura on its list")
+    "and Edit tracked opens on it, the aura on its list")
 menu = Click(thorns)
 check(#menu == 7 and menu[7].text == TEXT.auraLists, "tracked: no Add tracking, Edit tracked... last")
 ns.AuraLists.Hide()
@@ -564,7 +565,7 @@ on.player.Thorns = THORNS
 Update()
 
 -------------------------------------------------------------------------------
---  Edit auras: the list's Reminder tick, the chosen aura's reminder under it
+--  Edit tracked: the list's Reminder tick, the chosen aura's reminder under it
 -------------------------------------------------------------------------------
 local Editor, Lists = ns.ReminderEditor, ns.AuraLists
 local function Inside(widget, parent)
@@ -598,7 +599,7 @@ local function Of(name)
 end
 Editor.Open(reminder)
 local panel = Editor.panel
-check(panel and panel:IsVisible() and Said(TEXT.listsTitle), "the reminder's settings are a part of Edit auras, open")
+check(panel and panel:IsVisible() and Said(TEXT.listsTitle), "the reminder's settings are a part of Edit tracked, open")
 check(Of("Thorns") and Of("Thorns").remind:GetChecked() and Of("Thorns").mark._shown,
     "its aura on the list, its Reminder ticked, chosen")
 local ticks, menus = Kind("CheckButton", "UICheckButtonTemplate", panel), Kind("DropdownButton", "WowStyle1DropdownTemplate", panel)

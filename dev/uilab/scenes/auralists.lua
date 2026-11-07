@@ -1,4 +1,4 @@
--- Edit auras: Core and the module Combat from their TOCs with Core's real spell sets, the window with marks, two reminders
+-- Edit tracked: Core and the module Combat from their TOCs with Core's real spell sets, the window with marks, two reminders
 -- (Rejuvenation's chosen, on the party and raid frames) and a search typed
 -- The sets are the built ones (BUILD/SaneUI/Sets: dev/build makes them). In the console: LabSearch("rejuv") types into
 -- the search box, LabSearch() empties it; LabCombat is the module's table.

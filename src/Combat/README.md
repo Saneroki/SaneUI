@@ -121,7 +121,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     edge (on a foe those the game shows on its own plates, on a friend or you any, big defensives first), crowd
     control in the middle, centred, debuffs on the right, from its edge (on a foe the ones you put on it, on a
     friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
-    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames*, then *Edit tracked...* and last, while it is not tracked, *Add tracking* (below, *Aura icons*; Saneroki, 2026-11-07: "put the add tracked down to the bottom and change the name from edit aura to edit tracked"). *Edit tracked...* opens *Edit auras*, the one window
+    rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames*, then *Edit tracked...* and last, while it is not tracked, *Add tracking* (below, *Aura icons*; Saneroki, 2026-11-07: "put the add tracked down to the bottom and change the name from edit aura to edit tracked"). *Edit tracked...* opens *Edit tracked*, the one window
     for every aura's setup, its marks and where its icon shows (Saneroki: "one Edit Auras window where I can handle all the aura
     configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
     icon), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
@@ -130,7 +130,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
     order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
     first; click one, or Enter for the first, and it is on the list, lit and chosen, to tick. A spell's number finds that spell.
-    `/sane auras` and `/sane reminders` open it too, `/sane auras rejuv` with that searched, and the button *Edit auras*
+    `/sane auras` and `/sane reminders` open it too, `/sane auras rejuv` with that searched, and the button *Edit tracked*
     in the page's section *Aura icons*. The game lets the lists act here on the buffs of you, your group and friendly units and
     on the debuffs of foes; on the rest it decides itself (in a fight, that is; out of one your marks act on all of them).
   - **The rows under them**, as a cast bar hangs under a nameplate: while your target has a target, a row under
@@ -278,11 +278,11 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     where the game tells its instance; what came during the fight the menu cannot name, and says so. Where the game does not
     tell the instance, the list shows plain from its first change until the fight ends.
 - **Aura icons** (Saneroki: *Show on healthbars*, once *Reminders*, then *Track*, then *Show on raid frames*; the page's tick
-  *Aura icons and bars*; set in *Edit auras*, `/sane auras`, `/sane reminders`):
+  *Aura icons and bars*; set in *Edit tracked*, `/sane auras`, `/sane reminders`):
   - **Showing one:** click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of
     a fight), or right click a spell in the spellbook, and choose *Add tracking* in its menu (Saneroki, 2026-11-07): it
-    shows on *Aura bar 1* at once (Saneroki, 2026-11-07: "make the reminder bar 1 the default one"), and *Edit auras*
-    opens on it, its settings under the list (once it is tracked the menu's *Edit tracked...* does that). Or in *Edit auras* search
+    shows on *Aura bar 1* at once (Saneroki, 2026-11-07: "make the reminder bar 1 the default one"), and *Edit tracked*
+    opens on it, its settings under the list (once it is tracked the menu's *Edit tracked...* does that). Or in *Edit tracked* search
     any spell (any class's, an enemy's, an item's, or its number): it comes onto the list, chosen, and under the list
     *Add tracking*; or tick the line's *Tracked*, the same. Unticking that, or the line's X, takes it off.
   - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar, *Health bars* or *Nameplates*,
@@ -572,7 +572,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   - `Lists.lua` (`ns.AuraLists`): the settings `auraWhite`, `auraBlack`, `auraHidden`, and `auraShow`, `auraHide` (`{ [spell number] = name }`), one list of
     each side per spell (`Lists.SIDE`; `Put`, `Take`, `Unmark(which, name)`, `Forget(name)`, then `Auras.Refresh`, `BuffList.Style`); `Mark(name)` by name, for the ranks; `Entries` the menus' lines; and `auraKept`, the window's own list: every spell put on a mark or picked
     in the search, with a mark or none, until its X (`Forget`: off every list, and its reminders `Reminders.Take`). The
-    window *Edit auras* a `Core.Window` panel (`auraListsPlace`, not sizable, no full screen): one scroll list of every
+    window *Edit tracked* a `Core.Window` panel (`auraListsPlace`, not sizable, no full screen): one scroll list of every
     name on any of them or a reminder's (`Rows`), each line the game's close button (its template stands at frame level 510:
     set to its line's), icon, name, number, a `UICheckButtonTemplate` per mark in `Lists.COLUMNS` (Hidden, Unimportant,
     Important, Hide, Prioritize) and `line.remind` (Reminder: `Reminders.Make` of the line's spell, a debuff on your
@@ -798,8 +798,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
-| `Units/AuraSearch.lua` | What Edit auras' search finds: every class's auras, the enemies', the items', from Core's sets, in groups; its box and suggestions |
-| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and the window Edit auras (`/sane auras`, `/sane reminders`): one list with a tick per mark and Reminder, the search, the chosen line's reminder under it |
+| `Units/AuraSearch.lua` | What Edit tracked's search finds: every class's auras, the enemies', the items', from Core's sets, in groups; its box and suggestions |
+| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and the window Edit tracked (`/sane auras`, `/sane reminders`): one list with a tick per mark and Reminder, the search, the chosen line's reminder under it |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: the game's outline, fade, hidden last, the left click |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
@@ -823,9 +823,10 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Plates.lua` | The reminders on the nameplates: a row right under each plate, on Nameplates' dress where it dresses it, in a fight your cast on your target's plate |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
+| `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** the window *Edit auras* is now *Edit tracked*: its title, its button on Combat's settings page, the tips and the commands' words (Saneroki).
 - **2026-11-07:** the aura menu: the marks first, then *Edit tracked...* (was *Edit auras...*), last *Add tracking*, there only while the aura is not tracked (Saneroki: "put the add tracked down to the bottom and change the name from edit aura to edit tracked"); *Edit tracking* gone, *Edit tracked...* does the same.
 - **2026-11-07:** a tracked aura goes on *Aura bar 1* at first, and a new place *Nameplates*: its icons right under each plate, without a gap (Saneroki: "make the reminder bar 1 the default one and add on Nameplates as well. On those nameplates the trackers are shown directly underneath with no gaps on the nameplates"); the list's column *Show on healthbars* is now *Tracked* (Saneroki kept it).
 - **2026-11-07:** *In a group too* under *Hide the unit frames at rest* and *Hide the action bars at rest*: they rest out of sight in a party or raid as well (Saneroki: "I have no way to autohide then while i don't hover over them in party").

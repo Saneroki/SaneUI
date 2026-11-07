@@ -17,8 +17,8 @@ local _, ns = ...
 --  of its side.
 --
 --  Filled from the menu of a click on an aura or a spell of the spellbook
---  (Lists.Menu), and in the window Edit auras (/sane auras, /sane reminders, the
---  menu's Edit auras), Saneroki, 2026-11-06: one window for every aura's setup,
+--  (Lists.Menu), and in the window Edit tracked (/sane auras, /sane reminders, the
+--  menu's Edit tracked...), Saneroki, 2026-11-06: one window for every aura's setup,
 --  the marks and the reminders together. One long list of every aura you set up,
 --  by name, each with its red X in front (off the list, every mark and its
 --  reminder), its icon, name and number, a tick for each mark in the columns

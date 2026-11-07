@@ -21,6 +21,12 @@ Saneroki: "Can we add a tab on the mail window that opens automatically first. I
 - **`src/Economy/Economy.lua`:** the words, the sizes (`SIZE.banker`), the option *Open on Banker* (on), `ns.store`, `ns.NameOf` and `ns.Color` (from `Tab.lua`, for both tabs), standing down gives the mail window back too.
 - **Tests:** `dev/tests/economy.lua` (104): what goes; opening first and when not; the name typed and kept; a line unticked; 17 stacks in two mails, the second by itself; a refusal, a slow mail and Send again, the player's attachment, the cursor, the postage, a stack the game refuses; the game's tabs; standing down. README, `Doc/ideas/Economy.md`, `Doc/agent/README.md`, card #385.
 
+### Combat: the window Edit auras is now Edit tracked (Saneroki, 2026-11-07)
+Saneroki, of the window the menu's *Edit tracked...* opens: rename it too.
+- **`src/Combat/Combat.lua`:** `listsTitle` and `aurasOpen` (the button on Combat's settings page) *Edit tracked*; the tips that name the window (*Aura icons on the health bars*, *Aura icons and bars*) and the words of `/sane auras` and `/sane reminders` with them. The commands stay as they are.
+- **Comments** in `Units/Lists.lua`, `Reminders/Editor.lua`, `Reminders/Reminders.lua`, the interface lab's scene `auralists`, the tests' words: the window by its new name. Combat's README (its history keeps the old name where it tells the past).
+- **Tests:** `dev/tests/reminders.lua`: the three words.
+
 ### Combat: the aura menu's Add tracking last, Edit tracked... above it (Saneroki, 2026-11-07)
 Saneroki: "in the flyout when you click a spell. Can you put the add tracked down to the bottom and change the name from edit aura to edit tracked."
 - **`src/Combat/Units/Lists.lua`, `src/Combat/Reminders/Reminders.lua`:** the menu of an aura or a spell (the game's buff list, the unit frames' icons, the spellbook): the marks, *Edit tracked...*, then *Add tracking* (`Reminders.Entry` after `Lists.Entries`). Once the aura is tracked the line goes: *Edit tracking* opened the same window as the line above it, so it is gone, and so is its word `trackEdit`.

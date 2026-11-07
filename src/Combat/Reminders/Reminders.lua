@@ -130,7 +130,7 @@ function Reminders.Find(spell)
     return nil
 end
 
--- The first reminder of an aura of that name, if it has one (Edit auras holds an aura by its name).
+-- The first reminder of an aura of that name, if it has one (Edit tracked holds an aura by its name).
 function Reminders.Named(name)
     for _, reminder in ipairs(Reminders.List()) do
         if reminder.name == name then return reminder end
@@ -296,7 +296,7 @@ function Reminders.Update()
 end
 
 -- A menu's last line for an aura ({ id, name, icon, harmful, unit }): Add tracking, its reminder made on the first aura
--- bar, the aura on Edit auras' list and the window opened on it, its settings under the list (Saneroki, 2026-11-07: "a
+-- bar, the aura on Edit tracked's list and the window opened on it, its settings under the list (Saneroki, 2026-11-07: "a
 -- add Tracking that will add that spell to the edit auras window and open the edit auras window"; "put the add tracked
 -- down to the bottom"); none where it is tracked: the line above it, Edit tracked..., opens the window on it
 -- (Units/Lists.lua: Lists.Track, Lists.Entries).

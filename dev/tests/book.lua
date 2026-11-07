@@ -451,7 +451,7 @@ local function Top(widget) -- the window a widget is in: its ancestor right unde
     while widget._parent and widget._parent ~= UIParent do widget = widget._parent end
     return widget
 end
-local auraWindow = ns.ReminderEditor.panel and Top(ns.ReminderEditor.panel) -- Edit auras, opened by Add tracking above
+local auraWindow = ns.ReminderEditor.panel and Top(ns.ReminderEditor.panel) -- Edit tracked, opened by Add tracking above
 for _, widget in ipairs(W.frames) do
     if widget._template == "UICheckButtonTemplate" and Top(widget) ~= auraWindow then toggle = widget end
     if widget._template == "UIPanelArrowDropdownButtonTemplate" then dropdown = widget end
