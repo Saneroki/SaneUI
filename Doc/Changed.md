@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Combat: your target's health bar red on a foe (Saneroki, 2026-11-07)
+Saneroki: "The target unit frame. Can we make it red if it is an enemy, otherwise green like we have it now."
+- **`src/Combat/Units/Bar.lua`:** `Bar.HOSTILE` (1, 0, 0, a nameplate's red for a foe); `Bar.Paint` colours the health: on a frame that tells foes (`frame.foes`) red while `UnitCanAttack("player", unit)` is true (a neutral creature too, as the frame's level and auras count a foe), else `Bar.GREEN`; an answer the game hides leaves it green. Painted at each fill: a new target, its faction or flags changing.
+- **`src/Combat/Units/Units.lua`:** the target's kind has `foes = true`, given to its face; your own frame and your focus's stay green.
+- **Tests:** `dev/tests/combat.lua` (503): an elite foe red, a friendly player green, a foe as your focus green, the foe again red. README, `Doc/guides/interface-style.md`, `Doc/changelog.txt`, card #387.
+
 ### Combat: Sane Macros' condition Once per target (Saneroki, 2026-11-07)
 Saneroki: "Can we make our macro system to also look out for those things and avoid to try to cast this? So for example our macro editor has a step that says /cast [if no rend] cast rend", then "It is not only red but there might be other things. Can we have a condition called like \"Once per target\" that we can add?"
 - **Why not by the aura:** the snippet that picks a step in a fight has no aura call (the newest export's `RestrictedEnvironment.lua`; the game's conditions have no aura word), and addon code that reads auras may not write to a secure button in a fight; Forever's client hides most target auras from addons then too.

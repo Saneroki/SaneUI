@@ -37,7 +37,8 @@ local _, ns = ...
 --
 --  From the inside out:
 --    the bar      health as the game gives it (a hidden value in a fight: the
---                 bar takes it as it is), green: the game's colour for health
+--                 bar takes it as it is), green: the game's colour for health;
+--                 on your target's frame red while you can attack it (Bar.HOSTILE)
 --    the powers   the unit's mana, rage or energy, in the game's colour for each
 --    the row      health again, its own unit's: a target's target in the light
 --                 yellow of a nameplate's neutral creature (Bar.CALM), your
@@ -72,6 +73,7 @@ Bar.GREEN = { 0, 1, 0 }
 local green = rawget(_G, "COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR")
 if type(green) == "table" and type(green.r) == "number" then Bar.GREEN = { green.r, green.g, green.b } end
 Bar.CALM = { 1, 0.93, 0.55 } -- a target's target: the light yellow of a nameplate's creature that does not attack on sight
+Bar.HOSTILE = { 1, 0, 0 } -- a foe's health on a frame that tells foes (frame.foes: your target's), a nameplate's red
 local GOLD = { 1, 0.82, 0, 1 }
 local gold = rawget(_G, "NORMAL_FONT_COLOR")
 if type(gold) == "table" and type(gold.r) == "number" then GOLD = { gold.r, gold.g, gold.b, 1 } end
@@ -321,8 +323,12 @@ function Bar.Rank(unit)
     return type(classification) == "string" and RANK_OF[classification] or nil
 end
 
--- The rank's line and the glow of a player who may attack you, as the unit is now.
+-- The health's colour, the rank's line and the glow of a player who may attack you, as the unit is now. On a frame
+-- that tells foes (frame.foes) the health is red while you can attack the unit, else green (its answer hidden: green).
 function Bar.Paint(frame, unit)
+    local foe = frame.foes and Core.Ask(UnitCanAttack, "player", unit) == true
+    local health = foe and Bar.HOSTILE or Bar.GREEN
+    frame.health:SetStatusBarColor(health[1], health[2], health[3])
     local rank = Bar.RANKS[Bar.Rank(unit)] or Bar.PLAIN
     if rank ~= frame.rank then
         frame.rank = rank

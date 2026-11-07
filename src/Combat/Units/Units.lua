@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Combat - Units
 --  Our own frames for you, your target and your focus, each in place of the
 --  game's own, in the look of a nameplate (Bar.lua, Text.lua): a round green
---  health bar, the level and the raid marker on its left, the name after them
+--  health bar (your target's red while you can attack it), the level and the raid marker on its left, the name after them
 --  (a player's first name and surname; none on your own frame), the health and
 --  how much is left on its right; under it the unit's power at half its height
 --  with the same words on the right (on your own frame, where you may have two
@@ -68,9 +68,9 @@ Units.POLL = 0.2 -- seconds between two readings of a shown row's unit
 Units.ICON = 16  -- an aura's icon over the name, square
 -- Each frame: its unit, its setting, the game's frame it stands for and how that goes out of sight (Away), its place's
 -- key and first place (from the screen's bottom middle, above the action bars: you left of the middle, your target
--- right, your focus above it; by the button's top: the health bar's, the same whatever height the button has), and its
--- row: the same of the unit under it, its bar's colour (none: green), and whether
--- its power shows under it. Your own frame's bars: the game's frames that go deaf for them, each with its setting and
+-- right, your focus above it; by the button's top: the health bar's, the same whatever height the button has), whether
+-- its health is red on a foe (foes), and its row: the same of the unit under it, its bar's colour (none: green), and
+-- whether its power shows under it. Your own frame's bars: the game's frames that go deaf for them, each with its setting and
 -- what it no longer hears.
 Units.KINDS = {
     { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts", noName = true,
@@ -80,7 +80,7 @@ Units.KINDS = {
                { option = "unitCast", game = "OverlayPlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitCast", game = "PetCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
                { option = "unitBreath", game = "MirrorTimerContainer", away = "deaf", events = ns.UnitTimers.EVENTS } } },
-    { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent",
+    { unit = "target", option = "unitTarget", game = "TargetFrame", away = "parent", foes = true,
       place = "targetPlace", first = { point = "TOP", relative = "BOTTOM", x = 190, y = 269 },
       row = { unit = "targettarget", option = "unitTargetTarget", colour = ns.UnitBar.CALM } },
     { unit = "focus", option = "unitFocus", game = "FocusFrame", away = "parent",
@@ -259,7 +259,7 @@ local function Make(kind)
     face:SetPoint("TOPLEFT", button, "TOPLEFT")
     face:SetPoint("TOPRIGHT", button, "TOPRIGHT")
     face:SetHeight(Units.HEIGHT)
-    face.unit, face.noName = kind.unit, kind.noName
+    face.unit, face.noName, face.foes = kind.unit, kind.noName, kind.foes
     ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW,
                             rowPower = kind.row.power and Units.ROW_POWER or nil })
     ns.UnitText.Make(face)

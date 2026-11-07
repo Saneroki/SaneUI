@@ -392,8 +392,10 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
 
 - **Unit frames like the nameplates:** your frame, your target's and your focus's look very like a nameplate (the
   module Nameplates): the round bar with its thin border, the power line along its bottom, the rank's line and the
-  red glow, in the plates' font. Green for everyone, never class colours. One line inside: the level and the raid
-  marker on the left, then the name anchored left, the current health and its share on the right ("850 | 85%").
+  red glow, in the plates' font. Green for everyone, never class colours; your target's red while it is an enemy
+  you can attack (Saneroki, 2026-11-07: "make it red if it is an enemy, otherwise green like we have it now"). One
+  line inside: the level and the raid marker on the left, then the name anchored left, the current health and its
+  share on the right ("850 | 85%").
   A player's name is always the whole name, first name and surname; your own frame has no name. No portrait, no
   frame round it. A fixed width: every frame as wide as the others, whatever it shows; the rank's gold or silver
   line lies inside the border (on a nameplate it reaches outwards).

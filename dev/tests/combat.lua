@@ -1275,8 +1275,9 @@ do
     local foe = target.face
     check(foe.name._text == "Kobold Miner" and foe.value._text == "40 | 33%" and foe.raid._shown and foe.raid._cell == 8,
         "your target: its name, health, and its raid marker beside its level")
-    check(foe.rank == ns.UnitBar.RANKS.elite and foe.health._barColor[2] == green[2] and foe.health._barColor[1] == green[1],
-        "green for a foe too; the gold line of an elite")
+    local red = ns.UnitBar.HOSTILE
+    check(foe.rank == ns.UnitBar.RANKS.elite and foe.health._barColor[1] == red[1] and foe.health._barColor[2] == red[2]
+        and foe.health._barColor[3] == red[3], "red for a foe you can attack; the gold line of an elite")
     -- One width for every frame: the border on its edge, an elite's gold line inside it, the bar inside both.
     local pixel = Core.Pixels(foe, 1)
     check(target._width == Units.WIDTH and target._width == player._width and foe.border[1]._points[1][4] == 0
@@ -1346,6 +1347,21 @@ do
     units.target.tanking = false
     W.Fire("UNIT_THREAT_LIST_UPDATE", "target")
     check(foe.glow._alpha == 0, "and none while you do not")
+    -- A friend as your target: green again; a foe as your focus stays green (only your target's frame tells foes).
+    local kobold = units.target
+    units.target = { name = "Tess", surname = "Brook", player = true, class = "PRIEST", health = 500, most = 1000 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(foe.health._barColor[1] == green[1] and foe.health._barColor[2] == green[2]
+        and foe.health._barColor[3] == green[3], "a friend as your target: green, not in its class's colour")
+    units.focus = kobold
+    W.Fire("PLAYER_FOCUS_CHANGED")
+    check(focus.face.health._value == 30 and focus.face.health._barColor[1] == green[1]
+        and focus.face.health._barColor[2] == green[2], "a foe as your focus: green")
+    units.focus, units.target = nil, kobold
+    W.Fire("PLAYER_FOCUS_CHANGED")
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(foe.health._barColor[1] == red[1] and foe.health._barColor[2] == red[2] and foe.name._text == "Kobold Miner",
+        "the foe again: red again")
     -- In a fight the game hides its health and your threat: shown as they are, nothing computed with them.
     local hidden = W.Secret()
     units.target.health, units.target.tanking = hidden, hidden

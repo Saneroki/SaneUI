@@ -13,8 +13,9 @@ the bottom edge, or press your spellbook or talents key, and it fills the screen
 talents windows, which look and work as the game's, on Core's board that you arrange; push there again, press
 the key again, or Esc, and it goes back. A talent planner Sane UI knows is a window of its own there.
 
-Your frame, your target's and your focus's are ours, in the look of a nameplate and green: the level and raid
-marker on the left, then the name (none on your own), the health and how much is left on the right. Under your
+Your frame, your target's and your focus's are ours, in the look of a nameplate and green (your target's red while
+you can attack it): the level and raid marker on the left, then the name (none on your own), the health and how much
+is left on the right. Under your
 target's and focus's frames, as a cast bar under a nameplate, a row with the name of their target; under yours your
 pet, with its health and its resource. Directly above each health bar its unit's cast while it casts. Your breath
 lies over your health bar, in the game's bubbles, half see-through, the game's other timers on you stand above your
@@ -106,7 +107,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   still open ("3/8"). It goes once the objective is done. As the game says it in the creature's tooltip; a
   creature the game says nothing about has none. *Quest marks on nameplates* switches it off.
 - **Unit frames:** your own frame, your target's and your focus's, in place of the game's, in the look of a
-  nameplate: a round green bar (the game's green for health, for everyone: no class colours), and under it the
+  nameplate: a round green bar (the game's green for health, for everyone: no class colours; your target's red, a
+  nameplate's red for a foe, while you can attack it), and under it the
   unit's power in a bar half as high, in the game's colour for it, with the power and how much is left on its
   right ("2.4k | 80%"). A druid's own frame has two: mana always, and under it energy or rage while in a form;
   so does yours in a specialization whose power is not mana but who has mana too. Inside the health bar, on the
@@ -540,7 +542,9 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     unit's own (`UnitPowerType`), or on a frame with two slots (`face.alternate`) mana (`Bar.MANA`) and under it the
     unit's own while that is not mana; `Bar.Powers` fills them (`UnitPower`/`UnitPowerMax` by type, hidden or not;
     an empty bar where the unit has none) and lays them out anew when their number changes. Every health bar
-    `Bar.GREEN` (the game's `COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`, plain green without it); each power in the
+    `Bar.GREEN` (the game's `COMPACT_UNIT_FRAME_FRIENDLY_HEALTH_COLOR`, plain green without it), set in `Bar.Paint`:
+    on a frame that tells foes (`face.foes`, the kind's `foes`: your target's) `Bar.HOSTILE` (a nameplate's red)
+    while `UnitCanAttack("player", unit)` says so, green where it says no or its answer is hidden; each power in the
     game's `PowerBarColor`; ranks and glow as on a plate. Hidden values (health, a creature's most, your threat against it)
     go to the bars, the glow's `SetAlphaFromBoolean` and the texts as they are.
   - `Text.lua` (`ns.UnitText`): the game's plate font (`SystemFont_NamePlate_Outlined`) at `Text.SIZE` 12; level
@@ -804,7 +808,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
-| `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar, the power bars under it (a druid's mana and form), the row |
+| `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar (your target's red on a foe), the power bars under it (a druid's mana and form), the row |
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
@@ -836,6 +840,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** your target's health bar red while you can attack it, green otherwise (Saneroki: "The target unit frame. Can we make it red if it is an enemy, otherwise green like we have it now."); your focus's stays green.
 - **2026-11-07:** *When class in group* counts your own class too (Saneroki: "I meant my own included").
 - **2026-11-07:** an aura tracked more than once: a + beside each line's X copies its tracking onto a line of its own, with its own place and conditions; the X on one of several lines deletes that one alone (Saneroki: "Sometimes I want to show it on multiple places or have different conditions"). A condition *When class in group* (Saneroki: "It only shows that spell / buff on the bars when that class is in the party").
 - **2026-11-07:** the window *Edit auras* is now *Edit tracked*: its title, its button on Combat's settings page, the tips and the commands' words (Saneroki).
