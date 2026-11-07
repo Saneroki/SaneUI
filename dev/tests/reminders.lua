@@ -114,6 +114,10 @@ local function Buttons(count)
     return frame
 end
 BuffFrame, DebuffFrame = Buttons(3), Buttons(1)
+-- The game's classes, three of them (When class in group).
+local CLASSES = { { "Warrior", "WARRIOR" }, { "Paladin", "PALADIN" }, { "Druid", "DRUID" } }
+GetNumClasses = function() return #CLASSES end
+GetClassInfo = function(id) local class = CLASSES[id] if class then return class[1], class[2], id end end
 BuffFrame.auraFrames[4] = { isAuraAnchor = true }
 
 if RETAIL then W.Play("retail") end
@@ -360,6 +364,25 @@ check(row._width == 1, "don't show in resting areas")
 resting, reminder.noRest = false, false
 Update()
 check(row._width == Bars.SIZE, "out of them it shows")
+-- When class in group: a druid among the others of your party or raid, you aside (a druid yourself).
+reminder.class = "DRUID"
+W.Fire("GROUP_ROSTER_UPDATE")
+Update()
+check(row._width == 1, "When class in group, a druid: no other druid in your group, not shown")
+units.party1 = { name = "Leafy", class = "DRUID", level = 60, health = 900, most = 900 }
+W.Fire("GROUP_ROSTER_UPDATE")
+Update()
+check(row._width == Bars.SIZE, "a druid in your party: shown")
+units.party1.class = "WARRIOR"
+Update()
+check(row._width == Bars.SIZE, "read again at most once a second")
+W.Wait(1)
+Update()
+check(row._width == 1, "then a warrior in the druid's place: not shown")
+units.party1, reminder.class = nil, nil
+W.Fire("GROUP_ROSTER_UPDATE")
+Update()
+check(row._width == Bars.SIZE, "no class needed: shown again")
 
 -------------------------------------------------------------------------------
 --  A fight with the auras hidden by the game
@@ -603,7 +626,15 @@ check(panel and panel:IsVisible() and Said(TEXT.listsTitle), "the reminder's set
 check(Of("Thorns") and Of("Thorns").remind:GetChecked() and Of("Thorns").mark._shown,
     "its aura on the list, its Reminder ticked, chosen")
 local ticks, menus = Kind("CheckButton", "UICheckButtonTemplate", panel), Kind("DropdownButton", "WowStyle1DropdownTemplate", panel)
-check(#ticks == 4 and #menus == 3, "under the list: four ticks and three dropdowns: where it shows, on whom, combat")
+check(#ticks == 4 and #menus == 4,
+    "under the list: four ticks and four dropdowns: where it shows, on whom, combat, which class in your group")
+check(menus[4].words._text == TEXT.reminderClass and #menus[4]._items == 4 and menus[4]._items[1].text == TEXT.reminderClassAny
+    and menus[4]._items[2].text == "Druid" and menus[4]._items[4].text == "Warrior",
+    "When class in group: Not needed, then the game's classes by name")
+menus[4]._items[2].fn()
+check(reminder.class == "DRUID", "a class chosen")
+menus[4]._items[1].fn()
+check(reminder.class == nil, "and none needed again")
 check(ticks[1]:GetChecked() == true and ticks[2]:GetChecked() == false, "as the reminder is set")
 ticks[2]:SetChecked(true)
 ticks[2]._scripts.OnClick(ticks[2])
@@ -669,6 +700,48 @@ reminder = Reminders.List()[1]
 check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.Bars()[1] and reminder.missing and Said("Thorns")
     and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, on the first aura bar, its settings shown")
 check(TEXT.reminderColumn == "Tracked", "the column's word")
+-- The +: the aura tracked once more, a line of its own under the first, chosen, with its own settings.
+local function Lines(name) -- the list's lines of an aura, top to bottom
+    local found = {}
+    for _, widget in ipairs(W.frames) do
+        if widget.row and widget.remind and widget._shown and widget.row.name == name then found[#found + 1] = widget end
+    end
+    return found
+end
+local function Cross(line)
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == line and widget._template == "UIPanelCloseButton" then return widget end
+    end
+end
+local thornsLines = Lines("Thorns")
+check(#thornsLines == 1 and thornsLines[1].copy and thornsLines[1].icon._points[1][2] == thornsLines[1].copy
+    and thornsLines[1].copy._points[1][2] == Cross(thornsLines[1]), "one tracking, one line: its + right of its X")
+thornsLines[1].copy._scripts.OnClick(thornsLines[1].copy)
+local copy = Reminders.List()[2]
+thornsLines = Lines("Thorns")
+check(#Reminders.List() == 2 and copy ~= reminder and copy.name == "Thorns" and copy.bar == reminder.bar
+    and copy.missing == reminder.missing and #thornsLines == 2 and thornsLines[2].row.reminder == copy
+    and thornsLines[2].mark._shown and not thornsLines[1].mark._shown and thornsLines[2].remind:GetChecked(),
+    "the +: a copy of its tracking, on a line of its own under it, chosen")
+menus[1]._items[2].fn()
+check(copy.bar == Reminders.GROUP and reminder.bar == Reminders.Bars()[1], "the copy's own place, the first's as it was")
+thornsLines[1]._scripts.OnMouseUp(thornsLines[1])
+menus[1]._items[3].fn()
+check(reminder.bar == Reminders.PLATES and copy.bar == Reminders.GROUP and thornsLines[1].mark._shown,
+    "the first line chosen: its own settings under the list")
+menus[1]._items[1].fn()
+local cross = Cross(thornsLines[2])
+cross._scripts.OnClick(cross)
+check(#Reminders.List() == 1 and Reminders.List()[1] == reminder and #Lines("Thorns") == 1 and Of("Thorns"),
+    "the X on one of two lines: that tracking alone goes")
+thornsLines = Lines("Thorns")
+thornsLines[1].remind:SetChecked(false)
+thornsLines[1].remind._scripts.OnClick(thornsLines[1].remind)
+check(#Reminders.List() == 0 and #Lines("Thorns") == 1, "the last one unticked: the line stays, not tracked")
+thornsLines[1].copy._scripts.OnClick(thornsLines[1].copy)
+reminder = Reminders.List()[1]
+check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.Bars()[1] and Of("Thorns").remind:GetChecked(),
+    "the + on an aura not tracked: its first tracking, on the first aura bar")
 -- Any spell by the search: on the list, chosen; its tick, a reminder; on the first aura bar, then the health bars.
 W.spells[1126] = { name = "Mark of the Wild" }
 C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
@@ -699,7 +772,7 @@ end
 take._scripts.OnClick(take)
 check(not Reminders.Named("Mark of the Wild") and not Of("Mark of the Wild") and #Reminders.List() == 1,
     "its X: off the list and its reminder gone")
-check(#Kind("DropdownButton", "WowStyle1DropdownTemplate") == 3, "one window: no other dropdowns made")
+check(#Kind("DropdownButton", "WowStyle1DropdownTemplate") == 4, "one window: no other dropdowns made")
 Reminders.Take(reminder)
 check(#Reminders.List() == 0, "deleted")
 Lists.Hide()

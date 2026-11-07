@@ -123,8 +123,11 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     friend or you any, what you can dispel and a boss's first). Out of a fight the mouse on an icon shows your own tooltip of the aura and brings the frame in sight at rest, and **a left or right click** opens its menu; in a fight the game's icons stand there, with its own tooltip and no click. The menu: *Important* (in front of the
     rest, whoever cast it, with the game's golden animated outline), *Unimportant* (never here), *Hidden* (only the game's list, *Your buffs and debuffs*), *Prioritize on unit frames* (in front of the rest, no glow), *Hide from unit frames*, then *Edit tracked...* and last, while it is not tracked, *Add tracking* (below, *Aura icons*; Saneroki, 2026-11-07: "put the add tracked down to the bottom and change the name from edit aura to edit tracked"). *Edit tracked...* opens *Edit tracked*, the one window
     for every aura's setup, its marks and where its icon shows (Saneroki: "one Edit Auras window where I can handle all the aura
-    configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
-    icon), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
+    configuration"): one long list of every aura you set up, a line for each time it is tracked (one where it is not), in
+    front of each its red X (off the list, every mark and its icon; on one of several lines of an aura that tracking
+    alone) and a + (the game's own plus button: the aura tracked once more, a copy of the line's tracking on a line under
+    it, chosen, its own place and conditions from now on; Saneroki, 2026-11-07: "Sometimes I want to show it on multiple
+    places or have different conditions"), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
     *Hide from unit frames* and *Prioritize on unit frames*, and last *Tracked* (below, *Aura icons*). Click a
     line to choose it: its icon's settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
@@ -284,14 +287,20 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     shows on *Aura bar 1* at once (Saneroki, 2026-11-07: "make the reminder bar 1 the default one"), and *Edit tracked*
     opens on it, its settings under the list (once it is tracked the menu's *Edit tracked...* does that). Or in *Edit tracked* search
     any spell (any class's, an enemy's, an item's, or its number): it comes onto the list, chosen, and under the list
-    *Add tracking*; or tick the line's *Tracked*, the same. Unticking that, or the line's X, takes it off.
+    *Add tracking*; or tick the line's *Tracked*, or its +, the same. Unticking that, or the line's X, takes it off.
+  - **More than once:** the line's + tracks the aura once more, a copy on a line of its own, set apart: on another bar,
+    the health bars or the nameplates, or with other conditions (a Mark of the Wild missing on a bar in a fight, and on
+    the health bars out of one). Each line is its own; the X on one of them deletes that one alone.
   - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar, *Health bars* or *Nameplates*,
     with *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on* you, your target or your focus (one
     made in the window: a debuff on your target, a buff on you); on the health bars and the nameplates those two are out
     of sight; *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
     (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
-    areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help). Never
+    areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help);
+    *When class in group*: *Not needed*, or one of the game's classes: shown only while one of the others in your party
+    or raid is of that class, in every place (Saneroki, 2026-11-07: "if a druid is in the party or raid it will then
+    show that spell"; you yourself do not count, the group's classes read again as it changes). Never
     while you are dead. What you show belongs to the character, watched by the aura's name, so any rank of it, on whom
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
@@ -743,7 +752,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
     Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
     nothing of it, not even the mouse's coming, is on or over the full screen; its old second place `meterFullPlace` is no longer read.
-- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. `Reminders.Update` runs on a ticker every
+- **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of the others in your party or raid (`UnitExists`, not `UnitIsUnit` player, `UnitClass`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders on bars or the nameplates and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
   with *Only yours*) and hands each bar what shows. `Hidden` asks
@@ -826,6 +835,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** an aura tracked more than once: a + beside each line's X copies its tracking onto a line of its own, with its own place and conditions; the X on one of several lines deletes that one alone (Saneroki: "Sometimes I want to show it on multiple places or have different conditions"). A condition *When class in group* (Saneroki: "It only shows that spell / buff on the bars when that class is in the party").
 - **2026-11-07:** the window *Edit auras* is now *Edit tracked*: its title, its button on Combat's settings page, the tips and the commands' words (Saneroki).
 - **2026-11-07:** the aura menu: the marks first, then *Edit tracked...* (was *Edit auras...*), last *Add tracking*, there only while the aura is not tracked (Saneroki: "put the add tracked down to the bottom and change the name from edit aura to edit tracked"); *Edit tracking* gone, *Edit tracked...* does the same.
 - **2026-11-07:** a tracked aura goes on *Aura bar 1* at first, and a new place *Nameplates*: its icons right under each plate, without a gap (Saneroki: "make the reminder bar 1 the default one and add on Nameplates as well. On those nameplates the trackers are shown directly underneath with no gaps on the nameplates"); the list's column *Show on healthbars* is now *Tracked* (Saneroki kept it).

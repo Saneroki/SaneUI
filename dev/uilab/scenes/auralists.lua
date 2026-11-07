@@ -1,5 +1,6 @@
--- Edit tracked: Core and the module Combat from their TOCs with Core's real spell sets, the window with marks, two reminders
--- (Rejuvenation's chosen, on the party and raid frames) and a search typed
+-- Edit tracked: Core and the module Combat from their TOCs with Core's real spell sets, the window with marks, three reminders
+-- (Rejuvenation twice: on the party and raid frames, its copy chosen, on the nameplates while a druid is in your group) and
+-- a search typed
 -- The sets are the built ones (BUILD/SaneUI/Sets: dev/build makes them). In the console: LabSearch("rejuv") types into
 -- the search box, LabSearch() empties it; LabCombat is the module's table.
 for _, name in ipairs({ "PlayerFrame", "TargetFrame", "FocusFrame", "PetFrame", "PlayerCastingBarFrame",
@@ -42,6 +43,8 @@ Lab.OnLogin(function()
     Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
     local rejuvenation = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
     rejuvenation.bar, rejuvenation.own = Reminders.GROUP, true
+    local again = Reminders.Copy(rejuvenation)
+    again.bar, again.class = Reminders.PLATES, "DRUID"
     Lists.Open(nil, "Rejuvenation")
     LabSearch("re")
 end)

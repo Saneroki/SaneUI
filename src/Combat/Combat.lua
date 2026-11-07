@@ -228,6 +228,11 @@ ns.TEXT = {
     reminderRest = "Don't show in resting areas",
     reminderOwn = "Only yours",
     reminderEarly = "Offset time (seconds)",
+    reminderClass = "When class in group",
+    reminderClassAny = "Not needed",
+    listsCopy = "Track it once more: a copy of this line under it, with its own place and conditions.",
+    listsCopied = "%s is tracked once more: set its place and conditions below.",
+    listsCopyGone = "That tracking of %s is deleted; the others stay.",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever

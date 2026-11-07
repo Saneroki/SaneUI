@@ -14,6 +14,10 @@ local _, ns = ...
 --                 are out of sight)
 --      Display when missing, Display when active, Combat, Don't show in
 --      resting areas, Only yours, Offset time
+--      When class in group   Not needed, or a class of the game's: shown only
+--                 while one of the others in your party or raid is of it
+--                 (Saneroki, 2026-11-07: "if a druid is in the party or raid
+--                 it will then show that spell")
 --  A line's tick Tracked makes or deletes one; a line chosen without
 --  one has the button Add tracking (Lists.Track: made on the first bar, its
 --  settings here at once; Saneroki, 2026-11-07: a spell searched could not be
@@ -23,18 +27,19 @@ local Core = SaneUI.Core
 local Editor = {}
 ns.ReminderEditor = Editor
 
-Editor.HEIGHT = 128 -- the panel under the list
+Editor.HEIGHT = 158 -- the panel under the list
 Editor.ICON = 20
 Editor.ROW = 30     -- from one row of settings to the next
 Editor.RIGHT = 470  -- where the settings' right half starts
 Editor.WORD = 80    -- a dropdown's words before it
+Editor.LONG = 140   -- longer words before it (When class in group)
 Editor.MENU = 170   -- a dropdown's width
 Editor.TRACK = 130  -- the button Add tracking's width
 Editor.HINT = 5     -- the words beside it, down from its top
 Editor.COMBAT = { "any", "out", "in" }
 Editor.UNITS = { "player", "target", "focus" }
 
-local panel, controls, face, head, on, hint, track, place, unit, combat, early, takeBar
+local panel, controls, face, head, on, hint, track, place, unit, combat, early, takeBar, class
 local ticks = {}
 local chosen -- the reminder whose settings show
 
@@ -46,6 +51,24 @@ local function Set(key, value)
     chosen[key] = value
     ns.Reminders.Apply()
     Fill()
+end
+
+local classes -- the game's classes, { name, token } each by name, read once
+
+-- Which class must be in your group: none needed, then the game's classes by name.
+local function Classes()
+    if not classes then
+        classes = {}
+        local total = Core.Ask(rawget(_G, "GetNumClasses")) or 0
+        for id = 1, math.max(total, 13) do
+            local name, token = Core.Ask(rawget(_G, "GetClassInfo"), id)
+            if type(name) == "string" and type(token) == "string" then classes[#classes + 1] = { name, token } end
+        end
+        table.sort(classes, function(a, b) return a[1] < b[1] end)
+    end
+    local entries = { { ns.TEXT.reminderClassAny } }
+    for at, entry in ipairs(classes) do entries[at + 1] = entry end
+    return entries
 end
 
 -- Where a reminder may show: { word, number } each, the bars by their place among them; then the party and raid
@@ -94,6 +117,7 @@ function Fill()
     place:GenerateMenu()
     unit:GenerateMenu()
     combat:GenerateMenu()
+    class:GenerateMenu()
     if not early:HasFocus() then early:SetText(tostring(chosen.early or 0)) end
 end
 
@@ -117,13 +141,14 @@ local function Tick(key, x, row, word)
     ticks[key] = tick
 end
 
--- A dropdown of one setting, its words before it: entries as { word, value } (or a function that gives them).
-local function Choice(key, x, row, word, entries)
+-- A dropdown of one setting, its words before it (room: theirs, Editor.WORD where not said): entries as { word, value }
+-- (or a function that gives them; no value: the setting none).
+local function Choice(key, x, row, word, entries, room)
     local words = Words(x, row, word)
     local menu = CreateFrame("DropdownButton", nil, controls, "WowStyle1DropdownTemplate")
     menu.words = words
     menu:SetWidth(Editor.MENU)
-    menu:SetPoint("TOPLEFT", controls, "TOPLEFT", x + Editor.WORD, -row * Editor.ROW)
+    menu:SetPoint("TOPLEFT", controls, "TOPLEFT", x + (room or Editor.WORD), -row * Editor.ROW)
     menu:SetupMenu(ns.Guard(function(_, root)
         for _, entry in ipairs(type(entries) == "function" and entries() or entries) do
             root:CreateRadio(entry[1], ns.Guard(function() return chosen ~= nil and chosen[key] == entry[2] end),
@@ -206,6 +231,7 @@ function Editor.Build(parent)
     early:SetScript("OnTextChanged", ns.Guard(function(self, typed) if typed then Early(self) end end))
     early:SetScript("OnEnterPressed", ns.Guard(function(self) self:ClearFocus() end))
     early:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
+    class = Choice("class", 0, 3, ns.TEXT.reminderClass, Classes, Editor.LONG)
     Editor.panel = panel
     return panel
 end

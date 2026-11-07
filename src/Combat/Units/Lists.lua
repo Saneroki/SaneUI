@@ -20,8 +20,12 @@ local _, ns = ...
 --  (Lists.Menu), and in the window Edit tracked (/sane auras, /sane reminders, the
 --  menu's Edit tracked...), Saneroki, 2026-11-06: one window for every aura's setup,
 --  the marks and the reminders together. One long list of every aura you set up,
---  by name, each with its red X in front (off the list, every mark and its
---  reminder), its icon, name and number, a tick for each mark in the columns
+--  by name, a line for each of its reminders (one where it has none), each with
+--  its red X in front (off the list, every mark and its reminder; on one of
+--  several lines of an aura that line's reminder alone), a + (the aura tracked
+--  once more, a copy of the line's reminder under it: Saneroki, 2026-11-07,
+--  "Sometimes I want to show it on multiple places or have different
+--  conditions"), its icon, name and number, a tick for each mark in the columns
 --  Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit
 --  frames, and last Tracked: a reminder made or deleted (Reminders/: on the
 --  first aura bar, or where its settings choose: another bar, the health bars
@@ -47,6 +51,9 @@ Lists.COLUMN = 92   -- a mark's column, its tick in the middle
 Lists.TOP = 56      -- from the window's top to the marks' words, under the search box
 Lists.HEAD = 30     -- the marks' words over their columns, two lines at most
 Lists.BAR = 24      -- the scroll bar's room at the list's right
+Lists.PLUS = 18     -- the + beside the X, square: the game's own plus button (its quest log's)
+Lists.PLUS_ART = { up = "Interface\\Buttons\\UI-PlusButton-Up", down = "Interface\\Buttons\\UI-PlusButton-Down",
+                   lit = "Interface\\Buttons\\UI-PlusButton-Hilight" }
 Lists.SEARCH = 360  -- the search box's suggestions, wide
 Lists.KEYS = { white = "auraWhite", black = "auraBlack", hidden = "auraHidden", show = "auraShow", hide = "auraHide",
                kept = "auraKept" } -- the lists' settings; kept: the window's own, every spell put on it
@@ -62,6 +69,7 @@ local names      -- [a side][a spell's name] = its list, made when asked after a
 local rows       -- the list as last shown: { id, name } each, by name
 local fresh      -- the name of the spell last put on it, lit
 local chosen     -- the name of the spell whose reminder's settings show
+local pick       -- which of its reminders (nil: its first line's)
 
 -- A list: { [spell number] = its name }.
 local function List(which)
@@ -72,22 +80,45 @@ end
 
 local Icon = ns.AuraSearch.Icon
 
--- Every spell on the window's list, a mark or a reminder, once by name, by name.
+-- Every spell on the window's list, a mark or a reminder, by name: a line ({ id, name, reminder }) for each of its
+-- reminders in the order made, one without where it has none. by: a name's first line.
 local function Rows()
-    local found, by = {}, {}
+    local found, by, ids, tracked, order = {}, {}, {}, {}, {}
     local function Add(id, name)
         name = tostring(name)
-        if by[name] then return end
-        by[name] = { id = tonumber(id), name = name }
-        found[#found + 1] = by[name]
+        if ids[name] then return end
+        ids[name] = tonumber(id) or false
+        order[#order + 1] = name
     end
     for id, name in pairs(List("kept")) do Add(id, name) end
     for _, which in ipairs(Lists.ORDER) do
         for id, name in pairs(List(which)) do Add(id, name) end
     end
-    for _, reminder in ipairs(ns.Reminders.List()) do Add(reminder.id, reminder.name) end
-    table.sort(found, function(a, b) return a.name:lower() < b.name:lower() end)
+    for _, reminder in ipairs(ns.Reminders.List()) do
+        Add(reminder.id, reminder.name)
+        local name = tostring(reminder.name)
+        tracked[name] = tracked[name] or {}
+        table.insert(tracked[name], reminder)
+    end
+    table.sort(order, function(a, b) return a:lower() < b:lower() end)
+    for _, name in ipairs(order) do
+        local own = tracked[name]
+        for index = 1, own and #own or 1 do
+            local row = { id = ids[name] or nil, name = name, reminder = own and own[index] }
+            found[#found + 1] = row
+            by[name] = by[name] or row
+        end
+    end
     return found, by
+end
+
+-- The line chosen: the chosen reminder's, else the first of the chosen name.
+local function Current(found, by)
+    if not chosen then return nil end
+    for _, row in ipairs(found) do
+        if pick and row.reminder == pick then return row end
+    end
+    return by[chosen]
 end
 
 -- The list of a spell on a side by its name, any rank of it; nil where it has none.
@@ -106,6 +137,7 @@ local function Fill()
     if not frame then return end
     local by
     rows, by = Rows()
+    local current = Current(rows, by)
     for index, row in ipairs(rows) do
         local line = lines[index] or Lists.Line(index)
         line.row = row
@@ -113,16 +145,15 @@ local function Fill()
         line.name:SetText(row.name)
         line.number:SetText(row.id or "")
         line.lit:SetShown(row.name == fresh)
-        line.mark:SetShown(row.name == chosen)
+        line.mark:SetShown(row == current)
         for which, tick in pairs(line.ticks) do tick:SetChecked(Side(Lists.SIDE[which], row.name) == which) end
-        line.remind:SetChecked(ns.Reminders.Named(row.name) ~= nil)
+        line.remind:SetChecked(row.reminder ~= nil)
         line:Show()
     end
     for index = #rows + 1, #lines do lines[index]:Hide() end
     empty:SetShown(rows[1] == nil)
     child:SetHeight(math.max(#rows * Lists.LINE, 1))
-    local row = chosen and by[chosen]
-    ns.ReminderEditor.Show(chosen and ns.Reminders.Named(chosen), row and row.name, row and Icon(row.id))
+    ns.ReminderEditor.Show(current and current.reminder, current and current.name, current and Icon(current.id))
 end
 
 -- The list as it is now, from outside (a reminder made or deleted elsewhere).
@@ -178,7 +209,7 @@ function Lists.Forget(name)
         end
     end
     if fresh == name then fresh = nil end
-    if chosen == name then chosen = nil end
+    if chosen == name then chosen, pick = nil, nil end
     while ns.Reminders.Named(name) do ns.Reminders.Take(ns.Reminders.Named(name)) end
     Changed()
     if status then status:SetText(ns.TEXT.listsGone:format(name)) end
@@ -240,9 +271,9 @@ local function Reach(name)
     end
 end
 
--- That spell chosen: its reminder's settings under the list.
-local function Choose(name)
-    chosen = name
+-- That spell chosen, that reminder of it (nil: its first line's): its settings under the list.
+local function Choose(name, reminder)
+    chosen, pick = name, reminder
     Fill()
 end
 
@@ -251,7 +282,7 @@ local function Pick(entry)
     local _, by = Rows()
     local there = by[entry.name] ~= nil
     if not there then List("kept")[entry.id] = entry.name end
-    fresh, chosen = entry.name, entry.name
+    fresh, chosen, pick = entry.name, entry.name, nil
     Fill()
     Reach(entry.name)
     status:SetText((there and ns.TEXT.listsThere or ns.TEXT.listsAdded):format(entry.name))
@@ -270,17 +301,40 @@ local function Keep(id, name)
     if id and name then List("kept")[id] = List("kept")[id] or name end
 end
 
--- A line's tick Tracked: its reminder made on the first aura bar, or deleted (the line stays); the line chosen.
+-- A line's tick Tracked: its reminder made on the first aura bar, or deleted (an aura's last line stays); the line
+-- chosen.
 local function Remind(row, on)
-    local reminder = ns.Reminders.Named(row.name)
-    chosen = row.name
+    chosen, pick = row.name, nil
     Keep(row.id, row.name)
-    if on and not reminder then
-        ns.Reminders.Make(Spell(row))
-    elseif not on and reminder then
-        ns.Reminders.Take(reminder)
+    if on and not row.reminder then
+        pick = ns.Reminders.Make(Spell(row))
+    elseif not on and row.reminder then
+        ns.Reminders.Take(row.reminder)
     end
     Fill()
+end
+
+-- A line's +: its aura tracked once more, a copy of the line's reminder under it (its own place and settings from
+-- now on), or its first where it has none; the new line chosen.
+local function Copy(row)
+    Keep(row.id, row.name)
+    local copy = row.reminder and ns.Reminders.Copy(row.reminder) or ns.Reminders.Make(Spell(row))
+    chosen, pick = row.name, copy
+    Fill()
+    if status then status:SetText(ns.TEXT.listsCopied:format(row.name)) end
+end
+
+-- A line's X: on one of several lines of an aura its reminder alone goes, with the line; on its last line the aura goes
+-- off the list, every mark and its reminder (Forget).
+local function Drop(row)
+    local count = 0
+    for _, reminder in ipairs(ns.Reminders.List()) do
+        if reminder.name == row.name then count = count + 1 end
+    end
+    if not (row.reminder and count > 1) then return Lists.Forget(row.name) end
+    if pick == row.reminder then pick = nil end
+    ns.Reminders.Take(row.reminder)
+    if status then status:SetText(ns.TEXT.listsCopyGone:format(row.name)) end
 end
 
 -- Add tracking (an aura's menu, ns.Reminders.Entry; the button under the list, Reminders/Editor.lua: spell nil, the
@@ -307,8 +361,8 @@ local function Middle(place)
     return -((#Lists.COLUMNS + 1 - place) * Lists.COLUMN + Lists.COLUMN / 2)
 end
 
--- One line of the list, made as needed: the X, the icon, the name and number, a tick per mark, its reminder's tick; a
--- click on it chooses it.
+-- One line of the list, made as needed: the X, the +, the icon, the name and number, a tick per mark, its reminder's
+-- tick; a click on it chooses it.
 function Lists.Line(index)
     local line = CreateFrame("Frame", nil, child)
     line:SetHeight(Lists.LINE)
@@ -317,7 +371,7 @@ function Lists.Line(index)
     line:EnableMouse(true)
     line:SetScript("OnEnter", ns.Guard(function(self) if self.row then Tip(self, self.row.id, self.row.name) end end))
     line:SetScript("OnLeave", GameTooltip_Hide)
-    line:SetScript("OnMouseUp", ns.Guard(function(self) if self.row then Choose(self.row.name) end end))
+    line:SetScript("OnMouseUp", ns.Guard(function(self) if self.row then Choose(self.row.name, self.row.reminder) end end))
     -- Chosen and lit (just put on the list), the name's part only: under the ticks they made them look greyed out.
     line.mark = line:CreateTexture(nil, "BACKGROUND")
     line.mark:SetPoint("TOPLEFT", line, "TOPLEFT", 0, 0)
@@ -337,10 +391,24 @@ function Lists.Line(index)
     take:SetFrameLevel((Plain(line:GetFrameLevel()) or 1) + 1) -- the template stands high (510): over the suggestions else
     take:SetSize(Lists.LINE, Lists.LINE)
     take:SetPoint("LEFT", line, "LEFT", 0, 0)
-    take:SetScript("OnClick", ns.Guard(function() if line.row then Lists.Forget(line.row.name) end end))
+    take:SetScript("OnClick", ns.Guard(function() if line.row then Drop(line.row) end end))
+    local copy = CreateFrame("Button", nil, line)
+    copy:SetSize(Lists.PLUS, Lists.PLUS)
+    copy:SetPoint("LEFT", take, "RIGHT", 0, 0)
+    copy:SetNormalTexture(Lists.PLUS_ART.up)
+    copy:SetPushedTexture(Lists.PLUS_ART.down)
+    copy:SetHighlightTexture(Lists.PLUS_ART.lit, "ADD")
+    copy:SetScript("OnClick", ns.Guard(function() if line.row then Copy(line.row) end end))
+    copy:SetScript("OnEnter", ns.Guard(function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(ns.TEXT.listsCopy, 1, 1, 1, 1, true)
+        GameTooltip:Show()
+    end))
+    copy:SetScript("OnLeave", GameTooltip_Hide)
+    line.copy = copy
     line.icon = line:CreateTexture(nil, "ARTWORK")
     line.icon:SetSize(Lists.ICON, Lists.ICON)
-    line.icon:SetPoint("LEFT", take, "RIGHT", 4, 0)
+    line.icon:SetPoint("LEFT", copy, "RIGHT", 4, 0)
     line.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     line.number = line:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     line.number:SetPoint("RIGHT", line, "RIGHT", Middle(1) - Lists.COLUMN / 2 - 6, 0)
@@ -435,7 +503,7 @@ function Lists.Open(text, name)
     if ns.off then return end
     if not frame then Build() end
     status:SetText("")
-    if name then chosen = name end
+    if name then chosen, pick = name, nil end
     frame:Show()
     Fill()
     if name then Reach(name) end

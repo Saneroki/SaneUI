@@ -17,6 +17,11 @@ local _, ns = ...
 --      combat    "any", "out" (only out of a fight), "in" (only in one)
 --      noRest    not shown in resting areas (cities, inns)
 --      own       only your own cast of it counts
+--      class     shown only while one of the others in your party or raid is
+--                of that class (its token, "DRUID"); nil: any, no group needed
+--                (When class in group, Saneroki, 2026-11-07)
+--  An aura may have more than one: a copy (Reminders.Copy, the + in the
+--  window) with its own place and settings.
 --  A name of a family (Reminders.FAMILIES) counts all its names: a Gift of the
 --  Wild for a Mark of the Wild. Made from the menu of a click on an aura or a
 --  spell of the spellbook (Units/Lists.lua), set in the window (Editor.lua,
@@ -55,6 +60,7 @@ Reminders.FAMILIES = {
 local seen = setmetatable({}, { __mode = "k" }) -- [a reminder] = what was last known: { on, instance, ends, left }
 local families = {} -- [a name] = its family
 local ticker
+local classes, looked = {}, nil -- the classes of the others in your party or raid ([token] = true), when last read
 
 for _, family in ipairs(Reminders.FAMILIES) do
     for _, name in ipairs(family) do families[name] = family end
@@ -75,6 +81,26 @@ end
 function Reminders.Reaches(reminder, unit)
     local family = families[reminder.name]
     return not (family and family.party) or Core.Ask(UnitInParty, unit) or Core.Ask(UnitIsUnit, unit, "player")
+end
+
+-- Whether one of the others in your party or raid is of that class (its token, "DRUID"): read again at most once a
+-- second, and anew as the group changes.
+function Reminders.InGroup(class)
+    local now = GetTime()
+    if not looked or now - looked >= 1 then
+        looked = now
+        wipe(classes)
+        local raid = Core.Ask(IsInRaid)
+        local count = raid and (Core.Ask(GetNumGroupMembers) or 0) or 4
+        for index = 1, count do
+            local unit = (raid and "raid" or "party") .. index
+            if Core.Ask(UnitExists, unit) and not Core.Ask(UnitIsUnit, unit, "player") then
+                local _, token = Core.Ask(UnitClass, unit)
+                if type(token) == "string" then classes[token] = true end
+            end
+        end
+    end
+    return classes[class] == true
 end
 
 -- Whether the reminder is on a bar: not on the party and raid frames, nor on the nameplates.
@@ -153,6 +179,27 @@ function Reminders.Make(spell, bar)
     table.insert(Reminders.List(), reminder)
     Reminders.Apply()
     return reminder
+end
+
+-- The aura tracked once more: a copy of the reminder, right after it, its own from now on.
+function Reminders.Copy(reminder)
+    local copy = {}
+    for key, value in pairs(reminder) do
+        if type(value) == "table" then
+            copy[key] = {}
+            for inner, each in pairs(value) do copy[key][inner] = each end
+        else
+            copy[key] = value
+        end
+    end
+    local list = Reminders.List()
+    local at = #list + 1
+    for index, each in ipairs(list) do
+        if each == reminder then at = index + 1 end
+    end
+    table.insert(list, at, copy)
+    Reminders.Apply()
+    return copy
 end
 
 function Reminders.Take(reminder)
@@ -260,6 +307,7 @@ function Reminders.Wanted(reminder, state, unit)
     local fighting = InCombatLockdown()
     if (reminder.combat == "out" and fighting) or (reminder.combat == "in" and not fighting) then return false end
     if reminder.noRest and IsResting() then return false end
+    if reminder.class and not Reminders.InGroup(reminder.class) then return false end
     if Core.Ask(UnitIsDeadOrGhost, "player") then return false end
     if unit ~= "player" then
         if not Core.Ask(UnitExists, unit) or Core.Ask(UnitIsDeadOrGhost, unit) then return false end
@@ -335,6 +383,13 @@ local function Unit()
     end
 end
 
+-- The group changed: its classes read anew, and everything shown as they say (once a frame).
+local again = Core.Later(ns.Guard(function() Reminders.Apply() end))
+local function Roster()
+    looked = nil
+    again()
+end
+
 -- The looks run while there are reminders on bars or the nameplates and the setting is on; the bars and the plates'
 -- icons go when it is off. The party and raid frames as the reminders on them say.
 function Reminders.Apply()
@@ -363,6 +418,7 @@ function Reminders.Start()
     end
     Core.On("PLAYER_TARGET_CHANGED", Unit)
     Core.On("PLAYER_FOCUS_CHANGED", Unit)
+    Core.On("GROUP_ROSTER_UPDATE", Roster)
     Core.OnUnit("UNIT_SPELLCAST_SENT", "player", Sent)
     Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", Cast)
     Core.EditMode.Watch(ns.Guard(Reminders.Apply))
