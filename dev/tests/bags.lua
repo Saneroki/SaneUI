@@ -952,6 +952,81 @@ Categories.Pin(2589, false)
 Categories.Assign(2589, nil)
 Bags.Refresh()
 
+-- Let go over one of a category's items: a catcher of ours over the game's button (which would swap the two in
+-- the bags) puts it into that category; not over the same item (its stacks join), not where nothing is put into.
+-- Put anywhere but Pinned, a pinned item is unpinned: it shows where it went.
+function methods:GetHitRectInsets()
+    local hit = self._hit or {}
+    return hit[1] or 0, hit[2] or 0, hit[3] or 0, hit[4] or 0
+end
+do
+    Categories.Pin(2001, true)
+    Bags.Refresh()
+    local pinnedSword = Cells.Button(0, 1)
+    holding = 118
+    pinnedSword:GetScript("OnEnter")(pinnedSword)
+    local catcher = Bags.canvas.catcher
+    check(catcher and catcher:IsShown() and catcher.into == "pinned" and catcher._points[1][2] == pinnedSword
+        and catcher:GetFrameLevel() > pinnedSword:GetFrameLevel(), "an item held over a pinned item: our catcher over its button")
+    catcher:GetScript("OnEnter")(catcher)
+    check(catcher.lit:IsShown() and GameTooltip:IsOwned(catcher) and GameTooltip._text == "Pinned Items",
+        "lit, its tooltip naming where the item goes")
+    catcher:GetScript("OnReceiveDrag")(catcher)
+    check(kept.pinned[118] and holding == nil and not catcher:IsShown() and not catcher.lit:IsShown(),
+        "let go there: pinned, the item back in its slot")
+    Bags.Refresh()
+    local clothButton = Cells.Button(0, 2)
+    holding = 118
+    clothButton:GetScript("OnEnter")(clothButton)
+    check(catcher:IsShown() and catcher.into == "trade", "over an item of Trade Goods: that category")
+    catcher:GetScript("OnClick")(catcher, "LeftButton")
+    check(kept.assigned[118] == "trade" and not kept.pinned[118] and holding == nil and Cells.Record(Cells.Button(0, 3)).category == "trade",
+        "picked up and clicked there: into Trade Goods and unpinned, so it shows there")
+    Bags.Refresh()
+    holding = 2589
+    clothButton = Cells.Button(0, 2)
+    clothButton:GetScript("OnEnter")(clothButton)
+    check(not catcher:IsShown(), "the same item held over it: the game's own, the stacks join")
+    holding = nil
+    clothButton:GetScript("OnEnter")(clothButton)
+    check(not catcher:IsShown(), "nothing held: no catcher")
+    holding = 118
+    clothButton:GetScript("OnEnter")(clothButton)
+    holding = nil
+    catcher:GetScript("OnUpdate")(catcher, 0)
+    check(not catcher:IsShown(), "the item put down elsewhere: the catcher gone")
+    holding = 118
+    clothButton:GetScript("OnEnter")(clothButton)
+    Bags.Refresh()
+    check(not catcher:IsShown(), "drawn anew: gone (its button may draw another item now)")
+    Bags.Choose("one")
+    local slotButton = Cells.Button(0, 4)
+    slotButton:GetScript("OnEnter")(slotButton)
+    check(Bags.Viewing() == "one" and not catcher:IsShown(), "One Bag's slots, the bags as they are: the game's own, they swap")
+    Bags.Choose("all")
+    holding = nil
+    -- A pinned item put into a category of the player's own: unpinned, shown there; a middle click on a pinned item
+    -- put into one: unpinned, back in it; let go over the paper: out of both.
+    Categories.Pin(118, true)
+    Bags.Refresh()
+    holding = 118
+    local tonics = HeadNamed("Tonics")
+    tonics:GetScript("OnReceiveDrag")(tonics)
+    check(kept.assigned[118] == "own1" and not kept.pinned[118] and HeadNamed("Tonics").number._text == "(1)",
+        "a pinned item let go over the player's own category: in it, unpinned, shown there")
+    Categories.Pin(118, true)
+    Bags.Refresh()
+    local potionPinned = Cells.Button(0, 3)
+    potionPinned:GetScript("OnMouseUp")(potionPinned, "MiddleButton")
+    check(not kept.pinned[118] and kept.assigned[118] == "own1", "a middle click on it pinned: unpinned, back in that category")
+    Categories.Pin(118, true)
+    holding = 118
+    check(ns.Menus.Home(true) and not kept.pinned[118] and not kept.assigned[118] and holding == nil,
+        "let go over the paper: unpinned, out of the category, where the rules put it")
+    Categories.Pin(2001, false)
+    Bags.Refresh()
+end
+
 -- A category's empty slot after its items (the "+"): an item brought to it goes in; clicked with nothing, the next item clicked does.
 local function PlusOf(key)
     for _, widget in ipairs(W.frames) do
@@ -1233,6 +1308,16 @@ local function RowOf(bag, slot) return Bags.rowOf[Cells.Button(bag, slot)] end
 check(kept.look == "list" and RowOf(0, 1) and RowOf(0, 1).cells.name._text == "Steel Sword" and RowOf(0, 1).cells.level._text == "20"
     and RowOf(0, 1).cells.sell._text == "500c" and RowOf(0, 2).cells.count._text == "27",
     "the list: a line per item, its name, item level, what the vendor pays, the count")
+do
+    local cloth = Cells.Button(0, 2)
+    holding = 118
+    cloth:GetScript("OnEnter")(cloth)
+    local catcher = Bags.canvas.catcher
+    check(catcher:IsShown() and cloth._hit[2] < 0 and catcher._hit[2] == cloth._hit[2],
+        "an item held over a line: the catcher takes the whole line, as the button does")
+    holding = nil
+    catcher:GetScript("OnUpdate")(catcher, 0)
+end
 local columnsHead = ns.Columns.head
 check(columnsHead:IsShown() and ns.Columns.Cell("level"):IsShown() and not ns.Columns.Cell("bind"), "the columns' head over the list")
 local levelCell = ns.Columns.Cell("level")

@@ -224,6 +224,14 @@ worn bags hold items. So *Containers* is a category of its own (bags and quivers
 classes Container and Quiver, and what a right click opens, the game's `hasLoot`; it takes what is put into it, a
 lockbox drawn for it), and *Special Bags* holds again only what lies in a worn bag for one kind of item.
 
+**Built (2026-11-07), Saneroki asked:** "When I drag items to different slots like for example I drag items to
+pinned. Can you save that so that those items are remembered as this category?" and his own categories must take
+items in and out ("Save it", so he remembers not to sell or delete them). An item let go over one of a category's
+items now goes into that category, as over its head (a catcher of ours over the game's button, which would swap
+the two in the bags and keep nothing); put anywhere but Pinned, a pinned item is unpinned, so it shows in his own
+category (it stood only under Pinned before); let go over the paper, it is out of both. Kept as before in the
+profile's `bags` (the game's saved settings).
+
 **Next, each its own step:**
 - Spells that work on an item (disenchanting, picking a lock) right from the window: a secure button of the
   game's over the item, out of a fight.

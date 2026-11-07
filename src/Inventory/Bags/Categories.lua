@@ -57,6 +57,8 @@ local _, ns = ...
 --
 --  An item is pinned by its item ID, put into a category (assigned), or
 --  marked as junk (put into Junk; unmarked, it goes back where it was).
+--  Put anywhere but Pinned (Categories.File) it is unpinned too: a pinned
+--  item stands only under Pinned (Saneroki, 2026-11-07).
 --  What the player chose is kept in store.bags (the window's: Categories.Use),
 --  account-wide, never trusted as it comes (Categories.Check):
 --      assigned  { [item] = key }      an item put into a category
@@ -551,6 +553,22 @@ end
 
 function Categories.Assigned(item)
     return (kept.assigned or {})[item]
+end
+
+-- An item let go over a category or chosen for it (Menus, Select): Pinned pins it (what it was put into kept for
+-- when it is unpinned); a group ("group:<group>") puts it into the member Into gives; Junk marks it as junk; any
+-- other category takes it. Anywhere but Pinned it is unpinned, else it would still show only under Pinned.
+function Categories.File(item, key)
+    if key == Categories.PINNED then return Categories.Pin(item, true) end
+    Categories.Pin(item, false)
+    local group = type(key) == "string" and key:match("^group:(.+)$")
+    if group then
+        Categories.Assign(item, Categories.Into(group, item))
+    elseif key == Categories.JUNK then
+        Categories.MarkJunk(item, true)
+    else
+        Categories.Assign(item, key)
+    end
 end
 
 -- Marked as junk, or unmarked: back into the category it was put into before, else where the rules put it; a

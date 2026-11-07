@@ -87,7 +87,7 @@ local function ToggleJunk()
 end
 local function IsIn(key) return item.category == key end
 local function PutIn(key)
-    Categories.Assign(item.id, key)
+    Categories.File(item.id, key)
     Changed()
 end
 local function TakeOut()
@@ -309,35 +309,28 @@ local function Stow(id)
     ClearCursor()
 end
 
--- The item on the cursor let go over a category: put into it (Pinned: pinned; Junk: marked as junk; any other:
--- assigned to it, which takes a junk mark off), then back to its slot; stow: in the bags' window, an item from
--- elsewhere goes into the bags (Stow).
+-- The item on the cursor let go over a category (its head, its row, its empty slot, one of its items): put into it
+-- (Pinned: pinned; Junk: marked as junk; any other: assigned to it, which takes a junk mark off; anywhere but
+-- Pinned: unpinned, Categories.File), then back to its slot; stow: in the bags' window, an item from elsewhere goes
+-- into the bags (Stow).
 function Menus.Drop(key, stow)
     if not Menus.Takes(key) then return false end
     local kind, id = Core.Ask(rawget(_G, "GetCursorInfo"))
     id = Core.Plain(id)
     if kind ~= "item" or type(id) ~= "number" then return false end
-    local group = key:match("^group:(.+)$")
-    if group then
-        Categories.Assign(id, Categories.Into(group, id))
-    elseif key == Categories.PINNED then
-        Categories.Pin(id, true)
-    elseif key == Categories.JUNK then
-        Categories.MarkJunk(id, true)
-    else
-        Categories.Assign(id, key)
-    end
+    Categories.File(id, key)
     if stow then Stow(id) else ClearCursor() end
     Changed()
     return true
 end
 
 -- The item on the cursor let go over the page's paper (no slot, no head): into the bags (stow), in the category
--- the rules give it (what the player put it into, or marked it as, taken off).
+-- the rules give it (what the player put it into, or marked it as, taken off; unpinned: out of Pinned too).
 function Menus.Home(stow)
     local kind, id = Core.Ask(rawget(_G, "GetCursorInfo"))
     id = Core.Plain(id)
     if kind ~= "item" or type(id) ~= "number" then return false end
+    Categories.Pin(id, false)
     Categories.Assign(id, nil)
     if stow then Stow(id) else ClearCursor() end
     Changed()

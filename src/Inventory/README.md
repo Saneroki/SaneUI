@@ -124,8 +124,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   - **Your own way:** a middle click on an item pins it (or unpins it; an item you put into a category is taken
     out of it again). Alt and a right click opens its menu: *Pinned Items*, *Junk*, *Put Into* another category
     or a new one, *Take Out of* the one you put it into. An item picked up (or dragged) and let go over a
-    category's head, its row in the sidebar or one of its empty slots (or clicked onto that slot) goes into that
-    category (over Pinned: pinned; over Junk: marked as junk; over any other: the junk mark taken off). An item from
+    category's head, its row in the sidebar, one of its empty slots or one of its items (or clicked onto it) goes
+    into that category (over Pinned: pinned; over Junk: marked as junk; over any other: the junk mark taken off);
+    over an item it is lit and its tooltip names the category, and the two no longer swap places in your bags
+    (over the same item, Recent Items, a special bag's, the reagent bag's or One Bag and Each Bag's slots they still
+    do, as in the game's bags). Put anywhere but Pinned, a pinned item is unpinned, so it shows in the category it
+    went to (your own too: an item kept in *Save it* stands there, no longer under Pinned); let go over the paper,
+    it is unpinned and out of the category you put it into. An item from
     your bags stays in its slot; one from elsewhere (the bank, what you wear) goes into a free slot of your bags. A right click on a
     category (its row or its head): *Rename*, *Move Up*, *Move Down*, *Create Group With* another, *Add to Group*,
     *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
@@ -133,7 +138,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     sidebar's foot makes one of your own. Drag a category's row in the sidebar to another place: let go at a
     row's top or foot it goes before or after that row (between a group's members it joins that group), at a
     row's middle it joins that row's group (or makes one with that category); drag a group's row to move the whole
-    group. Pinned Items and Recent Items stay at the top, Junk at the end. All of it is kept for the account.
+    group. Pinned Items and Recent Items stay at the top, Junk at the end. All of it is kept in your profile, in the
+    game's saved settings (its WTF folder), never shared.
   - **The list's columns:** the icon, the name, item level, required level, type, how it binds (BoP, BoE, BoU,
     Quest; SB once bound), the count and what the vendor pays for it. Click a column's head to sort by it (again
     for the other way), drag it sideways to move it, drag its right edge to size it; a right click on the head
@@ -465,7 +471,10 @@ login has no last line, until the game has said your time.
     the game's cut a little round their edge), the groups (`GroupOf`, `Members`, `GroupWord`: its own name, its first name, else its members'
     "A & B"; a group of one is none), an item's category (`Categories.Classify`: the reagent bag's, a special
     bag's, the player's, Camp Items by the game's item IDs, Quest Items, Junk for grey, Item Set Gear, then by
-    class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). Kept by item
+    class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). An item let go
+    over a category or chosen for it: `Categories.File` (Pinned pins it, its category kept for when it is
+    unpinned; a group's key `Into`; Junk `MarkJunk`; any other `Assign`; anywhere but Pinned it is unpinned too,
+    since a pinned item stands only under Pinned). Kept by item
     ID in `options.bags` (account-wide, the player's own settings, never shared): `assigned`, `before` (where a
     junk-marked item was), `pinned`, `own`, `order`, `words`, `member`, `groups`, `off`, `hidden`; checked when
     read (`Categories.Check`). Moved by the menus (`Move`: one place, past a whole group; a group's member among its
@@ -566,6 +575,16 @@ login has no last line, until the game has said your time.
     on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`. In its middle its category's drawing
     (a group's, `Categories.GroupIcon`; a game icon a player chose grey, cut round its edge), `Canvas.SLOT_ICON`
     (0.75) of the slot's side at `Canvas.SLOT_FADE` (0.3): a grey on the paper.
+  - **Letting an item go over an item** (`Views.lua`'s `block.into`, `Canvas.lua`'s `Sheet:Catch`): the bags'
+    Pinned, every category of theirs that takes items and a group shown as one give their cells `into` (`Into`:
+    the bags' section, `Categories.Takes`; the bank's, the alts', Recent's and the slots of One Bag and Each Bag
+    none). The game's button would put the item held into its slot, swapping the two, and keep nothing. So while
+    an item is held over such a cell (the bags' `Hover`, after the game's `OnEnter`) and it is not the cell's own
+    item (its stacks join as the game joins them), one catcher per canvas lies over the button (`SetAllPoints`,
+    the button's hit rect, as in the list the whole line; ten frame levels above it), lit, its tooltip the
+    category and `bagsDropTip`; let go or clicked there `Menus.Drop` with `into`; it goes when the mouse leaves, at
+    each drawing and once nothing is held (its `OnUpdate`, only while shown). The game's button is left as it is,
+    its scripts and clicks its own.
   - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
     journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
     narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Core's journal piece `arrow`, a pencil chevron
@@ -767,7 +786,7 @@ classes' gains can be held against each other; `early` for a character without a
 | `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
-| `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, the empty slots, the list's lines, the item buttons |
+| `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, the empty slots, the list's lines, the item buttons, the catcher of an item let go over an item |
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
 | `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
@@ -795,3 +814,5 @@ classes' gains can be held against each other; `early` for a character without a
   categories without resistances (which stopped the whole page) or the pet's, the specialization on the level line,
   Retail's own icons for the side tabs; the skills and PvP windows, the ranged and ammo slots and the keyring stand
   down there.
+- **2026-11-07:** (Saneroki) an item let go over an item of a category goes into that category, no longer swapped
+  in the bags; put anywhere but Pinned, a pinned item is unpinned, so it shows in the player's own category.

@@ -15,7 +15,9 @@ local _, ns = ...
 --  at a right click (Menus.lua); in the list a click folds the block, Shift
 --  and a click every block (kept in the window's store: folded). An empty
 --  slot takes an item brought to it (lit while one is held over it), or (the
---  bags) clicked with nothing starts choosing one by a click (Select.lua).
+--  bags) clicked with nothing starts choosing one by a click (Select.lua). So
+--  does an item of a category (Views' block.into): while another item is held
+--  over it, a catcher of ours lies over the game's button (Catch below).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Canvas = {}
@@ -370,10 +372,85 @@ function Sheet:Row(place, button)
     row:Show()
 end
 
--- The mouse on a list's item button: its line lit.
+-------------------------------------------------------------------------------
+--  An item let go over an item
+-------------------------------------------------------------------------------
+-- An item held over one of a category's items goes into that category as over its head (Menus.Drop), and back to
+-- its slot: the game's button would swap the two in the bags and keep nothing (Saneroki, 2026-11-07). While it is
+-- held there, a catcher of ours lies over that button, which stays the game's own (its clicks, in a fight too);
+-- not over the same item, so its stacks still join.
+local function CatchDrop(catcher)
+    local into = catcher.into
+    catcher:Hide()
+    if into and GetCursorInfo() == "item" then Menus.Drop(into, catcher.canvas.owner.stow) end
+end
+
+local function CatchEnter(catcher)
+    catcher.lit:Show()
+    local into = catcher.into or ""
+    local group = into:match("^group:(.+)$")
+    GameTooltip:SetOwner(catcher, "ANCHOR_TOP")
+    GameTooltip:SetText(group and Categories.GroupWord(group) or Categories.Word(into), 1, 0.82, 0)
+    Menus.Hint(GameTooltip, ns.TEXT.bagsDropTip)
+    GameTooltip:Show()
+end
+
+local function CatchLeave(catcher)
+    catcher:Hide()
+end
+
+local function CatchGone(catcher)
+    catcher.lit:Hide()
+    if GameTooltip:IsOwned(catcher) then GameTooltip:Hide() end
+end
+
+-- Nothing held any more (put down elsewhere, Esc): the catcher away, the game's button under the mouse again.
+local function CatchHeld(catcher)
+    if GetCursorInfo() ~= "item" then catcher:Hide() end
+end
+
+local function MakeCatcher(canvas)
+    local catcher = CreateFrame("Button", nil, canvas.child)
+    catcher.canvas = canvas
+    catcher:RegisterForClicks("LeftButtonUp")
+    catcher.lit = catcher:CreateTexture(nil, "OVERLAY")
+    catcher.lit:SetAllPoints()
+    local shade = ns.Paper.SHADE
+    catcher.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
+    catcher.lit:Hide()
+    catcher:SetScript("OnClick", function(self) ns.Safe("bags", CatchDrop, self) end)
+    catcher:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", CatchDrop, self) end)
+    catcher:SetScript("OnEnter", function(self) ns.Safe("bags", CatchEnter, self) end)
+    catcher:SetScript("OnLeave", function(self) ns.Safe("bags", CatchLeave, self) end)
+    catcher:SetScript("OnHide", function(self) ns.Safe("bags", CatchGone, self) end)
+    catcher:SetScript("OnUpdate", function(self) ns.Safe("bags", CatchHeld, self) end)
+    catcher:Hide()
+    return catcher
+end
+
+-- The mouse came onto an item button with an item held: the catcher over it, if its category takes items and the
+-- item held is another (its hit rect as the button's: the list's line takes it too).
+function Sheet:Catch(button)
+    local into = self.into[button]
+    if not into or GetCursorInfo() ~= "item" then return end
+    local _, held = Core.Ask(rawget(_G, "GetCursorInfo"))
+    local record = Cells.Record(button)
+    if record and record.item == Core.Plain(held) then return end
+    local catcher = self.catcher or MakeCatcher(self)
+    self.catcher = catcher
+    catcher.into = into
+    catcher:ClearAllPoints()
+    catcher:SetAllPoints(button)
+    catcher:SetHitRectInsets(button:GetHitRectInsets())
+    catcher:SetFrameLevel(button:GetFrameLevel() + 10)
+    catcher:Show()
+end
+
+-- The mouse on an item button: a list's line lit; with an item held, the catcher over it.
 function Sheet:Hover(button, on)
     local row = self.rowOf[button]
     if row and row:IsShown() then row.lit:SetShown(on) end
+    if on then self:Catch(button) end
 end
 
 -------------------------------------------------------------------------------
@@ -417,6 +494,8 @@ function Sheet:Draw(blocks, room, how, size)
     self.bins:Begin()
     cells:Begin()
     for button in pairs(self.rowOf) do self.rowOf[button] = nil end
+    for button in pairs(self.into) do self.into[button] = nil end
+    if self.catcher then self.catcher:Hide() end -- its button may draw another item now
     local x = Canvas.INSET
     for index = 1, count do
         local place = places[index]
@@ -434,6 +513,7 @@ function Sheet:Draw(blocks, room, how, size)
             if button then
                 how.faded, how.count = entry.faded, entry.count
                 cells:Draw(button, entry.record, how)
+                self.into[button] = place.block and place.block.into or nil
                 if place.kind == "row" then
                     -- The button in the icon's column, in the line's middle; its click over the rest of the line.
                     local spot = Columns.Place(place.width).icon
@@ -461,7 +541,7 @@ end
 -- A canvas in a scroll area's child; owner: { store (look, folded), redraw(), cells (its pool), stow (the bags':
 -- an item let go over a head or a slot goes into them) }.
 function Canvas.New(child, owner)
-    local canvas = setmetatable({ child = child, owner = owner, rowOf = {}, places = {} }, Sheet)
+    local canvas = setmetatable({ child = child, owner = owner, rowOf = {}, into = {}, places = {} }, Sheet)
     canvas.cells = owner.cells
     canvas.heads = Core.Pool(function() return MakeHead(canvas) end)
     canvas.rows = Core.Pool(function() return MakeRow(canvas) end)

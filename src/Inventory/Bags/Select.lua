@@ -72,16 +72,7 @@ local function Act(button)
     end
     local key = target
     Select.Stop()
-    local group = type(key) == "string" and key:match("^group:(.+)$")
-    if group then
-        Categories.Assign(record.item, Categories.Into(group, record.item))
-    elseif key == Categories.PINNED then
-        Categories.Pin(record.item, true)
-    elseif key == Categories.JUNK then
-        Categories.MarkJunk(record.item, true)
-    else
-        Categories.Assign(record.item, key)
-    end
+    Categories.File(record.item, key)
     Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
     Changed()
 end

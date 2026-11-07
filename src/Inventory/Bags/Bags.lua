@@ -205,8 +205,8 @@ local function Splits(button, mouse)
 end
 
 -- A click on an item button, after the game's own: Alt and the right button (which the game's button does
--- nothing with) open the item's menu; Shift and the left one our splitter; the middle one pins it, unpins it,
--- or takes it out of the category it was put into.
+-- nothing with) open the item's menu; Shift and the left one our splitter; the middle one unpins it, takes it out
+-- of the category it was put into, or pins it (a pinned item put into one shows only under Pinned: unpinned first).
 function Bags.Clicked(button, mouse)
     local alt = rawget(_G, "IsAltKeyDown")
     if mouse == "RightButton" and alt and alt() then return Menus.Item(button) end
@@ -215,10 +215,12 @@ function Bags.Clicked(button, mouse)
     local record = Cells.Record(button)
     if not (record and record.item) then return end
     local assigned = Categories.Assigned(record.item)
-    if assigned and assigned ~= Categories.JUNK then
+    if Categories.Pinned(record.item) then
+        Categories.Pin(record.item, false)
+    elseif assigned and assigned ~= Categories.JUNK then
         Categories.Assign(record.item, nil)
     else
-        Categories.Pin(record.item, not Categories.Pinned(record.item))
+        Categories.Pin(record.item, true)
     end
     Bags.Refresh()
     if ns.Bank then ns.Bank.Refresh() end -- the bank's items by category may hold it too

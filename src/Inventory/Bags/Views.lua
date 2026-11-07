@@ -44,7 +44,10 @@ local _, ns = ...
 --          player's own: shown when empty), slots (the bags as they are:
 --          empty slots are cells too), plus (a "+" after its cells, to put
 --          an item in: Pinned, a category that takes items), bin (Junk's:
---          the waste bin before its cells) }
+--          the waste bin before its cells), into (where an item let go
+--          over one of its items goes, as over its head: the bags' Pinned,
+--          a category of theirs that takes items, a group as one; nil:
+--          the game's own, the two items swap) }
 --  Pinned is shown with its "+" when it is empty too (not while searching).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -89,7 +92,7 @@ local function Block(word, level)
     for index = #block.entries, 1, -1 do block.entries[index] = nil end
     block.word, block.level, block.number = word, level or 2, nil
     block.key, block.group, block.own, block.slots, block.section, block.spare = nil, nil, false, false, nil, false
-    block.plus, block.title, block.bare, block.drop, block.bin = false, false, false, nil, false
+    block.plus, block.title, block.bare, block.drop, block.bin, block.into = false, false, false, nil, false, nil
     return block
 end
 
@@ -174,6 +177,11 @@ end
 local pinned, recent = {}, {}
 local showPinned, showRecent, plus, firstSection -- this building's: what is shown, whether the bags' section
 
+-- Where an item let go over one of a category's items goes (block.into): the bags' category that takes items.
+local function Into(key)
+    return firstSection and Categories.Takes(key) and key or nil
+end
+
 -- Pinned and Recent: the items pinned, the items that came lately (newest first).
 local function Fixed(section, query, order, merge)
     if showPinned then
@@ -182,7 +190,7 @@ local function Fixed(section, query, order, merge)
             if record.item and record.pinned then pinned[#pinned + 1] = record end
         end
         local block = Fill(Block(Categories.Word(Categories.PINNED)), pinned, query, order, merge)
-        block.key, block.plus = Categories.PINNED, plus
+        block.key, block.plus, block.into = Categories.PINNED, plus, Categories.PINNED
         if #block.entries == 0 and (query or not plus) then used = used - 1 end
     end
     if showRecent then
@@ -218,7 +226,7 @@ local function ByCategories(section, query, order, merge)
                     local first, cells = used, 0
                     for _, member in ipairs(Categories.Members(group)) do
                         local block = Fill(Block(Categories.Word(member), 3), lists[member] or {}, query, order, merge)
-                        block.key = member
+                        block.key, block.into = member, Into(member)
                         cells = cells + #block.entries
                         if #block.entries == 0 then used = used - 1 end
                     end
@@ -235,6 +243,7 @@ local function ByCategories(section, query, order, merge)
                     local block = Block(Categories.GroupWord(group))
                     block.group, block.drop = group, Views.GroupKey(group)
                     block.plus = plus and firstSection
+                    block.into = firstSection and block.drop or nil
                     Clear(byLink)
                     for _, member in ipairs(Categories.Members(group)) do
                         for _, record in ipairs(lists[member] or {}) do
@@ -247,7 +256,7 @@ local function ByCategories(section, query, order, merge)
                 end
             elseif not Categories.Hidden(key) or query then
                 local block = Fill(Block(Categories.Word(key)), lists[key] or {}, query, order, merge)
-                block.key = key
+                block.key, block.into = key, Into(key)
                 block.own = Categories.Own(key)
                 block.plus = plus and firstSection and Categories.Takes(key)
                 block.bin = block.plus and key == Categories.JUNK
@@ -342,7 +351,7 @@ function Views.Build(view, sections, query, order, options, store)
                 end
             else
                 local block = Fill(Block(Categories.Word(single)), lists[single] or {}, query, order, merge)
-                block.key = single
+                block.key, block.into = single, Into(single)
                 block.own = Categories.Own(single)
                 block.plus = plus and bags and Categories.Takes(single)
                 block.bin = block.plus and single == Categories.JUNK
@@ -351,7 +360,7 @@ function Views.Build(view, sections, query, order, options, store)
             local lists = ByCategory(section)
             for _, member in ipairs(Categories.Members(group)) do
                 local block = Fill(Block(Categories.Word(member), 3), lists[member] or {}, query, order, merge)
-                block.key = member
+                block.key, block.into = member, Into(member)
                 block.plus = plus and bags and Categories.Takes(member)
                 if #block.entries == 0 then used = used - 1 end
             end
