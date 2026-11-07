@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Sane Macros: a new condition, Once per target, under the + of a
+  spell or item step. In a sequence, Rend, Hunter's Mark and the like
+  are cast once on each target; after that their turn does nothing
+  until you change target, and the next press goes on.
 - Mail: a new tab, Banker, opens first at the mailbox. Type your
   banker's name once and every trade good and reagent in your bags is
   lined up for it; Send mails them all, twelve stacks a mail. Untick

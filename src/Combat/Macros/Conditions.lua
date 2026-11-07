@@ -12,6 +12,12 @@ local Macros = ns.Macros
 --
 --  The game takes a word it does not know as true, without a sound. So the list
 --  of words stands here (WORDS), for the check of macro text too.
+--
+--  An entry with ours is Sane Macros' own, not the game's: it never stands
+--  between the brackets and has no opposite. Once per target (Saneroki,
+--  2026-11-07: "/cast [if no rend] Rend", and "not only Rend"): the press may not
+--  read a target's auras, so the step is written as the game's own cast sequence
+--  (Write.lua), which waits after the cast until the target changes.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Conditions = {}
@@ -44,6 +50,8 @@ Conditions.GROUPS = {
         { word = "harm", on = "An enemy", off = "Not an enemy", tip = "True if the target can be attacked." },
         { word = "help", on = "A friend", off = "Not a friend", tip = "True if the target can be helped." },
         { word = "dead", on = "Dead", off = "Alive", tip = "True if the target is dead." },
+        { word = "once", ours = true, on = "Once per target", off = "Once per target",
+          tip = "Cast once on each target, as a Rend, a Hunter's Mark or a Faerie Fire. After the cast its turn does nothing until you change target or the fight ends, and the next press goes on. The game does not say when it runs out or misses. For a spell or an item, with Each press takes the next step." },
     } },
     { name = "Where you are", items = {
         { word = "indoors", on = "Indoors", off = "Not indoors", tip = "True inside a building or a cave, where mounts cannot go." },
@@ -99,16 +107,24 @@ for word in ([[combat exists help harm dead party raid group mod modifier btn bu
     Conditions.WORDS[word] = true
 end
 
+-- Sane Macros' own words (an entry with ours): [word] = true.
+Conditions.OURS = {}
+for _, group in ipairs(Conditions.GROUPS) do
+    for _, item in ipairs(group.items) do
+        if item.ours then Conditions.OURS[item.word] = true end
+    end
+end
+
 -- What cannot hold together. Opposites of one word are found without a list.
 Conditions.APART = { { "help", "harm" }, { "indoors", "outdoors" } }
 
--- The entries of this game, group by group.
-function Conditions.Groups()
+-- The entries of this game, group by group; Sane Macros' own too where ours (a spell's or an item's step).
+function Conditions.Groups(ours)
     local groups = {}
     for _, group in ipairs(Conditions.GROUPS) do
         local items = {}
         for _, item in ipairs(group.items) do
-            if not item.game or item.game == Core.GAME then items[#items + 1] = item end
+            if (not item.game or item.game == Core.GAME) and (ours or not item.ours) then items[#items + 1] = item end
         end
         if items[1] then groups[#groups + 1] = { name = group.name, items = items } end
     end

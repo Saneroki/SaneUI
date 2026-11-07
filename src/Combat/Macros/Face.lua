@@ -8,7 +8,8 @@ local Macros = ns.Macros
 --  with the bar, at rest too, and it never touches the game's button, which
 --  keeps what it holds underneath. It shows the step that comes next, that
 --  step's cooldown by the game's duration object (a hidden value in a fight is
---  taken as it is), dimmed while the game says it cannot be used.
+--  taken as it is), dimmed while the game says it cannot be used, or while a
+--  step cast once a target waits for the next one (Press.Waits).
 --
 --  As a game's button does (Saneroki, 2026-11-06: no spell would take its place,
 --  and Shift-dragging it off did nothing): a spell, an item or anything else of
@@ -46,7 +47,9 @@ local function PaintOne(face)
     face.icon:SetTexture(Macros.Press.Picture(step, macro))
     local spell = step and Macros.Press.SpellOf(step)
     local dim = false
-    if ns.options.macroDim and spell then
+    if ns.options.macroDim and Macros.Press.Waits(turn) then
+        dim = true -- cast on this target already: this press does nothing
+    elseif ns.options.macroDim and spell then
         local spells = rawget(_G, "C_Spell")
         dim = spells and Core.Plain(Core.Ask(spells.IsSpellUsable, spell)) == false
     end
@@ -68,6 +71,7 @@ local function Enter(face)
     tip:SetText(macro.name, 1, 0.82, 0)
     local turn = Macros.Press.Next(macro)
     if turn then tip:AddLine(turn.line, 1, 1, 1, true) end
+    if Macros.Press.Waits(turn) then tip:AddLine(Macros.TEXT.onceWaits, 1, 0.82, 0, true) end
     tip:AddLine(Macros.TEXT.faceTip, 0.6, 0.6, 0.6, true)
     tip:Show()
 end
@@ -112,14 +116,20 @@ local function Land(face)
     if Macros.Place.Drop() == false then Macros.TakeOff(face.place) end
 end
 
--- What shows follows the game's own news, only once a macro lies on a bar.
+-- What shows follows the game's own news, only once a macro lies on a bar. A new target, a fight's end and your cast
+-- move the game's cast sequences (a step cast once a target) at the same news, so those paint a frame later, when
+-- the game has moved them.
 local function Listen()
     if listening then return end
     listening = true
-    for _, event in ipairs({ "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_USABLE", "PLAYER_TARGET_CHANGED",
-                             "MODIFIER_STATE_CHANGED", "PLAYER_REGEN_DISABLED", "SPELLS_CHANGED" }) do
+    for _, event in ipairs({ "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_USABLE", "MODIFIER_STATE_CHANGED",
+                             "PLAYER_REGEN_DISABLED", "SPELLS_CHANGED" }) do
         ns.On(event, Face.Paint)
     end
+    local soon = Core.Later(ns.Guard(Face.Paint), nil, "macros")
+    ns.On("PLAYER_TARGET_CHANGED", soon)
+    ns.On("PLAYER_REGEN_ENABLED", soon)
+    Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", soon)
 end
 
 -- The face of a place on bar button slot. Out of a fight.

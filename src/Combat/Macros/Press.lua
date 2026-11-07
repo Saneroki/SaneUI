@@ -13,8 +13,10 @@ local Macros = ns.Macros
 --  a macro's text, and moves on. Whether the game can cast it is the game's to
 --  say on the action: a turn it refuses costs that press and nothing else.
 --  Snippets cannot read rage, cooldowns or auras, so conditions are the only
---  way a turn is skipped. Their text may not hold the word for a Lua closure or
---  any brace, comments included.
+--  way a turn is skipped. A step cast once a target is the game's own cast
+--  sequence (Write.lua): its turn is taken, and does nothing while it waits.
+--  Their text may not hold the word for a Lua closure or any brace, comments
+--  included.
 --
 --  Everything else here is out of a fight only: the game keeps addon code off a
 --  secure button then. A macro's change waits for the fight's end.
@@ -145,6 +147,14 @@ function Press.Next(macro)
         at = at % count + 1
     end
     return nil
+end
+
+-- Whether a turn cast once a target waits: cast on this target already, so a press of it does nothing until the
+-- target changes. The game's own cast sequence says (QueryCastSequence: its plain index, in a fight too).
+function Press.Waits(turn)
+    if not (turn and turn.sequence) then return false end
+    local index = Core.Ask(rawget(_G, "QueryCastSequence"), turn.sequence)
+    return type(index) == "number" and index > 1
 end
 
 -- The spell a step's line would cast now, as far as the game's parser says.

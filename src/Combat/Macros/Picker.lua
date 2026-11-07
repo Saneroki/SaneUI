@@ -45,11 +45,12 @@ local function Line(group, item, chosen)
     end))
 end
 
--- Opens the list at owner; chosen(word, value) with what was picked.
-function Picker.Open(owner, chosen)
+-- Opens the list at owner; chosen(word, value) with what was picked. ours: Sane Macros' own words too (Once per
+-- target), for a spell's or an item's step; never in macro text, which goes to the game as written.
+function Picker.Open(owner, chosen, ours)
     MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
         root:CreateTitle(Macros.TEXT.whenAdd)
-        for _, group in ipairs(Macros.Conditions.Groups()) do
+        for _, group in ipairs(Macros.Conditions.Groups(ours)) do
             local line = root:CreateButton(group.name)
             for _, item in ipairs(group.items) do Line(line, item, chosen) end
         end

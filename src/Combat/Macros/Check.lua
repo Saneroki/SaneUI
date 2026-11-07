@@ -128,6 +128,7 @@ function Check.Step(step)
         Text(step, out)
     end
     Conditions(step, out)
+    if step.kind == "text" and Macros.Write.Marked(step) then out[#out + 1] = Macros.TEXT.check.onceText end
     return out
 end
 
@@ -156,6 +157,9 @@ function Check.Macro(macro)
             live = true
             local problems = Check.Step(step)
             if macro.top and ended then problems[#problems + 1] = words.unreachable end
+            if macro.top and step.kind ~= "text" and Macros.Write.Marked(step) then
+                problems[#problems + 1] = words.onceTop
+            end
             if Macros.Write.When(step) == nil then ended = true end
             if problems[1] then
                 found[step] = problems

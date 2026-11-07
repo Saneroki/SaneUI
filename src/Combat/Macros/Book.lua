@@ -21,7 +21,8 @@ local Macros = ns.Macros
 --    what      the spell's or item's name; the macro text
 --    id        the spell's or item's number, where it is known
 --    unit      who it is cast on ("mouseover"); nil: your target
---    when      its conditions: { word, no, value } each
+--    when      its conditions: { word, no, value } each; Sane Macros' own too ("once":
+--              Once per target), which have no opposite (Conditions.OURS)
 --    often     how many times it comes up in a round
 --    off       switched off
 --  The character's (Core.Character): keys[key] = macro id, and
@@ -47,7 +48,8 @@ local function CleanStep(step)
     local when = {}
     for _, condition in ipairs(type(step.when) == "table" and step.when or {}) do
         if type(condition) == "table" and type(condition.word) == "string" then
-            when[#when + 1] = { word = condition.word, no = condition.no and true or nil,
+            local ours = Macros.Conditions.OURS[condition.word]
+            when[#when + 1] = { word = condition.word, no = condition.no and not ours or nil,
                                 value = type(condition.value) == "string" and condition.value or nil }
         end
     end

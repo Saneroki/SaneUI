@@ -100,16 +100,23 @@ end
 
 local function Added(word, value)
     if not step then return end
+    if Macros.Conditions.OURS[word] then
+        for _, condition in ipairs(step.when) do
+            if condition.word == word then return end -- one of ours is there once
+        end
+    end
     step.when[#step.when + 1] = { word = word, value = value }
     Macros.Editor.Changed()
 end
 
--- A chip: click for its opposite, right click to take it away.
+-- A chip: click for its opposite, right click to take it away. One of Sane Macros' own has no opposite.
 local function ChipClick(chip, mouse)
+    local condition = step.when[chip.index]
     if mouse == "RightButton" then
         table.remove(step.when, chip.index)
+    elseif Macros.Conditions.OURS[condition.word] then
+        return
     else
-        local condition = step.when[chip.index]
         condition.no = not condition.no or nil
     end
     Core.HideTip()
@@ -119,7 +126,8 @@ end
 local function ChipEnter(chip)
     local condition = step.when[chip.index]
     local words, tip = Macros.Conditions.Words(condition)
-    Core.ShowTip(chip, words, (tip and tip .. "\n" or "") .. Macros.TEXT.whenFlip)
+    local how = Macros.Conditions.OURS[condition.word] and Macros.TEXT.whenTake or Macros.TEXT.whenFlip
+    Core.ShowTip(chip, words, (tip and tip .. "\n" or "") .. how)
 end
 
 local function Chip(index)
@@ -178,7 +186,7 @@ function Detail.Fill(chosenMacro, chosenStep)
     else
         whatWord:SetText(Macros.TEXT[step.kind])
         if not what:HasFocus() then what:SetText(step.what) end
-        writes:SetText(Macros.Write.Line(step))
+        writes:SetText(Macros.Write.Line(step, macro.top))
     end
     Chips()
 end
@@ -251,7 +259,7 @@ function Detail.Build(parent)
     plus = Macros.Button(panel, "+", 24, 20)
     plus:SetScript("OnClick", ns.Guard(function(self)
         Core.HideTip()
-        Macros.Picker.Open(self, Added)
+        Macros.Picker.Open(self, Added, step ~= nil and step.kind ~= "text")
     end))
     Core.Tip(plus, Macros.TEXT.whenAdd, Macros.TEXT.whenTip)
 

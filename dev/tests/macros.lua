@@ -270,7 +270,7 @@ W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
 -- What the saved files may hold: rubbish among a good macro.
 local store = Core.Store("Macros")
-store.macros = { "rubbish", { id = 5, name = 7, steps = { { kind = "nothing" }, { kind = "spell", what = "Slam", often = 99, when = { 3, { word = "harm" } } } } } }
+store.macros = { "rubbish", { id = 5, name = 7, steps = { { kind = "nothing" }, { kind = "spell", what = "Slam", often = 99, when = { 3, { word = "harm" }, { word = "once", no = true } } } } } }
 W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
 W.Fire("PLAYER_ENTERING_WORLD")
@@ -283,7 +283,8 @@ local Book, Write, Check, Press, Face, Reach, Editor, TEXT = Macros.Book, Macros
 check(#Book.All() == 1 and Book.All()[1].id == 5, "rubbish in the saved files is left out")
 local cleaned = Book.All()[1]
 check(cleaned.name == TEXT.firstName and #cleaned.steps == 1, "a bad name and a bad step fall away")
-check(cleaned.steps[1].often == Book.MOST_OFTEN and #cleaned.steps[1].when == 1, "a step comes in the shape read")
+check(cleaned.steps[1].often == Book.MOST_OFTEN and #cleaned.steps[1].when == 2, "a step comes in the shape read")
+check(cleaned.steps[1].when[2].word == "once" and cleaned.steps[1].when[2].no == nil, "Once per target has no opposite")
 check(Book.New().id == 6, "numbers go on after the saved ones")
 local copied = Book.Copy(cleaned)
 check(copied.name == TEXT.copyOf:format(cleaned.name) and copied.steps[1] ~= cleaned.steps[1], "a copy holds its own steps")
@@ -329,6 +330,29 @@ check(#Write.Turns(spread) == 2, "from the top a step comes up once")
 local partly = Macro(Spell("Slam"), Book.Step("spell", ""), Spell("Rend"))
 partly.steps[3].off = true
 check(#Write.Turns(partly) == 1, "an empty step and one switched off are left out")
+
+-- Once per target (Saneroki, 2026-11-07): the game's own cast sequence, waiting after the cast until the target changes.
+do
+    local once = { { word = "once" } }
+    check(Write.Line(Spell("Rend", once)) == "/castsequence reset=target/combat Rend, null", "once per target: the game's cast sequence")
+    check(Write.Line(Spell("Rend", { { word = "harm" }, { word = "once" } }, "mouseover"))
+          == "/castsequence [@mouseover,harm] reset=target/combat Rend, null", "who and the game's conditions in the brackets, ours not")
+    check(Write.When(Spell("Rend", once)) == nil, "ours is nothing the press asks the game")
+    check(Write.When(Spell("Rend", { { word = "once" }, { word = "harm" } })) == "[harm] 1", "the game's beside it are")
+    local mark = Book.Step("item", "Hearthstone", 6948)
+    mark.when = { { word = "once" } }
+    check(Write.Line(mark) == "/castsequence reset=target/combat item:6948, null", "an item too, by its number")
+    check(Write.Line(Spell("Rend", once), true) == "/cast Rend", "from the top a plain cast")
+    local text = Book.Step("text", "/cast Slam")
+    text.when = { { word = "once" } }
+    check(Write.Line(text) == "/cast Slam" and not Write.Once(text), "macro text stays as written")
+    local sequence = Macro(Spell("Rend", once), Spell("Slam"))
+    local turns = Write.Turns(sequence)
+    check(turns[1].sequence == "reset=target/combat Rend, null" and turns[2].sequence == nil, "a turn knows its cast sequence")
+    sequence.top = true
+    check(Write.Turns(sequence)[1].sequence == nil, "from the top there is none")
+    Book.Delete(sequence)
+end
 
 -------------------------------------------------------------------------------
 --  The checks
@@ -377,6 +401,19 @@ check(Check.Macro(Macro()).macro[1] == C.noSteps, "no steps")
 local off = Macro(Spell("Slam"))
 off.steps[1].off = true
 check(Check.Macro(off).macro[1] == C.allOff, "every step off")
+do
+    local onceSlam = Spell("Slam", { { word = "once" } })
+    check(#Check.Step(onceSlam) == 0, "once per target on a spell: nothing wrong")
+    local text = Text("/cast Slam")
+    text.when = { { word = "once" } }
+    check(Finds(text, C.onceText), "once per target on macro text says so")
+    local fromTop = Macro(onceSlam)
+    check(Check.Macro(fromTop).count == 0, "in a sequence it works")
+    fromTop.top = true
+    local said = Check.Macro(fromTop)
+    check(said.count == 1 and said[onceSlam][1] == C.onceTop, "from the top it says so")
+    Book.Delete(fromTop)
+end
 
 -------------------------------------------------------------------------------
 --  A press
@@ -422,6 +459,20 @@ Press.Load(none)
 local noneHub = Press.Hub(none)
 check(Hit(noneHub) == "" and noneHub:GetAttribute("at") == 1, "nothing true, nothing run, nothing moved")
 check(Hit(Press.Hub(Macro())) == "", "no steps, nothing run")
+
+-- Once per target: the press takes its turn as any other, the game's cast sequence does the rest.
+local onceMacro = Macro(Spell("Rend", { { word = "once" } }), Spell("Slam"))
+Press.Load(onceMacro)
+local onceHub = Press.Hub(onceMacro)
+check(Hit(onceHub) == "/castsequence reset=target/combat Rend, null" and Hit(onceHub) == "/cast Slam", "a turn a press")
+local sequences = {}
+QueryCastSequence = function(sequence) return sequences[sequence] or 1, nil, "rend" end
+local first = Press.Next(onceMacro)
+check(first.sequence and not Press.Waits(first), "not cast on this target yet: it does not wait")
+sequences[first.sequence] = 2
+check(Press.Waits(first), "cast: it waits for the next target")
+check(not Press.Waits(onceHub.turns[2]), "a plain turn never waits")
+sequences = {}
 
 -- A change in a fight waits for its end; the macro goes on as it was.
 W.Combat(true)
@@ -496,6 +547,22 @@ ns.options.macroKey = false
 Face.Paint()
 check(face.key:GetText() == "", "unless it should not")
 ns.options.macroKey = true
+-- A step cast once a target that waits shows dimmed, and says why; a new target paints it a frame later.
+keyed.steps[1].when = { { word = "once" } }
+Press.Load(keyed)
+Face.Paint()
+check(face.icon._shade == 1, "not cast on this target yet: bright")
+sequences[Press.Next(keyed).sequence] = 2
+Face.Paint()
+check(face.icon._shade == 0.4, "cast on this target: dimmed")
+sequences = {}
+W.Fire("PLAYER_TARGET_CHANGED")
+check(face.icon._shade == 0.4, "the game moves its sequence at the same news")
+W.Wait(0.1)
+check(face.icon._shade == 1, "painted a frame later")
+keyed.steps[1].when = {}
+Press.Load(keyed)
+Face.Paint()
 
 Reach.SetPlace(keyed, "ActionButton3:3")
 check(Book.PlaceOf(keyed) == "ActionButton3:3", "one bar button a macro")
@@ -662,6 +729,15 @@ local function HasSpec()
     end
 end
 check(not HasSpec(), "what only Retail has stays out of Forever's list")
+local function HasOnce(ours)
+    for _, group in ipairs(Macros.Conditions.Groups(ours)) do
+        for _, entry in ipairs(group.items) do
+            if entry.word == "once" then return true end
+        end
+    end
+end
+check(HasOnce(true) and not HasOnce(), "Once per target in a spell's list, never in macro text's")
+check(not Macros.Conditions.WORDS.once, "and no word of the game's for macro text")
 check(Macros.Conditions.Text({ word = "mod:shift", no = true }) == "nomod:shift", "the opposite in the game's words")
 check(Macros.Conditions.Text({ word = "stance", value = "2" }) == "stance:2", "with its value")
 check((Macros.Conditions.Words({ word = "combat", no = true })) == "Out of a fight", "and in plain ones")
