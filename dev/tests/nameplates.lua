@@ -1612,9 +1612,14 @@ check(not dress:IsShown() and castBar:IsShown() and not castBar:IsVisible() and 
 bar:Show()
 check(dress:IsShown() and shows == 1 and dress.outlined == castBar and dress.border[2]._points[1][2] == castBar,
     "the game's bar back: the dress shown runs the cast bar's OnShow with it, one outline around both")
+local foot = ns.Plate.Foot(plates.nameplate1)
+check(foot == dress.foot and foot._parent == dress and foot._points[1][1] == "TOPLEFT" and foot._points[1][2] == castBar
+    and foot._points[1][3] == "BOTTOMLEFT" and foot._points[1][5] == 0,
+    "its foot, for what goes right under the plate (Combat's tracked auras): under the cast bar while one shows")
 casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
 check(not castBar:IsShown() and dress.outlined == outlined, "failed: gone, the outline as before")
+check(foot._points[1][2] == outlined and foot._points[1][3] == "BOTTOMLEFT", "and under the lowest row again once it went")
 
 -------------------------------------------------------------------------------
 --  Retail: what it lacks of Forever's hidden, a plate dressed and filled as in Forever

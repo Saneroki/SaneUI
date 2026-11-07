@@ -5,10 +5,12 @@ local _, ns = ...
 --  A reminder watches one buff or debuff, by its name (so any rank of it), on
 --  you or the unit it was made on, and puts its icon on a reminder bar (Bars.lua)
 --  while its settings want it; or, placed on the party and raid frames, on each
---  member's frame (Group.lua). Kept per character, a buff being a character's,
---  with the bars, one at first; a bar made is yours until you delete it:
+--  member's frame (Group.lua); or on the nameplates, under each plate
+--  (Plates.lua). Kept per character, a buff being a character's, with the
+--  bars, one at first; a bar made is yours until you delete it:
 --      bar       which reminder bar: its number, which never changes; GROUP:
---                the party and raid frames
+--                the party and raid frames; PLATES: the nameplates. A new
+--                one goes on the first bar (Saneroki, 2026-11-07)
 --      missing   shown while the aura is not there
 --      active    shown while it is
 --      early     with missing: seconds before it runs out to show it already
@@ -36,6 +38,7 @@ ns.Reminders = Reminders
 Reminders.EVERY = 0.25  -- seconds between looks, while there are reminders on bars
 Reminders.MOST_EARLY = 9999 -- the longest offset, in seconds
 Reminders.GROUP = 0     -- the place of the reminders on the party and raid frames: no bar has that number
+Reminders.PLATES = -1   -- the place of the reminders on the nameplates: nor that one
 -- Names that count as the same buff, a group's version with the one: any of them on a unit is enough, whoever cast it.
 -- own: a paladin's blessing is each paladin's own on a unit, so a reminder of one starts with only yours counting, and
 -- any of your blessings is enough; party: a shout reaches your own party only.
@@ -60,6 +63,23 @@ end
 -- The family of that name, or nil.
 function Reminders.Family(name)
     return families[name]
+end
+
+-- Whether the reminder watches a spell of that name: its own, or one of its family.
+function Reminders.Watches(reminder, name)
+    local family = families[reminder.name]
+    return reminder.name == name or (family ~= nil and families[name] == family)
+end
+
+-- Whether the reminder reaches the unit: a party's family (a shout) your own party only.
+function Reminders.Reaches(reminder, unit)
+    local family = families[reminder.name]
+    return not (family and family.party) or Core.Ask(UnitInParty, unit) or Core.Ask(UnitIsUnit, unit, "player")
+end
+
+-- Whether the reminder is on a bar: not on the party and raid frames, nor on the nameplates.
+function Reminders.OnBar(reminder)
+    return reminder.bar ~= Reminders.GROUP and reminder.bar ~= Reminders.PLATES
 end
 
 -- This character's reminders, in the order made.
@@ -118,7 +138,7 @@ function Reminders.Named(name)
     return nil
 end
 
--- The reminder of that aura, made if it has none, on bar (a bar's number or GROUP; nil: the first bar): a buff shown
+-- The reminder of that aura, made if it has none, on bar (a bar's number, GROUP or PLATES; nil: the first bar): a buff shown
 -- when it is missing, a debuff on you or the party and raid frames when it is there, a debuff on another (yours on a
 -- foe) when it is missing; only yours counting where its family says so (a blessing).
 function Reminders.Make(spell, bar)
@@ -243,22 +263,23 @@ function Reminders.Wanted(reminder, state, unit)
     if Core.Ask(UnitIsDeadOrGhost, "player") then return false end
     if unit ~= "player" then
         if not Core.Ask(UnitExists, unit) or Core.Ask(UnitIsDeadOrGhost, unit) then return false end
-        local foe = reminder.harmful and reminder.bar ~= Reminders.GROUP -- a member's debuff is on a friend
+        local foe = reminder.harmful and reminder.bar ~= Reminders.GROUP -- a member's debuff is on a friend; a plate's on a foe
         if foe and Core.Ask(UnitCanAttack, "player", unit) == false then return false end
     end
     if not state.on then return reminder.missing end
     return reminder.active or (reminder.missing and state.left ~= nil and state.left <= reminder.early)
 end
 
--- Whether any reminder is on a bar.
-local function OnBars()
+-- Whether any reminder is on a bar or the nameplates: the looks run.
+local function Looked()
     for _, reminder in ipairs(Reminders.List()) do
         if reminder.bar ~= Reminders.GROUP then return true end
     end
     return false
 end
 
--- Every reminder of a bar looked at, every bar filled. In Edit Mode a bar shows all it holds, to be placed.
+-- Every reminder of a bar looked at, every bar filled, then every nameplate (Plates.lua). In Edit Mode a bar shows all
+-- it holds, to be placed.
 function Reminders.Update()
     if ns.off then return end
     local bars = {}
@@ -271,9 +292,10 @@ function Reminders.Update()
         end
     end
     for place, bar in ipairs(Reminders.Bars()) do ns.ReminderBars.Fill(bar, place, bars[bar]) end
+    ns.PlateReminders.Update()
 end
 
--- A menu's line for an aura ({ id, name, icon, harmful, unit }): Add tracking, its reminder made on the health bars,
+-- A menu's line for an aura ({ id, name, icon, harmful, unit }): Add tracking, its reminder made on the first aura bar,
 -- the aura on Edit auras' list and the window opened on it, its settings under the list (Saneroki, 2026-11-07: "a add
 -- Tracking that will add that spell to the edit auras window and open the edit auras window"); Edit tracking where it
 -- has one, the window on it (Units/Lists.lua: Lists.Track).
@@ -296,12 +318,14 @@ local function Cast(_, cast, spell)
     local name = spell and Core.Ask(C_Spell.GetSpellName, spell)
     if not name then return end
     for _, reminder in ipairs(Reminders.List()) do
-        if reminder.name == name and reminder.bar ~= Reminders.GROUP and Hidden(reminder) then
+        if reminder.name == name and Reminders.OnBar(reminder) and Hidden(reminder) then
             seen[reminder] = { on = true, ends = Reminders.Ends(reminder, name) }
         end
     end
     cast = Plain(cast)
-    ns.GroupReminders.Cast(name, cast ~= nil and cast == sentCast and sentTarget or nil)
+    local aimed = cast ~= nil and cast == sentCast and sentTarget or nil
+    ns.GroupReminders.Cast(name, aimed)
+    ns.PlateReminders.Cast(name, aimed)
 end
 
 -- Another unit behind the token: what was known of it no longer counts.
@@ -311,23 +335,28 @@ local function Unit()
     end
 end
 
--- The looks run while there are reminders on bars and the setting is on; the bars go when it is off. The party and
--- raid frames as the reminders on them say.
+-- The looks run while there are reminders on bars or the nameplates and the setting is on; the bars and the plates'
+-- icons go when it is off. The party and raid frames as the reminders on them say.
 function Reminders.Apply()
     local on = not ns.off and ns.options.reminders ~= false
-    local looking = on and OnBars()
+    local looking = on and Looked()
     if looking and not ticker then
         ticker = C_Timer.NewTicker(Reminders.EVERY, ns.Guard(Reminders.Update))
     elseif ticker and not looking then
         ticker:Cancel()
         ticker = nil
     end
-    if on then Reminders.Update() else ns.ReminderBars.Hide() end
+    if on then
+        Reminders.Update()
+    else
+        ns.ReminderBars.Hide()
+        ns.PlateReminders.Hide()
+    end
     ns.GroupReminders.Apply()
 end
 
 function Reminders.Start()
-    local bars, known = Reminders.Bars(), { [Reminders.GROUP] = true } -- a reminder on no bar there is: on the first
+    local bars, known = Reminders.Bars(), { [Reminders.GROUP] = true, [Reminders.PLATES] = true } -- on no bar there is: the first
     for _, bar in ipairs(bars) do known[bar] = true end
     for _, reminder in ipairs(Reminders.List()) do
         if not known[reminder.bar] then reminder.bar = bars[1] end
@@ -338,10 +367,11 @@ function Reminders.Start()
     Core.OnUnit("UNIT_SPELLCAST_SUCCEEDED", "player", Cast)
     Core.EditMode.Watch(ns.Guard(Reminders.Apply))
     ns.GroupReminders.Start()
+    ns.PlateReminders.Start()
     Reminders.Apply()
 end
 
--- Standing down: the looks stop, the bars and the window go.
+-- Standing down: the looks stop, the bars, the plates' icons and the window go.
 function Reminders.GiveBack()
     Reminders.Apply()
     ns.ReminderEditor.Hide()

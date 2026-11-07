@@ -5,15 +5,17 @@ local _, ns = ...
 --  The reminder of the aura chosen in Edit auras (Units/Lists.lua: /sane auras,
 --  /sane reminders, an aura's menu), under its list, each setting taking effect
 --  at once (Saneroki, 2026-11-06: one window for every aura's setup):
---      Shows on   a reminder bar, or the party and raid frames; New bar (the
+--      Shows on   a reminder bar (the first one for a new reminder), the
+--                 party and raid frames, or the nameplates; New bar (the
 --                 reminder on it), Delete bar (its reminders on the first bar
 --                 left; the last bar stays)
---      Watch on   you, your target or your focus; on the frames each member
---                 (then it and Delete bar are out of sight)
+--      Watch on   you, your target or your focus; on the frames each member,
+--                 on the nameplates each plate's unit (then it and Delete bar
+--                 are out of sight)
 --      Display when missing, Display when active, Combat, Don't show in
 --      resting areas, Only yours, Offset time
---  A line's tick Show on healthbars makes or deletes one; a line chosen without
---  one has the button Add tracking (Lists.Track: made on the health bars, its
+--  A line's tick Tracked makes or deletes one; a line chosen without
+--  one has the button Add tracking (Lists.Track: made on the first bar, its
 --  settings here at once; Saneroki, 2026-11-07: a spell searched could not be
 --  set up).
 -------------------------------------------------------------------------------
@@ -46,11 +48,13 @@ local function Set(key, value)
     Fill()
 end
 
--- Where a reminder may show: { word, number } each, the bars by their place among them; the party and raid frames last.
+-- Where a reminder may show: { word, number } each, the bars by their place among them; then the party and raid
+-- frames, the nameplates.
 local function Places()
     local entries = {}
     for at, number in ipairs(ns.Reminders.Bars()) do entries[at] = { ns.TEXT.reminderBar:format(at), number } end
     entries[#entries + 1] = { ns.TEXT.reminderGroup, ns.Reminders.GROUP }
+    entries[#entries + 1] = { ns.TEXT.reminderPlates, ns.Reminders.PLATES }
     return entries
 end
 
@@ -75,16 +79,18 @@ function Fill()
         hint:SetText(untracked and ns.TEXT.reminderNone or ns.TEXT.reminderPick)
         return
     end
-    local frames = chosen.bar == ns.Reminders.GROUP
+    local barless = not ns.Reminders.OnBar(chosen)
     face:SetTexture(chosen.icon)
     head:SetText(chosen.name)
-    on:SetText(frames and ns.TEXT.reminderOnGroup or "")
+    on:SetText(chosen.bar == ns.Reminders.GROUP and ns.TEXT.reminderOnGroup
+               or chosen.bar == ns.Reminders.PLATES and ns.TEXT.reminderOnPlates or "")
     for key, tick in pairs(ticks) do tick:SetChecked(chosen[key] and true or false) end
-    -- On the health bars no bar to delete and no unit to choose (each member): out of sight, not greyed out.
-    takeBar:SetShown(not frames)
+    -- On the health bars and the nameplates no bar to delete and no unit to choose (each member, each plate's): out of
+    -- sight, not greyed out.
+    takeBar:SetShown(not barless)
     takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil)
-    unit:SetShown(not frames)
-    unit.words:SetShown(not frames)
+    unit:SetShown(not barless)
+    unit.words:SetShown(not barless)
     place:GenerateMenu()
     unit:GenerateMenu()
     combat:GenerateMenu()
@@ -176,7 +182,7 @@ function Editor.Build(parent)
         if chosen then Set("bar", ns.Reminders.AddBar()) end
     end)
     takeBar = Button(ns.TEXT.reminderDeleteBar, Editor.WORD + Editor.MENU + 102, 0, function()
-        if not chosen or chosen.bar == ns.Reminders.GROUP then return end
+        if not chosen or not ns.Reminders.OnBar(chosen) then return end
         ns.Reminders.TakeBar(chosen.bar)
         Fill()
     end)

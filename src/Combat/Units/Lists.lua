@@ -23,8 +23,9 @@ local _, ns = ...
 --  by name, each with its red X in front (off the list, every mark and its
 --  reminder), its icon, name and number, a tick for each mark in the columns
 --  Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit
---  frames, and last Show on healthbars: a reminder made or deleted (Reminders/:
---  on the health bars of your unit frames and party and raid frames, or an aura bar its settings choose). A spell stays on
+--  frames, and last Tracked: a reminder made or deleted (Reminders/: on the
+--  first aura bar, or where its settings choose: another bar, the health bars
+--  of your unit frames and party and raid frames, the nameplates). A spell stays on
 --  the list with no tick, until its X (auraKept). A line clicked is chosen, and
 --  under the list stand its reminder's settings (Reminders/Editor.lua). Over it a
 --  search box: as you type, suggestions under it in groups, each class's auras,
@@ -268,13 +269,13 @@ local function Keep(id, name)
     if id and name then List("kept")[id] = List("kept")[id] or name end
 end
 
--- A line's tick Show on healthbars: its reminder made there, or deleted (the line stays); the line chosen.
+-- A line's tick Tracked: its reminder made on the first aura bar, or deleted (the line stays); the line chosen.
 local function Remind(row, on)
     local reminder = ns.Reminders.Named(row.name)
     chosen = row.name
     Keep(row.id, row.name)
     if on and not reminder then
-        ns.Reminders.Make(Spell(row), ns.Reminders.GROUP)
+        ns.Reminders.Make(Spell(row))
     elseif not on and reminder then
         ns.Reminders.Take(reminder)
     end
@@ -282,8 +283,8 @@ local function Remind(row, on)
 end
 
 -- Add tracking (an aura's menu, ns.Reminders.Entry; the button under the list, Reminders/Editor.lua: spell nil, the
--- line chosen): the aura on the window's list, its reminder made on the health bars where it has none, the window open
--- on it with its settings under the list.
+-- line chosen): the aura on the window's list, its reminder made on the first aura bar where it has none (Saneroki,
+-- 2026-11-07: "make the reminder bar 1 the default one"), the window open on it with its settings under the list.
 function Lists.Track(spell)
     if not spell then
         local _, by = Rows()
@@ -293,7 +294,7 @@ function Lists.Track(spell)
     end
     if not spell.name then return end
     Keep(spell.id, spell.name)
-    if not ns.Reminders.Named(spell.name) then ns.Reminders.Make(spell, ns.Reminders.GROUP) end
+    if not ns.Reminders.Named(spell.name) then ns.Reminders.Make(spell) end
     Lists.Open(nil, spell.name)
 end
 

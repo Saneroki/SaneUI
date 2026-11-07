@@ -318,16 +318,16 @@ W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][2].fn()
 local made = ns.Reminders.List()[1]
-check(made and made.name == "Frost Nova" and not made.harmful and made.missing and made.bar == ns.Reminders.GROUP,
-    "Add tracking: on the health bars, a buff, while it is missing")
+check(made and made.name == "Frost Nova" and not made.harmful and made.missing and made.bar == ns.Reminders.Bars()[1],
+    "Add tracking: on the first aura bar, a buff, while it is missing")
 ns.Reminders.Take(made)
 C_Spell.IsSpellHarmful = function() return true end
 W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][2].fn()
 made = ns.Reminders.List()[1]
-check(made.harmful and made.bar == ns.Reminders.GROUP and made.active and not made.missing,
-    "a spell that hurts: a debuff, shown on the raid frames while it is on")
+check(made.harmful and made.unit == "target" and made.bar == ns.Reminders.Bars()[1] and made.missing and not made.active,
+    "a spell that hurts: a debuff on your target, shown on the bar while it is missing")
 ns.Reminders.Take(made)
 ns.ReminderEditor.Hide()
 C_Spell.IsSpellHarmful = nil

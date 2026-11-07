@@ -158,7 +158,7 @@ menu[2].fn()
 local list = Reminders.List()
 local reminder = list[1]
 check(#list == 1 and reminder.name == "Thorns" and reminder.id == 782 and reminder.unit == "player"
-    and reminder.bar == Reminders.GROUP, "Add tracking: the reminder is made, on the health bars, of your own aura")
+    and reminder.bar == Reminders.Bars()[1], "Add tracking: the reminder is made, on the first aura bar, of your own aura")
 check(reminder.missing and not reminder.active and reminder.early == 0 and reminder.combat == "any", "a buff: shown when missing")
 check(ns.options.auraKept[782] == "Thorns" and ns.ReminderEditor.panel and ns.ReminderEditor.panel:IsVisible(),
     "and Edit auras opens on it, the aura on its list")
@@ -171,9 +171,8 @@ ns.AuraLists.Hide()
 Reminders.Take(reminder)
 Click(thorns)[2].fn()
 reminder = Reminders.List()[1]
-check(#Reminders.List() == 1 and reminder.bar == Reminders.GROUP, "deleted, then added again")
+check(#Reminders.List() == 1 and reminder.bar == Reminders.Bars()[1], "deleted, then added again")
 ns.AuraLists.Hide()
-reminder.bar = Reminders.Bars()[1] -- on its bar for what follows
 
 -------------------------------------------------------------------------------
 --  The marks on the game's list
@@ -434,6 +433,108 @@ check(soul.active and not soul.missing, "a debuff on you: shown when active")
 Reminders.Take(soul)
 
 -------------------------------------------------------------------------------
+--  On the nameplates: right under each plate, side by side without a gap
+-------------------------------------------------------------------------------
+do
+    local Plates = ns.PlateReminders
+    local plates, guids = {}, { nameplate1 = "Creature-1", nameplate2 = "Player-2" }
+    local canAttack, guid, same = UnitCanAttack, UnitGUID, UnitIsUnit
+    C_NamePlate = { GetNamePlateForUnit = function(unit) return plates[unit] end }
+    UnitCanAttack = function(_, unit) return units[unit] ~= nil and units[unit].enemy == true end
+    UnitGUID = function(unit) return guids[unit] or guid(unit) end
+    local function Plate(unit, info)
+        units[unit], on[unit] = info, {}
+        local plate = W.NewWidget("Frame", nil, UIParent)
+        plate.UnitFrame = W.NewWidget("Frame", nil, plate)
+        plate.UnitFrame.HealthBarsContainer = W.NewWidget("Frame", nil, plate.UnitFrame)
+        plates[unit] = plate
+        W.Fire("NAME_PLATE_UNIT_ADDED", unit)
+        return plate
+    end
+    local function Under(parent) -- our row on it, and how many icons it shows
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == parent and widget.icons then
+                local count = 0
+                for _, icon in ipairs(widget.icons) do if icon._shown then count = count + 1 end end
+                return widget, widget._shown and count or 0
+            end
+        end
+        return nil, 0
+    end
+    local wolf = Plate("nameplate1", { name = "Young Wolf", level = 5, enemy = true, health = 50, most = 50 })
+    local friend = Plate("nameplate2", { name = "Ally", player = true, level = 60, health = 900, most = 900 })
+    check(Under(wolf) == nil and Under(friend) == nil, "nothing on the nameplates: no row made")
+    local sunder = Reminders.Make({ id = 7386, name = "Sunder Armor", icon = 132363, harmful = true, unit = "target" },
+                                  Reminders.PLATES)
+    check(sunder.bar == Reminders.PLATES and sunder.missing and not sunder.active, "a debuff on the nameplates: shown where missing")
+    Update()
+    local row, count = Under(wolf)
+    local point = row and row._points[1]
+    check(count == 1 and point[1] == "TOPLEFT" and point[2] == wolf.UnitFrame.HealthBarsContainer and point[3] == "BOTTOMLEFT"
+        and point[4] == 0 and point[5] == 0 and row._width == Plates.SIZE,
+        "a foe without it: its icon right under the plate's health bar, no gap")
+    check(select(2, Under(friend)) == 0, "a friend: none of your debuffs to miss")
+    on.nameplate1["Sunder Armor"] = { name = "Sunder Armor", spellId = 7386, auraInstanceID = 30, expirationTime = 0 }
+    Update()
+    check(select(2, Under(wolf)) == 0, "with it: gone")
+    on.nameplate1["Sunder Armor"] = nil
+    local rend = Reminders.Make({ id = 772, name = "Rend", icon = 132155, harmful = true, unit = "target" }, Reminders.PLATES)
+    local mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" },
+                                Reminders.PLATES)
+    Update()
+    row, count = Under(wolf)
+    check(count == 2 and row.icons[1]._points[1][4] == 0 and row.icons[2]._points[1][4] == Plates.SIZE
+        and row._width == 2 * Plates.SIZE, "two missing: side by side, no gap between them; a buff not on a foe")
+    check(select(2, Under(friend)) == 1, "the buff on a friend who misses it")
+    units.nameplate1.dead = true
+    Update()
+    check(select(2, Under(wolf)) == 0, "none on the dead")
+    units.nameplate1.dead = nil
+    -- A fight: the auras hidden, known from before; your cast at your target's plate.
+    W.Combat(true)
+    secret = true
+    Update()
+    check(select(2, Under(wolf)) == 2, "in a fight, hidden: as known before it")
+    UnitIsUnit = function(a, b) return a == b or (a == "nameplate1" and b == "target") end
+    W.spells[7386] = { name = "Sunder Armor" }
+    C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
+    W.Fire("UNIT_SPELLCAST_SENT", "player", "Young Wolf", "cast-1", 7386)
+    W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", 7386)
+    check(select(2, Under(wolf)) == 1, "your Sunder Armor at it: on, by your cast")
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate1")
+    check(select(2, Under(wolf)) == 0, "its plate gone: nothing on it")
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    Update()
+    check(select(2, Under(wolf)) == 0, "back in the fight: what was known forgotten, the game hides the rest")
+    secret = false
+    W.Combat(false)
+    Update()
+    check(select(2, Under(wolf)) == 2, "after it, read again")
+    -- Dressed by the module Nameplates: right under its dress's lowest row, on it.
+    local foot = W.NewWidget("Frame", nil, friend)
+    rawset(SaneUI, "Nameplates", { Plate = { Foot = function(plate) return plate == friend and foot or nil end } })
+    Update()
+    row, count = Under(foot)
+    check(row and count == 1 and row._points[1][1] == "TOPLEFT" and row._points[1][2] == foot and row._points[1][4] == 0
+        and row._points[1][5] == 0, "on a dressed plate: right under the dress, on its foot, no gap")
+    SaneUI.Nameplates.off = true
+    Update()
+    row = Under(friend)
+    check(row and row._points[1][2] == friend.UnitFrame.HealthBarsContainer, "the module stood down: under the game's bar again")
+    rawset(SaneUI, "Nameplates", nil)
+    Core.Set("Combat", "reminders", false)
+    check(not row:IsShown(), "off: none on the plates")
+    Core.Set("Combat", "reminders", true)
+    check(row:IsShown(), "on again")
+    for _, made in ipairs({ sunder, rend, mark }) do Reminders.Take(made) end
+    check(not row:IsShown(), "none left on the nameplates: the rows go")
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate1")
+    W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate2")
+    units.nameplate1, units.nameplate2, on.nameplate1, on.nameplate2 = nil, nil, nil, nil
+    UnitCanAttack, UnitGUID, UnitIsUnit = canAttack, guid, same
+end
+
+-------------------------------------------------------------------------------
 --  Bars: one at first, more made, deleted
 -------------------------------------------------------------------------------
 check(#Reminders.Bars() == 1, "one bar by default")
@@ -515,12 +616,15 @@ check(takeBar._disabled, "one bar: it cannot be deleted")
 newBar._scripts.OnClick(newBar)
 check(#Reminders.Bars() == 2 and reminder.bar == Reminders.Bars()[2] and not takeBar._disabled,
     "a new bar by its button, the reminder on it")
-check(#menus[1]._items == 3 and menus[1]._items[3].text == TEXT.reminderGroup,
-    "a line for each bar, and the party and raid frames last")
+check(#menus[1]._items == 4 and menus[1]._items[3].text == TEXT.reminderGroup and menus[1]._items[4].text == TEXT.reminderPlates,
+    "a line for each bar, then the party and raid frames, the nameplates last")
 menus[1]._items[3].fn()
 check(reminder.bar == Reminders.GROUP and not takeBar._shown and not menus[2]._shown and not menus[2].words._shown,
     "on the health bars: no bar of it to delete, no unit, out of sight")
 check(Said(TEXT.reminderOnGroup), "and the window says where it watches")
+menus[1]._items[4].fn()
+check(reminder.bar == Reminders.PLATES and not takeBar._shown and not menus[2]._shown and Said(TEXT.reminderOnPlates),
+    "on the nameplates: the same, each plate's unit watched")
 Update()
 check(row._width == 1, "and it is off its bar")
 ticks[4]:SetChecked(true)
@@ -560,10 +664,10 @@ check(#Reminders.List() == 0 and Of("Thorns") and Said(TEXT.reminderNone) and Pr
 Of("Thorns").remind:SetChecked(true)
 Of("Thorns").remind._scripts.OnClick(Of("Thorns").remind)
 reminder = Reminders.List()[1]
-check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.GROUP and reminder.missing and Said("Thorns")
-    and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, on the raid frames, its settings shown")
-check(TEXT.reminderColumn == "Show on healthbars", "the column's word")
--- Any spell by the search: on the list, chosen; its tick, a reminder; on the party and raid frames.
+check(reminder and reminder.name == "Thorns" and reminder.bar == Reminders.Bars()[1] and reminder.missing and Said("Thorns")
+    and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4, "ticked: made again, on the first aura bar, its settings shown")
+check(TEXT.reminderColumn == "Tracked", "the column's word")
+-- Any spell by the search: on the list, chosen; its tick, a reminder; on the first aura bar, then the health bars.
 W.spells[1126] = { name = "Mark of the Wild" }
 C_Spell.GetSpellName = function(id) return W.spells[id] and W.spells[id].name end
 local search = Kind("EditBox", "InputBoxTemplate", nil, panel)
@@ -580,11 +684,11 @@ check(track and markLine.lit._shown and markLine.lit._points[1][2] == markLine.m
     and markLine.mark._points[2][4] < Lists.COLUMN * -5, "its Add tracking under the list; the line lit up to its ticks")
 track._scripts.OnClick(track)
 local mark = Reminders.Named("Mark of the Wild")
-check(mark and mark.id == 1126 and mark.bar == Reminders.GROUP and markLine.remind:GetChecked()
+check(mark and mark.id == 1126 and mark.bar == Reminders.Bars()[1] and markLine.remind:GetChecked()
     and #Kind("CheckButton", "UICheckButtonTemplate", panel) == 4 and not track:IsVisible(),
-    "Add tracking: made on the health bars, its settings there at once")
-menus[1]._items[1].fn()
-check(mark.bar == Reminders.Bars()[1], "and put on an aura bar instead")
+    "Add tracking: made on Aura bar 1, its settings there at once")
+menus[1]._items[2].fn()
+check(mark.bar == Reminders.GROUP, "and put on the health bars instead")
 -- Its X: off the list, every mark and its reminder.
 local take
 for _, widget in ipairs(W.frames) do

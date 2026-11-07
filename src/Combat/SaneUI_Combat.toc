@@ -78,9 +78,11 @@ Units\Units.lua
 Units\GroupFace.lua
 Units\GroupTools.lua
 Units\Group.lua
-# Reminders of buffs and debuffs: what shows when, those on the party and raid frames, the invisible bars, the window
+# Reminders of buffs and debuffs: what shows when, those on the party and raid frames and on the nameplates, the
+# invisible bars, the window
 Reminders\Reminders.lua
 Reminders\Group.lua
+Reminders\Plates.lua
 Reminders\Bars.lua
 Reminders\Editor.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone

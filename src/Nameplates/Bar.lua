@@ -210,6 +210,12 @@ end
 -- and power line (and the line of texts above it all, Text.lua).
 function Bar.Make(dress)
     local level = Plain(dress:GetFrameLevel()) or 1
+    -- Right under the plate's lowest row (Bar.Outline), for what another module shows right under the plate (Combat's
+    -- tracked auras: Plate.Foot), over the rank's line and the glow reaching past the outline.
+    local foot = CreateFrame("Frame", nil, dress)
+    foot:SetFrameLevel(level + 6)
+    foot:SetHeight(1)
+    dress.foot = foot
     -- The glow: its plates' strengths are their vertex alpha, so only its frame's alpha switches it.
     local holder = CreateFrame("Frame", nil, dress)
     holder:SetAllPoints(dress)
@@ -294,6 +300,9 @@ function Bar.Outline(dress)
         dress.cast:SetPoint("TOPRIGHT", above, "BOTTOMRIGHT", 0, 0)
     end
     local below = cast or strip or dress
+    dress.foot:ClearAllPoints()
+    dress.foot:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 0, 0)
+    dress.foot:SetPoint("TOPRIGHT", below, "BOTTOMRIGHT", 0, 0)
     local tall = height
     for _, row in ipairs({ strip or false, cast or false }) do
         if row then tall = tall + (Plain(row:GetHeight()) or 0) end

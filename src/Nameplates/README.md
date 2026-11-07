@@ -305,7 +305,7 @@ fails, every plate is the game's own again.
   your character, so the game counts them for every unit: there only your target's plate is asked. A row of its own
   under the dress (`TOPLEFT` on its `BOTTOMLEFT`, `Resource.SHARE` (a third) of its height, `Resource.Fit`), inside
   its outline: `Bar.Outline` (run as the row or the cast shows or hides) puts the cast under it and anchors the
-  border, the rank's line and the glow down to the lowest row; the health bar square at its bottom then, the
+  border, the rank's line, the glow and the dress's foot down to the lowest row; the health bar square at its bottom then, the
   row round at its bottom corners only while it is the lowest (`Resource.Shape`, Core's corner masks), square
   above a cast. Inside it one `StatusBar` per point, a pixel apart, over the bar's dark, in the game's `PowerBarColor.COMBO_POINTS`: segment
   *i* from *i* - 1 to *i*, each given that count as the game gives it (secret or not):
@@ -394,13 +394,16 @@ fails, every plate is the game's own again.
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character; drawings for what did no harm |
 | `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by an image model and picked by Saneroki (`assets/interface/combat-text/`; the miss drawn by code), traced by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
-| `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' and critters' plates hidden |
+| `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it; strangers' and critters' plates hidden; `Plate.Foot`, the dress's frame right under its lowest row, for what another module shows right under a plate |
 
 ## Not there yet
 The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`,
 *To redesign*).
 
 ## History
+- **2026-11-07:** each dress keeps a frame right under its lowest row (`dress.foot`, at its frame level + 6, placed by
+  `Bar.Outline`), handed out by `Plate.Foot(plate)`: Combat's tracked auras on the nameplates stand on it, right
+  under the plate without a gap, and grow, shrink and fade with it (Saneroki).
 - **2026-11-06:** strangers' pets, guardians and totems hidden with their players' plates (Saneroki): a pet follows
   its owner's plate, unless it may attack you or you it, or it is your target.
 - **2026-10-30:** barriers, lost maximum health and dispellable auras on the plates (Saneroki), each its own switch

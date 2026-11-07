@@ -325,6 +325,15 @@ local OnSizeChanged = ns.Guard(Fit)
 -- Laid out anew at the scale it shows at now (Scale.lua, as a plate grows or shrinks): its border one screen pixel.
 Plate.Refit = Fit
 
+-- The frame right under a plate's lowest row (the bar, the combo points, a cast's bar: Bar.Outline) while our dress is on
+-- the plate's unit, for what another module shows right under the plate (Combat's tracked auras), so it follows the
+-- plate's size and fading; nil otherwise.
+function Plate.Foot(plate)
+    local dress = dresses[plate]
+    if ns.off or not dress or not dress.unit then return nil end
+    return dress.foot
+end
+
 local function Make(plate)
     local dress = CreateFrame("Frame", nil, plate)
     dress.plate, dress.edge = plate, 0

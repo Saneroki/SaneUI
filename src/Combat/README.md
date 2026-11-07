@@ -35,9 +35,10 @@ it; the mouse on it brings its buttons.
 Click a buff or debuff, or right click a spell in the spellbook, and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
 with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or choose *Add tracking*: its
-icon then shows on the health bars of your unit frames and the party and raid frames, or on an invisible aura bar placed in
-Edit Mode, while its settings want it; a bar is as wide as what shows on it, and you make as many bars as you like. On the
-health bars its icon then shows on each frame whose unit lacks it (your Mark of the Wild, your Rejuvenation), as you choose, nothing fixed.
+icon then shows on an invisible aura bar placed in Edit Mode (*Aura bar 1* at first), or on the health bars of your unit
+frames and the party and raid frames, or right under each nameplate, while its settings want it; a bar is as wide as what
+shows on it, and you make as many bars as you like. On the health bars and the nameplates its icon then shows on each
+frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, your Sunder Armor), as you choose, nothing fixed.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -124,7 +125,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     for every aura's setup, its marks and where its icon shows (Saneroki: "one Edit Auras window where I can handle all the aura
     configuration"): one long list of every aura you set up, in front of each its red X (off the list, every mark and its
     icon), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
-    *Hide from unit frames* and *Prioritize on unit frames*, and last *Show on healthbars* (below, *Aura icons*). Click a
+    *Hide from unit frames* and *Prioritize on unit frames*, and last *Tracked* (below, *Aura icons*). Click a
     line to choose it: its icon's settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
     order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
@@ -280,26 +281,35 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   *Aura icons and bars*; set in *Edit auras*, `/sane auras`, `/sane reminders`):
   - **Showing one:** click a buff or debuff of the game's at the top of the screen, or an icon above a unit frame (out of
     a fight), or right click a spell in the spellbook, and choose *Add tracking* in its menu (Saneroki, 2026-11-07): it
-    shows on the health bars at once, and *Edit auras* opens on it, its settings under the list (*Edit tracking* in
-    the menu once it is tracked). Or in *Edit auras* search any spell (any class's, an enemy's, an item's, or its
-    number): it comes onto the list, chosen, and under the list *Add tracking*; or tick the line's *Show on healthbars*.
-    Unticking that, or the line's X, takes it off.
-  - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar or *Health bars*, with
-    *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on* you, your target or your focus (one
-    made in the window: a debuff on your target, a buff on you); on the health bars those two are out of sight; *Display when missing*; *Display when active*;
+    shows on *Aura bar 1* at once (Saneroki, 2026-11-07: "make the reminder bar 1 the default one"), and *Edit auras*
+    opens on it, its settings under the list (*Edit tracking* in the menu once it is tracked). Or in *Edit auras* search
+    any spell (any class's, an enemy's, an item's, or its number): it comes onto the list, chosen, and under the list
+    *Add tracking*; or tick the line's *Tracked*, the same. Unticking that, or the line's X, takes it off.
+  - **Its settings** under the list, for the line chosen, each at once: *Shows on* a bar, *Health bars* or *Nameplates*,
+    with *New bar* (the aura on it) and, on a bar, *Delete bar*; on a bar, *Watch on* you, your target or your focus (one
+    made in the window: a debuff on your target, a buff on you); on the health bars and the nameplates those two are out
+    of sight; *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
-    (on a bar); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
+    (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
     areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help). Never
     while you are dead. What you show belongs to the character, watched by the aura's name, so any rank of it, on whom
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
     your blessings for a blessing (which starts with *Only yours*).
-  - **On the health bars** (the place *Health bars*, last in the dropdowns; the switch *Aura icons on the health bars* on
+  - **On the health bars** (the place *Health bars*, after the bars in the dropdown; the switch *Aura icons on the health bars* on
     the page's group section): the aura is watched on your own frame, your target's and your focus's, and on every member
     the party and raid frames show, your own slot too, and its icon floats over that frame's name, from the health leftwards,
     four at most in the order made. A buff only on a unit you can help (none on a foe you target), a debuff on any. Not on
     the dead or the offline; a shout on your own party only. The class buffs no longer show by themselves: show each one
     you want there.
+  - **On the nameplates** (the place *Nameplates*, last in the dropdown; Saneroki, 2026-11-07: "On those nameplates the
+    trackers are shown directly underneath with no gaps"): the aura is watched on the unit of every plate the game shows,
+    and its icon stands in a row right under that plate, from its left, the icons side by side, nothing between them nor
+    between them and the plate, six at most in the order made, the seconds left on each. With *Nameplates* on, right under
+    the plate's lowest row (its bar, your combo points, a cast's bar while one shows), as big as its debuffs above the bar,
+    growing, shrinking and fading with the plate; without it, under the game's own health bar. A debuff only on a unit you
+    can attack (your Sunder Armor missing on a foe), a buff only on one you can help; none on the dead; a shout on your own
+    party only. Not on the plates the game keeps from addons (inside dungeons and raids every friendly plate) nor your own.
   - **The bars:** one at first, more by *New bar*, each with its own aura icons (*Shows on* moves one to another).
     *Delete bar* deletes the chosen aura's bar and puts what it held on the first bar left; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
@@ -308,7 +318,8 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     its time is up, and the offset counts on; then its icon shows. What comes during a fight the game does not tell, but
     your own casts: a cast of an aura watched counts as on for as long as that aura lasted when last seen out of a fight
     (else until the fight ends), on the party and raid frames on the member it was aimed at, so a Rejuvenation you cast
-    on the tank takes its icon off the tank's frame until it runs out. A group's version (Gift of the Wild) or a shout
+    on the tank takes its icon off the tank's frame until it runs out; on the nameplates on your target's plate (or a plate
+    of the name it was aimed at). A plate that goes in a fight forgets what was known of its unit. A group's version (Gift of the Wild) or a shout
     counts on each member whose auras changed with it. An aura taken off early (dispelled, cancelled) is not told: its
     icon shows when its time would have been up.
 
@@ -568,10 +579,10 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`; the line kept), their words over the
     columns; `OnMouseUp` chooses the line (`chosen`, by name), and `ReminderEditor.Show(reminder, name, icon)` puts
     `Reminders.Named(chosen)` in the panel under the list (`Reminders/Editor.lua`; none: the button *Add tracking* and
-    `reminderNone` beside it, both anchored by their tops; *Watch on* and *Delete bar* hidden on `GROUP`). `line.mark`
+    `reminderNone` beside it, both anchored by their tops; *Watch on* and *Delete bar* hidden off a bar, `Reminders.OnBar`). `line.mark`
     (chosen) and `line.lit` (just picked) stop where the ticks start: under them a tick looked greyed out.
     `Track(spell)`: *Add tracking*, the menu's (`Reminders.Entry`, a button: `trackAdd`, or `trackEdit` where a reminder
-    of that name is) and the panel's (nil: the line chosen): kept, `Reminders.Make(spell, GROUP)` where none is, `Open`
+    of that name is) and the panel's (nil: the line chosen): kept, `Reminders.Make(spell)` (the first bar) where none is, `Open`
     on it. The search box `AuraSearch.Box` over all. `Open(text, name)` searches at once, chooses that name. `/sane
     auras [words]` and `/sane reminders` (`Core.Command`).
   - `AuraSearch.lua` (`ns.AuraSearch`): what the search finds, read once at the first search from Core's sets: each class
@@ -676,8 +687,8 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   `face.roomed` places your buffs' icons after each layout. `face.tint` (`Face.Tint`, at each fill): a player's class colour from the
   game's `RAID_CLASS_COLORS` (`groupClass`), a creature's by `UnitReaction` (4 `UnitBar.CALM`, under it `Face.HOSTILE`, the game's
   `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`.
-- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `bar == Reminders.GROUP` (0, no bar's number), *Show on
-  healthbars*. `GroupReminders.Show(face, unit)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's, and a unit
+- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `bar == Reminders.GROUP` (0, no bar's number), *Health
+  bars*. `GroupReminders.Show(face, unit)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's, and a unit
   frame's (`Units.lua`: `face.floating` over the words, `Units.ICON`, at each fill and its unit's `UNIT_AURA`, in `Units.EVENTS`;
   `Units.Each`); a buff only where `UnitCanAssist`. `GroupFace`'s
   `Buffs` asks `GroupReminders.Missing(unit, list)` on a fill, on `UNIT_AURA` (out of a fight only one that may change what is seen:
@@ -691,6 +702,18 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
   `reminder.lasts[name]` (saved, learned at each plain read, `data.duration`: `Reminders.Ends`); no name of the frames, or
   `Reminders.Many` (a family's later names, a greater blessing, a shout): each member whose `UNIT_AURA` came within
   `GroupReminders.WINDOW` of it, before or after.
+- **Reminders on the nameplates (`Reminders/Plates.lua`):** a reminder with `bar == Reminders.PLATES` (-1), *Nameplates*.
+  `NAME_PLATE_UNIT_ADDED`, `_REMOVED` follow each plate's unit (`C_NamePlate.GetNamePlateForUnit`; none for a forbidden plate
+  or `player`), its GUID taken as it comes; `PlateReminders.Update`, last in `Reminders.Update` on its ticker (which runs while
+  any reminder is off the frames: `Looked`), fills each plate's row: `Reminders.Known` per reminder and GUID, `Wanted` on the
+  plate's unit (its `foe` check: a debuff only where `UnitCanAttack`), a buff only where `UnitCanAssist` is plainly true,
+  `Reminders.Reaches`, `PlateReminders.MOST`. The row (`PlateReminders.SIZE` icons, `ReminderBars.Icon`, no gap) is made at a
+  plate's first icon and kept per plate. Its place: `SaneUI.Nameplates.Plate.Foot(plate)` (asked by `Core.Ask`, nil while that
+  module is off or does not dress the plate), a frame of the dress at its frame level + 6 kept under the lowest row by
+  `Bar.Outline`; the row on it, by its `TOPLEFT`; else on the plate under the game's `UnitFrame.HealthBarsContainer`. Asked at
+  each fill, so it moves on as soon as Nameplates dresses the plate or stops. Your cast (`Reminders.lua`'s `Cast`):
+  `PlateReminders.Cast(name, target)` on the plate `UnitIsUnit(unit, "target")` (where the sent name is its) or the first of
+  that name, `ends` by `Reminders.Ends`. A plate removed forgets its GUID's states.
 
 - **The threat and damage meter** (`Meter/`): the combat log is closed to addons (`C_CombatLog.IsCombatLogRestricted`), so
   the numbers are the game's own meter's (`C_DamageMeter`, the same in both games). `Read.Fight(where, types, people)` reads one
@@ -721,7 +744,7 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
     Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
     nothing of it, not even the mouse's coming, is on or over the full screen; its old second place `meterFullPlace` is no longer read.
 - **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. `Reminders.Update` runs on a ticker every
-  `Reminders.EVERY` seconds, only while there are reminders on bars and the setting is on: it looks at each aura
+  `Reminders.EVERY` seconds, only while there are reminders on bars or the nameplates and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
   with *Only yours*) and hands each bar what shows. `Hidden` asks
   `C_Secrets.ShouldAurasBeSecret` and `ShouldSpellAuraBeSecret`, `Core.Restricted` where they are not there. Hidden, `Look`
@@ -798,10 +821,12 @@ health bars its icon then shows on each frame whose unit lacks it (your Mark of 
 | `Meter/Meter.lua` | The window: its place, out of sight under the full screen, the list of whole rows, grown down or up, when it shows, the game's meter out of sight, the looks in a fight |
 | `Reminders/Reminders.lua` | The reminders and bars: kept per character, the families of names, what is known of an aura, in a fight too, whether one shows, the looks |
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
+| `Reminders/Plates.lua` | The reminders on the nameplates: a row right under each plate, on Nameplates' dress where it dresses it, in a fight your cast on your target's plate |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames), on whom, its settings |
+| `Reminders/Editor.lua` | The chosen aura's reminder in Edit auras, under its list: where it shows (a bar, a new bar, the party and raid frames, the nameplates), on whom, its settings |
 
 ## History
+- **2026-11-07:** a tracked aura goes on *Aura bar 1* at first, and a new place *Nameplates*: its icons right under each plate, without a gap (Saneroki: "make the reminder bar 1 the default one and add on Nameplates as well. On those nameplates the trackers are shown directly underneath with no gaps on the nameplates"); the list's column *Show on healthbars* is now *Tracked*.
 - **2026-11-07:** *In a group too* under *Hide the unit frames at rest* and *Hide the action bars at rest*: they rest out of sight in a party or raid as well (Saneroki: "I have no way to autohide then while i don't hover over them in party").
 - **2026-11-07:** the aura menu's *Show on healthbars* tick is now *Add tracking* (*Edit tracking* once tracked): tracked on the health bars, put on *Edit auras*' list and the window opened on it; a spell searched there has *Add tracking* under the list; the chosen and new lines lit only behind their names, *Watch on* and *Delete bar* out of sight on the health bars (Saneroki: "I need a add Tracking that will add that spell to the edit auras window and open the edit auras window", "When I search for a spell in Edit auras I can't edit them. They are greyed out").
 - **2026-11-07:** in a fight an aura on the health bars and the reminder bars counts from your cast for as long as it lasted when last seen, on the member it was aimed at, and runs out by the clock (Saneroki: "Inside combat i have the hots showing up but they never disappear"; Forever's client hides every aura's number in a fight, which the casts were matched to).

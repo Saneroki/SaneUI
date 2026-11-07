@@ -2,7 +2,7 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Group
---  The reminders shown on the health bars (Reminders.GROUP, Show on healthbars:
+--  The reminders shown on the health bars (Reminders.GROUP, Health bars:
 --  Saneroki, 2026-11-06): each watched on every member the party and raid
 --  frames show, your own slot too, and on your own frame, your target's and
 --  your focus's (Units.lua), its icon on that frame (from the health
@@ -76,12 +76,6 @@ local function Look(reminder, unit, key)
     return states[key]
 end
 
--- Whether the reminder reaches the member: a party's family (a shout) your own party only.
-local function Reaches(reminder, unit)
-    local family = Reminders.Family(reminder.name)
-    return not (family and family.party) or Core.Ask(UnitInParty, unit) or Core.Ask(UnitIsUnit, unit, "player")
-end
-
 -- The icons of the reminders on the health bars that the unit's auras and their settings want shown, into list
 -- (emptied first); how many, Members.MOST at most.
 function Members.Missing(unit, list)
@@ -91,7 +85,7 @@ function Members.Missing(unit, list)
     local helped = Core.Ask(UnitCanAssist, "player", unit) ~= false
     for _, reminder in ipairs(Reminders.List()) do
         if #list >= Members.MOST then break end
-        if Placed(reminder) and (reminder.harmful or helped) and Reaches(reminder, unit)
+        if Placed(reminder) and (reminder.harmful or helped) and Reminders.Reaches(reminder, unit)
             and Reminders.Wanted(reminder, Look(reminder, unit, key), unit) then
             list[#list + 1] = reminder.icon
         end
@@ -113,11 +107,7 @@ function Members.Icons()
     return icons[1] and icons or Members.SAMPLES
 end
 
--- Whether the reminder watches a spell of that name: its own, or one of its family.
-local function Named(reminder, name)
-    local family = Reminders.Family(reminder.name)
-    return reminder.name == name or (family ~= nil and Reminders.Family(name) == family)
-end
+local Named = Reminders.Watches
 
 -- A buff the game hides now that a reminder on the frames watches by that name.
 local function Watched(name)

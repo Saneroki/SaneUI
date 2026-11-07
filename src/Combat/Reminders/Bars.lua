@@ -19,10 +19,11 @@ Bars.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it 
 
 local bars = {} -- [a bar's number] = { frame, window, row, icons, place }
 
-local function Icon(bar, index)
-    local icon = CreateFrame("Frame", nil, bar.row)
-    icon:SetSize(Bars.SIZE, Bars.SIZE)
-    icon:SetPoint("LEFT", bar.row, "LEFT", (index - 1) * (Bars.SIZE + Bars.GAP), 0)
+-- An icon as the bars show one, on parent, that big: its picture in a thin dark edge, the seconds left at its foot in
+-- that font (the nameplates' icons too, Plates.lua).
+function Bars.Icon(parent, size, font)
+    local icon = CreateFrame("Frame", nil, parent)
+    icon:SetSize(size, size)
     local edge = icon:CreateTexture(nil, "BACKGROUND")
     edge:SetAllPoints(icon)
     edge:SetColorTexture(0, 0, 0, 0.9)
@@ -30,8 +31,14 @@ local function Icon(bar, index)
     icon.picture:SetPoint("TOPLEFT", icon, "TOPLEFT", 1, -1)
     icon.picture:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -1, 1)
     icon.picture:SetTexCoord(Bars.CROP[1], Bars.CROP[2], Bars.CROP[3], Bars.CROP[4])
-    icon.left = icon:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+    icon.left = icon:CreateFontString(nil, "OVERLAY", font)
     icon.left:SetPoint("BOTTOM", icon, "BOTTOM", 0, 2)
+    return icon
+end
+
+local function Icon(bar, index)
+    local icon = Bars.Icon(bar.row, Bars.SIZE, "NumberFontNormal")
+    icon:SetPoint("LEFT", bar.row, "LEFT", (index - 1) * (Bars.SIZE + Bars.GAP), 0)
     bar.icons[index] = icon
     return icon
 end
