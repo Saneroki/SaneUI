@@ -18,7 +18,16 @@ local Macros = ns.Macros
 --  "/castsequence reset=target/combat Rend, null": Rend, then a name the game
 --  casts nothing for (no global cooldown, no rage) until it starts over. Only in
 --  a sequence: from the top every press would stop at it (Check.lua says so).
+--
+--  Cast on, several in order (Saneroki, 2026-11-07: "if we have @mouseover as 1
+--  and @Target as 2 fx it will try to cast it on mouseover first and if it
+--  doesn't have that condition it will do it on the target"): a bracket a unit,
+--  "[@mouseover,exists,harm][@target]". Each but the last asks that its unit be
+--  there and, for a spell or item the game calls harmful or helpful, be a foe or
+--  a friend, so the game goes on to the next; the last takes it as it is. The
+--  step's own conditions stand in every bracket.
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Write = {}
 Macros.Write = Write
 
@@ -47,12 +56,57 @@ function Write.Once(step, top)
     return not top and step.kind ~= "text" and Write.Marked(step)
 end
 
--- The words between a step's brackets: who it is for, then its conditions. "" when there are none.
-function Write.Words(step)
-    local words = {}
-    if step.unit then words[1] = "@" .. step.unit end
-    for _, condition in ipairs(Game(step)) do words[#words + 1] = Macros.Conditions.Text(condition) end
-    return table.concat(words, ",")
+-- Who the step is cast on, in order ("": your target, as the game takes it); none: your target. A step as saved holds
+-- units (Book), one another code made may still hold its unit alone.
+function Write.Units(step)
+    if type(step.units) == "table" and step.units[1] then return step.units end
+    if type(step.unit) == "string" then return { step.unit } end
+    return {}
+end
+
+-- Whether the game calls the step's spell or item harmful ("harm") or helpful ("help"); nil where it says neither.
+function Write.Side(step)
+    local thing = step.id or step.what
+    local harmful, helpful
+    if step.kind == "spell" then
+        local spells = rawget(_G, "C_Spell")
+        harmful = spells and Core.Ask(spells.IsSpellHarmful, thing)
+        helpful = spells and Core.Ask(spells.IsSpellHelpful, thing)
+    elseif step.kind == "item" then
+        local items = rawget(_G, "C_Item")
+        harmful = items and Core.Ask(items.IsHarmfulItem, thing)
+        helpful = items and Core.Ask(items.IsHelpfulItem, thing)
+    end
+    if harmful == true then return "harm" end
+    if helpful == true then return "help" end
+    return nil
+end
+
+-- The words of each of the step's brackets, one a unit in its order; { "" } where there is nothing to say.
+function Write.Clauses(step)
+    local game, units = {}, Write.Units(step)
+    for _, condition in ipairs(Game(step)) do game[#game + 1] = Macros.Conditions.Text(condition) end
+    if not units[1] then return { table.concat(game, ",") } end
+    local clauses, side = {}, nil
+    for index, unit in ipairs(units) do
+        local words = {}
+        if unit ~= "" then words[1] = "@" .. unit end
+        if index < #units and unit ~= "cursor" then -- the place under the mouse is always there
+            words[#words + 1] = "exists"
+            if side == nil then side = Write.Side(step) or false end
+            if side then words[#words + 1] = side end
+        end
+        for _, word in ipairs(game) do words[#words + 1] = word end
+        clauses[index] = table.concat(words, ",")
+    end
+    return clauses
+end
+
+-- The step's brackets as a line holds them, with a space after: "[@mouseover,exists][] "; "" with nothing to say.
+function Write.Bracket(step)
+    local clauses = Write.Clauses(step)
+    if #clauses == 1 and clauses[1] == "" then return "" end
+    return "[" .. table.concat(clauses, "][") .. "] "
 end
 
 -- A step's spell or item as the game's commands name it.
@@ -69,17 +123,17 @@ end
 -- The step as a line of a macro; top: the macro starts at the top on every press.
 function Write.Line(step, top)
     if step.kind == "text" then return step.what end
-    local words = Write.Words(step)
-    local bracket = words ~= "" and "[" .. words .. "] " or ""
+    local bracket = Write.Bracket(step)
     if Write.Once(step, top) then return "/castsequence " .. bracket .. Write.Sequence(step) end
     return (step.kind == "item" and "/use " or "/cast ") .. bracket .. Thing(step)
 end
 
--- What the press asks the game before it takes the step; nil: nothing to ask.
+-- What the press asks the game before it takes the step; nil: nothing to ask. Without a condition of the game's a
+-- spell's or an item's step is always taken: its last unit takes it whoever is there.
 function Write.When(step)
-    if not Game(step)[1] and (step.kind ~= "text" or not step.unit) then return nil end
-    local words = Write.Words(step)
-    return words ~= "" and "[" .. words .. "] 1" or nil
+    if not Game(step)[1] and (step.kind ~= "text" or not Write.Units(step)[1]) then return nil end
+    local bracket = Write.Bracket(step)
+    return bracket ~= "" and bracket .. "1" or nil
 end
 
 -- Whether a step has anything to do.

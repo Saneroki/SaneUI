@@ -56,6 +56,12 @@ of your normal action bar buttons. The macros are your account's, on every chara
   leave it out, X deletes it.
 - **A step:** a spell, an item, or macro text (any commands, up to 255 characters in a step), who it is cast on, and how
   often it comes up in a round (spread out evenly among the others).
+- **Cast on, several in order** (Saneroki, 2026-11-07: "if we have @mouseover as 1 and @Target as 2 fx it will try to cast
+  it on mouseover first and if it doesn't have that condition it will do it on the target"): in *Cast on* a click chooses
+  one after those chosen, its number where the circle was, and the list stays open for the next; a click again takes it out.
+  The step goes to the first that is there, a foe for a harmful spell or item and a friend for a helpful one, else to the
+  last whoever it is; the step's conditions count for each. None chosen: your target, as before. After *At the mouse*, or
+  *Yourself* with a spell that is not harmful, nothing more is reached: the check says so.
 - **Choosing a spell** (Saneroki, 2026-11-07: "big spell window on the plus", "a fuzzy search with [a fly-out] there"): the
   **+** beside a spell's name opens a large window over everything, the full screen too: on the left *Your spells*, each
   tab of your spellbook, each class (yours first) and *All*; at the top a search, forgiving of typos; then the spells,
@@ -133,6 +139,15 @@ of your normal action bar buttons. The macros are your account's, on every chara
   casts nothing; nothing is drawn over the bars (Saneroki, 2026-11-04: a gold wash over every button hid them). The button under
   the mouse comes from the frames the game says are under it (`GetMouseFoci`), only then from each square's `IsMouseOver`: a
   square hangs on the game's button, and where the game keeps that button's place to itself the answer is hidden (`Core.Plain`: no).
+- **Cast on in order** (`Write.Clauses`, `Write.Bracket`). A step's `units` in order, a bracket each:
+  `/cast [@mouseover,exists,harm,combat][@target,combat] Rend`. Each but the last adds `exists` and, where the game calls
+  the spell or item harmful or helpful (`C_Spell.IsSpellHarmful`, `IsSpellHelpful`; `C_Item.IsHarmfulItem`,
+  `IsHelpfulItem`), `harm` or `help`; `@cursor` adds nothing, the place under the mouse being always there. `""` is your
+  target as the game takes it (no `@`). The press asks every bracket (`Write.When`: `[..][..] 1`, true where one holds);
+  without a condition of the game's the step is always taken. The dropdown's lines are the game's radios
+  (`SetResponse(MenuResponse.Refresh)`, so it stays open), a chosen one's number drawn where the game draws its circle
+  (`frame.leftTexture1`, its tick `leftTexture2`, both games' `MenuVariants.CreateRadio`), asked as the line is drawn;
+  its text `OverrideText` ("Under the mouse, then Your target"). An open list is not made anew at a change.
 - **The spell window** (`Spells.lua`). Built as the picture window is (its sizes, strata and ground), its grid of tiles
   (picture and name, `Spells.TILE`). Groups: what the character knows, by its spellbook's tabs as the game's own book
   makes them (`ns.BookData.Tabs`, `C_SpellBook.GetSpellBookItemInfo`; no passive, no other specialization's, no lower
@@ -177,7 +192,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body, picture, owner)` makes a macro under that name, once, with that
   picture where one is given (a texture's path or number; `Book.Icon` keeps no question mark): of macro
   text a normal macro, of a table `{ top, fresh, steps = { step, ... } }` a macro of those steps, each step in the shape
-  `Book.lua` saves (`kind`, `what`, `unit`, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
+  `Book.lua` saves (`kind`, `what`, `units = { "mouseover", "" }` or a `unit` alone, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
   (`Book.FromSteps`). `owner`: nil every character's, `"class"` this character's class's, `"character"` its own. One of that
   name and owner already there is left as it is (a setup addon, a script). `Macros.Set(name, body, owner)` makes that macro anew from a body as Add takes it, its number, picture, keys and places kept, its button taking it at once or after a fight (Saneroki, 2026-11-04: a potion macro kept on the best potion held). `Macros.PlaceOn(name, place)` puts the macro of
   that name this character uses (its own or its class's before a general one) on a bar button by its place

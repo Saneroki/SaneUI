@@ -149,7 +149,8 @@ Macros.TEXT = {
     letters = "%d of 255",
 
     target = "Cast on",
-    targetTip = "Who the step is cast on, and who its conditions about a target ask about.",
+    targetTip = "Who the step is cast on, and who its conditions about a target ask about. Choose several, in order: each gets its number, and the step goes to the first that is there (a foe for a harmful spell, a friend for a helpful one), else to the last whoever it is. Click one again to take it out.",
+    unitsThen = ", then ",
     targets = {
         { "", "Your target", "The usual: your target, or yourself where the spell allows." },
         { "mouseover", "Under the mouse", "Whoever the mouse is on, in the world or on a unit frame." },
@@ -207,6 +208,7 @@ Macros.TEXT = {
         notCommand = "This line has no / and would be sent to chat: %s",
         afterOpen = "Never reached: after a ; with no condition, nothing more can be picked: %s",
         secondCast = "Only the first /cast of a step is sure to run. Make the second one a step of its own: %s",
+        unitsAfter = "Never reached: %s is always there, so the step never goes on to those after it in Cast on.",
         onceText = "Once per target works on a Spell or an Item step. In macro text, write the game's /castsequence reset=target yourself.",
         onceTop = "Once per target works only with Each press takes the next step. From the top the step is cast as if it were not marked.",
         heldCasting = "The game's Press and Hold Casting is on (Options, Gameplay, Combat): a cast of this macro stops when you let go of the key. Turn it off.",

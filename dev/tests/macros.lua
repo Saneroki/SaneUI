@@ -270,7 +270,7 @@ W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
 -- What the saved files may hold: rubbish among a good macro.
 local store = Core.Store("Macros")
-store.macros = { "rubbish", { id = 5, name = 7, steps = { { kind = "nothing" }, { kind = "spell", what = "Slam", often = 99, when = { 3, { word = "harm" }, { word = "once", no = true } } } } } }
+store.macros = { "rubbish", { id = 5, name = 7, steps = { { kind = "nothing" }, { kind = "spell", what = "Slam", often = 99, unit = "focus", when = { 3, { word = "harm" }, { word = "once", no = true } } } } } }
 W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
 W.Fire("PLAYER_ENTERING_WORLD")
@@ -285,9 +285,12 @@ local cleaned = Book.All()[1]
 check(cleaned.name == TEXT.firstName and #cleaned.steps == 1, "a bad name and a bad step fall away")
 check(cleaned.steps[1].often == Book.MOST_OFTEN and #cleaned.steps[1].when == 2, "a step comes in the shape read")
 check(cleaned.steps[1].when[2].word == "once" and cleaned.steps[1].when[2].no == nil, "Once per target has no opposite")
+check(#cleaned.steps[1].units == 1 and cleaned.steps[1].units[1] == "focus" and cleaned.steps[1].unit == nil,
+      "a unit alone is read as the first of Cast on's")
 check(Book.New().id == 6, "numbers go on after the saved ones")
 local copied = Book.Copy(cleaned)
 check(copied.name == TEXT.copyOf:format(cleaned.name) and copied.steps[1] ~= cleaned.steps[1], "a copy holds its own steps")
+check(copied.steps[1].units[1] == "focus" and copied.steps[1].units ~= cleaned.steps[1].units, "its own Cast on")
 Book.Delete(copied)
 check(Book.Find(copied.id) == nil, "deleted")
 
@@ -352,6 +355,40 @@ do
     sequence.top = true
     check(Write.Turns(sequence)[1].sequence == nil, "from the top there is none")
     Book.Delete(sequence)
+end
+
+-- Cast on, several in order (Saneroki, 2026-11-07: "if we have @mouseover as 1 and @Target as 2 fx it will try to
+-- cast it on mouseover first and if it doesn't have that condition it will do it on the target").
+do
+    local harmful, helpful = { Rend = true }, { Renew = true }
+    C_Spell.IsSpellHarmful = function(spell) return harmful[spell] == true end
+    C_Spell.IsSpellHelpful = function(spell) return helpful[spell] == true end
+    local function Ordered(name, units, when)
+        local step = Spell(name, when)
+        step.units = units
+        return step
+    end
+    check(Write.Line(Ordered("Rend", { "mouseover", "" })) == "/cast [@mouseover,exists,harm][] Rend",
+          "a harmful spell: the mouse's unit if it is a foe, else your target")
+    check(Write.Line(Ordered("Renew", { "mouseover", "player" })) == "/cast [@mouseover,exists,help][@player] Renew",
+          "a helpful one: a friend under the mouse, else yourself")
+    check(Write.Line(Ordered("Slam", { "focus", "target" })) == "/cast [@focus,exists][@target] Slam", "neither: whoever is there")
+    local fought = Ordered("Rend", { "mouseover", "target" }, { { word = "combat" } })
+    check(Write.Line(fought) == "/cast [@mouseover,exists,harm,combat][@target,combat] Rend", "the step's conditions in each")
+    check(Write.When(fought) == "[@mouseover,exists,harm,combat][@target,combat] 1", "and the press asks them all")
+    check(Write.When(Ordered("Rend", { "mouseover", "" })) == nil, "without a condition the last always takes it")
+    check(Write.Line(Ordered("Rend", { "" })) == "/cast Rend", "your target alone: the usual line")
+    check(Write.Line(Ordered("Rend", { "mouseover", "" }, { { word = "once" } }))
+          == "/castsequence [@mouseover,exists,harm][] reset=target/combat Rend, null", "once per target too")
+    check(Write.Line(Ordered("Rend", { "cursor", "target" })) == "/cast [@cursor][@target] Rend", "the place under the mouse asks nothing")
+    local stuck = Ordered("Renew", { "player", "mouseover" })
+    local found = false
+    for _, said in ipairs(Check.Step(stuck)) do found = found or said:find("Yourself", 1, true) ~= nil end
+    check(found, "after yourself nothing is reached: said")
+    local fine = true
+    for _, said in ipairs(Check.Step(Ordered("Rend", { "player", "target" }))) do fine = fine and not said:find("Never reached", 1, true) end
+    check(fine, "but a harmful spell goes on past yourself")
+    C_Spell.IsSpellHarmful, C_Spell.IsSpellHelpful = nil, nil
 end
 
 -------------------------------------------------------------------------------
@@ -1330,6 +1367,50 @@ do
     Editor.Choose(inner)
     W.book, W.lines = oldBook, oldLines
     W.Fire("SPELLS_CHANGED")
+end
+
+-- Cast on's dropdown (Saneroki, 2026-11-07: "when we select one it will have a number to its left instead of the
+-- circle"): a click puts one after those chosen, again takes it out; the menu stays open.
+do
+    function methods:OverrideText(text) self._override = text end
+    local macro = Book.New("Ordered")
+    macro.steps[1] = Book.Step("spell", "Rend")
+    Editor.Choose(macro)
+    local menu = Macros.Detail.Parts().units
+    local function Line(words)
+        for _, item in ipairs(menu._items) do
+            if item.text == words then return item end
+        end
+    end
+    check(menu._override == TEXT.targets[1][2], "at first: your target")
+    Line("Under the mouse").fn()
+    Line("Your target").fn()
+    local units = macro.steps[1].units
+    check(#units == 2 and units[1] == "mouseover" and units[2] == "", "in the order clicked")
+    check(menu._override == "Under the mouse, then Your target", "the dropdown says so: " .. tostring(menu._override))
+    check(Line("Under the mouse").checked() and Line("Your target").checked() and not Line("Your focus").checked(),
+          "those chosen are marked")
+    check(Line("Under the mouse").response == MenuResponse.Refresh, "the menu stays open for the next")
+    local function Frame()
+        local frame = { leftTexture1 = { SetAlpha = function(self, alpha) self.alpha = alpha end } }
+        function frame:AttachFontString()
+            self.number = W.NewWidget("FontString", nil, UIParent)
+            return self.number
+        end
+        return frame
+    end
+    local drawn = Frame()
+    for _, init in ipairs(Line("Your target").inits) do init(drawn) end
+    check(drawn.number and tostring(drawn.number:GetText()) == "2" and drawn.leftTexture1.alpha == 0,
+          "its place in the order where the circle was")
+    local plain = Frame()
+    for _, init in ipairs(Line("Your focus").inits) do init(plain) end
+    check(plain.number == nil and plain.leftTexture1.alpha == nil, "one not chosen keeps its circle")
+    Line("Under the mouse").fn()
+    check(#macro.steps[1].units == 1 and macro.steps[1].units[1] == "", "clicked again: out, those after it move up")
+    check(Write.Line(macro.steps[1]) == "/cast Rend", "your target alone: the usual line")
+    Book.Delete(macro)
+    Editor.Choose(inner)
 end
 
 -------------------------------------------------------------------------------

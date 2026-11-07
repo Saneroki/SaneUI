@@ -20,7 +20,8 @@ local Macros = ns.Macros
 --    kind      "spell", "item" or "text"
 --    what      the spell's or item's name; the macro text
 --    id        the spell's or item's number, where it is known
---    unit      who it is cast on ("mouseover"); nil: your target
+--    units     who it is cast on, in order ({ "mouseover", "" }; "": your target); none: your
+--              target. A unit alone (unit = "mouseover"), as other code may give it, is read too
 --    when      its conditions: { word, no, value } each; Sane Macros' own too ("once":
 --              Once per target), which have no opposite (Conditions.OURS)
 --    often     how many times it comes up in a round
@@ -41,7 +42,15 @@ local function CleanStep(step)
     if type(step) ~= "table" or not Book.KINDS[step.kind] then return nil end
     step.what = type(step.what) == "string" and step.what or ""
     if type(step.id) ~= "number" then step.id = nil end
-    if type(step.unit) ~= "string" then step.unit = nil end
+    local units, seen = {}, {}
+    local given = type(step.units) == "table" and step.units or { step.unit }
+    for _, unit in ipairs(given) do
+        if type(unit) == "string" and not seen[unit] then
+            seen[unit] = true
+            units[#units + 1] = unit
+        end
+    end
+    step.units, step.unit = units, nil
     if type(step.often) ~= "number" or step.often < 1 then step.often = 1 end
     step.often = math.min(math.floor(step.often), Book.MOST_OFTEN)
     step.off = step.off and true or nil
@@ -161,7 +170,7 @@ function Book.Find(id)
 end
 
 function Book.Step(kind, what, id)
-    return { kind = kind or "spell", what = what or "", id = id, when = {}, often = 1 }
+    return { kind = kind or "spell", what = what or "", id = id, units = {}, when = {}, often = 1 }
 end
 
 function Book.New(name)
@@ -178,7 +187,8 @@ function Book.Copy(macro)
     copy.top, copy.fresh, copy.icon, copy.class, copy.char = macro.top, macro.fresh, macro.icon, macro.class, macro.char
     for index, step in ipairs(macro.steps) do
         local new = Book.Step(step.kind, step.what, step.id)
-        new.unit, new.often, new.off = step.unit, step.often, step.off
+        new.often, new.off = step.often, step.off
+        for at, unit in ipairs(Macros.Write.Units(step)) do new.units[at] = unit end
         for at, condition in ipairs(step.when) do
             new.when[at] = { word = condition.word, no = condition.no, value = condition.value }
         end

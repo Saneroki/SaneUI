@@ -62,16 +62,68 @@ local function Kinds(root)
     for _, kind in ipairs({ "spell", "item", "text" }) do
         root:CreateRadio(Macros.TEXT.kinds[kind], ns.Guard(function() return step ~= nil and step.kind == kind end),
                          ns.Guard(function()
-                             if step.kind ~= kind then step.id, step.unit = nil, nil end
+                             if step.kind ~= kind then step.id, step.units = nil, {} end
                              step.kind = kind
                              Macros.Editor.Changed()
                          end))
     end
 end
 
+-- Who a step is cast on in words, in order ("Under the mouse, then Your target"); nil for the usual, your target.
+function Detail.UnitsWords(target)
+    local words = {}
+    for _, unit in ipairs(Macros.Write.Units(target)) do
+        for _, each in ipairs(Macros.TEXT.targets) do
+            if each[1] == unit then words[#words + 1] = each[2] end
+        end
+    end
+    return words[1] and table.concat(words, Macros.TEXT.unitsThen) or nil
+end
+
+-- A unit's place in the step's order; nil where it is not chosen.
+local function Place(value)
+    for index, unit in ipairs(Macros.Write.Units(step)) do
+        if unit == value then return index end
+    end
+    return nil
+end
+
+-- Chosen: it goes after those chosen; chosen again: out, and those after it move up.
+local function Toggle(value)
+    local units = {}
+    for _, unit in ipairs(Macros.Write.Units(step)) do units[#units + 1] = unit end
+    local at = Place(value)
+    if at then table.remove(units, at) else units[#units + 1] = value end
+    step.units, step.unit = units, nil
+    Macros.Editor.Changed()
+end
+
+-- A chosen line shows its place in the order where the game's line shows its circle (frame.leftTexture1, the
+-- selected tick over it leftTexture2: MenuVariants.CreateRadio, both games). Asked as the line is drawn: a click
+-- redraws the open menu's lines without making them anew.
+local function Number(frame, at)
+    local circle = rawget(frame, "leftTexture1")
+    if not (at and circle and frame.AttachFontString) then return end
+    circle:SetAlpha(0)
+    local tick = rawget(frame, "leftTexture2")
+    if tick then tick:SetAlpha(0) end
+    local number = frame:AttachFontString()
+    number:SetFontObject("GameFontNormal")
+    number:SetPoint("CENTER", circle, "CENTER", 0, 0)
+    number:SetText(at)
+end
+
+-- Cast on: several, in order (Saneroki, 2026-11-07): each line a radio of the game's that stays open on a click, a
+-- chosen one numbered by its place.
 local function Units(root)
+    local refresh = rawget(_G, "MenuResponse") and MenuResponse.Refresh
     for _, target in ipairs(Macros.TEXT.targets) do
-        Radio(root, target[2], "unit", target[1] ~= "" and target[1] or nil, target[3])
+        local value = target[1]
+        local radio = root:CreateRadio(target[2], ns.Guard(function() return step ~= nil and Place(value) ~= nil end),
+                                       ns.Guard(function() Toggle(value) end))
+        if refresh then radio:SetResponse(refresh) end
+        radio:AddInitializer(ns.Guard(function(frame) Number(frame, Place(value)) end))
+        radio:SetTooltip(ns.Guard(function(tooltip) GameTooltip_AddNormalLine(tooltip, target[3]) end))
     end
 end
 
@@ -186,7 +238,9 @@ function Detail.Fill(chosenMacro, chosenStep)
     if not step then return end
     local text = step.kind == "text"
     kindMenu:GenerateMenu()
-    unitMenu:GenerateMenu()
+    -- Open, it stays as it is: its lines ask the step as they are drawn, and a new one would not be the one shown.
+    if not (unitMenu.IsMenuOpen and unitMenu:IsMenuOpen()) then unitMenu:GenerateMenu() end
+    unitMenu:OverrideText(Detail.UnitsWords(step) or Macros.TEXT.targets[1][2])
     oftenMenu:GenerateMenu()
     unitMenu:SetShown(not text)
     unitWord:SetShown(not text)
@@ -214,7 +268,7 @@ end
 
 -- For the test: the spell's name box, the + beside it, the fly-out's search box.
 function Detail.Parts()
-    return { what = what, choose = choose, finder = finder }
+    return { what = what, choose = choose, finder = finder, units = unitMenu }
 end
 
 -- The panel is that wide now.

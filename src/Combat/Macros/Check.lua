@@ -61,6 +61,20 @@ local function Conditions(step, out)
     end
 end
 
+-- Cast on in order: after one that is always there (the place under the mouse; yourself, but for a harmful spell)
+-- the step never goes on to those after it.
+local function Units(step, out)
+    local units = Macros.Write.Units(step)
+    for index, unit in ipairs(units) do
+        if index < #units and (unit == "cursor" or (unit == "player" and Macros.Write.Side(step) ~= "harm")) then
+            for _, target in ipairs(Macros.TEXT.targets) do
+                if target[1] == unit then out[#out + 1] = Macros.TEXT.check.unitsAfter:format(target[2]) end
+            end
+            return
+        end
+    end
+end
+
 -- The words between one line's brackets, each known to the game or told.
 local function Brackets(line, out)
     local words = Macros.TEXT.check
@@ -122,8 +136,10 @@ function Check.Step(step)
     end
     if step.kind == "spell" then
         Spell(step, out)
+        Units(step, out)
     elseif step.kind == "item" then
         Item(step, out)
+        Units(step, out)
     else
         Text(step, out)
     end

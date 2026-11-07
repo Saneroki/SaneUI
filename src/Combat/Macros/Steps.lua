@@ -148,9 +148,8 @@ end
 -- When it runs, and on whom, in plain words.
 local function When(step)
     local words = {}
-    for _, target in ipairs(Macros.TEXT.targets) do
-        if step.unit and target[1] == step.unit then words[1] = target[2] end
-    end
+    local who = Macros.Detail.UnitsWords(step)
+    if who then words[1] = who end
     for _, condition in ipairs(step.when) do words[#words + 1] = (Macros.Conditions.Words(condition)) end
     return table.concat(words, ", ")
 end

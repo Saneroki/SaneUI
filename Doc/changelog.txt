@@ -19,6 +19,9 @@ The bigger changes of each version, newest first.
 - Sane Macros: a + beside a spell's name opens a large spell window
   (your spells, your spellbook's tabs, every class's, with a search),
   and typing a name shows the best matching spells to pick from.
+- Sane Macros: Cast on takes several in order, each numbered as you
+  pick it (Under the mouse 1, Your target 2): the step goes to the
+  first that is there, a foe for a harmful spell, else to the next.
 - Mail: a new tab, Banker, opens first at the mailbox. Type your
   banker's name once and every trade good and reagent in your bags is
   lined up for it; Send mails them all, twelve stacks a mail. Untick
