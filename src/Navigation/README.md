@@ -810,7 +810,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
   it; without a pin that leg alone.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
-  pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second).
+  pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second;
+  none where the game's minimap lies over the map, whose own dots of them move at every frame: `Hybrid.Square`).
 - **Indoors** (`Indoors.lua`): inside a building or a cave (`Live.Indoors`: the game's `IsIndoors`, or its minimap
   showing its indoor plan, its view's radius under `Live.PLAN` of its step's outdoors, `Live.OUTDOORS`: the halls one
   may ride through, which the game's `WMOAreaTable` counts as outdoors, so `IsIndoors` says no there; Ironforge's

@@ -10,7 +10,9 @@ local _, ns = ...
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's);
 --                           a click leads the game's arrow to it or not, Ctrl-click takes it away
 --      the party, the raid  the game's party blip in each member's class colour, a few times a
---                           second while the map is shown (the pin filter's Party and raid)
+--                           second while the map is shown (the pin filter's Party and raid); none
+--                           where the game's minimap lies over the map: the game draws them there
+--                           itself, moved at each frame (Hybrid.Square; Saneroki, 2026-11-07)
 --
 --  Placed against the canvas' holder like the layers (Canvas.lua), so a drag moves
 --  them with the map; the arrow is moved again on every step of the canvas'
@@ -128,10 +130,8 @@ function Marks.Pin(view)
     Put(pin, px, py, Marks.PIN / 2)
 end
 
--- The party or raid where the game tells their places (on the view's plane's map), a few times a second.
-function Marks.Group(view, now)
-    if now < nextGroup then return end
-    nextGroup = now + Marks.GROUP
+-- Each member's mark placed where the game tells (Marks.Group).
+local function Members(view)
     local count = 0
     local box = view.map and Coords.Box(view.map)
     if box and ns.Pins.Shows("group") and IsInGroup() then
@@ -156,16 +156,39 @@ function Marks.Group(view, now)
     for index = count + 1, #members do Put(members[index], nil) end
 end
 
--- Each mark shown while it lies wholly inside the canvas' rectangle as it is now (Canvas.edge).
+-- The members' marks shown while wholly inside the canvas and not under the game's minimap (Hybrid.Square), whose
+-- own blips stand for the party there: those move at each frame, ours only a few times a second, and two dots of
+-- one member, the one lagging behind the other, would be one too many.
+local function Cover()
+    local x, y, half = ns.Hybrid.Square()
+    local Inside = ns.Canvas.Inside
+    for _, texture in ipairs(members) do
+        if texture.x then
+            local under = x and math.abs(texture.x - x) <= half and math.abs(texture.y - y) <= half
+            texture:SetShown(not under and Inside(texture.x, texture.y, texture.half))
+        end
+    end
+end
+
+-- The party or raid where the game tells their places (on the view's plane's map), asked a few times a second;
+-- shown or not at each step of the canvas' tracker, as the game's minimap moves with the player (Cover).
+function Marks.Group(view, now)
+    if now >= nextGroup then
+        nextGroup = now + Marks.GROUP
+        Members(view)
+    end
+    Cover()
+end
+
+-- Each mark shown while it lies wholly inside the canvas' rectangle as it is now (Canvas.edge); the party's not
+-- under the game's minimap (Cover).
 function Marks.Fit()
     if not arrow then return end
     local Inside = ns.Canvas.Inside
     for _, mark in ipairs(pair) do
         if mark.x then mark:SetShown(Inside(mark.x, mark.y, mark.half)) end
     end
-    for _, texture in ipairs(members) do
-        if texture.x then texture:SetShown(Inside(texture.x, texture.y, texture.half)) end
-    end
+    Cover()
 end
 
 -- Out of sight, all of them.

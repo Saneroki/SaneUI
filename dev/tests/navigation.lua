@@ -1278,6 +1278,11 @@ check(minimap._shown and minimap._width == 20, "however thin a view: the square 
 frame._width, frame._height = 200, 200
 Canvas.Layout()
 check(minimap._shown and minimap._mask == Hybrid.MASK, "square again: shown, square")
+do
+    local x, y, half = Hybrid.Square()
+    check(x and near(x, -Canvas.edge.x) and near(y, -Canvas.edge.y) and near(half, 100),
+        "the square it covers, in the holder's units: the view's middle, half its side (the party's marks stand down there)")
+end
 IsIndoors = function() return true end
 W.Fire("ZONE_CHANGED_INDOORS")
 Canvas.Layout()
@@ -2129,6 +2134,9 @@ do
     check(arrow._shown and arrow._points[1][2] == holder and near(arrow._points[1][4], (u - Canvas.view.u) * full.k)
         and near(arrow._points[1][5], (v - Canvas.view.v) * full.k),
         "full: our arrow on the player, over the game's minimap there too")
+    local x, y, half = Hybrid.Square()
+    check(x and near(x, minimap._points[1][4]) and near(y, minimap._points[1][5]) and near(half, minimap._width / 2),
+        "full: the square it covers, on the player")
     local chosen = Core.Copy(ns.options.pins)
     chosen.minimap = nil
     Core.Set(ns.name, "pins", chosen)
@@ -4180,6 +4188,23 @@ local blip
 for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget.x then blip = widget end end
 check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member on the map, in the class' colour")
 check(blip._shown == Canvas.Inside(blip.x, blip.y, ns.Marks.MEMBER / 2), "shown while wholly inside the canvas")
+-- Under the game's minimap its own blip stands for the member, moved at each frame: ours stands down there, at once
+-- (each step of the tracker, not at the next look at the party), and comes back past its square.
+do
+    local square, inside = Hybrid.Square, Canvas.Inside
+    Canvas.Inside = function() return true end -- the member within the canvas
+    Hybrid.Square = function() return blip.x + 3, blip.y - 3, 10 end
+    ns.Marks.Group(Canvas.view, GetTime() + 10.1)
+    check(not blip._shown and blip.x, "the member under the game's minimap: its own dot alone, not ours")
+    Hybrid.Square = function() return blip.x + 30, blip.y, 10 end
+    ns.Marks.Fit()
+    check(blip._shown, "past its square: ours")
+    Hybrid.Square = function() return nil end
+    ns.Marks.Group(Canvas.view, GetTime() + 10.2)
+    check(blip._shown, "the game's minimap out of sight: ours")
+    Hybrid.Square, Canvas.Inside = square, inside
+    ns.Marks.Fit()
+end
 IsInGroup = function() return false end
 ns.Marks.Group(Canvas.view, GetTime() + 20)
 check(not blip._shown and not blip.x, "out of the group: gone")
