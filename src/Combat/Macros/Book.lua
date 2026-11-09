@@ -12,6 +12,9 @@ local Macros = ns.Macros
 --    fresh     back to the first step when a fight ends
 --    steps     its steps, in order
 --    icon      its own picture (a texture's path or number); nil: its steps' (Press.MacroPicture)
+--    fixed     its bar button shows that picture the whole time, not the next step's (Saneroki,
+--              2026-11-09: the tick in Choose a picture, as the game's #showtooltip); nil: the next step's
+--    description  what it is for, in the player's words (Saneroki, 2026-11-09); nil: none
 --    class     a class's file name ("WARRIOR"): the macro is that class's characters'
 --    char      a character's key (Core.charKey): the macro is that character's
 --              neither: every character's, a general one (Saneroki, 2026-11-04: "only the
@@ -74,10 +77,20 @@ function Book.Icon(picture)
 end
 Book.QUESTION = 134400 -- the question mark's file number, the picture the game gives a macro without one
 
+Book.DESCRIPTION = 500 -- letters of a description at most
+-- A description as kept: its words without spaces round them, at most Book.DESCRIPTION letters; nil for none.
+function Book.Description(text)
+    if type(text) ~= "string" then return nil end
+    text = text:gsub("^%s+", ""):gsub("%s+$", ""):sub(1, Book.DESCRIPTION)
+    return text ~= "" and text or nil
+end
+
 local function CleanMacro(macro)
     if type(macro) ~= "table" or type(macro.id) ~= "number" then return nil end
     macro.name = type(macro.name) == "string" and macro.name or Macros.TEXT.firstName
     macro.icon = Book.Icon(macro.icon)
+    macro.fixed = macro.fixed and true or nil
+    macro.description = Book.Description(macro.description)
     macro.top = macro.top and true or nil
     macro.fresh = macro.fresh ~= false
     macro.class = type(macro.class) == "string" and macro.class:match("^%u+$") or nil
@@ -185,6 +198,7 @@ end
 function Book.Copy(macro)
     local copy = Book.New(Macros.TEXT.copyOf:format(macro.name))
     copy.top, copy.fresh, copy.icon, copy.class, copy.char = macro.top, macro.fresh, macro.icon, macro.class, macro.char
+    copy.fixed, copy.description = macro.fixed, macro.description
     for index, step in ipairs(macro.steps) do
         local new = Book.Step(step.kind, step.what, step.id)
         new.often, new.off = step.often, step.off
@@ -237,12 +251,14 @@ function Book.FromSteps(name, spec)
 end
 
 -- A macro's steps made anew (Macros.Set): of macro text one step of it, from the top; of { top, fresh, steps } those
--- steps, as FromSteps takes them. Its number, name, picture and whose it is stay.
+-- steps, as FromSteps takes them, and its description where the table gives one. Its number, name, picture and
+-- whose it is stay.
 function Book.Fill(macro, body)
     if type(body) == "string" then
         macro.top, macro.fresh, macro.steps = true, true, { Book.Step("text", body) }
         return macro
     end
+    if body.description ~= nil then macro.description = Book.Description(body.description) end
     macro.top = body.top and true or nil
     macro.fresh = body.fresh ~= false
     macro.steps = {}

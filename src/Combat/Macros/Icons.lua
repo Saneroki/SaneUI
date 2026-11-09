@@ -9,7 +9,10 @@ local Macros = ns.Macros
 --  the rest), at the top a search box over the icons' names and groups, then the
 --  icons; the mouse on one names it and says what shows it. A click gives the
 --  macro that picture and closes the window; Steps' picture takes the macro's
---  own away.
+--  own away. A tick at the top (Saneroki, 2026-11-09: "a choice to #showtooltip
+--  ... to show the icon of the spell"), on at first: the macro's bar button shows
+--  the picture of the step that comes next; off, its picture stays the whole
+--  time (Press.FacePicture).
 --
 --  The icons are Core's set Icons: every icon the client holds, by its file
 --  number, with its name, and in Forever the classes, spells and items that show
@@ -58,7 +61,7 @@ Icons.NAMED = {
 }
 
 local frame, window, built
-local search, count, clear, box, view, empty
+local search, count, clear, box, view, empty, show
 local groupLines = {}
 local entries          -- every icon: { key, name, plain, groups = { [group] = true }, words, classes, spells, items }
 local groups           -- the groups shown: { key, title, list }
@@ -389,6 +392,21 @@ local function Build()
         if give then give(nil) end
     end))
     Core.Tip(clear, Macros.TEXT.iconClear, Macros.TEXT.iconClearTip)
+    -- The tick, beside Steps' picture: the next step's picture on the bar button, or the macro's the whole time. Its
+    -- words take the click too, as the game's options' ticks do.
+    local showWord = inside:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    showWord:SetPoint("RIGHT", clear, "LEFT", -14, 0)
+    showWord:SetText(Macros.TEXT.iconShow)
+    show = CreateFrame("CheckButton", nil, inside, "UICheckButtonTemplate")
+    show:SetSize(24, 24)
+    show:SetPoint("RIGHT", showWord, "LEFT", -2, 0)
+    show:SetHitRectInsets(0, -((showWord:GetStringWidth() or 0) + 2), 0, 0)
+    show:SetScript("OnClick", ns.Guard(function(self)
+        if not macro then return end
+        macro.fixed = not self:GetChecked() or nil
+        Macros.Face.Paint()
+    end))
+    Core.Tip(show, Macros.TEXT.iconShow, Macros.TEXT.iconShowTip)
     built.side = CreateFrame("Frame", nil, inside)
     built.side:SetPoint("TOPLEFT", I, -I)
     built.side:SetPoint("BOTTOM", 0, I)
@@ -418,6 +436,7 @@ function Icons.Open(which, given)
     if ns.off then return end
     if not frame then Build() end
     macro, done = which, given
+    show:SetChecked(not (which and which.fixed))
     frame:Show()
     frame:Raise()
     Read()
@@ -459,6 +478,10 @@ end
 
 function Icons.Clear()
     return clear
+end
+
+function Icons.Show()
+    return show
 end
 
 function Icons.Forget()

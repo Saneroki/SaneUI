@@ -199,3 +199,13 @@ function Press.MacroPicture(macro)
     end
     return Press.ICON
 end
+
+-- A macro's picture on its bar button, with step the one that comes next (Saneroki, 2026-11-09: "a choice to
+-- #showtooltip ... to show the icon of the spell. If it is not ticked it will be a fixed icon during the whole
+-- time"): the next step's, as the game's macros with the question mark and #showtooltip show the spell they would
+-- cast; a fixed one shows its picture of the list the whole time. Only the picture: the swirl and the dimming stay
+-- the next step's, as the game's button keeps the cooldown of the spell its macro would cast.
+function Press.FacePicture(macro, step)
+    if macro and macro.fixed then return Press.MacroPicture(macro) end
+    return Press.Picture(step, macro)
+end

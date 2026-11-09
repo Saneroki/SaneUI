@@ -81,6 +81,19 @@ Macros.TEXT = {
     name = Word("NAME", "Name"),
     nameTip = "What the macro is called. Names may repeat, and may be as long as you like.",
 
+    description = "Description",
+    descriptionNone = "No description yet. Edit writes one.",
+    descriptionEdit = "Edit",
+    descriptionSave = Word("SAVE", "Save"),
+    descriptionTip = "What the macro is for, in your words. Edit makes it writable; Save keeps what you wrote, Esc puts back what was there.",
+
+    noteButton = "?",
+    noteTitle = "About Sane Macros",
+    noteTip = "Shows the note about this editor again.",
+    noteClose = Word("OKAY", "Okay"),
+    -- Saneroki's words (2026-11-09), their spelling and grammar fixed.
+    note = "This is the modern macro editor. It is more capable than the native one. The macros shown here are just examples to show you how to set up macros.\n\nPress the icon at the top to add a picture, write its name that is displayed on the icon, add a description, and add spells or native macros or use the conditions below. Macros are automatically saved whenever you change anything.\n\nDrag the macro onto your action bars. If the macro has many spells in it, make sure it works by testing it in real combat.",
+
     key = "Key",
     keyNone = "Set key",
     keyTip = "The key of this macro, on this character. It stays out of the game's own key settings: take it away here and the key is as it was.",
@@ -111,6 +124,8 @@ Macros.TEXT = {
     iconNumber = "Picture %d",
     iconChosen = "The macro's picture now",
     iconClick = "Click: the macro's picture.",
+    iconShow = "Show the spell's picture (#showtooltip)",
+    iconShowTip = "Ticked: on its action bar button the macro shows the picture of the spell or item that comes next, as the game's macros do with #showtooltip. Unticked: the picture chosen here (with Steps' picture, its first step's) stays the whole time.",
     iconGroups = {
         all = "All", game = "In the game", weapons = "Weapons", armor = "Armor", consumables = "Consumables",
         goods = "Trade goods", items = "Other items", spells = "Spells and abilities", mounts = "Mounts and pets",
@@ -246,7 +261,7 @@ end
 
 
 -- The way in for other code (SaneUI.Combat.Macros.Add, a setup addon or a script): a normal macro of macro text
--- under its name, or a macro of steps ({ top, fresh, steps }, as Book.FromSteps reads it; Saneroki, 2026-11-04: a
+-- under its name, or a macro of steps ({ top, fresh, description, steps }, as Book.FromSteps reads it; Saneroki, 2026-11-04: a
 -- setup addon's rotations), with its own picture where one is given (a texture's path or number), made once; one of
 -- that name and owner already there is left as it is. owner: nil or "general" every character's, "class" this
 -- character's class's, "character" this character's alone (Book.SetOwner). Returns the macro and whether it is new.

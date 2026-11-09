@@ -14,6 +14,10 @@ of your normal action bar buttons. The macros are your account's, on every chara
   the game's key bindings). It opens on Combat's full screen, beside your action bars; where that cannot come (Edit Mode, the
   full screen switched off) as a window of its own, whose first title bar button goes to the game's own macro window. The
   game's macros stay as they are.
+- **The first time** (Saneroki, 2026-11-09: "a little overlay window in its window"): a note stands over the window,
+  in his words: what the editor is, that the macros shown are examples, how to make one, that every change is kept at
+  once, and to try a macro of many spells in a real fight. *Okay* closes it, once for the account; the **?** beside
+  *Place on bar* shows it again.
 - **New macro:** *New* makes an empty one, or takes one over from the game's macros as macro text. *Copy*, *Delete*.
 - **Whose it is and the filter** (Saneroki, 2026-11-04: "only the relevant ones for each class ... a dropdown that is show all
   ..., a general one ... and a per character one"): a macro is every character's (a general one: Sit, Follow, the potions),
@@ -32,7 +36,14 @@ of your normal action bar buttons. The macros are your account's, on every chara
   the full screen too: on the left the groups (All, In the game, each class, Weapons, Armor, Consumables, Trade goods,
   Other items, Spells and abilities, Mounts and pets, Achievements, Other), at the top a search box over the names and
   groups, then every icon of the game's. The mouse on one names it and says which spells and items show it. A click
-  gives the macro that picture; *Steps' picture* takes its own away. Esc closes it.
+  gives the macro that picture; *Steps' picture* takes its own away. Esc closes it. The tick at the top, *Show the
+  spell's picture (#showtooltip)* (Saneroki, 2026-11-09), on at first: its bar button shows the picture of the step
+  that comes next, as the game's macros do with `#showtooltip`; off, its picture stays the whole time (its own, with
+  *Steps' picture* its first step's). The swirl and the dimming are the next step's either way.
+- **Its description** (Saneroki, 2026-11-09: "a description field to macros where people can write a description by
+  pressing [edit] button"): under the name, three lines to read (the mouse on them shows it whole). *Edit* opens the
+  box, and the button says *Save* while it is open: *Save* keeps what is written, Esc puts back what was there;
+  choosing another macro or closing the window keeps it too. Up to 500 letters; shown only here.
 - **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, under their own line and marked with a gold **W**. A click opens it in the
   game's own macro window, on that macro; a drag puts it on an action bar as the game's macro; a right click makes a Sane
   Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *Sane UI*
@@ -183,6 +194,12 @@ of your normal action bar buttons. The macros are your account's, on every chara
   group chosen. A tooltip's spells and items by the game's names (`C_Spell.GetSpellName`, `C_Item.GetItemNameByID`;
   an item not read yet is asked for). Without the set (refused), the game's own lists (`GetMacroIcons`,
   `GetMacroItemIcons`) stand in, by file number. It closes when Sane Macros goes, at Esc, and at standing down.
+- **The picture on the bar** (`Press.FacePicture`). The game's macro with the question mark (`IconDataProvider.lua`,
+  `QuestionMarkIconFileDataID`, its first icon) shows the icon of the spell it would cast, `#showtooltip` naming it
+  and giving its tooltip; one with another icon keeps that icon (the client's, not in the export's Lua). Ours: the
+  next step's picture unless the macro is `fixed` (the tick off), then `Press.MacroPicture` the whole time. The game's
+  limits, for comparison: 255 letters a macro (`MacroFrameText`, both games), 120 account macros and 30 a character
+  (`Constants.MacroConsts`, both games); Sane Macros has neither but the 255 letters a step.
 - **What shows.** The macro's name along the bottom in the game's own way (`ActionButtonTemplate`'s `Name`:
   `GameFontHighlightSmallOutline`, 10 high, 2 up; one line, cut where too long; `macroName`). The picture of the turn the next press would take (`Press.Next`, the game's parser answers plainly in a fight),
   its cooldown by the game's duration object (a hidden value is taken as it is), dimmed by `C_Spell.IsSpellUsable` (plain in a
@@ -200,7 +217,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
 - **On the full screen.** The part `macros` of Combat's board (`Board.Part`). One page, made once, goes where it is shown: the panel's
   body or the window of its own (`Into`), and takes the room it has (`Editor.Size`, `Steps.Width`, `Detail.Width`). Opening the window
   of its own tries the full screen first (`ToBoard`), and it shuts unseen.
-- **Saved.** Macros in `Core.Store("Macros")` (the account, every profile; whose: `class`, `char`), keys, places and the list's
+- **Saved.** Macros in `Core.Store("Macros")` (the account, every profile; whose: `class`, `char`; `description`,
+  `fixed`), and there `noteRead`, the first time's note read; keys, places and the list's
   filter in `Core.Character("Macros")`: apart
   from Combat's own, so that their names cannot meet. The switches are Combat's (`macroChecks`, `macroDim`, `macroKey`). Its parts
   stand in `ns.Macros`, as Combat already has a `Book`, a `Face` and a `Press`-like name or two.
@@ -210,7 +228,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
   `SelectMacro`, where the client has them; the list reads the game's macros again at `UPDATE_MACROS`.
 - **The way in for other code:** `SaneUI.Combat.Macros.Add(name, body, picture, owner)` makes a macro under that name, once, with that
   picture where one is given (a texture's path or number; `Book.Icon` keeps no question mark): of macro
-  text a normal macro, of a table `{ top, fresh, steps = { step, ... } }` a macro of those steps, each step in the shape
+  text a normal macro, of a table `{ top, fresh, description, steps = { step, ... } }` a macro of those steps, each step in the shape
   `Book.lua` saves (`kind`, `what`, `units = { "mouseover", "" }` or a `unit` alone, `when = { { word, no, value } }`, `often`) and cleaned as a saved one is
   (`Book.FromSteps`). `owner`: nil every character's, `"class"` this character's class's, `"character"` its own. One of that
   name and owner already there is left as it is (a setup addon, a script). `Macros.Set(name, body, owner)` makes that macro anew from a body as Add takes it, its number, picture, keys and places kept, its button taking it at once or after a fight (Saneroki, 2026-11-04: a potion macro kept on the best potion held). `Macros.PlaceOn(name, place)` puts the macro of
@@ -239,4 +257,4 @@ of your normal action bar buttons. The macros are your account's, on every chara
 | `Picker.lua` | The list behind the +; macro text's commands |
 | `Steps.lua` | The steps in a list: choosing, dragging, dropping |
 | `Detail.lua` | The chosen step's settings; a spell's + and the fly-out under its name |
-| `Editor.lua` | The window, the macros' list as squares (yours, then the game's marked W), its head, the key's capture, the game's window |
+| `Editor.lua` | The window, the macros' list as squares (yours, then the game's marked W), its head and description, the key's capture, the first time's note, the game's window |

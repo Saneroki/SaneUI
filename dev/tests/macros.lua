@@ -293,6 +293,21 @@ check(copied.name == TEXT.copyOf:format(cleaned.name) and copied.steps[1] ~= cle
 check(copied.steps[1].units[1] == "focus" and copied.steps[1].units ~= cleaned.steps[1].units, "its own Cast on")
 Book.Delete(copied)
 check(Book.Find(copied.id) == nil, "deleted")
+-- A description and a fixed picture (Saneroki, 2026-11-09), kept in their shape and in a copy.
+cleaned.description, cleaned.fixed = "  Rend first, then Slam.  ", "yes"
+Book.Clean()
+check(cleaned.description == "Rend first, then Slam." and cleaned.fixed == true,
+      "a description without spaces round it, the picture fixed as a tick")
+cleaned.description, cleaned.fixed = { "odd" }, false
+Book.Clean()
+check(cleaned.description == nil and cleaned.fixed == nil, "rubbish for none")
+check(Book.Description(("x"):rep(600)) == ("x"):rep(Book.DESCRIPTION) and Book.Description("   ") == nil,
+      "at most so many letters; spaces alone are none")
+cleaned.description, cleaned.fixed = "Mine", true
+copied = Book.Copy(cleaned)
+check(copied.description == "Mine" and copied.fixed == true, "a copy keeps both")
+Book.Delete(copied)
+cleaned.description, cleaned.fixed = nil, nil
 
 local function Macro(...)
     local macro = Book.New("Test")
@@ -596,7 +611,17 @@ check(face.icon:GetTexture() == 1000 + 1464, "the next step's picture")
 keyed.icon = "Interface\\Icons\\INV_Sword_04"
 Face.Paint()
 check(face.icon:GetTexture() == 1000 + 1464, "a step with a spell shows the spell's, the macro's own picture or not")
+-- Fixed (Saneroki, 2026-11-09: "If it is not ticked it will be a fixed icon during the whole time"): the macro's
+-- picture the whole time; the swirl stays the next step's.
+keyed.fixed = true
+Face.Paint()
+check(face.icon:GetTexture() == "Interface\\Icons\\INV_Sword_04", "fixed: the macro's own picture")
+check(face.cooldown._duration == "duration of Slam", "and the next step's swirl")
 keyed.icon = nil
+Face.Paint()
+check(face.icon:GetTexture() == Press.MacroPicture(keyed) and Press.MacroPicture(keyed) == 1000 + 1464,
+      "fixed with none of its own: its first step's, as in the list")
+keyed.fixed = nil
 Face.Paint()
 check(face.cooldown._duration == "duration of Slam", "the swirl from the game's duration object")
 check(face.key:GetText() == "3", "the key shows")
@@ -779,6 +804,62 @@ Editor.AddStep(Book.Step("spell", "Shield Slam"), 0)
 check(inner.steps[1].what == "Shield Slam", "or where it fell")
 Editor.TakeStep(1)
 check(#inner.steps == 2 and inner.steps[1].what == "Slam", "taken away")
+
+-- The note the first time (Saneroki, 2026-11-09: "a little overlay window in its window"): once an account, his words,
+-- its button the end of it, kept in Core's saved settings; the ? brings it again.
+do
+    local note = Editor.Note()
+    check(note and note:IsShown() and note:GetParent() == Editor.Page() and note.text:GetText() == TEXT.note,
+          "the note over the page, the first time")
+    check(TEXT.note:find("more capable than the native one", 1, true) and not TEXT.note:find("when ever", 1, true),
+          "his words, mended")
+    note.close:GetScript("OnClick")(note.close)
+    check(not note:IsShown() and store.noteRead == true, "its button closes it, for the account")
+    Editor.Toggle()
+    Editor.Toggle()
+    check(Editor.Shown() and not note:IsShown(), "opened again: no note")
+    local _, _, _, noteButton = Editor.AboutParts()
+    noteButton:GetScript("OnClick")(noteButton)
+    check(note:IsShown(), "the ? brings it again")
+    note.close:GetScript("OnClick")(note.close)
+end
+
+-- The description (Saneroki, 2026-11-09: "by pressing [edit] button. While the description field is writeable /
+-- changeable the button says save").
+do
+    local about, box, button = Editor.AboutParts()
+    local function Press(self) self:GetScript("OnClick")(self) end
+    check(about:IsShown() and not box:IsShown() and button:GetText() == TEXT.descriptionEdit
+          and about:GetText() == TEXT.descriptionNone, "none yet: words to read, the button Edit")
+    Press(button)
+    check(box:IsShown() and not about:IsShown() and button:GetText() == TEXT.descriptionSave, "Edit: the box, the button Save")
+    box.EditBox:SetText("  Slam, then Rend.  ")
+    Editor.Refresh()
+    check(box:IsShown() and button:GetText() == TEXT.descriptionSave, "a look again keeps it open")
+    Press(button)
+    check(inner.description == "Slam, then Rend." and about:GetText() == "Slam, then Rend."
+          and button:GetText() == TEXT.descriptionEdit and not box:IsShown(), "Save: kept, words to read again")
+    Press(button)
+    check(box.EditBox:GetText() == "Slam, then Rend.", "Edit again: the words there")
+    box.EditBox:SetText("Something else")
+    box.EditBox:GetScript("OnEscapePressed")(box.EditBox)
+    check(inner.description == "Slam, then Rend." and not box:IsShown(), "Esc: as it was")
+    -- Another macro chosen while it is written: what is written is kept, the other's shows.
+    local other = Book.New("Other")
+    Press(button)
+    box.EditBox:SetText("   ")
+    Editor.Choose(other)
+    check(inner.description == nil and about:GetText() == TEXT.descriptionNone and button:GetText() == TEXT.descriptionEdit,
+          "another chosen: kept (emptied here), the new one's shows")
+    Editor.Choose(inner)
+    Press(button)
+    box.EditBox:SetText("Slam, then Rend.")
+    Editor.Toggle()
+    check(inner.description == "Slam, then Rend.", "the window closed: kept")
+    Editor.Toggle()
+    Book.Delete(other)
+    Editor.Choose(inner)
+end
 
 -- The + list: every group, every line with its explanation.
 local groups = Macros.Conditions.Groups()
@@ -1010,6 +1091,11 @@ check(rotation.steps[2].often == Book.MOST_OFTEN and rotation.steps[3].kind == "
 check(Macros.Add("Odd", { top = true }) == nil, "a table without steps is no macro")
 local sequence = Macros.Add("Builder", { steps = { { kind = "spell", what = "Shred" } } })
 check(not sequence.top and sequence.fresh, "without top each press goes on; back to the start after a fight")
+local described = Macros.Add("Described", { description = "  For tanking.  ", steps = { { kind = "spell", what = "Taunt" } } })
+check(described.description == "For tanking.", "with the description given (Launch Setup's examples)")
+Macros.Set("Described", { steps = { { kind = "spell", what = "Sunder Armor" } } })
+check(described.description == "For tanking." and described.steps[1].what == "Sunder Armor", "made anew without one: it stays")
+Book.Delete(described)
 Book.Delete(rotation)
 Book.Delete(sequence)
 
@@ -1262,12 +1348,23 @@ do
     check(GameTooltip._text == "INV Sword 04" and said:find("Weapons", 1, true) and said:find("Hearthstone", 1, true)
           and said:find("File 135274", 1, true), "its tooltip: name, group, item, file: " .. said)
     GameTooltip._lines = nil
+    -- The tick at the top (Saneroki, 2026-11-09: "a choice to #showtooltip"): on at first; off, the picture is fixed.
+    local show = Icons.Show()
+    check(show:GetChecked() == true and macro.fixed == nil, "the next step's picture, at first")
+    show:SetChecked(false)
+    show:GetScript("OnClick")(show)
+    check(macro.fixed == true and Icons.Shown(), "unticked: fixed, and the window stays")
+    show:SetChecked(true)
+    show:GetScript("OnClick")(show)
+    check(macro.fixed == nil, "ticked again: the next step's")
+    macro.fixed = true
     -- A click: the macro's picture, the window closed.
     sword:GetScript("OnClick")(sword)
     check(macro.icon == 135274 and not Icons.Shown() and Press.MacroPicture(macro) == 135274, "clicked: the macro's picture")
     Editor.ChoosePicture()
     Frames()
     check(box.rows[2].mark:IsShown() and not box.rows[1].mark:IsShown(), "the picture it has is marked")
+    check(macro.fixed == true and Icons.Show():GetChecked() == false, "a fixed one opens unticked")
     Icons.Clear():GetScript("OnClick")(Icons.Clear())
     check(macro.icon == nil and not Icons.Shown(), "Steps' picture: none of its own")
     Editor.ChoosePicture()

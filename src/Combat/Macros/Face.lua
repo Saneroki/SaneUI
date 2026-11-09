@@ -6,7 +6,8 @@ local Macros = ns.Macros
 --  Our button lying over a bar button: the macro's look there and its own press
 --  (the same hub, Press.lua). It sits in the bar's frame, so it comes and goes
 --  with the bar, at rest too, and it never touches the game's button, which
---  keeps what it holds underneath. It shows the step that comes next, that
+--  keeps what it holds underneath. It shows the step that comes next (a macro
+--  whose picture is fixed, its own the whole time: Press.FacePicture), that
 --  step's cooldown by the game's duration object (a hidden value in a fight is
 --  taken as it is), dimmed while the game says it cannot be used, or while a
 --  step cast once a target waits for the next one (Press.Waits); the macro's
@@ -47,7 +48,7 @@ local function PaintOne(face)
     local macro = face.macro
     local turn = macro and Macros.Press.Next(macro)
     local step = turn and turn.step or (macro and macro.steps[1])
-    face.icon:SetTexture(Macros.Press.Picture(step, macro))
+    face.icon:SetTexture(Macros.Press.FacePicture(macro, step))
     local spell = step and Macros.Press.SpellOf(step)
     local dim = false
     if ns.options.macroDim and Macros.Press.Waits(turn) then

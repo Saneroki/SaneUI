@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Sane Macros: a macro has a description now, under its name: click
+  Edit, write, and Save. The picture window has a tick at the top,
+  Show the spell's picture (#showtooltip): untick it and the macro's
+  bar button keeps its picture instead of showing the next spell's.
+  The first time it opens, a short note explains the editor; the ?
+  beside Place on bar shows it again.
 - Searches with a list of matches under them (Edit tracked, a
   Sane Macros step's spell, a settings page's search): Up and Down go
   through the matches, each with its tooltip, and Enter takes the one

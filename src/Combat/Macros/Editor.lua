@@ -8,7 +8,9 @@ local Macros = ns.Macros
 --  marked W (Saneroki, 2026-11-03), as squares of their pictures with their names
 --  under them, as the game's window shows its macros (Saneroki, 2026-11-04); on
 --  the right the one chosen: its name, key and
---  bar button, its order, its steps, and under them the chosen step's settings.
+--  bar button, its description (Saneroki, 2026-11-09: written after Edit, the
+--  button saying Save meanwhile), its order, its steps, and under them the
+--  chosen step's settings.
 --  A filter over the list (Saneroki, 2026-11-04: "a dropdown that is show all ...,
 --  a general one ... and a per character one") shows this character's macros, the
 --  general ones or all of the account's; a right click on one says whose it is.
@@ -20,12 +22,17 @@ local Macros = ns.Macros
 --  the full screen switched off) it is a window of its own, made at login to stand
 --  for the game's window. What it holds is one page, made when first shown, that
 --  goes where it is shown.
+--
+--  The first time it shows on an account a note stands over it (Saneroki,
+--  2026-11-09: "a little overlay window in its window"), his words, until its
+--  button is pressed; kept in Core's saved settings (the store Macros, the
+--  account's). The ? beside the bar button shows it again.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Editor = {}
 Macros.Editor = Editor
 
-Editor.WIDTH, Editor.HEIGHT = 920, 640
+Editor.WIDTH, Editor.HEIGHT = 920, 688
 Editor.LEAST = { 800, 480 } -- the panel on the full screen at least this large
 Editor.INSET = 12
 Editor.LIST = 250    -- the macros' list, its scroll bar too
@@ -36,18 +43,25 @@ Editor.GAP = 6       -- between two macros in a row
 Editor.HEAD = 22     -- the line over the game's macros
 Editor.ICON = 36     -- the macro's picture
 Editor.DRAG = "LeftButton"
-Editor.BESIDE = 306  -- of the right side's width, what is not the name's box
+Editor.BESIDE = 334  -- of the right side's width, what is not the name's box
+Editor.ABOUT = 48    -- the description's room, under the name: three lines
+Editor.ABOUT_WORD = 90 -- the word Description, and the room it takes
+Editor.NOTE = 460    -- the note's width
+Editor.NOTE_SHADE = 0.55 -- the page darkened under the note
 
 local KEY = "macros"
 local frame, window, built, page, onBoard
 local list, child, empty, gameHead, right, picture, name, keyButton, placeButton, orderMenu, fresh, freshWord, flags, copy, delete
 local filterMenu
 local catcher
+local about, aboutBox, aboutButton, noteButton, note
+local writing    -- the macro whose description is being written
 local lines = {}
 local chosen     -- the macro shown
 local step       -- the step chosen
 
 local Fill
+local StopWriting
 
 -- Where the game's character macros start: after the account's.
 local function AccountMax()
@@ -95,6 +109,7 @@ function Editor.Changed()
 end
 
 function Editor.Choose(macro)
+    StopWriting(true)
     chosen = macro
     step = macro and macro.steps[1] or nil
     Fill()
@@ -262,6 +277,90 @@ local function Lines()
     child:SetHeight(math.max(top, 1))
 end
 
+-- The description (Saneroki, 2026-11-09: "a description field to macros where people can write a description by
+-- pressing [edit] button. While the description field is writeable / changeable the button says save"): its words to
+-- read, or the box to write them in while it is written, the button Save then.
+function Editor.About()
+    if not built then return end
+    local text = chosen and chosen.description
+    local open = writing ~= nil and writing == chosen
+    about:SetText(text or Macros.TEXT.descriptionNone)
+    about:SetFontObject(text and "GameFontHighlightSmall" or "GameFontDisableSmall")
+    about:SetShown(not open)
+    aboutBox:SetShown(open)
+    aboutButton:SetText(open and Macros.TEXT.descriptionSave or Macros.TEXT.descriptionEdit)
+end
+
+-- The description being written is kept (keep: Save, another macro chosen, the page gone) or left as it was (Esc),
+-- and its box shut.
+function StopWriting(keep)
+    local macro = writing
+    if not macro then return end
+    writing = nil
+    if keep then macro.description = Macros.Book.Description(aboutBox.EditBox:GetText()) end
+    aboutBox.EditBox:ClearFocus()
+    Editor.About()
+end
+
+-- Edit: the box, with the words there, the cursor after them; Save: they are kept.
+local function AboutClick()
+    if not chosen then return end
+    if writing then return StopWriting(true) end
+    writing = chosen
+    local text = chosen.description or ""
+    aboutBox.EditBox:SetText(text)
+    Editor.About()
+    aboutBox.EditBox:SetFocus()
+    aboutBox.EditBox:SetCursorPosition(#text)
+end
+
+-- The note over the page (Saneroki's words), its button the end of it: once an account, the ? brings it again.
+local function Note()
+    if note then return note end
+    note = CreateFrame("Frame", nil, page)
+    note:SetAllPoints(page)
+    note:EnableMouse(true) -- the page under it waits until it is read
+    local shade = note:CreateTexture(nil, "BACKGROUND")
+    shade:SetAllPoints()
+    shade:SetColorTexture(0, 0, 0, Editor.NOTE_SHADE)
+    local card = CreateFrame("Frame", nil, note)
+    card:SetWidth(Editor.NOTE)
+    card:SetPoint("CENTER", 0, 20)
+    note.skin = Core.Skin.New(card)
+    local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", 0, -18)
+    title:SetText(Macros.TEXT.title)
+    local text = card:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    text:SetPoint("TOP", title, "BOTTOM", 0, -12)
+    text:SetWidth(Editor.NOTE - 48)
+    text:SetJustifyH("LEFT")
+    text:SetSpacing(2)
+    text:SetText(Macros.TEXT.note)
+    local close = Macros.Button(card, Macros.TEXT.noteClose, 110, 24)
+    close:SetPoint("BOTTOM", 0, 18)
+    close:SetScript("OnClick", ns.Guard(function()
+        Macros.store.noteRead = true
+        note:Hide()
+    end))
+    note.card, note.title, note.text, note.close = card, title, text, close
+    return note
+end
+
+-- The note shows: as tall as its words, over all the page holds wherever the page went (the full screen's panel, the
+-- window of its own).
+function Editor.ShowNote()
+    if not built then return end
+    local shown = Note()
+    shown:SetFrameLevel(page:GetFrameLevel() + 40)
+    shown.card:SetFrameLevel(shown:GetFrameLevel() + 2)
+    shown.skin:SetFrameLevel(shown:GetFrameLevel() + 1)
+    local words, title = shown.text:GetStringHeight(), shown.title:GetStringHeight()
+    shown.card:SetHeight(18 + (type(title) == "number" and title or 16) + 12 + (type(words) == "number" and words or 180)
+                         + 18 + 24 + 18)
+    shown:Show()
+    shown.skin:Rest() -- its corners measured on its size now, as a window's at its placing
+end
+
 local function Head()
     picture.icon:SetTexture(Picture(chosen))
     if not name:HasFocus() then name:SetText(chosen.name) end
@@ -273,6 +372,7 @@ local function Head()
     else
         placeButton:SetText(Macros.TEXT.place)
     end
+    Editor.About()
     orderMenu:GenerateMenu()
     fresh:SetChecked(chosen.fresh)
     fresh:SetShown(not chosen.top)
@@ -589,8 +689,11 @@ local function Left(inside, I)
     Editor.gameButton = game
     local new = Button(inside, Macros.TEXT.new, 66, NewClick, Macros.TEXT.new, Macros.TEXT.newTip)
     new:SetPoint("BOTTOMLEFT", I, I)
-    copy = Button(inside, Macros.TEXT.copy, 66, function() if chosen then Editor.Choose(Macros.Book.Copy(chosen)) end end,
-                  Macros.TEXT.copy, Macros.TEXT.copyTip)
+    copy = Button(inside, Macros.TEXT.copy, 66, function()
+        if not chosen then return end
+        StopWriting(true) -- what is written goes into the copy too
+        Editor.Choose(Macros.Book.Copy(chosen))
+    end, Macros.TEXT.copy, Macros.TEXT.copyTip)
     copy:SetPoint("LEFT", new, "RIGHT", 4, 0)
     delete = Button(inside, Macros.TEXT.delete, 66, DeleteClick, Macros.TEXT.delete, Macros.TEXT.deleteTip)
     delete:SetPoint("LEFT", copy, "RIGHT", 4, 0)
@@ -639,9 +742,43 @@ local function Top()
     placeButton:SetPoint("LEFT", keyButton, "RIGHT", 6, 0)
     placeButton:HookScript("OnEnter", ns.Guard(PlaceTip))
     placeButton:HookScript("OnLeave", ns.Guard(Core.HideTip))
+    noteButton = Button(right, Macros.TEXT.noteButton, 22, Editor.ShowNote, Macros.TEXT.noteTitle, Macros.TEXT.noteTip)
+    noteButton:SetPoint("LEFT", placeButton, "RIGHT", 6, 0)
+
+    -- The description: three lines to read; to write, the game's box of several lines in their place.
+    local A = Editor.ABOUT
+    local aboutWord = right:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    aboutWord:SetPoint("TOPLEFT", 0, -48)
+    aboutWord:SetWidth(Editor.ABOUT_WORD - 6)
+    aboutWord:SetJustifyH("LEFT")
+    aboutWord:SetText(Macros.TEXT.description)
+    aboutButton = Button(right, Macros.TEXT.descriptionEdit, 66, AboutClick, Macros.TEXT.description, Macros.TEXT.descriptionTip)
+    aboutButton:SetPoint("TOPRIGHT", right, "TOPRIGHT", 0, -44)
+    about = right:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    about:SetPoint("TOPLEFT", Editor.ABOUT_WORD, -48)
+    about:SetPoint("RIGHT", aboutButton, "LEFT", -12, 0)
+    about:SetHeight(A - 10)
+    about:SetJustifyH("LEFT")
+    about:SetJustifyV("TOP")
+    about:SetMaxLines(3)
+    local spot = CreateFrame("Frame", nil, right) -- the whole description in a tooltip, where three lines cut it
+    spot:SetAllPoints(about)
+    spot:EnableMouse(true)
+    Core.Tip(spot, Macros.TEXT.description, function()
+        return chosen and chosen.description or Macros.TEXT.descriptionTip
+    end)
+    aboutBox = CreateFrame("ScrollFrame", nil, right, "InputScrollFrameTemplate")
+    aboutBox:SetPoint("TOPLEFT", Editor.ABOUT_WORD + 4, -46)
+    aboutBox:SetPoint("RIGHT", aboutButton, "LEFT", -14, 0)
+    aboutBox:SetHeight(A - 8)
+    aboutBox.hideCharCount = true
+    if aboutBox.CharCount then aboutBox.CharCount:Hide() end
+    aboutBox.EditBox:SetMaxLetters(Macros.Book.DESCRIPTION)
+    aboutBox.EditBox:HookScript("OnEscapePressed", ns.Guard(function() StopWriting(false) end))
+    aboutBox:Hide()
 
     local orderWord = right:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    orderWord:SetPoint("TOPLEFT", 0, -50)
+    orderWord:SetPoint("TOPLEFT", 0, -50 - A)
     orderWord:SetText(Macros.TEXT.order)
     orderMenu = CreateFrame("DropdownButton", nil, right, "WowStyle1DropdownTemplate")
     orderMenu:SetWidth(240)
@@ -659,10 +796,10 @@ local function Top()
     freshWord:SetText(Macros.TEXT.fresh)
 
     local stepsWord = right:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    stepsWord:SetPoint("TOPLEFT", 0, -88)
+    stepsWord:SetPoint("TOPLEFT", 0, -88 - A)
     stepsWord:SetText(Macros.TEXT.steps)
     local add = Button(right, Macros.TEXT.add, 100, function() Editor.AddStep(Macros.Book.Step("spell")) end, Macros.TEXT.add, Macros.TEXT.addTip)
-    add:SetPoint("TOPRIGHT", right, "TOPRIGHT", 0, -82)
+    add:SetPoint("TOPRIGHT", right, "TOPRIGHT", 0, -82 - A)
 end
 
 -- The page, made once, in parent.
@@ -688,7 +825,7 @@ local function Build(parent)
     below:SetHeight(Macros.Detail.HEIGHT)
     Macros.Detail.Build(below)
     local above = CreateFrame("Frame", nil, right)
-    above:SetPoint("TOPLEFT", 0, -112)
+    above:SetPoint("TOPLEFT", 0, -112 - Editor.ABOUT)
     above:SetPoint("BOTTOMRIGHT", below, "TOPRIGHT", 0, 8)
     Macros.Steps.Build(above)
 end
@@ -698,6 +835,7 @@ function Editor.Size(width)
     if not built then return end
     local wide = width - 3 * Editor.INSET - Editor.LIST
     name:SetWidth(wide - Editor.BESIDE)
+    aboutBox.EditBox:SetWidth(wide - Editor.ABOUT_WORD - 4 - 66 - 14 - 18)
     Macros.Steps.Width(wide - 24)
     Macros.Detail.Width(wide)
 end
@@ -711,6 +849,7 @@ local function Into(parent, width)
     page:Show()
     Editor.Size(width)
     if not chosen then Editor.Choose(Macros.Book.Shown(Filter())[1]) else Fill() end
+    if not Macros.store.noteRead then Editor.ShowNote() end
 end
 
 -- Whether its place is on the full screen now: it was brought there, or stands there already.
@@ -730,6 +869,7 @@ local function Shown()
 end
 
 local function Hidden()
+    StopWriting(true)
     Macros.Icons.Close()
     Macros.Spells.Close()
     Macros.Place.Stop()
@@ -755,6 +895,7 @@ function Part.Show(on)
         if frame and frame:IsShown() then frame:Hide() end
         return Into(body, body:GetWidth())
     end
+    StopWriting(true)
     Macros.Icons.Close()
     Macros.Spells.Close()
     Macros.Place.Stop()
@@ -805,6 +946,14 @@ end
 
 function Editor.Page()
     return page
+end
+
+function Editor.Note()
+    return note
+end
+
+function Editor.AboutParts()
+    return about, aboutBox, aboutButton, noteButton
 end
 
 function Editor.Line(index)
