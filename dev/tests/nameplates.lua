@@ -3,7 +3,8 @@
 -- the bar's health (hidden values passed on untouched), colours, the border lit on your target and focus, the rank's
 -- line and the glow behind it, the power line, the line inside the bar and the bar's width from it, the raid marker,
 -- the aura containers around the bar, the combo points on your target's bar, strangers' plates out of sight, the
--- scaling by distance, the settings, and standing down. The look can only be judged in the game.
+-- scaling by distance, what the plates show (the health bar only, the spells only: the dot, the arrow), the
+-- transparency, the settings, and standing down. The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/nameplates.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -1620,6 +1621,139 @@ casts.nameplate1 = nil
 W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
 check(not castBar:IsShown() and dress.outlined == outlined, "failed: gone, the outline as before")
 check(foot._points[1][2] == outlined and foot._points[1][3] == "BOTTOMLEFT", "and under the lowest row again once it went")
+
+-------------------------------------------------------------------------------
+--  What the plates show (Saneroki, 2026-11-09): the health bar only, the spells only; your target's transparency
+-------------------------------------------------------------------------------
+;(function()
+    local Marks, pixel = ns.Marks, Core.Pixels(dress, 1)
+    local option = Core.Described(ns.name, "style")
+    check(ns.Style() == "both" and option.choices == ns.STYLES and option.default == "both" and ns.options.dot == false,
+        "at first the plates show the bar and the spells; the dot off")
+    check(Core.Described(ns.name, "dot").parent == "style" and Core.Described(ns.name, "dot").parentValue == "spells",
+        "the dot under Plates show, free only with Spells only")
+    -- Health bar only: no auras, no dispel type, nothing under the plate from elsewhere; the bar, its line and the cast
+    -- bar stay.
+    Core.Set(ns.name, "style", "bar")
+    check(not dress.own:IsShown() and dress.own._unit == "none" and not dress.foes:IsShown() and not dress.control:IsShown(),
+        "health bar only: no debuffs, buffs or crowd control")
+    check(dress.marks.dispelOn == false and dress.marks.barrierOn and dress.marks.lostOn,
+        "no dispel type above it; the barrier and lost health on the bar stay")
+    check(not dress.foot:IsShown() and ns.Plate.Foot(plates.nameplate1) == dress.foot,
+        "the foot under it, where Combat's tracked auras stand, out of sight with them")
+    check(dress.health:IsShown() and dress.top:IsShown() and dress.name._text == "Young Wolf" and dress.border[1]:IsShown()
+        and dress.want ~= nil, "the bar, its line and its outline stay")
+    check(ns.options.dot == false and not dress.dot:IsShown() and not dress.arrow:IsShown(), "no dot, no arrow")
+    casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+    W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+    check(castBar:IsShown() and dress.border[2]._points[1][2] == castBar and dress.border[1]._points[1][2] == dress,
+        "the cast bar stays, in the one outline")
+    casts.nameplate1 = nil
+    W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
+    -- Spells only: no bar, no name, no outline; the auras where they stand, the dot on with it, an arrow on your target.
+    Core.Set(ns.name, "style", "spells")
+    check(ns.options.dot == true, "spells only: the dot switched on with it")
+    check(not dress.health:IsShown() and not dress.top:IsShown(), "no bar (its fill, power line, barrier) and no line: no name")
+    check(not dress.border[1]:IsShown() and not dress.rankLine[1]:IsShown() and dress.glow._alpha == 0,
+        "no outline, no rank's line, no glow while no row is under it")
+    units.nameplate1.classification = "elite"
+    dress:GetScript("OnEvent")(dress, "UNIT_CLASSIFICATION_CHANGED", "nameplate1")
+    Bar.Glow(dress, true)
+    check(dress.rank == Bar.RANKS.elite and not dress.rankLine[1]:IsShown() and dress.glow._alpha == 0,
+        "an elite with your aggro: neither all the same")
+    check(dress.marks.barrierOn == false and dress.marks.lostOn == false and dress.marks.dispelOn,
+        "nothing of the bar's marks but the dispel type")
+    check(dress.want == nil and dress._width == 120 and dress.outside == 0
+        and dress.foes._points[1][4] == -Auras.GAP and dress.own._points[1][2] == dress and dress.control._points[1][2] == dress,
+        "as wide as the game's own bar under it, the auras around that")
+    check(dress.own:IsShown() and dress.foes:IsShown() and dress.control:IsShown() and dress.own._unit == "nameplate1"
+        and dress.own._groups.own.most == Auras.Slots(120) and dress.foot:IsShown(),
+        "your debuffs above, a foe's buffs left, crowd control right, the tracked auras under it")
+    check(dress.dot:IsShown() and dress.dot._points[1][1] == "CENTER" and dress.dot._points[1][2] == dress
+        and dress.dot._width == Marks.DOT and #dress.dot._masks == 1, "a small round dot in the middle")
+    check(dress.dot._vertex[1] == 1 and dress.dot._vertex[2] == 0 and dress.dot._vertex[4] == Marks.FAINT,
+        "in the colour its bar would have (a foe's red), faint")
+    check(not dress.arrow:IsShown(), "no arrow: not your target")
+    units.target, plates.target = units.nameplate1, plates.nameplate1
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(dress.arrow:IsShown() and (dress.arrow._atlas == Marks.ARROW or dress.arrow._texture == Marks.ARROW_FILE)
+        and dress.arrow._points[1][1] == "BOTTOM" and dress.arrow._points[1][3] == "TOP" and dress.arrow._points[1][5] == Auras.SIZE
+        and dress.arrow._width == Marks.ARROW_SIZE, "your target: the game's gold arrow over it, above its debuffs")
+    units.target, plates.target = nil, nil
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(not dress.arrow:IsShown(), "let go: gone")
+    -- The raid marker stays, alone in the middle, in the dot's place.
+    units.nameplate1.raid = 3
+    W.Fire("RAID_TARGET_UPDATE")
+    check(dress.raid:IsShown() and dress.raid._parent ~= dress.top and dress.raid._points[1][1] == "CENTER"
+        and dress.raid._points[1][2] == dress and not dress.dot:IsShown() and dress.want == nil,
+        "a raid marker: alone in the middle, in place of the dot")
+    units.nameplate1.raid = nil
+    W.Fire("RAID_TARGET_UPDATE")
+    check(not dress.raid:IsShown() and dress.dot:IsShown(), "gone: the dot again")
+    -- A cast: the outline around it alone, round at its top too.
+    casts.nameplate1 = { name = "Frostbolt", starts = W.clock * 1000, ends = (W.clock + 3) * 1000 }
+    W.Fire("UNIT_SPELLCAST_START", "nameplate1")
+    local round = dress._height * Bar.CAP - pixel
+    check(castBar:IsShown() and dress.border[1]:IsShown() and dress.border[1]._points[1][2] == castBar
+        and dress.border[2]._points[1][2] == castBar and Near(dress.border[2]._height, castBar._height / 2)
+        and not dress.rankLine[1]:IsShown(), "a cast: the outline around the cast bar alone")
+    check(castBar.icon._points[1][5] == -pixel and Near(castBar.crown._width, round) and Near(castBar.corner._width, round)
+        and castBar.caps[2]._texture == Core.Shape.CAP_RIGHT and castBar.caps[1]._texture == Bar.WHITE,
+        "a pixel inside it at its top as well, round at all four corners")
+    casts.nameplate1 = nil
+    W.Fire("UNIT_SPELLCAST_FAILED", "nameplate1")
+    check(not castBar:IsShown() and not dress.border[1]:IsShown(), "gone: no outline")
+    -- Your combo points with no bar above them: the outline's top is theirs too.
+    Resource.Shape(dress, true)
+    check(dress.strip.inner._points[1][5] == -pixel and dress.strip.caps[1]._texture == Core.Shape.CAP_LEFT
+        and dress.strip.caps[2]._texture == Core.Shape.CAP_RIGHT, "combo points with nothing above: a pixel inside at the top, round all round")
+    Resource.Shape(dress, false)
+    check(dress.strip.caps[1]._texture == Core.Shape.CORNER.TOPLEFT, "over a cast: round at their top alone")
+    -- The dot off by its own switch; on again when the plates turn to Spells only anew. A profile's own value kept.
+    Core.Set(ns.name, "dot", false)
+    check(not dress.dot:IsShown() and ns.Style() == "spells", "the dot off by its switch")
+    Core.Set(ns.name, "style", "both")
+    Core.Set(ns.name, "style", "spells")
+    check(ns.options.dot == true and dress.dot:IsShown(), "turned to Spells only anew: on again")
+    ns.options.style, ns.options.dot = "both", false
+    Core.described[ns.name].replaced() -- another profile's settings came in
+    ns.options.style = "spells"
+    Core.described[ns.name].replaced()
+    check(ns.options.dot == false and not dress.dot:IsShown() and not dress.health:IsShown(),
+        "another profile's Spells only: its dot as it has it")
+    -- Back to the bar and the spells: all as it was.
+    Core.Set(ns.name, "style", "both")
+    check(dress.health:IsShown() and dress.top:IsShown() and dress.border[1]:IsShown() and dress.rankLine[1]:IsShown()
+        and dress.border[1]._points[1][2] == dress and dress.want ~= nil and dress._width == dress.want
+        and dress.name._text == "Young Wolf" and dress.foes._points[1][4] == -(Auras.GAP + dress.outside),
+        "back to both: the bar, its line, its outline and rank's line, as wide as the line")
+    Resource.Shape(dress, true)
+    check(castBar.icon._points[1][5] == 0 and castBar.caps[2]._texture == Core.Shape.CORNER.BOTTOMRIGHT
+        and dress.strip.inner._points[1][5] == 0 and dress.strip.caps[1]._texture == Core.Shape.CORNER.BOTTOMLEFT,
+        "the cast bar and the combo points square at their top again")
+    check(dress.marks.barrierOn and dress.marks.dispelOn and dress.own:IsShown() and dress.foot:IsShown()
+        and not dress.dot:IsShown() and not dress.arrow:IsShown(), "the marks and auras back, no dot or arrow")
+    ns.options.dot = false
+    Bar.Glow(dress, false)
+    units.nameplate1.classification = "normal"
+    dress:GetScript("OnEvent")(dress, "UNIT_CLASSIFICATION_CHANGED", "nameplate1")
+    -- Your target's transparency, a slider of its own; the others' by Nameplate transparency.
+    Core.Set(ns.name, "targetTransparency", 30)
+    check(dress._alpha == 1, "not your target: the other slider's (0%)")
+    units.target, plates.target = units.nameplate1, plates.nameplate1
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(Near(dress._alpha, 0.7) and Near(plates.nameplate1.UnitFrame._alpha, 0.7),
+        "your target 30% seen through, the game's unit frame under it too")
+    Core.Set(ns.name, "transparency", 50)
+    check(Near(dress._alpha, 0.7), "the others' slider leaves your target's alone")
+    units.target, plates.target = nil, nil
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(Near(dress._alpha, 0.5), "let go: the others' 50%")
+    Core.Set(ns.name, "transparency", 0)
+    Core.Set(ns.name, "targetTransparency", 0)
+    check(dress._alpha == 1, "both 0%: solid")
+end)()
 
 -------------------------------------------------------------------------------
 --  Retail: what it lacks of Forever's hidden, a plate dressed and filled as in Forever

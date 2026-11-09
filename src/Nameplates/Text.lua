@@ -220,9 +220,22 @@ local function Gap(last, key)
     return Text.GAP
 end
 
+-- Spells only (ns.Style): no line (Plate.lua hides it); the raid marker alone in the middle of the plate, where the
+-- bar was (Marks.lua: in the dot's place), nothing outside it, and the plate as wide as the game's own bar under it
+-- (Plate.Place, no width wanted), so the auras stand around that.
+function Text.Bare(dress)
+    dress.outside = 0
+    ns.Auras.Place(dress)
+    dress.raid:ClearAllPoints()
+    dress.raid:SetPoint("CENTER", dress, "CENTER")
+    dress.want = nil
+    ns.Plate.Place(dress)
+end
+
 -- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place);
 -- the icons outside, left of the bar, from it outward.
 function Text.Layout(dress)
+    if ns.Style() == "spells" then return Text.Bare(dress) end
     local top, room = dress.top, dress.room
     local edge = 0
     for _, key in ipairs(OUTSIDE) do
@@ -457,10 +470,10 @@ end
 
 -- The texts measured on themselves, measured anew at the size the plate shows at now (Scale.lua, as it grows or
 -- shrinks); the line laid out anew only where one outgrew its room or the name left too much of its spare. Not while the dress is
--- out of sight (a hidden text may not measure), nor a text that answers its width hidden.
+-- out of sight (a hidden text may not measure) or shows no line (Spells only), nor a text that answers its width hidden.
 local MEASURED = { "count", "level", "gear", "name" }
 function Text.Refit(dress)
-    if not dress.unit or not dress:IsShown() then return end
+    if not dress.unit or not dress:IsShown() or ns.Style() == "spells" then return end
     local room, changed = dress.room, false
     dress.holding = true
     for _, piece in ipairs(MEASURED) do

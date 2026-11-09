@@ -1,6 +1,6 @@
 # Sane UI: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' and critters' plates hidden; smaller far away; combat text rising over them and over your character) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' and critters' plates hidden; smaller far away; combat text rising over them and over your character; at a setting the health bar only, or the spells only with a faint dot and an arrow over your target) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
@@ -12,8 +12,9 @@ bar is as wide as that line, no wider. Along its bottom a thin line of the unit'
 and your combo points in a row of their own under the bar of the unit you have them on, inside the same outline. Its one border is lit on your target and focus, a line
 behind it tells the unit's rank, a red glow behind that your aggro or a player who may attack you. Right above the bar your own debuffs,
 left of it up to three of a foe's buffs, right of it the crowd control on the unit. Plates
-of players who may not attack you nor you them and whom you do not know are hidden, and critters' plates (a setting shows them); every plate is smaller the farther away it is. When it
-fails, every plate is the game's own again.
+of players who may not attack you nor you them and whom you do not know are hidden, and critters' plates (a setting shows them); every plate is smaller the farther away it is. A
+setting shows the health bar only (no auras), or the spells only (no bar, no name: a faint dot where each plate is,
+the game's gold arrow over your target). When it fails, every plate is the game's own again.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Nameplates* under *Sane UI* in the game's addon list (the game
@@ -98,9 +99,22 @@ fails, every plate is the game's own again.
   shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
   at 60 yards is taken by the game at once. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
-- **Transparency:** every plate but your target's as see-through as *Nameplate transparency* says (0% at first, up
-  to 90%): ours with all on it (auras, cast bar, combat text) and what the game still shows of its own plate there
-  (widgets, its cast bar with *Cast bar* off). Your target's is always whole; a plate appearing fades in up to it.
+- **What plates show:** *Plates show* (Saneroki, 2026-11-09): *Health bar and spells* (at first) is all the above.
+  *Health bar only*: the bar, its line and its outline, the combo points and the cast bar, but no auras around it
+  (your debuffs, a foe's buffs, crowd control, the dispellable type above it) and none of Combat's tracked auras
+  under it. *Spells only*: no bar and no name (nor anything of the line, the power line, the rank's line, the glow);
+  your debuffs above, a foe's buffs left and crowd control right where they would stand, around the place of the
+  game's own bar (as wide as that), the raid marker alone in its middle, the combo points and the cast bar under it in
+  an outline of their own (none while neither shows), the combat text, and the tracked auras under them. Over your
+  target's plate the game's gold arrow pointing down at it, above its debuffs (the character list's arrow, the art
+  catalogue's #47). *Dot where a plate is*: in *Spells only*, a small faint dot in the middle of each plate, in the
+  colour its bar would have (a foe's red, a player's class colour), so you see there is a plate while it shows no
+  spells; a raid marker there stands in its place. Choosing *Spells only* switches it on; off by its own switch, and
+  another profile's keeps its own value.
+- **Transparency:** every plate but your target's as see-through as *Nameplate transparency* says, your target's as
+  *Your target's transparency* says (both 0% at first, up to 90%): ours with all on it (auras, cast bar, combat text)
+  and what the game still shows of its own plate there (widgets, its cast bar with *Cast bar* off); a plate appearing
+  fades in up to it.
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
   (Kalam Bold, outlined): auto attacks and physical damage in white, spell damage in red, a critical hit larger with a short
   swell, a glancing blow smaller, heals in green with a "+". What did no harm is the game's word in white ("Miss", "Parry",
@@ -115,8 +129,8 @@ fails, every plate is the game's own again.
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
   client lacks those for its numbers over units, those numbers stay as the game has them.
-- **Settings:** *Sane UI > Nameplates*: *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
-  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*, *Nameplate transparency*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
+- **Settings:** *Sane UI > Nameplates*: *Plates show* (and under it *Dot where a plate is*), *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
+  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*, *Nameplate transparency*, *Your target's transparency*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
@@ -247,7 +261,28 @@ fails, every plate is the game's own again.
   sets its containers to `"none"`, disabled. Without the template the plates show no auras (noted once).
 - **Marks** (`Marks.lua`): the raid marker `Interface\TargetingFrame\UI-RaidTargetingIcons`, in the line after the
   level (`Text.size` square, its room in the line, placed by `Text.Layout`), `SetSpriteSheetCell(GetRaidTargetIndex(unit), 4, 4)` as the game does (the index may be
-  secret: only its type is looked at).
+  secret: only its type is looked at). It, the dot and the arrow stand on a frame of their own (`dress` child at the
+  line's frame level), so they stay while the line is hidden (*Spells only*). The dot: `Bar.WHITE`, `Marks.DOT`
+  square, round by `Core.Shape.Round`, at the dress's centre, in the bar's colour (`Bar.Paint`, `Marks.Hue`) at
+  `Marks.FAINT`; the arrow: the atlas `Marks.ARROW` (`glues-characterSelect-icon-arrowDown`, in both games;
+  `Marks.ARROW_FILE`, the game's older arrow, where `C_Texture.GetAtlasInfo` knows none), `Marks.ARROW_SIZE` square,
+  its `BOTTOM` `Auras.SIZE` over the dress's `TOP`. `Marks.Spells` shows them (from `Wear`, so at each change of
+  target, and from `Marks.Raid`).
+- **What plates show** (`ns.Style()`: the setting `style`, `"both"`, `"bar"`, `"spells"`; `dot` under it with
+  `parentValue = "spells"`): `Plate.lua`'s `Style`, run as a dress is made and for every dress made before every
+  refresh (`Plate.Refresh`, so the line shows again before it is measured), shows the bar (`dress.health`: its fill,
+  power line and barrier) and the line (`dress.top`: the texts and the quest's icon) but in *Spells only*, and the
+  foot (`dress.foot`, so Combat's tracked auras on it) but in *Health bar only*. Each piece asks the style itself:
+  `Auras.Set` (no container in *Health bar only*), `Fill`'s health marks (`Switch`: no barrier nor lost health in
+  *Spells only*, no dispel type in *Health bar only*), `Bar.Paint` (no rank's line), `Bar.Glow` (alpha 0),
+  `Text.Layout` (`Text.Bare`: no line laid out, the raid marker at the centre, `dress.outside` 0, `dress.want` none, so
+  `Plate.Place` makes the dress as wide as the game's row), `Text.Refit` (nothing measured), `Bar.Outline` (the
+  border, the rank's line and the glow from the highest row under the dress, `Around`'s head; the border hidden while
+  no row shows), `Resource.Shape` (a pixel in at its top, round there: `"both"` lowest, `"top"` over a cast) and
+  `Cast.Shape` (split from `Cast.Fit`, run by `Bar.Outline`: with no combo points above, a pixel in at its top, the
+  fill's right end `"both"`, the icon's top left round by a second corner mask, `bar.crown`, else 0.01 wide). The
+  settings' `changed` hook sets `dot` on as `style` turns to `"spells"`; `replaced` (another profile's settings)
+  does every switch's work anew and sets nothing, so a profile's `dot` stays its own.
 - **Range** (`Range.lua`): the game tells addons no distance, but whether a unit is within reach of an item's use
   (`C_Item.IsItemInRange`) or of one of your spells (`C_Spell.IsSpellInRange`), from your character. Each unit is
   asked against a ladder, the shortest reach first: items of the game whose use reaches a foe (`Range.ENEMY`: 5 to 40
@@ -326,7 +361,8 @@ fails, every plate is the game's own again.
   `Scale.SNAP` of its size, there).
   `Scale.Born`: a plate appearing is asked about at once (`Range.One`, not at the next look) and shows at the size of its
   distance (your target's full), never larger; its alpha from 0 to what it shows at (`Scale.Fade`: times `Scale.Seen`,
-  1 on your target, else 1 minus *Nameplate transparency*, key `transparency`; `Plate.lua`'s `Wear` runs it too, so at
+  1 minus *Your target's transparency* (key `targetTransparency`) on your target, else 1 minus *Nameplate
+  transparency*, key `transparency`; `Plate.lua`'s `Wear` runs it too, so at
   each change of target, and sets the game's unit frame under ours to `Scale.Seen`) in a straight line within `Scale.SHOW` (5/7 s:
   running at 7 yards a second from 60 yards to 55; no item or spell reaches a foe at 55 or 60 yards, so nothing tells
   the two apart).
@@ -387,7 +423,7 @@ fails, every plate is the game's own again.
 | `Bar.lua` | The health bar: round at both ends, its border lit on your target and focus, the rank's line and the glow behind it, the power line |
 | `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
 | `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
-| `Marks.lua` | The raid marker, in the line |
+| `Marks.lua` | The raid marker, in the line (alone in the middle in *Spells only*); in *Spells only* the faint dot where a plate is and the gold arrow over your target |
 | `Resource.lua` | Your combo points in a row under the bar of the unit holding them |
 | `Cast.lua` | A unit's cast under its plate's bar: the icon with the seconds left, the spell and its target, cut to fit |
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
@@ -401,6 +437,11 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-09:** *Plates show* (Saneroki): *Health bar only* (no auras, no tracked auras under the plate; the cast
+  bar stays) and *Spells only* (no bar, no name: the auras, the raid marker, the combo points, the cast bar and the
+  combat text stay; a faint dot where each plate is, its own switch, on as *Spells only* is chosen; the game's gold
+  arrow over your target). *Your target's transparency*, a slider of its own: your target's plate no longer always
+  whole.
 - **2026-11-07:** each dress keeps a frame right under its lowest row (`dress.foot`, at its frame level + 6, placed by
   `Bar.Outline`), handed out by `Plate.Foot(plate)`: Combat's tracked auras on the nameplates stand on it, right
   under the plate without a gap, and grow, shrink and fade with it (Saneroki).

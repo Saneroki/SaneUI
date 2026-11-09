@@ -21,7 +21,9 @@ local _, ns = ...
 --  (Dress): the icon cut by the mask of the game's own nameplate auras, their
 --  border and their swipe, the stack count above the swipe. Nothing runs per
 --  aura change. A plate the game reuses for another unit gets its containers
---  set to that unit.
+--  set to that unit. With the setting Plates show at Health bar only there
+--  are none (ns.Style); at Spells only they stand where they would, around
+--  the game's own bar's place (Text.Bare).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -133,12 +135,14 @@ local function Shown(container, unit, on)
     container:SetShown(on)
 end
 
--- The containers set for the dress's unit (or none), each as its switch and the unit say.
+-- The containers set for the dress's unit (or none), each as its switch and the unit say; none while the plates show
+-- the health bar only (ns.Style).
 function Auras.Set(dress, unit)
     local options = ns.options or {}
+    local on = unit ~= nil and ns.Style() ~= "bar"
     local foe = unit and Plain(UnitCanAttack("player", unit)) ~= false
     Most(dress.own, Auras.Slots(dress:GetWidth()))
-    Shown(dress.own, unit, unit ~= nil and options.debuffs ~= false)
-    Shown(dress.foes, unit, unit ~= nil and foe and options.buffs ~= false)
-    Shown(dress.control, unit, unit ~= nil and options.control ~= false)
+    Shown(dress.own, unit, on and options.debuffs ~= false)
+    Shown(dress.foes, unit, on and foe and options.buffs ~= false)
+    Shown(dress.control, unit, on and options.control ~= false)
 end

@@ -41,6 +41,9 @@ local _, ns = ...
 --  and on the bar what Core's health marks show (dress.marks, Core's
 --  HealthMarks.lua): the barrier and the lost maximum health (the bar ends
 --  earlier, Bar.Outline); the dispel type icon above the bar's right end.
+--  With the setting Plates show at Spells only (ns.Style) there is no bar:
+--  no rank's line and no glow either, and the border goes around the rows
+--  under it alone (the combo points, the cast bar), none while none shows.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -185,19 +188,20 @@ local function Plate(host, sublevel)
     return plate
 end
 
--- A plate reaching that far beyond the dress on every side, down to the bottom of below (the dress, or its cast bar
--- under it while a cast shows), tall high from the dress's top to below's bottom: its halves each half of it, its
--- corners round by radius and the reach (around a round edge, the round grows by what lies between).
-local function Around(plate, dress, reach, tall, below, radius)
+-- A plate reaching that far beyond head (the dress, or in Spells only the highest row under it) on every side, down to
+-- the bottom of below (the dress, or its cast bar under it while a cast shows), tall high from head's top to below's
+-- bottom: its halves each half of it, its corners round by radius and the reach (around a round edge, the round grows
+-- by what lies between).
+local function Around(plate, head, reach, tall, below, radius)
     local half = (tall + 2 * reach) / 2
     local upper, lower = plate[1], plate[2]
     upper:ClearAllPoints()
-    upper:SetPoint("TOPLEFT", dress, "TOPLEFT", -reach, reach)
-    upper:SetPoint("TOPRIGHT", dress, "TOPRIGHT", reach, reach)
+    upper:SetPoint("TOPLEFT", head, "TOPLEFT", -reach, reach)
+    upper:SetPoint("TOPRIGHT", head, "TOPRIGHT", reach, reach)
     upper:SetHeight(half)
     lower:ClearAllPoints()
-    lower:SetPoint("BOTTOMLEFT", below or dress, "BOTTOMLEFT", -reach, -reach)
-    lower:SetPoint("BOTTOMRIGHT", below or dress, "BOTTOMRIGHT", reach, -reach)
+    lower:SetPoint("BOTTOMLEFT", below or head, "BOTTOMLEFT", -reach, -reach)
+    lower:SetPoint("BOTTOMRIGHT", below or head, "BOTTOMRIGHT", reach, -reach)
     lower:SetHeight(half)
     local round = math.min(radius + reach, half)
     for _, piece in ipairs(plate) do
@@ -303,15 +307,21 @@ function Bar.Outline(dress)
     dress.foot:ClearAllPoints()
     dress.foot:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 0, 0)
     dress.foot:SetPoint("TOPRIGHT", below, "BOTTOMRIGHT", 0, 0)
-    local tall = height
+    -- Spells only (ns.Style): no bar, so the outline goes around the rows under it alone, from the highest of them; none
+    -- while no row shows.
+    local head, tall = dress, height
+    if ns.Style() == "spells" then head, tall = strip or cast, 0 end
     for _, row in ipairs({ strip or false, cast or false }) do
         if row then tall = tall + (Plain(row:GetHeight()) or 0) end
     end
     local radius = Bar.Radius(dress)
-    Around(dress.border, dress, 0, tall, below, radius)
-    local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
-    Around(dress.rankLine, dress, pixel * reach, tall, below, radius)
-    for band, glow in ipairs(dress.halo) do Around(glow, dress, pixel * (reach + band), tall, below, radius) end
+    dress.border:SetShown(head ~= nil)
+    if head then
+        Around(dress.border, head, 0, tall, below, radius)
+        local reach = dress.rank.width - 1 -- the rank's line beyond the dress (the border is its first pixel)
+        Around(dress.rankLine, head, pixel * reach, tall, below, radius)
+        for band, glow in ipairs(dress.halo) do Around(glow, head, pixel * (reach + band), tall, below, radius) end
+    end
     local marks = dress.marks
     -- The bar a pixel inside the outline; down to the row under it while one shows, square there, so nothing of the
     -- outline shows between them. The combo points' row round at its bottom only while the cast bar is not under it.
@@ -328,6 +338,7 @@ function Bar.Outline(dress)
     Bar.End(marks.lostEnd, marks.lost, "RIGHT", mode, round, high)
     marks:Fit(inner)
     if strip then ns.Resource.Shape(dress, cast == nil) end
+    ns.Cast.Shape(dress)
     dress.outlined = below
 end
 
@@ -363,9 +374,12 @@ function Bar.Danger(unit)
     return Plain(UnitIsPlayer(unit)) == true and Core.Ask(UnitCanAttack, unit, "player") == true
 end
 
--- The bar's colour, the border's rank and the glow of a player who may attack you, as the unit is now.
+-- The bar's colour (the dot's too, Marks.lua), the border's rank and the glow of a player who may attack you, as the
+-- unit is now. In Spells only no rank's line, as no bar (ns.Style).
 function Bar.Paint(dress, unit)
-    dress.health:SetStatusBarColor(Bar.Colour(unit))
+    local r, g, b = Bar.Colour(unit)
+    dress.health:SetStatusBarColor(r, g, b)
+    ns.Marks.Hue(dress, r, g, b)
     local rank = Bar.RANKS[Bar.Rank(unit)] or Bar.PLAIN
     if rank ~= dress.rank then
         dress.rank = rank
@@ -373,17 +387,20 @@ function Bar.Paint(dress, unit)
     end
     local colour = rank.colour
     if colour then dress.rankLine:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
-    dress.rankLine:SetShown(colour ~= nil)
+    dress.rankLine:SetShown(colour ~= nil and ns.Style() ~= "spells")
     dress.danger = Bar.Danger(unit)
     Bar.Glow(dress, dress.aggro)
 end
 
 -- The glow on while you have the unit's aggro (true, false, or the game's answer hidden: the textures take it as it
 -- is, never compared: a hidden boolean in a comparison is an error) or while the unit is a player who may attack you.
+-- None in Spells only, as no bar (ns.Style).
 function Bar.Glow(dress, aggro)
     dress.aggro = aggro
     local glow = dress.glow
-    if dress.danger then
+    if ns.Style() == "spells" then
+        glow:SetAlpha(0)
+    elseif dress.danger then
         glow:SetAlpha(1)
     elseif Core.Secret(aggro) then
         -- The game's own alphas for true and false (full, none).

@@ -32,6 +32,9 @@ local ADDON, ns = ...
 --                  character, in place of the game's own combat text
 --  Players who may not attack you nor you them and whom you do not know show
 --  no plate, nor do critters unless the setting shows them (Plate.lua).
+--  The setting Plates show picks what each plate shows (ns.Style,
+--  Plate.Style): the bar and the auras around it, the health bar only, or the
+--  spells only (no bar, no name; a faint dot and, on your target, an arrow).
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -40,6 +43,13 @@ Core.NewModule(ADDON, "Nameplates", ns)
 -- Every word the module shows; the game's own where it has one.
 ns.TEXT = {
     title = "Nameplates",
+    style = "Plates show",
+    styleTip = "What every nameplate shows. Health bar and spells: the bar with its name and health, your debuffs above it, a foe's buffs left of it, crowd control right of it. Health bar only: the bar without those auras and without the tracked auras under it; its cast bar stays. Spells only: no bar and no name; the auras, the cast bar, the raid marker and your combo points where they stand, and a gold arrow over your target.",
+    styleBoth = "Health bar and spells",
+    styleBar = "Health bar only",
+    styleSpells = "Spells only",
+    dot = "Dot where a plate is",
+    dotTip = "With Spells only: a small faint dot in the middle of each plate, in the colour its bar would have, so you see there is a plate while it shows no spells. On by itself when you choose Spells only.",
     debuffs = "Your debuffs",
     debuffsTip = "Right above a nameplate's bar, from its left: the debuffs and damage over time you put on that creature or player, with the time each has left.",
     buffs = "Buffs on foes",
@@ -73,7 +83,9 @@ ns.TEXT = {
     size = "Nameplate size",
     sizeTip = "How large nameplates are within " .. Core.Distance(10) .. ".",
     transparency = "Nameplate transparency",
-    transparencyTip = "How much you see through every nameplate but your target's: 0% solid, 90% barely there. Your target's plate always shows whole.",
+    transparencyTip = "How much you see through every nameplate but your target's (that one has a slider of its own): 0% solid, 90% barely there.",
+    targetTransparency = "Your target's transparency",
+    targetTransparencyTip = "How much you see through your target's nameplate: 0% solid, 90% barely there.",
     combatHeader = "Combat text",
     combatText = "Over nameplates",
     combatTextTip = "What a creature or player takes rises over its nameplate and fades: auto attacks and physical damage in white, spell damage in red, heals in green, critical hits larger; a miss, dodge, parry, block, evade or immunity in words. The game says what a unit took, not from whom: in a group it is everybody's damage.",
@@ -90,7 +102,13 @@ ns.TEXT = {
 -- What is told when the module stands down (Core's StandDown).
 ns.GIVEN_BACK = "the nameplates are the game's own again"
 
+-- What the plates show (the setting Plates show, Saneroki, 2026-11-09): "both" the bar and the auras around it,
+-- "bar" the health bar only, "spells" the spells only (no bar, no name).
+ns.STYLES = { { "both", ns.TEXT.styleBoth }, { "bar", ns.TEXT.styleBar }, { "spells", ns.TEXT.styleSpells } }
+
 local OPTIONS = {
+    { key = "style", default = "both", choices = ns.STYLES, text = ns.TEXT.style, tip = ns.TEXT.styleTip },
+    { key = "dot", default = false, parent = "style", parentValue = "spells", text = ns.TEXT.dot, tip = ns.TEXT.dotTip },
     { key = "debuffs", default = true, text = ns.TEXT.debuffs, tip = ns.TEXT.debuffsTip },
     { key = "buffs", default = true, text = ns.TEXT.buffs, tip = ns.TEXT.buffsTip },
     { key = "quest", default = true, text = ns.TEXT.quest, tip = ns.TEXT.questTip },
@@ -109,6 +127,8 @@ local OPTIONS = {
     { key = "castBar", default = true, text = ns.TEXT.castBar, tip = ns.TEXT.castBarTip },
     { key = "plateSize", default = 125, min = 50, max = 300, step = 5, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
     { key = "transparency", default = 0, min = 0, max = 90, step = 5, unit = "%", text = ns.TEXT.transparency, tip = ns.TEXT.transparencyTip },
+    { key = "targetTransparency", default = 0, min = 0, max = 90, step = 5, unit = "%", text = ns.TEXT.targetTransparency,
+      tip = ns.TEXT.targetTransparencyTip },
     { key = "combatText", default = true, text = ns.TEXT.combatText, tip = ns.TEXT.combatTextTip, header = ns.TEXT.combatHeader },
     { key = "combatSelf", default = true, text = ns.TEXT.combatSelf, tip = ns.TEXT.combatSelfTip },
     { key = "combatHeals", default = true, text = ns.TEXT.combatHeals, tip = ns.TEXT.combatHealsTip },
@@ -116,7 +136,13 @@ local OPTIONS = {
     { key = "combatGame", default = true, text = ns.TEXT.combatGame, tip = ns.TEXT.combatGameTip },
     { key = "combatFoundCVars", default = {} }, -- the game's combat text CVars as they were before ours (CombatText.lua)
 }
-Core.Options(ns.name, OPTIONS, { changed = function(key)
+-- What the plates show now (the setting Plates show): "both", "bar" or "spells".
+function ns.Style()
+    return (ns.options or {}).style or "both"
+end
+
+-- A switch changed: what it touches done anew.
+local function Apply(key)
     if key == "resource" then
         ns.Guarded(ns.Resource.Update)
     elseif key == "range" then
@@ -130,7 +156,21 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     else
         ns.Guarded(ns.Plate.Refresh)
     end
-end })
+end
+
+Core.Options(ns.name, OPTIONS, {
+    -- Plates show turned to Spells only: the dot where a plate is on with it (Saneroki, 2026-11-09: "automatically on
+    -- when the nameplate is changed into only Spells"), and off again by its own switch.
+    changed = function(key, value)
+        if key == "style" and value == "spells" then Core.Set(ns.name, "dot", true) end
+        Apply(key)
+    end,
+    -- Another profile's settings came in: everything done anew, as each switch would be; none set for another, so the
+    -- dot keeps the profile's own value.
+    replaced = function()
+        for _, key in ipairs({ "resource", "range", "distance", "combatText", "style" }) do Apply(key) end
+    end,
+})
 
 -- Standing down: every plate the game's own again, ours out of sight, the game's scaling by distance.
 function ns.GiveBack()

@@ -432,6 +432,9 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   button (frame, slot); only the filled slots, each its square icon alone, cut free of the edge its picture is drawn
   with. What answers the mouse and keys is a flat wash over the icon. The main bar's page number and its arrows
   stay visible.
+- **Nameplates, Spells only (Saneroki, 2026-11-09):** over your target's plate the game's gold arrow pointing down at it,
+  #47 `glues-characterSelect-icon-arrowDown` (the character list's arrow, in both games), above its debuffs; where
+  each plate is, a small faint dot in the colour its bar would have.
 
 ## Views
 

@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Nameplates: choose what they show on the Nameplates page: the
+  health bar and spells, the health bar only (no auras, nor the
+  tracked auras under it), or the spells only: no bar and no name,
+  a faint dot where each plate is and a gold arrow over your target.
+  Your target's plate has a transparency slider of its own.
 - At a vendor the Inventory full screen comes by itself, the vendor
   on the left and your bags on the right; at a banker your bags on the
   left and your bank on the right. At a trainer Combat's full screen

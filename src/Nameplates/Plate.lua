@@ -87,8 +87,11 @@ local function Fill(dress)
     local unit = dress.unit
     ns.Bar.Paint(dress, unit)
     ns.Bar.Health(dress, unit)
-    local options = ns.options or {}
-    dress.marks:Switch(options.barrier, options.lost, options.dispel)
+    local options, style = ns.options or {}, ns.Style()
+    -- The barrier and lost health lie on the bar (none in Spells only), the dispel type is an aura's (none in Health
+    -- bar only).
+    dress.marks:Switch(options.barrier ~= false and style ~= "spells", options.lost ~= false and style ~= "spells",
+        options.dispel ~= false and style ~= "bar")
     dress.marks:Set(unit)
     ns.Bar.Power(dress, unit)
     ns.Bar.Border(dress, Lit(dress, PlateOf("target"), PlateOf("focus")), dress.out)
@@ -253,6 +256,7 @@ local function Wear(dress)
     dress.away = not on
     dress:SetShown(on)
     if on then ns.Scale.Fade(dress) end
+    ns.Marks.Spells(dress) -- the arrow on your target (Spells only)
     if back then Fill(dress) end
 end
 
@@ -313,6 +317,21 @@ function Plate.Place(dress)
     dress:SetSize(width, height)
 end
 
+-- What the setting Plates show leaves of the dress (ns.Style; Saneroki, 2026-11-09). Spells only: no bar (its fill,
+-- power line and barrier) and no line of texts (the name, the quest's icon outside), the outline around the rows under
+-- it alone (Bar.Outline), no rank's line nor glow (Bar.Paint, Bar.Glow); the auras, the raid marker (Text.Bare), the
+-- combo points, the cast bar and the combat text stay, and the dot and the arrow come (Marks.Spells). Health bar only:
+-- no auras (Auras.Set, the dispel type in Fill) and nothing under the plate from elsewhere: the foot, which Combat's
+-- tracked auras stand on (Plate.Foot), out of sight with them; the cast bar stays. Run as a dress is made and before
+-- every plate is filled anew (Plate.Refresh), so its line shows again before it is measured.
+local function Style(dress)
+    local style = ns.Style()
+    dress.health:SetShown(style ~= "spells")
+    dress.top:SetShown(style ~= "spells")
+    dress.foot:SetShown(style ~= "bar")
+    ns.Bar.Outline(dress)
+end
+
 -- Laid out anew for its size: its place over the game's row, the bar, the strip, the room for auras.
 local function Fit(dress)
     Plate.Place(dress)
@@ -327,7 +346,8 @@ Plate.Refit = Fit
 
 -- The frame right under a plate's lowest row (the bar, the combo points, a cast's bar: Bar.Outline) while our dress is on
 -- the plate's unit, for what another module shows right under the plate (Combat's tracked auras), so it follows the
--- plate's size and fading; nil otherwise.
+-- plate's size and fading, and goes out of sight with it while the plates show the health bar only (Style); nil
+-- otherwise.
 function Plate.Foot(plate)
     local dress = dresses[plate]
     if ns.off or not dress or not dress.unit then return nil end
@@ -346,6 +366,7 @@ local function Make(plate)
     dress:SetScript("OnEvent", OnEvent)
     dress:SetScript("OnSizeChanged", OnSizeChanged)
     dress:Hide()
+    Style(dress)
     dresses[plate] = dress
     return dress
 end
@@ -529,8 +550,10 @@ function Plate.Of(plate)
     return nil
 end
 
--- Every dress filled anew (a setting changed).
+-- Every dress filled anew (a setting changed); every one made is as Plates show says (those shown no more too: the
+-- game hands its plates out again).
 function Plate.Refresh()
+    for _, dress in pairs(dresses) do Style(dress) end
     for _, dress in pairs(shown) do
         Fill(dress)
         Wear(dress)

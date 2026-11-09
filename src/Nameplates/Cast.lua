@@ -183,7 +183,12 @@ function Cast.Make(dress)
     corner:SetTexture(Core.Shape.CORNER.BOTTOMLEFT, "CLAMPTOWHITE", "CLAMPTOWHITE")
     corner:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT")
     icon:AddMaskTexture(corner)
-    bar.corner = corner
+    -- Its top left too, while nothing is above it (Spells only: Cast.Shape).
+    local crown = top:CreateMaskTexture()
+    crown:SetTexture(Core.Shape.CORNER.TOPLEFT, "CLAMPTOWHITE", "CLAMPTOWHITE")
+    crown:SetPoint("TOPLEFT", icon, "TOPLEFT")
+    icon:AddMaskTexture(crown)
+    bar.corner, bar.crown = corner, crown
     local timer = top:CreateFontString(nil, "OVERLAY")
     timer:SetPoint("CENTER", icon, "CENTER")
     local text = top:CreateFontString(nil, "OVERLAY")
@@ -208,26 +213,38 @@ function Cast.Make(dress)
     Cast.Fit(dress)
 end
 
--- Laid out for the dress's size (Plate's Fit): as high as its bar, inside the plate's one outline (Bar.Outline:
--- along the cast bar's ends and bottom, nothing between it and the bar), the icon square at its left end; round only
--- where the outline is, at its bottom corners, a pixel less than the outline (Bar.Radius): the icon's bottom left,
--- the fill's bottom right; square where they meet each other and the bar.
+-- Laid out for the dress's size (Plate's Fit): as high as its bar.
 function Cast.Fit(dress)
     local bar = dress.cast
     if not bar then return end
-    local height = Plain(dress:GetHeight()) or 0
+    bar:SetHeight(Plain(dress:GetHeight()) or 0)
+    Cast.Shape(dress)
+end
+
+-- Its inside as the plate's one outline has it (Bar.Outline, which runs this: along the cast bar's ends and bottom,
+-- nothing between it and the bar), the icon square at its left end; round only where the outline is, at its bottom
+-- corners, a pixel less than the outline (Bar.Radius): the icon's bottom left, the fill's bottom right; square where
+-- they meet each other and the bar. In Spells only (ns.Style) with no combo points over it, nothing is above it: the
+-- outline's top is its own, a pixel in there too and round at its top corners as well (the icon's top left).
+function Cast.Shape(dress)
+    local bar = dress.cast
+    if not bar then return end
+    local height = Plain(bar:GetHeight()) or 0
     local edge = Core.Pixels(dress, 1)
-    bar:SetHeight(height)
-    local inner = math.max(height - edge, 1)
+    local alone = ns.Style() == "spells" and not (dress.strip and dress.strip:IsShown())
+    local top = alone and edge or 0
+    local inner = math.max(height - edge - top, 1)
     bar.icon:ClearAllPoints()
-    bar.icon:SetPoint("TOPLEFT", bar, "TOPLEFT", edge, 0)
+    bar.icon:SetPoint("TOPLEFT", bar, "TOPLEFT", edge, -top)
     bar.icon:SetSize(inner, inner)
     bar.fill:ClearAllPoints()
     bar.fill:SetPoint("TOPLEFT", bar.icon, "TOPRIGHT", 0, 0)
     bar.fill:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -edge, edge)
     local radius = math.max(ns.Bar.Radius(dress) - edge, 0.01)
     bar.corner:SetSize(radius, radius)
-    ns.Bar.Ends(bar.caps, bar.fill, "none", "bottom", radius, inner)
+    local crown = alone and radius or 0.01 -- too small to see: square
+    bar.crown:SetSize(crown, crown)
+    ns.Bar.Ends(bar.caps, bar.fill, "none", alone and "both" or "bottom", radius, inner)
 end
 
 -- The game's own cast bar on the plate seen (true: ours cannot show this cast) or out of sight under ours.

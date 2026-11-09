@@ -129,17 +129,21 @@ function Resource.Fit(dress)
 end
 
 -- The row's inside as the outline has it (Bar.Outline): a pixel in at its ends; at its bottom too and round there
--- (a pixel less than the outline) while it is the lowest, square and down to what is under it otherwise.
+-- (a pixel less than the outline) while it is the lowest, square and down to what is under it otherwise. In Spells
+-- only (ns.Style) no bar is above it: the outline's top is its own, a pixel in there too and round at its top.
 function Resource.Shape(dress, lowest)
     local strip = dress.strip
     if not strip then return end
     local edge = Core.Pixels(dress, 1)
+    local head = ns.Style() == "spells"
+    local top = head and edge or 0
     local inner = strip.inner
     inner:ClearAllPoints()
-    inner:SetPoint("TOPLEFT", strip, "TOPLEFT", edge, 0)
+    inner:SetPoint("TOPLEFT", strip, "TOPLEFT", edge, -top)
     inner:SetPoint("BOTTOMRIGHT", strip, "BOTTOMRIGHT", -edge, lowest and edge or 0)
-    local height = (Plain(strip:GetHeight()) or 0) - (lowest and edge or 0)
+    local height = (Plain(strip:GetHeight()) or 0) - (lowest and edge or 0) - top
     local mode = lowest and "bottom" or "none"
+    if head then mode = lowest and "both" or "top" end
     ns.Bar.Ends(strip.caps, inner, mode, mode, math.max(ns.Bar.Radius(dress) - edge, 0.01), height)
 end
 

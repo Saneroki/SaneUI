@@ -17,7 +17,8 @@ local _, ns = ...
 --  Right under the plate: while the module Nameplates dresses it, under the
 --  lowest row of its dress (the bar, your combo points, a cast's bar while one
 --  shows: its Plate.Foot), on it, so the row grows, shrinks and fades with the
---  plate; else under the game's own health bar. A row of ours per plate, made
+--  plate, and is out of sight with it while Nameplates shows the health bar
+--  only (its setting Plates show); else under the game's own health bar. A row of ours per plate, made
 --  when it first has something to show and kept (the game hands its plates out
 --  again), the plates followed from NAME_PLATE_UNIT_ADDED to _REMOVED, filled
 --  with the bars (Reminders.Update, its ticker). Display only: nothing of a

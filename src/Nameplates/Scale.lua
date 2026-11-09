@@ -10,9 +10,9 @@ local _, ns = ...
 --  larger, and fades in from unseen in a straight line (Scale.SHOW): as long
 --  as running takes from 60 yards, where the game first shows plates, to 55.
 --  The game tells addons no distance that far (Range.lua), so the fade is
---  timed. Besides, every plate but your target's is as transparent as the
---  setting Nameplate transparency says (Scale.Seen; 0% at first), the fade
---  in reaching that.
+--  timed. Besides, every plate is as transparent as the settings say
+--  (Scale.Seen: Nameplate transparency, your target's Your target's
+--  transparency; 0% at first), the fade in reaching that.
 --
 --  The distance is Range.lua's (from your character, never the camera). The
 --  game's own scaling of plates (by the camera's distance, a larger target,
@@ -98,10 +98,12 @@ local function Put(name, value)
     return Core.Ask(C_CVar.SetCVar, name, value) ~= false
 end
 
--- How much of a plate shows (the setting Nameplate transparency): your target's whole, any other's less by the setting.
+-- How much of a plate shows: your target's less by the setting Your target's transparency, any other's by Nameplate
+-- transparency.
 function Scale.Seen(dress)
-    if dress.unit and Plain(UnitIsUnit(dress.unit, "target")) == true then return 1 end
-    return 1 - ((ns.options or {}).transparency or 0) / 100
+    local key = "transparency"
+    if dress.unit and Plain(UnitIsUnit(dress.unit, "target")) == true then key = "targetTransparency" end
+    return 1 - ((ns.options or {})[key] or 0) / 100
 end
 
 -- A dress at what shows of it now: its fade in (dress.showing, from 0 to 1) times that.
@@ -260,8 +262,7 @@ function Scale.Born(dress)
     Scale.Again()
 end
 
--- A dress without our curve: the full size over the game's own scaling, seen (as the setting Nameplate transparency
--- says), the game's unit frame at its own scale (a plate taken back, the setting off, standing down).
+-- A dress without our curve: the full size over the game's own scaling, seen (as the transparency settings say), the game's unit frame at its own scale (a plate taken back, the setting off, standing down).
 function Scale.Leave(dress)
     if dress.frame then dress.frame:SetScale(1) end
     dress:SetScale(Scale.Full())
