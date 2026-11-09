@@ -86,16 +86,46 @@ local function Add(want, info)
     return true
 end
 
+-- The next layout set takes its own text too (Sync.ExactLayout), where the game's differs: the save window's No
+-- after frames were moved in Edit Mode and saved (Unsaved.lua). Otherwise a layout the character has stays as it is.
+local exact
+
+function Sync.ExactLayout()
+    exact = true
+end
+
+-- A layout the character has, given the text it had: saved through the game, which reads it at the next /reload
+-- (offered). Edit Mode's manager is not told: its frames would move under our taint. Whether it was changed.
+local function Replace(want)
+    if (want.kind ~= ACCOUNT and want.kind ~= CHARACTER) or type(want.text) ~= "string" then return false end
+    local all = Core.Ask(C_EditMode.GetLayouts)
+    if type(all) ~= "table" or type(all.layouts) ~= "table" then return false end
+    for index, known in ipairs(all.layouts) do
+        if type(known) == "table" and known.layoutName == want.name and known.layoutType == want.kind then
+            if Core.Ask(C_EditMode.ConvertLayoutInfoToString, known) == want.text then return false end
+            local layout = Core.Ask(C_EditMode.ConvertStringToLayoutInfo, want.text)
+            if type(layout) ~= "table" then return false end
+            layout.layoutName, layout.layoutType = want.name, want.kind
+            all.layouts[index] = layout
+            return pcall(C_EditMode.SaveLayouts, all) and true or false
+        end
+    end
+    return false
+end
+
 -- Sets a layout. Returns nil when it has to wait; else true, and whether another layout was set. One
 -- that is not there is added from its text; without one the layout in use stays, and the one wanted is
 -- kept as missing.
 local function Choose(want)
     local info = Layouts()
     if not info or InCombatLockdown() or Core.EditMode.active then return nil end
+    local again = exact
+    exact = nil
     for index, layout in ipairs(info.layouts) do
         if type(layout) == "table" and layout.layoutName == want.name and layout.layoutType == want.kind then
             seen, missing = { name = want.name, kind = want.kind, text = want.text }, nil
-            if index == info.activeLayout then return true, false end
+            local replaced = again and Replace(want) or false
+            if index == info.activeLayout then return true, replaced end
             local own = Core.Ask(C_EditMode.GetLayouts)
             Sync.said = SET:format(want.name, index, tostring(info.activeLayout),
                 tostring(type(own) == "table" and own.activeLayout or nil))

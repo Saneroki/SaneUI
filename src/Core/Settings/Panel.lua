@@ -47,6 +47,8 @@ end
 -- The controls show their values anew: those of one page, or (no page) those of every page that is
 -- shown now, and of the others once they are shown (a hidden page waits: nobody sees it).
 function Panel.Refresh(page)
+    -- A click or a value changed: the save window looks at what changed since the last save (Unsaved.lua).
+    if Core.Unsaved then Core.Unsaved.Soon() end
     if page and pages[page] then
         stale[page] = nil
         Show(pages[page])

@@ -67,6 +67,8 @@ local TEXT = {
     current = "that is the character you are playing.",
     unknown = "Sane UI has not seen that character.",
     notProfile = "that is no Sane UI profile.",
+    first = "the changes are not saved yet: the save window asks first, then the profile %s is used.",
+    next = "Then the profile %s is used.",
     old = "%s (old)",
     older = "%s (old %d)",
 }
@@ -261,6 +263,16 @@ local function Move(to)
         return new
     end)
     if Core.SwitchChanged then Core.SwitchChanged() end
+    -- The last save was of the place left (Unsaved.lua): what counts from now on is this one's.
+    if Core.Unsaved then Core.Safe("profiles: unsaved", Core.Unsaved.Moved) end
+end
+
+-- Whether another place comes into use only after the save window's answer (Unsaved.lua): changes made in the
+-- options and not saved yet are the place's in use. Then the step runs again; meanwhile it is refused, and why.
+local function Answer(name, again)
+    local unsaved = Core.Unsaved
+    if not (unsaved and unsaved.Pending()) or name == Profiles.InUse() then return false end
+    return unsaved.Wait(TEXT.next:format(name), again)
 end
 
 -------------------------------------------------------------------------------
@@ -427,6 +439,17 @@ function Profiles.InUse()
     return source or OWN
 end
 
+-- For the save window (Unsaved.lua): a saved profile's table of every module's settings (nil: none of that name),
+-- and the settings in use filled anew as Fill does (the modules told; fill(name) gives a module's new settings, false
+-- leaves it as it is).
+function Profiles.Settings(name)
+    return db and Saved(name) or nil
+end
+
+function Profiles.Put(fill)
+    Fill(fill)
+end
+
 -------------------------------------------------------------------------------
 --  Profiles
 -------------------------------------------------------------------------------
@@ -497,6 +520,7 @@ function Profiles.Use(name)
     if not Usable(name) then return false, TEXT.missing:format(tostring(name)) end
     local line = Line()
     if not line then return false, TEXT.unknown end
+    if Answer(name, function() Profiles.Use(name) end) then return false, TEXT.first:format(name) end
     Capture() -- the game's settings into the profile left, while Sync still reads them
     Assign(line, name)
     Move(Want())
@@ -540,6 +564,9 @@ end
 function Profiles.Delete(name)
     if Profiles.Fixed(name) then return false, TEXT.fixed end
     if not Saved(name) then return false, TEXT.missing:format(tostring(name)) end
+    if name == source and Answer(ACCOUNTWIDE, function() Profiles.Delete(name) end) then
+        return false, TEXT.first:format(ACCOUNTWIDE)
+    end
     for _, line in pairs(db.characters) do
         if type(line) == "table" and line.profile == name then line.profile = nil end
     end
@@ -669,6 +696,9 @@ function Profiles.SetCharacter(which, name)
     end
     local line = Line(which)
     if not line then return false, TEXT.unknown end
+    if which == key and Answer(name, function() Profiles.SetCharacter(which, name) end) then
+        return false, TEXT.first:format(name)
+    end
     if which == key then Capture() end
     Assign(line, name)
     if which == key then Move(Want()) end

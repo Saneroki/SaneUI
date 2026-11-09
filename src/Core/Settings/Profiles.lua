@@ -29,7 +29,7 @@ local TEXT = {
     tab = "Profiles",
     yours = "This character",
     profile = "Profile",
-    profileTip = "The profile this character uses: its settings, Sane UI's and the game's, are the profile's. A change made on any options page goes into it, for every character that uses it. Character specific is no shared profile: Sane UI at its defaults, the game's settings back at the game's defaults, and from then on each character keeps its own.",
+    profileTip = "The profile this character uses: its settings, Sane UI's and the game's, are the profile's. A change made on any options page counts at once; the save window then asks whether to keep it, in this profile or others, for every character that uses them. Character specific is no shared profile: Sane UI at its defaults, the game's settings back at the game's defaults, and from then on each character keeps its own.",
     new = "New",
     newTip = "A new profile of your own, a copy of the settings in use, which this character uses from then on.",
     askNew = "A new profile, a copy of the settings in use. Its name:",
@@ -71,6 +71,14 @@ local TEXT = {
     imported = "the profile %s is imported.",
     used = "this character uses the profile %s.",
     forgotten = "%s is forgotten.",
+    save = "Save",
+    saveTip = "Keeps the changes made since the last save, in every profile ticked under Save to in the save window (the profile in use at first). Only while there are changes not saved yet.",
+    load = "Load last settings",
+    loadTip = "Takes back every change made since the last save: the settings in use as they were then, Sane UI's and the game's. Only while there are changes not saved yet.",
+    askLoad = "Take back every change made since the last save?",
+    saved = "the changes are saved.",
+    loaded = "the settings are back as they were at the last save.",
+    tickFirst = "tick a profile under Save to in the save window first.",
     exportFailed = "the profile could not be written as text.",
     close = "Close",
 }
@@ -229,6 +237,17 @@ local MORE = {
     { button = TEXT.export, tip = TEXT.exportTip, needs = Shared, run = Export },
     { button = TEXT.import, tip = TEXT.importTip, run = Import },
 }
+-- The last save (Core/Unsaved.lua): kept, or back to it; only while changes wait to be saved.
+local Unsaved = Core.Unsaved
+local KEEP = {
+    { button = TEXT.save, tip = TEXT.saveTip, needs = Unsaved.Pending, run = function()
+        if not Unsaved.Any() then return Core.Print(TEXT.tickFirst) end
+        Tell(Unsaved.Save(), nil, TEXT.saved)
+    end },
+    { button = TEXT.load, tip = TEXT.loadTip, needs = Unsaved.Pending, width = 150, run = function()
+        Core.Confirm(TEXT.askLoad, nil, function() Tell(Unsaved.Undo(), nil, TEXT.loaded) end, true)
+    end },
+}
 
 -- A row of buttons from x, y in box.
 local function Buttons(box, list, x, y)
@@ -236,7 +255,7 @@ local function Buttons(box, list, x, y)
     for _, action in ipairs(list) do
         local button = Panel.Button(box, action.button, action.tip, function()
             if not action.needs or action.needs() then Run(action.run) end
-        end, action.needs, 96)
+        end, action.needs, action.width or 96)
         if previous then button:SetPoint("LEFT", previous, "RIGHT", 6, 0) else button:SetPoint("TOPLEFT", x, y) end
         previous = button
     end
@@ -296,12 +315,13 @@ local function ProfilesTab(child)
     if copy.OverrideText then copy:OverrideText(TEXT.copyFrom) end
     copy:SetPoint("TOPLEFT", 14, -80)
     Buttons(yours, MORE, 222, -80)
-    yours:SetHeight(112)
+    Buttons(yours, KEEP, 14, -110)
+    yours:SetHeight(142)
 
     -- First the line for characters not seen yet, then every character seen on the account.
     local list = Profiles.Characters()
     table.insert(list, 1, Profiles.Character(Profiles.NEW))
-    local box = Panel.Box(child, TEXT.characters, -136)
+    local box = Panel.Box(child, TEXT.characters, -166)
     for _, head in ipairs({ { TEXT.character, 16 }, { TEXT.profile, 220 } }) do
         local text = box:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         text:SetPoint("TOPLEFT", head[2], -12)
@@ -347,7 +367,7 @@ local function ProfilesTab(child)
         Config.characters[key] = row
     end
     box:SetHeight(40 + #list * 30)
-    return 136 + 18 + box:GetHeight() + 8
+    return 166 + 18 + box:GetHeight() + 8
 end
 
 -- Builds the page into the frame Core put up for it (the first time it is shown): its title, a line,

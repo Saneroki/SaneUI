@@ -138,6 +138,8 @@ Sync\Addons.lua
 Sync\Keys.lua
 Sync\Chat.lua
 Sync\Game.lua
+# Changes made in the menus (the options, Edit Mode, the addon list) kept or taken back: the last save, what differs
+Unsaved.lua
 # Sound profiles: the game's five sounds on or off with their volumes, under a name; each game account's last one set
 # again at its login (the game keeps them in one file for the whole installation). After Sync, which leaves them alone
 Audio.lua
@@ -149,6 +151,8 @@ Settings\Tabbed.lua
 Settings\Screen.lua
 Settings\Profiles.lua
 Settings\Synced.lua
+# The save window beside the menus: Yes into the profiles ticked, No takes the changes back
+Settings\Save.lua
 # The page Sane UI: links (Discord, website, GitHub) and feedback
 Settings\About.lua
 Settings\Data\CVarLabels.lua

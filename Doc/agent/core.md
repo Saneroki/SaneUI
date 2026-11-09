@@ -185,6 +185,16 @@ description has `tabs` (`Core.Tabbed(name)`; Social's do). Only `SaneUI[name]` m
 game's (`module.elsewhere`); Sync's switches, described under `Sync`, are shown by the tab *Game settings*.
 `Config.Refresh` re-notifies controls, which only read then (Core already told the modules).
 
+**Unsaved changes (built 2026-11-09, `Unsaved.lua`, `Settings/Save.lua`):** a change still counts at once; a change made
+while a menu is open (the game's `SettingsPanel`, `AddonList`, Edit Mode, a full screen's options view) is compared with
+the last save (a copy of every live table taken when a menu opens with nothing waiting; `Sync.Capture` first) and the
+save window asks: *Yes* writes the differing paths into the profiles ticked, *No* puts the last save back through
+`Profiles.Put` (= `Fill`: modules told, Sync's `moved` writes the game's). Traps: a menu counts only while its frame is
+shown (the tests run `SettingsPanel`'s `OnShow` by hand with it hidden); only Sync's capture is read (another module's
+`capture` would change its settings at each look); `Profiles.Use`/`SetCharacter`/`Delete` return false while changes
+wait (`Answer`), so a caller that tests the result says why; unanswered at `PLAYER_LOGOUT` the paths are put back in
+the saved tables only (Unsaved.lua's listener comes after Profiles' capture, by the TOC's order).
+
 ## Options trap
 
 `Settings/Settings.lua` registers **empty pages at login** (`PutUpPages`), because Blizzard chooses whether to show

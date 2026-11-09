@@ -413,6 +413,7 @@ local RELOAD = {
     reload = "Reload",
     later = "Later",
     both = "%s and %s",
+    after = "Then the interface reloads.",
 }
 
 -- "a", "a and b", "a, b and c"
@@ -422,11 +423,17 @@ local function Named(names)
     return RELOAD.both:format(table.concat(names, ", ", 1, count - 1), names[count])
 end
 
--- The dialog's Reload: the game's own /reload (made once).
-local Reload = Core.Guard("reload", function()
+-- The dialog's Reload: the game's own /reload (made once). With changes in the options not saved yet, the save
+-- window asks first (Unsaved.lua) and the /reload follows its answer: a /reload itself would take them back.
+local function ReloadNow()
     local ui = rawget(_G, "C_UI")
     local reload = ui and ui.Reload or ReloadUI
     if reload then reload() end
+end
+local Reload = Core.Guard("reload", function()
+    local unsaved = Core.Unsaved
+    if unsaved and unsaved.Pending() and unsaved.Wait(RELOAD.after, ReloadNow) then return end
+    ReloadNow()
 end)
 
 -- Offers a /reload in the game's own dialog (Reload / Later), for a change the game shows only after

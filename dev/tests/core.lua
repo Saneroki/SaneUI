@@ -97,6 +97,7 @@ check(Core.Config and SaneUI.Settings == nil and SaneUI.Sync == nil and Core.Syn
 
 -- The options: their pages put up at login, filled when the game's options are first opened -----------
 SettingsPanel = W.NewWidget("Frame", "SettingsPanel") -- the game's options window
+SettingsPanel:Hide() -- closed: its OnShow is run by hand below; the save window's checks (sync.lua) open it
 -- The game finds a picture only if its file is there: Interface\AddOns\SaneUI_<Module>\<path> is
 -- assets/optimized/<Module>/<path>.blp (SaneUI: Core), put in by dev/build. So Core has its banner (Sane UI's), the Demo module none.
 function W.methods:SetTexture(file)

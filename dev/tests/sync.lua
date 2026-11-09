@@ -154,6 +154,7 @@ CONTROLS_LABEL, SETTING_GROUP_GAMEPLAY = "Controls", "Gameplay"
 -- Core, with Sync and the options ------------------------------------------------------------------
 W.LoadCore(root)
 SettingsPanel = W.NewWidget("Frame", "SettingsPanel")
+SettingsPanel:Hide() -- closed: its OnShow is run by hand below; the save window's checks (sync.lua) open it
 local Core = SaneUI.Core
 local Sync = Core.Sync
 check(Sync and SaneUI.Sync == nil and Sync.name == "Sync", "Sync is part of Core, no module; its settings are kept under the name Sync")
@@ -521,6 +522,7 @@ check(game.active == 2 and Called("SetActiveLayout"), "once the manager has them
 -- Edit Mode open: the player is changing layouts. Core follows it (EditMode.lua).
 game.editMode, game.calls = true, {}
 EventRegistry:TriggerEvent("EditMode.Enter")
+taken = options.taken -- Edit Mode opened: the game's settings read in, the save window's last save (Unsaved.lua)
 taken.hudLayout = { name = "Mine", kind = 1 }
 Sync.Give()
 check(Core.EditMode.active and game.active == 2 and not Called("SetActiveLayout"), "while Edit Mode is open nothing is set")
@@ -531,6 +533,7 @@ check(game.active == 3, "it is set when Edit Mode closes")
 -- One that waits while Edit Mode is open, and the player picks another there: the player's wins.
 game.editMode = true
 EventRegistry:TriggerEvent("EditMode.Enter")
+taken = options.taken -- Edit Mode opened: the game's settings read in, the save window's last save (Unsaved.lua)
 taken.hudLayout = { name = "Classic", kind = 0 }
 Sync.Give()
 C_EditMode.SetActiveLayout(1) -- the player picks Modern in Edit Mode
@@ -541,6 +544,7 @@ W.Wait(0.1)
 Sync.Capture()
 taken = options.taken
 check(game.active == 1 and taken.hudLayout.name == "Modern", "one waiting gives way to the layout the player picks meanwhile")
+check(Core.Unsaved.Pending() and Core.Unsaved.Save(), "what Edit Mode changed waits for the save window: kept (its Yes, Unsaved.lua)")
 C_EditMode.SetActiveLayout(3) -- back as it was
 W.Wait(0.1)
 -- A fight.
@@ -959,6 +963,147 @@ game.active = 1
 local popups = #W.popups
 Sync.Moved()
 check(#W.popups == popups + 1, "another profile's writing is new too, whatever the login before offered")
+
+-- The save window (Unsaved.lua, Settings/Save.lua): changes in the menus kept or taken back -------------
+do
+    local Unsaved = Core.Unsaved
+    W.Wait(1)
+    local use = Profiles.InUse()
+    local other = use == "Accountwide" and "Speedleveling" or "Accountwide"
+    local function Errors() return Core.Settings(Core.name).errors end
+    local function Window() return rawget(_G, "SaneUISaveChanges") end
+    local function Lists(words) return Window() and Window().List._text:find(words, 1, true) ~= nil end
+    -- A frame for the change to be shown (Config.RefreshSoon), then the moment it is looked at (Unsaved.Soon).
+    local function Frames() W.Wait(0.1) W.Wait(0.4) end
+
+    Core.Set(Core.name, "errors", not Errors())
+    Frames()
+    check(not Unsaved.Pending() and not (Window() and Window():IsShown()), "a change with no menu open is no change for the save window")
+    SettingsPanel:Show() -- the game's options open: the settings as they are now are the last save
+    local was, cvar = Errors(), W.cvars.cameraSmoothStyle
+    Core.Set(Core.name, "errors", not was)
+    Frames()
+    check(Unsaved.Pending() and Window() and Window():IsShown() and Lists("General: Errors in chat"),
+        "a switch set in the options: the save window comes, beside them, and lists it")
+    check(rawget(Window(), "CloseButton") == nil or not Window().CloseButton:IsShown(), "no close button: it stays until Yes or No")
+    Core.Set(Core.name, "errors", was)
+    Frames()
+    check(not Unsaved.Pending() and not Window():IsShown(), "set back by hand: nothing to save, the window goes")
+
+    -- A switch and one of the game's settings, saved into the profile in use and one ticked besides
+    Core.Set(Core.name, "errors", not was)
+    W.cvars.cameraSmoothStyle = cvar == "2" and "3" or "2"
+    W.Fire("CVAR_UPDATE", "cameraSmoothStyle", W.cvars.cameraSmoothStyle)
+    Frames()
+    check(Lists("General: Errors in chat") and Lists("Game settings: Controls"), "the game's options page of a CVar that changed is listed too")
+    check(Unsaved.Ticked(use) and not Unsaved.Ticked(other) and tContains(Unsaved.Targets(), other)
+        and not tContains(Unsaved.Targets(), Profiles.OWN), "Save to: the profile in use ticked at first; Character specific only while in use")
+    Unsaved.Tick(other, true)
+    check(SaneUIDB.saveTo[other] == true, "a profile ticked besides is kept for the next time")
+    local new = W.cvars.cameraSmoothStyle
+    check(not Profiles.Use(other) and Profiles.InUse() == use and Unsaved.Next() == "Then the profile " .. other .. " is used.",
+        "another profile waits for the answer, which the window names")
+    check(Window().After._text == Unsaved.Next(), "the window says what follows")
+    Window().Yes:GetScript("OnClick")(Window().Yes)
+    local saved = SaneUIDB.profiles[other]
+    check(saved.Core.errors == not was and saved.Sync.taken.CONTROLS_LABEL.cvars.cameraSmoothStyle == new,
+        "Yes: the changes are in the profile ticked besides, the game's setting too")
+    check(Profiles.InUse() == other and not Unsaved.Pending() and not Window():IsShown(), "then the profile that waited is used")
+    check(SaneUIDB.profiles[use].Core.errors == not was, "and the profile left kept them")
+    use, other = other, use
+
+    -- No: back as at the last save, the game's settings written into the game
+    Frames()
+    local before, game, theirs = Errors(), W.cvars.cameraSmoothStyle, SaneUIDB.profiles[other].Core.errors
+    Core.Set(Core.name, "errors", not before)
+    W.cvars.cameraSmoothStyle = game == "2" and "3" or "2"
+    W.Fire("CVAR_UPDATE", "cameraSmoothStyle", W.cvars.cameraSmoothStyle)
+    Frames()
+    check(Unsaved.Pending() and Unsaved.Ticked(use), "the profile in use ticked again")
+    Unsaved.Tick(other, true)
+    Window().No:GetScript("OnClick")(Window().No)
+    check(Errors() == before and W.cvars.cameraSmoothStyle == game and not Unsaved.Pending(),
+        "No: every change taken back, the game's setting written back into the game")
+    check(SaneUIDB.profiles[other].Core.errors == theirs, "and no profile ticked was written")
+
+    -- Unticked, the profile in use gets its settings back; the one ticked takes them
+    Frames()
+    local mine = Errors()
+    Core.Set(Core.name, "errors", not mine)
+    Frames()
+    Unsaved.Tick(use, false)
+    Unsaved.Tick(other, false)
+    check(not Unsaved.Any() and not Window().Yes:IsEnabled() and not Unsaved.Save() and Unsaved.Pending(),
+        "none ticked: Yes is off, nothing to save to")
+    Unsaved.Tick(other, true)
+    check(Window().Yes:IsEnabled(), "one ticked: Yes is on")
+    Unsaved.Save()
+    check(Errors() == mine and SaneUIDB.profiles[other].Core.errors == not mine and not Unsaved.Pending(),
+        "Yes with the profile in use unticked: the one ticked takes the change, the one in use is back as it was")
+
+    -- The page Profiles: Save and Load last settings, only while there are changes
+    local load, keep = Control("Load last settings"), Control("Save")
+    Config.Refresh()
+    check(load and keep and not load:IsEnabled() and not keep:IsEnabled(), "the page Profiles: Save and Load last settings, off with nothing to save")
+    Frames()
+    local now = Errors()
+    Core.Set(Core.name, "errors", not now)
+    Frames()
+    Frames()
+    check(load:IsEnabled() and keep:IsEnabled(), "on while there are changes")
+    Click(load)
+    W.popups[#W.popups].data.callback()
+    check(Errors() == now and not Unsaved.Pending(), "Load last settings asks first, then takes every change back")
+    Frames()
+    Core.Set(Core.name, "errors", not now)
+    Frames()
+    Click(keep)
+    check(Errors() == not now and not Unsaved.Pending() and SaneUIDB.profiles[use].Core.errors == not now, "Save keeps them")
+
+    -- A /reload Sane UI offers waits for the answer
+    Frames()
+    Core.Set(Core.name, "errors", now)
+    Frames()
+    W.reloaded = nil
+    Core.AskReload({ "something" })
+    W.popups[#W.popups].data.callback()
+    check(not W.reloaded and Unsaved.Next() == "Then the interface reloads.", "a /reload offered with changes unsaved: the save window first")
+    Unsaved.Undo()
+    check(W.reloaded == true and Errors() == not now, "then the /reload")
+    W.reloaded = nil
+
+    -- The options closed with changes: the window stays; a logout unanswered takes them back in the saved settings
+    Frames()
+    Core.Set(Core.name, "errors", now)
+    Frames()
+    SettingsPanel:Hide()
+    check(Unsaved.Pending() and Window():IsShown(), "the options closed: the window stays until Yes or No")
+    W.Fire("PLAYER_LOGOUT")
+    check(SaneUIDB.profiles[use].Core.errors == not now, "unanswered at the logout: taken back in the saved settings")
+end
+
+-- The save window's No after Edit Mode: the layout takes its own text again
+do
+    local layouts = { layouts = { { layoutName = "Mine", layoutType = 1 } }, activeLayout = 3 }
+    local saved
+    local was = {}
+    for _, name in ipairs({ "ConvertLayoutInfoToString", "ConvertStringToLayoutInfo", "GetLayouts", "SaveLayouts" }) do was[name] = C_EditMode[name] end
+    C_EditMode.ConvertLayoutInfoToString = function(layout) return "now " .. layout.layoutName end
+    C_EditMode.ConvertStringToLayoutInfo = function(text) return { from = text } end
+    C_EditMode.GetLayouts = function() return layouts end
+    C_EditMode.SaveLayouts = function(all) saved = all end
+    local part = Sync.part.hudLayout
+    part.Write({ name = "Mine", kind = 1, text = "before" })
+    check(saved == nil, "a layout the character has keeps its own text when a profile is used")
+    Sync.ExactLayout()
+    check(part.Write({ name = "Mine", kind = 1, text = "before" }) == true and saved == layouts and layouts.layouts[1].from == "before"
+        and layouts.layouts[1].layoutName == "Mine" and layouts.layouts[1].layoutType == 1,
+        "after No: its text from the last save, saved through the game, a /reload due")
+    saved = nil
+    part.Write({ name = "Mine", kind = 1, text = "again" })
+    check(saved == nil, "once")
+    for name, fn in pairs(was) do C_EditMode[name] = fn end
+end
 
 local problems = {}
 for label, problem in pairs(Core.errors) do problems[#problems + 1] = label .. ": " .. tostring(problem.text) end

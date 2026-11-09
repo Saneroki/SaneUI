@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A save window after you change settings in Sane UI's options, the
+  game's own options, key bindings, Edit Mode or the addon list: it
+  stands beside them until you answer. Yes saves the changes into
+  every profile you tick, No takes them back. The Profiles page has
+  Save and Load last settings.
 - Tracked auras: watch them on everyone, a role (Tank, Healer,
   DPS), a party member or any raid member (Group 1 to 40), and
   show them on your unit frames and on the group frames apart.

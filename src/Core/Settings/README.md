@@ -8,6 +8,8 @@ Shows the switches of Sane UI in the game's own options: the page *Sane UI* with
 every module that is switched on.
 Checkboxes, sliders for numbers, boxes to type words or a number into, dropdowns for one of a few (or several,
 ticked), colours, buttons, and a list of the CVars. A module's page in tabs has a search box and *Defaults*.
+After a change in a menu, a save window beside it asks whether to keep it: *Yes* into the profiles ticked, *No* takes
+it back.
 
 ## How to use
 - **Open the options:** Esc > Options > AddOns > Sane UI, or `/sane options`, or click *Sane UI* in
@@ -25,7 +27,9 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
         profile in use back to their defaults), then *Copy from* (a dropdown of the other profiles; asks
         first), *Export* (a window with the profile as a line of text, selected to copy) and *Import* (the same
         window, empty: paste, *Import*, a name). The three standard ones cannot be renamed or deleted, and on
-        *Character specific* there is nothing to export. Chat says what was
+        *Character specific* there is nothing to export. Then *Save* (keeps the changes not saved yet, into the
+        profiles ticked in the save window) and *Load last settings* (asks first: every change since the last
+        save taken back), both only while there are changes not saved yet. Chat says what was
         done, and why a name was refused.
       - *Characters*: first *New Characters*, the profile a character not seen yet starts with; then every
         character seen on the account, this one marked, each with its profile (a dropdown) and, but this one,
@@ -63,6 +67,22 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
       The game's own *Defaults* button (on a list page) with *All settings* does the same for such a page.
 - A change counts at once. One the game shows only after a `/reload` offers it (the game's dialog: *Reload*,
   *Later*).
+- **The save window** (Saneroki, 2026-11-09): after a change here, in the game's own options (its pages, key
+  bindings, the tab *CVars*), in Edit Mode, in the game's addon list or in Sane UI's options over a full screen,
+  a window *Save the changes?* stands beside the menu while it can still be used, and stays until *Yes* or *No*,
+  the menu closed too (it has no close button; Esc leaves it; it can be dragged). It lists what changed since the
+  last save (*General: Errors in chat*, *Game settings: Graphics*, up to 8 lines), and under *Save to* the profiles
+  to save it to, a tick each: the one in use ticked at first, the others as you ticked them the last time.
+  - *Yes*: the changes go into every profile ticked; the one in use, if you unticked it, gets its settings back
+    as they were at the last save. *No*: every change since the last save taken back, the game's settings too
+    (an Edit Mode layout's frames after the `/reload` offered). Set back by hand, there is nothing to save and the
+    window goes.
+  - Choosing another profile (on this page, `/sane profile`, the box *Speed Leveling* in the bags) or the *Reload*
+    Sane UI offers waits for the answer: the window says what follows (*Then the profile Speedleveling is used.*).
+  - A `/reload` or logout with the window unanswered takes the changes back; the addon list's *Reload UI*
+    saves them first (into the profiles ticked).
+  - Only what the profiles keep counts: Sane UI's settings, and of the game's what the tab *Game settings* ticks
+    (and the CVars kept by name). A change made with no menu open (a window moved, a box in a window) is none.
 - Words or a number in a box: Enter sets what was typed, Esc (or a click elsewhere) leaves the value as it was.
   A number is kept within its ends; words the module refuses get the default back.
 
@@ -146,6 +166,18 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
     into the game's `StaticPopupDialogs`. Should a client update take one away, it is noted and nothing happens.
   - Export and import show a window of ours (`SaneUIProfileText`, `ButtonFrameTemplate` with an
     `InputScrollFrameTemplate` box; Esc closes it): the text of `Core.Profiles.Export`, or a box to paste into.
+  - *Save* and *Load last settings* (`KEEP`) are `Core.Unsaved.Save` and `Undo` (Core's README, *Unsaved
+    changes*), on while `Unsaved.Pending()`.
+- **The save window (`Save.lua`):** `SaneUISaveChanges`, a `ButtonFrameTemplate` (its portrait and close button
+  hidden; strata `DIALOG`, toplevel, movable, clamped), made the first time there are changes; shown by
+  `Core.Unsaved.Watch` while `Unsaved.Pending()`, placed anew each time it comes: right of the game's
+  `SettingsPanel` or `AddonList` where one is shown, else at the screen's right. Its lines are `Unsaved.Changes()`
+  (8 at most, the last *and N more*), `Unsaved.Next()` under them; *Save to* is a `WowStyle1DropdownTemplate` of
+  checkboxes (`Unsaved.Targets`, `Ticked`, `Tick`), its text the names ticked (`OverrideText`); *Yes*
+  (`Unsaved.Save`, off with none ticked) and *No* (`Unsaved.Undo`) are `UIPanelButtonTemplate`s. Each change of
+  it also shows the pages anew (`Config.RefreshSoon`). A click on any page of ours (`Panel.Refresh`), a CVar kept
+  or not (`CVars.Keep`) and the full screen's options view (`Screen.lua`: `Unsaved.Open`, `Close`) reach
+  `Core.Unsaved`.
   - **Shown anew:** when values change under the controls (another profile used, a
     switch set elsewhere with `Core.Set`), `Config.Refresh`, a frame later, asks each setting of the list pages
     to show its value again (`SettingMixin:NotifyUpdate`, what the game does for a value changed elsewhere) and
@@ -247,7 +279,8 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
 | `Panel.lua` | The parts of a page of our own: header, tabs over their box, scroll area, titled boxes, checkboxes, sliders, dropdowns (one or several), boxes to type into, colours, buttons; each page's controls shown anew together |
 | `Tabbed.lua` | A module's page in tabs, drawn from its switches' descriptions (`tab`, `header`, `headerTip`, `parent`, `parentValue`, `inline`, `unit`, `hidden`, the kinds), its search and *Defaults* |
 | `Screen.lua` | Sane UI's options over a full screen (its title bar's cog): the list of pages, the chosen one drawn as a page in tabs |
-| `Profiles.lua` | The page *Profiles*: its tabs, the tab *Profiles*, the export/import window |
+| `Profiles.lua` | The page *Profiles*: its tabs, the tab *Profiles* (with *Save* and *Load last settings*), the export/import window |
+| `Save.lua` | The save window beside the menus after a change: what changed, *Save to* (a tick per profile), *Yes*, *No* |
 | `Synced.lua` | The tab *Game settings*: Sync's parts, kept per profile |
 | `CVars.lua` | The tab *CVars* on the page *Profiles*: the list of the game's CVars |
 | `CVars.xml` | The list's frame, and one CVar's row in it |
@@ -260,6 +293,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 
 ## History
 
+- 2026-11-09 — The save window (Saneroki): a change in the options, the game's own, Edit Mode or the addon list brings *Save the changes?* beside the menu until *Yes* (into the profiles ticked under *Save to*) or *No* (taken back); the page Profiles has *Save* and *Load last settings*. Another profile and an offered `/reload` wait for the answer; unanswered, a `/reload` or logout takes the changes back.
 - 2026-10-17 — The page *Profiles* anew (Saneroki): *Accountwide settings*; *This character* with its profile and *New*, *Rename*, *Delete*, *Defaults*, *Copy from*, *Export*, *Import*; *Characters* with a profile each and *Forget*. *Load*, *Save*, *Duplicate*, *Load at login*, *Save at logout*, *Empty* and *SaneUI Defaults* are gone. The tab *Accountwide* is *Game settings*, without the box of modules.
 - 2026-10-17 — Every kind of switch on both kinds of page: words and numbers typed into a box (`entry`), several
   of a few in a dropdown of checkboxes (`multi`), a button (`button`), a colour on a list page too; `hidden`

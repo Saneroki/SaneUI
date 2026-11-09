@@ -137,6 +137,15 @@ but for a window to try those with (`/sane window`).
     at first.
   - Every change on any options page goes into the profile in use, for every character that uses it. Nothing
     is copied at a logout: the settings live in their profile, and only the game's are read into it.
+  - **The save window** (`Unsaved.lua`, `Settings/Save.lua`; Saneroki, 2026-11-09): a change made in a menu (the
+    game's options with Sane UI's pages, its own pages, key bindings and the CVar list; Edit Mode; the addon list;
+    Sane UI's options over a full screen) counts at once, and a window beside the menu asks *Save the changes?*
+    until it is answered, the menu closed too: what changed since the last save, *Save to* (a tick per profile,
+    the one in use at first, the others as ticked the last time), *Yes* (saved into every profile ticked; the one
+    in use, unticked, gets its settings back) and *No* (every change since the last save taken back, the game's
+    too). The page Profiles has the same as *Save* and *Load last settings*. Another profile chosen (also the box
+    *Speed Leveling* in the bags) and a /reload Sane UI offers wait for the answer; a /reload or logout unanswered
+    takes the changes back, but the addon list's *Reload UI* saves them first.
 
 ## Technical details
 - **Several addons, one shared table.** The game gives every addon a table only its own files see, so what
@@ -161,6 +170,7 @@ but for a window to try those with (`/sane window`).
   | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (a name, *Character specific* for none; nil: Accountwide) |
   | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Accountwide) |
   | `SaneUIDB.version` | The shape of these settings (`Profiles.VERSION`, 2) |
+  | `SaneUIDB.saveTo` | `[profile] = true`: the profiles ticked under *Save to* besides the one in use (the save window, `Unsaved.lua`) |
   | `SaneUIDB.errors` | What went wrong (`Core.errors`), for `/sane errors` |
   | `SaneUIDB.log` | The same, every time it happened: the error log (`Core.log`) |
   | `SaneUICharDB` | Per character (`WTF/Account/<account>/<realm>/<character>/SavedVariables/SaneUI.lua`): `settings.<Module>` (its own, with *Accountwide settings* off), `since` (the `ownSince` they were made under), `key` (its key in `characters`, to find it before the login) |
@@ -200,7 +210,25 @@ but for a window to try those with (`/sane window`).
     settings in use at their defaults), `Export(name)` (a line of text, `Core.Serial`), `Import(text, as)`,
     `Characters()`, `Character(key)` (`Profiles.NEW`: *New Characters*), `SetCharacter(key, name)`,
     `Forget(key)`, `Capture()`. A step returns true, or false and a line for chat saying why not. Names are up
-    to `MAX_NAME` (32) letters, unique in any letter case. `/sane profile [name]`.
+    to `MAX_NAME` (32) letters, unique in any letter case. `/sane profile [name]`. For the save window:
+    `Settings(name)` (a saved profile's table), `Put(fill)` (the settings in use filled anew, as a profile used:
+    `fill(module)` its new settings, false leaves it). With changes unsaved, `Use`, `SetCharacter` of this
+    character and `Delete` of the one in use wait for the answer (`Core.Unsaved.Wait`) and return false meanwhile.
+- **Unsaved changes** (`Unsaved.lua`, `Core.Unsaved`): the last save is a copy of every module's settings, taken
+  when a menu opens with nothing waiting (`Open(menu, frame)`, `Close(menu)`: the game's `SettingsPanel` and
+  `AddonList`, Edit Mode by `Core.EditMode.Watch`, a full screen's options view). While a menu is open a change
+  is looked at at most every 0.3 s (`Soon`: `Panel.Refresh`, `CVAR_UPDATE`, `UPDATE_BINDINGS`,
+  `EDIT_MODE_LAYOUTS_UPDATED`, `AddonList_Update`): Sync's capture reads the game's settings in, then each
+  described setting that differs is a path into its module's settings (down into tables of names; a list, as the
+  chat windows or a command's keys, counts as one), but where the windows stand and Sync's `from`. `Pending()`,
+  `Changes()` (in words: *General: Errors in chat*, *Game settings: Controls*), `Targets()`, `Ticked(name)`,
+  `Tick(name, on)`, `Any()`, `Save()` (each path written into every other profile ticked, Sync's only into one
+  of this game; the one in use unticked gets them back), `Undo()` (`Profiles.Put` with the last save's values:
+  the modules told, Sync writing the game's; an Edit Mode layout takes its own text again, `Sync.ExactLayout`),
+  `Wait(words, fn)`, `Next()`, `Watch(fn)`, `Moved()` (another profile in use: a new last save). At
+  `PLAYER_LOGOUT`, after Profiles' capture: unanswered, the paths take the last save's values in the saved
+  settings only (the game gets them at the next login, Sync's writing); after the addon list's Okay with a
+  /reload due (a hook after `AddonList_OnOkay`) they are saved as *Yes* would.
 
 - **A switch is described once,** by its module, while its files are read:
   `Core.Options(name, { { key, default, text, tip }, ... }, hooks)`, hooks a table (`changed(key, value)`,
@@ -545,6 +573,7 @@ but for a window to try those with (`/sane window`).
 | `Saved.lua` | The saved settings and the description of the switches |
 | `Presets.lua` | What the standard profiles set over the defaults: our recommended CVars (`Core.Presets`) |
 | `Profiles.lua` | Where every module's settings live: a profile (Accountwide at first) or the character's own; the profiles |
+| `Unsaved.lua` | Changes made in the menus kept or taken back: the last save, what differs from it, Yes into the profiles ticked, No, a step waiting for the answer (`Core.Unsaved`; its window is `Settings/Save.lua`) |
 | `Serial.lua` | Plain values as a line of text and back (`Core.Serial.Write`, `Read`): a profile exported and imported |
 | `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`, `Unconfirmed` (the line *! Unconfirmed Data !*; `UNCONFIRMED_MARK`, the red ! before each such thing's name), `TipLook`/`TipSection`/`LookOf` (a creature on a map, drawn by the Tooltips module like a unit), `Pool`, `Confirm`, `AskText`, `Font`, `Sound`, `Lend` |
 | `Dock.lua` | The zones at the screen's edges, and the shape that shows where a dragged window docks |

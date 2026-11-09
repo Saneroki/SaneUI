@@ -157,6 +157,7 @@ end
 function CVars.Keep(name, on)
     local sync = Core.Sync
     if sync.options then sync.Keep(name, on) end
+    if Core.Unsaved then Core.Unsaved.Soon() end -- a CVar kept or not: a change for the save window
 end
 
 -------------------------------------------------------------------------------

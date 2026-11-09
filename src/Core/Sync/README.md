@@ -152,6 +152,13 @@ the game's own chat channels on every character is the Social module's.)
       that is not there (deleted, another character's own) leaves the layout in use, and is still the one
       kept until a layout is picked in this session: a character that does not have it does not give its
       own to the others at its logout, and the character that has it finds it again.
+    - **Its own text again** (`Sync.ExactLayout`, Saneroki, 2026-11-09): the save window's *No* after frames were
+      moved in Edit Mode and saved there (`Unsaved.lua`) has the next layout set take the text of the last save
+      too: where the game's text of that layout differs, it is replaced in `C_EditMode.GetLayouts()` and saved by
+      `C_EditMode.SaveLayouts` (Edit Mode's manager is not told: its frames would move under our taint), and the
+      `/reload` that shows it is offered. Otherwise a layout the character has keeps its own text.
+- **Read more often:** while a menu is open (the game's options, Edit Mode, the addon list), the save window has
+  `Sync.Capture` read the kept parts at most every 0.3 s (Core's `Unsaved.lua`), so a change there is seen at once.
 - **Left out, and why:**
   - The settings of Core's sound profiles (`Audio.lua`): the five sounds' switches and volumes (`Sound_EnableAllSound`,
     `Sound_MasterVolume`, ... `Sound_AmbienceVolume`). The profiles keep them per game account and set them at each
@@ -183,6 +190,7 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-09 — The save window (Core's `Unsaved.lua`): the kept parts read while a menu is open; its *No* after Edit Mode gives a layout its own text again (`Sync.ExactLayout`).
 - 2026-11-04 — The sound profiles' CVars left to Core's `Audio.lua` (`Sync.Leave`): per game account, set at each
   login, never written by a profile's Sync.
 - 2026-10-25 — Per game (Saneroki): what was read in one game is written only there (`from`), never Forever's

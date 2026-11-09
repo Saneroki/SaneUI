@@ -244,6 +244,7 @@ function Screen.Close(window)
     local screen = screens[window]
     if not screen or not screen.view:IsShown() then return end
     screen.view:Hide()
+    if Core.Unsaved then Core.Unsaved.Close(screen) end -- a menu for the save window (Unsaved.lua)
     Core.Escape(screen, nil)
     window:Escapes(true) -- Esc is the window's again (Window.lua: a panel's close, else its full screen's way back)
     if window.settings then window.settings:UnlockHighlight() end
@@ -253,6 +254,7 @@ function Screen.Toggle(window)
     if Screen.Shown(window) then return Screen.Close(window) end
     local screen = screens[window] or Make(window)
     screen.view:Show()
+    if Core.Unsaved then Core.Unsaved.Open(screen, screen.view) end
     Sized(screen)
     Choose(screen, screen.chosen)
     window:Escapes(false)
