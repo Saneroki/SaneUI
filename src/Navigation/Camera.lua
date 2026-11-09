@@ -16,7 +16,10 @@ local _, ns = ...
 --
 --  Zoomed out past its continent the view shows the whole world, in the same
 --  plane (the world map's box in it, Coords.WorldBox); zoomed in again over
---  another continent, it moves into that continent's plane (Settle). The levels
+--  another continent, it moves into that continent's plane (Settle). Dragged,
+--  its middle goes anywhere on the world map, at every zoom: off its continent
+--  over another, it moves into that one's plane, the same on the screen
+--  (Saneroki, 2026-11-09: no other continent to choose first). The levels
 --  change with some slack, so the view does not flicker between two at a
 --  border. A plane of its own (Coords.Alone: Zephras Isle) is a zone: its
 --  zone's level reaches out to the world, with no continent's between.
@@ -73,9 +76,9 @@ function methods:Nearest()
     return Camera.Near()
 end
 
--- The zoom within its bounds, the middle on the map shown (the plane's, or the world).
+-- The zoom within its bounds, the middle on the world map (the plane's own map where it has no place there).
 local function Clamp(self)
-    local box = self.level == "world" and self.world or self.box
+    local box = self.world or self.box
     if not box then return end
     local near = self.native and self.k or self:Nearest()
     self.k = math.max(self.far, math.min(near, self.k))
@@ -100,12 +103,14 @@ local function Over(box, u, v)
 end
 
 -- After every change: the level, and coming in from the world over another continent or a plane of its own, its
--- plane. At the world off a plane of its own (not while following the player, who is on it), the plane under the
--- middle at once: over a continent the world is left at that continent's zoom, not at the isle's.
+-- plane. Off its plane's own map (not while following the player, who is on it): at the world off a plane of its
+-- own, the plane under the middle at once (over a continent the world is left at that continent's zoom, not at the
+-- isle's); closer in, the plane under the middle too, at the level the zoom shows there.
 function methods:Settle()
     local level = Level(self)
-    local away = self.alone and not self.follow and self.level == "world" and not Over(self.box, self.u, self.v)
-    if self.level == "world" and (level ~= "world" or away) then
+    local off = not self.follow and not Over(self.box, self.u, self.v)
+    local away = off and (level == "world" and self.alone or level ~= "world" and self.level ~= "world")
+    if (self.level == "world" and level ~= "world") or away then
         local under = Coords.PlaneAt(self.map, self.u, self.v)
         if under and under ~= self.map and self:Move(under) then
             if not away then self.level = nil end -- coming in: its own level, as if come to anew

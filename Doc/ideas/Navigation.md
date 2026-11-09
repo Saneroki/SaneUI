@@ -103,7 +103,9 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Rendered as terrain plus Blizzard's map art:** a mix of the minimap look, which renders the terrain
   from the game's own minimap tiles, and the official native maps. Navigation is built with our own code
   and, where it needs data, our own data, kept and handled by Core's database system (*Our own data*).
-- **Navigation as on Blizzard's map:** drag to pan, scroll wheel to zoom. On the small window the
+- **Navigation as on Blizzard's map:** drag to pan, scroll wheel to zoom; dragged anywhere on the world map at
+  every zoom, across the sea onto the other continent too (Saneroki, 2026-11-09: no continent to choose first). On
+  the small window the
   wheel zooms from the usual minimap range all the way out to the whole world and back in, so the
   minimap is already a world map.
 - **Independent views:** the small window and the full screen each keep their own zoom and position.
@@ -480,7 +482,8 @@ When the window fills the screen:
 - **One pin per thing (Saneroki, 2026-10-16):** the same quest, NPC or place can be known several ways
   (our shipped data, learned in play, shared by the guild, the game live). One pin is kept for it, not
   several (*One pin per thing*).
-- Every pin type can be switched on and off with the pin filter (see *Full screen*).
+- Every pin type can be switched on and off with the pin filter (see *Full screen*). The quest areas on the
+  minimap have a switch of their own, off at first (Saneroki, 2026-11-09: no blue area and white ring there).
 - **Always on top (Saneroki, 2026-10-20):** pins, quest areas, the route and every other notation on the map
   stand over the map in every view and at every zoom, never behind it (the painted Atlas, the art, the terrain,
   the game's minimap all lie under them).
@@ -1319,12 +1322,15 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     the set's `wait` where Forever has the original game's way (a batch, unverified), else the sailing and the
     stays, corrected by a second ride. When a ship really sails on a realm is learnt on a ride: the player's
     place in the world moving along its way at its speed says when it left its last stop; kept for the realm on
-    this computer, trusted half a day. The planner's wait for a ship is the time to its next departure where
+    this computer, for good where its round is known (worked out anew from the clock after a reload or a login,
+    each ride correcting it; decision 2026-11-09), for three rounds where it is only estimated (a ship ridden
+    once). The planner's wait for a ship is the time to its next departure where
     that is known, else half its round; nothing guessed is in the master.
   - **At a dock (built 2026-10-20, `DockWatch.lua`):** within 60 yards of where a ship stops, under the game's
     widgets at the top of the screen, a row for each ship that stops there: its icon, where it goes, and when it
     arrives and leaves, counting down (grey, how often it sails, until a ride taught its times); aboard, when
-    it lands. The setting *Ship times at a dock* (on); not while the map fills the screen.
+    it lands. The setting *Ship times at a dock* (on); not while the map fills the screen. A dock's pin lists every
+    port of its ship in the order it travels to them, that one last (Saneroki, 2026-11-09).
   - **The trip on screen (built 2026-10-20, `TripView.lua`, Core's `Data.Trips`):** on a flight, a ship or the
     tram, high up the screen (2026-10-21 and 2026-10-30, Saneroki): the start and the end named above the ends of a fine
     golden line in the map route's art, filling smoothly (eased every frame between Core's looks), the vehicle's

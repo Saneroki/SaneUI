@@ -18,7 +18,8 @@ local Core = SaneUI.Core
 --      Ships:Next(key, stop, at)   -- at server time at (default: now): the next time it arrives at that stop
 --                              -- (its number in stops) and when it leaves, as server times, and whether it
 --                              -- stands there now (then arrive is when it came); nil while its times on this
---                              -- realm are not known (no ride seen, or longer ago than Ships.TRUST)
+--                              -- realm are not known (no ride seen; where its round is only estimated, a ride
+--                              -- more than Ships.GUESS rounds ago)
 --      Ships:Near(yards)       -- the stops within so many yards of the player now: a list of { key, stop }
 --      Ships:Seen(key)         -- when its times were last learnt here (server time) and how many rides did
 --      Ships:Aboard()          -- aboard a boat or zeppelin now: its key, the stop it comes to next, the seconds
@@ -43,7 +44,11 @@ local Core = SaneUI.Core
 --  Ships.AGREE seconds are a ride, kept for this realm in Core's saved data
 --  (Core.Store), on this computer only. Where the set has no round, the rides learn
 --  it from the rounds between them, and correct it while they agree with it (Keep,
---  below). Nothing in a taxi's flight, and nothing while the set Travel is not
+--  below). Kept for good where the round is known (Saneroki, 2026-11-09: after a
+--  /reload or a login the times are there again, worked out anew from the clock);
+--  every ride corrects them (a restart of the realm starts its ships anew). Where
+--  it is only estimated, some seconds off each round, for Ships.GUESS rounds after
+--  the ride. Nothing in a taxi's flight, and nothing while the set Travel is not
 --  loaded (it is Core's, read with Core at the login).
 -------------------------------------------------------------------------------
 local Data = Core.Data
@@ -59,7 +64,7 @@ Ships.LOOK, Ships.CLOSE = 3, 1 -- seconds between two looks: anywhere, near a st
 Ships.SAMPLES = 5        -- samples at full speed that make a ride
 Ships.AGREE = 4          -- seconds they agree within
 Ships.PACE = 0.3         -- a share the player's pace along the way may differ from the boat's
-Ships.TRUST = 12 * 3600  -- seconds a ride's times are trusted
+Ships.GUESS = 3          -- rounds after a ride its times hold where its round is only estimated (a known one's: always)
 Ships.ROUNDS = 40        -- at most so many rounds between two rides that give a round not confirmed yet
 Ships.KINDS = { boat = true, zeppelin = true }
 
@@ -255,8 +260,8 @@ function Ships:Next(key, stop, at)
     local entry = timetable and timetable.stops[stop]
     if not entry or not learnt or not learnt.epoch then return nil end
     at = at or Ships.Now()
-    if at - (learnt.seen or 0) > Ships.TRUST then return nil end
     local round = timetable.round
+    if not timetable.known and at - (learnt.seen or 0) > Ships.GUESS * round then return nil end
     local arrive = learnt.epoch + entry.arrive + math.ceil((at - learnt.epoch - entry.arrive) / round) * round
     local before = arrive - round
     if at >= before and at < before + entry.stay then return before, before + entry.stay, true end

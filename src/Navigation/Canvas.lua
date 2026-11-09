@@ -316,7 +316,7 @@ local function Draw()
     ns.Safe("terrain", ns.Terrain.Place, view, art < 1)
     ns.Safe("map art", ns.Art.Place, view, art > 0)
     ns.Safe("indoors", ns.Indoors.Place, view)
-    ns.Safe("areas", ns.Areas.Place, view)
+    ns.Safe("areas", ns.Areas.Place, view, camera == ns.Window.small)
     ns.Safe("route", ns.Route.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
@@ -518,16 +518,21 @@ local function Down(_, button)
 end
 
 -- Where the game's map pin goes for the mouse at x, y from the view's middle: on the zone there, else the continent
--- (as the game's map puts it on the map it shows); at the world, on the continent (or the plane of its own) under
--- the mouse. { map, x, y } (PinView.Drop takes it), or { } where there is none.
+-- (as the game's map puts it on the map it shows); at the world, and off the view's continent closer in (the other
+-- one beside it), on the continent (or the plane of its own) under the mouse. { map, x, y } (PinView.Drop takes it),
+-- or { } where there is none.
 local function Where(x, y)
     local u, v = camera.u + x / camera.k, camera.v + y / camera.k
-    local plane = camera.map
-    if camera.level == "world" then
+    local plane, own = camera.map, camera.box
+    local off = own and not (u >= own.u and u <= own.u + own.width and v <= own.v and v >= own.v - own.height)
+    if camera.level == "world" or off then
         local under = Coords.PlaneAt(camera.map, u, v)
         local link = under and Coords.Link(camera.map, under)
-        if not link then return {} end
-        plane, u, v = under, link.du + link.su * u, link.dv + link.sv * v
+        if link then
+            plane, u, v = under, link.du + link.su * u, link.dv + link.sv * v
+        elseif camera.level == "world" then
+            return {}
+        end
     end
     local map = Coords.ZoneAt(plane, u, v) or plane
     local box = Coords.Box(map) -- (a zone the game gives no world position for has none: no place to pin there)
@@ -818,14 +823,14 @@ function Canvas.Build(parent)
             -- The game's arrow may lead to another quest now: its pins (the game's alone) and area.
             ns.Pins.Changed("waypoint")
             if drawn then ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small) end
-            if drawn then ns.Safe("areas", ns.Areas.Place, view) end
+            if drawn then ns.Safe("areas", ns.Areas.Place, view, camera == ns.Window.small) end
         elseif what == "explored" then
             ns.Pins.Changed(what)
             Canvas.Refresh() -- the map's art shows what is explored
         elseif ns.Pins.Changed(what) and drawn then
             -- The pins only ("zone" too: a burst of them comes at each new part of a building), not the whole map.
             ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
-            if what == "quests" then ns.Safe("areas", ns.Areas.Place, view) end
+            if what == "quests" then ns.Safe("areas", ns.Areas.Place, view, camera == ns.Window.small) end
         end
     end)
     return frame

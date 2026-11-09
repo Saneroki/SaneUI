@@ -9,7 +9,8 @@ local _, ns = ...
 --
 --      which quest   the one the mouse is over in the quest log (QuestLog.lua), else the one the game's
 --                    arrow leads to (C_SuperTrack); in the log only
---      when          at a zone's level, while the pin filter's Quest areas is on
+--      when          at a zone's level, while the pin filter's Quest areas is on; on the small view (the
+--                    minimap) while its Quest areas on the minimap is (off at first: Saneroki, 2026-11-09)
 --
 --  The engine shades the area into the frame's rectangle as it stands when it
 --  is asked; a frame just placed or sized has its new rectangle only once the
@@ -36,6 +37,7 @@ local layer, holder
 local frames = {} -- [uiMapID] = its area frame, made when first needed
 local works       -- the game makes the frame for us: nil not tried yet, false it did not
 local hovered     -- the quest under the mouse in the quest log
+local small       -- the view last placed is the small one (the minimap)
 local pending     -- the quest to draw on the next frame, into the frames placed for it (Redraw)
 
 -- A zone's area frame, made the first time; nil when the game does not make one.
@@ -100,10 +102,11 @@ local function Quest()
     return index and index > 0 and quest or nil
 end
 
--- Drawn for the view as the canvas laid it out: over each zone in view, at a zone's level; one map at a time
--- (Retail), over the map shown.
-function Areas.Place(view)
-    local quest = view.level == "zone" and ns.Pins.Shows("area") and Quest()
+-- Drawn for the view as the canvas laid it out (onSmall: the small view's, the minimap): over each zone in view, at a
+-- zone's level; one map at a time (Retail), over the map shown.
+function Areas.Place(view, onSmall)
+    small = onSmall and true or false
+    local quest = view.level == "zone" and ns.Pins.Shows(small and "minimapArea" or "area") and Quest()
     if not quest then return HideAll() end
     layer:SetAlpha(ns.PinScale("area")) -- the pin filter's slider for the quest areas is their opacity
     local drawn = {}
@@ -135,7 +138,7 @@ end
 function Areas.Hover(quest)
     if hovered == quest then return end
     hovered = quest
-    if ns.Canvas.Laid() then Areas.Place(ns.Canvas.view) end
+    if ns.Canvas.Laid() then Areas.Place(ns.Canvas.view, small) end
 end
 
 function Areas.Clear()

@@ -36,7 +36,7 @@ local Core = SaneUI.Core
 --  stations' line at least Trips.SHARE of its speed (the set's time for a run);
 --  Trips.SAMPLES looks of a ride that agree within Trips.AGREE seconds on when it
 --  left its station are its times on this realm (kept as the ships' are, in
---  Core's saved data, trusted Data.Ships' TRUST seconds); a train leaves each
+--  Core's saved data, for good: its wait is the set's); a train leaves each
 --  station every wait seconds (the set's), and stands there wait less time.
 --  Looked at every Trips.LOOK seconds, every Trips.CLOSE on a trip or in the
 --  tram's map.
@@ -427,7 +427,6 @@ function Trips:TramNext(key, at)
     local record = Travel:Get(key)
     if not learnt or not learnt.epoch or not record or not record.wait or not record.time then return nil end
     at = at or Ships.Now()
-    if at - (learnt.seen or 0) > Ships.TRUST then return nil end
     local wait = record.wait
     local stay = math.max(0, wait - record.time)
     local leave = learnt.epoch + math.ceil((at - learnt.epoch) / wait) * wait

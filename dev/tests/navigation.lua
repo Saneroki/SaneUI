@@ -1118,7 +1118,28 @@ camera:Show(1415, 0, -5000, 0.5)
 camera:Pan(50, -100)
 check(near(camera.u, -100) and near(camera.v, -4800) and not camera.follow, "a drag moves the middle against the mouse and stops following")
 camera:Pan(-1e6, 0)
-check(camera.u == camera.box.u + camera.box.width, "the middle stays on the continent")
+check(camera.map == 1415 and camera.u == camera.world.u + camera.world.width,
+    "dragged far off its continent, over the sea: the middle stays on the world map")
+-- Dragged from the Eastern Kingdoms over Kalimdor at a zone's zoom (Saneroki, 2026-11-09): no continent to choose
+-- first, the camera moves into Kalimdor's plane, the same on the screen, its zone's level kept.
+;(function()
+    camera:Show(1415, 0, -5000, 0.5)
+    camera.follow = false
+    local overU, overV = lu + 2000 * link.su, lv - 2000 * link.sv -- Kalimdor's (-10000, 18000), in the Eastern Kingdoms' plane
+    camera:Pan((camera.u - overU) * camera.k, (camera.v - overV) * camera.k)
+    check(camera.map == 1414 and camera.level == "zone" and near(camera.k, 0.5 * link.su) and near(camera.u, -10000)
+        and near(camera.v, 18000), "dragged over the other continent at a zone's zoom: into its plane, the same on the screen")
+    camera:Pan(10, 10)
+    check(camera.map == 1414, "a drag within it: still there")
+    local back = Coords.Link(1415, 1414)
+    camera:Pan((camera.u - (back.du + back.su * 0)) * camera.k, (camera.v - (back.dv + back.sv * -5000)) * camera.k)
+    check(camera.map == 1415 and near(camera.u, 0) and near(camera.v, -5000) and near(camera.k, 0.5),
+        "and back over the Eastern Kingdoms: their plane again, at the zoom it had")
+    camera.follow = true
+    camera:Look(overU, overV)
+    check(camera.map == 1415, "a view that follows the player stays in its plane")
+    camera.follow = false
+end)()
 -- The isle (2000 x 2500 yards, a yard of it half a yard of the Eastern Kingdoms' on the world map): a zone out to the
 -- world, no continent's level between; off it at the world, the world left over a continent at that one's zoom.
 do
@@ -1911,7 +1932,13 @@ end)()
     check(minimap._shown and ground == true and minimap._zoom == step and not Canvas.Laid()
         and Count(Shown(), 801, 804) == 0 and Overviews(Shown(), 0) == 0,
         "in an instance: the game's minimap alone, its own ground on, at the view's step; nothing of ours but the sea")
-    check(minimap._AreasAt(Hybrid.AREA), "there its own quest areas too")
+    check(minimap._AreasAt(0), "there its own quest areas and their ring off: the pin filter's Quest areas on the minimap is at first")
+    ns.SwitchPin("minimapArea")
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(minimap._AreasAt(Hybrid.AREA), "switched on: its own quest areas there too")
+    ns.SwitchPin("minimapArea")
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(minimap._AreasAt(0), "and off again")
     IsInGroup = function() return true end
     tracker._scripts.OnUpdate(tracker, 0.016)
     local blips = 0
@@ -2449,8 +2476,18 @@ do
     GameTooltip._lines = nil
     dock._scripts.OnEnter(dock)
     local lines = GameTooltip._lines
-    check(lines and lines[1] == "To The Far Shore, Kalimdor" and lines[2] == Pins.TEXT.openMap and not lines[3],
-        "its tooltip: where it sails to, the area and the zone in the game's words; the game's own way, not unconfirmed")
+    check(lines and lines[1] == Pins.TEXT.ports and lines[2] == "1. The Far Shore, Kalimdor"
+        and lines[3] == "2. Elwynn Forest (this port)" and lines[4] == Pins.TEXT.openMap and not lines[5],
+        "its tooltip: its ports in the order it travels to them, this one last, the area and the zone in the game's words; "
+        .. "the game's own way, not unconfirmed")
+    -- A way round three ports, stopping twice in a row at the second: from there the third, the first, then back.
+    local record = { docks = { { map = 1429 }, { map = 1414 }, { map = 1415 } }, dockAreas = { 0, 12, 0 } }
+    local round = { stops = { { dock = 1 }, { dock = 2 }, { dock = 2 }, { dock = 3 } } }
+    local ports = Pins.Ports(record, round, 2)
+    check(ports and #ports == 3 and ports[1].map == 1415 and ports[2].map == 1429 and ports[3].map == 1414
+        and ports[3].area == 12 and ports[3].here and not ports[1].here and not ports[1].area,
+        "a way of three ports: from its second the third, the first, and the second last; a port it stops at twice in a row once")
+    check(Pins.Ports(record, nil, 2) == nil and Pins.Ports(record, round, 4) == nil, "none without its timetable or a stop there")
 end
 local marker = pins["gathered:npc:69"]
 check(marker and #marker.pin.gathered == 2 and marker.icon._atlas == ns.PinView.PLUS and not marker.count
@@ -3664,6 +3701,31 @@ function W.SmallAndBack(between)
     for key, value in pairs(kept) do small[key] = value end
 end
 
+-- The quest areas on the minimap: none at first, though the full map has them (Saneroki, 2026-11-09); the pin
+-- filter's Quest areas on the minimap brings them.
+;(function()
+    local was = focused
+    focused = 7
+    local function Area()
+        for _, widget in ipairs(areaFrames) do if widget._shown then return widget end end
+    end
+    W.SmallAndBack(function()
+        small:Show(1415, 500, -8950, 0.5)
+        Canvas.Layout()
+        check(Canvas.view.level == "zone" and not Area() and not ns.Pins.Shows("minimapArea"),
+            "the small view at a zone, the arrow leading to a quest: no quest area drawn on it at first")
+        ns.SwitchPin("minimapArea")
+        local area = Area()
+        if area then area._parent._scripts.OnUpdate(area._parent) end
+        check(area and area._quest == 7, "Quest areas on the minimap ticked: its area on the minimap too")
+        ns.SwitchPin("minimapArea")
+        check(not Area(), "and gone again when it is not")
+    end)
+    check(Area(), "the full map again: the quest's area there")
+    focused = was
+    Canvas.Layout()
+end)()
+
 -- The box Follow me left of the pin filter: on at first. Ticked, the full map on the player and following; dragged
 -- away, it follows again as the player walks on once the mouse has left it alone for Canvas.AGAIN (not while the player
 -- stands, nor sooner); a map chosen in the bar's selector counts as the mouse; the full map opens on the player. Not
@@ -4230,7 +4292,9 @@ do
         "laid out past the canvas' bottom edge, the tower is out of sight there")
     GameTooltip._lines = nil
     tower._scripts.OnEnter(tower)
-    check(GameTooltip._lines and GameTooltip._lines[1] == "To Elwynn Forest", "its tooltip: where it flies to")
+    local lines = GameTooltip._lines
+    check(lines and lines[1] == Pins.TEXT.ports and lines[2] == "1. Elwynn Forest" and lines[3]:find("^2%. .+ %(this port%)$"),
+        "its tooltip: its two ports, where it flies to first")
     shown = Shown()
     local isleCut = shown[950] and shown[950]._mask
     check(isleCut and isleCut._texture == ns.Terrain.PATH:format(2991, 4, 4) and Overviews(shown, 2991) > 0,
@@ -4285,6 +4349,21 @@ do
     ctrl = false
     check(waypoint and waypoint.uiMapID == 2521 and near(waypoint.position.x, 0.55) and near(waypoint.position.y, 0.5),
         "Ctrl-click on the isle: the map pin on it")
+    -- Off the isle, over the Eastern Kingdoms' coast beside it in view: the pin on them, not off the isle's map.
+    local coastU, coastV = Coords.FromWorldMap(2521, 0.63, 0.42)
+    full:Look(Coords.FromWorldMap(2521, 0.6, 0.42)) -- dragged a little east, over the sea between them
+    Canvas.Layout()
+    check(full.map == 2521 and full.level == "zone", "dragged off the isle over the sea: still on the isle's plane")
+    waypoint = nil
+    ctrl = true
+    local can = C_Map.CanSetUserWaypointOnMap
+    C_Map.CanSetUserWaypointOnMap = function() return true end -- a continent's map takes one here
+    cursorX, cursorY = 800 + (coastU - full.u) * full.k, 434 + (coastV - full.v) * full.k
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    ctrl, C_Map.CanSetUserWaypointOnMap = false, can
+    check(waypoint and waypoint.uiMapID == 1415 and near(waypoint.position.x, 0.01 / 0.32) and near(waypoint.position.y, 0.24 / 0.64),
+        "Ctrl-click over the other continent beside it: the map pin on that one")
     waypoint = nil
     player.map, player.x, player.y = 1429, 0.75, 0.3
     full:Show(was.map, was.u, was.v, was.k)
@@ -4932,9 +5011,10 @@ local function Rides()
     local arrive, leave, here = Ships:Next(3, 2)
     check(arrive and math.abs(arrive - (leaves + run(yards))) < 1 and near(leave - arrive, 60) and not here,
         "then when it comes to the next dock, and leaves it")
-    arrive, leave, here = Ships:Next(3, 1, leaves + 10 * round - 30)
-    check(arrive and math.abs(arrive - (leaves + 10 * round - 60)) < 1 and here, "ten rounds later: standing at its first dock")
-    check(Ships:Next(3, 1, now + Ships.TRUST + 1) == nil, "a ride's times not trusted after a while")
+    arrive, leave, here = Ships:Next(3, 1, leaves + 2 * round - 30)
+    check(arrive and math.abs(arrive - (leaves + 2 * round - 60)) < 1 and here, "two rounds later: standing at its first dock")
+    check(Ships:Next(3, 1, kept.seen + Ships.GUESS * round + 1) == nil,
+        "its round only estimated, some seconds off each round: its times hold only for Ships.GUESS rounds after the ride")
     -- Three rounds later, a ride again, the boat 10 seconds a round slower than estimated: its round corrected.
     W.place = nil
     W.Wait(20)
@@ -4949,6 +5029,12 @@ local function Rides()
     kept = store["Stub Realm"][3]
     check(kept.rides == 2 and math.abs(kept.round - (round + 10)) < 1 and Ships:Table(3).known
         and math.abs(Ships:Table(3).round - (round + 10)) < 1, "a second ride corrects the estimated round")
+    -- Its round known now: its times kept for good, worked out from the clock (after a /reload or a login too,
+    -- Saneroki 2026-11-09), until a ride corrects them.
+    local known = Ships:Table(3).round
+    local far = Ships:Next(3, 1, kept.epoch + 1000 * known + 10)
+    check(far and math.abs(far - (kept.epoch + 1001 * known - 60)) < 0.01,
+        "its round known: a thousand rounds after the ride its times still there, from the clock")
     -- The dock watch (DockWatch.lua): aboard, where it lands and when; at its dock, where it goes and when it comes.
     local DockWatch = ns.DockWatch
     local function Clock(seconds)

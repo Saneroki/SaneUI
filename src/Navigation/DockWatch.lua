@@ -4,8 +4,10 @@ local _, ns = ...
 --  Sane UI - Navigation - DockWatch
 --  At a dock of a boat or a zeppelin, or a station of the tram: each that stops
 --  there, where it goes, and when it comes and leaves, once a ride taught its
---  times on this realm (Core's Data.Ships, Data.Trips); until then how often it
---  sails. Nothing on a trip. While the setting Ship times at a dock is on. The
+--  times on this realm (Core's Data.Ships, Data.Trips), worked out anew from the
+--  clock each time, also after a /reload or a login (Saneroki, 2026-11-09); until
+--  then how often it sails (one ridden once whose round is not learnt yet: ride it
+--  again). Nothing on a trip. While the setting Ship times at a dock is on. The
 --  overlay draws it (TripView.lua); this knows no frames.
 --
 --      DockWatch.Rows()     the ways waiting here, soonest first: { { kind, icon, name, status, known, arrive,
@@ -31,6 +33,7 @@ DockWatch.TEXT = {
     coming = "Arrives in %s, leaves in %s",
     every = "Sails every %s (ride it once for its times)",
     about = "Sails about every %s (ride it once for its times)",
+    again = "Sails about every %s (ride it again for its times)",
     trams = "A train about every %s (ride it once for its times)",
     to = "To %s",
 }
@@ -74,9 +77,13 @@ local function Icon(timetable)
     return ns.Pins.WAY_ICONS[timetable.kind] or ns.Pins.WAY_ICONS.boat
 end
 
--- A row's words: when it comes and leaves, or how often (now: server time).
-local function Status(row, now, every, known)
-    if not row.leave then return (known and DockWatch.TEXT.every or DockWatch.TEXT.about):format(Clock(every)) end
+-- A row's words: when it comes and leaves, or how often (now: server time; ridden: a ride of it is kept, its round not
+-- learnt yet).
+local function Status(row, now, every, known, ridden)
+    if not row.leave then
+        local words = known and DockWatch.TEXT.every or ridden and DockWatch.TEXT.again or DockWatch.TEXT.about
+        return words:format(Clock(every))
+    end
     if row.here then return DockWatch.TEXT.here:format(Clock(row.leave - now)) end
     return DockWatch.TEXT.coming:format(Clock(row.arrive - now), Clock(row.leave - now))
 end
@@ -119,7 +126,7 @@ function DockWatch.Rows()
                     name = name and DockWatch.TEXT.to:format(name) or ns.Pins.WAY_WORDS[timetable.kind],
                     arrive = arrive, leave = leave, here = here, known = leave ~= nil, every = timetable.round,
                     last = leave and leave - timetable.round }
-            row.status = Status(row, now, timetable.round, timetable.known)
+            row.status = Status(row, now, timetable.round, timetable.known, Ships:Seen(near.key) ~= nil)
             best[near.key] = row
         end
     end

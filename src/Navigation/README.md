@@ -24,7 +24,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane map`,
   and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
 - **The same in both views:**
-  - **drag** with the left button: the map moves, and stops following you;
+  - **drag** with the left button: the map moves, and stops following you; anywhere on the world map, at any
+    zoom: dragged off a continent over the other (or Zephras Isle), the map goes on there, no continent to choose
+    first;
   - **the mouse wheel** zooms around the point under the mouse; while the map follows you it walks the game's
     minimap's zoom steps first (its live dots show then), then goes on out to the whole continent and the
     world, and in past the game's nearest step four times nearer than it;
@@ -91,7 +93,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   with its icon large before its words, in sections under their titles: *Around you* (the route, the minimap's
   dots, the party and raid), *Quests*, *Travel*, *Towns and services*, *Rares and treasures*, *Gathering*; it
   scrolls on a screen lower than it. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
-  experience for you any more), *Quests for later* (once you meet what they ask), *Done quests*, *Quest areas* and *Quest objectives*. Its
+  experience for you any more), *Quests for later* (once you meet what they ask), *Done quests*, *Quest areas*, *Quest
+  areas on the minimap* (off at first) and *Quest objectives*. Its
   first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
   shows around you (players, tracked herbs and ore), on the small map and on the full map too, there
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
@@ -164,7 +167,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   you face. While you turn the camera with the left mouse button they wait, until you ride on a moment or turn with
   the right button. They never touch the map pin.
 - **Quest areas:** the quest the arrow leads to, or the one under the mouse in the quest log, shaded as the game
-  shades it on its map, lightly, its edge clear; on the small map too, in place of the game's minimap's own.
+  shades it on its map, lightly, its edge clear. On the small map only with *Quest areas on the minimap* ticked
+  in the pin filter or the satchel (off at first: no blue area and no white ring there), in place of the game's
+  minimap's own (theirs too where its own ground shows: in a dungeon, in Retail).
 - **Quest objectives:** where your quests' open objectives really are, not only their area: of each quest in your log
   that Sane UI's data holds, a pin at every spawn it knows of what is asked: the quest log's sword on a creature to
   kill, its sack on what gives an item to loot and on an object to use, the game's speech bubble on someone to speak
@@ -286,8 +291,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **Ship times at a dock:** at the dock of a boat or a zeppelin, or a station of the Deeprun Tram, the travel
   overlay (below) shows the next to come there: where it goes, the golden line filling as it nears, when it
   arrives (*Board now* while it is in) and when it leaves; the others that stop there in a line each below. A ship
-  or the tram you have not ridden on this realm yet shows how often it comes; one ride teaches its times (kept on
-  this computer for the realm, half a day). *Ship times at a dock* in the settings switches it off.
+  or the tram you have not ridden on this realm yet shows how often it comes; one ride teaches its times, kept on
+  this computer for the realm and worked out anew from the clock each time, after a `/reload` or a login too; every
+  ride corrects them (a restart of the realm starts its ships anew). Until a ride on a later trip teaches how long
+  it takes once round (Forever's own boats and zeppelins), they hold only for its next three trips; then it says to
+  ride it again. *Ship times at a dock* in the settings switches it off.
 - **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay high up
   the screen: where it began and where it goes at the ends of a fine golden line (the map route's art, its glint
   pulsing along) that fills smoothly as you go, the vehicle's icon riding at its tip, a flight point's mark at each
@@ -337,7 +345,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   world, the camera moves into its plane, at the same size on the screen. On the isle the zone's level reaches
   out to the world, with no continent's between; at the world off the isle (not following you) the camera goes
   into the plane under the middle at once, so over a continent the world is left at that continent's own zoom,
-  as ever, not at the small isle's.
+  as ever, not at the small isle's. Its middle may go anywhere on the world map (`Camera`'s `Clamp`: the world's
+  box in its plane, at every level): dragged off its continent at a zone's or a continent's zoom (not following
+  you), over another continent or the isle (`Coords.PlaneAt`), it moves into that plane, the same on the screen,
+  at the level the zoom shows there; over the sea between them it stays in its own. A map pin set off its
+  continent there goes on the one under the mouse (`Canvas`'s `Where`).
 - **The canvas** (`Canvas.lua`), the same for both views: its layers hang on one holder frame, laid out around
   an origin. A drag or a step of following moves the holder only; a layout happens when the zoom changes, the
   holder has moved past a margin, or another zone is in the middle (asked of the game every `Canvas.LOOK` while
@@ -398,8 +410,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Offered`: not done,
   not in the log, level, side, race, class, the quests before) is a quest giver, else a rare, else its service in
   the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
-  (Core's set *Travel*, its `docks`) its own pin, its tooltip where it goes from there (the game's names of each
-  other dock's area and zone, `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening the map where it is the
+  (Core's set *Travel*, its `docks`) its own pin, its tooltip every port it calls at, numbered in the order it
+  travels to them from there, that one last (`Pins.Ports`, by the stops of Core's timetable, `Data.Ships`; a port it
+  stops at twice in a row once; the tram: its other station), in the game's names of each dock's area and zone
+  (`C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening the map where it is the
   only one, not marked unconfirmed (the game's own ways). A pin at each of a thing's points (a herb's every spawn:
   its key the thing's and the point's, its `thing` the thing's); the game's pin hides every one of the data's for
   the same thing (a vignette's GUID names its creature). Kept per map until the game says it changed (the message
@@ -437,7 +451,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   128 (over our darker ground that stood solid), the edge at its 192, times the pin filter's opacity. The game's
   minimap draws none of its own while our map lies under it (`Hybrid.AREAS`: its quest, bonus objective and dig site
   areas' fill, edge and ring at 0 with its ground off, `Hybrid.AREA` again with its ground on): its ring round its
-  edge, made for the round minimap, stood as a white circle inside the square, whole or in part.
+  edge, made for the round minimap, stood as a white circle inside the square, whole or in part. On the small view
+  (`Areas.Place`'s `onSmall`, from the canvas' camera) ours and the game's minimap's own only while the filter's kind
+  `minimapArea` is on (off at first: a missing kind counts as off, so no upgrade); the full map's by `area`, whose
+  slider sets the opacity of both.
 - **Dungeons** (`Dungeons.lua`): the maps of kind *Dungeon* under the world map (`C_Map.GetMapChildrenInfo`), one
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
@@ -947,6 +964,15 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-09, ship times kept, ports in order, quest areas off the minimap, the map across continents:** Saneroki
+  found the travel overlay's ship times gone after a reload or a login: Core dropped a ride's times half a day after
+  it (`Ships.TRUST`). Now a known round's are kept for good, worked out anew from the clock, every ride correcting
+  them; an estimated one's (a boat ridden once) hold `Ships.GUESS` rounds, then *ride it again* (his pick). A dock's
+  pin lists every port of its ship in the order it travels to them (`Pins.Ports`). The quest areas, "the blue bubble
+  and the white ring", are off on the minimap at first, *Quest areas on the minimap* in the pin filter brings them
+  (ours and the game's minimap's own). "There is a limit how far you can pan and you have to select the other
+  continent": the camera's middle now goes anywhere on the world map and into the other continent's plane as it
+  is dragged over it.
 - **2026-11-09, the Atlas gone:** as Saneroki asked ("too many disadvantages without much benefit"), the painted map
   and its module `SaneUI_Atlas` are gone, with `Painted.lua`, its layer and its nearer zoom: the map offers
   *Parchment*, *Blended* and *Scrying* and starts as Scrying; a saved *Atlas* falls back to Scrying.

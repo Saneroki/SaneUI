@@ -28,7 +28,7 @@ local Core = SaneUI.Core
 --      name, to (the map a place or way leads to), levelMin, levelMax, side; instance (a dungeon's or raid's
 --                entrance: its instance's map ID)
 --      towards   a dock's: where its boat or zeppelin goes from there, its way's other docks, each { map, area
---                (the game's area there, AreaTable ID, or nil) }
+--                (the game's area there, AreaTable ID, or nil) }; dock: its number in the way's docks
 --  An NPC with many points on a map (a wanderer, a rare) stands at the middles of its areas there instead; a
 --  boat or a zeppelin at each of its docks (Travel's docks), one place per dock even where it stops twice.
 --
@@ -180,7 +180,7 @@ local function Docks(found, key, record)
             end
         end
         Put(found, dock.map, dock.x, dock.y, { kind = "travel", key = "travel:" .. key .. ":" .. index, id = key,
-            what = record.kind, name = record.name, side = record.side, towards = Hand(towards),
+            dock = index, what = record.kind, name = record.name, side = record.side, towards = Hand(towards),
             to = #towards == 1 and towards[1].map or nil })
     end
 end

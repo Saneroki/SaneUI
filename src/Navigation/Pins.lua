@@ -109,6 +109,9 @@ Pins.TEXT = {
     questGiver = "Quest giver",
     level = "Level %d to %d",
     towards = "To %s",
+    ports = "Its ports, in the order it travels to them:",
+    port = "%d. %s",
+    thisPort = "%d. %s (this port)",
     -- What a thing gives, on its pin's tooltip (PinView.Drops)
     dropsCorpse = "Drops, per corpse looted",
     dropsNode = "Gives, per gather",
@@ -124,6 +127,7 @@ Pins.TEXT = {
 Pins.WAY_WORDS = { boat = "Boat", zeppelin = "Zeppelin", tram = "Tram", lift = "Lift", portal = "Portal" }
 
 local Map = Core.Data.Map()
+local Ships = Core.Data.Ships()
 
 -------------------------------------------------------------------------------
 --  What the game tells, per map
@@ -354,6 +358,30 @@ local function Towards(there)
 end
 Pins.Towards = Towards
 
+-- A boat's or zeppelin's ports from its dock number dock, in the order it sails to them, that one last: { { map,
+-- area, here } }, by its timetable's stops (Core's Data.Ships: each stop's dock, its number in the record's docks), a
+-- port it stops at twice in a row once; nil without a timetable (the tram) or a stop at that dock.
+function Pins.Ports(record, timetable, dock)
+    if type(record) ~= "table" or type(record.docks) ~= "table" or not timetable then return nil end
+    local stops, first = timetable.stops, nil
+    for number, stop in ipairs(stops) do
+        if stop.dock == dock then first = number break end
+    end
+    if not first then return nil end
+    local areas = type(record.dockAreas) == "table" and record.dockAreas or {}
+    local ports, last = {}, dock
+    for step = 1, #stops do
+        local at = stops[(first - 1 + step) % #stops + 1].dock
+        local there = record.docks[at]
+        if at ~= last and type(there) == "table" then
+            local area = areas[at]
+            ports[#ports + 1] = { map = there.map, area = area and area > 0 and area or nil, here = at == dock }
+        end
+        last = at
+    end
+    return #ports > 1 and ports or nil
+end
+
 -- A trainer's icon: the class book where its title names one of the game's classes, else the profession's scroll.
 local classNames -- the game's class names, asked once
 local function Trainer(title)
@@ -510,8 +538,19 @@ local function FromData(place)
         if place.towards then
             -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
             pin.unverified, pin.doubt, pin.lines = nil, nil, {}
-            for _, there in ipairs(place.towards) do
-                pin.lines[#pin.lines + 1] = Pins.TEXT.towards:format(Towards(there))
+            -- A boat's or zeppelin's every port, in the order it travels to them from here (Saneroki, 2026-11-09);
+            -- the tram's other station.
+            local ports = place.dock and Pins.Ports(WAYS_SET:Get(place.id), Ships:Table(place.id), place.dock)
+            if ports then
+                pin.lines[1] = { Pins.TEXT.ports, 1, 0.82, 0 }
+                for number, port in ipairs(ports) do
+                    pin.lines[#pin.lines + 1] = port.here and { Pins.TEXT.thisPort:format(number, Towards(port)), 0.6, 0.6, 0.6 }
+                        or Pins.TEXT.port:format(number, Towards(port))
+                end
+            else
+                for _, there in ipairs(place.towards) do
+                    pin.lines[#pin.lines + 1] = Pins.TEXT.towards:format(Towards(there))
+                end
             end
             if place.to then
                 pin.to, pin.click = place.to, "map"

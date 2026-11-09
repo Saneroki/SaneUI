@@ -581,8 +581,10 @@ Ships:OnLearn(fn)     -- fn(key) on the frame after a ride taught its times
   along a way at its full speed says when the ship left its last stop; `Ships.SAMPLES` looks that agree within
   `Ships.AGREE` seconds are a ride. Kept in Core's saved data per realm (`ships[realm][key] = { epoch, seen,
   rides, round, span, doubt }`; a record of the wrong shape is none), on this computer only, never shared or
-  harvested; trusted `Ships.TRUST` seconds (a restart of the realm starts its ships anew). Without a ride, `Next`
-  gives nil.
+  harvested. Kept for good where the round is known (the set's or learnt; Saneroki, 2026-11-09: after a `/reload` or
+  a login `Next` works them out anew from the clock), every ride correcting them (a restart of the realm starts its
+  ships anew); where it is only estimated (some seconds off each round), for `Ships.GUESS` rounds after the ride.
+  Without a ride, `Next` gives nil.
 - **The round learnt** (where the set gives none): each ride is compared with the round kept, by the rounds since
   the ride before. One that agrees with it (within twice `Ships.AGREE`) is of the same run of the realm: it
   confirms the round, and corrects it when it spans more rounds than the one the round was learnt from (`span`).
@@ -617,8 +619,8 @@ A trip's `pace` (yards a second) and `t` (the `GetTime()` of Core's look) let a 
 - **A boat or a zeppelin** as `Data.Ships` finds the player aboard; **the tram** (the set's way of kind `tram`):
   a place in its map moving along its stations' line at `Trips.SHARE` of its speed (its run's `time`) or more.
   When its train left its station, `Trips.SAMPLES` looks that agree within `Trips.AGREE` seconds, are its times on
-  this realm, kept as the ships' are (`trams[realm][key] = { epoch, seen }`, on this computer only, trusted
-  `Data.Ships`' `TRUST`); a train leaves each station every `wait` seconds and stands there `wait` less `time`.
+  this realm, kept as the ships' are (`trams[realm][key] = { epoch, seen }`, on this computer only, for good: its
+  `wait` is the set's); a train leaves each station every `wait` seconds and stands there `wait` less `time`.
 - **Watched** once a module asks for the trips (`Data.Trips()`: Navigation, as its files are read) and the world is
   there: the flight master's hooks and the looks, every `Trips.LOOK` seconds, every `Trips.CLOSE` on a trip or in
   the tram's map. Before, nothing. A kept flight, pace or tram time of the wrong shape is none.

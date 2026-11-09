@@ -99,6 +99,9 @@ ns.KINDS = {
     { "done", ns.TEXT.done, section = "quests", on = false, small = true, icon = "islands-questbangdisable", grey = true,
       data = SPAWNS },
     { "area", "Quest areas", section = "quests", on = true, small = true, icon = "questblob" },
+    -- The quest areas on the minimap too, ours and the game's minimap's own with the ring round its edge: off at first
+    -- (Saneroki, 2026-11-09), the opacity Quest areas' slider.
+    { "minimapArea", "Quest areas on the minimap", section = "quests", on = false, small = true, icon = "questblob" },
     { "goal", "Quest objectives", section = "quests", on = true, small = true, texture = "Interface\\CURSOR\\Attack",
       data = SPAWNS },
     { "flight", "Flight points", section = "travel", on = true, small = true, icon = "flightmaster" },

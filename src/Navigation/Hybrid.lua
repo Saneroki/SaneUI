@@ -32,6 +32,8 @@ local _, ns = ...
 --      quest areas  its own (quests', bonus objectives', dig sites') are off with its ground: our own
 --                   lie under it (Areas.lua), and its ring round its edge, made for the round minimap,
 --                   stood as a circle inside the square (Saneroki, 2026-11-06); on with its ground again
+--                   while the pin filter's Quest areas on the minimap is on (off at first, ours too:
+--                   Saneroki, 2026-11-09)
 --      an instance  a dungeon, a raid, a battleground: the game tells no place of the player in our
 --                   planes, so its minimap alone is the map there, with its own ground, at the view's
 --                   step (the game's own while the view has none), whatever the pin filter says; our
@@ -67,7 +69,8 @@ Hybrid.ROOM = 0.5 -- the full map: its square takes at most so much of the canva
 Hybrid.HOME = 2 -- the step a middle click comes back to the player at (Canvas.Home): the game's middle one, its dots
                 -- in sight around you, neither its nearest nor its widest
 -- The game's minimap's own areas, each part's alpha (the engine's: the game's code sets none): 0 while our map lies
--- under it, Hybrid.AREA (the top of the scale, the engine's own) wherever its ground shows and when given back.
+-- under it, Hybrid.AREA (the top of the scale, the engine's own) wherever its ground shows while the pin filter's
+-- Quest areas on the minimap is on (off at first: Saneroki, 2026-11-09), and when given back.
 Hybrid.AREAS = { "SetQuestBlobInsideAlpha", "SetQuestBlobOutsideAlpha", "SetQuestBlobRingAlpha",
                  "SetTaskBlobInsideAlpha", "SetTaskBlobOutsideAlpha", "SetTaskBlobRingAlpha",
                  "SetArchBlobInsideAlpha", "SetArchBlobOutsideAlpha", "SetArchBlobRingAlpha" }
@@ -81,24 +84,28 @@ local cut -- the mask it is cut by now
 local wide -- on the full map: { side, x, y (the player's place in the holder's units), holder }
 local square -- the small view: the side of the game's minimap in its middle, as last placed (Hybrid.Square)
 local ground -- whether the game's minimap draws its own ground now, as last set (nil: not set by us yet)
+local areas  -- whether its own areas show now, as last set
 
 -- The game's minimap, its cluster and border, if this client has them.
 local function Parts()
     return rawget(_G, "Minimap"), rawget(_G, "MinimapCluster"), rawget(_G, "MinimapBackdrop")
 end
 
--- Its own ground drawn (on) or not, where this client lets us say so, and its own areas with it (Hybrid.AREAS);
--- asked of the game only when it changes.
-local function Ground(on)
+-- Its own ground drawn (on) or not, where this client lets us say so, and its own areas with it (Hybrid.AREAS) unless
+-- shown is false; asked of the game only when it changes.
+local function Ground(on, shown)
     on = on and true or false
-    if on == ground then return end
-    ground = on
-    local draw = rawget(_G, "C_Minimap") and C_Minimap.SetDrawGroundTextures
-    if draw then draw(on) end
+    shown = on and shown ~= false
+    if on == ground and shown == areas then return end
+    if on ~= ground then
+        local draw = rawget(_G, "C_Minimap") and C_Minimap.SetDrawGroundTextures
+        if draw then draw(on) end
+    end
+    ground, areas = on, shown
     local minimap = Parts()
     for _, name in ipairs(Hybrid.AREAS) do
         local set = minimap and minimap[name]
-        if set then Core.Ask(set, minimap, on and Hybrid.AREA or 0) end
+        if set then Core.Ask(set, minimap, shown and Hybrid.AREA or 0) end
     end
 end
 
@@ -388,7 +395,7 @@ function Hybrid.Place(camera, width, height, known, lost)
     if not taken then return end
     local minimap = Parts()
     wide = nil
-    Ground(lost or (camera ~= ns.Window.full and not ns.Terrain.Possible()))
+    Ground(lost or (camera ~= ns.Window.full and not ns.Terrain.Possible()), ns.Pins.Shows("minimapArea"))
     if not lost and not ns.Pins.Shows("minimap") then return minimap:Hide() end
     if camera == ns.Window.full then return Wide(minimap, camera, width, height, known) end
     if lost and not camera.native then camera.native = minimap:GetZoom() end
