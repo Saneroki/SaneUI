@@ -194,7 +194,8 @@ ticked), colours, buttons, and a list of the CVars. A module's page in tabs has 
     words in any of Fuzzy's ways, or else the start of a word of its tab, box title or tooltip (300 lower); a
     setting hidden now is not found. Up to 8 are listed under the box in the look of the game's search
     suggestions (`search-highlight`), the letters found in gold (`Fuzzy.Highlight`), with tab and box; *Nothing
-    found* (`SETTINGS_SEARCH_NOTHING_FOUND`) if none. A choice selects its tab, scrolls to its line and marks it
+    found* (`SETTINGS_SEARCH_NOTHING_FOUND`) if none. Up and Down light one, round at the ends, Enter takes the lit one
+    (`Fuzzy.Keys`), else the first. A choice selects its tab, scrolls to its line and marks it
     (until the words change or the lines move). *Defaults* asks with `Core.Confirm`, then `Core.Reset(module)`;
     the page's `OnDefault` (`Settings.lua`, set when the page is put up) does it for the game's *All settings*.
 - **The CVar list (`CVars.lua`, `CVars.xml`):**

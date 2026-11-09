@@ -629,7 +629,8 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     While the sets are read `done` gets what the game found with `reading`, then again. `Lit(entry, text)` the name with what was typed in gold.
     `Box(parent, x, y, opts)` the search box (`InputBoxTemplate`, searched `WAIT` after the last key) and under it the
     suggestions, a frame of their own over what lies below (`FIND`: 16 lines at most, each group its title and its best,
-    at least `per`); Enter takes the first, Escape empties it; `opts.pick(entry)`. `Icon(id)`, `Tip(owner, id, name)`.
+    at least `per`); Enter takes the first, Escape empties it; Up and Down light a find as the mouse would (its tooltip),
+    round at the ends, and Enter takes the lit one (`Core.Fuzzy.Keys`); `opts.pick(entry)`. `Icon(id)`, `Tip(owner, id, name)`.
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
     children `TotemFrame` and the class bars stay the game's; `PetFrame` (which the game's layout re-parents) alpha 0

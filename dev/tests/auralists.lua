@@ -32,6 +32,9 @@ function methods:GetFrameLevel() return self._level or 1 end
 function methods:SetFrameLevel(level) self._level = level end
 function methods:SetTexture(texture) self._texture = texture return true end
 function methods:SetFontObject(font) self._font = font end
+function methods:LockHighlight() self._lit = true end
+function methods:UnlockHighlight() self._lit = false end
+function methods:Click(button) if self._scripts.OnClick then self._scripts.OnClick(self, button or "LeftButton", false) end end
 local function noop() end
 function methods:CreateAnimationGroup()
     local group = setmetatable({}, { __index = function() return noop end })
@@ -270,6 +273,26 @@ if not RETAIL then
     Type("infected")
     box._scripts.OnEnterPressed(box)
     check(Line("Infected Wound") and ns.options.auraKept[3427], "an enemy's aura")
+    -- Up and Down: a find lit as the mouse would light it, round at the ends; Enter picks the lit one, as a click.
+    Type("re")
+    local finds = {}
+    for _, line in ipairs(Suggested()) do if line.entry then finds[#finds + 1] = line end end
+    local function Arrow(key) box._scripts.OnArrowPressed(box, key) end
+    Arrow("DOWN")
+    Arrow("DOWN")
+    check(finds[2].widget._lit and not finds[1].widget._lit and GameTooltip._owner == finds[2].widget,
+        "Down twice: the second find lit, its tooltip shown")
+    Arrow("UP")
+    Arrow("UP")
+    check(finds[#finds].widget._lit and not finds[1].widget._lit, "Up on the first: round to the last")
+    Arrow("DOWN")
+    Arrow("DOWN")
+    local second = finds[2].entry
+    check(finds[2].widget._lit and second ~= finds[1].entry and not Line(second.name), "Down on the last: round to the first")
+    box._scripts.OnEnterPressed(box)
+    check(Line(second.name) and ns.options.auraKept[second.id] == second.name and not Line(finds[1].entry.name),
+        "Enter: the lit one picked, not the first")
+    check(box:GetText() == "" and not finder._shown and not finds[2].widget._lit, "the box empty again, nothing lit")
 end
 
 -- A spell's number: that spell first, whatever the sets.

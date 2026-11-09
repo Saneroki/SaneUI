@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Searches with a list of matches under them (Edit tracked, a
+  Sane Macros step's spell, a settings page's search): Up and Down go
+  through the matches, each with its tooltip, and Enter takes the one
+  chosen, as a click on it does.
 - Map: the painted view Atlas is gone, with its module. The map
   offers Parchment, Blended and Scrying, and starts as Scrying.
 - Edit tracked: Shows on now takes several places at once. Tick any

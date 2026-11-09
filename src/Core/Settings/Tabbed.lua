@@ -260,7 +260,8 @@ end
 
 -- The search box over the tabs, left of anchor, and the list of what it found under it: at every key
 -- (a page has a few dozen settings) the best FOUND, the letters found in gold, each with its tab and
--- box; a click on one, or Enter for the first, goes to it (Go). A setting hidden now is not found.
+-- box; a click on one, or Enter for the first, goes to it (Go); Up and Down light one, Enter goes to the lit
+-- one (Fuzzy.Keys). A setting hidden now is not found.
 local function Search(page, anchor, find)
     local search = CreateFrame("EditBox", nil, page, "SearchBoxTemplate")
     search:SetSize(200, 20)
@@ -272,7 +273,8 @@ local function Search(page, anchor, find)
     list:SetFrameLevel(page:GetFrameLevel() + 20) -- over the tabs' box
     list:Hide()
     find.search, find.list, find.found = search, list, {}
-    local found = find.found
+    local found, keys = find.found, Fuzzy.Keys(search)
+    list:HookScript("OnHide", Core.Guard("options", function() keys:Rows(nil) end))
     local rows = Core.Pool(function(_, index)
         local row = CreateFrame("Button", nil, list)
         row:SetHeight(MATCH)
@@ -296,6 +298,7 @@ local function Search(page, anchor, find)
     end)
     find.rows = rows
     local function Look()
+        keys:Rows(nil)
         if find.marked then find.marked:Hide() end
         for index = #found, 1, -1 do found[index] = nil end
         local query = Fuzzy.Query(search:GetText())
@@ -313,9 +316,10 @@ local function Search(page, anchor, find)
             return a.order < b.order
         end)
         rows:Begin()
+        local taken = {}
         for index = 1, math.min(#found, FOUND) do
             local entry, row = found[index], rows:Take()
-            row.entry = entry
+            row.entry, taken[index] = entry, row
             row.Words:SetText(Fuzzy.Highlight(entry.option.text, Spots(query, entry.option.text)))
             row.Where:SetText(entry.where)
             row:Show()
@@ -330,9 +334,11 @@ local function Search(page, anchor, find)
         rows:Done()
         list:SetHeight(8 + rows.taken * MATCH)
         list:Show()
+        keys:Rows(taken)
     end
     search:HookScript("OnTextChanged", Core.Guard("options", Look))
     search:HookScript("OnEnterPressed", Core.Guard("options", function(self)
+        if keys:Take() then return end -- the one lit by the arrows, as a click
         if found[1] then Go(find, found[1]) end
         list:Hide()
         self:ClearFocus()

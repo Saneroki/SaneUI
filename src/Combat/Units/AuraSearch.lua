@@ -21,7 +21,9 @@ local _, ns = ...
 --  The box that asks it (Search.Box) is the aura lists' window's and the
 --  reminders' window's: what is typed searched a moment after the last key, the
 --  finds under it in their groups, over everything below it; a click on one, or
---  Enter for the first, picks it; the mouse on one shows its tooltip. Sane
+--  Enter for the first, picks it; the mouse on one shows its tooltip. Up and
+--  Down light one as the mouse would, round at the ends, and Enter picks the lit
+--  one (Core.Fuzzy.Keys; Saneroki, 2026-11-09). Sane
 --  Macros' step hands it a box of its own and its own search (any spell), the
 --  finds flying up over the steps (Macros/Detail.lua, Macros/Spells.lua).
 -------------------------------------------------------------------------------
@@ -270,10 +272,11 @@ end
 -- What the search found under the box: each group's title, then its best finds; nil: none of it.
 function Box:Show(list)
     self.first = nil
+    self.keys:Rows(nil)
     if not list then return self.finder:Hide() end
     local F = Search.FIND
     local typed = self.box:GetText()
-    local at, most = 0, self.most
+    local at, most, finds = 0, self.most, {}
     local per = math.max(F.per, math.floor((most - math.max(#list, 1)) / math.max(#list, 1)))
     for _, group in ipairs(list) do
         local room = most - at - 1
@@ -287,6 +290,7 @@ function Box:Show(list)
             local entry = group.entries[index]
             at = at + 1
             self:Fill(at, entry, Search.Lit(entry, typed))
+            finds[#finds + 1] = self.lines[at]
             self.first = self.first or entry
         end
     end
@@ -297,6 +301,7 @@ function Box:Show(list)
     for index = at + 1, #self.lines do self.lines[index]:Hide() end
     self.finder:SetHeight(at * F.line + 8)
     self.finder:Show()
+    self.keys:Rows(finds)
 end
 
 -- What is typed now, searched; the answer shown while the box is in sight and it is still what is typed.
@@ -349,9 +354,11 @@ function Search.Box(parent, x, y, opts)
         box:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 6, -4)
         box:SetAutoFocus(false)
     end
+    self.keys = Core.Fuzzy.Keys(box)
     local later = Core.Later(function() ns.Safe(opts.label, Box.Run, self) end, Search.WAIT, "Combat: " .. opts.label)
     Script(box, "OnTextChanged", ns.Guard(function(_, typed) if typed then later() end end))
     Script(box, "OnEnterPressed", ns.Guard(function(edit)
+        if self.keys:Take() then return end -- the one lit by the arrows, as a click
         if self.first then return self:Pick(self.first) end
         edit:ClearFocus()
     end))

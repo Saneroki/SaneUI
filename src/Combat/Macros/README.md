@@ -167,7 +167,8 @@ of your normal action bar buttons. The macros are your account's, on every chara
   (`byClass`, kind `class`) and `Spells`, once, the first time they are there, passives left out by `C_Spell.IsSpellPassive`,
   one entry a name, its highest rank; *All*, each name once. The search is `Core.Fuzzy.Filter` over the names of the group
   chosen. The fly-out under a spell's name is the aura search's box (`ns.AuraSearch.Box`, given the name's own box: it
-  keeps its scripts and its text, the finds fly up over the steps, ten lines) asking `Spells.Find`, whose finds are every
+  keeps its scripts and its text, the finds fly up over the steps, ten lines; Up and Down light one, Enter takes it)
+  asking `Spells.Find`, whose finds are every
   name once in its best group (yours, then your class's, then the others'), ranked and grouped by the aura search's own
   `Search.Grouped`. It closes when Sane Macros goes and at standing down.
 - **The picture window** (`Icons.lua`). A Core window of kind panel at `FULLSCREEN_DIALOG` (over the full screen, HIGH,

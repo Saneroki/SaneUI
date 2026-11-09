@@ -563,6 +563,20 @@ do
     check(page.parts[2]:IsShown() and not page.parts[1]:IsShown() and find.went.option.key == "tint", "one in another tab: a click shows that tab")
     Look("kept")
     check(find.found[1].option.key == "lines" and find.found[2].option.key == "count", "a word of its tooltip finds one too, after those found by their words")
+    -- Up and Down light one as the mouse would, round at the ends; Enter goes to the lit one, as a click
+    for index = 1, 2 do
+        local row = find.rows[index]
+        row.LockHighlight, row.UnlockHighlight = function(self) self.held = true end, function(self) self.held = false end
+        row.Click = Press
+    end
+    local function Arrow(key) find.search:GetScript("OnArrowPressed")(find.search, key) end
+    Arrow("DOWN")
+    Arrow("DOWN")
+    check(find.rows[2].held and not find.rows[1].held, "Down twice: the second found lit")
+    find.search:GetScript("OnEnterPressed")(find.search)
+    check(find.went.option.key == "count" and not find.list:IsShown() and not find.rows[2].held,
+        "Enter goes to the lit one, not the first; the list closed, nothing lit")
+    Look("kept")
     Core.Set("Tabbed", "size", 10)
     Config.Panel.Refresh(page)
     Look("big lett")

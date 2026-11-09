@@ -18,6 +18,8 @@ local Core = SaneUI.Core
 --      Fuzzy.Filter(rows, query, fields, done)  -- the rows every word is found in (by their fields, keys or
 --                                               -- functions of a row), ranked: done(found, ranks); a long
 --                                               -- list a part per frame (below)
+--      Fuzzy.Keys(box)                          -- Up, Down and Enter over the finds flying out of a search
+--                                               -- box (at the end)
 --
 --  A rank is a whole number. Its hundreds say how the word was found, best
 --  first:
@@ -296,4 +298,60 @@ function Fuzzy.Highlight(text, spots)
     end
     Close()
     return table.concat(out)
+end
+
+-------------------------------------------------------------------------------
+--  The keys over a fly-out (Saneroki, 2026-11-09)
+--  A search box whose finds fly out as rows to click (the aura search's box,
+--  a settings page's search): Up and Down light one, round at the ends, as the
+--  game's own name completion does (AutoComplete.lua), and as the mouse would:
+--  its highlight held (LockHighlight) and its OnEnter run (a tooltip), OnLeave
+--  when it goes. Enter on the lit one does what a click on it does. Nothing
+--  lit, Enter does what the box's own does.
+--
+--      local keys = Fuzzy.Keys(box)   -- the box's arrows hooked (OnArrowPressed)
+--      keys:Rows(list)                -- the buttons that can be taken, in order, as the fly-out shows
+--                                     -- them now (nil: none, the fly-out hidden); none lit
+--      keys:Take()                    -- first in the box's OnEnterPressed: the lit row clicked, true;
+--                                     -- false: none lit
+-------------------------------------------------------------------------------
+local Keys = {}
+Keys.__index = Keys
+
+-- A row lit as the mouse coming onto it would light it, or no longer, as the mouse leaving it.
+local function Light(row, on)
+    if on then row:LockHighlight() else row:UnlockHighlight() end
+    local script = row:GetScript(on and "OnEnter" or "OnLeave")
+    if script then script(row, false) end
+end
+
+function Keys:Rows(list)
+    local lit = self.lit and self.rows[self.lit]
+    self.rows, self.lit = list or {}, nil
+    if lit then Light(lit, false) end
+end
+
+-- Up or Down: the row before or after the lit one, round at the ends; with none lit the first (Down) or the
+-- last (Up), which is the one next to the box when the finds fly out over it.
+function Keys:Step(key)
+    local rows, at = self.rows, self.lit
+    local count = #rows
+    if count == 0 or (key ~= "UP" and key ~= "DOWN") then return end
+    if at then Light(rows[at], false) end
+    if key == "DOWN" then at = at and at % count + 1 or 1 else at = at and (at - 2) % count + 1 or count end
+    self.lit = at
+    Light(rows[at], true)
+end
+
+function Keys:Take()
+    local row = self.lit and self.rows[self.lit]
+    if not row then return false end
+    row:Click()
+    return true
+end
+
+function Fuzzy.Keys(box)
+    local keys = setmetatable({ rows = {} }, Keys)
+    box:HookScript("OnArrowPressed", Core.Guard("search", function(_, key) keys:Step(key) end))
+    return keys
 end

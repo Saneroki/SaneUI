@@ -1727,6 +1727,45 @@ do
     check(older == nil, "a newer search makes the older one stop: its rows never come")
 end
 
+-- The keys over a fly-out: Up and Down light a find as the mouse would, round at the ends; Enter takes the lit one
+do
+    local box, told, rows = CreateFrame("EditBox", nil, UIParent), {}, {}
+    for index = 1, 3 do
+        local row = CreateFrame("Button", nil, UIParent)
+        row.LockHighlight = function(self) self.held = true end
+        row.UnlockHighlight = function(self) self.held = false end
+        row.Click = function(self) self:GetScript("OnClick")(self, "LeftButton", false) end
+        row:SetScript("OnEnter", function() told[#told + 1] = "tip " .. index end)
+        row:SetScript("OnLeave", function() told[#told + 1] = "gone " .. index end)
+        row:SetScript("OnClick", function() told[#told + 1] = "took " .. index end)
+        rows[index] = row
+    end
+    local keys = Fuzzy.Keys(box)
+    local function Arrow(key) box:GetScript("OnArrowPressed")(box, key) end
+    Arrow("DOWN")
+    check(keys:Take() == false and #told == 0, "no finds shown: the arrows light nothing, Enter takes nothing")
+    keys:Rows(rows)
+    Arrow("DOWN")
+    check(rows[1].held and told[1] == "tip 1", "Down: the first lit, its tooltip shown as the mouse on it shows it")
+    Arrow("DOWN")
+    Arrow("DOWN")
+    Arrow("DOWN")
+    check(rows[1].held and not rows[3].held and told[#told] == "tip 1" and told[#told - 1] == "gone 3",
+        "Down on the last: round to the first, the last's tooltip gone")
+    Arrow("UP")
+    check(rows[3].held and not rows[1].held, "Up on the first: round to the last")
+    Arrow("LEFT")
+    check(rows[3].held and told[#told] == "tip 3", "Left and Right are the cursor's")
+    check(keys:Take() == true and told[#told] == "took 3", "Enter: the lit one, as a click on it")
+    keys:Rows(nil)
+    check(not rows[3].held and told[#told] == "gone 3" and keys:Take() == false, "the finds gone: nothing lit")
+    keys:Rows(rows)
+    Arrow("UP")
+    check(rows[3].held, "Up with none lit: the last, next to the box when the finds fly out over it")
+    keys:Rows(rows)
+    check(not rows[3].held and keys:Take() == false, "new finds: none lit, Enter does what the box's own does")
+end
+
 -- The bar ----------------------------------------------------------------------------------------------
 STATUS_BAR_NUM_SEGMENTS = 8 -- the pieces the game cuts its own bar into
 local counted = {}
