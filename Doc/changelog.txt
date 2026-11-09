@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Speed Leveling: with no guide chosen, the guide says Select a guide,
+  with a button to pick one, and what the mouse does. A middle click
+  on the guide opens its settings: the guide on, paused or off,
+  professions along the way, together with the party, class quests,
+  the arrow, the map pin, the icons, and all settings.
 - Sane Macros: a macro has a description now, under its name: click
   Edit, write, and Save. The picture window has a tick at the top,
   Show the spell's picture (#showtooltip): untick it and the macro's

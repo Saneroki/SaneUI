@@ -36,7 +36,8 @@ local _, ns = ...
 --      Guide.LoadPacks()  the guide packs of this game loaded (at the start); each hands its guides to Guide.Take
 --      Guide.Remove(key), Guide.Choose(key), Guide.Chosen()
 --      Guide.Reread()     the guide followed read anew, for other company (Party.lua), your place kept
---      Guide.Empty()      while no guide is followed, the view's words for why (none kept, none for you); else nil
+--      Guide.Empty()      while no guide is followed, why: "none" kept, "unchosen" (one is for you), "elsewhere"
+--                         (none is for you); else nil
 --      Guide.State()      "on", "paused" or "off": your setting, and off wherever Speed Leveling is off
 --      Guide.Following()  whether the guide is followed now: one chosen, and on (not paused, not off)
 --      Guide.Watch(fn)    fn() whenever the picture may have changed (once a frame at most)
@@ -470,16 +471,16 @@ function Guide.Chosen()
     return guide and guide.key or nil
 end
 
--- While no guide is followed, the words the view shows instead: none kept yet, or none of those kept is for this
--- character or this game. nil while one is followed.
+-- While no guide is followed, why: none kept yet ("none"), one kept is for this character but none chosen
+-- ("unchosen"), or none of those kept is for this character or this game ("elsewhere"). nil while one is followed.
 function Guide.Empty()
     if ns.Run.Guide() then return nil end
     local kept = Guide.Kept()
-    if not kept[1] then return ns.TEXT.noGuide end
+    if not kept[1] then return "none" end
     for _, guide in ipairs(kept) do
-        if guide.mine then return ns.TEXT.noGuideChosen end
+        if guide.mine then return "unchosen" end
     end
-    return ns.TEXT.noGuideHere
+    return "elsewhere"
 end
 
 -- A kept guide to follow; nil: none, as is one that is not for this character or has no step for it.

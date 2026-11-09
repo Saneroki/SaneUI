@@ -355,7 +355,7 @@ BNGetInfo = function() return 1, "Tester#4242" end
 --  The guides kept, one run
 -------------------------------------------------------------------------------
 check(Guide.Picture() == nil, "no guide yet: no picture")
-check(Guide.Empty() == ns.TEXT.noGuide, "the view says no guide is kept")
+check(Guide.Empty() == "none", "the view knows no guide is kept")
 Steps.Update()
 local view = rawget(_G, "SaneUISpeedLevelingSteps")
 check(view and view._shown, "the view stays, with its head, while no guide is followed")
@@ -364,12 +364,23 @@ local function Shown(text)
         if widget._text == text and widget._shown then return widget end
     end
 end
-local hintText = Shown(ns.TEXT.noGuide)
-check(hintText ~= nil, "its line says how to add a guide")
--- A click on that line opens the window of the guides kept; built, with its import line and its box.
-hintText._parent._scripts.OnClick(hintText._parent, "LeftButton")
+-- No guide (Saneroki, 2026-11-09): "Select a guide", its button beside it, under them what the mouse does, on a shade.
+local hintText = Shown(ns.TEXT.selectGuide)
+local emptyCard = hintText and hintText._parent
+local choose = emptyCard and emptyCard.choose
+check(hintText ~= nil and choose and choose._shown and choose.label._text == ns.TEXT.guides,
+    "its card says to select a guide, a button beside it")
+check(Shown(ns.TEXT.howTo) and Shown(ns.TEXT.howTo)._parent == emptyCard, "and under it what the mouse does")
+check(choose._points[1][4] > hintText._points[1][4], "the button after the words, on their line")
+check(emptyCard._height > 0 and emptyCard.shade ~= nil, "on a shade, as high as its words")
+choose._scripts.OnEnter(choose)
+check(choose.plate.look.alpha == ns.Steps.BUTTON_LIT, "the mouse on the button: its band more solid")
+choose._scripts.OnLeave(choose)
+check(choose.plate.look.alpha == ns.Steps.BAND, "and back")
+-- None kept: the button opens the window of the guides kept; built, with its import line and its box.
+choose._scripts.OnClick(choose, "LeftButton")
 local lineTitle = Shown(ns.TEXT.stringTitle)
-check(lineTitle ~= nil and lineTitle._parent:IsVisible() ~= false, "a click opens the guides, with the import line")
+check(lineTitle ~= nil and lineTitle._parent:IsVisible() ~= false, "none kept: the button opens the guides, with the import line")
 check(not ns.off and #Core.log == 0, "the guides' window is built without an error: "
     .. tostring(Core.log[1] and Core.log[1].text))
 ns.Guides.Open() -- closed again
@@ -398,6 +409,11 @@ check(Core.Character(ns.name).guide == "Our Group\\1-6 Valley << Horde", "kept f
     check(ok and Guide.Chosen() == nil and picture == nil, "one kept before with no step for you: chosen, none is followed: "
         .. tostring(picture))
     check(pcall(Steps.Update), "and the view draws nothing of it")
+    -- One kept for this character, none followed: the button opens the menu of the guides for it.
+    check(Guide.Empty() == "unchosen" and choose._shown, "one for you, none followed: the button")
+    local menus = #W.menus
+    choose._scripts.OnClick(choose, "LeftButton")
+    check(#W.menus == menus + 1 and W.menus[#W.menus][1].title == ns.TEXT.guides, "it opens the menu of the guides")
     Core.Store(ns.name).guides["Our Group\\Empty"] = nil
     Core.Store(ns.name).guides["Our Group\\Elsewhere"], Core.Store(ns.name).guides["Our Group\\Head Alone"] = nil, nil
     Guide.Choose(valley)
@@ -610,6 +626,50 @@ end)()
     check(label and label._points[1][1] == "TOPRIGHT", "the step's number at the card's top right")
 end)()
 
+-- A middle click anywhere on the view (Saneroki, 2026-11-09): its settings: Your guide on, paused or off, the guide's
+-- switches, each with its words and its tip from the options page, and All settings... for that page.
+;(function()
+    Steps.Update()
+    local card = Shown(ns.TEXT.step:format(3))._parent
+    local menus, at = #W.menus, Run.At()
+    card._scripts.OnClick(card, "MiddleButton")
+    check(#W.menus == menus + 1 and Run.At() == at and not Run.Paused(at) and card._shown,
+        "a middle click on a step: the settings, the step neither paused nor skipped")
+    local menu = W.menus[#W.menus]
+    check(menu[1].title == ns.TEXT.settings and menu[2].title == ns.TEXT.follow, "titled, Your guide first")
+    check(menu[3].text == ns.TEXT.followOn and menu[4].text == ns.TEXT.followPaused and menu[5].text == ns.TEXT.followOff
+        and menu[3].checked() and not menu[4].checked(), "on, paused or off; on now")
+    for index, key in ipairs(ns.Steps.SETTINGS) do
+        local item, option = menu[5 + index], Core.Described(ns.name, key)
+        check(item and item.checkbox and item.text == option.text and item.checked() == (ns.options[key] == true),
+            "the switch " .. key .. " to tick, as on the options page")
+    end
+    check(menu[6].text == ns.TEXT.gather and menu[7].text == ns.TEXT.party, "the professions and the party first")
+    local arrow = menu[5 + 4]
+    local was = ns.options.showArrow
+    arrow.fn()
+    check(ns.options.showArrow == not was and arrow.checked() == not was, "a tick switches it")
+    arrow.fn()
+    check(ns.options.showArrow == was, "and back")
+    menu[4].fn()
+    W.Wait(0.1)
+    check(ns.options.follow == "paused" and menu[4].checked(), "paused from the menu")
+    menu[3].fn()
+    W.Wait(0.1)
+    check(ns.options.follow == "on" and Run.At() == at, "on again, where it was")
+    W.options.opened = nil
+    menu[#menu].fn()
+    check(menu[#menu].text == ns.TEXT.allSettings and W.options.opened == Core.pages[ns.name]:GetID(),
+        "All settings... opens Speed Leveling's page")
+    -- The head too; a right click there is still the guides.
+    local head = ns.Steps.closer._parent
+    head._scripts.OnClick(head, "MiddleButton")
+    check(W.menus[#W.menus][1].title == ns.TEXT.settings, "a middle click on the head: the settings")
+    head._scripts.OnClick(head, "RightButton")
+    check(W.menus[#W.menus][1].title == ns.TEXT.guides, "a right click there: the guides")
+    check(not ns.off and #Core.log == 0, "no error: " .. tostring(Core.log[1] and Core.log[1].text))
+end)()
+
 -- The list only on the wheel, in the place of the steps at hand: the whole guide, your step in its middle and marked,
 -- a line at a time from its first step to its last; the steps back at the cross, or when it is left alone.
 ;(function()
@@ -687,6 +747,8 @@ end)()
     Guide.Go = function(step) went = step end
     row._scripts.OnClick(row, "LeftButton")
     check(row._shown, "a single click does nothing")
+    row._scripts.OnClick(row, "MiddleButton")
+    check(row._shown and not went and W.menus[#W.menus][1].title == ns.TEXT.settings, "a middle click: the settings")
     row._scripts.OnDoubleClick(row, "LeftButton")
     check(went == row.step, "a double click goes to that step")
     Steps.Update()

@@ -6,8 +6,9 @@
 One key for questing, pressed again and again, and your leveling guide over the world, run by Sane UI itself. It
 needs no other addon: it reads leveling guides written as text (the guides that come for each game in its guide
 pack, the guides you bought, opened for your own account, and guides you paste) and runs them with an engine of its
-own. A right click on the guide's zone chooses the one to follow. A click on a step pauses it (it stays in sight, the
-guide goes on with the next, and what depends on it waits), a click again takes it up, a right click skips it. In a
+own. A right click on the guide's zone chooses the one to follow; with none followed, *Select a guide* and its button.
+A click on a step pauses it (it stays in sight, the guide goes on with the next, and what depends on it waits), a click
+again takes it up, a right click skips it, a middle click anywhere on the guide opens its settings. In a
 party, those of you on the same guide follow it as one: the same steps by the same numbers for each, read for all your
 classes, a class's own steps only for it, and whoever is through with a step first waits for the others.
 
@@ -49,9 +50,13 @@ the words of its text format and the recipe its bought guides are locked by (`Co
   bindings per account: on a new account give it one again (a key there may still be bound to a button that is gone,
   and then does nothing). `/sane key` shows the keys it has.
 - **Choose a guide:** right click the guide's zone over the world: the guides for this character, by group, each
-  group a menu of its own; a click follows one. The guides that come for each game are there from the start (the
-  guide pack of the game, *The guides*). A character without a guide takes the first one whose head names its race
-  or class.
+  group a menu of its own; a click follows one. While none is followed, the button after *Select a guide* opens that
+  menu (Saneroki, 2026-11-09). The guides that come for each game are there from the start (the guide pack of the
+  game, *The guides*). A character without a guide takes the first one whose head names its race or class.
+- **Its settings at hand:** a middle click anywhere on the guide (Saneroki, 2026-11-09): *Your guide* on, paused or off,
+  *Professions along the way*, *Together with the party*, *Class quests*, *Show the arrow*, *Map pin on the guide's
+  place*, *Targets and items with the guide* (`Steps.SETTINGS`), each with the options page's words and tip, and *All
+  settings...* for the options page.
 - **Add your guides:** open *Guides* (`/sane guides`, the last line of that menu, or the button on the options page).
   Paste the **import string** of the guides you bought into the line at the top — it is opened for the account you
   are playing, and no other — or paste a guide's **text** into the box below and press *Read*.
@@ -179,10 +184,14 @@ name for different characters stand apart, and the guide named next is the one f
   steps stay in their order. Edit Mode moves its place (`Steps.PLACE`, the window's frame), a box of one size, at first
   at the screen's right, a little down: the steps hang from its top or stand on its bottom, so that edge never moves
   whatever the steps' height, and its middle says which half it is in.
-- **No guide yet:** the view stays, one line saying so (none there, none chosen, or none of them is for this character
-  or game) and its head with the mouse on it; a click on that line opens *Guides*.
-- **Paused** (*Your guide*): a line saying so, its head with the mouse on it; a click on the line goes on. Off: nothing
-  is shown.
+- **No guide yet** (Saneroki, 2026-11-09): the view stays, a card on the steps' shade in their place: *Select a guide*
+  and a button after it, *Guides*, on a gold band of round corners (a step at hand's in the list), and under them what
+  the mouse does: *Middle click for settings. Left click pauses and resumes a step. Right click skips a step.* The button
+  (or a click on the card) opens the menu of the guides for this character, as a right click on the zone; with none for
+  this character or game (none there, or all for others), *Guides*, to add one (`Guide.Empty`: `none`, `unchosen`,
+  `elsewhere`). Its head with the mouse on it.
+- **Paused** (*Your guide*): a line saying so on the same card, its head with the mouse on it; a click on the line goes
+  on. Off: nothing is shown.
 - **The mouse** (Saneroki, 2026-11-04: "leftclick will pause / resume the steps still showing them but ignores of the
   process and rightclick skip them"):
   - a click on a step at hand **pauses** it: it stays in sight, faint, but the guide goes on past it as past a done step
@@ -197,6 +206,8 @@ name for different characters stand apart, and the guide named next is the one f
   - **back to an earlier step:** a double click on it in the list (the wheel), or a right click on it there, *Go to
     step*;
   - a detour's step (*Professions along the way*) is left by either click;
+  - a **middle click** anywhere on the view, a step, a line of the list, the head or the card with no guide, opens its
+    settings (Saneroki, 2026-11-09; *How to use*, *Its settings at hand*);
   - a right click on the zone chooses the guide to follow: the guides for this character by group, each group a menu of
     its own with its subgroups as titles (a long one scrolls), then *All guides, or add one...*.
 
@@ -530,7 +541,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Quests.lua` | What a quest giver does for your guide: takes and hands in its quests, closes a talk that is done, the NPC you are through with |
 | `Errands.lua` | What would hold you up: Loot's switches set for all loot, the game's questions on binding and destroying answered (a hook on `StaticPopup_Show`), new upgrades put on |
 | `Rolls.lua` | Group rolls: Need on an upgrade, else Greed, `RollOnLoot`, the game's question on a roll answered |
-| `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menu |
+| `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menus (the guides, its settings), its card with no guide |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
 | `Pin.lua` | The game's map pin on the guide's place |
 | `Icons.lua` | The icons past the guide's head: items to use and names to target, Sane UI's own secure buttons |

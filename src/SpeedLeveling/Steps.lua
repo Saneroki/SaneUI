@@ -39,7 +39,13 @@ local _, ns = ...
 --  step, the guides). In the list a paused step bears the pause button for its
 --  number, and it and a step on hold are faint. A right click on the zone opens
 --  the menu of the guides kept (choose the one to follow, Paste a guide, the class
---  quests you left brought back). Edit Mode moves its place (Core.Window), a box
+--  quests you left brought back). A middle click anywhere on the view opens its
+--  settings (Saneroki, 2026-11-09): Your guide on, paused or off, the guide's
+--  switches (Steps.SETTINGS), All settings... for the options page. While no
+--  guide is followed, a card in the steps' place: "Select a guide" and a button
+--  beside it (the menu of the guides for this character; with none for it, the
+--  window of the guides), under them what the mouse does on the steps.
+--  Edit Mode moves its place (Core.Window), a box
 --  of one size, at first at the screen's right, a little down: the steps hang from
 --  its top or stand on its bottom, so that edge stays.
 --
@@ -74,6 +80,12 @@ Steps.DONE = 0.7      -- a thing done, so faint
 Steps.RESTING = 0.5   -- a paused step, so faint; in the list a step on hold too
 Steps.BESIDE = 8      -- between the step's number and the first words beside it
 Steps.MENU = 520      -- a group's menu of guides, high at most: a longer one scrolls
+Steps.BUTTON = 20     -- the button of the view with no guide, high
+Steps.BUTTON_PAD = 10 -- and the room beside its words
+Steps.BUTTON_LIT = 0.55 -- its gold band, so solid with the mouse on it (Steps.BAND else)
+-- The switches the middle click offers under Your guide, in this order (Saneroki, 2026-11-09: the professions, waiting
+-- for the party, and the guide's other switches); the rest are on the options page.
+Steps.SETTINGS = { "gather", "party", "classQuests", "showArrow", "mapPin", "icons" }
 Steps.FONT = "Interface\\AddOns\\SaneUI_SpeedLeveling\\Fonts\\Expressway.ttf"
 Steps.TICK = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12|t" -- the game's ready check's tick
 Steps.PAUSE = "|TInterface\\TimeManager\\PauseButton:12:12|t" -- the game's pause button (its stopwatch's)
@@ -81,7 +93,7 @@ Steps.PAUSE = "|TInterface\\TimeManager\\PauseButton:12:12|t" -- the game's paus
 -- The fonts, by part: size in UI units.
 local FONTS = {
     title = 16, levels = 11, count = 11, label = 10, instruction = 13.5, line = 12.5, note = 12, mark = 12, ahead = 12,
-    number = 11,
+    number = 11, button = 12,
 }
 local SOFT = { 0.9, 0.9, 0.9 }
 
@@ -92,7 +104,7 @@ local seen = false   -- the head and the icons are in sight
 local bare = false    -- nothing but the head to show: it stays
 local gone = Steps.PEEK -- seconds the mouse has been off the view
 local waited = 0      -- seconds since the last look at where the mouse is
-local empty           -- the line shown while no guide is followed: a click opens the guides
+local empty           -- the card shown while no guide is followed (its button opens the guides) or the guide is paused
 local listShade       -- the shade behind the listed steps
 local closer          -- the cross that takes the list away
 local cards, rows = {}, {}
@@ -129,7 +141,7 @@ end
 -------------------------------------------------------------------------------
 --  Building
 -------------------------------------------------------------------------------
-local Menu, TakesWheel
+local Menu, TakesWheel, Settings
 
 -- A dark shade in that frame: round corners, no border (Core's Shape, of one radius wherever it is).
 local function Shade(host)
@@ -140,14 +152,21 @@ end
 
 local function Card()
     local card = CreateFrame("Button", nil, frame)
-    card:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    card:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
     card.shade = Shade(card)
     card.label = Text(card, "label")
     card.label:SetJustifyH("RIGHT")
     card.texts, card.marks = {}, {}
-    -- A click pauses the step, or takes a paused one up again; a right click skips it (Saneroki, 2026-11-04).
+    -- A click pauses the step, or takes a paused one up again; a right click skips it (Saneroki, 2026-11-04); a middle
+    -- click, the settings (Saneroki, 2026-11-09).
     card:SetScript("OnClick", ns.Guard(function(self, button)
-        if button == "RightButton" then ns.Guide.Skip(self.number) else ns.Guide.Pause(self.number) end
+        if button == "MiddleButton" then
+            Settings(self)
+        elseif button == "RightButton" then
+            ns.Guide.Skip(self.number)
+        else
+            ns.Guide.Pause(self.number)
+        end
     end))
     TakesWheel(card)
     return card
@@ -248,7 +267,7 @@ end
 
 local function Row()
     local row = CreateFrame("Button", nil, frame)
-    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
     local r, g, b = Core.RGB(ns.Guide.WarnHex():sub(3))
     row.band = row:CreateTexture(nil, "BACKGROUND")
     row.band:SetAllPoints()
@@ -263,13 +282,41 @@ local function Row()
     row.text = Text(row, "ahead")
     row.text:SetWordWrap(false)
     row:SetScript("OnClick", ns.Guard(function(self, button)
-        if button == "RightButton" then RowMenu(self) end
+        if button == "MiddleButton" then Settings(self) elseif button == "RightButton" then RowMenu(self) end
     end))
     row:SetScript("OnDoubleClick", ns.Guard(function(self, button)
         if button == "LeftButton" then GoTo(self.step) end
     end))
     TakesWheel(row)
     return row
+end
+
+-- The guides to select from, while none is followed (Saneroki, 2026-11-09): the menu of those for this character, as
+-- a right click on the zone; with none for this character, the window of the guides, to add one.
+local function Choose(owner)
+    if ns.Guide.Empty() == "unchosen" then Menu(owner) else ns.Guides.Open() end
+end
+
+-- The button after "Select a guide": its words on a gold band of round corners, as a step at hand's in the list,
+-- more solid with the mouse on it.
+local function Choice(parent)
+    local button = CreateFrame("Button", nil, parent)
+    button:RegisterForClicks("LeftButtonUp", "MiddleButtonUp")
+    local r, g, b = Core.RGB(ns.Guide.WarnHex():sub(3))
+    local gold = { r, g, b }
+    button.plate = Core.Shape.New(button, { radius = Steps.ROUND })
+    button.plate:Look({ top = gold, alpha = Steps.BAND })
+    button.label = Text(button, "button")
+    button.label:SetJustifyH("CENTER")
+    button.label:SetJustifyV("MIDDLE")
+    button.label:SetPoint("CENTER", button, "CENTER", 0, 0)
+    -- The look anew, more solid: the plate's own alpha would only dim what its look sets.
+    button:SetScript("OnEnter", ns.Guard(function(self) self.plate:Look({ top = gold, alpha = Steps.BUTTON_LIT }) end))
+    button:SetScript("OnLeave", ns.Guard(function(self) self.plate:Look({ top = gold, alpha = Steps.BAND }) end))
+    button:SetScript("OnClick", ns.Guard(function(self, mouse)
+        if mouse == "MiddleButton" then Settings(self) else Choose(self) end
+    end))
+    return button
 end
 
 local function Build()
@@ -280,10 +327,12 @@ local function Build()
     frame:SetSize(Steps.WIDTH, Steps.PLACE)
     TakesWheel(frame)
     header = CreateFrame("Button", nil, frame)
-    header:RegisterForClicks("RightButtonUp")
+    header:RegisterForClicks("RightButtonUp", "MiddleButtonUp")
     header:Hide()
     TakesWheel(header)
-    header:SetScript("OnClick", ns.Guard(function(self) Menu(self) end))
+    header:SetScript("OnClick", ns.Guard(function(self, button)
+        if button == "MiddleButton" then Settings(self) else Menu(self) end
+    end))
     title = Text(header, "title")
     title:SetWordWrap(false)
     levels = Text(header, "levels")
@@ -306,16 +355,20 @@ local function Build()
     end))
     closer:Hide()
     Steps.closer = closer
+    -- No guide (Saneroki, 2026-11-09): "Select a guide" and a button that opens them, under it what the mouse does; or
+    -- the guide paused, a line saying so. On a step's shade.
     empty = CreateFrame("Button", nil, frame)
-    empty:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-    empty.text = Text(empty, "note")
-    empty.text:SetPoint("TOPLEFT", empty, "TOPLEFT", 0, 0)
-    empty.text:SetWidth(Steps.WIDTH)
-    empty.text:SetTextColor(unpack(SOFT))
-    -- No guide: the guides open; paused: the guide goes on.
+    empty:RegisterForClicks("LeftButtonUp", "RightButtonUp", "MiddleButtonUp")
+    empty.shade = Shade(empty)
+    empty.text = Text(empty, "instruction")
+    empty.help = Text(empty, "note")
+    empty.help:SetTextColor(unpack(SOFT))
+    empty.choose = Choice(empty)
+    -- No guide: as the button; paused: the guide goes on. A right click, the guides; a middle click, the settings.
     empty:SetScript("OnClick", ns.Guard(function(self, button)
+        if button == "MiddleButton" then return Settings(self) end
         if button == "RightButton" then return Menu(self) end
-        if self.resume then Core.Set(ns.name, "follow", "on") else ns.Guides.Open() end
+        if self.resume then Core.Set(ns.name, "follow", "on") else Choose(self) end
     end))
     empty:Hide()
     window = Core.Window.New(spot, { store = Core.Store(ns.name), key = "guidePlace", title = ns.TEXT.guideView,
@@ -406,6 +459,53 @@ function RowMenu(row)
         root:CreateTitle(ns.TEXT.step:format(shown))
         root:CreateButton(ns.TEXT.goToStep:format(shown), ns.Guard(function() GoTo(step) end))
         root:CreateButton(ns.TEXT.guides, ns.Guard(function() Menu(row) end))
+    end))
+end
+
+-- Speed Leveling's page in Sane UI's options; Sane UI's options where the game cannot open that page now (in a fight
+-- they open once it is over).
+local function Options()
+    local category = Core.pages and Core.pages[ns.name]
+    local settings = rawget(_G, "Settings")
+    if not category or InCombatLockdown() or not (settings and settings.OpenToCategory) then return Core.Config.Open() end
+    Core.Safe("options", Core.Config.Fill)
+    settings.OpenToCategory(category:GetID())
+end
+
+-- One of the module's switches as a box to tick in a menu, its words and its tip the options page's.
+local function Box(root, key)
+    local option = Core.Described(ns.name, key)
+    if not option then return end
+    local box = root:CreateCheckbox(option.text, ns.Guard(function() return ns.options[key] == true end),
+                                    ns.Guard(function() Core.Set(ns.name, key, not ns.options[key]) end))
+    if box and box.SetTooltip and option.tip then
+        box:SetTooltip(ns.Guard(function(tooltip)
+            GameTooltip_SetTitle(tooltip, option.text)
+            GameTooltip_AddNormalLine(tooltip, option.tip)
+        end))
+    end
+end
+
+-- The settings, a middle click anywhere on the view (Saneroki, 2026-11-09): Your guide on, paused or off; the guide's
+-- switches (Steps.SETTINGS); and all the others on the options page.
+function Settings(owner)
+    local util = rawget(_G, "MenuUtil")
+    if not (util and util.CreateContextMenu) then return end
+    util.CreateContextMenu(owner, ns.Guard(function(_, root)
+        root:CreateTitle(ns.TEXT.settings)
+        local follow = Core.Described(ns.name, "follow")
+        if follow then
+            root:CreateTitle(follow.text)
+            for _, choice in ipairs(follow.choices) do
+                local value = choice[1]
+                root:CreateRadio(choice[2], ns.Guard(function() return ns.options.follow == value end),
+                                 ns.Guard(function() Core.Set(ns.name, "follow", value) end))
+            end
+            root:CreateDivider()
+        end
+        for _, key in ipairs(Steps.SETTINGS) do Box(root, key) end
+        root:CreateDivider()
+        root:CreateButton(ns.TEXT.allSettings, ns.Guard(Options))
     end))
 end
 
@@ -508,6 +608,58 @@ local function DrawCard(card, step, y, warn)
     return height
 end
 
+-- The card in the steps' place while no guide is followed, from the top y of the view; its height. No guide: "Select
+-- a guide" with its button beside it, under them what the mouse does on the steps (Saneroki, 2026-11-09). Paused: the
+-- line saying so.
+local function DrawEmpty(y)
+    local P = Steps.PAD
+    local inner = Steps.WIDTH - P * 2
+    local text, help, choose = empty.text, empty.help, empty.choose
+    empty:ClearAllPoints()
+    empty:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
+    empty:SetWidth(Steps.WIDTH)
+    text:ClearAllPoints()
+    help:ClearAllPoints()
+    choose:ClearAllPoints()
+    local cy = -P
+    if empty.resume then
+        text:SetFontObject(Font("note"))
+        text:SetTextColor(unpack(SOFT))
+        text:SetWidth(inner)
+        text:SetText(ns.TEXT.paused)
+        text:SetPoint("TOPLEFT", empty, "TOPLEFT", P, cy)
+        cy = cy - text:GetStringHeight()
+        help:SetText("")
+        choose:Hide()
+    else
+        choose.label:SetText(ns.TEXT.guides)
+        local wide = choose.label:GetStringWidth() + Steps.BUTTON_PAD * 2
+        choose:SetSize(wide, Steps.BUTTON)
+        choose.plate:Fit(0, 0, wide, Steps.BUTTON)
+        text:SetFontObject(Font("instruction"))
+        text:SetTextColor(1, 1, 1)
+        local room = math.max(40, inner - wide - Steps.BESIDE)
+        text:SetWidth(room)
+        text:SetText(ns.TEXT.selectGuide)
+        -- The words and the button on one line, the words in the button's middle height.
+        local line = math.max(Steps.BUTTON, text:GetStringHeight())
+        text:SetPoint("TOPLEFT", empty, "TOPLEFT", P, cy - (line - text:GetStringHeight()) / 2)
+        choose:SetPoint("TOPLEFT", empty, "TOPLEFT", P + math.min(text:GetStringWidth(), room) + Steps.BESIDE,
+                        cy - (line - Steps.BUTTON) / 2)
+        choose:Show()
+        cy = cy - line - 4
+        help:SetWidth(inner)
+        help:SetText(ns.TEXT.howTo)
+        help:SetPoint("TOPLEFT", empty, "TOPLEFT", P, cy)
+        cy = cy - help:GetStringHeight()
+    end
+    local height = -cy + P
+    empty:SetHeight(height)
+    empty.shade:Fit(0, 0, Steps.WIDTH, height) -- only its size counts: its corners are round wherever it is
+    empty:Show()
+    return height
+end
+
 local function Hide()
     if frame then
         if browsing then Browse(false) end
@@ -528,7 +680,7 @@ function Steps.Update()
     local follow = ns.Guide.State()
     if follow == "off" then return Hide() end
     local picture = ns.options.showGuide and ns.Guide.Picture()
-    -- No guide followed: the view stays, its head and a line saying so; a click on it opens the guides.
+    -- No guide followed: the view stays, its head and a card to select one by (DrawEmpty).
     local hint = not picture and ns.options.showGuide and ns.Guide.Empty() or nil
     if picture and follow == "paused" then
         hint = ns.TEXT.paused
@@ -567,15 +719,11 @@ function Steps.Update()
     bare = false
     if hint then
         if browsing then Browse(false) end
-        empty.text:SetText(hint)
-        empty:ClearAllPoints()
-        empty:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, y)
-        empty:SetSize(Steps.WIDTH, empty.text:GetStringHeight() + 2)
-        empty:Show()
+        local height = DrawEmpty(y)
         for _, card in ipairs(cards) do card:Hide() end
         for _, row in ipairs(rows) do row:Hide() end
         listShade:Hide()
-        frame:SetHeight(math.max(1, -y + empty.text:GetStringHeight() + 2))
+        frame:SetHeight(math.max(1, -y + height))
         ns.Arrow.Update(false)
         ns.Icons.Update(false)
         ns.Pin.Update(false)
