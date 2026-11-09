@@ -17,7 +17,7 @@ end (`dev/build`, from `assets/data/`).
 | `Serial.lua` | Plain values as one line of text and back (a profile exported, imported): `Core.Serial.Write`/`Read`; read letter by letter, never run |
 | `Motion.lua` | Kinds of motion on the game's easing curves: `Core.Motion.KINDS` (glide, swing, even, off), `Kind`/`Ease`/`Share`/`Choices`, `Clock`, `Fade`/`Slide` |
 | `Saved.lua` | `SaneUIDB`, the switches described and the settings in use: `Core.Store`/`StoreName`/`Character`, `Copy`/`Same`, `Settle`, `Options`/`Described`/`Settings`/`Set`/`Reset` |
-| `Presets.lua` | What the standard profiles set over the defaults: `Core.Presets.profiles` (Accountwide, Speedleveling: our CVars as Sync's `named`, Speed Leveling's switches), `Presets.VERSION` |
+| `Presets.lua` | What the standard profiles set over the defaults: `Core.Presets.profiles` (Accountwide, Speedleveling: our CVars as Sync's `named`, Speed Leveling's switches, Economy's `bankerAuto`), `Presets.VERSION` |
 | `Profiles.lua` | Where every module's settings live (*Profiles* below): `Core.Profiles.On`/`Arrive`/`Live`/`InUse`/`List`/`Fixed`/`Create`/`Use`/`Rename`/`Delete`/`CopyFrom`/`Reset`/`Export`/`Import`/`Character`/`Leveling`/`SetLeveling`; `VERSION` 2; `/sane profile` |
 | `Dock.lua` | Nine snap zones: `Core.Dock.ZONES`, `REACH` 60, pure `Find`/`Rect`/`Of`, `Anchor` (a frame hung on the screen's point of its zone), `Hold`/`Holder` (a zone holds one window), `Watch`/`Drop` (the shape while dragged) |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open: `Core.EditMode.active`, `available`, `Watch(fn)` |

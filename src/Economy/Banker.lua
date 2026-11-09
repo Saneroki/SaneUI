@@ -12,10 +12,12 @@ local _, ns = ...
 --      [ ] [] Holy Candle x5                     stays with you
 --      14 stacks in 2 mails                          [ Send ]
 --
---  What goes (Banker.Goods): every trade good and reagent in the bags (the
---  game's item classes Trade Goods and Reagent, as the bags' category Trade
---  Goods), not bound and not locked. An item unticked stays with you at every
---  mailbox until it is ticked again (store.kept, by item ID, for the account).
+--  What goes (Banker.Goods): every trade good, reagent and profession item in
+--  the bags (the game's item classes Trade Goods and Reagent, as the bags'
+--  category Trade Goods, and Recipe and Profession, as its category
+--  Professions; Saneroki, 2026-11-09), not bound and not locked. An item
+--  unticked stays with you at every mailbox until it is ticked again
+--  (store.kept, by item ID, for the account).
 --  The banker's name is kept for the account, one per realm and faction
 --  (store.bankers), since mail goes only to a character of both.
 --
@@ -31,6 +33,12 @@ local _, ns = ...
 --  It does not open first on the banker itself, nor when a banker is named and
 --  nothing would go to it: then the inbox is what is wanted.
 --
+--  Send by itself (the option bankerAuto, on in the profile Speedleveling:
+--  Core's Presets.lua; Saneroki, 2026-11-09): with a banker named and something
+--  to go, the mailbox opens on Banker and the first mail goes at once, as on a
+--  click, the others after it as ever. Shift held as the mailbox opens leaves
+--  it to the player, as at a vendor.
+--
 --  Nothing is written into the game's window, as with Deals (Tab.lua): our page
 --  covers its page, our tab stands after its tabs and marks them as not chosen
 --  with the game's own calls while ours is, and a hook on MailFrameTab_OnClick
@@ -43,7 +51,10 @@ ns.Banker = Banker
 
 local TEXT, SIZE = ns.TEXT, ns.SIZE.banker
 local CLASS = Enum and Enum.ItemClass or {}
-local GOODS = { [CLASS.Tradegoods or 7] = true, [CLASS.Reagent or 5] = true } -- the game's item classes that go
+-- The game's item classes that go: the bags' categories Trade Goods and Professions (Forever has no item of the class
+-- Profession; its profession items are the recipes).
+local GOODS = { [CLASS.Tradegoods or 7] = true, [CLASS.Reagent or 5] = true, [CLASS.Recipe or 9] = true,
+                [CLASS.Profession or 19] = true }
 local SOFT = { 0.7, 0.7, 0.7 }  -- small words, and what stays
 local WAIT = 10                 -- seconds a mail may take before the button is the player's again
 local STEP = 0.5                -- seconds after a mail went before the next is put together: the bags catch up
@@ -527,15 +538,19 @@ local function Build()
     hooksecurefunc("MailFrameTab_OnClick", ns.Guard(Close))
 end
 
--- The mailbox opened: on Banker, unless you play the banker, or a banker is named and nothing would go to it.
+-- The mailbox opened: on Banker, unless you play the banker, or a banker is named and nothing would go to it. With
+-- Send by itself, and Shift not held, what goes is sent at once, whether Banker opens first or not.
 local function Shown()
     Build()
-    if ns.off or not page or not ns.options.bankerFirst then return end
+    if ns.off or not page then return end
     local name = Banker.Name()
     if name and Banker.IsMe(name) then return end
     local _, stacks = Banker.Goods()
     if name and #stacks == 0 then return end
+    local auto = name and ns.options.bankerAuto and not Ask(rawget(_G, "IsShiftKeyDown"))
+    if not (auto or ns.options.bankerFirst) then return end
     Open()
+    if auto then Send() end
 end
 local ShownSoon = Core.Later(Shown)
 

@@ -1,8 +1,8 @@
 -- Runs the Economy module against the stand-in client (wowstub.lua): what is worth buying and selling right now from
 -- made-up prices, the server asked one item at a time, a purchase and a post from a click only, what is bought going by the
 -- server's answer and never over the line's limit, the tab on the game's window and the gold on sale; the tab Banker on the
--- mail window (what goes, the name kept, mails of twelve sent one after the other, a refusal, a slow mail, what stops one,
--- when it opens first); and standing down.
+-- mail window (what goes, profession items too, the name kept, mails of twelve sent one after the other, a refusal, a slow
+-- mail, what stops one, when it opens first, Send by itself in the profile Speedleveling); and standing down.
 -- The look can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/economy.lua
 
@@ -650,6 +650,49 @@ check(not mailPage:IsShown(), "with the option off the window opens on the inbox
 ns.options.bankerFirst = true
 OpenMail()
 check(mailPage:IsShown(), "on again, something to send: on Banker")
+CloseMail()
+
+-- Profession items go too: the bags' category Professions, the recipes and (Retail's) the class Profession
+classes[2553], classes[190000] = 9, 19
+W.items[2553], W.items[190000] = { name = "Recipe: Elixir of Minor Agility" }, { name = "A profession's tool" }
+bagged[0][11] = { id = 2553, count = 1 }
+bagged[0][12] = { id = 190000, count = 1 }
+local goes = {}
+lines, stacks = Banker.Goods()
+for _, stack in ipairs(stacks) do goes[stack.id] = true end
+check(#stacks == 3 and goes[2770] and goes[2553] and goes[190000], "profession items go too: a recipe, a profession's tool, beside the ore")
+
+-- Send by itself: on in the profile Speedleveling alone, and what goes is sent as the mailbox opens
+check(ns.options.bankerAuto == false, "Send by itself is off at first")
+Core.Profiles.SetLeveling(true)
+check(Core.Profiles.Leveling() and ns.options.bankerAuto == true, "Speed Leveling on: the profile Speedleveling sends by itself")
+local before = #mails
+ns.options.bankerFirst = false
+OpenMail()
+local last = mails[#mails]
+check(#mails == before + 1 and last.name == "Bank Alt" and last.count == 3 and last.subject == TEXT.bankerSubject and mailPage:IsShown(),
+    "the mailbox opens: all of it goes at once, on Banker though Open on Banker is off, without a click")
+Delivered()
+W.Wait(0.6)
+check(#mails == before + 1 and Says(TEXT.bankerSent:format("Bank Alt", "1 mail")) and not bagged[0][11], "went: it says so, the recipe gone")
+CloseMail()
+local shift = IsShiftKeyDown
+IsShiftKeyDown = function() return true end
+bagged[0][13] = { id = 2770, count = 1 }
+OpenMail()
+check(#mails == before + 1 and not mailPage:IsShown(), "Shift held as it opens: nothing sent, the inbox as the option has it")
+IsShiftKeyDown = shift
+CloseMail()
+ns.options.bankerFirst = true
+Banker.SetName(nil)
+OpenMail()
+check(#mails == before + 1 and mailPage:IsShown(), "no banker named: nothing to send to, the tab asks for the name")
+CloseMail()
+Banker.SetName("Bank Alt")
+Core.Profiles.SetLeveling(false)
+check(not Core.Profiles.Leveling() and ns.options.bankerAuto == false, "Speed Leveling off: back to the profile before, Send by itself off")
+OpenMail()
+check(#mails == before + 1 and mailPage:IsShown() and sendButton:IsEnabled(), "on Banker, and nothing goes before the click")
 CloseMail()
 
 ns.StandDown("a test")

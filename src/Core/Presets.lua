@@ -7,7 +7,8 @@ local Core = SaneUI.Core
 --  tab CVars), so they are written into the game at the login and what the
 --  player changes afterwards goes into the profile as anything else. A CVar one
 --  of the two games lacks is passed over. And all of Speed Leveling's switches,
---  off by default, on in Speedleveling alone. And in Retail the Newcomer Chat,
+--  off by default, on in Speedleveling alone, with what other modules do by
+--  themselves for it (Economy's Send by itself). And in Retail the Newcomer Chat,
 --  which the game puts a character in by itself: left every time, in both
 --  profiles. Character specific has none of this: it stays as the game has it.
 --
@@ -19,7 +20,7 @@ local Core = SaneUI.Core
 --      Core.Presets.VERSION
 --      Core.Presets.profiles[name]   { [module] = { [switch] = value } }
 -------------------------------------------------------------------------------
-local Presets = { VERSION = 5, profiles = {} }
+local Presets = { VERSION = 6, profiles = {} }
 Core.Presets = Presets
 
 -- What both Accountwide and Speedleveling hold. No water detail: its 3 crashed Forever's client in the Ruins of
@@ -72,6 +73,10 @@ for _, switch in ipairs({ "loot", "corpses", "talk", "walk", "objects", "useOn",
     LEVELING[switch] = true
 end
 
+-- Economy's, for Speed Leveling: what goes to the banker is sent at the mailbox without a click (Banker.lua; Saneroki,
+-- 2026-11-09: "while speedleveling is turned on it aldo sends it totally automatically").
+local ECONOMY = { bankerAuto = true }
+
 -- Social's wish for a channel of the game, by the game's name of it: never in it (Join.lua). Forever has that one
 -- switched off.
 local SOCIAL = Core.ForGame({ retail = { presence = { ["Newcomer Chat"] = false } } })
@@ -84,4 +89,5 @@ local function Both(extra)
 end
 
 Presets.profiles.Accountwide = { Sync = { named = Both(ACCOUNTWIDE) }, Social = SOCIAL }
-Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = LEVELING, Social = SOCIAL }
+Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = LEVELING, Economy = ECONOMY,
+                                  Social = SOCIAL }

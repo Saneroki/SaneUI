@@ -98,7 +98,8 @@ but for a window to try those with (`/sane window`).
 - **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
   - Every character uses one of three standard profiles, or one you made. None is made for a character by itself.
     - *Speedleveling*: all of Speed Leveling's switches on but *Professions along the way* (Saneroki, 2026-11-05), our
-      recommended CVars and some more that keep you moving (`Presets.lua`), and the key E. The box *Speed Leveling* at the foot of
+      recommended CVars and some more that keep you moving (`Presets.lua`), the key E, and Economy's *Send by itself*: what
+      goes to the banker is sent as the mailbox opens (Saneroki, 2026-11-09). The box *Speed Leveling* at the foot of
       the bags is this profile (`Profiles.SetLeveling`): ticked, the character uses it; unticked, the one it used before
       (`line.before`), *Accountwide* if it had no other.
     - *Accountwide*: Sane UI's recommended settings and CVars (`Presets.lua`), every change shared by all the

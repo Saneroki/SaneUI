@@ -16,7 +16,8 @@ local ADDON, ns = ...
 --    Trade.lua   a purchase and a post, each from a click of the player
 --    Tab.lua     the tab Deals, its two columns, the gold on sale in the corner
 --  and to the game's mail window, which stays the game's too:
---    Banker.lua  the tab Banker: the trade goods and reagents sent to your banker
+--    Banker.lua  the tab Banker: the trade goods, reagents and profession items
+--                sent to your banker, by themselves with Send by itself
 --  Standing down, the tabs are gone and the windows are as the game made them
 --  (GiveBack).
 -------------------------------------------------------------------------------
@@ -69,9 +70,9 @@ ns.TEXT = {
     banker = "Banker",
     bankerTo = Core.Word("MAIL_TO_LABEL", "To:"),
     bankerKept = "Remembered for your %s characters on %s",
-    bankerNoName = "Type your banker's name above: every trade good and reagent in your bags goes to it with one Send.",
+    bankerNoName = "Type your banker's name above: every trade good, reagent and profession item in your bags goes to it with one Send.",
     bankerMe = "This is your banker: your other characters send to it.",
-    bankerNothing = "No trade goods or reagents in your bags.",
+    bankerNothing = "No trade goods, reagents or profession items in your bags.",
     bankerStacks = "%d stacks",
     bankerStays = "stays with you",
     bankerTick = "Goes to your banker",
@@ -82,7 +83,7 @@ ns.TEXT = {
     bankerSend = Core.Word("SEND_LABEL", "Send"),
     bankerSending = "Sending...",
     bankerAgain = "Send again",
-    bankerSubject = "Trade goods and reagents",
+    bankerSubject = "Trade goods and profession items",
     bankerOf = "%s (%d/%d)",
     bankerSent = "Sent to %s: %s",
     bankerSlow = "The mail has not gone yet: Send tries again.",
@@ -94,6 +95,8 @@ ns.TEXT = {
     bankerNone = "Not sent: none of it could be put into a mail.",
     bankerFirst = "Open on Banker",
     bankerFirstTip = "The mailbox opens on the tab Banker, unless you play your banker or nothing would go to it. Off: on the inbox.",
+    bankerAuto = "Send by itself",
+    bankerAutoTip = "At the mailbox all that goes to your banker is sent at once, without a click on Send; Shift held as you open the mailbox leaves it to you. On in the profile Speedleveling.",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -153,6 +156,8 @@ end
 Core.Options(ns.name, {
     { key = "dealsFirst", default = true, text = ns.TEXT.dealsFirst, tip = ns.TEXT.dealsFirstTip },
     { key = "bankerFirst", default = true, text = ns.TEXT.bankerFirst, tip = ns.TEXT.bankerFirstTip },
+    -- On in the profile Speedleveling (Core's Presets.lua), off elsewhere at first.
+    { key = "bankerAuto", default = false, text = ns.TEXT.bankerAuto, tip = ns.TEXT.bankerAutoTip },
 }, {})
 
 -- Standing down: the tabs are gone, the windows as the game made them.

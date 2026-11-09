@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The Banker tab on the mailbox sends your profession items too
+  (recipes, patterns, plans). With Speed Leveling on, everything
+  goes to your banker by itself as you open the mailbox; hold Shift
+  to keep it for this visit.
 - Action bars on the full screen: no longer dark after a spell or a
   macro is dragged onto them, every icon at full brightness. Every
   bar you switched on stands there, one Edit Mode hides too, and

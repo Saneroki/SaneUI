@@ -442,7 +442,7 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
   your tradegoods and reagents to your banker." The tab Banker on the game's own window, as Deals on the auction house
   (`src/Economy/Banker.lua`): the name kept per realm and faction for the account; the bags' trade goods and reagents
   (item classes Trade Goods and Reagent, not bound), an item unticked kept back; mails of twelve, the first on the
-  click, the next on `MAIL_SEND_SUCCESS`; open first except on the banker or with nothing to send.* Still to come: the inbox with *Take all* (Blizzard's own *Open All* takes one mail after the
+  click, the next on `MAIL_SEND_SUCCESS`; open first except on the banker or with nothing to send.* *More, 2026-11-09 (Saneroki): "Can you also send profession items to the banker and while speedleveling is turned on it aldo sends it totally automatically." The item classes Recipe and Profession go too (the bags' category Professions); the option Send by itself (`bankerAuto`), on in the profile Speedleveling by Core's presets: Send runs as the mailbox opens, Shift held leaves it to the player.* Still to come: the inbox with *Take all* (Blizzard's own *Open All* takes one mail after the
   other, waiting for the game between them: `OpenAllMailMixin` in `MailFrame.lua`, the pattern to follow),
   the auction house's mails summed up (sold, bought, expired, with their amounts; the house's cut for
   *Price to post*), sending. The mailbox opens the bags in its show function, not in `OnShow`, so they open
