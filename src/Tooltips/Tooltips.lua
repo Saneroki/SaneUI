@@ -187,6 +187,9 @@ local Filled -- below
 -- SetShown runs this twice, after OnShow and after the function; the second time the panel waits
 -- to be drawn and only the tooltip's alpha is set again.)
 local function Reshown(tooltip)
+    -- A key may be held that this game window was never told of (Core.Modifiers): while a tooltip
+    -- is shown, the keys it waits for (Shift, Alt, Ctrl) are looked at.
+    if Core.Modifiers then Core.Modifiers.Want(tooltip, true) end
     local panel = PanelOf(tooltip)
     if panel.pending then
         ns.Host.Keep(tooltip) -- filled and not drawn yet: it must not show through
@@ -212,6 +215,7 @@ local queue, driver = {}, nil -- the tooltips that wait, and the frame whose OnU
 -- would blink, its 3D model start over (Filled: refreshed). Where the panel stands is noted
 -- meanwhile (Host.Hold keeps it there until the new picture is drawn).
 local function Hidden(tooltip)
+    if Core.Modifiers then Core.Modifiers.Want(tooltip, false) end
     local panel = ns.Panel.All()[tooltip]
     if not panel then return end
     panel.hiddenAt = GetTime()

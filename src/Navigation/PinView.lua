@@ -231,6 +231,7 @@ local function Tip(button)
     end
     GameTooltip:Show()
     hovered = button
+    if Core.Modifiers then Core.Modifiers.Want(PinView, true) end -- Alt may be held that this window was not told of
     Model()
 end
 
@@ -331,6 +332,7 @@ end
 
 local function Left()
     hovered = nil
+    if Core.Modifiers then Core.Modifiers.Want(PinView, false) end
     GameTooltip_Hide()
     Model()
 end
@@ -526,6 +528,7 @@ function PinView.Clear()
         free[#free + 1] = button
     end
     hovered = nil
+    if Core.Modifiers then Core.Modifiers.Want(PinView, false) end
     if stage then stage:Hide() end
 end
 

@@ -285,6 +285,7 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
+W.Load(root, "SaneUI", "Core/Modifiers", {}) -- Shift, Ctrl and Alt a window was not told of
 for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Rhythm", "Prices", "Fees", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
@@ -2258,6 +2259,7 @@ frame()
 check(not panel:IsShown(), "a draw that waited when the fade began is not made")
 spell()
 check(panel:IsShown() and tip:GetAlpha() == 0, "the next tooltip has its panel again")
+check(Core.Modifiers.watch and Core.Modifiers.watch:IsShown(), "a shown tooltip keeps the modifier keys watched (a key this window was never told of)")
 local points = tip._points
 tip._points = {} -- placed nowhere now (ANCHOR_NONE)
 tick(panel)
