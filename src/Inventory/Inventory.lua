@@ -109,6 +109,11 @@ ns.TEXT = {
     bagsResetColumns = "Reset Columns",
     bagsKeys = "Bag Keys Open Our Bags",
     bagsKeysTip = "Your bag keys open the Inventory full screen with our bags; the game's bags stay closed (the dropdown Classic windows still opens them) and its bag bar is gone from the screen.",
+    -- The full screen at a vendor and a banker (Talks.lua)
+    talks = "Full Screen at Vendors and the Bank",
+    talksTip = "At a vendor the full screen comes with the vendor's window on the left and your bags on the right; at a banker with your bags on the left and your bank on the right. Each is a layout of its own behind its tab, kept as you arrange it, and the full screen goes back when the talk ends.",
+    talkVendor = "Vendor",
+    talkBank = Core.Word("BANK", "Bank"),
     bagsFirstTip = "The view the bags open with: every item by category, every slot of your bags together, or each bag by itself.",
     bagsShowPinnedTip = "Pinned Items at the top of the bags: the items you pinned with a middle click.",
     bagsPinnedOne = "Pinned in One Bag and Each Bag",
@@ -186,6 +191,7 @@ local OPTIONS = {
     { key = "first", default = "all", choices = OPENS, text = ns.TEXT.bagsFirst, tip = ns.TEXT.bagsFirstTip,
       header = ns.TEXT.bags },
     { key = "bagKeys", default = true, text = ns.TEXT.bagsKeys, tip = ns.TEXT.bagsKeysTip },
+    { key = "talks", default = true, text = ns.TEXT.talks, tip = ns.TEXT.talksTip },
     { key = "bags", default = {} }, -- the bags' display, order, categories and columns (Bags.lua), each profile its own
     { key = "autoSell", default = true, text = ns.TEXT.bagsAutoSell, tip = ns.TEXT.bagsAutoSellTip },
     { key = "autoRepair", default = true, text = ns.TEXT.bagsAutoRepair, tip = ns.TEXT.bagsAutoRepairTip },
@@ -235,6 +241,7 @@ function ns.OnLogin()
     ns.Window.Build()
     ns.Recent.Start()
     ns.Bank.Start()
+    ns.Talks.Start()
     ns.Vendor.Start()
     ns.Asks.Start()
     ns.Room.Start()

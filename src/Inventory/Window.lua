@@ -91,6 +91,21 @@ function Window.Full()
     return handle and handle.edge and handle.edge.full or false
 end
 
+-- The full screen, asked for by a talk (Talks.lua): true if it fills the screen now or is on its way. Not in Edit Mode,
+-- nor with Can expand to fullscreen off (Edge.lua).
+function Window.Fill()
+    local edge = handle and handle.edge
+    if not edge or not frame:IsShown() then return false end
+    if not edge.full then edge:Fill(true) end
+    return edge.full
+end
+
+-- Back to its size, if it fills the screen.
+function Window.Back()
+    local edge = handle and handle.edge
+    if edge and edge.full then edge:Fill(false) end
+end
+
 -- The full screen with that window on it: put on the layout now if the screen stands full, else once it does.
 -- Not in Edit Mode, nor with Can expand to fullscreen off (Edge.lua).
 function Window.Open(key)

@@ -138,3 +138,99 @@ function Seat.New(frame, options)
     seats[frame] = self
     return self
 end
+
+-------------------------------------------------------------------------------
+--  A window not ours as a part of a module's board (Saneroki, 2026-11-09: the
+--  game's vendor, trainer and profession windows on a full screen). Its panel
+--  holds the window, seated in the panel's body while the window is open; the
+--  part is there (Present) only while it is. The game opens and closes it, at
+--  an NPC or by its own keys: our code only follows (hooks after its OnShow
+--  and OnHide), and tells the module.
+--
+--      local part = Core.Seat.Part({
+--          frame = "MerchantFrame",          -- the window's global name (there once its addon is loaded)
+--          addon = "Blizzard_TrainerUI",     -- the game's addon it comes with, loaded by the game on demand (or none)
+--          label = "Inventory: vendor",      -- its name in the error log
+--          level = 30,                       -- how far above its panel's body it stands (over Core's panels)
+--          width = 336,                      -- how wide it is, until it is there to ask (part.Width)
+--          opened = function(frame) end,     -- it came into sight, by whatever way (after its own OnShow)
+--          closed = function(frame) end,     -- it went (after its own OnHide)
+--      })
+--      part.Build(panel), part.Show(on), part.Size(), part.Present(), part.Leave()  -- a part of a module's board
+--      part.Frame()                          -- the window, once there
+--      part.Width()                          -- how wide it is itself, in UIParent's units
+--      part.Follow()                         -- its opening and closing followed: now, or once its addon has loaded
+-------------------------------------------------------------------------------
+Seat.LEVEL = 30 -- how far above its panel's body a seated part stands, unless it says
+
+function Seat.Part(options)
+    local part, label = {}, options.label or "seat"
+    local body, seat, shown, followed
+
+    function part.Frame()
+        local frame = rawget(_G, options.frame)
+        if type(frame) == "table" and type(frame.IsShown) == "function" then return frame end
+    end
+
+    -- Seated in its panel's body while both are shown: the body's room in UIParent's units.
+    local function Lay()
+        local frame = part.Frame()
+        if not (shown and body and frame and frame:IsShown()) then return end
+        local left, top = body:GetLeft(), body:GetTop()
+        if not (left and top) then return end
+        local ratio = body:GetEffectiveScale() / UIParent:GetEffectiveScale()
+        seat = seat or Seat.New(frame, { label = label })
+        seat:Hold(left * ratio, top * ratio, body:GetWidth() * ratio, body:GetHeight() * ratio, body:GetFrameStrata(),
+                  body:GetFrameLevel() + (options.level or Seat.LEVEL))
+    end
+    local Relay = Core.Later(function() Core.Safe(label, Lay) end, nil, label) -- once the panel stands where it goes
+
+    function part.Build(panel) body = panel.body end
+
+    function part.Show(on)
+        shown = on
+        if on then return Relay() end
+        if seat then seat:Free() end
+    end
+
+    function part.Size() Relay() end
+
+    function part.Present()
+        local frame = part.Frame()
+        return frame ~= nil and Core.Plain(frame:IsShown()) == true
+    end
+
+    -- How wide it is itself, in UIParent's units, as when it is not seated (a layout's share); options.width while it
+    -- is not there yet.
+    function part.Width()
+        local frame = part.Frame()
+        if seat then return (seat:Size()) end
+        local width = frame and Core.Plain(frame:GetWidth())
+        if type(width) ~= "number" or width <= 0 then return options.width or 300 end
+        local parent = frame:GetParent()
+        local outer = (parent and parent:GetEffectiveScale() or 1) / UIParent:GetEffectiveScale()
+        return width * (Core.Plain(frame:GetScale()) or 1) * outer
+    end
+
+    function part.Leave()
+        shown = false
+        if seat then seat:Free() end
+    end
+
+    local function Hook(frame)
+        if followed or type(frame) ~= "table" then return end
+        followed = true
+        frame:HookScript("OnShow", Core.Guard(label, function(self) if options.opened then options.opened(self) end end))
+        frame:HookScript("OnHide", Core.Guard(label, function(self) if options.closed then options.closed(self) end end))
+    end
+
+    function part.Follow()
+        if part.Frame() then return Hook(part.Frame()) end
+        local util = rawget(_G, "EventUtil")
+        if options.addon and util and util.ContinueOnAddOnLoaded then
+            util.ContinueOnAddOnLoaded(options.addon, Core.Guard(label, function() Hook(part.Frame()) end))
+        end
+    end
+
+    return part
+end

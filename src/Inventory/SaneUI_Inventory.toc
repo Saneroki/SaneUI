@@ -65,6 +65,8 @@ Bags\Canvas.lua
 Bags\Sidebar.lua
 Bags\Bags.lua
 Bags\Bank.lua
+# The full screen at a vendor and a banker: a layout of its own for each, the game's vendor window seated on it
+Talks.lua
 # The other characters' things, as last seen: what is shown, the dropdown of them, the items, the window that holds them
 Alts\Snapshot.lua
 Alts\Roster.lua

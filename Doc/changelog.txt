@@ -6,6 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- At a vendor the Inventory full screen comes by itself, the vendor
+  on the left and your bags on the right; at a banker your bags on the
+  left and your bank on the right. At a trainer Combat's full screen
+  comes, the trainer on the left and your spellbook on the right, or
+  at a profession trainer that profession's window. Each is a layout
+  of its own behind its tab, kept as you arrange it, and the full
+  screen goes back when you leave. Switch it off on the Inventory and
+  Combat pages.
 - Map: the ship times at a dock are kept after a reload or a login,
   worked out anew from the clock, and every ride corrects them. A
   dock's pin lists all the ports its ship calls at, in the order it

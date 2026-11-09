@@ -11,6 +11,8 @@ local _, ns = ...
 --      spellbook  your spellbook: our own window, as the game's (Book/)
 --      game       in a game without those two (Retail): the game's own window of
 --                 both, seated in its panel (GameWindow.lua)
+--      trainer    the game's trainer window, seated in its panel while it is open
+--      profession the game's Profession window, likewise (Trainer.lua)
 --      planner    the window of a talent planner Sane UI knows (Core.Neighbours),
 --                 while that addon is installed: seated in its panel (Core.Seat:
 --                 its place, scale and layer lent), opened with its panel and
@@ -24,7 +26,8 @@ local _, ns = ...
 --  wide as its share of the two windows' own widths, Sane Macros beside them
 --  with the wide action bars under it, stacked as on the screen (Saneroki,
 --  2026-11-04; without Sane Macros in a strip along the foot), the tall ones
---  down the right.
+--  down the right. At a trainer the full screen comes with a layout of its own
+--  for that talk (Trainer.lua: Core's board's occasions, Board.Occasion).
 --
 --  A panel is Core's (a plate in Sane UI's look, a head with its title and the
 --  X, the body under it); what is in it is its part's. A part runs apart from
@@ -51,11 +54,12 @@ Board.ICONS = {
     sidebars = "Interface/ICONS/INV_Misc_Gear_02",
     macros = "Interface/ICONS/INV_Misc_Note_06",
 }
-Board.ORDER = { "talents", "spellbook", "game", "planner", "macros", "bars", "sidebars" }
+Board.ORDER = { "talents", "spellbook", "game", "trainer", "profession", "planner", "macros", "bars", "sidebars" }
 Board.FIRST = { "talents", "spellbook", "game" }
 
 local layouts    -- Core's board, once the window is there (Board.Take)
 local parts = {} -- [key] = { part, spec }: registered by the parts' files
+local occasions = {} -- [name] = { title, default }: the talks the full screen has a layout for (Board.Occasion)
 
 -- A part's steps, each by itself under the part's key.
 local function Step(key, part, name)
@@ -72,6 +76,17 @@ function Board.Part(key, title, least, part, wants)
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
     } }
+end
+
+-- A talk the full screen has a layout of its own for (Trainer.lua): its name, its tab's title and its layout until the
+-- player changes it (function(width, height) returning a node of Core's board).
+function Board.Occasion(name, title, default)
+    occasions[name] = { title = title, default = function(width, height) return ns.Safe("board", default, width, height) end }
+end
+
+-- A talk began (its name) or ended (nil): its layout stands on the full screen while it is on.
+function Board.Talk(name)
+    if layouts then layouts:Occasion(name) end
 end
 
 -- Whether a part is registered and has something to show now (the planner: while its addon is there).
@@ -149,6 +164,7 @@ function Board.Take(window)
         windows = Windows,
         default = function(width, height) return ns.Safe("board", Default, width, height) end,
         changed = function() ns.Guarded(ns.Window.Reboard) end,
+        occasions = occasions,
     })
     Board.layouts = layouts
 end

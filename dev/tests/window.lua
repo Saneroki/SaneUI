@@ -2151,6 +2151,65 @@ end
     frame:Hide()
 end)()
 
+-- A talk's layout on the board (Board.lua, occasions): an unknown talk counts as none; one on stands instead of the tab
+-- chosen, its changes kept as its own, a kept one a hand spoiled mended; a window forgotten leaves it too; Reset makes
+-- it the module's again (in a function of its own: the main chunk is at Lua's 200 locals) ---------------------------
+;(function()
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local store, defaults = {}, 0
+    local settings = { expand = true, motion = "off", expandOpacity = 50, expandTexture = "solid", corners = 10, squareEdges = true }
+    local function Spec(key) return { key = key, title = key } end
+    local specs = { Spec("one"), Spec("two"), Spec("shop") }
+    local board, handle
+    local function Lay() if handle.edge.full then board:Show(handle.inside, 1920, 1048) else board:Hide() end end
+    handle = Window.New(frame, { store = store, key = "talked", title = "Talked", dock = true, edge = settings,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 }, docked = function() if board then Lay() end end })
+    board = Core.Board.New(handle, { store = store, key = "layouts", label = "Talked",
+        windows = function() return specs end, changed = Lay,
+        default = function() return { key = "one" } end,
+        occasions = { shop = { title = "Shop", default = function()
+            defaults = defaults + 1
+            return { split = "x", parts = { { key = "shop" }, { key = "two" } }, shares = { 1, 3 } }
+        end } } })
+    handle:Place()
+    at(frame, 810, 440)
+    handle.edge:Fill(true)
+    check(board.rects.one and not board.rects.shop, "(its first layout)")
+    board:Occasion("market")
+    check(board.occasion == nil and board.rects.one, "a talk the module has no layout for counts as none")
+    board:Occasion("shop")
+    check(board:Talking() == "shop" and board.rects.shop and board.rects.two and not board.rects.one and defaults == 1
+        and board.rects.shop[3] < board.rects.two[3], "a talk on: its layout stands instead of the tab chosen, the module's for it")
+    board:Remove("two")
+    check(store.layouts.occasions.shop.tree.key == "shop" and store.layouts.tabs[1].tree == nil,
+        "changed, it is kept as the talk's; the first tab still the module's default")
+    board:Forget("shop")
+    check(store.layouts.occasions.shop.tree == false, "a window that is no more leaves the talk's layout too")
+    store.layouts.occasions = "spoiled"
+    Lay()
+    check(board.rects.shop and defaults == 2, "a kept talk's layout a hand spoiled: the module's for it again")
+    board:Remove("two")
+    local MenuUtil_ = MenuUtil
+    local reset
+    MenuUtil = { CreateContextMenu = function(_, fn)
+        local root = { CreateTitle = function() end, CreateButton = function(_, text, click) if text == Core.Board.TEXT.reset then reset = click end end }
+        fn(nil, root)
+    end }
+    local confirm = Core.Confirm
+    Core.Confirm = function(_, _, yes) yes() end
+    local tab = board.strip.tabs[1]
+    tab:GetScript("OnClick")(tab, "RightButton")
+    reset()
+    Core.Confirm, MenuUtil = confirm, MenuUtil_
+    check(store.layouts.occasions.shop.tree == nil and board.rects.shop and board.rects.two and defaults == 3,
+        "its tab's Reset: the module's own layout for it again")
+    board:Occasion(nil)
+    check(board:Talking() == nil and board.rects.one and not board.rects.shop and board.strip.tabs[1].talk == nil,
+        "the talk over: the tab chosen stands again, and the talk's tab is gone")
+    handle.edge:Fill(false)
+    frame:Hide()
+end)()
+
 -- Let go when hidden mid-drag, Esc given up and taken again, the screen's size changed, a window not ours seated
 -- (in a function of its own: the main chunk is at Lua's 200 locals) ------------------------------------------------
 ;(function()

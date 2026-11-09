@@ -36,8 +36,17 @@ local Core = SaneUI.Core
 --  its room until it is back. Its tick then does nothing to see, so a window
 --  of the module's own stands instead and says why it is empty.
 --
+--  A talk's layout (Saneroki, 2026-11-09: at a vendor, a banker, a trainer the
+--  full screen comes with what that talk is for): while the module says a
+--  talk is on (board:Occasion(name), one of options.occasions), its layout
+--  stands instead of the tab chosen: the module's own for it until it is
+--  changed, then kept as changed. Its tab, first in the title bar while the
+--  talk is on, says its name; a right click resets it. Another tab chosen
+--  meanwhile sets it aside until the talk is over; its own tab brings it back.
+--
 --  Kept in the module's store, account-wide as windows' places are:
---      store[key] = { chosen = 2, tabs = { { name = "Default", tree = nil }, { name = "Raid", tree = node } } }
+--      store[key] = { chosen = 2, tabs = { { name = "Default", tree = nil }, { name = "Raid", tree = node } },
+--                     occasions = { vendor = { tree = node } } }   -- a talk's layout, once changed
 --      node = { key = "talks" }                                         a window
 --           | { split = "x" or "y", parts = { node, ... }, shares = { 0.6, 0.4 } }
 --  The first tab without a tree is the module's default; another without one is empty.
@@ -48,6 +57,8 @@ local Core = SaneUI.Core
 --          windows = function() return { spec, ... } end,      -- what can stand on it now, in the dropdown's order
 --          default = function(width, height) return node end,  -- the first tab's layout until it is changed
 --          changed = function() end,           -- a layout changed: the module lays out anew (board:Show)
+--          occasions = { vendor = { title = "Vendor",        -- the talks it has a layout for (or none)
+--                                   default = function(width, height) return node end } },
 --      })
 --      spec = { key = "talks", title = "Conversations",
 --               least = { 460, 200 },          -- its least width and height (or a function giving both)
@@ -67,6 +78,8 @@ local Core = SaneUI.Core
 --      board:Search(text)                 -- what is typed into the search box
 --      board:Has(key)                     -- in the layout laid out last
 --      board:Forget(key)                  -- a window that is no more (a chat view removed): out of every layout
+--      board:Occasion(name)               -- a talk began (its name in options.occasions) or ended (nil)
+--      board:Talking()                    -- the talk whose layout stands now, or nil
 --      board.panels[key]                  -- its panel, once made
 --      board.made[spec]                   -- every panel made, by the spec it was built for: one back under its
 --                                         -- key (Board.Offer, Withdraw) is its own again, not built anew
@@ -105,6 +118,7 @@ Board.TEXT = {
     delete = Core.Word("DELETE", "Delete"),
     deleteAsk = "Delete the layout %s?",
     tabTip = "Right-click to rename or delete it.",
+    talkTip = "The layout while you talk to them: arrange it as you like. Right-click to reset it.",
     accept = Core.Word("ACCEPT", "Accept"),
 }
 
@@ -336,7 +350,16 @@ local function Kept(board)
         if type(tab) ~= "table" then kept.tabs[index] = {} end -- the first: the module's own again; another: empty
     end
     if type(kept.chosen) ~= "number" or not kept.tabs[kept.chosen] then kept.chosen = 1 end
+    if kept.occasions ~= nil and type(kept.occasions) ~= "table" then kept.occasions = nil end
     return kept
+end
+
+-- The talk whose layout stands now: one the module has a layout for, not set aside by another tab chosen.
+local function Occasion(board)
+    local name = board.occasion
+    local occasions = board.options.occasions
+    if name == nil or board.aside or type(occasions) ~= "table" or type(occasions[name]) ~= "table" then return nil end
+    return name, occasions[name]
 end
 
 local function Name(index, tab)
@@ -375,9 +398,20 @@ local function Least(board, key)
     return width, height + Board.HEAD
 end
 
--- The layout chosen, as it is kept: tree (nil for the first tab: the module's default).
+-- The layout chosen, as it is kept: tree (nil for the first tab: the module's default); during a talk, the talk's
+-- (nil: the module's for it) and what the module says of it (title, default).
 local function Chosen(board)
     local kept = Kept(board)
+    local name, occasion = Occasion(board)
+    if name then
+        kept.occasions = kept.occasions or {}
+        local tab = kept.occasions[name]
+        if type(tab) ~= "table" then
+            tab = {}
+            kept.occasions[name] = tab
+        end
+        return tab, nil, occasion
+    end
     return kept.tabs[kept.chosen], kept.chosen
 end
 
@@ -746,9 +780,12 @@ end
 -------------------------------------------------------------------------------
 --  The tabs and the dropdown, in the window's title bar
 -------------------------------------------------------------------------------
+-- A layout's tab chosen; during a talk, the talk's layout set aside for it (even the tab chosen before).
 local function Choose(board, index)
     local kept = Kept(board)
-    if not kept.tabs[index] or index == kept.chosen then return end
+    local talking = Occasion(board) ~= nil
+    if not kept.tabs[index] or (index == kept.chosen and not talking) then return end
+    if talking then board.aside = true end
     kept.chosen = index
     Core.Sound("IG_CHARACTER_INFO_TAB")
     if board.options.changed then Core.Safe(Label(board), board.options.changed) end
@@ -794,17 +831,45 @@ local function TabMenu(board, owner, index)
     end))
 end
 
+-- The talk's tab: a click brings its layout back while it was set aside; a right click resets it.
+local function Talk(board, owner, button)
+    local name = board.occasion
+    local occasion = name and board.options.occasions and board.options.occasions[name]
+    if not occasion then return end
+    if button ~= "RightButton" then
+        if not board.aside then return end
+        board.aside = false
+        Core.Sound("IG_CHARACTER_INFO_TAB")
+        if board.options.changed then Core.Safe(Label(board), board.options.changed) end
+        return
+    end
+    MenuUtil.CreateContextMenu(owner, Core.Guard("board", function(_, root)
+        root:CreateTitle(occasion.title or name)
+        root:CreateButton(Board.TEXT.reset, Core.Guard("board", function()
+            Core.Confirm(Board.TEXT.resetAsk, occasion.title or name, function()
+                local kept = Kept(board)
+                if kept.occasions then kept.occasions[name] = nil end
+                if board.options.changed then Core.Safe(Label(board), board.options.changed) end
+            end)
+        end))
+    end))
+end
+
 local function Tab(board, strip)
     local tab = CreateFrame("Button", nil, strip, "MinimalTabTemplate")
     tab:SetHeight(Core.Window.BAR)
     tab:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     tab:SetScript("OnClick", Core.Guard("board", function(self, button)
+        if self.talk then return Talk(board, self, button) end
         if self.plus then return New(board) end
         if button == "RightButton" then return TabMenu(board, self, self.index) end
         Choose(board, self.index)
     end))
     Core.Tip(tab, function() return not tab.plus and tab.Text:GetText() or nil end,
-        function() return not tab.plus and Board.TEXT.tabTip or nil end, "ANCHOR_BOTTOM")
+        function()
+            if tab.talk then return Board.TEXT.talkTip end
+            return not tab.plus and Board.TEXT.tabTip or nil
+        end, "ANCHOR_BOTTOM")
     return tab
 end
 
@@ -859,20 +924,27 @@ local function Tabs(board, on)
         end
     end
     local kept, tabs = Kept(board), strip.tabs
+    local talking = Occasion(board) ~= nil
     tabs:Begin()
     local previous, width = nil, 0
-    local function Place(tab, text, index)
-        tab.index, tab.plus = index, index == nil
+    local function Place(tab, text, index, talk)
+        tab.index, tab.talk, tab.plus = index, talk, index == nil and not talk
         tab.Text:SetWidth(0)
         tab.Text:SetText(text)
         tab:SetWidth((tab.Text:GetStringWidth() or 0) + Board.TAB_PAD)
-        if tab.SetSelected then tab:SetSelected(index == kept.chosen) end
+        if tab.SetSelected then
+            if talk then tab:SetSelected(talking) else tab:SetSelected(not talking and index == kept.chosen) end
+        end
         tab:ClearAllPoints()
         if previous then tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT", 2, 0) else tab:SetPoint("BOTTOMLEFT") end
         tab:Show()
         width = width + tab:GetWidth() + 2
         previous = tab
     end
+    -- A talk on (set aside or not): its tab first.
+    local name = board.occasion
+    local occasion = name and type(board.options.occasions) == "table" and board.options.occasions[name]
+    if type(occasion) == "table" then Place(tabs:Take(), occasion.title or name, nil, name) end
     for index, layout in ipairs(kept.tabs) do Place(tabs:Take(), Name(index, layout), index) end
     local plus = tabs:Take()
     Place(plus, "+", nil)
@@ -1045,9 +1117,13 @@ function methods:Show(inside, width, height)
     self.inside, self.width, self.height, self.standing = inside, math.floor(width), math.floor(height), true
     local list, specs = Specs(self)
     self.specs = specs
-    local tab, index = Chosen(self)
+    local tab, index, occasion = Chosen(self)
     local tree = tab.tree
-    if tree == nil and index == 1 then tree = Core.Safe(Label(self), self.options.default, self.width, self.height) end
+    if tree == nil and occasion then
+        tree = type(occasion.default) == "function" and Core.Safe(Label(self), occasion.default, self.width, self.height) or nil
+    elseif tree == nil and index == 1 then
+        tree = Core.Safe(Label(self), self.options.default, self.width, self.height)
+    end
     self.tree = Tidy(Copy(tree)) -- its shares each a part of one (a module's default may give sizes); false: empty
     local function here(key)
         local spec = specs[key]
@@ -1134,10 +1210,29 @@ function methods:Toggle(key)
     Keep(self, Board.Beside(Copy(self.tree), key, largest, rect and (rect[3] >= rect[4] and "right" or "bottom") or "right"))
 end
 
+-- A talk began (name: one of options.occasions; an unknown one counts as none) or ended (nil): its layout stands while
+-- it is on, not set aside. A board that stands lays out anew.
+function methods:Occasion(name)
+    local occasions = self.options.occasions
+    if name ~= nil and not (type(occasions) == "table" and type(occasions[name]) == "table") then name = nil end
+    if name == self.occasion then return end
+    self.occasion, self.aside = name, false
+    if self.standing and self.options.changed then Core.Safe(Label(self), self.options.changed) end
+end
+
+-- The talk whose layout stands now, or nil (none, or set aside by another tab).
+function methods:Talking()
+    return (Occasion(self))
+end
+
 -- A window that is no more: out of every layout.
 function methods:Forget(key)
-    for _, tab in ipairs(Kept(self).tabs) do
+    local kept = Kept(self)
+    for _, tab in ipairs(kept.tabs) do
         if type(tab.tree) == "table" then tab.tree = Board.Without(Copy(tab.tree), key) or false end
+    end
+    for _, tab in pairs(kept.occasions or {}) do
+        if type(tab) == "table" and type(tab.tree) == "table" then tab.tree = Board.Without(Copy(tab.tree), key) or false end
     end
     local panel = self.panels[key]
     if panel then Put(self, panel, nil) end

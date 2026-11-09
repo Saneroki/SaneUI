@@ -307,6 +307,11 @@ Core.Options("Loot", { { key = "full", default = true, text = "Make room for loo
     { changed = function() Core.SwitchChanged() end })
 -- Only the bags on the full screen: the other parts are tried elsewhere.
 ns.store.board = { chosen = 1, tabs = { { name = "Default", tree = { key = "bags" } } } }
+-- The game's vendor window, closed, there from the start as the game's is (Talks.lua follows it from the login on).
+local merchantFrame = CreateFrame("Frame", "MerchantFrame", UIParent)
+merchantFrame:SetSize(336, 444)
+merchantFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
+merchantFrame:Hide()
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Inventory == ns and not ns.off, "the module is made and started")
 local Contents, Layout, Cells, Bags, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Bags, ns.Foot
@@ -2327,6 +2332,74 @@ function W.CheckRoom()
     C_Container.GetContainerNumFreeSlots, Contents.Junk, Bags.Carried, Bags.Store = numFree, junkOf, carriedOf, store
     C_Container.PickupContainerItem, CursorHasItem, ClearCursor, DeleteCursorItem = pick, cursorWas, cleared, nil
 end
+-- The full screen at a vendor and a banker (Talks.lua): a layout of its own for each, the game's vendor window seated
+-- on the left, the bags on the right; the bags on the left, the bank on the right. The talk over, the full screen goes
+-- back if it came for it; one that stood before keeps standing, with the layout chosen.
+do
+    local Talks, layouts, store = ns.Talks, ns.Board.layouts, ns.store.board
+    if handle.edge.full then handle.edge:Fill(false) Stand() end
+    local chosenTree = store.tabs[store.chosen].tree
+    merchantFrame:Show()
+    Stand()
+    local rects = layouts.rects
+    check(handle.edge.full and layouts:Talking() == "vendor" and rects.vendor and rects.bags and rects.vendor[1] < rects.bags[1],
+        "a vendor's window opened: the full screen comes, the vendor's window on the left, the bags on the right")
+    check(rects.vendor[3] >= Talks.VENDOR and rects.vendor[3] < Talks.VENDOR + 3 * Core.Board.PAD and rects.bags[3] > rects.vendor[3],
+        "the vendor's panel as wide as its window, the bags taking the rest")
+    local vendorPanel = ns.Board.Panel("vendor")
+    vendorPanel.body._left, vendorPanel.body._bottom = rects.vendor[1], 1080 - rects.vendor[2] - rects.vendor[4]
+    vendorPanel.body._width, vendorPanel.body._height = rects.vendor[3], rects.vendor[4] - Core.Board.HEAD
+    Talks.shop.Size()
+    W.Wait(0)
+    check(Core.Lent(merchantFrame) and merchantFrame:GetParent() == UIParent and merchantFrame:IsShown(),
+        "the game's vendor window seated in its panel: lent its place, its parent and its opening the game's")
+    local tabs = layouts.strip.tabs
+    check(tabs[1].talk == "vendor" and tabs[1].Text._text == "Vendor" and tabs[1]._selected and not tabs[2]._selected,
+        "the talk's tab first in the title bar, chosen")
+    layouts:Remove("bags")
+    check(type(store.occasions) == "table" and store.occasions.vendor.tree.key == "vendor"
+        and store.tabs[store.chosen].tree == chosenTree, "a change is kept as the talk's: the layout chosen stays as it was")
+    tabs[2]:GetScript("OnClick")(tabs[2], "LeftButton")
+    check(layouts:Talking() == nil and layouts.rects.bags and not layouts.rects.vendor and tabs[1].talk == "vendor"
+        and not tabs[1]._selected and tabs[2]._selected, "another tab chosen sets the talk's layout aside, its tab still there")
+    tabs[1]:GetScript("OnClick")(tabs[1], "LeftButton")
+    check(layouts:Talking() == "vendor" and layouts.rects.vendor and not layouts.rects.bags, "its own tab brings it back")
+    store.occasions = nil -- reset: the module's own again
+    merchantFrame:Hide()
+    Stand()
+    check(not handle.edge.full and layouts.occasion == nil and not Core.Lent(merchantFrame)
+        and merchantFrame._points[1][4] == 16, "the vendor closed: the full screen goes back, the window given back exactly")
+    handle.edge:Fill(true)
+    Stand()
+    merchantFrame:Show()
+    W.Wait(0)
+    check(layouts:Talking() == "vendor" and layouts.rects.vendor and layouts.rects.bags, "the full screen standing already: the vendor's layout comes on it")
+    merchantFrame:Hide()
+    W.Wait(0)
+    check(handle.edge.full and layouts:Talking() == nil and not layouts.rects.vendor and layouts.rects.bags,
+        "the vendor closed: the full screen stays, with the layout chosen")
+    handle.edge:Fill(false)
+    Stand()
+    ns.options.talks = false
+    merchantFrame:Show()
+    Stand()
+    check(not handle.edge.full and layouts.occasion == nil, "Full Screen at Vendors and the Bank off: no full screen at a vendor")
+    merchantFrame:Hide()
+    ns.options.talks = true
+
+    bankOpen = true
+    W.Fire("BANKFRAME_OPENED")
+    Stand()
+    rects = layouts.rects
+    check(handle.edge.full and layouts:Talking() == "bank" and rects.bags and rects.bank and rects.bags[1] < rects.bank[1]
+        and layouts.strip.tabs[1].Text._text == "Bank", "at a banker: the full screen comes, the bags on the left, the bank on the right")
+    bankOpen = false
+    W.Fire("BANKFRAME_CLOSED")
+    Stand()
+    check(not handle.edge.full and layouts.occasion == nil and store.tabs[store.chosen].tree == chosenTree,
+        "the bank closed: the full screen goes back, the layout chosen as it was")
+end
+
 W.CheckRoom()
 
 for label, problem in pairs(Core.errors) do check(false, "no step failed on the way: " .. label .. ": " .. tostring(problem.text)) end

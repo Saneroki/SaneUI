@@ -180,6 +180,14 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   bags. Alt and a right click opens an item's
   menu, a middle click pins it, Shift and a click splits a stack (with *Stack Splitter Everywhere*). Your gold at
   the foot. Away from the banker the window is gone and the others share its room.
+- **At a vendor and a banker** (Saneroki, 2026-11-09): the full screen comes by itself. At a vendor the game's
+  vendor window stands on the left (the window *Vendor*: the game's own, as it always works, only placed there) and
+  your bags on the right; at a banker your bags on the left and your bank on the right. Each is a layout of its own
+  behind a tab first in the title bar (*Vendor*, *Bank*), there while you talk to them: arrange it as you like and it
+  is kept so; a right click on its tab resets it; another tab chosen shows that layout instead until the talk ends.
+  When the vendor or the bank closes, the full screen goes back, unless it was open already before. Pushing the
+  corner or Esc closes the full screen as always (Esc closes the vendor's window with it). *Sane UI > Inventory >
+  Full Screen at Vendors and the Bank* switches it off.
 - **Your alts** (the window *Alts*), in the bags' look and made of the bags' own parts, so what you learned there holds
   here: on the title line after *Alts* the dropdown of the account's characters (you first, each in its class's
   colour with its class's icon and its gold, the account's bank last where it holds something, the gold of them all
@@ -242,7 +250,7 @@ login has no last line, until the game has said your time.
   UI* either, the Classic entries' `ready`), Edit Mode while open (`Core.EditMode.Watch`), standing down
   (`Keys.Leave`) give everything back; a key pressed while the full screen cannot come wishes for nothing later.
 - **The board** (`Board.lua`): Core's (`Core.Board`), the module's windows in the order `Board.ORDER`
-  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `bags`, `bank`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
+  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `vendor`, `bags`, `bank`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
   that registers itself: `Board.Part(key, title, least, part)`, `part.Build(panel)`, `part.Show(on)`,
   `part.Size(width, height)`, `part.Search(text)`; each step runs `ns.Safe`, so a part that fails is noted and
   the others go on. The first layout puts the parts of `Board.FIRST` (the character, the stats, the bags, the other
@@ -251,6 +259,14 @@ login has no last line, until the game has said your time.
   (`Board.ICONS`: a texture, or a function that draws it: the portrait, the PvP icon of your faction; the side tabs'
   icons are WoW: Forever's own art, so Retail gets icons of its own of the same meaning, `Core.ForGame`) gives it a
   tab of its own in the title bar (Core's board, `spec.icon`).
+- **The talks** (`Talks.lua`, Saneroki, 2026-11-09): two layouts of Core's board's own for a talk (`Board.Occasion(name,
+  title, default)`, its occasions; `Board.Talk(name)` sets the one on): `vendor` (the part `vendor` as wide as the game's
+  window, `Shop.Width()`, the bags the rest) and `bank` (the bags and the bank, halves). The part `vendor` is Core's
+  `Core.Seat.Part` on `MerchantFrame`: seated in its panel's body while it is open (`Present`), its `OnShow` and `OnHide`
+  followed (hooks after the game's) to begin and end the talk; the bank by `BANKFRAME_OPENED` and `BANKFRAME_CLOSED`.
+  `Talks.Began` fills the screen (`Window.Fill`) and notes that it came for that talk; `Talks.Ended` takes the
+  layout off and sends the full screen back (`Window.Back`) only then. Switched off (`talks`), nothing comes; a vendor
+  window put in a layout by hand still lays out with it.
 - **The character sheet** (`Sheet/`): the game's Camelot character window rebuilt from Blizzard's code
   (`CharacterFrame.xml`, `PaperDollFrame.xml`, `PaperDollFrame.lua`, `ReputationFrame`, `SkillsFrame`, `PVPRankFrame`,
   `TokenFrame`, `StatisticsFrame`), its parts windows of their own on the board (Saneroki, 2026-10-20), each moved
@@ -789,6 +805,7 @@ classes' gains can be held against each other; `early` for a character without a
 | `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, the empty slots, the list's lines, the item buttons, the catcher of an item let go over an item |
 | `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
 | `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
+| `Talks.lua` | The full screen at a vendor and a banker: a layout of its own for each talk; the game's vendor window seated on it, the part `vendor` |
 | `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The other characters' window: the dropdown of the account's characters, their gold |
 | `Alts/Items.lua` | The other characters' window: the chosen one's things as the bags' records and sections, read-only buttons, the paper doll |
@@ -816,3 +833,5 @@ classes' gains can be held against each other; `early` for a character without a
   down there.
 - **2026-11-07:** (Saneroki) an item let go over an item of a category goes into that category, no longer swapped
   in the bags; put anywhere but Pinned, a pinned item is unpinned, so it shows in the player's own category.
+- **2026-11-09:** (Saneroki) the full screen at a vendor (the game's vendor window on the left, the bags on the right)
+  and at a banker (the bags on the left, the bank on the right), each a layout of its own behind its tab.

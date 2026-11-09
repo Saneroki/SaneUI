@@ -17,6 +17,8 @@ local _, ns = ...
 --                  window of its own (Sheet/); skills and pvp only where the
 --                  game has WoW: Forever's skill lines and PvP rank (none in
 --                  Retail: those parts do not register)
+--      vendor      the game's vendor window, seated in its panel while it is
+--                  open (Talks.lua)
 --      bags        the bags
 --      bank        the bank, while the character is at a banker
 --      alts        your alts: the other characters' snapshots
@@ -25,7 +27,9 @@ local _, ns = ...
 --  The first layout puts the windows of Board.FIRST side by side, left to
 --  right, each as wide as it asks (its least width), the last one taking what
 --  is left (a window with nothing to show now, the bank away from a banker,
---  left out); the others are added from the dropdown Windows.
+--  left out); the others are added from the dropdown Windows. At a vendor and
+--  a banker the full screen comes with a layout of its own for that talk
+--  (Talks.lua: Core's board's occasions, registered by Board.Occasion).
 --
 --  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
 --  title and the X, the body under it); what is in it is its part's. A part
@@ -76,6 +80,7 @@ Board.ICONS = {
     pvp = Honor,
     currency = SideTab("INV_SideTab_Currency_c60", "INV_Misc_Coin_02"),
     statistics = SideTab("INV_SideTab_Stats_c60", "Achievement_General"),
+    vendor = "Interface/ICONS/INV_Misc_Coin_01",
     bags = "Interface/ICONS/INV_Misc_Bag_08",
     bank = "Interface/ICONS/INV_Misc_Bag_09",
     alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
@@ -88,11 +93,13 @@ Board.DRESS = { character = "bare", stats = "journal", gear = "journal", titles 
                 bank = "journal", alts = "journal" }
 
 -- The windows in the dropdown's order; those the first layout holds.
-Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "bags", "bank", "alts" }
+Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "vendor", "bags",
+                "bank", "alts" }
 Board.FIRST = { character = true, stats = true, bags = true, bank = true, alts = true }
 
 local layouts  -- Core's board, once the window is there (Board.Take)
 local parts = {} -- [key] = { part, spec }: registered by the parts' files
+local occasions = {} -- [name] = { title, default }: the talks the full screen has a layout for (Board.Occasion)
 
 -- A part's steps, each by itself under the part's title.
 local function Step(key, part, name)
@@ -110,6 +117,24 @@ function Board.Part(key, title, least, part)
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
         present = part.Present and function() return ns.Safe(key, part.Present) == true end or nil,
     } }
+end
+
+-- A talk the full screen has a layout of its own for (Talks.lua): its name, its tab's title and its layout until the
+-- player changes it (function(width, height) returning a node of Core's board).
+function Board.Occasion(name, title, default)
+    occasions[name] = { title = title, default = function(width, height) return ns.Safe("board", default, width, height) end }
+end
+
+-- A talk began (its name) or ended (nil): its layout stands on the full screen while it is on.
+function Board.Talk(name)
+    if layouts then layouts:Occasion(name) end
+end
+
+-- Whether a part is registered and has something to show now (the vendor: while its window is open).
+function Board.Present(key)
+    local entry = parts[key]
+    if not entry then return false end
+    return not entry.spec.present or entry.spec.present()
 end
 
 -- The windows there are, in their order.
@@ -152,6 +177,7 @@ function Board.Take(window)
         windows = Windows,
         default = function(width, height) return ns.Safe("board", Default, width, height) end,
         changed = function() ns.Guarded(ns.Window.Reboard) end,
+        occasions = occasions,
     })
     Board.layouts = layouts
 end

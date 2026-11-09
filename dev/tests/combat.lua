@@ -2590,6 +2590,116 @@ do
     W.cursorX, W.cursorY = nil, nil
 end
 
+-- The full screen at a trainer (Trainer.lua): the game's trainer window seated on the left, the spellbook on the
+-- right; at a profession trainer the Profession window of what it teaches, opened and closed the game's way; the
+-- talk over, the full screen goes back if it came for it (in a function of its own: the main chunk is near Lua's
+-- 200 locals) ------------------------------------------------------------------------------------------------------
+;(function()
+    if handle.edge.full then handle.edge:Fill(false) end
+    Back()
+    local trainer = W.NewWidget("Frame", "ClassTrainerFrame", UIParent)
+    trainer._width, trainer._height, trainer._scale = 338, 424, 1
+    trainer:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
+    trainer:Hide()
+    ClassTrainerFrame = trainer
+    local professions = W.NewWidget("Frame", "ProfessionsFrame", UIParent)
+    professions._width, professions._height, professions._scale = 750, 594, 1
+    professions:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
+    professions:Hide()
+    ProfessionsFrame = professions
+    -- The game loads their addons when first wanted.
+    W.loaded.Blizzard_TrainerUI, W.loaded.Blizzard_Professions = true, true
+    waiting.Blizzard_TrainerUI()
+    waiting.Blizzard_Professions()
+    local tradeskill, learned, opened, closed = false, "Blacksmithing", {}, 0
+    IsTradeskillTrainer = function() return tradeskill end
+    GetNumTrainerServices = function() return 2 end
+    GetTrainerServiceSkillLine = function(index) return tradeskill and learned or (index == 1 and "Arms" or "Defense") end
+    GetProfessions = function() return nil, 2, nil, 3 end -- holes where a profession is not learned
+    GetProfessionInfo = function(slot)
+        if slot == 2 then return "Blacksmithing", 136241, 1, 75, 2, 10, 164 end
+        if slot == 3 then return "Herbalism", 136246, 1, 75, 1, 20, 182 end
+    end
+    local book = C_SpellBook.GetSpellBookItemInfo
+    C_SpellBook.GetSpellBookItemInfo = function(index, bank)
+        if index == 11 then return { spellID = 2018 } end
+        if index == 21 then return { spellID = 2366 } end
+        return book(index, bank)
+    end
+    -- A panel's body where the board put it (the stand-in knows no anchors), its window seated there anew.
+    local function Placed(key, part)
+        local room, body = In(key), ns.Board.Panel(key).body
+        body._left, body._bottom, body._width, body._height = room[1], top - room[2] - room[4], room[3], room[4]
+        part.Size()
+        W.Wait(0)
+        return room
+    end
+    C_TradeSkillUI = {
+        OpenTradeSkill = function(line) opened[#opened + 1] = line professions:Show() return true end,
+        CloseTradeSkill = function() closed = closed + 1 professions:Hide() end,
+        CanTradeSkillShowCraftingUI = function(spell) return spell == 2018 end, -- Herbalism crafts nothing
+    }
+
+    trainer:Show()
+    Stand()
+    local rects = layouts.rects
+    check(handle.edge.full and layouts:Talking() == "trainer" and rects.trainer and rects.spellbook and not rects.talents
+        and rects.trainer[1] < rects.spellbook[1], "a class trainer: the full screen comes, its window on the left, the spellbook on the right")
+    check(rects.trainer[3] >= 338 and rects.trainer[3] < 338 + 3 * pad and #opened == 0,
+        "the trainer's panel as wide as its window; no Profession window asked for")
+    check(Seated(trainer, Placed("trainer", ns.Trainer.seated), 338, 424), "the game's trainer window seated in its panel")
+    check(layouts.strip.tabs[1].talk == "trainer" and layouts.strip.tabs[1].Text._text == "Trainer", "the talk's tab first")
+    trainer:Hide()
+    Stand()
+    check(not handle.edge.full and layouts.occasion == nil and not Core.Lent(trainer) and trainer._points[1][4] == 16,
+        "the trainer closed: the full screen goes back, its window given back exactly")
+    Back()
+
+    tradeskill = true
+    trainer:Show()
+    Stand()
+    W.Wait(0)
+    rects = layouts.rects
+    check(opened[1] == 164 and #opened == 1 and professions:IsShown(),
+        "a profession trainer: the Profession window of what it teaches, asked of the server")
+    check(layouts:Talking() == "profession" and rects.trainer and rects.profession and not rects.spellbook
+        and rects.trainer[1] < rects.profession[1], "the trainer's window on the left, the Profession window on the right")
+    check(Seated(professions, Placed("profession", ns.Trainer.profession), 750, 594), "the Profession window seated in its panel")
+    trainer:Hide()
+    Stand()
+    check(closed == 1 and not professions:IsShown() and not Core.Lent(professions) and not handle.edge.full,
+        "the talk over: the Profession window closed as it was opened, the full screen back")
+    Back()
+
+    professions:Show() -- the player's own, open before the talk
+    trainer:Show()
+    Stand()
+    check(#opened == 1 and layouts.rects.profession, "a Profession window open already: not asked for again, it takes its place")
+    trainer:Hide()
+    Stand()
+    check(closed == 1 and professions:IsShown(), "and the talk over, it stays open: not ours to close")
+    professions:Hide()
+    Back()
+
+    learned = "Herbalism"
+    trainer:Show()
+    Stand()
+    check(#opened == 1 and layouts:Talking() == "profession" and layouts.rects.trainer and not layouts.rects.profession,
+        "a profession with nothing to craft: no window asked for, the trainer alone")
+    trainer:Hide()
+    Stand()
+    Back()
+
+    Core.Set(ns.name, "trainers", false)
+    trainer:Show()
+    Stand()
+    check(not handle.edge.full and layouts.occasion == nil, "Full Screen at Trainers off: the trainer's window as the game has it")
+    trainer:Hide()
+    Core.Set(ns.name, "trainers", true)
+    IsTradeskillTrainer, GetNumTrainerServices, GetTrainerServiceSkillLine, GetProfessions, GetProfessionInfo = nil, nil, nil, nil, nil
+    C_SpellBook.GetSpellBookItemInfo, C_TradeSkillUI = book, nil
+end)()
+
 -- A step of the giving back fails (here the board's own): the others give back all the same, the keys first.
 Board.layouts.Hide = function() error("the board failed") end
 ns.StandDown("a test")

@@ -51,6 +51,12 @@ ns.TEXT = {
     gameFight = "Press %s to open it here. A click here works again after the fight.",
     gameFightNoKey = "A click here opens it again after the fight.",
     gameNotYet = "Not available yet.",
+    -- The full screen at a trainer (Trainer.lua).
+    trainer = "Trainer",
+    profession = Core.Word("TRADE_SKILLS", "Professions"),
+    professionTrainer = "Profession Trainer",
+    trainers = "Full Screen at Trainers",
+    trainersTip = "At a trainer the full screen comes with the trainer's window on the left and your spellbook on the right; at a profession trainer with your Profession window on the right, opened for what that trainer teaches once you know it. Each is a layout of its own behind its tab, kept as you arrange it, and the full screen goes back when the talk ends.",
     keys = "Your spellbook and talents keys open ours",
     keysTip = "The keys you gave the game's spellbook, pet spellbook and talents open our own windows on Combat's full screen, and close them again. Off: they open the game's own windows, as before. Your key bindings stay as they are either way.",
     nameplates = "Nameplates",
@@ -343,7 +349,9 @@ local OPTIONS = {
     { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
     { key = "aurasOpen", text = ns.TEXT.aurasOpen, tip = ns.TEXT.aurasOpenTip, button = function() ns.Guarded(ns.AuraLists.Open) end },
 }
+table.insert(OPTIONS, 1, { key = "trainers", default = true, text = ns.TEXT.trainers, header = ns.TEXT.book, tip = ns.TEXT.trainersTip })
 if ns.Serves() then
+    OPTIONS[1].header = nil -- under the keys' head
     table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
 end
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
@@ -405,6 +413,7 @@ function ns.OnLogin()
     ns.Window.Build()
     ns.Board.Follow()
     ns.GameWindow.Start()
+    ns.Trainer.Start()
     ns.Keys.Start()
     ns.QuestMarks.Start()
     ns.Units.Start()

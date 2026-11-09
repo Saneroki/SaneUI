@@ -268,7 +268,9 @@ planner Sane UI knows). The rules:
   window. Esc closes it with the full screen.
 - **Where it stands today:** the game's window of talents and spellbook in Combat's panel in Retail, where ours are
   not (`src/Combat/GameWindow.lua`, with that secure button over the closed panel), the game's action bars in Combat's panels
-  (`src/Combat/BarsWindow.lua`), Social's guild window, a talent planner.
+  (`src/Combat/BarsWindow.lua`), Social's guild window, a talent planner, the game's vendor window on Inventory's
+  full screen and its trainer and Profession windows on Combat's (`Core.Seat.Part`: a board's part made of a game's
+  window, there while it is open, its `OnShow` and `OnHide` followed; Saneroki, 2026-11-09).
 
 ### The board: a module's full screen of windows (`Board.lua`)
 
@@ -308,6 +310,15 @@ not by itself. The rules:
   layout, and says false when that cannot come now (its window closed, Edit Mode, *Can expand to fullscreen* off): the
   module shows its window elsewhere; `Withdraw` takes it back when its module stands down. Either way a board that
   stands lays out anew, and the window that has the key now gets a panel of its own.
+- **A talk's layout** (Saneroki, 2026-11-09): a module may give its board a layout for a talk (`occasions = { [name] =
+  { title, default } }`: Inventory's vendor and bank, Combat's trainer and profession trainer). While the module says
+  the talk is on (`board:Occasion(name)`, at the NPC's window or event), that layout stands instead of the tab chosen,
+  behind a tab of its own first in the title bar; changed, it is kept as the talk's (`occasions[name]`), never in the
+  player's tabs; a right click resets it; another tab chosen sets it aside until the talk ends. The module fills the
+  screen for the talk and sends it back at the end only when it came for it; one open before stays, with the tab
+  chosen. The game's window of the talk is never opened or closed by our code: only seated while it is open; where a
+  second game window belongs to it (the Profession window), it is asked of the server, as the game's own code does it
+  (`C_TradeSkillUI.OpenTradeSkill`, `CloseTradeSkill`), whose answer the game's code shows.
 - **What is in a window is the module's**: a panel of Core's (`Core.Skin` plate, a head `Board.HEAD` high with its
   title and the X, a line, the body) holds the module's part, built the first time it is shown (`build`), told
   when it is shown and hidden (`show`), its size once a change stands (`size`), the search (`search`). A window

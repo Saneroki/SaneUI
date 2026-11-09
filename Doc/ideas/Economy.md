@@ -396,6 +396,9 @@ names (`AUCTION_HOUSE_BUY_TAB`, `AUCTION_HOUSE_SELL_TAB`, `AUCTION_HOUSE_AUCTION
 - **Repair all:** own gold or the guild's (`RepairAllItems`, `RepairAllItems(true)`), the cost shown. The bags'
   *Auto Repair* does it with own gold on opening (built 2026-10-30).
 - **Buyback.**
+- **Where it stands (Saneroki, 2026-11-09):** "When vendor is open show vendor on the left and the bags on the right in
+  the fullscreen." Built on Inventory's full screen (`src/Inventory/Talks.lua`): the game's own vendor window seated
+  there until ours is made, a layout of its own for the talk (Core's board's occasions). Ours takes the same place.
 
 ## The trainer window
 
@@ -409,6 +412,10 @@ names (`AUCTION_HOUSE_BUY_TAB`, `AUCTION_HOUSE_SELL_TAB`, `AUCTION_HOUSE_AUCTION
   Blizzard's window as the player left it.
 - What comes at the next levels from the database's set *Trainers* (pack Spells), which the Abilities
   module reads too.
+- **Where it stands (Saneroki, 2026-11-09):** "When the class trainer is open show the fullscreen with Class Trainer
+  on the left and the skills window on the right." Asked: the skills window is our spellbook; weapon and pet trainers
+  open it as well, "but profession trainers open up the Profession window"; all on Combat's full screen
+  (`src/Combat/Trainer.lua`), the game's own trainer window seated there until ours is made.
 
 ## The bank window
 
@@ -419,6 +426,8 @@ names (`AUCTION_HOUSE_BUY_TAB`, `AUCTION_HOUSE_SELL_TAB`, `AUCTION_HOUSE_AUCTION
 - One view with search, sorting and filters; the value of each stack and of the whole bank from the
   history.
 - Gold in and out of the account bank.
+- **Where it stands (Saneroki, 2026-11-09):** "When the banker is open show the banker window on the right and the bags
+  on the left fullscreen." Built on Inventory's full screen with Inventory's own bank window (`src/Inventory/Talks.lua`).
 
 ## More windows (Saneroki)
 

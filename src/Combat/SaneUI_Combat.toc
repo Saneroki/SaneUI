@@ -47,6 +47,8 @@ Book\Casts.lua
 Book\Book.lua
 # The game's own spellbook and talents on the full screen, in a game where ours are not
 GameWindow.lua
+# The full screen at a trainer: the game's trainer window beside the spellbook, or beside the Profession window
+Trainer.lua
 # Your spellbook, pet book and talents keys opening ours (the game's override bindings; our keys: Bindings.xml)
 Keys.lua
 # A mark beside a creature's nameplate while it belongs to an objective of your quests still to do

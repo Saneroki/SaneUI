@@ -98,6 +98,13 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   shows, an empty one too. Drag a macro of Sane Macros onto one. A layout of your own takes them from the dropdown *Windows*.
 - **Sane Macros:** macros and sequences with no limit of 30, on the full screen beside your bars: `/macro`, `/sane macros` or its key.
   See [Macros/README.md](Macros/README.md). Its switches: *Check macros*, *Dim what cannot be used*, *Show the key on the button*.
+- **At a trainer** (Saneroki, 2026-11-09): the full screen comes by itself, the trainer's window on the left (the window
+  *Trainer*: the game's own, as it always works, only placed there). Class, weapon and pet trainers: your spellbook on
+  the right (in Retail the game's own window). Profession trainers: the game's *Professions* window on the right,
+  opened for the profession that trainer teaches once you know it and it has something to craft, and closed again when
+  you leave if it was opened for you. Each is a layout of its own behind a tab first in the title bar (*Trainer*,
+  *Profession Trainer*), kept as you arrange it; a right click on its tab resets it. When the trainer closes, the full
+  screen goes back, unless it was open already before. *Full Screen at Trainers* switches it off.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*: the
   full screen goes back and what opens the game's is said: its key, or, while your keys open ours, its button
   in the micro menu (our code does not open the game's spellbook). The game's spellbook has the button *Sane UI*
@@ -503,6 +510,19 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   The first layout (`Default`): Sane Macros (the part `macros`, [Macros/README.md](Macros/README.md)) its least width beside the
   others, the wide bars under it as high as they stand on the screen (at most what Sane Macros' least height leaves); without it, a
   strip along the foot of at most `MOST_SHARE` of the height.
+- **The trainer** (`Trainer.lua`, Saneroki, 2026-11-09; Saneroki's picks: the spellbook beside a class, weapon or pet
+  trainer, the Profession window beside a profession trainer): the parts `trainer` (`ClassTrainerFrame`, its addon
+  `Blizzard_TrainerUI` loaded by the game on demand) and `profession` (`ProfessionsFrame`, `Blizzard_Professions`), each
+  Core's `Core.Seat.Part`: seated in its panel while open, its `OnShow` and `OnHide` followed. The trainer's opening
+  begins the talk: `IsTradeskillTrainer()` picks the occasion `profession`, else `trainer` (Board.lua's
+  `Board.Occasion`, Core's board's occasions; the trainer as wide as its window, `Seated.Width()`, the other the rest,
+  `spellbook` or, where ours is not, `game`). At a profession trainer `Trainer.Taught()` matches the services' skill
+  line (`GetTrainerServiceSkillLine`) by name to the character's professions (`GetProfessions`, `GetProfessionInfo`:
+  its skill line), one with a window to craft in (`C_TradeSkillUI.CanTradeSkillShowCraftingUI` of its first book
+  spell); `C_TradeSkillUI.OpenTradeSkill` asks the server, and the game's own code shows its window
+  (`TRADE_SKILL_SHOW`), never ours. Opened so, `C_TradeSkillUI.CloseTradeSkill` closes it when the trainer closes; one the
+  player had open stays. The full screen came for the talk (`Window.Fill`): it goes back at its end (`Window.Back`).
+  Off by the setting `trainers`.
 - **The game's own window on the full screen** (`GameWindow.lua`, the part `game`, present where `ns.Serves()` is
   false): `PlayerSpellsFrame` seated in the panel's body (`Core.Seat`), never shown or hidden by our code (its
   `OnShow` and `OnHide` set the action bars' grids, its book writes which spell each entry casts:
@@ -867,6 +887,7 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Talents/Changes.lua` | Buying, refunding, applying, undoing and resetting, where the game allows it |
 | `Talents/Tree.lua` | The frame: the game's shared talent frame with the class layer over it, its events while shown |
 | `GameWindow.lua` | The game's own spellbook and talents window seated on the full screen, in a game where ours are not |
+| `Trainer.lua` | The full screen at a trainer: the game's trainer window seated on it beside the spellbook, or beside the game's Profession window; the parts `trainer` and `profession`, a layout of its own for each kind of talk |
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
@@ -984,3 +1005,4 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   bars full; a solid red border on aggro; the box back in Edit Mode only (Saneroki).
 - **2026-11-01:** rings around the mouse for the global cooldown and your cast (Saneroki): only while they run, around the whole cursor, not its tip.
 - **2026-11-01:** unit frames and action bars out of sight at rest (Saneroki): in sight with the mouse on them, while your health or resource is not full, in a fight and in a group; the mouse on any action bar shows them all.
+- **2026-11-09:** the full screen at a trainer (Saneroki): the game's trainer window on the left, the spellbook on the right, or at a profession trainer the game's Profession window; a layout of its own for each, behind its tab.
