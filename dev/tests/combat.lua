@@ -538,8 +538,10 @@ do
     on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
     check(second.face.border[1]._vertex[1] == 1 and second.face.border[1]._vertex[2] == 0 and second.face.border[1]._vertex[4] == 1,
         "aggro: a solid red border")
-    check(second.face.threat._value == 0 and second.face.threat._min == Face.AGGRO - 1 and second.face.threat._max == Face.AGGRO,
-        "told: the red plate over it empty, full from aggro up")
+    local plate = second.face.threat
+    check(#plate == 2 and plate[1]._value == 0 and plate[2]._value == 0 and plate[1]._min == Face.AGGRO - 1
+        and plate[1]._max == Face.AGGRO and plate[2]._min == Face.AGGRO - 1 and plate[2]._max == Face.AGGRO,
+        "told: the red plate over it empty, full from aggro up, in two halves")
     W.threat.party1 = 1
     on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
     check(second.face.border[1]._vertex[1] == 0, "without it: black")
@@ -547,13 +549,16 @@ do
     local hidden = W.Secret()
     W.threat.party1 = hidden
     on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
-    check(second.face.border[1]._vertex[1] == 0 and second.face.threat._value == hidden,
+    check(second.face.border[1]._vertex[1] == 0 and plate[1]._value == hidden and plate[2]._value == hidden,
         "hidden: the border black, the red plate over it filled by the game's hidden answer, never compared")
-    check(second.face.threat._level == second.face.health._level - 1 and #second.face.threat.corners == 4,
+    check(plate[1]._level == second.face.health._level - 1 and plate[2]._level == plate[1]._level and #plate.corners == 4,
         "over the black border, under the health, round as it is")
+    -- The game refuses a texture a fourth mask (build 70862): each half rounds its own two corners.
+    local masks = function(half) local n = 0 for _ in pairs(half:GetStatusBarTexture()._masks or {}) do n = n + 1 end return n end
+    check(masks(plate[1]) == 2 and masks(plate[2]) == 2, "each half's fill takes two masks, its own corners")
     W.threat.party1 = 1
     on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
-    check(second.face.threat._value == 0, "told again: the plate empty")
+    check(plate[1]._value == 0 and plate[2]._value == 0, "told again: the plate empty")
     W.ready.party1 = "waiting"
     W.Fire("READY_CHECK", "player", 30)
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == second.face.big

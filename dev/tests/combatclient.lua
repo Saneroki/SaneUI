@@ -57,7 +57,18 @@ function Client.Install(W)
         self._fill = self._fill or W.NewWidget("Texture", nil, self)
         return self._fill
     end
-    function methods:AddMaskTexture(mask) self._masks = self._masks or {}; self._masks[mask] = true end
+    -- As the game (build 70862 on): a texture takes three masks at most and refuses a fourth.
+    function methods:AddMaskTexture(mask)
+        self._masks = self._masks or {}
+        if not self._masks[mask] then
+            local count = 0
+            for _ in pairs(self._masks) do count = count + 1 end
+            if count >= 3 then
+                error("Texture:AddMaskTexture(): Texture already has the maximum number of mask textures (3)", 2)
+            end
+        end
+        self._masks[mask] = true
+    end
     function methods:RemoveMaskTexture(mask) if self._masks then self._masks[mask] = nil end end
     function methods:SetSpriteSheetCell(cell) self._cell = cell end
     function methods:SetFormattedText(form, ...)

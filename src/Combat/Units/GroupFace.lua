@@ -89,6 +89,13 @@ Face.READY = { ready = rawget(_G, "READY_CHECK_READY_TEXTURE_RAID") or "UI-LFG-R
                waiting = rawget(_G, "READY_CHECK_WAITING_TEXTURE_RAID") or "UI-LFG-PendingMark-Raid" }
 Face.READY_HOLD = rawget(_G, "CUF_READY_CHECK_DECAY_TIME") or 11
 
+-- The red plate of aggro (Face.Make): its two halves as one, both given the same value, the game's hidden one too.
+Face.Threat = {}
+Face.Threat.__index = Face.Threat
+function Face.Threat:SetValue(value)
+    for _, half in ipairs(self) do half:SetValue(value) end
+end
+
 -- The icons over the name: from the health (on your own slot the cog) leftwards. A face of the unit frames has them
 -- too (Units.lua), at its own size (face.iconSize).
 function Face.Roomed(face, right)
@@ -152,20 +159,26 @@ function Face.Make(parent, sample, small)
     face.border = Bar.Plate(edges, -4)
     face.border:SetVertexColor(Bar.BORDER[1], Bar.BORDER[2], Bar.BORDER[3], Bar.BORDER[4])
     -- Aggro while the game hides it: the red plate as a bar over the black one, full from Face.AGGRO up, empty under it.
-    local threat = CreateFrame("StatusBar", nil, face)
-    threat:SetAllPoints(face)
-    threat:SetFrameLevel(level + 2)
-    threat:SetStatusBarTexture(Bar.WHITE)
-    threat:SetStatusBarColor(Face.AGGRO_BORDER[1], Face.AGGRO_BORDER[2], Face.AGGRO_BORDER[3], Face.AGGRO_BORDER[4])
-    threat:SetMinMaxValues(Face.AGGRO - 1, Face.AGGRO)
-    threat:SetValue(0)
-    threat.corners = {}
-    for _, corner in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
-        local mask = threat:CreateMaskTexture()
-        mask:SetTexture(Core.Shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
-        mask:SetPoint(corner, threat, corner)
-        threat:GetStatusBarTexture():AddMaskTexture(mask)
-        threat.corners[#threat.corners + 1] = mask
+    -- Two halves, each a bar rounding its own two corners, as the border is (Bar.Plate): a texture takes three masks
+    -- at most, and the game refuses a fourth (since build 70862).
+    local threat = setmetatable({ corners = {} }, Face.Threat)
+    for index, corners in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } }) do
+        local half = CreateFrame("StatusBar", nil, face)
+        half:SetPoint(corners[1], face, corners[1])
+        half:SetPoint(index == 1 and "BOTTOMRIGHT" or "TOPRIGHT", face, "RIGHT") -- to the middle of the face's height
+        half:SetFrameLevel(level + 2)
+        half:SetStatusBarTexture(Bar.WHITE)
+        half:SetStatusBarColor(Face.AGGRO_BORDER[1], Face.AGGRO_BORDER[2], Face.AGGRO_BORDER[3], Face.AGGRO_BORDER[4])
+        half:SetMinMaxValues(Face.AGGRO - 1, Face.AGGRO)
+        half:SetValue(0)
+        for _, corner in ipairs(corners) do
+            local mask = half:CreateMaskTexture()
+            mask:SetTexture(Core.Shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+            mask:SetPoint(corner, half, corner)
+            half:GetStatusBarTexture():AddMaskTexture(mask)
+            threat.corners[#threat.corners + 1] = mask
+        end
+        threat[index] = half
     end
     face.threat = threat
     local health = Bar.Strip(face, level + 3)

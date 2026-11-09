@@ -830,8 +830,10 @@ Sunder Armor), as you choose, nothing fixed.
   `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`. The power line on every member (`Power`): `UnitPowerType`, a healer's mana
   where `UnitPowerMax` has one, `UnitBar.Power` (none where the most is 0); the samples' by class (`Group.POWERS`). Aggro: a
   plain `UnitThreatSituation` paints the border (`Face.AGGRO`, 2, up: `Face.AGGRO_BORDER`); a hidden one (a fight) leaves it
-  black and goes as it is into `face.threat`, a `StatusBar` over the border (`edges` one level under it, the health over it)
-  of `UnitBar.WHITE` in the red, its corners four masks of `Core.Shape.CORNER` as round as the border's, bounds
+  black and goes as it is into `face.threat` (`Face.Threat`: its `SetValue` gives both halves the value), two `StatusBar`s
+  over the border (`edges` one level under them, the health over them), the face's upper and lower half, of
+  `UnitBar.WHITE` in the red, each rounding its own two corners by masks of `Core.Shape.CORNER` as round as the border's
+  (as `UnitBar.Plate`: the game refuses a texture a fourth mask since build 70862, `threat.corners` all four), bounds
   `Face.AGGRO - 1` to `Face.AGGRO`: full from aggro up, empty under it, never compared.
 - **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `Reminders.GROUP` (-3, *Group frames*) or
   `Reminders.FRAMES` (-2, *Unit frames*) among its `places` (`Reminders.At`; `IsFrames`), that watches the face's unit
