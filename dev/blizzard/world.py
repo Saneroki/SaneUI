@@ -13,9 +13,8 @@ reads them, so a file that only changed its bytes is no change (Doc/guides/blizz
   the maps       Map, AreaTable and UiMap: what is new, gone or renamed
 
 What it says decides the rest of the patch's world work: walk_maps, the maps whose walking data is made anew;
-squares, the Atlas' squares to paint again (only what its pictures are made from: ground, holes, water, minimap);
-subjects, the painted zones and instances to paint again. A square is <continent>-<i>-<j>, as dev/tools/atlas numbers
-them: i to the east, j to the south.
+instances, the instances whose terrain changed (ground, water, a tile added or gone), whose painted maps are painted
+again (dev/tools/patchday rerender).
 """
 import csv
 import filecmp
@@ -26,12 +25,8 @@ from pathlib import Path
 import numpy as np
 
 GRID, CHUNKS = 64, 16                  # tiles along a map's side, map chunks along a tile's
-TILE_PIXELS, SQUARE, STEP = 2048, 2048, 1792  # the Atlas' pixels: a tile, a square, from one square to the next
-CHUNK_PIXELS = TILE_PIXELS // CHUNKS
 TILE_YARDS = 1600 / 3
-ATLAS_MAPS = (0, 1)                    # the Atlas' continents
 GROUND = 1.0                           # yards: the ground moved by less is no change
-ZONE_SHARE = 0.25                      # of a zone's tiles changed: its own painting is made again
 
 
 def pieces(data, start, end):
@@ -111,32 +106,25 @@ def read_tile(path):
 
 
 def compare_tile(old_path, new_path):
-    """What changed between two builds of a tile: counts, and the chunks whose picture or walking it touches."""
+    """What changed between two builds of a tile: its chunks counted by what changed in them."""
     old, new = read_tile(old_path), read_tile(new_path)
-    change = dict(ground=0, most=0.0, holes=0, areas=0, water=0, chunks=[])
+    change = dict(ground=0, most=0.0, holes=0, areas=0, water=0)
     for place in sorted(set(old) | set(new)):
         before, after = old.get(place), new.get(place)
         if before is None or after is None:
             change["ground"] += 1
-            change["chunks"].append(place)
             continue
-        touched = False
         if before["heights"] is not None and after["heights"] is not None:
             moved = float(np.abs(before["heights"] - after["heights"])[INSIDE].max())
             if moved >= GROUND:
                 change["ground"] += 1
                 change["most"] = max(change["most"], moved)
-                touched = True
         if before["holes"] != after["holes"]:
             change["holes"] += 1
-            touched = True
         if before["water"] != after["water"]:
             change["water"] += 1
-            touched = True
         if before["area"] != after["area"]:
             change["areas"] += 1
-        if touched:
-            change["chunks"].append(place)
     return change
 
 
@@ -177,19 +165,6 @@ def minimap_files(folder):
                 if file:
                     files[map_id * GRID * GRID + row * GRID + column] = file
     return files
-
-
-def squares_of(left, top, right, bottom):
-    """The Atlas' squares (i, j) a box of pixels reaches into."""
-    def span(low, high):
-        return range(max(0, (low - SQUARE) // STEP + 1), (high - 1) // STEP + 1)
-    return {(i, j) for i in span(left, right) for j in span(top, bottom)}
-
-
-def chunk_box(row, column, place):
-    x, y = place
-    left, top = (column * CHUNKS + x) * CHUNK_PIXELS, (row * CHUNKS + y) * CHUNK_PIXELS
-    return left, top, left + CHUNK_PIXELS, top + CHUNK_PIXELS
 
 
 def read_csv(folder, name):
@@ -237,8 +212,8 @@ class Zones:
 
 
 def compare_terrain(old_folder, new_folder, zones):
-    """Two builds' terrain folders: one record per tile that changed, the moved placements with it, the squares."""
-    tiles, squares = {}, set()
+    """Two builds' terrain folders: one record per tile that changed, the moved placements with it; the models."""
+    tiles = {}
     old_adt, new_adt = old_folder / "adt", new_folder / "adt"
     old_names = {p.name for p in old_adt.glob("*.adt")}
     new_names = {p.name for p in new_adt.glob("*.adt")}
@@ -249,37 +224,23 @@ def compare_terrain(old_folder, new_folder, zones):
                                           areas=0, water=0, buildings=0, doodads=0, minimap=False, models=[],
                                           added=False, removed=False, zones=[]))
 
-    def paint(map_id, row, column, places=None):
-        """The squares a tile's change reaches: the chunks named, else the whole tile."""
-        if map_id not in ATLAS_MAPS:
-            return
-        left, top = column * TILE_PIXELS, row * TILE_PIXELS
-        boxes = ([(left, top, left + TILE_PIXELS, top + TILE_PIXELS)] if places is None
-                 else [chunk_box(row, column, place) for place in places])
-        for box in boxes:
-            squares.update((map_id, i, j) for i, j in squares_of(*box))
-
     for name in sorted(new_names - old_names, key=lambda n: int(n.split(".")[0])):
         key = int(name.split(".")[0])
         entry = record(key)
         entry["added"] = True
-        paint(entry["map"], entry["row"], entry["column"])
     for name in sorted(old_names - new_names, key=lambda n: int(n.split(".")[0])):
         key = int(name.split(".")[0])
         entry = record(key)
         entry["removed"] = True
-        paint(entry["map"], entry["row"], entry["column"])
     for name in sorted(old_names & new_names, key=lambda n: int(n.split(".")[0])):
         if filecmp.cmp(old_adt / name, new_adt / name, shallow=False):
             continue
         change = compare_tile(old_adt / name, new_adt / name)
-        places = change.pop("chunks")
         if not any(change.values()):
             continue
         entry = record(int(name.split(".")[0]))
         entry.update(change)
         entry["most"] = round(entry["most"], 1)
-        paint(entry["map"], entry["row"], entry["column"], places)
 
     old_map, new_map = minimap_files(old_folder), minimap_files(new_folder)
     for key in sorted(old_map.keys() & new_map.keys()):
@@ -291,7 +252,6 @@ def compare_terrain(old_folder, new_folder, zones):
         if not same:
             entry = record(key)
             entry["minimap"] = True
-            paint(entry["map"], entry["row"], entry["column"])
 
     held = {}   # model file: the tiles that place it, as the new build has them
     old_obj, new_obj = old_folder / "adt-obj0", new_folder / "adt-obj0"
@@ -322,7 +282,7 @@ def compare_terrain(old_folder, new_folder, zones):
             found = {zones.of(chunk["area"])["AreaName_lang"] for chunk in read_tile(path).values()
                      if zones.of(chunk["area"])}
             entry["zones"] = sorted(found)
-    return [tiles[key] for key in sorted(tiles)], squares, models
+    return [tiles[key] for key in sorted(tiles)], models
 
 
 def by_zone(tiles, new_folder, zones):
@@ -357,18 +317,17 @@ def compare(old_folder, new_folder, old_tables, new_tables):
     """The world of two builds, as a dict for world.json. The folders are the builds' raw extracts: adt, adt-obj0, wmo,
     m2, wdt, minimap; the tables the CSV folders. A build's instances stand beside it, <folder>-instances."""
     zones = Zones(new_tables)
-    tiles, squares, models = compare_terrain(old_folder, new_folder, zones)
+    tiles, models = compare_terrain(old_folder, new_folder, zones)
     old_inst, new_inst = old_folder.with_name(old_folder.name + "-instances"), new_folder.with_name(new_folder.name + "-instances")
     instances = []
     if (old_inst / "adt").is_dir() and (new_inst / "adt").is_dir():
-        changed, _, _ = compare_terrain(old_inst, new_inst, zones)
+        changed, _ = compare_terrain(old_inst, new_inst, zones)
         instances = sorted({t["map"] for t in changed if t["ground"] or t["water"] or t["added"] or t["removed"]})
     maps = changed_names(read_csv(old_tables, "Map"), read_csv(new_tables, "Map"), "MapName_lang", ("Directory", "InstanceType"))
     areas = changed_names(read_csv(old_tables, "AreaTable"), read_csv(new_tables, "AreaTable"), "AreaName_lang", ("ParentAreaID",))
     uimaps = changed_names(read_csv(old_tables, "UiMap"), read_csv(new_tables, "UiMap"), "Name_lang", ("Type", "ParentUiMapID"))
     return dict(maps=maps, areas=areas, uimaps=uimaps, tiles=tiles, zones=by_zone(tiles, new_folder, zones), models=models,
-                instances=instances, walk_maps=walking_maps(tiles),
-                squares=[f"{c}-{i}-{j}" for c, i, j in sorted(squares)])
+                instances=instances, walk_maps=walking_maps(tiles))
 
 
 def moved(world):
@@ -392,7 +351,6 @@ def report(world, title):
              f"{count('minimap')} of minimap textures, {count('buildings')} with buildings placed otherwise, "
              f"{count('doodads')} with doodads, {count('models')} placing a changed model.",
              f"Walking data to make anew: {', '.join(map(str, world['walk_maps'])) or 'none'}. "
-             f"Atlas squares to paint again: {len(world['squares'])}. "
              f"Instances whose terrain changed: {', '.join(map(str, world['instances'])) or 'none'}."]
     for key, word in (("maps", "Maps"), ("areas", "Areas"), ("uimaps", "Zone maps")):
         for how in ("new", "gone", "renamed"):

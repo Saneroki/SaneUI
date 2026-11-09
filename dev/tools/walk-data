@@ -71,7 +71,7 @@ array of whole numbers:
                same tile, else 1 + the next tile's direction, as the sides). On its own tile an opening is written
                once, from the north or west of the two; into the next tile, from both.
 
-The input, as for dev/tools/map-meta, for every map with terrain files (the continents, the isle):
+The input, for every map with terrain files (the continents, the isle), as the game's files are extracted:
   game files    a folder with adt/ (the root terrain files, <tile key>.adt), adt-obj0/ (the object files: where
                 buildings and doodads stand), wmo/ (every placed building's root file <file ID>.wmo and its group
                 files <file ID>_<part>.wmo) and m2/ (every model placed or shown by a building, <file ID>.m2)
@@ -1351,7 +1351,7 @@ def cbor(value):
 
 def decode(data):
     """A value back from CBOR (cbor's whole numbers and arrays), as the game's DeserializeCBOR reads it: the one
-    reader of the blocks, dev/tools/walk-gates' and map-layers' too (dev/tests/walk.py reads them on its own)."""
+    reader of the blocks, dev/tools/walk-gates' too (dev/tests/walk.py reads them on its own)."""
     at = 0
 
     def item():

@@ -1,27 +1,26 @@
 # The briefs of Navigation's instance maps, the dungeons and raids (Doc/guides/map-style.md; Doc/ideas/Navigation.md,
-# *Instance maps as the world map, apart from it*; Doc/guides/image-generation.md, *Maps*).
+# *Instance maps, apart from the world map*; Doc/guides/image-generation.md, *Maps*).
 #
-# The instance maps are apart from the world map (their own view, data, pictures and jobs), but their three levels
-# are made as the world map's are, by one pipeline (dev/tools/map-layers) with the same words and tools, so the two
-# are one look and one precision (Saneroki, 2026-10-21): close, the instance's own terrain (its map's tiles and the
-# indoor maps of the buildings they place) repainted with the Atlas' words (atlas.toml), from this file its colours
-# and the light of its atmosphere; middle, each floor a top-down map in the manner of the game's, in pencil on
-# parchment, exactly over that terrain; far, the instance as a photorealistic aerial render, its layout kept. The
-# shared words are in levels.toml. Text, pins, the bosses' 3D models and every other mark are drawn over them by
-# code, never painted.
+# The instance maps' three levels are made by one pipeline (dev/tools/map-layers) with the same words and tools for
+# every instance, one look and one precision (Saneroki, 2026-10-21): close, the instance's own terrain (its map's
+# tiles and the indoor maps of the buildings they place) repainted with the close level's words (close.toml), from
+# this file its colours and the light of its atmosphere; middle, each floor a top-down map in the manner of the
+# game's, in pencil on parchment, exactly over that terrain; far, the instance as a photorealistic aerial render, its
+# layout kept. The shared words are in levels.toml. Text, pins, the bosses' 3D models and every other mark are drawn
+# over them by code, never painted.
 #
 # One table per instance, keyed by its map ID (the game's Map table; the set Dungeons' key). name and kind are for
-# people reading the file and never go into a prompt. The other fields are the zone briefs' (zones.toml), meant
-# alike, and are prompt words that name nothing: a proper name in the words comes back as garbled letters in the
-# picture, so places, peoples and creatures are described, never named. Kinds of people are common nouns in lower
-# case (orcs, trolls, dwarves). Each was written from the game's own lore texts and pictures of the place and from
-# what is known of it in play (Saneroki asked for each instance's research, 2026-10-21).
+# people reading the file and never go into a prompt. The other fields are prompt words that name nothing: a proper
+# name in the words comes back as garbled letters in the picture, so places, peoples and creatures are described,
+# never named. Kinds of people are common nouns in lower case (orcs, trolls, dwarves). Each was written from the
+# game's own lore texts and pictures of the place and from what is known of it in play (Saneroki asked for each
+# instance's research, 2026-10-21).
 #   biome       what kind of place it physically is: a cave, a castle, a mine, a temple, a city, a volcano  5 to 20 words
 #   buildings   its architecture and materials, what fills its rooms                        10 to 50
 #   places      how its parts lie and join, its major areas in the order one goes through   12 to 60
 #   mood        who holds it now, what happened there, how it feels                         8 to 40
 #   colours     its colours                                                                  4 to 15
-#   atmosphere  its light first, a sentence the Atlas' close level takes whole (no words of colour, haze, mist,
+#   atmosphere  its light first, a sentence the close level takes whole (no words of colour, haze, mist,
 #               smoke, fog, cloud, dust, glow, cast: its filter drops such clauses), then its air and state  15 to 55
 
 # Dungeons and raids with the game's own map art (the set Dungeons)

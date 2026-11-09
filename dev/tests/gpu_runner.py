@@ -84,7 +84,7 @@ check("state: no passing file left", sorted(runner.STATE.glob("*.tmp")), [])
 
 for bad, why in (('[[job]]\nname = "x"\n', "no command"),
                  ('[[job]]\nname = "x"\ncommand = ["a"]\n[[job]]\nname = "x"\ncommand = ["b"]\n', "twice"),
-                 ('[[job]]\nname = "x"\ncommand = "dev/tools/atlas paint"\n', "a command as one string")):
+                 ('[[job]]\nname = "x"\ncommand = "dev/tools/map-layers paint"\n', "a command as one string")):
     listed.write_text(bad)
     try:
         runner.load_jobs(listed)

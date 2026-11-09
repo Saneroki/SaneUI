@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""The finished maps compared (Saneroki, 2026-10-23): every zone and instance of dev/tools/map-layers that has a
-painted level, its levels and the game's own pictures of it in one web page, laid by their boxes in the world over
-each other: a slider each, or two of them side by side under a divider that is dragged across.
+"""The finished maps compared (Saneroki, 2026-10-23): every instance (dungeon or raid) of dev/tools/map-layers that
+has a painted level, its levels and the game's own pictures of it in one web page, laid by their boxes in the world
+over each other: a slider each, or two of them side by side under a divider that is dragged across. A subject of
+map-layers' run that is no instance is passed over.
 
-Layers, per subject, from the bottom (each only where its picture is made):
-  Game terrain                   ground.png: the terrain plan, the whole subject
-  Game map[, floor N]            art.png of each floor (a zone: its own), on that floor's box
+Layers, per instance, from the bottom (each only where its picture is made):
+  Game terrain                   ground.png: the terrain plan, the whole instance
+  Game map[, floor N]            art.png of each floor, on that floor's box
   Our close level                close.png: the joined close squares, on the squares' own box
   Our middle level[, floor N]    middle.png of each floor
-  Our far level                  far.png, the whole subject
+  Our far level                  far.png, the whole instance
 
 Usage:
   dev/tools/map-compare build [--out DIR]    (saneui makemapcompare)
@@ -37,8 +38,8 @@ def module(name, path):
     return found
 
 
-ml = module("map_layers", ROOT / "dev" / "tools" / "map-layers")   # the subjects, their frames and the close grid
-at = ml.at
+ml = module("map_layers", ROOT / "dev" / "tools" / "map-layers")   # the instances, their frames and the close grid
+ms = ml.ms
 OUT = ml.OUT / "compare"
 WIDEST = 3072                   # a picture at most so many pixels across (the close level is some 12800)
 QUALITY = 86
@@ -59,8 +60,8 @@ def close_box(folder):
     k = ml.PER_YARD
     i0, i1 = min(i for i, _ in found), max(i for i, _ in found)
     j0, j1 = min(j for _, j in found), max(j for _, j in found)
-    return [ml.CENTRE - j0 * at.STEP / k, ml.CENTRE - (j1 * at.STEP + at.SQ) / k,
-            ml.CENTRE - i0 * at.STEP / k, ml.CENTRE - (i1 * at.STEP + at.SQ) / k]
+    return [ml.CENTRE - j0 * ms.STEP / k, ml.CENTRE - (j1 * ms.STEP + ms.SQ) / k,
+            ml.CENTRE - i0 * ms.STEP / k, ml.CENTRE - (i1 * ms.STEP + ms.SQ) / k]
 
 
 def layers_of(subject):
@@ -81,7 +82,7 @@ def build(args):
     out = Path(args.out)
     state = ml.load_state(ml.OUT)
     maps = []
-    for subject in state["subjects"]:
+    for subject in ml.instances_of(state):
         layers = layers_of(subject)
         levels = sorted({key.split("-")[0] for key, *_, side in layers if side == "ours"},
                         key=("close", "middle", "far").index)
@@ -101,14 +102,14 @@ def build(args):
             entry["layers"].append({"key": key, "name": name, "file": f"{subject['name']}/{target.name}",
                                     "box": list(box), "side": side})
         maps.append(entry)
-    maps.sort(key=lambda m: (m["kind"] != "zone", m["title"]))
+    maps.sort(key=lambda m: m["title"])
     out.mkdir(parents=True, exist_ok=True)
     (out / "maps.js").write_text("window.MAPS = " + json.dumps(maps, indent=1) + ";\n")
-    print(f"{out}: {len(maps)} maps ({sum(m['kind'] == 'zone' for m in maps)} zones)")
+    print(f"{out}: {len(maps)} maps")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="The finished maps compared, level by level.")
+    parser = argparse.ArgumentParser(description="The finished instance maps compared, level by level.")
     parser.add_argument("command", choices=("build",))
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args()

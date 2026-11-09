@@ -39,8 +39,8 @@
 #   voices.py       the voice database's rules: the cast, the names, words, parts, tone, presets
 #   imagegen.py     the image pipeline's lists, recipes and sets, and the flipbook's grid and loops
 #   uilab.py        the interface lab: every scene runs, anchors, events and scripts as the game's
-#   atlas.py        the Atlas painting's words, its check against the game's water, the seams, the screen
-#   map_layers.py   the maps' three levels: frames, the buildings' indoor maps placed, the words, the checks
+#   map_squares.py  the instance maps' close level: its words, its check against the game's water, the colours, the seams
+#   map_layers.py   the instance maps' three levels: frames, the buildings' indoor maps placed, the words, the checks
 #   gpu_runner.py   the GPU runner: its jobs in order, the claims, what counts as the card wanted elsewhere
 #   auctions.py     dev/tools/auction-database: the addon of links to every account's auction data
 #   saneui.py       dev/saneui: every command's script is there, its names, the greeting card, the completion
@@ -101,7 +101,7 @@ lua dev/tests/data.lua
 python3 -I dev/tests/voices.py
 python3 -I dev/tests/imagegen.py
 python3 -I dev/tests/uilab.py
-python3 -I dev/tests/atlas.py
+python3 -I dev/tests/map_squares.py
 python3 -I dev/tests/map_layers.py
 python3 -I dev/tests/gpu_runner.py
 python3 -I dev/tests/auctions.py

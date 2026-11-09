@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runs the pending ComfyUI work (the Atlas' painting, image sets) while the graphics card is idle, and gives
+"""Runs the pending ComfyUI work (the instance maps, image sets) while the graphics card is idle, and gives
 the card back as soon as something else wants it: the game, another program on the card, ComfyUI work of
 another session or tool, or a claim. Guide: Doc/guides/image-generation.md, *The GPU runner*.
 
@@ -8,9 +8,9 @@ The runner runs the most important one not yet finished, or the one switched to 
 first until it is finished or another is switched to. A more important job than the one running (one added to
 the list, a switch) takes over at once: the running one is stopped as for the game and comes back when its turn
 comes again. Stopped, a job's same command runs again later, and
-the tool goes on where it stopped (dev/tools/atlas skips the squares it has painted; dev/tools/imagegen
+the tool goes on where it stopped (dev/tools/map-layers skips the paintings it has made; dev/tools/imagegen
 makes its whole list again, so give it short lists). A job is finished when its command ends well, or, with
-done, when its status command's output matches done (the Atlas ends well when it is stopped too).
+done, when its status command's output matches done (a job may end well when it is stopped too).
 
 The card is wanted elsewhere while:
   - the game runs (a program of the names in games, by default Wow*.exe: WoW Forever is WowB.exe under Proton);
@@ -21,9 +21,9 @@ The card is wanted elsewhere while:
   - a claim is there: a file in $XDG_RUNTIME_DIR/saneui-gpu/claims/ (any name; if its first line is a process
     id, the claim ends with that process), made with `gpu-runner claim` or by hand;
   - it is paused by hand (gpu-runner pause).
-Then the runner stops its job at once (SIGTERM: the Atlas drops the picture being painted, keeps every square
+Then the runner stops its job at once (SIGTERM: a job drops the picture being painted, keeps every one
 finished), takes its pictures off ComfyUI's queue and frees the card: ComfyUI stopped if the runner started
-it and nobody else has used it since, else told to let go of its memory (`/free`, as the Atlas' pause). It
+it and nobody else has used it since, else told to let go of its memory (`/free`, as a pause by hand). It
 goes on once the card has been free for hold seconds, so a quick alt-tab or a restart of the game does not
 start it again.
 
@@ -49,7 +49,7 @@ Usage (saneui start|stop|pause|resume|status gpurunner, saneui gpuqueue, saneui 
                                         keeps the job NAME from running (stopped if it runs), across restarts,
                                         while the others go on | lets it run again
   dev/tools/gpu-runner rebuild NAME     starts the job anew with the plans as they are: its rebuild command
-                                        (the Atlas: dev/tools/atlas rebuild, the run so far put aside), run
+                                        (a job's own, say its run so far put aside), run
                                         while the job is stopped; without it the job goes on where it stopped
   --jobs FILE                           another job list (default dev/imagegen/jobs.toml)
 
@@ -103,7 +103,7 @@ def module(name, path):
     return found
 
 
-ig = module("imagegen", ROOT / "dev" / "tools" / "imagegen")   # ComfyUI's calls, shared with the Atlas
+ig = module("imagegen", ROOT / "dev" / "tools" / "imagegen")   # ComfyUI's calls, shared with the jobs' tools
 
 
 def say(text):
@@ -166,7 +166,7 @@ def load_jobs(path):
         for key in ("command", "status", "rebuild"):   # run without a shell: a list of words, not one string
             words = job.get(key)
             if words is not None and not (isinstance(words, list) and all(isinstance(w, str) for w in words)):
-                raise SystemExit(f"{path}: {job['name']}: {key} must be a list of words, [\"dev/tools/atlas\", \"paint\"]")
+                raise SystemExit(f"{path}: {job['name']}: {key} must be a list of words, [\"dev/tools/map-layers\", \"paint\"]")
         jobs.append({"priority": 0, "status": None, "done": None, "rebuild": None, **job, "at": at})
     jobs.sort(key=lambda j: (-j["priority"], j["at"]))
     return settings, jobs
@@ -438,7 +438,7 @@ class Runner:
             say(f"{name}: finished" + (f" ({line})" if line else ""))
         elif self.stopping_job:
             say(f"{name}: stopped" + (f" ({line})" if line else ""))
-        else:  # an error, or it ended well without finishing (the Atlas ends so when ComfyUI went away)
+        else:  # an error, or it ended well without finishing (a job may end so when ComfyUI went away)
             self.failure(name, ("ended without finishing" if code == 0 else f"failed with {code}")
                          + (f" ({line})" if line else ""))
         self.keep(name)

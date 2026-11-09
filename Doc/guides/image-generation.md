@@ -97,9 +97,9 @@ template or an app, so Saneroki can follow the work and go on with it there hims
 
 - **Every job is a workflow there.** `dev/tools/imagegen`'s `Server.queue` sends each job's graph in the canvas'
   form too (`ui_workflow`, made from ComfyUI's node definitions as its own "load API JSON" does), named after
-  the picture (`concept-3`, `atlas-…`). ComfyUI's queue panel shows it; a click opens it as a workflow on the
+  the picture (`concept-3`, `close-…`). ComfyUI's queue panel shows it; a click opens it as a workflow on the
   canvas, its values as sent and its seed fixed; its pictures carry it (dragged into ComfyUI, they open). Every
-  tool that talks to ComfyUI goes through `Server.queue` (the Atlas, the map layers, the GPU runner's jobs); a
+  tool that talks to ComfyUI goes through `Server.queue` (the map layers, the GPU runner's jobs); a
   new one does too, never its own `/prompt` call.
 - **Reference pictures** go into ComfyUI's input folder itself (not a folder in it): its Load Image offers only
   those, and a job opened there would otherwise stop at "media input missing".
@@ -256,28 +256,28 @@ dev/tools/imagegen dev/imagegen/sets/example/parts.txt --count 2 --only star
 
 ## The GPU runner
 
-The card is also the game's. Long work (the Atlas, a big set) goes to `dev/tools/gpu-runner`, the queue of
+The card is also the game's. Long work (the instance maps, a big set) goes to `dev/tools/gpu-runner`, the queue of
 ComfyUI renders, which runs it by priority only while the card is idle and gives the card back the moment
 something else wants it. Saneroki runs it as `saneui start gpurunner` / `saneui stop gpurunner`, sees the queue
 with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (Saneroki, 2026-10-21).
 
 - **The jobs:** `dev/imagegen/jobs.toml`, one `[[job]]` each: a `name`, a `priority` (higher first) and the
   `command` of a tool, optionally a `status` command and a `done` pattern for its output (the file's commented
-  example, the Atlas: `dev/tools/atlas status`, `'^(\d+) of \1 squares painted'`). The runner reads the file at every look and runs
+  example, the instance maps: `dev/tools/map-layers status`, `'^(\d+) of \1 paintings made'`). The runner reads the file at every look and runs
   the most important unfinished job; stopped, it runs the same command again later. A job more important than
   the one at work (a new one in the file, a switch) takes over at once: the one at work is stopped as for the
   game, its progress kept, and comes back when its turn comes. A job goes on where it
   stopped (`dev/tools/map-layers` skips what it has painted); `dev/tools/imagegen` makes its whole list again, so give the
-  runner short lists. Long runs go into the file only on Saneroki's word (Saneroki, 2026-10-21); the jobs today are
-  `worldtiles` (priority 10: `dev/tools/map-layers paint --levels far --kind zone && dev/tools/map-layers tiles`,
-  which replaces the Atlas' close squares) and `instancemaps` (2) (Saneroki, 2026-10-22).
+  runner short lists. Long runs go into the file only on Saneroki's word (Saneroki, 2026-10-21); the job today is
+  `instancemaps` (2) (Saneroki, 2026-10-22; the Atlas' `worldtiles` and `patch-70707` left with the Atlas,
+  2026-11-09).
 - **New GPU work goes here:** a tool that runs long on the card is added as a job (with `status` and `done`
   when it can tell how far it is, and skipping what it has made when run again), never started by itself
   next to the runner. Its command also gets its name in `dev/saneui` (README.md, *Building*).
 - **Every render plan is in the queue (Saneroki, 2026-10-21):** a session that adds or changes a render plan
   (a set's lists in `dev/imagegen/sets/`, such as `interface/` (the interface parts) and `far-marks/`, a map's
   plan, a job's words or workflow) adds or updates its job in `dev/imagegen/jobs.toml` in the same commit: a
-  `name`, a `priority` (`worldtiles`, which replaces the Atlas' close squares, is 10; above it what Saneroki waits for, below it what can
+  `name`, a `priority` (10 for what Saneroki waits for, lower for what can
   wait; ask Saneroki when unclear; `instancemaps`, the dungeons' paintings, is 2, and the redesigns of interface parts, such as
   the map pins, the route line and the raid markers, go above them when they are queued: Saneroki, 2026-10-21) and a `rebuild` command when the plan's change has to start it anew. A
   finished job whose plan changed is let go again with `saneui switch <job>` or `saneui rebuildstart <job>`
@@ -285,7 +285,7 @@ with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (S
   session works on a look need no job (their pictures in ComfyUI's queue make the runner yield); what is left
   to render when the session ends goes in as a job.
 - **The switch:** `saneui switch <job>` makes the job run now: held, finished or failed, it is let go again;
-  the job at work is stopped with its progress kept (the Atlas keeps every square painted and its own plan);
+  the job at work is stopped with its progress kept (the map layers keep every painting made);
   the runner is started if it is not running, and skips its three minutes' hold. The job switched to stays
   first, also after the game or a claim took the card, until it is finished or another is switched to; then
   the priorities rule again (`saneui switch --back` at once). `saneui rebuildstart <job>` rebuilds the job's
@@ -293,11 +293,10 @@ with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (S
 - **Wanted elsewhere:** the game (`Wow*.exe`; WoW Forever is `WowB.exe` under Proton); another program on the
   card holding more than 1.5 GB of it, or using more than 40 % at three looks in a row (the desktop's own
   programs never count); pictures of another session or tool in ComfyUI's queue (the runner gives its jobs an
-  `IMAGEGEN_CLIENT`, which `dev/tools/imagegen` and the Atlas send with each picture); a claim; a pause by hand.
-- **Then:** the job is stopped at once (the Atlas drops the picture being painted and keeps every square
-  finished), its pictures leave ComfyUI's queue (by their id: never another's) and the card is freed: ComfyUI
-  stopped if the runner started it and nobody else used it meanwhile, else told to let go of its memory, as the
-  Atlas' `p`. With the card free for three minutes (`hold`, after its own start too), the runner goes on: an
+  `IMAGEGEN_CLIENT`, which `dev/tools/imagegen` sends with each picture); a claim; a pause by hand.
+- **Then:** the job is stopped at once (the picture being painted is dropped, every one finished kept), its
+  pictures leave ComfyUI's queue (by their id: never another's) and the card is freed: ComfyUI stopped if the
+  runner started it and nobody else used it meanwhile, else told to let go of its memory. With the card free for three minutes (`hold`, after its own start too), the runner goes on: an
   alt-tab or a restart of the game does not start it again.
 - **Another session or tool that needs the card** claims it:
 
@@ -322,35 +321,27 @@ with `saneui gpuqueue` and changes the job at work with `saneui switch <job>` (S
 | `saneui rebuildstart <job>` | `rebuild`, then `switch` |
 | `dev/tools/gpu-runner reset NAME` | a job finished or left after three failures runs again when its turn comes |
 | `saneui hold NAME` / `unhold NAME` | a job kept from running (stopped if it runs), across restarts, the others going on (`--why TEXT`) |
-| `saneui rebuild NAME` | the job anew with the plans as they are (its `rebuild` command; the Atlas: the run so far put aside in `assets/generated/atlas-runs/`); without it the job goes on with its own plan |
+| `saneui rebuild NAME` | the job anew with the plans as they are (its `rebuild` command); without it the job goes on with its own plan |
 
-A pause by hand, the holds and the switch (`first.json`) are kept there too, so they last over a restart. **The Atlas' plan:** a run
-paints with the words, zone briefs and workflow it began with (a copy in the run's `plan/`, made at its first
-paint; `dev/tools/atlas status` says when the plans have changed since), so new rules never mix into a run under
-way: they take effect with `saneui rebuild atlas`.
+A pause by hand, the holds and the switch (`first.json`) are kept there too, so they last over a restart.
 
 Its log is `~/.local/state/saneui/gpu-runner/runner.log`, each job's output `<name>.log` beside it. The limits
 and the hold are set at the head of `jobs.toml`.
 
 ## Maps
 
-Navigation's painted map view (`Doc/ideas/Navigation.md`, *The painted view*) is made with the same tool and
-lists, from inputs of its own:
+Navigation's painted instance maps (the dungeons and raids: `Doc/ideas/Navigation.md`, *Dungeon, instance and raid
+maps in three zooms*; their look in [map-style.md](map-style.md)) are made with the same tool and lists, from inputs
+of their own. (The painted world, the Atlas, went 2026-11-09; what it taught stays below.)
 
-- **Guides from the game's files:** `dev/tools/map-meta` writes the roads, the standing buildings, the ground
-  cover and `places.json` (areas, city districts, flight masters, entrances, caves and mines, exits) to
-  `assets/generated/maps/meta/`; `dev/tools/terrain-art` makes the terrain and the stitched Sketches.
-- **Zone briefs:** `dev/imagegen/maps/zones.toml`, one table a zone or city: biome, land, plants, colours,
-  buildings, roads, places, mood, atmosphere and a prompt paragraph, all without names. A square's words take
-  only the zone's colours and the light of its atmosphere (its first sentence), never its buildings, plants,
-  places, features or props: the model paints whatever the words name into the square it is given.
-- **One picture a square, the look in words:** image 1 the terrain of the square (the layout and everything on
-  it, kept; `qwen21-edit-1ref`; the Atlas at 2048 x 2048, one tile, with `resolution=2048` so the reference
-  is read at the painting's size; the minimap textures softened a little first, or their dot pattern comes
-  back). A picture of
-  the look as image 2, even "only as a reference for the art style", was painted instead of image 1 when it
-  showed the same place from further out. The look pilot (`looks.txt`) gave image 2 the softened Sketches of
-  the square, for painted continent maps.
+- **One picture a square, the look in words:** the close level is the instance's terrain in squares of one terrain
+  tile at 2048 x 2048 (`dev/tools/map-squares`), each repainted on its own: image 1 the terrain of the square (the
+  layout and everything on it, kept; `qwen21-edit-1ref`, with `resolution=2048` so the reference is read at the
+  painting's size; the minimap textures softened a little first, or their dot pattern comes back). A picture of
+  the look as image 2, even "only as a reference for the art style", was painted instead of image 1 when it showed
+  the same place from further out. A square's words (`dev/imagegen/maps/close.toml`) take only the instance's
+  colours and the light of its atmosphere (its brief's first sentence), never its buildings, plants, places,
+  features or props: the model paints whatever the words name into the square it is given.
 - **No names, anywhere the model can read them:** a place's name in the words, or a label it can read in
   image 2, comes back as garbled lettering in the picture. Describe ("a mine mouth in the hills at the bottom
   left"), never name.
@@ -359,62 +350,42 @@ lists, from inputs of its own:
   water" and nothing of the kind in the square, the photorealistic look painted Blackrock's dark ash plain as
   lakes between islands. So each square's words say which liquids the game has in it ("there is no water
   anywhere in this picture", "the flat bright orange areas are molten lava"), and every painting is checked
-  against the game's water and lava (Navigation.md, *Checked against the game*).
+  against the game's water and lava (up to three seeds, the best kept).
 - **Words of an edit keep a picture faithful:** "make image 1 look like a photograph of exactly the same
   place; change only how things look, never where or what anything is" kept the layout of 8 of 8 hard places,
-  where "repaint image 1 as …" kept 2 (the Atlas lab, Navigation.md, *The lab*). Words that name features,
-  props or buildings bring them into the picture; give colours and light instead. Words of motion bring their
-  traces too: lava "smoking" drew a cloud of smoke over it.
-- **Colours drift with the light:** a zone's light words shift its colours (orange ground painted tan), more for
-  a whole zone in one picture than for a close square. Fix them after the painting, not in the words: the
-  Atlas' colour pass moves the painting's broad colour back toward the game's and keeps its detail.
+  where "repaint image 1 as …" kept 2. Words that name features, props or buildings bring them into the picture;
+  give colours and light instead. Words of motion bring their traces too: lava "smoking" drew a cloud of smoke
+  over it.
+- **Colours drift with the light:** a place's light words shift its colours (orange ground painted tan), more for
+  a whole place in one picture than for a close square. Fix them after the painting, not in the words: the colour
+  pass moves the painting's broad colour back toward the game's and keeps its detail.
 - **Straight from above:** "like an orthographic satellite image: no perspective, no tilt, no horizon" keeps
   mountains from turning into cones seen at an angle.
-- The pilots: `dev/imagegen/sets/maps-pilot/looks.txt` (five looks on two squares, 20 pictures in 9 minutes with
-  the full model), `close.txt` (the stylised look on the terrain, close up), `dev/imagegen/sets/maps-styles/`
-  (five styles; chosen: the photorealistic render), `dev/imagegen/sets/maps-atlas/pilot.txt` (that look, one
-  square of ten zones at 2048, each in its zone's atmosphere; about two and a half minutes a picture).
-- **The Atlas' run:** `dev/tools/atlas` paints every square of both continents from these, checks it against the
-  game's water and keeps the best of three seeds; `--near` paints a few squares around a place first, `join`
-  stitches them, each through the colour pass (`--mood`); in a terminal it shows its progress, `p` pauses (and frees the graphics card), `q` quits; the whole run goes
-  to the GPU runner (*The GPU runner*), which paints only while the card is idle.
-- **The three levels, the world's and the instances' alike** (`dev/tools/map-layers`, `saneui makemaplayers`;
-  [map-style.md](map-style.md); Saneroki, 2026-10-21: strict maps of the layout, not free concept art): each subject
-  (a zone, an instance, an instance's floor) has one frame, its box in the world, that its three levels share.
-  - **Inputs** (`map-layers inputs`): the terrain plan of the frame, from the game's minimap textures (an
-    instance's from its own map's tiles, with the indoor maps of the buildings its object files place laid over
-    them, placed as Navigation places indoor maps: the instances' terrain is extracted into a folder of its own,
-    so the continents' tools never read it); the game's map art in the same frame (a zone's full map with its
-    explored parts; an instance floor's map, its title banner painted over; Forever's new dungeons have none, so
-    another dungeon's map gives only its manner).
-  - **Close:** the Atlas' own squares, words, water and lava check (up to three seeds) and colour pass, by its own
-    code (`dev/tools/atlas`'s `Game`, `words`, `check`, `colour_of`), an instance's map in place of a continent.
+- **The three levels** (`dev/tools/map-layers`, `saneui makemaplayers`; [map-style.md](map-style.md); Saneroki,
+  2026-10-21: strict maps of the layout, not free concept art): each subject (an instance, an instance's floor)
+  has one frame, its box in the world, that its three levels share.
+  - **Inputs** (`map-layers inputs`): the terrain plan of the frame, from the instance's own map's tiles, with the
+    indoor maps of the buildings its object files place laid over them, placed as Navigation places indoor maps
+    (the instances' terrain is extracted into a folder of its own, so the continents' tools never read it); the
+    game's map art in the same frame (an instance floor's map, its title banner painted over; Forever's new
+    dungeons have none, so another dungeon's map gives only its manner).
+  - **Close:** the squares above, their words, water and lava check and colour pass (`dev/tools/map-squares`'s
+    `Game`, `words`, `check`, `colour_of`), joined along the line where neighbours differ least.
   - **Middle** (`qwen21-edit-3ref-i2i`: image to image, starting from image 1 itself): image 1 the game's map
-    art, image 2 the terrain plan, image 3 a piece of the parchment (the house paper's grain in the yellow-orange of the game's maps, a zone's turned
-    towards its land's colour: `parchment`, `land_tone`) (where the game has no map, image 1 the
-    plan and image 2 another place's map for its manner); edit words, no brief; strength 0.95 each try (one step
-    skipped), a try another seed (none skipped lost the zone's colours: Duskwood came out pale; at 0.8 and 0.88, six
-    and three skipped, the Deadmines' map stayed the game's coloured map, labels and all).
-  - **Far** (straight down, from noise, its layout held by controls: the Fun ControlNet Union,
-    `QwenImageDiffsynthControlnet`; Saneroki, 2026-10-22: all three levels from straight above, each zone on its
-    own, joined along the outlines by `map-layers stitch`): image 1 the place's terrain in its frame, lightly blurred
-    and toned down (its textures gone, its roads and towns faint), image 2 a piece of the close level; a photograph
-    of the land, its layout kept. A zone (`qwen21-edit-2ref-i2i-cn2`): image 1's water a deep, dark blue, dark
-    blue-green in the shallows, and its words ask for dark water lit like the land (Saneroki, 2026-10-22: the bright
-    blue stood out); the controls its heights (`height_map`, 0.35 to 30 % of the steps) and the lines where the walking
-    data's water meets land (0.5 to 35 %), light and early (stronger and longer they kept the game's look); its words
-    name the zones reaching into its frame. An instance (`qwen21-edit-2ref-i2i-cn`): the control its clearest edges
-    (0.35 to 30 %: at 0.5 to 35 % Zul'Farrak kept the game's raw edges, at 0.8 to 60 % its game terrain). Learned on
-    Westfall, then at an angle: the middle drawing as a picture had its pencil symbols stamped on the land; the sharp
-    terrain as image 1 came back as the game's own, read at 512 pixels too; the walking data's barriers as lines came
-    back as lakes; without controls the model painted a closer view than the frame. Its outlines must share FAR (0.3)
-    with the terrain plan and at most COPY (0.97: more is image 1 come back as it is), a zone's water agree with the
-    walking data's.
-  - **The world's tiles** (`map-layers tiles`, the GPU job `worldtiles`): the far harness on every land square of
-    the Atlas' grid (2048 pixels a terrain tile), coarse to fine: image 1 the zones' far renders over the square
-    (their colour and light, broader than `LOW` 24 pixels) with the game's terrain for the finer shapes, image 2 the
-    renders' piece, the controls its heights (shaded over at least `TILE_RELIEF` 150 yards) and its water lines, its
-    main zone's words and the zones beside it; checked for writing, outlines (FAR to COPY) and water.
+    art, image 2 the terrain plan, image 3 a piece of the parchment (the house paper's grain in the colour of the
+    instance's game map: `parchment`, `tone_of`) (where the game has no map, image 1 the plan and image 2 another
+    instance's map for its manner); edit words, no brief; strength 0.95 each try (one step skipped), a try another
+    seed (at 0.8 and 0.88, six and three skipped, the Deadmines' map stayed the game's coloured map, labels and
+    all).
+  - **Far** (straight down, from noise, its layout held by a control: the Fun ControlNet Union,
+    `QwenImageDiffsynthControlnet`, `qwen21-edit-2ref-i2i-cn`; Saneroki, 2026-10-22: all three levels from
+    straight above): image 1 the instance's plan in its frame, lightly blurred and toned down (its textures gone),
+    image 2 a piece of the close level; a photograph of the place, its layout kept; the control its clearest edges
+    (0.35 to 30 %: at 0.5 to 35 % Zul'Farrak kept the game's raw edges, at 0.8 to 60 % its game terrain). Learned
+    on the first tries: the middle drawing as a picture had its pencil symbols stamped on the land; the sharp
+    terrain as image 1 came back as the game's own, read at 512 pixels too; without a control the model painted a
+    closer view than the frame. Its outlines must share FAR (0.3) with the terrain plan and at most COPY (0.97:
+    more is image 1 come back as it is).
   - **Strength is in steps:** ComfyUI's KSampler runs int(steps / denoise) steps and skips the first ones beyond
     `steps`: with 25 steps a denoise from 0.927 to 0.961 skips one, above it none, so 0.93 and 0.96 make the same
     picture and 0.97 is a painting from noise. Choose a denoise by the steps it skips.
@@ -423,8 +394,8 @@ lists, from inputs of its own:
   - **Checks**, a painting that fails painted again, three tries at most: its outlines against image 1's (the
     normalised correlation of their edges at 256 pixels across, against how well the game's own map agrees with
     the terrain: a middle level must reach three quarters of it, a far one under half), and the vision model.
-  - The words: `levels.toml` (middle, far) and `atlas.toml` (close), with the briefs of `zones.toml` and
-    `dungeons.toml`.
+  - The words: `levels.toml` (middle, far) and `close.toml` (close), with the briefs of `dungeons.toml`.
+  - The finished maps compared, layer over layer, with the game's: `saneui makemapcompare`, `saneui showmaps`.
 - **The check by a vision model** (`dev/imagegen/workflows/qwen3vl-look.json`): ComfyUI's `TextGenerate` with the
   Qwen3-VL model the image model reads its words with looks at a picture and answers questions in JSON, about six
   seconds a picture with no other model to load. The map levels ask about writing, a pencil map seen from above

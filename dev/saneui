@@ -2,7 +2,7 @@
 """saneui: every script of Sane UI under one command, by a name that says what it does (README.md, *Building*).
 
   saneui                          the commands, by group
-  saneui <command> [args ...]     runs one: saneui installdev, saneui showerrors, saneui atlas status
+  saneui <command> [args ...]     runs one: saneui installdev, saneui showerrors, saneui board list
   saneui start|pause|resume|stop|status <command>
                                   the ones that run in the background: saneui start gpurunner, saneui stop comfyui
   saneui help <command>           a command's own help
@@ -42,13 +42,12 @@ GROUPS = {
                    "run this GPU job now"),
         "rebuildstart": (["dev/tools/gpu-runner", "rebuildstart"], "rebuild a GPU job's plan, then run it now",
                          "rebuild a GPU job, run it now"),
-        "rebuild": (["dev/tools/gpu-runner", "rebuild"], "a GPU job anew with the plans as they are (rebuild atlas)", None),
+        "rebuild": (["dev/tools/gpu-runner", "rebuild"], "a GPU job anew with the plans as they are (rebuild instancemaps)", None),
         "hold": (["dev/tools/gpu-runner", "hold"], "keep a GPU job from running, across restarts (--why TEXT)", None),
         "unhold": (["dev/tools/gpu-runner", "unhold"], "let a held GPU job run again", None),
         "comfyui": (["comfyui"], "the image generator; saneui comfyui log follows it", 'the image generator'),
     },
     "Art": {
-        "atlas": (["dev/tools/atlas"], "the Atlas' painting: paint status join pack", 'paint · status · join · pack'),
         "makeimages": (["dev/tools/imagegen"], "a list of prompts through ComfyUI", 'prompts through ComfyUI'),
         "linkprivate": (["dev/tools/private-folder", "link"], "the common folder assets/generated into the private folder (where, check)",
                         None),
@@ -70,18 +69,11 @@ GROUPS = {
         "maketooltipart": (["dev/tools/tooltip-art"], "the Tooltips module's pictures", None),
         "maketerrain": (["dev/tools/terrain-art"], "Navigation's terrain, outlines and stitched map", None),
         "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),
-        "makemapguides": (["dev/tools/map-meta"], "the guides the painted map is made from", None),
-        "makemaplayers": (["dev/tools/map-layers"], "the maps' three levels, zones and instances: inputs paint contact",
+        "makemaplayers": (["dev/tools/map-layers"], "the instance maps' three levels (close, middle, far): inputs paint status",
                           None),
-        "makeworldmap": (["dev/tools/world-map", "build"], "the world map offline: every layer, the game's and ours, built",
-                         None),
-        "showworldmap": (["dev/tools/web-pages", "open", "world"], "the world map offline in the browser, every layer stacked",
-                         "world map offline, layered"),
         "makemapcompare": (["dev/tools/map-compare", "build"], "the finished maps' pictures for their page", None),
         "showmaps": (["dev/tools/web-pages", "open", "maps"], "the finished maps in the browser, each level against the "
                      "game's, overlaid or side by side", "finished maps compared"),
-        "showinstancemaps": (["dev/tools/web-pages", "open", "instances"],
-                             "the instance maps offline in the browser", None),
         "webpages": (["dev/tools/web-pages"], "every tool's web page, one server on one port: which are ready",
                      "tools' web pages"),
         "showuilab": (["dev/tools/web-pages", "open", "lab"], "the interface lab: Sane UI's Lua drawn in the browser with a fake "

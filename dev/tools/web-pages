@@ -9,8 +9,6 @@ page hangs under its own name:
     /art/         game art           assets/generated/game-art (saneui showgameart)
     /pieces/      interface pieces   assets/generated/interface
     /maps/        maps compared      dev/tools/map-compare-page over its build (saneui showmaps)
-    /world/       world map          dev/tools/world-map-page over its build (saneui showworldmap)
-    /instances/   instance maps      the same page with one kind of map (saneui showinstancemaps)
   and the pages of ~/.config/saneui/pages.json, folders kept outside the project:
     {"pages": [{"name": ..., "place": ..., "folder": ...}]}
 
@@ -62,7 +60,6 @@ HTML, TEXT = "text/html; charset=utf-8", "text/plain; charset=utf-8"
 MENU = b'<script src="/web-nav.js" defer></script>'
 LOCAL = ("127.0.0.1", "localhost")
 GENERATED = ROOT / "assets" / "generated"
-WORLD = [ROOT / "dev" / "tools" / "world-map-page", GENERATED / "world-map"]
 BODY_LIMIT = 16 << 20   # bytes a request may carry
 TOLD = set()   # the config's problems printed, each once
 
@@ -117,8 +114,6 @@ PAGES = [
     Page("interface pieces", "pieces", [GENERATED / "interface"]),
     Page("maps compared", "maps", [ROOT / "dev" / "tools" / "map-compare-page", GENERATED / "map-layers" / "compare"],
          needs="maps.js"),
-    Page("world map", "world", WORLD, "?only=continent", needs="world.json"),
-    Page("instance maps", "instances", WORLD, "?only=instance", needs="world.json"),
 ]
 
 

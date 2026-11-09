@@ -42,7 +42,7 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 
 The file list with a line each: `src/Navigation/README.md`, section *Files* (line 828). The groups: the window and its
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
-`Painted`, `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
+`Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`); the routes (`Walk`, `Gates`, `Search`, `Lifts`, `Planner`,
 `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
@@ -73,7 +73,7 @@ character, learnt at a flight master).
   (`Native.lua`) and lays out its full screen in `docked`.
 - Not built: a travel pin's ways under the mouse (the plan, *Map pins*); a search over the full map (the plan, *Top
   bar, map selector and search*; `TopBar.lua` has none); the dungeons' three zooms and our own art where the game
-  has none (the plan, *Zones and continents reimagined*; `dev/tools/map-layers` makes the levels); rares' spawn
+  has none (the plan, *Dungeon, instance and raid maps in three zooms*; `dev/tools/map-layers` makes the levels); rares' spawn
   areas and patrol paths on the map (the sets are there, Navigation does not read them).
 
 ## Open questions without a proposal

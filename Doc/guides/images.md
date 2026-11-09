@@ -193,16 +193,16 @@ it, so its size is about the memory it takes:
 | 1024 x 512 | 684 KB | 2 MB |
 | 1024 x 1024 | 1.3 MB | 4 MB |
 
-`assets/optimized/` holds about 3.6 GB (`du -sh assets/optimized`): most of it the Atlas' pack (`Atlas/`, 3.4 GB), then
-Navigation's map sets (`Navigation/Art/Terrain/`, `Zones/`, `Sketches/`, `Coasts/`, `Indoors/`), Core's
-`Journal/`, caps and corners, Inventory's `Categories/`, the Nameplates', Social's, SpeedLeveling's and Tooltips' art,
-the `Fonts/` folders (Core, Lore, SpeedLeveling) and loose banners, icons, CombatText and FarMarks shapes at its root.
-What a module ships is its `assets/optimized/<Module>/Art/` (and `Fonts/`, `Sounds/`), put in with its code by
-`dev/build`; among it the two banners, Core's and Tooltips' (looked for when the options first open, drawn when its page
-is), the Tooltips module's six small TGA shapes (`assets/optimized/Tooltips/Art/`, 72 KB together, made by
-`dev/tools/tooltip-art`), and Core's two masks for round corners (`assets/optimized/Core/Art/circle.blp` and
-`circle-hole.blp`, 86 KB each, made by `dev/tools/shape-art`), read when a window first draws its plate; its rings
-(`ring.blp`, `ring-wide.blp`, 86 KB each, the same tool), read when the rings around the mouse first come out.
+`assets/optimized/` holds about 130 MB (`du -sh assets/optimized`): most of it Navigation's map sets
+(`Navigation/Art/Terrain/`, `Zones/`, `Sketches/`, `Coasts/`, `Indoors/`), Core's `Journal/`, caps and corners,
+Inventory's `Categories/`, the Nameplates', Social's, SpeedLeveling's and Tooltips' art, the `Fonts/` folders (Core,
+Lore, SpeedLeveling) and loose banners, icons, CombatText and FarMarks shapes at its root. What a module ships is its
+`assets/optimized/<Module>/Art/` (and `Fonts/`, `Sounds/`), put in with its code by `dev/build`; among it the two
+banners, Core's and Tooltips' (looked for when the options first open, drawn when its page is), the Tooltips module's
+six small TGA shapes (`assets/optimized/Tooltips/Art/`, 72 KB together, made by `dev/tools/tooltip-art`), and Core's
+two masks for round corners (`assets/optimized/Core/Art/circle.blp` and `circle-hole.blp`, 86 KB each, made by
+`dev/tools/shape-art`), read when a window first draws its plate; its rings (`ring.blp`, `ring-wide.blp`, 86 KB each,
+the same tool), read when the rings around the mouse first come out.
 
 ## Tried and rejected
 

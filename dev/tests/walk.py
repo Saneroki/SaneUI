@@ -79,7 +79,7 @@ check("a small number is one byte", walk.cbor(5), bytes([5]))
 check("a number past 23 takes a byte more", walk.cbor(200), bytes([0x18, 200]))
 check("a negative number", walk.cbor(-3), bytes([0x22]))
 check("an array of them", decode(walk.cbor([1, [70000, -1, 23]]))[0], [1, [70000, -1, 23]])
-check("the tool's own reader (walk-gates' and map-layers' too) gives the value back",
+check("the tool's own reader (walk-gates' too) gives the value back",
       walk.decode(walk.cbor([1, [70000, -1, 23], []])), [1, [70000, -1, 23], []])
 
 

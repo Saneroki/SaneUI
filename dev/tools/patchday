@@ -9,15 +9,17 @@ Usage:  dev/tools/patchday check [--json]      which game's installed build is n
         dev/tools/patchday bump <game>         the new build into builds.toml, and BUILD of the data tools (Forever's)
         dev/tools/patchday tables <game>       every client table against the build before: tables.tsv, tables/
         dev/tools/patchday world <game>        the terrain and the map tables against the build before: world.md,
-                                               world.json (the walking data's maps, the Atlas' squares)
+                                               world.json (the walking data's maps, the instances whose terrain
+                                               changed)
         dev/tools/patchday draft <game>        what the master took from this build: facts.md, facts.json; an empty
                                                patchnotes.json in Blizzard's layout, if there is none
         dev/tools/patchday rerender <game> [--priority N]
-                                               the Atlas' squares and painted zones the world changed set aside, the
-                                               tiles' inputs moved to the new build, the job patch-<build> in the GPU
-                                               queue. Starts nothing: the runner takes it up when its turn comes
+                                               the far paintings of the instance maps whose terrain changed set
+                                               aside, the maps' inputs moved to the new build, the job patch-<build>
+                                               in the GPU queue. Starts nothing: the runner takes it up when its turn
+                                               comes
         dev/tools/patchday paint <patch> [--status]
-                                               the job's own command: paints what rerender set aside
+                                               the job's own command: paints again what rerender set aside
         dev/tools/patchday page <game>         patchnotes.json checked, as patchnotes.md in the patch's folder and as this
                                                build's page, Patchnotes/<Game>-<version>.html: a plain file to open
         dev/tools/patchday store <game>        patchnotes.json into the database: the set PatchNotes, key the build
@@ -49,7 +51,6 @@ import world as worlds  # noqa: E402
 
 BUILDS = ROOT / "assets" / "data" / "builds.toml"
 JOBS = ROOT / "dev" / "imagegen" / "jobs.toml"
-TILES = ROOT / "assets" / "generated" / "world-tiles"
 LAYERS = ROOT / "assets" / "generated" / "map-layers"
 STAGING = ROOT / "dev" / "data" / "staging"
 PATCHNOTES = ROOT / "Patchnotes"
@@ -59,7 +60,7 @@ BUILD_TOOLS = ("map-data", "travel-data", "walk-data", "walk-gates")   # the dat
 COUNT_ONLY = {"Walking", "Tiles"}   # sets listed by their counts: an entry says nothing to a reader
 ITEM_CLASS = {"Items", "Disenchants"}  # sets whose field class is an item's class (Enum.ItemClass), no player's class
 SHOWN = 80                          # characters of a value in facts
-PRIORITY = 11                       # above the world's tiles (10): the map tells what the game shows
+PRIORITY = 11                       # above the other jobs (the instance maps are 2): a map tells what the game shows
 
 
 def fail(text):
@@ -148,7 +149,7 @@ def steps_of(patch):
             "builds": str(patch.build) in master_builds(patch.game),
             "tables": (folder / "tables.tsv").is_file(),
             "world": world is not None,
-            "rerender": world is not None and (patch.game != "forever" or not (world["squares"] or world["zones"])
+            "rerender": world is not None and (patch.game != "forever" or not world.get("instances")
                                                or (folder / "rerender.json").is_file()),
             "draft": (folder / "facts.json").is_file(),
             "points": bool(notes) and any(True for _ in patchnotes.points_of(notes)),
@@ -362,17 +363,11 @@ def layers_state():
     return path, (json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None)
 
 
-def zone_subjects(world, state, tables):
-    """The painted zones a quarter of whose tiles changed in what a painting is made from (ground, holes, water, minimap;
-    a tile that only places a changed model does not count), by the zones' names on the game's maps."""
-    named = {row["Name_lang"]: key for key, row in worlds.read_csv(tables, "UiMap").items() if row.get("Type") == "3"}
-    tiles_of = {zone["zone"]: zone["of"] for zone in world["zones"]}
-    changed = Counter(name for tile in world["tiles"] if tile["ground"] or tile["holes"] or tile["water"] or tile["minimap"]
-                      for name in tile["zones"])
-    wanted = {f"zone-{named[name]}" for name, count in changed.items()
-              if name in named and tiles_of.get(name) and count / tiles_of[name] >= worlds.ZONE_SHARE}
-    wanted |= {f"instance-{key}" for key in world["instances"]}
-    return sorted(wanted & {subject["name"] for subject in state["subjects"]})
+def instance_subjects(world, state):
+    """The painted instances whose terrain changed (ground, water, a tile added or gone: world.json's instances); a
+    subject of the maps' run that is no instance is passed over."""
+    wanted = {f"instance-{key}" for key in world.get("instances", [])}
+    return sorted(wanted & {subject["name"] for subject in state["subjects"] if subject.get("kind") == "instance"})
 
 
 def set_far_aside(name, into):
@@ -392,14 +387,14 @@ def set_far_aside(name, into):
 def job_text(name, patch, priority):
     command = json.dumps(["dev/tools/patchday", "paint", patch])
     status = json.dumps(["dev/tools/patchday", "paint", patch, "--status"])
-    return (f"\n# What {patch} changed of the world, painted again (dev/tools/patchday rerender).\n[[job]]\nname = \"{name}\"\n"
-            f"priority = {priority}\ncommand = {command}\nstatus = {status}\ndone = '^(\\d+) of \\1 squares painted'\n")
+    return (f"\n# The instance maps {patch} changed, painted again (dev/tools/patchday rerender).\n[[job]]\nname = \"{name}\"\n"
+            f"priority = {priority}\ncommand = {command}\nstatus = {status}\ndone = '^(\\d+) of \\1 paintings made'\n")
 
 
 def run_rerender(args):
     patch = Patch(args.game, reports())
     if patch.game != "forever":
-        print("The Atlas and the painted maps are Forever's: nothing to paint for Retail.")
+        print("The painted instance maps are Forever's: nothing to paint for Retail.")
         return
     path = patch.folder / "world.json"
     if not path.is_file():
@@ -410,61 +405,48 @@ def run_rerender(args):
     world = json.loads(path.read_text(encoding="utf-8"))
     state_path, state = layers_state()
     if state is None:
-        fail(f"{state_path} is not there: the painted maps have no plan on this computer.")
+        fail(f"{state_path} is not there: the instance maps have no plan on this computer.")
     tables = client_tables(patch.product, patch.new)
     aside = ROOT / "assets" / "generated" / "replaced" / str(patch.build)
-    squares = []
-    for square in world["squares"]:
-        continent, i, j = square.split("-")
-        painted = TILES / continent / f"sq-{i}-{j}.png"
-        if painted.is_file():
-            (aside / "world-tiles" / continent).mkdir(parents=True, exist_ok=True)
-            shutil.move(str(painted), aside / "world-tiles" / continent / painted.name)
-            squares.append(square)
-    subjects = zone_subjects(world, state, tables)
+    subjects = instance_subjects(world, state)
     for name in subjects:
         set_far_aside(name, aside / "map-layers")
-    new_paths = dict(continents=str(patch.extract / "adt"), tables=str(tables))
-    if (patch.extract / "minimap").is_dir():
-        new_paths["minimap"] = str(patch.extract / "minimap")
+    new_paths = dict(tables=str(tables))   # the maps' inputs: map-layers' state.json keeps the game's folders
+    instances = patch.extract.with_name(patch.extract.name + "-instances")   # beside the build, as world.json read it
+    if (instances / "tiles.jsonl").is_file():
+        new_paths["instance_files"] = str(instances)
+    if (patch.extract / "mapart").is_dir():
+        new_paths["mapart"] = str(patch.extract / "mapart")
     state["paths"].update(new_paths)
     state_path.write_text(json.dumps(state), encoding="utf-8")
-    if not squares and not subjects:
-        (patch.folder / "rerender.json").write_text(json.dumps({"squares": [], "subjects": []}), encoding="utf-8")
-        print("Nothing painted stands on what changed: no job. The maps' inputs now read the new build.")
+    if not subjects:
+        (patch.folder / "rerender.json").write_text(json.dumps({"subjects": []}), encoding="utf-8")
+        print("No painted instance stands on what changed: no job. The maps' inputs now read the new build.")
         return
-    (patch.folder / "rerender.json").write_text(json.dumps({"squares": squares, "subjects": subjects}), encoding="utf-8")
+    (patch.folder / "rerender.json").write_text(json.dumps({"subjects": subjects}), encoding="utf-8")
     name = f"patch-{patch.build}"
     text = JOBS.read_text(encoding="utf-8")
     if f'name = "{name}"' not in text:
         JOBS.write_text(text.rstrip("\n") + "\n" + job_text(name, patch.name, args.priority), encoding="utf-8")
-    print(f"{name}: {len(squares)} squares and {len(subjects)} paintings set aside in {aside}, the job queued at priority "
-          f"{args.priority}. The runner takes it up on its own; nothing was started.")
+    print(f"{name}: {len(subjects)} far paintings set aside in {aside}, the job queued at priority {args.priority}. "
+          "The runner takes it up on its own; nothing was started.")
 
 
 def painted(plan):
-    squares = sum(1 for square in plan["squares"]
-                  if (TILES / square.split("-")[0] / f"sq-{square.split('-', 1)[1]}.png").is_file())
-    return squares + sum(1 for name in plan["subjects"] if (LAYERS / name / "far.png").is_file())
+    return sum(1 for name in plan["subjects"] if (LAYERS / name / "far.png").is_file())
 
 
 def run_paint(args):
+    """The instances rerender set aside: their inputs made again from the new build, their far level painted."""
     plan = json.loads((reports() / "patches" / args.patch / "rerender.json").read_text(encoding="utf-8"))
-    whole = len(plan["squares"]) + len(plan["subjects"])
+    subjects = [name for name in plan["subjects"] if name.startswith("instance-")]
     if args.status:
-        made = painted(plan)
-        print(f"{made} of {whole} squares painted ({100 * made / max(1, whole):.1f} %)")
+        made = painted({"subjects": subjects})
+        print(f"{made} of {len(subjects)} paintings made ({100 * made / max(1, len(subjects)):.1f} %)")
         return
-    if plan["subjects"]:
-        zones = [name.split("-")[1] for name in plan["subjects"] if name.startswith("zone-")]
-        instances = [name.split("-")[1] for name in plan["subjects"] if name.startswith("instance-")]
-        inputs = [MAP_LAYERS, "inputs"] + (["--zones", ",".join(zones)] if zones else []) \
-            + (["--instances", ",".join(instances)] if instances else [])
-        subprocess.run(inputs, check=True)
-        subprocess.run([MAP_LAYERS, "paint", "--levels", "far", "--only", ",".join(plan["subjects"])], check=True)
-    for continent in sorted({square.split("-")[0] for square in plan["squares"]}):
-        here = [square.split("-", 1)[1] for square in plan["squares"] if square.startswith(f"{continent}-")]
-        subprocess.run([MAP_LAYERS, "tiles", "--maps", continent, "--only", ",".join(here)], check=True)
+    if subjects:
+        subprocess.run([MAP_LAYERS, "inputs", "--instances", ",".join(name.split("-")[1] for name in subjects)], check=True)
+        subprocess.run([MAP_LAYERS, "paint", "--levels", "far", "--only", ",".join(subjects)], check=True)
 
 
 # --- page and store -------------------------------------------------------------------------------

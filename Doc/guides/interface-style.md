@@ -664,7 +664,7 @@ Rules:
 
 The whole render is `catalog.py`, run by hand (`python3 dev/imagegen/sets/interface/catalog.py`, every step in
 order): it cleans the picks, makes the 4K parts (one render each) and the two masks, takes out the pencil
-lines, cuts the final pieces, lays out the views and the 4K full screen, and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped. It has no job in `dev/imagegen/jobs.toml` today (the jobs there are `worldtiles` and `instancemaps`); a session that queues it adds one there with a priority ([image-generation.md](image-generation.md), *The GPU runner*).
+lines, cuts the final pieces, lays out the views and the 4K full screen, and rebuilds the gallery. Each step skips what it has made, so a stopped run goes on where it stopped. It has no job in `dev/imagegen/jobs.toml` today (the job there is `instancemaps`); a session that queues it adds one there with a priority ([image-generation.md](image-generation.md), *The GPU runner*).
 
 - See how far it is: `python3 dev/imagegen/sets/interface/catalog.py --status`.
 - After a decision changed (a pick, a cut, a part's source): `catalog.py --rebuild` forgets what was

@@ -56,7 +56,7 @@ for name, verbs in su.BACKGROUND.items():
     check(f"{name}: verbs known", set(verbs) <= set(su.VERBS), True)
 check("names: the commands first", output("--names")[:2], ["installdev", "installrelease"])
 check("names: after a verb, the background ones", output("--names", "start"), list(su.BACKGROUND))
-check("names: after a command, none", output("--names", "atlas"), [])
+check("names: after a command, none", output("--names", "installdev"), [])
 lines = [line.split("\t") for line in output("--card")]
 check("card: sides and kinds", all(p[0] in "LR" and p[1] in "hrb" for p in lines), True)
 check("card: a row has a command and words", all(len(p) == 4 for p in lines if p[1] == "r"), True)

@@ -5,19 +5,19 @@
 # over from the one at work at once, which keeps its progress. saneui gpuqueue lists them in the order they run.
 #
 # A session that adds or changes a render plan (a set's lists, a map's plan, a job's words or workflow) adds or
-# updates its job here in the same commit, with a priority: the Atlas' close squares are 10, above it what
-# Saneroki waits for, below it what can wait; ask Saneroki when unclear. The maps' painted levels of the
-# instances are low (2); the redesigns of interface parts (the map pins, the route line, the raid markers, ...) go
-# above them when they are queued (Saneroki, 2026-10-21).
+# updates its job here in the same commit, with a priority: 10 for what Saneroki waits for, lower for what can
+# wait; ask Saneroki when unclear. The maps' painted levels of the instances are low (2); the redesigns of
+# interface parts (the map pins, the route line, the raid markers, ...) go above them when they are queued
+# (Saneroki, 2026-10-21).
 #
 #   [[job]]
-#   name = "atlas"                                   # letters, digits, - and _; its log is <name>.log
-#   priority = 10
-#   command = ["dev/tools/atlas", "paint"]           # run from Sane UI's folder; run again after each stop
-#   status = ["dev/tools/atlas", "status"]           # optional: its first line shows in gpu-runner status
-#   done = '^(\d+) of \1 squares painted'            # optional: finished when status's output matches this
+#   name = "instancemaps"                            # letters, digits, - and _; its log is <name>.log
+#   priority = 2
+#   command = ["dev/tools/map-layers", "paint"]      # run from Sane UI's folder; run again after each stop
+#   status = ["dev/tools/map-layers", "status"]      # optional: its first line shows in gpu-runner status
+#   done = '^(\d+) of \1 paintings made'             # optional: finished when status's output matches this
 #   comfyui = true                                   # false: the job needs no ComfyUI (the runner leaves it off)
-#   rebuild = ["dev/tools/atlas", "rebuild"]         # optional: what gpu-runner rebuild runs to start it anew
+#   rebuild = ["...", "..."]                         # optional: what gpu-runner rebuild runs to start it anew
 #                                                    # with the plans as they are; without it, it goes on
 #
 # The runner's settings (these are the defaults):
@@ -32,21 +32,6 @@
 #
 # Long painting runs go in here only on Saneroki's word.
 
-# The world's high resolution tiles (Saneroki, 2026-10-22: the far renders so precise that the world map is made of
-# them: tiny tiles in high resolution for extreme zoom, the final tiles of the game's map and of the world map
-# offline; this one job replaces the Atlas' close squares, the zones' middle levels and the maps' comparison). Coarse
-# to fine (dev/tools/map-layers, *The world's high resolution tiles*): first every zone's far render (49 zones, a
-# photograph straight down in its own frame), then every square of the Atlas' plan with land (1456 squares, a
-# terrain tile at 2048 pixels each), its colour and light from the zones' renders over it, its shapes from the
-# game's terrain. Each step skips what it has made; the squares go into assets/generated/world-tiles in the Atlas'
-# run layout, which its pack makes the game's blocks of (and dev/tools/world-map the world map offline).
-[[job]]
-name = "worldtiles"
-priority = 10
-command = ["sh", "-c", "dev/tools/map-layers paint --levels far --kind zone && dev/tools/map-layers tiles"]
-status = ["dev/tools/map-layers", "tiles", "--status"]
-done = '^(\d+) of \1 squares painted'
-
 # The instance maps (Saneroki, 2026-10-22: every dungeon's and raid's map, a view of its own beside the world map):
 # one large far render each, a photograph straight down of the whole instance, its halls cut open
 # (dev/tools/map-layers, its instances: 30, their terrain extracted from the install by build). Each skipped once
@@ -54,14 +39,6 @@ done = '^(\d+) of \1 squares painted'
 [[job]]
 name = "instancemaps"
 priority = 2
-command = ["dev/tools/map-layers", "paint", "--levels", "far", "--kind", "instance"]
-status = ["dev/tools/map-layers", "status", "--levels", "far", "--kind", "instance"]
+command = ["dev/tools/map-layers", "paint", "--levels", "far"]
+status = ["dev/tools/map-layers", "status", "--levels", "far"]
 done = '^(\d+) of \1 paintings made'
-
-# What forever-1.60.1.70532-to-1.60.1.70707 changed of the world, painted again (dev/tools/patchday rerender).
-[[job]]
-name = "patch-70707"
-priority = 11
-command = ["dev/tools/patchday", "paint", "forever-1.60.1.70532-to-1.60.1.70707"]
-status = ["dev/tools/patchday", "paint", "forever-1.60.1.70532-to-1.60.1.70707", "--status"]
-done = '^(\d+) of \1 squares painted'

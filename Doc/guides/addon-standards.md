@@ -319,8 +319,7 @@ frames built for them, and all of the data (maps, quests, NPCs, routes).
   type a client does not know lets the file load. `dev/tests/lint` allows only these two; the tests and the
   lab read them as the game does (`W.Allowed`).
 - **A module for one game:** `## X-SaneUI-Games: forever` in its TOC (`Core.ServesGame`): in the other game
-  it is never started and has no options page, and `dev/build` does not install it there (the Atlas: its
-  painted pieces are Forever's world).
+  it is never started and has no options page, and `dev/build` does not install it there (Auction Scans).
 - **Data per game:** game data never goes into a module's code: it is Core's data, kept per game version
   (Forever's sets are refused in Retail, which has none yet). It moves into a package per game, Data: Forever
   and Data: Retail.

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Tests of dev/tools/patchday without the game's files, on made-up terrain, tables and notes: a ground that moved
-against a chunk's base or outer ring baked anew, water, holes, areas and placements; which squares of the Atlas a
-change reaches; a client table compared, its noise left out; the patch notes checked and written as text, as a page and
+against a chunk's base or outer ring baked anew, water, holes, areas and placements; a client table compared, its noise left out; the patch notes checked and written as text, as a page and
 as the database's rows, which fit the real schema, the changes tied to their points; a build's own plain file, folded
 shut; a build added to builds.toml; what the master took from a build; the repaint: what is set aside, the job in the
 queue, how far it says it is; Core reading the notes and a racial's history; races and classes from the client. Run by
 dev/tests/run."""
+import contextlib
 import csv
 import importlib.machinery
 import importlib.util
+import io
 import json
 import re
 import resource
@@ -118,24 +119,19 @@ def tile_change(before, after, water_before=None, water_after=None):
 got = tile_change([chunk(0, 0, base=100)], [chunk(0, 0, base=100, heights=ring)])
 check("the outer ring baked anew is no ground", got["ground"], 0)
 got = tile_change([chunk(0, 0, base=100)], [chunk(0, 0, base=90, heights=[10.0] * 145)])
-check("a base baked anew is no ground", (got["ground"], got["chunks"]), (0, []))
+check("a base baked anew is no ground", got["ground"], 0)
 got = tile_change([chunk(0, 0)], [chunk(0, 0, heights=small)])
 check("half a yard is no ground", got["ground"], 0)
 got = tile_change([chunk(0, 0)], [chunk(0, 0, heights=moved_inside)])
-check("the ground moved", (got["ground"], got["most"], got["chunks"]), (1, 30.0, [(0, 0)]))
+check("the ground moved", (got["ground"], got["most"]), (1, 30.0))
 got = tile_change([chunk(0, 0, holes=0)], [chunk(0, 0, holes=1)])
-check("a hole", (got["holes"], got["chunks"]), (1, [(0, 0)]))
+check("a hole", (got["holes"], got["ground"]), (1, 0))
 got = tile_change([chunk(0, 0, area=12)], [chunk(0, 0, area=13)])
-check("an area counts but touches no picture", (got["areas"], got["chunks"]), (1, []))
+check("an area counts, and nothing else", got, {"ground": 0, "most": 0.0, "holes": 0, "areas": 1, "water": 0})
 got = tile_change([chunk(0, 0)], [chunk(0, 0)], (1, 5.0), (1, 9.0))
-check("the water", (got["water"], got["chunks"]), (1, [(0, 0)]))
+check("the water", (got["water"], got["ground"]), (1, 0))
 got = tile_change([chunk(0, 0)], [chunk(0, 0)], (1, 5.0), (1, 5.0))
 check("the same water", got["water"], 0)
-
-# --- the Atlas' squares -------------------------------------------------------------------------------------------
-check("the first chunk: one square", world.squares_of(*world.chunk_box(0, 0, (0, 0))), {(0, 0)})
-check("the overlap: two squares", sorted(world.squares_of(1800, 0, 1900, 100)), [(0, 0), (1, 0)])
-check("a chunk of the next tile's row", (0, 1) in world.squares_of(*world.chunk_box(1, 0, (0, 0))), True)
 
 # --- two builds -----------------------------------------------------------------------------------------------------
 key = 4096 + 30 * 64 + 40   # Kalimdor
@@ -166,7 +162,7 @@ check("the tile that places a changed model", tiles[same]["models"], [700])
 check("the changed models", found["models"], {"buildings": [700], "doodads": []})
 check("a new area", [a["name"] for a in found["areas"]["new"]], ["New Crater"])
 check("a chunk's zone is the top of its parents", tiles[key]["zones"], ["Elwynn Forest"])
-check("the squares are the Atlas' continents' alone", found["squares"] and all(s.startswith("1-") for s in found["squares"]), True)
+check("no instance beside the builds: none changed", found["instances"], [])
 check("an area alone asks for no walking data", found["walk_maps"], [1])
 check("the world moved", world.moved(found), True)
 text = world.report(found, "a test")
@@ -314,45 +310,40 @@ check("what facts say", "changed 1 Bolt (Mage): cost 5 → 7" in pd.facts_text(f
 reports = temp / "reports"
 folder = reports / "patches" / "forever-1-to-2"
 folder.mkdir(parents=True)
-pd.TILES, pd.LAYERS, pd.JOBS = temp / "tiles", temp / "layers", temp / "jobs.toml"
+pd.LAYERS, pd.JOBS = temp / "layers", temp / "jobs.toml"
 pd.ROOT = temp
-(pd.TILES / "1").mkdir(parents=True)
-(pd.TILES / "1" / "sq-3-4.png").write_bytes(b"old")
-(pd.LAYERS / "zone-1429").mkdir(parents=True)
-(pd.LAYERS / "zone-1429" / "far.png").write_bytes(b"far")
-(pd.LAYERS / "zone-1429" / "far-2.png").write_bytes(b"try")
-(pd.LAYERS / "zone-1429" / "far-colours.png").write_bytes(b"input")
-(pd.LAYERS / "zone-1429" / "checks.json").write_text(json.dumps({"far-2": 1, "middle-1": 2}))
-(pd.LAYERS / "state.json").write_text(json.dumps({"paths": {"continents": "old", "tables": "old", "minimap": "keep"},
-                                                  "subjects": [{"name": "zone-1429"}, {"name": "zone-1"}]}))
-pd.JOBS.write_text('[[job]]\nname = "worldtiles"\npriority = 10\ncommand = ["x"]\n')
-moved_tile = {"ground": 2, "holes": 0, "water": 0, "minimap": False, "zones": ["Elwynn Forest"]}
-model_tile = {"ground": 0, "holes": 0, "water": 0, "minimap": False, "zones": ["Elwynn Forest 2"], "models": [700]}
-world_facts = {"squares": ["1-3-4", "1-9-9"], "instances": [], "tiles": [moved_tile] * 3 + [model_tile] * 9, "maps": {}, "areas": {},
-               "uimaps": {}, "zones": [{"zone": "Elwynn Forest", "tiles": 3, "of": 10, "ground": 6, "water": 0},
-                                       {"zone": "Elwynn Forest 2", "tiles": 9, "of": 10, "ground": 0, "water": 0}]}
-state_now = {"subjects": [{"name": "zone-1429"}, {"name": "zone-1430"}]}
-uimaps_now = temp / "uimaps"
-uimaps_now.mkdir()
-table(uimaps_now, "UiMap", [{"ID": "1429", "Name_lang": "Elwynn Forest", "Type": "3"}, {"ID": "1430", "Name_lang": "Elwynn Forest 2", "Type": "3"}])
-check("a zone counts the tiles its pictures are made from, not those of a changed model",
-      pd.zone_subjects(world_facts, state_now, uimaps_now), ["zone-1429"])
+(pd.LAYERS / "instance-36").mkdir(parents=True)
+(pd.LAYERS / "instance-36" / "far.png").write_bytes(b"far")
+(pd.LAYERS / "instance-36" / "far-2.png").write_bytes(b"try")
+(pd.LAYERS / "instance-36" / "far-colours.png").write_bytes(b"input")
+(pd.LAYERS / "instance-36" / "checks.json").write_text(json.dumps({"far-2": 1, "middle-1": 2}))
+(pd.LAYERS / "state.json").write_text(json.dumps({"paths": {"tables": "old", "instance_files": "old", "mapart": "keep"},
+                                                  "subjects": [{"name": "instance-36", "kind": "instance"},
+                                                               {"name": "instance-47", "kind": "instance"},
+                                                               {"name": "zone-1429", "kind": "zone"}]}))
+pd.JOBS.write_text('[[job]]\nname = "instancemaps"\npriority = 2\ncommand = ["x"]\n')
+world_facts = {"instances": [36, 209, 1429], "tiles": [], "maps": {}, "areas": {}, "uimaps": {}, "zones": []}
+check("the painted instances whose terrain changed; not one unpainted, nor a subject of another kind",
+      pd.instance_subjects(world_facts, json.loads((pd.LAYERS / "state.json").read_text())), ["instance-36"])
 (folder / "world.json").write_text(json.dumps(world_facts))
+beside = new.with_name(new.name + "-instances")   # the new build's instances, as world.json read them
+beside.mkdir()
+(beside / "tiles.jsonl").write_text("")
 pd.reports = lambda: reports
 pd.client_tables = lambda product, version: new / "tables"
 pd.Patch = lambda game, place: Thing(game=game, name="forever-1-to-2", folder=folder, build=2, product="wowf", new="2", extract=new)
 pd.run_rerender(Thing(game="forever", priority=11))
-check("a painted square is set aside", (pd.TILES / "1" / "sq-3-4.png").is_file(), False)
 aside = temp / "assets" / "generated" / "replaced" / "2"
-check("its picture is kept", (aside / "world-tiles" / "1" / "sq-3-4.png").read_bytes(), b"old")
-check("the plan: what was painted", json.loads((folder / "rerender.json").read_text()), {"squares": ["1-3-4"], "subjects": ["zone-1429"]})
-check("a zone's far painting and tries go", sorted(p.name for p in (pd.LAYERS / "zone-1429").glob("far*")), ["far-colours.png"])
-check("its far checks are forgotten", json.loads((pd.LAYERS / "zone-1429" / "checks.json").read_text()), {"middle-1": 2})
+check("the plan: what was painted", json.loads((folder / "rerender.json").read_text()), {"subjects": ["instance-36"]})
+check("an instance's far painting and tries go", sorted(p.name for p in (pd.LAYERS / "instance-36").glob("far*")), ["far-colours.png"])
+check("they are kept", (aside / "map-layers" / "instance-36" / "far.png").read_bytes(), b"far")
+check("its far checks are forgotten", json.loads((pd.LAYERS / "instance-36" / "checks.json").read_text()), {"middle-1": 2})
 state = json.loads((pd.LAYERS / "state.json").read_text())
-check("the maps' inputs read the new build", state["paths"]["continents"], str(new / "adt"))
-check("a build without textures keeps the old ones", state["paths"]["minimap"], "keep")
+check("the maps' inputs read the new build's tables and instances",
+      (state["paths"]["tables"], state["paths"]["instance_files"]), (str(new / "tables"), str(beside)))
+check("a build without map art keeps the old", state["paths"]["mapart"], "keep")
 jobs = tomllib.loads(pd.JOBS.read_text())["job"]
-check("the job is queued behind the others", [j["name"] for j in jobs], ["worldtiles", "patch-2"])
+check("the job is queued behind the others", [j["name"] for j in jobs], ["instancemaps", "patch-2"])
 job = jobs[1]
 check("its priority", job["priority"], 11)
 check("its command", job["command"], ["dev/tools/patchday", "paint", "forever-1-to-2"])
@@ -360,11 +351,13 @@ pd.run_rerender(Thing(game="forever", priority=11))
 check("queued once", len(tomllib.loads(pd.JOBS.read_text())["job"]), 2)
 plan = json.loads((folder / "rerender.json").read_text())
 check("nothing painted yet", pd.painted(plan), 0)
-(pd.TILES / "1" / "sq-3-4.png").write_bytes(b"new")
-(pd.LAYERS / "zone-1429" / "far.png").write_bytes(b"new")
-check("all painted", pd.painted(plan), 2)
-check("the runner's pattern reads the status", bool(re.search(job["done"], "2 of 2 squares painted (100.0 %)")), True)
-check("not while one is missing", bool(re.search(job["done"], "1 of 2 squares painted (50.0 %)")), False)
+(pd.LAYERS / "instance-36" / "far.png").write_bytes(b"new")
+check("all painted", pd.painted(plan), 1)
+told = io.StringIO()
+with contextlib.redirect_stdout(told):
+    pd.run_paint(Thing(patch="forever-1-to-2", status=True))
+check("its status says so, as the runner's pattern reads it", bool(re.search(job["done"], told.getvalue())), True)
+check("not while one is missing", bool(re.search(job["done"], "1 of 2 paintings made (50.0 %)")), False)
 
 # --- a build's file ---------------------------------------------------------------------------------------------------
 pd.PATCHNOTES = temp / "Patchnotes"

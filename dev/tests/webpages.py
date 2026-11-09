@@ -41,13 +41,13 @@ for page in wp.PAGES:
         check(f"{page.name} has web()", "def web(request):" in page.tool.path.read_text(), True)
     else:
         check(f"{page.name}'s first folder lies in the project or is made", page.folders[0].is_relative_to(ROOT), True)
-    if page.place in ("world", "instances", "maps"):
-        check(f"{page.name} is ready only with its build", page.needs, "world.json" if page.place != "maps" else "maps.js")
+    if page.place == "maps":
+        check(f"{page.name} is ready only with its build", page.needs, "maps.js")
 saneui = (ROOT / "dev" / "saneui").read_text()
 for place in places:
     if place != "pieces":
         check(f"saneui opens {place}", f'["dev/tools/web-pages", "open", "{place}"]' in saneui, True)
-for name in ("board-page/index.html", "world-map-page/index.html", "map-compare-page/index.html"):
+for name in ("board-page/index.html", "map-compare-page/index.html"):
     check(f"{name} leaves the menu to the server", "web-nav.js" in (ROOT / "dev" / "tools" / name).read_text(), False)
 
 # A little site of its own on a free port.
@@ -137,7 +137,7 @@ check("a tool's fourth value sends its headers", (status, held.get("etag"), held
 check("the request's headers reach the tool: 304 to the mark it gave", heads("/tool/tag", {"If-None-Match": '"v1"'})[0], 304)
 check("a page without headers of its own is not kept", heads("/tool/")[1].get("cache-control"), "no-store")
 check("a folder page with the file its build makes", wp.Page("w", "w", [first], needs="index.html").ready(), True)
-check("a folder page without it is not built yet", wp.Page("w", "w", [first], needs="world.json").ready(), False)
+check("a folder page without it is not built yet", wp.Page("w", "w", [first], needs="maps.js").ready(), False)
 # A config that cannot be read: said once each, the project's pages answer alone.
 told = io.StringIO()
 with contextlib.redirect_stderr(told):

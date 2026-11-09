@@ -106,7 +106,7 @@ the game's newest patch and writes into its folder:
 | `check [--json]` | nothing | Which game's installed build is newer than its last export; what the newest patch still lacks, read from what stands there, so a stopped run goes on where it was |
 | `bump <game>` | `builds.toml`, `BUILD` of the data tools | The new build's line; `BUILD` is Forever's alone |
 | `tables <game>` | `tables.tsv`, `tables/<Table>.tsv` | Every client table against the build before, by topic: what the master does not hold is seen too (a race's abilities); a table the client numbers anew is compared by what its rows hold |
-| `world <game>` | `world.md`, `world.json` | The terrain and the map tables against the build before |
+| `world <game>` | `world.md`, `world.json` | The terrain and the map tables against the build before: the walking data's maps, the instances whose terrain changed |
 | `draft <game>` | `facts.md`, `facts.json`, `patchnotes.json` | What the master took from the game at this build; empty notes in Blizzard's layout |
 | `rerender <game>` | `rerender.json`, `dev/imagegen/jobs.toml` | The repaint queued; below |
 | `paint <patch>` | the paintings | The job's own command |
@@ -117,16 +117,14 @@ the game's newest patch and writes into its folder:
 ground counts by its heights with the base added, inside a chunk and from `GROUND` yards: the game bakes a chunk's base
 and its outer ring anew at times (a tile's edge on the deep sea floor jumped 500 yards while no ground moved). A placement
 counts without its number, which the game renumbers at will. `walk_maps` names the maps whose walking data is made anew:
-all a change reaches but an area alone. `squares` names the Atlas' squares to paint again: only what they are made from,
-the ground, holes, water and minimap textures; a building moved alters the walking data, not a painting, until its
-minimap texture changes.
+all a change reaches but an area alone. `instances` names the instances whose terrain changed (its ground, water, a
+tile added or gone): their painted maps are painted again.
 
-**The repaint:** `rerender` moves the painted squares and the far paintings of zones a quarter of whose tiles changed in what a painting
-is made from into
-`assets/generated/replaced/<build>/`, points the maps' `state.json` at the new build's terrain, and adds the job
-`patch-<build>` to the queue at priority 11, above the world's tiles. It starts nothing; the runner takes it up. A square
-of the list not painted yet stays the world's tiles' own. Long jobs go into the file on Saneroki's word: running the skill
-is that word. The Atlas' pack comes after the job, by Saneroki's choice.
+**The repaint:** `rerender` moves the far paintings of those instances' painted maps into
+`assets/generated/replaced/<build>/`, points the maps' `state.json` at the new build's tables (and its instances' terrain
+and map art where the build has them), and adds the job `patch-<build>` to the queue at priority 11, above the instance
+maps' own job. It starts nothing; the runner takes it up. Long jobs go into the file on Saneroki's word: running the skill
+is that word. (Until 2026-11-09 it repainted the Atlas' squares and the zones' paintings too; the Atlas is gone.)
 
 **The notes:** `patchnotes.json`, its form in `dev/blizzard/patchnotes.py`: Blizzard's sections, groups and subgroups, "(was
 X)" after what changed. Each point says where it stands: `both` (Blizzard says it and the client shows it), `client`, or

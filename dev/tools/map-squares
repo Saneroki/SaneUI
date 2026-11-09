@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+"""The close level's squares of the instance maps, a library of dev/tools/map-layers (no command of its own).
+
+An instance's terrain is cut into squares of one terrain tile at 2048 pixels (a quarter of a yard a pixel) that
+overlap by an eighth. Each square is repainted by the local image model from the game's terrain (its minimap
+textures softened a little, its open water made flat) with the words of dev/imagegen/maps/close.toml and the
+instance brief's colours and light (dungeons.toml): an edit, never a repaint. Each painting is checked against the
+game's water and lava: its liquids are named in the words, and a painting with broad sheets of water where the
+game has none, or land where it has water, fails and is painted again with another seed, the best of TRIES kept.
+The kept painting is brought back toward the game's broad colours by the colour pass (the model's own colours
+drift with the place's light; lava stays as painted), and the squares are joined along the line where
+neighbours differ least, their colour and light faded across the overlap.
+
+Tested by dev/tests/map_squares.py without ComfyUI and without the game's files.
+"""
+import collections
+import importlib.machinery
+import importlib.util
+import os
+import re
+import struct
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageFilter
+
+Image.MAX_IMAGE_PIXELS = None   # the close level of a whole instance is larger than Pillow's guard
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def module(name, path):
+    loader = importlib.machinery.SourceFileLoader(name, str(path))
+    spec = importlib.util.spec_from_loader(name, loader)
+    found = importlib.util.module_from_spec(spec)
+    loader.exec_module(found)
+    return found
+
+
+ta = module("terrain_art", ROOT / "dev" / "tools" / "terrain-art")   # the game's terrain files
+
+WORDS = ROOT / "dev" / "imagegen" / "maps" / "close.toml"
+
+PX = 2048          # pixels a tile: four times the minimap textures'
+SQ = 2048          # a square's side: one tile
+STEP = 1792        # from one square to the next: they overlap by an eighth (256 pixels, 67 yards)
+CHUNK = PX // 16   # a map chunk's side in pixels: squares start on chunks (STEP is 14 of them)
+TRIES = 3          # paintings of a square at most: seeds 1, 2, 3
+ADDED, LOST = 0.005, 0.01   # the check: broad sheets of water added, or of the game's water lost, past these fail
+WORKFLOW = "qwen21-edit-1ref"
+SETTINGS = {"width": SQ, "height": SQ, "resolution": SQ}
+NAVY = np.array([22, 38, 50])   # the flat water of the inputs
+SOFTEN = 2.0       # the minimap textures softened by so much (pixels) first: their dot pattern came back in the rock and,
+                   # at 0.8, suggested water (a lake by Stormwind's cathedral); 0.8, 1.4 and 2.0 were tried
+
+
+# --- What the game has in a square ---------------------------------------------------------------
+
+class Game:
+    """The game's files a square is made from, read a tile at a time; the last few tiles are kept, since
+    neighbouring squares share them. paths: the terrain files (adt, <key>.adt), the client tables as CSV (tables)
+    and the minimap textures (minimap, <file ID>.blp); files: {tile key: minimap file ID}."""
+
+    def __init__(self, paths, files):
+        self.adt, self.minimap = Path(paths["adt"]), Path(paths["minimap"])
+        tables = Path(paths["tables"])
+        formats = {row["ID"]: int(row["LVF"]) for row in ta.table(tables, "LiquidMaterial")}
+        types = ta.table(tables, "LiquidType")
+
+        def kinds(banks):  # the game's sound banks: 0 water, 1 ocean, 2 magma, 3 slime
+            return {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in types if row["SoundBank"] in banks}
+        self.liquids = {"water": kinds(("0", "1")), "lava": kinds(("2",)), "slime": kinds(("3",))}
+        self.files = dict(files)
+        self.kept = collections.OrderedDict()
+
+    def tile(self, key):
+        """A tile at PX: its terrain (softened a little first: the textures' fine dot pattern comes back in the
+        painting otherwise) and its liquids (0 to 255)."""
+        if key in self.kept:
+            self.kept.move_to_end(key)
+            return self.kept[key]
+        rgb = np.empty((PX, PX, 3), np.uint8)
+        rgb[:] = NAVY
+        if key in self.files and (self.minimap / f"{self.files[key]}.blp").is_file():
+            texture = Image.open(self.minimap / f"{self.files[key]}.blp").convert("RGB").filter(ImageFilter.GaussianBlur(SOFTEN))
+            rgb = np.asarray(texture.resize((PX, PX), Image.Resampling.LANCZOS)).copy()
+        masks = {kind: np.zeros((PX, PX), np.uint8) for kind in self.liquids}
+        path = self.adt / f"{key}.adt"
+        if path.is_file():
+            for kind, types in self.liquids.items():
+                land, _ = ta.terrain(path, types)
+                small = Image.fromarray(((1 - land) * 255).astype(np.uint8))
+                masks[kind] = np.asarray(small.resize((PX, PX), Image.Resampling.BILINEAR))
+        else:  # no terrain: open water
+            masks["water"][:] = 255
+        masks["water"] = open_water(rgb, masks["water"])
+        wet = masks["water"][..., None].astype(np.float32) / 255
+        rgb = (rgb * (1 - wet) + NAVY * wet).astype(np.uint8)
+        self.kept[key] = {"rgb": rgb, **masks}
+        if len(self.kept) > 12:
+            self.kept.popitem(last=False)
+        return self.kept[key]
+
+    def square(self, map_id, i, j):
+        """A square's terrain and liquids: square i to the east, j to the south of the map's corner."""
+        x0, y0 = i * STEP, j * STEP
+        out = {"rgb": np.zeros((SQ, SQ, 3), np.uint8)}
+        out["rgb"][:] = NAVY
+        for kind in self.liquids:
+            out[kind] = np.full((SQ, SQ), 255 if kind == "water" else 0, np.uint8)
+        for row in range(y0 // PX, (y0 + SQ - 1) // PX + 1):
+            for col in range(x0 // PX, (x0 + SQ - 1) // PX + 1):
+                if not (0 <= row < ta.GRID and 0 <= col < ta.GRID):
+                    continue
+                tile = self.tile(map_id * ta.GRID * ta.GRID + row * ta.GRID + col)
+                ax, ay = max(x0, col * PX), max(y0, row * PX)
+                bx, by = min(x0 + SQ, (col + 1) * PX), min(y0 + SQ, (row + 1) * PX)
+                into = (slice(ay - y0, by - y0), slice(ax - x0, bx - x0))
+                take = (slice(ay - row * PX, by - row * PX), slice(ax - col * PX, bx - col * PX))
+                for name in ("rgb", *self.liquids):
+                    out[name][into] = tile[name][take]
+        return out
+
+
+def open_water(rgb, water):
+    """The game's water less what stands in it (piers, stilt houses, bridges, domes; ice): the minimap draws water
+    cool and dark, wood, roofs and stone warm or bright. Only the open water is made flat, and only it counts as
+    water (a flat sheet over Booty Bay's boardwalk erased it from every painting)."""
+    r, g, b = (rgb[..., k].astype(np.int16) for k in range(3))
+    # clearly warm (wood, roof tiles) or bright (stone, domes, ice); muddy water is a little warm and stays water
+    standing = ((r > b + 25) & (r > 70)) | (np.minimum(np.minimum(r, g), b) > 140)
+    standing = grow(shrink(standing, 1), 1) & (water > 127)
+    return np.where(standing, 0, water).astype(np.uint8)
+
+# --- The check against the game's water ----------------------------------------------------------
+
+CHECK = 512    # pictures are checked at this size: sheets, not detail
+SLACK = 0.02   # of the side: how far a painted shore may stray
+
+
+def small(array, side=CHECK):
+    mode = "RGB" if array.ndim == 3 else "L"
+    return np.asarray(Image.fromarray(array, mode).resize((side, side), Image.Resampling.BOX))
+
+
+def box_mean(a, r):
+    """The mean of a over a square of side 2r + 1 around each point."""
+    c = np.pad(a, r + 1, mode="edge").cumsum(0).cumsum(1)
+    n = 2 * r + 1
+    return (c[n:, n:] - c[:-n, n:] - c[n:, :-n] + c[:-n, :-n])[:a.shape[0], :a.shape[1]] / n ** 2
+
+
+def grow(mask, r):
+    return np.asarray(Image.fromarray(mask.astype(np.uint8) * 255).filter(ImageFilter.MaxFilter(2 * r + 1))) > 127
+
+
+def shrink(mask, r):
+    return np.asarray(Image.fromarray(mask.astype(np.uint8) * 255).filter(ImageFilter.MinFilter(2 * r + 1))) > 127
+
+
+def water_of(square):
+    """The game's water in a square, at CHECK: its liquids, and the speckled dark blue-grey the minimap draws for
+    the water of buildings (city canals), in sheets (the shadows of blue roofs are small)."""
+    terrain = small(square["rgb"]).astype(np.int32)
+    drawn = (terrain[..., 2] >= terrain[..., 0] + 8) & (terrain.max(-1) < 90)
+    drawn = grow(shrink(box_mean(drawn.astype(np.float32), 2) > 0.5, 2), 2)
+    return (small(square["water"]) > 127) | (np.abs(terrain - NAVY).sum(-1) < 30) | drawn
+
+
+def check(square, painting):
+    """How much of the painting is water where the game has none (added), and land where it has water (lost):
+    broad sheets only, a shore may stray a little (SLACK). Painted water is bluish, smooth, in sheets and bluer
+    than the painting's own land, so a place graded blue (Duskwood's dusk) and the blue shadows of snow are not
+    water."""
+    out = small(np.asarray(painting))
+    game = water_of(square)
+    hsv = np.asarray(Image.fromarray(out).convert("HSV"), np.float32)
+    h, s, v = hsv[..., 0] * 360 / 255, hsv[..., 1] / 255, hsv[..., 2] / 255
+    grey = out.astype(np.float32).mean(-1)
+    rough = np.sqrt(np.maximum(box_mean(grey ** 2, 2) - box_mean(grey, 2) ** 2, 0))
+    slack = max(1, round(CHECK * SLACK))
+    blue = out[..., 2].astype(np.float32) - (out[..., 0].astype(np.float32) + out[..., 1]) / 2
+    land = ~grow(game, slack)
+    bar = np.percentile(blue[land], 30) + 12 if land.any() else -255.0
+    # (from teal-green on: a tropical lagoon is emerald; meadows are yellower, forests rough)
+    painted = (h >= 125) & (h <= 250) & (s >= 0.22) & (v >= 0.18) & (rough < 9) & ~((v > 0.65) & (s < 0.6)) & (blue > bar)
+    painted = grow(shrink(painted, 3), 3)
+    added = grow(shrink(painted & land, 4), 4)
+    lost = grow(shrink(game & ~grow(painted, slack) & ~grow(~game, slack), 4), 4)
+    return {"added": round(float(added.mean()), 4), "lost": round(float(lost.mean()), 4)}
+
+
+def passes(result):
+    return result["added"] <= ADDED and result["lost"] <= LOST
+
+
+# --- The words -----------------------------------------------------------------------------------
+
+WET = re.compile(r"coast|shore|sea\b|lake|river|stream|water|shallow|surf|pool|pond|canal|marsh|bog|reed|harbour"
+                 r"|beach|spring|falls|wave|steam", re.I)
+HOT = re.compile(r"lava|molten|magma|ember|glowing", re.I)
+WHERE = re.compile(r"north|south|east|west|centre|middle|edge", re.I)
+
+
+def only(text, facts):
+    """The phrases of a brief's field that fit the square: none about water or lava where the game has none,
+    none that say where in the place (a square is a small part of it)."""
+    drop = [WHERE] + [rx for rx, there in ((WET, facts["water"] >= 0.001), (HOT, facts["lava"] >= 0.005)) if not there]
+    kept = [p for p in re.split(r"(?<=[,;.:])\s+", text) if not any(rx.search(p) for rx in drop)]
+    return re.sub(r"[,;:.]$", "", " ".join(kept).strip())
+
+
+LIGHT_DROP = re.compile(r"colou?r|grade|tint|cast|hue|bleach|drain|wash|haze|mist|steam|smoke|fog|cloud|spray|dust"
+                        r"|shimmer|glow", re.I)
+
+
+def light_of(atmosphere):
+    """The light of a brief's atmosphere, its quality only: its first sentence without the clauses about colour or haze."""
+    first = atmosphere.split(". ")[0].rstrip(".")
+    kept = [clause for clause in first.split(", ") if not LIGHT_DROP.search(clause)]
+    return ", ".join(kept) or "soft daylight"
+
+def words(fixed, brief, facts):
+    """A square's words: an edit, never a repaint (what may change: how things look; what never does: where and
+    what they are), the liquids the game has, the brief's colours and the quality of its light, the colours of
+    image 1 kept, nothing added or taken away. Never the brief's buildings, plants, places or props, nor the ground
+    in words: the model paints whatever the words name into the square. fixed: close.toml; facts: the square's
+    shares of water, lava and slime."""
+    said = fixed["words"]
+    water = facts["water"]
+    liquids = [said["water"] if water >= 0.01 else said["little"] if water >= 0.001 else said["dry"]]
+    if facts["lava"] >= 0.005:
+        liquids.append(said["lava"])
+    if facts["slime"] >= 0.005:
+        liquids.append(said["slime"])
+    place = f"Its colours, as image 1 shows them: {only(brief['colours'], facts)}. Its light: {light_of(brief['atmosphere'])}."
+    return " ".join([fixed["edit"], *liquids, place, said["keep_colours"], said["last"]])
+
+
+# --- The colour pass -----------------------------------------------------------------------------
+# The model paints each place in its own light, and with it its own colours: Badlands' orange came out pale tan,
+# Teldrassil violet. So each painting's broad colour (its hue and saturation averaged over BROAD pixels) is moved
+# toward the game's by 1 - MOOD; its brightness, its fine detail and light are kept (a dark place stays dark: the
+# game's minimap is drawn without the place's light). The same pull evens out neighbours painted a little apart.
+
+MOOD = 0.5     # how much of the model's own colour a square keeps (1: all of it; 0: the game's broad colours)
+BROAD = 48     # pixels (12 yards): broader than a tree, finer than a hill
+SEA = np.array([18, 52, 86])   # the open sea's blue: the water of every square is pulled toward it, whatever the mood
+WHITE = np.array([0.95047, 1.0, 1.08883])   # CIE D65, the white of sRGB
+
+
+def to_lab(rgb):
+    c = rgb.astype(np.float32) / 255
+    c = np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
+    xyz = c @ np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]], np.float32).T / WHITE
+    f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16 / 116)
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], -1)
+
+
+def to_rgb(lab):
+    fy = (lab[..., 0] + 16) / 116
+    f = np.stack([fy + lab[..., 1] / 500, fy, fy - lab[..., 2] / 200], -1)
+    xyz = np.where(f > 0.2069, f ** 3, (f - 16 / 116) / 7.787) * WHITE
+    c = xyz @ np.array([[3.2406, -1.5372, -0.4986], [-0.9689, 1.8758, 0.0415], [0.0557, -0.2040, 1.0570]], np.float32).T
+    c = np.where(c > 0.0031308, 1.055 * np.clip(c, 0, None) ** (1 / 2.4) - 0.055, 12.92 * c)
+    return (c * 255).clip(0, 255).round().astype(np.uint8)
+
+
+def broad(a, r):
+    """Each channel averaged over about r pixels (three box means: close to a Gaussian)."""
+    a = a.astype(np.float32)
+    for _ in range(3):
+        a = np.stack([box_mean(a[..., k], max(1, r // 3)) for k in range(a.shape[-1])], -1)
+    return a
+
+
+def colour_of(painting, square, mood=MOOD):
+    """A painting with its broad colours moved toward the square's terrain (land) and the open sea's blue (water,
+    over a broader area, so the painted shallows keep their gradient); lava kept as painted. Worked out at a
+    quarter of the size, where only broad colour lives, and laid back on at full size."""
+    q = 4
+    side = painting.shape[0] // q
+    shrunk = lambda a: np.asarray(Image.fromarray(a).resize((side, side), Image.Resampling.BOX))  # noqa: E731
+    water = shrunk(square["water"]).astype(np.float32)[..., None] / 255
+    lava = shrunk(square["lava"]).astype(np.float32)[..., None] / 255
+    land = (1 - np.maximum(water, lava)) ** 2
+    paint, game = to_lab(shrunk(painting)), to_lab(shrunk(square["rgb"]))
+
+    def toward(target, w, r):
+        weight = broad(w, r) + 1e-4
+        return broad(target * w, r) / weight - broad(paint * w, r) / weight
+
+    shift = toward(game, land, BROAD // q) * land * (1 - mood)
+    shift[..., 0] = 0      # the light, bright or dark, stays the place's (Duskwood stays dark): only colours move
+    sea = toward(to_lab(np.broadcast_to(SEA.astype(np.uint8), paint.shape)), water * (1 - lava), BROAD) * water * 0.85
+    sea[..., 0] *= 0.5     # half the sea's brightness: in a dark place the water stays darker than the land
+    shift += sea
+    full = np.stack([np.asarray(Image.fromarray(shift[..., k]).resize(painting.shape[1::-1], Image.Resampling.BILINEAR))
+                     for k in range(3)], -1)
+    return to_rgb(to_lab(painting) + full)
+
+
+# --- Joining the squares -------------------------------------------------------------------------
+
+FEATHER = 12   # pixels softened to either side of a cut
+
+
+def seam(a, b):
+    """The weight of a where two overlapping strips meet side by side (a on the left): 1 left of the line where they
+    differ least (found row by row, moving a pixel at most from one row to the next), 0 right of it, softened
+    FEATHER pixels to either side. A cut, not a cross-fade: two paintings of the same trees blended over the
+    whole overlap would show both."""
+    diff = box_mean(np.abs(a.astype(np.int16) - b.astype(np.int16)).sum(-1).astype(np.float32), 2)
+    rows, width = diff.shape
+    cum, back = diff.copy(), np.zeros((rows, width), np.int8)
+    for y in range(1, rows):
+        prev = cum[y - 1]
+        options = np.stack([np.r_[np.inf, prev[:-1]], prev, np.r_[prev[1:], np.inf]])
+        pick = options.argmin(0)
+        back[y] = pick - 1
+        cum[y] += options[pick, np.arange(width)]
+    line = np.empty(rows, int)
+    line[-1] = int(cum[-1].argmin())
+    for y in range(rows - 1, 0, -1):
+        line[y - 1] = line[y] + back[y, line[y]]
+    return np.clip(0.5 - (np.arange(width)[None, :] - line[:, None]) / (2 * FEATHER), 0, 1)[..., None]
+
+
+SOFT = 24      # pixels: what is broader than this (a painting's colour and light) fades across the whole overlap
+
+
+def light_of_strip(strip):
+    """A strip's colour and light: blurred by SOFT."""
+    return np.asarray(Image.fromarray(strip.clip(0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(SOFT)),
+                      np.float32)
+
+
+def two_bands(a, b, w, axis=1):
+    """Two overlapping strips (a before b along axis) as one: their fine detail meets as w says (the seam's
+    weights of a), their colour and light (blurred by SOFT) fade from a to b across the whole overlap, so a square a
+    little lighter than its neighbour leaves no step at the line (Saneroki, 2026-10-22: no harsh line between
+    squares)."""
+    a, b = a.astype(np.float32), b.astype(np.float32)
+    shape = [1, 1, 1]
+    shape[axis] = a.shape[axis]
+    ramp = np.linspace(1.0, 0.0, a.shape[axis], dtype=np.float32).reshape(shape)
+    wide_a, wide_b = light_of_strip(a), light_of_strip(b)
+    return wide_a * ramp + wide_b * (1 - ramp) + (a - wide_a) * w + (b - wide_b) * (1 - w)
+
+
+def join_two(left, right, cut):
+    """Two pictures that overlap by SQ - STEP at the left's right edge, as one. A hard cut in the middle (cut), or
+    in two bands (two_bands): their fine detail meets along the line where they differ least (seam: interlocking,
+    never both trees), their colour and light fade from one to the other across the whole overlap."""
+    over = SQ - STEP
+    a, b = left[:, -over:].astype(np.float32), right[:, :over].astype(np.float32)
+    if cut:
+        w = (np.arange(over) < over // 2).astype(np.float32)[None, :, None]
+        middle = a * w + b * (1 - w)
+    else:
+        middle = two_bands(a, b, seam(a, b))
+    return np.concatenate([left[:, :-over], middle.clip(0, 255).astype(np.uint8), right[:, over:]], axis=1)
+
+
+def painting_of(path):
+    """A square's painting as an (SQ, SQ, 3) array, or None when its file cannot be opened (a run killed while it
+    was saved, before the saving went through a temp file), told: the square counts as not painted."""
+    try:
+        with Image.open(path) as picture:
+            return np.asarray(picture.convert("RGB"))
+    except (OSError, SyntaxError, ValueError, struct.error) as error:  # Pillow's own errors of a broken file
+        print(f"{path}: cannot be opened ({error}): skipped as not painted; remove it to paint it again",
+              file=sys.stderr, flush=True)
+        return None
+
+
+def save_png(picture, target):
+    """A picture saved through a temp file beside its target and os.replace: a run killed while saving leaves no
+    half file there for the next run to take as finished."""
+    temp = target.with_suffix(".tmp")
+    picture.save(temp, format="PNG")
+    os.replace(temp, target)

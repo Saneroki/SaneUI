@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Tests of dev/tools/map-layers without ComfyUI and without the game's files: where a world point lies in a frame,
-the affine data of a linear map, a building's point placed and found again, the words of the middle and far levels
-put together from the shared words and a brief, the outline agreement of pictures (one layout or another), the
-vision model's answers read, and an instance floor's map art with its title banner painted over. Run by
-dev/tests/run."""
+"""Tests of dev/tools/map-layers, the instance maps' three levels, without ComfyUI and without the game's files: where
+a world point lies in a frame, the affine data of a linear map, a building's point placed and found again, the words
+of the middle and far levels put together from the shared words and a brief, the outline agreement of pictures (one
+layout or another), the vision model's answers read, the parchment's tone, the checks file, the run's subjects (its
+instances only) and the game's folders it keeps, and an instance floor's map art with its title banner painted over.
+Run by dev/tests/run."""
 import importlib.machinery
 import importlib.util
 import math
@@ -57,56 +58,30 @@ check("indoors: a building's point placed and found again (the drawing's inverse
 words = tomllib.loads(ml.LEVELS.read_text())
 check("words: the levels", sorted(words), ["far", "middle"])
 check("words: the middle level's parts", sorted(words["middle"]), ["images", "images_plan", "last", "look", "look_plan"])
-check("words: the far level's parts", sorted(words["far"]), ["around", "images", "images_zone", "last", "look", "look_zone", "open"])
+check("words: the far level's parts", sorted(words["far"]), ["images", "last", "look", "open"])
 check("words: the middle level is pencil on parchment, straight from above",
       all(w in words["middle"]["look"] for w in ("pencil", "parchment", "straight from above")), True)
 check("words: both levels are edits of image 1 (they keep its layout)",
       all(w in words[level]["look"] for level, w in (("middle", "Make image 1 look like"), ("far", "Make image 1 a"))), True)
 check("words: the middle level keeps its layout exactly", "never where or what anything is" in words["middle"]["look"], True)
-check("words: the far level a photograph straight down of where image 1's places lie, a zone's and an instance's",
-      all(w in words["far"][look] for w in ("photograph", "straight down", "exactly where image 1 has it", "image 2")
-          for look in ("look", "look_zone")), True)
+check("words: the far level a photograph straight down of where image 1's places lie",
+      all(w in words["far"]["look"] for w in ("photograph", "straight down", "exactly where image 1 has it", "image 2")), True)
 check("words: no view at an angle any more", any("angle" in words[level][part] or "plane" in words[level][part]
                                                 for level in words for part in words[level] if isinstance(words[level][part], str)), False)
-heights = np.array([[np.nan, 0.0, 10.0], [20.0, 30.0, 40.0]], np.float32)
-shades = np.asarray(ml.height_map(heights).convert("L"))
-check("height map: the highest ground white, the lowest dark, no terrain black",
-      (int(shades[1, 2]), int(shades[0, 1]), int(shades[0, 0])), (255, 40, 0))
-check("height map: higher is lighter", bool(shades[0, 1] < shades[0, 2] < shades[1, 0] < shades[1, 1] < shades[1, 2]), True)
-classes = Image.fromarray(np.array([[ml.SWIM, ml.WALKED] * 50] * 70, np.uint8))
-check("framed: a walking picture keeps its shades (nearest)",
-      set(np.unique(np.asarray(ml.framed(classes, Image.Resampling.NEAREST)))) <= {ml.SWIM, ml.WALKED}, True)
-deep = ml.sea_of(np.array([[10, 20, 30], [10, 20, 30], [60, 90, 90], [60, 90, 90]], np.uint8))
-check("sea: the game's darkest water deep blue, its lighter shallows turquoise",
-      (tuple(deep[0]), tuple(deep[-1])), (ml.SEA, ml.SHALLOWS))
 brief = {"biome": "An old gold mine", "buildings": "Timber.", "places": "Tunnels.", "colours": "brown",
          "atmosphere": "Warm lantern light. Dust."}
-middle = ml.words_of("middle", words, brief, True)
-far = ml.words_of("far", words, brief, True)
+middle = ml.words_of("middle", words, brief)
+far = ml.words_of("far", words, brief)
 check("words: the middle level's pictures first", middle.startswith(words["middle"]["images"]), True)
 check("words: the middle level takes no brief", brief["places"] in middle or "This place is" in middle, False)
 check("words: no cut-away in the middle level", words["far"]["open"] in middle, False)
 check("words: an instance's far level cuts away its roofs", words["far"]["open"] in far, True)
-check("words: a zone's far level does not", words["far"]["open"] in ml.words_of("far", words, brief, False), False)
-check("words: a zone's far level starts from its blurred terrain",
-      ml.words_of("far", words, brief, False).startswith(words["far"]["images_zone"]), True)
-check("words: the lands around a zone, by direction, before the last sentence",
-      "to the east, a dark forest; to the north, hills." in ml.words_of("far", words, brief, False,
-                                                                      [("east", "A dark forest"), ("north", "hills")]), True)
-zone = {"box": (100.0, 0.0, 100.0, 0.0), "map": 0, "key": 1}
-found = {1: (0, (100.0, 0.0, 100.0, 0.0), 0), 2: (0, (100.0, 0.0, 30.0, -70.0), 0), 3: (0, (130.0, 30.0, 100.0, 0.0), 0),
-         4: (1, (100.0, 0.0, 30.0, -70.0), 0), 5: (0, (500.0, 400.0, 100.0, 0.0), 0)}
-check("around: the zones reaching into a zone's frame, east and north; not itself, another continent's or one out of it",
-      sorted(ml.around_of(zone, found, {"1": {}, "2": {}, "3": {}, "4": {}, "5": {}})), [("east", 2), ("north", 3)])
 check("words: the kind of place, in lower case", "This place is an old gold mine." in far, True)
 check("words: the light is the atmosphere's first sentence", "Its light: Warm lantern light." in far, True)
 check("words: the last sentence last", far.endswith(words["far"]["last"]), True)
 check("words: another place's map for its manner only",
-      ml.words_of("middle", words, dict(brief, _style_only=True), True).startswith(words["middle"]["images_plan"]), True)
-tile = ml.tile_words(words, dict(brief, land="A lake in the north.", plants="Oaks.", roads="A road."))
-check("words: a square's words name its kind, colours and light, never the zone's places, land, plants or roads",
-      all(w in tile for w in ("This place is an old gold mine.", "Its colours: brown", "Its light: Warm lantern light."))
-      and not any(w in tile for w in ("A lake in the north.", "Oaks.", "A road.", "Tunnels.", "Timber.")), True)
+      ml.words_of("middle", words, dict(brief, _style_only=True)).startswith(words["middle"]["images_plan"]), True)
+check("words: the brief's buildings and places, in order", far.index("Timber.") < far.index("Tunnels.") < far.index("Its colours"), True)
 check("strength: one a try, the first the strictest",
       all(len(ml.STRENGTH[level]) == ml.TRIES and list(ml.STRENGTH[level]) == sorted(ml.STRENGTH[level])
           for level in ("middle", "far")), True)
@@ -156,89 +131,60 @@ check("words: the middle level washed in image 1's own colours, not on cream",
       and "own colours" in words["middle"]["look"], True)
 green = Image.new("RGB", (60, 40), (70, 120, 40))
 ImageDraw.Draw(green).rectangle((0, 0, 59, 9), fill=(80, 100, 140))   # a strip of grey-blue sea
-check("tone: a green zone's map gives green parchment, its sea left out", ml.tone_of(green), (70, 120, 40))
-grass = Image.new("RGB", (40, 40), (60, 130, 40))
-check("land tone: a green zone's land gives a greener parchment than the game maps' ochre",
-      bool(ml.land_tone(grass, -1)[1] / ml.land_tone(grass, -1)[0] > ml.PARCHMENT[1] / ml.PARCHMENT[0]), True)
-check("land tone: a zone of water only keeps the game maps' ochre", ml.land_tone(Image.new("RGB", (8, 8), (40, 80, 140)), -1), ml.PARCHMENT)
+check("tone: a green map gives green parchment, its sea left out", ml.tone_of(green), (70, 120, 40))
 leafy = np.asarray(ml.parchment((32, 32), ml.tone_of(green))).reshape(-1, 3).mean(0)
 check("parchment: in a green map's tone, green over red and blue", bool(leafy[1] > leafy[0] and leafy[1] > leafy[2]), True)
 paper = np.asarray(ml.parchment((64, 64))).reshape(-1, 3).mean(0)
 check("parchment: the game maps' yellow-orange, red over green over blue",
       bool(paper[0] > paper[1] > paper[2] and paper[0] - paper[2] > 60), True)
 
-# --- The walking data -----------------------------------------------------------------------------
-
-import base64  # noqa: E402
 import contextlib  # noqa: E402
 import io  # noqa: E402
-import json  # noqa: E402
-import zlib  # noqa: E402
 
-
-def encoded(value):
-    """CBOR of whole numbers and arrays, as the walking blocks are written."""
-    if isinstance(value, list):
-        head, body = 4, b"".join(encoded(item) for item in value)
-        size = len(value)
-    else:
-        head, body, size = (0, b"", value) if value >= 0 else (1, b"", -1 - value)
-    if size < 24:
-        return bytes([head << 5 | size]) + body
-    width = next(n for n in (1, 2, 4, 8) if size < 1 << (8 * n))
-    return bytes([head << 5 | {1: 24, 2: 25, 4: 26, 8: 27}[width]]) + size.to_bytes(width, "big") + body
-
-
-check("cbor: numbers, a negative one and arrays read back (walk-data's reader, which the tool shares)",
-      ml.decode(encoded([1, [200, -3, 70000], []])), [1, [200, -3, 70000], []])
-check("cbor: the tool's writer is walk-data's too", ml.cbor([1, [200, -3, 70000], []]), encoded([1, [200, -3, 70000], []]))
-packed = zlib.compressobj(9, zlib.DEFLATED, -15)
-# one tile: its north half a floor of land, its south half water, a strip at its east edge where nobody walks
-data = packed.compress(encoded([1, [1, 1, 0, 1, 2, 0], [0, 0, 240, 128, 0, 0, 128, 240, 128, 0], []])) + packed.flush()
-walking = ml.Walking(Path("/nonexistent"))
-row, column = 30, 31
-walking.blocks[row * ml.GRID + column] = base64.b64encode(data).decode("ascii")
-north, west = ml.CENTRE - row * ml.TILE, ml.CENTRE - column * ml.TILE
-tile = walking.picture(0, (north, north - ml.TILE, west, west - ml.TILE), 256)
-check("walking: a floor of land", tile.getpixel((60, 60)), ml.WALKED)
-check("walking: water", tile.getpixel((60, 200)), ml.SWIM)
-check("walking: where nobody walks", tile.getpixel((250, 60)), ml.BARRED)
-around = walking.picture(0, (north + ml.TILE / 2, north - ml.TILE, west, west - ml.TILE), 256)
-check("walking: no data beyond its tiles", around.getpixel((60, 20)), ml.NOWHERE)
-shades = np.full((300, 400), ml.WALKED, np.uint8)
-shades[150:] = ml.SWIM          # water in the south
-shades[30:120, 250:400] = ml.BARRED  # a mountain
-shades[200:300, 0:40] = ml.NOWHERE   # beyond the data
-guide = np.asarray(ml.guide_of(Image.fromarray(shades)).convert("L")) > 127
-check("guide: the shore drawn", guide[146:154, 50:60].any(), True)
-check("guide: not the mountain's foot (it came out a lake; the relief holds it)", guide[115:125, 300].any(), False)
-check("guide: open land and open water plain", guide[80, 50] or guide[250, 100], False)
-check("guide: nothing along the edge of the data", guide[220:280, 36:46].any(), False)
-walk = Image.fromarray(shades)
-wet = Image.new("RGB", (400, 300), (196, 170, 110))
-ImageDraw.Draw(wet).rectangle((0, 150, 399, 299), fill=(40, 90, 150))
-dry = Image.new("RGB", (400, 300), (196, 170, 110))
-check("water check: the walking data's water painted where it is passes",
-      ml.water_check(walk, wet)["lost"] <= ml.FAR_WATER[1] and ml.water_check(walk, wet)["added"] <= ml.FAR_WATER[0], True)
-check("water check: its water painted as land fails", ml.water_check(walk, dry)["lost"] > ml.FAR_WATER[1], True)
-
-# --- The set's file, the checks file --------------------------------------------------------------
+# --- The checks file, the run's subjects and folders --------------------------------------------------------------
 
 import tempfile  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
 
 with tempfile.TemporaryDirectory() as folder:
-    lines = [{"key": 5, "block": "x"}, {"key": 6, "block": "y"}, {"key": 5, "gone": True}, {"key": 6, "block": "z"}]
-    (Path(folder) / "Walking.jsonl").write_text("".join(json.dumps(line) + "\n" for line in lines))
-    check("walking: the newest line of each tile, a tile gone left out", ml.Walking(Path(folder) / "Walking.jsonl").blocks, {6: "z"})
     check("checks: none yet", ml.checks_of(Path(folder)), {})
     ml.save_checks(Path(folder), {"close-1-2": {"seed": 1}})
     check("checks: saved through a temp file beside it (none left) and read back",
           (ml.checks_of(Path(folder)), sorted(p.name for p in Path(folder).iterdir())),
-          ({"close-1-2": {"seed": 1}}, ["Walking.jsonl", "checks.json"]))
+          ({"close-1-2": {"seed": 1}}, ["checks.json"]))
     (Path(folder) / "checks.json").write_text('{"close-1-2": {"se')   # cut short by a run killed while writing
     with contextlib.redirect_stdout(io.StringIO()) as told:
         found = ml.checks_of(Path(folder))
     check("checks: a file cut short counts as empty, told", (found, "not JSON" in told.getvalue()), ({}, True))
+
+with tempfile.TemporaryDirectory() as folder:
+    out = Path(folder)
+    asked = dict(out=str(out), instances=[], tables=None, instance_files=None, mapart=None)
+    try:
+        ml.inputs(SimpleNamespace(**asked))
+        refused = None
+    except SystemExit as stop:
+        refused = str(stop)
+    check("inputs: the game's folders needed the first time, each named",
+          bool(refused) and all(flag in refused for flag in ("--tables", "--instance-files", "--mapart")), True)
+    given = dict(tables=str(out / "tables"), instance_files=str(out / "instances"), mapart=str(out / "mapart"))
+    ml.inputs(SimpleNamespace(**dict(asked, **given)))
+    kept = ml.load_state(out)["paths"]
+    check("inputs: the run's state.json remembers them", kept, {k: str(Path(v).resolve()) for k, v in given.items()})
+    ml.inputs(SimpleNamespace(**asked))   # then none is asked for
+    check("inputs: none needed again", ml.load_state(out)["paths"], kept)
+    state = {"paths": kept, "subjects": [{"name": "zone-1429", "kind": "zone", "key": 1429},
+                                         {"name": "instance-36", "kind": "instance", "key": 36}]}
+    ml.save_state(out, state)
+    check("subjects: only the instances, a zone of an earlier run passed over",
+          [s["name"] for s in ml.instances_of(ml.load_state(out))], ["instance-36"])
+    (out / "instance-36").mkdir()
+    (out / "instance-36" / "far.png").write_bytes(b"far")
+    (out / "zone-1429").mkdir()
+    (out / "zone-1429" / "far.png").write_bytes(b"far")
+    with contextlib.redirect_stdout(io.StringIO()) as told:
+        ml.status(SimpleNamespace(out=str(out), levels={"far"}))
+    check("status: the instances' paintings alone", told.getvalue().split("\n")[0], "1 of 1 paintings made (1 instances)")
 
 # --- An instance floor's map art ------------------------------------------------------------------
 

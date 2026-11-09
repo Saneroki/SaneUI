@@ -1,22 +1,22 @@
-# The fixed words of the Atlas, Navigation's painted map view (Doc/ideas/Navigation.md, *The painted view*).
+# The fixed words of the instance maps' close level (Doc/guides/map-style.md): each square of an instance's terrain
+# repainted, pixel-exact.
 #
-# dev/tools/atlas puts each square's words together from these, the zone briefs (zones.toml: the main zone's
-# colours and the quality of the light of its atmosphere) and what the game has in the square (its liquids).
-# The order: edit, the liquids, the colours and light, keep the colours, last. No sentence on the ground: the
-# ground cover, read from the textures' names, called Darkshore's forest floor sand, and the model painted sand
-# and water channels; the edit's "rock stays rock" keeps the ground.
+# dev/tools/map-squares puts each square's words together from these, the instance's brief (dungeons.toml: its
+# colours and the quality of the light of its atmosphere) and what the game has in the square (its liquids). The
+# order: edit, the liquids, the colours and light, keep the colours, last. No sentence on the ground: the ground
+# cover, read from the textures' names, called Darkshore's forest floor sand, and the model painted sand and water
+# channels; the edit's "rock stays rock" keeps the ground.
 #
-# Chosen in the Atlas lab (2026-10-19, eight hard places: Darnassus' branch, Thousand Needles, Ironforge's gate,
-# Booty Bay, the edge of Elwynn and Duskwood, the steepest squares of Elwynn, Redridge and Alterac): words of an
-# edit, not of a repaint. Asked to "repaint image 1 as a photorealistic render", with the zone's buildings and
-# features, the model invented villages on mountains, an elven island on Darnassus' bark and a lake in Redridge
-# (the layout held on 2 of 8 places); told what may change (how things look) and what never does (where and what
-# they are), it held on all eight, the mountains bare rock. Every square of the map must get the same: change
+# Chosen in a lab round on the continents' terrain (2026-10-19, eight hard places: Darnassus' branch, Thousand
+# Needles, Ironforge's gate, Booty Bay, the edge of Elwynn and Duskwood, the steepest squares of Elwynn, Redridge
+# and Alterac): words of an edit, not of a repaint. Asked to "repaint image 1 as a photorealistic render", with the
+# place's buildings and features, the model invented villages on mountains, an elven island on Darnassus' bark and
+# a lake in Redridge (the layout held on 2 of 8 places); told what may change (how things look) and what never does
+# (where and what they are), it held on all eight, the mountains bare rock. Every square must get the same: change
 # them only with a new lab round.
 
 # What may change and what never does.
 edit = "Make image 1 look like a photorealistic satellite photograph of exactly the same place, seen straight down. Change only how things look: their materials, textures, fine detail and light. Never change where or what anything is: every rock, cliff, mountain, slope, tree, bush, field, road, path, building, wall, bridge, shore and patch of colour stays exactly where it is, with the same shape, size and colour; rock stays rock, bark stays bark, grass stays grass."
-sea = "Make image 1 look like a photorealistic satellite photograph of exactly the same open sea, seen straight down. Change only how the water looks; every shore, rock and island stays exactly where it is."
 
 [words]
 # The liquids, as the game has them in the square: said always, also that there is no water (without it the
@@ -28,7 +28,7 @@ dry = "There is no water anywhere in this picture: dark ground, hollows, furrows
 # Glowing, never smoking: "smoking" drew a cloud of smoke over Burning Steppes' lava fields.
 lava = "The flat bright orange areas of image 1 are molten lava, glowing hot; the red glowing cracks in the rock are lava too."
 slime = "The flat green pools of image 1 are thick toxic slime."
-# After the zone's light (its quality only: its clauses about colour or haze are left out, they bleached Badlands
+# After the place's light (its quality only: its clauses about colour or haze are left out, they bleached Badlands
 # beige, turned Felwood's sea green and Teldrassil's violet, and drew steam clouds over Stranglethorn).
 keep_colours = "Keep the colours of image 1 as they are; the light only warms or cools them a little. No clouds, fog, mist or smoke over the ground."
 # Last: nothing added, nothing taken away, no text.

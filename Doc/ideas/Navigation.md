@@ -60,7 +60,7 @@ One window on Core's window system, behaving like the Social module's chat windo
 
 ## Forever's own world, Retail's own maps (Saneroki, 2026-10-25)
 
-The map differs per game. **WoW: Forever** keeps the custom map of this plan: our own tiles, Scrying, the Atlas,
+The map differs per game. **WoW: Forever** keeps the custom map of this plan: our own tiles, Scrying,
 one world to roam freely, without right clicks. **Retail** shows its maps as the game's own map does: its map tree,
 one map at a time (a zone, its continent, Azeroth, the Cosmic map of every world), each with its own art and its
 layers; a click goes into the map under the mouse, a right click up to the map over it, the wheel zooms within the
@@ -125,132 +125,52 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **One map of the world (Saneroki, 2026-10-19):** both continents are visible at every zoom; the world and
   continent maps are our own, stitched from Blizzard's zone maps, their edges fading softly into each other so
   the whole reads as one coherent map. The view *Blizzard maps* is called **Sketches**: a hand-drawn world.
-- **A painted third view (Saneroki, 2026-10-19, replacing *a reinterpretation* of the same day):** Sketches and
-  Terrain stay exactly as they are; Blizzard's art and the game's terrain are not redrawn. The local image
-  models paint a **third view of its own** instead of Overlay: one coherent map of the whole world, as by one
-  hand, made from Sketches, Terrain and what the game's files say lies where (roads, buildings, the ground,
-  the places' names) and the zones' briefs (their peoples, biomes and buildings). It looks like painted art, not
-  like a screen capture of the terrain, and still shows clearly where the buildings and the roads are; the
-  roads stand out above all, and the gates and buildings of Stormwind and Orgrimmar must be right.
 - **The views' names (Saneroki, 2026-10-19):** immersive and true to the world, never technical words on the
-  buttons: **Parchment** (Blizzard's maps, was *Sketches*), **Scrying** (the terrain), **Atlas** (the painted view).
-- **Atlas, a module of its own; Overlay gone (Saneroki, 2026-10-19):** the painted view's art is the addon
-  `SaneUI_Atlas` (`src/Atlas/`), loaded on demand. Navigation finds it at login without loading it: installed and
-  switched on, the map offers **Parchment, Scrying, Atlas**; not found, **Parchment and Scrying**. The view
-  *Overlay* is gone (its button, its choice, its code); the default view is Scrying (since 2026-10-30 Atlas, *The
-  first view*), and a saved view that is not offered (Overlay, or Atlas without its module) falls back to it. The code's keys: `sketches`, `terrain`, `atlas`.
-- **Life on the sea (Saneroki, 2026-10-19):** in the painted view the Maelstrom turns between the continents,
-  and ships, giant turtles, sea dragons and squids roam the water, each a short looped animation, seen on the
-  world map.
-- **Close up and far out (Saneroki, 2026-10-19):** the painted view holds its quality and small details from a
-  single building up close to the whole world far out: many small detailed pictures stitched together like the
-  game's own tiles, with coarser levels for the far views, so it stays sharp up close and light on the whole world.
-- **Zones and continents reimagined (Saneroki, 2026-10-21, replacing for the middle and far zooms "the far
-  levels are made from the close ones" below):** the close zooms are unchanged: the accurate terrain
-  repainted, square by square, as built (*The lab*, *The whole run*). The middle zoom (a whole zone) and the far zoom (the world) are a
-  free, realistic fantasy painting of each zone by the image model: very cool to look at, the zone's mood and
-  lore, its general layout and its major places (cities, landmarks, the great mountains, lakes and forests)
-  where they lie, the game's own buildings and looks of the zone fed to the model as reference pictures of its
-  3D world. They need not be accurate or useful for finding one's way, and need not be seen from straight
-  above: a perspective angle is welcome, for the full freedom of the render. The zones' borders fit together,
-  each zone clearly sectioned from the next, so the world reads as one picture. Parchment and Scrying keep
-  their own views unchanged. Open: the switch-over zoom between the close squares and the zone paintings. (How the
-  zone paintings meet: painted per zone, from straight above, and joined along the zones' outlines; below.)
-  - **All three from straight above, the zones stitched (Saneroki, 2026-10-22; replacing the far zoom's view from
-    a plane at an angle, and answering the open question above):** every level is seen straight from above in the
-    same world coordinates, so the three lie over each other: every road, major place and pin is in the same spot
-    in each, and one sees where one is in every view. Each zone is painted on its own (its middle and far levels in
-    its own frame, 2048 pixels across) and the zones are joined along their outlines into the world
-    (`dev/tools/map-layers stitch`, cut by Navigation's zone masks); no continent or world is painted as a whole.
-    Each zone keeps its own mood, colours and light by its brief at the far level too; the middle level's
-    parchment is each zone's own colour (greenish, yellowish, reddish, whitish by what the zone is: its land's
-    colour turned into the game maps' yellow-orange).
-  - **Strict maps, all three (Saneroki, 2026-10-21, last of the day; replacing the free paintings of this
-    decision and the angled middle zoom below):** the close zoom the terrain, pixel-exact; the middle zoom a
-    top-down map in Blizzard's style, in pencil on the interface's parchment, exactly over the terrain, looking much
-    like the game's own maps (which are its input); the far zoom a photorealistic aerial render with a very strict
-    harness: outlines, locations, biome, mood, atmosphere, lore and layout fitting the zones, the continent and the
-    dungeons, not exact but with the major places (cities, landmarks) where they lie in the zone or instance, its
-    borders and walls kept. Not free, creative concept art. One pipeline for zones and instances
-    (`dev/tools/map-layers`, `Doc/guides/map-style.md`).
-  - **The three levels' looks (Saneroki, 2026-10-21, later the same day; for the middle zoom replacing the free
-    painting above; since made stricter, above):** the close zoom is the terrain, pixel-exact; the middle zoom is not drawn by code and not a
-    free painting but rendered as a beautiful hand-drawn map in pencil on paper, in the interface's own paper and
-    pencil (`Doc/guides/interface-style.md`), very strict: every wall, edge and walkable area traced exactly along
-    the terrain map. The world's middle zoom keeps its perspective angle; an instance's is seen straight from
-    above, in the floor's own frame, so it lies under the close zoom as its ground wherever the terrain has nothing
-    to show (rather than black or paper, Saneroki); the far zoom is the free, realistic reimagination
-    described here. Text, pins, the bosses' 3D models and every other mark are overlays drawn by code; the
-    paintings are only the ground. The same three looks for the instance maps (*Instance maps as the world map,
-    apart from it*). The style guide: `Doc/guides/map-style.md`.
-  - **Three levels, no continent view (Saneroki, 2026-10-21):** the Atlas has only the terrain (close), the
-    zone (middle) and the world (far); the world always shows both continents together, never one continent on
-    its own. Only Scrying and Parchment have Blizzard's zone and continent maps and controls (the breadcrumb's
-    continent and zone menus).
-  - **One smooth world (Saneroki, 2026-10-21):** the Atlas is one continuous world; the wheel zooms smoothly
-    from the terrain through the zone paintings out to the world, the map's style blending from one level into
-    the next as it goes, never a step or a jump. No right-click steps out a level (*Open questions*, 8).
-  - **Middle and far differ (Saneroki, 2026-10-21):** the middle zoom (a whole zone) shows the zone's major places:
-    each city, landmark and great feature clearly where it lies (in the pencil drawing, exactly along the terrain:
-    *The three levels' looks*). The far zoom
-    (the world) is a realistic render of each zone with only a loose idea of its major places,
-    the land and its mood first.
-  - **No pins far out (Saneroki, 2026-10-21):** the middle and far zooms show no pins; pins are the close,
-    accurate terrain view's.
-  - **No names in the paintings:** the renders show no text. Names are an interactive overlay drawn by code,
-    each kind its own switch: the zones' names and their major places' names on the zone and world views;
-    on the world view, per zone, its level range (its enemies and its quests) and the skill it is meant for in
-    fishing, herbalism and mining.
-  - **Soft borders:** a zone's outline follows the game's only in general, never pixel by pixel, with natural
-    transitions into the next: the game's harsh, straight lines and abrupt changes of biome are softened and
-    made realistic.
-  - **Lore over the open map:** where the game's zone is a cut-open view, the far zoom shows what stands there
-    in the lore, while the middle zoom keeps the open view: Teldrassil and Darnassus the world tree itself, not
-    its open crown; Ironforge an imagined open mountain with the city inside in the middle zoom, and the
-    realistic full mountain landscape far out. The same for the other places under the ground or under a roof.
-- **Dungeon, instance and raid maps in three zooms (Saneroki, 2026-10-21), as the world map:**
-  - **close up:** the accurate terrain of the instance repainted, pixel-exact, as the Atlas' close squares;
+  buttons: **Parchment** (Blizzard's maps, was *Sketches*), **Scrying** (the terrain), and **Blended** between them.
+- **Overlay gone (Saneroki, 2026-10-19):** the view *Overlay* is gone (its button, its choice, its code); the
+  default view is Scrying, and a saved view that is not offered falls back to it. The code's keys: `sketches`,
+  `blend`, `terrain`.
+- **The Atlas gone (Saneroki, 2026-11-09):** "Completly remove the entire Navigation: Atlas system and images. It
+  has to many disadvangages without much benefit." The painted world, the third view *Atlas* (2026-10-19 to
+  2026-11-09: the module `SaneUI_Atlas`, the world's painted squares, the zones' paintings and the world's tiles,
+  their tools, jobs and 3.4 GB of art), is gone; a saved *Atlas* falls back to Scrying. The painted instance maps
+  stay (his pick the same day): *Dungeon, instance and raid maps in three zooms*. Its plan is in git's history.
+- **Dungeon, instance and raid maps in three zooms (Saneroki, 2026-10-21):**
+  - **close up:** the accurate terrain of the instance repainted, pixel-exact, in squares;
   - **in between:** the rooms, corridors and walls exact in their shapes and sizes, so it is useful in the game.
-    First planned as a clean map drawn by code; since (Saneroki, 2026-10-21) rendered as the world's middle zoom
-    is: a top-down map in the manner of the game's dungeon maps, in pencil on parchment, exactly over the
-    instance's terrain, the ground the close zoom lies over;
+    First planned as a clean map drawn by code; since (Saneroki, 2026-10-21) rendered: a top-down map in the
+    manner of the game's dungeon maps, in pencil on parchment, exactly over the instance's terrain, the ground the
+    close zoom lies over;
   - **zoomed out fully:** the instance as a whole, a photorealistic aerial render with its layout, halls and rooms
     where they lie (first planned as a free reimagination; made strict, Saneroki, 2026-10-21).
+  - **Strict maps, all three (Saneroki, 2026-10-21, last of the day):** the close zoom the terrain, pixel-exact; the
+    middle zoom a top-down map in Blizzard's style, in pencil on parchment, exactly over the terrain, looking much
+    like the game's own maps (which are its input); the far zoom a photorealistic aerial render with a very strict
+    harness: outlines, biome, mood, atmosphere, lore and layout fitting the instance, its major places where they
+    lie, its walls kept. Not free, creative concept art. The style guide: `Doc/guides/map-style.md`.
+  - **All three from straight above (Saneroki, 2026-10-22):** every level seen straight from above in the same world
+    coordinates, so the three lie over each other: every room, boss and pin in the same spot in each.
+  - **The middle under the close (Saneroki, 2026-10-21):** a floor's middle map, in the floor's own frame, lies under
+    the close zoom as its ground wherever the terrain has nothing to show, rather than black or paper.
+  - **No names in the paintings:** the renders show no text. Text, pins, the bosses' 3D models and every other mark
+    are overlays drawn by code; the paintings are only the ground.
 
-  Made after the zones. **The pipeline (2026-10-21):** `dev/tools/map-layers`, for zones and instances alike: an
-  instance's terrain is its own map's tiles with the indoor maps of the buildings they place (extracted from the
-  install into a folder of its own), painted at the close level by the Atlas' own code; its floors' middle maps
-  from that terrain and the game's map art in the same frame; its far render from the terrain seen from a plane
-  (a zone's with its heights standing up and the walking data's water, held by controls; 2026-10-22), and the
-  close painting; each middle and far painting checked for its outlines and by a vision model. The briefs are
+  **The pipeline (2026-10-21):** `dev/tools/map-layers`: an instance's terrain is its own map's tiles with the
+  indoor maps of the buildings they place (extracted from the install into a folder of its own), painted at the
+  close level in squares (`dev/tools/map-squares`, the words `close.toml`); its floors' middle maps from that terrain
+  and the game's map art in the same frame; its far render from its plan and the close painting, held by its
+  plan's edges; each middle and far painting checked for its outlines and by a vision model. The briefs are
   `dev/imagegen/maps/dungeons.toml` (30 instances, researched from the game's lore texts and pictures and from
-  play) and `zones.toml`; the shared words `levels.toml`. Samples painted (2026-10-21): Westfall and Tanaris, the
-  Deadmines, Zul'Farrak and the Hall of Thanes, all three levels; the Eastern Kingdoms and Kalimdor whole, middle
-  and far at an angle (2026-10-22, given up); then from straight above, each zone on its own, Westfall joined with
-  Elwynn Forest and Duskwood (`stitch`); Duskwood, Ashenvale, the Deadmines and the Hall of Thanes compared with
-  the game's terrain and maps, layer over layer.
-  - **The world map of high resolution tiles (Saneroki, 2026-10-22, replacing for now the close and middle levels
-    and their jobs):** the far renders are so precise that the world map is made of them: every terrain tile of
-    the Atlas' grid painted with the far harness at 2048 pixels (3.84 a yard, eight times the game's minimap) for
-    the closest zoom, the squares joined into one world; the final tiles of the game's map. Coarse to fine
-    (`map-layers tiles`): each square's colour and light from the zones' far renders over it, its shapes from the
-    game's terrain, its heights and water lines the controls, its zone's words, so neighbours share their light.
-    The water dark blue, dark blue-green in the shallows (the bright blue stood out). The GPU job `worldtiles`
-    (priority 10): the zones' far renders, then the 1456 squares of land. The instances: one large far render
-    each, once the new game build's tables are in (1.60.1.70532 is installed; their terrain is extracted by build).
-  - **The world map offline (Saneroki, 2026-10-22):** `dev/tools/world-map` (`saneui makeworldmap`,
-    `showworldmap`): every layer laid where the game lays it and stacked in a web page, a slider each, from a whole
-    continent down to the finest blocks: the game's terrain and zone maps, our zone renders and maps, our tiles
-    packed by the Atlas' own pack, the Atlas' pack read by the Atlas module itself under Lua 5.1; the instances.
-    For refining the world map outside the game.
-- **Instance maps as the world map, apart from it (Saneroki, 2026-10-21):** the instance maps are completely
-  independent of the world map and separate from it (their own view, data, pictures, packs and jobs; never part of
-  the world's picture), but they work in the same way and are made in the same way: the same three levels, one
-  smooth zoom through them, the same render pipeline, words, ComfyUI tools and terrain cleanups as the world map's
-  layers (its softening, check against the game's water and lava, colour pass, pixels a yard, outlines clear
-  around), so they are coherent with it in style and precision. The words they share are in
-  `dev/imagegen/maps/levels.toml`; the briefs have the zone briefs' fields (`dungeons.toml`, `zones.toml`).
-  Their own rules stay (*Instance maps keep rules of their own*: no players, the bosses in 3D in every zoom).
+  play); the shared words `levels.toml`. Samples painted (2026-10-21): the Deadmines, Zul'Farrak and the Hall of
+  Thanes, all three levels; the GPU job `instancemaps` (priority 2): one large far render each (30 of 30 made).
+  Compared with the game's terrain and maps, layer over layer, on the page *maps compared* (`saneui showmaps`).
+- **Instance maps, apart from the world map (Saneroki, 2026-10-21):** the instance maps are completely
+  independent of the world map and separate from it (their own view, data, pictures, packs and jobs): three
+  levels, one smooth zoom through them, one render pipeline, words, ComfyUI tools and terrain cleanups for every
+  instance (the softening, the check against the game's water and lava, the colour pass, pixels a yard, outlines
+  clear around), so they are coherent in style and precision. (They were made as the painted world's were, until
+  it went, 2026-11-09.) The words they share are in `dev/imagegen/maps/levels.toml`, the briefs in
+  `dungeons.toml`. Their own rules stay (*Instance maps keep rules of their own*: no players, the bosses in 3D in every zoom).
 - **Dungeon maps now, with their bosses (Saneroki, 2026-10-20 and 21):** until the three zooms are made, every
   dungeon and raid (only those, no other instances) has a map in Blizzard's style: the game's own map art of it,
   floor by floor (Forever's client has none, so Core's set *Dungeons* holds them, from Blizzard's own tables; the
@@ -276,17 +196,11 @@ minimap) and the full-screen window (the world map) show the same map with the s
   game counts as outdoors (Ironforge under its mountain, the Undercity, Timbermaw Hold, Booty Bay's tunnel), the
   indoor map lies over the zone's map as in any building, never the mountain or the ruins over them. Told by the
   game's minimap, which shows its indoor plan there (`Live.Indoors`).
-- **Soft zone edges, exact inside (Saneroki, 2026-10-21):** the close terrain view stays as accurate as planned,
-  down to the tiniest walkable places. Only the outermost outline of a zone, and only where the player cannot
-  go (the mountains between zones, the edge of the world), is blended into a natural transition instead of the
-  game's pixel-exact edge of the zone's terrain. Everything the player can walk or swim stays pixel-exact:
-  every coast and shore into the water, piers, docks and bridges, and every pass from one zone into the next;
-  nothing inside the zone is softened or moved.
-- **Scrying and Parchment stay exact (Saneroki, 2026-10-21):** the soft borders and every reimagination are the
-  painted Atlas' alone. Scrying (the terrain) and Parchment (Blizzard's maps) keep drawing the game's own files
-  pixel for pixel, only cut so that neighbouring zones do not overlap, as they are built now.
-- **A size budget (Saneroki, 2026-10-21):** before the big runs, each map pack's size is reckoned (the Atlas'
-  close squares, the zone and continent paintings, the three zooms of every dungeon), for the player's disk, its
+- **Scrying and Parchment stay exact (Saneroki, 2026-10-21):** Scrying (the terrain) and Parchment (Blizzard's
+  maps) keep drawing the game's own files pixel for pixel, only cut so that neighbouring zones do not overlap, as
+  they are built now.
+- **A size budget (Saneroki, 2026-10-21):** before the big runs, each map pack's size is reckoned (the three
+  zooms of every dungeon), for the player's disk, its
   memory and loading in the game, and Git LFS's space. That decides each level's pixels a tile, what loads only
   on demand and in which pack, and what is committed (only the chosen art, *Workflow*).
 - **Stale paintings after a game update (Saneroki, 2026-10-21):** when a new Forever build changes the land
@@ -294,7 +208,7 @@ minimap) and the full-screen window (the world map) show the same map with the s
   painted from (to be built: today `dev/tools/blizzard` compares only the interface) names the tiles and indoor
   maps that changed; the paintings made from them are marked stale and only those go to the GPU
   runner to be painted again (and into the review queue), never the whole map.
-- **A review queue (Saneroki, 2026-10-21):** finished paintings (the Atlas' squares, the zones', the dungeons')
+- **A review queue (Saneroki, 2026-10-21):** finished paintings (the dungeons')
   go into a queue to review: a contact sheet where each is taken or sent back to be painted again, after the
   automatic checks (the game's water and lava). The GPU runner (`dev/tools/gpu-runner`) paints what is sent
   back; only what is taken goes into the packs and, once chosen, into Git.
@@ -308,43 +222,18 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Entrances and ways out are pins (Saneroki, 2026-10-19, replacing the same day's ask to paint them):** caves,
   mines, the entrances of dungeons and raids and the ways from one zone into the next are shown by map pins, not
   painted into the view.
-- **The look: a photorealistic render (Saneroki, 2026-10-19, after the five styles below):** a modern game
-  engine's render of the land seen from straight above, a mix of detail and a precision a map can use. Within
-  that one look **every zone has its own atmosphere**, from its lore: its light, air and colours and the state
-  of what stands there (the volcano's land volatile, smouldering and dangerous; Stormwind and its farmland
-  bright, safe and friendly; the haunted wood a cold dusk), and the buildings, roads and places stay exactly
-  where the terrain has them.
 - **Only what the game has (Saneroki, 2026-10-19):** what the originals (the game's terrain and files) show is
   painted, nothing more: the model put water around Blackrock Mountain, where there is ash and lava. So the
   words of a square say what the game has in it (its water, lava and slime, its ground), never a zone's
   features that lie elsewhere, and every painting is checked against the game's water and lava before it is
   taken.
-- **Faithful above all: what cannot be walked looks it (Saneroki, 2026-10-19):** the painted view shows the world
+- **Faithful above all: what cannot be walked looks it (Saneroki, 2026-10-19):** a painted map shows the place
   as the game has it, nothing added: no lake, village or forest where the terrain has none. Above all a mountain
   stays a mountain: where the terrain is too steep to walk, the painting shows bare rock and cliffs, so a player
-  sees at once that the way is closed (a forest says "you can walk here"). Found and measured in the Atlas lab
-  (*The lab* below), and kept by its words.
-- **Three times closer (Saneroki, 2026-10-19):** the painted view zooms about three times closer than the map
-  does now, single buildings large; zoomed out it is the same pictures, smaller. Quality before speed, but all of
-  it made within a couple of days on this computer.
-- **Full detail, 4x (Saneroki, 2026-10-19):** the finest level at 2048 pixels a tile, four times the terrain's
-  detail (*Size* below).
-- **Dark zones stay dark (Saneroki, 2026-10-19):** a zone as dark as the game has it (Duskwood's endless dusk)
-  is painted that dark; its atmosphere is not brightened for the map's sake.
-- **The look before: on the terrain, its style open (Saneroki, 2026-10-19):** of the five looks of the first pilot,
-  *stylised game art* (bold, saturated colours, chunky trees, painted rocks, glossy water) came first; painted
-  on the terrain close up it felt too cartoonish, like pixel art. Wanted: a rough, old, grimy, realistic look that
-  stays true to the old World of Warcraft; five different styles on four subjects to choose from
-  (`dev/imagegen/sets/maps-styles/`: grimy realism, the original game's painted textures, high-fantasy matte
-  painting, an old oil painting, a photorealistic render; tried 2026-10-19: all five keep the layout up close; the
-  whole world painted in one picture drew the continents larger than they are, so the far levels are made
-  from the close ones, never painted on their own; since 2026-10-21 only the close levels, *Zones and
-  continents reimagined*). The **terrain is the base**: the painted view is the terrain repainted in that look, every building, street,
-  tree and shore where the terrain has it, so it serves as the map of one's close vicinity, zoomed in as close as
-  the minimap, single buildings clear. The painted continent maps of the pilot work only far out.
+  sees at once that the way is closed (a forest says "you can walk here"); kept by the close level's words.
 - **Routes, later (Saneroki, 2026-10-19):** flight paths, and the ships' routes as a red dotted line, shown when
   one takes a ship or looks the routes up, the dots running from one harbour to the other. They are interactive
-  parts of the map, drawn by code, never painted into the view's pictures. Not now: after the painted view.
+  parts of the map, drawn by code. Not now.
 - **The map moves with its window (Saneroki, 2026-10-19):** on the way to the full screen and back the map grows
   and zooms with the window, not hidden and shown; Core's windows let what they hold go with the motion.
 - **Follows the player:** when the player moves, the map centres on the player.
@@ -362,8 +251,8 @@ minimap) and the full-screen window (the world map) show the same map with the s
   not: the game's minimap is the map there.
 - **The first view (Saneroki, 2026-10-30; built):** "The default map view should be atlas if available otherwise
   scrying and in retail, since there is only one mode it is the default one and no "mode button" is showin on the
-  fullscreen." Atlas where it can be drawn, else Scrying, else Parchment (`ns.FirstView`). One view alone: no buttons
-  on the bar and no setting (`ns.Several`).
+  fullscreen." Atlas where it can be drawn, else Scrying, else Parchment. One view alone: no buttons on the bar and no
+  setting (`ns.Several`). Since the Atlas went (2026-11-09): Scrying, else Parchment (`ns.Fallback`).
 - **Pings as on the game's minimap (Saneroki, 2026-10-23; built):** a click on our map pings the place to the party
   and raid through the game's own ping (`Minimap:PingLocation`, the one ping the game has: Forever's client loads no
   ping wheel), so members see it on their minimaps as if the game's minimap was clicked. The game pings only inside
@@ -438,8 +327,7 @@ When the window fills the screen:
   - **Three view buttons** next to the dropdown:
     1. **Sketches:** Blizzard's own map art (was *Blizzard maps*).
     2. **Terrain:** the terrain render.
-    3. **Overlay:** the terrain, with the Blizzard maps drawn over it at 50% transparency; to be replaced by the
-       painted view once its art is made (*A painted third view*).
+    3. **Overlay:** the terrain, with the Blizzard maps drawn over it at 50% transparency (gone, 2026-10-19).
 
   The Blizzard maps and the terrain must fit together exactly: the Blizzard map of Stormwind lies on
   Stormwind and its places in the terrain.
@@ -485,7 +373,7 @@ When the window fills the screen:
 - Every pin type can be switched on and off with the pin filter (see *Full screen*). The quest areas on the
   minimap have a switch of their own, off at first (Saneroki, 2026-11-09: no blue area and white ring there).
 - **Always on top (Saneroki, 2026-10-20):** pins, quest areas, the route and every other notation on the map
-  stand over the map in every view and at every zoom, never behind it (the painted Atlas, the art, the terrain,
+  stand over the map in every view and at every zoom, never behind it (the art, the terrain,
   the game's minimap all lie under them).
 
 ## Our own data
@@ -751,7 +639,6 @@ guide), and these for Navigation in particular:
 | `Canvas.lua` | The canvas frame: holder, layers, input (drag, wheel, clicks), the per-frame step | yes |
 | `Terrain.lua` | The terrain layer: tiles in view, pooled | yes |
 | `Art.lua` | Blizzard's map art, explored areas, cut to the zones' outlines (the view Parchment) | yes |
-| `Painted.lua` | The view Atlas: the module `SaneUI_Atlas` found, loaded when first drawn, its blocks by zoom | yes |
 | `PinView.lua` | The pin layer: pin buttons, clusters, tooltips | yes |
 | `Areas.lua` | Quest areas, spawn areas, patrol paths | yes |
 | `Hybrid.lua` | The native `Minimap` in the small view, and back | yes |
@@ -888,7 +775,7 @@ Three spaces, converted only in `Coords.lua`:
   map last), as Blizzard's map shows it. Explored areas from `C_MapExplorationInfo.GetExploredMapTextures`
   (each overlay cut into the layer's tiles, as Blizzard's provider does).
 - **Terrain view:** terrain only; far out, Blizzard's art (the same switch-over as in *Terrain*).
-- **Overlay view (gone, Saneroki, 2026-10-19: the Atlas takes its place):** the terrain, with each zone in view drawn over it at 50 %, **cut to its zone**, so
+- **Overlay view (gone, Saneroki, 2026-10-19):** the terrain, with each zone in view drawn over it at 50 %, **cut to its zone**, so
   the parchment edge of one zone map does not cover the next. The cut is a mask on the zone's art tiles
   (one mask region over the zone's world box, added to each of its tiles: a mask works in screen space;
   `MaskTexture` ignores texture coordinates). Where the mask comes from, in order:
@@ -916,175 +803,6 @@ Three spaces, converted only in `Coords.lua`:
   Stormwind. Painted art is not exact to the yard; that is accepted.
 - **Exceptions** with their own handling: a city under the ground (Undercity) has no terrain; a map
   whose box cannot be read is shown alone.
-
-### The painted view (planned)
-
-The third view (*A painted third view*), made by the local image models beside the game and shipped as art in
-blocks like the terrain's, so the map draws it the way it draws the others.
-
-- **The module (built 2026-10-19, *Atlas, a module of its own*):** `SaneUI_Atlas`, `## LoadOnDemand: 1`, every level in
-  the one addon, Core its only dependency. `src/Atlas/` holds its code only (TOC, `Atlas.lua`, README); its art and index are made by
-  `dev/tools/atlas` into `assets/optimized/Atlas/` (`Art/`, `Index.lua`), and `dev/build` builds the addon from
-  both, only once the index is there (no art made, no module: the map shows two views). Navigation's `Painted.lua`
-  finds it at login (`C_AddOns.GetAddOnInfo` and `GetAddOnEnableState`: there, switched on for this character,
-  loadable), loads it the first time the view is drawn (`C_AddOns.LoadAddOn`, guarded) and reads it as
-  `SaneUI.Atlas`; if it cannot be loaded or stands down, the button and the choice go and the view falls back
-  to Scrying, the problem kept as every other.
-- **The format (fixed, 2026-10-19):** blocks of 512 x 512 pixels, BLP2 DXT1 with mipmaps, at
-  `Interface\AddOns\SaneUI_Atlas\Art\<continent>\<level>\<row>_<col>.blp`, the continent the map's instance
-  (0, 1). Level 0 is the finest, 2048 pixels a tile, a block a quarter tile (`TILE / 4` yards); a block of
-  level L spans `TILE / 4 * 2^L` yards; levels 0 to `levels - 1`. Row and column as the terrain's tiles, from
-  the north-west corner of the 64 x 64 grid: `column = floor((HALF - y) / span)`, `row = floor((HALF - x) /
-  span)`, `HALF = 32 * TILE`, `x`, `y` the world's yards. `Index.lua`: `ns.INDEX = { levels = n, [continent] =
-  { [level] = { [row] = "c,c,a-b" } } }`, the columns of a row that have a block; a block not listed is not there
-  (open sea, or not painted yet), and the terrain shows through.
-- **Drawn (built 2026-10-19):** the terrain exactly as Scrying, the blocks over it from the canvas' pool, with the
-  same margin: the coarsest level whose art still has as many pixels a yard as the screen shows (each continent
-  at its own scale on the screen), never finer than 0, and the next coarser level under it; past 400 blocks of a
-  level a continent (a long way of the window) a coarser one. The nearest zoom is three times the others' (6
-  units a yard, `Camera.Near`); the game's minimap's steps work as before.
-
-- **What the models get** (*The look*, *Only what the game has*, *Faithful above all*): the continents cut into
-  squares of one tile that overlap by an eighth; for each, the terrain of that square as the one picture (its
-  layout and everything on it, kept; the minimap textures softened a little first, or their fine dot pattern
-  comes back in the painting; the game's water made flat dark navy, but not what stands in it, piers, stilt
-  houses, bridges, domes and ice: a flat sheet over Booty Bay's boardwalk had erased it before the model saw it),
-  and **words of an edit, not of a repaint** (`dev/imagegen/maps/atlas.toml`): make image 1 look like a
-  photorealistic satellite photograph of exactly the same place; change only how things look; never where or what
-  anything is, rock stays rock, bark stays bark; then its liquids as the game has them ("the flat dark navy areas
-  are water, nowhere else"; under 1 % "only a little water, its few small patches"; or "there is no water anywhere
-  in this picture"; "the flat bright orange areas are molten lava, glowing hot", never smoking: that drew a cloud
-  of smoke over Burning Steppes), its main zone's colours and the quality of its
-  light (the first sentence of its atmosphere without its clauses about colour or haze: those bleached Badlands
-  beige, turned Felwood's sea green and Teldrassil's violet and drew steam clouds over Stranglethorn), "keep the
-  colours of image 1; no clouds, fog, mist or smoke over the ground", and "add nothing and remove nothing". No
-  sentence on the ground: the ground cover, read from the textures' names, called Darkshore's forest floor sand,
-  and the model painted sand and channels. Never a zone's buildings, plants, places or props: the model painted orc
-  forts, tents and pines from them into a square of empty ash. The minimap textures are softened by 2 pixels
-  first (`SOFTEN`; at 0.8 their dot pattern came back as a grid in the rock and suggested a lake by Stormwind's
-  cathedral). A picture of the look as a second reference did not work: it showed the same city from further out,
-  and the model painted that instead.
-- **The lab** (2026-10-19, `assets/generated/atlas-lab/`: 26 hard places painted by every method and scored
-  against the game: the coarse and fine layout, the colour, the relief against the hillshade of the real
-  heights, the share of ground too steep to walk painted green, the water added and lost):
-  - "Repaint image 1 as a photorealistic render" with the zone's words: the layout held on 2 of 8 places; it
-    built a village with fields on Elwynn's mountains, an elven island on Darnassus' bark, a lake in Redridge.
-  - Starting from the terrain (img2img): either the minimap barely changed, blur and all, or, from a denoise
-    of 0.97 up, the same as a repaint (the sampler counts in whole steps: `int(25 / 0.97)` is 25, nothing kept).
-  - The Qwen-Image 2.1 Fun ControlNet: on the heights as depth, meadows over the mountains (it learnt depth
-    from photographs at an angle); on the terrain's grey, the layout held but the colours went (bark grey or
-    green), at 6.5 minutes a picture; on 12 GB of video memory too slow for the world.
-  - FLUX.2 [klein] (33 s a picture at 2048): just as inventive (lakes and houses in Redridge, water lost at
-    Booty Bay); FLUX.2 [dev] not needed after the edit words.
-  - The terrain shaded by its heights with words about steep ground: a new valley of its own. The game's own
-    ground textures laid into the minimap (sharper): helped FLUX.2, not needed by the edit words.
-  - **Words of an edit:** the layout held on 8 of 8, the mountains bare rock (Elwynn's steep ground painted green
-    5 %, the game 2 %, the repaint 31 %), Darnassus' bark, bridge and dome in place, Booty Bay's bay and town,
-    photorealistic; with the zone's colours and light also its colours (Thousand Needles' sandstone, not grey).
-  - Then on all 26 places (`final`): the layout held on all of them (coarse 0.94, fine 0.88 on average; the repaint
-    words 0.46 and 0.29), one stray lake caught by the check; and the light's colour clauses left out (round 7):
-    the colours closer to the game's on 9 places (109 against 126), the layout a little better.
-  - The whole zones painted as one picture each, and both continents in pieces placed as the world map places
-    them (`assets/generated/atlas-looks/`): the layouts held, the mountains bright rock; the open sea painted by
-    the model grew land and showed each piece's blue, so far out the open sea is made by code (one even blue,
-    blending into the painted shallows near the coasts).
-  - Built from the game's data alone (the ground from its own textures, the tiling broken up, water by its real
-    depth, the minimap's buildings and trees enlarged by an upscaling model): faithful by construction, but soft
-    and game-like; kept as the way to fall back on.
-  - The game's own textures without their repeats (Saneroki's idea, 2026-10-20): each ground texture laid 8 by 8
-    times and painted by the edit model as one patch of the same ground (21 seconds each, all 421 in about two
-    and a half hours). The repeats go and the materials stay, except Darnassus' bark (painted as pebbles; its
-    planks are drawn by the blend maps, which keep them) and the game's two blank placeholder textures (left out).
-    The map built from them: the best fine layout and the game's colours, still game-like; painted over with the
-    edit words it drifts more than the chosen method (fine layout 0.82 against 0.90). Fixed on the way: texture
-    pieces placed by the continent, not the tile, and blend maps enlarged per tile, not per chunk (both drew
-    straight lines), heights interpolated smoothly and softened for the light (they drew stair steps).
-  - A blind check (2026-10-20): 24 squares drawn at random from the plan, both continents: every one faithful in
-    shape (layout on land 0.95, the hard places 0.98), 3 failing the water check (a lake painted dark teal; a
-    bluish forest and snow shadows taken for water), repainted by the run. One invention: on Loch Modan's blank
-    plateau beyond its mountains (one plain filler texture, out of the players' reach) a field and a row of pines
-    on a narrow ridge. A sentence that plain areas stay plain did not help. Next to try: where the game's data
-    says a chunk is that one plain filler, the map shows the game's own ground built from its data.
-- **Checked against the game:** every painting is compared with the game's water (its liquids, and the
-  speckled blue-grey the minimap draws for a city's canals) and lava: broad sheets of water where the game has
-  none, or of the game's water painted as land, fail it (a shore that strays a few yards does not), and the
-  square is painted again with another seed, the best of up to three kept. Water is bluish, smooth, in sheets
-  and bluer than the painting's own land, so a zone graded blue (Duskwood) and the blue shadows of snow are not
-  taken for it. Tried on the five styles and the ten zones: it failed every Blackrock with false water (up to 8%
-  of the picture), the pond added under Stormwind's hill and the sea square built over, and passed the rest.
-- **The guides** (`dev/tools/map-meta`, from the game's files): the roads (the ground textures of roads and
-  paving), the buildings' footprints as they stand, what covers the ground (meadow, forest floor, farmland,
-  sand, rock, snow, swamp, ash, blight), and the places by name with their positions (the terrain's areas, the
-  districts of the cities from the parts of their buildings, the flight masters, the entrances of dungeons and
-  raids, the caves and mines under the ground, the exits where a zone's roads meet the next zone's).
-- **Words without names:** the words describe what is where ("a village of half-timbered houses at the
-  crossroads", "a mine mouth in the hills at the bottom left") but name nothing, and image 2 is softened so its
-  labels cannot be read: in the pilot the model wrote every legible name into the picture, garbled.
-- **One map, not tiles** (seams): the same look words and sun everywhere, each zone's atmosphere changing only
-  where the zone does; every square painted on its own, and the overlaps (an eighth of a square, 67 yards) cut
-  along the line where the two paintings differ least, softened a few pixels to either side: a cut, not a
-  cross-fade, which would show two paintings of the same trees at once. A square with its painted neighbours
-  pasted into its edges (tried 2026-10-19, to carry their colours on) came back with a garish strip of flowers
-  at the wrong scale along the opposite edge, with or without words about it. Where the pilot shows
-  the model losing roads, the guide's roads are drawn back over the painting in its colours.
-- **The colour pass** (2026-10-20, `colour_of` in `dev/tools/atlas`): with the zone's light the model also paints
-  the zone's own colours, more in some zones than others (the whole zones painted as one: Badlands' orange pale
-  tan, Teldrassil's bark and forest violet, Burning Steppes' grey ash dark red). When the squares are joined,
-  each painting's broad colour (its hue and saturation averaged over 48 pixels, 12 yards) is moved toward the
-  game's, keeping a share of the model's own (`MOOD`, 0.5 until Saneroki chooses: at 0.3 the zones look much like
-  the game's colours, at 1 as painted); its brightness, fine detail and light are kept, so a dark zone stays dark
-  (*Dark zones stay dark*; the game's minimap is drawn without the zone's light, and moving brightness too
-  lightened Duskwood); its water is pulled toward the open sea's colour whatever the mood (the sea is one sea),
-  and halfway toward its brightness, so a dark zone's river stays darker than its land; its lava is left as
-  painted. The paintings on disk stay as painted, so the mood can be
-  changed without painting again (`join --mood`), and the same pull evens out neighbours painted a little apart,
-  so far out no patchwork shows. About a second a square.
-- **Levels of detail** (*Close up and far out*, *Three times closer*): the finest level is painted at 2048
-  pixels a tile (a quarter of a yard a pixel, four times the minimap textures), with the full model, one
-  square of one tile a picture (about two and a half minutes each): the model adds detail the terrain does not
-  have (a bridge's chains, the stones of a wall) and keeps the layout. Painting at 1024 and enlarging it with an
-  upscaling model (two tried, 2026-10-19) only sharpened what was there, the dot pattern too; the fast Turbo
-  model kept the layout but painted soft, flat rock. Every coarser level is made from the finest, as a pyramid
-  the map loads by zoom: only the tiles in view, at the level the zoom asks for; the map's nearest zoom
-  (`Camera.NEAR`) goes about three times closer in this view.
-- **The whole run** (`dev/tools/atlas paint`, in a terminal: a progress bar, the time left, `p` to pause and free
-  the graphics card for the game, `q` to quit; it goes on where it stopped): 1,112 tiles hold land (472 of the
-  Eastern Kingdoms, 640 of Kalimdor), 1,456 squares; with the squares painted again about 1,600 pictures, some
-  3 to 3.5 days on this computer, started only when Saneroki says so. The 612 tiles of open sea
-  are not painted by the model: their water is made by code from the sea floor's depth, in the look of the
-  painted shores.
-- **Size** (the 1,114 tiles with land, DXT1, the game's only kind of texture for this, with every coarser
-  level): 512 pixels a tile (1x) 0.19 GB, 1024 (2x) 0.78 GB, 2048 (4x) 3.1 GB, of which the finest level alone
-  is 2.3 GB; zipped for download hardly smaller (8 %). Seen side by side at the nearest zoom
-  (`assets/generated/maps-pilot/sheets/zoom/`, 2026-10-19): 1x blurred, 2x soft, 4x sharp down to single carts
-  and paving. 4x only where things are built saves little: 61 % of the land tiles hold buildings. Chosen: 4x
-  (*Full detail, 4x*); the art may come as two addons, the view up to 2x and the finest level as an addon of
-  its own, used when installed.
-- **Packed** (2026-10-20, `dev/tools/atlas pack`): each continent joined in strips of squares from the north (cut
-  where neighbours differ least, through the colour pass) and handed down the nine levels as it goes, a band of
-  512 rows at a time, so it is never whole in memory; each level halves the one below. A pixel is painted, open
-  sea (no square of the plan: the sea's one blue, made by code) or missing (land not painted yet); a block is
-  written where it holds painted ground and nothing is missing, so a map painted in part has no holes and open
-  sea alone makes no block. BLP2 DXT1 with mipmaps by ImageMagick (0.03 s a block), the index as `Index.lua`, in
-  `assets/optimized/Atlas/`, where `dev/build` takes them from.
-- **Light in the game at every zoom:** only the blocks in view are drawn (512 pixels, 128 KB each), from the
-  level the zoom asks for, so a 4K screen needs some 40 to 60 blocks at any zoom, a few MB of video memory,
-  whatever the package's size: the size costs disk, not frames. What costs frames is loading new blocks, so the
-  textures come from the canvas' pools, a frame loads only a few new blocks, the ring around the view and the
-  next level are loaded ahead, and the coarser level stays drawn under a finer one until it has loaded (never a
-  hole). The blocks are compressed by a fast encoder when the art is built (ImageMagick's careful one took
-  minutes for one tile).
-- **Routes** (*Routes, later*): the game's own paths of ships and zeppelins (its taxi paths of the transports)
-  and of flights.
-- **Life on the sea:** each creature and ship a small top-down sprite with a short looped flipbook
-  (`dev/tools/flipbook`), moved along paths over the open sea by code; the Maelstrom a painted whirl turned by
-  code, with a flipbook of foam.
-- **Order:** a pilot of five looks (`dev/imagegen/sets/maps-pilot/looks.txt`; chosen: stylised game art), then
-  the close-up pilot on the terrain (`close.txt`: Stormwind, Goldshire, Westfall's edge, Orgrimmar, Razor Hill,
-  and one tile at half a yard a pixel; tried 2026-10-19: the layout kept in 11 of 12 pictures, single houses,
-  canals and trees clear at both scales; one of Orgrimmar's painted water where the canyon has land); then both
-  continents; packing into the pyramid (`dev/tools/atlas join` stitches the squares; the levels, the blocks, the
-  colour pass and the index still to come); then the sea's life; then the routes.
 
 ### Maps without a world box
 
@@ -1391,14 +1109,14 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     (four blocks each) and its outline (`dev/tools/terrain-art --maps 2991`, the open sky around it cut away:
     *The open sky*), and its walking data (`dev/tools/walk-data --maps 2991`: 26 tiles with ground, the docks of
     both zeppelins on the island's own region). `Terrain.Overview`, Art's maps under the stitched map and
-    Painted draw every plane (`Coords.Planes`), so *Scrying* and *Atlas* show its terrain and *Parchment* its own
+    draw every plane (`Coords.Planes`), so *Scrying* shows its terrain and *Parchment* its own
     map, frame faded off, under its stitched map and, up close, its map cut to its outline over both (the maps
     under the stitched map have pool keys of their own, so one map can be drawn under it and over it).
     `--maps` leaves the other maps' files and lines as they are, so the continents' are not made again for the
     isle. Its minimap textures are the Forever beta client's, as the continents' were: the newer build (70450 over
     live's 70245, whose textures differ a little in many tiles; the isle's tiles and file IDs are the same in both),
     and the client the build installs into.
-  - **Not yet:** Zephras Isle's painting (the Atlas); a new route kept only when clearly better. Which side's town a
+  - **Not yet:** a new route kept only when clearly better. Which side's town a
     dock stands in is not in the client's tables (a town's guards are the server's); since 2026-10-21 a ship's side
     is its towns' by the flight masters near its docks (below, *the portals*).
 - **Built (2026-10-21): the lifts.** Saneroki: a route into the Undercity or up Thunder Bluff's mesas should walk to
@@ -2309,8 +2027,7 @@ Each with a proposal; what is not answered when its step comes is built as propo
    difficulty as small parts of our own around the small view; no addon buttons.
 7. **Window shape:** square (fits the docking window and the native minimap) or round? *Proposal:* square,
    with Core's round corners.
-8. Answered (Saneroki, 2026-10-21): no right-click to zoom out a level; the wheel alone zooms, and the Atlas is
-   one smooth world (*One smooth world*). **Right-click** as well as the wheel?
+8. Answered (Saneroki, 2026-10-21): no right-click to zoom out a level; the wheel alone zooms. **Right-click** as well as the wheel?
 9. **The game's own window button:** Navigation stands for two of the game's windows, but a window has one
    such button (window guide). *Proposal:* no button on the small window; in full screen the dropdown
    *Classic windows* lists both; the switches *Minimap* and *Map* on the page.

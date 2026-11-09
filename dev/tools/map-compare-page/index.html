@@ -120,18 +120,16 @@ function list() {
   if (!BUILT) return;
   const words = $("filter").value.trim().toLowerCase(), box = $("list");
   box.innerHTML = "";
-  for (const [kind, heading] of [["zone", "Zones"], ["instance", "Dungeons and raids"]]) {
-    const shown = MAPS.filter(m => m.kind === kind && m.title.toLowerCase().includes(words));
-    if (!shown.length) continue;
-    box.insertAdjacentHTML("beforeend", `<h2>${heading} (${shown.length})</h2>`);
-    for (const m of shown) {
-      const a = document.createElement("a");
-      a.href = "#" + m.name;
-      a.setAttribute("aria-current", map && m.name === map.name);
-      a.innerHTML = `<span class="title">${m.title}</span>` + ["close", "middle", "far"].map(l =>
-        `<span class="badge ${m.levels.includes(l) ? "" : "off"}" title="${l} level">${LETTER[l]}</span>`).join("");
-      box.appendChild(a);
-    }
+  const shown = MAPS.filter(m => m.kind === "instance" && m.title.toLowerCase().includes(words));
+  if (!shown.length) return;
+  box.insertAdjacentHTML("beforeend", `<h2>Dungeons and raids (${shown.length})</h2>`);
+  for (const m of shown) {
+    const a = document.createElement("a");
+    a.href = "#" + m.name;
+    a.setAttribute("aria-current", map && m.name === map.name);
+    a.innerHTML = `<span class="title">${m.title}</span>` + ["close", "middle", "far"].map(l =>
+      `<span class="badge ${m.levels.includes(l) ? "" : "off"}" title="${l} level">${LETTER[l]}</span>`).join("");
+    box.appendChild(a);
   }
 }
 
