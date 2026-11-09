@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map: the painted view Atlas is gone, with its module. The map
+  offers Parchment, Blended and Scrying, and starts as Scrying.
 - Edit tracked: Shows on now takes several places at once. Tick any
   of the aura bars, the health bars and the nameplates in its
   dropdown, which names them; the aura shows on each.

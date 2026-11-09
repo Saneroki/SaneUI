@@ -28,7 +28,6 @@ ns.Camera = Camera
 Camera.STEP = 1.25   -- the wheel zooms by so much per notch
 Camera.NEAR = 8      -- the nearest zoom of its own: so many units per yard (four times the game's minimap's
                      -- nearest step in the small window; Saneroki, 2026-10-20)
-Camera.CLOSER = 3    -- the view Atlas goes so many times nearer: its art has four times the terrain's detail
 Camera.FIT = 0.9     -- a whole map, stepped out to, in so much of the view
 Camera.START = 3000  -- yards the view is high when it first looks at a continent: most of a zone
 Camera.ZONE = 9000   -- below so many yards in view's height the zone in the middle is the map shown
@@ -37,9 +36,8 @@ Camera.SLACK = 0.15  -- a level is left only so far past where it is entered
 local methods = {}
 Camera.methods = methods -- Retail's camera is made of them, with its own where the two differ (Camera.Retail.lua)
 
--- The nearest zoom of its own in the view the map is drawn in (Navigation.lua, View).
+-- The nearest zoom of its own (Camera.Retail.lua asks it too).
 function Camera.Near()
-    if ns.View() == "atlas" then return Camera.NEAR * Camera.CLOSER end
     return Camera.NEAR
 end
 

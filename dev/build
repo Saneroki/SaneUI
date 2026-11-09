@@ -16,8 +16,7 @@
 #      names (src/Core -> BUILD/SaneUI, src/Abilities -> BUILD/SaneUI_Abilities), without what
 #      only development needs (the READMEs), plus the project's licence, which covers every
 #      addon. These folders are the ones to hand to other people. A module's art comes from
-#      assets/optimized/<its folder> (src/Core + assets/optimized/Core -> BUILD/SaneUI). The Atlas
-#      takes its index from there too, and is built only once dev/tools/atlas has made it. Then Core's data
+#      assets/optimized/<its folder> (src/Core + assets/optimized/Core -> BUILD/SaneUI). Then Core's data
 #      sets (BUILD/SaneUI/Sets, listed at the end of its TOC), compiled from the master in assets/data by
 #      dev/tools/data: Forever live's (Doc/guides/data.md).
 #   3. With --install: copies them into the AddOns folders of both games at once, WoW: Forever's _forever_ and
@@ -25,10 +24,10 @@
 #      if one of the two is not there (no AddOns folder, or .flavor.info names another product), nothing goes
 #      into either (WOW_FOREVER and WOW_RETAIL name the folders elsewhere). It removes a module's folder
 #      there under its old name (SaneUI_Chat, now SaneUI_Social; SaneUI_Spellbook, now SaneUI_Abilities; the
-#      data packs SaneUI_Data_*, now part of Core). Core's sets go in as the game folder's product says:
-#      Forever live's into its folder; into another game version's folder (Retail's, a PTR's) that game
-#      version's, compiled into the game's copy of Core (a client refuses another game version's sets; Retail
-#      has none yet). A module made for one game only (its TOC's X-SaneUI-Games) goes only into that game's
+#      data packs SaneUI_Data_*, now part of Core), or of a module that is gone (SaneUI_Atlas). Core's sets go
+#      in as the game folder's product says: Forever live's into its folder; into another game version's
+#      folder (Retail's, a PTR's) that game version's, compiled into the game's copy of Core (a client refuses
+#      another game version's sets; Retail has none yet). A module made for one game only (its TOC's X-SaneUI-Games) goes only into that game's
 #      folders and is taken out of the other's. A module of ours that this build does not have (one the
 #      release predates) is taken out of the game, so a release never runs with newer modules.
 #
@@ -90,7 +89,7 @@ if [ -n "$release" ]; then
 else
     root="$here"
     build="$here/BUILD"
-    # "+": the code, the data or the committed art differs from the commit (the Atlas' local art does not count)
+    # "+": the code, the data or the committed art differs from the commit
     if commit="$(git -C "$here" rev-parse --short HEAD 2>/dev/null)"; then
         changed="$(git -C "$here" status --porcelain -- src assets/data; git -C "$here" diff --name-only HEAD -- assets/optimized)"
         mark="dev $commit${changed:+ +changes}"
@@ -112,14 +111,6 @@ for toc in "$root"/src/*/*.toc; do
     art="$root/assets/optimized/$(basename "$(dirname "$toc")")"
     if [ -d "$art" ]; then assets[$name]="$art"; fi
 done
-# The Atlas' art (Art/) and its index (Index.lua) are made by dev/tools/atlas into assets/optimized/Atlas (about
-# 3 GB), never into src: the addon is src/Atlas with them. Without them there is no Atlas to build, and the
-# map shows two views; its folder in BUILD then goes as a stale one, and a copy in the game stays (stale only
-# names it there).
-if [ ! -f "$root/assets/optimized/Atlas/Index.lua" ]; then
-    unset 'source[SaneUI_Atlas]'
-    echo "Not built: SaneUI_Atlas, its art is not made yet (dev/tools/atlas, into assets/optimized/Atlas)."
-fi
 names="$(printf '%s\n' "${!source[@]}" | sort)"
 
 # LICENSE.txt is not in src (it is the project's LICENSE), nor are Core's sets (Sets/, dev/tools/data compile
@@ -238,7 +229,7 @@ into() {
         echo "Installed: $addons/$name"
     done
     # A release goes in whole: a module of the dev build it does not have (newer than the release) leaves the
-    # game, and installdev brings it back. The dev build leaves the Atlas' copy when its art is not made here.
+    # game, and installdev brings it back.
     if [ "$build" != "$here/BUILD" ]; then
         for toc in "$here"/src/*/*.toc; do
             name="$(basename "$toc" .toc)"
@@ -248,9 +239,9 @@ into() {
             fi
         done
     fi
-    # Our own old names (a module renamed, the data packs now in Core): those folders are ours, and would load
-    # next to the new one.
-    for old in SaneUI_Chat SaneUI_Spellbook SaneUI_Macros $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
+    # Our own old names (a module renamed or removed, the data packs now in Core): those folders are ours, and
+    # would load next to the new one (SaneUI_Atlas, the painted map, gone 2026-11-09).
+    for old in SaneUI_Chat SaneUI_Spellbook SaneUI_Macros SaneUI_Atlas $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
         if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
             rm -rf "${addons:?}/$old"
             echo "Removed from the game, an old folder of ours: $addons/$old"

@@ -15,9 +15,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the
    wheel zooms from the minimap's range to the world, follows the player, north-up only. The views (setting `view`,
-   `ns.TEXT.views`): Parchment (`Art.lua`, the game's maps), Blended, Scrying (`Terrain.lua`, Core's set *Tiles*) and
-   Atlas (`Painted.lua`: the module `SaneUI_Atlas`, loaded when first drawn); the map starts in the view that can be
-   drawn here (`ns.FIRST`, `FirstView`, `Several`).
+   `ns.TEXT.views`): Parchment (`Art.lua`, the game's maps), Blended and Scrying (`Terrain.lua`, Core's set
+   *Tiles*); the map starts as Scrying where it can be drawn, else Parchment (`ns.FALLBACK`, `Fallback`, `Several`).
 3. The game's `Minimap` lies over our ground in the small view (`Hybrid.lua`), so its live dots stay; other addons'
    minimap buttons are held for the satchel (`Strays.lua`, `Satchel.lua`); all given back exactly. The satchel's
    section Sane UI starts with the line of Core's sound profiles (`AudioLine.lua`, `Core.Audio`).

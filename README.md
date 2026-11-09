@@ -25,7 +25,6 @@ module is an addon of its own (`SaneUI_<Module>`), switched on and off in the ga
 |---|---|
 | [Core](src/Core/README.md) (`SaneUI`) | The part every module needs: game events, error catching, `/sane`, every module's settings in profiles, the options, and Sync, which keeps the game's own per-character settings in your profile. |
 | [Abilities](src/Abilities/README.md) | Your spellbook also lists the spells you have not learned yet, in grey; drag one onto an action bar button to reserve it until you learn it. A Home page says what your trainer can teach you now. |
-| [Atlas](src/Atlas/README.md) | The whole world painted as one map, Navigation's third map view: about 3 GB of art, loaded only when first shown; Forever only. Its painting is still being made; until it is, the build leaves it out. |
 | [Auction Data](src/AuctionData/README.md) | The auction house's prices and daily history in a file of their own; no code, Core fills and reads it. Switched off, Sane UI neither scans the auction house nor shows prices. |
 | [Auction Scans](src/AuctionScans/README.md) | Every full scan of the auction house, every auction in it, in a file of its own, read only when the auction house opens. |
 | [Combat](src/Combat/README.md) | Frames of our own for you, your target, focus and pet, in a nameplate's look with power bars and the auras that matter; a window at the bottom middle fills the screen with our own spellbook and talents. |
@@ -74,8 +73,8 @@ installed. `WOW_FOREVER` and `WOW_RETAIL` name the folders on another computer. 
   The options (`src/Core/Settings/`) and Sync (`src/Core/Sync/`) are folders of Core, no modules.
 - **Core is the backend:** every data set is Core's; the modules are the views on top and gather no game
   data of their own. **Two games, one code:** what differs between Forever and Retail is told apart in the
-  code or by a file's load condition in its TOC; art of one game is its own addon (the Atlas is Forever's) and
-  the data packages per game are planned: today Core carries Forever's sets, Retail runs without data.
+  code or by a file's load condition in its TOC; the data and art packages per game are planned: today Core
+  carries Forever's sets, Retail runs without data.
 - **The build** (`BUILD`) has one addon folder per module, named after its TOC (`src/Core` becomes
   `BUILD/SaneUI`), with its textures from `assets/optimized/`, Core's data sets compiled from `assets/data/`
   and the licence, without the READMEs. A copy, not a symlink: the game runs in Steam's container, which

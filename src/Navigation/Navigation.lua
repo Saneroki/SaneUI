@@ -12,19 +12,17 @@ local ADDON, ns = ...
 --  screen's top right corner it is the minimap, filling the screen it is the map,
 --  the same map drawn and handled the same way, each view with its own camera.
 --  Drawn two ways at every zoom (Blizzard's map art, or the terrain of the game's
---  own minimap textures), from a zone out to the whole world, and a third, the
---  painted map, while the module Atlas (SaneUI_Atlas) is there; the game's minimap
+--  own minimap textures), from a zone out to the whole world; the game's minimap
 --  lies over it for its live dots. The game's map stays closed: its keys and every
 --  way to it open ours.
 --
 --      Coords (the spaces, the map tree) . Camera . Live (what the game tells)   know no frames
---      Canvas (the frame, its layers, the mouse) . Terrain . Art . Painted . Marks
+--      Canvas (the frame, its layers, the mouse) . Terrain . Art . Marks
 --      Hybrid (the game's minimap over ours) . Native (the game's map kept closed) . Window
 --
 --  The terrain's textures are Core's data (the set Tiles) and the
 --  module's overview (Art/Terrain); the art and every position come from the
---  game's map API; the painted map is the module Atlas', loaded when its view is
---  first drawn (Painted.lua). The pins of the game's data and Core's come later.
+--  game's map API. The pins of the game's data and Core's come later.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Navigation", ns)
@@ -33,17 +31,13 @@ Core.NewModule(ADDON, "Navigation", ns)
 ns.TEXT = {
     title = Core.Word("WORLD_MAP", "World Map"),
     view = "Map view",
-    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Blended: the old maps far out, the land as it truly lies up close. Scrying: the land as it truly lies. Atlas: the whole world painted as one map (while the module Atlas is switched on in the addon list).",
-    views = { sketches = "Parchment", blend = "Blended", terrain = "Scrying", atlas = "Atlas" },
+    viewTip = "How the map is drawn, small and full screen, at every zoom. Parchment: the old maps, drawn by hand. Blended: the old maps far out, the land as it truly lies up close. Scrying: the land as it truly lies.",
+    views = { sketches = "Parchment", blend = "Blended", terrain = "Scrying" },
     viewTips = {
         sketches = "The old maps, drawn by hand on parchment: every zone's map, in full, joined into one map of both continents.",
         blend = "The old maps far out, the land as it truly lies up close: the one fades into the other as you zoom in.",
         terrain = "The land as it truly lies, as a scrying glass shows it: both continents, from close up out to the whole world.",
-        atlas = "The whole world painted as one map, every road and building where it stands: from a single house up close out to both continents.",
     },
-    atlasFailed = "the map view Atlas could not be loaded (%s); the map shows Scrying.",
-    atlasEmpty = "the module Atlas holds no painted map",
-    atlasBroken = "the module Atlas did not start",
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in the top right corner instead of this map's small window; the mouse pushed into that corner still fills the screen with this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
@@ -197,14 +191,14 @@ for _, kind in ipairs(ns.KINDS) do
     if kind.on then PIN_DEFAULT[kind[1]] = true end
 end
 
--- The ways to draw the map, in the order of their buttons (shown as Parchment, Blended, Scrying, Atlas). Atlas only
--- while the module Atlas is there (Painted.lua); Scrying and Blended only while Core's terrain is (Terrain.Possible:
--- not in Retail, until its data comes). The map starts as Atlas where that can be drawn (ns.FirstView); a view not
--- offered falls back to Scrying, and where that is not offered either to Parchment, the game's own map art (ns.Fallback).
-ns.VIEWS = { "sketches", "blend", "terrain", "atlas" }
-ns.FIRST, ns.FALLBACK = "atlas", "terrain"
+-- The ways to draw the map, in the order of their buttons (shown as Parchment, Blended, Scrying). Scrying and
+-- Blended only while Core's terrain is (Terrain.Possible: not in Retail, until its data comes). The map starts as
+-- Scrying; a view not offered (a saved one that is gone) falls back to Scrying, and where that is not offered either
+-- to Parchment, the game's own map art (ns.Fallback).
+ns.VIEWS = { "sketches", "blend", "terrain" }
+ns.FALLBACK = "terrain"
 local CHOICES = { { "sketches", ns.TEXT.views.sketches }, { "blend", ns.TEXT.views.blend },
-                  { "terrain", ns.TEXT.views.terrain }, { "atlas", ns.TEXT.views.atlas } }
+                  { "terrain", ns.TEXT.views.terrain } }
 
 -- The switches of what this game cannot have stand down (hidden): the trip and the docks need Core's set Travel; the
 -- sparkles Core's herbs and ore (Nodes.Known), the far ones also the game's minimap's answers (Found.Works), the turns
@@ -218,10 +212,10 @@ local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, di
                 text = ns.TEXT.nodeYards, tip = ns.TEXT.nodeYardsTip, hidden = function() return ns.Nodes.TOGETHER end }
 
 local OPTIONS = {
-    -- Every view a choice while the settings are first read, so a saved Atlas is kept; at login only those
-    -- offered, and the view the map starts in here the default (Offer). One view alone: no setting (ns.Several).
-    { key = "view", default = ns.FIRST, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
-      choices = { CHOICES[1], CHOICES[2], CHOICES[3], CHOICES[4] }, hidden = function() return not ns.Several() end },
+    -- Every view a choice while the settings are first read; at login only those offered, and the view the map
+    -- starts in here the default (Offer). One view alone: no setting (ns.Several).
+    { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
+      choices = { CHOICES[1], CHOICES[2], CHOICES[3] }, hidden = function() return not ns.Several() end },
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
@@ -311,9 +305,8 @@ Core.Options(ns.name, OPTIONS, { version = 5, upgrade = Upgrade, changed = funct
     if key == "nodeYards" then return ns.Guarded(ns.Nodes.Update) end
 end })
 
--- Whether a view can be drawn: Atlas only while its module is there and has not failed.
+-- Whether a view can be drawn: Scrying and Blended only while Core's terrain is; a key that is no view, never.
 function ns.Offered(key)
-    if key == "atlas" then return ns.Painted.Offered() end
     if key == "blend" or key == "terrain" then return ns.Terrain.Possible() end
     return key == "sketches"
 end
@@ -322,12 +315,6 @@ end
 function ns.Fallback()
     if ns.Offered(ns.FALLBACK) then return ns.FALLBACK end
     return "sketches"
-end
-
--- The view the map starts in here: Atlas where it can be drawn, else the fallback.
-function ns.FirstView()
-    if ns.Offered(ns.FIRST) then return ns.FIRST end
-    return ns.Fallback()
 end
 
 -- The view the map is drawn in: the one chosen, if it is offered, else the fallback.
@@ -353,16 +340,16 @@ local function Shows(option)
 end
 
 -- The views offered, in the settings' dropdown and on the full map's buttons; the default the view the map starts
--- in here, and a saved view not offered (the module Atlas switched off, or failed; Scrying without Core's terrain)
--- becomes it. The kinds of pin that can show anything here in the setting's list (TopBar's filter asks ns.KindOffered
--- itself), and the section Herbs and ore only while one of its switches is there. At login, and when the Atlas failed.
+-- in here, and a saved view not offered (one that is gone; Scrying without Core's terrain) becomes it. The kinds of
+-- pin that can show anything here in the setting's list (TopBar's filter asks ns.KindOffered itself), and the
+-- section Herbs and ore only while one of its switches is there. At login.
 function ns.Offer()
     local option = OPTIONS[1]
     wipe(option.choices)
     for _, choice in ipairs(CHOICES) do
         if ns.Offered(choice[1]) then option.choices[#option.choices + 1] = choice end
     end
-    option.default = ns.FirstView()
+    option.default = ns.Fallback()
     if not ns.Offered(ns.options.view) then Core.Set(ns.name, "view", option.default) end
     wipe(PIN_CHOICES)
     for _, kind in ipairs(ns.KINDS) do
@@ -397,7 +384,6 @@ function ns.OnLogin()
     Core.Data.Prepare("Tiles")
     -- A map pin kept from the last session: its route (the walking data is asked for then).
     Core.Later(function() ns.Guarded(ns.Planner.Update) end, 2)()
-    ns.Painted.Find()
     ns.Offer()
     ns.Window.Build()
     ns.Hybrid.Start(ns.Canvas.frame)

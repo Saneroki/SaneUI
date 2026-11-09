@@ -1,8 +1,7 @@
 -- Runs the Navigation module against the stand-in client (wowstub.lua) on a small made-up world: the map's
 -- spaces and the map tree, the camera's levels, what the game tells (Live), the map drawn each way in both
--- views, the views offered with and without the module Atlas (its index read, the level a zoom draws, the
--- block under a point, loaded when first drawn, the fall back when it fails), the mouse (drag, wheel, right
--- click, middle click, Ctrl-click), the game's minimap taken over ours and given back, other addons' buttons
+-- views, the views offered and a saved one that is gone, the mouse (drag, wheel, right click, middle click,
+-- Ctrl-click), the game's minimap taken over ours and given back, other addons' buttons
 -- held in the satchel and given back, the satchel's page, the game's map kept closed and its
 -- keys; played as Retail (W.Play), without Forever's data, what stands down and what the game's own does instead.
 -- Then again as a Retail client from the start ("retail"): the game's own map tree, one map at a time
@@ -957,12 +956,12 @@ check(type(ns.COASTS) == "table", "the tiles on a coast are listed (Coasts.lua)"
 check(ns.options.view == "terrain" and ns.View() == "terrain", "a saved view that is gone (Overlay) falls back to Scrying")
 local viewOption = Core.Described(ns.name, "view")
 check(#viewOption.choices == 3 and viewOption.choices[1][1] == "sketches" and viewOption.choices[2][1] == "blend"
-    and viewOption.choices[3][1] == "terrain" and not ns.Offered("atlas"),
-    "without the module Atlas three views are offered: Parchment, Blended and Scrying")
-check(ns.FIRST == "atlas" and viewOption.default == "terrain" and ns.FirstView() == "terrain" and ns.Several()
-    and Core.Settle(ns.name, {}).view == "terrain", "a first load starts as Atlas where it can be drawn, here as Scrying")
-ns.options.view = "atlas" -- saved while the module was there
-check(ns.View() == "terrain", "a saved Atlas without its module: the map is drawn as Scrying")
+    and viewOption.choices[3][1] == "terrain" and not ns.Offered("atlas") and #ns.VIEWS == 3,
+    "three views are offered: Parchment, Blended and Scrying")
+check(viewOption.default == "terrain" and ns.Fallback() == "terrain" and ns.Several()
+    and Core.Settle(ns.name, {}).view == "terrain", "a first load starts as Scrying")
+ns.options.view = "atlas" -- saved while the painted map was there (gone 2026-11-09)
+check(ns.View() == "terrain", "a saved Atlas, a view that is gone: the map is drawn as Scrying")
 ns.Offer()
 check(ns.options.view == "terrain", "and the setting falls back to Scrying")
 ns.OUTLINES = { [0] = { [1429] = true } } -- the made-up world's zone has one
@@ -2175,9 +2174,9 @@ local function Button(key)
     for _, widget in ipairs(W.frames) do if widget.key == key and widget._scripts.OnClick then return widget end end
 end
 check(Button("terrain")._lit and not Button("sketches")._lit, "the view chosen is lit")
-check(Button("sketches")._shown and Button("blend")._shown and Button("terrain")._shown and not Button("atlas")._shown
+check(Button("sketches")._shown and Button("blend")._shown and Button("terrain")._shown and not Button("atlas")
     and Button("blend")._points[1][2] == Button("sketches") and Button("terrain")._points[1][2] == Button("blend"),
-    "three buttons in a row: no Atlas without its module")
+    "three buttons in a row, no Atlas")
 Button("sketches")._scripts.OnClick(Button("sketches"))
 shown = Shown()
 check(ns.options.view == "sketches" and Button("sketches")._lit and Count(shown, 801, 804) == 0
@@ -4292,149 +4291,6 @@ do
     full.follow = false
     Canvas.Layout()
 end
-
--------------------------------------------------------------------------------
---  The view Atlas: the module SaneUI_Atlas, found at login, loaded when first drawn
--------------------------------------------------------------------------------
-local Painted = ns.Painted
--- The module's index, as dev/tools/atlas writes it with the art: four levels; around the player (row 195,
--- column 131 at level 0) every block but the player's own; lines the reading passes over.
-local atlasFolder = io.popen("mktemp -d -t saneui-atlas-XXXXXX"):read("*l")
-out = assert(io.open(atlasFolder .. "/Index.lua", "w"))
-out:write([[
-local _, ns = ...
-ns.INDEX = { levels = 4,
-    [0] = {
-        [0] = { [194] = "125-140", [195] = "125-130,132-140", [196] = "125-140", [197] = "125 - 140",
-                [198] = "125-140,x,7-", [199] = "125-140", [300] = "1-2", row = "1", [190] = 5 },
-        [1] = { [96] = "60-70", [97] = "60-70", [98] = "60-70", [99] = "60-70" },
-        [2] = { [47] = "30-35", [48] = "30-35", [49] = "30-35", [50] = "30-35" },
-        [3] = { [23] = "14-18", [24] = "14-18", [25] = "14-18" },
-        [9] = { [1] = "1" },
-    },
-    [1] = { [0] = { [128] = "128,250-300" } },
-    oops = { [0] = { [1] = "1" } },
-}
-]])
-out:close()
--- In the addon list, switched off for this character: not offered.
-local atlasAddon = { name = "SaneUI_Atlas", title = "Atlas", metadata = { Title = "Atlas", LoadOnDemand = "1" },
-                     loadable = false, reason = "DEMAND_LOADED", enabled = 0 }
-W.addons[#W.addons + 1] = atlasAddon
-check(not Painted.Find() and not ns.Offered("atlas"), "the module Atlas switched off for this character: not offered")
--- Switched on, but made for the other game only (its TOC's X-SaneUI-Games): not offered.
-atlasAddon.enabled, atlasAddon.metadata["X-SaneUI-Games"] = 2, "retail"
-check(not Painted.Find() and not ns.Offered("atlas"), "the module Atlas made for the other game: not offered")
-atlasAddon.metadata["X-SaneUI-Games"] = "forever"
--- Switched on, but the game cannot load it: offered at first, then Scrying again once it was tried.
-check(Painted.Find() and ns.Offered("atlas"), "the module Atlas in the addon list, switched on: found without loading it")
-ns.Offer()
-check(#viewOption.choices == 4 and viewOption.choices[4][1] == "atlas" and Button("atlas")._shown
-    and Button("atlas")._points[1][2] == Button("terrain") and not W.loaded.SaneUI_Atlas,
-    "with the module four views are offered: its button after Scrying's, its choice; nothing loaded yet")
-Button("atlas")._scripts.OnClick(Button("atlas"))
-shown = Shown()
-check(ns.options.view == "atlas" and not Painted.Offered() and ns.View() == "terrain" and Count(shown, 801, 804) == 4,
-    "the module cannot be loaded: the map shows Scrying at once")
-check(Core.errors["Navigation: atlas"] and Core.errors["Navigation: atlas"].text:find("could not be loaded (CORRUPT)", 1, true),
-    "the problem is kept and told")
-W.Wait(0)
-check(ns.options.view == "terrain" and not Button("atlas")._shown and #viewOption.choices == 3 and Button("terrain")._lit,
-    "on the next frame its button and choice go, the setting is Scrying again")
--- The game can load it: drawn over the terrain.
-W.onDemand.SaneUI_Atlas = function()
-    local private = {}
-    assert(loadfile(root .. "/src/Atlas/Atlas.lua"))("SaneUI_Atlas", private)
-    assert(loadfile(atlasFolder .. "/Index.lua"))("SaneUI_Atlas", private)
-    atlasAddon.loadable, atlasAddon.reason = true, nil
-end
-check(Painted.Find(), "found again")
-ns.Offer()
-full:Show(1415, 500, -8950, 2)
-Button("atlas")._scripts.OnClick(Button("atlas"))
-os.execute(("rm -rf '%s'"):format(atlasFolder))
-local Atlas = SaneUI.Atlas
-check(W.loaded.SaneUI_Atlas and Atlas and not Atlas.off and Atlas.Ready() and Painted.Ready() and Button("atlas")._lit,
-    "the view Atlas drawn the first time: the module loaded, its index read (SaneUI.Atlas)")
-;(function()
-    check(viewOption.default == "atlas" and ns.FirstView() == "atlas" and Core.Settle(ns.name, {}).view == "atlas",
-        "with the module a first load starts as Atlas")
-    Button("terrain")._scripts.OnClick(Button("terrain"))
-    Core.Reset(ns.name, function(option) return option.key == "view" end)
-    check(ns.options.view == "atlas" and Button("atlas")._lit, "and the settings' default is Atlas")
-end)()
-
--- Its index and its grid.
-check(Atlas.Levels() == 4 and Atlas.INDEX == nil, "the index read: its levels, its strings let go")
-local function Has(continent, level, row, column) return Atlas.Has(Atlas.Key(continent, level, row, column)) end
-check(Has(0, 0, 194, 125) and Has(0, 0, 194, 140) and Has(0, 0, 195, 130) and not Has(0, 0, 195, 131) and Has(0, 0, 195, 132)
-    and not Has(0, 0, 194, 124) and not Has(0, 0, 194, 141), "single columns and ranges; a block not listed is not there")
-check(Has(0, 0, 197, 133) and Has(0, 0, 198, 125) and not Has(0, 0, 198, 7) and not Has(0, 0, 190, 5),
-    "spaces in a range are read, what is no column or range is passed over")
-check(not Has(0, 9, 1, 1) and Has(1, 0, 128, 128) and Has(1, 0, 128, 255) and not Has(1, 0, 128, 256) and not Has(0, 0, 1, 1),
-    "a level past the index' levels, columns past the grid, rows past it and keys that are no continent: passed over")
-check(Atlas.Key(0, 0, 0, 1) ~= Atlas.Key(0, 0, 1, 0) and Atlas.Key(1, 0, 0, 0) ~= Atlas.Key(0, 1, 0, 0)
-    and Atlas.Key(0, 15, 255, 255) < Atlas.Key(1, 0, 0, 0), "one number per block")
-check(near(Atlas.Span(0), 1600 / 12) and near(Atlas.Span(3), 8 * 1600 / 12) and Atlas.Cells(0) == 256 and Atlas.Cells(2) == 64
-    and Atlas.Cells(9) == 1, "a block spans a quarter tile at level 0, twice as much each level up")
--- The player at x = -8950 (north), y = -500 (west): row 195, column 131 at level 0; the terrain's tile 48, 32 at 2.
-local blockRow, blockColumn = Atlas.Cell(0, -8950, -500)
-local tileRow, tileColumn = Atlas.Cell(2, -8950, -500)
-check(blockRow == 195 and blockColumn == 131 and tileRow == 48 and tileColumn == 32 and select(2, Atlas.Cell(1, -8950, -500)) == 65,
-    "the block under a position, counted from the grid's north-west corner as the terrain's tiles")
-local cornerX, cornerY = Atlas.Corner(0, 195, 131)
-check(cornerX >= -8950 and cornerX - Atlas.Span(0) < -8950 and cornerY >= -500 and cornerY - Atlas.Span(0) < -500
-    and Atlas.File(0, 3, 24, 16) == "Interface\\AddOns\\SaneUI_Atlas\\Art\\0\\3\\24_16",
-    "a block's north-west corner holds the position; its file")
-
--- The level a zoom draws: the coarsest whose art has as many pixels a yard as the screen (3.84 at level 0).
-check(Painted.Level(5, 4, 512, Atlas.Span) == 0 and Painted.Level(3.84, 4, 512, Atlas.Span) == 0
-    and Painted.Level(1.9, 4, 512, Atlas.Span) == 1 and Painted.Level(1, 4, 512, Atlas.Span) == 1
-    and Painted.Level(0.9, 4, 512, Atlas.Span) == 2 and Painted.Level(0.01, 4, 512, Atlas.Span) == 3
-    and Painted.Level(0.01, 2, 512, Atlas.Span) == 1, "the level for a zoom: never finer than needed, never past the last")
-
--- Drawn: at 2 units a yard on a screen of 2160 pixels for 768 units, 5.6 pixels a yard: level 0, level 1 under it.
-local function Blocks(shownNow, level)
-    local list = {}
-    for file, texture in pairs(shownNow) do
-        local row, column = tostring(file):match("^Interface\\AddOns\\SaneUI_Atlas\\Art\\0\\" .. level .. "\\(%d+)_(%d+)$")
-        if row then list[row .. "_" .. column] = texture end
-    end
-    return list
-end
-local function Size(list) local n = 0 for _ in pairs(list) do n = n + 1 end return n end
-shown = Shown()
-local fine, coarse = Blocks(shown, 0), Blocks(shown, 1)
-check(Count(shown, 801, 804) == 4 and Size(fine) == 4 * 9 - 1 and fine["195_130"] and not fine["195_131"] and not fine["193_130"]
-    and coarse["97_65"] and Size(Blocks(shown, 2)) == 0, "Atlas: the terrain, over it every listed block of level 0 in view, level 1 under them")
-local block = fine["195_130"]
-check(block._sublevel == 1 and coarse["97_65"]._sublevel == 0 and near(block._points[1][4], (266 + 2 / 3 - 500) * 2)
-    and near(block._points[1][5], (-8933 - 1 / 3 + 8950) * 2) and near(block._width, 1600 / 12 * 2 + Canvas.OVERLAP),
-    "each block where its corner lies, as large as its yards; the coarser level under the finer")
-full:Show(1415, 500, -8950, 0.5)
-Canvas.Layout()
-shown = Shown()
-check(Size(Blocks(shown, 0)) == 0 and Size(Blocks(shown, 1)) > 0 and Size(Blocks(shown, 2)) > 0,
-    "farther out a coarser level, about as many blocks")
-Painted.CAP = 60
-Canvas.Layout()
-shown = Shown()
-check(Size(Blocks(shown, 1)) == 0 and Size(Blocks(shown, 2)) > 0 and Size(Blocks(shown, 3)) > 0,
-    "more blocks in view than the cap: a coarser level")
-Painted.CAP = 400
--- Three times nearer than the other views; back to Scrying, no nearer than its own.
-full:ZoomAt(100, 0, 0)
-check(near(full.k, Camera.NEAR * 3) and Camera.Near() == Camera.NEAR * 3, "Atlas zooms three times nearer than the other views")
-Button("terrain")._scripts.OnClick(Button("terrain"))
-check(full.k == Camera.NEAR and Size(Blocks(Shown(), 0)) == 0, "Scrying: its own nearest zoom, no painted blocks")
-Button("atlas")._scripts.OnClick(Button("atlas"))
--- The module stood down (an error of its own, caught by Core's guards): Scrying, its button and choice gone.
-Atlas.off = true
-Canvas.Refresh()
-check(ns.View() == "terrain" and Size(Blocks(Shown(), 0)) == 0, "the module stood down: the map shows Scrying")
-W.Wait(0)
-check(ns.options.view == "terrain" and not Button("atlas")._shown and #viewOption.choices == 3,
-    "and its button and choice go")
 
 -- Back to the corner: the small view as it was left.
 Window.Toggle()
@@ -6838,7 +6694,7 @@ end)()
         if widget._points and widget._points[1] and widget._points[1][2] == logButton and widget ~= logButton then afterLog = widget end
     end
     check(not ns.Several() and not Button("sketches")._shown and not Button("blend")._shown and not Button("terrain")._shown
-        and not Button("atlas")._shown and Hidden("view") and viewOption.default == "sketches"
+        and Hidden("view") and viewOption.default == "sketches"
         and Core.Settle(ns.name, {}).view == "sketches" and afterLog and afterLog._override,
         "one view: Parchment, a first load's too; no view buttons, the map selector right of the quest log's; no setting")
 

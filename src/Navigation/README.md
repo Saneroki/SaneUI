@@ -10,8 +10,7 @@ zoom and place. The map is drawn two ways at every zoom, from close up out to th
 continents always: *Parchment*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
 fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, its water cut away to a calm sea
 (the docks, piers and bridges standing on it kept); or *Blended*, the one far out fading into the other close in.
-With the module *Atlas* (`SaneUI_Atlas`, `src/Atlas/`) switched on there is a third, *Atlas*: the whole world
-painted as one map, three times closer. The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
+The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
 That is WoW: Forever's map; in Retail the map is the game's own map tree, one map at a time, as the game's own map
 shows it: a click into a map, a right click out to the one over it, the wheel within it.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
@@ -246,9 +245,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   and no party or raid; what stands still there, the bosses, stands on them.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
-  no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* and *Atlas* its
-  terrain, the open sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on
-  the continents. The painted map does not cover the isle yet: *Atlas* shows the terrain there.
+  no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
+  sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on the continents.
 - **Routes:** put the game's map pin (a double click, on a quest in the quest log too, or Ctrl and a click; Speed Leveling's guide puts it on its places by itself) and a golden line leads you there from where you stand,
   pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
   into and out of caves, buildings and the cities in the mountains, on the floor you are on (a cave under a hill, a
@@ -302,10 +300,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   timetable; the tram's from the game's own. A `/reload` in the air finds the flight again. *Your trip on screen*
   in the settings switches it off.
 - **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment*,
-  *Blended*, *Scrying*, and *Atlas* while that module is switched on in the addon list; for both views and at every
-  zoom (in the code `sketches`, `blend`, `terrain`, `atlas`). The map starts as *Atlas* where it can be drawn, else as
-  *Scrying*. *Blended* is Parchment out to a zone's level and Scrying close in, the maps fading out over the land in
-  between. A view not offered (the module switched off or failed, or *Overlay*, which is gone) falls back to Scrying.
+  *Blended* and *Scrying*, for both views and at every zoom (in the code `sketches`, `blend`, `terrain`). The map
+  starts as *Scrying*. *Blended* is Parchment out to a zone's level and Scrying close in, the maps fading out over the
+  land in between. A view not offered (*Overlay* and *Atlas*, which are gone) falls back to Scrying.
   In Retail, until its data comes, Parchment is the one view: the map simply is that, with no view buttons on the bar
   and no setting.
 - **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
@@ -385,22 +382,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   one: its art and every part the game reveals once explored (Core's set *Overlays*), placed as Blizzard's
   exploration provider places them. Under the mouse, at a continent or the world shown whole, the game's own highlight
   of the zone or continent there.
-- **Painted** (`Painted.lua`), the view *Atlas*: the terrain as Scrying draws it, and over it the painted map
-  of the module Atlas (`SaneUI_Atlas`, `src/Atlas/`; its art made into `assets/optimized/Atlas/` and put in by
-  `dev/build`). At login it is looked for in the addon list without being loaded (there, switched on for this
-  character, loadable: `C_AddOns.GetAddOnInfo`, `GetAddOnEnableState`); only then is the view offered, its
-  button after Scrying's and its choice in the setting. The first time the view is drawn it is loaded
-  (`C_AddOns.LoadAddOn`, guarded) and answers as `SaneUI.Atlas`; if it cannot be loaded, or stands down later,
-  the map shows Scrying at once, and on the next frame its button and choice go and the setting is Scrying
-  (`Offer` in `Navigation.lua`), the problem kept and told once. Its blocks (512 pixels, level 0 at 2048 pixels a
-  tile, each level up half the detail) are drawn at the coarsest level whose art still has as many pixels a
-  yard as the screen shows (each continent at its own scale on the screen), so about the same number of blocks
-  at every zoom, and the next coarser level under them, so a block still loading leaves no hole; where the index
-  has none (sea, not painted yet) the terrain shows. At most `Painted.CAP` (400) blocks of a level a continent:
-  past it a coarser level (the window on its way). The nearest zoom is three times the others'
-  (`Camera.Near`: 6 units a yard, else 2).
 - **What stands on the map is always over it:** the canvas sets every layer's frame level from its own at each
-  layout (`Canvas.LEVELS`): the map's own layers (terrain, Atlas, art, the highlight) up to `Canvas.MAP`, then the
+  layout (`Canvas.LEVELS`): the map's own layers (terrain, art, the highlight) up to `Canvas.MAP`, then the
   quest areas, the route, the game's minimap (`Hybrid.LEVEL`), the pins and the marks on top; the bar over all.
 - **And inside the canvas:** the game cuts the map's textures at the canvas' edge, but it drew the lines and
   buttons laid out past the view (`Canvas.MARGIN`) over the screen around the small window. So `Canvas.edge`
@@ -656,9 +639,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   chosen on the bar or by the game count as that: `lastInput`). Ticked, `Canvas.Center` puts the full camera on the
   player whenever the window fills the screen (but at a map the game was asked for, `Window.OpenTo`) and when the box
   is ticked; unticked, the full map no longer follows, and a small view that follows goes on following.
-- **The first view:** the option's first default is `ns.FIRST` (Atlas), so a first load starts there; `Offer` then sets
-  the default to `ns.FirstView()` (Atlas where offered, else `ns.Fallback()`), so a reset, a profile read after login
-  and a saved view not offered come to a view that can be drawn. `ns.Several` tells whether there is a choice at all.
+- **The first view:** the option's first default is `ns.FALLBACK` (Scrying), so a first load starts there; `Offer`
+  then sets the default to `ns.Fallback()` (Scrying where offered, else Parchment), so a reset, a profile read after
+  login and a saved view not offered come to a view that can be drawn. `ns.Several` tells whether there is a choice
+  at all.
 - **Walk** (`Walk.lua`, no frames): Core's set *Walking* (read with Core at the login, as all its sets), made by
   `dev/tools/walk-data` from the game's terrain, buildings, doodads (fences, rocks, trees, piers, the game's invisible
   walls) and water: per terrain tile a block (base64, deflate, CBOR, read by the game's `C_EncodingUtil`) of surfaces
@@ -925,7 +909,6 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand; Forever's world, read in Forever only (its TOC line) |
 | `Coasts.lua` | The tiles on a coast, which have a finer mask of their own, by their plane's instance: made by `dev/tools/terrain-art`, not by hand; Forever's, read in Forever only |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
-| `Painted.lua` | The view Atlas: the module SaneUI_Atlas found at login, loaded when first drawn, its blocks at the level the zoom asks for |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
 | `Goals.lua` | What your quests still ask of the world and where exactly it stands: the open objectives' things at every spawn Core's data knows. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
@@ -964,6 +947,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-09, the Atlas gone:** as Saneroki asked ("too many disadvantages without much benefit"), the painted map
+  and its module `SaneUI_Atlas` are gone, with `Painted.lua`, its layer and its nearer zoom: the map offers
+  *Parchment*, *Blended* and *Scrying* and starts as Scrying; a saved *Atlas* falls back to Scrying.
 - **2026-11-07, the quest log at rest in a group too:** Saneroki found the quest log, unit frames and action bars hidden
   alone but always in sight in a party. *In a group too* under *Hide the quest log at rest* (`questLogRestGroup`, off
   at first) keeps it out of sight there as well, by Core's `rest:InGroup`.

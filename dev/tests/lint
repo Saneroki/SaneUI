@@ -4,9 +4,7 @@
 Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
 
   1. Each folder has one TOC. Every file it lists is there (spelled the same, capitals too), and
-     every Lua and XML file in the folder is listed, or the game would silently not load it. The Atlas'
-     index is made with its art into assets/optimized/Atlas, which dev/build puts in: it is checked there,
-     and may be missing while the art is not made (the Atlas is then not built).
+     every Lua and XML file in the folder is listed, or the game would silently not load it.
   2. The TOCs agree: same game version and addon version, and every module depends on SaneUI and
      is grouped under it, or the game would read it before Core or list it apart.
   3. Every Lua file parses (the game's Lua is 5.1).
@@ -48,9 +46,8 @@ SRC = Path(__file__).resolve().parents[2] / "src"
 sys.path.insert(0, str(SRC.parent / "dev" / "data"))
 GAME_CONDITIONS = ("[AllowLoadGameType standard]", "[ExcludeLoadGameType standard]")  # Retail's file, Forever's
 MAIN = "SaneUI"  # the addon every module depends on; a module's addon is SaneUI_<Module>
-# dev/build puts each module together from src/<folder> and assets/optimized/<folder> (its art, and the Atlas'
-# index a tool makes with it): a file its TOC lists may be in either. src itself holds no pictures or sounds.
-ASSETS = SRC.parent / "assets" / "optimized"
+# dev/build puts each module together from src/<folder> and assets/optimized/<folder> (its art): src itself holds
+# no pictures or sounds.
 MEDIA = {".blp", ".tga", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ogg", ".mp3", ".wav", ".flac",
          ".mp4", ".webm"}
 
@@ -100,10 +97,6 @@ def check_addon(folder):
     fields, listed = read_toc(toc)
     for path in sorted(listed):
         named = path.relative_to(folder)
-        if not path.exists():
-            path = ASSETS / folder.name / named
-            if not path.exists() and folder.name == "Atlas":
-                continue  # its art is not made yet: dev/build does not build it
         # A name that only differs in capitals loads on Windows and nowhere else; ask for the exact one.
         if not path.exists() or path.name not in {p.name for p in path.parent.iterdir()}:
             problems.append(f"{name} lists a file that is not there: {named}")
@@ -411,7 +404,6 @@ def flagged(path, lines, line, what, marks):
 
 counts = check_tocs()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
-check_lua(sorted(ASSETS.glob("*/*.lua")), SRC.parent)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
 sets = check_sets(core_fields)
 doors = check_guards(p for p in SRC.iterdir() if p.is_dir())

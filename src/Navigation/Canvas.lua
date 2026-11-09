@@ -9,7 +9,6 @@ local _, ns = ...
 --      canvas (clips what it holds; the ground: one colour)
 --       ├─ holder (at the canvas' middle; moved by a drag and by following)
 --       │    ├─ terrain   the game's minimap textures and the overview (Terrain.lua)
---       │    ├─ atlas     the painted map, the view Atlas (Painted.lua)
 --       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
 --       │    ├─ indoors   the indoor map of the building the player is in (Indoors.lua)
 --       │    ├─ light     the zone under the mouse (Art.lua)
@@ -92,9 +91,9 @@ Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a dou
 Canvas.HOME = 400    -- yards across the view's shorter side a middle click comes back at where the game's minimap
                      -- is not ours (Home)
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
-Canvas.LEVELS = { holder = 1, terrain = 2, atlas = 3, art = 4, indoors = 5, light = 6, areas = 7, route = 8, pins = 12,
+Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, indoors = 4, light = 5, areas = 7, route = 8, pins = 12,
                   marks = 20, satchel = 30 }
-Canvas.MAP = 6 -- the highest level of the map itself: what stands on it is above this
+Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is above this
 Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own ground: over that, under the pins (Stack)
 
 local frame, holder, camera, tracker, layers, hover, ground
@@ -285,7 +284,6 @@ end
 -- Every layer's textures let go: nothing of ours drawn but the sea (the canvas' ground).
 local function Empty()
     ns.Safe("terrain", ns.Terrain.Clear)
-    ns.Safe("atlas", ns.Painted.Clear)
     ns.Safe("map art", ns.Art.Clear)
     ns.Safe("indoors", ns.Indoors.Clear)
     ns.Safe("areas", ns.Areas.Clear)
@@ -300,10 +298,9 @@ local function Lost(u)
 end
 
 -- The layers, as the view chosen draws them, at every zoom: Parchment (the art), Scrying (the land), Blended (the
--- art over the land, faded out as the view comes close: Canvas.Blend), Atlas (the land, the painted map over it);
--- the ground is the sea of the one or the other, or between them. Only a layer that shows is drawn. The Atlas'
--- module is loaded the first time its view is drawn; if it cannot be, the fallback (Painted.lua). In an instance
--- (lost) none: the game's minimap is the map there.
+-- art over the land, faded out as the view comes close: Canvas.Blend); the ground is the sea of the one or the
+-- other, or between them. Only a layer that shows is drawn. In an instance (lost) none: the game's minimap is the
+-- map there.
 local function Draw()
     if lost then
         ground:SetColorTexture(Canvas.GROUND[1], Canvas.GROUND[2], Canvas.GROUND[3])
@@ -311,14 +308,12 @@ local function Draw()
         return ns.Safe("marks", ns.Marks.Clear)
     end
     local chosen = ns.View()
-    if chosen == "atlas" and not ns.Painted.Ready() then chosen = ns.Fallback() end
     local art = chosen == "sketches" and 1 or chosen == "blend" and Canvas.Blend(view.span) or 0
     local sea, paper = Canvas.GROUND, Canvas.PAPER
     ground:SetColorTexture(sea[1] + (paper[1] - sea[1]) * art, sea[2] + (paper[2] - sea[2]) * art,
         sea[3] + (paper[3] - sea[3]) * art)
     layers.art:SetAlpha(art)
     ns.Safe("terrain", ns.Terrain.Place, view, art < 1)
-    ns.Safe("atlas", ns.Painted.Place, view, chosen == "atlas")
     ns.Safe("map art", ns.Art.Place, view, art > 0)
     ns.Safe("indoors", ns.Indoors.Place, view)
     ns.Safe("areas", ns.Areas.Place, view)
@@ -798,7 +793,7 @@ function Canvas.Build(parent)
     holder = CreateFrame("Frame", nil, frame)
     holder:SetSize(1, 1)
     holder:SetPoint("CENTER")
-    layers = { terrain = ns.Terrain.Build(holder), atlas = ns.Painted.Build(holder) }
+    layers = { terrain = ns.Terrain.Build(holder) }
     layers.art, layers.light = ns.Art.Build(holder)
     layers.indoors = ns.Indoors.Build(holder)
     layers.areas, layers.route = ns.Areas.Build(holder), ns.Route.Build(holder)

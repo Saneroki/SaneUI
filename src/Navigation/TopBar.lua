@@ -6,8 +6,8 @@ local _, ns = ...
 --
 --      Quest Log         the quest log on or off, over the map and on the screen alone (kept; QuestLog.lua)
 --      the views         Parchment; Blended and Scrying while Core's terrain is there (not in Retail, until its
---                        data comes); Atlas while its module is: how the map is drawn (the setting Map view;
---                        Navigation.lua, Offer); no buttons where only one is offered (ns.Several)
+--                        data comes): how the map is drawn (the setting Map view; Navigation.lua, Offer); no
+--                        buttons where only one is offered (ns.Several)
 --      the map selector  the world (in Retail first the Cosmic map over it), a continent or a plane of its own
 --                        (Zephras Isle), then a zone of it (A to Z): the map shows it whole; each says what the
 --                        map shows now
