@@ -295,7 +295,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   this computer for the realm and worked out anew from the clock each time, after a `/reload` or a login too; every
   ride corrects them (a restart of the realm starts its ships anew). Until a ride on a later trip teaches how long
   it takes once round (Forever's own boats and zeppelins), they hold only for its next three trips; then it says to
-  ride it again. *Ship times at a dock* in the settings switches it off.
+  ride it again. *Ship times at a dock* in the settings switches it off. On the map, the mouse over a dock's pin
+  tells the same in its tooltip, counting down: when the ship next comes there and when it leaves (the tram's
+  stations too).
 - **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay high up
   the screen: where it began and where it goes at the ends of a fine golden line (the map route's art, its glint
   pulsing along) that fills smoothly as you go, the vehicle's icon riding at its tip, a flight point's mark at each
@@ -410,7 +412,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Offered`: not done,
   not in the log, level, side, race, class, the quests before) is a quest giver, else a rare, else its service in
   the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
-  (Core's set *Travel*, its `docks`) its own pin, its tooltip every port it calls at, numbered in the order it
+  (Core's set *Travel*, its `docks`) its own pin, its tooltip first when its ship next comes there and leaves, as the
+  dock watch words it (`DockWatch.Timer`, white once known, grey while only how often; drawn again as its second
+  turns, through the game's tooltip's own `UpdateTooltip` of its owner), then every port it calls at, numbered in the order it
   travels to them from there, that one last (`Pins.Ports`, by the stops of Core's timetable, `Data.Ships`; a port it
   stops at twice in a row once; the tram: its other station), in the game's names of each dock's area and zone
   (`C_Map.GetAreaInfo`, `C_Map.GetMapInfo`), a click opening the map where it is the
@@ -972,7 +976,8 @@ Tests: `dev/tests/navigation.lua`.
   and the white ring", are off on the minimap at first, *Quest areas on the minimap* in the pin filter brings them
   (ours and the game's minimap's own). "There is a limit how far you can pan and you have to select the other
   continent": the camera's middle now goes anywhere on the world map and into the other continent's plane as it
-  is dragged over it.
+  is dragged over it. Then: "If I mouse over a boat on the map, can it then show the current timer? Like when it
+  arives or leaves?" A dock's pin's tooltip now counts it down (`DockWatch.Timer`).
 - **2026-11-09, the Atlas gone:** as Saneroki asked ("too many disadvantages without much benefit"), the painted map
   and its module `SaneUI_Atlas` are gone, with `Painted.lua`, its layer and its nearer zoom: the map offers
   *Parchment*, *Blended* and *Scrying* and starts as Scrying; a saved *Atlas* falls back to Scrying.

@@ -14,6 +14,9 @@ local _, ns = ...
 --                           -- leave, here, last (when it last left here), every (seconds between two departures) } }
 --                           -- (server times)
 --      DockWatch.Update()   drawn again now (the setting changed)
+--      DockWatch.Timer(key, dock)  the words of when the ship of way key next comes to its dock number dock and
+--                           -- leaves (the tram: its next train at that station), and whether its times are known;
+--                           -- nil for a way of no timetable (a dock pin's tooltip on the map, PinView.lua)
 --      DockWatch.Clock(s)   seconds as the game's clock writes them (1:05)
 --
 --  Within DockWatch.NEAR yards of where one stops (a tram's station:
@@ -140,6 +143,30 @@ function DockWatch.Rows()
     while #rows > DockWatch.ROWS do table.remove(rows) end
     shown = #rows > 0
     return rows
+end
+
+function DockWatch.Timer(key, dock)
+    local now = Ships.Now()
+    local timetable = Ships:Table(key)
+    if timetable then
+        -- Its stop at that dock it leaves soonest (one that stops there twice).
+        local best
+        for number, stop in ipairs(timetable.stops) do
+            if stop.dock == dock then
+                local arrive, leave, here = Ships:Next(key, number)
+                if not best or (leave and (not best.leave or leave < best.leave)) then
+                    best = { arrive = arrive, leave = leave, here = here }
+                end
+            end
+        end
+        if not best then return nil end
+        return Status(best, now, timetable.round, timetable.known, Ships:Seen(key) ~= nil), best.leave ~= nil
+    end
+    local record = Travel:Get(key)
+    if not record or record.kind ~= "tram" or not record.wait then return nil end
+    local arrive, leave, here = Trips:TramNext(key, now)
+    if not leave then return DockWatch.TEXT.trams:format(Clock(record.wait)), false end
+    return Status({ arrive = arrive, leave = leave, here = here }, now), true
 end
 
 function DockWatch.Update()

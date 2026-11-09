@@ -28,6 +28,8 @@ The bigger changes of each version, newest first.
   travels to them. The quest areas stay off the minimap unless you
   tick Quest areas on the minimap in the pin filter. Drag the map
   across the sea to the other continent without choosing it first.
+  The mouse over a dock's pin shows when its ship next arrives and
+  leaves, counting down.
 - Speed Leveling: with no guide chosen, the guide says Select a guide,
   with a button to pick one, and what the mouse does. A middle click
   on the guide opens its settings: the guide on, paused or off,

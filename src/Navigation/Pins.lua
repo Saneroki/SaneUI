@@ -538,6 +538,7 @@ local function FromData(place)
         if place.towards then
             -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
             pin.unverified, pin.doubt, pin.lines = nil, nil, {}
+            pin.way, pin.dock = place.id, place.dock -- its timer in its tooltip (PinView.lua, DockWatch.Timer)
             -- A boat's or zeppelin's every port, in the order it travels to them from here (Saneroki, 2026-11-09);
             -- the tram's other station.
             local ports = place.dock and Pins.Ports(WAYS_SET:Get(place.id), Ships:Table(place.id), place.dock)

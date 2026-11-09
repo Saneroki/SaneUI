@@ -2476,10 +2476,18 @@ do
     GameTooltip._lines = nil
     dock._scripts.OnEnter(dock)
     local lines = GameTooltip._lines
-    check(lines and lines[1] == Pins.TEXT.ports and lines[2] == "1. The Far Shore, Kalimdor"
-        and lines[3] == "2. Elwynn Forest (this port)" and lines[4] == Pins.TEXT.openMap and not lines[5],
-        "its tooltip: its ports in the order it travels to them, this one last, the area and the zone in the game's words; "
-        .. "the game's own way, not unconfirmed")
+    local every = ns.DockWatch.TEXT.about:format(ns.DockWatch.Clock(Core.Data.Ships():Table(3).round))
+    check(lines and lines[1] == every and lines[2] == Pins.TEXT.ports and lines[3] == "1. The Far Shore, Kalimdor"
+        and lines[4] == "2. Elwynn Forest (this port)" and lines[5] == Pins.TEXT.openMap and not lines[6],
+        "its tooltip: how often it sails (no ride yet); its ports in the order it travels to them, this one last, the "
+        .. "area and the zone in the game's words; the game's own way, not unconfirmed")
+    check(dock.UpdateTooltip, "kept up while it shows: the game's tooltip asks its owner again and again")
+    GameTooltip._lines = nil
+    dock:UpdateTooltip()
+    check(not GameTooltip._lines, "within the same second nothing drawn again")
+    W.Wait(1)
+    dock:UpdateTooltip()
+    check(GameTooltip._lines and GameTooltip._lines[1] == every, "a second later: drawn again")
     -- A way round three ports, stopping twice in a row at the second: from there the third, the first, then back.
     local record = { docks = { { map = 1429 }, { map = 1414 }, { map = 1415 } }, dockAreas = { 0, 12, 0 } }
     local round = { stops = { { dock = 1 }, { dock = 2 }, { dock = 2 }, { dock = 3 } } }
@@ -4293,8 +4301,8 @@ do
     GameTooltip._lines = nil
     tower._scripts.OnEnter(tower)
     local lines = GameTooltip._lines
-    check(lines and lines[1] == Pins.TEXT.ports and lines[2] == "1. Elwynn Forest" and lines[3]:find("^2%. .+ %(this port%)$"),
-        "its tooltip: its two ports, where it flies to first")
+    check(lines and lines[1]:find("^Sails about every ") and lines[2] == Pins.TEXT.ports and lines[3] == "1. Elwynn Forest"
+        and lines[4]:find("^2%. .+ %(this port%)$"), "its tooltip: how often it flies, its two ports, where it flies to first")
     shown = Shown()
     local isleCut = shown[950] and shown[950]._mask
     check(isleCut and isleCut._texture == ns.Terrain.PATH:format(2991, 4, 4) and Overviews(shown, 2991) > 0,
@@ -5059,6 +5067,12 @@ local function Rides()
         "at its dock: where it goes, when it arrives and leaves")
     check(rows[1].last and near(rows[1].leave - rows[1].last, Ships:Table(3).round),
         "the wait drawn from when it last left this dock to when it comes again")
+    local timer, timed = DockWatch.Timer(3, 1)
+    check(timer == rows[1].status and timed and DockWatch.Timer(3, 9) == nil and DockWatch.Timer(2, 1) == nil,
+        "its dock pin's tooltip says the same (DockWatch.Timer); none for a dock it has not, nor a flight")
+    local tram = DockWatch.Timer(7, 2)
+    check(tram == DockWatch.TEXT.trams:format(Clock(120)) or (tram and tram:find("leaves in", 1, true)),
+        "a station of the tram: its next train, or how often one comes")
     local width, height = UIParent._width, UIParent._height
     UIParent:SetSize(1600, 900)
     DockWatch.Update()

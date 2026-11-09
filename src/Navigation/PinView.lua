@@ -26,6 +26,8 @@ local _, ns = ...
 --                  bosses' loot (Dungeons.lua): each item with how often it comes, from Core's Data.Drops: what shipped
 --                  and what play counted. A percent once enough came, until then how many of how many; the likeliest
 --                  first, at most PinView.DROPS lines. In a gathered marker a line or so under each name
+--      a dock      a boat's, a zeppelin's or the tram's: under its name when it next comes here and leaves,
+--                  counting down while the tooltip shows (DockWatch.Timer; Saneroki, 2026-11-09), then its ports
 --      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
@@ -42,6 +44,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Pins = ns.Pins
+local Ships = Core.Data.Ships()
 local PinView = {}
 ns.PinView = PinView
 
@@ -172,10 +175,20 @@ local function Lines(pin)
     end
 end
 
-local function Tip(button)
+-- A dock's tooltip, while it shows: drawn again as its timer's second turns (the game's tooltip asks its owner's
+-- UpdateTooltip every TOOLTIP_UPDATE_TIME, as for an action button's cooldown).
+local Tip
+local ticked -- the server's second the dock's tooltip was last drawn at
+local ticking = ns.Guard(function(button)
+    local second = math.floor(Ships.Now())
+    if second ~= ticked and button.pin and button.pin.dock then Tip(button) end
+end)
+
+function Tip(button)
     local pin = button.pin
     if not pin then return end
     tipped = button
+    button.UpdateTooltip = pin.dock and not pin.gathered and ticking or nil
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     wipe(said)
     if pin.gathered then
@@ -220,6 +233,13 @@ local function Tip(button)
         GameTooltip:AddLine(Pins.TEXT.open, 0.5, 0.5, 0.5)
     else
         if pin.offer then Say(Pins.TEXT.offered, 1, 0.82, 0) end
+        -- A boat's, a zeppelin's or the tram's: when it comes here next and leaves, counting down, as at the dock
+        -- (Saneroki, 2026-11-09); how often it sails while a ride has not taught its times.
+        local timer, known = pin.dock and ns.DockWatch.Timer(pin.way, pin.dock)
+        if timer then
+            ticked = math.floor(Ships.Now())
+            if known then GameTooltip:AddLine(timer, 1, 1, 1) else GameTooltip:AddLine(timer, 0.6, 0.6, 0.6) end
+        end
         Lines(pin)
         if pin.kind == "goal" then Say(Pins.TEXT.open, 0.5, 0.5, 0.5) end
         local key, unsure = Dropper(pin), false
