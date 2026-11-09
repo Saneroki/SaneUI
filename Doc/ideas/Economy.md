@@ -447,6 +447,10 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
   the auction house's mails summed up (sold, bought, expired, with their amounts; the house's cut for
   *Price to post*), sending. The mailbox opens the bags in its show function, not in `OnShow`, so they open
   with a held mailbox too.
+  *Where it stands (Saneroki, 2026-11-09):* "Mail window should open inside the inventory fullscreen with the mail
+  window on the left and the bags on the right side." Built on Inventory's full screen (`src/Inventory/Talks.lua`): the
+  game's mail window seated there, a letter being read (`OpenMailFrame`, a window of its own) beside it, the bags on the
+  right; the tab Banker goes with the mail window, being its child. Ours takes the same place.
 - **Guild bank** (`GuildBankFrame`, `Blizzard_GuildBankUI`, loaded on demand; *GuildBanker*;
   `GUILDBANKFRAME_CLOSED`): its tabs in one view with search, the value of each tab, deposit and withdraw,
   the log.

@@ -442,10 +442,12 @@ local function IconTab(key)
         if strip.icons[index].key == key then return strip.icons[index] end
     end
 end
-local iconKeys = {}
+local iconKeys, iconed = {}, {}
 for index = 1, strip.icons.taken do iconKeys[index] = strip.icons[index].key end
-check(table.concat(iconKeys, ",") == table.concat(Board.ORDER, ","),
-    "a tab of its own for each window, in the dropdown's order: " .. table.concat(iconKeys, ","))
+for _, key in ipairs(Board.ORDER) do if Board.ICONS[key] then iconed[#iconed + 1] = key end end
+check(table.concat(iconKeys, ",") == table.concat(iconed, ",") and #iconed == #Board.ORDER - 1 and not Board.ICONS.letter,
+    "a tab of its own for each window with an icon (all but a letter, which comes with the mail), in the dropdown's order: "
+    .. table.concat(iconKeys, ","))
 local repIcon, dollIcon = IconTab("reputation"), IconTab("character")
 check(dollIcon._selected and IconTab("alts")._selected and not repIcon._selected and repIcon.Text._text == ""
     and repIcon.icon._texture == "Interface/ICONS/INV_SideTab_Reputation2_c60" and dollIcon.icon._portrait == "player",

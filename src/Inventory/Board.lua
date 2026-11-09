@@ -19,6 +19,7 @@ local _, ns = ...
 --                  Retail: those parts do not register)
 --      vendor      the game's vendor window, seated in its panel while it is
 --                  open (Talks.lua)
+--      mail, letter  the game's mail window and a letter's, likewise
 --      bags        the bags
 --      bank        the bank, while the character is at a banker
 --      alts        your alts: the other characters' snapshots
@@ -28,7 +29,7 @@ local _, ns = ...
 --  right, each as wide as it asks (its least width), the last one taking what
 --  is left (a window with nothing to show now, the bank away from a banker,
 --  left out); the others are added from the dropdown Windows. At a vendor and
---  a banker the full screen comes with a layout of its own for that talk
+--  a banker and a mailbox the full screen comes with a layout of its own for that talk
 --  (Talks.lua: Core's board's occasions, registered by Board.Occasion).
 --
 --  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
@@ -81,6 +82,7 @@ Board.ICONS = {
     currency = SideTab("INV_SideTab_Currency_c60", "INV_Misc_Coin_02"),
     statistics = SideTab("INV_SideTab_Stats_c60", "Achievement_General"),
     vendor = "Interface/ICONS/INV_Misc_Coin_01",
+    mail = "Interface/ICONS/INV_Letter_15", -- a letter has none: it comes with the mail
     bags = "Interface/ICONS/INV_Misc_Bag_08",
     bank = "Interface/ICONS/INV_Misc_Bag_09",
     alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
@@ -93,8 +95,8 @@ Board.DRESS = { character = "bare", stats = "journal", gear = "journal", titles 
                 bank = "journal", alts = "journal" }
 
 -- The windows in the dropdown's order; those the first layout holds.
-Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "vendor", "bags",
-                "bank", "alts" }
+Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "vendor", "mail",
+                "letter", "bags", "bank", "alts" }
 Board.FIRST = { character = true, stats = true, bags = true, bank = true, alts = true }
 
 local layouts  -- Core's board, once the window is there (Board.Take)

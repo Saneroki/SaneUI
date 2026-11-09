@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- At a mailbox the Inventory full screen comes too: the mail window
+  on the left (with its Banker tab), a letter you open beside it, and
+  your bags on the right.
 - Nameplates: choose what they show on the Nameplates page: the
   health bar and spells, the health bar only (no auras, nor the
   tracked auras under it), or the spells only: no bar and no name,

@@ -307,11 +307,20 @@ Core.Options("Loot", { { key = "full", default = true, text = "Make room for loo
     { changed = function() Core.SwitchChanged() end })
 -- Only the bags on the full screen: the other parts are tried elsewhere.
 ns.store.board = { chosen = 1, tabs = { { name = "Default", tree = { key = "bags" } } } }
--- The game's vendor window, closed, there from the start as the game's is (Talks.lua follows it from the login on).
-local merchantFrame = CreateFrame("Frame", "MerchantFrame", UIParent)
-merchantFrame:SetSize(336, 444)
-merchantFrame:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
-merchantFrame:Hide()
+-- The game's vendor and mail windows, closed, there from the start as the game's are (Talks.lua follows them from
+-- the login on); a letter's window beside the mail window (its own, on UIParent, anchored to it); Economy's tab
+-- Banker, the mail window's own child. One table: the main chunk is at Lua's 200 locals.
+local talkWindows = {}
+talkWindows.shop = CreateFrame("Frame", "MerchantFrame", UIParent)
+talkWindows.shop:SetSize(336, 444)
+talkWindows.mail = CreateFrame("Frame", "MailFrame", UIParent)
+talkWindows.mail:SetSize(338, 424)
+talkWindows.letter = CreateFrame("Frame", "OpenMailFrame", UIParent)
+talkWindows.letter:SetSize(338, 424)
+talkWindows.tab = CreateFrame("Frame", nil, talkWindows.mail)
+for _, window in ipairs({ talkWindows.shop, talkWindows.mail }) do window:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116) end
+talkWindows.letter:SetPoint("TOPLEFT", talkWindows.mail, "TOPRIGHT", 46, 0)
+for _, window in ipairs({ talkWindows.shop, talkWindows.mail, talkWindows.letter }) do window:Hide() end
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Inventory == ns and not ns.off, "the module is made and started")
 local Contents, Layout, Cells, Bags, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Bags, ns.Foot
@@ -2334,9 +2343,12 @@ function W.CheckRoom()
 end
 -- The full screen at a vendor and a banker (Talks.lua): a layout of its own for each, the game's vendor window seated
 -- on the left, the bags on the right; the bags on the left, the bank on the right. The talk over, the full screen goes
--- back if it came for it; one that stood before keeps standing, with the layout chosen.
-do
+-- back if it came for it; one that stood before keeps standing, with the layout chosen. The mailbox: the mail window
+-- on the left, a letter being read beside it, the bags on the right (in a function of its own: the main chunk is at
+-- Lua's 200 locals).
+;(function()
     local Talks, layouts, store = ns.Talks, ns.Board.layouts, ns.store.board
+    local merchantFrame, mailFrame, letterFrame, bankerTab = talkWindows.shop, talkWindows.mail, talkWindows.letter, talkWindows.tab
     if handle.edge.full then handle.edge:Fill(false) Stand() end
     local chosenTree = store.tabs[store.chosen].tree
     merchantFrame:Show()
@@ -2398,7 +2410,45 @@ do
     Stand()
     check(not handle.edge.full and layouts.occasion == nil and store.tabs[store.chosen].tree == chosenTree,
         "the bank closed: the full screen goes back, the layout chosen as it was")
-end
+
+    -- The mailbox: the mail window on the left, a letter being read beside it, the bags on the right.
+    local pad, edge = Core.Board.PAD, Core.Board.EDGE
+    mailFrame:Show()
+    Stand()
+    rects = layouts.rects
+    check(handle.edge.full and layouts:Talking() == "mail" and rects.mail and rects.bags and not rects.letter
+        and rects.mail[1] < rects.bags[1] and layouts.strip.tabs[1].Text._text == "Mail",
+        "at a mailbox: the full screen comes, the mail window on the left, the bags on the right, no letter yet")
+    check(rects.mail[3] == 338 + 2 * edge, "the mail's panel as wide as its window")
+    local mailPanel = ns.Board.Panel("mail")
+    mailPanel.body._left, mailPanel.body._bottom = rects.mail[1], 1080 - rects.mail[2] - rects.mail[4]
+    mailPanel.body._width, mailPanel.body._height = rects.mail[3], rects.mail[4] - Core.Board.HEAD
+    Talks.post.Size()
+    W.Wait(0)
+    check(Core.Lent(mailFrame) and bankerTab:GetParent() == mailFrame and mailFrame:IsShown(),
+        "the game's mail window seated, Economy's tab on it still its own child, so it goes with it")
+    letterFrame:Show()
+    W.Wait(0)
+    rects = layouts.rects
+    check(rects.letter and rects.mail[1] < rects.letter[1] and rects.letter[1] < rects.bags[1]
+        and rects.mail[3] == 338 + 2 * edge and rects.letter[3] == 338 + 2 * edge,
+        "a letter opened: between the mail and the bags, each as wide as its window")
+    check(rects.bags[3] == 1920 - 4 * pad - 2 * (338 + 2 * edge), "the bags taking the rest")
+    letterFrame:Hide()
+    W.Wait(0)
+    check(not layouts.rects.letter and layouts.rects.mail[3] == 338 + 2 * edge, "the letter closed: the mail keeps its width")
+    layouts:Remove("letter")
+    check(not layouts:Has("letter"), "(the player takes the letter out of the mail's layout)")
+    letterFrame:Show()
+    W.Wait(0)
+    check(layouts:Has("letter") and layouts.rects.letter, "a letter opened then: put back, never left behind the full screen")
+    store.occasions.mail = nil
+    letterFrame:Hide()
+    mailFrame:Hide()
+    Stand()
+    check(not handle.edge.full and layouts.occasion == nil and not Core.Lent(mailFrame) and not Core.Lent(letterFrame)
+        and mailFrame._points[1][4] == 16, "the mailbox left: the full screen goes back, both windows given back exactly")
+end)()
 
 W.CheckRoom()
 

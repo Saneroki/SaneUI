@@ -109,11 +109,13 @@ ns.TEXT = {
     bagsResetColumns = "Reset Columns",
     bagsKeys = "Bag Keys Open Our Bags",
     bagsKeysTip = "Your bag keys open the Inventory full screen with our bags; the game's bags stay closed (the dropdown Classic windows still opens them) and its bag bar is gone from the screen.",
-    -- The full screen at a vendor and a banker (Talks.lua)
-    talks = "Full Screen at Vendors and the Bank",
-    talksTip = "At a vendor the full screen comes with the vendor's window on the left and your bags on the right; at a banker with your bags on the left and your bank on the right. Each is a layout of its own behind its tab, kept as you arrange it, and the full screen goes back when the talk ends.",
+    -- The full screen at a vendor, a banker and a mailbox (Talks.lua)
+    talks = "Full Screen at Vendors, the Bank and Mail",
+    talksTip = "At a vendor the full screen comes with the vendor's window on the left and your bags on the right; at a banker with your bags on the left and your bank on the right; at a mailbox with the mail window on the left, a letter you read beside it, and your bags on the right. Each is a layout of its own behind its tab, kept as you arrange it, and the full screen goes back when the talk ends.",
     talkVendor = "Vendor",
     talkBank = Core.Word("BANK", "Bank"),
+    talkMail = Core.Word("MAIL_LABEL", "Mail"),
+    talkLetter = "Letter",
     bagsFirstTip = "The view the bags open with: every item by category, every slot of your bags together, or each bag by itself.",
     bagsShowPinnedTip = "Pinned Items at the top of the bags: the items you pinned with a middle click.",
     bagsPinnedOne = "Pinned in One Bag and Each Bag",
