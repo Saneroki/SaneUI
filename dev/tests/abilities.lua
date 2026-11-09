@@ -192,7 +192,7 @@ D.Class("MAGE", function()
     }
 end)
 
-for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1", "FormBar", "Spacing",
+for _, file in ipairs({ "Data/SkillLines", "Sources", "Buttons", "Engine", "Ghosts", "Presets", "Bar1", "FormBar", "PagedBars", "Spacing",
                         "Book/Layout", "Book/Item", "Book/Drag", "Book/Book", "Book/Home", "Book/Window", "Book/Menu",
                         "Book/Offer" }) do
     load(file)
@@ -2184,6 +2184,113 @@ do
     W.printed = {}
     sane("formbar on")
     check(printedMatch("only a druid's"), "and the command says so")
+
+    -- Bars 2 to 8 paged by stance or form as the game's Bar 1 (PagedBars.lua; Saneroki, 2026-11-09), by a checkbox
+    -- beside each, for a class with rows for its stances or forms.
+    local two, barTwo, before = W.NewWidget("Frame", "MultiBarBottomLeft"), {}, {}
+    _G.MultiBarBottomLeft = two
+    two:SetSize(540, 45)
+    Attributes(two)
+    two.attributes.actionpage = 6
+    local function Slot2(button)
+        return button.id + ((button:GetAttribute("actionpage") or two:GetAttribute("actionpage")) - 1) * 12
+    end
+    for index = 1, 12 do
+        before[index] = _G["MultiBarBottomLeftButton" .. index]
+        local button = W.NewWidget("CheckButton", "MultiBarBottomLeftButton" .. index, two)
+        Attributes(button)
+        button.id = index
+        button:SetScript("OnAttributeChanged", function(self) self.action = Slot2(self) end)
+        button.action = Slot2(button)
+        _G["MultiBarBottomLeftButton" .. index], barTwo[index] = button, button
+    end
+    ns.class = "MAGE"
+    ns.PagedBars.Apply()
+    check(not (ns.PagedBars.Box(2) and ns.PagedBars.Box(2):IsShown()), "a mage's bars have no such checkbox")
+    ns.class = "WARRIOR"
+    W.combat = true
+    ns.PagedBars.Apply()
+    check(not ns.PagedBars.Box(2), "in a fight it waits")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    local box = ns.PagedBars.Box(2)
+    check(box and box:IsShown() and not box:GetChecked() and not ns.PagedBars.Held(2) and box.ignoreInLayout == true
+        and box:GetParent() == two, "then a warrior's Bar 2 has its checkbox, unticked at first, in the bar but out of its layout")
+    local point, relative, relativePoint = box:GetPoint(1)
+    check(point == "RIGHT" and relative == barTwo[1] and relativePoint == "LEFT", "left of its first button")
+    check(ns.TEXT.pagedTip:format(2):find("Action Bar 2 a paged bar, as the game's own Bar 1", 1, true) ~= nil,
+          "its tooltip says it makes the bar a paged bar like Bar 1")
+    InForm("form", "bonusbar:1")
+    check(barTwo[1].action == 61, "unticked, a stance leaves the bar on its own row")
+    box:SetChecked(true)
+    Press(box)
+    check(ns.PagedBars.Held(2) and ns.PagedBars.On(2) and ns.char.pagedBars[2] == true and barTwo[1].action == 73
+        and barTwo[12].action == 84, "ticked, Battle Stance's row at once")
+    local rows = {
+        { "Defensive Stance", { "form", "bonusbar:2" }, 85 },
+        { "Berserker Stance", { "form", "bonusbar:3" }, 97 },
+        { "a form without a row of its own (Shadowform, Moonkin Form)", { "form" }, 61 },
+        { "out of it", {}, 61 },
+    }
+    for _, row in ipairs(rows) do
+        InForm(unpack(row[2]))
+        check(barTwo[1].action == row[3] and barTwo[12].action == row[3] + 11 and barOne[1].action == 1,
+              row[1] .. ": its row, and Bar 1 keeps its page")
+    end
+    check(not ns.Bar1.Unseen(73) and not ns.Bar1.Unseen(120), "the stances' rows are seen")
+    W.combat = true
+    InForm("form", "bonusbar:3")
+    check(barTwo[1].action == 97, "the stance turns it in a fight too")
+    W.printed = {}
+    box:SetChecked(false)
+    Press(box)
+    check(ns.PagedBars.Held(2) and barTwo[1].action == 97 and printedMatch("once the fight is over"), "unticked in a fight it waits")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(not ns.PagedBars.Held(2) and barTwo[1].action == 61 and barTwo[1]:GetAttribute("actionpage") == nil
+        and ns.char.pagedBars == nil, "and after it the bar is its own again, nothing kept")
+    check(ns.Bar1.Unseen(73), "the stances' rows out of sight again")
+    -- A druid's Bar 6 keeps its form bar; its other bars page as the game's Bar 1 does.
+    ns.class = "DRUID"
+    ns.FormBar.Apply()
+    ns.PagedBars.Apply()
+    check(ns.FormBar.Held() and not (ns.PagedBars.Box(6) and ns.PagedBars.Box(6):IsShown()) and box:IsShown(),
+          "a druid's Bar 6 keeps its own checkbox and arrows, Bar 2 has this one")
+    box:SetChecked(true)
+    Press(box)
+    InForm("form", "bonusbar:1")
+    check(barTwo[1].action == 73 and barSix[1].action == 109, "Cat Form: Bar 2 on Bar 1's row of it, Bar 6 on Bar 10")
+    InForm("form", "bonusbar:3")
+    check(barTwo[1].action == 97 and barSix[1].action == 97, "Bear Form: both on its row")
+    InForm()
+    ns.class = "ROGUE"
+    ns.FormBar.Apply()
+    ns.PagedBars.Apply()
+    InForm("form", "bonusbar:1")
+    check(barTwo[1].action == 73 and ns.PagedBars.Box(6) and ns.PagedBars.Box(6):IsShown() and not ns.FormBar.Held(),
+          "a rogue in Stealth: its row; another class's Bar 6 has the checkbox too")
+    -- Standing down gives the bars back; the choice stays the character's.
+    ns.off = true
+    ns.PagedBars.Apply()
+    check(not ns.PagedBars.Held(2) and not box:IsShown() and barTwo[1].action == 61 and ns.PagedBars.On(2),
+          "standing down gives the bars back, the choice kept")
+    ns.off = nil
+    ns.PagedBars.Apply()
+    check(ns.PagedBars.Held(2) and barTwo[1].action == 73 and box:IsShown(), "back with the module, on the row at once")
+    InForm()
+    -- A tall bar: the checkbox above its first button.
+    two:SetSize(45, 540)
+    two:GetScript("OnSizeChanged")(two, 45, 540) -- the game lays out its rows anew (after the login, in Edit Mode)
+    point, relative, relativePoint = box:GetPoint(1)
+    check(point == "BOTTOM" and relative == barTwo[1] and relativePoint == "TOP", "above a tall bar's first button")
+    ns.PagedBars.Set(2, false)
+    ns.class = class
+    ns.PagedBars.Apply()
+    ns.FormBar.Apply()
+    check(not ns.PagedBars.Held(2) and not box:IsShown(), "another class again: no checkbox")
+    for index = 1, 12 do _G["MultiBarBottomLeftButton" .. index] = before[index] end
+    _G.MultiBarBottomLeft = nil
+
     for index = 1, 12 do _G["MultiBar5Button" .. index] = nil end
     _G.MultiBar5 = nil
 

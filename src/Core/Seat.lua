@@ -12,7 +12,11 @@ local Core = SaneUI.Core
 --
 --  Followed while seated: the game (or its addon) places or scales it anew (the
 --  game's panels make room for each other, a window scaled to fit the screen):
---  hooks after its SetPoint and SetScale put it back. A new size (another tab,
+--  hooks after its SetPoint and SetScale put it back, and after its
+--  SetFrameStrata and SetFrameLevel its layer: the game's action bars set their
+--  own strata at every drag onto them (ActionBarMixin:UpdateFrameStrata: MEDIUM,
+--  TOOLTIP while a spell is dragged), which put them behind the full screen,
+--  dark and out of the mouse's reach until it opened again. A new size (another tab,
 --  made small) fits it anew and is told (sized). Closed, it is given back and
 --  that is told (gone). Nothing of it is replaced: hooks after its functions
 --  and scripts (hooksecurefunc, HookScript), each made once per window.
@@ -75,6 +79,31 @@ local function Moved(frame)
     Core.Safe(self.label, Fit, self)
 end
 
+-- Its layer in the room: that strata, at least that level (where its own is above already, its own).
+local function Layer(self)
+    local frame, strata, level = self.frame, self.layer[1], self.layer[2]
+    placing = true
+    local ok, problem = pcall(self.lent.SetLayer, self.lent, strata, Plain(frame:GetFrameLevel()) < level and level or nil)
+    placing = false
+    if not ok then error(problem, 0) end
+end
+
+-- Its own code set its strata or level anew: the room's again, now or once the fight is over (a protected frame).
+local function Relayer(self)
+    if not self.held or Core.Locked(self.frame) then return end
+    Layer(self)
+end
+
+local function Layered(frame)
+    local self = seats[frame]
+    if placing or not self or not self.held or not self.layer then return end
+    if frame:GetFrameStrata() == self.layer[1] and Plain(frame:GetFrameLevel()) >= self.layer[2] then return end
+    if Core.Locked(frame) then
+        return Core.AfterCombat(self.label .. ": layer of " .. tostring(frame:GetName() or frame), Relayer, self)
+    end
+    Core.Safe(self.label, Layer, self)
+end
+
 local function Sized(frame)
     local self = seats[frame]
     if placing or not self or not self.held or Core.Locked(frame) then return end
@@ -95,6 +124,8 @@ local function Follow(frame)
     hooked[frame] = true
     hooksecurefunc(frame, "SetPoint", Core.Guard("seat", Moved))
     hooksecurefunc(frame, "SetScale", Core.Guard("seat", Moved))
+    hooksecurefunc(frame, "SetFrameStrata", Core.Guard("seat", Layered))
+    hooksecurefunc(frame, "SetFrameLevel", Core.Guard("seat", Layered))
     frame:HookScript("OnSizeChanged", Core.Guard("seat", Sized))
     frame:HookScript("OnHide", Core.Guard("seat", Hidden))
 end
@@ -109,7 +140,8 @@ function methods:Hold(left, top, width, height, strata, level)
     local room = self.room
     room[1], room[2], room[3], room[4] = left, top, math.max(width, 1), math.max(height, 1)
     -- Its own level where that is above already (the game's spellbook stands at 5000, its parts above that).
-    self.lent:SetLayer(strata, Plain(frame:GetFrameLevel()) <= level and level or nil)
+    self.layer = { strata or frame:GetFrameStrata(), level or 0 }
+    Layer(self)
     Fit(self)
     return true
 end

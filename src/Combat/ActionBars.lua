@@ -34,6 +34,12 @@ local _, ns = ...
 --  rest in a group as well (Saneroki, 2026-11-07).
 --  This goes for how they look or as the game has them alike.
 --
+--  On the full screen every icon shows at full brightness (Saneroki,
+--  2026-11-09: "It should always show the icons in full brightness"): what the
+--  game greys (cannot be used now) or tints blue (too little mana) is set white
+--  after each of its UpdateUsable, its own colour kept and given back when the
+--  bars leave the full screen. A Sane Macros face is not dimmed there either.
+--
 --  Hooks after the game's own (each button's Update and UpdateButtonArt, a
 --  bar's Update, UpdateState and UpdateDividers) keep the look as the game
 --  changes them. Off (the setting) or standing down, everything is as the game
@@ -72,6 +78,8 @@ local rest            -- the bars as one set, out of sight at rest (Core.Rest)
 local bars = {}       -- the game's bars found, each once
 local dressed = {}    -- [the game's button] = what we changed on it: its lends, the looks it had
 local slots = setmetatable({}, { __mode = "k" })  -- [the game's button] = our dark square on it, once made
+local bright = setmetatable({}, { __mode = "k" }) -- [the game's button] = its icon's colour as the game set it, while white
+local watched = setmetatable({}, { __mode = "k" }) -- [the game's button] = its UpdateUsable is followed (the hook stays)
 local hooked = setmetatable({}, { __mode = "k" }) -- [the game's frame] = its hooks are placed (they stay)
 local barLends = {}   -- the lends of the bars' own art
 
@@ -192,6 +200,36 @@ local function Undress(button)
         was.texture:SetBlendMode(was.blend or "BLEND")
     end
     button:SetAlpha(1)
+end
+
+-- An icon at full brightness while the bars stand on the full screen, its colour as the game set it kept (again after
+-- each of the game's UpdateUsable: game, true); off it, that colour again.
+local function Bright(button, game)
+    local icon = rawget(button, "icon")
+    if type(icon) ~= "table" or not icon.SetVertexColor then return end
+    if seated and not ns.off then
+        if game or not bright[button] then bright[button] = { icon:GetVertexColor() } end
+        icon:SetVertexColor(1, 1, 1)
+    elseif bright[button] then
+        local was = bright[button]
+        bright[button] = nil
+        icon:SetVertexColor(was[1], was[2], was[3])
+    end
+end
+local OnUsable = ns.Guard(function(button) if seated then Bright(button, true) end end)
+
+-- Every button of the bars that stand on the full screen: at full brightness, or as the game had it; its usable look
+-- followed from now on (each button's hook placed once).
+local function Brighten()
+    for _, bar in ipairs(Bars.Frames()) do
+        for _, button in pairs(rawget(bar, "actionButtons") or {}) do
+            if not watched[button] and type(button.UpdateUsable) == "function" then
+                watched[button] = true
+                hooksecurefunc(button, "UpdateUsable", OnUsable)
+            end
+            Bright(button)
+        end
+    end
 end
 
 -- The dividers a bar shows between its buttons: out of sight while clean. Each one ever put out of sight is
@@ -328,10 +366,14 @@ local function Rests()
     end
 end
 
--- The bars on the full screen, or no longer.
+-- The bars on the full screen, or no longer; nil: whether they are.
 function Bars.Seated(on)
+    if on == nil then return seated end
     seated = on and true or false
     Grid(dragging)
+    ns.Safe("action bars", Brighten)
+    local faces = ns.Macros and ns.Macros.Face
+    if faces and faces.Paint then ns.Safe("action bars", faces.Paint) end
 end
 
 -- The bars that stand on the full screen, as far as this game has them.
@@ -360,6 +402,7 @@ end
 -- Standing down: the bars as the game has them, at once.
 function Bars.GiveBack()
     Restore()
+    for button in pairs(bright) do Bright(button) end
     if rest then rest:Switch(false) end
 end
 

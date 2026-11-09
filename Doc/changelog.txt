@@ -6,6 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Action bars on the full screen: no longer dark after a spell or a
+  macro is dragged onto them, every icon at full brightness. Every
+  bar you switched on stands there, one Edit Mode hides too, and
+  the window is just as large as its bars.
+- A checkbox beside each of Action Bars 2 to 8 (warrior, druid,
+  rogue): Page with your stance or form makes the bar paged as the
+  game's own Bar 1 is, a row of its own in each stance or form.
 - A save window after you change settings in Sane UI's options, the
   game's own options, key bindings, Edit Mode or the addon list: it
   stands beside them until you answer. Yes saves the changes into

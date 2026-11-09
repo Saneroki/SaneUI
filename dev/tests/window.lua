@@ -2313,6 +2313,19 @@ end)()
         "placed anew by the game, it is put back in its room at once (its own placing passes the hook)")
     game:SetScale(1)
     check(game:GetScale() == 0.5, "scaled anew by the game, likewise")
+    -- The game's action bars set their own strata at every drag onto them (MEDIUM; TOOLTIP while a spell is dragged),
+    -- which put them behind the full screen, dark and out of the mouse's reach (Saneroki, 2026-11-09).
+    game:SetFrameStrata("MEDIUM")
+    check(game._strata == "HIGH" and game._level == 50, "its own code sets its strata anew: its layer is put back at once")
+    game:SetFrameLevel(3)
+    check(game._strata == "HIGH" and game._level == 50, "its level too")
+    game._protected = true
+    W.combat = true
+    game:SetFrameStrata("MEDIUM")
+    check(game._strata == "MEDIUM", "a protected one in a fight waits")
+    W.Combat(false)
+    check(game._strata == "HIGH" and game._level == 50, "and has its layer again once the fight is over")
+    game._protected = nil
     seat:Free()
     point = game._points[1]
     check(not seat.held and not Core.Lent(game) and game:GetScale() == 1 and #game._points == 1 and point[1] == "TOPLEFT"

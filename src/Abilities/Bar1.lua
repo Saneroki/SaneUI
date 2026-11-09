@@ -20,7 +20,8 @@ local _, ns = ...
 --
 --  All of it runs in the game's secure state driver, so it works in a fight.
 --  Bars 6 to 8 need nothing here: their slots are on none of Bar 1's pages and
---  no form changes them, but a druid's Bar 6 swaps with its form (FormBar.lua).
+--  no form changes them, but a druid's Bar 6 swaps with its form (FormBar.lua), and any of Bars 2 to 8 may
+--  be paged by stance or form, taking the rows Bar 1 leaves free here (PagedBars.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Bar1 = {}
@@ -84,9 +85,10 @@ function Bar1.Apply()
 end
 
 -- Whether a slot is on a form's row while the bar keeps its page: that row never shows, unless it is a druid's Bar 9
--- or 10, which Bar 6 shows (FormBar.lua).
+-- or 10, which Bar 6 shows (FormBar.lua), or a paged bar shows it (PagedBars.lua).
 function Bar1.Unseen(slot)
     return held and slot > ns.PAGES[2] and slot <= ns.PAGES[#ns.PAGES] + ns.NUM_BUTTONS and not ns.FormBar.Number(slot)
+        and not ns.PagedBars.Shows(slot)
 end
 
 -- For the test: whether the buttons hold their page now.

@@ -185,6 +185,17 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
   is, at the left of its first button, wherever Edit Mode puts the bar; the arrows are the game's page arrows of Bar 1
   (`ui-hud-actionbar-pageuparrow-*`, `-pagedownarrow-*`). `ns.char.formBar` is `false` when unticked. With the module
   standing down, or another class, the driver goes, `state-row` is `own` and the pager hides.
+- **Paged bars (`PagedBars.lua`).** Any of Bars 2 to 8 paged by stance or form as the game pages Bar 1 (Saneroki,
+  2026-11-09), for a warrior, a druid or a rogue (`PagedBars.CLASSES`: the classes whose forms have a bonus bar in
+  WoW: Forever's `SpellShapeshiftForm.BonusActionBar`: Battle, Defensive and Berserker Stance 1-3, Cat Form 1, Bear and
+  Dire Bear Form 3, Stealth 1; Shadowform, Moonkin, Travel and Aquatic Form none). Per bar a header of ours with its
+  twelve buttons (`Bar1.Header`) and a state `row` from the driver `[bonusbar:1] 7; [bonusbar:2] 8; [bonusbar:3] 9;
+  [bonusbar:4] 10; own`, the rows the game gives Bar 1 (6 + n); its snippet writes the page to each button's
+  `actionpage` (none for `own`), in a fight too. The checkbox (`UICheckButtonTemplate`, insecure, `ignoreInLayout`, a
+  child of the bar) stands left of its first button, above it on a tall bar; ticked, the driver is registered, unticked
+  it goes and `state-row` is `own`; in a fight the change waits for its end. Kept per character
+  (`ns.char.pagedBars[number] = true`, nothing while none). A druid's Bar 6 is the form bar's and has none of these.
+  `PagedBars.Shows(slot)`: rows 7 to 10 are seen while any bar is paged (`Bar1.Unseen`).
 - **Buttons that touch (`Spacing.lua`).** `ActionBar_OnLoad` gives each button a small frame of its own (`button.container`,
   parented to the bar), `UpdateGridLayout` lays out those frames with `max(minButtonPadding, buttonPadding)` between
   them, and Edit Mode's icon size is the frames' scale. `minButtonPadding` is the game's field and stays unwritten:
@@ -413,6 +424,7 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `Presets.lua` | Save and load bar layouts |
 | `Bar1.lua` | Action Bar 1 keeps the page you chose; its buttons and the keys of Bar 6 under the game's own bars |
 | `FormBar.lua` | A druid's Action Bar 6 swaps with its form (Bars 9 and 10); its number, arrows and checkbox |
+| `PagedBars.lua` | Bars 2 to 8 paged by stance or form as the game's Bar 1, by a checkbox beside each |
 | `Spacing.lua` | The buttons of every action bar touch, and bars snapped together |
 | `Book/Layout.lua` | Page layout and the order of entries (no frames) |
 | `Book/Item.lua` | One grey spellbook entry: look, the two marks, tooltip, link, menu |
@@ -425,6 +437,9 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-09 — Bars 2 to 8 paged by stance or form, as the game pages Bar 1 (Saneroki: "this makes the bar into a
+  paged bar (like the first one, bar one native) or activate the stance / forms specific page and change accordingly"):
+  the checkbox *Page with your stance or form* beside each, for a warrior, a druid (not its Bar 6) or a rogue.
 - 2026-11-06 — Combat's spellbook on its full screen shows what the game's book shows here: the grey spells, the weapon
   skills, Home, the reservations by drag, the clock and quest marks, the checkbox and the menu's lines; through Core
   (`Book/Offer.lua`, `Core.Spellbook`), so neither module needs the other.

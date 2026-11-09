@@ -51,9 +51,11 @@ local function PaintOne(face)
     face.icon:SetTexture(Macros.Press.FacePicture(macro, step))
     local spell = step and Macros.Press.SpellOf(step)
     local dim = false
-    if ns.options.macroDim and Macros.Press.Waits(turn) then
+    -- On the full screen every icon at full brightness (ActionBars.lua, Seated).
+    local dims = ns.options.macroDim and not (ns.ActionBars and ns.ActionBars.Seated())
+    if dims and Macros.Press.Waits(turn) then
         dim = true -- cast on this target already: this press does nothing
-    elseif ns.options.macroDim and spell then
+    elseif dims and spell then
         local spells = rawget(_G, "C_Spell")
         dim = spells and Core.Plain(Core.Ask(spells.IsSpellUsable, spell)) == false
     end

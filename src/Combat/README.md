@@ -103,6 +103,11 @@ Sunder Armor), as you choose, nothing fixed.
   2026-11-09). Every icon there shows at full brightness, and the bars stay in front of the full screen however often
   something is dragged onto them. Beside each of Bars 2 to 8 of a warrior, druid or rogue stands the checkbox *Page with
   your stance or form* (Abilities: [../Abilities/README.md](../Abilities/README.md)).
+  Every bar switched on in the game's options stands there, one Edit Mode shows only in a fight or never too, so you can
+  fill it; each window is just as large as its bars, the window above it taking the rest of its column (Saneroki,
+  2026-11-09). Every icon there shows at full brightness, and the bars stay in front of the full screen however often
+  something is dragged onto them. Beside each of Bars 2 to 8 of a warrior, druid or rogue stands the checkbox *Page with
+  your stance or form* (Abilities: [../Abilities/README.md](../Abilities/README.md)).
 - **Sane Macros:** macros and sequences with no limit of 30, on the full screen beside your bars: `/macro`, `/sane macros` or its key.
   See [Macros/README.md](Macros/README.md). Its switches: *Check macros*, *Dim what cannot be used*, *Show the key on the button*.
 - **At a trainer** (Saneroki, 2026-11-09): the full screen comes by itself, the trainer's window on the left (the window
@@ -530,6 +535,17 @@ Sunder Armor), as you choose, nothing fixed.
   middle; the tall ones, and the wide ones where a bar's place is not plain, in lines from the left (`Flow`). Either at the
   largest scale, at most 1, at which all fit. `ActionBars.Seated`: every button shows and the bars
   stay in sight at rest. The game's stance and pet bars are left out. In a fight nothing moves; bars seated go back after it.
+  Every icon at full brightness while seated (Saneroki, 2026-11-09): a hook after each button's `UpdateUsable` notes the
+  game's colour and sets it white, given back when the bars leave (`Bright`); Sane Macros' faces are not dimmed then.
+  The game sets each bar's strata at every grid change (`ActionBarMixin:UpdateFrameStrata`: MEDIUM, TOOLTIP while a spell
+  is dragged), under the full screen's HIGH, so the bars went dark behind it after a drag until it opened again; the seat
+  puts its layer back (`Core.Seat`, hooks after `SetFrameStrata` and `SetFrameLevel`). Each window is as large as its bars
+  (`Part.Fit`, Core's board's `spec.fit`; `Content` at scale 1 with the room of what stands beside a bar out of its layout,
+  `Beyond`: its shown `ignoreInLayout` children, Bar 1's page number and a paged bar's checkbox). Every bar switched on
+  counts: `frame:IsShown()` is the game's `IsShownOverride`, switched on whatever Edit Mode's visibility; one that the
+  visibility hides is shown by the game's own `ShowBase` while seated (`Reveal`, out of a fight) and hidden by its
+  `HideBase` when the full screen goes, where the setting still hides it (`Conceal`, `SettingHides` as its
+  `UpdateVisibility` reads it, after a fight).
   Every icon at full brightness while seated (Saneroki, 2026-11-09): a hook after each button's `UpdateUsable` notes the
   game's colour and sets it white, given back when the bars leave (`Bright`); Sane Macros' faces are not dimmed then.
   The game sets each bar's strata at every grid change (`ActionBarMixin:UpdateFrameStrata`: MEDIUM, TOOLTIP while a spell
@@ -986,6 +1002,7 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-09:** The action bars on the full screen (Saneroki): no longer dark after a spell or macro is dragged onto them ("only reopening the fullscreen resets it to visible"; the game set their strata under the full screen at every drag, the seat puts it back); every icon there at full brightness ("It should always show the icons in full brightness"); every bar switched on, one Edit Mode hides too; each window as large as its bars ("its height and width should always be the same height to just show the amount of content to fit"), the room beside it in its column empty.
 - **2026-11-09:** The action bars on the full screen (Saneroki): no longer dark after a spell or macro is dragged onto them ("only reopening the fullscreen resets it to visible"; the game set their strata under the full screen at every drag, the seat puts it back); every icon there at full brightness ("It should always show the icons in full brightness"); every bar switched on, one Edit Mode hides too; each window as large as its bars ("its height and width should always be the same height to just show the amount of content to fit"), the room beside it in its column empty.
 - **2026-11-09:** *Edit tracked* (Saneroki): *Watch on* takes *Everyone*, the roles *Tank*, *Healer* and *DPS*, *Party 1* to *Party 4* and, in a menu of its own, *Group 1* to *Group 40* ("can you add on the watched on all party members Like Party 1 and also on Role Tank, Healer, DPS", "add in the watch on Group 1, 2 to 40 members"), counted on the bars and on the frames' health bars, where the icon shows on each frame of one watched; *Shows on* has *Unit frames* (yours, your target's, your focus's) and *Group frames* apart, in place of *Health bars* ("Add a Show on groupframes that show the spell in the show on"; a tracking from before on both, on everyone where it is on no bar); the conditions *Only in groups* and *Ignore everywhere* (paused, kept), *Don't show in resting areas* now *Hide in rested areas* ("Add a only in Groups (groups are raids and party.", "Add a Hide in Rested Areas", "Add a ignore everywhere"); the columns *Hide from unit frames* and *Prioritize on unit frames* made way for a cog, its tooltip *Edit Tracked conditions*, the title of the settings under the list now, with those two ticks in it ("put there button That looks like a cogwheel"). The aura bars' icons clickable out of a fight as the buffs are ("The reminderbar icons should be clickable like the buffs in the aura view to add tracked etc."). *Look out for* focuses one not of your group by your target, your target back as it was ("The add focus is not entirely working. It doesn't add units that are not in the group."). The group frames: every member's class resource, and aggro in a fight too ("Grooup windows should show always the class resource and aggro.").
 - **2026-11-07:** *Shows on* takes several places at once: its dropdown's lines are ticks (each aura bar, *Health bars*, *Nameplates*), its words name those ticked, the last one ticked stays; the aura shows on each by the same settings; *New bar* puts it on the new bar in place of its bars; *Delete bar* on several bars asks which (Saneroki: "We have the edit Tracked window we made the watch on multiple choice. Can we make the shows on also multiple choice").

@@ -39,6 +39,8 @@ local _, ns = ...
 --      Part.Size(w, h)        its panel's body is that wide and high now (a part may lack it)
 --      Part.Search(text)      what is typed into the search box ("": nothing; a part may lack it)
 --      Part.Present()         it has something to show now (a part may lack it: always)
+--      Part.Fit()             as large as what it holds: { width, height } of its panel in UIParent's units (a part
+--                             may lack it: as the layout gives; Core.Board, spec.fit)
 --      Part.Leave()           the module stands down: all it lent or made protected given back
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -75,6 +77,7 @@ function Board.Part(key, title, least, part, wants)
         key = key, title = title, least = least, icon = part.icon or Board.ICONS[key], coords = part.coords,
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
+        fit = part.Fit and function() return ns.Safe(key, part.Fit) end,
     } }
 end
 

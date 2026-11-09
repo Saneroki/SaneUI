@@ -36,8 +36,10 @@ Ghosts.lua
 Presets.lua
 # Action Bar 1 keeps the page you chose
 Bar1.lua
-# One character's Action Bar 7 follows its form
+# A druid's Action Bar 6 swaps with its form
 FormBar.lua
+# Bars 2 to 8 paged by stance or form, as the game's Bar 1
+PagedBars.lua
 # The buttons of every action bar touch
 Spacing.lua
 

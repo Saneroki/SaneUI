@@ -67,6 +67,10 @@ local Core = SaneUI.Core
 --               size = function(panel, width, height) end,  -- placed that large (once a change stands)
 --               search = function(panel, text) end,
 --               present = function() return true end,       -- it has something to show now
+--               fit = function() return { width, height } end,  -- as large as what it holds (the panel's size in
+--                                              -- UIParent's units; nil: as the layout gives): along its split it
+--                                              -- takes that, its neighbours share the rest and the line between
+--                                              -- them stays; across, the room beside it stays empty
 --               dress = "journal",             -- the journal's leather and paper (Core.Journal), not the dark plate;
 --                                              -- "bare": none, the module draws its own (its head, title, X there)
 --               icon = "Interface/ICONS/...",  -- its tab of its own after the layouts' tabs: a texture or file ID
@@ -238,32 +242,64 @@ end
 -- Where each window of a layout stands in a room (left and top from the inside's top left, down; whole pixels),
 -- gap between neighbours. rects[key] = { left, top, width, height }; lines: one for each pair of neighbours,
 -- { node, index (of the part before it), left, top, width, height (the gap), before, after (the two parts' sizes) }.
-function Board.Lay(node, left, top, width, height, gap, rects, lines)
+-- fit(key), where given: a window's own size ({ width, height }, the layout's units) when it is as large as what it
+-- holds (spec.fit), else nil.
+function Board.Lay(node, left, top, width, height, gap, rects, lines, fit)
     rects, lines = rects or {}, lines or {}
     if not node then return rects, lines end
+    local function Own(key)
+        local size = fit and key and fit(key)
+        return type(size) == "table" and size or nil
+    end
     if node.key then
-        rects[node.key] = { left, top, width, height }
+        local own = Own(node.key)
+        if own then
+            -- Its own size where the room allows, along the room's top, in its middle across.
+            local wide, high = math.min(own[1], width), math.min(own[2], height)
+            rects[node.key] = { left + math.floor((width - wide) / 2), top, wide, high }
+        else
+            rects[node.key] = { left, top, width, height }
+        end
         return rects, lines
     end
     local across, count = node.split == "x", #node.parts
     local room = (across and width or height) - gap * (count - 1)
+    -- A window as large as what it holds takes its size along the split; the others share what is left as they share.
+    local fixed, rest, shared, last = {}, room, 0, nil
+    for index, part in ipairs(node.parts) do
+        local own = Own(part.key)
+        if own then
+            fixed[index] = math.max(math.min(math.floor((across and own[1] or own[2]) + 0.5), rest), 0)
+            rest = rest - fixed[index]
+        else
+            shared, last = shared + node.shares[index], index
+        end
+    end
     local sizes, used = {}, 0
     for index = 1, count do
-        sizes[index] = index == count and room - used or math.floor(room * node.shares[index] + 0.5)
-        used = used + sizes[index]
+        if fixed[index] then
+            sizes[index] = fixed[index]
+        else
+            local share = shared > 0 and node.shares[index] / shared or 0
+            sizes[index] = index == last and rest - used or math.floor(rest * share + 0.5)
+            used = used + sizes[index]
+        end
     end
     local at = across and left or top
     for index, part in ipairs(node.parts) do
         if across then
-            Board.Lay(part, at, top, sizes[index], height, gap, rects, lines)
+            Board.Lay(part, at, top, sizes[index], height, gap, rects, lines, fit)
         else
-            Board.Lay(part, left, at, width, sizes[index], gap, rects, lines)
+            Board.Lay(part, left, at, width, sizes[index], gap, rects, lines, fit)
         end
         at = at + sizes[index]
         if index < count then
-            local line = across and { node, index, at, top, gap, height } or { node, index, left, at, width, gap }
-            line[7], line[8] = sizes[index], sizes[index + 1]
-            lines[#lines + 1] = line
+            -- No line to drag beside a window as large as what it holds.
+            if not (fixed[index] or fixed[index + 1]) then
+                local line = across and { node, index, at, top, gap, height } or { node, index, left, at, width, gap }
+                line[7], line[8] = sizes[index], sizes[index + 1]
+                lines[#lines + 1] = line
+            end
             at = at + gap
         end
     end
@@ -396,6 +432,19 @@ local function Least(board, key)
     local width = type(least) == "table" and tonumber(least[1]) or Board.LEAST
     local height = type(least) == "table" and tonumber(least[2]) or Board.LEAST
     return width, height + Board.HEAD
+end
+
+-- A window's own size in the board's units while it is as large as what it holds (spec.fit), else nil.
+local function Fitted(board, key)
+    local spec = board.specs and board.specs[key]
+    if not (spec and spec.fit) then return nil end
+    local size = Core.Safe(Label(board), spec.fit)
+    local width, height = type(size) == "table" and tonumber(size[1]), type(size) == "table" and tonumber(size[2])
+    if not (width and height and width > 0 and height > 0) then return nil end
+    local inside = board.inside
+    local ratio = inside and inside.GetEffectiveScale and inside:GetEffectiveScale() / UIParent:GetEffectiveScale() or 1
+    if not (ratio > 0) then ratio = 1 end
+    return { width / ratio, height / ratio }
 end
 
 -- The layout chosen, as it is kept: tree (nil for the first tab: the module's default); during a talk, the talk's
@@ -1132,7 +1181,8 @@ function methods:Show(inside, width, height)
     end
     local shown = self.tree and Present(self.tree, here)
     local pad = Board.PAD
-    self.rects, self.lines = Board.Lay(shown, pad, pad, self.width - 2 * pad, self.height - 2 * pad, pad)
+    self.rects, self.lines = Board.Lay(shown, pad, pad, self.width - 2 * pad, self.height - 2 * pad, pad, nil, nil,
+                                       function(key) return Fitted(self, key) end)
     for key, panel in pairs(self.panels) do
         if not self.rects[key] then Put(self, panel, nil) end
     end

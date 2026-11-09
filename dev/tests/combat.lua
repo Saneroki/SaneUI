@@ -1110,12 +1110,67 @@ do
         and stacked[2].y == 105 and stacked[4].y == 195 and stacked[4].x == 130, "stacked as on the screen, touching, in the middle")
     check(Room.Arrange(stacked, 800, 90) == 0.5 and stacked[1].y == 0 and stacked[2].y == 22.5 and stacked[1].x == 265,
           "the whole smaller where it does not fit")
+    -- The window as large as its bars (Saneroki, 2026-11-09), with the room of what stands beside them (Bar 1's page
+    -- number and arrows, a paged bar's checkbox: ignoreInLayout).
+    local width, height = Room.Content(stacked, false)
+    check(width == 540 and height == 180, "their room at their own size: as they stand, touching")
+    stacked[1].pad = { 30, 0, 0, 0 }
+    width, height = Room.Content(stacked, false)
+    check(width == 570 and height == 180 and Room.Arrange(stacked, 570, 180) == 1 and stacked[1].x == 30
+          and stacked[4].x == 30 and stacked[1].y == 0, "what stands beside one has its room at its side")
+    stacked[1].pad = nil
+    local bar, beside = W.NewWidget("Frame", nil, UIParent), nil
+    bar._left, bar._bottom, bar._width, bar._height = 690, 45, 540, 45
+    function bar:GetRight() return self._left + self._width end
+    beside = W.NewWidget("Frame", nil, bar)
+    beside._left, beside._bottom, beside._width, beside._height = 650, 50, 37, 30
+    function beside:GetRight() return self._left + self._width end
+    function bar:GetChildren() return beside end
+    beside.ignoreInLayout = true
+    local reach = Room.Beyond(bar)
+    check(reach[1] == 40 and reach[2] == 0 and reach[3] == 0 and reach[4] == 0, "how far it reaches past the bar's edge")
+    beside:Hide()
+    check(Room.Beyond(bar)[1] == 0, "only while it shows")
+    -- Core's board gives such a window its own size along its split, the other the rest, and no line between them;
+    -- across, the room beside it stays empty.
+    local column = { split = "y", parts = { { key = "macros" }, { key = "bars" } }, shares = { 0.5, 0.5 } }
+    local rects, lines = Core.Board.Lay(column, 0, 0, 800, 600, 12, nil, nil,
+                                        function(key) return key == "bars" and { 582, 228 } or nil end)
+    check(rects.bars[1] == 109 and rects.bars[2] == 372 and rects.bars[3] == 582 and rects.bars[4] == 228
+          and rects.macros[2] == 0 and rects.macros[4] == 360 and rects.macros[3] == 800 and #lines == 0,
+          "laid out: the bars' window as large as they are, Sane Macros the rest of the column")
+    rects, lines = Core.Board.Lay(column, 0, 0, 800, 600, 12)
+    check(rects.bars[3] == 800 and rects.bars[4] == 294 and #lines == 1, "a window without its own size as before")
     stacked[3].home = nil
     check(Room.Arrange(stacked, 800, 300) == nil, "a bar whose place is not known: none stands so")
+    width, height = Room.Content(stacked, false)
+    check(width == 540 and height == 4 * 45 + 3 * gap, "then one under the other")
     local tallOnes = { { width = 40, height = 480 }, { width = 40, height = 480 } }
     check(Room.Fit(tallOnes, 90, 600) == 1 and tallOnes[2].x == 40 + gap and tallOnes[2].y == 0,
           "tall bars side by side in their own window, at their own size")
     check(not Board.Present("sidebars"), "that window only where a tall bar shows")
+    -- On the board: the bars' window as large as the bar it holds, under Sane Macros, which takes the rest.
+    local main = MainActionBar
+    main._left, main._bottom, main._width, main._height = 690, 45, 540, 45
+    local edge, head = Core.Board.EDGE, Core.Board.HEAD
+    layouts:Show(layouts.inside, layouts.width, layouts.height)
+    local rects = layouts.rects
+    check(rects.bars[3] == 540 + 2 * edge and rects.bars[4] == 45 + head + 2 * edge and rects.bars[2] + rects.bars[4] == top - pad
+          and math.abs(rects.bars[1] + rects.bars[3] / 2 - (rects.macros[1] + rects.macros[3] / 2)) <= 1
+          and rects.macros[2] + rects.macros[4] + pad == rects.bars[2],
+          "on the board the bars' window is as large as its bar, in its column's middle, Sane Macros over it")
+    local body = layouts.panels.bars.body
+    body._left, body._bottom = rects.bars[1], 1080 - rects.bars[2] - rects.bars[4] -- the stand-in's panels have no place
+    body._width, body._height = rects.bars[3], rects.bars[4] - head
+    body._strata = "HIGH" -- as the full screen's (Core.Edge.STRATA)
+    layouts:Show(layouts.inside, layouts.width, layouts.height)
+    W.Wait(0.1) -- the bars seated once their panel stands
+    local held = main._points[1]
+    check(held and held[2] == UIParent and main._strata == "HIGH", "and the bar seated in it, in the full screen's layer")
+    main:SetFrameStrata("MEDIUM") -- the game's ActionBarMixin:UpdateFrameStrata at every drag onto the bars
+    check(main._strata == "HIGH", "the game setting its strata at a drag no longer puts it behind the full screen")
+    main._width, main._height = 0, 0
+    layouts:Show(layouts.inside, layouts.width, layouts.height)
 end
 check(not Board.Present("planner"), "without a talent planner Sane UI knows, there is no planner's window to add")
 check(not Board.Present("game") and not layouts.panels.game, "with ours there, the game's own window stands on no panel")
@@ -2212,7 +2267,21 @@ do
     check(full:GetHighlightTexture()._colour and full:GetHighlightTexture()._blend == "ADD"
         and full:GetPushedTexture()._colour, "the mouse over it and a press: a flat wash")
     check(empty._alpha == 1, "on the full screen an empty button shows, to drop something on")
+    -- On the full screen every icon at full brightness (Saneroki, 2026-11-09), the game's colour kept and given back.
+    local icon = full.icon
+    function icon:SetVertexColor(r, g, b) self._vertex = { r, g, b } end
+    function icon:GetVertexColor() return unpack(self._vertex or { 1, 1, 1 }) end
+    icon:SetVertexColor(0.4, 0.4, 0.4) -- the game's grey: it cannot be used now
+    full:UpdateUsable()
+    check(ns.ActionBars.Seated() and icon._vertex[1] == 1 and icon._vertex[3] == 1,
+          "on the full screen an icon the game greys shows at full brightness, after each of the game's updates")
     ns.ActionBars.Seated(false)
+    check(icon._vertex[1] == 0.4 and icon._vertex[3] == 0.4, "off it, the game's grey again")
+    icon:SetVertexColor(0.5, 0.5, 1) -- the game's blue: too little mana
+    ns.ActionBars.Seated(true)
+    check(icon._vertex[1] == 1 and icon._vertex[2] == 1, "the game's blue too, as soon as the bars are there")
+    ns.ActionBars.Seated(false)
+    check(icon._vertex[1] == 0.5 and icon._vertex[3] == 1 and not ns.ActionBars.Seated(), "and given back")
     check(full._alpha == 1 and empty._alpha == 0, "a button that holds something shows; an empty one does not")
     W.Fire("ACTIONBAR_SHOWGRID")
     local slot

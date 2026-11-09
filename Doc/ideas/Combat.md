@@ -108,6 +108,10 @@ Decided (Saneroki, 2026-10-16):
   every bar switched on, one Edit Mode hides too; each window as large as its bars, the room beside it empty. Any of
   Bars 2 to 8 paged by stance or form as the game's Bar 1, by a checkbox beside it (Abilities, a warrior's, druid's
   or rogue's; a druid's Bar 6 keeps its form bar).
+- **The action bars on the full screen** (Saneroki, 2026-11-09; built): never dark, every icon at full brightness;
+  every bar switched on, one Edit Mode hides too; each window as large as its bars, the room beside it empty. Any of
+  Bars 2 to 8 paged by stance or form as the game's Bar 1, by a checkbox beside it (Abilities, a warrior's, druid's
+  or rogue's; a druid's Bar 6 keeps its form bar).
 
 ## Its parts
 

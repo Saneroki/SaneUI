@@ -27,7 +27,8 @@ local ADDON, ns = ...
 --  The reservations, their grey icons on the bars and the saved layouts serve both.
 --
 --  Action Bar 1 keeps the page you chose (Bar1.lua) and the buttons of every action bar
---  touch (Spacing.lua), in both games. A druid's Action Bar 6 swaps with its form (FormBar.lua).
+--  touch (Spacing.lua), in both games. A druid's Action Bar 6 swaps with its form (FormBar.lua); any of
+--  Bars 2 to 8 may be paged by stance or form as Bar 1 is in the game (PagedBars.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -111,6 +112,10 @@ ns.TEXT = {
     formBarDruid = "only a druid's Action Bar 6 swaps with its form.",
     formBarFight = "You are in combat: the bar swaps with your form or stays after the fight.",
     formBarUsage = "type: /sane ab formbar on  or  /sane ab formbar off",
+    -- Bars 2 to 8 paged by stance or form (PagedBars.lua): the checkbox beside each
+    pagedText = "Page with your stance or form",
+    pagedTip = "Makes Action Bar %d a paged bar, as the game's own Bar 1: in each stance, form or stealth it shows the row of buttons Bar 1 shows there, in a fight too, and its own again out of it. For this character alone.",
+    pagedFight = "You are in combat: Action Bar %d changes once the fight is over.",
     -- The trainer's list, a spell added by hand (Sources.lua)
     trainerRead = "read your class trainer's list. Every spell now sits in its own spellbook tab.",
     noSpell = "there is no spell with the ID %s.", isPassive = "%s is passive: it cannot go on a button.",
@@ -454,6 +459,7 @@ function ns.OnLogin()
     ns.Safe("trainer data", ns.Data.Fill)
     ns.Bar1.Apply()
     ns.FormBar.Apply()
+    ns.PagedBars.Apply()
     ns.Spacing.Apply()
 
     local function scan() ns.QueueUpdate(true) end
@@ -528,6 +534,7 @@ function ns.GiveBack()
     if Core.Spellbook then ns.Safe("giving back", Core.Spellbook.Changed) end
     if ns.Bar1 then ns.Safe("giving back", ns.Bar1.Apply) end
     if ns.FormBar then ns.Safe("giving back", ns.FormBar.Apply) end
+    if ns.PagedBars then ns.Safe("giving back", ns.PagedBars.Apply) end
     if ns.Spacing then ns.Safe("giving back", ns.Spacing.Apply) end
 end
 
