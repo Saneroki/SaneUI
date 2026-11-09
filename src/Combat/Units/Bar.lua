@@ -380,6 +380,7 @@ local function PowerColour(token)
     if type(colour) == "table" and type(colour.r) == "number" then return colour.r, colour.g, colour.b end
     return 0, 0.55, 1
 end
+Bar.PowerColour = PowerColour -- a power's colour by its token, as the game has it
 
 -- One power on its bar, as the game gives it (hidden or not), in the game's colour; an empty bar where the unit has
 -- none (a most of 0, as far as can be told). kind: { type = the game's number, token = its name }. Whether it has one.

@@ -22,14 +22,19 @@ local _, ns = ...
 --            HealthMarks.lua), each stepping aside for the one before it.
 --            All float over the name and the raid marker, which stay where they
 --            are and go on behind them
---    bottom  the mana of a tank or healer, a line inside the bar as on a
+--    bottom  every member's class resource (Saneroki, 2026-11-09: "show
+--            always the class resource"), a line inside the bar as on a
 --            nameplate, so the frame is no taller for it
 --  and on it Core's barrier and lost maximum health. A player's health in their
 --  class's colour (Saneroki, 2026-11-06; the switch Class colours, else green as
 --  every unit frame), a creature beside a party by how it stands to you (neutral
 --  yellow, hostile red), a pet green; a dead unit's bar full and red, an offline
 --  one's full and grey.
---  Its border is black, solid red while the unit has an enemy's aggro.
+--  Its border is black, solid red while the unit has an enemy's aggro; in a
+--  fight too, where the game hides threat from addons (Saneroki, 2026-11-09:
+--  "show always ... aggro"): a red plate over the black one then fills from
+--  the game's hidden threat kind, as a bar takes a hidden value, full from
+--  having aggro up and empty under it (face.threat).
 --
 --  Your own slot is a frame like all the others, with all of that (Saneroki,
 --  2026-10-30). Two things differ: its name is the word Party or Raid, and at
@@ -45,9 +50,9 @@ local _, ns = ...
 --  (Face.Sample). It takes no mouse: the button under it keeps clicks, the
 --  tooltip and @mouseover.
 --
---  Who gets the mana line: the game's assigned role (tank, healer); without a
---  role (many groups set none) a main tank, or a class that can heal, so it
---  does not go missing there. A unit without mana shows its own power.
+--  The power line: a healer's mana (the game's assigned role), everyone else's
+--  the power they show now (a warrior's rage, a rogue's energy, a druid's in
+--  its form, a mage's mana); none on a unit without one.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -75,7 +80,6 @@ Face.HOSTILE = type(hostile) == "table" and type(hostile.r) == "number" and { ho
 Face.COG = "questlog-icon-setting"  -- the game's cog, as Core's windows have it
 Face.REZ = "RaidFrame-Icon-Rez"     -- the game's raid frames' icon of an incoming resurrection
 Face.ROLES = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer" } -- the game's plain marks, without a ring
-Face.HEALERS = { PRIEST = true, DRUID = true, SHAMAN = true, PALADIN = true, MONK = true, EVOKER = true }
 Face.EVENTS = { "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_POWER_UPDATE", "UNIT_MAXPOWER", "UNIT_DISPLAYPOWER",
                 "UNIT_NAME_UPDATE", "UNIT_CONNECTION", "UNIT_FLAGS", "UNIT_IN_RANGE_UPDATE", "UNIT_AURA",
                 "UNIT_THREAT_SITUATION_UPDATE", "UNIT_THREAT_LIST_UPDATE", "INCOMING_RESURRECT_CHANGED" }
@@ -117,6 +121,8 @@ function Face.Fit(face)
     local radius = height * Bar.CAP
     local marks, health = face.marks, face.health
     Bar.Around(face.border, face, 0, height, 0, 0, radius)
+    local round = math.max(math.min(radius, height / 2), 0.01) -- as the border's corners
+    for _, mask in ipairs(face.threat.corners) do mask:SetSize(round, round) end
     local inner = width - 2 * pixel
     health:ClearAllPoints()
     health:SetPoint("TOPLEFT", face, "TOPLEFT", pixel, -pixel)
@@ -142,9 +148,26 @@ function Face.Make(parent, sample, small)
     local level = Plain(face:GetFrameLevel()) or 1
     local edges = CreateFrame("Frame", nil, face)
     edges:SetAllPoints(face)
-    edges:SetFrameLevel(level + 2)
+    edges:SetFrameLevel(level + 1)
     face.border = Bar.Plate(edges, -4)
     face.border:SetVertexColor(Bar.BORDER[1], Bar.BORDER[2], Bar.BORDER[3], Bar.BORDER[4])
+    -- Aggro while the game hides it: the red plate as a bar over the black one, full from Face.AGGRO up, empty under it.
+    local threat = CreateFrame("StatusBar", nil, face)
+    threat:SetAllPoints(face)
+    threat:SetFrameLevel(level + 2)
+    threat:SetStatusBarTexture(Bar.WHITE)
+    threat:SetStatusBarColor(Face.AGGRO_BORDER[1], Face.AGGRO_BORDER[2], Face.AGGRO_BORDER[3], Face.AGGRO_BORDER[4])
+    threat:SetMinMaxValues(Face.AGGRO - 1, Face.AGGRO)
+    threat:SetValue(0)
+    threat.corners = {}
+    for _, corner in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
+        local mask = threat:CreateMaskTexture()
+        mask:SetTexture(Core.Shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+        mask:SetPoint(corner, threat, corner)
+        threat:GetStatusBarTexture():AddMaskTexture(mask)
+        threat.corners[#threat.corners + 1] = mask
+    end
+    face.threat = threat
     local health = Bar.Strip(face, level + 3)
     face.health = health
     local power = CreateFrame("StatusBar", nil, health)
@@ -246,26 +269,15 @@ local function RoleIcon(face, role)
     face.role:SetShown(atlas ~= nil)
 end
 
--- Whether a unit of that role gets the power line: a tank, a healer, without a role a class that heals.
-local function WantsPower(unit, role)
-    if role == "TANK" or role == "HEALER" then return true end
-    if role == "DAMAGER" then return false end
-    local _, class = Core.Ask(UnitClass, unit)
-    return Face.HEALERS[class] == true
-end
-
 local KIND = { type = Bar.MANA, token = "MANA" } -- read again each time: the power line's kind
 
--- The power line as the unit's role says: its mana, or its own power where it has none.
+-- The power line, on every member: a healer's mana where they have it, else the power they show now; none where the
+-- unit has none.
 local function Power(face, unit)
-    local on = WantsPower(unit, RoleOf(unit))
-    if on then
-        local mana = Bar.Raw(UnitPowerMax, unit, Bar.MANA)
-        KIND.type, KIND.token = Bar.MANA, "MANA"
-        if type(mana) == "nil" or Plain(mana) == 0 then KIND.type, KIND.token = Core.Ask(UnitPowerType, unit) end
-        on = Bar.Power(face.power, unit, KIND)
-    end
-    face.power:SetShown(on)
+    KIND.type, KIND.token = Core.Ask(UnitPowerType, unit)
+    local mana = RoleOf(unit) == "HEALER" and Bar.Raw(UnitPowerMax, unit, Bar.MANA)
+    if KIND.type == nil or (mana and Plain(mana) ~= 0) then KIND.type, KIND.token = Bar.MANA, "MANA" end
+    face.power:SetShown(Bar.Power(face.power, unit, KIND))
 end
 
 -- Fainter while the unit is out of your reach; the game's answer may be hidden, and the alpha takes it as it is.
@@ -285,8 +297,16 @@ local function Border(face, aggro)
     face.border:SetVertexColor(colour[1], colour[2], colour[3], colour[4])
 end
 
+-- Aggro on the border: told, red or black; hidden (a fight), the black border under the red plate, which takes the
+-- game's hidden threat kind as it is, never compared.
 local function Aggro(face, unit)
-    local status = Core.Ask(UnitThreatSituation, unit)
+    local status = Bar.Raw(UnitThreatSituation, unit)
+    if Core.Secret(status) then
+        Border(face, false)
+        if not pcall(face.threat.SetValue, face.threat, status) then face.threat:SetValue(0) end
+        return
+    end
+    face.threat:SetValue(0)
     Border(face, type(status) == "number" and status >= Face.AGGRO)
 end
 
@@ -475,7 +495,8 @@ end
 
 -- Made-up values instead of a unit (the preview): sample = { you (your own slot), raid, name, health (a share), most, mana (a share, or nil),
 -- role, mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's
--- answer), rez, aggro, word (Dead, Offline), colour (theirs), class (a player's), reaction (a creature's) }.
+-- answer), rez, aggro, word (Dead, Offline), colour (theirs), class (a player's), reaction (a creature's), power (its
+-- kind's token, nil: mana) }.
 function Face.Sample(face, sample)
     if face.small then
         Colour(face, Face.Tint(sample.class ~= nil, sample.class, sample.reaction))
@@ -491,9 +512,10 @@ function Face.Sample(face, sample)
     face.health:SetValue(sample.colour and 1 or sample.health)
     face.power:SetShown(sample.mana ~= nil)
     if sample.mana then
-        face.power:SetStatusBarColor(0, 0.55, 1)
+        face.power:SetStatusBarColor(Bar.PowerColour(sample.power or "MANA"))
         face.power:SetValue(sample.mana)
     end
+    face.threat:SetValue(0)
     Border(face, sample.aggro)
     ReadyIcon(face, sample.ready)
     RezIcon(face, sample.rez == true)

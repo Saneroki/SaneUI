@@ -14,9 +14,17 @@ local _, ns = ...
 --  only a press on a secure button of the game's does. So the place is one
 --  (SecureActionButtonTemplate) whose left click and key run a macro's text,
 --  /focus [@focus,noexists] <the name or unit>, set out of a fight only: a
---  change made in one waits for its end. The game shows it while you have no
---  focus and hides it while you have one, in a fight too (a state driver). A
---  right click runs nothing of the game's and opens the field again.
+--  change made in one waits for its end. The game's /focus takes the name of
+--  one of your group alone (FocusUnit), so a name's text goes on: where that
+--  gave no focus, /targetexact the name, /focus your target, and your target
+--  back as it was: the one you had (/cleartarget first, so a name not near
+--  focuses nobody, then /targetlasttarget), or none (/cleartarget). Which of
+--  the two a press runs, the button's own snippet picks as it is pressed, in
+--  a fight too, by whether you have a target (LookOut.SNIPPET; Saneroki,
+--  2026-11-09: "It doesn't add units that are not in the group"). The game
+--  shows it while you have no focus and hides it while you have one, in a
+--  fight too (a state driver). A right click runs nothing of the game's and
+--  opens the field again.
 --
 --  In a fight the game hides a creature's name from addons: one found before
 --  stays found while its nameplate stays, one that comes in a fight cannot be
@@ -33,7 +41,14 @@ ns.LookOut = LookOut
 LookOut.NAME = "SaneUILookOut" -- the button's name: its key's binding clicks it (Bindings.xml)
 LookOut.KEY = "Key"            -- the button a key's click comes as: it opens no field
 LookOut.DRIVER = "[@focus,exists] hide; show"
-LookOut.LINE = "/focus [@focus,noexists] %s" -- focuses only while you have none (the game's /focus takes the name)
+LookOut.LINE = "/focus [@focus,noexists] %s" -- focuses only while you have none (the game's /focus takes a member's name)
+-- After it, for a name not of your group: the target's way, your target kept (KEPT) or none again (BARE).
+LookOut.KEPT = "\n/stopmacro [@focus,exists]\n/cleartarget\n/targetexact %s\n/focus [@target,exists] target\n/targetlasttarget"
+LookOut.BARE = "\n/stopmacro [@focus,exists]\n/targetexact %s\n/focus [@target,exists] target\n/cleartarget"
+-- As the button is pressed: the line for having a target or not, which the game's click then runs.
+LookOut.SNIPPET = [[
+    self:SetAttribute("macrotext", self:GetAttribute(UnitExists("target") and "sane-kept" or "sane-bare") or "")
+]]
 LookOut.WIDTH = 120  -- the button Look out for before it opens, in the frame's units
 LookOut.OPEN = 0.15  -- seconds the field takes to grow to the frame's width
 LookOut.SIDE = 18    -- its X and its +, square
@@ -49,8 +64,9 @@ for index = 1, 4 do PARTY[index] = "party" .. index end
 local spot, look, label, box, take, plus, grower, ear
 local watched   -- what is watched: { text, name } or { text, role } or { text, unit }; nil for nothing
 local found     -- the unit token it was found as, or nil
-local wanted = "" -- the macro's line for what is watched now
-local armed = ""  -- the line on the button (out of a fight only)
+local wanted = "" -- the macro's text for what is watched now, with a target (a unit's: its one line)
+local bare = ""   -- and without one
+local armed = ""  -- the text on the button (out of a fight only)
 local hover = false
 
 -- What a text watches: a role of your group ({ role = "TANK" }), one of your group ({ unit = "party2" }), or a name
@@ -145,11 +161,21 @@ local function Paint()
 end
 LookOut.Paint = Paint
 
--- Where what is watched is now, and the line it wants; painted.
+-- The macro's texts for a target (a unit, a name): with a target of yours and without one. A unit of your group, or
+-- a role's, is focused by its token alone; a name the game's /focus may not know (one not of your group) by your
+-- target too.
+function LookOut.Lines(target, named)
+    if not target then return "", "" end
+    local line = LookOut.LINE:format(target)
+    if not named then return line, line end
+    return line .. LookOut.KEPT:format(target), line .. LookOut.BARE:format(target)
+end
+
+-- Where what is watched is now, and the texts it wants; painted.
 local function Look()
     local target
     if watched then target = watched.role and Resolve(watched.role) or watched.unit or watched.name end
-    wanted = target and LookOut.LINE:format(target) or ""
+    wanted, bare = LookOut.Lines(target, watched ~= nil and watched.name ~= nil)
     if not watched then
         found = nil
     elseif watched.name then
@@ -167,6 +193,8 @@ local function Arm()
     if not spot then return end
     Look()
     armed = wanted
+    spot:SetAttribute("sane-kept", wanted)
+    spot:SetAttribute("sane-bare", bare)
     spot:SetAttribute("macrotext", armed)
     spot:SetAttribute("useOnKeyDown", GetCVarBool("ActionButtonUseKeyDown") and true or false)
     Paint()
@@ -329,7 +357,9 @@ end
 -- dark, the plates' font), the field with its + and X in it.
 local function Make(anchor)
     local Bar, Text = ns.UnitBar, ns.UnitText
-    spot = CreateFrame("Button", LookOut.NAME, UIParent, "SecureActionButtonTemplate")
+    ear = CreateFrame("Frame") -- first: what follows may fail, and standing down then stops its events
+    ear:SetScript("OnEvent", ns.Guard(Heard))
+    spot = CreateFrame("Button", LookOut.NAME, UIParent, "SecureActionButtonTemplate,SecureHandlerBaseTemplate")
     spot:SetFrameStrata("LOW")
     spot:SetPoint("TOPLEFT", anchor, "TOPLEFT")
     spot:SetPoint("TOPRIGHT", anchor, "TOPRIGHT")
@@ -338,6 +368,8 @@ local function Make(anchor)
     spot:SetAttribute("*type1", "macro")
     spot:SetAttribute("*type-" .. LookOut.KEY, "macro")
     spot:SetAttribute("macrotext", "")
+    -- The text for having a target or not, as it is pressed; where the game's template gives no wrap, the text for one.
+    if type(spot.WrapScript) == "function" then spot:WrapScript(spot, "OnClick", LookOut.SNIPPET) end
     spot:SetScript("PostClick", ns.Guard(Clicked))
     spot:SetScript("OnEnter", ns.Guard(Entered))
     spot:SetScript("OnLeave", ns.Guard(Left))
@@ -396,8 +428,6 @@ local function Make(anchor)
     plus:Hide()
     spot.look = look -- its parts, for the tests
     look.label, look.box, look.take, look.plus, look.grower = label, box, take, plus, grower
-    ear = CreateFrame("Frame")
-    ear:SetScript("OnEvent", ns.Guard(Heard))
 end
 
 -- The outline round as the frames' are, a screen pixel each, at the size the frame shows at.
@@ -415,6 +445,8 @@ local function Off()
     UnregisterStateDriver(spot, "visibility")
     spot:Hide()
     armed = ""
+    spot:SetAttribute("sane-kept", "")
+    spot:SetAttribute("sane-bare", "")
     spot:SetAttribute("macrotext", "")
     ear:UnregisterAllEvents()
     LookOut.Close()
@@ -454,9 +486,10 @@ function LookOut.GiveBack()
     Core.AfterCombat("look out", Off)
 end
 
--- For the tests: what is watched, where it was found, the line on the button and the one it wants.
+-- For the tests: what is watched, where it was found, the text on the button and the one it wants (with a target;
+-- then without one).
 function LookOut.State()
-    return watched, found, armed, wanted, spot
+    return watched, found, armed, wanted, spot, bare
 end
 
 _G["BINDING_NAME_CLICK " .. LookOut.NAME .. ":" .. LookOut.KEY] = ns.TEXT.lookOutKey

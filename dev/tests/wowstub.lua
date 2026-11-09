@@ -416,6 +416,12 @@ function methods:SetAttribute(name, value)
     self._attributes[name] = value
 end
 function methods:GetAttribute(name) return self._attributes and self._attributes[name] end
+-- A secure snippet wrapped round a script (SecureHandlerBaseTemplate's WrapScript): kept as a function of (self, button,
+-- down), to run as the game's restricted code would, its functions (UnitExists) from the globals.
+function methods:WrapScript(_, script, snippet)
+    self._wraps = self._wraps or {}
+    self._wraps[script] = assert(loadstring("return function(self, button, down) " .. snippet .. "\nend"))()
+end
 
 -- Shown and hidden: OnShow and OnHide reach every frame that starts or stops being seen, a parent's shown
 -- children with it, as the game runs them (dev/uilab/lab/frames.lua does the same): nothing for a frame shown

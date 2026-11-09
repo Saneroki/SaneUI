@@ -194,12 +194,19 @@ end
 check(take and take._points[1][1] == "LEFT" and take._points[1][3] == "LEFT", "the red X at the line's left, in front of all")
 local xs = {}
 for index, which in ipairs(Lists.COLUMNS) do xs[index] = thorns.ticks[which]._points[1][4] end
-check(Lists.COLUMNS[1] == "hidden" and Lists.COLUMNS[3] == "white" and Lists.COLUMNS[5] == "show"
-      and xs[1] < xs[2] and xs[2] < xs[3] and xs[3] < xs[4] and xs[4] < xs[5],
-    "the ticks: Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit frames, left to right")
+check(#Lists.COLUMNS == 3 and Lists.COLUMNS[1] == "hidden" and Lists.COLUMNS[2] == "black" and Lists.COLUMNS[3] == "white"
+      and xs[1] < xs[2] and xs[2] < xs[3] and not thorns.ticks.hide and not thorns.ticks.show,
+    "the ticks: Hidden, Unimportant, Important, left to right; Hide from and Prioritize on unit frames no columns now")
 check(TEXT.auraFramesShow == "Prioritize on unit frames", "Show on unit frames is now Prioritize on unit frames")
-check(thorns.remind and thorns.remind._points[1][4] > xs[5] and not thorns.remind:GetChecked(),
-    "last, right of the marks, the tick Reminder: none yet")
+check(thorns.cog and thorns.cog._points[1][4] > xs[3] and thorns.remind and thorns.remind._points[1][4] > thorns.cog._points[1][4]
+      and not thorns.remind:GetChecked(), "right of the marks a cog in their place, last the tick Tracked: none yet")
+thorns.cog._scripts.OnEnter(thorns.cog)
+check(GameTooltip:IsOwned(thorns.cog) and GameTooltip._text == "Edit Tracked conditions" and TEXT.reminderTitle == GameTooltip._text,
+    "the cog's tooltip: Edit Tracked conditions (Saneroki, 2026-11-09)")
+thorns.cog._scripts.OnLeave(thorns.cog)
+thorns.cog._scripts.OnClick(thorns.cog)
+thorns = Line("Thorns")
+check(thorns.mark._shown and ns.ReminderEditor.panel.name == "Thorns", "a click on it: the line chosen, its conditions below")
 
 -- A tick of a side takes the place of the other of that side; the other side stays.
 thorns.ticks.black:SetChecked(true)
@@ -207,18 +214,16 @@ thorns.ticks.black._scripts.OnClick(thorns.ticks.black)
 thorns = Line("Thorns")
 check(ns.options.auraBlack[782] and not ns.options.auraWhite[782] and thorns.ticks.black:GetChecked()
       and not thorns.ticks.white:GetChecked(), "Unimportant ticked: Important off")
-thorns.ticks.show:SetChecked(true)
-thorns.ticks.show._scripts.OnClick(thorns.ticks.show)
+Lists.Put("show", { id = 782, name = "Thorns" })
 check(ns.options.auraShow[782] and ns.options.auraBlack[782], "Prioritize on unit frames beside it, a side of its own")
-thorns.ticks.hide:SetChecked(true)
-thorns.ticks.hide._scripts.OnClick(thorns.ticks.hide)
-check(ns.options.auraHide[782] and not ns.options.auraShow[782], "Hide from unit frames takes Prioritize's place")
+Lists.Put("hide", { id = 782, name = "Thorns" })
+check(ns.options.auraHide[782] and not ns.options.auraShow[782] and Lists.Has("hide", "Thorns") and not Lists.Has("show", "Thorns"),
+    "Hide from unit frames takes Prioritize's place")
 -- Every tick off: it stays on the list, until its X.
-for _, which in ipairs({ "black", "hide" }) do
-    local tick = Line("Thorns").ticks[which]
-    tick:SetChecked(false)
-    tick._scripts.OnClick(tick)
-end
+local tick = Line("Thorns").ticks.black
+tick:SetChecked(false)
+tick._scripts.OnClick(tick)
+Lists.Unmark("hide", "Thorns")
 check(not ns.options.auraBlack[782] and not ns.options.auraHide[782] and Line("Thorns") ~= nil,
     "every tick off: no mark, still on the list")
 take._scripts.OnClick(take)

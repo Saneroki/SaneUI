@@ -6,6 +6,15 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Tracked auras: watch them on everyone, a role (Tank, Healer,
+  DPS), a party member or any raid member (Group 1 to 40), and
+  show them on your unit frames and on the group frames apart.
+  New conditions Only in groups and Ignore everywhere (a pause);
+  Hide in rested areas. A cog on each line of Edit tracked opens
+  its Edit Tracked conditions, and a click on an icon of an aura
+  bar opens the aura's menu.
+- Group frames: every member's class resource, and their aggro
+  in a fight too. Look out for focuses those outside your group.
 - At a mailbox the Inventory full screen comes too: the mail window
   on the left (with its Banker tab), a letter you open beside it, and
   your bags on the right.

@@ -37,9 +37,11 @@ Click a buff or debuff, or right click a spell in the spellbook, and mark it: *I
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
 with no glow or fade, *Prioritize on unit frames* or *Hide from unit frames*. Or choose *Add tracking*: its
 icon then shows on an invisible aura bar placed in Edit Mode (*Aura bar 1* at first), or on the health bars of your unit
-frames and the party and raid frames, or right under each nameplate, while its settings want it; a bar is as wide as what
-shows on it, and you make as many bars as you like. On the health bars and the nameplates its icon then shows on each
-frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, your Sunder Armor), as you choose, nothing fixed.
+frames, or of the party and raid frames, or right under each nameplate, while its settings want it, watched on whom you
+choose (you, your target, your focus, everyone, a role, a member of your party or raid); a bar is as wide as what
+shows on it, its icons clickable as the buffs are, and you make as many bars as you like. On the health bars and the
+nameplates its icon then shows on each frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, your
+Sunder Armor), as you choose, nothing fixed.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
@@ -96,6 +98,11 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   where Sane Macros is not there), and *Side bars* down the right while a tall bar shows. Your bars stand in them as they
   stand on your screen, stacked as you put them, so no other window lies over them; they work as ever, and every button
   shows, an empty one too. Drag a macro of Sane Macros onto one. A layout of your own takes them from the dropdown *Windows*.
+  Every bar switched on in the game's options stands there, one Edit Mode shows only in a fight or never too, so you can
+  fill it; each window is just as large as its bars, the window above it taking the rest of its column (Saneroki,
+  2026-11-09). Every icon there shows at full brightness, and the bars stay in front of the full screen however often
+  something is dragged onto them. Beside each of Bars 2 to 8 of a warrior, druid or rogue stands the checkbox *Page with
+  your stance or form* (Abilities: [../Abilities/README.md](../Abilities/README.md)).
 - **Sane Macros:** macros and sequences with no limit of 30, on the full screen beside your bars: `/macro`, `/sane macros` or its key.
   See [Macros/README.md](Macros/README.md). Its switches: *Check macros*, *Dim what cannot be used*, *Show the key on the button*.
 - **At a trainer** (Saneroki, 2026-11-09): the full screen comes by itself, the trainer's window on the left (the window
@@ -137,8 +144,10 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     alone) and a + (the game's own plus button: the aura tracked once more, a copy of the line's tracking on a line under
     it, chosen, its own place and conditions from now on; Saneroki, 2026-11-07: "Sometimes I want to show it on multiple
     places or have different conditions"), then its icon, name and number, a tick for each mark in the columns *Hidden*, *Unimportant*, *Important*,
-    *Hide from unit frames* and *Prioritize on unit frames*, and last *Tracked* (below, *Aura icons*). Click a
-    line to choose it: its icon's settings stand under the list. A spell stays on the list with no tick until its X. Over the list a search:
+    then a cog (the game's), whose tooltip says *Edit Tracked conditions*, and last *Tracked* (below, *Aura icons*). Click a
+    line or its cog to choose it: under the list, titled *Edit Tracked conditions*, stand its icon's settings and its two marks for
+    the unit frames, *Hide from unit frames* and *Prioritize on unit frames*, ticked there, tracked or not (Saneroki, 2026-11-09:
+    the two columns made way for the cog). A spell stays on the list with no tick until its X. Over the list a search:
     type, and suggestions come under the box, forgivingly found (a piece of the name, its first letters, its letters in
     order), in groups, each class's auras in its colour, *Enemies* and *Food, potions, items and the world*, the best
     first; click one, or Enter for the first, and it is on the list, lit and chosen, to tick. A spell's number finds that spell.
@@ -172,7 +181,9 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     too, and kept for the character. Once found, the place shows *Focus found: Add it now* in a gold edge, and a click
     on it, or its key (*Focus who you look out for*, under Sane UI in the game's key bindings), makes that one your
     focus. The game lets no addon set a focus by itself, so that click is yours; it focuses only while you have none.
-    In a fight the game hides creatures' names from addons: one found before stays found, one that comes in the
+    One not of your group, whom the game's `/focus` does not know by name (Saneroki, 2026-11-09: "It doesn't add units
+    that are not in the group"), the click takes as your target first, makes your focus, and gives you back the target
+    you had (or none, if you had none). In a fight the game hides creatures' names from addons: one found before stays found, one that comes in the
     fight cannot be told, and the place says *Looking out for Hogger: click to try* (the click still finds him by name
     if he is near). What you change in a fight is taken at its end. A right click opens the field again.
   - **Placing them:** in the game's Edit Mode, like the game's frames; at first you left of the screen's bottom
@@ -220,9 +231,10 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   behind the name and raid marker (by the role the game was told, or a main tank). Floating big over the left of the frame, so they are easy to see, with the name going on behind them: the ready check while one runs and its result for a while after, the
   game's icon of a resurrection on its way, the type icon of a dispellable debuff (the game's, a green drop for poison and so on), each moving aside for the one before it; how much health is left on the right ("85%";
   nothing on a frame narrower than 80, where the name gets it too; Dead and Offline always). A dead unit's bar is full and red, an offline
-  one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, as far as the game tells it in a fight. A
-  tank's or healer's mana as a line inside the bar, so the frame is no taller for it (with no roles set, a class that can heal or a main
-  tank; a unit without mana its own power); an icon floating over the name, which goes on behind it, for each aura you show
+  one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, in a fight too, where the game
+  hides threat from addons (Saneroki, 2026-11-09: "Grooup windows should show always the class resource and aggro"). Every
+  member's class resource as a line inside the bar, so the frame is no taller for it: a healer's mana, everyone else's the power
+  they show now (a warrior's rage, a rogue's energy, a druid's in its form); an icon floating over the name, which goes on behind it, for each aura you show
   on these frames whose settings want it, four at most (*Aura icons on the health bars*, below, *Aura icons*: a buff or HoT the member is
   missing, say). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
@@ -309,23 +321,29 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     any spell (any class's, an enemy's, an item's, or its number): it comes onto the list, chosen, and under the list
     *Add tracking*; or tick the line's *Tracked*, or its +, the same. Unticking that, or the line's X, takes it off.
   - **More than once:** the line's + tracks the aura once more, a copy on a line of its own, set apart: on another bar,
-    the health bars or the nameplates, or with other conditions (a Mark of the Wild missing on a bar in a fight, and on
-    the health bars out of one). Each line is its own; the X on one of them deletes that one alone.
-  - **Its settings** under the list, for the line chosen, each at once: *Shows on*: a tick for each bar, *Health bars*
-    and *Nameplates*, any number of them ticked, the dropdown naming them ("Aura bar 1, Nameplates"; Saneroki,
-    2026-11-07: "make the shows on also multiple choice"); the last one ticked stays, as a tracking shows somewhere. On
-    each place ticked it shows by the same settings, as that place shows it. *New bar* puts the aura on a new bar in
-    place of the bars it was on (the health bars and the nameplates stay as ticked); on a bar, *Delete bar*, on several
-    bars a menu of them asks which; on a bar, *Watch on*: a tick for you, your target and
-    your focus, any number of them ticked, the dropdown naming those watched ("You, Your target"; Saneroki, 2026-11-07:
-    "select multiple targets in its dropdown with checkboxes"); the last one ticked stays, as a reminder watches someone
-    (one made in the window: a debuff on your target, a buff on you). It shows while its settings want it on any unit
-    ticked, as one icon however many want it: its seconds those of the one whose aura runs out first, none while one of
-    them lacks it (on the bars only). On none of the bars *Watch on* and *Delete bar* are out of sight (each member, each
-    plate's unit watched); *Display when missing*; *Display when active*;
+    the unit frames, the group frames or the nameplates, or with other conditions (a Mark of the Wild missing on a bar
+    in a fight, and on the group frames out of one). Each line is its own; the X on one of them deletes that one alone.
+  - **Its settings** under the list, titled *Edit Tracked conditions*, for the line chosen, each at once: *Shows on*: a
+    tick for each bar, *Unit frames*, *Group frames* and *Nameplates*, any number of them ticked, the dropdown naming them
+    ("Aura bar 1, Nameplates"; Saneroki, 2026-11-07: "make the shows on also multiple choice"; 2026-11-09: "Add a Show on
+    groupframes"); the last one ticked stays, as a tracking shows somewhere. On each place ticked it shows by the same
+    settings, as that place shows it. *New bar* puts the aura on a new bar in place of the bars it was on (the frames and
+    the nameplates stay as ticked); on a bar, *Delete bar*, on several bars a menu of them asks which; *Watch on*: a tick
+    for you, your target and your focus, *Everyone*, the roles *Tank*, *Healer* and *DPS*, *Party 1* to *Party 4*, and in
+    a menu of its own, *Group*, *Group 1* to *Group 40*, your raid's members (Saneroki, 2026-11-09: "all party members
+    Like Party 1 and also on Role Tank, Healer, DPS", "Group 1, 2 to 40"); any number of them ticked, the dropdown naming
+    those watched ("You, Tank"; Saneroki, 2026-11-07: "select multiple targets in its dropdown with checkboxes"); the last
+    one ticked stays, as a reminder watches someone (one made in the window: a debuff on your target, a buff on you; one
+    made on the frames: everyone). On a bar it shows while its settings want it on any unit watched, as one icon however
+    many want it: its seconds those of the one whose aura runs out first, none while one of them lacks it; a member
+    offline counts for none. On the unit frames and the group frames on each frame of one watched: *Tank*, on the tank's
+    frame alone; *Everyone*, on all. On the nameplates alone *Watch on* is out of sight (each plate's unit watched), and
+    on none of the bars *Delete bar*; *Display when missing*; *Display when active*;
     *Offset time*, with missing: so many seconds before it runs out it shows already, with the seconds left on the icon
-    (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Don't show in resting
-    areas*; *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help);
+    (on a bar and a nameplate); *Combat*: in and out, *Only show outside of combat* or *Only show inside of combat*; *Hide in
+    rested areas* (cities, inns); *Only in groups*: only while you are in a party or a raid (Saneroki, 2026-11-09: "groups
+    are raids and party"); *Ignore everywhere*: shown nowhere for now, its settings kept, to pause it (Saneroki,
+    2026-11-09); *Only yours*: only your own cast of it counts (your HoTs, where another druid's Rejuvenation is no help);
     *When class in group*: *Not needed*, or one of the game's classes: shown only while you or one of your party or raid
     is of that class, in every place (Saneroki, 2026-11-07: "if a druid is in the party or raid it will then show that
     spell"; your own class counts too, "my own included", so a druid's *Druid* shows alone as well; the group's classes
@@ -334,10 +352,12 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     *Watch on* says. A group's version counts for the one: a Gift of the Wild for a Mark of
     the Wild, a Prayer of Fortitude for a Power Word: Fortitude, an Arcane Brilliance for an Arcane Intellect, any of
     your blessings for a blessing (which starts with *Only yours*).
-  - **On the health bars** (the place *Health bars*, after the bars in the dropdown; the switch *Aura icons on the health bars* on
-    the page's group section): the aura is watched on your own frame, your target's and your focus's, and on every member
-    the party and raid frames show, your own slot too, and its icon floats over that frame's name, from the health leftwards,
-    four at most in the order made. A buff only on a unit you can help (none on a foe you target), a debuff on any. Not on
+  - **On the health bars** (the places *Unit frames* and *Group frames*, after the bars in the dropdown, each on its own;
+    the switch *Aura icons on the health bars* on the page's group section): the aura is watched on your own frame, your
+    target's and your focus's (*Unit frames*), or on every member the party and raid frames show, your own slot too
+    (*Group frames*), on those *Watch on* takes in, and its icon floats over that frame's name, from the health leftwards,
+    four at most in the order made. A tracking from before, on *Health bars*, is on both, watched on everyone where it
+    is on no bar. A buff only on a unit you can help (none on a foe you target), a debuff on any. Not on
     the dead or the offline; a shout on your own party only. The class buffs no longer show by themselves: show each one
     you want there.
   - **On the nameplates** (the place *Nameplates*, last in the dropdown; Saneroki, 2026-11-07: "On those nameplates the
@@ -352,7 +372,10 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     several). *Delete bar* deletes the chosen aura's bar (on several: the one picked) and puts what it held on the first
     bar left, its other places kept; the last bar stays.
     Invisible, only the icons of what shows now, side by side around the bar's middle, no glow. Placed in Edit Mode, where
-    every bar stands with all it holds. Nothing on them takes the mouse.
+    every bar stands with all it holds (but what is ignored everywhere). Out of a fight an icon on a bar works as a buff
+    above a unit frame does (Saneroki, 2026-11-09: "The reminderbar icons should be clickable like the buffs in the aura
+    view"): the mouse on it shows the aura's tooltip, a left or right click its menu, its marks and *Edit tracked...*, which
+    opens the window on that tracking. In a fight and in Edit Mode nothing on them takes the mouse: your clicks go through.
   - **In a fight** the game hides most auras from addons, Forever's client all of them. What was on stays known until
     its time is up, and the offset counts on; then its icon shows. What comes during a fight the game does not tell, but
     your own casts: a cast of an aura watched counts as on for as long as that aura lasted when last seen out of a fight
@@ -507,6 +530,17 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   middle; the tall ones, and the wide ones where a bar's place is not plain, in lines from the left (`Flow`). Either at the
   largest scale, at most 1, at which all fit. `ActionBars.Seated`: every button shows and the bars
   stay in sight at rest. The game's stance and pet bars are left out. In a fight nothing moves; bars seated go back after it.
+  Every icon at full brightness while seated (Saneroki, 2026-11-09): a hook after each button's `UpdateUsable` notes the
+  game's colour and sets it white, given back when the bars leave (`Bright`); Sane Macros' faces are not dimmed then.
+  The game sets each bar's strata at every grid change (`ActionBarMixin:UpdateFrameStrata`: MEDIUM, TOOLTIP while a spell
+  is dragged), under the full screen's HIGH, so the bars went dark behind it after a drag until it opened again; the seat
+  puts its layer back (`Core.Seat`, hooks after `SetFrameStrata` and `SetFrameLevel`). Each window is as large as its bars
+  (`Part.Fit`, Core's board's `spec.fit`; `Content` at scale 1 with the room of what stands beside a bar out of its layout,
+  `Beyond`: its shown `ignoreInLayout` children, Bar 1's page number and a paged bar's checkbox). Every bar switched on
+  counts: `frame:IsShown()` is the game's `IsShownOverride`, switched on whatever Edit Mode's visibility; one that the
+  visibility hides is shown by the game's own `ShowBase` while seated (`Reveal`, out of a fight) and hidden by its
+  `HideBase` when the full screen goes, where the setting still hides it (`Conceal`, `SettingHides` as its
+  `UpdateVisibility` reads it, after a fight).
   The first layout (`Default`): Sane Macros (the part `macros`, [Macros/README.md](Macros/README.md)) its least width beside the
   others, the wide bars under it as high as they stand on the screen (at most what Sane Macros' least height leaves); without it, a
   strip along the foot of at most `MOST_SHARE` of the height.
@@ -630,15 +664,21 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     window *Edit tracked* a `Core.Window` panel (`auraListsPlace`, not sizable, no full screen): one scroll list of every
     name on any of them or a reminder's (`Rows`), each line the game's close button (its template stands at frame level 510:
     set to its line's), icon, name, number, a `UICheckButtonTemplate` per mark in `Lists.COLUMNS` (Hidden, Unimportant,
-    Important, Hide, Prioritize) and `line.remind` (Reminder: `Reminders.Make` of the line's spell, a debuff on your
-    target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`; the line kept), their words over the
-    columns; `OnMouseUp` chooses the line (`chosen`, by name), and `ReminderEditor.Show(reminder, name, icon)` puts
-    `Reminders.Named(chosen)` in the panel under the list (`Reminders/Editor.lua`; none: the button *Add tracking* and
-    `reminderNone` beside it, both anchored by their tops; *Watch on* and *Delete bar* hidden on none of the bars, `Reminders.OnBar`). `line.mark`
+    Important), `line.cog` (a button of the game's cog atlas `Lists.COG`, its tooltip and its column's words
+    `reminderTitle`, *Edit Tracked conditions*: the line chosen) and `line.remind` (Reminder: `Reminders.Make` of the
+    line's spell, a debuff on your target by `C_Spell.IsSpellHarmful`, else a buff on you; `Reminders.Take`; the line
+    kept), their words over the columns (`Middle`: from the right, Tracked last, the cog before it); `OnMouseUp` chooses
+    the line (`chosen`, by name), and `ReminderEditor.Show(reminder, name, icon, id)` puts
+    `Reminders.Named(chosen)` in the panel under the list (`Reminders/Editor.lua`, titled `reminderTitle`; none: the
+    button *Add tracking* and `reminderNone` beside it, both anchored by their tops; *Delete bar* hidden on none of the
+    bars, `Reminders.OnBar`, *Watch on* on the nameplates alone); under the settings, for the aura chosen, tracked or
+    not, the marks `Editor.MARKED` (Hide from unit frames, Prioritize on unit frames: `Lists.Put`, `Lists.Unmark`,
+    `Lists.Has(which, name)`). `line.mark`
     (chosen) and `line.lit` (just picked) stop where the ticks start: under them a tick looked greyed out.
     `Track(spell)`: *Add tracking*, the menu's (`Reminders.Entry`, its last line, a button `trackAdd`, none where a reminder
     of that name is: `Entries`' *Edit tracked...*, `auraLists`, opens it there) and the panel's (nil: the line chosen): kept, `Reminders.Make(spell)` (the first bar) where none is, `Open`
-    on it. The search box `AuraSearch.Box` over all. `Open(text, name)` searches at once, chooses that name. `/sane
+    on it. The search box `AuraSearch.Box` over all. `Open(text, name, reminder)` searches at once, chooses that name
+    (that reminder's line: the menu's *Edit tracked...* of an aura bar's icon, `spell.reminder`). `/sane
     auras [words]` and `/sane reminders` (`Core.Command`).
   - `AuraSearch.lua` (`ns.AuraSearch`): what the search finds, read once at the first search from Core's sets: each class
     (`Classes`, 1 to `CLASSES`) its class lines' spells (`SkillLines` by `byClass`, kind `class`) that put an aura on
@@ -680,9 +720,14 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   restricted (`HasRestrictions` in the newest export), so the place is the game's secure button `SaneUILookOut`
   (`SecureActionButtonTemplate`) anchored over the focus button's top, as high as its health bar, at its scale:
   `*type1` and `*type-Key` run `macrotext` `/focus [@focus,noexists] <name or unit>` (`LookOut.LINE`; the game's
-  `/focus` hands the name to `FocusUnit`), set out of a fight only (`Arm` through `Core.AfterCombat("look out")`;
-  `wanted` the line for what is watched now, `armed` the one on the button: while they differ the words say
-  *after the fight*). `RegisterForClicks("AnyUp", "AnyDown")` with `useOnKeyDown` from `ActionButtonUseKeyDown` (again
+  `/focus` hands the name to `FocusUnit`, which knows the names of your group alone), and for a name after it the
+  target's way (`LookOut.Lines(target, named)`): `/stopmacro [@focus,exists]`, `/targetexact` the name, `/focus
+  [@target,exists] target`, your target back: with one, `/cleartarget` first and `/targetlasttarget` last
+  (`LookOut.KEPT`; a name not near focuses nobody), without, `/cleartarget` last (`LookOut.BARE`). Both stand on the
+  button (`sane-kept`, `sane-bare`), and its snippet (`SecureHandlerBaseTemplate`'s `WrapScript` on `OnClick`,
+  `LookOut.SNIPPET`) puts the one for `UnitExists("target")` into `macrotext` as it is pressed, in a fight too. Set out of a
+  fight only (`Arm` through `Core.AfterCombat("look out")`; `wanted` the text for what is watched now, `armed` the one on
+  the button: while they differ the words say *after the fight*). `RegisterForClicks("AnyUp", "AnyDown")` with `useOnKeyDown` from `ActionButtonUseKeyDown` (again
   at `CVAR_UPDATE`): a mouse click acts on its release, a key on the edge the setting says. The right button has
   no type: `PostClick` opens the field; the left opens it while nothing is found; a press (`down`) and the key's
   click (`Key`, `Bindings.xml`: `CLICK SaneUILookOut:Key`) never. A state driver shows it (`LookOut.DRIVER`,
@@ -766,9 +811,17 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
   are told to `UnitText.Health`; `MakeLine` takes its tighter inset and gap; `face.floating`, a frame over the words, holds the icons, and
   `face.roomed` places your buffs' icons after each layout. `face.tint` (`Face.Tint`, at each fill): a player's class colour from the
   game's `RAID_CLASS_COLORS` (`groupClass`), a creature's by `UnitReaction` (4 `UnitBar.CALM`, under it `Face.HOSTILE`, the game's
-  `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`.
-- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `Reminders.GROUP` (0, no bar's number) among its
-  `places` (`Reminders.At`), *Health bars*; `Wanted` asked with that place (no `foe` check: a member's debuff is on a friend). `GroupReminders.Show(face, unit)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's, and a unit
+  `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`. The power line on every member (`Power`): `UnitPowerType`, a healer's mana
+  where `UnitPowerMax` has one, `UnitBar.Power` (none where the most is 0); the samples' by class (`Group.POWERS`). Aggro: a
+  plain `UnitThreatSituation` paints the border (`Face.AGGRO`, 2, up: `Face.AGGRO_BORDER`); a hidden one (a fight) leaves it
+  black and goes as it is into `face.threat`, a `StatusBar` over the border (`edges` one level under it, the health over it)
+  of `UnitBar.WHITE` in the red, its corners four masks of `Core.Shape.CORNER` as round as the border's, bounds
+  `Face.AGGRO - 1` to `Face.AGGRO`: full from aggro up, empty under it, never compared.
+- **Reminders on the frames (`Reminders/Group.lua`):** a reminder with `Reminders.GROUP` (-3, *Group frames*) or
+  `Reminders.FRAMES` (-2, *Unit frames*) among its `places` (`Reminders.At`; `IsFrames`), that watches the face's unit
+  (`Reminders.Watching`: `Takes` of an entry, the same unit by `UnitIsUnit`, its role by `Reminders.Role`, everyone by
+  `group`); `Wanted` asked with that place (no `foe` check: a member's debuff is on a friend). `GroupReminders.Show(face,
+  unit, place)` puts its icons on a face (`GroupFace.Icons`, `Roomed`): a member's (GROUP), and a unit
   frame's (`Units.lua`: `face.floating` over the words, `Units.ICON`, at each fill and its unit's `UNIT_AURA`, in `Units.EVENTS`;
   `Units.Each`); a buff only where `UnitCanAssist`. `GroupFace`'s
   `Buffs` asks `GroupReminders.Missing(unit, list)` on a fill, on `UNIT_AURA` (out of a fight only one that may change what is seen:
@@ -825,21 +878,30 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
     Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
     nothing of it, not even the mouse's coming, is on or over the full screen; its old second place `meterFullPlace` is no longer read.
 - **Reminders** (`Reminders/`): `Core.Character(ns.name).reminders`, a list. Where one shows: its `places` (*Shows on*), a
-  list of bar numbers, `Reminders.GROUP` and `Reminders.PLATES`, one at least, in Editor's `Places` order (`Put`, the last
-  one ticked staying); `Reminders.Places` reads an older one's single `bar` into it (at `Start`, which drops a bar there is
-  no more, and on any read), `Reminders.At` asks for one place, `IsBar` and `OnBar` for the bars. `Update` looks at a
-  reminder on the bars once (`Shown`) and puts its icon on each bar ticked; `Wanted` takes the place it is asked for
-  (`GROUP`: no `foe` check). `TakeBar` takes the bar out of each reminder's places, the first bar left in where it is
+  list of bar numbers (above 0), `Reminders.FRAMES` (-2), `Reminders.GROUP` (-3) and `Reminders.PLATES` (-1), one at
+  least, in Editor's `Places` order (`Put`, the last one ticked staying); `Reminders.Places` reads an older one's single
+  `bar` into it, and an older one's `Reminders.HEALTH` (0, *Health bars*) as `FRAMES` and `GROUP`, its `units` `{ "group" }`
+  where it is on no bar (at `Start`, which drops a bar there is no more, and on any read), `Reminders.At` asks for one
+  place, `IsBar` (above 0), `IsFrames` and `OnBar`. `Update` looks at a reminder on the bars once (`Shown`) and puts its
+  icon on each bar ticked, `{ icon, left, reminder }` (`ReminderBars.Fill`: `EnableMouse` on each icon while
+  `InCombatLockdown` and `Core.EditMode.active` are not, changed only when it differs; `OnMouseUp` `AuraLists.Menu` of
+  the reminder's aura, `OnEnter` `AuraSearch.Tip`); `Wanted` takes the place it is asked for (`IsFrames`: no `foe`
+  check), after `Reminders.Allowed`, the conditions of every place: `ignore` (*Ignore everywhere*, out of Edit Mode's
+  bars too), `combat`, `noRest` (*Hide in rested areas*), `inGroup` (*Only in groups*, `IsInGroup`), `class`, you alive. `TakeBar` takes the bar out of each reminder's places, the first bar left in where it is
   not already. Editor: `Editor.Where` the dropdown's words (`OverrideText`), `Says` the words beside the name (the
   health bars' and the nameplates' in a row), `NewBar` the new bar in place of the reminder's bars, `TakeBar` a menu
   of its bars (`MenuUtil.CreateContextMenu`, titled *Delete bar*) where it is on several. An aura may have several (`Reminders.Copy`, a copy of every field right after the original; `Named` gives the first): the window's `Rows` gives a line `{ id, name, reminder }` for each, `Current` the one chosen (`chosen` the name, `pick` the reminder), `Drop` the X (that reminder alone where its name has more). `class` (a class token, *When class in group*): `Reminders.Wanted` asks `Reminders.InGroup`, the tokens of you and your party or raid (`UnitClass` of `player`, and of each `party`/`raid` unit that `UnitExists`), read at most once a second and anew at `GROUP_ROSTER_UPDATE` (then `Reminders.Apply` once a frame). `Reminders.Update` runs on a ticker every
   `Reminders.EVERY` seconds, only while there are reminders on bars or the nameplates and the setting is on: it looks at each aura
   (`Reminders.Aura`: `C_UnitAuras.GetAuraDataBySpellName`, the name for the ranks, each name of `Reminders.FAMILIES`, `PLAYER`
-  with *Only yours*) on each unit of the reminder's `units` (*Watch on*, Editor's checkboxes in `Editor.UNITS`'s order,
-  one at least; `Reminders.Units` reads an older reminder's single `unit` into the list, at `Reminders.Start` and on
-  any read; `Find` takes a reminder that watches the spell's unit too), and hands each bar what shows: one icon where
-  `Wanted` says so for any of them, the fewest seconds left of those, none while one is missing (`Shown`). What was
-  known is kept per reminder and unit (`seen`); a new target or focus forgets all but yours. A cast in a fight
+  with *Only yours*) on each unit of the reminder's `units` (*Watch on*, Editor's checkboxes in `Editor.UNITS`'s order:
+  `player`, `target`, `focus`, `group`, `tank`, `healer`, `dps`, `party1` to `party4` and, in a submenu (`raidMenu`,
+  four across), `raid1` to `raid40`; one at least; `Reminders.Units` reads an older reminder's single `unit` into the
+  list, at `Reminders.Start` and on any read; `Find` takes a reminder that watches the spell's unit too), as
+  `Reminders.Watched` makes them units, each once (a role: each of `Reminders.Members()`, `PARTY` with you or `RAID`,
+  whose `Reminders.Role` it is, `UnitGroupRolesAssigned` or a main tank; `group`: all of them), and hands each bar what
+  shows: one icon where `Wanted` says so for any of them (one offline, or one a party's family does not `Reaches`,
+  counts for none), the fewest seconds left of those, none while one is missing (`Shown`). What was known is kept per
+  reminder and unit (`seen`); a new target forgets your target's, a new focus your focus's, a group changed its members'. A cast in a fight
   (`Given`): on the units watched whose `UnitName` (or `Core.FullName`) is the name `UNIT_SPELLCAST_SENT` gave, on all
   of them where none is, or the name reaches many (`Reminders.Many`). Editor's dropdown words: `Editor.Watched`,
   set by `OverrideText`. `Hidden` asks
@@ -896,13 +958,13 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
 | `Units/AuraSearch.lua` | What Edit tracked's search finds: every class's auras, the enemies', the items', from Core's sets, in groups; its box and suggestions |
-| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and the window Edit tracked (`/sane auras`, `/sane reminders`): one list with a tick per mark and Reminder, the search, the chosen line's reminder under it |
+| `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and the window Edit tracked (`/sane auras`, `/sane reminders`): one list with a tick per mark of the game's list, a cog (Edit Tracked conditions) and Tracked, the search, the chosen line's reminder under it |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: the game's outline, fade, hidden last, the left click |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
 | `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
 | `Units/LookOut.lua` | Look out for, in your focus's place while you have none: the field, its + and X, the watch on nameplates, group and target, the game's secure button that focuses who it found on your click or key |
-| `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the mana line, the icons; live or made up |
+| `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the power line, aggro in a fight too, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
 | `Units/Group.lua` | The one window for party and raid: the game's secure group headers, beside a party each member's target and pet, sizes, Edit Mode's settings and preview |
 | `BarsWindow.lua` | The action bars as windows of the full screen, seated, so that nothing lies over them |
@@ -920,10 +982,12 @@ frame or plate whose unit lacks it (your Mark of the Wild, your Rejuvenation, yo
 | `Reminders/Reminders.lua` | The reminders and bars: kept per character, the families of names, what is known of an aura, in a fight too, whether one shows, the looks |
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Plates.lua` | The reminders on the nameplates: a row right under each plate, on Nameplates' dress where it dresses it, in a fight your cast on your target's plate |
-| `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows |
-| `Reminders/Editor.lua` | The chosen aura's reminder in Edit tracked, under its list: where it shows (ticks for the bars, the party and raid frames, the nameplates; a new bar), on whom, its settings |
+| `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows, clickable out of a fight |
+| `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-09:** The action bars on the full screen (Saneroki): no longer dark after a spell or macro is dragged onto them ("only reopening the fullscreen resets it to visible"; the game set their strata under the full screen at every drag, the seat puts it back); every icon there at full brightness ("It should always show the icons in full brightness"); every bar switched on, one Edit Mode hides too; each window as large as its bars ("its height and width should always be the same height to just show the amount of content to fit"), the room beside it in its column empty.
+- **2026-11-09:** *Edit tracked* (Saneroki): *Watch on* takes *Everyone*, the roles *Tank*, *Healer* and *DPS*, *Party 1* to *Party 4* and, in a menu of its own, *Group 1* to *Group 40* ("can you add on the watched on all party members Like Party 1 and also on Role Tank, Healer, DPS", "add in the watch on Group 1, 2 to 40 members"), counted on the bars and on the frames' health bars, where the icon shows on each frame of one watched; *Shows on* has *Unit frames* (yours, your target's, your focus's) and *Group frames* apart, in place of *Health bars* ("Add a Show on groupframes that show the spell in the show on"; a tracking from before on both, on everyone where it is on no bar); the conditions *Only in groups* and *Ignore everywhere* (paused, kept), *Don't show in resting areas* now *Hide in rested areas* ("Add a only in Groups (groups are raids and party.", "Add a Hide in Rested Areas", "Add a ignore everywhere"); the columns *Hide from unit frames* and *Prioritize on unit frames* made way for a cog, its tooltip *Edit Tracked conditions*, the title of the settings under the list now, with those two ticks in it ("put there button That looks like a cogwheel"). The aura bars' icons clickable out of a fight as the buffs are ("The reminderbar icons should be clickable like the buffs in the aura view to add tracked etc."). *Look out for* focuses one not of your group by your target, your target back as it was ("The add focus is not entirely working. It doesn't add units that are not in the group."). The group frames: every member's class resource, and aggro in a fight too ("Grooup windows should show always the class resource and aggro.").
 - **2026-11-07:** *Shows on* takes several places at once: its dropdown's lines are ticks (each aura bar, *Health bars*, *Nameplates*), its words name those ticked, the last one ticked stays; the aura shows on each by the same settings; *New bar* puts it on the new bar in place of its bars; *Delete bar* on several bars asks which (Saneroki: "We have the edit Tracked window we made the watch on multiple choice. Can we make the shows on also multiple choice").
 - **2026-11-07:** *Look out for* in your focus's place while you have no focus: a name or @tank, @healer, @party1-4, @raid1-40 watched in a fight too; found, the place says *Focus found: Add it now* and a click or its key makes it your focus (Saneroki: "Is it possible to have a {add} button instead of the focus target if and only if there is no focus target selected", then "the button add is now called 'Look out for' instead" and "Focus found: Add it now").
 - **2026-11-07:** *Watch on* takes several units at once: its dropdown's lines are ticks (you, your target, your focus), its words name those watched, the last one ticked stays; a reminder on a bar shows as one icon while any of them wants it, in a fight each unit known on its own (Saneroki: "Can we have watch on have several targets where we can select multiple targets in its dropdown with checkboxes to show what we watch it on."). The health bars and the nameplates as before.

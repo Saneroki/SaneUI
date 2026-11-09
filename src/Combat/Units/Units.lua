@@ -124,11 +124,12 @@ local function Row(face)
     ns.UnitText.Row(face, unit, face.rowSample and ns.TEXT.samples[face.rowUnit] or nil)
 end
 
--- Your auras on the health bars over the face, as its unit has them (Reminders/Group.lua); none on a sample.
+-- Your auras on the health bars over the face, as its unit has them: those shown on your unit frames
+-- (Reminders/Group.lua, Unit frames); none on a sample.
 local function Buffs(face)
     if ns.off or not face.icons then return end
     local real = not face.sample and Core.Ask(UnitExists, face.unit)
-    ns.GroupReminders.Show(face, real and face.unit or nil)
+    ns.GroupReminders.Show(face, real and face.unit or nil, ns.Reminders.FRAMES)
 end
 Units.Buffs = Buffs
 

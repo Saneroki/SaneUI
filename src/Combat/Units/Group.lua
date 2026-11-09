@@ -283,14 +283,14 @@ Group.CLASSES = { -- the classes a made-up player is of, by the role it may have
     TANK = { "WARRIOR", "PALADIN", "DRUID" }, HEALER = { "PRIEST", "PALADIN", "SHAMAN", "DRUID" },
     NONE = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" },
 }
+Group.POWERS = { WARRIOR = "RAGE", ROGUE = "ENERGY" } -- a made-up player's power where it is no mana
 local function Roll(icons)
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
-    if Chance(0.35) then -- a tank or a healer
-        sample.mana = 0.1 + math.random() * 0.9
-        sample.role = Pick({ "TANK", "HEALER" })
-    end
+    sample.mana = 0.1 + math.random() * 0.9 -- every member's class resource
+    if Chance(0.35) then sample.role = Pick({ "TANK", "HEALER" }) end -- a tank or a healer
     sample.class = Pick(Group.CLASSES[sample.role or "NONE"])
+    if sample.role ~= "HEALER" then sample.power = Group.POWERS[sample.class] end
     if Chance(0.2) then sample.mark = math.random(1, 8) end
     if Chance(0.2) then sample.barrier = math.min(0.1 + math.random() * 0.3, 1 - sample.health) end
     if Chance(0.15) then sample.lost = 0.1 + math.random() * 0.3 end

@@ -3,41 +3,52 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Editor
 --  The reminder of the aura chosen in Edit tracked (Units/Lists.lua: /sane auras,
---  /sane reminders, an aura's menu), under its list, each setting taking effect
+--  /sane reminders, an aura's menu, a line's cog), under its list and the title
+--  Edit Tracked conditions (Saneroki, 2026-11-09), each setting taking effect
 --  at once (Saneroki, 2026-11-06: one window for every aura's setup):
---      Shows on   a reminder bar (the first one for a new reminder), the
---                 party and raid frames, the nameplates: a tick on each line,
---                 any number of them, one at least (the last stays ticked),
---                 the dropdown's words naming them ("Aura bar 1, Nameplates";
---                 Saneroki, 2026-11-07: "make the shows on also multiple
---                 choice"); New bar (the reminder on it in place of its bars),
---                 Delete bar (its reminders on the first bar left; the last
---                 bar stays; on several bars a menu of them asks which)
---      Watch on   you, your target, your focus: a tick on each line, any
---                 number of them, one at least (the last stays ticked), the
---                 dropdown's words naming those watched ("You, Your target";
---                 Saneroki, 2026-11-07: "select multiple targets in its
---                 dropdown with checkboxes"); on the frames each member, on
---                 the nameplates each plate's unit (on none of the bars it and
---                 Delete bar are out of sight)
---      Display when missing, Display when active, Combat, Don't show in
---      resting areas, Only yours, Offset time
+--      Shows on   a reminder bar (the first one for a new reminder), your
+--                 unit frames, the party and raid frames (Group frames:
+--                 Saneroki, 2026-11-09, "Add a Show on groupframes"), the
+--                 nameplates: a tick on each line, any number of them, one at
+--                 least (the last stays ticked), the dropdown's words naming
+--                 them ("Aura bar 1, Nameplates"; Saneroki, 2026-11-07: "make
+--                 the shows on also multiple choice"); New bar (the reminder
+--                 on it in place of its bars), Delete bar (its reminders on
+--                 the first bar left; the last bar stays; on several bars a
+--                 menu of them asks which)
+--      Watch on   you, your target, your focus, everyone, a role (Tank,
+--                 Healer, DPS), a member of your party (Party 1 to 4) or raid
+--                 (Group 1 to 40, a menu of its own; Saneroki, 2026-11-09): a
+--                 tick on each line, any number of them, one at least (the
+--                 last stays ticked), the dropdown's words naming those
+--                 watched ("You, Tank"; Saneroki, 2026-11-07: "select
+--                 multiple targets in its dropdown with checkboxes"); on a bar
+--                 and on the frames; the nameplates watch each plate's unit
+--                 (on them alone it is out of sight, Delete bar too on none of
+--                 the bars)
+--      Display when missing, Display when active, Combat, Hide in rested
+--      areas, Only yours, Offset time, Only in groups (a party or a raid),
+--      Ignore everywhere (shown nowhere, kept as it is set)
 --      When class in group   Not needed, or a class of the game's: shown only
 --                 while you or one of your party or raid is of it (Saneroki,
 --                 2026-11-07: "if a druid is in the party or raid it will
 --                 then show that spell", "my own included")
---  A line's tick Tracked makes or deletes one; a line chosen without
---  one has the button Add tracking (Lists.Track: made on the first bar, its
---  settings here at once; Saneroki, 2026-11-07: a spell searched could not be
---  set up).
+--  And the aura's two marks for the unit frames, tracked or not (Hide from unit
+--  frames, Prioritize on unit frames: no columns of the list's any more;
+--  Saneroki, 2026-11-09). A line's tick Tracked makes or deletes one; a line
+--  chosen without one has the button Add tracking (Lists.Track: made on the
+--  first bar, its settings here at once; Saneroki, 2026-11-07: a spell searched
+--  could not be set up).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Editor = {}
 ns.ReminderEditor = Editor
 
-Editor.HEIGHT = 158 -- the panel under the list
+Editor.HEIGHT = 200 -- the panel under the list
 Editor.ICON = 20
+Editor.TOP = 52     -- from the panel's top to its settings, under its title and the aura's name
 Editor.ROW = 30     -- from one row of settings to the next
+Editor.MARKS = 4    -- the row of the aura's marks for the unit frames, under the settings
 Editor.RIGHT = 520  -- where the settings' right half starts
 Editor.WORD = 80    -- a dropdown's words before it
 Editor.LONG = 140   -- longer words before it (When class in group)
@@ -46,10 +57,14 @@ Editor.WIDE = 220   -- Shows on's and Watch on's: room for three names ("You, Yo
 Editor.TRACK = 130  -- the button Add tracking's width
 Editor.HINT = 5     -- the words beside it, down from its top
 Editor.COMBAT = { "any", "out", "in" }
-Editor.UNITS = { "player", "target", "focus" }
+-- Watch on's entries, in their order: you, your target, your focus; everyone and the roles; your party; your raid.
+Editor.UNITS = { "player", "target", "focus", "group", "tank", "healer", "dps" }
+for index = 1, 4 do Editor.UNITS[#Editor.UNITS + 1] = "party" .. index end
+for index = 1, 40 do Editor.UNITS[#Editor.UNITS + 1] = "raid" .. index end
+Editor.MARKED = { "hide", "show" } -- the aura's marks for the unit frames here (Lists.lua's), left to right
 
 local panel, controls, face, head, on, hint, track, place, unit, combat, early, takeBar, class
-local ticks = {}
+local ticks, marks = {}, {}
 local chosen -- the reminder whose settings show
 
 local Fill
@@ -80,11 +95,12 @@ local function Classes()
     return entries
 end
 
--- Where a reminder may show: { word, number } each, the bars by their place among them; then the party and raid
--- frames, the nameplates.
+-- Where a reminder may show: { word, number } each, the bars by their place among them; then your unit frames, the
+-- party and raid frames, the nameplates.
 local function Places()
     local entries = {}
     for at, number in ipairs(ns.Reminders.Bars()) do entries[at] = { ns.TEXT.reminderBar:format(at), number } end
+    entries[#entries + 1] = { ns.TEXT.reminderFrames, ns.Reminders.FRAMES }
     entries[#entries + 1] = { ns.TEXT.reminderGroup, ns.Reminders.GROUP }
     entries[#entries + 1] = { ns.TEXT.reminderPlates, ns.Reminders.PLATES }
     return entries
@@ -108,14 +124,24 @@ function Editor.Where(reminder)
     return table.concat(words, ", ")
 end
 
--- What the window says of the places that watch each one there (the health bars, the nameplates), one after the other.
+-- What the window says of a place that watches each one there whatever Watch on says (the nameplates).
 local function Says(reminder)
-    local words = {}
-    if ns.Reminders.At(reminder, ns.Reminders.GROUP) then words[#words + 1] = ns.TEXT.reminderOnGroup end
-    if ns.Reminders.At(reminder, ns.Reminders.PLATES) then
-        words[#words + 1] = words[1] and ns.TEXT.reminderOnPlates:gsub("^%u", string.lower) or ns.TEXT.reminderOnPlates
+    return ns.Reminders.At(reminder, ns.Reminders.PLATES) and ns.TEXT.reminderOnPlates or ""
+end
+
+-- Whether Watch on counts for the reminder: on a bar, on your unit frames, on the party and raid frames.
+local function Watches(reminder)
+    local Reminders = ns.Reminders
+    return Reminders.OnBar(reminder) or Reminders.At(reminder, Reminders.FRAMES) or Reminders.At(reminder, Reminders.GROUP)
+end
+
+-- The aura's marks for the unit frames, ticked as they are; out of sight while no aura is chosen.
+local function Marks()
+    for which, tick in pairs(marks) do
+        tick:SetShown(panel.name ~= nil)
+        tick.words:SetShown(panel.name ~= nil)
+        tick:SetChecked(panel.name ~= nil and ns.AuraLists.Has(which, panel.name))
     end
-    return table.concat(words, "; ")
 end
 
 function Fill()
@@ -125,6 +151,7 @@ function Fill()
     face:SetShown(chosen ~= nil or panel.icon ~= nil)
     hint:SetShown(chosen == nil)
     track:SetShown(untracked)
+    Marks()
     if not chosen then
         face:SetTexture(panel.icon)
         head:SetText(panel.name or "")
@@ -133,23 +160,23 @@ function Fill()
         if untracked then
             hint:SetPoint("TOPLEFT", track, "TOPRIGHT", 10, -Editor.HINT)
         else
-            hint:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
+            hint:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -Editor.TOP)
         end
-        hint:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, untracked and -32 - Editor.HINT or -32)
+        hint:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, untracked and -Editor.TOP - Editor.HINT or -Editor.TOP)
         hint:SetText(untracked and ns.TEXT.reminderNone or ns.TEXT.reminderPick)
         return
     end
-    local barless = not ns.Reminders.OnBar(chosen)
+    local barless, watching = not ns.Reminders.OnBar(chosen), Watches(chosen)
     face:SetTexture(chosen.icon)
     head:SetText(chosen.name)
     on:SetText(Says(chosen))
     for key, tick in pairs(ticks) do tick:SetChecked(chosen[key] and true or false) end
-    -- On none of the bars (the health bars, the nameplates: each member, each plate's unit) no bar to delete and no unit
-    -- to choose: out of sight, not greyed out.
+    -- On none of the bars no bar to delete; on the nameplates alone (each plate's unit) no unit to choose: out of sight,
+    -- not greyed out.
     takeBar:SetShown(not barless)
     takeBar:SetEnabled(ns.Reminders.Bars()[2] ~= nil)
-    unit:SetShown(not barless)
-    unit.words:SetShown(not barless)
+    unit:SetShown(watching)
+    unit.words:SetShown(watching)
     place:GenerateMenu()
     place:OverrideText(Editor.Where(chosen))
     unit:GenerateMenu()
@@ -167,16 +194,36 @@ local function Words(x, row, word)
     return words
 end
 
+-- A tick on host (the settings, or the panel), on its row at x, its words to its right; click(tick) when clicked.
+local function Box(host, x, y, word, click)
+    local tick = CreateFrame("CheckButton", nil, host, "UICheckButtonTemplate")
+    tick:SetSize(24, 24)
+    tick:SetPoint("TOPLEFT", host, "TOPLEFT", x, y)
+    tick:SetScript("OnClick", ns.Guard(click))
+    tick.words = host:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    tick.words:SetPoint("LEFT", tick, "RIGHT", 4, 0)
+    tick.words:SetText(word)
+    return tick
+end
+
 -- A tick for a setting, on its row at x.
 local function Tick(key, x, row, word)
-    local tick = CreateFrame("CheckButton", nil, controls, "UICheckButtonTemplate")
-    tick:SetSize(24, 24)
-    tick:SetPoint("TOPLEFT", controls, "TOPLEFT", x, -row * Editor.ROW)
-    tick:SetScript("OnClick", ns.Guard(function(self) Set(key, self:GetChecked() and true or false) end))
-    local text = controls:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    text:SetPoint("LEFT", tick, "RIGHT", 4, 0)
-    text:SetText(word)
-    ticks[key] = tick
+    ticks[key] = Box(controls, x, -row * Editor.ROW, word, function(self) Set(key, self:GetChecked() and true or false) end)
+end
+
+-- A tick for one of the aura's marks for the unit frames (Lists.lua's), in the panel's row under the settings: the
+-- aura chosen marked so, or not, tracked or not.
+local function Mark(which, x)
+    local word = ns.TEXT[ns.AuraLists.WORDS[which]]
+    marks[which] = Box(panel, x, -Editor.TOP - Editor.MARKS * Editor.ROW, word, function(self)
+        if not panel.name then return end
+        if self:GetChecked() then
+            ns.AuraLists.Put(which, { id = panel.id, name = panel.name })
+        else
+            ns.AuraLists.Unmark(which, panel.name)
+        end
+        Marks()
+    end)
 end
 
 -- A dropdown on the panel's row at x, its words before it (room: theirs, Editor.WORD where not said), that wide
@@ -204,19 +251,29 @@ end
 -- Watch on: that unit ticked or not, the others as they were, in Editor.UNITS's order; the last one ticked stays.
 local function Watch(value)
     if not chosen then return end
-    local Watches, list = ns.Reminders.On, {}
+    local On, list = ns.Reminders.On, {}
     for _, each in ipairs(Editor.UNITS) do
-        local ticked = Watches(chosen, each)
+        local ticked = On(chosen, each)
         if each == value then ticked = not ticked end
         if ticked then list[#list + 1] = each end
     end
     if list[1] then Set("units", list) else Fill() end
 end
 
+-- What Watch on calls an entry: "You", "Tank", "Party 2", "Group 12".
+function Editor.Unit(each)
+    local words = ns.TEXT.reminderUnits
+    if words[each] then return words[each] end
+    local kind, number = tostring(each):match("^(%a+)(%d+)$")
+    if kind == "party" then return words.party:format(number) end
+    if kind == "raid" then return words.raid:format(number) end
+    return tostring(each)
+end
+
 -- Watch on's words: the units watched, by name ("You, Your target").
 function Editor.Watched(reminder)
     local words = {}
-    for at, each in ipairs(ns.Reminders.Units(reminder)) do words[at] = ns.TEXT.reminderUnits[each] or each end
+    for at, each in ipairs(ns.Reminders.Units(reminder)) do words[at] = Editor.Unit(each) end
     return table.concat(words, ", ")
 end
 
@@ -269,10 +326,22 @@ local function TakeBar(button)
     end))
 end
 
--- Watch on's lines: a tick for each unit.
+-- Watch on's lines: a tick for each entry; you, your target and your focus, then everyone and the roles, then your
+-- party; your raid's forty in a menu of their own (Group), four across.
 local function Watching(root)
+    local raid
     for _, value in ipairs(Editor.UNITS) do
-        root:CreateCheckbox(ns.TEXT.reminderUnits[value],
+        if value == "group" or value == "party1" then root:CreateDivider() end
+        local into = root
+        if value:find("^raid") then
+            if not raid then
+                raid = root:CreateButton(ns.TEXT.reminderUnits.raidMenu)
+                local grid = rawget(_G, "MenuConstants")
+                if raid.SetGridMode and grid then raid:SetGridMode(grid.VerticalGridDirection, 4) end
+            end
+            into = raid
+        end
+        into:CreateCheckbox(Editor.Unit(value),
                             ns.Guard(function() return chosen ~= nil and ns.Reminders.On(chosen, value) end),
                             ns.Guard(function() Watch(value) end))
     end
@@ -302,9 +371,12 @@ function Editor.Build(parent)
     line:SetPoint("TOPRIGHT")
     line:SetHeight(1)
     line:SetColorTexture(0.45, 0.4, 0.3, 0.8)
+    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -6)
+    title:SetText(ns.TEXT.reminderTitle)
     face = panel:CreateTexture(nil, "ARTWORK")
     face:SetSize(Editor.ICON, Editor.ICON)
-    face:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -6)
+    face:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -24)
     face:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     head = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     head:SetPoint("LEFT", face, "RIGHT", 8, 0)
@@ -314,12 +386,12 @@ function Editor.Build(parent)
     hint:SetJustifyH("LEFT")
     track = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     track:SetSize(Editor.TRACK, 22)
-    track:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
+    track:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -Editor.TOP)
     track:SetText(ns.TEXT.trackAdd)
     track:SetScript("OnClick", ns.Guard(function() ns.AuraLists.Track() end))
 
     controls = CreateFrame("Frame", nil, panel)
-    controls:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -32)
+    controls:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -Editor.TOP)
     controls:SetPoint("BOTTOMRIGHT")
     local R = Editor.RIGHT
     place = Dropdown(0, 0, ns.TEXT.reminderOnBar, Showing, nil, Editor.WIDE)
@@ -344,20 +416,23 @@ function Editor.Build(parent)
     early:SetScript("OnEnterPressed", ns.Guard(function(self) self:ClearFocus() end))
     early:SetScript("OnEscapePressed", ns.Guard(function(self) self:ClearFocus() end))
     class = Choice("class", 0, 3, ns.TEXT.reminderClass, Classes, Editor.LONG)
+    Tick("inGroup", R, 3, ns.TEXT.reminderInGroup)
+    Tick("ignore", R + 200, 3, ns.TEXT.reminderIgnore)
+    for at, which in ipairs(Editor.MARKED) do Mark(which, (at - 1) * 200) end
     Editor.panel = panel
     return panel
 end
 
--- The panel for that reminder; nil: none, the aura of that name and icon (if any) chosen without one.
-function Editor.Show(reminder, name, icon)
+-- The panel for that reminder; nil: none, the aura of that name, icon and number (if any) chosen without one.
+function Editor.Show(reminder, name, icon, id)
     chosen = reminder
-    if panel then panel.name, panel.icon = name, icon end
+    if panel then panel.name, panel.icon, panel.id = name, icon, id end
     Fill()
 end
 
 -- Edit tracked on that reminder's aura (nil: as it was left).
 function Editor.Open(reminder)
-    ns.AuraLists.Open(nil, reminder and reminder.name)
+    ns.AuraLists.Open(nil, reminder and reminder.name, reminder)
 end
 
 -- A reminder deleted, from here or a menu: the window without it.

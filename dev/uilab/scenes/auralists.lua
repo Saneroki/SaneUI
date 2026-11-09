@@ -42,7 +42,7 @@ Lab.OnLogin(function()
     local Reminders = LabCombat.Reminders
     Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
     local rejuvenation = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
-    rejuvenation.places, rejuvenation.own = { Reminders.GROUP }, true
+    rejuvenation.places, rejuvenation.own, rejuvenation.units = { Reminders.GROUP }, true, { "group" }
     local again = Reminders.Copy(rejuvenation)
     again.places, again.class = { Reminders.Bars()[1], Reminders.PLATES }, "DRUID"
     Lists.Open(nil, "Rejuvenation")

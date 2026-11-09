@@ -26,12 +26,15 @@ local _, ns = ...
 --  once more, a copy of the line's reminder under it: Saneroki, 2026-11-07,
 --  "Sometimes I want to show it on multiple places or have different
 --  conditions"), its icon, name and number, a tick for each mark in the columns
---  Hidden, Unimportant, Important, Hide from unit frames, Prioritize on unit
---  frames, and last Tracked: a reminder made or deleted (Reminders/: on the
---  first aura bar, or where its settings choose: another bar, the health bars
---  of your unit frames and party and raid frames, the nameplates). A spell stays on
---  the list with no tick, until its X (auraKept). A line clicked is chosen, and
---  under the list stand its reminder's settings (Reminders/Editor.lua). Over it a
+--  Hidden, Unimportant, Important, then a cog (Edit Tracked conditions: the line
+--  chosen; Saneroki, 2026-11-09, in place of the columns Hide from unit frames
+--  and Prioritize on unit frames, whose ticks stand in that section now), and
+--  last Tracked: a reminder made or deleted (Reminders/: on the first aura bar,
+--  or where its settings choose: another bar, your unit frames, the party and
+--  raid frames, the nameplates). A spell stays on the list with no tick, until
+--  its X (auraKept). A line clicked is chosen, and under the list stand its
+--  reminder's settings and its marks for the unit frames, under the title Edit
+--  Tracked conditions (Reminders/Editor.lua). Over it a
 --  search box: as you type, suggestions under it in groups, each class's auras,
 --  the enemies', the items' (AuraSearch.lua); a click on one, or Enter for the
 --  first, puts it on the list, lit and chosen, to tick. At the foot, what the
@@ -47,7 +50,7 @@ Lists.INSET = 12
 Lists.LINE = 26     -- a spell's line
 Lists.ICON = 18
 Lists.TICK = 24
-Lists.COLUMN = 92   -- a mark's column, its tick in the middle
+Lists.COLUMN = 92   -- a mark's column, its tick in the middle; the cog's and Tracked's too
 Lists.TOP = 56      -- from the window's top to the marks' words, under the search box
 Lists.HEAD = 30     -- the marks' words over their columns, two lines at most
 Lists.BAR = 24      -- the scroll bar's room at the list's right
@@ -58,7 +61,8 @@ Lists.SEARCH = 360  -- the search box's suggestions, wide
 Lists.KEYS = { white = "auraWhite", black = "auraBlack", hidden = "auraHidden", show = "auraShow", hide = "auraHide",
                kept = "auraKept" } -- the lists' settings; kept: the window's own, every spell put on it
 Lists.ORDER = { "white", "black", "hidden", "show", "hide" }
-Lists.COLUMNS = { "hidden", "black", "white", "hide", "show" } -- the window's ticks, left to right
+Lists.COLUMNS = { "hidden", "black", "white" } -- the window's ticks, left to right; then the cog, then Tracked
+Lists.COG = "questlog-icon-setting" -- the game's cog, as Core's windows have it
 Lists.WORDS = { white = "auraImportant", black = "auraUnimportant", hidden = "auraHidden",
                 show = "auraFramesShow", hide = "auraFramesHide" } -- their words in ns.TEXT
 Lists.SIDE = { white = "look", black = "look", hidden = "look", show = "frames", hide = "frames" }
@@ -153,7 +157,8 @@ local function Fill()
     for index = #rows + 1, #lines do lines[index]:Hide() end
     empty:SetShown(rows[1] == nil)
     child:SetHeight(math.max(#rows * Lists.LINE, 1))
-    ns.ReminderEditor.Show(current and current.reminder, current and current.name, current and Icon(current.id))
+    ns.ReminderEditor.Show(current and current.reminder, current and current.name, current and Icon(current.id),
+                           current and current.id)
 end
 
 -- The list as it is now, from outside (a reminder made or deleted elsewhere).
@@ -172,6 +177,11 @@ end
 -- How a spell looks in the game's list: "white", "black", "hidden" or nil.
 function Lists.Mark(name)
     return Side("look", name)
+end
+
+-- Whether a spell has that mark ("hide", "white"), by its name, any rank of it.
+function Lists.Has(which, name)
+    return Side(Lists.SIDE[which], name) == which
 end
 
 -- A spell on a list (and on the window's): off the others of its side.
@@ -230,7 +240,7 @@ function Lists.Entries(root, spell)
             end))
     end
     root:CreateDivider()
-    root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() Lists.Open(nil, spell.name) end))
+    root:CreateButton(ns.TEXT.auraLists, ns.Guard(function() Lists.Open(nil, spell.name, spell.reminder) end))
 end
 
 -- The menu of an aura or a spell ({ id, name, icon, harmful, unit }): the marks, the window, last Add tracking where it is
@@ -356,13 +366,24 @@ end
 -------------------------------------------------------------------------------
 --  The window
 -------------------------------------------------------------------------------
--- The middle of a column from the list's right: the marks' in their order, then Reminder (#Lists.COLUMNS + 1).
+-- The middle of a column from the list's right: the marks' in their order, then the cog (#Lists.COLUMNS + 1), then
+-- Tracked (#Lists.COLUMNS + 2).
 local function Middle(place)
-    return -((#Lists.COLUMNS + 1 - place) * Lists.COLUMN + Lists.COLUMN / 2)
+    return -((#Lists.COLUMNS + 2 - place) * Lists.COLUMN + Lists.COLUMN / 2)
 end
 
--- One line of the list, made as needed: the X, the +, the icon, the name and number, a tick per mark, its reminder's
--- tick; a click on it chooses it.
+-- A tooltip of a few words for a button.
+local function Says(button, words)
+    button:SetScript("OnEnter", ns.Guard(function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(words, 1, 1, 1, 1, true)
+        GameTooltip:Show()
+    end))
+    button:SetScript("OnLeave", GameTooltip_Hide)
+end
+
+-- One line of the list, made as needed: the X, the +, the icon, the name and number, a tick per mark, the cog, its
+-- reminder's tick; a click on it, or on its cog, chooses it.
 function Lists.Line(index)
     local line = CreateFrame("Frame", nil, child)
     line:SetHeight(Lists.LINE)
@@ -399,12 +420,7 @@ function Lists.Line(index)
     copy:SetPushedTexture(Lists.PLUS_ART.down)
     copy:SetHighlightTexture(Lists.PLUS_ART.lit, "ADD")
     copy:SetScript("OnClick", ns.Guard(function() if line.row then Copy(line.row) end end))
-    copy:SetScript("OnEnter", ns.Guard(function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(ns.TEXT.listsCopy, 1, 1, 1, 1, true)
-        GameTooltip:Show()
-    end))
-    copy:SetScript("OnLeave", GameTooltip_Hide)
+    Says(copy, ns.TEXT.listsCopy)
     line.copy = copy
     line.icon = line:CreateTexture(nil, "ARTWORK")
     line.icon:SetSize(Lists.ICON, Lists.ICON)
@@ -430,9 +446,18 @@ function Lists.Line(index)
         end))
         line.ticks[which] = tick
     end
+    -- The cog: the line chosen, its conditions under the list (Saneroki, 2026-11-09).
+    local cog = CreateFrame("Button", nil, line)
+    cog:SetSize(Lists.ICON, Lists.ICON)
+    cog:SetPoint("CENTER", line, "RIGHT", Middle(#Lists.COLUMNS + 1), 0)
+    cog:SetNormalAtlas(Lists.COG)
+    cog:SetHighlightAtlas(Lists.COG, "ADD")
+    cog:SetScript("OnClick", ns.Guard(function() if line.row then Choose(line.row.name, line.row.reminder) end end))
+    Says(cog, ns.TEXT.reminderTitle)
+    line.cog = cog
     line.remind = CreateFrame("CheckButton", nil, line, "UICheckButtonTemplate")
     line.remind:SetSize(Lists.TICK, Lists.TICK)
-    line.remind:SetPoint("CENTER", line, "RIGHT", Middle(#Lists.COLUMNS + 1), 0)
+    line.remind:SetPoint("CENTER", line, "RIGHT", Middle(#Lists.COLUMNS + 2), 0)
     line.remind:SetScript("OnClick", ns.Guard(function(self)
         if line.row then Remind(line.row, self:GetChecked() and true or false) end
     end))
@@ -469,11 +494,14 @@ local function Build()
         head:SetWordWrap(true)
         head:SetText(ns.TEXT[Lists.WORDS[which]])
     end
-    local head = inside:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    head:SetWidth(Lists.COLUMN - 6)
-    head:SetPoint("BOTTOM", scroll, "TOPRIGHT", Middle(#Lists.COLUMNS + 1), 4)
-    head:SetJustifyH("CENTER")
-    head:SetText(ns.TEXT.reminderColumn)
+    for place, word in ipairs({ ns.TEXT.reminderTitle, ns.TEXT.reminderColumn }) do -- the cog's, Tracked's
+        local head = inside:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        head:SetWidth(Lists.COLUMN - 6)
+        head:SetPoint("BOTTOM", scroll, "TOPRIGHT", Middle(#Lists.COLUMNS + place), 4)
+        head:SetJustifyH("CENTER")
+        head:SetWordWrap(true)
+        head:SetText(word)
+    end
     empty = child:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     empty:SetPoint("TOPLEFT", 4, -6)
     empty:SetText(ns.TEXT.listsEmpty)
@@ -498,12 +526,13 @@ local function Build()
     window:Place()
 end
 
--- The window; text: searched for at once, as if typed (/sane auras rejuv); name: that aura chosen, in sight.
-function Lists.Open(text, name)
+-- The window; text: searched for at once, as if typed (/sane auras rejuv); name: that aura chosen, in sight; reminder:
+-- that line of it (nil: its first).
+function Lists.Open(text, name, reminder)
     if ns.off then return end
     if not frame then Build() end
     status:SetText("")
-    if name then chosen, pick = name, nil end
+    if name then chosen, pick = name, reminder end
     frame:Show()
     Fill()
     if name then Reach(name) end

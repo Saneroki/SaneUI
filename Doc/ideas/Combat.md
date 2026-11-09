@@ -71,7 +71,9 @@ Decided (Saneroki, 2026-10-16):
 - **Look out for** (Saneroki, 2026-11-07; built, `src/Combat/README.md`): in the focus's place while there is no
   focus, hidden unless the mouse is on it, a button that opens into a field: a name, or by its + @tank, @healer, a
   party or raid member; watched for in a fight too, and once found the place says "Focus found: Add it now" and a
-  click makes it the focus (the game lets no addon set a focus by itself), its X stops it.
+  click makes it the focus (the game lets no addon set a focus by itself), its X stops it. One not of your group
+  (Saneroki, 2026-11-09: "It doesn't add units that are not in the group"; built): the click takes them as your target,
+  makes the focus, and gives your target back as it was.
 - **Casts and timers part of the frames** (Saneroki, 2026-10-30; built): the cast bars of all unit frames directly
   above the health bars, as part of them, while active, in place of the game's bars (yours, your target's, your
   focus's). Your breath over your health bar, 50 % transparent so the health shows underneath, in the bubble art of
@@ -102,6 +104,10 @@ Decided (Saneroki, 2026-10-16):
   on the right.
 - **Clean action bars** (Saneroki, 2026-10-29; built): the game's action bars without any border, decoration or
   background, only the filled slots; they stay the game's bars, placed in its Edit Mode.
+- **The action bars on the full screen** (Saneroki, 2026-11-09; built): never dark, every icon at full brightness;
+  every bar switched on, one Edit Mode hides too; each window as large as its bars, the room beside it empty. Any of
+  Bars 2 to 8 paged by stance or form as the game's Bar 1, by a checkbox beside it (Abilities, a warrior's, druid's
+  or rogue's; a druid's Bar 6 keeps its form bar).
 
 ## Its parts
 
@@ -240,7 +246,7 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
    focus's targets and the pet built 2026-10-29 as rows under the frames).
 3. **Party**, then **Raid:** many of the same frame, arranged by the game's secure group header. Built 2026-10-30 as one frame for both
    (`Units/Group.lua`, Saneroki: no party frame at all), a header per raid group. Decided: party in the raid's look; no click casting yet.
-4. **Buffs:** your own, at the top right as the game has them. Reminders of them built 2026-11-01 (`Reminders/`): the game's buff frames stay, a right click there and on a unit frame's icons makes one. On the party and raid frames built 2026-11-06 (`Reminders/Group.lua`, Saneroki: "manually instead of you doing something fixed"): a reminder's place *Party and raid frames*, on each member; the fixed buffs of your class gone. Aura bar 1 the place of a new one, and a place *Nameplates* built 2026-11-07 (`Reminders/Plates.lua`, Saneroki: "the trackers are shown directly underneath with no gaps on the nameplates"): on each plate's unit, a row right under the plate. *Watch on* several units at once built 2026-11-07 (Saneroki: "select multiple targets in its dropdown with checkboxes"): ticks for you, your target and your focus, one icon on its bar while any of them wants it. *Shows on* several places at once built 2026-11-07 (Saneroki: "make the shows on also multiple choice"): ticks for each bar, the health bars and the nameplates, the aura on each by the same settings.
+4. **Buffs:** your own, at the top right as the game has them. Reminders of them built 2026-11-01 (`Reminders/`): the game's buff frames stay, a right click there and on a unit frame's icons makes one. On the party and raid frames built 2026-11-06 (`Reminders/Group.lua`, Saneroki: "manually instead of you doing something fixed"): a reminder's place *Party and raid frames*, on each member; the fixed buffs of your class gone. Aura bar 1 the place of a new one, and a place *Nameplates* built 2026-11-07 (`Reminders/Plates.lua`, Saneroki: "the trackers are shown directly underneath with no gaps on the nameplates"): on each plate's unit, a row right under the plate. *Watch on* several units at once built 2026-11-07 (Saneroki: "select multiple targets in its dropdown with checkboxes"): ticks for you, your target and your focus, one icon on its bar while any of them wants it. *Shows on* several places at once built 2026-11-07 (Saneroki: "make the shows on also multiple choice"): ticks for each bar, the health bars and the nameplates, the aura on each by the same settings. Built 2026-11-09 (Saneroki): *Watch on* also *Everyone*, *Tank*, *Healer*, *DPS*, *Party 1* to *4* and *Group 1* to *40* ("all party members Like Party 1 and also on Role Tank, Healer, DPS", "Group 1, 2 to 40"), counted on the bars and the frames' health bars; *Shows on* *Unit frames* and *Group frames* apart ("Add a Show on groupframes"); the conditions *Only in groups* ("groups are raids and party"), *Hide in rested areas* and *Ignore everywhere* (his pick: a pause); the columns *Hide from* and *Prioritize on unit frames* a cog, *Edit Tracked conditions*, the section under the list of that title holding their ticks (his pick); the aura bars' icons clickable out of a fight ("like the buffs in the aura view"). The group frames: every member's class resource and aggro, in a fight too ("show always the class resource and aggro").
 5. **Cast bars** (yours, your target's and your focus's built 2026-10-30, with your timers), **bosses**, **class resources**, **swing timers**, **threat.**
 6. **Combat text** and **raid warnings.**
 7. ~~**Nameplates**~~: a module of their own since 2026-10-20 (`src/Nameplates/`), built there.

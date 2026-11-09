@@ -439,14 +439,15 @@ do
 
     -- The power line, inside the bar: no taller for it.
     Face.Fill(second.face)
-    check(second.face.power._shown and second.face.power._value == 40, "no role set: a class that heals shows its mana")
-    check(not third.face.power._shown, "no role set: a warrior shows none")
+    check(second.face.power._shown and second.face.power._value == 40, "no role set: a priest shows its power")
+    check(third.face.power._shown and third.face.power._value == 10,
+        "no role set: a warrior shows its rage too, every member's class resource (Saneroki, 2026-11-09)")
     check(not second.face.role._shown and not third.face.role._shown, "no role set: no role's icon, whatever its class")
     UnitGroupRolesAssigned = function(unit) return unit == "party2" and "TANK" or "DAMAGER" end
     Face.Fill(second.face)
     Face.Fill(third.face)
-    check(third.face.power._shown and third.face.power._value == 10 and not second.face.power._shown,
-        "by role: a tank's own power where it has no mana, a damage dealer none")
+    check(third.face.power._shown and third.face.power._value == 10 and second.face.power._shown,
+        "by role: a tank's own power where it has no mana, a damage dealer's own too")
     check(third.face.role._shown and third.face.role._atlas == Face.ROLES.TANK and not second.face.role._shown,
         "a tank's tiny icon, a damage dealer none")
     check(third.face.role._points[1][1] == "TOPLEFT" and third.face.role._parent == third.face.top
@@ -537,9 +538,22 @@ do
     on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
     check(second.face.border[1]._vertex[1] == 1 and second.face.border[1]._vertex[2] == 0 and second.face.border[1]._vertex[4] == 1,
         "aggro: a solid red border")
+    check(second.face.threat._value == 0 and second.face.threat._min == Face.AGGRO - 1 and second.face.threat._max == Face.AGGRO,
+        "told: the red plate over it empty, full from aggro up")
     W.threat.party1 = 1
     on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
     check(second.face.border[1]._vertex[1] == 0, "without it: black")
+    -- In a fight the game hides threat from addons: the red plate takes its hidden kind as it is (Saneroki, 2026-11-09).
+    local hidden = W.Secret()
+    W.threat.party1 = hidden
+    on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
+    check(second.face.border[1]._vertex[1] == 0 and second.face.threat._value == hidden,
+        "hidden: the border black, the red plate over it filled by the game's hidden answer, never compared")
+    check(second.face.threat._level == second.face.health._level - 1 and #second.face.threat.corners == 4,
+        "over the black border, under the health, round as it is")
+    W.threat.party1 = 1
+    on(second.face, "UNIT_THREAT_SITUATION_UPDATE", "party1")
+    check(second.face.threat._value == 0, "told again: the plate empty")
     W.ready.party1 = "waiting"
     W.Fire("READY_CHECK", "player", 30)
     check(second.face.ready._shown and second.face.ready._atlas == Face.READY.waiting and second.face.ready._width == second.face.big
@@ -598,7 +612,7 @@ do
     local roomBefore = second.face.name._width
     local mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
     check(not Shows(second.face, 136078) and not mark.own, "on a bar: nothing on the frames")
-    mark.places = { Reminders.GROUP }
+    mark.places, mark.units = { Reminders.FRAMES, Reminders.GROUP }, { "group" }
     Reminders.Apply()
     check(Shows(first.face, 136078) and Shows(second.face, 136078) and Shows(third.face, 136078),
         "on the frames: its icon on each member without it, your own slot too")
@@ -616,6 +630,43 @@ do
     check(second.face.icons[1]._parent == second.face.floating and second.face.name._width == roomBefore,
         "floating over the name, which keeps its room")
     check(Members.Icons()[1] == 136078, "and in Edit Mode's preview")
+    -- Watch on counts on the frames too (Saneroki, 2026-11-09): a role, one of your party, you; each place on its own.
+    local roles = UnitGroupRolesAssigned
+    UnitGroupRolesAssigned = function(unit) return unit == "party2" and "TANK" or "DAMAGER" end
+    mark.units = { "tank" }
+    Reminders.Apply()
+    check(Shows(third.face, 136078) and not Shows(second.face, 136078) and not Shows(first.face, 136078)
+        and not Shows(own, 136078), "watched on the tank: on the tank's frame alone")
+    mark.units = { "party1", "tank" }
+    Reminders.Apply()
+    check(Shows(second.face, 136078) and Shows(third.face, 136078) and not Shows(first.face, 136078),
+        "and on Party 1: on both")
+    mark.units = { "player" }
+    Reminders.Apply()
+    check(Shows(first.face, 136078) and Shows(own, 136078) and not Shows(second.face, 136078),
+        "on you: your own slot and your own unit frame")
+    mark.places = { Reminders.FRAMES }
+    Reminders.Apply()
+    check(Shows(own, 136078) and not Shows(first.face, 136078), "Unit frames alone: on your unit frame, not the group's")
+    mark.places = { Reminders.GROUP }
+    Reminders.Apply()
+    check(Shows(first.face, 136078) and not Shows(own, 136078), "Group frames alone: the group's, not your unit frame")
+    UnitGroupRolesAssigned = roles
+    mark.places, mark.units = { Reminders.FRAMES, Reminders.GROUP }, { "group" }
+    Reminders.Apply()
+    mark.inGroup = true
+    grouped = false
+    Members.Refresh()
+    check(not Shows(second.face, 136078) and not Shows(own, 136078), "Only in groups: out of a group, nowhere")
+    grouped = true
+    Members.Refresh()
+    check(Shows(second.face, 136078), "in one: shown again")
+    mark.inGroup, mark.ignore = false, true
+    Members.Refresh()
+    check(not Shows(second.face, 136078) and not Shows(own, 136078) and Members.Icons() == Members.SAMPLES,
+        "Ignore everywhere: shown nowhere, not in the preview either")
+    mark.ignore = false
+    Members.Refresh()
     auras.party1 = { ["Gift of the Wild"] = { auraInstanceID = 31 } }
     on(second.face, "UNIT_AURA", "party1", { isFullUpdate = true })
     check(not Shows(second.face, 136078) and Shows(third.face, 136078), "the group's version counts for it, from anyone")
@@ -642,7 +693,7 @@ do
     check(might.own, "a blessing: only yours counts from the start")
     Reminders.Take(might)
     local shout = Reminders.Make({ id = 6673, name = "Battle Shout", icon = 132333, harmful = false, unit = "player" })
-    shout.places = { Reminders.GROUP }
+    shout.places, shout.units = { Reminders.GROUP }, { "group" }
     UnitInParty = function(unit) return unit == "party1" end
     Reminders.Apply()
     check(Shows(first.face, 132333) and Shows(second.face, 132333) and not Shows(third.face, 132333),
@@ -661,7 +712,7 @@ do
     local extra = {}
     for index, name in ipairs({ "Thorns", "Regrowth", "Renew", "Fear Ward" }) do
         extra[index] = Reminders.Make({ id = 900 + index, name = name, icon = 900 + index, harmful = false, unit = "player" })
-        extra[index].places = { Reminders.GROUP }
+        extra[index].places, extra[index].units = { Reminders.GROUP }, { "group" }
     end
     Reminders.Apply()
     local count = 0
@@ -676,9 +727,9 @@ do
     -- Your HoT in a fight the game hides it in (Forever's client: no aura, number or list to read): what was known, by the
     -- clock; your cast on the member it was aimed at, as long as it lasted when last read.
     local rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
-    rejuv.places, rejuv.own = { Reminders.GROUP }, true
+    rejuv.places, rejuv.own, rejuv.units = { Reminders.GROUP }, true, { "group" }
     mark = Reminders.Make({ id = 1126, name = "Mark of the Wild", icon = 136078, harmful = false, unit = "player" })
-    mark.places = { Reminders.GROUP }
+    mark.places, mark.units = { Reminders.GROUP }, { "group" }
     auras.party1 = { Rejuvenation = { name = "Rejuvenation", auraInstanceID = 41, mine = true, duration = 15,
                                       expirationTime = W.clock + 10 } }
     auras.party2 = {}
@@ -743,7 +794,7 @@ do
     auras.party2 = {}
     Core.Set(ns.name, "groupBuffs", false)
     rejuv = Reminders.Make({ id = 774, name = "Rejuvenation", icon = 136081, harmful = false, unit = "player" })
-    rejuv.places = { Reminders.GROUP }
+    rejuv.places, rejuv.units = { Reminders.GROUP }, { "group" }
     Reminders.Apply()
     check(not Shows(third.face, 136081) and not Members.Any(), "the frames' switch off: none")
     Core.Set(ns.name, "groupBuffs", true)
@@ -1767,7 +1818,7 @@ do
     local LookOut = ns.LookOut
     local _, _, _, _, spot = LookOut.State()
     local look, focus = spot and spot.look, unitButtons.focus
-    check(spot and spot._template == "SecureActionButtonTemplate" and SaneUILookOut == spot
+    check(spot and spot._template == "SecureActionButtonTemplate,SecureHandlerBaseTemplate" and SaneUILookOut == spot
         and spot:GetAttribute("*type1") == "macro" and spot:GetAttribute("*type-Key") == "macro"
         and spot:GetAttribute("*type2") == nil and spot:GetAttribute("macrotext") == "",
         "a secure button of the game's: its left click and its key run a line of the game's, none yet; the right runs nothing")
@@ -1791,10 +1842,30 @@ do
     look.box._text = "  Hogger "
     look.box._scripts.OnEnterPressed(look.box)
     local watched, found, armed = LookOut.State()
-    check(watched.name == "Hogger" and armed == "/focus [@focus,noexists] Hogger" and spot:GetAttribute("macrotext") == armed
+    local kept = "/focus [@focus,noexists] Hogger\n/stopmacro [@focus,exists]\n/cleartarget\n/targetexact Hogger"
+        .. "\n/focus [@target,exists] target\n/targetlasttarget"
+    local bare = "/focus [@focus,noexists] Hogger\n/stopmacro [@focus,exists]\n/targetexact Hogger"
+        .. "\n/focus [@target,exists] target\n/cleartarget"
+    check(watched.name == "Hogger" and armed == kept and spot:GetAttribute("macrotext") == armed
+        and spot:GetAttribute("sane-kept") == kept and spot:GetAttribute("sane-bare") == bare
         and Core.Character(ns.name).lookOut == "Hogger" and not look.opened
         and look.label._text == ns.TEXT.lookOutWatching:format("Hogger"),
-        "Enter: Hogger looked out for, kept for the character; the line focuses him while you have no focus")
+        "Enter: Hogger looked out for, kept for the character; the text focuses him while you have no focus, by his name "
+        .. "in your group, else as your target, your target kept as it was")
+    do -- the button's snippet, as it is pressed: the text for having a target or not (Saneroki, 2026-11-09)
+        local exists = UnitExists
+        UnitExists = function(unit) return unit == "target" end
+        spot._wraps.OnClick(spot, "LeftButton", false)
+        local withTarget = spot:GetAttribute("macrotext")
+        UnitExists = function() return false end
+        spot._wraps.OnClick(spot, "LeftButton", false)
+        local without = spot:GetAttribute("macrotext")
+        UnitExists = exists
+        check(withTarget == kept and without == bare, "pressed with a target: back to it after; without one: none again")
+        check(LookOut.Lines("party2") == "/focus [@focus,noexists] party2"
+            and select(2, LookOut.Lines("party2")) == "/focus [@focus,noexists] party2",
+            "a unit of your group: its one line either way")
+    end
     spot._scripts.OnLeave(spot)
     check(spot._alpha == 0, "not found: out of sight again")
     units.nameplate3 = { name = "Hogger", foe = true, health = 800, most = 1000 }
@@ -1829,12 +1900,13 @@ do
     look.box._text = "Kobold Miner"
     look.box._scripts.OnEnterPressed(look.box)
     local _, _, line, wanted = LookOut.State()
-    check(line == "/focus [@focus,noexists] Hogger" and wanted == "/focus [@focus,noexists] Kobold Miner"
+    check(line == kept and wanted == LookOut.Lines("Kobold Miner", true)
         and look.label._text == ns.TEXT.lookOutLater:format("Kobold Miner") and not ns.off,
         "changed in a fight: the button keeps its line to the fight's end (the game takes no change in one)")
     W.Combat(false)
     _, _, line = LookOut.State()
-    check(line == "/focus [@focus,noexists] Kobold Miner" and spot:GetAttribute("macrotext") == line, "after it: armed")
+    check(line == LookOut.Lines("Kobold Miner", true) and spot:GetAttribute("macrotext") == line
+        and spot:GetAttribute("sane-bare") == select(2, LookOut.Lines("Kobold Miner", true)), "after it: armed")
     units.nameplate5 = nil
 
     -- Its +: a role or one of your group, watched at once.

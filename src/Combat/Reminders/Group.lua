@@ -2,16 +2,18 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Reminders - Group
---  The reminders shown on the health bars (Reminders.GROUP among their
---  places, Health bars: Saneroki, 2026-11-06; on a bar or the nameplates too
---  where it is ticked there): each watched on every member the party and raid
---  frames show, your own slot too, and on your own frame, your target's and
---  your focus's (Units.lua), its icon on that frame (from the health
---  leftwards) while its settings want it, as on a bar: missing or active, the
---  offset, in or out of a fight, resting, only yours. A buff only on a unit you
---  can help, a debuff on any; none on the dead and the offline; a party's
---  family (a shout) on your own party only; Members.MOST on a frame at most, in
---  the order made. Off with the reminders, or with the switch groupBuffs.
+--  The reminders shown on the health bars: Reminders.FRAMES among their
+--  places on your own frame, your target's and your focus's (Units.lua, Unit
+--  frames), Reminders.GROUP on the party and raid frames, your own slot too
+--  (Group frames: Saneroki, 2026-11-09, "Add a Show on groupframes"; on a bar
+--  or the nameplates too where it is ticked there). On each frame whose unit
+--  it watches (Watch on: that unit, a role it has, everyone; Reminders.Takes),
+--  its icon on that frame (from the health leftwards) while its settings want
+--  it, as on a bar: missing or active, the offset, in or out of a fight,
+--  resting, in a group, only yours. A buff only on a unit you can help, a
+--  debuff on any; none on the dead and the offline; a party's family (a
+--  shout) on your own party only; Members.MOST on a frame at most, in the
+--  order made. Off with the reminders, or with the switch groupBuffs.
 --
 --  In a fight the game hides most auras from addons (ShouldSpellAuraBeSecret;
 --  a spell it never hides is read as ever), Forever's client even their numbers
@@ -48,8 +50,10 @@ local function On()
     return not ns.off and ns.options.reminders ~= false and ns.options.groupBuffs ~= false
 end
 
-local function Placed(reminder)
-    return Reminders.At(reminder, Reminders.GROUP)
+-- Whether the reminder is on the frames of that place (FRAMES, GROUP), or on either (nil).
+local function Placed(reminder, place)
+    if place then return Reminders.At(reminder, place) end
+    return Reminders.At(reminder, Reminders.FRAMES) or Reminders.At(reminder, Reminders.GROUP)
 end
 
 -- Whether any reminder is on the frames, and they are on.
@@ -77,33 +81,36 @@ local function Look(reminder, unit, key)
     return states[key]
 end
 
--- The icons of the reminders on the health bars that the unit's auras and their settings want shown, into list
--- (emptied first); how many, Members.MOST at most.
-function Members.Missing(unit, list)
+-- The icons of the reminders on the health bars of that place (GROUP, the party and raid frames; FRAMES, your unit
+-- frames) that watch the unit and that its auras and their settings want shown, into list (emptied first); how many,
+-- Members.MOST at most.
+function Members.Missing(unit, list, place)
     wipe(list)
     if not On() or Core.Ask(UnitIsDeadOrGhost, unit) or Core.Ask(UnitIsConnected, unit) == false then return 0 end
+    place = place or Reminders.GROUP
     local key = Key(unit)
     local helped = Core.Ask(UnitCanAssist, "player", unit) ~= false
     for _, reminder in ipairs(Reminders.List()) do
         if #list >= Members.MOST then break end
-        if Placed(reminder) and (reminder.harmful or helped) and Reminders.Reaches(reminder, unit)
-            and Reminders.Wanted(reminder, Look(reminder, unit, key), unit, Reminders.GROUP) then
+        if Placed(reminder, place) and (reminder.harmful or helped) and Reminders.Reaches(reminder, unit)
+            and Reminders.Watching(reminder, unit)
+            and Reminders.Wanted(reminder, Look(reminder, unit, key), unit, place) then
             list[#list + 1] = reminder.icon
         end
     end
     return #list
 end
 
--- Those icons on a face of the health bars (a member's, or a unit frame's: GroupFace.Icons).
-function Members.Show(face, unit)
-    ns.GroupFace.Icons(face, face.missing, unit and Members.Missing(unit, face.missing) or 0)
+-- Those icons on a face of the health bars: a member's (place nil: GROUP), or a unit frame's (FRAMES: GroupFace.Icons).
+function Members.Show(face, unit, place)
+    ns.GroupFace.Icons(face, face.missing, unit and Members.Missing(unit, face.missing, place) or 0)
 end
 
--- The icons for a preview: the reminders on the frames, the samples where none is.
+-- The icons for a preview of the party and raid frames: the reminders on them, the samples where none is.
 function Members.Icons()
     local icons = {}
     for _, reminder in ipairs(Reminders.List()) do
-        if Placed(reminder) then icons[#icons + 1] = reminder.icon end
+        if Placed(reminder, Reminders.GROUP) and not reminder.ignore then icons[#icons + 1] = reminder.icon end
     end
     return icons[1] and icons or Members.SAMPLES
 end
