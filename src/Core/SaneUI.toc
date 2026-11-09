@@ -35,8 +35,6 @@ Dock.lua
 EditMode.lua
 Escape.lua
 Watch.lua
-# Shift, Ctrl and Alt: a key the game's window learns of without being told (a second game window on another screen), and /sane keys
-Modifiers.lua
 # What shows only while it is needed: out of sight while you are at rest
 Rest.lua
 Fuzzy.lua

@@ -37,10 +37,6 @@ but for a window to try those with (`/sane window`).
   `log`), which the game writes at a `/reload` and when you log out. `dev/tools/errors` prints it.
 - `/sane arrange` moves and sizes Sane UI's windows as Edit Mode does, only in a game without Blizzard's Edit
   Mode (there: Esc > Edit Mode).
-- `/sane keys` shows, at the top of the screen, what this game window sees of Shift, Ctrl and Alt, and how many changes
-  the game told of and how many Sane UI found without it. For two game windows (one per screen): turn it on in both,
-  hold Shift in one and move the mouse into the other; if Shift reads *down* there, that window learned of it from the
-  system and Sane UI passes it on (see *Modifiers.lua* in the Files); if it stays *up*, the game was never told.
 - `/sane window` shows a small window to try what every Sane UI window can do, a panel as the spellbook
   will be (again: hides it; `/sane window reset`: its first place; `/sane window reset all`: every window of
   Sane UI at its first place and size, the chat's too):
@@ -559,7 +555,6 @@ but for a window to try those with (`/sane window`).
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open |
 | `Escape.lua` | Esc: one stand-in in the game's list for everything of Sane UI's it closes |
 | `Watch.lua` | A look a few times a second while there is something to see; the mouse on a window |
-| `Modifiers.lua` | Shift, Ctrl and Alt: while something waits for them (`Core.Modifiers.Want(owner, on)`: a tooltip is shown, a pin hovered) the keys are looked at ten times a second, and a change the game did not announce (a second game window that is given the keyboard by the window manager while Shift is already held learns of the key without a key press) is raised as MODIFIER_STATE_CHANGED (`Core.Raise`, in `Core.lua`); `/sane keys` |
 | `Rest.lua` | What shows only while it is needed: a set of frames out of sight while you are at rest |
 | `Fuzzy.lua` | Forgiving search of typed words in texts, ranked, for the windows' search; a long list a part per frame; Up, Down and Enter over a search box's fly-out |
 | `Edge.lua` | A docked window that fills the screen when the mouse is pushed against its screen edge |
@@ -600,9 +595,6 @@ but for a window to try those with (`/sane window`).
 - 2026-11-09 — A talk's layout on the board (`Board.lua`, Saneroki): `occasions`, `board:Occasion(name)`, `board:Talking()`,
   its tab first in the title bar while the talk is on; and `Core.Seat.Part` (`Seat.lua`), the game's window as a board's
   part. Inventory's full screen comes at a vendor and a banker, Combat's at a trainer.
-- 2026-11-09 — Modifiers (`Modifiers.lua`, Saneroki): a Shift, Ctrl or Alt that a game window is given without a key press
-  (two game windows, the mouse moved from one to the other with Shift held) is raised as MODIFIER_STATE_CHANGED while a
-  tooltip or a pin waits for it; `Core.Raise`; `/sane keys`.
 - 2026-11-07 — Rest in a group too (`Rest.lua`, Saneroki): `rest:InGroup(on)` keeps a set at rest in a party or raid;
   `Core.Rest.Busy(inGroup)`. Combat's unit frames and action bars and Navigation's quest log offer it.
 - 2026-11-06 — Spellbook offers (`Spellbook.lua`, Saneroki): the module that knows what a spellbook shows beyond the

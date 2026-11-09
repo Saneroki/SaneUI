@@ -511,13 +511,6 @@ frame:SetScript("OnEvent", function(_, event, ...) -- unguarded: the events' gua
     if list then Deliver(list, event, ...) end
 end)
 
--- Hands an event to those who listen to it as if the game had sent it: for a change the game made
--- without saying so (Modifiers.lua). Nobody listening, nothing happens.
-function Core.Raise(event, ...)
-    local list = handlers[event]
-    if list then Deliver(list, event, ...) end
-end
-
 -- An event of one unit only (UNIT_AURA of "player"): the game sends it for that unit alone, not for
 -- every unit about, which matters for the UNIT_ events that come many times a second in a group.
 -- One frame per unit; fn gets the event's arguments as Core.On's listeners do (the unit first).

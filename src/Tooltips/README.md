@@ -39,10 +39,8 @@ only read.
   | *Opacity* | 97 % | From 30 to 100 percent: how solid the background is. Texts and pictures stay as they are |
 
 - **Two game windows, one on each screen:** Shift (or Ctrl, Alt) held in one window and the mouse moved into the other: the
-  window manager gives the keyboard to the window under the mouse, and the game sends no "key pressed" to it. While a
-  tooltip is shown Core looks at the keys ten times a second (`Core.Modifiers`) and passes a key the window was
-  given without a key press on, so the tooltip is seen at once. If the game itself does not know the key is held
-  there, nothing can: press Shift again over that window. `/sane keys` shows what a window sees.
+  game does not take a key that is already held when its window gets the keyboard (it only counts a key it saw pressed),
+  so press the key again over that window. Sane UI cannot change that.
 
 - **What each panel shows:**
 
@@ -647,8 +645,6 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
-- 2026-11-09 — A key held in one game window and the mouse moved into another: the keys are looked at while a tooltip is shown,
-  so the tooltip follows (`Core.Modifiers`, Saneroki).
 - 2026-10-30 — The advice weighs your side's house against a neutral one, each by its own fees: buy in one, sell in the other (Saneroki).
 - 2026-10-30 — Forever's real fees (Core's *Fees*): 15% at a neutral house, the deposit by the duration you chose, prices of what does
   not stack in whole silver. Money is written 1g1s1c, with the game's coin icons (Saneroki).

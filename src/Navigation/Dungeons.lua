@@ -577,7 +577,6 @@ Dungeons.FOE = { 1, 0.3, 0.25 } -- a foe's name
 local function BossTip(part)
     local mark = part.mark or part
     tipped = part
-    if Core.Modifiers then Core.Modifiers.Want(Dungeons, true) end -- Alt may be held that this window was not told of
     GameTooltip:SetOwner(part, "ANCHOR_RIGHT")
     Core.TipLook(GameTooltip, { display = mark.display, dragon = "boss", badge = "??" })
     local foe = Dungeons.FOE
@@ -600,7 +599,6 @@ end
 
 local function TipGone()
     tipped = nil
-    if Core.Modifiers then Core.Modifiers.Want(Dungeons, false) end
     GameTooltip_Hide()
 end
 
