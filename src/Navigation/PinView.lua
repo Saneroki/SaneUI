@@ -34,6 +34,7 @@ local _, ns = ...
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
 --      a flight master  open (Taxi.lua): the flight points large and over all, the one you stand at glowing, a click
 --                  on one flies there, its tooltip what it costs
+--      a flight point, a dock  on the full map a click keeps its ways drawn (Paths.lua), its pin glowing; again: no more
 --      a click     its own, where it has one (Act; above): Shift and a click on one that leads into another
 --                  map opens that map; else as a click on the map there (Canvas.lua: the map under it opens, or
 --                  a ping). A double click, on the small map and the full one: the game's map pin where it
@@ -288,6 +289,8 @@ function PinView.Act(pin)
         ns.Canvas.Show(pin.to)
         return true
     end
+    -- On the full map a flight point's or a dock's ways kept drawn, or let go (Paths.lua).
+    if ns.Canvas.camera == ns.Window.full and ns.Paths.Toggle(pin) then return true end
     if pin.gathered then
         ns.Canvas.ZoomTo(pin.pu, pin.pv, 3)
         return true
@@ -430,7 +433,7 @@ end
 local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
     local size = (first.size or Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
-    local glowing = (first.focused or first.here) and not pin.gathered and true or false
+    local glowing = (first.focused or first.here or ns.Paths.Active(first)) and not pin.gathered and true or false
     local plus = pin.gathered and not Alike(pin.gathered) or false
     local shining = lit ~= nil and Tied(pin, lit)
     if button.first == first and button.size == size and button.glowing == glowing and button.plus == plus
@@ -471,6 +474,11 @@ end
 function PinView.Light(quest)
     if lit == quest then return end
     lit = quest
+    PinView.Relook()
+end
+
+-- Every pin's look again (a quest lit, a flight point's or dock's ways kept drawn or let go: its glow).
+function PinView.Relook()
     for _, button in pairs(used) do
         if button.pin then Look(button, button.pin) end
     end

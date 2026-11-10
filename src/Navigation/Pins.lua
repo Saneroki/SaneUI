@@ -7,7 +7,8 @@ local _, ns = ...
 --  Knows no frames: PinView.lua draws what For gives.
 --
 --      Pins.For(view, small)   the pins in view: every zone the view shows at a zone's level, the
---                              continents' travel and places further out, none at the world; one map at
+--                              continents' travel and places further out, their flight points and ways of
+--                              travel at the world; one map at
 --                              a time (Retail), the map shown's
 --      Pins.Gather(list, k)    pins that would cover each other on the screen, gathered (Gather below)
 --      Pins.Standing(quest, id) where a quest of Core's data stands for this character, and why (offered, low,
@@ -42,6 +43,9 @@ ns.Pins = Pins
 -- The filter's kinds (Navigation.lua: they are its setting's choices).
 Pins.KINDS = ns.KINDS
 Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true } -- kinds shown past a zone
+-- Kinds shown at the world too, and never gathered: flight points and the ways of travel (docks, the tram, lifts,
+-- portals), each to be hovered for where it goes (Paths.lua; Saneroki, 2026-11-11).
+Pins.WORLD = { flight = true, travel = true }
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
 Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
 Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, flight = 18, travel = 22, entrance = 22,
@@ -637,10 +641,25 @@ local NONE = {}
 
 -- The maps whose pins the view shows: each zone in view (and the zone in the middle, should it have none of
 -- its own), further out the continent itself too (its flight points, as the game's continent map has them);
--- at the world none. One map at a time (Retail): the map shown, as the game's own map asks for its pins.
+-- at the world every plane in view (each continent and the isle: Pins.WORLD's kinds alone). One map at a time
+-- (Retail): the map shown, as the game's own map asks for its pins; at the world none there.
 local function Maps(view)
     local maps = {}
-    if view.level == "world" then return maps end
+    if view.level == "world" then
+        if view.shown then return maps end
+        for _, plane in ipairs(Coords.Planes()) do
+            local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
+            if box and link then
+                local left, top = link.du + link.su * box.u, link.dv + link.sv * box.v
+                local right, bottom = left + link.su * box.width, top - link.sv * box.height
+                if math.max(left, right) >= view.left and math.min(left, right) <= view.right
+                    and math.max(top, bottom) >= view.bottom and math.min(top, bottom) <= view.top then
+                    maps[#maps + 1] = plane
+                end
+            end
+        end
+        return maps
+    end
     if view.shown then
         maps[1] = view.shown
         return maps
@@ -712,7 +731,8 @@ function Pins.For(view, small, pu, pv)
                 if wanted == nil then
                     -- (at a flight master the flight points always: Taxi.lua)
                     wanted = (Shows(kind) or kind == "flight" and ns.Taxi.On()) and (not small or SMALL[kind])
-                        and (not continentLevel or Pins.CONTINENT[kind]) and true or false
+                        and (not continentLevel or Pins.CONTINENT[kind]) and (view.level ~= "world" or Pins.WORLD[kind])
+                        and true or false
                     shown[kind] = wanted
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
@@ -755,7 +775,7 @@ end
 
 -- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
 -- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near,
--- nor the flight points at a flight master (Taxi.lua);
+-- nor flight points and the ways of travel (Pins.WORLD: each to be hovered);
 -- the quests' objectives only among themselves (goalCells), so none vanishes into a marker of other things.
 -- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
 -- pu, pv, key }); a herb or ore with others riding with it (For) is a marker of them all.
@@ -786,7 +806,7 @@ function Pins.Gather(list, k)
     local out, used, made = {}, 0, 0
     local size = Pins.GATHER
     for _, pin in ipairs(list) do
-        if pin.kind == "log" or pin.kind == "quest" or pin.live or pin.taxi then
+        if pin.kind == "log" or pin.kind == "quest" or pin.live or Pins.WORLD[pin.kind] then
             out[#out + 1] = pin
         else
             local x, y = pin.pu * k, pin.pv * k

@@ -615,12 +615,18 @@ local function Clicked(button, pin)
         and math.abs(x - last.x) + math.abs(y - last.y) <= Canvas.NEAR then
         local first = last
         last = nil
+        -- (a flight point's or dock's ways the first click kept drawn: let go again, the double click pins only)
+        if first.kept then ns.Safe("paths", ns.Paths.Toggle, first.pin) end
         if not lost then ns.PinView.Drop(first.pin or first.spot) end
         return
     end
     -- Shift and a click is a pin's own (a map opened), never half of a double click.
     last = not IsShiftKeyDown() and { at = now, x = x, y = y, pin = pin, spot = not lost and Where(x, y) } or nil
-    if pin and ns.PinView.Act(pin) then return end
+    local was = pin and ns.Paths.Active(pin)
+    if pin and ns.PinView.Act(pin) then
+        if last and ns.Paths.Active(pin) ~= was then last.kept = true end
+        return
+    end
     if lost then return ns.Hybrid.Ping(x, y) end
     if Into(x, y) then return end
     ns.Ping.Send(camera.map, camera.u + x / camera.k, camera.v + y / camera.k)

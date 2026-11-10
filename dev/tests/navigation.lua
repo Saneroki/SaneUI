@@ -5956,6 +5956,72 @@ end)()
         Window.frame._group:Run(1)
     end
 end)()
+-- Flight points and ways of travel (Pins.WORLD) at every zoom: never gathered, at the world too (each continent's), each
+-- to be hovered; on the full map a click keeps a flight point's ways drawn (its pin glowing) after the mouse left it,
+-- again lets go, a double click only pins; the full screen closed, none kept (Saneroki, 2026-11-11).
+;(function()
+    local Pins, Paths = ns.Pins, ns.Paths
+    local wasFull = Window.handle.edge.full
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    local together = Pins.Gather({ { kind = "flight", key = "a", pu = 0, pv = 0, order = 6 },
+                                   { kind = "travel", key = "b", pu = 0, pv = 0, order = 5 },
+                                   { kind = "flight", key = "c", pu = 0, pv = 0, order = 6 } }, 1)
+    check(#together == 3 and not together[1].gathered and not together[2].gathered,
+        "flight points and ways of travel on one spot: never gathered, each its own pin")
+    local u, v, k, level = full.u, full.v, full.k, full.level
+    for _ = 1, 3 do if full.level ~= "world" then full:StepOut() end end
+    Canvas.Layout()
+    local kinds, flights = {}, 0
+    for _, pin in ipairs(Pins.For(Canvas.view, false)) do
+        kinds[pin.kind] = true
+        if pin.kind == "flight" then flights = flights + 1 end
+    end
+    local others = false
+    for kind in pairs(kinds) do if not Pins.WORLD[kind] then others = true end end
+    check(full.level == "world" and flights > 0 and not others,
+        "zoomed out to the world: the flight points and ways of travel still there, nothing else")
+    full.u, full.v, full.k, full.level = u, v, k, level
+    full:Look(0, -9250)
+    Canvas.Layout()
+    local pin = { kind = "flight", id = 2, map = 1429, key = "flight:2", name = "Near" }
+    local function Drawn()
+        local count = 0
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Line" and widget._shown and widget._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.paths then
+                count = count + 1
+            end
+        end
+        return count
+    end
+    check(Paths.Toggle(pin) and Paths.Active(pin) and Drawn() == 4, "a click on a flight point: its flights drawn")
+    Paths.Show(pin)
+    Paths.Hide()
+    check(Paths.Active(pin) and Drawn() == 4, "the mouse off it: still drawn (active)")
+    check(not Paths.Toggle({ kind = "service", key = "npc:69" }), "a pin with no ways: no click of these")
+    Paths.Toggle(pin)
+    check(not Paths.Active(pin) and Drawn() == 0, "clicked again: let go")
+    -- Two clicks on it, as a double click: kept drawn by the first, let go by the second, the map pin there.
+    Canvas.Press("LeftButton")
+    Canvas.Release("LeftButton", pin)
+    check(Paths.Active(pin), "one click (the full map): kept drawn")
+    Canvas.Press("LeftButton")
+    Canvas.Release("LeftButton", pin)
+    check(not Paths.Active(pin), "a double click: not kept, it only pins")
+    Paths.Toggle(pin)
+    Window.Back()
+    Window.frame._group:Run(1)
+    check(not Paths.Active(pin) and Drawn() == 0, "the full screen closed: none kept")
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    if wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+end)()
 -- A portal a few yards across between floors one over the other (14: from the building's floor of tile 6179 up onto
 -- its roof, 35 yards on, as the Wizard's Sanctum's go up and down its tower): a hop between two looks, no leap of
 -- Planner.LEAP yards; the floor followed after it is the roof's, where it brings one, not the floor under it.

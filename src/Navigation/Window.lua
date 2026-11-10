@@ -113,6 +113,7 @@ end
 -- opens on the player (but at a map the game was asked for).
 local function Filled(on, width, height)
     ns.Safe("taxi", ns.Taxi.Filled, on) -- back to the corner at a flight master: its map closes too
+    if not on then ns.Safe("paths", ns.Paths.Reset) end -- the ways kept drawn let go
     if resting then Rest(false) end
     ns.Satchel.Place(false)
     if on and ns.options.followMap and not aimed then ns.Canvas.Center(full) end
@@ -271,6 +272,7 @@ end
 -- The module stood down (GiveBack): the window goes.
 function Window.Hide()
     if not frame then return end
+    ns.Safe("paths", ns.Paths.Reset)
     ns.Canvas.Close()
     ns.Dungeons.Close()
     ns.QuestLog.Hide()

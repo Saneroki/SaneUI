@@ -11,9 +11,16 @@ local _, ns = ...
 --  canvas between the golden line and the pins (Canvas.LEVELS), in both views.
 --  At a flight master (Taxi.lua) a flight point's pin draws the way there from
 --  where you stand instead, hop by hop as the master flies it.
+--  A click on one of those pins on the full map keeps its ways drawn (active)
+--  after the mouse has left it, its pin glowing, as many as are clicked; a second
+--  click lets go of them, and all go when the full screen closes (Saneroki,
+--  2026-11-11).
 --
---      Paths.Show(pin)    the pin's ways, where it has any (none: as Hide)
---      Paths.Hide()       none
+--      Paths.Show(pin)    the pin's ways under the mouse, where it has any (none: as Hide)
+--      Paths.Hide()       none under the mouse (the active ones stay)
+--      Paths.Toggle(pin)  a click: its ways kept drawn, or no more; false where it has none
+--      Paths.Active(pin)  whether its ways are kept drawn
+--      Paths.Reset()      none kept (the full screen closed)
 --
 --  Each way is a run of the game's Line widgets from a pool, straight from point
 --  to point (the game's paths are fine enough): a dark edge, over it the golden
@@ -33,8 +40,9 @@ local Travel = Core.Data.Set("Travel")
 local SHIPS = { boat = true, zeppelin = true }
 
 local layer, holder
-local ways         -- the ways shown: { { kind, faint, points = { { map, u, v, jump }, ... } }, ... }, nil while none
+local ways         -- the ways under the mouse: { { kind, faint, points = { { map, u, v, jump }, ... } }, ... }, or nil
 local owner        -- the pin they are of
+local active = {}  -- [a pin's thing: Key] = its ways, kept drawn after a click (Toggle)
 local lines, used = {}, 0 -- the pool: { edge, fill } each
 local parts, count = {}, 0 -- the pieces laid out: { x1, y1, x2, y2, length, along, entry, from, to }
 
@@ -167,72 +175,126 @@ function Paths.Fit(edge)
     for index = 1, count do Refit(parts[index], edge, thickness.edge) end
 end
 
--- Laid out for the view as the canvas laid it out: the pieces near the view (its rectangle with its margin), each
--- way's points on planes linked to the view's; a leap no line.
+local Key -- (below)
+
+-- The ways of one list laid out: the pieces near the view (its rectangle with its margin), each way's points on planes
+-- linked to the view's; a leap no line.
+local function Lay(list, view, left, right, bottom, top)
+    for _, way in ipairs(list) do
+        local colour = ns.Route.COLOURS[way.kind] or ns.Route.COLOURS.flight
+        local alpha = way.faint and Paths.FAINT or Paths.ALPHA
+        local px, py, along = nil, nil, 0
+        for _, point in ipairs(way.points) do
+            local link = Coords.Link(point.map, view.map)
+            local x, y
+            if link then
+                x = (link.du + link.su * point.u - view.u) * view.k
+                y = (link.dv + link.sv * point.v - view.v) * view.k
+            end
+            if x and px and not point.jump then
+                local length = math.sqrt((x - px) ^ 2 + (y - py) ^ 2)
+                if length >= 1 and math.max(x, px) >= left and math.min(x, px) <= right
+                    and math.max(y, py) >= bottom and math.min(y, py) <= top then
+                    local entry = Next()
+                    entry.fill:SetVertexColor(colour[1], colour[2], colour[3], alpha)
+                    entry.edge:SetAlpha(alpha)
+                    entry.edge:SetThickness(thickness.edge)
+                    entry.fill:SetThickness(thickness.fill)
+                    count = count + 1
+                    local part = parts[count] or {}
+                    parts[count] = part
+                    part.x1, part.y1, part.x2, part.y2, part.length, part.along = px, py, x, y, length, along
+                    part.entry, part.from, part.to = entry, nil, nil
+                end
+                along = along + length
+            end
+            px, py = x, y
+        end
+    end
+end
+
+-- Laid out for the view as the canvas laid it out: the active ways, and those of the pin under the mouse.
 function Paths.Place(view)
     used, count = 0, 0
-    if ways and view and view.map then
+    if (ways or next(active)) and view and view.map then
         local scale = ns.PinScale("route")
         thickness.edge, thickness.fill = (Paths.THICK + 3) * scale, Paths.THICK * scale
         local left, right = (view.left - view.u) * view.k, (view.right - view.u) * view.k
         local bottom, top = (view.bottom - view.v) * view.k, (view.top - view.v) * view.k
-        for _, way in ipairs(ways) do
-            local colour = ns.Route.COLOURS[way.kind] or ns.Route.COLOURS.flight
-            local alpha = way.faint and Paths.FAINT or Paths.ALPHA
-            local px, py, along = nil, nil, 0
-            for _, point in ipairs(way.points) do
-                local link = Coords.Link(point.map, view.map)
-                local x, y
-                if link then
-                    x = (link.du + link.su * point.u - view.u) * view.k
-                    y = (link.dv + link.sv * point.v - view.v) * view.k
-                end
-                if x and px and not point.jump then
-                    local length = math.sqrt((x - px) ^ 2 + (y - py) ^ 2)
-                    if length >= 1 and math.max(x, px) >= left and math.min(x, px) <= right
-                        and math.max(y, py) >= bottom and math.min(y, py) <= top then
-                        local entry = Next()
-                        entry.fill:SetVertexColor(colour[1], colour[2], colour[3], alpha)
-                        entry.edge:SetAlpha(alpha)
-                        entry.edge:SetThickness(thickness.edge)
-                        entry.fill:SetThickness(thickness.fill)
-                        count = count + 1
-                        local part = parts[count] or {}
-                        parts[count] = part
-                        part.x1, part.y1, part.x2, part.y2, part.length, part.along = px, py, x, y, length, along
-                        part.entry, part.from, part.to = entry, nil, nil
-                    end
-                    along = along + length
-                end
-                px, py = x, y
-            end
-        end
+        for _, list in pairs(active) do Lay(list, view, left, right, bottom, top) end
+        -- (the pin under the mouse an active one: drawn once)
+        if ways and not active[Key(owner)] then Lay(ways, view, left, right, bottom, top) end
     end
     for index = used + 1, #lines do Hide(lines[index]) end
     Paths.Fit(ns.Canvas.edge)
 end
 
+local function Redraw()
+    if ns.Canvas.Laid() then Paths.Place(ns.Canvas.view) else Paths.Clear() end
+end
+
+-- A pin's ways: a flight point's flights (at a flight master the way there, hop by hop: Taxi.lua), a dock's ship's way
+-- round; nil for any other pin.
+local function Of(pin)
+    if not pin or pin.gathered then return nil end
+    local found
+    if pin.kind == "flight" then
+        found = ns.Taxi.Ways(pin.taxi) or Flights(pin.id, pin.map)
+    elseif pin.way and pin.dock then
+        found = Ship(pin.way)
+    end
+    return found and #found > 0 and found or nil
+end
+
+-- What a pin's ways are kept by: its flight point, or its ship (its docks on two maps are one), else the pin.
+function Key(pin)
+    if not pin then return nil end
+    if pin.kind == "flight" and pin.id then return "flight:" .. tostring(pin.id) end
+    if pin.way then return "way:" .. tostring(pin.way) end
+    return pin.key
+end
+
 function Paths.Show(pin)
     if not layer then return end
     if pin and pin == owner and ways then return end -- drawn already (a dock's tooltip is drawn again each second)
-    local found
-    if pin and not pin.gathered then
-        if pin.kind == "flight" then
-            -- At a flight master, the way there hop by hop (Taxi.lua); else every flight from it.
-            found = ns.Taxi.Ways(pin.taxi) or Flights(pin.id, pin.map)
-        elseif pin.way and pin.dock then
-            found = Ship(pin.way)
-        end
-    end
-    if not found or #found == 0 then return Paths.Hide() end
+    local found = Of(pin)
+    if not found then return Paths.Hide() end
     ways, owner = found, pin
-    if ns.Canvas.Laid() then Paths.Place(ns.Canvas.view) end
+    Redraw()
 end
 
 function Paths.Hide()
     if not ways then return end
     ways, owner = nil, nil
+    Redraw()
+end
+
+function Paths.Active(pin)
+    local key = Key(pin)
+    return key ~= nil and active[key] ~= nil
+end
+
+function Paths.Toggle(pin)
+    local key = layer and Key(pin)
+    if not key then return false end
+    if active[key] then
+        active[key] = nil
+    else
+        local found = Of(pin)
+        if not found then return false end
+        active[key] = found
+    end
+    Redraw()
+    ns.Safe("pins", ns.PinView.Relook) -- its pin's glow
+    return true
+end
+
+function Paths.Reset()
+    local had = next(active) ~= nil
+    wipe(active)
+    ways, owner = nil, nil
     Paths.Clear()
+    if had then ns.Safe("pins", ns.PinView.Relook) end
 end
 
 -- Out of sight (the window hidden, the pins laid out anew): the lines go.

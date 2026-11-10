@@ -10,13 +10,14 @@ The bigger changes of each version, newest first.
   flight map, its flight points large: click one to fly there, the
   mouse on it shows the way and what it costs. Hold Shift as you
   talk to the flight master for the game's own.
-- On the full map, the zone under the mouse shows its name, its
-  level range and the fishing skill its waters ask. The mouse on a
-  flight point draws its flights, on a dock its ship's whole way.
-  Routes take the portals of Dalaran and the pads of Stormwind's
-  Wizard's Sanctum only for mages. When you die, the map pin moves
-  to your corpse and the golden line leads you back; alive again,
-  your old map pin returns.
+- On the full map, the zone under the mouse shows its name and the
+  fishing skill its waters ask. The mouse on a flight point draws
+  its flights, on a dock its ship's whole way, at every zoom; a
+  click keeps them drawn until you leave the full map. Routes take
+  the portals of Dalaran and the pads of Stormwind's Wizard's
+  Sanctum only for mages. When you die, the map pin moves to your
+  corpse and the golden line leads you back; alive again, your old
+  map pin returns.
 - The minimap's satchel has a button to the game's own minimap, and
   the game's minimap has one back, so you can switch between them.
 - The addon buttons in the minimap's satchel open their addons again,

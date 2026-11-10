@@ -319,7 +319,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   tells the same in its tooltip, counting down: when the ship next comes there and when it leaves (the tram's
   stations too); and draws its ship's whole way round over the map, light blue as on the ride (the tram's run from
   station to station). The mouse over a flight point's pin draws every flight of your side that leaves it, white
-  as on a flight, fainter to a flight point you have not found.
+  as on a flight, fainter to a flight point you have not found. Flight points and the ways of travel (docks, the
+  tram, lifts, portals) stand on the map at every zoom, out to the whole world, each a pin of its own (never
+  gathered into a marker), so each can be hovered. On the full map a click on a flight point or a dock keeps its
+  ways drawn after the mouse has left it, its pin glowing, as many as you click; a second click lets go of them, and
+  all go when the full map goes back to its corner. A double click only puts the map pin there.
 - **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay high up
   the screen: where it began and where it goes at the ends of a fine golden line (the map route's art, its glint
   pulsing along) that fills smoothly as you go, the vehicle's icon riding at its tip, a flight point's mark at each
@@ -520,7 +524,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   `skill`, the original game's base: a cast catches at it, every one `Label.SURE` points over it), from 1 at the
   least to that, coloured by your fishing skill line with its bonus (`Nodes.Reach`), the red mark before it while
   unconfirmed (`Core.UNCONFIRMED_MARK`). Out with the highlight (`Art.Unlight`); told anew at a level or a skill.
-- **Paths** (`Paths.lua`): while the mouse is on a flight point's pin or a dock's (`PinView` Tip, Left), that pin's
+- **Paths** (`Paths.lua`): kept drawn after a click on the full map (`Paths.Toggle` from `PinView.Act`; `Active`, by
+  the pin's flight point or ship, `Key`; the pin glowing, `PinView.Relook`; let go by a second click, by the double
+  click's second, `Canvas.lua`, and all by `Paths.Reset` when the full screen goes back or the window hides), and
+  while the mouse is on a flight point's pin or a dock's (`PinView` Tip, Left), that pin's
   ways from Core's set *Travel* on a layer of their own (`Canvas.LEVELS.paths`, between the route and the pins):
   every flight of the player's side from that node (`byFromNode`; its path on the flight point's plane), fainter to
   one not found (`Planner.Knows`); a boat's or zeppelin's whole way round (its path's points on their worlds' planes,
@@ -1036,6 +1043,12 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, flight points and docks at every zoom, their ways kept by a click:** Saneroki: "can you make sure
+  that when you zoom all the way out of the map that all ship and flightpath icons are still fully visible so we can
+  hover over them to see where they go. Can you also make them so that a single click will make them "active" [...]
+  This "active" state should deactivate when you close the fullscreen". `Pins.WORLD`: at the world the planes' own
+  pins of those kinds, and never gathered. He also found the zone label without levels: Forever tells none
+  (`C_Map.GetMapLevels` empty, no level range in its client tables).
 - **2026-11-10, the flight master's map:** Saneroki: "When we open the flightpath master window, can you make it so
   that shiftclicking will open it normally but if you open it normally it shows our own fullscreen map instead but
   where the flightpath icons are huge and you can click them to fly there like the normal flightpath window"
