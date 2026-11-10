@@ -179,6 +179,26 @@ end
 -- Reads the kept parts into the settings in use; what is not kept, or no part of this version, is
 -- dropped. Core calls it before Sane UI's settings are saved anywhere. Not while a writing waits for
 -- a fight to end: the game still holds the old settings then (a profile just loaded would be lost).
+-- The server's clock, whole seconds (0 when the game cannot say).
+local function Now()
+    return tonumber(Plain(Core.Ask(rawget(_G, "GetServerTime")))) or 0
+end
+
+-- When the profile's value of each key of such a part (one with Outside: the addons) last changed: what a character
+-- changed outside the world since its own logout counts only where the profile's is older (Sync.Outside).
+local function Stamp(id, old, new)
+    if type(old) ~= "table" or type(new) ~= "table" then return end
+    local stamps = Sync.options.stamps
+    if type(stamps[id]) ~= "table" then stamps[id] = {} end
+    local now, at = Now(), stamps[id]
+    for key, value in pairs(new) do
+        if old[key] ~= value then at[key] = now end
+    end
+    for key in pairs(old) do
+        if new[key] == nil then at[key] = now end
+    end
+end
+
 function Sync.Capture()
     if not On() or not given or waiting or Hunt() == true then return end
     local options, taken = Sync.options, {}
@@ -189,6 +209,7 @@ function Sync.Capture()
                 Core.NoteError(Sync.name .. ": reading " .. part.id, data)
                 data = options.taken[part.id]
             end
+            if part.Outside then Stamp(part.id, options.taken[part.id], data) end
             taken[part.id] = data
         end
     end
@@ -221,34 +242,47 @@ function Sync.Began()
 end
 
 -- What the game holds of the parts that look for changes made outside the world (part.Outside), kept for this
--- character at its logout (Core.Character(Sync.name).logout); none on Character specific, where Sync keeps nothing.
+-- character at its logout (Core.Character(Sync.name).logout, at: when); none on Character specific, where Sync keeps
+-- nothing. A session that wrote nothing yet (a /reload within the first seconds, a fight) leaves the record of the
+-- logout before: what changed outside the world since is still to be taken at the next login.
 local function Remember()
-    local held
+    local character, held = Core.Character(Sync.name), nil
     if On() and Hunt() ~= true then
+        if not given then return end
         for _, part in ipairs(Sync.parts) do
             if part.Outside and Sync.PartKept(part.id) then
                 local ok, data = xpcall(part.Read, Core.Trace)
                 if ok and data ~= nil then
-                    held = held or {}
+                    held = held or { at = Now() }
                     held[part.id] = data
                 end
             end
         end
     end
-    Core.Character(Sync.name).logout = held
+    character.logout = held
 end
 
 -- A session's first writing: what the player changed since this character's last logout while no character was in
 -- the world (the addon list at the character screen) goes into the profile first, so that the writing keeps it.
+-- A key the profile changed after that logout (on another character: Stamp) is the profile's word, newer than anything
+-- this character can bring: it is left out of what the character had then, so Outside passes it over.
 function Sync.Outside()
     local logout = Core.Character(Sync.name).logout
     if type(logout) ~= "table" or not On() or not Ours() or Hunt() == true then return end
-    local taken = Sync.options.taken
+    local taken, stamps, at = Sync.options.taken, Sync.options.stamps, tonumber(logout.at)
     for _, part in ipairs(Sync.parts) do
         local before, data = logout[part.id], taken[part.id]
         if part.Outside and Sync.PartKept(part.id) and type(before) == "table" and type(data) == "table" then
             local ok, now = xpcall(part.Read, Core.Trace)
-            if ok and type(now) == "table" then part.Outside(data, before, now) end
+            if ok and type(now) == "table" then
+                local seen, newer = Core.Copy(before), type(stamps[part.id]) == "table" and stamps[part.id] or {}
+                for key, when in pairs(newer) do
+                    if at and type(when) == "number" and when > at then seen[key] = nil end
+                end
+                local was = Core.Copy(data)
+                part.Outside(data, seen, now)
+                Stamp(part.id, was, data)
+            end
         end
     end
 end
@@ -399,11 +433,13 @@ end
 --      named   [CVar] = its value: single CVars kept by name
 --      from    the game taken and named were read in ("forever", "retail"; Ours): those kept before Sane UI
 --              served two games are Forever's
+--      stamps  [part id] = { [key] = the server's time it last changed in the profile }: of a part with Outside
 Core.Options(Sync.name, {
     { key = "off", default = {} },
     { key = "taken", default = {} },
     { key = "named", default = {} },
     { key = "from", default = "forever" },
+    { key = "stamps", default = {} },
 }, { capture = function() Sync.Capture() end, moved = function() Sync.Moved() end, game = true })
 
 -- Core's saved settings are there, and in use where they should come from (Saved.lua and

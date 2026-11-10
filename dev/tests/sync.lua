@@ -931,7 +931,26 @@ do
     character.logout, taken.addons.One = nil, false
     Sync.Outside()
     check(taken.addons.One == false, "no logout kept (a first login): the profile's as before")
-    taken.addons, character.logout = wasTaken, wasLogout
+    -- The profile changed One after this character's logout (on another character): its word is newer than what this
+    -- character brings, so a change on the character screen seen only now is passed over
+    local stamps = Sync.options.stamps
+    local wasStamps = stamps.addons
+    states.One, states.Two = 2, 2
+    taken.addons = { One = false, Two = true, SaneUI = true }
+    character.logout = { at = 100, addons = { One = false, Two = true, SaneUI = true } }
+    stamps.addons = { One = 200 }
+    Sync.Outside()
+    check(taken.addons.One == false, "the profile changed it after this character's logout: the profile's stays")
+    stamps.addons = { One = 50 }
+    Sync.Outside()
+    check(taken.addons.One == true and stamps.addons.One > 100, "the profile's older: the character's change taken, stamped now")
+    -- A capture stamps what changed in the profile
+    stamps.addons = {}
+    states.One = 0
+    Sync.Capture()
+    check(Sync.options.taken.addons.One == false and type(stamps.addons.One) == "number" and stamps.addons.Two == nil,
+        "a capture stamps the addon that changed, only that one")
+    stamps.addons, Sync.options.taken.addons, character.logout = wasStamps, wasTaken, wasLogout
     C_AddOns.GetNumAddOns, C_AddOns.GetAddOnInfo, C_AddOns.GetAddOnEnableState, C_AddOns.EnableAddOn, C_AddOns.DisableAddOn, C_AddOns.SaveAddOns =
         wasNum, wasInfo, wasState, wasOn, wasOff, wasSave
 end
@@ -1121,7 +1140,8 @@ do
         "unanswered at the logout: saved in the profile in use, the game's setting and the addon too")
     check(ticked.Core.errors == now and ticked.Sync.taken.CONTROLS_LABEL.cvars.cameraSmoothStyle == camera and ticked.Sync.taken.addons.One == false,
         "and in the profile ticked besides")
-    check(Core.Character(Sync.name).logout.addons.One == false, "the addons as the logout left them, for the next login (Sync.Outside)")
+    check(Core.Character(Sync.name).logout.addons.One == false and type(Core.Character(Sync.name).logout.at) == "number",
+        "the addons as the logout left them, and when, for the next login (Sync.Outside)")
     Unsaved.Save()
 
     -- Unticked, the profile in use gets the last save back at the logout, in the saved settings only
@@ -1134,7 +1154,53 @@ do
     W.Fire("PLAYER_LOGOUT")
     check(SaneUIDB.profiles[use].Core.errors == now and SaneUIDB.profiles[other].Core.errors == not now,
         "unticked in use at the logout: back as at the last save; the one ticked takes the change")
+    Unsaved.Tick(use, true)
     Unsaved.Undo()
+
+    -- The profile in use renamed while changes wait: still ticked, under its new name, and Yes keeps them
+    Frames()
+    check(Profiles.Create("Hunt A") and Profiles.Use("Hunt A") and Profiles.InUse() == "Hunt A", "a profile of our own in use")
+    Frames()
+    local before = Errors()
+    Core.Set(Core.name, "errors", not before)
+    Frames()
+    check(Unsaved.Ticked("Hunt A"), "the profile in use ticked")
+    check(Profiles.Rename("Hunt A", "Hunt B") and Unsaved.Ticked("Hunt B") and not Unsaved.Ticked("Hunt A"),
+        "renamed: ticked under its new name")
+    Unsaved.Save()
+    check(Errors() == not before and SaneUIDB.profiles["Hunt B"].Core.errors == not before and not Unsaved.Pending(),
+        "Yes keeps the change in the profile renamed (was: taken back, the old name ticked)")
+    check(Profiles.Use(use) and Profiles.InUse() == use, "back to the profile of before")
+
+    -- A profile ticked besides, then deleted: no tick left for it; with the one in use unticked, Yes is off
+    Frames()
+    Core.Set(Core.name, "errors", not Errors())
+    Frames()
+    Unsaved.Tick("Hunt B", true)
+    Unsaved.Tick(use, false)
+    Unsaved.Tick(other, false)
+    check(Unsaved.Any() and SaneUIDB.saveTo["Hunt B"] == true, "ticked besides, for the next time too")
+    check(Profiles.Delete("Hunt B") and not Unsaved.Any() and not Window().Yes:IsEnabled() and SaneUIDB.saveTo["Hunt B"] == nil,
+        "deleted: its tick gone, Yes off")
+    Unsaved.Tick(use, true)
+    Unsaved.Undo()
+
+    -- Another profile chosen while changes wait, then a /reload unanswered: that answers too, so the character uses
+    -- the profile chosen from its next login (its line names it); the settings in use stay where they are till then
+    Frames()
+    Core.Set(Core.name, "errors", not Errors())
+    Frames()
+    local mineKey
+    for key in pairs(SaneUIDB.characters) do
+        local line = Profiles.Character(key)
+        if line and line.current then mineKey = key end
+    end
+    check(mineKey and not Profiles.Use(other) and Unsaved.Next() == "Then the profile " .. other .. " is used.", "another profile waits")
+    W.Fire("PLAYER_LOGOUT")
+    check(SaneUIDB.characters[mineKey].profile == other and Profiles.InUse() == use and Unsaved.Next() == nil,
+        "a /reload unanswered: the profile chosen is the character's at its next login")
+    SaneUIDB.characters[mineKey].profile = use -- as the rest of this test has it
+    Unsaved.Save()
     SettingsPanel:Hide()
     for name, fn in pairs(stubbed) do C_AddOns[name] = fn end
 end

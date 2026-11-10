@@ -215,7 +215,10 @@ but for a window to try those with (`/sane window`).
     to `MAX_NAME` (32) letters, unique in any letter case. `/sane profile [name]`. For the save window:
     `Settings(name)` (a saved profile's table), `Put(fill)` (the settings in use filled anew, as a profile used:
     `fill(module)` its new settings, false leaves it). With changes unsaved, `Use`, `SetCharacter` of this
-    character and `Delete` of the one in use wait for the answer (`Core.Unsaved.Wait`) and return false meanwhile.
+    character and `Delete` of the one in use wait for the answer (`Core.Unsaved.Wait`) and return false meanwhile;
+    a /reload or logout unanswered does their lasting part (the character's line names the profile chosen, or the
+    profile deleted is gone, for the next login). `Rename` and `Delete` move or drop the profile's tick under *Save
+    to* (`Unsaved.Renamed`).
 - **Unsaved changes** (`Unsaved.lua`, `Core.Unsaved`): the last save is a copy of every module's settings, taken
   when a menu opens with nothing waiting (`Open(menu, frame)`, `Close(menu)`: the game's `SettingsPanel` and
   `AddonList`, Edit Mode by `Core.EditMode.Watch`, a full screen's options view). While a menu is open a change
@@ -227,10 +230,12 @@ but for a window to try those with (`/sane window`).
   `Tick(name, on)`, `Any()`, `Save()` (each path written into every other profile ticked, Sync's only into one
   of this game; the one in use unticked gets them back), `Undo()` (`Profiles.Put` with the last save's values:
   the modules told, Sync writing the game's; an Edit Mode layout takes its own text again, `Sync.ExactLayout`),
-  `Wait(words, fn)`, `Next()`, `Watch(fn)`, `Moved()` (another profile in use: a new last save). At
+  `Wait(words, fn, last)`, `Next()`, `Watch(fn)`, `Moved()` (another profile in use: a new last save),
+  `Renamed(old, new)` (a profile's tick follows its new name; nil: deleted). At
   `PLAYER_LOGOUT`, after Profiles' capture: unanswered, the changes are saved as *Yes* saves them (Saneroki,
   2026-11-10), into every profile ticked; only the one in use, unticked, takes the last save's values, in the
-  saved settings only (the game gets them at the next login, Sync's writing). A hook after `AddonList_OnOkay`
+  saved settings only (the game gets them at the next login, Sync's writing); a step that waited has its `last`
+  done. A hook after `AddonList_OnOkay`
   would never run: the addon list's `OnLoad` gave its button the game's function itself, so no hook is needed
   or made (its Cancel resets the addons in its `OnHide`, which the look at its closing then finds unchanged).
 

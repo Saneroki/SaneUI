@@ -8,6 +8,7 @@ The bigger changes of each version, newest first.
 ------------------
 - Settings you change stay changed when you /reload or log out,
   also with the save window unanswered: only No takes them back.
+  A profile you chose meanwhile is used from your next login.
   Addons you switch on or off at the character screen stay so too.
 - The Banker tab on the mailbox sends your profession items too
   (recipes, patterns, plans). With Speed Leveling on, everything

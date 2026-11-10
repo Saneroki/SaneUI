@@ -78,7 +78,9 @@ it back.
     (an Edit Mode layout's frames after the `/reload` offered). Set back by hand, there is nothing to save and the
     window goes.
   - Choosing another profile (on this page, `/sane profile`, the box *Speed Leveling* in the bags) waits for the
-    answer: the window says what follows (*Then the profile Speedleveling is used.*).
+    answer: the window says what follows (*Then the profile Speedleveling is used.*). A `/reload` or logout before
+    the answer answers too: the character uses that profile from its next login.
+  - A profile renamed or deleted takes its tick under *Save to* along (the one in use renamed stays ticked).
   - A `/reload` or logout with the window unanswered saves the changes as *Yes* does, into the profiles ticked
     (Saneroki, 2026-11-10: a change must not pop back at a `/reload`); so do the addon list's *Reload UI* and the
     *Reload* Sane UI offers, which waits for nothing. The window says so under the list: *A /reload or logout saves
@@ -296,6 +298,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 
 ## History
 
+- 2026-11-10 — A profile chosen while the window waits is the character's from its next login when a `/reload` or logout answers instead; a profile renamed keeps its tick under *Save to* (the one in use renamed lost it, and *Yes* took the changes back), one deleted loses it.
 - 2026-11-10 — The save window keeps what is not answered (Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload"): a `/reload` or logout saves the changes as *Yes* does (was: took them back, and the addon list's *Reload UI*, meant to save first, never did); the *Reload* Sane UI offers no longer waits for the answer. A line in the window says so.
 - 2026-11-09 — The save window (Saneroki): a change in the options, the game's own, Edit Mode or the addon list brings *Save the changes?* beside the menu until *Yes* (into the profiles ticked under *Save to*) or *No* (taken back); the page Profiles has *Save* and *Load last settings*. Another profile and an offered `/reload` wait for the answer; unanswered, a `/reload` or logout takes the changes back.
 - 2026-10-17 — The page *Profiles* anew (Saneroki): *Accountwide settings*; *This character* with its profile and *New*, *Rename*, *Delete*, *Defaults*, *Copy from*, *Export*, *Import*; *Characters* with a profile each and *Forget*. *Load*, *Save*, *Duplicate*, *Load at login*, *Save at logout*, *Empty* and *SaneUI Defaults* are gone. The tab *Accountwide* is *Game settings*, without the box of modules.

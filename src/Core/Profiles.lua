@@ -269,10 +269,16 @@ end
 
 -- Whether another place comes into use only after the save window's answer (Unsaved.lua): changes made in the
 -- options and not saved yet are the place's in use. Then the step runs again; meanwhile it is refused, and why.
-local function Answer(name, again)
+-- last: what of the step lasts when a /reload or logout answers instead (the character's line for the next login).
+local function Answer(name, again, last)
     local unsaved = Core.Unsaved
     if not (unsaved and unsaved.Pending()) or name == Profiles.InUse() then return false end
-    return unsaved.Wait(TEXT.next:format(name), again)
+    return unsaved.Wait(TEXT.next:format(name), again, last)
+end
+
+-- The save window's ticks follow a profile renamed or deleted (new: nil).
+local function Ticks(name, new)
+    if Core.Unsaved then Core.Safe("profiles: unsaved", Core.Unsaved.Renamed, name, new) end
 end
 
 -------------------------------------------------------------------------------
@@ -520,7 +526,9 @@ function Profiles.Use(name)
     if not Usable(name) then return false, TEXT.missing:format(tostring(name)) end
     local line = Line()
     if not line then return false, TEXT.unknown end
-    if Answer(name, function() Profiles.Use(name) end) then return false, TEXT.first:format(name) end
+    if Answer(name, function() Profiles.Use(name) end, function() Assign(line, name) end) then
+        return false, TEXT.first:format(name)
+    end
     Capture() -- the game's settings into the profile left, while Sync still reads them
     Assign(line, name)
     Move(Want())
@@ -556,23 +564,33 @@ function Profiles.Rename(name, as)
     end
     if db.newProfile == name then db.newProfile = new end
     if source == name then source = new end
+    Ticks(name, new)
     Shown()
     return true
+end
+
+-- No character has it any more: they use Accountwide; new characters too.
+local function Unassign(name)
+    for _, line in pairs(db.characters) do
+        if type(line) == "table" and line.profile == name then line.profile = nil end
+    end
+    if db.newProfile == name then db.newProfile = nil end
 end
 
 -- Deleted, the characters that had it use Accountwide; this one at once.
 function Profiles.Delete(name)
     if Profiles.Fixed(name) then return false, TEXT.fixed end
     if not Saved(name) then return false, TEXT.missing:format(tostring(name)) end
-    if name == source and Answer(ACCOUNTWIDE, function() Profiles.Delete(name) end) then
+    if name == source and Answer(ACCOUNTWIDE, function() Profiles.Delete(name) end, function()
+        Unassign(name)
+        db.profiles[name] = nil
+    end) then
         return false, TEXT.first:format(ACCOUNTWIDE)
     end
-    for _, line in pairs(db.characters) do
-        if type(line) == "table" and line.profile == name then line.profile = nil end
-    end
-    if db.newProfile == name then db.newProfile = nil end
+    Unassign(name)
     Move(Want())
     db.profiles[name] = nil
+    Ticks(name, nil)
     Shown()
     return true
 end
@@ -696,7 +714,7 @@ function Profiles.SetCharacter(which, name)
     end
     local line = Line(which)
     if not line then return false, TEXT.unknown end
-    if which == key and Answer(name, function() Profiles.SetCharacter(which, name) end) then
+    if which == key and Answer(name, function() Profiles.SetCharacter(which, name) end, function() Assign(line, name) end) then
         return false, TEXT.first:format(name)
     end
     if which == key then Capture() end

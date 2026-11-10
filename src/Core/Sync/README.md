@@ -107,6 +107,11 @@ the game's own chat channels on every character is the Social module's.)
   specific*); at the next login what differs between that and the game now was changed on the game's screens
   before the world (the addon list at the character screen) and goes into the profile, so the writing keeps it.
   What the profile changed meanwhile (on another character) is written as ever; a first login has nothing to compare.
+  The record is made only by a session that wrote (a `/reload` in the first seconds keeps the one before, so a change
+  made before it is still seen), with the server's time (`at`). Each capture stamps, in the profile, when each of
+  such a part's values changed (`stamps[part][key]`); one stamped after the character's logout is the profile's
+  newer word and is passed over (an old character-screen change, seen late on a second character, does not undo a
+  change made in the game since).
   Never in a fight: then at `PLAYER_REGEN_ENABLED`. Only in the game they were read in (`from`: `forever` or
   `retail`; those kept before Sane UI served two games are Forever's): each game has options, CVars, layouts and
   chat windows of its own, so another game's (a game folder's saved settings copied into the other's) are neither
@@ -196,6 +201,7 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-10 — The addons' record of the logout only from a session that wrote; the profile's values stamped with the time they changed, its newer word kept over a character's older change (`stamps`).
 - 2026-11-10 — Addons switched on the character screen are kept (Saneroki: "I can't turn off addons"): the login took the profile's list back over them; now what changed since the character's last logout goes into the profile first (`Sync.Outside`).
 - 2026-11-09 — The save window (Core's `Unsaved.lua`): the kept parts read while a menu is open; its *No* after Edit Mode gives a layout its own text again (`Sync.ExactLayout`).
 - 2026-11-04 — The sound profiles' CVars left to Core's `Audio.lua` (`Sync.Leave`): per game account, set at each

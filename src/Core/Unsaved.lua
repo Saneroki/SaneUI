@@ -24,7 +24,9 @@ local Core = SaneUI.Core
 --
 --  Unanswered, a /reload or logout saves them as Yes does (Saneroki, 2026-11-10:
 --  a change must not pop back at a reload): only No and Load last settings take
---  changes back. Another profile used waits for the answer first (Wait).
+--  changes back. Another profile used waits for the answer first (Wait); unanswered,
+--  the /reload or logout counts as the answer and the character uses it at its
+--  next login.
 -------------------------------------------------------------------------------
 local Unsaved = {}
 Core.Unsaved = Unsaved
@@ -45,8 +47,9 @@ local waiting    -- { words, fn }: a step that follows the answer
 local ticks      -- [profile] = true: where Yes saves the changes, while there are some
 local watchers = {}
 
--- Settings that are no setting of a menu: where the windows stand (Window.lua), which game Sync read in.
-local SKIP = { [Core.name] = { places = true }, Sync = { from = true } }
+-- Settings that are no setting of a menu: where the windows stand (Window.lua), which game Sync read in and when its
+-- values changed.
+local SKIP = { [Core.name] = { places = true }, Sync = { from = true, stamps = true } }
 
 local function Tell()
     for _, fn in ipairs(watchers) do Core.Safe("unsaved", fn) end
@@ -283,6 +286,22 @@ function Unsaved.Tick(name, on)
     Tell()
 end
 
+-- A profile renamed (Profiles.lua; new: nil for one deleted): its tick under Save to goes with it, now and the next
+-- time. Left on the old name, the profile in use renamed would count as unticked and get its last save back at Yes.
+function Unsaved.Renamed(old, new)
+    if ticks and ticks[old] then
+        ticks[old] = nil
+        if new then ticks[new] = true end
+    end
+    local kept = rawget(_G, "SaneUIDB")
+    local saveTo = type(kept) == "table" and type(kept.saveTo) == "table" and kept.saveTo or nil
+    if saveTo and saveTo[old] then
+        saveTo[old] = nil
+        if new then saveTo[new] = true end
+    end
+    Tell()
+end
+
 -- Whether any profile is ticked.
 function Unsaved.Any()
     return ticks ~= nil and next(ticks) ~= nil
@@ -349,10 +368,12 @@ function Unsaved.Undo()
 end
 
 -- A step that needs the answer first: true when it waits for it (fn runs once the changes are saved or taken back),
--- false when nothing waits to be saved. words: what follows, for the save window.
-function Unsaved.Wait(words, fn)
+-- false when nothing waits to be saved. words: what follows, for the save window. last: what of the step is done
+-- at a /reload or logout unanswered, which saves the changes as Yes does and so answers too (another profile: the
+-- character's line names it for the next login).
+function Unsaved.Wait(words, fn, last)
     if not changes then return false end
-    waiting = { words = words, fn = fn }
+    waiting = { words = words, fn = fn, last = last }
     Tell()
     return true
 end
@@ -387,13 +408,18 @@ end)
 
 -- The game writes the saved settings after this (a logout, a /reload); Profiles.lua has read the game's in. Changes
 -- not answered are saved as Yes saves them: into every profile ticked. Only the one in use, unticked, gets the last
--- save's values back, in the saved settings only (the game gets them from the profile at the next login).
+-- save's values back, in the saved settings only (the game gets them from the profile at the next login). A step
+-- that waited for the answer has its lasting part done then (another profile chosen is used at the next login).
 Core.On("PLAYER_LOGOUT", function()
     if next(menus) then Check() end
-    if not changes or Keep() then return end
-    local live = Live()
-    for _, change in ipairs(changes) do
-        local values = live[change.module]
-        if values then Put(values, change.path, Get(before[change.module], change.path)) end
+    if changes and not Keep() then
+        local live = Live()
+        for _, change in ipairs(changes) do
+            local values = live[change.module]
+            if values then Put(values, change.path, Get(before[change.module], change.path)) end
+        end
     end
+    local step = waiting
+    waiting = nil
+    if step and step.last then Core.Safe("unsaved: at the logout", step.last) end
 end)
