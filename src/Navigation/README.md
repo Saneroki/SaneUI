@@ -593,9 +593,13 @@ is small, and the maps of the dungeons and raids. The plan is in
   minimap, a frame hanging on `Minimap`, `MinimapBackdrop`, `MinimapCluster` or its `MinimapContainer` that has a
   name of its own whose global an addon set (`issecurevariable(name)` says not secure, and which addon; the game's
   own are secure, Sane UI's left), no larger than `Strays.LARGEST` (64) each way, taking the mouse and not
-  protected, is held: its parent, points, scale, strata and level kept, the clicks the cluster's hiding took from
-  it given back (`Hybrid.Release`), then out of sight until the satchel lays it in a cell (`Strays.Place`, scaled to
-  the cell's picture), unseen there (alpha 0) over the round picture the satchel draws of it: its own largest
+  protected, its name not ending in a number (one of a pool: an addon's marks of places in the world on the
+  minimap, its quests', many at once, are no buttons and stay there; Saneroki, 2026-11-10), is held: its parent,
+  points, scale, strata and level kept, and whether its addon fixed its strata and level, the clicks the cluster's
+  hiding took from it given back (`Hybrid.Release`), then out of sight until the satchel lays it in a cell
+  (`Strays.Place`, scaled to the cell's picture; its strata and level the cell's, free while it is held: one fixed
+  stayed under the page and the cell took its clicks; fixed again when given back), unseen there (alpha 0) over
+  the round picture the satchel draws of it: its own largest
   texture in the `ARTWORK` layer, else its normal texture (`Strays.Picture`), cut inside its frame where it shows its
   whole file (`Satchel.TRIM`) and cut round (`Satchel.ROUND`); the ring and background the common buttons have lie in
   other layers and stay out. Hooks after its `SetPoint` and `SetAlpha` put it back whenever its addon places it

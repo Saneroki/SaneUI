@@ -13,7 +13,9 @@ local _, ns = ...
 --  Another addon's: a frame on the minimap, its backdrop or its cluster with a
 --  name of its own, whose global the game says an addon set (issecurevariable:
 --  not secure, and by which addon; the game's own frames are secure, Sane UI's
---  are left), no larger than Strays.LARGEST, taking the mouse, not protected.
+--  are left), no larger than Strays.LARGEST, taking the mouse, not protected,
+--  its name not ending in a number (one of a pool: an addon's marks of places
+--  in the world on the minimap, its quests', many at once; they stay there).
 --  Looked for at the login, Strays.AGAIN seconds after it, after each addon that
 --  loads, and as the satchel opens. Named by its addon's title in the addon list.
 --
@@ -22,7 +24,9 @@ local _, ns = ...
 --  picture the satchel draws of it (Strays.Picture: without the ring and the
 --  background round it), its clicks and tooltip its own; where its addon places it
 --  again or shows it (a drag, an update of its own, a fade) it goes back (hooks
---  after its SetPoint and SetAlpha).
+--  after its SetPoint and SetAlpha). Its strata and level are its cell's, free
+--  while it is held where its addon fixed them (one fixed stayed under the
+--  page, and the cell took its clicks); fixed again when it is given back.
 --  The clicks the cluster's hiding took from it are its own again (Hybrid.Release).
 --  Given back exactly once the game's minimap is the game's again (the switch
 --  Show the game's minimap) or the module stands down (GiveBack). One its addon
@@ -78,15 +82,33 @@ local function Whose(frame)
     return addon
 end
 
--- Whether a frame is a button: small, taking clicks, not one of the protected kind (moved only out of a fight).
+-- Whether a frame is a button: small, taking clicks, not one of the protected kind (moved only out of a fight), and
+-- not one of a numbered pool: the marks an addon puts on the minimap for places in the world (its quests' marks) are
+-- named by their number in their pool, many at once, coming and going as the player moves; they are no buttons of
+-- that addon and stay on the minimap.
 local function Button(frame)
-    if frame:IsProtected() then return false end
+    if frame:IsProtected() or frame:GetName():find("%d$") then return false end
     local width, height = frame:GetSize()
     if not width or width <= 0 or width > Strays.LARGEST or height <= 0 or height > Strays.LARGEST then return false end
     return frame:IsObjectType("Button") or frame:IsMouseEnabled() or frame:GetScript("OnMouseUp") ~= nil
 end
 
--- A held button on its spot, at its size there (size: the units its larger side takes; nil: as it was).
+-- Its strata and level fixed (the game keeps them then, whatever its parent or a new strata or level says) or free,
+-- where the client lets us say so.
+local function Fix(button, strata, level)
+    if button.SetFixedFrameStrata then button:SetFixedFrameStrata(strata) end
+    if button.SetFixedFrameLevel then button:SetFixedFrameLevel(level) end
+end
+
+-- Whether its strata and level are fixed now.
+local function Fixed(button)
+    return button.IsFrameStrataFixed and button:IsFrameStrataFixed() or false,
+        button.IsFrameLevelFixed and button:IsFrameLevelFixed() or false
+end
+
+-- A held button on its spot, at its size there (size: the units its larger side takes; nil: as it was). Its strata
+-- and level are its spot's, free while it is held: one its addon fixed would stay under the page, and the cell would
+-- take its clicks.
 local function Lay(button, size)
     local spot, was = spots[button], held[button]
     placing = true
@@ -95,6 +117,7 @@ local function Lay(button, size)
     button:SetPoint("CENTER", spot, "CENTER")
     local width, height = button:GetSize()
     button:SetScale(size and size / math.max(width or 1, height or 1, 1) or was.scale)
+    Fix(button, false, false)
     button:SetFrameStrata(spot:GetFrameStrata())
     button:SetFrameLevel(spot:GetFrameLevel() + 2)
     button:SetAlpha(0) -- the satchel draws its picture under it
@@ -117,10 +140,11 @@ local unseen = ns.Guard(function(button)
 end)
 
 local function Take(button, addon)
+    local fixedStrata, fixedLevel = Fixed(button)
     held[button] = {
         parent = button:GetParent(), points = Core.Points(button), scale = button:GetScale(),
         strata = button:GetFrameStrata(), level = button:GetFrameLevel(), alpha = button:GetAlpha(), addon = addon,
-        title = Title(addon),
+        title = Title(addon), fixedStrata = fixedStrata, fixedLevel = fixedLevel,
     }
     ns.Hybrid.Release(button)
     if not hooked[button] then
@@ -227,6 +251,7 @@ function Strays.GiveBack()
         Core.Repoint(button, was.points)
         button:SetFrameStrata(was.strata)
         button:SetFrameLevel(was.level)
+        Fix(button, was.fixedStrata, was.fixedLevel)
         button:SetAlpha(was.alpha)
         placing = false
     end

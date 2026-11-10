@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The addon buttons in the minimap's satchel open their addons again,
+  and an addon's quest marks on the minimap no longer fill it as
+  extra buttons.
 - Settings you change stay changed when you /reload or log out,
   also with the save window unanswered: only No takes them back.
   A profile you chose meanwhile is used from your next login.

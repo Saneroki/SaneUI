@@ -43,15 +43,24 @@ function methods:EnableMouse(on) self._mouse = on and true or false end
 function methods:IsMouseEnabled() return self._mouse or false end
 function methods:EnableMouseWheel(on) self._wheel = on and true or false end
 function methods:IsMouseWheelEnabled() return self._wheel or false end
-function methods:SetFrameLevel(level) self._level = level end
+-- Strata and level as the game keeps them: a fixed one stays, whatever is asked; a frame without a strata of its own
+-- has its parent's.
+function methods:SetFrameLevel(level) if not self._fixedLevel then self._level = level end end
 function methods:GetFrameLevel() return self._level or 1 end
+function methods:SetFixedFrameLevel(on) self._fixedLevel = on and true or false end
+function methods:IsFrameLevelFixed() return self._fixedLevel or false end
+function methods:SetFixedFrameStrata(on) self._fixedStrata = on and true or false end
+function methods:IsFrameStrataFixed() return self._fixedStrata or false end
 function methods:SetBlendMode(mode) self._blend = mode end
 function methods:SetTexCoord(...) self._coords = { ... } end
 function methods:AddMaskTexture(mask) self._mask = mask end
 function methods:RemoveMaskTexture(mask) if self._mask == mask then self._mask = nil end end
 function methods:SetVertexColor(r, g, b, a) self._vertex = { r, g, b, a } end
-function methods:SetFrameStrata(strata) self._strata = strata end
-function methods:GetFrameStrata() return self._strata or "MEDIUM" end
+function methods:SetFrameStrata(strata) if not self._fixedStrata then self._strata = strata end end
+function methods:GetFrameStrata()
+    local parent = self._parent
+    return self._strata or (type(parent) == "table" and parent.GetFrameStrata and parent:GetFrameStrata()) or "MEDIUM"
+end
 function methods:SetRotation(angle) self._rotation = angle end
 function methods:SetDrawLayer(layer, sublevel) self._layer, self._sublevel = layer, sublevel end
 function methods:OverrideText(text) self._override = text end
@@ -1529,6 +1538,51 @@ end)()
         "the button again closes it: the addon's button waits out of sight again")
 end)()
 
+-- An addon whose button fixes its strata and level (the game keeps them then), and whose marks of places in the world
+-- stand on the minimap too, named by their number in their pool: its button above the page in its cell, so a click
+-- is its own; its marks no buttons, left on the minimap. Kept in W for the giving back.
+;(function()
+    local Satchel = ns.Satchel
+    local own = W.NewWidget("Button", "PinAddonButton", minimap)
+    own:SetSize(31, 31)
+    own:SetPoint("CENTER", minimap, "CENTER", 80, 0)
+    own:SetFrameStrata("MEDIUM")
+    own:SetFixedFrameStrata(true)
+    own:SetFrameLevel(8)
+    own:SetFixedFrameLevel(true)
+    W.fixed, W.marks = own, {}
+    for index = 1, 3 do
+        local mark = W.NewWidget("Button", "PinAddonFrame" .. index, minimap)
+        mark:SetSize(16, 16)
+        mark:SetPoint("CENTER", minimap, "CENTER", index * 10, 0)
+        W.marks[mark] = true
+    end
+    own._mouse = true
+    rawset(_G, own._name, own)
+    W.insecure[own._name] = "PinAddon"
+    for mark in pairs(W.marks) do
+        mark._mouse = true
+        rawset(_G, mark._name, mark)
+        W.insecure[mark._name] = "PinAddon"
+    end
+    W.addons[#W.addons + 1] = { name = "PinAddon", title = "Pin Addon", metadata = {} }
+    Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
+    local found, count = nil, 0
+    for _, widget in ipairs(W.frames) do
+        if widget._shown and widget.item and widget.item.title == "Pin Addon" then found, count = widget, count + 1 end
+    end
+    check(found and count == 1 and found.item.button == own and own:GetParent() == found.spot
+        and own:GetFrameStrata() == Satchel.frame:GetFrameStrata() and own:GetFrameLevel() > found:GetFrameLevel()
+        and own:GetFrameLevel() ~= 8 and not own:IsFrameStrataFixed() and not own:IsFrameLevelFixed(),
+        "a button whose addon fixed its strata and level: in its cell above the page, once, so its clicks are its own")
+    local stayed = true
+    for mark in pairs(W.marks) do
+        stayed = stayed and mark:GetParent() == minimap and mark._points[1][2] == minimap and mark._alpha == 1
+    end
+    check(stayed, "that addon's numbered marks on the minimap: no buttons, left where they stand")
+    Satchel.Close()
+end)()
+
 -- The satchel's sound line (AudioLine.lua): first in its section Sane UI, Core's sound profile in use in a dropdown,
 -- the game's sound settings and the profile's buttons under a cogwheel.
 ;(function()
@@ -1923,7 +1977,8 @@ end)()
 ;(function()
     local sane
     for _, widget in ipairs(W.frames) do
-        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late then sane = widget end
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
+            and widget ~= W.fixed and not W.marks[widget] then sane = widget end
     end
     check(sane and not sane._shown and minimap._shown, "inside our map the game's minimap carries no button Sane UI")
     local step = minimap._zoom
@@ -4457,12 +4512,15 @@ check(not Hybrid.Taken() and minimap:GetParent() == container and minimap._wheel
 check(minimap._AreasAt(Hybrid.AREA), "and its own quest areas")
 check(W.stray:GetParent() == minimap and W.stray._points[1][1] == "TOPLEFT" and W.stray._points[1][2] == minimap
     and W.stray._scale == 1 and W.stray._alpha == 1, "and the other addon's button back on it, where, as large and as seen as its addon had it")
+check(W.fixed:GetParent() == minimap and W.fixed:GetFrameStrata() == "MEDIUM" and W.fixed._level == 8
+    and W.fixed:IsFrameStrataFixed() and W.fixed:IsFrameLevelFixed(), "the button whose addon fixed its strata and level: both as they were, fixed again")
 check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse and backdrop._alpha == 1 and minimap.ZoomIn._mouse,
     "its cluster, border and buttons back")
 ;(function()
     local sane
     for _, widget in ipairs(W.frames) do
-        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late then sane = widget end
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
+            and widget ~= W.fixed and not W.marks[widget] then sane = widget end
     end
     check(sane and sane._shown and minimap._shown, "the game's own minimap again: its button Sane UI on it, back to ours")
 end)()
