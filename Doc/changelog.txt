@@ -6,6 +6,14 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Mail: the Banker tab is gone. Instead, tick Send to banker on the
+  Send Mail tab with your banker's name in To:. From then on the
+  mailbox opens on Send Mail with the mail to your banker filled in:
+  its name, today's date as the subject, and every trade good,
+  reagent, waylaid crate and writ that is not soulbound. Just press
+  Send; the next mail follows the same way. With Speed Leveling on it
+  goes by itself; hold Shift to keep it for this visit. Unticked, the
+  mailbox is the game's own.
 - At a flight master Sane UI's full map opens in place of the game's
   flight map, its flight points large: click one to fly there, the
   mouse on it shows the way and what it costs. Hold Shift as you
@@ -31,10 +39,6 @@ The bigger changes of each version, newest first.
   your other characters.
   Unticking Graphics or another part under Game settings unticks
   its CVars too, and a CVar you untick stays unticked.
-- The Banker tab on the mailbox sends your profession items too
-  (recipes, patterns, plans). With Speed Leveling on, everything
-  goes to your banker by itself as you open the mailbox; hold Shift
-  to keep it for this visit.
 - Action bars on the full screen: no longer dark after a spell or a
   macro is dragged onto them, every icon at full brightness. Every
   bar you switched on stands there, one Edit Mode hides too, and
@@ -57,7 +61,7 @@ The bigger changes of each version, newest first.
 - Group frames: every member's class resource, and their aggro
   in a fight too. Look out for focuses those outside your group.
 - At a mailbox the Inventory full screen comes too: the mail window
-  on the left (with its Banker tab), a letter you open beside it, and
+  on the left (with its Send to banker tick), a letter you open beside it, and
   your bags on the right.
 - Nameplates: choose what they show on the Nameplates page: the
   health bar and spells, the health bar only (no auras, nor the
@@ -129,10 +133,6 @@ The bigger changes of each version, newest first.
 - Sane Macros: Cast on takes several in order, each numbered as you
   pick it (Under the mouse 1, Your target 2): the step goes to the
   first that is there, a foe for a harmful spell, else to the next.
-- Mail: a new tab, Banker, opens first at the mailbox. Type your
-  banker's name once and every trade good and reagent in your bags is
-  lined up for it; Send mails them all, twelve stacks a mail. Untick
-  what you want to keep.
 - Aura tracking: a newly tracked aura goes onto Aura bar 1 at first,
   and a new place, Nameplates, shows its icon right under every
   nameplate whose unit lacks it (your Sunder Armor on a foe, say).

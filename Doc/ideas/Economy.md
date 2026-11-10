@@ -442,7 +442,7 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
   your tradegoods and reagents to your banker." The tab Banker on the game's own window, as Deals on the auction house
   (`src/Economy/Banker.lua`): the name kept per realm and faction for the account; the bags' trade goods and reagents
   (item classes Trade Goods and Reagent, not bound), an item unticked kept back; mails of twelve, the first on the
-  click, the next on `MAIL_SEND_SUCCESS`; open first except on the banker or with nothing to send.* *More, 2026-11-09 (Saneroki): "Can you also send profession items to the banker and while speedleveling is turned on it aldo sends it totally automatically." The item classes Recipe and Profession go too (the bags' category Professions); the option Send by itself (`bankerAuto`), on in the profile Speedleveling by Core's presets: Send runs as the mailbox opens, Shift held leaves it to the player.* Still to come: the inbox with *Take all* (Blizzard's own *Open All* takes one mail after the
+  click, the next on `MAIL_SEND_SUCCESS`; open first except on the banker or with nothing to send.* *More, 2026-11-09 (Saneroki): "Can you also send profession items to the banker and while speedleveling is turned on it aldo sends it totally automatically." The item classes Recipe and Profession go too (the bags' category Professions); the option Send by itself (`bankerAuto`), on in the profile Speedleveling by Core's presets: Send runs as the mailbox opens, Shift held leaves it to the player.* *Changed, 2026-11-11 (Saneroki): "Remove the extra tab but add a checkbox to the send tab that toggles to send to banker. If that checkbox is ticked the mail window will always open the send to tab, fill out the banker's name, in the subject the current date and add all the reagents, trade goods, waylaid crates and writs that are not soulbound to the mail. So when it is ticked you only need to press the send button. If it is unticked it behaves normally." The tab is gone; the tick Send to banker stands on the game's Send Mail tab, right of the window's tabs (`src/Economy/Banker.lua`), kept per realm and faction with the banker (the name in To: while ticked). Ticked, the mailbox opens on Send Mail filled in for the game's own Send, the next mail after each that went; unticked, ours comes off. What goes: Trade Goods, Reagent, and Forever's crafting orders by name (waylaid crates and supplies, writs); recipes stay. Send by itself sends the mail filled in. Open on Banker is gone. Not on the banker itself, nor with nothing to go.* Still to come: the inbox with *Take all* (Blizzard's own *Open All* takes one mail after the
   other, waiting for the game between them: `OpenAllMailMixin` in `MailFrame.lua`, the pattern to follow),
   the auction house's mails summed up (sold, bought, expired, with their amounts; the house's cut for
   *Price to post*), sending. The mailbox opens the bags in its show function, not in `OnShow`, so they open
@@ -450,7 +450,7 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
   *Where it stands (Saneroki, 2026-11-09):* "Mail window should open inside the inventory fullscreen with the mail
   window on the left and the bags on the right side." Built on Inventory's full screen (`src/Inventory/Talks.lua`): the
   game's mail window seated there, a letter being read (`OpenMailFrame`, a window of its own) beside it, the bags on the
-  right; the tab Banker goes with the mail window, being its child. Ours takes the same place.
+  right; the tick Send to banker goes with the mail window, being its child. Ours takes the same place.
 - **Guild bank** (`GuildBankFrame`, `Blizzard_GuildBankUI`, loaded on demand; *GuildBanker*;
   `GUILDBANKFRAME_CLOSED`): its tabs in one view with search, the value of each tab, deposit and withdraw,
   the log.
@@ -469,7 +469,7 @@ Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for 
 - *Hide Blizzard's window*, one per window (Saneroki): *Auction house*, *Vendor*, *Trainer*, *Bank* (later
   *Mailbox*, *Guild bank*, *Bags*), each ticked by default.
 - *Undercut* for the price to post.
-- Built: *Open on Deals* and *Open on Banker* (each on by default): the auction house on Deals, the mailbox on Banker.
+- Built: *Open on Deals* (on by default): the auction house on Deals; *Send by itself* (off; on in the profile Speedleveling): with Send to banker ticked, the mail goes as the mailbox opens. The tick Send to banker itself stands on the Send Mail tab, not on this page.
 - Core's section **Expand window** (`Edge.Options`, as on Social's page, made by Core, not by Economy):
   *Can expand to fullscreen*, *Animation type* (*Use global type* by default), the full screen's
   background, the corners. One section for all of Economy's windows (*proposal*: they are one kind of
@@ -636,7 +636,7 @@ The scan and the history are Core's (`Data/Scan.lua`, series *Prices*), not Econ
 5. **Bank and trainer windows.**
 6. **Movement and Sales,** and the price history, once *sold between two scans* guesses the player's own
    auctions right.
-7. **Mailbox, guild bank and bags.** The mailbox's tab Banker is built (2026-11-07, *More windows*).
+7. **Mailbox, guild bank and bags.** The mailbox's Send to banker is built (2026-11-07 as a tab, 2026-11-11 as a tick on Send Mail, *More windows*).
 
 ## Open questions
 

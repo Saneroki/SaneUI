@@ -2,47 +2,42 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Economy - Banker
---  The tab Banker on the game's mail window, in the game's own look, and open
---  first (the option Open on Banker):
+--  Send to banker: a tick on the game's Send Mail tab, right of the window's
+--  tabs (Saneroki, 2026-11-11; in the place of the tab Banker of 2026-11-07):
 --
---      To: [ Droopy Fairwind            ]
---          Remembered for your Alliance characters on Argent Dawn
---      [x] [] Linen Cloth x47                         3 stacks
---      [x] [] Copper Ore x20
---      [ ] [] Holy Candle x5                     stays with you
---      14 stacks in 2 mails                          [ Send ]
+--      [ Inbox ][ Send Mail ]  [x] Send to banker   1 more mail
 --
---  What goes (Banker.Goods): every trade good, reagent and profession item in
---  the bags (the game's item classes Trade Goods and Reagent, as the bags'
---  category Trade Goods, and Recipe and Profession, as its category
---  Professions; Saneroki, 2026-11-09), not bound and not locked. An item
---  unticked stays with you at every mailbox until it is ticked again
---  (store.kept, by item ID, for the account).
---  The banker's name is kept for the account, one per realm and faction
---  (store.bankers), since mail goes only to a character of both.
+--  Ticked, the mailbox opens on Send Mail, its To: holds your banker, its
+--  subject today's date, and every trade good, reagent, waylaid crate and writ
+--  in the bags that is not soulbound is on the mail: press Send. A mail holds
+--  ATTACHMENTS_MAX_SEND stacks; when one went (MAIL_SEND_SUCCESS, after which
+--  the game empties its boxes) the next is filled in the same way, for the next
+--  press. Unticked, what we put there comes off again, and the tab is the
+--  game's as ever.
 --
---  Send puts the stacks into mails of ATTACHMENTS_MAX_SEND each, by the game's
---  own calls (PickupContainerItem, ClickSendMailItemButton, SendMail): the
---  first on the click, each next one when the game says the last went
---  (MAIL_SEND_SUCCESS), until nothing is left. A mail the game refuses
---  (MAIL_FAILED) gets its items back into the bags and the game's reason on the
---  line (its UI_ERROR_MESSAGE). One the game neither sends nor refuses within
---  WAIT seconds (a question of the game's still open, a send it held back)
---  leaves the button to the player: Send again tries that mail once more.
+--  The banker is the name in To: while the tick is on (typed there once),
+--  kept for the account per realm and faction (store.bankers), since mail goes
+--  only to a character of both; the tick too (store.toBanker). On the banker
+--  itself, and with nothing to go, the mailbox opens on the inbox as ever.
 --
---  It does not open first on the banker itself, nor when a banker is named and
---  nothing would go to it: then the inbox is what is wanted.
+--  What goes (Banker.Goods): the item classes Trade Goods and Reagent (the
+--  bags' category Trade Goods), and Forever's crafting orders, told by the
+--  game's English names (Sane UI's clients are English): "Waylaid Crate",
+--  "Waylaid Crate: Journeyman Ore", "Waylaid Supplies: Copper Bars", "Sealed
+--  Apprentice's Writ", "Craftsman's Writ: Wizardweave Turban"; never what is
+--  bound or locked, never a quest item.
 --
 --  Send by itself (the option bankerAuto, on in the profile Speedleveling:
---  Core's Presets.lua; Saneroki, 2026-11-09): with a banker named and something
---  to go, the mailbox opens on Banker and the first mail goes at once, as on a
---  click, the others after it as ever. Shift held as the mailbox opens leaves
---  it to the player, as at a vendor.
+--  Core's Presets.lua; Saneroki, 2026-11-09): with the tick on, the mail goes
+--  as the mailbox opens, each next one as the last went, until nothing is left
+--  or the game refuses one. Shift held as the mailbox opens leaves it to you.
 --
---  Nothing is written into the game's window, as with Deals (Tab.lua): our page
---  covers its page, our tab stands after its tabs and marks them as not chosen
---  with the game's own calls while ours is, and a hook on MailFrameTab_OnClick
---  tells when it wants its page back (its tabs, a reply, the window opened).
+--  The game's window stays the game's: the tick is a frame of ours on its Send
+--  Mail page; what is filled in is what a player types and drags (its boxes'
+--  SetText; C_Container.PickupContainerItem, then ClickSendMailItemButton into
+--  a free slot only), and its own button sends. A hook on MailFrameTab_OnClick
+--  tells when Send Mail opens; a reply (SendMailFrame.sendMode "reply", set
+--  right after the game opens the tab for it) gets nothing of ours.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Ask = Core.Ask
@@ -51,36 +46,34 @@ ns.Banker = Banker
 
 local TEXT, SIZE = ns.TEXT, ns.SIZE.banker
 local CLASS = Enum and Enum.ItemClass or {}
--- The game's item classes that go: the bags' categories Trade Goods and Professions (Forever has no item of the class
--- Profession; its profession items are the recipes).
-local GOODS = { [CLASS.Tradegoods or 7] = true, [CLASS.Reagent or 5] = true, [CLASS.Recipe or 9] = true,
-                [CLASS.Profession or 19] = true }
-local SOFT = { 0.7, 0.7, 0.7 }  -- small words, and what stays
-local WAIT = 10                 -- seconds a mail may take before the button is the player's again
-local STEP = 0.5                -- seconds after a mail went before the next is put together: the bags catch up
-local LETTERS = 77              -- the most a name may have, as in the game's own box for it
-local BASE_LEVEL = 100          -- our page over the game's pages, under its portrait and border
+local GOODS = { [CLASS.Tradegoods or 7] = true, [CLASS.Reagent or 5] = true } -- the game's item classes that go
+local QUEST = CLASS.Questitem or 12
+local ORDERS = { "^Waylaid ", "Writ$", "Writ[:%s%-]" } -- the crafting orders' names: crates, supplies, writs
+local STEP = 0.5        -- seconds after a change before the mail is filled in: the bags and the game's boxes catch up
+local LETTERS = 77      -- the most a name may have, as in the game's own box for it
 
-local page, tab, box, empty, nameBox, note, summary, status, send
--- The mails going out: { name, sent, total, busy, at, error, attached = { [slot] = true }, skip = { ["bag:slot"] = true } }
-local run = nil
+local tick, more
+local ours = {}         -- [slot] = true: what we put on the mail
+local wrote = {}        -- what we wrote into the game's boxes: { name, subject }
+local auto = false      -- Send by itself, for this visit to the mailbox
+local sending = false   -- a mail Send by itself sent is on its way: no second one until the game answers
 local given = false
 
-local function Now()
-    return Ask(rawget(_G, "GetTime")) or 0
+local function Trim(text)
+    return type(text) == "string" and text:match("^%s*(.-)%s*$") or ""
 end
 
-local function Many(count, words)
-    return ("%d %s"):format(count, count == 1 and words[1] or words[2])
+local function Box(name)
+    return rawget(_G, name)
 end
 
 -------------------------------------------------------------------------------
---  What is kept: the bankers by realm and faction, the items kept back
+--  What is kept: the banker and the tick, by realm and faction
 -------------------------------------------------------------------------------
 local function Store()
     local store = ns.store
     if type(store.bankers) ~= "table" then store.bankers = {} end
-    if type(store.kept) ~= "table" then store.kept = {} end
+    if type(store.toBanker) ~= "table" then store.toBanker = {} end
     return store
 end
 
@@ -89,10 +82,6 @@ local function Place()
     local realm = Ask(rawget(_G, "GetNormalizedRealmName")) or "?"
     local side, sideName = Ask(UnitFactionGroup, "player")
     return realm .. "|" .. (side or "?"), Ask(rawget(_G, "GetRealmName")) or realm, sideName or side or ""
-end
-
-local function Trim(text)
-    return type(text) == "string" and text:match("^%s*(.-)%s*$") or ""
 end
 
 -- The banker of the realm and faction you play: a name, or nil.
@@ -106,6 +95,15 @@ function Banker.SetName(name)
     Store().bankers[(Place())] = name ~= "" and name or nil
 end
 
+-- Whether the tick is on, for the realm and faction you play.
+function Banker.On()
+    return Store().toBanker[(Place())] == true
+end
+
+function Banker.SetOn(on)
+    Store().toBanker[(Place())] = on and true or nil
+end
+
 -- Whether a name is the character you play: on Forever its whole name, elsewhere its name with or without the realm.
 function Banker.IsMe(name)
     local mine = Core.FullName("player")
@@ -116,13 +114,11 @@ function Banker.IsMe(name)
     return not Core.Surnames() and realm ~= nil and (mine .. "-" .. realm):lower() == name
 end
 
--- Whether an item stays with you.
-function Banker.Kept(id)
-    return Store().kept[id] == true
-end
-
-function Banker.Keep(id, keep)
-    Store().kept[id] = keep and true or nil
+-- The banker to fill in now: named, and not the character you play.
+local function Target()
+    local name = Banker.Name()
+    if name and not Banker.IsMe(name) then return name end
+    return nil
 end
 
 -------------------------------------------------------------------------------
@@ -135,45 +131,49 @@ local function Class(id)
     return ok and Core.Plain(class) or nil
 end
 
+-- A crafting order of Forever's: a waylaid crate or supplies, a writ.
+local function Order(name)
+    if type(name) ~= "string" then return false end
+    for _, pattern in ipairs(ORDERS) do
+        if name:find(pattern) then return true end
+    end
+    return false
+end
+
+local function Goes(info, id)
+    if Core.Plain(info.isBound) or Core.Plain(info.isLocked) then return false end
+    local class = Class(id)
+    if GOODS[class] then return true end
+    if class == QUEST then return false end
+    return Order(Core.Plain(info.itemName) or Ask(C_Item.GetItemNameByID, id))
+end
+
 -- The bags carried: the backpack, the bags, the reagent bag where there is one.
 local function LastBag()
     local constants = Constants and Constants.InventoryConstants or {}
     return (constants.NumBagSlots or rawget(_G, "NUM_BAG_SLOTS") or 4) + (constants.NumReagentBagSlots or 0)
 end
 
--- The trade goods and reagents in the bags: the lines to show, one an item ({ id, count, stacks, kept, link }), and
--- the stacks that go ({ bag, slot, id }), both in the bags' order.
+-- The stacks in the bags that go to the banker and are not on a mail yet: { { bag, slot, id }, ... }, in the bags' order.
 function Banker.Goods()
-    local lines, stacks, seen = {}, {}, {}
+    local stacks = {}
     local container = C_Container
-    if not (container and container.GetContainerItemInfo) then return lines, stacks end
+    if not (container and container.GetContainerItemInfo) then return stacks end
     for bag = 0, LastBag() do
         for slot = 1, Ask(container.GetContainerNumSlots, bag) or 0 do
             local info = Ask(container.GetContainerItemInfo, bag, slot)
             local id = type(info) == "table" and Core.Plain(info.itemID)
-            if id and not Core.Plain(info.isBound) and not Core.Plain(info.isLocked) and GOODS[Class(id)] then
-                local line = seen[id]
-                if not line then
-                    line = { id = id, count = 0, stacks = 0, kept = Banker.Kept(id), link = Core.Plain(info.hyperlink) }
-                    seen[id], lines[#lines + 1] = line, line
-                end
-                line.count, line.stacks = line.count + (Core.Plain(info.stackCount) or 1), line.stacks + 1
-                if not line.kept then stacks[#stacks + 1] = { bag = bag, slot = slot, id = id } end
-            end
+            if id and Goes(info, id) then stacks[#stacks + 1] = { bag = bag, slot = slot, id = id } end
         end
     end
-    return lines, stacks
+    return stacks
 end
 
 -------------------------------------------------------------------------------
---  Sending
+--  The mail
 -------------------------------------------------------------------------------
 local function Max()
     return rawget(_G, "ATTACHMENTS_MAX_SEND") or 12
-end
-
-local function Mails(stacks)
-    return math.ceil(stacks / Max())
 end
 
 local function Has(slot)
@@ -184,393 +184,215 @@ local function Cursor()
     return Ask(rawget(_G, "GetCursorInfo"))
 end
 
-local Draw
-
-local function Say(word)
-    if status then status:SetText(word or "") end
+-- Whether the game's Send Mail page shows a mail of the player's own writing (not a reply).
+local function Showing()
+    local page = Box("SendMailFrame")
+    return page ~= nil and Core.Plain(page:IsVisible()) == true and page.sendMode ~= "reply"
 end
 
-local function Stop(word)
-    run = nil
-    Say(word)
-    Draw()
+-- What stands beside the tick: how many more mails it takes after this one.
+local function Count()
+    if not more then return end
+    local left = Banker.On() and Target() and #Banker.Goods() or 0
+    local mails = math.ceil(left / Max())
+    more:SetText(mails > 0 and TEXT.bankerMore:format(mails, mails == 1 and TEXT.bankerMail[1] or TEXT.bankerMail[2]) or "")
 end
 
--- Our items out of the mail and back into the bags, as the game's right click on an attachment does.
-local function Unattach()
-    if not run then return end
-    for slot in pairs(run.attached) do
-        if Has(slot) then Ask(rawget(_G, "ClickSendMailItemButton"), slot, true) end
-    end
-    run.attached = {}
-end
-
--- Up to a mail's worth of stacks into the mail, each as the game does it: picked up, put on an attachment. A stack the
--- game will not take goes back from the cursor into its bag, and is not tried again in this run.
+-- Stacks into the mail's free slots, each as a player does it: picked up, put on an attachment. A stack the game will not
+-- take goes back from the cursor into its bag.
 local function Attach(stacks)
-    local pick, put = C_Container.PickupContainerItem, rawget(_G, "ClickSendMailItemButton")
-    local slot = 0
-    for _, stack in ipairs(stacks) do
-        if slot >= Max() then break end
-        Ask(pick, stack.bag, stack.slot)
-        if Cursor() == "item" then
-            Ask(put, slot + 1)
-            if Cursor() then
-                Ask(rawget(_G, "ClearCursor"))
-                run.skip[stack.bag .. ":" .. stack.slot] = true
-            else
-                slot = slot + 1
-                run.attached[slot] = true
+    local pick, put = C_Container.PickupContainerItem, Box("ClickSendMailItemButton")
+    local slot, index = 1, 1
+    while slot <= Max() and index <= #stacks do
+        if Has(slot) then
+            slot = slot + 1
+        else
+            local stack = stacks[index]
+            index = index + 1
+            Ask(pick, stack.bag, stack.slot)
+            if Cursor() == "item" then
+                Ask(put, slot)
+                if Cursor() then
+                    Ask(Box("ClearCursor"))
+                else
+                    ours[slot] = true
+                    slot = slot + 1
+                end
             end
         end
     end
 end
 
--- The stacks that go and are still to be tried in this run.
-local function Left()
-    local _, stacks = Banker.Goods()
-    local left = {}
-    for _, stack in ipairs(stacks) do
-        if not run.skip[stack.bag .. ":" .. stack.slot] then left[#left + 1] = stack end
+-- What we put on the mail and into its boxes taken off again: the items back into the bags, our words out of the boxes.
+local function Unfill()
+    for slot in pairs(ours) do
+        if Has(slot) then Ask(Box("ClickSendMailItemButton"), slot, true) end
     end
-    return left
+    ours = {}
+    local to, subject = Box("SendMailNameEditBox"), Box("SendMailSubjectEditBox")
+    if to and wrote.name and to:GetText() == wrote.name then to:SetText("") end
+    if subject and wrote.subject and subject:GetText() == wrote.subject then subject:SetText("") end
+    wrote = {}
 end
 
-local Overdue -- a mail that takes too long (below)
-
--- After a mail went the game puts the keys into its own box for a name (SendMailFrame_Reset), hidden under our page:
--- they are let go, or typing would end up there.
-local function Unfocus()
-    local theirs = rawget(_G, "SendMailNameEditBox")
-    if theirs and theirs:HasFocus() and not theirs:IsVisible() then theirs:ClearFocus() end
-end
-
--- The next mail: put together (or the one already in the mail again, after Send again) and sent.
-local function Next()
-    if not run then return end
-    Unfocus()
-    if ns.off or not (page and page:IsShown()) then
-        Unattach()
-        run = nil
+-- Send by itself: the mail as filled in, sent as the game's Send does (its button waits until the game answers).
+local function SendNow()
+    if sending or not (auto and next(ours) and Showing()) or ns.off then return end
+    local to, subject, body = Box("SendMailNameEditBox"), Box("SendMailSubjectEditBox"), Box("SendMailBodyEditBox")
+    if not (to and subject) then return end
+    if (Ask(Box("GetSendMailPrice")) or 0) > (Ask(GetMoney) or 0) then
+        auto = false -- too little for the postage: the game's own shows it in red
         return
     end
-    if next(run.attached) == nil then
-        if Cursor() then return Stop(TEXT.bankerCursor) end
-        for slot = 1, Max() do
-            if Has(slot) then return Stop(TEXT.bankerAttached) end
+    local button = Box("SendMailMailButton")
+    if button then button:Disable() end
+    sending = true
+    Ask(Box("SendMail"), to:GetText(), subject:GetText(), body and body:GetText() or "")
+end
+
+-- The mail to the banker filled in, where the tick is on and the player writes on Send Mail: the stacks into the free
+-- slots, then To: and the subject where they are empty. Nothing to go: nothing is touched.
+local function Fill()
+    if ns.off or not Banker.On() or not Showing() then return Count() end
+    local name = Target()
+    local to, subject = Box("SendMailNameEditBox"), Box("SendMailSubjectEditBox")
+    if not (name and to and subject) then return Count() end
+    local stacks = Banker.Goods()
+    if #stacks > 0 and not Cursor() then Attach(stacks) end
+    if next(ours) then
+        if Trim(to:GetText()) == "" then
+            to:SetText(name)
+            wrote.name = name
         end
-        local stacks = Left()
-        if #stacks > 0 then
-            run.total = run.sent + Mails(#stacks)
-            Attach(stacks)
-        end
-        if next(run.attached) == nil then -- all gone, or what is left the game will not take
-            local word = #stacks > 0 and TEXT.bankerNone or nil
-            if run.sent > 0 then word = TEXT.bankerSent:format(run.name, Many(run.sent, TEXT.bankerMail)) end
-            return Stop(word)
+        if Trim(subject:GetText()) == "" then
+            wrote.subject = date(TEXT.bankerDate)
+            subject:SetText(wrote.subject)
         end
     end
-    local price = Ask(rawget(_G, "GetSendMailPrice")) or 0
-    if price > (Ask(GetMoney) or 0) then
-        Unattach()
-        return Stop(TEXT.bankerPostage:format(Core.Coins(price) or ""))
-    end
-    local subject = TEXT.bankerSubject
-    if run.total > 1 then subject = TEXT.bankerOf:format(subject, run.sent + 1, run.total) end
-    run.busy, run.error, run.at = true, nil, Now()
-    Ask(rawget(_G, "SendMail"), run.name, subject, "")
-    Overdue()
-    Draw()
+    Count()
+    SendNow()
 end
-local NextSoon = Core.Later(Next, STEP)
-
--- Looked at each second while a mail is on its way: one that has neither gone nor been refused in WAIT seconds leaves
--- the button to the player again (Send again).
-local function Late()
-    if not (run and run.busy) then return end
-    if Now() - run.at < WAIT then return Overdue() end
-    run.busy = false
-    Say(TEXT.bankerSlow)
-    Draw()
-end
-Overdue = Core.Later(Late, 1)
-
--- The button: the first mail on the click, the others as each went.
-local function Send()
-    if ns.off or (run and run.busy) then return end
-    local name = Banker.Name()
-    if not name or Banker.IsMe(name) then return end
-    if nameBox:HasFocus() then nameBox:ClearFocus() end
-    if run then
-        run.name = name
-    else
-        run = { name = name, sent = 0, total = 0, attached = {}, skip = {} }
-    end
-    Say("")
-    Next()
-end
-
-local function Sent()
-    if not run then return Draw() end
-    run.sent, run.busy, run.attached = run.sent + 1, false, {}
-    Draw()
-    NextSoon()
-end
-
-local function Failed()
-    if not (run and run.busy) then return end
-    local why = run.error
-    Unattach()
-    Stop(why and TEXT.bankerRefused:format(why) or TEXT.bankerFailed)
-end
-
--- What the game says is wrong while a mail of ours is on its way: the reason it is refused (no such player, ...).
-local function Refused(_, message)
-    if run and run.busy and type(message) == "string" then run.error = message end
-end
+local FillSoon = Core.Later(Fill, STEP)
 
 -------------------------------------------------------------------------------
---  A line
+--  The tick
 -------------------------------------------------------------------------------
-local function Toggle(tick)
-    local row = tick:GetParent()
-    if not row.line then return end
-    Banker.Keep(row.line.id, not tick:GetChecked())
-    Core.Sound(tick:GetChecked() and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
-    Draw()
-end
-
-local function Enter(row)
-    local line = row.line
-    if not line then return end
-    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
-    if line.link then GameTooltip:SetHyperlink(line.link) else GameTooltip:SetItemByID(line.id) end
-    GameTooltip:Show()
-end
-
-local function Leave()
-    GameTooltip:Hide()
-end
-
-local function Make(row)
-    row:SetHeight(SIZE.row)
-    row:EnableMouse(true)
-    row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
-    row.tick = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
-    row.tick:SetSize(SIZE.tick, SIZE.tick)
-    row.tick:SetPoint("LEFT", 2, 0)
-    row.tick:SetScript("OnClick", ns.Guard(Toggle))
-    Core.Tip(row.tick, TEXT.bankerTick, TEXT.bankerTickTip)
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(SIZE.icon, SIZE.icon)
-    row.icon:SetPoint("LEFT", row.tick, "RIGHT", 4, 0)
-    row.note = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.note:SetPoint("RIGHT", -6, 0)
-    row.note:SetTextColor(SOFT[1], SOFT[2], SOFT[3])
-    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
-    row.name:SetPoint("RIGHT", row.note, "LEFT", -6, 0)
-    row.name:SetJustifyH("LEFT")
-    row.name:SetWordWrap(false)
-    row:SetScript("OnClick", ns.Guard(function(self) self.tick:Click() end))
-    row:SetScript("OnEnter", ns.Guard(Enter))
-    row:SetScript("OnLeave", ns.Guard(Leave))
-    row.made = true
-end
-
-local function Fill(row, line)
-    if not row.made then Make(row) end
-    row.line = line
-    row.icon:SetTexture(Ask(C_Item.GetItemIconByID, line.id))
-    row.icon:SetDesaturated(line.kept)
-    local name = ns.NameOf(line.id)
-    row.name:SetText(line.count > 1 and ("%s x%d"):format(name, line.count) or name)
-    if line.kept then row.name:SetTextColor(SOFT[1], SOFT[2], SOFT[3]) else row.name:SetTextColor(ns.Color(line.id)) end
-    row.note:SetText(line.kept and TEXT.bankerStays or (line.stacks > 1 and TEXT.bankerStacks:format(line.stacks)) or "")
-    row.tick:SetChecked(not line.kept)
-end
-
--------------------------------------------------------------------------------
---  The page
--------------------------------------------------------------------------------
-Draw = function()
-    if not (page and page:IsShown()) then return end
-    local lines, stacks = Banker.Goods()
-    box:SetDataProvider(CreateDataProvider(lines), ScrollBoxConstants.RetainScrollPosition)
-    empty:SetText(TEXT.bankerNothing)
-    empty:SetShown(#lines == 0)
-    local name = Banker.Name()
-    local me = name and Banker.IsMe(name)
+local function Tip()
     local _, realm, side = Place()
-    note:SetText((not name and TEXT.bankerNoName) or (me and TEXT.bankerMe) or TEXT.bankerKept:format(side, realm))
-    summary:SetText(#stacks > 0 and TEXT.bankerCount:format(Many(#stacks, TEXT.bankerOne), Many(Mails(#stacks), TEXT.bankerMail)) or "")
-    local word, on = TEXT.bankerSend, #stacks > 0
-    if run and run.busy then
-        word, on = TEXT.bankerSending, false
-    elseif run then
-        word, on = TEXT.bankerAgain, true
-    end
-    send:SetText(word)
-    send:SetEnabled(on and name ~= nil and not me)
-end
-local DrawSoon = Core.Later(Draw, 0.1)
-
-local function Typed(self, byPlayer)
-    if not byPlayer then return end
-    Banker.SetName(self:GetText())
-    DrawSoon()
+    local name = Banker.Name()
+    if name and Banker.IsMe(name) then return TEXT.bankerTip .. "\n\n" .. TEXT.bankerMe end
+    if name then return TEXT.bankerTip .. "\n\n" .. TEXT.bankerWho:format(name, side, realm) end
+    return TEXT.bankerTip .. "\n\n" .. TEXT.bankerNone:format(side, realm)
 end
 
-local function Open()
-    if ns.off or not page then return end
-    local window = MailFrame
-    page:Show()
-    local tabs = type(window.Tabs) == "table" and window.Tabs or {} -- the game's mail window names its tabs instead
-    for index = 1, tonumber(window.numTabs) or 2 do
-        local each = tabs[index] or rawget(_G, "MailFrameTab" .. index)
-        if each then PanelTemplates_DeselectTab(each) end
-    end
-    PanelTemplates_SelectTab(tab)
-    window:SetTitle(TEXT.banker)
-    nameBox:SetText(Banker.Name() or "")
-    Say("")
-    Draw()
-end
-
--- The game wants its page back: ours goes, a mail of ours still in the mail back into the bags.
-local function Close()
-    if not (page and page:IsShown()) then return end
-    page:Hide()
-    PanelTemplates_DeselectTab(tab)
-    PanelTemplates_UpdateTabs(MailFrame)
-    if nameBox:HasFocus() then nameBox:ClearFocus() end
-    if run and not run.busy then
-        Unattach()
-        run = nil
+local function Ticked(box)
+    local on = box:GetChecked() and true or false
+    Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
+    Banker.SetOn(on)
+    if on then
+        local to = Box("SendMailNameEditBox")
+        local typed = to and Trim(to:GetText()) or ""
+        if typed ~= "" and not Banker.IsMe(typed) then Banker.SetName(typed) end
+        Fill()
+    else
+        auto = false
+        Unfill()
+        Count()
     end
 end
 
--- The mailbox closed: the game gives back what was in the mail itself.
-local function Closed()
-    run = nil
-    if nameBox and nameBox:HasFocus() then nameBox:ClearFocus() end
+-- A name typed into To: while the tick is on is the banker; the mail is filled in once it stands there.
+local function Typed(box, byPlayer)
+    if not byPlayer or ns.off or not Banker.On() then return end
+    local name = Trim(box:GetText())
+    if name ~= "" and not Banker.IsMe(name) then Banker.SetName(name) end
+    FillSoon()
+end
+
+-- The game opened Send Mail (its tab, a reply, our own open): filled in a moment later, once a reply has said it is one.
+-- It left it (the inbox, the mailbox's own open): ours comes off, or a reply from the inbox would carry it.
+local function Tabbed(_, id)
+    if id == 2 then
+        FillSoon()
+    elseif not sending then
+        Unfill()
+    end
 end
 
 local function Build()
-    if page or given then return end
-    local window, after = rawget(_G, "MailFrame"), rawget(_G, "MailFrameTab2")
-    if not (window and after) then return end
-    page = CreateFrame("Frame", nil, window)
-    page:SetPoint("TOPLEFT", window, "TOPLEFT", SIZE.left, -SIZE.top)
-    page:SetPoint("BOTTOMRIGHT", window, "BOTTOMRIGHT", -SIZE.right, SIZE.bottom)
-    page:SetFrameLevel(window:GetFrameLevel() + BASE_LEVEL)
-    page:EnableMouse(true)
-    local ground = page:CreateTexture(nil, "BACKGROUND")
-    ground:SetAllPoints(page)
-    ground:SetColorTexture(0, 0, 0, 1)
-
-    -- The banker's name, right of the window's round portrait
-    nameBox = CreateFrame("EditBox", nil, page, "InputBoxTemplate")
-    nameBox:SetSize(SIZE.box, SIZE.boxHigh)
-    nameBox:SetPoint("TOPLEFT", page, "TOPLEFT", SIZE.portrait + SIZE.label, -8)
-    nameBox:SetAutoFocus(false)
-    nameBox:SetMaxLetters(LETTERS)
-    nameBox:HookScript("OnTextChanged", ns.Guard(Typed))
-    nameBox:SetScript("OnEnterPressed", ns.Guard(function(self) self:ClearFocus() end))
-    local label = page:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    label:SetPoint("RIGHT", nameBox, "LEFT", -10, 0)
-    label:SetText(TEXT.bankerTo)
-    note = page:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    note:SetPoint("TOPLEFT", nameBox, "BOTTOMLEFT", -4, -4)
-    note:SetPoint("RIGHT", page, "RIGHT", -6, 0)
-    note:SetJustifyH("LEFT")
-    note:SetTextColor(SOFT[1], SOFT[2], SOFT[3])
-
-    -- The list
-    local inset = CreateFrame("Frame", nil, page, "InsetFrameTemplate")
-    inset:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -SIZE.head)
-    inset:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", 0, SIZE.foot)
-    box = CreateFrame("Frame", nil, inset, "WowScrollBoxList")
-    box:SetPoint("TOPLEFT", inset, "TOPLEFT", 3, -4)
-    box:SetPoint("BOTTOMRIGHT", inset, "BOTTOMRIGHT", -ns.SIZE.scrollbar, 4)
-    local bar = CreateFrame("EventFrame", nil, inset, "MinimalScrollBar")
-    bar:SetPoint("TOPLEFT", box, "TOPRIGHT", 3, -2)
-    bar:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 3, 2)
-    local view = CreateScrollBoxListLinearView()
-    view:SetElementExtent(SIZE.row)
-    view:SetElementInitializer("Button", ns.Guard(Fill))
-    ScrollUtil.InitScrollBoxListWithScrollBar(box, bar, view)
-    empty = inset:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    empty:SetPoint("TOPLEFT", inset, "TOPLEFT", 16, -16)
-    empty:SetPoint("RIGHT", inset, "RIGHT", -16, 0)
-    empty:SetJustifyH("LEFT")
-
-    -- The foot: how much goes, what happened, the button
-    send = CreateFrame("Button", nil, page, "UIPanelButtonTemplate")
-    send:SetSize(SIZE.button, SIZE.buttonHigh)
-    send:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -2, 6)
-    send:SetScript("OnClick", ns.Guard(Send))
-    summary = page:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    summary:SetPoint("TOPLEFT", inset, "BOTTOMLEFT", 6, -4)
-    summary:SetPoint("RIGHT", send, "LEFT", -8, 0)
-    status = page:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    status:SetPoint("TOPLEFT", summary, "BOTTOMLEFT", 0, -3)
-    status:SetPoint("RIGHT", send, "LEFT", -8, 0)
-    for _, words in ipairs({ summary, status }) do
-        words:SetJustifyH("LEFT")
-        words:SetWordWrap(false)
+    if tick or given then return end
+    local page, after = Box("SendMailFrame"), Box("MailFrameTab2")
+    local to = Box("SendMailNameEditBox")
+    if not (page and after and to and Box("MailFrameTab_OnClick")) then return end
+    tick = CreateFrame("CheckButton", nil, page, "UICheckButtonTemplate")
+    tick:SetSize(SIZE.tick, SIZE.tick)
+    tick:SetPoint("LEFT", after, "RIGHT", SIZE.gap, SIZE.lift)
+    tick:SetScript("OnClick", ns.Guard(Ticked))
+    local label = tick.Text -- the template's own label, the game's small font right of the box
+    if not label then
+        label = tick:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+        label:SetPoint("LEFT", tick, "RIGHT", 2, 0)
     end
-    page:Hide()
-
-    -- The game's tab template joins its parent's list of tabs: its parent is a frame of ours, not the game's window.
-    local holder = CreateFrame("Frame", nil, window)
-    holder:SetAllPoints(window)
-    tab = CreateFrame("Button", nil, holder, "PanelTabButtonTemplate")
-    tab:SetText(TEXT.banker)
-    tab:SetPoint("LEFT", after, "RIGHT", -8, 0)
-    PanelTemplates_TabResize(tab)
-    PanelTemplates_DeselectTab(tab)
-    tab:SetScript("OnClick", ns.Guard(function()
-        Core.Sound("IG_SPELLBOOK_OPEN")
-        Open()
-    end))
-
-    hooksecurefunc("MailFrameTab_OnClick", ns.Guard(Close))
+    label:SetText(TEXT.banker)
+    more = tick:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    more:SetPoint("LEFT", label, "RIGHT", 8, 0)
+    Core.Tip(tick, TEXT.banker, Tip)
+    tick:SetChecked(Banker.On())
+    to:HookScript("OnTextChanged", ns.Guard(Typed))
+    hooksecurefunc("MailFrameTab_OnClick", ns.Guard(Tabbed))
 end
 
--- The mailbox opened: on Banker, unless you play the banker, or a banker is named and nothing would go to it. With
--- Send by itself, and Shift not held, what goes is sent at once, whether Banker opens first or not.
+-- The mailbox opened: with the tick on, a banker to send to and something to go, on Send Mail, filled in (and sent, with
+-- Send by itself and Shift not held).
 local function Shown()
     Build()
-    if ns.off or not page then return end
-    local name = Banker.Name()
-    if name and Banker.IsMe(name) then return end
-    local _, stacks = Banker.Goods()
-    if name and #stacks == 0 then return end
-    local auto = name and ns.options.bankerAuto and not Ask(rawget(_G, "IsShiftKeyDown"))
-    if not (auto or ns.options.bankerFirst) then return end
-    Open()
-    if auto then Send() end
+    if ns.off or not tick then return end
+    tick:SetChecked(Banker.On())
+    ours, wrote, auto, sending = {}, {}, false, false
+    Count()
+    if not (Banker.On() and Target()) or #Banker.Goods() == 0 then return end
+    local tab = Box("MailFrameTab2")
+    if not (tab and Core.Plain(tab:IsShown()) == true) then return end -- a trial account sends no mail
+    auto = ns.options.bankerAuto and not Ask(Box("IsShiftKeyDown")) or false
+    MailFrameTab_OnClick(nil, 2) -- as the game's own Reply opens it
+    Fill()
 end
 local ShownSoon = Core.Later(Shown)
+
+-- A mail went: the game has emptied its boxes; the next one is filled in.
+local function Sent()
+    ours, wrote, sending = {}, {}, false
+    if Banker.On() then FillSoon() else Count() end
+end
+
+-- The game refused a mail: Send by itself stops; the mail stays as it was, for the player to see why.
+local function Failed()
+    auto, sending = false, false
+end
+
+-- What came off the mail by the player's hand is no longer ours.
+local function Changed()
+    for slot in pairs(ours) do
+        if not Has(slot) then ours[slot] = nil end
+    end
+end
+
+local function Closed()
+    ours, wrote, auto, sending = {}, {}, false, false
+end
 
 function Banker.Start()
     Core.On("MAIL_SHOW", ns.Guard(ShownSoon))
     Core.On("MAIL_CLOSED", ns.Guard(Closed))
     Core.On("MAIL_SEND_SUCCESS", ns.Guard(Sent))
     Core.On("MAIL_FAILED", ns.Guard(Failed))
-    Core.On("UI_ERROR_MESSAGE", ns.Guard(Refused))
-    Core.On("BAG_UPDATE_DELAYED", ns.Guard(DrawSoon))
+    Core.On("MAIL_SEND_INFO_UPDATE", ns.Guard(Changed))
+    Core.On("BAG_UPDATE_DELAYED", ns.Guard(Count))
 end
 
--- The window as the game made it: our tab and page gone, a mail of ours back into the bags.
+-- The window as the game made it: the tick gone, what we put on the mail back into the bags.
 function Banker.GiveBack()
-    given = true
-    Unattach()
-    run = nil
-    if page then
-        Close()
-        page:Hide()
-    end
-    if tab then tab:Hide() end
+    given, auto, sending = true, false, false
+    Unfill()
+    if tick then tick:Hide() end
 end

@@ -73,7 +73,7 @@ for _, switch in ipairs({ "loot", "corpses", "talk", "walk", "objects", "useOn",
     LEVELING[switch] = true
 end
 
--- Economy's, for Speed Leveling: what goes to the banker is sent at the mailbox without a click (Banker.lua; Saneroki,
+-- Economy's, for Speed Leveling: with Send to banker ticked, the mail to the banker goes at the mailbox without a click (Banker.lua; Saneroki,
 -- 2026-11-09: "while speedleveling is turned on it aldo sends it totally automatically").
 local ECONOMY = { bankerAuto = true }
 

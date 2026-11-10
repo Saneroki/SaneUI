@@ -14,7 +14,7 @@ local _, ns = ...
 --  on the right; the game's mail window on the left (the part mail), a letter
 --  being read beside it (the part letter: the game's own window of it, which
 --  stands on its own beside the mail window), the bags on the right; Economy's
---  tab Banker on the mail window goes with it, being the window's own child.
+--  tick Send to banker on its Send Mail tab goes with it, being the window's own child.
 --  That layout stands behind a tab of its own, first in the
 --  title bar while the talk is on, and is kept as the player arranges it.
 --
