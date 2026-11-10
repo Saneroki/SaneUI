@@ -313,15 +313,32 @@ local function Give(profile, preset)
     end
 end
 
+-- A preset without the CVars the player unticked in the profile (Sync's dropped): a new version of the presets does not
+-- tick them again.
+local function Unticked(profile, preset)
+    local named = type(preset.Sync) == "table" and preset.Sync.named
+    local dropped = type(profile.Sync) == "table" and profile.Sync.dropped
+    if type(named) ~= "table" or type(dropped) ~= "table" or next(dropped) == nil then return preset end
+    local out = {}
+    for name in pairs(dropped) do
+        if type(name) == "string" then out[name:lower()] = true end
+    end
+    local copy = Copy(preset)
+    for name in pairs(named) do
+        if type(name) == "string" and out[name:lower()] then copy.Sync.named[name] = nil end
+    end
+    return copy
+end
+
 -- A standard profile: made if it is not there, for an account that has settings already as a copy of Accountwide's, so
--- that nothing is lost by using it; then what its preset holds, once for each version of the presets. The game's settings
--- in it are this game's from then on (Sync's from: a game's folder holds that game's).
+-- that nothing is lost by using it; then what its preset holds, once for each version of the presets, but for a CVar the
+-- player unticked. The game's settings in it are this game's from then on (Sync's from: a game's folder holds that game's).
 local function Standard(name)
     if not Saved(name) then db.profiles[name] = Copy(Saved(ACCOUNTWIDE)) or {} end
     local presets = Table(db, "presets")
     if presets[name] == Core.Presets.VERSION then return end
     local profile = db.profiles[name]
-    Give(profile, Profiles.PRESET[name] or {})
+    Give(profile, Unticked(profile, Profiles.PRESET[name] or {}))
     local sync = profile.Sync
     if type(sync) == "table" and sync.from == nil then sync.from = Core.GAME end
     presets[name] = Core.Presets.VERSION

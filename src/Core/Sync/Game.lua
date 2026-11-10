@@ -278,6 +278,7 @@ for _, page in ipairs(Sync.PAGES or NONE) do
         text = text,
         tip = TEXT.tips[page.page] or TEXT.page:format(text),
         reload = hasBars and TEXT.bars or nil,
+        Has = function(name) return allowed[name:lower()] == true end,
         Read = function()
             local before = Sync.Taken(page.page)
             if type(before) ~= "table" then before = NONE end
@@ -362,6 +363,12 @@ local function Find()
         end
         part.names, part.has = names[part], has[part]
     end
+    for _, part in ipairs(found) do -- unticked before its CVars were known: theirs kept by name go now (Sync.Unname)
+        if part.unname then
+            part.unname = nil
+            if not Sync.PartKept(part.id) then Sync.Unname(part.id) end
+        end
+    end
 end
 
 -- The names of such a part's CVars on this client once found (empty when the game has none of its
@@ -379,6 +386,11 @@ local function Found(id, group, kind, part)
     part.kind = kind
     found[#found + 1] = part
     part.Prepare = function() Names(part) end
+    -- Whether one of its CVars; nil until they are found (and the job that finds them is started).
+    part.Has = function(name)
+        if not Names(part) then return nil end
+        return part.has[name:lower()] == true
+    end
     part.Read = function()
         local names = Names(part)
         if not names or #names == 0 then return Sync.Taken(id) end

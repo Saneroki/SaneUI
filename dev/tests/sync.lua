@@ -750,6 +750,46 @@ do
     for name in pairs(preset) do options.named[name], W.cvarInfo[name], W.cvars[name] = nil, nil, nil end
 end
 
+-- A part unticked takes the CVars kept by name that are its own with it, once (card #439; Saneroki, 2026-11-10); one
+-- ticked in the CVars tab afterwards is kept all the same, and an untick is remembered (dropped) ----------------
+do
+    local offWas = Core.Copy(options.off)
+    options.named.graphicsQuality, options.named.Sound_EnableReverb, options.named.autoLootDefault = "3", "0", "1"
+    options.named.debugThing = "2"
+    Sync.KeepPart("GRAPHICS_LABEL", false)
+    check(options.named.graphicsQuality == nil and options.dropped.graphicsQuality == true and options.named.Sound_EnableReverb == "0"
+        and options.named.autoLootDefault == "1" and options.named.debugThing == "2",
+        "Graphics unticked: its CVars kept by name are unticked too and remembered so; the others stay kept")
+    Sync.KeepPart("CONTROLS_LABEL", false)
+    check(options.named.autoLootDefault == nil and options.dropped.autoLootDefault == true, "a page's own too (Controls)")
+    W.cvars.graphicsQuality = "1"
+    Sync.Give()
+    check(W.cvars.graphicsQuality == "1", "so nothing of Sane UI's writes graphics any more")
+    Sync.Keep("graphicsQuality", true)
+    check(options.named.graphicsQuality == "1" and options.dropped.graphicsQuality == nil,
+        "ticked in the CVars tab afterwards: kept all the same, the latest word")
+    Sync.KeepPart("GRAPHICS_LABEL", true)
+    Sync.KeepPart("GRAPHICS_LABEL", false)
+    check(options.named.graphicsQuality == nil, "unticked once more, it goes once more")
+    -- Unticked before the game said which CVars Graphics has: they go once it has.
+    Sync.KeepPart("GRAPHICS_LABEL", true)
+    Sync.Keep("graphicsQuality", true)
+    graphics.names, graphics.has = nil, nil
+    Sync.KeepPart("GRAPHICS_LABEL", false)
+    check(options.named.graphicsQuality == "1" and Core.Steps.Running(FINDING), "unticked while the game's CVars are still asked for: nothing yet")
+    Settle()
+    check(options.named.graphicsQuality == nil and options.named.debugThing == "2", "once they are in, its CVars kept by name go")
+    Sync.KeepPart("GRAPHICS_LABEL", true)
+    Sync.KeepPart("GRAPHICS_LABEL", false)
+    check(options.named.debugThing == "2", "a CVar of no part stays whatever part is unticked")
+    -- The presets' own spelling of a name goes with the player's.
+    options.named.SSAOThing = "4"
+    Sync.Keep("ssaothing", false)
+    check(options.named.SSAOThing == nil and options.dropped.ssaothing == true, "unticked by another spelling of its name, it goes too")
+    for _, name in ipairs({ "Sound_EnableReverb", "debugThing" }) do options.named[name] = nil end
+    options.off, options.dropped, W.cvars.graphicsQuality = offWas, {}, nil
+end
+
 -- The bug hunt (card #377): SaneUIDB.hunt holds Sync's writing back ---------------------------------
 do
     for _, name in ipairs({ "huntThing", "keptThing" }) do
@@ -1270,6 +1310,22 @@ do
     Unsaved.Save()
     SettingsPanel:Hide()
     for name, fn in pairs(stubbed) do C_AddOns[name] = fn end
+end
+
+-- The save window: a CVar unticked is one line, and No ticks it again
+do
+    local Unsaved = Core.Unsaved
+    Sync.Keep("debugThing", true)
+    SettingsPanel:Show()
+    Config.CVars.Keep("debugThing", false)
+    W.Wait(0.1) W.Wait(0.4)
+    local changes = Unsaved.Changes()
+    check(#changes == 1 and changes[1] == "CVar debugThing", "a CVar unticked in the CVars tab: one line in the save window")
+    Unsaved.Undo()
+    check(Sync.Kept("debugThing") and options.dropped.debugThing == nil, "No: kept again, and no longer remembered as unticked")
+    SettingsPanel:Hide()
+    Sync.Keep("debugThing", false)
+    options.dropped = {}
 end
 
 -- The save window's No after Edit Mode: the layout takes its own text again

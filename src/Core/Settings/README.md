@@ -36,7 +36,8 @@ it back.
         *Forget* (asks first).
     - *Game settings:* which of the game's settings the profiles keep: a box per group of Sync's parts
       (`Sync.GROUPS`: the game's own options groups, then *Elsewhere in the game*), checkboxes in two columns,
-      kept per profile. All ticked at first; switched off for a character on *Character specific*.
+      kept per profile. All ticked at first; switched off for a character on *Character specific*. Unticking a
+      part unticks its CVars in the tab *CVars* too, once; one ticked there afterwards is kept all the same.
     - *CVars:* *Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with Sane
       UI's settings.* Every CVar of the game in one list, to look up, change and keep:
       - Over the list a search box (a CVar's name, or the label the game's own options give it) and the game's
@@ -298,6 +299,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 
 ## History
 
+- 2026-11-10 — A part unticked in *Game settings* unticks its CVars in the tab *CVars* too (Graphics: our recommended view distance, shadows and frame rate), and an untick there stays when the presets get a new version.
 - 2026-11-10 — A profile chosen while the window waits is the character's from its next login when a `/reload` or logout answers instead; a profile renamed keeps its tick under *Save to* (the one in use renamed lost it, and *Yes* took the changes back), one deleted loses it.
 - 2026-11-10 — The save window keeps what is not answered (Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload"): a `/reload` or logout saves the changes as *Yes* does (was: took them back, and the addon list's *Reload UI*, meant to save first, never did); the *Reload* Sane UI offers no longer waits for the answer. A line in the window says so.
 - 2026-11-09 — The save window (Saneroki): a change in the options, the game's own, Edit Mode or the addon list brings *Save the changes?* beside the menu until *Yes* (into the profiles ticked under *Save to*) or *No* (taken back); the page Profiles has *Save* and *Load last settings*. Another profile and an offered `/reload` wait for the answer; unanswered, a `/reload` or logout takes the changes back.

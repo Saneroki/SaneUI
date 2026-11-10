@@ -25,7 +25,9 @@ the game's own chat channels on every character is the Social module's.)
     filters, the quest log, the calendar, tutorials seen, and whatever else the game keeps per character).
 
   All are ticked at first. The mouse over a checkbox says what it holds. An unticked part is left to the
-  game, which keeps it for each character. A ticked part is read into the profile in use when you log out
+  game, which keeps it for each character; unticking it also unticks, once, its CVars kept by name in the tab
+  *CVars* (our recommended ones among them: Graphics takes the view distance, shadows and frame rate with it). A
+  CVar ticked there afterwards is kept all the same; ticked again, the part keeps its CVars itself. A ticked part is read into the profile in use when you log out
   (and when you make a new profile or use another), and set when a character comes into the game (and when
   another profile comes into use). Each profile keeps its own ticks.
 - **The game shows chat windows and the extra action bars after a `/reload`,** and after another Edit Mode
@@ -66,6 +68,7 @@ the game's own chat channels on every character is the Social module's.)
   | `off` | `[part id] = true` for each part left to the game; every part is kept at first, a new one too |
   | `taken` | `[part id] = data`: what each kept part read last |
   | `named` | `[CVar] = value`: single CVars kept by name (the tab *CVars*, `Sync.Keep`/`Sync.Kept`), our recommended ones among them (`Presets.lua`) |
+  | `dropped` | `[CVar] = true`: one the player unticked (`Sync.Keep`, or its part unticked: `Sync.Unname`); a new version of the presets passes it over (`Profiles.lua`, `Standard`) |
 
   A character that comes over from another profile to one that holds nothing yet of a part with a `Default` (the key
   bindings) gets the game's own there, not what the profile it left had (`Sync.Moved`).
@@ -207,6 +210,7 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-10 — A part unticked takes its CVars kept by name with it, once (Saneroki chose it): Graphics unticked no longer wrote our recommended view distance, shadows and frame rate at every login all the same (`Sync.Unname`, a part's `Has`). A CVar unticked is remembered (`dropped`), so a new version of the presets no longer ticks it again.
 - 2026-11-10 — Channels no longer come back from another character's logout: one taken off every window stays off on every character (`joined`), and an own channel left is left on them all (`left`).
 - 2026-11-10 — The addons' record of the logout only from a session that wrote; the profile's values stamped with the time they changed, its newer word kept over a character's older change (`stamps`).
 - 2026-11-10 — Addons switched on the character screen are kept (Saneroki: "I can't turn off addons"): the login took the profile's list back over them; now what changed since the character's last logout goes into the profile first (`Sync.Outside`).

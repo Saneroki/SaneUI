@@ -1752,6 +1752,16 @@ do
     Core.GAME, Core.Presets = game, presets
     check(SaneUIDB.profiles.Accountwide.Sync.named.screenshotQuality == nil and SaneUIDB.presets.Accountwide == Core.Presets.VERSION,
         "and only once: one the player unticked stays out, until a new version brings what is new")
+    -- A new version: what is new comes, one the player unticked (Sync's dropped) does not (card #439).
+    local version, sync = Core.Presets.VERSION, SaneUIDB.profiles.Accountwide.Sync
+    sync.named.maxFPS, sync.dropped = nil, { ScreenshotQuality = true }
+    Core.Presets.VERSION = version + 1
+    NextSession(SaneUIDB, {})
+    sync = SaneUIDB.profiles.Accountwide.Sync
+    check(sync.named.maxFPS == "115" and sync.named.screenshotQuality == nil and SaneUIDB.presets.Accountwide == version + 1,
+        "a new version of the presets brings what the profile lacks, but not a CVar the player unticked (whatever its spelling)")
+    Core.Presets.VERSION, sync.dropped = version, nil
+    NextSession(SaneUIDB, {})
     UnitGUID = guid
     NextSession(SaneUIDB, {})
     Profiles.Create("Raid")

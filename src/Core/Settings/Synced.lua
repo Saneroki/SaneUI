@@ -14,7 +14,7 @@ local Profiles = Core.Profiles
 
 local TEXT = {
     tab = "Game settings",
-    intro = "The game's own settings the profile in use keeps, so every character that uses it has them: set when a character comes into the world, read back when it leaves. Unticked ones the game keeps for each character, as it does without Sane UI. A character on Character specific keeps none here.",
+    intro = "The game's own settings the profile in use keeps, so every character that uses it has them: set when a character comes into the world, read back when it leaves. Unticked ones the game keeps for each character, as it does without Sane UI, and their CVars in the tab CVars are unticked too. A character on Character specific keeps none here.",
 }
 
 -- One box of checkboxes at y; returns the y under it.

@@ -76,6 +76,8 @@ Sync.PERSONAL = { addons = true, keyBindings = true }
 --      Outside(data, before, now)  what the player changed on the game's screens before the world (the addon list
 --                  at the character screen) put into data, the profile's, so that the login does not undo it:
 --                  before is what Read gave at this character's last logout, now what it gives at the login
+--      Has(name)   whether a CVar is one of the part's (nil while the game is still asked which it has): unticked,
+--                  the part takes those kept by name with it (Sync.Unname)
 Sync.parts = {}
 Sync.part = {}
 
@@ -105,8 +107,31 @@ function Sync.PartKept(id)
     return Sync.options.off[id] == nil
 end
 
+-- Unticked, a part takes the CVars kept by name that are its own with it, once (Saneroki, 2026-11-10: Graphics
+-- unticked unticks its CVars in the tab CVars too, our recommended ones among them); one ticked there afterwards is
+-- kept all the same, the latest word. Ticked again, the part itself keeps them.
 function Sync.KeepPart(id, on)
     Sync.options.off[id] = (not on) or nil
+    if not on then Sync.Unname(id) end
+end
+
+-- The CVars kept by name that a part holds, unticked as in the tab CVars (Sync.Keep). A part that asks the game
+-- which CVars it has, still waiting for the answer, does it once that is in (Game.lua).
+function Sync.Unname(id)
+    local part = Sync.part[id]
+    if not (part and part.Has) then return end
+    local names = {}
+    for name in pairs(Sync.options.named) do
+        if type(name) == "string" then
+            local has = part.Has(name)
+            if has == nil then
+                part.unname = true
+                return
+            end
+            if has then names[#names + 1] = name end
+        end
+    end
+    for _, name in ipairs(names) do Sync.Keep(name, false) end
 end
 
 local given   -- written into the game this session: from now on the parts may be read
@@ -121,19 +146,27 @@ local turned    -- another profile came into use this session: what that changes
 -------------------------------------------------------------------------------
 --  Single CVars kept by name (Settings/CVars.lua)
 -------------------------------------------------------------------------------
--- named: [CVar] = its value, false until it could be read.
+-- named: [CVar] = its value, false until it could be read. dropped: [CVar] = true, unticked by the player, so a
+-- standard profile's presets do not tick it again (Profiles.lua); ticked again, it is the player's to keep.
 function Sync.Kept(name)
     return Sync.options.named[name] ~= nil
 end
 
 function Sync.Keep(name, on)
-    local named = Sync.options.named
+    local named, dropped = Sync.options.named, Sync.options.dropped
     if on and Sync.Barred(name) then return end
+    local lower = name:lower()
+    for key in pairs(dropped) do
+        if type(key) == "string" and key:lower() == lower then dropped[key] = nil end
+    end
     if on then
         named[name] = Sync.Value(name) or named[name] or false
-    else
-        named[name] = nil
+        return
     end
+    for key in pairs(named) do -- the presets' own spelling of it too
+        if type(key) == "string" and key:lower() == lower then named[key] = nil end
+    end
+    dropped[name] = true
 end
 
 -- A name that is no text (a hand-edited file) is left as it is, and one left to another part (Sync.Leave) too.
@@ -431,6 +464,7 @@ end
 --      off     [part id] = true: left to the game, which keeps it per character
 --      taken   [part id] = what the part read last
 --      named   [CVar] = its value: single CVars kept by name
+--      dropped [CVar] = true: one the player unticked, which the presets pass over (Sync.Keep)
 --      from    the game taken and named were read in ("forever", "retail"; Ours): those kept before Sane UI
 --              served two games are Forever's
 --      stamps  [part id] = { [key] = the server's time it last changed in the profile }: of a part with Outside
@@ -438,6 +472,7 @@ Core.Options(Sync.name, {
     { key = "off", default = {} },
     { key = "taken", default = {} },
     { key = "named", default = {} },
+    { key = "dropped", default = {} },
     { key = "from", default = "forever" },
     { key = "stamps", default = {} },
 }, { capture = function() Sync.Capture() end, moved = function() Sync.Moved() end, game = true })

@@ -234,7 +234,7 @@ local function Words(change)
             local part = sync.part and sync.part[path[2]]
             return TEXT.game:format(part and part.text or tostring(path[2]))
         end
-        if path[1] == "named" and path[2] then return TEXT.cvar:format(tostring(path[2])) end
+        if (path[1] == "named" or path[1] == "dropped") and path[2] then return TEXT.cvar:format(tostring(path[2])) end
         return TEXT.kept
     end
     local option = Core.Described(name, path[1])

@@ -17,6 +17,8 @@ The bigger changes of each version, newest first.
   Addons you switch on or off at the character screen stay so too,
   and chat channels you leave or take off every chat tab stay so on
   your other characters.
+  Unticking Graphics or another part under Game settings unticks
+  its CVars too, and a CVar you untick stays unticked.
 - The Banker tab on the mailbox sends your profession items too
   (recipes, patterns, plans). With Speed Leveling on, everything
   goes to your banker by itself as you open the mailbox; hold Shift
