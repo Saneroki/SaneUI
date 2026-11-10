@@ -651,7 +651,8 @@ end
 -- A profile from a text made by Export, under its own name or as; true and its name, or false and why.
 -- The text comes from another player: of the CVars it keeps by name (Sync's named), only the game's
 -- options' stay, so using it sets nothing the game's options could not; the other player's addons and key
--- bindings (Sync.PERSONAL) are not taken, so this character's stay as they are.
+-- bindings (Sync.PERSONAL) are not taken, so this character's stay as they are; nor the channels that player left
+-- (Sync/Chat.lua), which would be left here too.
 function Profiles.Import(text, as)
     local value, why = Core.Serial.Read(text)
     if type(value) ~= "table" then return false, why or TEXT.notProfile end
@@ -673,6 +674,7 @@ function Profiles.Import(text, as)
     local taken = type(game) == "table" and game.taken
     if type(taken) == "table" then
         for id in pairs(Core.Sync.PERSONAL) do taken[id] = nil end
+        if type(taken.ownChannels) == "table" then taken.ownChannels.left = nil end
     end
     db.profiles[fresh] = settings
     Shown()

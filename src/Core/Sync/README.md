@@ -138,8 +138,10 @@ the game's own chat channels on every character is the Social module's.)
     `Add/RemoveChatWindowMessages`, `Add/RemoveChatWindowChannel`, the places of the free ones (not the
     first's, which Edit Mode places) with `SetChatWindowSavedPosition/Dimensions`. The game's chat frames read
     these when the interface loads (`UPDATE_CHAT_WINDOWS`), hence the reload. A window's channels are matched only for
-    those the kept windows name and the character is in or joins in that writing, so what it left is not brought back
-    and a new character's public channels, which Social leaves, are no change. Colours with `ChangeChatColor`
+    those the character is in or joins in that writing, and either the kept windows name or the character that kept
+    them was in (`joined`): one taken off every window is taken off on every character, and does not come back from
+    another one's logout. What a character left is not brought back, and a new character's public channels, which
+    Social leaves and the keeping character was not in, are no change. Colours with `ChangeChatColor`
     and `SetChatColorNameByClass`, which the frames take at once from the game's own events, in our call. The
     game keeps a channel's colour by the channel's number, which differs between characters: it is kept by
     the channel's name and given to this character's channel of that name, whatever its number here. One the
@@ -148,7 +150,11 @@ the game's own chat channels on every character is the Social module's.)
     at all, the profile keeps the colour it had.
   - Your own channels with `JoinPermanentChannel` (into the first chat window, as `/join` does): those whose
     kind is *Custom* (`C_ChatInfo.GetChannelInfoFromIdentifier`), or, without that, not on offer from the
-    game (`EnumerateServerChannels`); not a community's.
+    game (`EnumerateServerChannels`); not a community's. One left (`CHANNEL_LEFT`) is kept as left (`left`) and
+    left with `LeaveChannelByName` on every character of the profile (not while chat is locked down: at the next
+    login), until one joins it again (`YOU_JOINED`). Asked to leave, it no longer counts as joined while the game
+    still lists it, so a capture before the server answers does not bring it back. A profile from another player
+    brings none of that player's left channels.
   - Edit Mode with `C_EditMode.SetActiveLayout`: the manager acts on the game's event itself. The layout is
     found by name and kind in the manager's list (`EditModeManagerFrame.layoutInfo`: presets first, then saved
     layouts, and the active one), which is only read.
@@ -201,6 +207,7 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-10 — Channels no longer come back from another character's logout: one taken off every window stays off on every character (`joined`), and an own channel left is left on them all (`left`).
 - 2026-11-10 — The addons' record of the logout only from a session that wrote; the profile's values stamped with the time they changed, its newer word kept over a character's older change (`stamps`).
 - 2026-11-10 — Addons switched on the character screen are kept (Saneroki: "I can't turn off addons"): the login took the profile's list back over them; now what changed since the character's last logout goes into the profile first (`Sync.Outside`).
 - 2026-11-09 — The save window (Core's `Unsaved.lua`): the kept parts read while a menu is open; its *No* after Edit Mode gives a layout its own text again (`Sync.ExactLayout`).

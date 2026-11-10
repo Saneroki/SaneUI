@@ -918,13 +918,16 @@ check(Profiles.Import("nonsense") == false and Profiles.Import(Core.Serial.Write
 do
     local theirs = Core.Serial.Write({ kind = "Sane UI profile", version = 2, name = "Theirs",
         settings = { Sync = { named = { autoLootDefault = "1", scriptErrors = "1" }, taken = { addons = { One = false },
-            keyBindings = { JUMP = { "X" } }, CONTROLS_LABEL = { cvars = { autoLootDefault = "1" } } } } } })
+            keyBindings = { JUMP = { "X" } }, CONTROLS_LABEL = { cvars = { autoLootDefault = "1" } },
+            ownChannels = { "Raiders", left = { world = "World" } } } } } })
     local sync = Profiles.Import(theirs) and SaneUIDB.profiles.Theirs.Sync
     local named, taken = sync and sync.named, sync and sync.taken
     check(named and named.autoLootDefault == "1" and named.scriptErrors == nil,
         "an imported profile keeps only the single CVars of the game's options")
     check(taken and taken.addons == nil and taken.keyBindings == nil and taken.CONTROLS_LABEL.cvars.autoLootDefault == "1",
         "and nothing of the other player's addons and key bindings; the parts of the game's options stay")
+    check(taken and taken.ownChannels[1] == "Raiders" and taken.ownChannels.left == nil,
+        "their own channels to join, not those they left: this player's characters leave none of theirs")
     SaneUIDB.profiles.Theirs = nil
 end
 

@@ -49,13 +49,49 @@ local function Own(name, offered)
     return nil
 end
 
+-- The player's own channels this character left this session and has not joined again ([lower-case name] = its
+-- name): seen leaving (the game's CHANNEL_LEFT), or asked to leave by Sync (Write), whose answer comes later. Until
+-- it joins one again, it is not counted as in it, even while the game still lists it: a capture before the answer
+-- does not bring it back. Only those the profile kept as the player's own: a city's Trade left outside a city is no
+-- channel of the player's.
+local gone = {}
+
+local function Kept(name)
+    local own = Sync.Taken("ownChannels")
+    for _, kept in ipairs(type(own) == "table" and own or {}) do
+        if type(kept) == "string" and kept:lower() == name:lower() then return true end
+    end
+    return false
+end
+
+Core.On("CHANNEL_LEFT", function(_, name)
+    name = Plain(name)
+    if type(name) == "string" and Kept(name) then gone[name:lower()] = name end
+end)
+Core.On("CHAT_MSG_CHANNEL_NOTICE", function(notice, ...)
+    local base = Plain(select(8, ...)) -- channelBaseName
+    if Plain(notice) == "YOU_JOINED" and type(base) == "string" then gone[base:lower()] = nil end
+end)
+
+-- The own channels left on a character of the profile and not joined again on any since ([lower-case name] = its
+-- name), with those this one left; nil for none. names: those this character is in.
+local function Left(names)
+    local kept, left = Sync.Taken("ownChannels"), {}
+    for key, name in pairs(type(kept) == "table" and type(kept.left) == "table" and kept.left or {}) do
+        if type(key) == "string" and type(name) == "string" then left[key:lower()] = name end
+    end
+    for key, name in pairs(gone) do left[key] = name end
+    for _, name in ipairs(names) do left[name:lower()] = nil end
+    return next(left) and left or nil
+end
+
 -- Read first in the list of parts (Sync.Part order): a channel joined goes into the first chat window,
 -- which the windows' part then puts right.
 Sync.Part("ownChannels", "elsewhere", {
     text = "Your own chat channels",
-    tip = "The chat channels you made or joined yourself, not the game's nor a community's: joined on every character when it logs in. One with a password cannot be joined this way.",
-    -- The names of those this character is in. When the game cannot tell its own from the player's,
-    -- what was kept stays (else the game's would be joined everywhere).
+    tip = "The chat channels you made or joined yourself, not the game's nor a community's: joined on every character when it logs in, and left on every one when you leave it. One with a password cannot be joined this way.",
+    -- The names of those this character is in; left: those left on a character of the profile (Left). When the
+    -- game cannot tell its own from the player's, what was kept stays (else the game's would be joined everywhere).
     Read = function()
         local offered, names = Offered(), {}
         local list = { GetChannelList() } -- number, name, disabled; and so on
@@ -65,13 +101,23 @@ Sync.Part("ownChannels", "elsewhere", {
             if type(name) == "string" and not community then
                 local own = Own(name, offered)
                 if own == nil then return Sync.Taken("ownChannels") end
-                if own then names[#names + 1] = name end
+                if own and not gone[name:lower()] then names[#names + 1] = name end
             end
         end
+        names.left = Left(names)
         return names
     end,
-    -- Joins those it is not in, as the game's /join does: into the first chat window.
+    -- Leaves those left on another character, as the game's /leave does (not while chat is locked down: then at the
+    -- next login), and joins those it is not in, as /join does: into the first chat window.
     Write = function(names)
+        local chat = rawget(_G, "C_ChatInfo")
+        local locked = chat ~= nil and Core.Ask(chat.InChatMessagingLockdown) == true
+        for key, name in pairs(type(names.left) == "table" and names.left or {}) do
+            if type(key) == "string" and type(name) == "string" and Plain(GetChannelName(name)) ~= 0 then
+                gone[key:lower()] = name
+                if not locked then LeaveChannelByName(name) end
+            end
+        end
         for _, name in ipairs(names) do
             if type(name) == "string" and Plain(GetChannelName(name)) == 0 then JoinPermanentChannel(name, nil, 1, 1) end
         end
@@ -189,22 +235,38 @@ local function Joined()
     return names, numbers
 end
 
--- The channels the windows' lists are matched for ([lower-case name] = true): those the kept windows name and this
--- character is in, or joins in this writing (its own). A kept one it is not in stays out: what a character left is not
--- for a window's list to bring back. One no kept window names stays as the game has it: a new character's General,
--- which Social leaves a moment later, is no change to offer a /reload for.
-local function Arranged(tabs)
-    local _, here = Joined()
+-- The channels this character is in ([lower-case name] = true), as a capture counts them: an own channel it is
+-- leaving (gone) is not.
+local function Here()
+    local _, numbers = Joined()
+    local here = {}
+    for key in pairs(numbers) do
+        if not gone[key] then here[key] = true end
+    end
+    return here
+end
+
+-- The channels the windows' lists are matched for ([lower-case name] = true): those this character is in, or joins in
+-- this writing (its own), and either a kept window names or the character that kept them was in (joined): one it was
+-- in and no window showed is taken off every window here too. A kept one this character is not in stays out: what a
+-- character left is not for a window's list to bring back. One the keeping character was not in and no window names
+-- stays as the game has it: a new character's General, which Social leaves a moment later, is no change to offer a
+-- /reload for.
+local function Arranged(data)
+    local here = Here()
     local own = Sync.Taken("ownChannels")
     for _, name in ipairs(type(own) == "table" and own or {}) do
-        if type(name) == "string" then here[name:lower()] = true end
+        if type(name) == "string" and not gone[name:lower()] then here[name:lower()] = true end
     end
     local arranged = {}
     for id = 1, WINDOWS do
-        local tab = tabs[id]
+        local tab = data.tabs[id]
         for _, name in ipairs(type(tab) == "table" and type(tab.channels) == "table" and tab.channels or {}) do
             if type(name) == "string" and here[name:lower()] then arranged[name:lower()] = true end
         end
+    end
+    for key, on in pairs(type(data.joined) == "table" and data.joined or {}) do
+        if type(key) == "string" and on == true and here[key:lower()] then arranged[key:lower()] = true end
     end
     return arranged
 end
@@ -329,16 +391,17 @@ Sync.Part("chatFrames", "elsewhere", {
     text = "Chat windows",
     tip = "The chat windows and their tabs: names, text size, colour, locked or docked, what each shows, where the free ones stand and how big they are (the first stands where Edit Mode puts it), and the colours of the kinds of chat. In place after a /reload.",
     reload = RELOAD,
+    -- joined: the channels this character is in ([lower-case name] = true), for Arranged.
     Read = function()
         local tabs = {}
         for id = 1, WINDOWS do tabs[id] = Tab(id) end
-        return { tabs = tabs, colours = Colours(), channels = Channels() }
+        return { tabs = tabs, colours = Colours(), channels = Channels(), joined = Here() }
     end,
     Write = function(data)
         local changed = false
         wipe(waiting) -- from now on only these settings' channels wait, not those given before
         if type(data.tabs) == "table" then
-            local arranged = Arranged(data.tabs)
+            local arranged = Arranged(data)
             for id = 1, WINDOWS do
                 local want = data.tabs[id]
                 if type(want) == "table" and WriteTab(id, want, arranged) then changed = true end

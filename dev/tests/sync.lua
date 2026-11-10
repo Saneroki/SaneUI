@@ -438,6 +438,73 @@ do
     options.taken.ownChannels, JoinPermanentChannel = ownWas, joinWas
 end
 
+-- Taken off every window, a channel the keeping character was in is taken off another's windows too (it once came back
+-- from the other character's logout). An own channel left on one character is left on the others; one joined again
+-- anywhere is the profile's again. A capture before the server answers a leave does not bring it back.
+do
+    local channelsWere, firstWas, secondWas, ownWas = game.channels, game.windows[1].channels, game.windows[2].channels, options.taken.ownChannels
+    local joinWas, framesWas = JoinPermanentChannel, options.taken.chatFrames
+    local asked, left = {}, {}
+    JoinPermanentChannel = function(name) asked[#asked + 1] = name end
+    LeaveChannelByName = function(name) left[#left + 1] = name end -- answered later: the game lists it meanwhile
+    local function Joined(name)
+        W.Fire("CHAT_MSG_CHANNEL_NOTICE", "YOU_JOINED", "", "", "4. " .. name, "", "", 0, 4, name)
+    end
+    -- A: in General and Trade, Trade shown on no window.
+    game.channels, game.windows[1].channels, game.windows[2].channels = { { 1, "General" }, { 2, "Trade" } }, { "General" }, {}
+    local kept = Sync.part.chatFrames.Read()
+    check(kept.joined.general and kept.joined.trade and not kept.joined.raiders, "the windows' part keeps which channels the character was in")
+    -- B: the same channels, Trade still on its first window.
+    game.windows[1].channels = { "General", "Trade" }
+    local changed = Sync.part.chatFrames.Write(kept)
+    check(changed and #game.windows[1].channels == 1 and game.windows[1].channels[1] == "General",
+        "a channel A was in and showed on no window is taken off B's windows too")
+    -- A new character's General, which A had left (Social): no window named it, A was not in it.
+    kept.joined.general, kept.tabs[1].channels = nil, {}
+    game.windows[1].channels = { "General" }
+    changed = Sync.part.chatFrames.Write(kept)
+    check(not changed and game.windows[1].channels[1] == "General", "one A was not in and no window names stays as the game has it")
+
+    -- A, in two channels of its own, leaves World; the game's Trade left outside a city is none of the player's.
+    options.taken.ownChannels = { "Raiders", "World" }
+    game.channels = { { 1, "General" }, { 2, "Trade" }, { 3, "Raiders" } }
+    W.Fire("CHANNEL_LEFT", 4, "World")
+    W.Fire("CHANNEL_LEFT", 2, "Trade")
+    local own = Sync.part.ownChannels.Read()
+    check(#own == 1 and own[1] == "Raiders" and own.left and own.left.world == "World" and own.left.trade == nil,
+        "an own channel left is kept as left; a game channel left is not")
+    game.channels[4] = { 4, "World" }
+    Joined("World")
+    own = Sync.part.ownChannels.Read()
+    check(#own == 2 and own.left == nil, "joined again, it is the profile's again")
+    game.channels[4] = nil
+    W.Fire("CHANNEL_LEFT", 4, "World")
+    own = Sync.part.ownChannels.Read()
+    options.taken.ownChannels = own -- A's logout
+    -- B, still in World: it leaves it, and joins none of the left.
+    game.channels = { { 1, "General" }, { 2, "Raiders" }, { 3, "World" } }
+    game.windows[1].channels, game.windows[2].channels = { "General" }, { "World" }
+    Sync.part.ownChannels.Write(own)
+    check(#left == 1 and left[1] == "World" and #asked == 0, "B leaves the channel A left, as /leave does, and joins nothing")
+    local again = Sync.part.ownChannels.Read()
+    check(#again == 1 and again[1] == "Raiders" and again.left.world == "World",
+        "read before the server answers (a menu opened at once), World is still left: A does not join it again")
+    changed = Sync.part.chatFrames.Write({ tabs = { { channels = { "General" } }, { channels = {} } }, joined = { general = true, raiders = true } })
+    check(not changed and game.windows[2].channels[1] == "World", "a channel being left is no change to the windows: no /reload for it")
+    -- Chat locked down: nothing is left now, the next login leaves it; it still counts as left.
+    C_ChatInfo = { InChatMessagingLockdown = function() return true end }
+    Sync.part.ownChannels.Write(own)
+    C_ChatInfo = nil
+    check(#left == 1 and Sync.part.ownChannels.Read().left.world == "World", "while chat is locked down nothing is left, and it stays left")
+    -- An older profile, a list alone: joined as before.
+    game.channels = { { 1, "General" } }
+    Sync.part.ownChannels.Write({ "Raiders" })
+    check(#asked == 1 and asked[1] == "Raiders" and #left == 1, "a profile kept before, a list alone, only joins")
+    Joined("World")
+    game.channels, game.windows[1].channels, game.windows[2].channels = channelsWere, firstWas, secondWas
+    options.taken.ownChannels, options.taken.chatFrames, JoinPermanentChannel, LeaveChannelByName = ownWas, framesWas, joinWas, nil
+end
+
 -- Again: nothing differs, so nothing is set, and no dialog -----------------------------------------
 game.calls, W.cvarSets = {}, 0
 local popups = #W.popups
