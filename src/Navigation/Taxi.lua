@@ -10,15 +10,18 @@ local _, ns = ...
 --
 --      the game's   opens its flight map as always (TaxiFrame, or FlightMapFrame where its map asks for that one),
 --                   by its own code; a hook after its OnShow makes it tiny and clear (Core.Lend: never hidden, its
---                   OnHide would end the talk; Doc/guides/windows.md, The holder), and our map fills the screen at
---                   the flight master's map (Window.OpenTo). Its OnHide (a flight taken, the master left) gives it
---                   back as it was, and our map goes back to its corner
+--                   OnHide would end the talk; Doc/guides/windows.md, The holder), and our map fills the screen as
+--                   it always does (Window.OpenTo: both continents, its views, every pin, the quest log; Saneroki,
+--                   2026-11-11: "the exact same map as our normal fullscreen map ... just with the extra big
+--                   flightpaths"; never at the master's own map, Forever's flight maps being maps of their own:
+--                   1463, 1464, 2665). Its OnHide (a flight taken, the master left) gives it back as it was, and our
+--                   map goes back to its corner
 --      the pins     the flight points as the master tells them (C_TaxiMap.GetAllTaxiNodes of its map), Taxi.SIZE
 --                   large, over every other pin and never gathered (Pins.lua, PinView.lua): the one you stand at
 --                   glowing, those you can fly to taken by a click (TakeTaxiNode, as the game's buttons do), the
 --                   rest red, as a flight point not found yet is on the map; the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
 --                   its way there hop by hop (GetNumRoutes, TaxiGetNodeSlot; each hop's path from Core's set
---                   Travel, else straight: Paths.lua)
+--                   Travel, else straight between the two flight points as their continent's map has them: Paths.lua)
 --      ours closed  (Esc, back to the corner) while the master is open: the game's closes too (CloseTaxiMap)
 --
 --  Whatever the switch Show the game's map says (the world map's). No frames of its own.
@@ -37,8 +40,8 @@ local hooked = {}  -- [frame] = true: its OnShow and OnHide followed
 local open         -- the game's flight map ours stands in for now, nil while none
 local lent         -- its lend (tiny and clear)
 local closing      -- ours is closing it (CloseTaxiMap): our map is on its way back already
-local nodes = {}   -- [node ID] = { slot, current, reachable, cost, x, y }, as the master told them when it opened
-local map          -- the flight master's map (GetTaxiMapID)
+local nodes = {}   -- [node ID] = { slot, current, reachable, cost }, as the master told them when it opened
+local map          -- the flight master's map (GetTaxiMapID): a map of its own in Forever, only asked for its nodes
 
 function Taxi.On()
     return open ~= nil
@@ -49,7 +52,7 @@ function Taxi.Node(node)
     return open and node and nodes[node] or nil
 end
 
--- What the master tells: each flight point's slot, state and cost, and where it stands on its map.
+-- What the master tells: each flight point's slot, state and cost.
 local function Read()
     wipe(nodes)
     map = Core.Plain(Core.Ask(rawget(_G, "GetTaxiMapID")))
@@ -60,10 +63,6 @@ local function Read()
         local node, slot, state = Core.Plain(info.nodeID), Core.Plain(info.slotIndex), Core.Plain(info.state)
         if node and slot then
             local entry = { slot = slot, current = state == (states.Current or 0), reachable = state == (states.Reachable or 1) }
-            if type(info.position) == "table" and info.position.GetXY then
-                local x, y = info.position:GetXY()
-                entry.x, entry.y = Core.Plain(x), Core.Plain(y)
-            end
             local copper = entry.reachable and cost and Core.Plain(Core.Ask(cost, slot))
             entry.cost = type(copper) == "number" and copper or nil
             nodes[node] = entry
@@ -94,35 +93,47 @@ function Taxi.Fly(node)
     return true
 end
 
--- A hop's way: its flight's path from Core's set Travel, else straight from the one flight point to the other.
-local function Hop(a, b, plane)
+-- Where each flight point stands in a plane, as its continent's map has them (the game's: Live.Flights): [node] = u, v.
+local function Places(plane)
+    local found = {}
+    for _, info in ipairs(ns.Live.Flights(plane)) do
+        local position, node = info.position, Core.Plain(info.nodeID)
+        local x, y = type(position) == "table" and Core.Plain(position.x), type(position) == "table" and Core.Plain(position.y)
+        if node and type(x) == "number" and type(y) == "number" then
+            local u, v = Coords.MapToPlane(plane, x, y, plane)
+            if u then found[node] = { u = u, v = v } end
+        end
+    end
+    return found
+end
+
+-- A hop's way: its flight's path from Core's set Travel, else straight from the one flight point to the other (places).
+local function Hop(a, b, plane, places)
     for _, key in ipairs(Travel:Keys("byFromNode", a)) do
         local flight = Travel:Get(key)
         if flight and flight.kind == "flight" and flight.toNode == b and type(flight.path) == "table" and #flight.path >= 2 then
             return { kind = "flight", points = ns.Paths.FromPath(flight.path, plane) }
         end
     end
-    local from, to = nodes[a], nodes[b]
-    if not (from and to and from.x and to.x) then return nil end
-    local au, av = Coords.MapToPlane(map, from.x, from.y, plane)
-    local bu, bv = Coords.MapToPlane(map, to.x, to.y, plane)
-    if not (au and bu) then return nil end
-    return { kind = "flight", points = { { map = plane, u = au, v = av }, { map = plane, u = bu, v = bv } } }
+    local from, to = places[a], places[b]
+    if not (from and to) then return nil end
+    return { kind = "flight", points = { { map = plane, u = from.u, v = from.v }, { map = plane, u = to.u, v = to.v } } }
 end
 
--- The way from where one stands to a flight point, hop by hop as the master flies it (Paths.lua draws it); nil where
--- it is no flight point of the master's, or the one one stands at.
-function Taxi.Ways(node)
+-- The way from where one stands to a flight point, hop by hop as the master flies it (Paths.lua draws it), in the plane
+-- of the map its pin stands on (pinMap); nil where it is no flight point of the master's, or the one one stands at.
+function Taxi.Ways(node, pinMap)
     local entry = Taxi.Node(node)
-    local plane = map and Coords.PlaneOf(map)
+    local plane = pinMap and Coords.PlaneOf(pinMap)
     if not entry or entry.current or not entry.reachable or not plane then return nil end
+    local places = Places(plane)
     local bySlot = {}
     for id, each in pairs(nodes) do bySlot[each.slot] = id end
     local hops, ways = Core.Plain(Core.Ask(rawget(_G, "GetNumRoutes"), entry.slot)) or 0, {}
     for hop = 1, hops do
         local a = bySlot[Core.Plain(Core.Ask(TaxiGetNodeSlot, entry.slot, hop, true))]
         local b = bySlot[Core.Plain(Core.Ask(TaxiGetNodeSlot, entry.slot, hop, false))]
-        local way = a and b and Hop(a, b, plane)
+        local way = a and b and Hop(a, b, plane, places)
         if way then ways[#ways + 1] = way end
     end
     return ways
@@ -141,7 +152,7 @@ local function Opened(frame)
     open, lent, closing = frame, made, false
     Read()
     ns.Pins.Changed("flights")
-    ns.Window.OpenTo(map)
+    ns.Window.OpenTo() -- the full map as always: never at the master's own map (a map of its own)
 end
 
 -- The game's flight map closed (a flight taken, the master left, ours closed): given back as it was, the flight points

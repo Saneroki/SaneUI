@@ -37,10 +37,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map. On the full map its name stands at the
     top, under the bar, as the game's map writes it: the zone's levels after it, in the colour of how hard they are
-    for you (where the game tells none, as in Forever, the levels of the quests given in that zone, the far few left
-    out; the red mark before them while one is not yet confirmed), and under it the fishing skill its waters ask, from the first catch to where no fish gets away
-    (*Fishing 130-225*), red while you cannot fish there yet, yellow while fish get away, green past it; that skill
-    is the original game's (not yet confirmed: the red mark before it);
+    for you (where the game tells none, as in Forever, the levels of the enemies there, the bulk of them; none for a
+    city or a sanctuary, whose creatures span too wide), and under it the fishing skill its waters ask, from the first catch to where no fish gets away
+    (*Fishing 130-225*), red while you cannot fish there yet, yellow while fish get away, green past it (the original
+    game's skill; no red mark of unconfirmed data on the label, by Saneroki's word);
   - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
     as a click on the game's minimap does (below: theirs). It goes out at once, in the click (the
     game takes a ping only from the click itself), so a double click pings too, with its first click. The game
@@ -297,8 +297,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
-- **At a flight master:** talking to one fills the screen with this map at the master's map in place of the game's
-  flight map: its flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
+- **At a flight master:** talking to one fills the screen with this map in place of the game's flight map, the full
+  map as it always is (both continents, its view, every pin, the quest log): its flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
   way there, hop by hop as the master flies it, and its tooltip says what the flight costs; a click on it flies
   there, as the game's flight map does. A flight point you cannot fly to from here is red, as one you have not found
   yet is everywhere on the map. Back to the corner (Esc)
@@ -520,14 +520,16 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **Label** (`Label.lua`): where the highlight lights a zone up (`Art.Light`), on the full map only, its name at the
   canvas' top under the bar, as Blizzard's map writes it (`AreaLabelDataProvider.lua`: `WorldMapTextFont`,
   `SubZoneTextFont`, scale `Label.SCALE`): the zone (`C_Map.GetMapInfoAtPosition`) with its levels
-  (`C_Map.GetMapLevels`; Forever gives none there and its client tables hold none, so `FromQuests`: the quests of
-  the quest givers on that zone's map, `Data.Map:On`, their `level` in *Quests*, of the player's side or both and of
-  no one class, sorted, `Label.TRIM` at each end left out from `Label.FEW` quests on, kept per zone until Core's
-  places change; `Core.UNCONFIRMED_MARK` before them while one is unverified) in the game's difficulty colours (below you as its highest less two, above you as its
+  (`C_Map.GetMapLevels`; Forever gives none there and its client tables hold none, so `Enemies`: one walk over
+  Core's *CreatureSpawns* (`Each`, a scheduler job, the first time a zone is named), each creature of *NPCs* that is
+  no critter, of no rank in `Label.SKIP` and spans at most `Label.SPAN` levels counting its lowest and highest level
+  once for each of its points on a map; a map's range cut by `Label.LOW` (10 %) of that count at its low end and
+  `Label.HIGH` (20 %) at its high end, none wider than `Label.WIDE` (a city); worked out again when either set
+  changes; the label named again once it is there) in the game's difficulty colours (below you as its highest less two, above you as its
   lowest, else yellow); under it the fishing skill of its area (Core's set *Zones*' `area`, then *Fishing*'s
   `skill`, the original game's base: a cast catches at it, every one `Label.SURE` points over it), from 1 at the
-  least to that, coloured by your fishing skill line with its bonus (`Nodes.Reach`), the red mark before it while
-  unconfirmed (`Core.UNCONFIRMED_MARK`). Out with the highlight (`Art.Unlight`); told anew at a level or a skill.
+  least to that, coloured by your fishing skill line with its bonus (`Nodes.Reach`); no red mark on either line
+  (Saneroki, 2026-11-11). Out with the highlight (`Art.Unlight`); told anew at a level or a skill.
 - **Paths** (`Paths.lua`): kept drawn after a click on the full map (`Paths.Toggle` from `PinView.Act`; `Active`, by
   the pin's flight point or ship, `Key`; the pin glowing, `PinView.Relook`; let go by a second click, by the double
   click's second, `Canvas.lua`, and all by `Paths.Reset` when the full screen goes back or the window hides), and
@@ -542,14 +544,16 @@ is small, and the maps of the dungeons and raids. The plan is in
   `FlightMapFrame` once `Blizzard_FlightMap` has loaded, `EventUtil.ContinueOnAddOnLoaded`), as the game shows them by
   its own code. Shown without Shift (the module up; `nativeMap` is the world map's, not looked at): made tiny and clear (`Core.Lend`,
   `Core.Holder.TINY`, alpha 0: never hidden, its `OnHide` would end the talk), the master's flight points read
-  (`C_TaxiMap.GetAllTaxiNodes` of `GetTaxiMapID`: slot, state, position; `TaxiNodeCost`), `Pins.Changed("flights")`,
-  and the window filled at that map (`Window.OpenTo`). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
+  (`C_TaxiMap.GetAllTaxiNodes` of `GetTaxiMapID`: slot and state; `TaxiNodeCost`), `Pins.Changed("flights")`,
+  and the window filled as always (`Window.OpenTo()`, never at the master's map: Forever's flight maps are maps of
+  their own, 1463, 1464, 2665, none of our planes). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
   node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), red where not reachable (`Pins.RED`, its colour
   taken out first, as a flight point not found), their lines
   `Taxi.Lines`; shown whatever the pin filter says, never gathered, at the pins' top level (`PinView`); a click
   `Taxi.Fly` (`TakeTaxiNode` of its slot; on another a click does nothing, no ping). The mouse on one: `Paths.Show`
   draws `Taxi.Ways`, each hop of `GetNumRoutes`/`TaxiGetNodeSlot` (slots back to nodes) by its flight's path in
-  *Travel* (`Paths.FromPath`), else straight between the two flight points. Its `OnHide`: the lend returned, the
+  *Travel* (`Paths.FromPath`), else straight between the two flight points where the plane of the pin's map has them
+  (`Live.Flights`). Its `OnHide`: the lend returned, the
   pins as always, the window back to its corner (`Window.Back`). The window on its way back (`Filled`, Esc) while it
   is open: `CloseTaxiMap`, so the game closes its own. `Taxi.GiveBack` returns the lend, open.
 - **Corpse** (`Corpse.lua`, no frames): dead (`PLAYER_DEAD`), the game's map pin one had (`Live.Waypoint`,
@@ -1047,6 +1051,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the flight master's map the full map as always; the zones' levels from their enemies:** Saneroki:
+  "the actuall skrying map is not visible and it only shows one continent. Ideally I want the exact same map as our
+  normal fullscreen map": it opened at the master's map, in Forever a map of its own (1463, 1464, 2665), shown alone;
+  now `Window.OpenTo()`. Then: "can you make the zone level the range of the enemies, not the quests? and remove the
+  !. That is not needed here." (`Label.lua` `Enemies`; no red mark on the label's two lines).
 - **2026-11-11, the zones' levels from their quests; the flight master's map whatever the world map's switch says:**
   Forever tells no zone's level range (above), and Saneroki chose "Forever's quest levels": `Label.lua`'s
   `FromQuests`. Then: "the flightmaster still opens only the native window normally": his *Show the game's map* was

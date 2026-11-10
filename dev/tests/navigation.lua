@@ -4271,14 +4271,45 @@ end)()
     for _, widget in ipairs(name and name._parent._children or {}) do if widget ~= name then under = widget end end
     check(name and name._shown ~= false and name._parent._shown and name._text == "Elwynn Forest |cffFFFF00(1-10)|r",
         "the zone under the mouse named over the full map, its levels after it in the colour of how hard they are")
-    check(under and under._text == Core.UNCONFIRMED_MARK .. "|cffFFFF00" .. ns.TEXT.fishing:format(1, 25) .. "|r",
-        "under it the fishing skill its waters ask, yellow while fish get away, marked as not yet confirmed")
-    -- Forever tells no zone's levels: those of the quests given there (Core's data: 100 at 5, 101 at 30; 5 has none).
+    check(under and under._text == "|cffFFFF00" .. ns.TEXT.fishing:format(1, 25) .. "|r",
+        "under it the fishing skill its waters ask, yellow while fish get away, no red mark (not wanted there)")
+    -- Forever tells no zone's levels: those of its enemies (Core's CreatureSpawns and NPCs, stood in for here): wolves
+    -- at 2, boars at 5 and 6, murlocs at 9 and 10, ten points each, two guards at 55 (the high end cut); a rabbit (a
+    -- critter), a pet seen at 7 to 30 and a rare left out.
     C_Map.GetMapLevels = function() end
+    local Creatures, Facts = Core.Data.Set("CreatureSpawns"), Core.Data.Set("NPCs")
+    local each, get = Creatures.Each, Facts.Get
+    local function Points(n)
+        local list = {}
+        for i = 1, n do list[i] = { map = 1429, x = i, y = i } end
+        return list
+    end
+    local spawns = { [901] = Points(10), [902] = Points(10), [903] = Points(10), [904] = Points(2), [905] = Points(20),
+                     [906] = Points(30), [907] = Points(5) }
+    local facts = { [901] = { levelMin = 2, levelMax = 2, kind = "beast" }, [902] = { levelMin = 5, levelMax = 6, kind = "beast" },
+                    [903] = { levelMin = 9, levelMax = 10, kind = "humanoid" }, [904] = { levelMin = 55, kind = "humanoid" },
+                    [905] = { levelMin = 1, kind = "critter" }, [906] = { levelMin = 7, levelMax = 30, kind = "beast" },
+                    [907] = { levelMin = 10, kind = "beast", rank = "rare" } }
+    local walks = 0
+    Creatures.Each = function(_, fn, done)
+        walks = walks + 1
+        for id, points in pairs(spawns) do fn(id, { points = points }) end
+        done(nil)
+        return { Stop = function() end }
+    end
+    Facts.Get = function(_, id, field)
+        local fact = facts[id]
+        if field then return fact and fact[field] end
+        return fact
+    end
     ns.Label.Hide()
     ns.Label.Show(1415, 0.5, 0.65)
-    check(name._text == "Elwynn Forest |cffFFFF00(5-30)|r",
-        "the game telling no levels: those of the quests given in the zone")
+    check(name._text == "Elwynn Forest |cffFFFF00(2-10)|r" and walks == 1,
+        "the game telling no levels: those of the zone's enemies, the bulk by spawn, no red mark")
+    ns.Label.Hide()
+    ns.Label.Show(1415, 0.5, 0.65)
+    check(walks == 1, "worked out once, not at every look")
+    Creatures.Each, Facts.Get = each, get
     ns.Label.Show(1415, 0.9, 0.1)
     check(not name._parent._shown, "over no zone: no label")
     ns.Label.Show(1415, 0.5, 0.65)
@@ -5891,12 +5922,12 @@ end)()
                  { nodeID = 5, name = "Far", position = CreateVector2D(0.39, 0.699), faction = 0, atlasName = "TaxiNode_Neutral" } }
     end
     C_TaxiMap.GetAllTaxiNodes = function(map)
-        if map ~= 1415 then return {} end
+        if map ~= 1463 then return {} end
         return { { nodeID = 2, slotIndex = 1, state = 0, position = CreateVector2D(0.575, 0.6445) },
                  { nodeID = 5, slotIndex = 2, state = 1, position = CreateVector2D(0.39, 0.699) },
                  { nodeID = 6, slotIndex = 3, state = 2, position = CreateVector2D(0.55, 0.7) } }
     end
-    GetTaxiMapID = function() return 1415 end
+    GetTaxiMapID = function() return 1463 end -- (Forever's flight map of the Eastern Kingdoms: a map of its own)
     TaxiNodeCost = function(slot) return slot == 2 and 150 or 0 end
     GetNumRoutes = function(slot) return slot == 2 and 1 or 0 end
     TaxiGetNodeSlot = function(slot, hop, source) return source and 1 or 2 end
@@ -5908,7 +5939,10 @@ end)()
     check(ns.Taxi.On() and scale == Core.Holder.TINY and TaxiFrame._alpha == 0 and TaxiFrame:IsShown()
         and Window.handle.edge.full and Canvas.camera == full,
         "a flight master: the game's flight map open but tiny and clear (its talk goes on), ours fills the screen")
-    full:Look(0, -9250) -- (the test's canvas is small: Elwynn in its middle)
+    -- Our map as it always opens, never at the master's own map (Forever's are maps of their own); then Elwynn whole in
+    -- the test's small canvas, its flight points in view.
+    check(not full.shown and full.map == 1415, "the full map as always: its own plane, both continents, not the master's map")
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height)
     Canvas.Layout()
     local here, there, locked
     for _, widget in ipairs(W.frames) do

@@ -11,7 +11,7 @@ The bigger changes of each version, newest first.
   mouse on it shows the way and what it costs. Hold Shift as you
   talk to the flight master for the game's own.
 - On the full map, the zone under the mouse shows its name, its
-  level range (from its quests) and the fishing skill its waters
+  level range (from its enemies) and the fishing skill its waters
   ask. The mouse on a flight point draws its flights, on a dock its
   ship's whole way, at every zoom; a click keeps them drawn until
   you leave the full map. Routes take the portals of Dalaran and the

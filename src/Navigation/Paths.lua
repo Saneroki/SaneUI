@@ -239,7 +239,7 @@ local function Of(pin)
     if not pin or pin.gathered then return nil end
     local found
     if pin.kind == "flight" then
-        found = ns.Taxi.Ways(pin.taxi) or Flights(pin.id, pin.map)
+        found = ns.Taxi.Ways(pin.taxi, pin.map) or Flights(pin.id, pin.map)
     elseif pin.way and pin.dock then
         found = Ship(pin.way)
     end
