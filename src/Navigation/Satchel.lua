@@ -40,6 +40,11 @@ local _, ns = ...
 --                which Found herbs, Found ore and Found fishing pools switch
 --                (Nodes.lua)
 --
+--  Beside its X, the button with the circling arrows that the game's minimap has
+--  too (Core's Window.Swap; Saneroki, 2026-11-10: "so we have a toggle so we
+--  can go back and forth"): the game's own minimap instead of ours (the switch
+--  Show the game's minimap), and its button Sane UI window brings ours back.
+--
 --  A cell switched on shows its picture whole with a pencil tick, one switched
 --  off faint and grey. Closed the first time the mouse leaves the page (Saneroki,
 --  2026-11-02), its button counting as the page, a menu one of its cells opened
@@ -118,6 +123,8 @@ Satchel.TEXT = {
     stopwatch = Core.Word("STOPWATCH_TITLE", "Stopwatch"),
     stopwatchTip = "The game's stopwatch, on the screen",
     fight = "After the fight: the game opens it only out of one",
+    game = "Classic minimap",
+    gameTip = "The game's own minimap instead of this one. The same button on it brings this one back.",
 }
 
 local button          -- the button on the small map
@@ -689,6 +696,15 @@ local function Build()
     Satchel.frame = panel
     look = Journal.Dress(panel, Satchel.TEXT.title)
     look.close:SetScript("OnClick", ns.Guard(function() Satchel.Close() end))
+    -- The game's minimap instead of ours, as the dropdown Classic windows chooses it (Window.lua): the window rests
+    -- out of sight, and the satchel goes with it.
+    look.swap = Core.Window.Swap(panel, Satchel.TEXT.game, Satchel.TEXT.gameTip, function()
+        Satchel.Close()
+        Core.Set(ns.name, "nativeMinimap", true)
+    end)
+    look.swap:SetPoint("RIGHT", look.close, "LEFT", -2, 0)
+    look.swap:SetFrameLevel(look.close:GetFrameLevel())
+    Satchel.swap = look.swap
     scroll = CreateFrame("ScrollFrame", nil, look.content)
     scroll:SetAllPoints()
     scroll:EnableMouseWheel(true)

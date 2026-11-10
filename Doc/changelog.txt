@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The minimap's satchel has a button to the game's own minimap, and
+  the game's minimap has one back, so you can switch between them.
 - The addon buttons in the minimap's satchel open their addons again,
   and an addon's quest marks on the minimap no longer fill it as
   extra buttons.

@@ -443,7 +443,8 @@ but for a window to try those with (`/sane window`).
     group finder's refresh), tip *Classic window*: `window:Native(true)`. `window:Attach()` puts the same
     button (tip *Sane UI window*, `window:Native(false)`) on the game's window, `RIGHT` of its close button
     (`CloseButton`, or the global *name*`CloseButton`, read raw), at that button's level: a frame of ours,
-    kept in our own table (nothing written into the game's frame), once per window. Not in Edit Mode. Shown
+    kept in our own table (nothing written into the game's frame), once per window. `Window.Swap(parent, text,
+    tip, click)` gives that button, unplaced, to a module's own frame (Navigation's satchel). Not in Edit Mode. Shown
     buttons stand side by side; `buttons.first` is the leftmost. A free or centred window fills the screen by
     its button (Edge's `placed`), and goes back to where it stood.
   - **What a window was left as** (`Remember`, kept in its place table, carried over by every new place;

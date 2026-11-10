@@ -711,6 +711,11 @@ local function Toggle(parent, text, tip, click)
     return Square(parent, { texture = ARROWS }, text, tip, click)
 end
 
+-- That button on a frame of a module's own (Navigation's satchel: the game's minimap instead of ours), unplaced.
+function Window.Swap(parent, text, tip, click)
+    return Toggle(parent, text, tip, click)
+end
+
 -- Full screen (on) or back, by the button: as the edge does it; the button then shows what it is now.
 local function Full(window, on)
     window.edge:Fill(on)

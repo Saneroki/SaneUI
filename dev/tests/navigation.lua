@@ -4545,6 +4545,26 @@ check(Window.frame._alpha == 0 and not Canvas.Laid(), "and rests again once Edit
 Core.Set(ns.name, "nativeMinimap", false)
 check(Hybrid.Taken() and Window.frame._alpha == 1 and Canvas.frame._mouse and Canvas.Laid(), "off again: taken again, our small window back")
 check(W.stray:GetParent() ~= minimap and ns.Satchel.button._shown, "the other addon's button held again, the satchel's button back")
+-- The satchel's button with the circling arrows, as on the game's minimap: there and back (Saneroki, 2026-11-10).
+;(function()
+    local Satchel = ns.Satchel
+    Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
+    local swap = Satchel.swap
+    check(Satchel.Shown() and swap and swap._shown and swap._parent == Satchel.frame and swap._points[1][1] == "RIGHT",
+        "the satchel has the button that swaps the minimaps, beside its X")
+    swap._scripts.OnClick(swap, "LeftButton")
+    check(ns.options.nativeMinimap and not Satchel.Shown() and not Hybrid.Taken() and Window.frame._alpha == 0,
+        "its click: the game's minimap, kept as the dropdown keeps it; ours rests and the satchel is gone")
+    local sane
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
+            and widget ~= W.fixed and not W.marks[widget] then sane = widget end
+    end
+    check(sane and sane._shown, "on the game's minimap its button Sane UI window")
+    sane._scripts.OnClick(sane, "LeftButton")
+    check(not ns.options.nativeMinimap and Hybrid.Taken() and Window.frame._alpha == 1 and Satchel.button._shown,
+        "and that one brings ours back, with the satchel's button")
+end)()
 
 -- The dropdown Classic windows: both kept choices, ticked while chosen, chosen again to come back.
 Window.Toggle()

@@ -101,7 +101,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
 - **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
-  the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit:
+  the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit.
+  Beside its X the button with the circling arrows, *Classic minimap*: the game's own minimap instead of this one
+  (the switch *Show the game's minimap*), and the same button on the game's minimap, *Sane UI window*, brings this
+  one back, so the two go back and forth:
   - **the zone you are in** (its title, with the subzone, as big as the numbers under it and centred, without a
     rule, in the colour the game's minimap gives it: friendly, hostile, contested, a sanctuary; a long one comes out
     smaller, on one line); under it four low boxes, a big number over its word: your local time, the realm's,
@@ -614,7 +617,8 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **The satchel** (`Satchel.lua`): its button on the canvas (level `Canvas.LEVELS.satchel`, over the marks), in the
   corner `Satchel.Place` picks from where the window stands, shown only while the window stands small and is the
   minimap. The page is a frame of its own (strata `DIALOG`) in Core's journal (`Core.Journal.Dress`: paper, leather
-  top, its X), beside the window toward the screen's middle, a scroll frame in it no higher than
+  top, its X; left of the X, at its level, `Satchel.swap`: Core's `Window.Swap`, whose click closes the page and
+  sets `nativeMinimap`, as the dropdown *Classic windows* does), beside the window toward the screen's middle, a scroll frame in it no higher than
   `Satchel.ROOM` of the screen. Its sections, each a title over a pencil rule (the zone's: none, `Title`) and a grid
   of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (first the sound line, `AudioLine.Place`,
   while the client has the game's sound settings, `AudioLine.Offered`; then `Core.Switches`, the modules' quick switches as offered; a
@@ -972,6 +976,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-10, the satchel swaps the minimaps:** Saneroki: "The little button on the native minimap to go back to our
+  own minimap. Can you also add that one to our own minimap bag window so we have a toggle so we can go back and
+  forth". The satchel's page has the same button beside its X (`Satchel.swap`, Core's `Window.Swap`).
 - **2026-11-09, ship times kept, ports in order, quest areas off the minimap, the map across continents:** Saneroki
   found the travel overlay's ship times gone after a reload or a login: Core dropped a ride's times half a day after
   it (`Ships.TRUST`). Now a known round's are kept for good, worked out anew from the clock, every ride correcting
