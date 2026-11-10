@@ -674,13 +674,21 @@ is small, and the maps of the dungeons and raids. The plan is in
   (`Strays.Place`, scaled to the cell's picture; its strata and level the cell's, free while it is held: one fixed
   stayed under the page and the cell took its clicks; fixed again when given back), unseen there (alpha 0) over
   the round picture the satchel draws of it: its own largest
-  texture in the `ARTWORK` layer, else its normal texture (`Strays.Picture`), cut inside its frame where it shows its
-  whole file (`Satchel.TRIM`) and cut round (`Satchel.ROUND`); the ring and background the common buttons have lie in
+  texture in the `ARTWORK` layer that shows (`Shows`: shown, not faded to 0, not a mask; a hidden or faded one is
+  another state of it), else its normal texture (`Strays.Picture`), else its addon's own icon in the addon list (its
+  TOC's `IconTexture` or `IconAtlas`, as the game's compartment takes it), else the game's question mark; a file cut
+  inside its frame where it shows the whole of it (`Satchel.TRIM`), an atlas as the game cuts it (cut as a file it
+  showed a part of another picture), and round (`Satchel.ROUND`); looked at again every `Satchel.EVERY` second while
+  the page shows (an addon may change its picture); the ring and background the common buttons have lie in
   other layers and stay out. Hooks after its `SetPoint` and `SetAlpha` put it back whenever its addon places it
   again or shows it (a drag, its own update, a fade). Looked for at the login, on the next frame (the buttons addons make
   at the login itself, held before another addon that gathers minimap buttons takes them off the minimap a second
   later: `Strays.AGAIN`), 2 and 10 seconds after, a second after each addon that loads, and as the satchel opens. Given back exactly when the game's minimap is the game's again (`Hybrid.Update` tells it) or the
-  module stands down. Its name in the satchel is its addon's title in the addon list (no colours). The game's addon
+  module stands down. Its name in the satchel is its addon's title in the addon list (no colours), its addon the
+  loaded one whose folder's name or title (letters and digits alone, at least `Strays.NAMED`) its own name holds,
+  the one ending last in it, then the longest (`Owner`), else the one `issecurevariable` names: code addons share (a
+  library the first of them loaded for all, or its event handling) runs in the name of that first one, so the game's
+  word alone put one addon's picture under another's title (Saneroki, 2026-11-11). The game's addon
   compartment (`AddonCompartmentFrame.registeredAddons`, both games): each addon a cell of its own, its click
   `entry.func(nil, { buttonName })` and the mouse's coming and going its own, as the game's menu calls them, behind
   `pcall` (a failure there is that addon's: its stack would hold our file, which Core reads as ours). One of the

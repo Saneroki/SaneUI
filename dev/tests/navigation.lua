@@ -1562,12 +1562,12 @@ end)()
     own:SetFixedFrameStrata(true)
     own:SetFrameLevel(8)
     own:SetFixedFrameLevel(true)
-    W.fixed, W.marks = own, {}
+    W.fixed, W.marks, W.others = own, {}, { [own] = true } -- others: other addons' frames the test made
     for index = 1, 3 do
         local mark = W.NewWidget("Button", "PinAddonFrame" .. index, minimap)
         mark:SetSize(16, 16)
         mark:SetPoint("CENTER", minimap, "CENTER", index * 10, 0)
-        W.marks[mark] = true
+        W.marks[mark], W.others[mark] = true, true
     end
     own._mouse = true
     rawset(_G, own._name, own)
@@ -1593,6 +1593,81 @@ end)()
     end
     check(stayed, "that addon's numbered marks on the minimap: no buttons, left where they stand")
     Satchel.Close()
+end)()
+
+-- Each addon's picture under its own title (Saneroki, 2026-11-11: "The icons and names sometimes don't match"). A button
+-- made through code another addon loaded for all (the game says that one set its global) is named by the loaded addon
+-- its own name holds; its picture the texture it shows (not a hidden or faded one), refreshed while the page is open;
+-- a button with none, its addon's own icon; a compartment's atlas whole, not cut as a file.
+;(function()
+    local Satchel = ns.Satchel
+    local function Button(name, setter, art)
+        local button = W.NewWidget("Button", name, minimap)
+        button:SetSize(31, 31)
+        button:SetPoint("CENTER", minimap, "CENTER", -80, 0)
+        button._mouse = true
+        rawset(_G, name, button)
+        W.insecure[name], W.others[button] = setter, true
+        for _, part in ipairs(art) do
+            local texture = button:CreateTexture()
+            texture:SetDrawLayer(part[1])
+            texture:SetTexture(part[2])
+            texture:SetSize(part[3], part[3])
+            if part[4] == "hidden" then texture:Hide() elseif part[4] == "faded" then texture:SetAlpha(0) end
+            button[part[5] or part[2]] = texture
+        end
+        return button
+    end
+    W.addons[#W.addons + 1] = { name = "OtherAddon", title = "Other Addon", metadata = {} }
+    W.addons[#W.addons + 1] = { name = "QuietAddon", title = "Quiet Addon", metadata = {} } -- installed, not loaded
+    W.addons[#W.addons + 1] = { name = "IconlessAddon", title = "Iconless Addon",
+                                metadata = { IconTexture = "Interface\\AddOns\\IconlessAddon\\Icon" } }
+    -- The shared code standing as an addon of its own, loaded: its name first in the button's, the owner's after it.
+    W.addons[#W.addons + 1] = { name = "SharedIcon", title = "Shared Icon", metadata = {} }
+    W.loaded.OtherAddon, W.loaded.IconlessAddon, W.loaded.SharedIcon = true, true, true
+    local other = Button("SharedIconOtherAddon", "SharedIcon", {
+        { "BACKGROUND", 136467, 20 }, { "ARTWORK", 136243, 18, nil, "icon" }, { "ARTWORK", 999, 26, "hidden" },
+        { "ARTWORK", 998, 24, "faded" }, { "OVERLAY", 136430, 53 } })
+    local quiet = Button("QuietAddonHelper", "PinAddon", { { "ARTWORK", 136244, 18 } })
+    local bare = Button("IconlessAddonButton", "IconlessAddon", { { "BACKGROUND", 136467, 30 }, { "OVERLAY", 136430, 30 } })
+    local registered = AddonCompartmentFrame.registeredAddons
+    local first = #registered + 1
+    registered[first] = { text = "Other Addon", icon = 134400, func = function() end }
+    registered[first + 1] = { text = "Sheet Icon Addon", icon = "pretend-sheet-icon", func = function() end }
+    local texture = rawget(_G, "C_Texture")
+    C_Texture = { GetAtlasInfo = function(atlas) return atlas == "pretend-sheet-icon" and {} or nil end }
+    Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
+    local function Cells()
+        local found, count = {}, {}
+        for _, widget in ipairs(W.frames) do
+            if widget._shown and widget.item then
+                found[widget.item.title] = widget
+                count[widget.item.title] = (count[widget.item.title] or 0) + 1
+            end
+        end
+        return found, count
+    end
+    local cells, count = Cells()
+    local cell = cells["Other Addon"]
+    check(cell and cell.item.button == other and count["Other Addon"] == 1 and other:GetParent() == cell.spot,
+        "a button another addon's shared code made: under the title of the loaded addon its name holds last, once "
+        .. "(its compartment entry left out)")
+    check(cells["Pin Addon"] and count["Pin Addon"] == 2 and quiet:GetParent() ~= minimap,
+        "one whose name holds only an addon not loaded: the addon the game says set it")
+    check(cell.picture._texture == 136243, "its picture the texture it shows, not a hidden or faded larger one")
+    local plain = cells["Iconless Addon"]
+    check(plain and plain.item.button == bare and plain.picture._texture == "Interface\\AddOns\\IconlessAddon\\Icon"
+        and near(plain.picture._coords[1], Satchel.TRIM), "a button showing no picture of its own: its addon's own icon")
+    local sheet = cells["Sheet Icon Addon"]
+    check(sheet and sheet.picture._atlas == "pretend-sheet-icon" and sheet.picture._coords[1] == 0
+        and sheet.picture._coords[2] == 1, "a compartment's addon with an atlas for its icon: the atlas whole, not cut")
+    other.icon:SetTexture(136245)
+    Satchel.frame._scripts.OnUpdate(Satchel.frame, Satchel.EVERY)
+    check(cells["Other Addon"].picture._texture == 136245, "its addon changing its picture: the satchel's too, within a second")
+    Satchel.Close()
+    C_Texture = texture
+    registered[first + 1], registered[first] = nil, nil
+    for _, button in ipairs({ other, quiet, bare }) do button:Hide() end -- out of the satchel the rest of the run
 end)()
 
 -- The satchel's sound line (AudioLine.lua): first in its section Sane UI, Core's sound profile in use in a dropdown,
@@ -1990,7 +2065,7 @@ end)()
     local sane
     for _, widget in ipairs(W.frames) do
         if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
-            and widget ~= W.fixed and not W.marks[widget] then sane = widget end
+            and not W.others[widget] then sane = widget end
     end
     check(sane and not sane._shown and minimap._shown, "inside our map the game's minimap carries no button Sane UI")
     local step = minimap._zoom
@@ -4636,7 +4711,7 @@ check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse a
     local sane
     for _, widget in ipairs(W.frames) do
         if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
-            and widget ~= W.fixed and not W.marks[widget] then sane = widget end
+            and not W.others[widget] then sane = widget end
     end
     check(sane and sane._shown and minimap._shown, "the game's own minimap again: its button Sane UI on it, back to ours")
 end)()
@@ -4674,7 +4749,7 @@ check(W.stray:GetParent() ~= minimap and ns.Satchel.button._shown, "the other ad
     local sane
     for _, widget in ipairs(W.frames) do
         if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
-            and widget ~= W.fixed and not W.marks[widget] then sane = widget end
+            and not W.others[widget] then sane = widget end
     end
     check(sane and sane._shown, "on the game's minimap its button Sane UI window")
     sane._scripts.OnClick(sane, "LeftButton")

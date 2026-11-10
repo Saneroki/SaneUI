@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The minimap satchel shows each addon's own picture under its own
+  name: buttons other addons make for one another are named by the
+  addon they belong to, and pictures from the game's icon sheets
+  are no longer cut.
 - Mail: the Banker tab is gone. Instead, tick Send to banker on the
   Send Mail tab with your banker's name in To:. From then on the
   mailbox opens on Send Mail with the mail to your banker filled in:

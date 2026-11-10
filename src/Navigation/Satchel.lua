@@ -394,15 +394,23 @@ local function Cell(index)
     return cell
 end
 
--- A picture: an atlas where the game has one by that name, else a file.
+-- A picture: an atlas where the game has one by that name, else a file. True where it is an atlas.
 local function Picture(texture, art)
     local atlases = rawget(_G, "C_Texture")
     if type(art) == "string" and atlases and atlases.GetAtlasInfo(art) then
         texture:SetAtlas(art)
-    else
-        texture:SetTexture(art)
+        return true
     end
+    texture:SetTexture(art)
+    return false
 end
+
+-- A picture cut inside its frame by cut (Satchel.TRIM, Satchel.SPELL: an icon's own frame) where it is a file; an
+-- atlas is a part of a larger file, as the game cuts it already (cut so, it would show a part of another picture).
+local function Cut(texture, art, cut)
+    if not Picture(texture, art) then texture:SetTexCoord(cut[1], cut[2], cut[1], cut[2]) end
+end
+local TRIM = { Satchel.TRIM, 1 - Satchel.TRIM }
 
 -- An addon's picture round (cut round, on), or box as it is (off).
 local function Round(cell, on)
@@ -414,7 +422,6 @@ end
 -- The picture a held button shows (Strays.Picture), as it shows it: its file or atlas, its part, its colour. One cut
 -- to the whole of its file is cut inside its frame, as the rest of the satchel's addons (Satchel.TRIM).
 local function Copy(icon, art)
-    if not art then return Picture(icon, 134400) end
     local atlas = art:GetAtlas()
     if atlas then icon:SetAtlas(atlas) else icon:SetTexture(art:GetTexture()) end
     local left, top, _, _, _, _, right, bottom = art:GetTexCoord()
@@ -426,6 +433,16 @@ local function Copy(icon, art)
     local r, g, b = art:GetVertexColor()
     if r then icon:SetVertexColor(r, g, b) end
     icon:SetDesaturated(art:IsDesaturated() and true or false)
+end
+
+-- A held button's picture on its cell as the button shows it now, else its addon's own icon (item.icon), else the
+-- game's question mark.
+local function Drawn(icon, item)
+    icon:SetTexCoord(0, 1, 0, 1)
+    icon:SetVertexColor(1, 1, 1, 1)
+    icon:SetDesaturated(false)
+    local art = ns.Strays.Picture(item.button)
+    if art then Copy(icon, art) else Cut(icon, item.icon or 134400, TRIM) end
 end
 
 -- A cell let go: a held button on it back out of sight (Strays.Place), the cell hidden.
@@ -451,7 +468,7 @@ local function Dress(cell, item, size, height)
     Round(cell, item.button ~= nil or item.entry ~= nil)
     if item.button then
         -- Its own button unseen over its picture, its clicks and tooltip its own.
-        Copy(icon, ns.Strays.Picture(item.button))
+        Drawn(icon, item)
         ns.Strays.Place(item.button, cell.spot, size)
     end
     local pin = item.pin
@@ -460,16 +477,13 @@ local function Dress(cell, item, size, height)
         if pin.tint then icon:SetVertexColor(pin.tint[1] / 255, pin.tint[2] / 255, pin.tint[3] / 255) end
         if pin.grey then icon:SetDesaturated(true) end
     elseif item.track then
-        Picture(icon, item.texture)
-        if item.spell then icon:SetTexCoord(Satchel.SPELL[1], Satchel.SPELL[2], Satchel.SPELL[1], Satchel.SPELL[2]) end
+        if item.spell then Cut(icon, item.texture, Satchel.SPELL) else Picture(icon, item.texture) end
     elseif item.entry then
-        Picture(icon, item.icon or 134400) -- a compartment's addon without a picture: the game's question mark
-        icon:SetTexCoord(Satchel.TRIM, 1 - Satchel.TRIM, Satchel.TRIM, 1 - Satchel.TRIM)
+        Cut(icon, item.icon or 134400, TRIM) -- a compartment's addon without a picture: the game's question mark
     elseif item.time then
         Picture(icon, item.art)
     elseif item.switch then
-        Picture(icon, item.icon or 134400)
-        icon:SetTexCoord(Satchel.SPELL[1], Satchel.SPELL[2], Satchel.SPELL[1], Satchel.SPELL[2])
+        Cut(icon, item.icon or 134400, Satchel.SPELL)
     end
     local switch = item.on ~= nil -- a pin, a tracking entry, a switch: on or off
     local off = switch and not item.on
@@ -673,7 +687,8 @@ local function Gone(elapsed)
 end
 
 -- Each frame while the page is open: closed once the mouse has left. Every Satchel.EVERY seconds: its boxes and
--- lines as the game tells them now; the page laid out anew where one came or went, or the alarm began or stopped.
+-- lines as the game tells them now, the addons' buttons' pictures as they show them now (an addon may change its
+-- picture); the page laid out anew where one came or went, or the alarm began or stopped.
 local function Look(_, elapsed)
     if Gone(elapsed) then return Satchel.Close() end
     since = since + elapsed
@@ -683,6 +698,9 @@ local function Look(_, elapsed)
     if #figures ~= shown.figures or #lines ~= shown.lines or Alarm() ~= shown.alarm then return Satchel.Fill() end
     for index, figure in ipairs(figures) do Tell(boxes[index], figure) end
     for index, line in ipairs(lines) do rows[index].value:SetText(line[2]) end
+    for _, cell in ipairs(cells) do
+        if cell.item and cell.item.button then Drawn(cell.picture, cell.item) end
+    end
     if calendar and not calendar.cell then Cover(CalendarCell()) end -- its cell's place not known at the layout
 end
 

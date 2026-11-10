@@ -17,12 +17,16 @@ local _, ns = ...
 --  its name not ending in a number (one of a pool: an addon's marks of places
 --  in the world on the minimap, its quests', many at once; they stay there).
 --  Looked for at the login, Strays.AGAIN seconds after it, after each addon that
---  loads, and as the satchel opens. Named by its addon's title in the addon list.
+--  loads, and as the satchel opens. Named by its addon's title in the addon list,
+--  its addon the loaded one whose name its own name holds (Owner), else the one
+--  the game says set its global: code addons share runs in the name of the one
+--  that loaded it first, so the game's word alone named another addon at times.
 --
 --  Held: its parent, place, scale, alpha and level kept, then out of sight until
 --  the satchel lays it in its cell (Strays.Place), unseen there over the round
 --  picture the satchel draws of it (Strays.Picture: without the ring and the
---  background round it), its clicks and tooltip its own; where its addon places it
+--  background round it, and no hidden or faded texture; where it shows none, its
+--  addon's own icon in the addon list), its clicks and tooltip its own; where its addon places it
 --  again or shows it (a drag, an update of its own, a fade) it goes back (hooks
 --  after its SetPoint and SetAlpha). Its strata and level are its cell's, free
 --  while it is held where its addon fixed them (one fixed stayed under the
@@ -46,6 +50,8 @@ Strays.LARGEST = 64       -- a button no larger than this either way: a larger f
 Strays.AGAIN = { 0, 2, 10 } -- seconds after the login it looks again: the next frame first, for the buttons addons make
                              -- at the login itself (held before another addon that gathers minimap buttons takes them
                              -- off the minimap: it looks a second later), then for addons that make theirs late
+Strays.NAMED = 4          -- an addon's name with fewer letters and digits than this is never looked for in a button's
+                             -- own name (Owner): too short to tell whose it is
 
 local held = {}       -- [button] = what it was: parent, points, scale, strata, level, mouse; and its addon, title
 local spots = {}      -- [button] = the frame it is laid on now (a cell), or the hidden home
@@ -60,10 +66,64 @@ local function Plain(text)
     return text ~= "" and text or nil
 end
 
+-- A title as one addon's two ways of writing it compare: its letters and digits alone, in small letters.
+local function Same(title)
+    return (title:lower():gsub("[%s%p]", ""))
+end
+
 -- An addon's title in the addon list (its folder's name where it has none).
 local function Title(addon)
     local _, title = Core.Ask(C_AddOns.GetAddOnInfo, addon)
     return Plain(title) or addon
+end
+
+-- An addon's own picture in the addon list (its TOC's icon file, else its atlas), as the game's compartment takes it.
+local function Icon(addon)
+    local meta = C_AddOns.GetAddOnMetadata
+    local file, atlas = Core.Ask(meta, addon, "IconTexture"), Core.Ask(meta, addon, "IconAtlas")
+    return file ~= "" and file or atlas ~= "" and atlas or nil
+end
+
+-- The other addons loaded now, by the letters and digits of their folder's name and of their title (Same), of
+-- Strays.NAMED at least: { [those] = folder }.
+local function Loaded()
+    local found = {}
+    for index = 1, C_AddOns.GetNumAddOns() do
+        local folder, title = Core.Ask(C_AddOns.GetAddOnInfo, index)
+        if type(folder) == "string" and not folder:find("^SaneUI") and Core.Ask(C_AddOns.IsAddOnLoaded, folder) then
+            for _, word in ipairs({ folder, Plain(title) or folder }) do
+                local key = Same(word)
+                if #key >= Strays.NAMED then found[key] = folder end
+            end
+        end
+    end
+    return found
+end
+
+-- Where in a name a word last ends (0: nowhere).
+local function Ends(name, word)
+    local at, from = 0, 1
+    while true do
+        local first, last = name:find(word, from, true)
+        if not first then return at end
+        at, from = last, first + 1
+    end
+end
+
+-- The addon a button is of (setter: the one the game says set its global): the loaded addon whose folder's name or
+-- title its own name holds, the one ending last in it (shared code puts its own name first, the addon's after it),
+-- then the longest, then the setter; else the setter. Code addons share (a library the first of them loaded for all,
+-- or its event handling) runs in the name of the addon that loaded it, so a button another addon made through it has
+-- its global set in that one's name: one addon's picture would stand under another's title.
+local function Owner(button, setter, loaded)
+    local name, best, ends = Same(button:GetName()), nil, 0
+    for key, folder in pairs(loaded) do
+        local at = Ends(name, key)
+        if at > 0 and (at > ends or at == ends and (#key > #best or #key == #best and folder == setter)) then
+            best, ends = key, at
+        end
+    end
+    return best and loaded[best] or setter
 end
 
 -- The frames other addons hang buttons on: the minimap, its backdrop, its cluster and the cluster's room for it.
@@ -144,7 +204,7 @@ local function Take(button, addon)
     held[button] = {
         parent = button:GetParent(), points = Core.Points(button), scale = button:GetScale(),
         strata = button:GetFrameStrata(), level = button:GetFrameLevel(), alpha = button:GetAlpha(), addon = addon,
-        title = Title(addon), fixedStrata = fixedStrata, fixedLevel = fixedLevel,
+        title = Title(addon), icon = Icon(addon), fixedStrata = fixedStrata, fixedLevel = fixedLevel,
     }
     ns.Hybrid.Release(button)
     if not hooked[button] then
@@ -159,14 +219,17 @@ end
 -- Every button of another addon on the minimap and its cluster held, while our window is the minimap.
 function Strays.Look()
     if not home or ns.off or not ns.Hybrid.Taken() then return end
-    local hangers = Hangers()
+    local hangers, loaded = Hangers(), nil
     for index = 1, 4 do -- one may be missing: no ipairs
         local hanger = hangers[index]
         if type(hanger) == "table" then
             for _, frame in ipairs({ hanger:GetChildren() }) do
                 if not held[frame] then
                     local addon = Whose(frame)
-                    if addon and Button(frame) then Take(frame, addon) end
+                    if addon and Button(frame) then
+                        loaded = loaded or Loaded() -- asked once a look, and only where one is new
+                        Take(frame, Owner(frame, addon, loaded))
+                    end
                 end
             end
         end
@@ -181,13 +244,20 @@ function Strays.Place(button, cell, size)
     Lay(button, cell and size)
 end
 
--- The picture an addon's button shows: the largest of its textures in the ARTWORK layer that shows something, else
--- its normal texture (some draw their picture so); nil where it has none. The ring and the background the common
+-- Whether a texture of a button shows a picture: a texture, not a mask, shown, not wholly faded, with a file or atlas.
+local function Shows(region)
+    return region:IsObjectType("Texture") and not region:IsObjectType("MaskTexture") and region:IsShown()
+        and (region:GetAlpha() or 0) > 0 and (region:GetTexture() or region:GetAtlas()) ~= nil
+end
+
+-- The picture an addon's button shows: the largest of its textures in the ARTWORK layer that shows one (Shows: a
+-- hidden or faded one is some other state of it), else its normal texture (some draw their picture so); nil where it
+-- has none (the satchel shows its addon's own icon then: Strays.List). The ring and the background the common
 -- minimap buttons lay round it are in other layers, and stay out of the satchel.
 function Strays.Picture(button)
     local best, most
     for _, region in ipairs({ button:GetRegions() }) do
-        if region:IsObjectType("Texture") and region:GetDrawLayer() == "ARTWORK" and (region:GetTexture() or region:GetAtlas()) then
+        if region:GetDrawLayer() == "ARTWORK" and Shows(region) then
             local width, height = region:GetSize()
             local area = (width or 0) * (height or 0)
             if not best or area > most then best, most = region, area end
@@ -195,22 +265,18 @@ function Strays.Picture(button)
     end
     if best then return best end
     local normal = button.GetNormalTexture and button:GetNormalTexture()
-    if normal and (normal:GetTexture() or normal:GetAtlas()) then return normal end
+    if normal and Shows(normal) then return normal end
     return nil
 end
 
--- A title as one addon's two ways of writing it compare: its letters and digits alone, in small letters.
-local function Same(title)
-    return (title:lower():gsub("[%s%p]", ""))
-end
-
--- What the satchel holds, A to Z by title: { button, title } for each held button its addon shows, { entry, title,
--- icon } for each addon of the game's compartment that has no button held (by its title or its folder's name).
+-- What the satchel holds, A to Z by title: { button, title, icon } for each held button its addon shows (icon: its
+-- addon's own, where the button shows none), { entry, title, icon } for each addon of the game's compartment that has
+-- no button held (by its title or its folder's name).
 function Strays.List()
     local list, titles = {}, {}
     for button, was in pairs(held) do
         if button:IsShown() then
-            list[#list + 1] = { button = button, title = was.title }
+            list[#list + 1] = { button = button, title = was.title, icon = was.icon }
             titles[Same(was.title)], titles[Same(was.addon)] = true, true
         end
     end
