@@ -9,6 +9,8 @@ local _, ns = ...
 --  round, light blue, and the tram's run from station to station. The ways are the
 --  game's own (Core's set Travel, from its TaxiPath tables), on a layer of the
 --  canvas between the golden line and the pins (Canvas.LEVELS), in both views.
+--  At a flight master (Taxi.lua) a flight point's pin draws the way there from
+--  where you stand instead, hop by hop as the master flies it.
 --
 --      Paths.Show(pin)    the pin's ways, where it has any (none: as Hide)
 --      Paths.Hide()       none
@@ -83,6 +85,7 @@ local function FromPath(path, map, round)
     end
     return points
 end
+Paths.FromPath = FromPath -- (Taxi.lua: a hop's way at a flight master)
 
 -- Every flight of the player's side (or of both) from a flight point, in its plane.
 local function Flights(node, map)
@@ -215,7 +218,8 @@ function Paths.Show(pin)
     local found
     if pin and not pin.gathered then
         if pin.kind == "flight" then
-            found = Flights(pin.id, pin.map)
+            -- At a flight master, the way there hop by hop (Taxi.lua); else every flight from it.
+            found = ns.Taxi.Ways(pin.taxi) or Flights(pin.id, pin.map)
         elseif pin.way and pin.dock then
             found = Ship(pin.way)
         end

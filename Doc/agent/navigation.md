@@ -30,7 +30,9 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    `Data.Ships`, `Data.Trips`; a portal of one class, the mages' own, only for that class). The trip underway and the
    docks' times: `TripView.lua`, `DockWatch.lua`. The mouse on a flight point's or a dock's pin draws its ways
    (`Paths.lua`); on a zone lit up the full map names it with its levels and fishing skill (`Label.lua`, Core's set
-   *Fishing*); while dead the map pin stands at the corpse, the one before back once alive (`Corpse.lua`).
+   *Fishing*); while dead the map pin stands at the corpse, the one before back once alive (`Corpse.lua`). At a
+   flight master our full map stands in for the game's flight map, its flight points large to click (`Taxi.lua`;
+   Shift held: the game's).
 6. The leveling guide is not Navigation's: Speed Leveling runs text guides with its own engine
    (`src/SpeedLeveling/Guide.lua`, `Guides.lua`, `Run.lua`). Its arrow points straight at its place (2026-11-07); the
    planner still serves a way through `Core.Ways` (its second way, `guide`, never drawn; `Core.Ways.Serve` at its end),
@@ -47,7 +49,7 @@ The file list with a line each: `src/Navigation/README.md`, section *Files* (lin
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
-`Planner`, `Corpse`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
+`Planner`, `Corpse`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,
 `indoor-art` and `mark-art`, never by hand.

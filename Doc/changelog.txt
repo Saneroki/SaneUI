@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- At a flight master Sane UI's full map opens in place of the game's
+  flight map, its flight points large: click one to fly there, the
+  mouse on it shows the way and what it costs. Hold Shift as you
+  talk to the flight master for the game's own.
 - On the full map, the zone under the mouse shows its name, its
   level range and the fishing skill its waters ask. The mouse on a
   flight point draws its flights, on a dock its ship's whole way.

@@ -39,6 +39,8 @@ Lifts.lua
 Planner.lua
 # While you are dead: the map pin at your corpse, the one you had back once you live again. Knows no frames
 Corpse.lua
+# At a flight master: our full map in place of the game's flight map (Shift: the game's), its flight points to click
+Taxi.lua
 # The frame the map is drawn in, the same for both views: its layers, the player's place, the mouse
 Canvas.lua
 # The terrain: the game's minimap textures up close, the module's overview of them further out

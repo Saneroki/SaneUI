@@ -32,6 +32,8 @@ local _, ns = ...
 --      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
+--      a flight master  open (Taxi.lua): the flight points large and over all, the one you stand at glowing, a click
+--                  on one flies there, its tooltip what it costs
 --      a click     its own, where it has one (Act; above): Shift and a click on one that leads into another
 --                  map opens that map; else as a click on the map there (Canvas.lua: the map under it opens, or
 --                  a ping). A double click, on the small map and the full one: the game's map pin where it
@@ -281,6 +283,7 @@ end
 -- a quest shows in the quest log (in the log: the arrow leads to it; a giver's: its quests as previews). False where
 -- the pin has none: the click is the map's there.
 function PinView.Act(pin)
+    if pin.taxi then return ns.Taxi.Fly(pin.taxi) end -- at a flight master: the flight there (Taxi.lua)
     if IsShiftKeyDown() and pin.to then
         ns.Canvas.Show(pin.to)
         return true
@@ -370,7 +373,7 @@ end
 local function Level(button)
     local pin = button.pin
     local first = pin and (pin.gathered and pin.gathered[1] or pin)
-    local tier = first and PinView.TIERS[first.kind] or 0
+    local tier = first and (first.taxi and PinView.LEVELS or PinView.TIERS[first.kind]) or 0 -- a flight master's over all
     button:SetFrameLevel(layer:GetFrameLevel() + 1 + math.min(tier, PinView.LEVELS))
 end
 
@@ -426,8 +429,8 @@ end
 -- same (the same first pin, size and glow: a pin's record is made anew whenever what it shows changes).
 local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
-    local size = (Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
-    local glowing = first.focused and not pin.gathered and true or false
+    local size = (first.size or Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
+    local glowing = (first.focused or first.here) and not pin.gathered and true or false
     local plus = pin.gathered and not Alike(pin.gathered) or false
     local shining = lit ~= nil and Tied(pin, lit)
     if button.first == first and button.size == size and button.glowing == glowing and button.plus == plus

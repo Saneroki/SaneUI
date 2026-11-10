@@ -112,6 +112,7 @@ end
 -- into sight first. With the full map's box Follow me ticked, it
 -- opens on the player (but at a map the game was asked for).
 local function Filled(on, width, height)
+    ns.Safe("taxi", ns.Taxi.Filled, on) -- back to the corner at a flight master: its map closes too
     if resting then Rest(false) end
     ns.Satchel.Place(false)
     if on and ns.options.followMap and not aimed then ns.Canvas.Center(full) end
@@ -129,6 +130,11 @@ end
 
 local function Back()
     if handle.edge then handle.edge:Fill(false) end
+end
+
+-- The full screen back to its corner (Taxi.lua: the flight master left, a flight taken).
+function Window.Back()
+    if handle and handle.edge and handle.edge.full then Back() end
 end
 
 -- The dropdown Classic windows: the game's own minimap and map, each kept (its switch), ticked while chosen;

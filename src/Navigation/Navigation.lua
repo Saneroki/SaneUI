@@ -40,10 +40,14 @@ ns.TEXT = {
     },
     -- The zone under the mouse (Label.lua): the fishing skill its waters ask, from the first catch to every cast's.
     fishing = "Fishing %d-%d",
+    -- A flight point at a flight master (Taxi.lua).
+    taxiHere = "You are here",
+    taxiFly = "Click to fly there",
+    taxiFar = "No flight there from here",
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in the top right corner instead of this map's small window; the mouse pushed into that corner still fills the screen with this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
-    nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map.",
+    nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; the mouse pushed into the top right corner still fills the screen with this map. Off: all of them open this map, and a flight master's map is this map too, its flight points large to click (hold Shift as you talk to the flight master for the game's own).",
     questLogRest = "Hide the quest log at rest",
     questLogRestTip = "The quest log on the screen alone is out of sight while nothing goes on. It shows while the mouse is on it, while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too) and in Edit Mode. Out of sight its words, title bar and items still take the mouse. Over the full map it always shows. Off: always in sight.",
     questLogRestGroup = "In a group too",
@@ -379,6 +383,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Sparkles.GiveBack)
     ns.Safe("giving back", ns.Glints.Hide)
     ns.Safe("giving back", ns.Corpse.GiveBack)
+    ns.Safe("giving back", ns.Taxi.GiveBack)
 end
 
 function ns.OnLoad()
@@ -401,6 +406,7 @@ function ns.OnLogin()
     ns.Sparkles.Start()
     ns.Glints.Start()
     ns.Corpse.Start()
+    ns.Taxi.Start()
 end
 
 Core.Command("map", ns.TEXT.about, function(rest)

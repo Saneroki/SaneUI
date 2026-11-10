@@ -23,7 +23,8 @@ local _, ns = ...
 --  tooltip shows something not yet confirmed: it, or one of its quests), lines (its tooltip's further lines; one of an
 --  objective: { quest, index }, its words asked of the game when the tooltip shows), goals (a pin of what a quest of
 --  yours asks for, Goals.lua: { { quest, index }, ... }), and by kind: quest (its ID), complete,
---  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), grey
+--  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), taxi (at a
+--  flight master: the flight point's node, Taxi.lua; here: the one you stand at, size its size there), grey
 --  (a quest too low), tint (its icon's colour: a quest for later, a flight point not yet found), order (drawn over
 --  a lower one).
 --
@@ -208,9 +209,17 @@ local function Flights(list, map)
             if atlas and info.textureKit then atlas = info.textureKit .. "-" .. atlas end
             local x, y = Vector(info.position)
             local found = ns.Planner and ns.Planner.Knows(info.nodeID)
-            Add(list, { kind = "flight", key = "flight:" .. tostring(info.nodeID), id = info.nodeID, name = info.name,
-                        atlas = atlas or "TaxiNode_Neutral", dim = not found or nil, tint = not found and Pins.RED or nil,
-                        lines = not found and { Pins.TEXT.undiscovered } or nil }, map, x, y)
+            local pin = { kind = "flight", key = "flight:" .. tostring(info.nodeID), id = info.nodeID, name = info.name,
+                          atlas = atlas or "TaxiNode_Neutral", dim = not found or nil, tint = not found and Pins.RED or nil,
+                          lines = not found and { Pins.TEXT.undiscovered } or nil }
+            -- At a flight master (Taxi.lua): large, as the master tells it, a click flies there.
+            local taxi = ns.Taxi.Node(info.nodeID)
+            if taxi then
+                pin.taxi, pin.size, pin.here = info.nodeID, ns.Taxi.SIZE, taxi.current or nil
+                pin.dim, pin.tint = not (taxi.current or taxi.reachable) or nil, nil
+                pin.lines = ns.Taxi.Lines(info.nodeID)
+            end
+            Add(list, pin, map, x, y)
         end
     end
 end
@@ -699,8 +708,9 @@ function Pins.For(view, small, pu, pv)
                 local kind = pin.kind
                 local wanted = shown[kind]
                 if wanted == nil then
-                    wanted = Shows(kind) and (not small or SMALL[kind]) and (not continentLevel or Pins.CONTINENT[kind])
-                        and true or false
+                    -- (at a flight master the flight points always: Taxi.lua)
+                    wanted = (Shows(kind) or kind == "flight" and ns.Taxi.On()) and (not small or SMALL[kind])
+                        and (not continentLevel or Pins.CONTINENT[kind]) and true or false
                     shown[kind] = wanted
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
@@ -742,7 +752,8 @@ function Pins.For(view, small, pu, pv)
 end
 
 -- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
--- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near;
+-- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near,
+-- nor the flight points at a flight master (Taxi.lua);
 -- the quests' objectives only among themselves (goalCells), so none vanishes into a marker of other things.
 -- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
 -- pu, pv, key }); a herb or ore with others riding with it (For) is a marker of them all.
@@ -773,7 +784,7 @@ function Pins.Gather(list, k)
     local out, used, made = {}, 0, 0
     local size = Pins.GATHER
     for _, pin in ipairs(list) do
-        if pin.kind == "log" or pin.kind == "quest" or pin.live then
+        if pin.kind == "log" or pin.kind == "quest" or pin.live or pin.taxi then
             out[#out + 1] = pin
         else
             local x, y = pin.pu * k, pin.pv * k

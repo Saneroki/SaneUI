@@ -296,6 +296,12 @@ is small, and the maps of the dungeons and raids. The plan is in
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
+- **At a flight master:** talking to one fills the screen with this map at the master's map in place of the game's
+  flight map: its flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
+  way there, hop by hop as the master flies it, and its tooltip says what the flight costs; a click on it flies
+  there, as the game's flight map does. A flight point you cannot fly to from here is dim. Back to the corner (Esc)
+  ends the talk. Hold Shift as you talk to the flight master for the game's own flight map; with *Show the game's
+  map* on, it is always the game's.
 - **Back to your corpse:** when you die, the map pin moves to where you fell (the game's arrow on the screen leads
   to it), and once you have released your spirit, onto your corpse as the game tells it: the golden line leads you
   from the spirit healer back to it, on foot or by ship (a ghost takes no flight, teleport or hearthstone). Alive
@@ -520,6 +526,19 @@ is small, and the maps of the dungeons and raids. The plan is in
   `Planner.Plane`, a leap no line); the tram's two stations straight. Straight lines from point to point, the dark
   edge and the route's art in `Route.COLOURS`, only near the view, cut at the canvas' edge (`Paths.Fit`), laid out
   again with the map.
+- **Taxi** (`Taxi.lua`, no frames of its own): hooks after the game's flight maps' `OnShow` and `OnHide` (`TaxiFrame`;
+  `FlightMapFrame` once `Blizzard_FlightMap` has loaded, `EventUtil.ContinueOnAddOnLoaded`), as the game shows them by
+  its own code. Shown without Shift (and without `nativeMap`, the module up): made tiny and clear (`Core.Lend`,
+  `Core.Holder.TINY`, alpha 0: never hidden, its `OnHide` would end the talk), the master's flight points read
+  (`C_TaxiMap.GetAllTaxiNodes` of `GetTaxiMapID`: slot, state, position; `TaxiNodeCost`), `Pins.Changed("flights")`,
+  and the window filled at that map (`Window.OpenTo`). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
+  node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), dim where not reachable, their lines
+  `Taxi.Lines`; shown whatever the pin filter says, never gathered, at the pins' top level (`PinView`); a click
+  `Taxi.Fly` (`TakeTaxiNode` of its slot; on another a click does nothing, no ping). The mouse on one: `Paths.Show`
+  draws `Taxi.Ways`, each hop of `GetNumRoutes`/`TaxiGetNodeSlot` (slots back to nodes) by its flight's path in
+  *Travel* (`Paths.FromPath`), else straight between the two flight points. Its `OnHide`: the lend returned, the
+  pins as always, the window back to its corner (`Window.Back`). The window on its way back (`Filled`, Esc) while it
+  is open: `CloseTaxiMap`, so the game closes its own. `Taxi.GiveBack` returns the lend, open.
 - **Corpse** (`Corpse.lua`, no frames): dead (`PLAYER_DEAD`), the game's map pin one had (`Live.Waypoint`,
   `Live.Tracked`) kept as the character's `corpse` (once: a `/reload` while dead keeps it), the pin put where one
   stands, followed; a ghost (`PLAYER_ALIVE` with `UnitIsGhost`, a loading screen, and again `Corpse.AGAIN` later):
@@ -979,6 +998,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
+| `Taxi.lua` | At a flight master: our full map in place of the game's flight map (Shift held: the game's), its flight points large, a click flies there, the way there drawn. No frames of its own |
 | `Corpse.lua` | While dead: the map pin at your corpse (where you fell, then where the game tells it), the one you had back once alive again. No frames |
 | `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the teleports it has (the hearthstone told in the chat where it is quicker); where along it the player is. No frames |
 | `Label.lua` | The zone under the mouse named at the top of the full map: its name, its levels, the fishing skill its waters ask (Core's set *Fishing*) |
@@ -1014,6 +1034,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-10, the flight master's map:** Saneroki: "When we open the flightpath master window, can you make it so
+  that shiftclicking will open it normally but if you open it normally it shows our own fullscreen map instead but
+  where the flightpath icons are huge and you can click them to fly there like the normal flightpath window"
+  (`Taxi.lua`): the game's flight map stays open tiny and clear, so the talk goes on and `TakeTaxiNode` flies.
 - **2026-11-10, the zone's name, the ways under the mouse, the mages' portals, back to the corpse:** Saneroki: "When
   you hover over a zone it gets highlighted, right? When that happens, can you show a overlay of what Level range
   and fishing range that zone is and the name of the zone." The full map names it at its top (`Label.lua`), the

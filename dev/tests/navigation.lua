@@ -798,6 +798,10 @@ W.AddSets(spawnsPath)
 -- The game's callback events (MINIMAP_PING among them): only RegisterEventCallback takes them, no frame's RegisterEvent.
 W.callbacks = {}
 RegisterEventCallback = function(event, fn) W.callbacks[event] = fn return true end
+-- The game's flight map (Taxi.lua follows its OnShow and OnHide); the talk closed, the game hides it.
+TaxiFrame = CreateFrame("Frame", "TaxiFrame", UIParent)
+TaxiFrame:Hide()
+CloseTaxiMap = function() TaxiFrame:Hide() end
 if W.retailRun then W.Play("retail") end
 W.LoadCore(root)
 local Core = SaneUI.Core
@@ -5853,6 +5857,98 @@ end)()
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")
     W.Wait(0)
+end)()
+-- At a flight master (Taxi.lua): the game's flight map opens tiny and clear, ours fills the screen at its map with the
+-- flight points large, over all and never gathered; Near (here) glowing, Far's tooltip its cost, the mouse
+-- on it its way there drawn, a click flies there; the master left: the game's back as it was, ours in its corner.
+-- Shift held as it opens: the game's own. Ours closed while it is open: the game's closes too.
+;(function()
+    local nodes, all, mapID = C_TaxiMap.GetTaxiNodesForMap, C_TaxiMap.GetAllTaxiNodes, rawget(_G, "GetTaxiMapID")
+    local routes, slotOf, take, cost = rawget(_G, "GetNumRoutes"), rawget(_G, "TaxiGetNodeSlot"), TakeTaxiNode,
+        rawget(_G, "TaxiNodeCost")
+    local wasFull = Window.handle.edge.full
+    -- The game's coin words (Core.Coins): 1s50c.
+    GOLD_AMOUNT_TEXTURE, SILVER_AMOUNT_TEXTURE, COPPER_AMOUNT_TEXTURE = "%dg", "%ds", "%dc"
+    if wasFull then
+        Window.Back()
+        Window.frame._group:Run(1)
+    end
+    -- The continent's two flight points, Near (here) and Far, the master's map the continent's.
+    C_TaxiMap.GetTaxiNodesForMap = function(map)
+        if map == 1429 then -- (a zone's own flight points, where the view is at a zone's level)
+            return { { nodeID = 2, name = "Near", position = CreateVector2D(0.5, 0.5), faction = 0, atlasName = "TaxiNode_Neutral" },
+                     { nodeID = 5, name = "Far", position = CreateVector2D(0.6, 0.3), faction = 0, atlasName = "TaxiNode_Neutral" } }
+        end
+        if map ~= 1415 then return {} end
+        return { { nodeID = 2, name = "Near", position = CreateVector2D(0.575, 0.6445), faction = 0, atlasName = "TaxiNode_Neutral" },
+                 { nodeID = 5, name = "Far", position = CreateVector2D(0.39, 0.699), faction = 0, atlasName = "TaxiNode_Neutral" } }
+    end
+    C_TaxiMap.GetAllTaxiNodes = function(map)
+        if map ~= 1415 then return {} end
+        return { { nodeID = 2, slotIndex = 1, state = 0, position = CreateVector2D(0.575, 0.6445) },
+                 { nodeID = 5, slotIndex = 2, state = 1, position = CreateVector2D(0.39, 0.699) } }
+    end
+    GetTaxiMapID = function() return 1415 end
+    TaxiNodeCost = function(slot) return slot == 2 and 150 or 0 end
+    GetNumRoutes = function(slot) return slot == 2 and 1 or 0 end
+    TaxiGetNodeSlot = function(slot, hop, source) return source and 1 or 2 end
+    local taken
+    TakeTaxiNode = function(slot) taken = slot end
+    TaxiFrame:Show()
+    Window.frame._group:Run(1)
+    local scale = TaxiFrame._scale
+    check(ns.Taxi.On() and scale == Core.Holder.TINY and TaxiFrame._alpha == 0 and TaxiFrame:IsShown()
+        and Window.handle.edge.full and Canvas.camera == full,
+        "a flight master: the game's flight map open but tiny and clear (its talk goes on), ours fills the screen")
+    full:Look(0, -9250) -- (the test's canvas is small: Elwynn in its middle)
+    Canvas.Layout()
+    local here, there
+    for _, widget in ipairs(W.frames) do
+        local pin = widget._kind == "Button" and rawget(widget, "pin")
+        if pin and pin.taxi == 2 then here = widget elseif pin and pin.taxi == 5 then there = widget end
+    end
+    check(here and there and near(there._width, ns.Taxi.SIZE * ns.PinScale("flight")) and here.pin.here
+        and here.glow._shown and not there.pin.gathered and not there.pin.dim,
+        "its flight points large (Taxi.SIZE), you are at the glowing one, the one to fly to clear")
+    check(there._level == there._parent._level + 1 + ns.PinView.LEVELS, "over every other pin")
+    local lines = there.pin.lines
+    check(lines and lines[1] == "1s50c" and lines[2][1] == ns.TEXT.taxiFly
+        and here.pin.lines[1][1] == ns.TEXT.taxiHere, "the tooltip: what the flight costs, a click flies there; here: you are")
+    there._scripts.OnEnter(there)
+    local drawn = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Line" and widget._shown and widget._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.paths then
+            drawn = drawn + 1
+        end
+    end
+    check(drawn == 2, "the mouse on it: its way there drawn, hop by hop (no path in the set: straight)")
+    there._scripts.OnLeave(there)
+    check(ns.PinView.Act(there.pin) and taken == 2, "a click flies there (TakeTaxiNode, its slot)")
+    check(ns.PinView.Act(here.pin) and taken == 2, "a click where you stand: nothing, no ping either")
+    TaxiFrame:Hide() -- the flight taken: the game closes its map
+    Window.frame._group:Run(1)
+    check(not ns.Taxi.On() and TaxiFrame._scale == 1 and TaxiFrame._alpha == 1 and not Window.handle.edge.full,
+        "the master left: the game's flight map back as it was, ours in its corner again")
+    IsShiftKeyDown = function() return true end
+    TaxiFrame:Show()
+    check(not ns.Taxi.On() and TaxiFrame._scale ~= Core.Holder.TINY and not Window.handle.edge.full,
+        "Shift held as it opens: the game's own flight map")
+    IsShiftKeyDown = function() return false end
+    TaxiFrame:Hide()
+    TaxiFrame:Show()
+    Window.frame._group:Run(1)
+    Window.Back()
+    Window.frame._group:Run(1)
+    check(not TaxiFrame:IsShown() and not ns.Taxi.On() and TaxiFrame._scale == 1 and not Window.handle.edge.full,
+        "ours closed while the master is open: the game's closes too")
+    C_TaxiMap.GetTaxiNodesForMap, C_TaxiMap.GetAllTaxiNodes, GetTaxiMapID = nodes, all, mapID
+    GetNumRoutes, TaxiGetNodeSlot, TakeTaxiNode, TaxiNodeCost = routes, slotOf, take, cost
+    GOLD_AMOUNT_TEXTURE, SILVER_AMOUNT_TEXTURE, COPPER_AMOUNT_TEXTURE = nil, nil, nil
+    ns.Pins.Changed("flights")
+    if wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
 end)()
 -- A portal a few yards across between floors one over the other (14: from the building's floor of tile 6179 up onto
 -- its roof, 35 yards on, as the Wizard's Sanctum's go up and down its tower): a hop between two looks, no leap of
