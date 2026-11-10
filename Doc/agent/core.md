@@ -192,8 +192,10 @@ save window asks: *Yes* writes the differing paths into the profiles ticked, *No
 `Profiles.Put` (= `Fill`: modules told, Sync's `moved` writes the game's). Traps: a menu counts only while its frame is
 shown (the tests run `SettingsPanel`'s `OnShow` by hand with it hidden); only Sync's capture is read (another module's
 `capture` would change its settings at each look); `Profiles.Use`/`SetCharacter`/`Delete` return false while changes
-wait (`Answer`), so a caller that tests the result says why; unanswered at `PLAYER_LOGOUT` the paths are put back in
-the saved tables only (Unsaved.lua's listener comes after Profiles' capture, by the TOC's order).
+wait (`Answer`), so a caller that tests the result says why; unanswered at `PLAYER_LOGOUT` the changes are saved as
+*Yes* saves them (2026-11-10, was: put back, which made every change pop back at a `/reload`), only an unticked profile
+in use gets the last save back (Unsaved.lua's listener comes after Profiles' capture, by the TOC's order). A
+`hooksecurefunc` on a global the game handed to a button in its `OnLoad` (`AddonList_OnOkay`) never runs on a click.
 
 ## Options trap
 

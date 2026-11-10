@@ -8,7 +8,10 @@ local Sync = Core.Sync -- Sync.lua
 --  profile the same, addons too). The game keeps that for each character; a
 --  part of Sync keeps it in the profile. Only addons this client has are
 --  written, and Sane UI itself is never switched off: the game shows a change
---  after a /reload, which is offered.
+--  after a /reload, which is offered. An addon switched on the character
+--  screen since this character's last logout is the player's word: it goes
+--  into the profile at the login instead of being switched back (Sync.Outside;
+--  Saneroki, 2026-11-10: "I can't turn off addons").
 -------------------------------------------------------------------------------
 local TEXT = {
     text = "Addons",
@@ -52,5 +55,12 @@ Sync.Part("addons", "elsewhere", {
         end
         if changed then Core.Ask(addons.SaveAddOns) end
         return changed
+    end,
+    -- Switched since the last logout (on the character screen): the profile takes it. One this character did not
+    -- have then (installed since) is left to the profile's.
+    Outside = function(data, before, now)
+        for name, on in pairs(now) do
+            if type(before[name]) == "boolean" and before[name] ~= on then data[name] = on end
+        end
     end,
 })

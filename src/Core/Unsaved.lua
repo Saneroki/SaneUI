@@ -22,10 +22,9 @@ local Core = SaneUI.Core
 --  differs from the copy, setting by setting (Diff). A change made while no
 --  menu is open (a window moved, a box in a window) is not one of them.
 --
---  Unanswered, a /reload or logout takes the changes back (only in the saved
---  settings: the game is given them at the next login, Sync's writing), but a
---  Reload in the addon list saves them first. A step that needs the answer
---  first waits for it (Wait): another profile used, a /reload Sane UI offered.
+--  Unanswered, a /reload or logout saves them as Yes does (Saneroki, 2026-11-10:
+--  a change must not pop back at a reload): only No and Load last settings take
+--  changes back. Another profile used waits for the answer first (Wait).
 -------------------------------------------------------------------------------
 local Unsaved = {}
 Core.Unsaved = Unsaved
@@ -44,7 +43,6 @@ local changes    -- { { module, path } }: each setting that differs from the las
 local menus = {} -- [menu] = true: the menus open now
 local waiting    -- { words, fn }: a step that follows the answer
 local ticks      -- [profile] = true: where Yes saves the changes, while there are some
-local reloads    -- the addon list's Reload: the changes are saved at the logout, not taken back
 local watchers = {}
 
 -- Settings that are no setting of a menu: where the windows stand (Window.lua), which game Sync read in.
@@ -324,14 +322,20 @@ local function Back()
     Core.Profiles.Put(function(name) return new[name] or false end)
 end
 
+-- The changes written into every other profile ticked; true when the one in use is ticked too (it holds them
+-- already), false when it is to get the last save back.
+local function Keep()
+    local use = Core.Profiles.InUse()
+    for name in pairs(ticks or {}) do
+        if name ~= use then Into(name) end
+    end
+    return ticks ~= nil and ticks[use] == true
+end
+
 -- Yes: the changes into every profile ticked; the one in use, unticked, gets the last save back.
 function Unsaved.Save()
     if not changes or not Unsaved.Any() then return false end
-    local use = Core.Profiles.InUse()
-    for name in pairs(ticks) do
-        if name ~= use then Into(name) end
-    end
-    if not ticks[use] then Back() end
+    if not Keep() then Back() end
     Done()
     return true
 end
@@ -370,34 +374,23 @@ Core.On("PLAYER_LOGIN", function()
     Core.EditMode.Watch(function(active)
         if active then Unsaved.Open("editmode") else Unsaved.Close("editmode") end
     end)
-    -- The game's addon list: a tick changes the addon at once (AddonList_Update follows each); its Okay with a
-    -- /reload due saves the changes at the logout, so the addons are not switched back.
+    -- The game's addon list: a tick changes the addon at once (AddonList_Update follows each, called by its global
+    -- name); its Okay (Reload UI) needs nothing of ours: the /reload saves what changed, as every /reload does. Its
+    -- Cancel gives the game the addons back (ResetAddOns, in its OnHide), so the look at its closing finds no change.
     local addons = rawget(_G, "AddonList")
     if addons and addons.HookScript then
         addons:HookScript("OnShow", Core.Guard("unsaved", function() Unsaved.Open("addons", addons) end))
         addons:HookScript("OnHide", Core.Guard("unsaved", function() Unsaved.Close("addons") end))
     end
     if rawget(_G, "AddonList_Update") then hooksecurefunc("AddonList_Update", Core.Guard("unsaved", Unsaved.Soon)) end
-    if rawget(_G, "AddonList_OnOkay") then
-        hooksecurefunc("AddonList_OnOkay", Core.Guard("unsaved", function()
-            if addons and addons.shouldReload then reloads = true end
-        end))
-    end
 end)
 
 -- The game writes the saved settings after this (a logout, a /reload); Profiles.lua has read the game's in. Changes
--- not answered are taken back in the saved settings only: the game gets the profile's at the next login. After the
--- addon list's Reload they are saved.
+-- not answered are saved as Yes saves them: into every profile ticked. Only the one in use, unticked, gets the last
+-- save's values back, in the saved settings only (the game gets them from the profile at the next login).
 Core.On("PLAYER_LOGOUT", function()
     if next(menus) then Check() end
-    if not changes then return end
-    if reloads and Unsaved.Any() then
-        local use = Core.Profiles.InUse()
-        for name in pairs(ticks) do
-            if name ~= use then Into(name) end
-        end
-        if ticks[use] then return end
-    end
+    if not changes or Keep() then return end
     local live = Live()
     for _, change in ipairs(changes) do
         local values = live[change.module]

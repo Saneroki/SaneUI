@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Settings you change stay changed when you /reload or log out,
+  also with the save window unanswered: only No takes them back.
+  Addons you switch on or off at the character screen stay so too.
 - The Banker tab on the mailbox sends your profession items too
   (recipes, patterns, plans). With Speed Leveling on, everything
   goes to your banker by itself as you open the mailbox; hold Shift

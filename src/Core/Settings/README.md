@@ -77,10 +77,12 @@ it back.
     as they were at the last save. *No*: every change since the last save taken back, the game's settings too
     (an Edit Mode layout's frames after the `/reload` offered). Set back by hand, there is nothing to save and the
     window goes.
-  - Choosing another profile (on this page, `/sane profile`, the box *Speed Leveling* in the bags) or the *Reload*
-    Sane UI offers waits for the answer: the window says what follows (*Then the profile Speedleveling is used.*).
-  - A `/reload` or logout with the window unanswered takes the changes back; the addon list's *Reload UI*
-    saves them first (into the profiles ticked).
+  - Choosing another profile (on this page, `/sane profile`, the box *Speed Leveling* in the bags) waits for the
+    answer: the window says what follows (*Then the profile Speedleveling is used.*).
+  - A `/reload` or logout with the window unanswered saves the changes as *Yes* does, into the profiles ticked
+    (Saneroki, 2026-11-10: a change must not pop back at a `/reload`); so do the addon list's *Reload UI* and the
+    *Reload* Sane UI offers, which waits for nothing. The window says so under the list: *A /reload or logout saves
+    them too.* Only *No* and *Load last settings* take changes back.
   - Only what the profiles keep counts: Sane UI's settings, and of the game's what the tab *Game settings* ticks
     (and the CVars kept by name). A change made with no menu open (a window moved, a box in a window) is none.
 - Words or a number in a box: Enter sets what was typed, Esc (or a click elsewhere) leaves the value as it was.
@@ -172,7 +174,8 @@ it back.
   hidden; strata `DIALOG`, toplevel, movable, clamped), made the first time there are changes; shown by
   `Core.Unsaved.Watch` while `Unsaved.Pending()`, placed anew each time it comes: right of the game's
   `SettingsPanel` or `AddonList` where one is shown, else at the screen's right. Its lines are `Unsaved.Changes()`
-  (8 at most, the last *and N more*), `Unsaved.Next()` under them; *Save to* is a `WowStyle1DropdownTemplate` of
+  (8 at most, the last *and N more*), `Unsaved.Next()` under them, then the line *A /reload or logout saves them
+  too.* (`GameFontDisableSmall`); *Save to* is a `WowStyle1DropdownTemplate` of
   checkboxes (`Unsaved.Targets`, `Ticked`, `Tick`), its text the names ticked (`OverrideText`); *Yes*
   (`Unsaved.Save`, off with none ticked) and *No* (`Unsaved.Undo`) are `UIPanelButtonTemplate`s. Each change of
   it also shows the pages anew (`Config.RefreshSoon`). A click on any page of ours (`Panel.Refresh`), a CVar kept
@@ -293,6 +296,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 
 ## History
 
+- 2026-11-10 — The save window keeps what is not answered (Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload"): a `/reload` or logout saves the changes as *Yes* does (was: took them back, and the addon list's *Reload UI*, meant to save first, never did); the *Reload* Sane UI offers no longer waits for the answer. A line in the window says so.
 - 2026-11-09 — The save window (Saneroki): a change in the options, the game's own, Edit Mode or the addon list brings *Save the changes?* beside the menu until *Yes* (into the profiles ticked under *Save to*) or *No* (taken back); the page Profiles has *Save* and *Load last settings*. Another profile and an offered `/reload` wait for the answer; unanswered, a `/reload` or logout takes the changes back.
 - 2026-10-17 — The page *Profiles* anew (Saneroki): *Accountwide settings*; *This character* with its profile and *New*, *Rename*, *Delete*, *Defaults*, *Copy from*, *Export*, *Import*; *Characters* with a profile each and *Forget*. *Load*, *Save*, *Duplicate*, *Load at login*, *Save at logout*, *Empty* and *SaneUI Defaults* are gone. The tab *Accountwide* is *Game settings*, without the box of modules.
 - 2026-10-17 — Every kind of switch on both kinds of page: words and numbers typed into a box (`entry`), several

@@ -8,11 +8,11 @@ local Config = SaneUI.Core.Config -- Settings.lua
 --  used, and stays until Yes or No, the menu closed too (no close button, Esc
 --  leaves it). It lists what changed since the last save and, under Save to,
 --  the profiles to save it to (a tick each, the one in use at first):
---      Yes   saved into every profile ticked
+--      Yes   saved into every profile ticked; a /reload or logout does the same
 --      No    every change since the last save taken back
---  A step that waits for the answer (another profile, a /reload Sane UI offered)
---  is named in it. Made the first time there is a change; the game's own
---  ButtonFrameTemplate, as the window of Export and Import.
+--  A step that waits for the answer (another profile) is named in it. Made the
+--  first time there is a change; the game's own ButtonFrameTemplate, as the
+--  window of Export and Import.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Unsaved = Core.Unsaved
@@ -26,9 +26,10 @@ local TEXT = {
     saveToTip = "The profiles the changes are saved to: tick as many as you like. The profile in use is ticked at first; left unticked, it gets its settings back as they were at the last save.",
     none = "No profile",
     yes = "Yes",
-    yesTip = "Keeps the changes: saved into every profile ticked under Save to.",
+    yesTip = "Keeps the changes: saved into every profile ticked under Save to. A /reload or logout does the same.",
     no = "No",
     noTip = "Takes back every change since the last save.",
+    reload = "A /reload or logout saves them too.",
 }
 local WIDTH, LINES, LINE = 330, 8, 14 -- the window's width; the changes listed, and the height of each
 
@@ -103,6 +104,12 @@ local function Build()
     Panel.Tooltip(yes, yes:GetText(), TEXT.yesTip)
     frame.Yes = yes
 
+    local note = frame:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    note:SetPoint("BOTTOMLEFT", 18, 76)
+    note:SetWidth(WIDTH - 36)
+    note:SetJustifyH("LEFT")
+    note:SetText(TEXT.reload)
+    frame.Note = note
     local label = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     label:SetPoint("BOTTOMLEFT", 18, 46)
     label:SetText(TEXT.saveTo)
@@ -135,7 +142,7 @@ local function Show()
     local step = Unsaved.Next()
     frame.After:SetText(step or "")
     frame.After:SetShown(step ~= nil)
-    frame:SetHeight(54 + #lines * LINE + (step and 26 or 0) + 82)
+    frame:SetHeight(54 + #lines * LINE + (step and 26 or 0) + 102)
     frame.Menu:GenerateMenu()
     if frame.Menu.OverrideText then frame.Menu:OverrideText(Ticked()) end
     frame.Yes:SetEnabled(Unsaved.Any())

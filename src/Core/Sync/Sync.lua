@@ -73,6 +73,9 @@ Sync.PERSONAL = { addons = true, keyBindings = true }
 --      Write(data) gives it back, setting only what differs; true when the game shows it only after a
 --                  /reload, then named by reload ("the chat windows")
 --      Prepare()   gets ready to be read, whatever the profile holds: the logout leaves no time for that
+--      Outside(data, before, now)  what the player changed on the game's screens before the world (the addon list
+--                  at the character screen) put into data, the profile's, so that the login does not undo it:
+--                  before is what Read gave at this character's last logout, now what it gives at the login
 Sync.parts = {}
 Sync.part = {}
 
@@ -215,6 +218,39 @@ end
 function Sync.Began()
     local character = Core.Character(Sync.name)
     last, character.asked, turned = character.asked, nil, false
+end
+
+-- What the game holds of the parts that look for changes made outside the world (part.Outside), kept for this
+-- character at its logout (Core.Character(Sync.name).logout); none on Character specific, where Sync keeps nothing.
+local function Remember()
+    local held
+    if On() and Hunt() ~= true then
+        for _, part in ipairs(Sync.parts) do
+            if part.Outside and Sync.PartKept(part.id) then
+                local ok, data = xpcall(part.Read, Core.Trace)
+                if ok and data ~= nil then
+                    held = held or {}
+                    held[part.id] = data
+                end
+            end
+        end
+    end
+    Core.Character(Sync.name).logout = held
+end
+
+-- A session's first writing: what the player changed since this character's last logout while no character was in
+-- the world (the addon list at the character screen) goes into the profile first, so that the writing keeps it.
+function Sync.Outside()
+    local logout = Core.Character(Sync.name).logout
+    if type(logout) ~= "table" or not On() or not Ours() or Hunt() == true then return end
+    local taken = Sync.options.taken
+    for _, part in ipairs(Sync.parts) do
+        local before, data = logout[part.id], taken[part.id]
+        if part.Outside and Sync.PartKept(part.id) and type(before) == "table" and type(data) == "table" then
+            local ok, now = xpcall(part.Read, Core.Trace)
+            if ok and type(now) == "table" then part.Outside(data, before, now) end
+        end
+    end
 end
 
 -- Writes the kept parts of the settings in use into the game; in a fight, once it is over. Another game's are
@@ -392,6 +428,7 @@ local function GiveSoon()
     C_Timer.After(SETTLE, Core.Guard("sync", function()
         settled = true
         Sync.Safe("beginning", Sync.Began)
+        Sync.Safe("changes made before the login", Sync.Outside)
         Sync.Safe("writing", Sync.Give)
     end))
 end
@@ -415,4 +452,8 @@ Core.On("VARIABLES_LOADED", function()
 end)
 Core.On("PLAYER_REGEN_ENABLED", function()
     if waiting then Sync.Safe("writing", Sync.Give) end
+end)
+-- The game writes the saved settings after this: what the next login compares with (Sync.Outside).
+Core.On("PLAYER_LOGOUT", function()
+    Sync.Safe("remembering the logout", Remember)
 end)

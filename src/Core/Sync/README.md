@@ -36,7 +36,8 @@ the game's own chat channels on every character is the Social module's.)
   character has the game's own, per character.
 - **Addons** (`Addons.lua`): which addons are switched on, in the box *Elsewhere in the game*. Written where the
   profile differs, for this character (`C_AddOns`), with the reload offered; never Sane UI itself, nor one this
-  client lacks.
+  client lacks. One switched on the character screen since this character's last logout is the player's word: the
+  login takes it into the profile instead of switching it back (`Sync.Outside`, Saneroki, 2026-11-10).
 - **Key bindings** (`Keys.lua`, Saneroki, 2026-10-30): every key of the game's list by command, Sane UI's and other
   addons' too, written where they differ and saved in the game's binding set in use. A command this client does not
   list now keeps its keys in the profile. Turning to *Character specific*: the game's default keys (`part.Default`).
@@ -101,6 +102,11 @@ the game's own chat channels on every character is the Social module's.)
   has its stored settings (`C_CVar.AreCVarsLoaded`, else 2 seconds after `VARIABLES_LOADED`), and when
   another profile came into use or *Accountwide settings* was switched on (Core's hook `moved`), once the
   first writing came due.
+  **Changes made before the login** (`Sync.Outside`, at a session's first writing, before `Sync.Give`): a part with
+  `Outside(data, before, now)` (the addons) is read at each logout into `chars[key].logout` (none on *Character
+  specific*); at the next login what differs between that and the game now was changed on the game's screens
+  before the world (the addon list at the character screen) and goes into the profile, so the writing keeps it.
+  What the profile changed meanwhile (on another character) is written as ever; a first login has nothing to compare.
   Never in a fight: then at `PLAYER_REGEN_ENABLED`. Only in the game they were read in (`from`: `forever` or
   `retail`; those kept before Sane UI served two games are Forever's): each game has options, CVars, layouts and
   chat windows of its own, so another game's (a game folder's saved settings copied into the other's) are neither
@@ -190,6 +196,7 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-10 — Addons switched on the character screen are kept (Saneroki: "I can't turn off addons"): the login took the profile's list back over them; now what changed since the character's last logout goes into the profile first (`Sync.Outside`).
 - 2026-11-09 — The save window (Core's `Unsaved.lua`): the kept parts read while a menu is open; its *No* after Edit Mode gives a layout its own text again (`Sync.ExactLayout`).
 - 2026-11-04 — The sound profiles' CVars left to Core's `Audio.lua` (`Sync.Leave`): per game account, set at each
   login, never written by a profile's Sync.

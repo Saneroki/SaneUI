@@ -917,6 +917,21 @@ do
         "written as the profile has them: a /reload is due")
     check(states.SaneUI == 2 and states.Gone == nil and saved == 1, "never Sane UI itself, nor one this client lacks")
     check(part.Write({ One = false, Two = true }) == false and saved == 1, "nothing to change: nothing asked")
+    -- Switched on the character screen since this character's last logout (Sync.Outside): the profile takes it, so
+    -- the login does not switch it back; one the profile changed meanwhile (on another character) stays the profile's.
+    check(Core.Profiles.On() and Sync.options.from == Core.GAME, "a profile of this game in use")
+    local taken, character = Sync.options.taken, Core.Character(Sync.name)
+    local wasTaken, wasLogout = taken.addons, character.logout
+    states.One, states.Two = 2, 2 -- the game now: One switched on at the character screen, Two on as at the logout
+    taken.addons = { One = false, Two = false, SaneUI = true }
+    character.logout = { addons = { One = false, Two = true, SaneUI = true } }
+    Sync.Outside()
+    check(taken.addons.One == true and taken.addons.Two == false, "switched on the character screen: the profile takes it; its own change stays")
+    check(part.Write(taken.addons) == true and states.One == 2 and states.Two == 0, "the login's writing keeps it, writes the profile's")
+    character.logout, taken.addons.One = nil, false
+    Sync.Outside()
+    check(taken.addons.One == false, "no logout kept (a first login): the profile's as before")
+    taken.addons, character.logout = wasTaken, wasLogout
     C_AddOns.GetNumAddOns, C_AddOns.GetAddOnInfo, C_AddOns.GetAddOnEnableState, C_AddOns.EnableAddOn, C_AddOns.DisableAddOn, C_AddOns.SaveAddOns =
         wasNum, wasInfo, wasState, wasOn, wasOff, wasSave
 end
@@ -1060,26 +1075,68 @@ do
     Click(keep)
     check(Errors() == not now and not Unsaved.Pending() and SaneUIDB.profiles[use].Core.errors == not now, "Save keeps them")
 
-    -- A /reload Sane UI offers waits for the answer
+    -- A /reload Sane UI offers waits for nothing: the /reload saves the changes, as every /reload does (below)
     Frames()
     Core.Set(Core.name, "errors", now)
     Frames()
     W.reloaded = nil
     Core.AskReload({ "something" })
     W.popups[#W.popups].data.callback()
-    check(not W.reloaded and Unsaved.Next() == "Then the interface reloads.", "a /reload offered with changes unsaved: the save window first")
+    check(W.reloaded == true and Unsaved.Next() == nil and Unsaved.Pending(), "a /reload offered with changes unsaved: at once, nothing waits")
     Unsaved.Undo()
-    check(W.reloaded == true and Errors() == not now, "then the /reload")
+    check(Errors() == not now and not Unsaved.Pending(), "No takes them back")
     W.reloaded = nil
 
-    -- The options closed with changes: the window stays; a logout unanswered takes them back in the saved settings
-    Frames()
-    Core.Set(Core.name, "errors", now)
+    -- A /reload or logout unanswered saves the changes as Yes does (Saneroki, 2026-11-10: a change must not pop back
+    -- at a /reload): Sane UI's switch, the game's setting, an addon switched off in the game's addon list, into the
+    -- profile in use and the one ticked besides
     Frames()
     SettingsPanel:Hide()
-    check(Unsaved.Pending() and Window():IsShown(), "the options closed: the window stays until Yes or No")
+    check(not Unsaved.Pending(), "nothing waits")
+    local names, states, stubbed = { "One", "SaneUI" }, { One = 2, SaneUI = 2 }, {}
+    for _, name in ipairs({ "GetNumAddOns", "GetAddOnInfo", "GetAddOnEnableState", "DisableAddOn", "SaveAddOns" }) do stubbed[name] = C_AddOns[name] end
+    C_AddOns.GetNumAddOns = function() return #names end
+    C_AddOns.GetAddOnInfo = function(which) return type(which) == "number" and names[which] or (states[which] and which) or nil end
+    C_AddOns.GetAddOnEnableState = function(name) return states[name] end
+    C_AddOns.DisableAddOn = function(name) states[name] = 0 end
+    C_AddOns.SaveAddOns = function() end
+    SettingsPanel:Show()
+    Core.Set(Core.name, "errors", now)
+    local camera = W.cvars.cameraSmoothStyle == "2" and "3" or "2"
+    W.cvars.cameraSmoothStyle = camera
+    W.Fire("CVAR_UPDATE", "cameraSmoothStyle", camera)
+    Frames()
+    SettingsPanel:Hide()
+    Unsaved.Open("addons") -- the game's addon list (its OnShow)
+    C_AddOns.DisableAddOn("One")
+    Unsaved.Soon() -- its AddonList_Update
+    Frames()
+    Unsaved.Close("addons") -- its OnHide: Reload UI hides it, then reloads
+    check(Unsaved.Pending() and Window():IsShown() and Lists("General: Errors in chat") and Lists("Game settings: Controls")
+        and Lists("Game settings: Addons"), "the menus closed: the window stays and lists the switch, the setting and the addon")
+    Unsaved.Tick(other, true)
     W.Fire("PLAYER_LOGOUT")
-    check(SaneUIDB.profiles[use].Core.errors == not now, "unanswered at the logout: taken back in the saved settings")
+    local mine, ticked = SaneUIDB.profiles[use], SaneUIDB.profiles[other]
+    check(mine.Core.errors == now and mine.Sync.taken.CONTROLS_LABEL.cvars.cameraSmoothStyle == camera and mine.Sync.taken.addons.One == false,
+        "unanswered at the logout: saved in the profile in use, the game's setting and the addon too")
+    check(ticked.Core.errors == now and ticked.Sync.taken.CONTROLS_LABEL.cvars.cameraSmoothStyle == camera and ticked.Sync.taken.addons.One == false,
+        "and in the profile ticked besides")
+    check(Core.Character(Sync.name).logout.addons.One == false, "the addons as the logout left them, for the next login (Sync.Outside)")
+    Unsaved.Save()
+
+    -- Unticked, the profile in use gets the last save back at the logout, in the saved settings only
+    Frames()
+    SettingsPanel:Show()
+    Core.Set(Core.name, "errors", not now)
+    Frames()
+    Unsaved.Tick(use, false)
+    Unsaved.Tick(other, true)
+    W.Fire("PLAYER_LOGOUT")
+    check(SaneUIDB.profiles[use].Core.errors == now and SaneUIDB.profiles[other].Core.errors == not now,
+        "unticked in use at the logout: back as at the last save; the one ticked takes the change")
+    Unsaved.Undo()
+    SettingsPanel:Hide()
+    for name, fn in pairs(stubbed) do C_AddOns[name] = fn end
 end
 
 -- The save window's No after Edit Mode: the layout takes its own text again

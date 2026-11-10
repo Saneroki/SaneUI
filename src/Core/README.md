@@ -145,8 +145,9 @@ but for a window to try those with (`/sane window`).
     the one in use at first, the others as ticked the last time), *Yes* (saved into every profile ticked; the one
     in use, unticked, gets its settings back) and *No* (every change since the last save taken back, the game's
     too). The page Profiles has the same as *Save* and *Load last settings*. Another profile chosen (also the box
-    *Speed Leveling* in the bags) and a /reload Sane UI offers wait for the answer; a /reload or logout unanswered
-    takes the changes back, but the addon list's *Reload UI* saves them first.
+    *Speed Leveling* in the bags) waits for the answer. A /reload or logout unanswered saves the changes as *Yes*
+    does, the addon list's *Reload UI* and the *Reload* Sane UI offers too (Saneroki, 2026-11-10: a change must not
+    pop back at a /reload): only *No* and *Load last settings* take changes back.
 
 ## Technical details
 - **Several addons, one shared table.** The game gives every addon a table only its own files see, so what
@@ -227,9 +228,11 @@ but for a window to try those with (`/sane window`).
   of this game; the one in use unticked gets them back), `Undo()` (`Profiles.Put` with the last save's values:
   the modules told, Sync writing the game's; an Edit Mode layout takes its own text again, `Sync.ExactLayout`),
   `Wait(words, fn)`, `Next()`, `Watch(fn)`, `Moved()` (another profile in use: a new last save). At
-  `PLAYER_LOGOUT`, after Profiles' capture: unanswered, the paths take the last save's values in the saved
-  settings only (the game gets them at the next login, Sync's writing); after the addon list's Okay with a
-  /reload due (a hook after `AddonList_OnOkay`) they are saved as *Yes* would.
+  `PLAYER_LOGOUT`, after Profiles' capture: unanswered, the changes are saved as *Yes* saves them (Saneroki,
+  2026-11-10), into every profile ticked; only the one in use, unticked, takes the last save's values, in the
+  saved settings only (the game gets them at the next login, Sync's writing). A hook after `AddonList_OnOkay`
+  would never run: the addon list's `OnLoad` gave its button the game's function itself, so no hook is needed
+  or made (its Cancel resets the addons in its `OnHide`, which the look at its closing then finds unchanged).
 
 - **A switch is described once,** by its module, while its files are read:
   `Core.Options(name, { { key, default, text, tip }, ... }, hooks)`, hooks a table (`changed(key, value)`,
