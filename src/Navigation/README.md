@@ -287,8 +287,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   Tirisfal Glades' map there, on the ruins). Darnassus and Rut'theran Village are reached through Teldrassil's portal
   between them (the line violet through it), Zephras Isle by its airships (the Alliance's from Dalaran, the Horde's
   from Mulgore), and Forever's portals (Stormwind's to Dalaran and back, Dalaran's Violet Citadel) where the walking
-  data holds their rooms: those are the mages' own, so a character of another class goes without them (Teldrassil's,
-  which everyone steps through, stays everyone's). A pin where nobody can walk (a tower, a plateau) gets its line as near
+  data holds their rooms: those are the mages' own, and so are the pads of Stormwind's Wizard's Sanctum, so a character
+  of another class goes without them (Teldrassil's, which everyone steps through, stays everyone's). A pin where nobody can walk (a tower, a plateau) gets its line as near
   as one walks, then straight to it. The lifts and portals are on the map too (not yet confirmed by the game). On a flight
   the line shows the flight's way on from where you are, pin or none, and from where it lands on to the pin; aboard
   a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
@@ -1022,7 +1022,8 @@ Tests: `dev/tests/navigation.lua`.
   the blue and white lines you normally see when you take those rides." (`Paths.lua`). "Only Mages can use portals.
   So if I am on a druid the routing needs to find another route without portals": Core's set *Travel* gives the
   portal objects a class (`class` 8, by hand), the planner takes one only for that class; Teldrassil's, a trigger
-  everyone steps into, has none. Then: "While you are dead, can you put the routing to your place of death [...]
+  everyone steps into, has none. Asked about the Wizard's Sanctum's pads in Stormwind: "Yes, mages only" (`class` 8
+  too). Then: "While you are dead, can you put the routing to your place of death [...]
   once you live again your map pin changes to where it has been before." (`Corpse.lua`; a ghost's route neither
   flies nor casts).
 - **2026-11-10, the satchel swaps the minimaps:** Saneroki: "The little button on the native minimap to go back to our
