@@ -2340,6 +2340,48 @@ end)()
     check(gone == 1 and not seat.held and game:GetScale() == 1 and game._strata == "MEDIUM" and game._points[1][4] == 16,
         "closed while seated, it is given back, and that is told")
     check(seat:Hold(100, 900, 200, 600, "HIGH", 50) == false, "a closed window is not seated")
+
+    -- Its parts the game pinned above it in a strata of their own (the trainer window's list and scroll bar on HIGH,
+    -- the window on MEDIUM) keep that strata's level, which the window's never moves: seated on the full screen's
+    -- strata they stood behind it, and the trainer's list was empty the first time (Saneroki, 2026-11-11). The game
+    -- drags a frame's parts along to its new strata, as this window does.
+    local trainer = CreateFrame("Frame", "SaneTestTrainer", UIParent)
+    trainer:SetSize(338, 424)
+    trainer:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
+    trainer:SetFrameStrata("MEDIUM")
+    trainer:SetFrameLevel(10)
+    rawset(trainer, "SetFrameStrata", function(self, strata)
+        self._strata = strata
+        for _, part in ipairs(self._children) do part._strata = strata end
+    end)
+    rawset(trainer, "GetChildren", function(self) return unpack(self._children) end)
+    local inset = CreateFrame("Frame", nil, trainer)
+    inset:SetFrameStrata("MEDIUM")
+    inset:SetFrameLevel(11)
+    rawset(inset, "GetChildren", function(self) return unpack(self._children) end)
+    local train = CreateFrame("Button", nil, inset) -- deep in the window, high up: the pinned ones go above it
+    train:SetFrameStrata("MEDIUM")
+    train:SetFrameLevel(60)
+    local list = CreateFrame("Frame", nil, trainer)
+    list:SetFrameStrata("HIGH")
+    list:SetFrameLevel(3)
+    local bar = CreateFrame("Frame", nil, trainer)
+    bar:SetFrameStrata("HIGH")
+    bar:SetFrameLevel(4)
+    local seated = Core.Seat.New(trainer, { label = "test: pinned" })
+    for visit = 1, 2 do
+        check(seated:Hold(100, 900, 200, 600, "HIGH", 50) and trainer._strata == "HIGH" and trainer._level == 50,
+            "visit " .. visit .. ": the trainer window seated in the room's strata")
+        check(list._strata == "HIGH" and list._level == 61 and bar._strata == "HIGH" and bar._level == 61 and Core.Lent(list),
+            "visit " .. visit .. ": its pinned list and scroll bar above every part of it, in front of the full screen")
+        seated:Free()
+        check(trainer._strata == "MEDIUM" and trainer._level == 10 and list._strata == "HIGH" and list._level == 3
+            and bar._strata == "HIGH" and bar._level == 4 and inset._strata == "MEDIUM" and not Core.Lent(list),
+            "visit " .. visit .. ": given back, after the window: the list and scroll bar on HIGH again at their own levels")
+    end
+    seated:Hold(100, 900, 200, 600, "HIGH", 50)
+    trainer:Hide()
+    check(not seated.held and list._strata == "HIGH" and list._level == 3, "closed while seated: its pinned parts given back too")
 end)()
 
 -- A module's window keeps its place in the profile in use, each profile its own.

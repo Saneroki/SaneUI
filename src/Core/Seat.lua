@@ -24,6 +24,14 @@ local Core = SaneUI.Core
 --  A protected window in a fight is not seated (Lend says no: Hold returns
 --  false), and one seated is given back once the fight is over.
 --
+--  Its parts the game pinned above it, in a strata of their own (the trainer
+--  window's list and scroll bar stand on HIGH, the window on MEDIUM), keep a
+--  level of that strata that its own levels never move: seated on the full
+--  screen's strata they stayed behind it, and the trainer's list was empty
+--  until the window was opened again (Saneroki, 2026-11-11). So they are lent
+--  too, raised above the rest of the window in the room's strata, and given
+--  back after it (its strata given back drags theirs along).
+--
 --      local seat = Core.Seat.New(frame, {
 --          label = "spellbook",            -- its name in the error log
 --          sized = function() end,         -- its size changed while seated (fitted anew already)
@@ -79,11 +87,55 @@ local function Moved(frame)
     Core.Safe(self.label, Fit, self)
 end
 
--- Its layer in the room: that strata, at least that level (where its own is above already, its own).
+-- The game's stratas, low to high.
+local STRATA = { WORLD = 0, BACKGROUND = 1, LOW = 2, MEDIUM = 3, HIGH = 4, DIALOG = 5, FULLSCREEN = 6,
+                 FULLSCREEN_DIALOG = 7, TOOLTIP = 8 }
+
+-- Its parts pinned above it (a strata of their own, higher than its own), found before it is seated, while that
+-- still shows; each one's layer noted first, since the window's new strata may change it.
+local function Pinned(frame)
+    local own, pinned = STRATA[frame:GetFrameStrata()], {}
+    if not own then return pinned end
+    for _, child in ipairs({ frame:GetChildren() }) do
+        local strata = STRATA[child:GetFrameStrata()]
+        if strata and strata > own then
+            local lend = Core.Lend(child)
+            if lend:SetLayer() then pinned[#pinned + 1] = lend end
+        end
+    end
+    return pinned
+end
+
+-- The highest level in a frame and its parts, those of skip left out.
+local function Top(frame, skip)
+    local top = Plain(frame:GetFrameLevel())
+    for _, child in ipairs({ frame:GetChildren() }) do
+        if not skip[child] then top = math.max(top, Top(child, skip)) end
+    end
+    return top
+end
+
+-- Its pinned parts above the rest of it in the room's strata, as they stood above it in the game's own; one in a
+-- strata above the room's stands above the full screen already and is left there.
+local function Lift(self, strata)
+    local pinned, skip = self.pinned, {}
+    if #pinned == 0 then return end
+    for _, lend in ipairs(pinned) do skip[lend.frame] = true end
+    local level = Top(self.frame, skip) + 1
+    for _, lend in ipairs(pinned) do
+        if (STRATA[lend.frame:GetFrameStrata()] or 0) <= (STRATA[strata] or 0) then lend:SetLayer(strata, level) end
+    end
+end
+
+-- Its layer in the room: that strata, at least that level (where its own is above already, its own); its pinned
+-- parts above it.
 local function Layer(self)
     local frame, strata, level = self.frame, self.layer[1], self.layer[2]
     placing = true
-    local ok, problem = pcall(self.lent.SetLayer, self.lent, strata, Plain(frame:GetFrameLevel()) < level and level or nil)
+    local ok, problem = pcall(function()
+        self.lent:SetLayer(strata, Plain(frame:GetFrameLevel()) < level and level or nil)
+        Lift(self, strata)
+    end)
     placing = false
     if not ok then error(problem, 0) end
 end
@@ -134,7 +186,10 @@ function methods:Hold(left, top, width, height, strata, level)
     local frame = self.frame
     if Core.Locked(frame) or not frame:IsShown() then return false end
     Follow(frame)
-    if not self.held then self.base = Plain(frame:GetScale()) end
+    if not self.held then
+        self.base = Plain(frame:GetScale())
+        self.pinned = Pinned(frame)
+    end
     if self.base <= 0 then self.base = 1 end
     self.held = true
     local room = self.room
@@ -150,9 +205,21 @@ function methods:Free()
     if not self.held then return end
     self.held = false
     placing = true
-    local ok, problem = pcall(self.lent.Return, self.lent)
+    local ok, back = pcall(self.lent.Return, self.lent)
+    local problem = not ok and back or nil
+    -- Its pinned parts after it, its strata given back dragging theirs along: after the fight too where its own
+    -- waits for that (Core.AfterCombat keeps the order).
+    for _, lend in ipairs(self.pinned) do
+        if ok and back == false then
+            Core.AfterCombat(lend, lend.Return, lend)
+        else
+            local fine, why = pcall(lend.Return, lend)
+            if not fine and not problem then problem = why end
+        end
+    end
+    self.pinned = {}
     placing = false
-    if not ok then Core.Report(self.label, problem) end
+    if problem then Core.Report(self.label, problem) end
 end
 
 function methods:Size()
@@ -166,7 +233,8 @@ end
 function Seat.New(frame, options)
     options = options or {}
     local self = setmetatable({ frame = frame, options = options, label = options.label or "seat",
-                                lent = Core.Lend(frame), room = {}, held = false, base = 1 }, { __index = methods })
+                                lent = Core.Lend(frame), room = {}, held = false, base = 1, pinned = {} },
+                         { __index = methods })
     seats[frame] = self
     return self
 end
