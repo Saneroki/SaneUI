@@ -4269,10 +4269,16 @@ end)()
         end
     end
     for _, widget in ipairs(name and name._parent._children or {}) do if widget ~= name then under = widget end end
-    check(name and name._shown ~= false and name._parent._shown and name._text == "Elwynn Forest|cffFFFF00 (1-10)|r",
+    check(name and name._shown ~= false and name._parent._shown and name._text == "Elwynn Forest |cffFFFF00(1-10)|r",
         "the zone under the mouse named over the full map, its levels after it in the colour of how hard they are")
     check(under and under._text == Core.UNCONFIRMED_MARK .. "|cffFFFF00" .. ns.TEXT.fishing:format(1, 25) .. "|r",
         "under it the fishing skill its waters ask, yellow while fish get away, marked as not yet confirmed")
+    -- Forever tells no zone's levels: those of the quests given there (Core's data: 100 at 5, 101 at 30; 5 has none).
+    C_Map.GetMapLevels = function() end
+    ns.Label.Hide()
+    ns.Label.Show(1415, 0.5, 0.65)
+    check(name._text == "Elwynn Forest |cffFFFF00(5-30)|r",
+        "the game telling no levels: those of the quests given in the zone")
     ns.Label.Show(1415, 0.9, 0.1)
     check(not name._parent._shown, "over no zone: no label")
     ns.Label.Show(1415, 0.5, 0.65)
@@ -5941,6 +5947,15 @@ end)()
         "Shift held as it opens: the game's own flight map")
     IsShiftKeyDown = function() return false end
     TaxiFrame:Hide()
+    -- The switch Show the game's map is the world map's: the flight master's is ours all the same.
+    Core.Set(ns.name, "nativeMap", true)
+    TaxiFrame:Show()
+    Window.frame._group:Run(1)
+    check(ns.Taxi.On() and TaxiFrame._scale == Core.Holder.TINY and Window.handle.edge.full,
+        "Show the game's map on: a flight master's map is ours all the same")
+    TaxiFrame:Hide()
+    Window.frame._group:Run(1)
+    Core.Set(ns.name, "nativeMap", false)
     TaxiFrame:Show()
     Window.frame._group:Run(1)
     Window.Back()

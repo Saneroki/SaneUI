@@ -21,7 +21,7 @@ local _, ns = ...
 --                   Travel, else straight: Paths.lua)
 --      ours closed  (Esc, back to the corner) while the master is open: the game's closes too (CloseTaxiMap)
 --
---  The switch Show the game's map leaves the flight master's map the game's too. No frames of its own.
+--  Whatever the switch Show the game's map says (the world map's). No frames of its own.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
@@ -128,10 +128,11 @@ function Taxi.Ways(node)
     return ways
 end
 
--- The game's flight map opened (a hook after its OnShow): ours in its place, unless Shift is held, the switch Show
--- the game's map is on, or the module stands down.
+-- The game's flight map opened (a hook after its OnShow): ours in its place, unless Shift is held or the module stands
+-- down. Whatever the switch Show the game's map says: that one is the world map's (Saneroki, 2026-11-11, his game's map
+-- on: "the flightmaster still opens only the native window normally").
 local function Opened(frame)
-    if open or ns.off or ns.options.nativeMap or Core.Plain(IsShiftKeyDown()) then return end
+    if open or ns.off or Core.Plain(IsShiftKeyDown()) then return end
     local made = Core.Lend(frame)
     if not (made:SetScale(Core.Holder.TINY) and made:SetAlpha(0)) then
         made:Return()

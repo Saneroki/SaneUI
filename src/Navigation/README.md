@@ -37,7 +37,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
     the world the continent; **a click** opens it, as on the game's map. On the full map its name stands at the
     top, under the bar, as the game's map writes it: the zone's levels after it, in the colour of how hard they are
-    for you, and under it the fishing skill its waters ask, from the first catch to where no fish gets away
+    for you (where the game tells none, as in Forever, the levels of the quests given in that zone, the far few left
+    out; the red mark before them while one is not yet confirmed), and under it the fishing skill its waters ask, from the first catch to where no fish gets away
     (*Fishing 130-225*), red while you cannot fish there yet, yellow while fish get away, green past it; that skill
     is the original game's (not yet confirmed: the red mark before it);
   - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
@@ -301,8 +302,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   way there, hop by hop as the master flies it, and its tooltip says what the flight costs; a click on it flies
   there, as the game's flight map does. A flight point you cannot fly to from here is red, as one you have not found
   yet is everywhere on the map. Back to the corner (Esc)
-  ends the talk. Hold Shift as you talk to the flight master for the game's own flight map; with *Show the game's
-  map* on, it is always the game's.
+  ends the talk. Hold Shift as you talk to the flight master for the game's own flight map (whatever *Show the
+  game's map* says: that one is the world map's).
 - **Back to your corpse:** when you die, the map pin moves to where you fell (the game's arrow on the screen leads
   to it), and once you have released your spirit, onto your corpse as the game tells it: the golden line leads you
   from the spirit healer back to it, on foot or by ship (a ghost takes no flight, teleport or hearthstone). Alive
@@ -519,7 +520,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **Label** (`Label.lua`): where the highlight lights a zone up (`Art.Light`), on the full map only, its name at the
   canvas' top under the bar, as Blizzard's map writes it (`AreaLabelDataProvider.lua`: `WorldMapTextFont`,
   `SubZoneTextFont`, scale `Label.SCALE`): the zone (`C_Map.GetMapInfoAtPosition`) with its levels
-  (`C_Map.GetMapLevels`) in the game's difficulty colours (below you as its highest less two, above you as its
+  (`C_Map.GetMapLevels`; Forever gives none there and its client tables hold none, so `FromQuests`: the quests of
+  the quest givers on that zone's map, `Data.Map:On`, their `level` in *Quests*, of the player's side or both and of
+  no one class, sorted, `Label.TRIM` at each end left out from `Label.FEW` quests on, kept per zone until Core's
+  places change; `Core.UNCONFIRMED_MARK` before them while one is unverified) in the game's difficulty colours (below you as its highest less two, above you as its
   lowest, else yellow); under it the fishing skill of its area (Core's set *Zones*' `area`, then *Fishing*'s
   `skill`, the original game's base: a cast catches at it, every one `Label.SURE` points over it), from 1 at the
   least to that, coloured by your fishing skill line with its bonus (`Nodes.Reach`), the red mark before it while
@@ -536,7 +540,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   again with the map.
 - **Taxi** (`Taxi.lua`, no frames of its own): hooks after the game's flight maps' `OnShow` and `OnHide` (`TaxiFrame`;
   `FlightMapFrame` once `Blizzard_FlightMap` has loaded, `EventUtil.ContinueOnAddOnLoaded`), as the game shows them by
-  its own code. Shown without Shift (and without `nativeMap`, the module up): made tiny and clear (`Core.Lend`,
+  its own code. Shown without Shift (the module up; `nativeMap` is the world map's, not looked at): made tiny and clear (`Core.Lend`,
   `Core.Holder.TINY`, alpha 0: never hidden, its `OnHide` would end the talk), the master's flight points read
   (`C_TaxiMap.GetAllTaxiNodes` of `GetTaxiMapID`: slot, state, position; `TaxiNodeCost`), `Pins.Changed("flights")`,
   and the window filled at that map (`Window.OpenTo`). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
@@ -1043,6 +1047,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the zones' levels from their quests; the flight master's map whatever the world map's switch says:**
+  Forever tells no zone's level range (above), and Saneroki chose "Forever's quest levels": `Label.lua`'s
+  `FromQuests`. Then: "the flightmaster still opens only the native window normally": his *Show the game's map* was
+  on, and `Taxi.lua` stood aside for it; now only Shift does.
 - **2026-11-11, flight points and docks at every zoom, their ways kept by a click:** Saneroki: "can you make sure
   that when you zoom all the way out of the map that all ship and flightpath icons are still fully visible so we can
   hover over them to see where they go. Can you also make them so that a single click will make them "active" [...]
