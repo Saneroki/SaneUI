@@ -35,7 +35,11 @@ is small, and the maps of the dungeons and raids. The plan is in
     small map at the game's middle zoom step (of its six), on the full map where that step's square takes half the
     map's height (the game's dots show around you there too); in Retail on the map you are on;
   - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
-    the world the continent; **a click** opens it, as on the game's map;
+    the world the continent; **a click** opens it, as on the game's map. On the full map its name stands at the
+    top, under the bar, as the game's map writes it: the zone's levels after it, in the colour of how hard they are
+    for you, and under it the fishing skill its waters ask, from the first catch to where no fish gets away
+    (*Fishing 130-225*), red while you cannot fish there yet, yellow while fish get away, green past it; that skill
+    is the original game's (not yet confirmed: the red mark before it);
   - **a click** where it opens nothing (in a zone) **pings** there: your party and raid see it on their minimaps,
     as a click on the game's minimap does (below: theirs). It goes out at once, in the click (the
     game takes a ping only from the click itself), so a double click pings too, with its first click. The game
@@ -283,7 +287,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   Tirisfal Glades' map there, on the ruins). Darnassus and Rut'theran Village are reached through Teldrassil's portal
   between them (the line violet through it), Zephras Isle by its airships (the Alliance's from Dalaran, the Horde's
   from Mulgore), and Forever's portals (Stormwind's to Dalaran and back, Dalaran's Violet Citadel) where the walking
-  data holds their rooms. A pin where nobody can walk (a tower, a plateau) gets its line as near
+  data holds their rooms: those are the mages' own, so a character of another class goes without them (Teldrassil's,
+  which everyone steps through, stays everyone's). A pin where nobody can walk (a tower, a plateau) gets its line as near
   as one walks, then straight to it. The lifts and portals are on the map too (not yet confirmed by the game). On a flight
   the line shows the flight's way on from where you are, pin or none, and from where it lands on to the pin; aboard
   a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
@@ -291,6 +296,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
+- **Back to your corpse:** when you die, the map pin moves to where you fell (the game's arrow on the screen leads
+  to it), and once you have released your spirit, onto your corpse as the game tells it: the golden line leads you
+  from the spirit healer back to it, on foot or by ship (a ghost takes no flight, teleport or hearthstone). Alive
+  again, the pin you had before is back, followed or not as it was; without one before, none. A pin you set while
+  dead stays yours. A `/reload` or a logout while dead keeps all of it.
 - **Ship times at a dock:** at the dock of a boat or a zeppelin, or a station of the Deeprun Tram, the travel
   overlay (below) shows the next to come there: where it goes, the golden line filling as it nears, when it
   arrives (*Board now* while it is in) and when it leaves; the others that stop there in a line each below. A ship
@@ -300,7 +310,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   it takes once round (Forever's own boats and zeppelins), they hold only for its next three trips; then it says to
   ride it again. *Ship times at a dock* in the settings switches it off. On the map, the mouse over a dock's pin
   tells the same in its tooltip, counting down: when the ship next comes there and when it leaves (the tram's
-  stations too).
+  stations too); and draws its ship's whole way round over the map, light blue as on the ride (the tram's run from
+  station to station). The mouse over a flight point's pin draws every flight of your side that leaves it, white
+  as on a flight, fainter to a flight point you have not found.
 - **Your trip on screen:** on a flight, a boat, a zeppelin or the Deeprun Tram, the travel overlay high up
   the screen: where it began and where it goes at the ends of a fine golden line (the map route's art, its glint
   pulsing along) that fills smoothly as you go, the vehicle's icon riding at its tip, a flight point's mark at each
@@ -493,6 +505,29 @@ is small, and the maps of the dungeons and raids. The plan is in
   player lacks its appearance (`C_TransmogCollection.GetItemInfo`, `GetAppearanceInfoBySource`; else the game's
   line saying so), then the effects, last the stats. The last line, `Core.Unconfirmed`, says that it is not yet
   confirmed by the game (an enemy's too).
+- **Label** (`Label.lua`): where the highlight lights a zone up (`Art.Light`), on the full map only, its name at the
+  canvas' top under the bar, as Blizzard's map writes it (`AreaLabelDataProvider.lua`: `WorldMapTextFont`,
+  `SubZoneTextFont`, scale `Label.SCALE`): the zone (`C_Map.GetMapInfoAtPosition`) with its levels
+  (`C_Map.GetMapLevels`) in the game's difficulty colours (below you as its highest less two, above you as its
+  lowest, else yellow); under it the fishing skill of its area (Core's set *Zones*' `area`, then *Fishing*'s
+  `skill`, the original game's base: a cast catches at it, every one `Label.SURE` points over it), from 1 at the
+  least to that, coloured by your fishing skill line with its bonus (`Nodes.Reach`), the red mark before it while
+  unconfirmed (`Core.UNCONFIRMED_MARK`). Out with the highlight (`Art.Unlight`); told anew at a level or a skill.
+- **Paths** (`Paths.lua`): while the mouse is on a flight point's pin or a dock's (`PinView` Tip, Left), that pin's
+  ways from Core's set *Travel* on a layer of their own (`Canvas.LEVELS.paths`, between the route and the pins):
+  every flight of the player's side from that node (`byFromNode`; its path on the flight point's plane), fainter to
+  one not found (`Planner.Knows`); a boat's or zeppelin's whole way round (its path's points on their worlds' planes,
+  `Planner.Plane`, a leap no line); the tram's two stations straight. Straight lines from point to point, the dark
+  edge and the route's art in `Route.COLOURS`, only near the view, cut at the canvas' edge (`Paths.Fit`), laid out
+  again with the map.
+- **Corpse** (`Corpse.lua`, no frames): dead (`PLAYER_DEAD`), the game's map pin one had (`Live.Waypoint`,
+  `Live.Tracked`) kept as the character's `corpse` (once: a `/reload` while dead keeps it), the pin put where one
+  stands, followed; a ghost (`PLAYER_ALIVE` with `UnitIsGhost`, a loading screen, and again `Corpse.AGAIN` later):
+  the pin moved to `C_DeathInfo.GetCorpseMapPosition` on the map one died on, else the one one stands on, while the
+  pin is still ours (within `Corpse.SAME`); alive again (`PLAYER_UNGHOST`, `PLAYER_ALIVE` alive, a login alive) the
+  pin one had back as it was, or none, where the pin is still ours; a pin set since stays. `Corpse.GiveBack` does
+  the same when the module stands down. The planner's journey for a ghost (`Planner.Ghost`) has no flight points,
+  teleports or hearthstone.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
@@ -944,11 +979,14 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
+| `Corpse.lua` | While dead: the map pin at your corpse (where you fell, then where the game tells it), the one you had back once alive again. No frames |
 | `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the teleports it has (the hearthstone told in the chat where it is quicker); where along it the player is. No frames |
+| `Label.lua` | The zone under the mouse named at the top of the full map: its name, its levels, the fishing skill its waters ask (Core's set *Fishing*) |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
+| `Paths.lua` | The ways of the flight point or dock under the mouse: each flight of your side from it white, a ship's way round light blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's 3D model beside its tooltip with Alt |
 | `Marks.lua` | The player's arrow, the map pin, the party, the pings |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive. No frames |
@@ -976,6 +1014,17 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-10, the zone's name, the ways under the mouse, the mages' portals, back to the corpse:** Saneroki: "When
+  you hover over a zone it gets highlighted, right? When that happens, can you show a overlay of what Level range
+  and fishing range that zone is and the name of the zone." The full map names it at its top (`Label.lua`), the
+  levels the game's, the fishing skill from Core's new set *Fishing* (the original game's, where both its records
+  agree: unconfirmed). "When you hover over a boat or flightpath, can you overlay the paths they go around? you know
+  the blue and white lines you normally see when you take those rides." (`Paths.lua`). "Only Mages can use portals.
+  So if I am on a druid the routing needs to find another route without portals": Core's set *Travel* gives the
+  portal objects a class (`class` 8, by hand), the planner takes one only for that class; Teldrassil's, a trigger
+  everyone steps into, has none. Then: "While you are dead, can you put the routing to your place of death [...]
+  once you live again your map pin changes to where it has been before." (`Corpse.lua`; a ghost's route neither
+  flies nor casts).
 - **2026-11-10, the satchel swaps the minimaps:** Saneroki: "The little button on the native minimap to go back to our
   own minimap. Can you also add that one to our own minimap bag window so we have a toggle so we can go back and
   forth". The satchel's page has the same button beside its X (`Satchel.swap`, Core's `Window.Swap`).

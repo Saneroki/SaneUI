@@ -206,7 +206,7 @@ part of Core.
 | --- | --- |
 | Items | Items (item ID), ItemSets (item set ID), Disenchants (the game's row of disenchanting), Enchantments (enchantment ID) |
 | Quests | Quests (quest ID), ClassQuests (a chain, numbered by hand: its class × 100 and its place) |
-| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel (the game's TaxiPath ID; our own number for a way it has no path for), Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID), Indoors (the building's root file ID), Encounters (encounter ID), Bosses (encounter ID), Dungeons (the instance's map ID) |
+| World | NPCs (creature ID), CreatureSpells (spell ID), Objects (object ID), Zones (map ID), Travel (the game's TaxiPath ID; our own number for a way it has no path for), Places (our own numbers), Drops (`npc:<ID>`, `object:<ID>`, `zone:<map ID>`), Tiles (continent × 4096 + row × 64 + column), Overlays (the game's overlay ID), Indoors (the building's root file ID), Encounters (encounter ID), Bosses (encounter ID), Dungeons (the instance's map ID), Fishing (area ID: the fishing skill its waters ask, the original game's, kept apart from the game's Areas until play confirms it) |
 | Spawns | Spawns (`npc:<ID>`, `object:<ID>`), QuestAreas (`<quest>/<objective>/<stage>/<map>`), PatrolPaths (creature ID) |
 | CreatureSpawns | CreatureSpawns (creature ID) |
 | Routes | Walking (a terrain tile: continent × 4096 + row × 64 + column) |

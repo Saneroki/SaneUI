@@ -1132,6 +1132,7 @@ function W.Install(env)
     env.UnitAffectingCombat = function() return W.combat end
     env.IsInGroup = function() return false end
     env.UnitIsDeadOrGhost = function() return false end
+    env.UnitIsGhost = function() return false end
     env.UnitHealth, env.UnitHealthMax = function() return 100 end, function() return 100 end
     env.UnitPowerType = function() return 0, "MANA" end
     local function Mana(_, kind) return (kind or 0) == 0 and 100 or 0 end

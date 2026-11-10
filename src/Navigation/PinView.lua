@@ -27,7 +27,8 @@ local _, ns = ...
 --                  and what play counted. A percent once enough came, until then how many of how many; the likeliest
 --                  first, at most PinView.DROPS lines. In a gathered marker a line or so under each name
 --      a dock      a boat's, a zeppelin's or the tram's: under its name when it next comes here and leaves,
---                  counting down while the tooltip shows (DockWatch.Timer; Saneroki, 2026-11-09), then its ports
+--                  counting down while the tooltip shows (DockWatch.Timer; Saneroki, 2026-11-09), then its ports;
+--                  its way round drawn over the map while the mouse is on it, a flight point's flights too (Paths.lua)
 --      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
@@ -252,6 +253,7 @@ function Tip(button)
     GameTooltip:Show()
     hovered = button
     Model()
+    ns.Safe("paths", ns.Paths.Show, pin) -- a flight point's flights, a dock's way round, drawn over the map
 end
 
 -- An item the tooltip asked for has come from the game: drawn again, once, on the next frame.
@@ -353,6 +355,7 @@ local function Left()
     hovered = nil
     GameTooltip_Hide()
     Model()
+    ns.Safe("paths", ns.Paths.Hide)
 end
 
 local function Down(button, mouse)

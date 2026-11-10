@@ -26,7 +26,8 @@ local _, ns = ...
 --                    times, and its run, Tram), the lifts from one end to the other (Core's set Travel, each end at
 --                    its landing, Lifts.lua: the wait for the car, half the time between two departures, and its
 --                    ride), the portals from their trigger to where they bring one (Core's set Travel, Portals:
---                    Planner.PORTAL seconds; with walking data only one with a floor at both ends), the
+--                    Planner.PORTAL seconds; with walking data only one with a floor at both ends; a portal of one
+--                    class, the mages' portal objects, only for that class), the
 --                    teleports this character has (Core's set Travel,
 --                    Teleports: a spell it knows, with its reagent in the bags, or an item it holds that the game
 --                    lets it use) from the player to where each brings one (its cooldown and the cast); the quickest
@@ -196,6 +197,11 @@ function Planner.Knows(node)
     return node ~= nil and Known()[node] == true
 end
 
+-- Whether the character is a ghost: no flights, no teleports, no hearthstone on its way (Journey).
+function Planner.Ghost()
+    return Core.Plain(UnitIsGhost("player")) == true
+end
+
 local Points -- (below)
 local opened = false -- a flight master was opened this session: the game's maps tell which flight points are found
 
@@ -326,6 +332,7 @@ local function Plane(world)
     if #list > 0 then planes[world] = found or false end
     return found
 end
+Planner.Plane = Plane -- (Paths.lua: a ship's way drawn)
 
 -- The world's map of each point of a transport's way: the last one given at or before it.
 local function Worlds(path)
@@ -451,7 +458,8 @@ end
 -- Every portal of Core's set Travel (a trigger of the game's that brings one elsewhere on its continent the moment one
 -- steps into it: Darnassus and Rut'theran Village; or a portal object one uses: Stormwind's and Dalaran's), on a plane
 -- of the world map: { key, kind ("portal"), map, u, v, z (the trigger), tu, tv, tz (where it brings one), side (one
--- side's only, else nil) }. Made once Core's set Travel is there, again when it changes.
+-- side's only, else nil), class (one class's only, the game's class ID: the mages' portals; else nil) }. Made once
+-- Core's set Travel is there, again when it changes.
 local function Portals()
     if portals then return portals end
     local found = {}
@@ -462,7 +470,7 @@ local function Portals()
         local map = a and a.map and Plane(a.map)
         if map and b and a.x and a.y and b.x and b.y then
             found[#found + 1] = { key = key, kind = "portal", map = map, u = -a.y, v = a.x, z = a.z, tu = -b.y,
-                                  tv = b.x, tz = b.z, side = way.side }
+                                  tv = b.x, tz = b.z, side = way.side, class = way.class }
         end
     end
     if Travel:Ready() and #Coords.Planes() > 0 then portals = found end
@@ -760,6 +768,10 @@ local function Journey(start, goal, measured, cut, home)
     -- A boat, zeppelin or tram of one side (Core's set Travel: its towns'): none for the other side (their guards).
     local faction = Core.Plain(UnitFactionGroup("player"))
     faction = type(faction) == "string" and faction:lower() or nil
+    -- A portal of one class (the mages': Saneroki, 2026-11-10, "Only Mages can use portals") only for that class.
+    local class = Core.Plain(select(3, UnitClass("player")))
+    -- A ghost on the way to its corpse (Corpse.lua) talks to no flight master and casts nothing: on foot, by ship.
+    local ghost = Planner.Ghost()
     local now = Ships.Now()
     local useData = Walk.Ready()
     -- The places: the two ends, and on every plane the known flight points, the docks, the lifts' ends, where the
@@ -773,7 +785,7 @@ local function Journey(start, goal, measured, cut, home)
     for _, plane in ipairs(Coords.Planes()) do
         for node, point in pairs(Points(plane)) do
             points[node] = point
-            if known[node] then places[node] = point end
+            if known[node] and not ghost then places[node] = point end
         end
     end
     for name, dock in pairs(Docks()) do
@@ -805,7 +817,7 @@ local function Journey(start, goal, measured, cut, home)
     if home then hearth, homeSeconds = Hearth() end
     if hearth then places.hearth = { map = hearth.map, u = hearth.u, v = hearth.v } end
     -- Where the teleports this character has bring one (on its floor there, where known).
-    local teleports = Teleports(faction)
+    local teleports = ghost and {} or Teleports(faction)
     for _, teleport in ipairs(teleports) do places[teleport.name] = teleport.place end
     local pace = Planner.Pace()
     -- A walk's seconds: as found, else guessed (between two places of known heights the climb too, as the search
@@ -957,9 +969,12 @@ local function Journey(start, goal, measured, cut, home)
                 local other = lift[here.lift == lift[1] and 2 or 1]
                 if places[other.name] then Reach(other.name, low + lift.wait / 2 + lift.time, lift) end
             end
-            -- Through a portal (one of the player's side or of both): from its trigger to where it brings one.
+            -- Through a portal (one of the player's side or of both, and of their class or of all): from its trigger
+            -- to where it brings one.
             local portal = here.portal
-            if portal and (not portal.side or portal.side == faction) then Reach(here.out, low + Planner.PORTAL, portal) end
+            if portal and (not portal.side or portal.side == faction) and (not portal.class or portal.class == class) then
+                Reach(here.out, low + Planner.PORTAL, portal)
+            end
             -- Home: the hearthstone from where the player is (home); and the teleports this character has.
             if current == "start" then
                 if places.hearth then Reach("hearth", low + homeSeconds, "hearth") end
@@ -1261,7 +1276,9 @@ local function Make(way, start)
     end }, function()
         local seconds
         steps, seconds = Find(start, goal)
-        if way == pin and not start.keep and not Same(told.home, goal) then home = Quicker(start, goal, seconds) end
+        if way == pin and not start.keep and not Same(told.home, goal) and not Planner.Ghost() then
+            home = Quicker(start, goal, seconds)
+        end
     end)
 end
 

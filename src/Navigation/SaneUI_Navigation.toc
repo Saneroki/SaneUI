@@ -37,6 +37,8 @@ Search.lua
 Lifts.lua
 # The way to the map pin: on foot, by the flights this character knows, by ship, tram and lift. Knows no frames
 Planner.lua
+# While you are dead: the map pin at your corpse, the one you had back once you live again. Knows no frames
+Corpse.lua
 # The frame the map is drawn in, the same for both views: its layers, the player's place, the mouse
 Canvas.lua
 # The terrain: the game's minimap textures up close, the module's overview of them further out
@@ -47,6 +49,8 @@ Outlines.lua [ExcludeLoadGameType standard]
 Coasts.lua [ExcludeLoadGameType standard]
 # Blizzard's map art: the world's, the continent's, the zones' cut to their outlines, and the explored parts
 Art.lua
+# The zone under the mouse named over the full map, as the game's map does: its name, levels and fishing skill
+Label.lua
 # The indoor map of the building you are in: the game's indoor pictures without their black, at your floor
 Indoors.lua
 # A quest's areas, as the game shades them, over each zone in view
@@ -56,6 +60,8 @@ Dungeons.lua
 # The golden line of the way to the map pin: its pulse (the game makes that animation only from XML), its lines
 Route.xml
 Route.lua
+# The ways of the flight point or dock under the mouse: its flights white, a ship's way round light blue
+Paths.lua
 # The pins drawn: a button each, in the game's own looks
 PinView.lua
 # Over the map at a fixed size: the party, the player's arrow, the map pin

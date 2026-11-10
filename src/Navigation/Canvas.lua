@@ -14,6 +14,7 @@ local _, ns = ...
 --       │    ├─ light     the zone under the mouse (Art.lua)
 --       │    ├─ areas     the quest's areas (Areas.lua)
 --       │    ├─ route     the golden line (Route.lua)
+--       │    ├─ paths     the ways of the flight point or dock under the mouse (Paths.lua)
 --       │    ├─ pins      the pins of the game and of Core's data (PinView.lua)
 --       │    └─ marks     the party, the player's arrow, the map pin (Marks.lua)
 --       └─ the game's minimap, between the route and the pins, while it shows (Hybrid.lua): small, in the
@@ -91,8 +92,8 @@ Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a dou
 Canvas.HOME = 400    -- yards across the view's shorter side a middle click comes back at where the game's minimap
                      -- is not ours (Home)
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
-Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, indoors = 4, light = 5, areas = 7, route = 8, pins = 12,
-                  marks = 20, satchel = 30 }
+Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, indoors = 4, light = 5, areas = 7, route = 8, paths = 9,
+                  pins = 12, marks = 20, satchel = 30 }
 Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is above this
 Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own ground: over that, under the pins (Stack)
 
@@ -255,6 +256,7 @@ end
 -- What stands on the map kept inside the canvas' rectangle as it is now.
 local function Keep()
     ns.Safe("route", ns.Route.Fit, edge)
+    ns.Safe("paths", ns.Paths.Fit, edge)
     ns.Safe("pins", ns.PinView.Fit, edge)
     ns.Safe("marks", ns.Marks.Fit, edge)
     ns.Guarded(ns.Hybrid.Keep)
@@ -288,6 +290,7 @@ local function Empty()
     ns.Safe("indoors", ns.Indoors.Clear)
     ns.Safe("areas", ns.Areas.Clear)
     ns.Safe("route", ns.Route.Clear)
+    ns.Safe("paths", ns.Paths.Clear)
     ns.Safe("pins", ns.PinView.Clear)
 end
 
@@ -318,6 +321,7 @@ local function Draw()
     ns.Safe("indoors", ns.Indoors.Place, view)
     ns.Safe("areas", ns.Areas.Place, view, camera == ns.Window.small)
     ns.Safe("route", ns.Route.Place, view)
+    ns.Safe("paths", ns.Paths.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
 end
@@ -342,7 +346,10 @@ local function Stack()
     local base = frame:GetFrameLevel()
     holder:SetFrameLevel(base + Canvas.LEVELS.holder)
     for name, layer in pairs(layers) do layer:SetFrameLevel(base + Canvas.LEVELS[name]) end
-    if not ns.Terrain.Possible() then layers.route:SetFrameLevel(base + Canvas.OVER_GROUND) end
+    if not ns.Terrain.Possible() then
+        layers.route:SetFrameLevel(base + Canvas.OVER_GROUND)
+        layers.paths:SetFrameLevel(base + Canvas.OVER_GROUND)
+    end
     ns.PinView.Stack(base + Canvas.LEVELS.pins)
     ns.Marks.Stack(base + Canvas.LEVELS.marks)
     ns.Satchel.Stack(base + Canvas.LEVELS.satchel)
@@ -802,6 +809,7 @@ function Canvas.Build(parent)
     layers.art, layers.light = ns.Art.Build(holder)
     layers.indoors = ns.Indoors.Build(holder)
     layers.areas, layers.route = ns.Areas.Build(holder), ns.Route.Build(holder)
+    layers.paths = ns.Paths.Build(holder)
     ns.PinView.Build(holder)
     ns.Marks.Build(holder)
     Stack()

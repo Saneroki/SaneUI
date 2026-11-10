@@ -38,6 +38,8 @@ ns.TEXT = {
         blend = "The old maps far out, the land as it truly lies up close: the one fades into the other as you zoom in.",
         terrain = "The land as it truly lies, as a scrying glass shows it: both continents, from close up out to the whole world.",
     },
+    -- The zone under the mouse (Label.lua): the fishing skill its waters ask, from the first catch to every cast's.
+    fishing = "Fishing %d-%d",
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in the top right corner instead of this map's small window; the mouse pushed into that corner still fills the screen with this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
@@ -376,6 +378,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Nodes.GiveBack)
     ns.Safe("giving back", ns.Sparkles.GiveBack)
     ns.Safe("giving back", ns.Glints.Hide)
+    ns.Safe("giving back", ns.Corpse.GiveBack)
 end
 
 function ns.OnLoad()
@@ -397,6 +400,7 @@ function ns.OnLogin()
     ns.Found.Start()
     ns.Sparkles.Start()
     ns.Glints.Start()
+    ns.Corpse.Start()
 end
 
 Core.Command("map", ns.TEXT.about, function(rest)

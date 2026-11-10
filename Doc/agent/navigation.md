@@ -27,7 +27,10 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 5. The map pin and the route (`Planner.lua`, `Search.lua`, `Walk.lua`, `Gates.lua`, `Lifts.lua`; `Route.lua` draws the
    golden pulsing line, always from the player): on foot over Core's set *Walking*, by the flights the character knows,
    boats, zeppelins, the tram, lifts, portals, the hearthstone and the teleports it has (Core's set *Travel*,
-   `Data.Ships`, `Data.Trips`). The trip underway and the docks' times: `TripView.lua`, `DockWatch.lua`.
+   `Data.Ships`, `Data.Trips`; a portal of one class, the mages' own, only for that class). The trip underway and the
+   docks' times: `TripView.lua`, `DockWatch.lua`. The mouse on a flight point's or a dock's pin draws its ways
+   (`Paths.lua`); on a zone lit up the full map names it with its levels and fishing skill (`Label.lua`, Core's set
+   *Fishing*); while dead the map pin stands at the corpse, the one before back once alive (`Corpse.lua`).
 6. The leveling guide is not Navigation's: Speed Leveling runs text guides with its own engine
    (`src/SpeedLeveling/Guide.lua`, `Guides.lua`, `Run.lua`). Its arrow points straight at its place (2026-11-07); the
    planner still serves a way through `Core.Ways` (its second way, `guide`, never drawn; `Core.Ways.Serve` at its end),
@@ -43,8 +46,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 The file list with a line each: `src/Navigation/README.md`, section *Files* (line 828). The groups: the window and its
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
-(`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`); the routes (`Walk`, `Gates`, `Search`, `Lifts`, `Planner`,
-`Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
+(`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
+`Planner`, `Corpse`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,
 `indoor-art` and `mark-art`, never by hand.

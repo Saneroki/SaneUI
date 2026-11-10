@@ -138,3 +138,8 @@ about = "What was counted in play in Forever up to 2026-10-28, as our tool picke
 kind = "batch"
 game = "forever"
 about = "The original game's drop chances (patch 1.12), only where every record of it agrees to the digit and the item is already known to drop from that creature in Forever, and no chance of Forever's own is known. Unverified: Forever's own counts replace it."
+
+[23]
+kind = "batch"
+game = "forever"
+about = "The original game's fishing skill of each area (patch 1.12): the base its servers measure a cast against, only where every record of it agrees and Forever's client still has the area under its old name. Unverified: Forever tells no area's fishing skill; play confirms it."

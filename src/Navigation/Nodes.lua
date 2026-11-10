@@ -10,6 +10,7 @@ local _, ns = ...
 --                              anything else (the data has the names in English)
 --      Nodes.Picture(node)     the file ID of what it gives (its herb, its ore), nil while not known
 --      Nodes.TooHard(node)     whether your skill (with its bonus) is below what it needs, or you have none
+--      Nodes.Reach(skill)      what you reach in a skill line with its bonus; false: not learned; nil: not told
 --      Nodes.Active()          the kind whose finder is on now ("herb", "ore", "fish"), nil for none
 --      Nodes.Wanted()          the kinds the pin filter wants found, as one string ("herb fish")
 --
@@ -123,11 +124,11 @@ end
 
 local skills = {} -- [skill line] = what you reach with its bonus, or false: not learned
 
-function Nodes.TooHard(node)
-    local skill = node.skill
+-- What you reach in a skill line, with its bonus (a fishing pole's, a lure's); false where you have not learned it;
+-- nil where the game tells no skill line's rank (Retail).
+function Nodes.Reach(skill)
     local lines = rawget(_G, "C_SkillInfo")
-    -- A game that tells no skill line's rank (Retail): none greyed, rather than all.
-    if not skill or not (lines and lines.GetSkillLineInfoByID) then return false end
+    if not skill or not (lines and lines.GetSkillLineInfoByID) then return nil end
     local reach = skills[skill]
     if reach == nil then
         reach = false
@@ -139,6 +140,13 @@ function Nodes.TooHard(node)
         end
         skills[skill] = reach
     end
+    return reach
+end
+
+function Nodes.TooHard(node)
+    local reach = Nodes.Reach(node.skill)
+    -- A game that tells no skill line's rank (Retail): none greyed, rather than all.
+    if reach == nil then return false end
     return not reach or reach < node.skillLevel
 end
 

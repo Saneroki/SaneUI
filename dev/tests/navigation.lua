@@ -505,6 +505,7 @@ W.cvarInfo.rotateMinimap = { default = "0", scope = "character" }
 GetUnitSpeed = function() return gather.speed end
 IsStealthed = function() return false end
 UnitIsDeadOrGhost = function() return false end
+UnitIsGhost = function() return false end
 UnitCastingInfo = function() return nil end
 UnitChannelInfo = function() return nil end
 GetLootSourceInfo = function() return nil end
@@ -589,9 +590,9 @@ Set(packPath .. "/Places.lua", "Places", "00000005", "int", '"kind", "name", "po
 -- The boat's way round has its docks on the maps too: in the east hall, and on Kalimdor in the game's area 12.
 Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     '"kind", "name", "from", "to", "fromNode", "toNode", "length", "path", "docks", "dockAreas", "time", "wait", "side", '
-    .. '"spell", "items", "reagent"',
+    .. '"spell", "items", "reagent", "class"',
     '"text", "text", "point", "point", "int", "int", "number", "list tuple(x:number,y:number,map:int,stay:number,jump:bool,z:number)", '
-    .. '"list point", "list int", "number", "number", "text", "int", "list int", "int"',
+    .. '"list point", "list int", "number", "number", "text", "int", "list int", "int", "int"',
     'R[1] = "70245\t\tboat\tTo the west\t1429\03190\03190\t1414\03150\03150\t\t\t"\n'
     .. 'R[2] = "70245\t\tflight\t\t\t\t2\t5\t6000"\n'
     .. 'R[3] = "70245\t\tboat\t\t\t\t\t\t3898.1\t-8600\031-450\0310\03160\030-8000\031-2000\0305000\031-9000\0311\031\0311'
@@ -625,9 +626,10 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'R[13] = "70245\t\tlift\t\t1460\03112.5\03150\t1460\03112.5\03150\t\t\t100'
     .. '\t-2400\031-2200\0310\031\031\031-40\030-2400\031-2200\031\031\031\03160\t\t\t3.5\t16"\n'
     -- A portal (12): its trigger on the west field of tile 6176 (world x -208.33, y -62.5, 10 yards), where it brings
-    -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map.
+    -- one on the city's building floor of tile 6179 (x -66.67, y -1666.67, 50 yards), on no zone map; the warriors'
+    -- only (class 1: the character's here), as the mages' portals are theirs.
     .. 'R[12] = "70245\t\tportal\t\t\t\t\t\t1606'
-    .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150\t\t\t\t\talliance"\n'
+    .. '\t-208.33\031-62.5\0311\031\031\03110\030-66.67\031-1666.67\031\031\031\03150\t\t\t\t\talliance\t\t\t\t1"\n'
     -- A portal a few yards across (14): on tile 6179 from the building's floor (world x -16.67, y -1616.67, 50 yards)
     -- up onto its roof (x -41.67, y -1641.67, 65 yards), of both sides.
     .. 'R[14] = "70245\t\tportal\t\t\t\t\t\t36'
@@ -640,11 +642,17 @@ Set(packPath .. "/Travel.lua", "Travel", "00000006", "int",
     .. 'R[3018960] = "70245\t\tteleport\tTeleport: Moonglade\t\t\t\t\t\t6500\031-9400\0311\t\t\t\t\t\t18960"\n'
     .. 'R[3023442] = "70245\t\tteleport\tEverlook Transporter\t\t\t\t\t\t6400\031-9500\0311\t\t\t\t\t\t23442\t260820"\n'
     .. 'R[4297659] = "70245\t\tteleport\tTeleport: Dalaran\t\t\t\t\t\t\t\t\t\t\talliance\t1297659\t\t17031"\n'
-    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
-    .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
+    -- A flight from Goldshire (node 2) to a flight point the map has none of (99): its way over Elwynn, x -9000 to
+    -- -9200 by y 100 (the routes leave it: no such flight point; the map draws it while the mouse is on Goldshire).
+    .. 'R[15] = "70245\t\tflight\t\t\t\t2\t99\t300\t-9000\0310\030-9100\031100\030-9200\0310"\n'
+    .. 'I.byFromNode = {}\nI.byFromNode[2] = "2\03015"\nI.byFromNode[20] = "5"\nI.byFromNode[21] = "6"\nI.byKind = {}\n'
+    .. 'I.byKind.boat = "1\0303"\nI.byKind.flight = "2\0305\0306\03015"\nI.byKind.tram = "7"\nI.byKind.zeppelin = "4"\n'
     .. 'I.byKind.lift = "8\0309\03010\03011\03013"\nI.byKind.portal = "12\03014"\n'
     .. 'I.byKind.teleport = "3003561\0303003567\0303018960\0303023442\0304297659"\n'
     .. 'S.unverified = "8\\0309\\03010\\03011\\03013\\03012\\03014"\n')
+-- Elwynn's area (12), and the fishing skill its waters ask (the older game's -70: not yet confirmed).
+Set(packPath .. "/Zones.lua", "Zones", "0000001a", "int", '"area"', '"int"', 'R[1429] = "70245\t\t12"\n')
+Set(packPath .. "/Fishing.lua", "Fishing", "0000001b", "int", '"skill"', '"int"', 'R[12] = "0\t\t-70"\nS.unverified = "12"\n')
 W.AddSets(packPath)
 local spawnsPath = folder .. "/Spawns"
 os.execute(("mkdir -p '%s'"):format(spawnsPath))
@@ -4207,6 +4215,73 @@ ns.Route.Show(nil)
 lines = 0
 for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then lines = lines + 1 end end
 check(lines == 0, "no way: no line")
+-- The mouse on a flight point's pin or a dock's (Paths.lua): its ways drawn over the map, over the golden line and
+-- under the pins; off it, gone.
+;(function()
+    local function Shown()
+        local found = {}
+        for _, widget in ipairs(W.frames) do if widget._kind == "Line" and widget._shown then found[#found + 1] = widget end end
+        return found
+    end
+    ns.Paths.Show({ kind = "flight", id = 2, map = 1429, name = "Goldshire" })
+    local drawn = Shown()
+    check(#drawn == 4 and drawn[1]._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.paths
+        and Canvas.LEVELS.paths > Canvas.LEVELS.route and Canvas.LEVELS.paths < Canvas.LEVELS.pins
+        and near(drawn[2]._start[2], (-9000 - full.v) * full.k) and near(drawn[2]._end[2], (-9100 - full.v) * full.k),
+        "a flight point's pin under the mouse: its flights with a way drawn (an edge and the line each part), over the "
+        .. "golden line, under the pins")
+    ns.Paths.Hide()
+    check(#Shown() == 0, "the mouse off it: gone")
+    ns.Paths.Show({ kind = "flight", id = 3, map = 1429 })
+    check(#Shown() == 0, "a flight point with no flight of the set: nothing drawn")
+    ns.Paths.Show({ kind = "travel", way = 3, dock = 1, map = 1429 })
+    drawn = Shown()
+    check(#drawn >= 2, "a dock's pin under the mouse: its boat's way round drawn, leaps left out")
+    ns.Paths.Show({ kind = "travel", gathered = { {} }, map = 1429 })
+    check(#Shown() == 0, "a gathered marker: none")
+end)()
+-- The zone under the mouse named at the top of the full map (Label.lua): its name and levels, as the game's map
+-- writes them, and the fishing skill its waters ask (Elwynn's -70: from 1, every cast from 25), with the red mark
+-- of what the game has not confirmed; yellow while your skill (10 and a pole's 5) lets fish get away.
+;(function()
+    local at, levels, colours, skills = C_Map.GetMapInfoAtPosition, C_Map.GetMapLevels, rawget(_G, "QuestDifficultyColors"),
+        rawget(_G, "C_SkillInfo")
+    C_Map.GetMapInfoAtPosition = function(map, x, y)
+        local info = at(map, x, y)
+        if info and info.mapID == 1429 then info.name = "Elwynn Forest" end
+        return info
+    end
+    C_Map.GetMapLevels = function(map) if map == 1429 then return 1, 10, 0, 0 end end
+    QuestDifficultyColors = { difficult = { r = 1, g = 1, b = 0 }, impossible = { r = 1, g = 0.1, b = 0.1 },
+                              standard = { r = 0.25, g = 0.75, b = 0.25 } }
+    C_SkillInfo = { GetSkillLineInfoByID = function(line) if line == 356 then return { rank = 10, modifier = 5 } end end }
+    local camera = Canvas.camera
+    Canvas.camera = Window.full
+    ns.Label.Show(1415, 0.5, 0.65)
+    local name, under
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and type(widget._text) == "string" and widget._text:find("^Elwynn Forest") then
+            name = widget
+        end
+    end
+    for _, widget in ipairs(name and name._parent._children or {}) do if widget ~= name then under = widget end end
+    check(name and name._shown ~= false and name._parent._shown and name._text == "Elwynn Forest|cffFFFF00 (1-10)|r",
+        "the zone under the mouse named over the full map, its levels after it in the colour of how hard they are")
+    check(under and under._text == Core.UNCONFIRMED_MARK .. "|cffFFFF00" .. ns.TEXT.fishing:format(1, 25) .. "|r",
+        "under it the fishing skill its waters ask, yellow while fish get away, marked as not yet confirmed")
+    ns.Label.Show(1415, 0.9, 0.1)
+    check(not name._parent._shown, "over no zone: no label")
+    ns.Label.Show(1415, 0.5, 0.65)
+    Canvas.camera = Window.small
+    ns.Label.Show(1415, 0.5, 0.65)
+    check(not name._parent._shown, "the small map: no room for it")
+    Canvas.camera = Window.full
+    ns.Label.Show(1415, 0.5, 0.65)
+    ns.Art.Unlight()
+    check(not name._parent._shown, "the highlight out of sight: the label too")
+    Canvas.camera = camera
+    C_Map.GetMapInfoAtPosition, C_Map.GetMapLevels, QuestDifficultyColors, C_SkillInfo = at, levels, colours, skills
+end)()
 -- What stands on the map keeps inside the canvas by itself: a segment reaching past its edge is cut there (its
 -- lines' thickness inside), pins past it are out of sight; the map moved a little (no layout), both follow.
 do
@@ -5709,6 +5784,71 @@ end)()
     for _, leg in ipairs(shownWay and shownWay.legs or {}) do through = through or leg.kind == "portal" end
     check(shownWay and not through, "the portal the other side's: a Horde character's line goes without it")
     UnitFactionGroup = function() return "Alliance" end
+    -- The portal is one class's (the warriors' here, as the mages' are theirs): a druid goes without it.
+    local unitClass = UnitClass
+    UnitClass = function() return "Druid", "DRUID", 11 end
+    Planner.Update()
+    Frames(8)
+    through = false
+    for _, leg in ipairs(shownWay and shownWay.legs or {}) do through = through or leg.kind == "portal" end
+    check(shownWay and not through, "a portal of another class (the mages'): a druid's line goes without it")
+    UnitClass = unitClass
+    Planner.Update()
+    Frames(8)
+    through = false
+    for _, leg in ipairs(shownWay and shownWay.legs or {}) do through = through or leg.kind == "portal" end
+    check(through, "the portal of the character's own class: taken again")
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- Dead (Corpse.lua): the pin one had kept, the pin put where one fell and followed by the game's arrow; released, a
+-- ghost: onto the corpse where the game tells it, and the route there neither flies nor casts; alive again: the pin
+-- one had back as it was. A pin set while dead stays one's own; none before, none after.
+;(function()
+    local dead, ghost, deathInfo = UnitIsDeadOrGhost, UnitIsGhost, rawget(_G, "C_DeathInfo")
+    local corpse
+    C_DeathInfo = { GetCorpseMapPosition = function(map) return map == 1429 and corpse or nil end }
+    player.map, player.x, player.y = 1429, 0.5, 0.5
+    ns.Live.SetWaypoint(1429, 0.2, 0.3)
+    UnitIsDeadOrGhost = function() return true end
+    W.Fire("PLAYER_DEAD")
+    local map, x, y = ns.Live.Waypoint()
+    check(map == 1429 and near(x, 0.5) and near(y, 0.5) and tracked and Core.Character(ns.name).corpse.pin.x == 0.2,
+        "dead: the pin one had kept, the pin where one fell, followed by the game's arrow")
+    UnitIsGhost = function() return true end
+    player.x, player.y = 0.9, 0.9
+    W.Fire("PLAYER_ALIVE")
+    map, x, y = ns.Live.Waypoint()
+    check(near(x, 0.5) and near(y, 0.5), "released, the game not yet telling the corpse: the pin stays where one fell")
+    corpse = CreateVector2D(0.52, 0.48)
+    W.Wait(ns.Corpse.AGAIN + 0.01)
+    map, x, y = ns.Live.Waypoint()
+    check(near(x, 0.52) and near(y, 0.48) and tracked and ns.Planner.Ghost(),
+        "a moment later: the pin on the corpse as the game tells it; a ghost's route takes no flight nor teleport")
+    UnitIsDeadOrGhost, UnitIsGhost = dead, ghost
+    W.Fire("PLAYER_UNGHOST")
+    map, x, y = ns.Live.Waypoint()
+    check(map == 1429 and near(x, 0.2) and near(y, 0.3) and not tracked and Core.Character(ns.name).corpse == nil,
+        "alive again: the pin one had back as it was (not followed), the saved corpse forgotten")
+    UnitIsDeadOrGhost = function() return true end
+    W.Fire("PLAYER_DEAD")
+    ns.Live.SetWaypoint(1429, 0.7, 0.7)
+    UnitIsDeadOrGhost = dead
+    W.Fire("PLAYER_ALIVE") -- raised by another before the release
+    map, x, y = ns.Live.Waypoint()
+    check(near(x, 0.7) and near(y, 0.7) and Core.Character(ns.name).corpse == nil, "a pin set while dead stays one's own")
+    ns.Live.ClearWaypoint()
+    UnitIsDeadOrGhost = function() return true end
+    W.Fire("PLAYER_DEAD")
+    check(ns.Live.Waypoint() == 1429, "no pin before: dead, one at the corpse all the same")
+    W.Fire("PLAYER_ENTERING_WORLD") -- a /reload while dead
+    check(Core.Character(ns.name).corpse.pin == false, "a /reload while dead: what one had stays kept (none)")
+    UnitIsDeadOrGhost = dead
+    W.Fire("PLAYER_ALIVE")
+    check(ns.Live.Waypoint() == nil, "and alive again: none")
+    C_DeathInfo = deathInfo
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

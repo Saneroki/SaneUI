@@ -31,7 +31,8 @@ local _, ns = ...
 --  Under the mouse, a map the view shows whole lights up what a click opens, as
 --  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone,
 --  at the world the continent, in the game's own highlight art
---  (C_Map.GetMapHighlightInfoAtPosition), added onto what is under it, in every view.
+--  (C_Map.GetMapHighlightInfoAtPosition), added onto what is under it, in every view;
+--  on the full map named at its top, with its levels and fishing skill (Label.lua).
 --
 --  Retail shows one map at a time, as the game's own map does (Camera.Retail.lua,
 --  view.shown): that map's art alone, in the layer the zoom asks for (a map may
@@ -275,9 +276,10 @@ function Art.Place(view, shown)
     outlines:End()
 end
 
--- The highlight out of sight.
+-- The highlight out of sight, and the zone's name over the full map with it (Label.lua).
 function Art.Unlight()
     light:Hide()
+    ns.Safe("label", ns.Label.Hide)
 end
 
 -- The game's highlight of what is under a point of the view's plane (u, v), on a map the view shows whole:
@@ -318,11 +320,12 @@ function Art.Light(view, u, v)
         return Art.Unlight()
     end
     light:Show()
+    ns.Safe("label", ns.Label.Show, map, x, y) -- what lights up named over the full map
 end
 
 -- Every texture let go.
 function Art.Clear()
-    light:Hide()
+    Art.Unlight()
     pool:Begin()
     pool:End()
     parts:Begin()

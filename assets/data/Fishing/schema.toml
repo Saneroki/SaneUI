@@ -1,0 +1,9 @@
+set = "Fishing"
+key = "int"              # the game's area ID (AreaTable): a zone's, or a subzone's that asks otherwise
+learn = false
+about = "The fishing skill each area's waters ask: the base a cast there is measured against, a catch at that skill and every cast from 95 points over it, until the game confirms it (Saneroki, 2026-11-10)."
+
+# Kept apart from the game's own Areas: the older game's word, shown as not yet confirmed (the map's zone label).
+
+[fields]
+skill = { type = "int" }  # the area's base (the older game's: below 1 where every skill catches there)

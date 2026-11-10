@@ -55,6 +55,9 @@ dockAreas = { type = "list", of = "int", min = 0 }
 spell     = { type = "int", min = 1 }
 items     = { type = "list", of = "ref", set = "Items" }
 reagent   = { type = "ref", set = "Items" }
+# A portal only one class may take: the game's class ID (the set Classes). The portal objects one uses, the mages'
+# own (8; Saneroki, 2026-11-10: only mages can use them), not the triggers anyone steps into (Teldrassil's).
+class     = { type = "int", min = 1 }
 
 [index]
 byKind     = "kind"

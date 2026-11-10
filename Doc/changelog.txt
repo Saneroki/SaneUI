@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- On the full map, the zone under the mouse shows its name, its
+  level range and the fishing skill its waters ask. The mouse on a
+  flight point draws its flights, on a dock its ship's whole way.
+  Routes take the portals to and in Dalaran only for mages. When
+  you die, the map pin moves to your corpse and the golden line
+  leads you back; alive again, your old map pin returns.
 - The minimap's satchel has a button to the game's own minimap, and
   the game's minimap has one back, so you can switch between them.
 - The addon buttons in the minimap's satchel open their addons again,
