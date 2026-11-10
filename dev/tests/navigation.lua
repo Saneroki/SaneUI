@@ -5877,7 +5877,8 @@ end)()
     C_TaxiMap.GetTaxiNodesForMap = function(map)
         if map == 1429 then -- (a zone's own flight points, where the view is at a zone's level)
             return { { nodeID = 2, name = "Near", position = CreateVector2D(0.5, 0.5), faction = 0, atlasName = "TaxiNode_Neutral" },
-                     { nodeID = 5, name = "Far", position = CreateVector2D(0.6, 0.3), faction = 0, atlasName = "TaxiNode_Neutral" } }
+                     { nodeID = 5, name = "Far", position = CreateVector2D(0.6, 0.3), faction = 0, atlasName = "TaxiNode_Neutral" },
+                     { nodeID = 6, name = "Locked", position = CreateVector2D(0.45, 0.6), faction = 0, atlasName = "TaxiNode_Neutral" } }
         end
         if map ~= 1415 then return {} end
         return { { nodeID = 2, name = "Near", position = CreateVector2D(0.575, 0.6445), faction = 0, atlasName = "TaxiNode_Neutral" },
@@ -5886,7 +5887,8 @@ end)()
     C_TaxiMap.GetAllTaxiNodes = function(map)
         if map ~= 1415 then return {} end
         return { { nodeID = 2, slotIndex = 1, state = 0, position = CreateVector2D(0.575, 0.6445) },
-                 { nodeID = 5, slotIndex = 2, state = 1, position = CreateVector2D(0.39, 0.699) } }
+                 { nodeID = 5, slotIndex = 2, state = 1, position = CreateVector2D(0.39, 0.699) },
+                 { nodeID = 6, slotIndex = 3, state = 2, position = CreateVector2D(0.55, 0.7) } }
     end
     GetTaxiMapID = function() return 1415 end
     TaxiNodeCost = function(slot) return slot == 2 and 150 or 0 end
@@ -5902,15 +5904,19 @@ end)()
         "a flight master: the game's flight map open but tiny and clear (its talk goes on), ours fills the screen")
     full:Look(0, -9250) -- (the test's canvas is small: Elwynn in its middle)
     Canvas.Layout()
-    local here, there
+    local here, there, locked
     for _, widget in ipairs(W.frames) do
         local pin = widget._kind == "Button" and rawget(widget, "pin")
-        if pin and pin.taxi == 2 then here = widget elseif pin and pin.taxi == 5 then there = widget end
+        if pin and pin.taxi == 2 then here = widget elseif pin and pin.taxi == 5 then there = widget
+        elseif pin and pin.taxi == 6 then locked = widget end
     end
     check(here and there and near(there._width, ns.Taxi.SIZE * ns.PinScale("flight")) and here.pin.here
         and here.glow._shown and not there.pin.gathered and not there.pin.dim,
         "its flight points large (Taxi.SIZE), you are at the glowing one, the one to fly to clear")
     check(there._level == there._parent._level + 1 + ns.PinView.LEVELS, "over every other pin")
+    check(locked and locked.pin.dim and locked.pin.tint == ns.Pins.RED and not there.pin.tint and not here.pin.tint
+        and locked.pin.lines[1][1] == ns.TEXT.taxiFar,
+        "one the master does not fly to (not found yet): red, as everywhere on the map, and says so")
     local lines = there.pin.lines
     check(lines and lines[1] == "1s50c" and lines[2][1] == ns.TEXT.taxiFly
         and here.pin.lines[1][1] == ns.TEXT.taxiHere, "the tooltip: what the flight costs, a click flies there; here: you are")

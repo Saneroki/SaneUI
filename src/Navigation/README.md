@@ -299,7 +299,8 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **At a flight master:** talking to one fills the screen with this map at the master's map in place of the game's
   flight map: its flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
   way there, hop by hop as the master flies it, and its tooltip says what the flight costs; a click on it flies
-  there, as the game's flight map does. A flight point you cannot fly to from here is dim. Back to the corner (Esc)
+  there, as the game's flight map does. A flight point you cannot fly to from here is red, as one you have not found
+  yet is everywhere on the map. Back to the corner (Esc)
   ends the talk. Hold Shift as you talk to the flight master for the game's own flight map; with *Show the game's
   map* on, it is always the game's.
 - **Back to your corpse:** when you die, the map pin moves to where you fell (the game's arrow on the screen leads
@@ -532,7 +533,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   `Core.Holder.TINY`, alpha 0: never hidden, its `OnHide` would end the talk), the master's flight points read
   (`C_TaxiMap.GetAllTaxiNodes` of `GetTaxiMapID`: slot, state, position; `TaxiNodeCost`), `Pins.Changed("flights")`,
   and the window filled at that map (`Window.OpenTo`). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
-  node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), dim where not reachable, their lines
+  node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), red where not reachable (`Pins.RED`, its colour
+  taken out first, as a flight point not found), their lines
   `Taxi.Lines`; shown whatever the pin filter says, never gathered, at the pins' top level (`PinView`); a click
   `Taxi.Fly` (`TakeTaxiNode` of its slot; on another a click does nothing, no ping). The mouse on one: `Paths.Show`
   draws `Taxi.Ways`, each hop of `GetNumRoutes`/`TaxiGetNodeSlot` (slots back to nodes) by its flight's path in
@@ -1038,6 +1040,8 @@ Tests: `dev/tests/navigation.lua`.
   that shiftclicking will open it normally but if you open it normally it shows our own fullscreen map instead but
   where the flightpath icons are huge and you can click them to fly there like the normal flightpath window"
   (`Taxi.lua`): the game's flight map stays open tiny and clear, so the talk goes on and `TakeTaxiNode` flies.
+  2026-11-11: "Flightpaths you don't know yet are on our map normally red. So instead of dimming them, make them the
+  same red icons."
 - **2026-11-10, the zone's name, the ways under the mouse, the mages' portals, back to the corpse:** Saneroki: "When
   you hover over a zone it gets highlighted, right? When that happens, can you show a overlay of what Level range
   and fishing range that zone is and the name of the zone." The full map names it at its top (`Label.lua`), the

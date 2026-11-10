@@ -212,11 +212,13 @@ local function Flights(list, map)
             local pin = { kind = "flight", key = "flight:" .. tostring(info.nodeID), id = info.nodeID, name = info.name,
                           atlas = atlas or "TaxiNode_Neutral", dim = not found or nil, tint = not found and Pins.RED or nil,
                           lines = not found and { Pins.TEXT.undiscovered } or nil }
-            -- At a flight master (Taxi.lua): large, as the master tells it, a click flies there.
+            -- At a flight master (Taxi.lua): large, as the master tells it, a click flies there; one it does not fly to
+            -- red, as a flight point not found yet is everywhere (Saneroki, 2026-11-11).
             local taxi = ns.Taxi.Node(info.nodeID)
             if taxi then
+                local far = not (taxi.current or taxi.reachable)
                 pin.taxi, pin.size, pin.here = info.nodeID, ns.Taxi.SIZE, taxi.current or nil
-                pin.dim, pin.tint = not (taxi.current or taxi.reachable) or nil, nil
+                pin.dim, pin.tint = far or nil, far and Pins.RED or nil
                 pin.lines = ns.Taxi.Lines(info.nodeID)
             end
             Add(list, pin, map, x, y)

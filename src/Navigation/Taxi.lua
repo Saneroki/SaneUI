@@ -16,7 +16,7 @@ local _, ns = ...
 --      the pins     the flight points as the master tells them (C_TaxiMap.GetAllTaxiNodes of its map), Taxi.SIZE
 --                   large, over every other pin and never gathered (Pins.lua, PinView.lua): the one you stand at
 --                   glowing, those you can fly to taken by a click (TakeTaxiNode, as the game's buttons do), the
---                   rest dim; the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
+--                   rest red, as a flight point not found yet is on the map; the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
 --                   its way there hop by hop (GetNumRoutes, TaxiGetNodeSlot; each hop's path from Core's set
 --                   Travel, else straight: Paths.lua)
 --      ours closed  (Esc, back to the corner) while the master is open: the game's closes too (CloseTaxiMap)
