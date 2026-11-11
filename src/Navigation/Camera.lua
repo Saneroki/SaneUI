@@ -121,10 +121,13 @@ function methods:Settle()
     Clamp(self)
 end
 
--- The view's size in units: the zoom that fits a whole continent, and the world, follows from it.
+-- The view's size in units: the zoom that fits a whole continent, and the world, follows from it. A view at the world
+-- whole (as far out as it goes) stays so at its new size (the flight master's map opens so, Taxi.lua; a window sized).
 function methods:Frame(width, height)
+    local whole = self.level == "world" and self.far and self.k <= self.far * (1 + 1e-6)
     self.width, self.height = width, height
     Limits(self)
+    if whole and self.far then self.k = self.far end
     self:Settle()
 end
 

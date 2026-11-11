@@ -6016,7 +6016,18 @@ end)()
         "a flight master: the game's flight map open but tiny and clear (its talk goes on), ours fills the screen")
     -- Our map as it always opens, never at the master's own map (Forever's are maps of their own); then Elwynn whole in
     -- the test's small canvas, its flight points in view.
-    check(not full.shown and full.map == 1415, "the full map as always: its own plane, both continents, not the master's map")
+    check(not full.shown and full.level == "world" and near(full.k, full.far),
+        "the full map as always, zoomed out to the world whole (both continents), not the master's map")
+    -- Zoomed in a little, over the other continent (Kalimdor, the view's plane): this continent's flight points still
+    -- there while it is in view (each continent in view gives its own map's pins at that zoom).
+    full:ZoomAt(1, 0, 0)
+    full:ZoomAt(1, 0, 0)
+    full:ZoomAt(1, 0, 0)
+    Canvas.Layout()
+    local middle = {}
+    for _, pin in ipairs(ns.Pins.For(Canvas.view, false)) do if pin.taxi then middle[pin.taxi] = true end end
+    check(full.level == "continent" and full.map == 1414 and middle[2] and middle[5],
+        "the middle zoom over the other continent: this one's flight points still there")
     ns.Canvas.Fit(full, 1429, frame._width, frame._height)
     Canvas.Layout()
     local here, there, locked
@@ -6095,7 +6106,6 @@ end)()
                                    { kind = "flight", key = "c", pu = 0, pv = 0, order = 6 } }, 1)
     check(#together == 3 and not together[1].gathered and not together[2].gathered,
         "flight points and ways of travel on one spot: never gathered, each its own pin")
-    local u, v, k, level = full.u, full.v, full.k, full.level
     for _ = 1, 3 do if full.level ~= "world" then full:StepOut() end end
     Canvas.Layout()
     local kinds, flights = {}, 0
@@ -6107,8 +6117,7 @@ end)()
     for kind in pairs(kinds) do if not Pins.WORLD[kind] then others = true end end
     check(full.level == "world" and flights > 0 and not others,
         "zoomed out to the world: the flight points and ways of travel still there, nothing else")
-    full.u, full.v, full.k, full.level = u, v, k, level
-    full:Look(0, -9250)
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height) -- Elwynn whole again, in its own plane
     Canvas.Layout()
     local pin = { kind = "flight", id = 2, map = 1429, key = "flight:2", name = "Near" }
     local function Drawn()

@@ -14,7 +14,8 @@ local _, ns = ...
 --                   it always does (Window.OpenTo: both continents, its views, every pin, the quest log; Saneroki,
 --                   2026-11-11: "the exact same map as our normal fullscreen map ... just with the extra big
 --                   flightpaths"; never at the master's own map, Forever's flight maps being maps of their own:
---                   1463, 1464, 2665). Its OnHide (a flight taken, the master left) gives it back as it was, and our
+--                   1463, 1464, 2665), zoomed out to the world whole ("fully zoomed out to max level where we can
+--                   see both continents"; Retail: at the master's map, one of its map tree). Its OnHide (a flight taken, the master left) gives it back as it was, and our
 --                   map goes back to its corner
 --      the pins     the flight points as the master tells them (C_TaxiMap.GetAllTaxiNodes of its map), Taxi.SIZE
 --                   large, over every other pin and never gathered (Pins.lua, PinView.lua): the one you stand at
@@ -152,7 +153,10 @@ local function Opened(frame)
     open, lent, closing = frame, made, false
     Read()
     ns.Pins.Changed("flights")
-    ns.Window.OpenTo() -- the full map as always: never at the master's own map (a map of its own)
+    -- The full map as always, zoomed out to the world whole: both continents (Saneroki, 2026-11-11). Never at the
+    -- master's own map in Forever (a map of its own); Retail's one map at a time shows no flight point at its world
+    -- map, so there the master's map, one of its tree.
+    ns.Window.OpenTo(Core.RETAIL and map or Coords.WorldMap())
 end
 
 -- The game's flight map closed (a flight taken, the master left, ours closed): given back as it was, the flight points

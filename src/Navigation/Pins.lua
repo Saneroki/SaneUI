@@ -640,23 +640,26 @@ local shown = {}    -- [kind] = whether the view shows it, as the filter says (s
 local NONE = {}
 
 -- The maps whose pins the view shows: each zone in view (and the zone in the middle, should it have none of
--- its own), further out the continent itself too (its flight points, as the game's continent map has them);
+-- its own), further out the continent itself too (its flight points, as the game's continent map has them) and the
+-- other continents in view (their own maps');
 -- at the world every plane in view (each continent and the isle: Pins.WORLD's kinds alone). One map at a time
 -- (Retail): the map shown, as the game's own map asks for its pins; at the world none there.
+-- Whether a plane (a continent, the isle) lies in the view, in the view's plane.
+local function InView(plane, view)
+    local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
+    if not (box and link) then return false end
+    local left, top = link.du + link.su * box.u, link.dv + link.sv * box.v
+    local right, bottom = left + link.su * box.width, top - link.sv * box.height
+    return math.max(left, right) >= view.left and math.min(left, right) <= view.right
+        and math.max(top, bottom) >= view.bottom and math.min(top, bottom) <= view.top
+end
+
 local function Maps(view)
     local maps = {}
     if view.level == "world" then
         if view.shown then return maps end
         for _, plane in ipairs(Coords.Planes()) do
-            local box, link = Coords.Box(plane), Coords.Link(plane, view.map)
-            if box and link then
-                local left, top = link.du + link.su * box.u, link.dv + link.sv * box.v
-                local right, bottom = left + link.su * box.width, top - link.sv * box.height
-                if math.max(left, right) >= view.left and math.min(left, right) <= view.right
-                    and math.max(top, bottom) >= view.bottom and math.min(top, bottom) <= view.top then
-                    maps[#maps + 1] = plane
-                end
-            end
+            if InView(plane, view) then maps[#maps + 1] = plane end
         end
         return maps
     end
@@ -664,7 +667,14 @@ local function Maps(view)
         maps[1] = view.shown
         return maps
     end
-    if view.level ~= "zone" then maps[1] = view.map end
+    if view.level ~= "zone" then
+        maps[1] = view.map
+        -- The other continents in view too, drawn as they are at every zoom: their own maps' pins (their flight
+        -- points and ways; Saneroki, 2026-11-11: the big flight points were gone at the middle zoom).
+        for _, plane in ipairs(Coords.Planes()) do
+            if plane ~= view.map and InView(plane, view) then maps[#maps + 1] = plane end
+        end
+    end
     for _, zone in ipairs(Coords.Zones(view.map)) do
         local box = zone.box
         if box.u <= view.right and box.u + box.width >= view.left and box.v >= view.bottom and box.v - box.height <= view.top then

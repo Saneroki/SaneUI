@@ -298,7 +298,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
 - **At a flight master:** talking to one fills the screen with this map in place of the game's flight map, the full
-  map as it always is (both continents, its view, every pin, the quest log): its flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
+  map as it always is (both continents, its view, every pin, the quest log), zoomed out to the whole world: its
+  flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
   way there, hop by hop as the master flies it, and its tooltip says what the flight costs; a click on it flies
   there, as the game's flight map does. A flight point you cannot fly to from here is red, as one you have not found
   yet is everywhere on the map. Back to the corner (Esc)
@@ -321,7 +322,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   stations too); and draws its ship's whole way round over the map, light blue as on the ride (the tram's run from
   station to station). The mouse over a flight point's pin draws every flight of your side that leaves it, white
   as on a flight, fainter to a flight point you have not found. Flight points and the ways of travel (docks, the
-  tram, lifts, portals) stand on the map at every zoom, out to the whole world, each a pin of its own (never
+  tram, lifts, portals) stand on the map at every zoom, out to the whole world (at a continent's zoom those of every
+  continent in view), each a pin of its own (never
   gathered into a marker), so each can be hovered. On the full map a click on a flight point or a dock keeps its
   ways drawn after the mouse has left it, its pin glowing, as many as you click; a second click lets go of them, and
   all go when the full map goes back to its corner. A double click only puts the map pin there.
@@ -545,8 +547,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   its own code. Shown without Shift (the module up; `nativeMap` is the world map's, not looked at): made tiny and clear (`Core.Lend`,
   `Core.Holder.TINY`, alpha 0: never hidden, its `OnHide` would end the talk), the master's flight points read
   (`C_TaxiMap.GetAllTaxiNodes` of `GetTaxiMapID`: slot and state; `TaxiNodeCost`), `Pins.Changed("flights")`,
-  and the window filled as always (`Window.OpenTo()`, never at the master's map: Forever's flight maps are maps of
-  their own, 1463, 1464, 2665, none of our planes). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
+  and the window filled as always, at the world whole (`Window.OpenTo(Coords.WorldMap())`; never at the master's map
+  in Forever: its flight maps are maps of their own, 1463, 1464, 2665, none of our planes; Retail, whose one map at a
+  time shows no flight point at its world map: at the master's map). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
   node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), red where not reachable (`Pins.RED`, its colour
   taken out first, as a flight point not found), their lines
   `Taxi.Lines`; shown whatever the pin filter says, never gathered, at the pins' top level (`PinView`); a click
@@ -1059,6 +1062,12 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the flight master's map zoomed out; every continent's pins at the middle zoom:** Saneroki: "When we
+  opent he flightmaster map, can you make sure that it is fully zoomed out to max level where we can see both
+  continents": it opens at the world whole (and a view at the world whole stays so at a new size, `Camera:Frame`).
+  Then: "The big icons disappear when you zoom a little to far in. They are only visible in the near and far view,
+  not in the middle view": at a continent's zoom only the continent under the view's middle gave its pins, the other
+  one drawn bare; now every continent in view gives its own map's (`Pins.lua` `Maps`, `InView`).
 - **2026-11-11, the flight master's map the full map as always; the zones' levels from their enemies:** Saneroki:
   "the actuall skrying map is not visible and it only shows one continent. Ideally I want the exact same map as our
   normal fullscreen map": it opened at the master's map, in Forever a map of its own (1463, 1464, 2665), shown alone;
