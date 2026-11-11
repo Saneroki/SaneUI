@@ -17,7 +17,7 @@ local _, ns = ...
 --  following the route"); Navigation's golden line shows the way there.
 --
 --  A part of its own, placed in Edit Mode apart from the guide (Core.Window), at
---  first where the travel overlay stands (Core.TOAST_TOP), making way for it
+--  first at a toast's height (Core.TOAST_TOP), where the travel overlay's lines reach, making way for it
 --  while it shows (Core.TopTaken); the toast of a new level stands beside it and
 --  it stays (Saneroki, 2026-11-04). Shown while the guide is and it has a place
 --  to go to (the switch Show the arrow).

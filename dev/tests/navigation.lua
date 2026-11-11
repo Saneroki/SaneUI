@@ -5372,8 +5372,8 @@ local function Rides()
     local overlay = ns.TripView.frame
     local point = overlay and overlay._points[1]
     check(overlay and overlay:IsShown() and point and point[1] == "CENTER" and point[3] == "TOP"
-        and near(point[5], -(SaneUI.Core.TOAST_TOP + ns.TripView.ABOVE)),
-        "waiting at its dock: the overlay, high up the screen, level with a toast")
+        and near(point[5], -(SaneUI.Core.TOAST_TOP - ns.TripView.HIGHER + ns.TripView.ABOVE)) and ns.TripView.HIGHER > 0,
+        "waiting at its dock: the overlay, high up the screen, a little over a toast's height")
     UIParent:SetSize(width, height)
     Core.Set(ns.name, "dockTimes", false)
     check(not overlay:IsShown(), "not while its setting is off")

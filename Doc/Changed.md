@@ -20,6 +20,15 @@ Saneroki: "Sometimes there are a lot of conversation options. Like talking to a 
 - **Tests:** `dev/tests/lore.lua` (188): a city guard's fourteen answers and Goodbye on a 16:9 screen, lifted with its foot on the margin at Size 100 %; at 150 % the twelve that fit, the arrows and the wheel, a click to the end and no further, a line brought into sight answering, the wheel back, the talk moved left to the margins, the column placed anew as the words turn, a new talk at its first line, Size back at 100 % and the talk in the middle again. The lab scene `talk`: `LabGuard()`. Lore's README, `Doc/ideas/Dialogue.md` (decided), `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/changelog.txt`.
 - A `/reload` takes it in.
 
+### Navigation: the travel overlay a little higher (Saneroki, 2026-11-11)
+Saneroki: "move both widgets a little more up", kept for the travel overlay once the Sane Rare tracker went under the
+minimap.
+- **`src/Navigation/TripView.lua`:** `TripView.HIGHER` (60): the words over its line that far over a toast's height
+  (`Core.TOAST_TOP`), the line and what stands under it with them; on a trip and waiting at a dock alike. The guide's
+  arrow (`src/SpeedLeveling/Arrow.lua`, its comment) still makes way for it while it shows.
+- **Tests:** `dev/tests/navigation.lua`: the overlay at its dock that much higher.
+- A `/reload` takes it in.
+
 ### Navigation: the Sane Rare tracker under the minimap, dragged; a double click for the map pin (Saneroki, 2026-11-11)
 Saneroki: "Can you make a rightclick will remove it and a left double click will put a map marker on him", then "move the
 rare tracker to the right edge of the screen underneath the minimap. A leftclick drag will move the window around". Card

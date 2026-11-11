@@ -1103,6 +1103,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the travel overlay a little higher:** Saneroki: "move both widgets a little more up", kept for the
+  travel overlay once the Sane Rare tracker went under the minimap: its words over the line `TripView.HIGHER` (60)
+  over a toast's height, no longer level with the toast of a new level.
 - **2026-11-11, the Sane Rare tracker under the minimap:** Saneroki: "Can you make a rightclick will remove it and a
   left double click will put a map marker on him", then "move the rare tracker to the right edge of the screen
   underneath the minimap. A leftclick drag will move the window around" (`RareTracker.lua`: `Place`, `Dragged`).

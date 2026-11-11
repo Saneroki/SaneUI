@@ -2,8 +2,9 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - TripView
---  The overlay of a trip, centred high up the screen at a toast's height
---  (Core.TOAST_TOP, the words over its line level with it): a fine golden
+--  The overlay of a trip, centred high up the screen, the words over its line
+--  TripView.HIGHER over a toast's height (Core.TOAST_TOP; Saneroki, 2026-11-11):
+--  a fine golden
 --  line in the art of the map's route (Route.lua: the game's dependency bar, its
 --  glint pulsing along), the vehicle's icon riding at its tip.
 --
@@ -33,6 +34,7 @@ local TripView = {}
 ns.TripView = TripView
 
 TripView.ABOVE = 30      -- from the line up to the top of the words over it
+TripView.HIGHER = 60     -- the words over the line so far over a toast's height (Core.TOAST_TOP)
 TripView.WIDTH = 320     -- the line's length
 TripView.THICK = 4       -- its thickness; its dark edge EDGE
 TripView.EDGE = 7
@@ -169,7 +171,7 @@ local function Build()
     TripView.frame = frame
     frame:SetFrameStrata("LOW")
     frame:SetSize(TripView.WIDTH, TripView.END)
-    frame:SetPoint("CENTER", UIParent, "TOP", 0, -(Core.TOAST_TOP + TripView.ABOVE))
+    frame:SetPoint("CENTER", UIParent, "TOP", 0, -(Core.TOAST_TOP - TripView.HIGHER + TripView.ABOVE))
     frame:EnableMouse(false)
     track = CreateFrame("Frame", nil, frame)
     track:SetSize(TripView.WIDTH, TripView.EDGE)
