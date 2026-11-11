@@ -1,0 +1,21 @@
+# The sea under the continents (Navigation, the full map zoomed all the way out; Saneroki, 2026-11-11: "use Comfyui to
+# generate a ocean that we can put underneath the continents. So comfy ui can try to make coastlines and add tiny ships
+# or sea monsters or scenarios to it", compared with the waves the map draws now).
+# Image 1: the full map's canvas on a 4K screen as Navigation draws it at the farthest zoom (Scrying), both continents'
+# terrain overviews where the world map puts them, over the sea's colour, at 2048 x 1104 (the canvas' shape). Image 2:
+# the mask, white where the open sea is painted (the sea joined to the picture's edge, grown two pixels into the coast's
+# soft fringe; lakes and rivers inside the land stay). The land comes back untouched (the workflow's last node). The
+# workflow's words do not see image 1 (the land reaches the model only through the picture): no "image 1" in them.
+# Both made by dev/tools/sea-art inputs (saneui makesea) into assets/generated/sea/ (input.png, mask.png), with side A;
+# side B of each painting and the page by dev/tools/sea-art page assets/generated/sea/round-1 (saneui showsea).
+# A quick try (no job), three seeds of each:
+#   dev/tools/imagegen dev/imagegen/sets/sea/ocean.txt --count 3
+# No place's name in the words: names come back as lettering.
+workflow: qwen21-inpaint
+count: 3
+out: assets/generated/sea/round-1
+ref: assets/generated/sea/input.png, assets/generated/sea/mask.png
+before: A fantasy world map seen straight from above, like an orthographic satellite image: no perspective, no tilt, no horizon. Two long continents of forests, deserts, snow and mountains, side by side. Around them a vast open ocean of deep dark navy blue, darker the further from land, lighter blue-green shallows and a thin line of white surf along every coast.
+style: Painted with the same muted, natural colours and fine detail as the land, as if it were one picture. No text, no letters, no labels, no compass rose, no grid lines, no frame, no border, no clouds, no fog.
+calm: Gentle wave patterns across the sea, a few tiny sailing ships with white sails each trailing a faint wake, small rocky islets near the coasts, and one vast swirling whirlpool in the open sea halfway between the two continents.
+tales: Tiny scenes scattered across the open sea, each small: a sea serpent coiled beside a sailing ship, a kraken's tentacles around a wrecked galleon, a small fleet of warships in a line, a lonely lighthouse on a rock, a pod of whales, and one vast swirling whirlpool halfway between the two continents.

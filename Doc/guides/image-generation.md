@@ -407,6 +407,12 @@ of their own. (The painted world, the Atlas, went 2026-11-09; what it taught sta
 - **Upscaling models** (`models/upscale_models/` of ImageGen: 4x-UltraSharpV2 and 4xNomos2, both DAT2, as
   safetensors, 17 s for 1024 to 4096): they sharpen what is there, the faults too, and add no detail; the
   painting is made at the size it is shown.
+- **The sea under the continents** (Saneroki, 2026-11-11; a concept, `Doc/ideas/Navigation.md`): the full map's
+  farthest view as it is drawn on 4K, repainted only where the open sea is (`qwen21-inpaint`: image 1 the land on
+  the sea's colour, image 2 white where the open sea is; the land comes back untouched), made and compared by
+  `dev/tools/sea-art` (`saneui makesea`, `saneui showsea`), the words in `dev/imagegen/sets/sea/ocean.txt`. The
+  inpaint workflow's words do not see image 1: they say what the whole picture shows, never "image 1". About 40 s
+  a painting at 2048 x 1104.
 
 ## Asking for interface art
 

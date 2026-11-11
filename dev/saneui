@@ -68,6 +68,9 @@ GROUPS = {
         "makemarkart": (["dev/tools/mark-art"], "Navigation's leather rings for the found herbs and ore", None),
         "maketooltipart": (["dev/tools/tooltip-art"], "the Tooltips module's pictures", None),
         "maketerrain": (["dev/tools/terrain-art"], "Navigation's terrain, outlines and stitched map", None),
+        "makesea": (["dev/tools/sea-art"], "the sea under the continents: ComfyUI's inputs, the A/B page", None),
+        "showsea": (["dev/tools/web-pages", "open", "sea"], "the sea compared in the browser: the waves now against the "
+                    "paintings", None),
         "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),
         "makemaplayers": (["dev/tools/map-layers"], "the instance maps' three levels (close, middle, far): inputs paint status",
                           None),

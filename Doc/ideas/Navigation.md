@@ -753,6 +753,14 @@ Three spaces, converted only in `Coords.lua`:
   Saneroki: "Can we make it a ocean like texture"): the game's own ocean texture, its light alone (`Art/Sea.blp`,
   `dev/tools/terrain-art --sea`), repeated over the plane so the waves move with the land, the same size on the
   screen at every zoom; they fade into Parchment's paper with the sea's colour.
+- **A painted sea under the continents (a concept, 2026-11-11):** Saneroki: "use Comfyui to generate a ocean that we
+  can put underneath the continents. So comfy ui can try to make coastlines and add tiny ships or sea monsters or
+  scenarios to it", and an A/B against the waves. Round 1: the full map zoomed all the way out as it is drawn on 4K
+  (`dev/tools/sea-art`), only the open sea painted around the land, which comes back untouched (`qwen21-inpaint`,
+  `dev/imagegen/sets/sea/ocean.txt`: *calm* and *tales*, three seeds each); the page `/sea/` (`saneui showsea`)
+  slides between A, the waves, and each painting. Waits for his pick. In the game a pick would be one more texture
+  under the terrain at the far zooms (the canvas' view at the farthest zoom, 2048 x 1104), giving way to the waves
+  as the view comes close.
 - **The water cut away (built 2026-10-19):** `dev/tools/terrain-art` reads the game's terrain files (each map
   chunk's heights, water and liquid type; magma and slime stay) and makes the overview's alpha the land: where
   the ground lies above the water's surface, sampled 2 yards apart, rivers and lakes too. The overview's colour
