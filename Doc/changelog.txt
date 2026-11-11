@@ -10,8 +10,9 @@ The bigger changes of each version, newest first.
   of its bar and the quest log. Inside a dungeon, scroll the minimap
   out once more past its farthest step for the dungeon's whole map
   with its bosses; scroll in or right-click for the minimap again.
-- Map: party and raid members are much bigger dots, growing as you
-  zoom in, and show at every zoom on the minimap and the full map.
+- Map: party and raid members are much bigger dots that glide
+  smoothly as they move, largest when zoomed out and smaller as you
+  zoom in, at every zoom on the minimap and the full map.
 - The map draws a ship's whole way when you hover or click its dock:
   through the open sea where the boat sails out of sight behind the
   loading screen, around the Maelstrom, and every port of a ship

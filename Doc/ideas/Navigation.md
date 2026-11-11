@@ -380,8 +380,9 @@ When the window fills the screen:
   stand over the map in every view and at every zoom, never behind it (the art, the terrain,
   the game's minimap all lie under them).
 - **The party's marks (Saneroki, 2026-11-11; built):** "much bigger, scale with the zoom level on the map and is
-  always visible on all zoom levels": the party and raid in their class colours larger as the map zooms in, at
-  every zoom, over the game's minimap too (its own dots of them under ours).
+  always visible on all zoom levels", then "smoother" (no jumps to each new place) and "smaller when you are zoomed
+  in closer": the party and raid in their class colours largest far out and smaller as the map zooms in, at every
+  zoom, over the game's minimap too (its own dots of them under ours), gliding between the game's places.
 
 ## Our own data
 

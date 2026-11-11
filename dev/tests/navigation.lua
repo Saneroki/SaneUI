@@ -4535,8 +4535,9 @@ for _, widget in ipairs(W.frames) do
 end
 check(not ns.Window.handle.hovered, "off the map: unseen again")
 
--- The party: the game's blip in the class' colour, where the game tells, at every zoom, larger as the map zooms in
--- (Saneroki, 2026-11-11: much bigger, with the zoom, always in sight), over the game's minimap too.
+-- The party: the game's blip in the class' colour, where the game tells, at every zoom, smaller as the map zooms in
+-- (Saneroki, 2026-11-11: much bigger, with the zoom, always in sight, smaller when zoomed in closer), over the game's
+-- minimap too, gliding between two looks.
 ;(function()
     local Marks, view = ns.Marks, Canvas.view
     IsInGroup = function() return true end
@@ -4548,13 +4549,13 @@ check(not ns.Window.handle.hovered, "off the map: unseen again")
     check(near(blip._width, size) and near(blip._height, size) and near(blip.half, size / 2)
         and blip._shown == Canvas.Inside(blip.x, blip.y, size / 2),
         "at its size for the view's zoom, shown while wholly inside the canvas")
-    -- Its size: the smallest out from Marks.WIDE, the largest at the nearest zoom, the same step larger at each notch.
-    local small, large, step, NEAR = Marks.MEMBER[1], Marks.MEMBER[2], ns.Camera.STEP, ns.Camera.NEAR
+    -- Its size: the largest out from Marks.WIDE, the smallest at the nearest zoom, the same step smaller at each notch.
+    local far, close, step, NEAR = Marks.MEMBER[1], Marks.MEMBER[2], ns.Camera.STEP, ns.Camera.NEAR
     local notch = Marks.MemberSize(step) / Marks.MemberSize(1)
-    check(near(Marks.MemberSize(Marks.WIDE), small) and near(Marks.MemberSize(Marks.WIDE / 100), small)
-        and near(Marks.MemberSize(NEAR), large) and near(Marks.MemberSize(NEAR * 4), large) and large >= 2 * small
-        and notch > 1 and near(Marks.MemberSize(0.2 * step) / Marks.MemberSize(0.2), notch),
-        "far out its smallest, in close twice that at least, between them one step larger at each notch of the wheel")
+    check(near(Marks.MemberSize(Marks.WIDE), far) and near(Marks.MemberSize(Marks.WIDE / 100), far)
+        and near(Marks.MemberSize(NEAR), close) and near(Marks.MemberSize(NEAR * 4), close) and far >= 2 * close
+        and notch < 1 and near(Marks.MemberSize(0.2 * step) / Marks.MemberSize(0.2), notch),
+        "far out its largest, in close half that at most, between them one step smaller at each notch in")
     local scale, plain = ns.PinScale, Marks.MemberSize(1) / ns.PinScale("group")
     ns.PinScale = function(kind) return kind == "group" and 2 or 1 end
     check(near(Marks.MemberSize(1), 2 * plain), "the pin filter's slider on top")
@@ -4564,12 +4565,64 @@ check(not ns.Window.handle.hovered, "off the map: unseen again")
     local k, native, x = view.k, camera.native, blip.x
     frame._scripts.OnMouseWheel(frame, 1)
     W.Wait(0)
-    check(view.k > k and near(blip._width, Marks.MemberSize(view.k)) and blip._width > size
+    check(view.k > k and near(blip._width, Marks.MemberSize(view.k)) and blip._width < size
         and near(blip.x / view.k, x / k),
-        "a notch in: larger at once, where it stands at the new zoom")
+        "a notch in: smaller at once, where it stands at the new zoom")
     camera.k, camera.native = k, native
     Canvas.Layout()
     check(near(view.k, k) and near(blip._width, size), "out again: as large as before")
+    -- Between two looks a mark glides from where it stood to the member's new place at every frame (the glider's
+    -- OnUpdate, there only while one is on its way), over the time since the place last changed (at least the time
+    -- to the next look, Marks.GLIDE at most); a member far off, or another member, stands there at once.
+    ;(function()
+        local ask, guid, shown = C_Map.GetPlayerMapPosition, UnitGUID, Hybrid.Shown
+        local place, who = { 0.5, 0.5 }, "Player-70-0000AAAA"
+        C_Map.GetPlayerMapPosition = function(map, unit)
+            if unit == "party1" and (map == 1429 or map == 1415) then return CreateVector2D(place[1], place[2]) end
+            return ask(map, unit)
+        end
+        UnitGUID = function(unit) return unit == "party1" and who or guid(unit) end
+        Hybrid.Shown = function() return false end
+        local box = Coords.Box(view.map)
+        local function X(x) return (Coords.ToPlane(box, x, 0.5) - view.u) * view.k end
+        local function Glider()
+            for _, widget in ipairs(W.frames) do
+                if widget._parent == blip._parent and widget._scripts and widget._scripts.OnUpdate then return widget end
+            end
+        end
+        local t = GetTime() + 40
+        Marks.Group(view, t)
+        check(near(blip.x, X(0.5)) and not Glider(), "another member (a new one in the slot): at its place at once")
+        place[1] = 0.5004
+        local first = t + 5 -- it stood still for some looks
+        Marks.Group(view, first)
+        check(near(blip.x, X(0.5)) and Glider(), "it moved: the mark still where it stood, on its way now")
+        Marks.Glide(first + Marks.GLIDE / 2)
+        check(near(blip.x, (X(0.5) + X(0.5004)) / 2), "halfway after half the time: a place that last changed long "
+            .. "ago is reached in Marks.GLIDE")
+        Marks.Glide(first + Marks.GLIDE)
+        check(near(blip.x, X(0.5004)) and not Glider(), "there: the glider at rest")
+        -- Moving on: changed at two looks in a row, the second glide as long as the time to the next look, from
+        -- where the first had brought it (a quarter of its way).
+        local second, third = first + Marks.GLIDE, first + Marks.GLIDE + Marks.GROUP
+        place[1] = 0.5008
+        Marks.Group(view, second)
+        place[1] = 0.5012
+        Marks.Group(view, third)
+        local from = 0.5004 + 0.0004 * Marks.GROUP / Marks.GLIDE
+        Marks.Glide(third + Marks.GROUP / 2)
+        check(near(blip.x, X((from + 0.5012) / 2)) and Glider(),
+            "changed again a look later: from where it was on its way, halfway after half the time to the next look")
+        Marks.Glide(third + Marks.GROUP)
+        check(near(blip.x, X(0.5012)) and not Glider(), "there in time for the next look")
+        place[1] = 0.6
+        Marks.Group(view, third + Marks.GROUP)
+        check(near(blip.x, X(0.6)) and not Glider() and (X(0.6) - X(0.5012)) / view.k > Marks.LEAP,
+            "a member farther than Marks.LEAP from its mark (a portal): there at once")
+        C_Map.GetPlayerMapPosition, UnitGUID, Hybrid.Shown = ask, guid, shown
+        Marks.Group(view, third + 2 * Marks.GROUP)
+        check(near(blip.x, X(0.5)) and not Glider(), "the member before again: at its place at once")
+    end)()
     -- Over the game's minimap ours show too, the party looked at every Marks.OVER there (the game moves its own dots
     -- at each frame, under ours), else every Marks.GROUP.
     local shown, inside, ask, asked = Hybrid.Shown, Canvas.Inside, C_Map.GetPlayerMapPosition, 0
@@ -4579,7 +4632,7 @@ check(not ns.Window.handle.hovered, "off the map: unseen again")
     end
     Canvas.Inside = function() return true end -- the member within the canvas
     Hybrid.Shown = function() return true end
-    local now = GetTime() + 30
+    local now = GetTime() + 60 -- after the looks above
     Marks.Group(view, now)
     Marks.Fit()
     check(blip._shown and asked == 1, "the game's minimap shown: ours over it, at once")
@@ -4596,7 +4649,7 @@ check(not ns.Window.handle.hovered, "off the map: unseen again")
     Hybrid.Shown, Canvas.Inside, C_Map.GetPlayerMapPosition = shown, inside, ask
     Marks.Fit()
     IsInGroup = function() return false end
-    Marks.Group(view, GetTime() + 60)
+    Marks.Group(view, GetTime() + 90)
     check(not blip._shown and not blip.x, "out of the group: gone")
 end)()
 

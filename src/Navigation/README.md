@@ -125,7 +125,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   there (a ping). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
   whole shows only travel and places; the minimap no
   books or treasures, services only near you. The party and raid in their class colours, at every zoom and over
-  the game's minimap too, larger as you zoom in.
+  the game's minimap too, largest far out and smaller as you zoom in, gliding smoothly as they move.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
   with its icon large before its words, in sections under their titles: *Around you* (the route, the minimap's
   dots, the party and raid), *Quests*, *Travel*, *Towns and services*, *Rares and treasures*, *Gathering*; it
@@ -974,10 +974,14 @@ is small, and the maps of the dungeons and raids. The plan is in
   it; without a pin that leg alone.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second, at
-  every zoom: `Marks.MemberSize`, from `Marks.MEMBER`'s 22 out at a continent, `Marks.WIDE`, to 44 at the nearest
-  zoom, the same step larger at each notch, the pin filter's slider on top; placed and sized anew as the view is
+  every zoom: `Marks.MemberSize`, from `Marks.MEMBER`'s 44 out at a continent, `Marks.WIDE`, to 22 at the nearest
+  zoom, the same step smaller at each notch in, the pin filter's slider on top; placed and sized anew as the view is
   laid out; over the game's minimap too, there every `Marks.OVER`, 0.1 seconds, so ours lie over its own dots of
-  them, which it moves at every frame).
+  them, which it moves at every frame). Between two looks each glides at every frame from where it stands to the
+  member's new place (`Marks.Glide`, a frame's `OnUpdate` set only while one is on its way), over the time since
+  the place last changed, the time to the next look at least and `Marks.GLIDE` (1 second) at most, so a member the
+  game tells of only now and then glides on too; at once where the mark stood for another member (`UnitGUID`), on
+  another plane, or lies farther than `Marks.LEAP` (200 yards: a portal).
 - **Indoors** (`Indoors.lua`): inside a building or a cave (`Live.Indoors`: the game's `IsIndoors`, or its minimap
   showing its indoor plan, its view's radius under `Live.PLAN` of its step's outdoors, `Live.OUTDOORS`: the halls one
   may ride through, which the game's `WMOAreaTable` counts as outdoors, so `IsIndoors` says no there; Ironforge's
@@ -1135,6 +1139,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the party's marks glide, smaller in close:** Saneroki: "can the movement of them become smoother?
+  right now they jitter to the new position all the time", then "it should be smaller when you are zoomed in
+  closer". `Marks.Glide`, `Aim`, `Along`; `Marks.MEMBER` 44 far out to 22 in close.
 - **2026-11-11, a dungeon's map whole in view, on both maps:** Saneroki: the dungeon and raid maps with the bosses' 3D
   models and loot still in the game, and "make the minimap and the fullscreen map fit the entire map in the view. So the
   zoomlevel is adjusted so it is always possible to see the entire dungeon map". The full map fits a floor into the
