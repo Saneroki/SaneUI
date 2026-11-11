@@ -180,7 +180,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   ring of stitched leather (the far herbs and ore below wear it with a point), grey while your skill is too low for it; on our small map and on the game's
   own minimap alike. Each switch is also its finder: *Found herbs* on puts Find Herbs on, off takes it off (or
   Find Minerals in its place, while *Found ore* is on), and so on, without a sound; *Found fishing pools* is Find
-  Fish, whose pools the game's minimap dots show (no picture of ours). With two or more on and their spells known
+  Fish, whose pools the game's minimap dots show (no picture of ours). The other way round, a finder switched on
+  outside them (the game's tracking menu, the spell, a macro, or one still on from another character of the
+  profile) switches its kind on, so the game's dots never show without our pictures and far ones (Saneroki,
+  2026-11-11); one going off leaves its kind as it is. With two or more on and their spells known
   they take turns while you move, herbs, ore, fish and round again, those you do not know left out (the setting
   *Switch finders every*, a slider: 15 yards you move at first, 0 to 50, as fast as the global cooldown lets it, 0 never), silently
   too, and the ones of the finder that is off meanwhile stay on the map until you gather one, go far from it or it
@@ -1161,7 +1164,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's tooltip as a dungeon boss's, its 3D model beside it with Alt |
 | `RareTracker.lua` | The Sane Rare tracker: rares, treasures, books and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover; a chest or book the interact key picks; a book still needed within 100 yards) told at once by a notice at the screen's right edge under the minimap, dragged where you like (its model or icon, name, rank and level, how far and which way) and the game's war horn; a double click: the map pin there, a right click: away; `/sane testraretracker` |
 | `Marks.lua` | The player's arrow, the map pin, the waypoints (and the ghost of one dragged), the party, the pings |
-| `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive. No frames |
+| `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive; one switched on outside the filter switches its kind on there. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |

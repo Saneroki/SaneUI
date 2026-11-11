@@ -15,10 +15,13 @@ local _, ns = ...
 --      Nodes.Wanted()          the kinds the pin filter wants found, as one string ("herb fish")
 --
 --  The finders follow the pin filter's kinds Found herbs, Found ore and Found fishing pools (Apply): the one
---  switched on, the one switched off. With two or more on and their spells known they take turns while you move,
---  herbs, ore, fish and round again, those not wanted or not known left out (the setting Switch finders every:
---  yards moved between two turns, 15 at first). Dying takes Forever's tracking: alive again, the first finder wanted comes back on as
---  soon as it can be cast (Revived), and the turns go on from it. Retail's tracking holds them all at once and keeps
+--  switched on, the one switched off. And the other way round: a finder switched on outside the filter (the game's
+--  tracking menu, the spell, a macro) switches its kind on there (Follow), so what the game's minimap shows of it
+--  is drawn in its pictures (Found.lua) and the far ones are shown (Glints.lua). With two or more on and their
+--  spells known they take turns while you move, herbs, ore, fish and round again, those not wanted or not known
+--  left out (the setting Switch finders every: yards moved between two turns, 15 at first). Dying takes Forever's
+--  tracking: alive again, the first finder wanted comes back on as soon as it can be cast (Revived), and the turns
+--  go on from it. Retail's tracking holds them all at once and keeps
 --  them through death (Nodes.TOGETHER): there each is simply on while its kind is, and no turns are taken. Fishing
 --  pools are no records of Core's: the game's own minimap dots show them, and only herbs and ore are told by their
 --  names (Nodes.DRAWN). Without Core's herbs and ore (Nodes.Known: Retail, until its data comes) nothing is told by
@@ -53,6 +56,7 @@ local HERB, METAL, GOODS = 9, 7, 7 -- the game's item class Trade Goods and its 
 local named = {}   -- [name] = its record, or false: none
 local pictures = {} -- [object key] = file ID, or false: none known yet
 local moving = 0   -- yards moved since the last turn
+local switched = nil -- when a switch of ours was made last (GetTime)
 local ticker, loud, reviving
 
 -------------------------------------------------------------------------------
@@ -214,6 +218,7 @@ local function Switch(index, on)
     Changed()
     if not on then LoudSoon(Nodes.AFTER) end -- (no cast comes to wait for)
     moving = 0
+    switched = GetTime()
 end
 
 -- Whether a kind's finder can be cast now: not in a fight, not dead, not casting, not hidden (it would show you),
@@ -286,6 +291,18 @@ function Nodes.Apply()
     end
 end
 
+-- A finder the game has on that the pin filter does not want was switched on outside it (the game's tracking menu,
+-- the spell, a macro; or on another character of the profile before the filter changed): its kind comes on in the
+-- filter, which then leaves that finder on (Apply). Not while a switch of ours may still be on its way (Nodes.QUIET
+-- seconds), and never a kind off: dying takes Forever's tracking (Revived brings it back), the turns switch them.
+local function Follow()
+    if ns.off or (switched and GetTime() - switched < Nodes.QUIET) then return end
+    local _, _, lit = Finders()
+    for _, kind in ipairs(Nodes.ORDER) do
+        if lit[kind] and not Wants(kind) then ns.SwitchPin(Nodes.FOUND[kind]) end
+    end
+end
+
 -- A look whether a turn is due: a finder on, and you moved the setting's yards since the last turn (your speed in
 -- yards a second at each look); the next kind in turn then, as soon as it can be cast. A tracking of another kind
 -- you chose (Track Beasts) is left as it is: no finder is on then.
@@ -355,6 +372,9 @@ function Nodes.Start()
     ns.On("SPELLS_CHANGED", Changed)
     ns.On("PLAYER_ENTERING_WORLD", Changed)
     ns.On("SPELLS_CHANGED", Nodes.Update)
+    -- A finder switched on outside the pin filter: its kind on there (at a login too, where one was left on so).
+    ns.On("MINIMAP_UPDATE_TRACKING", Follow)
+    ns.On("PLAYER_ENTERING_WORLD", Follow)
     -- Alive again: by another's resurrection, at your corpse or by the spirit healer.
     ns.On("PLAYER_ALIVE", Revived)
     ns.On("PLAYER_UNGHOST", Revived)

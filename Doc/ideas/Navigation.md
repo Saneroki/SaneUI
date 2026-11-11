@@ -1896,6 +1896,9 @@ battlemaster, spirit healer, meeting stone.
     move at first (the slider *Switch finders every*, 0 to 50 yards; 7 at first until Saneroki asked for 15), only those the character knows and the pin filter wants (*Found
     herbs*, *Found ore*, the new *Found fishing pools*); alive again after dying, the finder wanted comes back on by
     itself. Fishing pools get no picture of ours (no records): the game's minimap dots show them.
+  - **A finder on means its kind on (2026-11-11):** a finder switched on outside the pin filter (the game's menu,
+    the spell, a macro) switches its kind on there, so the game's dots never show without our pictures and the far
+    ones (Saneroki saw only the game's dots: both his characters' profile had *Found herbs* and *Found ore* off).
 - **Far sparkles** (built 2026-10-25, `Glints.lua`, the setting *Far herbs and ore on the screen*): every live node
   beyond the close sparkles' reach marked on the screen however far it is.
   - **What it shows (Saneroki, 2026-10-25):** its direction and its distance, the nearest eight: the picture of what

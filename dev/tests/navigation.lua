@@ -7216,6 +7216,37 @@ do
     W.Wait(Nodes.QUIET + 0.01)
 end
 
+-- A finder switched on outside the pin filter (the game's tracking menu, the spell): its kind on in the filter, so
+-- its pictures and far ones show; one gone off leaves the filter as it is.
+do
+    local chosen = Core.Copy(ns.options.pins)
+    chosen.foundHerb = nil
+    Core.Set(ns.name, "pins", chosen)
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    check(not ns.options.pins.foundHerb and Nodes.Active() == "ore", "Found herbs off, Find Minerals on: the filter as it is")
+    local count = #gather.switches
+    gather.tracking[1].active, gather.tracking[2].active = true, false -- Find Herbs cast by hand
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    check(ns.options.pins.foundHerb and Nodes.Active() == "herb" and #gather.switches == count,
+        "Find Herbs switched on by hand: Found herbs on in the filter, the finder left as it is")
+    for _, entry in ipairs(gather.tracking) do entry.active = false end
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    check(ns.options.pins.foundHerb and ns.options.pins.foundOre, "a finder gone off (dying takes it): its kind stays on")
+    -- Right after a switch of ours the game may still show the finder it replaces: left alone.
+    chosen = Core.Copy(ns.options.pins)
+    chosen.foundOre = nil
+    Core.Set(ns.name, "pins", chosen)
+    check(Nodes.Active() == "herb", "Found ore off, no finder on: Find Herbs comes on")
+    gather.tracking[2].active = true
+    W.Fire("MINIMAP_UPDATE_TRACKING")
+    check(not ns.options.pins.foundOre, "Find Minerals still the game's a moment after our switch: Found ore stays off")
+    gather.tracking[2].active = false
+    chosen = Core.Copy(ns.options.pins)
+    chosen.foundOre = true
+    Core.Set(ns.name, "pins", chosen)
+    W.Wait(Nodes.QUIET + 0.01)
+end
+
 -- Found herbs (Found.lua): the game's minimap gather.asked, the herb drawn on its dot in its picture.
 gather.tracking[1].active, gather.tracking[2].active = true, false
 W.Fire("MINIMAP_UPDATE_TRACKING") -- as the game says when its tracking changed
