@@ -72,11 +72,15 @@ is small, and the maps of the dungeons and raids. The plan is in
   name in its side's colour, under it *Rare* or *Rare Elite*, its kind and when it comes back; then *Abilities* and its
   loot, each with the game's icons, and with Alt each one's details (an ability's description, an item's effects and
   stats). Core's NPCs tell what they know of it.
-- **Sane Rare tracker.** A rare, a treasure or an event near you is told the moment the game shows it: the game's war
+- **Sane Rare tracker.** A rare, a treasure, a book or an event near you is told the moment the game shows it: the game's war
   horn, and a notice at the screen's right edge under the minimap: the rare's own 3D model at its left (a treasure's or an event's: the game's icon of its mark), its
   name in gold, *Rare Elite, Level 24*, how far and which way (*85 m north-west*, kept up to date). Found by the game's
   marks on the minimap, and by the rare itself as soon as you see it (its nameplate, your target, the mouse on it), for
-  the rares the game gives no mark. The mouse on it: its tooltip as on the map. A double click puts the map pin on it
+  the rares the game gives no mark. Forever's world has no such marks: there a chest is told when your interact key
+  picks it (its soft target, what Core's data says the object is), and a book a librarian asks for as you come within
+  100 yards of it (or your interact key picks it) while you still need it: not in your bags or bank, its quest not
+  done, and one only for those on a quest while you are on it; in your bags or its loot window opened, it goes. The
+  mouse on it: its tooltip as on the map. A double click puts the map pin on it
   and the golden line leads there, as on a pin; a right click sends it away; a drag with the left button moves the
   notices, kept where you let them go (`/sane testraretracker reset`: under the minimap again). It stays until you
   right click it, the rare is dead or the treasure taken (its mark gone or dead, or the creature seen dead: your
@@ -98,7 +102,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   at first); services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
-  herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book): as far as the data holds them; a place
+  herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book: those the librarians ask for, the book's
+  name in the tooltip): as far as the data holds them; a place
   the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in Sane UI's tooltips a
   quiet grey note at the bottom), and a red ! before the name of each thing in it that is not confirmed (the pin's
   own thing, a quest it offers, each of a gathered pin's), until the game confirms it in play: you or somebody of your guild or group sees
@@ -1078,7 +1083,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
 | `Paths.lua` | The ways of the flight point or dock under the mouse: each flight of your side from it white, a ship's way round light blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's tooltip as a dungeon boss's, its 3D model beside it with Alt |
-| `RareTracker.lua` | The Sane Rare tracker: rares, treasures and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover) told at once by a notice at the screen's right edge under the minimap, dragged where you like (its model or icon, name, rank and level, how far and which way) and the game's war horn; a double click: the map pin there, a right click: away; `/sane testraretracker` |
+| `RareTracker.lua` | The Sane Rare tracker: rares, treasures, books and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover; a chest or book the interact key picks; a book still needed within 100 yards) told at once by a notice at the screen's right edge under the minimap, dragged where you like (its model or icon, name, rank and level, how far and which way) and the game's war horn; a double click: the map pin there, a right click: away; `/sane testraretracker` |
 | `Marks.lua` | The player's arrow, the map pin, the party, the pings |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
@@ -1106,6 +1111,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, books and chests for the rare tracker in Forever:** Saneroki: "Does that work also with things like
+  treasures and other things like for example the books that are spread in the world that you need to gather", then
+  "Yes, build it". Forever's client has no marks for them; the 36 books the librarians ask for are books in Core's
+  data now (`assets/data/Objects/fixes.jsonl`), on the map too (*Books*). `RareTracker.lua`: `Soft`, `Scan`, `Book`,
+  `Needed`, `Looted`.
 - **2026-11-11, the rare tracker's notices stay:** Saneroki: "it should not remove the tracker window when you double
   click on it. Only right click, the rare dead or rightclicking it will remove the window. Reload and moving far enough
   away from it will also remove it eventually" (`RareTracker.lua`: `Over`, `Dead`, `Follow`; `FAR`, 400 yards).

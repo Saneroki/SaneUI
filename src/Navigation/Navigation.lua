@@ -81,9 +81,9 @@ ns.TEXT = {
     -- The Sane Rare tracker (RareTracker.lua).
     rareTracker = "Sane Rare tracker",
     rareOn = "Tell of finds near you",
-    rareOnTip = "A rare, a treasure or an event near you is told the moment the game shows it: a horn, and a notice at the screen's right edge under the minimap: the rare's own 3D model, its name, what it is and its level, how far it is and which way. The mouse on it: its tooltip as on the map, with its abilities and its loot. A double click puts the map pin on it and the golden line leads there; a right click sends it away; drag it with the left mouse button to put the notices where you like (/sane testraretracker reset: under the minimap again). It stays until you right click it, the rare is dead or the treasure taken, or you are " .. Core.Distance(400) .. " away (RareTracker.FAR); a /reload clears them too. Seen again while it shows, it stays as it is, without a sound; told again after 5 minutes at the earliest; never inside a dungeon or raid. /sane testraretracker shows one (chest, event: theirs).",
+    rareOnTip = "A rare, a treasure, a book you still need or an event near you is told the moment the game shows it: a horn, and a notice at the screen's right edge under the minimap: the rare's own 3D model, its name, what it is and its level, how far it is and which way. The mouse on it: its tooltip as on the map, with its abilities and its loot. A double click puts the map pin on it and the golden line leads there; a right click sends it away; drag it with the left mouse button to put the notices where you like (/sane testraretracker reset: under the minimap again). It stays until you right click it, the rare is dead, the treasure taken or the book gathered, or you are " .. Core.Distance(400) .. " away (RareTracker.FAR); a /reload clears them too. Seen again while it shows, it stays as it is, without a sound; told again after 5 minutes at the earliest; never inside a dungeon or raid. /sane testraretracker shows one (chest, book, event: theirs).",
     rareKinds = "What it tells of",
-    rareKindsTip = "Rares: the game's mark of one near you, or the rare itself as soon as you see it (its nameplate, your target, the mouse on it). Treasures: the game's mark of a chest near you. Events: the game's other marks near you.",
+    rareKindsTip = "Rares: the game's mark of one near you, or the rare itself as soon as you see it (its nameplate, your target, the mouse on it). Treasures: the game's mark of a chest near you, or a chest your interact key picks. Books: a book a librarian asks for, as you come within " .. Core.Distance(100) .. " of it or your interact key picks it, while you still need it (not in your bags or bank, its quest not done). Events: the game's other marks near you. Forever's world has no marks: there rares are found in person, chests by the interact key, books by where they stand.",
     rareSound = "Its sound",
     rareSoundTip = "What plays when the Sane Rare tracker tells of something: one of the game's own sounds, at the game's master volume. Chosen here, it plays once.",
     stopped = "the map is closed until the next /reload; the game's own minimap and map are back.",
@@ -230,7 +230,7 @@ local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, di
 
 -- The Sane Rare tracker's: what it tells of (RareTracker.Kind), and its sounds (RareTracker.SOUNDS; none: silent).
 local RARE_KINDS = { { "rare", "|A:dungeonskull:16:16|a Rares" }, { "treasure", "|A:vignetteloot:16:16|a Treasures" },
-                     { "event", "|A:vignetteevent:16:16|a Events" } }
+                     { "book", "|A:lorewalking-map-icon:16:16|a Books" }, { "event", "|A:vignetteevent:16:16|a Events" } }
 local RARE_SOUNDS = { { "horn", "War horn" }, { "chime", "Find chime" }, { "warning", "Raid warning" }, { "none", "None" } }
 
 local OPTIONS = {
@@ -254,8 +254,8 @@ local OPTIONS = {
       parent = "questLogRest" },
     SPARKLES, GLINTS, TURNS,
     { key = "rareTracker", default = true, text = ns.TEXT.rareOn, tip = ns.TEXT.rareOnTip, header = ns.TEXT.rareTracker },
-    { key = "rareKinds", default = { rare = true, treasure = true, event = true }, multi = true, choices = RARE_KINDS,
-      text = ns.TEXT.rareKinds, tip = ns.TEXT.rareKindsTip, parent = "rareTracker" },
+    { key = "rareKinds", default = { rare = true, treasure = true, book = true, event = true }, multi = true,
+      choices = RARE_KINDS, text = ns.TEXT.rareKinds, tip = ns.TEXT.rareKindsTip, parent = "rareTracker" },
     { key = "rareSound", default = "horn", choices = RARE_SOUNDS, text = ns.TEXT.rareSound, tip = ns.TEXT.rareSoundTip,
       parent = "rareTracker" },
 }

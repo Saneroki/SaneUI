@@ -1910,8 +1910,11 @@ battlemaster, spirit healer, meeting stone.
   instances"):** `Core.TipLook` by its creature: its model in the portrait's place, a rare's silver dragon, its level
   on the plaque; *Rare* or *Rare Elite*, its kind, its respawn; *Abilities* and its loot with the game's icons, Alt
   their details (`PinView.lua`). *Seen at* waits for Core's character data.
-- **The Sane Rare tracker (built 2026-11-11, card #108):** a rare, a treasure or an event near you told at once: the
-  game's marks on the minimap, and a rare's nameplate, target or mouseover for the rares without one; a notice at
+- **The Sane Rare tracker (built 2026-11-11, card #108):** a rare, a treasure, a book or an event near you told at
+  once: the game's marks on the minimap (Retail's: Forever's client has none), a rare's nameplate, target or
+  mouseover for the rares without one, a chest or a book the interact key picks (Core's Objects), and a book a
+  librarian asks for within 100 yards while this character still needs it (card #460; the 36 books are kind
+  *book* in Core's Objects by hand fixes, from the librarians' quests and what gives their items); a notice at
   the screen's right edge under the minimap (model or icon, name, rank and level, how far and which way) and the game's
   war horn; a double click the map pin there, a right click away, a drag with the left button moves it (kept; Saneroki,
   2026-11-11); kept until a right click, the rare dead or the treasure taken, or 400 yards away (Saneroki,

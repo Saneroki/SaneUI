@@ -16,7 +16,9 @@ The bigger changes of each version, newest first.
   under the minimap: the rare's own 3D model, its name, rank and
   level, how far it is and which way. Double-click it for a map pin
   and the golden line there, right-click it away, drag it where you
-  like. /sane testraretracker shows one.
+  like. /sane testraretracker shows one. In Forever it also tells of
+  a chest your interact key picks and of a library book you still
+  need as you come near it; the map shows those books too (Books).
 - A rare's tooltip on the map looks like a dungeon boss's: its 3D
   model, the silver dragon and its level, its abilities and its loot
   with their icons (hold Alt for their details).

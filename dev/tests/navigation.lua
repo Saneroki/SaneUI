@@ -7659,6 +7659,79 @@ end)()
     player.x = 0.75
     C_VignetteInfo.GetVignettePosition = position
 
+    -- Forever's world has no marks: a chest the interact key picks, and the books a librarian asks for, near you while
+    -- this character still needs them (Core's Objects, Drops and Quests; a loot window, the book in the bags: over)
+    local OBJECTS, QUESTS, places, drops = Core.Data.Set("Objects"), Core.Data.Set("Quests"), Core.Data.Map(), Core.Data.Drops()
+    local on, of, count, done, info = rawget(places, "On"), rawget(drops, "Of"), C_Item.GetItemCount,
+        C_QuestLog.IsQuestFlaggedCompleted, C_Item.GetItemInfo
+    local kinds = { [500] = "chest", [501] = "book", [502] = "book", [503] = "book" }
+    OBJECTS.Get = function(self, key, field)
+        if kinds[key] then return field == "kind" and kinds[key] or field == "name" and "Library Book" or nil end
+        return getmetatable(self).__index.Get(self, key, field)
+    end
+    QUESTS.Keys = function(self, index, value)
+        if index == "byObjective" and (value == 9001 or value == 9002 or value == 9003) then return { value + 1000 } end
+        return getmetatable(self).__index.Keys(self, index, value)
+    end
+    local gives = { ["object:501"] = 9001, ["object:502"] = 9002, ["object:503"] = 9003 }
+    drops.Of = function(self, key, ...)
+        if gives[key] then return { { item = gives[key], quest = 0 } } end
+        return of and of(self, key, ...) or getmetatable(self).__index.Of(self, key, ...)
+    end
+    places.On = function(self, map)
+        local list = on and on(self, map) or getmetatable(self).__index.On(self, map)
+        if map ~= 1429 then return list end
+        local all = {}
+        for _, place in ipairs(list or {}) do all[#all + 1] = place end
+        all[#all + 1] = { kind = "object", what = "book", key = "object:501", id = 501, name = "Library Book", x = 0.76, y = 0.3 }
+        all[#all + 1] = { kind = "object", what = "book", key = "object:502", id = 502, name = "Library Book", x = 0.75, y = 0.31 }
+        all[#all + 1] = { kind = "object", what = "book", key = "object:503", id = 503, name = "Library Book", x = 0.9, y = 0.3 }
+        return all
+    end
+    local held = {}
+    C_Item.GetItemCount = function(id) return held[id] or 0 end
+    C_QuestLog.IsQuestFlaggedCompleted = function(quest) return quest == 10002 end
+    C_Item.GetItemInfo = function(id) if id == 9001 then return "Nar'thalas Almanac" end end
+    RareTracker.Reread()
+    RareTracker.Scan()
+    check(#shown == 1 and shown[1].find.kind == "book" and shown[1].find.thing == "object:501"
+        and shown[1].name:GetText() == "Nar'thalas Almanac" and shown[1].what:GetText() == TEXT.book
+        and shown[1].icon._atlas == RareTracker.BOOK and shown[1].find.quests[1] == 10001,
+        "a book you still need 20 yards from you: told, by its own name; the one whose quest you did and the one 300 "
+        .. "yards off: not")
+    local book = shown[1]
+    held[9001] = 1
+    Looked()
+    Looked(RareTracker.FADE_OUT)
+    check(#shown == 0 and not book._shown, "the book in your bags: it goes")
+    RareTracker.Scan()
+    check(#shown == 0, "and is not told again")
+    local soft, guid2, name2 = nil, rawget(_G, "UnitGUID"), rawget(_G, "UnitName")
+    UnitGUID = function(unit) if unit == "softinteract" then return soft end return guid2 and guid2(unit) end
+    UnitName = function(unit) if unit == "softinteract" then return "A Battered Chest" end return name2 and name2(unit) end
+    soft = "GameObject-0-1-2-3-500-0000B0"
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, soft)
+    check(#shown == 1 and shown[1].find.kind == "treasure" and shown[1].name:GetText() == "A Battered Chest"
+        and near(shown[1].find.x, 0.75) and shown[1].where:GetText() == TEXT.near,
+        "a chest the interact key picks: told, where you stand")
+    local items, sources = rawget(_G, "GetNumLootItems"), rawget(_G, "GetLootSourceInfo")
+    GetNumLootItems, GetLootSourceInfo = function() return 1 end, function() return soft, 1 end
+    W.Fire("LOOT_OPENED")
+    Looked()
+    Looked(RareTracker.FADE_OUT)
+    check(#shown == 0, "the chest looted: it goes")
+    GetNumLootItems, GetLootSourceInfo = items, sources
+    soft = "GameObject-0-1-2-3-502-0000B1"
+    W.Fire("PLAYER_SOFT_INTERACT_CHANGED", nil, soft)
+    check(#shown == 0, "a book the interact key picks whose quest you did: not told")
+    UnitGUID, UnitName = guid2, name2
+    SlashCmdList.SANEUI("testraretracker book")
+    check(#shown == 1 and shown[1].find.kind == "book" and shown[1].find.x, "/sane testraretracker book: the nearest book's notice")
+    RareTracker.Hide()
+    OBJECTS.Get, QUESTS.Keys, drops.Of, places.On = nil, nil, of, on
+    RareTracker.Reread()
+    C_Item.GetItemCount, C_QuestLog.IsQuestFlaggedCompleted, C_Item.GetItemInfo = count, done, info
+
     -- The test command: Core's nearest rare on your map; its time, then it fades out and goes
     SlashCmdList.SANEUI("testraretracker")
     check(#shown == 1 and shown[1].find.thing == "npc:70" and shown[1].name:GetText() == "An Old Rare"
@@ -7673,7 +7746,7 @@ end)()
     -- What it tells of, its switch, an instance
     Core.Set(ns.name, "rareKinds", { rare = true })
     check(not RareTracker.Found({ kind = "treasure", thing = "object:99", name = "A box" }), "a kind not ticked: not told")
-    Core.Set(ns.name, "rareKinds", { rare = true, treasure = true, event = true })
+    Core.Set(ns.name, "rareKinds", { rare = true, treasure = true, book = true, event = true })
     SlashCmdList.SANEUI("testraretracker event")
     Core.Set(ns.name, "rareTracker", false)
     check(#shown == 0 and not RareTracker.Found({ kind = "treasure", thing = "object:99", name = "A box" }),

@@ -41,6 +41,32 @@ Saneroki: "Sometimes there are a lot of conversation options. Like talking to a 
 - **Tests:** `dev/tests/lore.lua` (188): a city guard's fourteen answers and Goodbye on a 16:9 screen, lifted with its foot on the margin at Size 100 %; at 150 % the twelve that fit, the arrows and the wheel, a click to the end and no further, a line brought into sight answering, the wheel back, the talk moved left to the margins, the column placed anew as the words turn, a new talk at its first line, Size back at 100 % and the talk in the middle again. The lab scene `talk`: `LabGuard()`. Lore's README, `Doc/ideas/Dialogue.md` (decided), `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/changelog.txt`.
 - A `/reload` takes it in.
 
+### Navigation: books and chests for the rare tracker in Forever; the librarians' books in Core's data (Saneroki, 2026-11-11)
+Saneroki: "Does that work also with things like treasures and other things like for example the books that are spread in
+the world that you need to gather", then "Yes, build it". Forever's client has no marks for them (its table of the
+game's marks holds two rows, a test and a wisp). Card #460.
+- **`assets/data/Objects/fixes.jsonl` (new):** the 36 objects that give an item a librarian's quest asks for (the NPCs
+  titled Librarian: the 32 library books of Garion Wendell and Owen Thadd, the four of Donyal Tovald's *Shelf Picked*)
+  are kind `book`, no longer `quest`: hand fixes made from the master's own Quests, Drops and Objects. So the map's
+  pin kind *Books* has them (off at first, the full map only).
+- **`src/Navigation/RareTracker.lua`:** `Soft`: the interact key's soft target (`PLAYER_SOFT_INTERACT_CHANGED`,
+  `softinteract`), told where Core's Objects says it is a chest (a treasure) or a book; at the player's place.
+  `Scan`, every `SCAN` (2) seconds by a ticker: a book on the player's map (`Data.Map():On`, kept until the places
+  change: `Reread`) within `BOOK_REACH` (100) yards. Told only while `Needed`: the book (`Book`: the object's item in
+  Core's Drops, its quests by `Quests:Keys("byObjective")`) not in the bags or bank (`C_Item.GetItemCount`), none of
+  its quests done (`IsQuestFlaggedCompleted`), and one only for those on a quest only while on it; one not needed
+  looked at again after `AGAIN`. Its notice by the book's own name (the item's), *Book* in light blue, the game's
+  `lorewalking-map-icon`; it goes once the book is in the bags or its quest done. `Looted`: a loot window's sources
+  (`GetLootSourceInfo`) are taken, and their notices go (a chest opened, a book or a corpse looted); a mark's object
+  now kept as `guid` whatever it is. `/sane testraretracker book`.
+- **`src/Navigation/Navigation.lua`:** *Books* among what the tracker tells of (on at first); the tips say how each is
+  found and that Forever has no marks.
+- **`src/Navigation/PinView.lua`:** a book's pin tells what it holds (`DROPPERS`): the book by its name.
+- **Tests:** `dev/tests/navigation.lua` (1744): a book 20 yards off told by its own name, not one whose quest is done
+  nor one 300 yards off; in the bags it goes, not told again; a chest the interact key picks, looted it goes; a book
+  so picked whose quest is done not told; the test command's book.
+- A `/reload` takes it in.
+
 ### Navigation: the rare tracker's notices stay until the find is over (Saneroki, 2026-11-11)
 Saneroki: "it should not remove the tracker window when you double click on it. Only right click, the rare dead or
 rightclicking it will remove the window. Reload and moving far enough away from it will also remove it eventually".

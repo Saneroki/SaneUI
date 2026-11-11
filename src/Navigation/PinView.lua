@@ -66,7 +66,8 @@ PinView.LIT, PinView.LIT_ALPHA = 1.9, 0.75 -- a pin of the quest under the mouse
 PinView.PLUS = "Garr_Building-AddFollowerPlus" -- a gathered marker of pins with different icons: the game's round plus
 PinView.TIP_ICON = 16 -- a pin's icon before its name in a gathered marker's tooltip
 PinView.DROPS = 8     -- what a thing gives, lines of a tooltip at most (a gathered marker's, over all its pins)
-PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true } -- the kinds of pin that tell what they give
+PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true, book = true } -- the kinds of pin that tell what
+                                                                                      -- they give (a book: itself)
 
 -- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
 -- stands over a lower one. Kinds that share a level are those that may stand together in a cloud (Pins.Spread)

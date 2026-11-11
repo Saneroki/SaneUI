@@ -9,9 +9,14 @@ local _, ns = ...
 --  sides fade out, the right one ending at the screen's edge.
 --
 --      found by     the game's marks near you (its vignettes, those it puts on the minimap: rares, treasures,
---                   events), and a rare creature itself as soon as the game shows it to you (its nameplate,
---                   your target, the mouse on it: UnitClassification rare or rareelite), for the rares the game
---                   gives no mark. Not inside an instance; never a dead one
+--                   events; Retail's: Forever's client has none), and a rare creature itself as soon as the game
+--                   shows it to you (its nameplate, your target, the mouse on it: UnitClassification rare or
+--                   rareelite), for the rares the game gives no mark. A chest or a book the interact key picks
+--                   near you (the soft target: what Core's Objects says it is). A book a librarian asks for
+--                   (Core's Objects, kind book) within RareTracker.BOOK_REACH yards of you, looked for every
+--                   RareTracker.SCAN seconds, while this character still needs it: its quest not done, the book
+--                   not in its bags or bank, and one only for those on a quest only while it is (Saneroki,
+--                   2026-11-11). Not inside an instance; never a dead one
 --      the notice   at its left the rare's own 3D model (the game's model of its creature), for a treasure or an
 --                   event the game's icon of its mark; its name in gold, under it what it is (Rare, Rare Elite,
 --                   Treasure, Event) and its level, under that how far it is and which way (kept up to date)
@@ -21,7 +26,8 @@ local _, ns = ...
 --                   kept where they are let go (ns.store.rareTracker; /sane testraretracker reset: under the minimap
 --                   again)
 --      how long     until it is sent away (a right click), the rare is dead or the treasure taken (its mark gone or
---                   dead, the creature seen dead: your target, the mouse on it, its nameplate), or you are
+--                   dead, the creature seen dead: your target, the mouse on it, its nameplate; a loot window from
+--                   it), a book gathered (in the bags, its quest done), or you are
 --                   RareTracker.FAR yards from it, in another part of the world or an instance; then it fades out
 --                   (Saneroki, 2026-11-11). A /reload ends them too. At most RareTracker.MOST at once, the newest
 --                   nearest their place, the others under it (over it in the screen's lower half); the same thing
@@ -29,7 +35,8 @@ local _, ns = ...
 --                   RareTracker.AGAIN seconds
 --      settings     Sane Rare tracker (on), what it tells of (rares, treasures, events), its sound
 --      /sane testraretracker  a notice as a find brings it, with its sound: the nearest rare of Core's data on
---                   your map, else a made-up one ahead of you; "chest" a treasure's, "event" an event's; "reset" the
+--                   your map, else a made-up one ahead of you; "chest" a treasure's, "book" the nearest book's,
+--                   "event" an event's; "reset" the
 --                   notices' place under the minimap again
 --
 --      RareTracker.Found(find, test)  tells of a find: { kind, thing, name, map, x, y, level, elite, atlas, vignette
@@ -56,6 +63,9 @@ RareTracker.NAME, RareTracker.LINE = 19, 14 -- the words' sizes
 RareTracker.DARK = 0.5   -- the shade
 RareTracker.FAR = 400    -- yards from it: it goes
 RareTracker.NEAR = 25    -- yards from it: near you
+RareTracker.BOOK_REACH = 100 -- yards: a book still to gather told as you come so near
+RareTracker.SCAN = 2     -- seconds between two looks for books near you
+RareTracker.BOOK = "lorewalking-map-icon" -- a book's picture: the game's, as the map's book pins have it
 RareTracker.FADE_IN, RareTracker.FADE_OUT = 0.25, 1
 RareTracker.MOST = 3
 RareTracker.AGAIN = 300
@@ -70,6 +80,7 @@ local FONT = "Interface\\AddOns\\SaneUI\\Fonts\\Expressway.ttf"
 local GOLD = { 1, 0.82, 0 }
 local SILVER = { 0.8, 0.82, 0.88 } -- a rare's rank, as its silver dragon
 local LIGHT = { 0.95, 0.95, 0.95 }
+local BLUE = { 0.55, 0.78, 1 } -- a book's kind
 -- The test's made-up rare where Core's data has none on your map: a creature both games have.
 local SAMPLE = { thing = "npc:448", name = "Hogger", level = 11, elite = true }
 
@@ -77,6 +88,7 @@ RareTracker.TEXT = {
     rare = Core.Word("RARE", "Rare"),
     elite = Core.Word("ELITE", "Elite"),
     treasure = "Treasure",
+    book = "Book",
     event = "Event",
     level = Core.Word("LEVEL", "Level"),
     near = "Near you",
@@ -86,12 +98,13 @@ RareTracker.TEXT = {
     away1 = "Right click: away. Drag: move.",
     reset = "the Sane Rare tracker's notices stand under the minimap again.",
     chest = "A treasure chest",
+    aBook = "A library book",
     anEvent = "Something going on",
-    about = "a notice of the Sane Rare tracker as a find brings it, with its sound (chest, event: theirs; reset: its place under the minimap)",
+    about = "a notice of the Sane Rare tracker as a find brings it, with its sound (chest, book, event: theirs; reset: its place under the minimap)",
 }
 local TEXT = RareTracker.TEXT
 
-local NPCS = Core.Data.Set("NPCs")
+local NPCS, OBJECTS, QUESTS = Core.Data.Set("NPCs"), Core.Data.Set("Objects"), Core.Data.Set("Quests")
 local holder        -- the notices' place, as large as one, dragged; its OnUpdate keeps them (shown while one shows):
                     -- RareTracker.holder
 local dragging      -- the notices are being dragged
@@ -100,6 +113,8 @@ local shown = {}    -- the notices in sight, the newest first (RareTracker.shown
 local spare = {}    -- notices let go, to be used again
 local seen = {}     -- [thing] = GetTime() it was last told
 local marked = {}   -- [the game's vignette GUID] = true: looked at already
+local taken = {}    -- [GUID] = true: a loot window came from it (a chest opened, a book or a corpse looted)
+local books = {}    -- the books on the player's map (Core's places): { map, list }, read anew when either changes
 local since = 0     -- seconds since the last look
 RareTracker.shown = shown
 
@@ -211,7 +226,45 @@ local function Follow(notice)
     end
 end
 
+-- The book an object gives (Core's Drops) and the quests that ask for it (Core's Quests), and the quest one only for those
+-- on it is (0: anyone); nil where Core's data knows none.
+local function Book(object)
+    local drops = Core.Data.Drops and Core.Data.Drops()
+    local entries = drops and Core.Ask(drops.Of, drops, "object:" .. tostring(object))
+    for _, entry in ipairs(type(entries) == "table" and entries or {}) do
+        local quests = QUESTS:Keys("byObjective", entry.item)
+        if #quests > 0 then return entry.item, quests, entry.quest or 0 end
+    end
+    return nil
+end
+
+-- Whether this character still needs a book: not in its bags or bank, none of its quests done, and where it is only for
+-- those on a quest, on it. One Core's data knows nothing of: yes.
+local function Needed(item, quests, only)
+    if not item then return true end
+    local items = rawget(_G, "C_Item")
+    local count = Core.Ask(type(items) == "table" and items.GetItemCount or rawget(_G, "GetItemCount"), item, true)
+    if type(count) == "number" and count > 0 then return false end
+    local log = rawget(_G, "C_QuestLog")
+    local done = type(log) == "table" and log.IsQuestFlaggedCompleted or rawget(_G, "IsQuestFlaggedCompleted")
+    for _, quest in ipairs(quests or {}) do
+        if Core.Ask(done, quest) == true then return false end
+    end
+    if only and only ~= 0 and Core.Ask(type(log) == "table" and log.IsOnQuest, only) ~= true then return false end
+    return true
+end
+
+-- A book's name: its item's, as the game has it (asked of it while it has not loaded it); nil while unknown.
+local function BookName(item)
+    if not item then return nil end
+    local name = Core.Ask(C_Item.GetItemInfo, item)
+    if not name then Core.Ask(C_Item.RequestLoadItemDataByID, item) end
+    return name
+end
+
 local function Over(find)
+    if find.guid and taken[find.guid] then return true end
+    if find.item and not Needed(find.item, find.quests, find.only) then return true end
     if find.vignette then
         local info = Core.Ask(C_VignetteInfo.GetVignetteInfo, find.vignette)
         if type(info) ~= "table" or Core.Plain(info.isDead) == true then return true end
@@ -470,7 +523,8 @@ local function Picture(notice, find)
         model:SetAlpha(0)
         model:Hide()
     end
-    notice.icon:SetAtlas(find.atlas or (find.kind == "rare" and ns.Pins.ICONS.rare) or ns.Pins.ICONS.treasure)
+    notice.icon:SetAtlas(find.atlas or (find.kind == "rare" and ns.Pins.ICONS.rare)
+        or (find.kind == "book" and RareTracker.BOOK) or ns.Pins.ICONS.treasure)
     notice.icon:Show()
     if not (npc and model and pcall(model.SetCreature, model, npc)) then return end
     pcall(model.SetPortraitZoom, model, 1)
@@ -527,7 +581,7 @@ function RareTracker.Found(find, test)
                    map = find.map, x = find.x, y = find.y, live = true }
     notice.name:SetText(find.name or "?")
     notice.what:SetText(What(find))
-    local colour = find.kind == "rare" and SILVER or find.kind == "treasure" and GOLD or LIGHT
+    local colour = find.kind == "rare" and SILVER or find.kind == "treasure" and GOLD or find.kind == "book" and BLUE or LIGHT
     notice.what:SetTextColor(colour[1], colour[2], colour[3])
     notice.where:SetText(Where(find))
     Picture(notice, find)
@@ -564,7 +618,7 @@ local function Vignette(guid)
     local position = map and Core.Ask(C_VignetteInfo.GetVignettePosition, guid, map)
     local x, y = type(position) == "table" and Core.Plain(position.x), type(position) == "table" and Core.Plain(position.y)
     RareTracker.Found({ kind = kind, thing = thing, name = Core.Plain(info.name), atlas = atlas, vignette = guid,
-                        guid = type(creature) == "string" and creature:find("^Creature") and creature or nil,
+                        guid = type(creature) == "string" and creature or nil,
                         elite = type(atlas) == "string" and atlas:find("Elite", 1, true) ~= nil or nil,
                         map = map, x = x or nil, y = y or nil })
 end
@@ -597,6 +651,93 @@ local function Unit(unit)
     local level = Core.Ask(UnitLevel, unit)
     RareTracker.Found({ kind = "rare", thing = thing, name = Core.Ask(UnitName, unit), elite = rank == "rareelite", guid = guid,
                         level = type(level) == "number" and level > 0 and level or nil, map = map, x = x, y = y })
+end
+
+-- Where the player stands: their map and the point on it; nil where the game tells none.
+local function Here()
+    local map = Core.Ask(C_Map.GetBestMapForUnit, "player")
+    local here = map and Core.Ask(C_Map.GetPlayerMapPosition, map, "player")
+    local x, y = type(here) == "table" and Core.Plain(here.x), type(here) == "table" and Core.Plain(here.y)
+    if not (x and y) then return map end
+    return map, x, y
+end
+
+-- What the interact key picks near you (its soft target): a chest, or a book this character still needs, by what Core's
+-- Objects says the object is. It stands within the key's reach: at your place.
+local function Soft()
+    local guid = Core.Ask(UnitGUID, "softinteract")
+    local thing = Thing(guid)
+    local id = thing and tonumber(thing:match("^object:(%d+)$"))
+    local kind = id and OBJECTS:Get(id, "kind")
+    local tell = kind == "chest" and "treasure" or kind == "book" and "book" or nil
+    if not (tell and Wanted(tell)) then return end
+    local item, quests, only
+    if tell == "book" then
+        item, quests, only = Book(id)
+        if not Needed(item, quests, only) then return end
+    end
+    local map, x, y = Here()
+    RareTracker.Found({ kind = tell, thing = thing, guid = guid, map = map, x = x, y = y, item = item, quests = quests,
+                        only = only, atlas = tell == "book" and RareTracker.BOOK or nil,
+                        name = BookName(item) or Core.Ask(UnitName, "softinteract") or OBJECTS:Get(id, "name") })
+end
+
+-- The books on a map (Core's places of the kind book): kept until the map or the places change.
+local function BooksOn(map)
+    if books.map == map and books.list then return books.list end
+    local data = Core.Data.Map and Core.Data.Map()
+    local places = data and Core.Ask(data.On, data, map)
+    if type(places) ~= "table" then return {} end -- (being read: asked again at the next look)
+    local list = {}
+    for _, place in ipairs(places) do
+        if place.kind == "object" and place.what == "book" and place.x and place.y then list[#list + 1] = place end
+    end
+    books.map, books.list = map, list
+    return list
+end
+
+-- Every RareTracker.SCAN seconds: a book on your map within RareTracker.BOOK_REACH yards, told while you still need it;
+-- one you do not, looked at again only after RareTracker.AGAIN seconds.
+local function Scan()
+    if not Wanted("book") then return end
+    local map, x, y = Here()
+    local box = map and Coords.Box(map)
+    if not (box and x) then return end
+    for _, place in ipairs(BooksOn(map)) do
+        local yards = math.sqrt(((place.x - x) * box.width) ^ 2 + ((place.y - y) * box.height) ^ 2)
+        if yards <= RareTracker.BOOK_REACH and Fresh(place.key) then
+            local item, quests, only = Book(place.id)
+            if Needed(item, quests, only) then
+                RareTracker.Found({ kind = "book", thing = place.key, name = BookName(item) or place.name, map = map,
+                                    x = place.x, y = place.y, item = item, quests = quests, only = only,
+                                    atlas = RareTracker.BOOK })
+            else
+                seen[place.key] = GetTime()
+            end
+        end
+    end
+end
+RareTracker.Scan = Scan
+
+-- Core's places changed: the books on the map read anew at the next look.
+function RareTracker.Reread()
+    books.list = nil
+end
+
+-- A loot window: each thing it came from (a chest, a book, a corpse) is taken, and its notice goes.
+local function Looted()
+    local count = Core.Ask(rawget(_G, "GetNumLootItems")) or 0
+    local sources = rawget(_G, "GetLootSourceInfo")
+    if type(sources) ~= "function" then return end
+    for slot = 1, count do
+        local answer = { pcall(sources, slot) }
+        if answer[1] then
+            for index = 2, #answer, 2 do
+                local guid = Core.Plain(answer[index])
+                if type(guid) == "string" then taken[guid] = true end
+            end
+        end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -644,6 +785,12 @@ function RareTracker.Test(rest)
                  name = place and place.name or TEXT.chest, map = map, x = place and place.x, y = place and place.y }
     elseif rest == "event" then
         find = { kind = "event", atlas = "VignetteEvent", thing = "vignette:test", name = TEXT.anEvent, map = map }
+    elseif rest == "book" then
+        local place = NearestOf(map, function(place) return place.kind == "object" and place.what == "book" end)
+        local item = place and Book(place.id)
+        find = { kind = "book", atlas = RareTracker.BOOK, thing = place and place.key or "object:0",
+                 name = BookName(item) or place and place.name or TEXT.aBook, map = map, x = place and place.x,
+                 y = place and place.y }
     else
         local place = NearestOf(map, function(place)
             return place.kind == "npc" and type(place.what) == "table" and place.what.rare
@@ -674,6 +821,12 @@ function RareTracker.Start()
     ns.On("NAME_PLATE_UNIT_ADDED", ns.Guard(Unit))
     ns.On("PLAYER_TARGET_CHANGED", ns.Guard(function() Unit("target") end))
     ns.On("UPDATE_MOUSEOVER_UNIT", ns.Guard(function() Unit("mouseover") end))
+    ns.On("PLAYER_SOFT_INTERACT_CHANGED", ns.Guard(Soft))
+    ns.On("LOOT_OPENED", ns.Guard(Looted))
     -- A new place (a loading screen): the marks there looked at anew
     ns.On("PLAYER_ENTERING_WORLD", ns.Guard(function() wipe(marked) end))
+    -- The books near you, looked for in turn; their list anew when Core's places change
+    local data = Core.Data.Map and Core.Data.Map()
+    if data and data.OnChange then data:OnChange(ns.Guard(RareTracker.Reread)) end
+    if rawget(_G, "C_Timer") and C_Timer.NewTicker then C_Timer.NewTicker(RareTracker.SCAN, ns.Guard(Scan)) end
 end
