@@ -297,6 +297,11 @@ Sunder Armor), as you choose, nothing fixed.
     whom on (the fight's foe where the game names none), the fight's name under the time, no duration. Swings and
     your own casts logged already stay out. The game's meter fills while Combat's meter is on (it keeps the game's
     switched on).
+  - *Cast in a fight*: the casts the Sane UI of each member of your party or raid sends after the fight, of buffs
+    and debuffs, with whom and when (Saneroki, 2026-11-11: "Can we use the guild and party sharing to get the spells
+    and information from other party members combat?"); one that is an aura seen already marks that line. Only from
+    members who run Sane UI, after the fight, never in it. *Share casts in a fight with your group* (page Combat,
+    section *Aura history*, on at first): off, yours are not sent and theirs not taken.
   An aura that came and went inside a fight and did no damage or healing, nor was dispelled (Sunder Armor, a shout,
   a boss's enrage), is not seen; Edit tracked's search finds it to mark.
 - **The threat and damage meter** (*Threat and damage meter* on the page Combat or `/sane meter` switch it, on at first),
@@ -932,7 +937,14 @@ Sunder Armor), as you choose, nothing fixed.
   (`combatSpellDetails.unitName`, else the session's name; for damage taken the two swapped), `fight`; one per what,
   spell, from and on (damage taken: per foe, `hits`), not `AuraLog.SWINGS`, not yours logged as casts in that fight.
   The view: `History.SHOWS` with `fights`; such lines' kind words `historyCast`, `historyWhat_<what>`, `+N` after
-  `on`, `historyFight` under the time. `dev/tests/aurahistory.lua`.
+  `on`, `historyFight` under the time. Shared (`Send`, `Heard`): after a fight your casts of it (`fight.mine`, those
+  folded into their aura too), at most `AuraLog.SENT`, as one block of `Core.Wire` of the kind `AuraLog.KIND` (F) to
+  `RAID`, `PARTY` or `INSTANCE_CHAT`, a line each "spell, the server's time (`GetServerTime`, so neither the
+  members' clocks nor the wire's waiting matter), whom at", once per fight; the wire sends nothing in a fight or
+  under the game's chat lockdown. Taken in (`Wire.ListenBlock`; never a whisper): each line checked (digits, within
+  `AuraLog.OLD` back, a name of 80 bytes at most), at this computer's time; an aura of that member's on that one
+  within `AuraLog.HEARD` seconds is it (`shared`), one heard already left, else `kind = "cast"`, `shared`, `from` the
+  sender's key. `AuraLog.Share(on)` from Combat's `auraShare` (`History.Apply`). `dev/tests/aurahistory.lua`.
 - **The threat and damage meter** (`Meter/`): the combat log is closed to addons (`C_CombatLog.IsCombatLogRestricted`), so
   the numbers are the game's own meter's (`C_DamageMeter`, the same in both games). `Read.Fight(where, types, people)` reads one
   list per kind, `where` `{ id = session }` or `{ type = "Current" / "Overall" }`, and matches the sources by GUID
@@ -1071,6 +1083,10 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-11:** the casts of your party's and raid's Sane UI in the aura history (Saneroki: "Can we use the guild
+  and party sharing to get the spells and information from other party members combat?"): after each fight each
+  member's Sane UI sends its player's casts of buffs and debuffs in it, with whom and when; *Share casts in a fight
+  with your group* on Combat's page.
 - **2026-11-11:** what a fight hides in the aura history (Saneroki: "Yess add them"): your own casts in a fight of a
   spell that puts an aura on, and after each fight the spells of the game's damage meter of it, each member's damage,
   healing, dispels and interrupts and the foes' spells that hit the group, all clickable as the rest; *From fights*.

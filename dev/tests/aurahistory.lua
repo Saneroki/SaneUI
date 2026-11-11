@@ -4,7 +4,8 @@
 -- aura gone; a fight in which the game hides the auras (W.Secret): nothing hidden kept or compared, nothing closed, a
 -- spell the game shows kept, the rest once the fight is over with the time it came; the most kept; the window on the
 -- full screen, newest on top, its icon's tooltip and menu, what it shows, the search, clearing; which spells the
--- game hides (/sane secrets). At its end it runs again as Retail loads the module ("retail": W.Play).
+-- game hides (/sane secrets); your casts and the game's meter after a fight; your group's casts shared. At its end it
+-- runs again as Retail loads the module ("retail": W.Play).
 -- Usage, from the project folder:  lua5.1 dev/tests/aurahistory.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -305,7 +306,8 @@ W.Wait(Log.FIGHT + 0.1)
 check(Count("Rend") == 1 and rend.kind == "cast", "in the fight its aura stays hidden")
 
 -- The game's meter: the fight's spells of you and Brisa, plain once it is over.
-Enum.DamageMeterType = { DamageDone = 0, HealingDone = 2, Interrupts = 5, Dispels = 6, DamageTaken = 7 }
+Enum.DamageMeterType = { DamageDone = 0, Dps = 1, HealingDone = 2, Hps = 3, Interrupts = 5, Dispels = 6, DamageTaken = 7 }
+Enum.DamageMeterSessionType = { Overall = 0, Current = 1, Expired = 2 }
 local sessions = {}
 local FIGHT = {
     [0] = { ["Player-1-1"] = { { spellID = 772 }, { spellID = 6603 }, { spellID = 12294 } },
@@ -335,8 +337,16 @@ C_DamageMeter = {
         return { combatSpells = spells }
     end,
 }
+-- The game's newest fight by its type too (Combat's meter asks so), the same one.
+C_DamageMeter.GetCombatSessionFromType = function(_, kind) return C_DamageMeter.GetCombatSessionFromID(1, kind) end
+C_DamageMeter.GetCombatSessionSourceFromType = function(_, kind, guid) return C_DamageMeter.GetCombatSessionSourceFromID(1, kind, guid) end
 sessions[1] = { sessionID = 1, name = "Hogger", durationSeconds = 30 }
 
+-- In a party: what is sent to it after the fight (Core.Wire's block, caught here).
+IsInGroup = function() return true end
+local sent = {}
+local sendBlock = Core.Wire.SendBlock
+Core.Wire.SendBlock = function(kind, text, channel) sent[#sent + 1] = { kind = kind, text = text, channel = channel } return true end
 W.Wait(5)
 secret = false
 W.Combat(false)
@@ -365,6 +375,51 @@ W.Combat(true)
 W.Combat(false)
 W.Wait(Log.AFTER + 0.1)
 check(#Log.Entries() == fights, "a fight the meter holds is read once")
+check(not ns.off, "the module stands, its meter reading the same fights")
+
+-------------------------------------------------------------------------------
+--  Your group's casts: yours sent after a fight, theirs taken in
+-------------------------------------------------------------------------------
+local skew = GetServerTime() - time()
+check(#sent == 1 and sent[1].kind == Log.KIND and sent[1].channel == "PARTY"
+    and sent[1].text == ("772\t%d\tHogger"):format(rend.stamp + skew),
+    "after the fight your casts of it go to your party once: the spell, when by the server's clock, whom at")
+check(not sent[1].text:find("^78\t") and not sent[1].text:find("\n78\t"), "not a cast the log left out")
+local brisa = Core.FullName("nameplate2")
+On("target", "HARMFUL", { name = "Hamstring", spellId = 1715, icon = 132316, auraInstanceID = 28, duration = 15,
+                          expirationTime = W.clock + 15, sourceUnit = "nameplate2", applications = 0 })
+Changed("target")
+local theirs
+for _, entry in ipairs(Log.Entries()) do
+    if entry.id == 1715 and entry.from == brisa then theirs = entry end
+end
+local before = #Log.Entries()
+local server = GetServerTime()
+Log.Heard(brisa, ("1715\t%d\tHogger"):format(server), "PARTY")
+check(theirs and theirs.shared and #Log.Entries() == before, "a member's cast that is an aura seen already marks it")
+Log.Heard(brisa, ("772\t%d\tHogger\nnonsense\t1\n6552\t%d\tHogger"):format(server - 20, server - 7200), "PARTY")
+local shared = Log.Entries()[#Log.Entries()]
+check(#Log.Entries() == before + 1 and shared.kind == "cast" and shared.shared and shared.from == brisa and shared.id == 772
+    and shared.on == "Hogger" and shared.stamp == time() - 20 and shared.name == "Rend",
+    "a member's cast comes in from them, at its time on this computer's clock; a bad or too old line is left")
+Log.Heard(brisa, ("772\t%d\tHogger"):format(server - 20), "PARTY")
+Log.Heard(brisa, ("772\t%d\tHogger"):format(server - 3), "WHISPER")
+check(#Log.Entries() == before + 1, "heard twice, one entry; a whisper not taken")
+
+-- The switch Share casts in a fight with your group: off, nothing sent nor taken.
+Core.Set("Combat", "auraShare", false)
+Log.Heard(brisa, ("1715\t%d\tHogger"):format(server - 30), "PARTY")
+check(#Log.Entries() == before + 1, "off: a member's casts not taken")
+W.Combat(true)
+secret = true
+W.Fire("UNIT_SPELLCAST_SENT", "player", "Hogger", "Cast-11", 772)
+W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-11", 772)
+secret = false
+W.Combat(false)
+W.Wait(Log.AFTER + 0.1)
+check(#sent == 1, "and yours not sent")
+Core.Set("Combat", "auraShare", true)
+Core.Wire.SendBlock, IsInGroup = sendBlock, function() return false end
 
 -------------------------------------------------------------------------------
 --  The window on the full screen
@@ -405,6 +460,13 @@ check(fought and fought.kind._text == TEXT.historyWhat_taken and fought.cells.on
     and fought.cells.on.under._text == TEXT.historyFrom:format("Hogger")
     and fought.cells.came.under._text == TEXT.historyFight:format("Hogger") and fought.cells.lasts.top._text == TEXT.historyNone,
     "a line of the fight: hit your group, from Hogger, the fight's name, no duration")
+
+local member
+for index, line in ipairs(box.lines) do
+    if line.entry == shared then member = box.rows[index] end
+end
+check(member and member.kind._text == TEXT.historyCastShared and member.cells.on.under._text == TEXT.historyFrom:format(brisa),
+    "a member's cast: Cast in a fight, from them")
 
 -- Its tooltip: the aura's own while it is on, else the spell's; a click its menu, as the buffs on the unit frames.
 row.icon._scripts.OnEnter(row.icon)
@@ -455,7 +517,12 @@ for _, line in ipairs(History.lines) do fightsOnly = fightsOnly and line.entry.k
 check(fightsOnly and #History.lines > 0, "From fights: the meter's and your casts alone")
 choices[1].fn()
 spec.search(panel, "brisa")
-check(#History.lines > 0 and History.lines[1].entry.from == "Brisa", "the search finds by whom from")
+local byBrisa = #History.lines > 0
+for _, line in ipairs(History.lines) do
+    local entry = line.entry
+    byBrisa = byBrisa and ((entry.from or ""):find("Brisa", 1, true) or (entry.on or ""):find("Brisa", 1, true)) ~= nil
+end
+check(byBrisa and History.lines[1].entry.from == brisa, "the search finds by whom from")
 spec.search(panel, "gnoll")
 local gnolls = true
 for _, line in ipairs(History.lines) do gnolls = gnolls and line.entry.on == "Riverpaw Gnoll" end

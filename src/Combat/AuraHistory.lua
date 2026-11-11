@@ -22,8 +22,10 @@ local _, ns = ...
 --  casts in a fight of spells that put an aura on (Your cast in a fight), and
 --  once a fight is over the spells the game's own meter holds of it (each
 --  member's damage, healing, damage taken, dispels, interrupts: Damage in a
---  fight, ...), whom from and whom on, the fight's name under the time. Their
---  icons work as the others', the spell's tooltip.
+--  fight, ...), whom from and whom on, the fight's name under the time. And the
+--  casts the Sane UI of your party or raid sends after each fight (Cast in a
+--  fight, from that member), while Share casts in a fight with your group is on
+--  (Core.AuraLog.Share). Their icons work as the others', the spell's tooltip.
 --  Over the list the dropdown of what to show (all, buffs, debuffs, on bosses,
 --  from fights) with Clear history in it; the full screen's search finds by the
 --  aura's name, whom it was on or whom from. Filled only while its panel is shown.
@@ -185,7 +187,7 @@ local function Draw(row, item)
     row.shade:SetShown(item.index % 2 == 0)
     row.name:SetText(entry.name or "")
     local kind = entry.harmful and T.historyDebuff or T.historyBuff
-    if entry.kind == "cast" then kind = T.historyCast end
+    if entry.kind == "cast" then kind = entry.shared and T.historyCastShared or T.historyCast end
     if entry.kind == "fight" then kind = T["historyWhat_" .. (entry.what or "damage")] or T.historyWhat_damage end
     if (entry.stacks or 0) > 1 then kind = kind .. "  " .. T.historyStacks:format(entry.stacks) end
     row.kind:SetText(kind)
@@ -328,7 +330,13 @@ end
 
 ns.Board.Part(History.KEY, T.historyTitle, History.LEAST, Part, History.WANTS)
 
+-- Combat's switch Share casts in a fight with your group, to Core's log.
+function History.Apply()
+    Core.AuraLog.Share(ns.options.auraShare ~= false)
+end
+
 function History.Start()
+    History.Apply()
     Core.AuraLog.Listen(function()
         if shown then Again() end
     end)

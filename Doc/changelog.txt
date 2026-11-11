@@ -16,6 +16,9 @@ The bigger changes of each version, newest first.
   over, your own casts as you cast them, and after each fight the
   spells of the game's damage meter: your group's damage, healing,
   dispels, interrupts and the foes' spells that hit you.
+- Share casts in a fight with your group: after each fight the
+  Sane UI of your party or raid swaps its players' casts of buffs
+  and debuffs, so the aura history shows theirs too.
 - At the spirit healer, Return me to life is a big picture over the
   talk, and its last question has a tick Don't ask me again: from
   then on the spirit healer resurrects you at once. Lore's options

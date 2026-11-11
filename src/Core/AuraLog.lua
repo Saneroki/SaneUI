@@ -27,6 +27,11 @@ local Core = SaneUI.Core
 --                      damage taken, dispels and interrupts in that fight, whom
 --                      from, whom on (kind "fight", what: AuraLog.METER), the
 --                      swings left out, yours that were logged as casts too
+--      a member's casts  your group's Sane UI sends you its player's casts of a
+--                      fight once it is over (Core.Wire, the kind AuraLog.KIND, by
+--                      the server's clock): the same lines, from that member
+--                      (shared); one that is an aura seen already marks it
+--  Whether yours are sent and theirs taken: AuraLog.Share (Combat's switch).
 --
 --  The units looked at: your target, your focus, the mouse's, your soft target,
 --  the boss frames' and every nameplate's, each by its own UNIT_AURA
@@ -49,6 +54,7 @@ local Core = SaneUI.Core
 --      Core.AuraLog.Live(entry)  the unit it is on now, the aura still there, and its instance; or nil
 --      Core.AuraLog.Listen(fn)   fn() once after the list changed (a frame later, a burst one call)
 --      Core.AuraLog.Clear()      the list emptied
+--      Core.AuraLog.Share(on)    your casts sent to your group after a fight, and theirs taken, or neither
 -------------------------------------------------------------------------------
 local Plain, Ask = Core.Plain, Core.Ask
 
@@ -67,6 +73,10 @@ AuraLog.MERGE = 2    -- seconds between your cast and its aura found after the f
 AuraLog.METER = { { "DamageDone", "damage" }, { "HealingDone", "healing" }, { "DamageTaken", "taken" },
                   { "Dispels", "dispel" }, { "Interrupts", "interrupt" } }
 AuraLog.SWINGS = { [1] = true, [75] = true, [5019] = true, [6603] = true } -- melee, Auto Shot, Shoot, Auto Attack
+AuraLog.KIND = "F"   -- the wire's kind of a member's casts in a fight
+AuraLog.SENT = 60    -- casts of one fight sent, and taken from one member, at most
+AuraLog.HEARD = 5    -- seconds between a member's cast and an aura of theirs seen, at most, for it to be that one
+AuraLog.OLD = 3600   -- seconds back a member's cast may lie, at most
 
 local list            -- the entries, Core.Character's (made at the first look after the login)
 local live = {}       -- [GUID] = { [aura instance] = entry }: what is on, as last looked at
@@ -77,6 +87,7 @@ local listeners = {}
 local aimed = {}      -- [cast GUID] = the name of whom your cast was sent at (UNIT_SPELLCAST_SENT)
 local fight           -- the fight under way, or the last: { casts = { [spell] = true } } (your casts logged in it)
 local read            -- the number of the game's newest fight read already (its meter's session)
+local sharing = true  -- AuraLog.Share
 
 local function List()
     if not list and Core.charKey then
@@ -353,10 +364,11 @@ local function Cast(_, cast, spell)
     if type(clock) ~= "number" then return end
     local name, icon, harmful = Spell(spell)
     local me = Name("player")
-    Append({ kind = "cast", id = spell, name = name, icon = icon, harmful = harmful, on = target or (not harmful and me) or nil,
-             from = me, stamp = clock, lasts = 0 })
-    fight = fight or { casts = {} }
+    local entry = Append({ kind = "cast", id = spell, name = name, icon = icon, harmful = harmful,
+                           on = target or (not harmful and me) or nil, from = me, stamp = clock, lasts = 0 })
+    fight = fight or { casts = {}, mine = {} }
     fight.casts[spell] = true
+    fight.mine[#fight.mine + 1] = entry
     Tell()
 end
 
@@ -397,7 +409,7 @@ local function Named(name)
 end
 
 -- The fight just over: every spell of its kinds, one entry each (a spell that hit many of the group once, counted).
-local function Fought()
+local function Fought(done)
     local meter, enum = Game("C_DamageMeter"), Game("Enum")
     local types = type(enum) == "table" and enum.DamageMeterType
     if not (type(meter) == "table" and type(types) == "table" and List() and Open()) then return end
@@ -405,8 +417,7 @@ local function Fought()
     local clock = Ask(Game("time"))
     if not newest or (read and newest.id <= read) or type(clock) ~= "number" then return end
     read = newest.id
-    local casts, merged = fight and fight.casts or {}, {}
-    fight = nil
+    local casts, merged = done and done.casts or {}, {}
     for _, kind in ipairs(AuraLog.METER) do
         local ok, found = pcall(Spells, meter, newest.id, types[kind[1]])
         for _, seen in ipairs(ok and type(found) == "table" and found or {}) do
@@ -431,7 +442,88 @@ local function Fought()
     end
     Tell()
 end
-local afterFight = Core.Later(Fought, AuraLog.AFTER, "aura log")
+-------------------------------------------------------------------------------
+--  Your casts to your group, theirs to you
+-------------------------------------------------------------------------------
+function AuraLog.Share(on)
+    sharing = on ~= false
+end
+
+-- Your group's channel: the raid's, the party's, an instance group's; nil alone.
+local function Group()
+    local home, instance = Game("LE_PARTY_CATEGORY_HOME"), Game("LE_PARTY_CATEGORY_INSTANCE")
+    if Ask(Game("IsInRaid"), home) == true then return "RAID" end
+    if Ask(Game("IsInGroup"), home) == true then return "PARTY" end
+    if instance and Ask(Game("IsInGroup"), instance) == true then return "INSTANCE_CHAT" end
+end
+
+-- The server's clock less this computer's: the same moment for every member, whatever their own clocks say.
+local function Skew()
+    local server, clock = Ask(Game("GetServerTime")), Ask(Game("time"))
+    if type(server) ~= "number" or type(clock) ~= "number" then return nil end
+    return server - clock
+end
+
+-- Your casts of a fight just over, to your group's Sane UI: a line each, the spell, when (the server's clock), whom
+-- at. Waits in Core's wire while the game holds addon messages back.
+local function Send(done)
+    local wire, skew, channel = Core.Wire, Skew(), Group()
+    if not (sharing and done and not done.sent and done.mine and #done.mine > 0 and wire and skew and channel) then return end
+    done.sent = true
+    local lines = {}
+    for index = math.max(1, #done.mine - AuraLog.SENT + 1), #done.mine do
+        local entry = done.mine[index]
+        if type(entry.id) == "number" and type(entry.stamp) == "number" then
+            lines[#lines + 1] = entry.id .. "\t" .. (entry.stamp + skew) .. "\t" .. (entry.on or "")
+        end
+    end
+    if #lines > 0 then wire.SendBlock(AuraLog.KIND, table.concat(lines, "\n"), channel) end
+end
+
+-- A member's cast: an aura of theirs seen already is it (marked), one heard already is left, else an entry of its own.
+local function Theirs(sender, id, stamp, on)
+    local entries = List()
+    for index = #entries, math.max(1, #entries - 200), -1 do
+        local entry = entries[index]
+        if entry.id == id and entry.from == sender and entry.on == on and entry.kind ~= "fight"
+            and math.abs((entry.stamp or 0) - stamp) <= AuraLog.HEARD then
+            entry.shared = true
+            return
+        end
+    end
+    local name, icon, harmful = Spell(id)
+    if not name then return end
+    Append({ kind = "cast", shared = true, id = id, name = name, icon = icon, harmful = harmful, on = on, from = sender,
+             stamp = stamp, lasts = 0 })
+end
+
+-- A member's casts came (Core.Wire): read, never run; each line checked.
+local function Heard(sender, text, channel)
+    if not sharing or channel == "WHISPER" or type(sender) ~= "string" or type(text) ~= "string" or not List() then return end
+    local skew, clock = Skew(), Ask(Game("time"))
+    if not skew or type(clock) ~= "number" then return end
+    local count = 0
+    for line in text:gmatch("[^\n]+") do
+        count = count + 1
+        if count > AuraLog.SENT then break end
+        local id, at, on = line:match("^(%d+)\t(%d+)\t([^\t]*)$")
+        id, at = tonumber(id), tonumber(at)
+        local stamp = at and at - skew
+        if id and id > 0 and stamp and stamp <= clock + 60 and clock - stamp <= AuraLog.OLD and #on <= 80 then
+            Theirs(sender, id, stamp, Named(on))
+        end
+    end
+    Tell()
+end
+AuraLog.Heard = Heard
+
+-- A fight over: your casts sent, its spells read from the game's meter.
+local function Over()
+    local done = fight
+    Send(done)
+    Fought(done)
+end
+local afterFight = Core.Later(Over, AuraLog.AFTER, "aura log")
 
 local function Run()
     for unit in pairs(pending) do
@@ -482,7 +574,8 @@ function AuraLog.Start()
     local meter = Game("C_DamageMeter")
     local newest = type(meter) == "table" and Newest(meter)
     read = newest and newest.id or 0 -- the fights before the login (or a /reload) are not this log's
-    Core.On("PLAYER_REGEN_DISABLED", function() fight = { casts = {} } end)
+    Core.On("PLAYER_REGEN_DISABLED", function() fight = { casts = {}, mine = {} } end)
+    if Core.Wire then Core.Wire.ListenBlock(AuraLog.KIND, Heard) end
     Core.On("PLAYER_REGEN_ENABLED", afterFight)
     for index = 1, rawget(_G, "MAX_BOSS_FRAMES") or 5 do Hear("boss" .. index) end
     Core.On("PLAYER_TARGET_CHANGED", function() Asked("target") end)

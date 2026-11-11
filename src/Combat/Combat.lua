@@ -295,6 +295,9 @@ ns.TEXT = {
     historyOn = "On now",
     historyStayed = "stayed %s",
     historyCast = "Your cast in a fight",
+    historyCastShared = "Cast in a fight",
+    historyShare = "Share casts in a fight with your group",
+    historyShareTip = "After each fight your casts of buffs and debuffs in it go to the Sane UI of your party or raid, and theirs come into your aura history, with whom and when: in a fight the game keeps them from addons, but each player's own casts not. Nothing is sent in a fight. Off: yours are not sent and theirs not taken.",
     historyWhat_damage = "Damage in a fight",
     historyWhat_healing = "Healing in a fight",
     historyWhat_taken = "Hit your group",
@@ -392,6 +395,7 @@ local OPTIONS = {
     { key = "buffList", default = true, text = ns.TEXT.buffListOn, tip = ns.TEXT.buffListTip, header = ns.TEXT.buffList },
     { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
     { key = "aurasOpen", text = ns.TEXT.aurasOpen, tip = ns.TEXT.aurasOpenTip, button = function() ns.Guarded(ns.AuraLists.Open) end },
+    { key = "auraShare", default = true, text = ns.TEXT.historyShare, tip = ns.TEXT.historyShareTip, header = ns.TEXT.historyTitle },
 }
 table.insert(OPTIONS, 1, { key = "trainers", default = true, text = ns.TEXT.trainers, header = ns.TEXT.book, tip = ns.TEXT.trainersTip })
 if ns.Serves() then
@@ -417,6 +421,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
     if key == "buffList" then ns.Guarded(ns.BuffList.Style) end
     if key == "reminders" or key == "groupBuffs" then ns.Guarded(ns.Reminders.Apply) end
+    if key == "auraShare" then ns.Guarded(ns.AuraHistory.Apply) end
 end })
 
 -- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the

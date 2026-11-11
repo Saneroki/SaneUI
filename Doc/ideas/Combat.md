@@ -127,7 +127,10 @@ Decided (Saneroki, 2026-10-16):
   units other than you and your pet). Should a later build mark spells as never hidden, the window gets them in a
   fight by itself. So (Saneroki, 2026-11-11: "Yess add them") your own casts in a fight of a spell that puts an aura
   on come in as they happen, and after each fight the spells of the game's damage meter of it (damage, healing,
-  damage taken, dispels, interrupts, per member; `C_DamageMeter` is plain once the fight is over).
+  damage taken, dispels, interrupts, per member; `C_DamageMeter` is plain once the fight is over). And each member's
+  Sane UI sends its player's casts of the fight to the party or raid once it is over (Core's wire; Saneroki,
+  2026-11-11: "Can we use the guild and party sharing ..."), behind the switch *Share casts in a fight with your
+  group*, on at first.
 
 ## Its parts
 
