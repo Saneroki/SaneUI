@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- The map draws a ship's whole way when you hover or click its dock:
+  through the open sea where the boat sails out of sight behind the
+  loading screen, around the Maelstrom, and every port of a ship
+  that sails a loop (Menethil Harbor, Southshore, Auberdine).
 - Talking to an NPC looks new: the words, the answers and the quest
   each stand on a dark plate of their own, side by side, its round
   edges fading softly into the world but never into the next one.

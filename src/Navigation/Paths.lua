@@ -26,6 +26,14 @@ local _, ns = ...
 --  to point (the game's paths are fine enough): a dark edge, over it the golden
 --  line's art in the way's colour; only the parts in view, cut at the canvas'
 --  edge (Canvas.edge: the game does not cut a line there; Fit).
+--
+--  The sea lanes (Saneroki, 2026-11-11): a boat sails a little way out of its
+--  dock, then leaps (a loading screen) to the sea off the next; the game's path
+--  has nothing between. There each boat's way follows a lane of ours (LANES)
+--  through the open sea alone, round the Maelstrom, as a smooth curve joined to
+--  the game's path where the boat leaves and where it comes in, so the whole
+--  round shows, every port of a loop. A way with no lane (a zeppelin flies
+--  straight) is drawn as before.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
@@ -35,6 +43,62 @@ ns.Paths = Paths
 Paths.THICK = 4    -- the line's thickness in units (at the route's size in the pin filter); its edge a little thicker
 Paths.FAINT = 0.45 -- a flight to a flight point you have not found: so opaque
 Paths.ALPHA = 0.9  -- every other way: so opaque
+Paths.LEAP = 1500  -- yards: a ship's step from its last point round to its first so long (or onto another plane) leaps
+Paths.PIECES = 8   -- pieces of a lane's curve between two of its points
+
+-- The sea lanes, by the boat's way (its key in the set Travel): one a leap, in the order the boat leaps (a way of two
+-- docks: one lane, sailed there and back). Each is points on WoW: Forever's world map (0 to 1, as Coords.ToWorldMap),
+-- from the sea off one dock to the sea off the other; a leap takes it from the end nearer where the boat leaves. Kept
+-- clear of the coasts (the terrain's), the Maelstrom and the islands the world map paints. Forever's alone: the
+-- world maps differ.
+-- Stretches several lanes share, so ships on one sea draw one line: from Auberdine round Kalimdor's north; where the
+-- ways from there part, north of the Maelstrom; from there into Menethil Harbor's bay.
+local NORTH = { { 0.1627, 0.2530 }, { 0.1926, 0.2193 }, { 0.2255, 0.1916 }, { 0.2869, 0.1662 }, { 0.3643, 0.1961 },
+                { 0.4391, 0.2582 } }
+local PART = { 0.5190, 0.3181 }
+local MENETHIL = { { 0.5938, 0.3780 }, { 0.6537, 0.4491 }, { 0.6986, 0.4596 } }
+
+-- One lane of points and lists of points, in order.
+local function Lane(...)
+    local lane = {}
+    for index = 1, select("#", ...) do
+        local part = select(index, ...)
+        if type(part[1]) == "number" then
+            lane[#lane + 1] = part
+        else
+            for _, at in ipairs(part) do lane[#lane + 1] = at end
+        end
+    end
+    return lane
+end
+
+local function Backwards(list)
+    local found = {}
+    for index = #list, 1, -1 do found[#found + 1] = list[index] end
+    return found
+end
+
+Paths.LANES = Core.FOREVER and {
+    -- Ratchet - Booty Bay: south-east, west of the island off Dustwallow, over the South Seas
+    [241] = { { { 0.3518, 0.5913 }, { 0.3443, 0.6587 }, { 0.3618, 0.7186 }, { 0.4142, 0.7784 }, { 0.4990, 0.8196 },
+                { 0.5888, 0.8346 }, { 0.6487, 0.8308 }, { 0.6737, 0.8234 } } },
+    -- Menethil Harbor - Theramore: out of the bay, round the Maelstrom's north and west
+    [292] = { Lane(Backwards(MENETHIL), PART, { { 0.4491, 0.3578 }, { 0.3942, 0.4192 }, { 0.3593, 0.5090 },
+                                                 { 0.3443, 0.5913 } }) },
+    -- Menethil Harbor, Southshore, Auberdine and round: from Southshore the outer way across the north, from Auberdine
+    -- back to Menethil the inner one, so the loop shows
+    [11167] = {
+        { { 0.7275, 0.4192 }, { 0.7186, 0.4476 }, { 0.6961, 0.4513 }, { 0.6437, 0.4207 }, { 0.5988, 0.3458 },
+          { 0.5389, 0.2784 }, { 0.4641, 0.2186 }, { 0.3892, 0.1751 }, { 0.3194, 0.1497 }, { 0.2570, 0.1497 },
+          { 0.2196, 0.1841 }, { 0.1946, 0.2208 }, { 0.1647, 0.2545 } },
+        Lane(NORTH, PART, MENETHIL, { 0.7211, 0.4491 }),
+    },
+    -- Steamwheedle Port - Riverglades: over the South Seas, round the Eastern Kingdoms' south, up the east coast
+    [11391] = { { { 0.3518, 0.7747 }, { 0.4291, 0.8234 }, { 0.5190, 0.8683 }, { 0.6238, 0.8817 }, { 0.7186, 0.8683 },
+                  { 0.7834, 0.8308 }, { 0.8283, 0.7784 }, { 0.8683, 0.7111 }, { 0.8957, 0.6437 } } },
+    -- Auberdine - Stormwind Harbor: round Kalimdor's north, past the Maelstrom's north-east, down the coast
+    [11616] = { Lane(NORTH, PART, { { 0.5838, 0.3892 }, { 0.6312, 0.4716 }, { 0.6562, 0.5614 }, { 0.6662, 0.6250 } }) },
+} or {}
 
 local Travel = Core.Data.Set("Travel")
 local SHIPS = { boat = true, zeppelin = true }
@@ -78,7 +142,86 @@ end
 -- each on map (a flight's: its start's plane), or on the plane of the world's map its point lies on (a ship's: map
 -- given at its first point and where it comes onto another); jump: it leaps to that point. A ship's way runs round:
 -- after its last point again its first.
-local function FromPath(path, map, round)
+-- A point of a way in another plane's yards, through the world map; nil where the two are not linked.
+local function In(point, plane)
+    local link = point and Coords.Link(point.map, plane)
+    if link then return link.du + link.su * point.u, link.dv + link.sv * point.v end
+end
+
+-- A direction (du, dv) made so long; the fallback where it has none.
+local function Stretched(du, dv, length, fallback)
+    local size = math.sqrt(du * du + dv * dv)
+    if size < 1e-6 then return fallback end
+    return { du / size * length, dv / size * length }
+end
+
+-- A leap's curve along its lane, in the plane of a (where the boat leaves): from a to b through the lane's points,
+-- leaving a on the heading it came from before, coming into b on the heading it sails on to after (either may be nil:
+-- straight at the next point). A Hermite curve through them all, Paths.PIECES pieces between two; returns the pieces'
+-- ends but b's, in order, or nil where the planes are not linked.
+local function Sail(a, b, before, after, lane)
+    local plane = a.map
+    local bu, bv = In(b, plane)
+    if not bu then return nil end
+    local through = {}
+    for index, at in ipairs(lane) do
+        local u, v = Coords.FromWorldMap(plane, at[1], at[2])
+        if not u then return nil end
+        through[index] = { u, v }
+    end
+    local function Gap(p, u, v) return math.sqrt((p[1] - u) ^ 2 + (p[2] - v) ^ 2) end
+    local first, last = through[1], through[#through]
+    local backwards = Gap(last, a.u, a.v) + Gap(first, bu, bv) < Gap(first, a.u, a.v) + Gap(last, bu, bv)
+    local spots = { { a.u, a.v } }
+    for index = 1, #through do spots[#spots + 1] = through[backwards and #through + 1 - index or index] end
+    spots[#spots + 1] = { bu, bv }
+    local n = #spots
+    local tangents = {}
+    for k = 2, n - 1 do
+        tangents[k] = { (spots[k + 1][1] - spots[k - 1][1]) / 2, (spots[k + 1][2] - spots[k - 1][2]) / 2 }
+    end
+    local chord = { spots[2][1] - a.u, spots[2][2] - a.v }
+    local pu, pv = In(before, plane)
+    tangents[1] = pu and Stretched(a.u - pu, a.v - pv, Gap(spots[2], a.u, a.v), chord) or chord
+    chord = { bu - spots[n - 1][1], bv - spots[n - 1][2] }
+    local nu, nv = In(after, plane)
+    tangents[n] = nu and Stretched(nu - bu, nv - bv, Gap(spots[n - 1], bu, bv), chord) or chord
+    local curve = {}
+    for k = 1, n - 1 do
+        local p0, p1, m0, m1 = spots[k], spots[k + 1], tangents[k], tangents[k + 1]
+        for step = 1, k == n - 1 and Paths.PIECES - 1 or Paths.PIECES do -- (a is there already, b comes after)
+            local t = step / Paths.PIECES
+            local t2, t3 = t * t, t * t * t
+            local h00, h10, h01, h11 = 2 * t3 - 3 * t2 + 1, t3 - 2 * t2 + t, 3 * t2 - 2 * t3, t3 - t2
+            curve[#curve + 1] = { map = plane, u = h00 * p0[1] + h10 * m0[1] + h01 * p1[1] + h11 * m1[1],
+                                  v = h00 * p0[2] + h10 * m0[2] + h01 * p1[2] + h11 * m1[2] }
+        end
+    end
+    return curve
+end
+
+-- A boat's way round with its leaps sailed along its lanes (lanes: Paths.LANES' list of the way); a leap whose
+-- lane cannot be laid stays a leap.
+local function Sailed(points, lanes)
+    local found, leaps = {}, 0
+    for index, point in ipairs(points) do
+        if point.jump and index > 1 then
+            leaps = leaps + 1
+            local lane = lanes[leaps] or lanes[#lanes]
+            local curve = lane and Sail(points[index - 1], point, points[index - 2], points[index + 1] or points[2], lane)
+            if curve then
+                for _, piece in ipairs(curve) do found[#found + 1] = piece end
+                point.jump = nil
+            end
+        end
+        found[#found + 1] = point
+    end
+    return found
+end
+
+-- lanes: a boat's lanes (Paths.LANES), its leaps drawn along them; its step from its last point round to its first
+-- then a leap too where it is one (onto another plane, or longer than Paths.LEAP).
+local function FromPath(path, map, round, lanes)
     local points, world = {}, nil
     for _, point in ipairs(path) do
         world = point.map or world
@@ -88,9 +231,14 @@ local function FromPath(path, map, round)
         end
     end
     if round and #points > 2 then
-        local first = points[1]
-        points[#points + 1] = { map = first.map, u = first.u, v = first.v, jump = first.jump }
+        local first, last = points[1], points[#points]
+        local back = { map = first.map, u = first.u, v = first.v, jump = first.jump }
+        if lanes and (first.map ~= last.map or (first.u - last.u) ^ 2 + (first.v - last.v) ^ 2 > Paths.LEAP ^ 2) then
+            back.jump = true
+        end
+        points[#points + 1] = back
     end
+    if lanes and #lanes > 0 then points = Sailed(points, lanes) end
     return points
 end
 Paths.FromPath = FromPath -- (Taxi.lua: a hop's way at a flight master)
@@ -111,12 +259,13 @@ local function Flights(node, map)
     return found
 end
 
--- A boat's or zeppelin's whole way round; the tram's two stations (its tunnel's map has no plane), straight.
+-- A boat's or zeppelin's whole way round, a boat's leaps along its lanes; the tram's two stations (its tunnel's map has
+-- no plane), straight.
 local function Ship(key)
     local way = key and Travel:Get(key)
     if not way then return {} end
     if SHIPS[way.kind] and type(way.path) == "table" then
-        return { { kind = way.kind, points = FromPath(way.path, nil, true) } }
+        return { { kind = way.kind, points = FromPath(way.path, nil, true, Paths.LANES[key]) } }
     end
     if way.kind == "tram" and type(way.docks) == "table" and #way.docks == 2 then
         local points = {}

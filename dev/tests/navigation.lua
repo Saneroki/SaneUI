@@ -4343,6 +4343,29 @@ check(lines == 0, "no way: no line")
     ns.Paths.Show({ kind = "travel", gathered = { {} }, map = 1429 })
     check(#Shown() == 0, "a gathered marker: none")
 end)()
+-- A boat's leaps (a loading screen between two seas) drawn along its sea lane (Paths.LANES; Saneroki, 2026-11-11):
+-- from where it leaves through the lane's points to where it comes in, the lane from its other end on the way home,
+-- the step from its last point round to its first a leap too; a way with no lane keeps its leaps as before.
+;(function()
+    local Paths = ns.Paths
+    local path = { { x = -9000, y = 500, map = 0 }, { x = -9100, y = 600 },
+                   { x = 1000, y = -4000, map = 1, jump = true }, { x = 1100, y = -4100 } }
+    local plain = Paths.FromPath(path, nil, true)
+    check(#plain == 5 and plain[3].jump and not plain[5].jump, "no lane: the leap left out, the step round as it was")
+    local lane = { { 0.50, 0.30 }, { 0.40, 0.35 } } -- its first end the nearer to the Eastern Kingdoms (from x 0.62)
+    local drawn = Paths.FromPath(path, nil, true, { lane })
+    local leaps, per, pieces = 0, (#lane + 1) * Paths.PIECES - 1, Paths.PIECES
+    for _, point in ipairs(drawn) do if point.jump then leaps = leaps + 1 end end
+    local function At(point, map, x, y)
+        local u, v = Coords.FromWorldMap(map, x, y)
+        return point and point.map == map and near(point.u, u) and near(point.v, v)
+    end
+    check(leaps == 0 and #drawn == #plain + 2 * per, "both leaps sailed: no leap left, a curve for each")
+    check(At(drawn[2 + pieces], 1415, 0.50, 0.30) and At(drawn[2 + 2 * pieces], 1415, 0.40, 0.35)
+        and drawn[3 + per].v == 1000, "out: from where it leaves through the lane's points in order, on into the other sea")
+    check(At(drawn[4 + per + pieces], 1414, 0.40, 0.35) and At(drawn[4 + per + 2 * pieces], 1414, 0.50, 0.30)
+        and drawn[#drawn].v == -9000, "home: the lane from its other end, the step round to the first point sailed too")
+end)()
 -- The zone under the mouse named at the top of the full map (Label.lua): its name and levels, as the game's map
 -- writes them, and the fishing skill its waters ask (Elwynn's -70: from 1, every cast from 25), with the red mark
 -- of what the game has not confirmed; yellow while your skill (10 and a pole's 5) lets fish get away.
