@@ -56,7 +56,7 @@ Pins.SPACE = 0.85     -- pins that would cover each other stand in a cloud, so m
 Pins.COMBINE = 2.5
 -- Kinds shown only up close, the view no higher than Pins.CLOSER yards (Saneroki, 2026-11-11: "Map pins for Treasure,
 -- possible ore and herbs should only be visible when you are really cloasly zoomed in").
-Pins.CLOSE = { treasure = true, herb = true, ore = true }
+Pins.CLOSE = { treasure = true, herb = true, ore = true, foundHerb = true, foundOre = true }
 Pins.CLOSER = 1500
 Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, flight = 18, travel = 22, entrance = 22,
               place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18,
@@ -64,7 +64,7 @@ Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, 
 
 -- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker (its icon).
 local ORDER = { log = 10, quest = 9, rare = 8, goal = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
-                later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
+                foundHerb = 2, foundOre = 2, later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
 -- The quests as the game marks them: in your log the yellow question mark, to take the yellow exclamation mark, too
@@ -543,6 +543,11 @@ local function FromData(place)
         if not look then return nil end
         pin.kind, pin.atlas = look[1], look[2]
         pin.service = look[1] == "service" -- a mailbox: on the small map only near the player, as every service
+        -- A herb or an ore: the picture of what it gives, soft at its edge and half opaque, as on the game's minimap
+        -- (Found.lua, PinView.lua); the game's gathering mark while its picture is not known.
+        local node = ns.Nodes.DRAWN[what] and ns.Nodes.Of(place.id)
+        local picture = node and ns.Nodes.Picture(node)
+        if picture then pin.atlas, pin.texture, pin.look, pin.node = nil, picture, "possible", node end
     elseif kind == "place" then
         local look = PLACES[what]
         if not look then return nil end
@@ -727,6 +732,29 @@ local ZONE_PARTS, FAR_PARTS = { "npc", "object", "way", "goal" }, { "way" }
 -- too a creature's many spawns.
 local ROW = 2 ^ 20
 local MANY = { herb = true, ore = true, goal = true }
+
+-- A found herb's or ore's pin (Found.lua), whole in its ring (PinView.lua): one record per found one, made again only
+-- when it moved, its key kept for as long as it is found.
+local WEAK = { __mode = "k" }
+local foundPins, foundKeys, foundCount = setmetatable({}, WEAK), setmetatable({}, WEAK), 0
+local function FoundPin(entry)
+    local picture = entry.picture or ns.Nodes.Picture(entry.node)
+    if not picture then return nil end
+    local pin = foundPins[entry]
+    if pin and pin.u == entry.u and pin.v == entry.v and pin.home == entry.plane then return pin end
+    local key = foundKeys[entry]
+    if not key then
+        foundCount = foundCount + 1
+        key = "found:" .. foundCount
+        foundKeys[entry] = key
+    end
+    local map, x, y = ns.Found.OnMap(entry)
+    pin = { kind = ns.Nodes.FOUND[entry.kind], key = key, thing = "object:" .. tostring(entry.node.key),
+            name = entry.node.name, texture = picture, look = "found", node = entry.node, home = entry.plane,
+            u = entry.u, v = entry.v, map = map, x = x, y = y }
+    foundPins[entry] = pin
+    return pin
+end
 local firsts = {}           -- [cell and thing] = the first spawn of a herb, an ore, a quest's creature in it (scratch)
 local rides, rode = {}, 0   -- the lists of those that ride with one, used again
 
@@ -747,6 +775,7 @@ function Pins.For(view, small, pu, pv)
     local parts = continentLevel and FAR_PARTS or ZONE_PARTS
     local floor, k, size = math.floor, view.k, Pins.GATHER
     local left, right, top, bottom = view.left, view.right, view.top, view.bottom
+    local standing = ns.Found.Taken() -- the spawns a found one stands on: no possible one there
     local maps = Maps(view)
     for _, map in ipairs(maps) do
         for _, pin in ipairs(LiveOn(map)) do hidden[pin.key] = true end
@@ -770,6 +799,7 @@ function Pins.For(view, small, pu, pv)
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
                 if wanted and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]
+                               and not standing[pin.key]
                                and (kind == "goal" or kind == "quest" or not goals[pin.thing])) then
                     local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
                     local near = not (small and pin.service) or (pu and (u - pu) ^ 2 + (v - pv) ^ 2 <= Pins.NEAR ^ 2)
@@ -809,6 +839,26 @@ function Pins.For(view, small, pu, pv)
                         end
                     end
                 end
+            end
+        end
+    end
+    -- The herbs and ore found (Found.lua), whole in their ring where they are, where Found does not draw them itself on
+    -- the game's minimap: the full map, the small view while that does not show.
+    for _, entry in ipairs(continentLevel and NONE or ns.Found.Each()) do
+        local kind = ns.Nodes.FOUND[entry.kind]
+        local wanted = shown[kind]
+        if wanted == nil then
+            wanted = kind and Shows(kind) and (not small or SMALL[kind])
+                and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER) and true or false
+            shown[kind] = wanted
+        end
+        local pin = wanted and not (small and ns.Found.Draws(entry.kind)) and FoundPin(entry)
+        local link = pin and Coords.Link(entry.plane, view.map)
+        if link then
+            local u, v = link.du + link.su * entry.u, link.dv + link.sv * entry.v
+            if u >= left and u <= right and v <= top and v >= bottom then
+                pin.pu, pin.pv, pin.order, pin.with = u, v, ORDER[kind] or 0, nil
+                found[#found + 1] = pin
             end
         end
     end
@@ -893,6 +943,7 @@ end
 local function Icon(pin)
     local first = pin.gathered and pin.gathered[1] or pin
     return tostring(first.atlas or first.texture or "") .. "/" .. tostring(first.tint) .. "/" .. tostring(first.grey or first.dim or false)
+        .. "/" .. tostring(first.look)
 end
 
 local byIcon, where = {}, {} -- (scratch) [icon] = the pins and markers in that icon so far; [pin or marker] = its place in the list
@@ -1017,6 +1068,14 @@ Map:OnChange(function()
     Pins.DataChanged()
     if ns.Canvas and ns.Canvas.Refresh then ns.Guarded(ns.Canvas.Refresh) end
 end)
+-- A herb's or ore's picture comes with Core's Objects and Drops (Nodes.Of, Nodes.Picture), each read when first asked
+-- for: the pins read again once one is there, so the game's gathering mark stays nowhere its picture is known by then.
+for _, name in ipairs({ "Objects", "Drops" }) do
+    Core.Data.Set(name):OnStamp(function()
+        Pins.DataChanged()
+        if ns.Canvas and ns.Canvas.Refresh then ns.Guarded(ns.Canvas.Refresh) end
+    end)
+end
 -- Something of Core's data confirmed in play: the pins say so no more.
 if Core.Data.OnConfirm then
     Core.Data.OnConfirm(function()

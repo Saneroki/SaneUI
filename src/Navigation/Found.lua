@@ -31,12 +31,13 @@ local _, ns = ...
 --  mouse right on it and on the minimap itself) is gone.
 --
 --  Where they can be: every spawn of Core's data of a herb or an ore around you,
---  while its kind is shown and you have its finder (Nodes.Has), in its picture,
---  Found.POSSIBLE opaque, on a frame under the game's minimap, so its own dot of
---  one up now stands on the picture of what it is; a found one is drawn whole
---  over it. In the small view and on the game's own minimap, not on the full map
---  (its pins Possible herbs and Possible ore: Pins.lua leaves the small view's
---  to these, Found.Draws).
+--  while its kind is shown and you have its finder (Nodes.Has), in its picture
+--  with a soft edge (Found.Soft), Found.POSSIBLE opaque, on a frame under the
+--  game's minimap, so its own dot of one up now stands on the picture of what it
+--  is; a found one is drawn whole in its ring over it. In the small view and on
+--  the game's own minimap; the full map draws both as pins in the same looks
+--  (Pins.lua, PinView.lua; Found.Draws, Found.Taken), as does the small view
+--  where the game's minimap does not show.
 --
 --  A sweep done, the dots of the kind whose finder is on are what the game
 --  shows now: one it covered and found no more is gone. Those it did not cover,
@@ -85,6 +86,10 @@ Found.HOLE = 0.2293 * 252 / 256
 Found.OUTER = 0.2942 * 252 / 256
 Found.TRIM = 0.12   -- of an item's picture cut off at each side: its own frame and the dark band inside it
 Found.FILL = 1.16   -- the round picture's width over the hole's: its edge under the leather, never in sight
+-- Where one only can be: its picture round with a soft edge (dev/tools/mark-art --soft; Saneroki, 2026-11-11: "a
+-- blurry edge"), as wide as a found one's ring, so both take the same room.
+Found.SOFT_MASK = "Interface\\AddOns\\SaneUI_Navigation\\Art\\mark-soft"
+Found.SOFT = Found.OUTER / Found.HOLE
 local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local SHAPE = { "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE" }
 
@@ -551,6 +556,14 @@ function Found.Round(icon, mask)
     icon:AddMaskTexture(mask)
 end
 
+-- The same with a soft edge, for a place one can be: side wide (a found one's hole), as wide as its ring (Found.SOFT).
+function Found.Soft(icon, mask)
+    icon:SetTexCoord(Found.TRIM, 1 - Found.TRIM, Found.TRIM, 1 - Found.TRIM)
+    mask:SetTexture(Found.SOFT_MASK, SHAPE[1], SHAPE[2])
+    mask:SetAllPoints(icon)
+    icon:AddMaskTexture(mask)
+end
+
 local function Picture(index)
     local picture = pictures[index]
     if picture then return picture end
@@ -572,38 +585,40 @@ end
 
 local function Hide(picture)
     picture.icon:Hide()
-    picture.ring:Hide()
+    if picture.ring then picture.ring:Hide() end
     if picture.button then
         picture.button:Hide()
         picture.button.entry = nil
     end
 end
 
--- A place a herb or ore can be: its picture in the ring as a found one's, on the frame under the minimap (its alpha
+-- A place a herb or ore can be: its picture with a soft edge, on the frame under the minimap (its alpha
 -- Found.POSSIBLE), taking no mouse: the game's own dot over it keeps its tooltip.
 local function Possible(index)
     local picture = possible[index]
     if picture then return picture end
     local icon = under:CreateTexture(nil, "ARTWORK")
     local mask = under:CreateMaskTexture()
-    Found.Round(icon, mask)
-    local ring = under:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(Found.RING)
-    picture = { icon = icon, mask = mask, ring = ring }
+    Found.Soft(icon, mask)
+    picture = { icon = icon, mask = mask }
     possible[index] = picture
     return picture
 end
 
--- One picture at x, y of its frame, side wide (its hole).
+-- One picture at x, y of its frame, side wide (a found one's hole): in its ring, or soft as wide as the ring.
 local function Lay(picture, frame, file, x, y, side, low)
     local icon = picture.icon
     icon:SetTexture(file)
     icon:ClearAllPoints()
     icon:SetPoint("CENTER", frame, "CENTER", x, y)
     icon:SetDesaturated(low)
-    Found.Ring(picture.ring, icon, side)
+    if picture.ring then
+        Found.Ring(picture.ring, icon, side)
+        picture.ring:Show()
+    else
+        icon:SetSize(side * Found.SOFT, side * Found.SOFT)
+    end
     icon:Show()
-    picture.ring:Show()
 end
 
 -- Whether x, y (units from the minimap's middle) lies inside it, edge from the middle (round, or square).
@@ -615,7 +630,7 @@ end
 local taken = {} -- spawns a found one stands on (scratch)
 
 -- The spawns around you in their pictures, but where a found one stands; in the small view and on the game's own
--- minimap, not on the full map (its own pins there).
+-- minimap, not on the full map (its own pins there, in the same looks).
 local function DrawPossible(pu, pv, scale, facing, half, round)
     local shown = 0
     if not ns.Hybrid.Wide() then
@@ -648,7 +663,8 @@ end
 local function Draw(plane, pu, pv, scale, facing)
     local half, round, shown = Minimap():GetWidth() / 2, Round(), 0
     DrawPossible(pu, pv, scale, facing, half, round)
-    for _, entry in ipairs(found) do
+    -- (on the full map the found ones are its pins: PinView.lua)
+    for _, entry in ipairs(ns.Hybrid.Wide() and NONE or found) do
         if shown >= Found.MOST then break end
         local file = entry.picture or Nodes.Picture(entry.node)
         entry.picture = file
@@ -721,10 +737,24 @@ local function Looted()
     if best then Remove(best) end
 end
 
--- The found ones, read only (each { u, v, plane, kind, node, picture, ... }): for the far sparkles (Glints.lua).
+-- The found ones, read only (each { u, v, plane, kind, node, picture, spawn, ... }): for the far sparkles
+-- (Glints.lua) and the map's pins (Pins.lua).
 function Found.Each()
     return found
 end
+
+-- The spawns of Core's data a found one stands on, [the spawn's pin key] = true: the map's pins draw no possible one
+-- there (Pins.lua).
+function Found.Taken()
+    local keys = {}
+    for _, entry in ipairs(found) do
+        if entry.spawn then keys[entry.spawn] = true end
+    end
+    return keys
+end
+
+-- Where a found one is on its zone's map: map, x, y (0 to 1); nil where the game knows no zone there.
+Found.OnMap = OnMap
 
 -- Whether herbs and ore are found here: the game's minimap names what lies under the mouse and Core knows its
 -- herbs and ore (Start).

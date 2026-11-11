@@ -1901,7 +1901,11 @@ battlemaster, spirit healer, meeting stone.
     (`Found.SILENT`). In its place (Saneroki, 2026-11-11: "make it spawn pictures from our data and see if you can make
     the far away arrows still work with found nodes"; "50% transparent if it is a possible one and 100% solid if it is
     a found node"): Core's spawns around you in their pictures, half opaque, under the game's dots; the dot under the
-    mouse found on its spawn, whole, with its far mark.
+    mouse found on its spawn, whole, with its far mark. Then both maps alike (Saneroki, 2026-11-11: "the golden leaves are also
+    changed into the actual icon. If it is a possible one it just has a blurry edge but if it is found it is like it
+    is now ... I want to minimap and the world map work as similar as possible"): a possible one soft-edged and half
+    opaque, under the game's minimap, on the full map as on the small one; a found one whole in its ring, a pin of
+    the full map too.
   - **A finder on means its kind on (2026-11-11):** a finder switched on outside the pin filter (the game's menu,
     the spell, a macro) switches its kind on there, so the game's dots never show without our pictures and the far
     ones (Saneroki saw only the game's dots: both his characters' profile had *Found herbs* and *Found ore* off).

@@ -176,11 +176,19 @@ is small, and the maps of the dungeons and raids. The plan is in
   menu one of its cells opened holds it. The button again, its X or Esc closes it too, and so does the map filling
   the screen; the wheel scrolls it on a low screen.
 - **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*; Saneroki, 2026-11-11):
+  - **the same on both maps** (Saneroki, 2026-11-11: "I want to minimap and the world map work as similar as
+    possible"): a place one can be is the picture of what it gives, round with a soft edge and half opaque, as wide
+    as a found one's ring; a found one is whole in the leather ring. On the small view's game minimap Found.lua
+    draws them at their exact places; on the full map (and the small view while the game's minimap does not show)
+    they are pins of the pin filter's *Possible herbs* and *Possible ore* (in place of the game's gathering mark,
+    which stays only where the picture is not known) and *Found herbs* and *Found ore*, gathered and combined as pins
+    are (`Pins.lua`, `PinView.lua`). The places one can be lie under the game's minimap on both, so its dot stands
+    on them; no place shows under a found one.
   - **where they can be:** every spawn of Core's data of a herb or an ore around you, while its kind is on and you
-    have its finder, in the picture of what it gives in the leather ring, half opaque (`Found.POSSIBLE`), under the
-    game's minimap: its own yellow dot of one up now stands on the picture of what it is. In the small view and on
-    the game's own minimap; the small view's pins *Possible herbs* and *Possible ore* give way to them there
-    (`Found.Draws`), the full map keeps its own.
+    have its finder, in the picture of what it gives with a soft edge (`Found.Soft`, `Art/mark-soft.blp`), half
+    opaque (`Found.POSSIBLE`), under the game's minimap: its own yellow dot of one up now stands on the picture of
+    what it is. In the small view and on the game's own minimap; the small view's pins *Possible herbs* and
+    *Possible ore* give way to them there (`Found.Draws`).
   - **found:** the dot under your mouse, which the game's minimap names (its tooltip), is found, on the spawn of it
     nearest the mouse: drawn whole over its place and marked far away on the screen (below) until you gather it, go
     far from it or it is five minutes old; the mouse on its place again and the game naming nothing there (its
@@ -1188,6 +1196,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
+| `Art/mark-soft.blp` | The soft round mask of a herb's or ore's picture where it can be (Found.lua, PinView.lua): white, whole within half its radius and falling smoothly to clear at its edge, drawn by `dev/tools/mark-art --soft` (`assets/FarMarks/soft-mask.png`), made by `dev/tools/art FarMarks-soft` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
 | `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
 | `AudioLine.lua` | The satchel's sound line: Core's sound profile in use in a dropdown, a cogwheel with the game's five sounds (checkbox and slider) and the profile's Save, Load, New and Delete |

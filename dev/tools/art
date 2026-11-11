@@ -38,11 +38,12 @@ writer washes out the letters and leaves red specks on gold.
 
 Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
-Usage:  dev/tools/art
+Usage:  dev/tools/art [names]      (names: only those, as named in assets/optimized: FarMarks-soft)
 """
 import io
 import struct
 import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -84,6 +85,8 @@ PICTURES = [
 ] + [  # made by dev/tools/mark-art from the leather ring Saneroki picked
     (f"FarMarks/ring-{name}.png", f"FarMarks-{name}", "mark", "Navigation", f"mark-{name}.blp")
     for name in ("pointed", "round")
+] + [  # dev/tools/mark-art --soft: the soft round mask of a herb's or ore's picture where it can be (Found.lua, PinView.lua)
+    ("FarMarks/soft-mask.png", "FarMarks-soft", "mark", "Navigation", "mark-soft.blp"),
 ] + [  # the same rings as Speed Leveling's arrow to the guide's place (Arrow.lua) and its icons (Icons.lua)
     (f"FarMarks/ring-{name}.png", f"FarMarks-{name}", "mark", "SpeedLeveling", f"mark-{name}.blp")
     for name in ("pointed", "round")
@@ -249,5 +252,8 @@ def make(pattern, name, kind, module, shipped_as="banner.blp"):
 
 
 if __name__ == "__main__":
+    # Names given (their names in assets/optimized, FarMarks-soft): only those made, the others' files left as they are.
+    wanted = set(sys.argv[1:])
     for picture in PICTURES:
-        make(*picture)
+        if not wanted or picture[1] in wanted:
+            make(*picture)

@@ -66,14 +66,14 @@ PinView.LIT, PinView.LIT_ALPHA = 1.9, 0.75 -- a pin of the quest under the mouse
 PinView.PLUS = "Garr_Building-AddFollowerPlus" -- a gathered marker of pins with different icons: the game's round plus
 PinView.TIP_ICON = 16 -- a pin's icon before its name in a gathered marker's tooltip
 PinView.DROPS = 8     -- what a thing gives, lines of a tooltip at most (a gathered marker's, over all its pins)
-PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true, book = true } -- the kinds of pin that tell what
+PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true, book = true, foundHerb = true, foundOre = true } -- the kinds of pin that tell what
                                                                                       -- they give (a book: itself)
 
 -- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
 -- stands over a lower one. Kinds that share a level are those that may stand together in a cloud (Pins.Spread)
 -- (the game's own marks nearby aside); at most PinView.LEVELS, all under the marks (Canvas.LEVELS).
 PinView.TIERS = { log = 6, quest = 5, rare = 4, goal = 4, entrance = 3, flight = 3, travel = 3, place = 3, treasure = 2,
-                  service = 1 }
+                  service = 1, foundHerb = 1, foundOre = 1 }
 PinView.LEVELS = 6
 -- At a flight master a flight point's name and price at its right (Saneroki, 2026-11-11), its size by the zoom: LABEL.MAX
 -- points with the view LABEL.AT yards high, LABEL.STEP less each time the view is twice as high, LABEL.MIN at least; on
@@ -454,10 +454,16 @@ local function Up(button, mouse)
     ns.Canvas.Release(mouse, button.pin)
 end
 
--- A pin's level: over the layer, a higher kind over a lower one, and still under the marks (Canvas.LEVELS).
+-- A pin's level: over the layer, a higher kind over a lower one, and still under the marks (Canvas.LEVELS). A place a
+-- herb or ore can be under the game's minimap (Hybrid.LEVEL), as on the small view (Found.lua): its dot of one up now
+-- stands on the picture of what it is.
 local function Level(button)
     local pin = button.pin
     local first = pin and (pin.gathered and pin.gathered[1] or pin)
+    if first and first.look == "possible" then
+        local levels = ns.Canvas.LEVELS
+        return button:SetFrameLevel(math.max(layer:GetFrameLevel() - (levels.pins - levels.paths), 1))
+    end
     local tier = first and (first.taxi and PinView.LEVELS or PinView.TIERS[first.kind]) or 0 -- a flight master's over all
     button:SetFrameLevel(layer:GetFrameLevel() + 1 + math.min(tier, PinView.LEVELS))
 end
@@ -486,7 +492,8 @@ local function Alike(gathered)
     if first.kind == "goal" then return true end -- never the plus: the first's picture, what stands there in the tooltip
     for index = 2, #gathered do
         local each = gathered[index]
-        if each.atlas ~= first.atlas or each.tint ~= first.tint or (each.grey or each.dim) ~= (first.grey or first.dim) then
+        if each.atlas ~= first.atlas or each.texture ~= first.texture or each.look ~= first.look or each.tint ~= first.tint
+            or (each.grey or each.dim) ~= (first.grey or first.dim) then
             return false
         end
     end
@@ -504,6 +511,50 @@ local function Tied(pin, quest)
         if Tied(each, quest) then return true end
     end
     return false
+end
+
+-- A herb's or ore's shape on a button (Found.lua's looks): "possible", its picture round with a soft edge, as wide as a
+-- found one's ring (Found.SOFT); "found", round in the leather ring; nil, the icon as it is, the button's size. The masks
+-- and the ring are made once per button and put on or taken off as its pin asks (a button serves any pin).
+local ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+local function Shape(button, look, size)
+    local icon, light, Found = button.icon, button.light, ns.Found
+    if button.shape ~= look then
+        if button.mask then
+            icon:RemoveMaskTexture(button.mask)
+            light:RemoveMaskTexture(button.mask)
+            button.mask = nil
+        end
+        if look then
+            local key = look == "found" and "roundMask" or "softMask"
+            local mask = button[key]
+            if not mask then
+                mask = button:CreateMaskTexture()
+                mask:SetTexture(look == "found" and ROUND or Found.SOFT_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+                mask:SetAllPoints(icon)
+                button[key] = mask
+            end
+            icon:AddMaskTexture(mask)
+            light:AddMaskTexture(mask)
+            button.mask = mask
+        end
+        button.shape = look
+    end
+    icon:ClearAllPoints()
+    if look then icon:SetPoint("CENTER") else icon:SetAllPoints() end
+    if look == "found" then
+        if not button.ring then
+            button.ring = button:CreateTexture(nil, "OVERLAY")
+            button.ring:SetTexture(Found.RING)
+        end
+        Found.Ring(button.ring, icon, size)
+        button.ring:Show()
+    elseif button.ring then
+        button.ring:Hide()
+    end
+    if look == "possible" then icon:SetSize(size * Found.SOFT, size * Found.SOFT) end
+    light:ClearAllPoints()
+    light:SetAllPoints(icon)
 end
 
 -- A button's look for its pin: its icon, whatever its kind (a gathered marker: its pins' where all have the same, else
@@ -526,19 +577,26 @@ local function Look(button, pin)
     local icon, glow = button.icon, button.glow
     local grey, tint = first.grey or first.dim, first.tint
     if plus then grey, tint = nil, nil end
-    icon:SetDesaturated(grey and true or false)
+    -- A herb or ore (Found.lua's looks): grey while your skill is too low for it, half opaque where it only can be.
+    local look = not plus and first.look or nil
+    Shape(button, look, size)
+    local low = look and first.node and ns.Nodes.TooHard(first.node)
+    icon:SetDesaturated((grey or low) and true or false)
     if tint then icon:SetVertexColor(tint[1], tint[2], tint[3], 1)
+    elseif look then icon:SetVertexColor(1, 1, 1, look == "possible" and ns.Found.POSSIBLE or 1)
     else icon:SetVertexColor(1, 1, 1, grey and PinView.GREY or 1) end
     local atlas = plus and PinView.PLUS or first.atlas or not first.texture and Pins.ICONS.offer
     if atlas then
         icon:SetAtlas(atlas)
         button.light:SetAtlas(atlas)
     else
-        -- A picture of its own: the whole of it, whatever atlas the button showed before
+        -- A picture of its own: the whole of it, whatever atlas the button showed before; an item's cut inside its
+        -- own frame (Found.TRIM)
+        local cut = look and ns.Found.TRIM or 0
         icon:SetTexture(first.texture)
-        icon:SetTexCoord(0, 1, 0, 1)
+        icon:SetTexCoord(cut, 1 - cut, cut, 1 - cut)
         button.light:SetTexture(first.texture)
-        button.light:SetTexCoord(0, 1, 0, 1)
+        button.light:SetTexCoord(cut, 1 - cut, cut, 1 - cut)
     end
     glow:Hide()
     if glowing or shining then
@@ -549,6 +607,7 @@ local function Look(button, pin)
         glow:Show()
     end
     if glowing then button.half = size * 0.8 end
+    if look then button.half = size * ns.Found.SOFT / 2 end -- (the ring, or the soft picture as wide)
 end
 
 -- The quest the mouse is on in the quest log (nil: off it): its pins glow a little while it is there, each drawn again

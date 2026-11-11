@@ -7095,6 +7095,7 @@ os.execute(("rm -rf '%s'"):format(routesFolder))
 local Nodes, Found = ns.Nodes, ns.Found
 W.items[765], W.items[2770], W.items[2835] = { name = "Silverleaf" }, { name = "Copper Ore" }, { name = "Rough Stone" }
 C_Item.GetItemInfoInstant = function(id) return id, nil, nil, nil, 3000 + id, 7, id == 765 and 9 or 7 end
+W.Fire("GET_ITEM_INFO_RECEIVED") -- (the map's herb pins asked for their pictures before: the game tells them anew)
 local silverleaf, vein = Nodes.Find("Silverleaf"), Nodes.Find("Copper Vein")
 check(silverleaf and silverleaf.kind == "herb" and vein and vein.kind == "ore" and Nodes.Find("A Wolf") == nil,
     "a herb and an ore known by their names, nothing else")
@@ -7398,6 +7399,29 @@ do
     check(#Found.Each() == 1 and Found.Each()[1].spawn and #herbs == 1 and math.abs(point[4]) < 0.5
         and math.abs(point[5]) < 0.5 and #Under() == 0,
         "the mouse on its dot: found, whole, on its spawn; the half opaque one not under it")
+    -- The map's pins in the same looks: the found one whole in its ring where it is, no possible one under it.
+    local view = {}
+    for key, value in pairs(Canvas.view) do view[key] = value end
+    view.left, view.right, view.bottom, view.top, view.span = -1e9, 1e9, -1e9, 1e9, 100
+    local function Herbs()
+        local whole, soft = nil, nil
+        for _, pin in ipairs(ns.Pins.For(view, false)) do
+            if pin.look == "found" then whole = pin end
+            if pin.thing == "object:1617" and pin.look == "possible" then soft = pin end
+        end
+        return whole, soft
+    end
+    ns.Pins.DataChanged()
+    local whole, soft = Herbs()
+    check(whole and whole.kind == "foundHerb" and whole.texture == 3765 and whole.thing == "object:1617"
+        and whole.map == 1429 and not soft, "the full map: the found herb a pin whole in its ring, no possible one under it")
+    ns.PinView.Place(view, false)
+    local ringed
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and widget.pin == whole then ringed = widget end
+    end
+    check(ringed and ringed.icon._texture == 3765 and ringed.ring and ringed.ring._shown and ringed.ring._texture == Found.RING,
+        "its button: the herb's picture in the leather ring")
     W.foci = { herbs[1] }
     gather.dots[1] = nil
     cursorX, cursorY = 600, 400
@@ -7407,6 +7431,17 @@ do
     gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
     check(#Found.Each() == 0 and #Pictures() == 0 and #Under() == 1,
         "the mouse on its place and the game names nothing there: gathered, its spawn half opaque again")
+    whole, soft = Herbs()
+    check(not whole and soft and soft.texture == 3765 and soft.node and soft.kind == "herb",
+        "the full map: no found one, the place a possible herb in its picture")
+    ns.PinView.Place(view, false)
+    local softened
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and widget.pin == soft then softened = widget end
+    end
+    check(softened and softened.icon._texture == 3765 and softened.softMask and softened.shape == "possible"
+        and not (softened.ring and softened.ring._shown), "its button: the herb's picture with a soft edge, no ring")
+    Canvas.Layout()
     local before = #W.printed
     SlashCmdList.SANEUI("nodes")
     check(table.concat(W.printed, "\n", before + 1):find("under the mouse: %d+ frames it named a herb or ore, 1 found so; "

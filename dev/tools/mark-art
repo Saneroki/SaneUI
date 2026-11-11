@@ -11,6 +11,11 @@ assets/interface/far-marks/leather-ring.png: a ring of stitched leather that run
 Both are CANVAS texels square, the hole's middle in the middle, at one scale, so code lays either the same way.
 dev/tools/art makes the game's textures of them (assets/optimized/Navigation/Art/mark-pointed.blp, mark-round.blp).
 
+  assets/FarMarks/soft-mask.png      a mask for a herb's or ore's picture where it only can be (Found.lua, PinView.lua;
+                                     Saneroki, 2026-11-11: "a blurry edge"): white, its alpha whole within SOFT_IN of
+                                     its half side and falling smoothly to nothing at SOFT_OUT; drawn alone with --soft
+                                     (dev/tools/art FarMarks-soft makes mark-soft.blp of it)
+
 The round one: the ring is unrolled round the hole's middle (a row per angle, from the hole's edge outwards). Where
 the point leaves the circle (within POINT degrees of the top) the rows are taken from the opposite side of the ring
 (the leather is evenly lit, so it fits), blended into their neighbours over BLEND degrees; then every row is
@@ -20,9 +25,10 @@ Prints the hole's radius and the ring's, in the canvas' texels, for Glints.lua.
 
 Needs Python with Pillow and NumPy.
 
-Usage:  dev/tools/mark-art      then dev/tools/art
+Usage:  dev/tools/mark-art [--soft]      then dev/tools/art [names]
 """
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +42,7 @@ ANGLES = 4096       # rows of the unrolled ring
 POINT = 64          # degrees each side of the top where the point leaves the circle
 BLEND = 8           # degrees over which the borrowed rows fade into the ring's own
 EDGE = 0.5          # alpha that counts as the ring's edge
+SOFT_IN, SOFT_OUT = 0.5, 0.98  # the soft mask: whole within, nothing past (of its half side), smooth between
 
 
 def bilinear(image, x, y):
@@ -99,6 +106,20 @@ def save(rgba, path):
     print(f"Wrote {path.relative_to(ROOT)} ({CANVAS} x {CANVAS}).")
 
 
+def soft():
+    """The soft mask: white, its alpha a smoothstep from SOFT_OUT (clear) in to SOFT_IN (whole) of the half side."""
+    m = CANVAS / 2
+    y, x = np.mgrid[0:CANVAS, 0:CANVAS] + 0.5
+    r = np.hypot(x - m, y - m) / m
+    t = np.clip((SOFT_OUT - r) / (SOFT_OUT - SOFT_IN), 0, 1)
+    alpha = t * t * (3 - 2 * t)
+    rgba = np.ones((CANVAS, CANVAS, 4))
+    rgba[..., 3] = alpha
+    rgba[..., :3] *= alpha[..., None]  # (premultiplied, as save takes it)
+    OUT.mkdir(parents=True, exist_ok=True)
+    save(rgba, OUT / "soft-mask.png")
+
+
 def main():
     source = np.asarray(Image.open(PICKED).convert("RGBA"), dtype=np.float64) / 255
     source[..., :3] *= source[..., 3:4]
@@ -152,4 +173,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--soft" not in sys.argv[1:]:
+        main()
+    soft()
