@@ -3,10 +3,10 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - RareTracker
 --  The Sane Rare tracker: a rare, a treasure or an event near you, told the
---  moment the game shows it, with the game's war horn and a notice below the
---  screen's top, left of its middle (the guide's arrow keeps the middle, a new
---  level's notice the right), in the look of what Sane UI tells over the world:
---  outlined words on a faint dark shade whose sides fade out.
+--  moment the game shows it, with the game's war horn and a notice at the
+--  screen's right edge under the minimap (Saneroki, 2026-11-11), in the look of
+--  what Sane UI tells over the world: outlined words on a faint dark shade whose
+--  sides fade out, the right one ending at the screen's edge.
 --
 --      found by     the game's marks near you (its vignettes, those it puts on the minimap: rares, treasures,
 --                   events), and a rare creature itself as soon as the game shows it to you (its nameplate,
@@ -15,15 +15,18 @@ local _, ns = ...
 --      the notice   at its left the rare's own 3D model (the game's model of its creature), for a treasure or an
 --                   event the game's icon of its mark; its name in gold, under it what it is (Rare, Rare Elite,
 --                   Treasure, Event) and its level, under that how far it is and which way (kept up to date)
---      the mouse    on it: the tooltip of its pin on the map (PinView.lua: a rare's abilities and loot); a click
---                   puts the game's map pin on it, and the golden line leads there (Planner.lua); a right click
---                   sends it away
+--      the mouse    on it: the tooltip of its pin on the map (PinView.lua: a rare's abilities and loot); a double
+--                   click puts the game's map pin on it, and the golden line leads there (Planner.lua), as a double
+--                   click on a pin does; a right click sends it away; a drag with the left button moves the notices,
+--                   kept where they are let go (ns.store.rareTracker; /sane testraretracker reset: under the minimap
+--                   again)
 --      how long     RareTracker.HOLD seconds, and as long as the mouse is on it; then it fades out. At most
---                   RareTracker.MOST at once, the newest at the top; the same thing told again only after
---                   RareTracker.AGAIN seconds
+--                   RareTracker.MOST at once, the newest nearest their place, the others under it (over it in the
+--                   screen's lower half); the same thing told again only after RareTracker.AGAIN seconds
 --      settings     Sane Rare tracker (on), what it tells of (rares, treasures, events), its sound
 --      /sane testraretracker  a notice as a find brings it, with its sound: the nearest rare of Core's data on
---                   your map, else a made-up one ahead of you; "chest" a treasure's, "event" an event's
+--                   your map, else a made-up one ahead of you; "chest" a treasure's, "event" an event's; "reset" the
+--                   notices' place under the minimap again
 --
 --      RareTracker.Found(find, test)  tells of a find: { kind, thing, name, map, x, y, level, elite, atlas };
 --                                     test: whatever the settings say and whenever it was told last
@@ -35,7 +38,8 @@ local Coords, Live = ns.Coords, ns.Live
 local RareTracker = {}
 ns.RareTracker = RareTracker
 
-RareTracker.LEFT = 340   -- left of the screen's middle, as far as a new level's notice stands right of it
+RareTracker.UNDER = 230  -- from the screen's top to the minimap's bottom, where nothing tells it (the small map: measured)
+RareTracker.BELOW = 10   -- between the minimap and the first notice
 RareTracker.WIDTH = 250  -- the shade, without its edges that fade out
 RareTracker.EDGE = 60
 RareTracker.HEIGHT = 72
@@ -72,16 +76,20 @@ RareTracker.TEXT = {
     near = "Near you",
     away = "%s %s", -- how far, which way
     ways = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" },
-    click = "Click: the map pin there. Right click: away.",
-    away1 = "Right click: away.",
+    click = "Double click: the map pin there. Right click: away. Drag: move.",
+    away1 = "Right click: away. Drag: move.",
+    reset = "the Sane Rare tracker's notices stand under the minimap again.",
     chest = "A treasure chest",
     anEvent = "Something going on",
-    about = "a notice of the Sane Rare tracker as a find brings it, with its sound (chest, event: theirs)",
+    about = "a notice of the Sane Rare tracker as a find brings it, with its sound (chest, event: theirs; reset: its place under the minimap)",
 }
 local TEXT = RareTracker.TEXT
 
 local NPCS = Core.Data.Set("NPCs")
-local holder        -- the hidden frame whose OnUpdate keeps the notices (only while one shows): RareTracker.holder
+local holder        -- the notices' place, as large as one, dragged; its OnUpdate keeps them (shown while one shows):
+                    -- RareTracker.holder
+local dragging      -- the notices are being dragged
+local under         -- from the screen's top to the minimap's bottom, last measured
 local shown = {}    -- the notices in sight, the newest first (RareTracker.shown, read only)
 local spare = {}    -- notices let go, to be used again
 local seen = {}     -- [thing] = GetTime() it was last told
@@ -211,9 +219,36 @@ local function Left()
 end
 
 local function Clicked(notice, mouse)
+    if mouse == "RightButton" then Let(notice) end
+end
+
+local function Doubled(notice, mouse)
     local pin = notice.pin
-    if mouse ~= "RightButton" and pin and pin.map and pin.x then ns.PinView.Drop(pin) end
-    Let(notice)
+    if mouse == "LeftButton" and pin and pin.map and pin.x then ns.PinView.Drop(pin) end
+end
+
+local Stack, Look -- below
+
+-- A drag with the left button on a notice moves them all; where they are let go is kept, from the screen's top right.
+local function Dragged()
+    if not holder then return end
+    dragging = true
+    Left()
+    holder:StartMoving()
+end
+
+local function Dropped()
+    if not (holder and dragging) then return end
+    holder:StopMovingOrSizing()
+    dragging = false
+    local right, top = Core.Plain(holder:GetRight()), Core.Plain(holder:GetTop())
+    local screenRight, screenTop = Core.Plain(UIParent:GetRight()), Core.Plain(UIParent:GetTop())
+    local scale = holder:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    if ns.store and right and top and screenRight and screenTop and screenTop > 0 then
+        ns.store.rareTracker = { right = math.floor(screenRight - right * scale + 0.5),
+                                 top = math.floor(screenTop - top * scale + 0.5) }
+    end
+    Stack()
 end
 
 local function Loaded(model)
@@ -227,6 +262,7 @@ local function Make()
     -- In sight while a talk fades the interface out (Lore)
     if notice.SetIgnoreParentAlpha then notice:SetIgnoreParentAlpha(true) end
     notice:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    notice:RegisterForDrag("LeftButton")
     local middle, left, right = Shade(notice, RareTracker.DARK, RareTracker.DARK), Shade(notice, 0, RareTracker.DARK),
         Shade(notice, RareTracker.DARK, 0)
     middle:SetAllPoints(notice)
@@ -260,18 +296,78 @@ local function Make()
     notice.where:SetTextColor(LIGHT[1], LIGHT[2], LIGHT[3])
     notice.fade = Core.Motion.Fade(notice)
     notice:SetScript("OnClick", ns.Guard(Clicked))
+    notice:SetScript("OnDoubleClick", ns.Guard(Doubled))
+    notice:SetScript("OnDragStart", ns.Guard(Dragged))
+    notice:SetScript("OnDragStop", ns.Guard(Dropped))
     notice:SetScript("OnEnter", ns.Guard(Entered))
     notice:SetScript("OnLeave", ns.Guard(Left))
     notice:Hide()
     return notice
 end
 
--- The notices one under the other, the newest at the top.
-local function Stack()
+-- How far below the screen's top a region's bottom is; nil where it is not in sight or nothing can be told.
+local function Below(region)
+    if not (region and region.IsShown and region:IsShown()) then return nil end
+    local bottom, top = Core.Plain(region:GetBottom()), Core.Plain(UIParent:GetTop())
+    if type(bottom) ~= "number" or type(top) ~= "number" or top <= 0 then return nil end
+    local from = top - bottom * region:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    if from > 0 and from < top then return from end
+    return nil
+end
+
+-- The notices' place: where they were let go, else at the screen's right edge under the minimap (the small map's window,
+-- measured while it is small; the game's minimap where it is chosen), the shade's fading edge ending at the screen's.
+-- How far below the screen's top it is.
+local function Place()
+    local saved = ns.store and ns.store.rareTracker
+    local right, top
+    if type(saved) == "table" and tonumber(saved.right) and tonumber(saved.top) then
+        right, top = tonumber(saved.right), tonumber(saved.top)
+    else
+        local window = ns.Window.frame
+        local measured
+        if ns.options and ns.options.nativeMinimap then
+            measured = Below(rawget(_G, "MinimapCluster")) or Below(rawget(_G, "Minimap"))
+        elseif ns.Canvas.camera ~= ns.Window.full then
+            measured = Below(window)
+        end
+        under = measured or under
+        right, top = RareTracker.EDGE, (under or RareTracker.UNDER) + RareTracker.BELOW
+    end
+    holder:ClearAllPoints()
+    holder:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -right, -top)
+    return top
+end
+
+local function Holder()
+    if holder then return holder end
+    holder = CreateFrame("Frame", nil, UIParent)
+    RareTracker.holder = holder
+    holder:SetSize(RareTracker.WIDTH, RareTracker.HEIGHT)
+    holder:SetMovable(true)
+    holder:SetClampedToScreen(true)
+    holder:SetClampRectInsets(-RareTracker.EDGE, RareTracker.EDGE, 0, 0) -- the shade's fading edges on the screen too
+    holder:SetScript("OnUpdate", ns.Guard(Look))
+    holder:Hide()
+    return holder
+end
+
+-- The notices at their place, the newest nearest it, the others under it (over it in the screen's lower half).
+function Stack()
+    if not holder then return end
+    local top
+    if not dragging then top = Place() end -- (while dragged, where it is)
+    local height = Core.Plain(UIParent:GetHeight())
+    local up = top and type(height) == "number" and top > height / 2
+    if top then holder.up = up else up = holder.up end
+    local step = RareTracker.HEIGHT + RareTracker.GAP
     for index, notice in ipairs(shown) do
         notice:ClearAllPoints()
-        notice:SetPoint("TOP", UIParent, "TOP", -RareTracker.LEFT,
-            -Core.TOAST_TOP - (index - 1) * (RareTracker.HEIGHT + RareTracker.GAP))
+        if up then
+            notice:SetPoint("BOTTOMRIGHT", holder, "BOTTOMRIGHT", 0, (index - 1) * step)
+        else
+            notice:SetPoint("TOPRIGHT", holder, "TOPRIGHT", 0, -(index - 1) * step)
+        end
     end
 end
 
@@ -288,11 +384,14 @@ function Let(notice)
     notice.pin, notice.find = nil, nil
     spare[#spare + 1] = notice
     Stack()
-    if #shown == 0 and holder then holder:Hide() end
+    if #shown == 0 and holder then
+        if dragging then Dropped() end -- (the last one gone while dragged: let go where it is)
+        holder:Hide()
+    end
 end
 
 -- Every RareTracker.LOOK seconds while one shows: how far each is now, and those whose time is up fade out and go.
-local function Look(_, elapsed)
+function Look(_, elapsed)
     since = since + (elapsed or 0)
     if since < RareTracker.LOOK then return end
     since = 0
@@ -365,15 +464,11 @@ function RareTracker.Found(find, test)
     notice.where:SetText(Where(find) or TEXT.near)
     Picture(notice, find)
     table.insert(shown, 1, notice)
+    Holder()
     Stack()
     notice.ends, notice.gone = GetTime() + RareTracker.FADE_IN + RareTracker.HOLD, nil
     notice:Show()
     notice.fade:To(1, RareTracker.FADE_IN, 0)
-    if not holder then
-        holder = CreateFrame("Frame", nil, UIParent)
-        holder:SetScript("OnUpdate", ns.Guard(Look))
-        RareTracker.holder = holder
-    end
     holder:Show()
     Sound()
     return true
@@ -460,6 +555,11 @@ end
 
 function RareTracker.Test(rest)
     rest = type(rest) == "string" and rest:lower() or ""
+    if rest == "reset" then
+        if ns.store then ns.store.rareTracker = nil end
+        Stack()
+        return ns.Print(TEXT.reset)
+    end
     local map = Core.Ask(C_Map.GetBestMapForUnit, "player")
     local find
     if rest == "chest" or rest == "treasure" then

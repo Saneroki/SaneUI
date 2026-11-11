@@ -7542,7 +7542,10 @@ end)()
     PinView.Untip()
     rare.pin = nil
 
-    -- The game's marks on the minimap: the rare told at once, then the chest
+    -- The game's marks on the minimap: the rare told at once, then the chest. The small map's window 220 under the top
+    local window, camera, top, right = ns.Window.frame, ns.Canvas.camera, UIParent._top, UIParent._right
+    local windowBottom, windowShown = window._bottom, window._shown
+    UIParent._top, window._bottom, window._shown, ns.Canvas.camera = 900, 680, true, ns.Window.small
     C_VignetteInfo.GetVignetteInfo = function(guid)
         if guid == "v1" then
             return { name = "A rare", atlasName = "VignetteKillElite", objectGUID = "Creature-0-1-2-3-70-0000AB", onMinimap = true }
@@ -7556,20 +7559,23 @@ end)()
     local notice = shown[1]
     check(#shown == 1 and notice._shown and notice.name:GetText() == "A rare" and notice.what:GetText() == "Rare Elite, Level 24",
         "the game's mark of a rare near you: a notice at once, its name, Rare Elite and its level")
-    check(notice._points[1][1] == "TOP" and notice._points[1][2] == UIParent and notice._points[1][4] == -RareTracker.LEFT
-        and notice._points[1][5] == -Core.TOAST_TOP, "below the screen's top, left of its middle")
+    local holder = RareTracker.holder
+    check(holder._points[1][1] == "TOPRIGHT" and holder._points[1][2] == UIParent and holder._points[1][4] == -RareTracker.EDGE
+        and holder._points[1][5] == -(220 + RareTracker.BELOW) and notice._points[1][1] == "TOPRIGHT"
+        and notice._points[1][2] == holder and notice._points[1][5] == 0,
+        "at the screen's right edge under the minimap, the shade's fading edge ending at the screen's")
     check(asked == 70 and notice.model._creature == 70 and notice.model._shown and not notice.icon._shown,
         "the rare's own 3D model at its left, by its creature")
     check(played[#played][1] == RareTracker.SOUNDS.horn and played[#played][2] == "Master", "and the game's war horn")
     check(notice.where:GetText():find("^%d+ m north%-west$"), "how far it is and which way: " .. tostring(notice.where:GetText()))
     W.Fire("VIGNETTES_UPDATED")
     check(#shown == 2 and shown[1].find.kind == "treasure" and shown[1].name:GetText() == "A chest" and shown[2] == notice
-        and shown[1].icon._shown and shown[1]._points[1][5] == -Core.TOAST_TOP
-        and shown[2]._points[1][5] == -Core.TOAST_TOP - RareTracker.HEIGHT - RareTracker.GAP,
+        and shown[1].icon._shown and shown[1]._points[1][5] == 0
+        and shown[2]._points[1][5] == -(RareTracker.HEIGHT + RareTracker.GAP),
         "the chest on the minimap too: its notice over the rare's, the game's icon of its mark; the rare told once")
     check(not RareTracker.Found({ kind = "rare", thing = "npc:70", name = "A rare" }), "told again only after a while")
 
-    -- The mouse on it: its pin's tooltip; a click: the map pin there; a right click: away
+    -- The mouse on it: its pin's tooltip; a double click: the map pin there; a drag moves them; a right click: away
     notice._mouseOver = true
     GameTooltip._lines = nil
     notice._scripts.OnEnter(notice)
@@ -7577,12 +7583,32 @@ end)()
         and GameTooltip._lines[#GameTooltip._lines] == TEXT.click, "the mouse on it: its tooltip as on the map, and what a click does")
     notice._mouseOver = false
     notice._scripts.OnLeave(notice)
+    ns.Live.ClearWaypoint()
     notice._scripts.OnClick(notice, "LeftButton")
+    check(ns.Live.Waypoint() == nil and #shown == 2 and notice._shown, "a click alone: nothing")
+    notice._scripts.OnDoubleClick(notice, "LeftButton")
     local map, x, y = ns.Live.Waypoint()
-    check(map == 1429 and near(x, 0.6) and near(y, 0.2) and #shown == 1 and not notice._shown,
-        "a click: the game's map pin where it stands, and the notice goes")
+    check(map == 1429 and near(x, 0.6) and near(y, 0.2) and #shown == 2 and notice._shown,
+        "a double click: the game's map pin where it stands, the notice stays")
+    holder._right, holder._top, UIParent._right = 1500, 700, 1600
+    notice._scripts.OnDragStart(notice)
+    notice._scripts.OnDragStop(notice)
+    check(ns.store.rareTracker and ns.store.rareTracker.right == 100 and ns.store.rareTracker.top == 200
+        and holder._points[1][4] == -100 and holder._points[1][5] == -200 and notice._points[1][2] == holder,
+        "a drag with the left button: the notices kept where they are let go")
+    ns.store.rareTracker = { right = 100, top = 600 }
+    RareTracker.Found({ kind = "treasure", thing = "object:98", name = "A crate" })
+    check(#shown == 3 and shown[1]._points[1][1] == "BOTTOMRIGHT" and shown[3]._points[1][5] == 2 * (RareTracker.HEIGHT
+        + RareTracker.GAP), "let go in the screen's lower half: the others over the newest")
+    SlashCmdList.SANEUI("testraretracker reset")
+    check(ns.store.rareTracker == nil and holder._points[1][4] == -RareTracker.EDGE
+        and holder._points[1][5] == -(220 + RareTracker.BELOW) and shown[3]._points[1][1] == "TOPRIGHT",
+        "/sane testraretracker reset: under the minimap again")
     shown[1]._scripts.OnClick(shown[1], "RightButton")
-    check(#shown == 0 and ns.Live.Waypoint() == 1429, "a right click: away, the map pin as it was")
+    notice._scripts.OnClick(notice, "RightButton")
+    check(#shown == 1 and not notice._shown and ns.Live.Waypoint() == 1429, "a right click: away, the map pin as it was")
+    shown[1]._scripts.OnClick(shown[1], "RightButton")
+    check(#shown == 0, "each away")
 
     -- The test command: Core's nearest rare on your map; its time, then it fades out and goes
     SlashCmdList.SANEUI("testraretracker")
@@ -7633,6 +7659,7 @@ end)()
         "a rare's nameplate: told, its level as the game shows it, near you (Core's data knows no point of it)")
     for name, fn in pairs(units) do _G[name] = fn end
 
+    UIParent._top, UIParent._right, window._bottom, window._shown, ns.Canvas.camera = top, right, windowBottom, windowShown, camera
     NPCS.Get, W.methods.SetCreature = nil, nil
     IsAltKeyDown, PlaySound, C_VignetteInfo.GetVignetteInfo = saved.IsAltKeyDown, saved.PlaySound, saved.info
     C_Spell.GetSpellInfo, C_Spell.GetSpellDescription = saved.spellInfo, saved.spellWords

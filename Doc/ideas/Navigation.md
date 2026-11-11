@@ -1899,9 +1899,10 @@ battlemaster, spirit healer, meeting stone.
   on the plaque; *Rare* or *Rare Elite*, its kind, its respawn; *Abilities* and its loot with the game's icons, Alt
   their details (`PinView.lua`). *Seen at* waits for Core's character data.
 - **The Sane Rare tracker (built 2026-11-11, card #108):** a rare, a treasure or an event near you told at once: the
-  game's marks on the minimap, and a rare's nameplate, target or mouseover for the rares without one; a notice left
-  of the screen's top middle (model or icon, name, rank and level, how far and which way) and the game's war horn; a
-  click the map pin there, a right click away; 40 seconds, three at most, once in 5 minutes per thing, never in an
+  game's marks on the minimap, and a rare's nameplate, target or mouseover for the rares without one; a notice at
+  the screen's right edge under the minimap (model or icon, name, rank and level, how far and which way) and the game's
+  war horn; a double click the map pin there, a right click away, a drag with the left button moves it (kept; Saneroki,
+  2026-11-11); 40 seconds, three at most, once in 5 minutes per thing, never in an
   instance. Settings: on, what it tells of, its sound; `/sane testraretracker` (`RareTracker.lua`). Rares seen and
   killed are not kept: that is Core's character data, still to come.
 - **Tooltip:** name, level, elite, *Seen at*, respawn where known, loot. Filters: elites only; killed today

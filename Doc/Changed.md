@@ -20,6 +20,23 @@ Saneroki: "Sometimes there are a lot of conversation options. Like talking to a 
 - **Tests:** `dev/tests/lore.lua` (188): a city guard's fourteen answers and Goodbye on a 16:9 screen, lifted with its foot on the margin at Size 100 %; at 150 % the twelve that fit, the arrows and the wheel, a click to the end and no further, a line brought into sight answering, the wheel back, the talk moved left to the margins, the column placed anew as the words turn, a new talk at its first line, Size back at 100 % and the talk in the middle again. The lab scene `talk`: `LabGuard()`. Lore's README, `Doc/ideas/Dialogue.md` (decided), `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/changelog.txt`.
 - A `/reload` takes it in.
 
+### Navigation: the Sane Rare tracker under the minimap, dragged; a double click for the map pin (Saneroki, 2026-11-11)
+Saneroki: "Can you make a rightclick will remove it and a left double click will put a map marker on him", then "move the
+rare tracker to the right edge of the screen underneath the minimap. A leftclick drag will move the window around". Card
+#108.
+- **`src/Navigation/RareTracker.lua`:** the notices stand at a place of their own (`RareTracker.holder`, as large as one,
+  movable, clamped to the screen with the shade's fading edges): by default at the screen's right edge, `EDGE` (60) in
+  so the right fade ends at the edge, `BELOW` (10) under the minimap (`Place`: the small map's window measured while
+  it is small, the game's `MinimapCluster` where its own minimap is chosen, else the last measured, else `UNDER`,
+  230). A drag with the left button on any notice moves them all (`Dragged`, `Dropped`: kept in `ns.store.rareTracker`
+  from the screen's top right); in the screen's lower half the others stack over the newest. A click alone does
+  nothing, a double click puts the map pin there (the notice stays), a right click sends it away.
+  `/sane testraretracker reset`: under the minimap again. `LEFT` gone.
+- **`src/Navigation/Navigation.lua`:** the switch's tip says so.
+- **Tests:** `dev/tests/navigation.lua`: the place under the measured minimap, stacked under it; a click alone, a
+  double click, a drag kept, the lower half, the reset, a right click each.
+- A `/reload` takes it in.
+
 ### Navigation: the Sane Rare tracker; a rare's tooltip as a dungeon boss's (Saneroki, 2026-11-11)
 Saneroki: a rare's tooltip on the map with "the icons like the bosses tooltip we had in instances", and a warning that
 shows "a widget on screen when it finds a rare, chest or other things" and "plays a little trumpet horn sound"; "give

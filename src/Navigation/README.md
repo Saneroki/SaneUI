@@ -73,13 +73,14 @@ is small, and the maps of the dungeons and raids. The plan is in
   loot, each with the game's icons, and with Alt each one's details (an ability's description, an item's effects and
   stats). Core's NPCs tell what they know of it.
 - **Sane Rare tracker.** A rare, a treasure or an event near you is told the moment the game shows it: the game's war
-  horn, and a notice below the top of the screen, left of its middle (the guide's arrow keeps the middle, a new level's
-  notice the right): the rare's own 3D model at its left (a treasure's or an event's: the game's icon of its mark), its
+  horn, and a notice at the screen's right edge under the minimap: the rare's own 3D model at its left (a treasure's or an event's: the game's icon of its mark), its
   name in gold, *Rare Elite, Level 24*, how far and which way (*85 m north-west*, kept up to date). Found by the game's
   marks on the minimap, and by the rare itself as soon as you see it (its nameplate, your target, the mouse on it), for
-  the rares the game gives no mark. The mouse on it: its tooltip as on the map. A click puts the map pin on it and the
-  golden line leads there; a right click sends it away. It goes after 40 seconds (not while the mouse is on it), three
-  at most, the newest on top; the same one comes again after 5 minutes at the earliest; never inside an instance, never
+  the rares the game gives no mark. The mouse on it: its tooltip as on the map. A double click puts the map pin on it
+  and the golden line leads there, as on a pin; a right click sends it away; a drag with the left button moves the
+  notices, kept where you let them go (`/sane testraretracker reset`: under the minimap again). It goes after 40
+  seconds (not while the mouse is on it), three at most, the newest nearest their place, the others under it (over it
+  in the screen's lower half); the same one comes again after 5 minutes at the earliest; never inside an instance, never
   a dead one. Settings, page Navigation, section *Sane Rare tracker*: on or off, what it tells of (rares, treasures,
   events), its sound (*War horn*, *Find chime*, *Raid warning*, *None*). **`/sane testraretracker`** shows one as a find
   would: the nearest rare of Core's data on your map, else a made-up one ahead of you; `chest` a treasure's, `event` an
@@ -1074,7 +1075,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
 | `Paths.lua` | The ways of the flight point or dock under the mouse: each flight of your side from it white, a ship's way round light blue |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's tooltip as a dungeon boss's, its 3D model beside it with Alt |
-| `RareTracker.lua` | The Sane Rare tracker: rares, treasures and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover) told at once by a notice left of the screen's top middle (its model or icon, name, rank and level, how far and which way) and the game's war horn; a click: the map pin there; `/sane testraretracker` |
+| `RareTracker.lua` | The Sane Rare tracker: rares, treasures and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover) told at once by a notice at the screen's right edge under the minimap, dragged where you like (its model or icon, name, rank and level, how far and which way) and the game's war horn; a double click: the map pin there, a right click: away; `/sane testraretracker` |
 | `Marks.lua` | The player's arrow, the map pin, the party, the pings |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
@@ -1102,6 +1103,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the Sane Rare tracker under the minimap:** Saneroki: "Can you make a rightclick will remove it and a
+  left double click will put a map marker on him", then "move the rare tracker to the right edge of the screen
+  underneath the minimap. A leftclick drag will move the window around" (`RareTracker.lua`: `Place`, `Dragged`).
 - **2026-11-11, pins of one icon combined, a smaller gap:** Saneroki: "map pins that share the same icon, for example
   all trainers, vendors, portals etc should be combined into one icon and split if you zoom in close enough. Right
   now the pins have to big of a gap between them and show to many." (`Pins.lua` `Combine`, `Pins.COMBINE`;

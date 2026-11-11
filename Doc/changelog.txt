@@ -8,9 +8,10 @@ The bigger changes of each version, newest first.
 ------------------
 - The Sane Rare tracker: a rare, a treasure or an event near you is
   told the moment the game shows it, with a war horn and a notice
-  at the top of the screen: the rare's own 3D model, its name, rank
-  and level, how far it is and which way. Click it for a map pin and
-  the golden line there. /sane testraretracker shows one.
+  under the minimap: the rare's own 3D model, its name, rank and
+  level, how far it is and which way. Double-click it for a map pin
+  and the golden line there, right-click it away, drag it where you
+  like. /sane testraretracker shows one.
 - A rare's tooltip on the map looks like a dungeon boss's: its 3D
   model, the silver dragon and its level, its abilities and its loot
   with their icons (hold Alt for their details).
