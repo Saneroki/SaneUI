@@ -18,9 +18,15 @@ local _, ns = ...
 --                        it was seen
 --      came              when it came, to the second (Core.ClockAt)
 --      lasts             its duration; under it On now, or how long it stayed
---  Over the list the dropdown of what to show (all, buffs, debuffs, on bosses)
---  with Clear history in it; the full screen's search finds by the aura's name
---  or whom it was on. Filled only while its panel is shown.
+--  What a fight hides comes in two more kinds of lines (Core.AuraLog): your
+--  casts in a fight of spells that put an aura on (Your cast in a fight), and
+--  once a fight is over the spells the game's own meter holds of it (each
+--  member's damage, healing, damage taken, dispels, interrupts: Damage in a
+--  fight, ...), whom from and whom on, the fight's name under the time. Their
+--  icons work as the others', the spell's tooltip.
+--  Over the list the dropdown of what to show (all, buffs, debuffs, on bosses,
+--  from fights) with Clear history in it; the full screen's search finds by the
+--  aura's name, whom it was on or whom from. Filled only while its panel is shown.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local History = {}
@@ -37,7 +43,7 @@ History.ICON = 28
 History.GAP = 8
 -- The columns from the right, their widths; the name takes what is left.
 History.COLUMNS = { { "lasts", 78 }, { "came", 72 }, { "cast", 104 }, { "removable", 92 }, { "on", 170 } }
-History.SHOWS = { "all", "buffs", "debuffs", "bosses" }
+History.SHOWS = { "all", "buffs", "debuffs", "bosses", "fights" }
 History.SKULL = "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:0|t "
 
 local T = ns.TEXT
@@ -72,12 +78,16 @@ end
 
 -- Whether an entry is to show: of the kind chosen, found by the search.
 local function Wanted(entry, kind)
-    if kind == "buffs" and entry.harmful then return false end
-    if kind == "debuffs" and not entry.harmful then return false end
+    local aura = entry.kind ~= "fight" -- seen on a foe, or your cast of one
+    if kind == "buffs" and (entry.harmful or not aura) then return false end
+    if kind == "debuffs" and (not entry.harmful or not aura) then return false end
     if kind == "bosses" and not entry.boss then return false end
+    if kind == "fights" and not entry.kind then return false end
     if search == "" then return true end
-    local name, on = (entry.name or ""):lower(), (entry.on or ""):lower()
-    return name:find(search, 1, true) ~= nil or on:find(search, 1, true) ~= nil
+    for _, words in ipairs({ entry.name, entry.on, entry.from }) do
+        if type(words) == "string" and words:lower():find(search, 1, true) then return true end
+    end
+    return false
 end
 
 -------------------------------------------------------------------------------
@@ -175,10 +185,13 @@ local function Draw(row, item)
     row.shade:SetShown(item.index % 2 == 0)
     row.name:SetText(entry.name or "")
     local kind = entry.harmful and T.historyDebuff or T.historyBuff
+    if entry.kind == "cast" then kind = T.historyCast end
+    if entry.kind == "fight" then kind = T["historyWhat_" .. (entry.what or "damage")] or T.historyWhat_damage end
     if (entry.stacks or 0) > 1 then kind = kind .. "  " .. T.historyStacks:format(entry.stacks) end
     row.kind:SetText(kind)
-    Cell(row, "on", (entry.boss and History.SKULL or "") .. (entry.on or T.historyNobody),
-         entry.from and T.historyFrom:format(entry.from) or nil)
+    local on = (entry.boss and History.SKULL or "") .. (entry.on or T.historyNobody)
+    if (entry.hits or 1) > 1 then on = on .. " " .. T.historyMore:format(entry.hits - 1) end
+    Cell(row, "on", on, entry.from and T.historyFrom:format(entry.from) or nil)
     if entry.dispel then
         local r, g, b = Tint(entry.dispel)
         Cell(row, "removable", entry.dispel, entry.steal and T.historySteal or nil, r, g, b)
@@ -194,14 +207,15 @@ local function Draw(row, item)
     else
         Cell(row, "cast", T.historyNone, nil, 0.5, 0.5, 0.5)
     end
-    Cell(row, "came", entry.stamp and Core.ClockAt(entry.stamp, true) or T.historyNone)
+    Cell(row, "came", entry.stamp and Core.ClockAt(entry.stamp, true) or T.historyNone,
+         entry.fight and T.historyFight:format(entry.fight) or nil)
     local now, stayed = Core.Ask(rawget(_G, "time")) or 0, nil
     if Core.AuraLog.Live(entry) then
         stayed = T.historyOn
     elseif entry.gone and entry.stamp and (entry.lasts == 0 or entry.gone < (entry.ends or 0) - 1) then
         stayed = T.historyStayed:format(Span(entry.gone - entry.stamp))
     end
-    local lasts = (entry.lasts or 0) > 0 and Span(entry.lasts) or T.historyLasting
+    local lasts = (entry.lasts or 0) > 0 and Span(entry.lasts) or (entry.kind and T.historyNone or T.historyLasting)
     Cell(row, "lasts", lasts, stayed)
     if entry.ends and not entry.gone and entry.ends < now and not Core.AuraLog.Live(entry) then
         row.cells.lasts.under:SetText("") -- out of sight before it went: nothing to tell

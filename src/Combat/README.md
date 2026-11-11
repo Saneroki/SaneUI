@@ -284,11 +284,21 @@ Sunder Armor), as you choose, nothing fixed.
   - *Its cast*: *Interruptible*, *Not interruptible* or *Instant*, where that cast was seen (out of a fight);
   - *Came*: when it came, to the second; *Duration*: its duration (*No limit*), under it *On now* or how long it stayed
     where it went sooner.
-  The dropdown over the list shows *All auras*, *Buffs*, *Debuffs* or those *On bosses*, and holds *Clear history*;
-  the full screen's search finds by the aura's name or whom it was on. **In a fight** the game keeps the auras on
-  others from addons (secret values): those of the spells it lets addons see come in as they come; the rest come in
-  once the fight is over, those still on with the time they came, so a buff that came and went inside the fight is
-  not seen.
+  The dropdown over the list shows *All auras*, *Buffs*, *Debuffs*, those *On bosses* or those *From fights*, and holds
+  *Clear history*; the full screen's search finds by the aura's name, whom it was on or whom from. **In a fight** the
+  game keeps the auras on others from addons (secret values; asked of the game, Forever hides every real spell then:
+  `/sane secrets`, `saneui showsecrets`). So what a fight hides comes in three ways:
+  - once the fight is over, what is still on, with the time it came;
+  - *Your cast in a fight*: your own casts the game does tell, each of a spell that puts an aura on (Core's data says
+    which; a swing or a strike stays out), on whom, when; the aura found on your foe after the fight becomes that line;
+  - after each fight, the spells the game's own damage meter holds of it (Saneroki, 2026-11-11: "Yess add them"):
+    each member's *Damage in a fight* (Rend's ticks too), *Healing in a fight*, *Dispel in a fight*, *Interrupt in a
+    fight*, and *Hit your group*: a foe's spell that hit you or a member, once, with how many more it hit. Whom from,
+    whom on (the fight's foe where the game names none), the fight's name under the time, no duration. Swings and
+    your own casts logged already stay out. The game's meter fills while Combat's meter is on (it keeps the game's
+    switched on).
+  An aura that came and went inside a fight and did no damage or healing, nor was dispelled (Sunder Armor, a shout,
+  a boss's enrage), is not seen; Edit tracked's search finds it to mark.
 - **The threat and damage meter** (*Threat and damage meter* on the page Combat or `/sane meter` switch it, on at first),
   in place of the game's own damage meter. Never on or over Combat's full screen: out of sight while that is up.
   - **When it shows:** the cog's section of that name, all three on at first. *Hide outside combat*, *Hide when not in
@@ -912,7 +922,17 @@ Sunder Armor), as you choose, nothing fixed.
   duration`. Its cast: `UNIT_SPELLCAST_START`/`_CHANNEL_START` (`UnitCastingInfo` 8th answer, `UnitChannelInfo` 7th:
   `notInterruptible`), `_INTERRUPTIBLE`/`_NOT_INTERRUPTIBLE`, a `_SUCCEEDED` not begun before is instant; matched by the
   aura's source GUID and the same spell within `AuraLog.CAST` seconds. Kept in `Core.Character(Core.name).auraLog`, the
-  last `AuraLog.MOST`. `dev/tests/aurahistory.lua`.
+  last `AuraLog.MOST` (1000). Your casts: `UNIT_SPELLCAST_SENT` of `player` (its target's name by cast GUID) and
+  `_SUCCEEDED`, while `Open()` is no, of a spell `AuraLog.Leaves` (Core's set *Spells*: an effect with an aura; or one of
+  *Auras*): `kind = "cast"`; an aura of yours seen later on the one it was sent at within `AuraLog.MERGE` seconds of
+  it fills that entry (`Yours`). A fight's spells (`Fought`, `AuraLog.AFTER` after `PLAYER_REGEN_ENABLED`, or when
+  the restriction ends): the newest of `C_DamageMeter.GetAvailableCombatSessions` not read yet (`read`, the newest
+  at the login), for each of `AuraLog.METER` its `combatSources` and each one's `GetCombatSessionSourceFromID`
+  `combatSpells` under `pcall`: `kind = "fight"`, `what`, `from` (the member, its pet by `creatureName`), `on`
+  (`combatSpellDetails.unitName`, else the session's name; for damage taken the two swapped), `fight`; one per what,
+  spell, from and on (damage taken: per foe, `hits`), not `AuraLog.SWINGS`, not yours logged as casts in that fight.
+  The view: `History.SHOWS` with `fights`; such lines' kind words `historyCast`, `historyWhat_<what>`, `+N` after
+  `on`, `historyFight` under the time. `dev/tests/aurahistory.lua`.
 - **The threat and damage meter** (`Meter/`): the combat log is closed to addons (`C_CombatLog.IsCombatLogRestricted`), so
   the numbers are the game's own meter's (`C_DamageMeter`, the same in both games). `Read.Fight(where, types, people)` reads one
   list per kind, `where` `{ id = session }` or `{ type = "Current" / "Overall" }`, and matches the sources by GUID
@@ -1051,6 +1071,9 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-11:** what a fight hides in the aura history (Saneroki: "Yess add them"): your own casts in a fight of a
+  spell that puts an aura on, and after each fight the spells of the game's damage meter of it, each member's damage,
+  healing, dispels and interrupts and the foes' spells that hit the group, all clickable as the rest; *From fights*.
 - **2026-11-11:** the aura history, a window of the full screen (Saneroki: "a window for the fullscreen that shows
   history of buffs and debuffs that have happened"): every buff and debuff seen on whoever you can attack, newest on
   top, each a proper aura icon with its tooltip and menu ("click on it to add it to the tracker etc, just like the buffs

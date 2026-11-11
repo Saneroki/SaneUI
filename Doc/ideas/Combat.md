@@ -125,7 +125,9 @@ Decided (Saneroki, 2026-10-16):
   2026-11-11): of 32,467 spells, 32,465 are hidden in a fight as auras and as casts, two of Blizzard's test spells the
   only exceptions, so no real spell comes in during a fight; your own casts are still plain (casts are hidden only for
   units other than you and your pet). Should a later build mark spells as never hidden, the window gets them in a
-  fight by itself.
+  fight by itself. So (Saneroki, 2026-11-11: "Yess add them") your own casts in a fight of a spell that puts an aura
+  on come in as they happen, and after each fight the spells of the game's damage meter of it (damage, healing,
+  damage taken, dispels, interrupts, per member; `C_DamageMeter` is plain once the fight is over).
 
 ## Its parts
 

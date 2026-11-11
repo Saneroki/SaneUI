@@ -264,11 +264,12 @@ ns.TEXT = {
     listsCopyGone = "That tracking of %s is deleted; the others stay.",
     -- The aura history, a window of the full screen (AuraHistory.lua).
     historyTitle = "Aura history",
-    historyTip = "The buffs and debuffs seen on whoever you can attack, newest on top. Point at an icon for its tooltip, click it to mark it or to add tracking, as the buffs on your unit frames. In a fight the game keeps most auras from addons: those it shows come in as they come, the rest once the fight is over, with the time they came while still on.",
+    historyTip = "The buffs and debuffs seen on whoever you can attack, newest on top. Point at an icon for its tooltip, click it to mark it or to add tracking, as the buffs on your unit frames. In a fight the game keeps the auras of others from addons: what is still on comes in once the fight is over, with the time it came; your own casts of an aura come in as you cast them, and after each fight the spells of the game's damage meter: your group's damage, healing, damage taken, dispels and interrupts.",
     historyShow_all = "All auras",
     historyShow_buffs = "Buffs",
     historyShow_debuffs = "Debuffs",
     historyShow_bosses = "On bosses",
+    historyShow_fights = "From fights",
     historyClear = "Clear history",
     historyClearAsk = "Clear the aura history?",
     historyCount = "%d auras",
@@ -293,6 +294,14 @@ ns.TEXT = {
     historyLasting = "No limit",
     historyOn = "On now",
     historyStayed = "stayed %s",
+    historyCast = "Your cast in a fight",
+    historyWhat_damage = "Damage in a fight",
+    historyWhat_healing = "Healing in a fight",
+    historyWhat_taken = "Hit your group",
+    historyWhat_dispel = "Dispel in a fight",
+    historyWhat_interrupt = "Interrupt in a fight",
+    historyMore = "+%d",
+    historyFight = "fight: %s",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever

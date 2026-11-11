@@ -267,6 +267,106 @@ check(Core.Character(Core.name).auraLog == Log.Entries(), "kept with the charact
 Log.MOST = most
 
 -------------------------------------------------------------------------------
+--  What a fight hides: your own casts, and the fight's spells from the game's meter
+-------------------------------------------------------------------------------
+local NAMES = { [772] = "Rend", [78] = "Heroic Strike", [12294] = "Mortal Strike", [6603] = "Auto Attack",
+                [6016] = "Pierce Armor", [6552] = "Pummel", [7386] = "Sunder Armor", [1715] = "Hamstring" }
+C_Spell.GetSpellName = function(id) return NAMES[id] end
+C_Spell.GetSpellTexture = function(id) return 130000 + id end
+C_Spell.IsSpellHarmful = function(id) return id ~= 0 end
+-- Core's data: Rend puts an aura on, Heroic Strike does not.
+local Data, set = Core.Data, Core.Data.Set
+local SPELLS = { [772] = { name = "Rend", effects = { { effect = 6, aura = 3 } } },
+                 [78] = { name = "Heroic Strike", effects = { { effect = 2, aura = 0 } } } }
+Data.Set = function(name)
+    if name == "Spells" then return { Ready = function() return true end, Get = function(_, id) return SPELLS[id] end } end
+    if name == "Auras" then return { Ready = function() return true end, Get = function() end } end
+    return set(name)
+end
+check(Log.Leaves(772) and not Log.Leaves(78) and not Log.Leaves(99999), "Core's data tells which spells put an aura on")
+
+-- A fight: your Rend on Hogger, then a Heroic Strike; the game hides the auras.
+local me = Core.FullName("player")
+W.Combat(true)
+secret = true
+W.Fire("UNIT_SPELLCAST_SENT", "player", "Hogger", "Cast-9", 772)
+W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-9", 772)
+local rendAt = W.clock
+W.Fire("UNIT_SPELLCAST_SENT", "player", "Hogger", "Cast-10", 78)
+W.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-10", 78)
+local rend = Find("Rend")
+check(rend and rend.kind == "cast" and rend.on == "Hogger" and rend.from == me and rend.harmful and rend.stamp == time()
+    and rend.icon == 130772, "your cast in a fight of a spell that puts an aura on: on whom, when")
+check(not Find("Heroic Strike"), "a strike that puts none on is left out")
+local REND = On("target", "HARMFUL", { name = "Rend", spellId = 772, icon = 132155, auraInstanceID = 27, duration = 21,
+                                       expirationTime = rendAt + 21, sourceUnit = "player", applications = 0 })
+Changed("target")
+W.Wait(Log.FIGHT + 0.1)
+check(Count("Rend") == 1 and rend.kind == "cast", "in the fight its aura stays hidden")
+
+-- The game's meter: the fight's spells of you and Brisa, plain once it is over.
+Enum.DamageMeterType = { DamageDone = 0, HealingDone = 2, Interrupts = 5, Dispels = 6, DamageTaken = 7 }
+local sessions = {}
+local FIGHT = {
+    [0] = { ["Player-1-1"] = { { spellID = 772 }, { spellID = 6603 }, { spellID = 12294 } },
+            ["Player-1-2"] = { { spellID = 772 }, { spellID = 12294, creatureName = "Wolf" } } },
+    [7] = { ["Player-1-1"] = { { spellID = 6016, combatSpellDetails = { unitName = "Hogger" } } },
+            ["Player-1-2"] = { { spellID = 6016, combatSpellDetails = { unitName = "Hogger" } } } },
+    [5] = { ["Player-1-2"] = { { spellID = 6552, combatSpellDetails = { unitName = "Hogger" } } } },
+}
+local WHO = { ["Player-1-1"] = { name = me, isLocalPlayer = true }, ["Player-1-2"] = { name = "Brisa" } }
+C_DamageMeter = {
+    GetAvailableCombatSessions = function() return sessions end,
+    GetCombatSessionFromID = function(_, kind)
+        if secret then error("hidden in a fight") end
+        local sources = {}
+        for guid in pairs(FIGHT[kind] or {}) do
+            sources[#sources + 1] = { sourceGUID = guid, name = WHO[guid].name, isLocalPlayer = WHO[guid].isLocalPlayer or false }
+        end
+        table.sort(sources, function(a, b) return a.sourceGUID < b.sourceGUID end)
+        return { combatSources = sources }
+    end,
+    GetCombatSessionSourceFromID = function(_, kind, guid)
+        local spells = {}
+        for index, spell in ipairs(FIGHT[kind] and FIGHT[kind][guid] or {}) do
+            spells[index] = { spellID = spell.spellID, creatureName = spell.creatureName or "",
+                              combatSpellDetails = spell.combatSpellDetails or { unitName = "" } }
+        end
+        return { combatSpells = spells }
+    end,
+}
+sessions[1] = { sessionID = 1, name = "Hogger", durationSeconds = 30 }
+
+W.Wait(5)
+secret = false
+W.Combat(false)
+W.Wait(0.05)
+check(Count("Rend") == 1 and rend.kind == nil and rend.lasts == 21 and rend.ends == rend.stamp + 21 and Log.Live(rend) == "target",
+    "after the fight its aura found on Hogger is folded into your cast, one entry")
+check(not Find("Mortal Strike"), "the meter is read a moment after the fight (Core.AuraLog.AFTER)")
+W.Wait(Log.AFTER + 0.1)
+local function Fight(name, what, from)
+    for _, entry in ipairs(Log.Entries()) do
+        if entry.kind == "fight" and entry.name == name and entry.what == what and (not from or entry.from == from) then return entry end
+    end
+end
+local strike, pet = Fight("Mortal Strike", "damage", me), Fight("Mortal Strike", "damage", "Wolf")
+check(strike and strike.on == "Hogger" and strike.fight == "Hogger" and strike.harmful and strike.stamp == time()
+    and strike.icon == 142294, "the fight's spells: your damage, on the fight's foe, its name with it")
+check(pet and Fight("Rend", "damage", "Brisa"), "a member's, and a pet's by its name")
+check(not Fight("Rend", "damage", me) and not Fight("Auto Attack", "damage"), "not your casts logged already, no swings")
+local pierce = Fight("Pierce Armor", "taken")
+check(pierce and pierce.from == "Hogger" and pierce.hits == 2 and (pierce.on == me or pierce.on == "Brisa"),
+    "the foe's spell that hit the group: one entry, from him, how many it hit")
+local pummel = Fight("Pummel", "interrupt", "Brisa")
+check(pummel and pummel.on == "Hogger", "an interrupt in the fight, on whom")
+local fights = #Log.Entries()
+W.Combat(true)
+W.Combat(false)
+W.Wait(Log.AFTER + 0.1)
+check(#Log.Entries() == fights, "a fight the meter holds is read once")
+
+-------------------------------------------------------------------------------
 --  The window on the full screen
 -------------------------------------------------------------------------------
 local spec
@@ -295,6 +395,16 @@ check(row.cells.came.top._text == Core.ClockAt(thrash.stamp, true) and #row.cell
 check(row.cells.lasts.top._text == "1m" and row.cells.lasts.under._text == TEXT.historyOn, "its duration, on now")
 check(row.cells.removable.top._text == TEXT.historyNone and row.cells.cast.top._text == TEXT.historyNone,
     "nothing to dispel, no cast seen")
+
+-- A line of the fight: what it was, on whom with how many more, the fight under its time, no duration known.
+local fought
+for index, line in ipairs(box.lines) do
+    if line.entry == pierce then fought = box.rows[index] end
+end
+check(fought and fought.kind._text == TEXT.historyWhat_taken and fought.cells.on.top._text == pierce.on .. " +1"
+    and fought.cells.on.under._text == TEXT.historyFrom:format("Hogger")
+    and fought.cells.came.under._text == TEXT.historyFight:format("Hogger") and fought.cells.lasts.top._text == TEXT.historyNone,
+    "a line of the fight: hit your group, from Hogger, the fight's name, no duration")
 
 -- Its tooltip: the aura's own while it is on, else the spell's; a click its menu, as the buffs on the unit frames.
 row.icon._scripts.OnEnter(row.icon)
@@ -339,7 +449,13 @@ choices[4].fn() -- On bosses
 local bosses = true
 for _, line in ipairs(History.lines) do bosses = bosses and line.entry.boss end
 check(bosses and #History.lines > 0, "On bosses: those on a boss alone")
+choices[5].fn() -- From fights
+local fightsOnly = true
+for _, line in ipairs(History.lines) do fightsOnly = fightsOnly and line.entry.kind ~= nil end
+check(fightsOnly and #History.lines > 0, "From fights: the meter's and your casts alone")
 choices[1].fn()
+spec.search(panel, "brisa")
+check(#History.lines > 0 and History.lines[1].entry.from == "Brisa", "the search finds by whom from")
 spec.search(panel, "gnoll")
 local gnolls = true
 for _, line in ipairs(History.lines) do gnolls = gnolls and line.entry.on == "Riverpaw Gnoll" end
