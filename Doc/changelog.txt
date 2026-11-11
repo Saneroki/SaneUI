@@ -28,7 +28,9 @@ The bigger changes of each version, newest first.
   a trainer, a flight master, the bank, the auction house, a
   battlemaster. One click opens it; the mouse on one says what it
   is. Lore's setting Services as icons puts them back among the
-  answers.
+  answers. A long list of answers, a city guard's, always stays on
+  the screen; the mouse wheel goes through one taller than the
+  screen.
 - The minimap satchel shows each addon's own picture under its own
   name: buttons other addons make for one another are named by the
   addon they belong to, and pictures from the game's icon sheets

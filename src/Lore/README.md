@@ -25,7 +25,11 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
     in `<...>` in the game's emote colour; at the bottom right which paragraph of how many (*2/4*);
   - **the answers** in a column right of the words, in this order: quests to hand in, quests offered, the NPC's
     other options (words to say), quests not done yet, *Goodbye*. Each has the game's picture for its kind; a
-    quest far below your level is dimmed;
+    quest far below your level is dimmed. The column always stays on the screen: a long one (a city guard's way
+    to every place) is lifted until it ends above the screen's bottom; one taller than the screen (a large *Size*)
+    shows the lines that fit, with the game's small scroll arrows over and under them where more lie that way:
+    the mouse wheel over the column or a click on an arrow goes on a line. Where the column would pass the
+    screen's right side, the whole talk moves left;
   - **the services** in a row over the talk, as big pictures without words: the hearthstone (*Make this inn your
     home*), a vendor's goods (the bag), a trainer (the book), a flight master (the winged boot), a battlemaster (the
     two shields), transmogrification (the helmet), the bank and the auction house (their map pictures). A click on
@@ -160,6 +164,16 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   auction house by the map's own atlases of them (`PICTURES` in `Icons.lua`), unmasked. A `status` other than `Available` greys the
   picture (`SetDesaturated`) and the tooltip adds the option's `failureDescription` in the game's red; the click is
   still the game's call, which decides. Under the mouse the picture is laid over itself, added (`HIGHLIGHT` layer).
+- **The column on the screen** (`Answers.Place`, after each draw and each paragraph, as the box's height changes
+  with the words): its top level with the box's (`Box.Top`: `Box.FOOT` plus the box's height, plus the quest's frame
+  and `Box.GAP` when one is under it), lifted to `Answers.MARGIN` (24) plus its height while its foot would be lower.
+  The room is `UIParent`'s height divided by the talk's scale, less the margin twice; taller than that, the lines
+  from `first` that fit in the room less two `Answers.ARROW` (22) bands, the game's `minimal-scrollbar-small-arrow-top`
+  and `-bottom` (with their `-over` and `-down` looks, half as large again) in those bands where lines lie that way,
+  `EnableMouseWheel` only then; `Answers.Scroll` moves `first` a line and clamps it so the last lines fill the room. A
+  new talk starts at its first line. Across: when the box's half, `Answers.GAP` and `Answers.WIDTH` reach past the
+  screen's right margin, `Box.Shift` moves the box (and the quest's frame, the column and the pictures hung on it) left
+  that far, but not past the left margin; what is still over, the column's offset takes over the box's right side.
 - **Space** (`Keys.lua`): `SetOverrideBindingClick` on a button of ours (`SaneUILoreContinue`) while the talk shows,
   `ClearOverrideBindings` when it ends; never in a fight (the talk ends before the lock).
 - **Esc** ends the talk through Core's one stand-in in `UISpecialFrames` (`Core.Escape`).
@@ -191,8 +205,10 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   a quest that costs money, a fight, a talk left to the game, a vendor's window, an NPC's only service taken (beside
   a word to say too, and each case that stays a talk, an answer given in between), the services as pictures over the
   talk (their pictures, the tip cut away, a click, the tooltip, greyed where refused, what stays in the column, the
-  setting), the settings, Retail, standing down. The interface lab's scene `talk` (`saneui showuilab`) draws an
-  innkeeper's talk with the real code.
+  setting), a city guard's fourteen answers kept on the screen (lifted at Size 100 %; at 150 % the lines that fit,
+  the wheel and the arrows through the rest, the talk moved left, the column placed anew as the words turn, a new
+  talk at its first line), the settings, Retail, standing down. The interface lab's scene `talk` (`saneui showuilab`)
+  draws an innkeeper's talk with the real code, `LabGuard()` a guard's.
 
 ## Files
 | File | What it does |
@@ -203,8 +219,8 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
 | `Quiet.lua` | The interface faded out while talking; tooltips, questions and errors kept in sight |
 | `Rewards.lua` | A quest's rewards, each item read: what it is, usable, value, what it changes |
 | `Look.lua` | Fonts, shades, the frame the parts stand in, its fade; coins and numbers |
-| `Box.lua` | The NPC's face, name and words; the column's foot |
-| `Answers.lua` | The answers beside the words |
+| `Box.lua` | The NPC's face, name and words; the column's foot, its top's height, its shift left |
+| `Answers.lua` | The answers beside the words, kept on the screen: lifted, paged by the wheel and arrows |
 | `Quest.lua` | The quest under the words: objectives, what it asks for, rewards |
 | `Icons.lua` | An NPC's services as big pictures without words in a row over the talk |
 | `Keys.lua` | Space goes on while the talk shows |
@@ -228,4 +244,6 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   wares" without Speed Leveling; Shift shows the choices). The same day, "Skip those too": a word to say beside the
   service no longer keeps the talk.
 - 2026-11-11: the services as big pictures over the talk (Saneroki asked: the hearthstone, the trainer, the vendor
-  and the like as big icons with no text on them, over the talk, to click them quickly).
+  and the like as big icons with no text on them, over the talk, to click them quickly). The same day, the column of
+  answers always on the screen (Saneroki: a guard's many answers went so far down that some were off the screen and
+  could not be clicked).

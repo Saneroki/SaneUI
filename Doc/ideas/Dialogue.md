@@ -60,6 +60,9 @@ The game's windows stay where they are and come back at once whenever ours steps
   quest far below the player's level is dimmed, as the game does. A quest's own answers stand there too
   (Accept, Decline; Complete Quest, Goodbye).
 - **Chosen by a click.** Highlighted under the mouse the way the game's gossip buttons are.
+- **Always on the screen** (Saneroki, 2026-11-11): a long column (a guard's) is lifted until it ends above the
+  screen's bottom; one taller than the screen goes a line at a time by the mouse wheel or the game's scroll arrows;
+  past the right side, the talk moves left.
 - **The services as big pictures over the talk** (Saneroki, 2026-11-11): the hearthstone, a vendor, a trainer, a
   flight master and the like, without words, in a row over the talk, a click away; their words in the tooltip.
 - **Continue** on the last paragraph does what needs no choosing: accept the quest offered, hand in the
@@ -217,6 +220,12 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 
 Saneroki, 2026-11-11:
 
+- **A long column on the screen:** "Sometimes there are a lot of conversation options. Like talking to a guard can have
+  a lot of conversion option for example. Right now there are so many that they go so far down that some are offscreen
+  and not clickable anymore." Claude's picks, for Saneroki to change: the column's top level with the box's while it
+  fits, else lifted just enough (24 from the screen's edge); taller than the screen, the lines that fit with the
+  game's small scroll arrows (half as large again) and the mouse wheel, a line a step; across, the whole talk moved
+  left rather than the column laid over the words, the column over the box's edge only where even that is not enough.
 - **The services as big icons:** "The dialogue option has common things like The hearthstone, Trainer, Vendor etc.
   Can you make those big icons that don't have any text on them. The icons are self expenatory. Make those big and
   over the conversation window so you can quickly click them to open them quickly" (`src/Lore/Icons.lua`). Claude's

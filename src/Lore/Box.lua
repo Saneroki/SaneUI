@@ -16,6 +16,8 @@ local _, ns = ...
 --      Box.Draw(talk)     the talk's name and paragraph at hand
 --      Box.Words(talk)    only the paragraph (the next one came)
 --      Box.Place(quest)   on the column, over the quest's frame when one is shown
+--      Box.Top()          how high the box's top stands over the screen's bottom, in the talk's units
+--      Box.Shift(x)       the column moved so far from the screen's middle (left: negative), for the answers' room
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Box = {}
@@ -32,6 +34,8 @@ Box.BOOK = "Interface\\QuestFrame\\UI-QuestLog-BookIcon" -- the game's own pictu
 Box.GAP = 10     -- between the box and the quest under it
 
 local frame, face, book, name, words, count, shade
+local placed    -- the quest's frame the box stands on, nil for none
+local shift = 0 -- the column's distance from the screen's middle (Answers.Place)
 
 local function Build()
     local root = ns.Look.Root()
@@ -123,14 +127,28 @@ end
 -- On the column: its foot over the screen's bottom, the box on the quest when one is shown under it.
 function Box.Place(quest)
     Box.Frame()
+    placed = quest
     frame:ClearAllPoints()
     if quest then
         quest:ClearAllPoints()
-        quest:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, Box.FOOT)
+        quest:SetPoint("BOTTOM", UIParent, "BOTTOM", shift, Box.FOOT)
         frame:SetPoint("BOTTOM", quest, "TOP", 0, Box.GAP)
     else
-        frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, Box.FOOT)
+        frame:SetPoint("BOTTOM", UIParent, "BOTTOM", shift, Box.FOOT)
     end
+end
+
+function Box.Shift(x)
+    if x == shift then return end
+    shift = x
+    Box.Place(placed)
+end
+
+function Box.Top()
+    Box.Frame()
+    local top = Box.FOOT + (Core.Plain(frame:GetHeight()) or 0)
+    if placed then top = top + (Core.Plain(placed:GetHeight()) or 0) + Box.GAP end
+    return top
 end
 
 function Box.Draw(talk)

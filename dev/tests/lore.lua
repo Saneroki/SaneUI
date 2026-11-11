@@ -11,7 +11,8 @@
 -- marked as a quest's, two services, right after a quest, nor over an answer given meanwhile; the talk after all
 -- when nothing opens), an NPC's services as big pictures over the talk (the game's large picture of each kind, the
 -- cursor's tip cut away, a click its answer, its words in the tooltip, greyed where refused; an option marked as a
--- quest's and what has no picture left in the column), and the settings. The look and the face can only be judged in the game.
+-- quest's and what has no picture left in the column), a guard's long column kept on the screen (lifted; taller than
+-- the screen: the lines that fit, the wheel and the arrows going through the rest), and the settings. The look and the face can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/lore.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -37,6 +38,8 @@ function methods:SetUnit(unit) self._unit = unit end
 function methods:SetAnimation(animation) self._animation = animation end
 function methods:RegisterForClicks(...) self._clicks = table.concat({ ... }, " ") end
 function methods:SetDesaturated(on) self._desaturated = on end
+function methods:SetNormalAtlas(atlas) self._normalAtlas = atlas end
+function methods:EnableMouseWheel(on) self._wheel = on end
 function methods:AddMaskTexture(mask) self._masks = self._masks or {}; self._masks[mask] = true end
 function methods:RemoveMaskTexture(mask) if self._masks then self._masks[mask] = nil end end
 
@@ -856,6 +859,107 @@ GossipFrame:Hide()
 W.Fire("GOSSIP_CLOSED", true)
 W.Wait(1)
 Frames(1)
+
+-------------------------------------------------------------------------------
+--  A long column stays on the screen
+-------------------------------------------------------------------------------
+-- A guard's many answers: lifted while they fit the screen, else the lines that fit and the wheel through the rest.
+-- A 16:9 screen at UI scale 1.
+UIParent:SetHeight(768)
+UIParent:SetWidth(1365)
+local PLACES = { "The bank", "The auction house", "The inn", "The gryphon master", "The guild master", "The mailbox",
+                 "The stable master", "The weapon master", "The officers' lounge", "The battlemasters",
+                 "A class trainer", "A profession trainer", "The barber", "The tram" }
+local function Guard()
+    gossip.text = "How can I help you, citizen?\n\nStormwind is a big city."
+    gossip.available, gossip.active, gossip.options = {}, {}, {}
+    for index, place in ipairs(PLACES) do gossip.options[index] = { name = place, orderIndex = index, icon = CHAT } end
+    GossipFrame:Show()
+    W.Fire("GOSSIP_SHOW")
+end
+local function Lines() -- the column's lines shown, top first
+    local shown = {}
+    for _, frame in ipairs(W.frames) do
+        if frame.answer and frame.text and frame:IsShown() then shown[frame.text._text] = frame end
+    end
+    local list = {}
+    for _, text in ipairs(Order()) do list[#list + 1] = shown[text] end
+    return list
+end
+local function Arrow(direction)
+    for _, frame in ipairs(W.frames) do
+        if frame._normalAtlas == "minimal-scrollbar-small-arrow-" .. direction then return frame end
+    end
+end
+-- The column's top and foot over the screen's bottom, in the talk's units.
+local function Column()
+    local column = Lines()[1]:GetParent()
+    local _, _, _, _, y = column:GetPoint(1)
+    local top = ns.Box.Top() + y
+    return column, top, top - column:GetHeight()
+end
+-- The column's right side and the box's left one, from the screen's left, in the talk's units at that scale.
+local function Sides(scale)
+    local _, _, _, x = Lines()[1]:GetParent():GetPoint(1)
+    local _, _, _, shift = ns.Box.Frame():GetPoint(1)
+    local middle = 1365 / scale / 2 + shift
+    return middle + ns.Box.WIDTH / 2 + x + ns.Answers.WIDTH, middle - ns.Box.WIDTH / 2, shift
+end
+Guard()
+local lines = Lines()
+local column, top, foot = Column()
+local right, left, moved = Sides(1)
+check(moved == 0 and right <= 1365 - ns.Answers.MARGIN, "at Size 100 % the talk stays in the middle, the column fits")
+check(#lines == 15 and lines[1].text._text == "The bank" and lines[15].text._text == "Goodbye",
+      "a guard's fourteen answers and Goodbye, all in sight while they fit the screen")
+check(top > ns.Box.Top() and foot == ns.Answers.MARGIN, "the column lifted until its foot stands on the screen's")
+check(not Arrow("top"):IsShown() and not Arrow("bottom"):IsShown() and column._wheel == false,
+      "no arrows, no wheel while everything fits")
+SaneUI.Core.Set(ns.name, "size", 150)
+lines = Lines()
+column, top, foot = Column()
+local screen = 768 / 1.5
+check(#lines == 12 and lines[1].text._text == "The bank", "taller than the screen at Size 150 %: the lines that fit")
+check(foot >= ns.Answers.MARGIN and top <= screen - ns.Answers.MARGIN, "the column within the screen")
+right, left, moved = Sides(1.5)
+check(moved < 0 and left == ns.Answers.MARGIN and right == 1365 / 1.5 - ns.Answers.MARGIN,
+      "too wide for the screen: the talk moved left to its margin, the column's right side on the right margin")
+check(not Arrow("top"):IsShown() and Arrow("bottom"):IsShown() and column._wheel == true,
+      "an arrow under it, more lying that way; the wheel goes through them")
+column._scripts.OnMouseWheel(column, -1)
+lines = Lines()
+check(lines[1].text._text == "The auction house" and #lines == 12, "the wheel down: a line on")
+check(Arrow("top"):IsShown() and Arrow("bottom"):IsShown(), "arrows over and under it, more both ways")
+for _ = 1, 6 do Arrow("bottom")._scripts.OnClick(Arrow("bottom")) end
+lines = Lines()
+check(lines[1].text._text == "The gryphon master" and lines[#lines].text._text == "Goodbye",
+      "a click on the arrow goes on a line, no further than the last line")
+check(Arrow("top"):IsShown() and not Arrow("bottom"):IsShown(), "at the end: the arrow over it alone")
+said = {}
+lines[#lines - 1]._scripts.OnClick(lines[#lines - 1])
+check(said[1] == "option 14", "a line brought into sight answers as ever")
+column._scripts.OnMouseWheel(column, 1)
+check(Lines()[1].text._text == "The inn", "the wheel up: a line back")
+-- The words turned: the box's height changes and the column is placed anew.
+UIParent:SetHeight(1200)
+Click(box, "LeftButton")
+check(#Lines() == 15, "the screen grown, the next paragraph: the column placed anew, everything in sight")
+UIParent:SetHeight(768)
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
+Guard()
+check(Lines()[1].text._text == "The bank", "a new talk starts at its first line")
+SaneUI.Core.Set(ns.name, "size", 100)
+check(#Lines() == 15 and not Arrow("top"):IsShown(), "Size back at 100 %: everything in sight again")
+check(select(3, Sides(1)) == 0, "and the talk in the middle again")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
+UIParent:SetHeight(0)
+UIParent:SetWidth(0)
 
 -------------------------------------------------------------------------------
 --  The settings

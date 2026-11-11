@@ -319,6 +319,7 @@ function Talk.Next()
     if not talk or talk.at >= #talk.paragraphs then return end
     talk.at = talk.at + 1
     ns.Box.Words(talk)
+    ns.Answers.Place() -- the box's height changed with the words
     Onward()
 end
 
@@ -326,6 +327,7 @@ function Talk.Cycle()
     if not talk or #talk.paragraphs < 2 then return end
     talk.at = talk.at % #talk.paragraphs + 1
     ns.Box.Words(talk)
+    ns.Answers.Place()
     Onward()
 end
 
