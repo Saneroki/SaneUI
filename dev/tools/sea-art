@@ -5,8 +5,8 @@ it", and "an AB comparison of those 2"): the full map zoomed all the way out, as
 with the waves it draws now (Art/Sea.blp, Canvas.lua's Waves), B with a painting of the sea under the same land.
 
   dev/tools/sea-art inputs <client tables>   the land, ComfyUI's image 1 and mask, and side A
-  dev/tools/sea-art page <round folder>      side B of every painting in that folder, and the page (/sea/ of
-                                             dev/tools/web-pages, saneui showsea)
+  dev/tools/sea-art page <round folder>      side B of every painting in that folder (an earlier round's gone),
+                                             and the page (/sea/ of dev/tools/web-pages, saneui showsea)
 
 The view (Navigation's own numbers): the full map's canvas is the screen less the title bar, 1365.33 x 736 units
 (Core's Window.BAR, 32), 2.8125 pixels a unit on 4K at UI scale 1; at the farthest zoom the world map's frame stands
@@ -180,6 +180,9 @@ def page(run):
         made.append((painting.stem, name))
     if not made:
         sys.exit(f"No painting in {run}")
+    for old in OUT.glob("B-*.jpg"):  # an earlier round's: the page shows this round alone
+        if old.name not in {name for _, name in made}:
+            old.unlink()
     options = "".join(f'<option value="{html.escape(f)}">{html.escape(n)}</option>' for n, f in made)
     text = PAGE.replace("WIDTH", str(whole.width)).replace("OPTIONS", options).replace("FIRST", made[0][1])
     (OUT / "index.html").write_text(text, encoding="utf-8")

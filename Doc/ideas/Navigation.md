@@ -758,7 +758,11 @@ Three spaces, converted only in `Coords.lua`:
   scenarios to it", and an A/B against the waves. Round 1: the full map zoomed all the way out as it is drawn on 4K
   (`dev/tools/sea-art`), only the open sea painted around the land, which comes back untouched (`qwen21-inpaint`,
   `dev/imagegen/sets/sea/ocean.txt`: *calm* and *tales*, three seeds each); the page `/sea/` (`saneui showsea`)
-  slides between A, the waves, and each painting. Waits for his pick. In the game a pick would be one more texture
+  slides between A, the waves, and each painting. Round 1 passed over: "The 'events' of the ships and fish etc don't
+  look like realistically blend into the ocean. Can we use a much more realistic fantasy style map where it has that
+  huge whirlwind / whirlpool combination in the middle". Round 2: a photograph from orbit, one colossal maelstrom in
+  the middle (the whirlpool and a storm turning over it), *maelstrom* without ships, *ships* with ships only as
+  specks and wakes, three seeds each. Waits for his pick. In the game a pick would be one more texture
   under the terrain at the far zooms (the canvas' view at the farthest zoom, 2048 x 1104), giving way to the waves
   as the view comes close.
 - **The water cut away (built 2026-10-19):** `dev/tools/terrain-art` reads the game's terrain files (each map
