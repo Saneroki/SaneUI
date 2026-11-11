@@ -112,6 +112,17 @@ Decided (Saneroki, 2026-10-16):
   every bar switched on, one Edit Mode hides too; each window as large as its bars, the room beside it empty. Any of
   Bars 2 to 8 paged by stance or form as the game's Bar 1, by a checkbox beside it (Abilities, a warrior's, druid's
   or rogue's; a druid's Bar 6 keeps its form bar).
+- **The aura history** (Saneroki, 2026-11-11; built, `src/Combat/README.md`): "a window for the fullscreen that shows
+  history of buffs and debuffs that have happened. Like if a enemy or boss had a buff or debuff on him it does show in
+  the window the icon, the tooltip, who it was applied on, when It was applied on, was it interruptable, it's
+  duration", each "a proper buff icon where you can see the tooltip and click on it to add it to the tracker etc, just
+  like the buffs normally". A window of the full screen (`AuraHistory.lua`); the gathering and keeping is Core's
+  (`Core.AuraLog`), as *Only reads* below says. The game's limit: in a fight it keeps the auras of others from addons
+  (secret values) and the combat log is closed, so only the spells it shows come in as they come, the rest once the
+  fight is over (still on: with the time they came; one that came and went inside the fight is not seen). For an aura,
+  *interruptible* is told of the cast that gave it where that cast was seen (out of a fight); what can remove an aura
+  is its dispel type and whether it can be stolen. Open: whether Forever's open world hides less than its dungeons
+  (`Doc/ideas/Data.md`, *What the game shows, and what it hides*); the window gets more in a fight by itself then.
 
 ## Its parts
 

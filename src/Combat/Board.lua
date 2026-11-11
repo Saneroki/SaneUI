@@ -20,6 +20,7 @@ local _, ns = ...
 --      bars       the game's wide action bars, seated in their panel (BarsWindow.lua)
 --      sidebars   its tall ones, while there are any, in a narrow panel of their own
 --      macros     Sane Macros (Macros/)
+--      history    the aura history: the buffs and debuffs seen on whoever you can attack (AuraHistory.lua)
 --  Each is a part, in files of its own listed after this one in the TOC, that
 --  registers itself (Board.Part); the board lists the parts that are there.
 --  The first layout puts the talents and the spellbook side by side, each as
@@ -55,8 +56,9 @@ Board.ICONS = {
     bars = "Interface/ICONS/INV_Misc_Gear_01",
     sidebars = "Interface/ICONS/INV_Misc_Gear_02",
     macros = "Interface/ICONS/INV_Misc_Note_06",
+    history = "Interface/ICONS/INV_Misc_PocketWatch_01",
 }
-Board.ORDER = { "talents", "spellbook", "game", "trainer", "profession", "planner", "macros", "bars", "sidebars" }
+Board.ORDER = { "talents", "spellbook", "game", "trainer", "profession", "planner", "macros", "history", "bars", "sidebars" }
 Board.FIRST = { "talents", "spellbook", "game" }
 
 local layouts    -- Core's board, once the window is there (Board.Take)

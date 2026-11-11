@@ -262,6 +262,37 @@ ns.TEXT = {
     listsCopy = "Track it once more: a copy of this line under it, with its own place and conditions.",
     listsCopied = "%s is tracked once more: set its place and conditions below.",
     listsCopyGone = "That tracking of %s is deleted; the others stay.",
+    -- The aura history, a window of the full screen (AuraHistory.lua).
+    historyTitle = "Aura history",
+    historyTip = "The buffs and debuffs seen on whoever you can attack, newest on top. Point at an icon for its tooltip, click it to mark it or to add tracking, as the buffs on your unit frames. In a fight the game keeps most auras from addons: those it shows come in as they come, the rest once the fight is over, with the time they came while still on.",
+    historyShow_all = "All auras",
+    historyShow_buffs = "Buffs",
+    historyShow_debuffs = "Debuffs",
+    historyShow_bosses = "On bosses",
+    historyClear = "Clear history",
+    historyClearAsk = "Clear the aura history?",
+    historyCount = "%d auras",
+    historyEmpty = "None yet. Target an enemy, or look at its nameplate, and its buffs and debuffs come here.",
+    historyNoneFound = "None of these.",
+    historyColumn_name = "Aura",
+    historyColumn_on = "On",
+    historyColumn_removable = "Removable",
+    historyColumn_cast = "Its cast",
+    historyColumn_came = "Came",
+    historyColumn_lasts = "Duration",
+    historyBuff = "Buff",
+    historyDebuff = "Debuff",
+    historyStacks = "%d stacks",
+    historyFrom = "from %s",
+    historyNobody = "Unknown",
+    historySteal = "Stealable",
+    historyNone = "-",
+    historyInterruptible = "Interruptible",
+    historyLocked = "Not interruptible",
+    historyInstant = "Instant",
+    historyLasting = "No limit",
+    historyOn = "On now",
+    historyStayed = "stayed %s",
 }
 
 -- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
@@ -412,6 +443,7 @@ end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
 Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
 Core.Command("reminders", "Edit tracked, for the buffs and debuffs shown on aura bars, health bars and nameplates", function() ns.Guarded(ns.AuraLists.Toggle) end)
+Core.Command("aurahistory", "the aura history on Combat's full screen: the buffs and debuffs seen on enemies", function() ns.Guarded(ns.AuraHistory.Open) end)
 
 function ns.OnLogin()
     ns.Window.Build()
@@ -429,5 +461,6 @@ function ns.OnLogin()
     ns.Meter.Build()
     ns.BuffList.Start()
     ns.Reminders.Start()
+    ns.AuraHistory.Start()
     ns.Macros.Start()
 end

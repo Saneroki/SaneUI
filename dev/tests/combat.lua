@@ -176,10 +176,11 @@ if RETAIL then
         "its window is at the bottom middle, and the middle half of the bottom edge fills the screen")
     local first, windows = layouts.options.default(), layouts.options.windows()
     check(first and first.split == "x" and first.parts[1].key == "game" and first.parts[2].split == "y"
-        and first.parts[2].parts[1].key == "macros" and first.parts[2].parts[2].key == "bars" and #windows == 3
-        and windows[1].key == "game" and windows[1].title == ns.TEXT.book and windows[2].key == "macros" and windows[3].key == "bars"
+        and first.parts[2].parts[1].key == "macros" and first.parts[2].parts[2].key == "bars" and #windows == 4
+        and windows[1].key == "game" and windows[1].title == ns.TEXT.book and windows[2].key == "macros"
+        and windows[3].key == "history" and windows[4].key == "bars"
         and Core.Classic.List(handle) == nil,
-        "its windows are the game's own of both, Sane Macros and the action bars; no Classic windows of Combat's")
+        "its windows are the game's own of both, Sane Macros, the aura history and the action bars; no Classic windows of Combat's")
     frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
     inside._left, inside._bottom, inside._height = 0, 0, 1080 - Core.Window.BAR
     inside._strata, inside._level = "HIGH", 501

@@ -89,6 +89,8 @@ Reminders\Group.lua
 Reminders\Plates.lua
 Reminders\Bars.lua
 Reminders\Editor.lua
+# The aura history on the full screen: the buffs and debuffs seen on whoever you can attack (Core.AuraLog)
+AuraHistory.lua
 # The game's action bars clean: only the buttons that hold something, each its icon alone
 ActionBars.lua
 # The action bars as a window of the full screen, so that nothing lies over them

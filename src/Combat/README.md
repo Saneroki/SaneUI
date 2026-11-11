@@ -1,6 +1,6 @@
 # Sane UI: Combat
 
-**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); rings around the mouse for the global cooldown and your cast (built); the threat and damage meter (built); in Retail all of it, the game's own spellbook and talents window standing on the full screen in place of ours (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** its window and full screen built: docked at the bottom middle, the bottom edge's middle half (or your spellbook or talents key) fills the screen with our own spellbook and talents (built), as the game's, on Core's board; quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); the game's action bars clean (built); rings around the mouse for the global cooldown and your cast (built); the threat and damage meter (built); the aura history on the full screen (built); in Retail all of it, the game's own spellbook and talents window standing on the full screen in place of ours (they are Forever's) · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 The module for everything about the fight: your own frame, your target's (and its target's), your
@@ -32,6 +32,11 @@ the cast's. They go around the whole picture of the cursor, so it stands in thei
 The threat and damage meter: your party or raid, you on top, each with their class, level, item level and name and
 a thin bar each for threat, damage, healing and interrupts. No title bar and no background, and clicks go through
 it; the mouse on it brings its buttons.
+
+The aura history, a window of the full screen: the buffs and debuffs seen on whoever you can attack, newest on top,
+each a proper aura icon (its tooltip, a click its menu: the marks, *Add tracking*), with whom it was on, from whom, when
+it came, its duration, whether it can be dispelled or stolen, and whether the cast that gave it could be interrupted.
+In a fight the game keeps most auras from addons: those it shows come in as they come, the rest once the fight is over.
 
 Click a buff or debuff, or right click a spell in the spellbook, and mark it: *Important* (the game's golden animated outline, first on the unit frames), *Unimportant* (faded,
 never on the unit frames) or *Hidden* (out of the game's list until the mouse is on it); for the unit frames alone,
@@ -266,6 +271,24 @@ Sunder Armor), as you choose, nothing fixed.
   in white, fills while the global cooldown runs; the outer one, in your class's colour, fills while you cast and empties while you channel, a bright
   line with a soft glow at its head. See-through, there only while they run, gone at once when the cast is interrupted. They stand around the cursor
   you see, start and end on the line to its tip, and grow with the game's *Cursor Size* (Accessibility).
+- **The aura history** (Saneroki, 2026-11-11): a window of the full screen, *Aura history* in its dropdown *Windows*,
+  or `/sane aurahistory` (the full screen with it on). The buffs and debuffs seen on whoever you can attack (your target,
+  focus, the mouse's, the boss frames' and every nameplate's; a friend's never), newest on top, the last 400 kept for
+  each character. Each line:
+  - the aura's icon, as the buffs on your unit frames: the mouse on it its tooltip (the aura's own while it is still on,
+    else the spell's), a left or right click its menu: *Important*, *Unimportant*, *Hidden*, the unit frames' two
+    marks, *Edit tracked...* and *Add tracking*;
+  - its name, *Buff* or *Debuff* and its stacks under it; *On*: whom it was on (a boss with the game's skull), from
+    whom under it;
+  - *Removable*: its dispel type in the game's colour of it (Magic, Curse, Poison, Disease), *Stealable*;
+  - *Its cast*: *Interruptible*, *Not interruptible* or *Instant*, where that cast was seen (out of a fight);
+  - *Came*: when it came, to the second; *Duration*: its duration (*No limit*), under it *On now* or how long it stayed
+    where it went sooner.
+  The dropdown over the list shows *All auras*, *Buffs*, *Debuffs* or those *On bosses*, and holds *Clear history*;
+  the full screen's search finds by the aura's name or whom it was on. **In a fight** the game keeps the auras on
+  others from addons (secret values): those of the spells it lets addons see come in as they come; the rest come in
+  once the fight is over, those still on with the time they came, so a buff that came and went inside the fight is
+  not seen.
 - **The threat and damage meter** (*Threat and damage meter* on the page Combat or `/sane meter` switch it, on at first),
   in place of the game's own damage meter. Never on or over Combat's full screen: out of sight while that is up.
   - **When it shows:** the cog's section of that name, all three on at first. *Hide outside combat*, *Hide when not in
@@ -869,6 +892,27 @@ Sunder Armor), as you choose, nothing fixed.
   `PlateReminders.Cast(name, target)` on the plate `UnitIsUnit(unit, "target")` (where the sent name is its) or the first of
   that name, `ends` by `Reminders.Ends`. A plate removed forgets its GUID's states.
 
+- **The aura history** (`AuraHistory.lua`, the part `history` on the board, `Board.ORDER` after `macros`, not in the first
+  layout): it shows what Core keeps (`Core.AuraLog`, `src/Core/AuraLog.lua`: every data set and its gathering are
+  Core's), filled only while its panel shows (`Part.Show`; `AuraLog.Listen` asks a fill a frame later). A
+  `WowScrollBoxList` of lines `History.ROW` high (`SetElementExtent`), newest first; `History.COLUMNS` from the right at
+  fixed widths, the name taking the rest (`History.LEAST` 660 wide). The icon a frame of ours with `UnitAuras.Paint`:
+  `OnEnter` asks `GameTooltip:SetUnitAuraByAuraInstanceID` while `AuraLog.Live(entry)` gives its unit and instance
+  (the GUID still on that unit, the aura still there), else `SetSpellByID`; `OnMouseUp` opens `Lists.Menu` with the
+  spell as `AuraRow` hands it (`unit = "target"`, so *Add tracking* watches your target). The kind shown is
+  `store.auraHistoryShow` (`History.SHOWS`), the dropdown `WowStyle1DropdownTemplate` with its radios and *Clear
+  history* (`Core.Confirm`, then `AuraLog.Clear`); `Part.Search` filters by name or `on`. `History.Open`:
+  `Window.Open("history")`. The clock through `Core.ClockAt(stamp, true)`; durations `History.Span` (45s, 2m 10s, 1h 5m).
+  Core's log: the units of `AuraLog.UNITS`, boss1-5 and each nameplate's (`NAME_PLATE_UNIT_ADDED`), each by its own
+  `UNIT_AURA` (`Core.OnUnit`) a frame later, in a fight at most each `AuraLog.FIGHT` seconds; `C_UnitAuras.GetUnitAuras`
+  per kind read under `pcall` (a table the game keeps closed errors when indexed), only auras whose `auraInstanceID`
+  and `spellId` are plain, by `[GUID][instance]`: one new is an entry, one gone is closed (`gone`) only where the whole
+  list was plain (`Open()`: no restriction, `C_Secrets.ShouldAurasBeSecret` no). `PLAYER_REGEN_ENABLED` and
+  `ADDON_RESTRICTION_STATE_CHANGED` look at every unit again; an aura on for a while came at `expirationTime -
+  duration`. Its cast: `UNIT_SPELLCAST_START`/`_CHANNEL_START` (`UnitCastingInfo` 8th answer, `UnitChannelInfo` 7th:
+  `notInterruptible`), `_INTERRUPTIBLE`/`_NOT_INTERRUPTIBLE`, a `_SUCCEEDED` not begun before is instant; matched by the
+  aura's source GUID and the same spell within `AuraLog.CAST` seconds. Kept in `Core.Character(Core.name).auraLog`, the
+  last `AuraLog.MOST`. `dev/tests/aurahistory.lua`.
 - **The threat and damage meter** (`Meter/`): the combat log is closed to addons (`C_CombatLog.IsCombatLogRestricted`), so
   the numbers are the game's own meter's (`C_DamageMeter`, the same in both games). `Read.Fight(where, types, people)` reads one
   list per kind, `where` `{ id = session }` or `{ type = "Current" / "Overall" }`, and matches the sources by GUID
@@ -1003,9 +1047,16 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Group.lua` | The reminders on the party and raid frames: on each member, in a fight your cast matched to the member who got it |
 | `Reminders/Plates.lua` | The reminders on the nameplates: a row right under each plate, on Nameplates' dress where it dresses it, in a fight your cast on your target's plate |
 | `Reminders/Bars.lua` | The invisible bars: their places in Edit Mode, the icons side by side, as wide as what shows, clickable out of a fight |
+| `AuraHistory.lua` | The aura history on the full screen: the buffs and debuffs seen on whoever you can attack (Core's `Core.AuraLog`), each a proper aura icon with its tooltip and menu, on whom, from whom, when, its duration, dispel type and its cast; what to show, the search, clearing |
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-11:** the aura history, a window of the full screen (Saneroki: "a window for the fullscreen that shows
+  history of buffs and debuffs that have happened"): every buff and debuff seen on whoever you can attack, newest on
+  top, each a proper aura icon with its tooltip and menu ("click on it to add it to the tracker etc, just like the buffs
+  normally"), whom it was on, from whom, when it came, its duration, whether it can be dispelled or stolen, and whether
+  the cast that gave it could be interrupted. In a fight the game keeps the auras of others from addons: only the spells
+  it shows come in then, the rest once the fight is over (still on, with the time they came).
 - **2026-11-11:** at a trainer the trainer's list shows the first time too (Saneroki: "First time its empty but 2nd
   time it is working as expected"): its list and scroll bar, pinned by the game on a strata of their own, stood behind the
   full screen until the window was given back once; Core's seat lifts them now.

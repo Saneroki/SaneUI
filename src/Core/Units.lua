@@ -13,8 +13,10 @@ local Core = SaneUI.Core
 --      Core.DistanceText(text)     a text of the game's with the yards it names
 --                                  as the setting says ("within 30 yards" is
 --                                  "within 27 m", "8-25 yd" is "7-23 m")
---      Core.Clock(hour, minute)    "23:59" or "11:59 PM"
---      Core.ClockAt(stamp)         the same for a moment; none: now
+--      Core.Clock(hour, minute, second)  "23:59" or "11:59 PM"; with a second
+--                                  "23:59:07" or "11:59:07 PM"
+--      Core.ClockAt(stamp, seconds) the same for a moment (none: now), with its
+--                                  second where seconds is true
 --      Core.GameClock()            the game's own clock says the same
 -------------------------------------------------------------------------------
 
@@ -59,17 +61,24 @@ function Core.DistanceText(text)
     return (text:gsub(NUMBER .. YARDS, One))
 end
 
-function Core.Clock(hour, minute)
-    if Core.Metric() then return ("%02d:%02d"):format(hour, minute) end
+function Core.Clock(hour, minute, second)
+    if Core.Metric() then
+        if second then return ("%02d:%02d:%02d"):format(hour, minute, second) end
+        return ("%02d:%02d"):format(hour, minute)
+    end
     local word = hour < 12 and Core.Word("TIMEMANAGER_AM", "AM") or Core.Word("TIMEMANAGER_PM", "PM")
+    if second then return ("%d:%02d:%02d %s"):format((hour + 11) % 12 + 1, minute, second, word) end
     return ("%d:%02d %s"):format((hour + 11) % 12 + 1, minute, word)
 end
 
 -- A chat line asks this: no table for the 24 hours.
-function Core.ClockAt(stamp)
-    if Core.Metric() then return stamp and date("%H:%M", stamp) or date("%H:%M") end
+function Core.ClockAt(stamp, seconds)
+    if Core.Metric() then
+        local form = seconds and "%H:%M:%S" or "%H:%M"
+        return stamp and date(form, stamp) or date(form)
+    end
     local at = date("*t", stamp)
-    return Core.Clock(at.hour, at.min)
+    return Core.Clock(at.hour, at.min, seconds and at.sec or nil)
 end
 
 -- The game's own clock and calendar: its switch for 24 hours, at the login and when the setting changes.

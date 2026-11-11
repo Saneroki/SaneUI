@@ -51,6 +51,8 @@ Holder.lua
 Seat.lua
 # What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled
 HealthMarks.lua
+# The buffs and debuffs seen on whoever you can attack, kept as a history for a view to show
+AuraLog.lua
 # A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs
 Board.lua
 Expand.lua

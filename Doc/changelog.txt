@@ -6,6 +6,13 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Aura history on the Combat full screen: every buff and debuff
+  seen on enemies and bosses, newest on top, with whom it was on,
+  from whom, when it came, its duration, whether it can be
+  dispelled or stolen and whether its cast could be interrupted.
+  Point at an icon for its tooltip, click it to mark or track it,
+  as the buffs on your unit frames. In a fight the game hides most
+  auras from addons: those come in once the fight is over.
 - At the spirit healer, Return me to life is a big picture over the
   talk, and its last question has a tick Don't ask me again: from
   then on the spirit healer resurrects you at once. Lore's options
