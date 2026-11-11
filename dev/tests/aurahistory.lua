@@ -3,8 +3,8 @@
 -- came, on whom, from whom, its duration, dispel type and stacks; whether the cast that gave it could be interrupted; an
 -- aura gone; a fight in which the game hides the auras (W.Secret): nothing hidden kept or compared, nothing closed, a
 -- spell the game shows kept, the rest once the fight is over with the time it came; the most kept; the window on the
--- full screen, newest on top, its icon's tooltip and menu, what it shows, the search, clearing. At its end it runs
--- again as Retail loads the module ("retail": W.Play).
+-- full screen, newest on top, its icon's tooltip and menu, what it shows, the search, clearing; which spells the
+-- game hides (/sane secrets). At its end it runs again as Retail loads the module ("retail": W.Play).
 -- Usage, from the project folder:  lua5.1 dev/tests/aurahistory.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -361,6 +361,32 @@ check(History.Span(45) == "45s" and History.Span(130) == "2m 10s" and History.Sp
     and History.Span(3900) == "1h 5m", "durations short: 45s, 2m 10s, 1h 5m")
 check(Core.ClockAt(DAY, true) == os.date("%H:%M:%S", DAY), "the clock to the second, as the setting Units says")
 check(not ns.off and #W.errors == 0, "nothing failed")
+
+-------------------------------------------------------------------------------
+--  Which spells the game hides (/sane secrets: Core's Secrecy.lua)
+-------------------------------------------------------------------------------
+-- The game's answers for a few spells (0 never hidden, 1 always, 2 in a fight), the rest not there.
+local LEVELS = { [772] = { 2, 0 }, [1715] = { 0, 2 }, [7386] = { 2, 2 }, [40001] = { 1, 1 } }
+C_Spell.DoesSpellExist = function(id) return LEVELS[id] ~= nil end
+C_Spell.GetSpellName = function(id) return ({ [772] = "Rend", [1715] = "Hamstring", [7386] = "Sunder Armor", [40001] = "Shroud" })[id] end
+C_Secrets.GetSpellAuraSecrecy = function(id) return LEVELS[id][1] end
+C_Secrets.GetSpellCastSecrecy = function(id) return LEVELS[id][2] end
+local Secrecy = Core.Secrecy
+Secrecy.TOP, Secrecy.STEP = 50000, 10000
+W.Combat(true)
+SlashCmdList.SANEUI("secrets")
+W.Wait(0.05)
+check(Core.Store(Core.name).secrecy == nil, "in a fight the scan waits")
+W.Combat(false)
+W.Wait(1.1)
+local answer = Core.Store(Core.name).secrecy
+check(answer and answer.spells == 4 and answer.top == 50000 and answer.game == Core.GAME,
+    "after the fight it goes on: every spell there is asked")
+check(answer.aura[0][1715] == "Hamstring" and answer.aura[1][40001] == "Shroud" and answer.aura[0][772] == nil
+    and answer.cast[0][772] == "Rend" and answer.counts.aura[2] == 2 and answer.counts.cast[2] == 2,
+    "the visible and the always hidden kept by name, the ones hidden in a fight counted")
+SlashCmdList.SANEUI("secrets clear")
+check(Core.Store(Core.name).secrecy == nil, "/sane secrets clear forgets it")
 
 -- As Retail loads the module: this file once more, in a client of its own.
 if not RETAIL then

@@ -32,6 +32,7 @@ GROUPS = {
         "lint": (["dev/tests/lint"], "the checks of the addons' files alone", None),
         "update": (["Scripts/update"], "pull from GitHub, then installdev", None),
         "showerrors": (["dev/tools/errors"], "the errors the game logged", "the game's error log"),
+        "showsecrets": (["dev/tools/secrets"], "which spells the game hides from addons, from /sane secrets", None),
     },
     "Background": {
         "gpurunner": (["dev/tools/gpu-runner"], "the queue of ComfyUI renders by priority, while the graphics card is idle",
