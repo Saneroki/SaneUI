@@ -6,8 +6,9 @@
 Lore is the world's words (plan: [Doc/ideas/Lore.md](../../Doc/ideas/Lore.md)). Its first part is the talk with an
 NPC ([Doc/ideas/Dialogue.md](../../Doc/ideas/Dialogue.md)): instead of the game's gossip and quest windows, the NPC's
 own 3D face, name and words stand low in the middle of the screen, straight on the world on a faint shade, a
-paragraph at a time. What you can answer stands in a column beside them; a quest's objectives and rewards under
-them. While you talk the rest of the interface fades out; the rewards' tooltips, the game's questions and its error
+paragraph at a time. What you can answer stands in a column beside them; the NPC's services (the hearthstone, a
+vendor's goods, a trainer, flights, the bank) as big pictures without words over them; a quest's objectives and
+rewards under them. While you talk the rest of the interface fades out; the rewards' tooltips, the game's questions and its error
 lines stay in sight. Each reward says, without its tooltip, what it is (Leather · Chest, Plate · Legs, a weapon's
 kind, a ring by its slot), whether you can use it, what a vendor pays for it and what it changes against what you
 wear (item level, stats). The words wait for you: a left click turns them, a right click accepts or says goodbye,
@@ -23,8 +24,14 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   - **the name** in the game's gold beside it, **the words** under the name, one paragraph at a time, an action
     in `<...>` in the game's emote colour; at the bottom right which paragraph of how many (*2/4*);
   - **the answers** in a column right of the words, in this order: quests to hand in, quests offered, the NPC's
-    other options (training, a flight, the inn), quests not done yet, *Goodbye*. Each has the game's picture for
-    its kind; a quest far below your level is dimmed;
+    other options (words to say), quests not done yet, *Goodbye*. Each has the game's picture for its kind; a
+    quest far below your level is dimmed;
+  - **the services** in a row over the talk, as big pictures without words: the hearthstone (*Make this inn your
+    home*), a vendor's goods (the bag), a trainer (the book), a flight master (the winged boot), a battlemaster (the
+    two shields), transmogrification (the helmet), the bank and the auction house (their map pictures). A click on
+    one takes it; the mouse on one shows its words, and where the game refuses it for now its picture is greyed and
+    the tooltip says why. A tabard, a guild charter, a trainer's unlearning, the spirit healer and an option the game
+    marks *(Quest)* keep their words in the column. *Services as icons* off: all of them in the column;
   - **a quest**, under the words: its title, its objectives and the group it is for when it is offered, what it
     asks for while in progress, its rewards when offered and handed in.
 - **Going on:** the words wait for you.
@@ -85,6 +92,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   | *Words go on by themselves* | on |
   | *Reading speed* (words a minute; 0: the words never go on by themselves) | 0 |
   | *Space goes on* | on |
+  | *Services as icons* (an NPC's services as big pictures over the talk; off: in the column) | on |
   | *Straight to the service* (an NPC's only service at once; Shift: the talk) | on |
 
 ## Technical details
@@ -140,6 +148,18 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   with the scene on, so nothing comes into sight; with the game's own windows it shows until the server answers).
   When neither `GOSSIP_CLOSED` nor another interaction (`PLAYER_INTERACTION_MANAGER_FRAME_SHOW`) comes within
   `Service.WAIT`, the talk shows after all.
+- **The services as pictures** (`Icons.lua`): Talk gives each gossip option the large picture of its kind
+  (`Icons.Picture`, by the option's `icon`, else its `overrideIconID`), none for an option with the
+  `QuestLabelPrepend` flag; `Answers.Draw` leaves out what `Icons.Shown` takes, `Icons.Draw` lays those in a row of
+  buttons centred over the box (`BOTTOM` on the box's `TOP`), on the talk's own shade. They stay among the talk's
+  answers, so a right click and Space find the same answer as before. The pictures are the game's: the cursor it shows
+  over that NPC (`Interface\CURSOR\UIInnkeeperCursor2x`, `UIBuyCursor2x`, `UITrainerCursor2x`, `UITaxiCursor2x`,
+  `UICursorPVP2x`, `UITransmogrifyCursor2x`; their 128 piece, at the same place in both games), the cursor's tip in its
+  top left corner cut away by the game's diamond mask (`Interface\COMMON\common-mask-diamond`, twice the picture's
+  side, its middle on the diagonal at 92/128, so its edge runs between the tip and the picture); the bank and the
+  auction house by the map's own atlases of them (`PICTURES` in `Icons.lua`), unmasked. A `status` other than `Available` greys the
+  picture (`SetDesaturated`) and the tooltip adds the option's `failureDescription` in the game's red; the click is
+  still the game's call, which decides. Under the mouse the picture is laid over itself, added (`HIGHLIGHT` layer).
 - **Space** (`Keys.lua`): `SetOverrideBindingClick` on a button of ours (`SaneUILoreContinue`) while the talk shows,
   `ClearOverrideBindings` when it ends; never in a fight (the talk ends before the lock).
 - **Esc** ends the talk through Core's one stand-in in `UISpecialFrames` (`Core.Escape`).
@@ -169,8 +189,10 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   round, the right on every screen, no reward taken and nothing paid by it, a double click), Speed Leveling's own
   `Quests.lua` beside the talk, the rewards read (kinds, slots, value, changes, an empty slot, a bow's slot), a choice,
   a quest that costs money, a fight, a talk left to the game, a vendor's window, an NPC's only service taken (beside
-  a word to say too, and each case that stays a talk, an answer given in between), the settings, Retail, standing
-  down.
+  a word to say too, and each case that stays a talk, an answer given in between), the services as pictures over the
+  talk (their pictures, the tip cut away, a click, the tooltip, greyed where refused, what stays in the column, the
+  setting), the settings, Retail, standing down. The interface lab's scene `talk` (`saneui showuilab`) draws an
+  innkeeper's talk with the real code.
 
 ## Files
 | File | What it does |
@@ -184,6 +206,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
 | `Box.lua` | The NPC's face, name and words; the column's foot |
 | `Answers.lua` | The answers beside the words |
 | `Quest.lua` | The quest under the words: objectives, what it asks for, rewards |
+| `Icons.lua` | An NPC's services as big pictures without words in a row over the talk |
 | `Keys.lua` | Space goes on while the talk shows |
 | `Service.lua` | Straight to an NPC's only service, no talk before it; Shift shows the talk |
 | `Talk.lua` | The talk as the game tells it, Continue, the answers' calls, fights |
@@ -204,3 +227,5 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
 - 2026-11-06: straight to the service (Saneroki asked: past the gossip window of "I need a ride" and "Show me your
   wares" without Speed Leveling; Shift shows the choices). The same day, "Skip those too": a word to say beside the
   service no longer keeps the talk.
+- 2026-11-11: the services as big pictures over the talk (Saneroki asked: the hearthstone, the trainer, the vendor
+  and the like as big icons with no text on them, over the talk, to click them quickly).

@@ -60,6 +60,8 @@ The game's windows stay where they are and come back at once whenever ours steps
   quest far below the player's level is dimmed, as the game does. A quest's own answers stand there too
   (Accept, Decline; Complete Quest, Goodbye).
 - **Chosen by a click.** Highlighted under the mouse the way the game's gossip buttons are.
+- **The services as big pictures over the talk** (Saneroki, 2026-11-11): the hearthstone, a vendor, a trainer, a
+  flight master and the like, without words, in a row over the talk, a click away; their words in the tooltip.
 - **Continue** on the last paragraph does what needs no choosing: accept the quest offered, hand in the
   quest whose reward is chosen, the one option there is, or goodbye when there is nothing to answer. Where
   there is a real choice, Continue waits for a click.
@@ -206,11 +208,24 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 | Words go on by themselves | on |
 | Reading speed (words a minute; 0: never by themselves) | 0 |
 | Space goes on | on |
+| Services as icons (an NPC's services as big pictures over the talk; off: in the column) | on |
 | Straight to the service (an NPC's only service at once; Shift: the talk) | on |
 
 - **Moving the talk:** in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`): still to come.
 
 ## Decided
+
+Saneroki, 2026-11-11:
+
+- **The services as big icons:** "The dialogue option has common things like The hearthstone, Trainer, Vendor etc.
+  Can you make those big icons that don't have any text on them. The icons are self expenatory. Make those big and
+  over the conversation window so you can quickly click them to open them quickly" (`src/Lore/Icons.lua`). Claude's
+  picks, for Saneroki to change: the row centred over the talk on its own shade, each picture 48 at Size 100 %; the
+  game's own large pictures (the cursor the game shows over such an NPC, its tip cut away; the bank's and the auction
+  house's map pictures, which have no cursor); the hearthstone, vendor, trainer, flight master, battlemaster,
+  transmogrification, bank and auction house as pictures, the rest (a tabard, a guild charter, unlearning, the spirit
+  healer, an option marked *(Quest)*) in the column; a refused one greyed, its reason in the tooltip; a setting,
+  on at first.
 
 Saneroki, 2026-11-06:
 

@@ -8,7 +8,8 @@ local _, ns = ...
 --  left (a quest to hand in, offered, not done yet; the NPC's own picture for
 --  its other options), the words beside it. A quest far below your level is
 --  dimmed, as the game does; an answer that cannot be given yet (a quest not
---  done) is greyed out. A click gives the answer (Talk.Answer).
+--  done) is greyed out. A click gives the answer (Talk.Answer). An NPC's
+--  service with a large picture stands over the talk instead (Icons.lua).
 --
 --      Answers.Draw(talk)   the talk's answers, beside the box
 -------------------------------------------------------------------------------
@@ -80,27 +81,31 @@ function Answers.Draw(talk)
     column:ClearAllPoints()
     column:SetPoint("TOPLEFT", ns.Box.Frame(), "TOPRIGHT", Answers.GAP, 0)
     local above
-    for index, answer in ipairs(talk.answers) do
-        local line = Line(index)
-        line.answer = answer
-        line.text:SetText(answer.text or "")
-        Picture(line, answer)
-        if answer.disabled or answer.trivial then
-            line.text:SetTextColor(unpack(ns.Look.GREY))
-        else
-            line.text:SetTextColor(1, 1, 1)
+    local count = 0
+    for _, answer in ipairs(talk.answers) do
+        if not ns.Icons.Shown(answer) then
+            count = count + 1
+            local line = Line(count)
+            line.answer = answer
+            line.text:SetText(answer.text or "")
+            Picture(line, answer)
+            if answer.disabled or answer.trivial then
+                line.text:SetTextColor(unpack(ns.Look.GREY))
+            else
+                line.text:SetTextColor(1, 1, 1)
+            end
+            line.shade:SetStrength(1)
+            line:SetHeight(math.max(Answers.ICON, Core.Plain(line.text:GetStringHeight()) or 0) + Answers.PAD * 2)
+            line:ClearAllPoints()
+            if above then
+                line:SetPoint("TOPLEFT", above, "BOTTOMLEFT", 0, -Answers.SPACE)
+            else
+                line:SetPoint("TOPLEFT", column, "TOPLEFT", 0, 0)
+            end
+            line:Show()
+            above = line
         end
-        line.shade:SetStrength(1)
-        line:SetHeight(math.max(Answers.ICON, Core.Plain(line.text:GetStringHeight()) or 0) + Answers.PAD * 2)
-        line:ClearAllPoints()
-        if above then
-            line:SetPoint("TOPLEFT", above, "BOTTOMLEFT", 0, -Answers.SPACE)
-        else
-            line:SetPoint("TOPLEFT", column, "TOPLEFT", 0, 0)
-        end
-        line:Show()
-        above = line
     end
-    for index = #talk.answers + 1, #lines do lines[index]:Hide() end
+    for index = count + 1, #lines do lines[index]:Hide() end
     column:Show()
 end

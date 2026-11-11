@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Talking to an NPC, its services stand as big pictures without
+  words in a row over the talk: the hearthstone, a vendor's goods,
+  a trainer, a flight master, the bank, the auction house, a
+  battlemaster. One click opens it; the mouse on one says what it
+  is. Lore's setting Services as icons puts them back among the
+  answers.
 - The minimap satchel shows each addon's own picture under its own
   name: buttons other addons make for one another are named by the
   addon they belong to, and pictures from the game's icon sheets

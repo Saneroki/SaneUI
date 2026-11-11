@@ -9,7 +9,9 @@
 -- questions, error lines and the rewards' tooltips kept in sight, Space bound only while a talk shows, an NPC's only
 -- service taken at once (a word to say or a trainer's unlearning beside it; not with Shift, a quest there, an option
 -- marked as a quest's, two services, right after a quest, nor over an answer given meanwhile; the talk after all
--- when nothing opens), and the settings. The look and the face can only be judged in the game.
+-- when nothing opens), an NPC's services as big pictures over the talk (the game's large picture of each kind, the
+-- cursor's tip cut away, a click its answer, its words in the tooltip, greyed where refused; an option marked as a
+-- quest's and what has no picture left in the column), and the settings. The look and the face can only be judged in the game.
 -- Usage, from the project folder:  lua5.1 dev/tests/lore.lua
 
 local root = arg[0]:match("^(.*)/dev/tests/") or "."
@@ -34,6 +36,9 @@ function methods:SetFrameStrata(strata) self._strata = strata end
 function methods:SetUnit(unit) self._unit = unit end
 function methods:SetAnimation(animation) self._animation = animation end
 function methods:RegisterForClicks(...) self._clicks = table.concat({ ... }, " ") end
+function methods:SetDesaturated(on) self._desaturated = on end
+function methods:AddMaskTexture(mask) self._masks = self._masks or {}; self._masks[mask] = true end
+function methods:RemoveMaskTexture(mask) if self._masks then self._masks[mask] = nil end end
 
 bit = { band = function(a, b) return (a % (2 * b) >= b) and b or 0 end }
 ChatTypeInfo = { MONSTER_EMOTE = { r = 1, g = 0.5, b = 0.25 } }
@@ -192,7 +197,8 @@ W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Lore", "SaneUI_Lore")
 W.Fire("ADDON_LOADED", "SaneUI_Lore")
 W.Fire("PLAYER_LOGIN")
-check(ns.options.talk == true and ns.options.quiet == true and ns.options.space == true, "the switches are on at first")
+check(ns.options.talk == true and ns.options.quiet == true and ns.options.space == true and ns.options.icons == true,
+      "the switches are on at first")
 check(ns.options.speed == 0 and ns.options.onward == true, "at first the reading speed is 0, the switch under it stays on")
 check(SaneUI.Core.Described(ns.name, "speed").min == 0, "and 0 is on its slider")
 
@@ -225,7 +231,7 @@ check(ns.Box.Frame():IsShown(), "the box shows")
 local function Order()
     local lines = {}
     for _, frame in ipairs(W.frames) do
-        if frame.answer and frame:IsShown() then lines[#lines + 1] = frame end
+        if frame.answer and frame.text and frame:IsShown() then lines[#lines + 1] = frame end
     end
     local below = {}
     for _, line in ipairs(lines) do
@@ -245,8 +251,43 @@ local function Order()
     return order
 end
 local order = Order()
-check(table.concat(order, "|") == "A Threat Within|Wolves Across the Border|Tell me more.|Train me.|Kobold Camp Cleanup|Goodbye",
-      "answers: to hand in, offered, the options in the game's order, not done yet, Goodbye (" .. table.concat(order, "|") .. ")")
+check(table.concat(order, "|") == "A Threat Within|Wolves Across the Border|Tell me more.|Kobold Camp Cleanup|Goodbye",
+      "answers: to hand in, offered, the options in the game's order, not done yet, Goodbye; the trainer not among them ("
+      .. table.concat(order, "|") .. ")")
+
+-- An NPC's services as big pictures over the talk (the icons in sight, by their place in the row).
+local function Pictures()
+    local list = {}
+    for _, frame in ipairs(W.frames) do
+        if frame.mask and frame.answer and frame:IsVisible() then list[#list + 1] = frame end
+    end
+    table.sort(list, function(a, b) return select(4, a:GetPoint(1)) < select(4, b:GetPoint(1)) end)
+    return list
+end
+local pictures = Pictures()
+check(#pictures == 1 and pictures[1].answer.text == "Train me.", "the trainer stands as a picture, without words")
+local trainer = pictures[1]
+local _, under, edge = trainer:GetParent():GetPoint(1)
+check(under == ns.Box.Frame() and edge == "TOP", "in a row over the box")
+check(trainer.picture:GetTexture() == "Interface\\CURSOR\\UITrainerCursor2x" and trainer:GetWidth() == ns.Icons.SIZE,
+      "big, in the game's own large picture of a trainer")
+check(trainer.picture._masks and trainer.picture._masks[trainer.mask], "the cursor's tip cut away by the diamond")
+trainer._scripts.OnEnter(trainer)
+check(GameTooltip:IsOwned(trainer) and GameTooltip._text == "Train me.", "the mouse on it shows its words")
+check(GameTooltip._ignoreAlpha == true, "the tooltip in sight over the faded interface")
+trainer._scripts.OnLeave(trainer)
+check(GameTooltip._ignoreAlpha ~= true, "and no longer kept once the mouse leaves")
+said = {}
+trainer._scripts.OnClick(trainer)
+check(said[1] == "option 2", "a click gives that answer: the option by its index")
+said = {}
+SaneUI.Core.Set(ns.name, "icons", false)
+order = Order()
+check(#Pictures() == 0 and table.concat(order, "|")
+      == "A Threat Within|Wolves Across the Border|Tell me more.|Train me.|Kobold Camp Cleanup|Goodbye",
+      "Services as icons off: the trainer among the answers again, in the game's order")
+SaneUI.Core.Set(ns.name, "icons", true)
+check(#Pictures() == 1 and #Order() == 5, "on again: a picture over the talk")
 
 -- The words: the first paragraph, the face talking, which of how many.
 local words
@@ -743,6 +784,78 @@ SaneUI.Core.Set(ns.name, "service", false)
 took, shown = Served(VENDING)
 check(took == nil and shown, "the switch off: the talk")
 SaneUI.Core.Set(ns.name, "service", true)
+
+-------------------------------------------------------------------------------
+--  An NPC's services as big pictures over the talk
+-------------------------------------------------------------------------------
+local BINDER, BANKER = 132052, 132050
+GossipFrame:Show()
+gossip.text = "Welcome, traveller."
+gossip.options = { { name = "Make this inn your home.", orderIndex = 1, icon = BINDER },
+                   { name = "Let me browse your goods.", orderIndex = 2, icon = VENDOR },
+                   { name = "What is there to do here?", orderIndex = 3, icon = CHAT },
+                   { name = "I would like to check my deposit box.", orderIndex = 4, icon = BANKER, status = 2,
+                     failureDescription = "The vault is closed." },
+                   { name = "I have the package.", orderIndex = 5, icon = VENDOR,
+                     flags = Enum.GossipOptionRecFlags.QuestLabelPrepend } }
+said = {}
+W.Fire("GOSSIP_SHOW")
+W.Wait(0)
+check(#said == 0 and talkRoot:IsShown(), "an innkeeper with more than one service: the talk")
+pictures = Pictures()
+check(#pictures == 3 and pictures[1].answer.text == "Make this inn your home."
+      and pictures[2].answer.text == "Let me browse your goods."
+      and pictures[3].answer.text == "I would like to check my deposit box.",
+      "the hearthstone, the goods and the bank as pictures, in the game's order")
+check(pictures[1].picture:GetTexture() == "Interface\\CURSOR\\UIInnkeeperCursor2x"
+      and pictures[2].picture:GetTexture() == "Interface\\CURSOR\\UIBuyCursor2x",
+      "the inn as the hearthstone, the goods as the vendor's bag: the game's large pictures")
+local bank = pictures[3]
+check(bank.picture._atlas == "banker" and not (bank.picture._masks and bank.picture._masks[bank.mask]),
+      "the bank, which has no cursor, as the map's picture, nothing cut away")
+check(bank.picture._desaturated == true and pictures[1].picture._desaturated == false,
+      "a service the game refuses for now is greyed, the others not")
+bank._scripts.OnEnter(bank)
+local refusal = false
+for _, line in ipairs(GameTooltip._lines or {}) do refusal = refusal or line == "The vault is closed." end
+check(GameTooltip._text == "I would like to check my deposit box." and refusal, "its tooltip says why the game refuses it")
+bank._scripts.OnLeave(bank)
+order = Order()
+check(table.concat(order, "|") == "What is there to do here?|I have the package.|Goodbye",
+      "words to say and an option marked as a quest's stay in the column (" .. table.concat(order, "|") .. ")")
+W.Wait(1)
+said = {}
+Click(box, "RightButton")
+check(#said == 0, "several answers, pictures among them: a right click waits")
+pictures[1]._scripts.OnClick(pictures[1])
+check(said[1] == "option 1", "a click on the hearthstone makes the inn your home")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
+-- A talk with no service: no row; a picture again on a cursor's kind after the bank's.
+gossip.options = { { name = "Hello.", orderIndex = 1 }, { name = "Bye.", orderIndex = 2 } }
+GossipFrame:Show()
+W.Fire("GOSSIP_SHOW")
+check(talkRoot:IsShown() and #Pictures() == 0, "no service: no row over the talk")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
+gossip.options = { { name = "I would like to check my deposit box.", orderIndex = 1, icon = BANKER },
+                   { name = "I seek more training.", orderIndex = 2, icon = TRAINER },
+                   { name = "Let me browse your goods.", orderIndex = 3, icon = VENDOR } }
+GossipFrame:Show()
+W.Fire("GOSSIP_SHOW")
+pictures = Pictures()
+check(#pictures == 3 and pictures[1].picture._atlas == "banker"
+      and pictures[2].picture._masks and pictures[2].picture._masks[pictures[2].mask]
+      and not (pictures[1].picture._masks and pictures[1].picture._masks[pictures[1].mask]),
+      "each picture cut as its kind needs, whichever icon showed what before")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
 
 -------------------------------------------------------------------------------
 --  The settings

@@ -343,6 +343,10 @@ the guide over the world: no window, no paper.
   game's gold, the paragraph under the name in white, *2/4* small and grey at the bottom right.
 - **The answers in a column right of the words,** a shade a line, darker under the mouse, the game's own pictures
   for a quest's kind.
+- **The NPC's services as big pictures over the talk** (Saneroki, 2026-11-11: "big icons that don't have any text on
+  them"): a row centred over the box on its shade, the game's own large picture of each kind (the cursor it shows over
+  such an NPC, its tip cut away; the map's for the bank and the auction house), lit under the mouse, greyed where the
+  game refuses it; the words in the tooltip.
 - **The quest under the words,** as wide: its title in gold, headings in gold, each reward a line: its icon, its name
   in its quality's colour, under it what it is in grey (*Leather · Chest*, *Can't use* in red), at the right what it
   sells for and what it changes (green up, red down).

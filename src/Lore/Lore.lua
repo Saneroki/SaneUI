@@ -24,6 +24,8 @@ local ADDON, ns = ...
 --                 stand in
 --    Box.lua      the NPC's face, name and words, low in the middle of the screen
 --    Answers.lua  what you can answer, in a column beside the words
+--    Icons.lua    the NPC's services (the hearthstone, a vendor, a trainer,
+--                 flights, the bank) as big pictures without words over the talk
 --    Quest.lua    under the words: a quest's objectives, what it asks for, its
 --                 rewards to choose from and to get
 --    Keys.lua     Space goes on while the talk shows
@@ -60,6 +62,8 @@ ns.TEXT = {
     speedTip = "How many words a minute you read, for the words that go on by themselves. 0: they never do.",
     space = "Space goes on",
     spaceTip = "While a talk shows, Space shows the next paragraph; on the last one it does what needs no choosing: it accepts the quest offered, hands in a quest whose reward is chosen (or that has one or none to choose), takes the only answer there is, or says goodbye. Space jumps again once the talk ends.",
+    icons = "Services as icons",
+    iconsTip = "An NPC's services as big pictures without words in a row over the talk, a click away: the hearthstone (to make the inn your home), a vendor's goods, a trainer, a flight master, the bank, the auction house, a battlemaster. The mouse on one shows its words. Off: they stand among the answers with their words.",
     service = "Straight to the service",
     serviceTip = "Talking to a vendor, a flight master, a trainer, a banker, the auction house or a battlemaster that has no quest for you and no other service, its window opens at once, without the talk before it, even with something to talk about beside it; as a scene or in the game's own windows alike. Hold Shift as you talk to them for the talk and its choices. Never in the talk that opens again after a quest handed in there.",
 
@@ -106,6 +110,7 @@ local OPTIONS = {
     { key = "speed", default = 0, min = 0, max = 500, step = 10, text = ns.TEXT.speed, tip = ns.TEXT.speedTip,
       parent = "onward" },
     { key = "space", default = true, text = ns.TEXT.space, tip = ns.TEXT.spaceTip, parent = "talk" },
+    { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip, parent = "talk" },
     { key = "service", default = true, text = ns.TEXT.service, tip = ns.TEXT.serviceTip },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
@@ -115,7 +120,7 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
         ns.Guarded(ns.Talk.Quieted)
     elseif key == "space" then
         ns.Guarded(ns.Keys.Update)
-    elseif key == "shade" or key == "size" then
+    elseif key == "shade" or key == "size" or key == "icons" then
         ns.Guarded(ns.Talk.Redraw)
     end
 end })

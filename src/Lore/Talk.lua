@@ -7,7 +7,9 @@ local _, ns = ...
 --  Native.lua holds out of sight meanwhile:
 --    - gossip (GOSSIP_SHOW) and a quest giver's greeting (QUEST_GREETING): the
 --      NPC's words and the answers: quests to hand in, quests offered, the NPC's
---      other options, quests not done yet, Goodbye;
+--      other options, quests not done yet, Goodbye; its services with a
+--      picture of their own (the hearthstone, a vendor, a trainer, flights)
+--      as big pictures over the talk instead (Icons.lua);
 --    - a quest offered (QUEST_DETAIL): its words, objectives and rewards;
 --      Accept, Decline;
 --    - a quest in progress (QUEST_PROGRESS): what it asks for; Complete Quest
@@ -123,15 +125,22 @@ local function Ordered(done, offered, options, open)
     return list
 end
 
+-- An option's words, and whether the game marks it as a quest's (it writes "(Quest)" before them).
 local function OptionText(option)
     local flags = Enum and Enum.GossipOptionRecFlags
     local prepend = rawget(_G, "QUEST_PREPEND")
     local form = rawget(_G, "GOSSIP_OPTION_PREPEND")
-    if flags and flags.QuestLabelPrepend and type(option.flags) == "number" and prepend and form
+    if flags and flags.QuestLabelPrepend and type(option.flags) == "number"
         and bit.band(option.flags, flags.QuestLabelPrepend) ~= 0 then
-        return form:format(prepend, option.name or "")
+        return prepend and form and form:format(prepend, option.name or "") or option.name or "", true
     end
-    return option.name or ""
+    return option.name or "", false
+end
+
+-- An option the game refuses for now (locked, done already): its own status.
+local function Refused(option)
+    local available = Enum and Enum.GossipOptionStatus and Enum.GossipOptionStatus.Available or 0
+    return (Core.Plain(option.status) or available) ~= available
 end
 
 local function GossipTalk(options)
@@ -153,7 +162,11 @@ local function GossipTalk(options)
     table.sort(options, function(a, b) return (a.orderIndex or 0) < (b.orderIndex or 0) end)
     for _, option in ipairs(options) do
         local index = option.orderIndex
-        choices[#choices + 1] = { text = OptionText(option), icon = option.overrideIconID or option.icon,
+        local text, quested = OptionText(option)
+        -- An NPC's service, its words in the tooltip: a big picture over the talk (Icons.lua).
+        choices[#choices + 1] = { text = text, icon = option.overrideIconID or option.icon,
+                                  picture = not quested and ns.Icons.Picture(option) or nil,
+                                  locked = Refused(option), failure = option.failureDescription,
                                   act = function() gossip.SelectOptionByIndex(index) end }
     end
     return { kind = "gossip", unit = "npc", name = Name("npc"), paragraphs = Talk.Paragraphs(Core.Ask(gossip.GetText)),
@@ -252,6 +265,7 @@ local function Draw()
     ns.Box.Draw(talk)
     ns.Quest.Draw(talk)
     ns.Answers.Draw(talk)
+    ns.Icons.Draw(talk)
 end
 
 local function Onward()
