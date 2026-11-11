@@ -2,18 +2,23 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Lore - Look
---  What the talk's parts share (Saneroki, 2026-10-28: the talk see-through over
---  the world). As the guide over the world (Doc/guides/interface-style.md): no
---  window, no paper; words in Expressway with a thin dark outline straight on
---  the game, names in the game's own colours, a soft dark shade behind each
---  part whose sides fade out into the world (how dark: the setting Shade behind
---  the words). The parts stand in one frame of ours over the interface, in
---  sight while the interface is faded out (Quiet.lua), sized by the setting
---  Size; it appears and goes with a quick fade.
+--  What the talk's parts share. No window over the world, but each part on a
+--  plate of its own (Saneroki, 2026-11-11: the shades faded into each other;
+--  the talk now in the make of the loot window and the guide's steps): round
+--  corners, a thin border nearly black, no edge fading out, so two parts side
+--  by side stay apart. A plate of no colour is a dark grey that darkens to its
+--  foot; a reward's is its quality's colour, deepened; under the mouse the
+--  border is grey, round a reward chosen gold. How solid the plates are is the
+--  setting Shade behind the words (0: the words alone over the world). The words
+--  in the game's outlined font of its nameplates, as the loot window's. The
+--  parts stand in one frame of ours over the interface, in sight while the
+--  interface is faded out (Quiet.lua), sized by the setting Size; it appears and
+--  goes with a quick fade.
 --
 --      Look.Root()                 the frame the talk's parts stand in
 --      Look.Text(parent, part)     a font string in that part's font (Look.SIZES)
---      Look.Shade(frame)           a soft shade behind a frame: shade:SetStrength(share of the setting)
+--      Look.Plate(frame)           a plate behind a frame: plate:Paint(r, g, b) (none: dark), plate:SetLit(on),
+--                                  plate:SetChosen(on), plate:Fit() (after the frame's size changed)
 --      Look.Show(), Look.Hide()    the talk appears, or goes (quickly faded); Look.Gone(): at once
 --      Look.Coins(copper), Look.Number(n)   money in the game's coins, a number with its separators
 -------------------------------------------------------------------------------
@@ -21,31 +26,50 @@ local Core = SaneUI.Core
 local Look = {}
 ns.Look = Look
 
-Look.FONT = "Interface\\AddOns\\SaneUI_Lore\\Fonts\\Expressway.ttf"
 Look.SIZES = { name = 19, words = 15.5, count = 11, answer = 14, head = 13, reward = 13, detail = 11.5 }
 Look.FADE = 0.3  -- seconds to appear or go
-Look.EDGE = 48   -- how far a shade's sides fade out
 Look.GREY = { 0.62, 0.62, 0.62 }
+Look.ROUND = 6   -- a plate's corners' radius, as the guide's steps over the world
+Look.TRIM = 1    -- its border's width
+Look.SHADE = 60  -- how solid the plates are at first, in % (the setting Shade behind the words)
+Look.DARK = { { 0.16, 0.16, 0.18 }, { 0.07, 0.07, 0.08 } } -- a plate of no colour, at its top and its foot
+Look.DEEP = { 0.5, 0.28 }  -- a coloured plate: its colour so far, at its top and its foot
+Look.BORDER = { 0, 0, 0 }  -- nearly black (Look.BORDER_ALPHA)
+Look.BORDER_ALPHA = 0.9
+Look.LIT = { 0.5, 0.5, 0.5 } -- under the mouse, as a nameplate's border on your target
+Look.GOLD = { 1, 0.82, 0 }   -- round a reward chosen
+
+-- The game's fonts of its nameplates' names, outlined (the loot window's), then its own plain one.
+local FACES = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate", "GameFontHighlight" }
 
 local root
 local fonts = {}
-local shades = {} -- every shade made, to follow the setting
+local plates = {} -- every plate made, to follow the setting
 local from, to, began
 local Fading
 
+-- The game's font file and outline (asked once); nil where it tells none.
+local face, outline
+local function Face()
+    if face then return face, outline end
+    for _, name in ipairs(FACES) do
+        local object = rawget(_G, name)
+        if type(object) == "table" and object.GetFont then
+            local file, _, flags = object:GetFont()
+            if type(file) == "string" then
+                face, outline = file, (flags and flags ~= "") and flags or "OUTLINE"
+                return face, outline
+            end
+        end
+    end
+end
+
 local function Font(part)
     if fonts[part] then return fonts[part] end
-    local size = Look.SIZES[part]
     local font = CreateFont("SaneUILore" .. part)
-    if not font:SetFont(Look.FONT, size, "OUTLINE") then
-        -- The font could not be set: the game's, outlined, at that size.
-        local base = rawget(_G, "GameFontHighlight")
-        local file = base and base:GetFont()
-        if file then font:SetFont(file, size, "OUTLINE") end
-    end
+    local file, flags = Face()
+    if file then font:SetFont(file, Look.SIZES[part], flags) end
     font:SetTextColor(1, 1, 1)
-    font:SetShadowOffset(1, -1)
-    font:SetShadowColor(0, 0, 0, 0.6)
     fonts[part] = font
     return font
 end
@@ -69,53 +93,68 @@ function Look.Number(amount)
 end
 
 -------------------------------------------------------------------------------
---  The shade: dark in its middle, its two sides fading out
+--  The plate: Core's shape of round corners and a thin border
 -------------------------------------------------------------------------------
-local shade = {}
-shade.__index = shade
+local plate = {}
+plate.__index = plate
 
-local function Darkness()
-    return ((ns.options and ns.options.shade) or 30) / 100
+local function Solid()
+    return ((ns.options and ns.options.shade) or Look.SHADE) / 100
 end
 
-local function Gradient(texture, left, right)
-    if texture.SetGradient and rawget(_G, "CreateColor") then
-        texture:SetGradient("HORIZONTAL", CreateColor(0, 0, 0, left), CreateColor(0, 0, 0, right))
-    else
-        texture:SetVertexColor(0, 0, 0, (left + right) / 2)
+-- Laid out at its frame's size (a plate that is not by the screen's edges needs only that).
+function plate:Fit()
+    local width, height = Core.Plain(self.frame:GetWidth()), Core.Plain(self.frame:GetHeight())
+    if type(width) == "number" and type(height) == "number" and width > 0 and height > 0 then
+        self.shape:Fit(0, 0, width, height)
     end
 end
 
-function shade:SetStrength(strength)
-    self.strength = strength or self.strength or 1
-    local alpha = Darkness() * self.strength
-    self.middle:SetColorTexture(0, 0, 0, alpha)
-    Gradient(self.left, 0, alpha)
-    Gradient(self.right, alpha, 0)
+function plate:Draw()
+    local solid = Solid()
+    local trim = self.chosen and Look.GOLD or self.lit and Look.LIT or Look.BORDER
+    self.shape:Look({ top = self.top, bottom = self.bottom, alpha = solid, trim = trim })
+    -- The border goes with the plate: none without one, whole when lit or chosen.
+    self.shape:SetAlpha(1, solid <= 0 and 0 or (self.lit or self.chosen) and 1 or Look.BORDER_ALPHA)
+    self:Fit()
 end
 
-function Look.Shade(frame)
-    local made = setmetatable({}, shade)
-    made.left = frame:CreateTexture(nil, "BACKGROUND")
-    made.middle = frame:CreateTexture(nil, "BACKGROUND")
-    made.right = frame:CreateTexture(nil, "BACKGROUND")
-    made.left:SetColorTexture(1, 1, 1, 1)
-    made.right:SetColorTexture(1, 1, 1, 1)
-    made.left:SetPoint("TOPRIGHT", frame, "TOPLEFT", 0, 0)
-    made.left:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", 0, 0)
-    made.left:SetWidth(Look.EDGE)
-    made.middle:SetAllPoints(frame)
-    made.right:SetPoint("TOPLEFT", frame, "TOPRIGHT", 0, 0)
-    made.right:SetPoint("BOTTOMLEFT", frame, "BOTTOMRIGHT", 0, 0)
-    made.right:SetWidth(Look.EDGE)
-    made:SetStrength(1)
-    shades[#shades + 1] = made
+function plate:Paint(r, g, b)
+    if r then
+        local top, foot = Look.DEEP[1], Look.DEEP[2]
+        self.top, self.bottom = { r * top, g * top, b * top }, { r * foot, g * foot, b * foot }
+    else
+        self.top, self.bottom = Look.DARK[1], Look.DARK[2]
+    end
+    self:Draw()
+end
+
+function plate:SetLit(on)
+    on = on and true or false
+    if on == self.lit then return end
+    self.lit = on
+    self:Draw()
+end
+
+function plate:SetChosen(on)
+    on = on and true or false
+    if on == self.chosen then return end
+    self.chosen = on
+    self:Draw()
+end
+
+function Look.Plate(frame)
+    local made = setmetatable({ frame = frame, lit = false, chosen = false }, plate)
+    made.shape = Core.Shape.New(frame, { radius = Look.ROUND, trim = Look.TRIM })
+    made.shape:Follow()
+    made:Paint()
+    plates[#plates + 1] = made
     return made
 end
 
--- The setting changed: every shade anew, the talk at its size.
+-- The setting changed: every plate anew, the talk at its size.
 function Look.Update()
-    for _, made in ipairs(shades) do made:SetStrength() end
+    for _, made in ipairs(plates) do made:Draw() end
     if root then root:SetScale(((ns.options and ns.options.size) or 100) / 100) end
 end
 

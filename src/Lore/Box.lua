@@ -7,8 +7,8 @@ local _, ns = ...
 --  (the game's model of the unit you talk to, with no background; a thing with
 --  no face, a board or a book, shows the game's quest book), talking while a
 --  paragraph is new; beside it the name in the game's gold, the paragraph under
---  it in white, and at the bottom right which paragraph of how many. A soft
---  shade lies behind the whole. Clicks are the talk's (Talk.Click). The quest
+--  it in white, and at the bottom right which paragraph of how many. A plate
+--  lies behind the whole (Look.Plate). Clicks are the talk's (Talk.Click). The quest
 --  under the words (Quest.lua) lifts the box: the two stand on one column whose
 --  foot stays put.
 --
@@ -33,7 +33,7 @@ Box.BOOK = "Interface\\QuestFrame\\UI-QuestLog-BookIcon" -- the game's own pictu
 
 Box.GAP = 10     -- between the box and the quest under it
 
-local frame, face, book, name, words, count, shade
+local frame, face, book, name, words, count, plate
 local placed    -- the quest's frame the box stands on, nil for none
 local shift = 0 -- the column's distance from the screen's middle (Answers.Place)
 
@@ -43,7 +43,7 @@ local function Build()
     frame:SetWidth(Box.WIDTH)
     frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     frame:SetScript("OnClick", ns.Guard(function(_, button) ns.Talk.Click(button) end))
-    shade = ns.Look.Shade(frame)
+    plate = ns.Look.Plate(frame)
 
     face = CreateFrame("PlayerModel", nil, frame)
     face:SetSize(Box.FACE, Box.FACE)
@@ -122,6 +122,7 @@ function Box.Words(talk)
     end
     local height = (Core.Plain(name:GetStringHeight()) or 0) + 8 + (Core.Plain(words:GetStringHeight()) or 0) + 20
     frame:SetHeight(math.max(Box.FACE, height) + Box.PAD * 2)
+    plate:Fit()
 end
 
 -- On the column: its foot over the screen's bottom, the box on the quest when one is shown under it.
@@ -155,7 +156,6 @@ function Box.Draw(talk)
     Box.Frame()
     name:SetText(talk.name or "")
     Face(talk)
-    shade:SetStrength(1)
     Box.Words(talk)
     frame:Show()
 end

@@ -206,7 +206,7 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 | --- | --- |
 | Talks as a scene (off: the game's gossip and quest windows) | on |
 | Fade out the interface while talking | on |
-| Shade behind the words (0: the words alone over the world) | 30 % |
+| Shade behind the words (how solid the plates are; 0: the words alone over the world) | 60 % |
 | Size | 100 % |
 | Words go on by themselves | on |
 | Reading speed (words a minute; 0: never by themselves) | 0 |
@@ -220,6 +220,13 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 
 Saneroki, 2026-11-11:
 
+- **The talk redesigned:** "I don't like how the dialogue background and the dialogue options are fading into each
+  other. It doesn't look good. Can you redesign the placement and look of the dialogue view Also incl quest rewards
+  etc." Of the layouts offered, "Side by side is good", and "I think the goodbye should also be a top icon." The look
+  was not picked: Claude's pick, the one recommended, for Saneroki to change: the loot window's make (every part on a
+  plate of round corners and a thin border nearly black, no fading; the answers dark bars; the rewards bars in their
+  quality colour, deepened so their words read; the game's nameplate font; the plates 60 % solid at first). Goodbye,
+  and Decline on a quest offered, as the game's raised open hand at the end of the pictures' row.
 - **A long column on the screen:** "Sometimes there are a lot of conversation options. Like talking to a guard can have
   a lot of conversion option for example. Right now there are so many that they go so far down that some are offscreen
   and not clickable anymore." Claude's picks, for Saneroki to change: the column's top level with the box's while it

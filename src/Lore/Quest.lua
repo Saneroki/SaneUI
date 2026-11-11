@@ -2,21 +2,24 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Lore - Quest
---  Under the words, as wide as they are, on its own soft shade: the quest the
---  NPC talks about (Saneroki, 2026-10-28). Its title in the game's gold, then:
+--  Under the words, as wide as they are, on a plate of its own (Look.Plate):
+--  the quest the NPC talks about (Saneroki, 2026-10-28). Its title in the
+--  game's gold, then:
 --    - offered: its objectives, the group it is for;
 --    - in progress: what it asks for (items with how many, money);
 --    - offered and handed in: its rewards, the ones to choose from first, then
 --      what you get besides, then experience, money, honor and a title in one
 --      line.
---  A reward's line says what it is without its tooltip (Rewards.lua): its icon
---  with the count, its name in its quality's colour; under the name what it is
+--  A reward's line says what it is without its tooltip (Rewards.lua), a bar in
+--  its quality's colour, deepened, as the loot window's lines (Saneroki,
+--  2026-11-11): its icon with the count, its name in white; under the name what it is
 --  (Leather · Chest), "Can't use" in red where you cannot; at the right what a
 --  vendor pays for all of it, and under that what it changes against what you
 --  wear: its item level and the one worn, the stats that go up (green) and down
 --  (red), or that the slot is empty. The tooltip is there too, with the game's
---  comparison, in sight over the faded interface (Quiet.Tips). A click on a
---  reward to choose chooses it (its shade darker, a gold line at its left); a
+--  comparison, in sight over the faded interface (Quiet.Tips); under the mouse
+--  its border is grey. A click on a reward to choose chooses it (its border
+--  gold); a
 --  double click hands the quest in with it; the right button on it does nothing.
 --  Anywhere else here a click is the talk's, as on the words (Talk.Click).
 --
@@ -29,16 +32,16 @@ ns.Quest = Quest
 Quest.PAD = 14
 Quest.ICON = 32
 Quest.ROW = 42    -- a reward's line, high
+Quest.INSET = 5   -- the icon's distance from the bar's edges
 Quest.SPACE = 3   -- between two lines
 Quest.HEAD = 10   -- above a heading
 
-local frame, shade, title
+local frame, plate, title
 local heads, texts, rows = {}, {}, {}
 local used -- how many of each are drawn this time
 local y    -- where the next part goes, from the top
 
-local GREEN = { 0.1, 1, 0.1 }
-local RED = { 1, 0.13, 0.13 }
+local SOFT = { 0.86, 0.86, 0.86 } -- the words under a reward's name and its value, on its coloured bar
 
 local function Colour(name, fallback)
     local colour = rawget(_G, name)
@@ -111,6 +114,7 @@ local function Enter(row)
     if not entry then return end
     ns.Quiet.Tips(true)
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+    row.plate:SetLit(true)
     if entry.spell then
         GameTooltip:SetSpellByID(entry.spell)
     elseif entry.currency then
@@ -123,7 +127,8 @@ local function Enter(row)
     GameTooltip:Show()
 end
 
-local function Leave()
+local function Leave(row)
+    row.plate:SetLit(false)
     GameTooltip:Hide()
     ns.Quiet.Tips(false)
 end
@@ -134,15 +139,11 @@ local function Row()
     if row then return row end
     row = CreateFrame("Button", nil, frame)
     row:SetSize(ns.Box.WIDTH - Quest.PAD * 2, Quest.ROW)
-    row.shade = ns.Look.Shade(row)
-    row.mark = row:CreateTexture(nil, "ARTWORK")
-    row.mark:SetPoint("TOPLEFT", row, "TOPLEFT", -6, 0)
-    row.mark:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", -6, 0)
-    row.mark:SetWidth(3)
-    row.mark:SetColorTexture(1, 0.82, 0, 0.9)
+    row.plate = ns.Look.Plate(row)
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetSize(Quest.ICON, Quest.ICON)
-    row.icon:SetPoint("LEFT", row, "LEFT", 4, 0)
+    row.icon:SetPoint("LEFT", row, "LEFT", Quest.INSET, 0)
+    row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- the icon's own border cut off: the bar is its frame
     row.count = ns.Look.Text(row, "detail")
     row.count:SetPoint("BOTTOMRIGHT", row.icon, "BOTTOMRIGHT", 1, 0)
     row.count:SetJustifyH("RIGHT")
@@ -153,10 +154,10 @@ local function Row()
     row.what:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 0)
     row.what:SetWordWrap(false)
     row.value = ns.Look.Text(row, "detail")
-    row.value:SetPoint("TOPRIGHT", row, "TOPRIGHT", -6, -4)
+    row.value:SetPoint("TOPRIGHT", row, "TOPRIGHT", -8, -5)
     row.value:SetJustifyH("RIGHT")
     row.change = ns.Look.Text(row, "detail")
-    row.change:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -6, 5)
+    row.change:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -8, 6)
     row.change:SetJustifyH("RIGHT")
     row.change:SetWordWrap(false)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -179,23 +180,23 @@ local function Reward(entry, chosen)
     row.icon:SetVertexColor(1, entry.cantUse and 0.35 or 1, entry.cantUse and 0.35 or 1)
     row.count:SetText((entry.count or 1) > 1 and Number(entry.count) or "")
     row.name:SetText(entry.name or "")
+    row.name:SetTextColor(1, 1, 1)
     local qualities = (C_Item and C_Item.GetItemQualityColor) or rawget(_G, "GetItemQualityColor")
     local r, g, b = Core.Ask(qualities, entry.quality or 1)
-    row.name:SetTextColor(r or 1, g or 1, b or 1)
+    row.plate:Paint(r or 1, g or 1, b or 1)
     local what = entry.what or ""
     if entry.cantUse then
         what = (what ~= "" and what .. "  " or "") .. "|cffff2020" .. ns.TEXT.cantUse .. "|r"
     end
     row.what:SetText(what)
-    row.what:SetTextColor(unpack(ns.Look.GREY))
+    row.what:SetTextColor(unpack(SOFT))
     row.value:SetText(entry.value and (entry.value > 0 and Coins(entry.value) or ns.TEXT.noValue) or "")
-    row.value:SetTextColor(unpack(ns.Look.GREY))
+    row.value:SetTextColor(unpack(SOFT))
     row.change:SetText(Change(entry))
     local width = row:GetWidth() - Quest.ICON - 24
     row.name:SetWidth(math.max(60, width - (Core.Plain(row.value:GetStringWidth()) or 0) - 12))
     row.what:SetWidth(math.max(60, width - (Core.Plain(row.change:GetStringWidth()) or 0) - 12))
-    row.mark:SetShown(chosen == true)
-    row.shade:SetStrength(chosen and 2.5 or 1)
+    row.plate:SetChosen(chosen == true)
     row:ClearAllPoints()
     row:SetPoint("TOPLEFT", frame, "TOPLEFT", Quest.PAD, y)
     row:Show()
@@ -210,7 +211,7 @@ local function Build()
     frame:SetWidth(ns.Box.WIDTH)
     frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     frame:SetScript("OnClick", ns.Guard(function(_, button) ns.Talk.Click(button) end))
-    shade = ns.Look.Shade(frame)
+    plate = ns.Look.Plate(frame)
     title = ns.Look.Text(frame, "name")
     title:SetPoint("TOPLEFT", frame, "TOPLEFT", Quest.PAD, -Quest.PAD)
     title:SetWidth(ns.Box.WIDTH - Quest.PAD * 2)
@@ -275,7 +276,7 @@ function Quest.Draw(talk)
     for index = used.texts + 1, #texts do texts[index]:Hide() end
     for index = used.rows + 1, #rows do rows[index]:Hide() end
     frame:SetHeight(-y + Quest.PAD)
-    shade:SetStrength(1)
+    plate:Fit()
     frame:Show()
     ns.Box.Place(frame)
 end

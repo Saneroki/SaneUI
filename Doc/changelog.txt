@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Talking to an NPC looks new: the words, the answers and the quest
+  each stand on a dark plate of their own with round corners, side
+  by side, nothing fading into anything. Each reward is a bar in its
+  quality colour, as in the loot window, and Goodbye is a raised
+  hand among the pictures over the talk.
 - The Sane Rare tracker: a rare, a treasure or an event near you is
   told the moment the game shows it, with a war horn and a notice
   under the minimap: the rare's own 3D model, its name, rank and

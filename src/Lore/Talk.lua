@@ -9,7 +9,7 @@ local _, ns = ...
 --      NPC's words and the answers: quests to hand in, quests offered, the NPC's
 --      other options, quests not done yet, Goodbye; its services with a
 --      picture of their own (the hearthstone, a vendor, a trainer, flights)
---      as big pictures over the talk instead (Icons.lua);
+--      and Goodbye as big pictures over the talk instead (Icons.lua);
 --    - a quest offered (QUEST_DETAIL): its words, objectives and rewards;
 --      Accept, Decline;
 --    - a quest in progress (QUEST_PROGRESS): what it asks for; Complete Quest

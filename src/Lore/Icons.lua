@@ -6,9 +6,12 @@ local _, ns = ...
 --  (Saneroki, 2026-11-11: big icons with no text on them, "over the
 --  conversation window so you can quickly click them"): the hearthstone (an
 --  inn made your home), a vendor's goods, a trainer, a flight master, the
---  bank, the auction house, a battlemaster, transmogrification. A click gives
---  that answer (Talk.Answer); the mouse on one shows its words in the tooltip,
---  and why the game refuses it where it does (its picture greyed then).
+--  bank, the auction house, a battlemaster, transmogrification; and at the
+--  row's end leaving (Saneroki, 2026-11-11: "the goodbye should also be a top
+--  icon"): Goodbye, or Decline on a quest offered, as the game's open hand. Each
+--  on a plate of its own (Look.Plate), its border grey under the mouse. A click
+--  gives that answer (Talk.Answer); the mouse on one shows its words in the
+--  tooltip, and why the game refuses it where it does (its picture greyed then).
 --  The answers' column keeps the rest: quests, words to say, an option the
 --  game marks as a quest's, and what has no large picture in the game (a
 --  tabard, a guild charter, a trainer's unlearning, the spirit healer).
@@ -18,8 +21,10 @@ local _, ns = ...
 --  the game's diamond mask, laid so that its edge runs between the tip and the
 --  picture), the bank and the auction house, which have no cursor, by their
 --  map icons. Off (the setting Services as icons) they stand in the column.
+--  The hand has no tip: nothing of it is cut.
 --
 --      Icons.Picture(option)   the large picture of a gossip option's kind, nil for none
+--      Icons.GOODBYE           the picture of leaving (an answer marked goodbye)
 --      Icons.Shown(answer)     whether that answer stands in the row (else in the column)
 --      Icons.Draw(talk)        the row over the box: the talk's answers with a picture
 -------------------------------------------------------------------------------
@@ -28,9 +33,9 @@ local Icons = {}
 ns.Icons = Icons
 
 Icons.SIZE = 48   -- a picture's side
-Icons.SPACE = 12  -- between two pictures
-Icons.PAD = 8     -- inside the row's shade
-Icons.GAP = 10    -- between the row and the box under it
+Icons.INSET = 5   -- between a picture and its plate's edge
+Icons.SPACE = 8   -- between two plates
+Icons.GAP = 10    -- between the row and the box under it, as between the other parts
 Icons.LIT = 0.35  -- the picture laid over itself, added, under the mouse
 
 local CURSOR = "Interface\\CURSOR\\"
@@ -44,18 +49,21 @@ local MIDDLE = 92 / 128
 
 -- The game's icons of an option's kind (Interface\GossipFrame), and the large picture of each.
 local PICTURES = {
-    [132052] = { file = CURSOR .. "UIInnkeeperCursor2x" },     -- BinderGossipIcon: the hearthstone
-    [4955461] = { file = CURSOR .. "UIInnkeeperCursor2x" },    -- InnkeeperGossipIcon
-    [132060] = { file = CURSOR .. "UIBuyCursor2x" },           -- VendorGossipIcon
-    [132058] = { file = CURSOR .. "UITrainerCursor2x" },       -- TrainerGossipIcon
-    [132057] = { file = CURSOR .. "UITaxiCursor2x" },          -- TaxiGossipIcon
-    [132051] = { file = CURSOR .. "UICursorPVP2x" },           -- BattleMasterGossipIcon
-    [1673939] = { file = CURSOR .. "UITransmogrifyCursor2x" }, -- transmogrifyGossipIcon
+    [132052] = { file = CURSOR .. "UIInnkeeperCursor2x", tip = true },     -- BinderGossipIcon: the hearthstone
+    [4955461] = { file = CURSOR .. "UIInnkeeperCursor2x", tip = true },    -- InnkeeperGossipIcon
+    [132060] = { file = CURSOR .. "UIBuyCursor2x", tip = true },           -- VendorGossipIcon
+    [132058] = { file = CURSOR .. "UITrainerCursor2x", tip = true },       -- TrainerGossipIcon
+    [132057] = { file = CURSOR .. "UITaxiCursor2x", tip = true },          -- TaxiGossipIcon
+    [132051] = { file = CURSOR .. "UICursorPVP2x", tip = true },           -- BattleMasterGossipIcon
+    [1673939] = { file = CURSOR .. "UITransmogrifyCursor2x", tip = true }, -- transmogrifyGossipIcon
     [132050] = { atlas = "banker" },                           -- BankerGossipIcon: the map's
     [528409] = { atlas = "auctioneer" },                       -- the auction house's: the map's
 }
 
-local row, shade
+-- Leaving: the game's open hand (its cursor's 128 piece, in the same place as the others', with no tip).
+Icons.GOODBYE = { file = CURSOR .. "UIOpenhandCursor2x" }
+
+local row
 local buttons = {}
 
 function Icons.Picture(option)
@@ -63,8 +71,13 @@ function Icons.Picture(option)
     return PICTURES[Core.Plain(option.icon)] or PICTURES[Core.Plain(option.overrideIconID)]
 end
 
+-- An answer's picture: a service's, or the hand for leaving.
+local function Picture(answer)
+    return answer.picture or (answer.goodbye and Icons.GOODBYE) or nil
+end
+
 function Icons.Shown(answer)
-    return answer.picture ~= nil and ns.options.icons ~= false
+    return ns.options.icons ~= false and Picture(answer) ~= nil
 end
 
 -------------------------------------------------------------------------------
@@ -73,6 +86,7 @@ end
 local function Tip(button)
     local answer = button.answer
     if not answer then return end
+    button.plate:SetLit(true)
     ns.Quiet.Tips(true)
     Core.ShowTip(button, answer.text ~= "" and answer.text or nil, nil, "ANCHOR_TOP")
     if answer.failure and answer.failure ~= "" and GameTooltip:IsOwned(button) then
@@ -86,14 +100,16 @@ local function Tip(button)
     end
 end
 
-local function Untip()
+local function Untip(button)
+    button.plate:SetLit(false)
     Core.HideTip()
     ns.Quiet.Tips(false)
 end
 
 local function Make(index)
     local button = CreateFrame("Button", nil, row)
-    button:SetSize(Icons.SIZE, Icons.SIZE)
+    button:SetSize(Icons.SIZE + Icons.INSET * 2, Icons.SIZE + Icons.INSET * 2)
+    button.plate = ns.Look.Plate(button)
     button.picture = button:CreateTexture(nil, "ARTWORK")
     button.lit = button:CreateTexture(nil, "HIGHLIGHT")
     button.lit:SetBlendMode("ADD")
@@ -101,8 +117,11 @@ local function Make(index)
     button.mask = button:CreateMaskTexture()
     button.mask:SetTexture(DIAMOND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     button.mask:SetSize(Icons.SIZE * 2, Icons.SIZE * 2)
-    button.mask:SetPoint("TOPLEFT", button, "TOPLEFT", (MIDDLE - 1) * Icons.SIZE, (1 - MIDDLE) * Icons.SIZE)
-    for _, texture in ipairs({ button.picture, button.lit }) do texture:SetAllPoints(button) end
+    for _, texture in ipairs({ button.picture, button.lit }) do
+        texture:SetSize(Icons.SIZE, Icons.SIZE)
+        texture:SetPoint("CENTER", button, "CENTER", 0, 0)
+    end
+    button.mask:SetPoint("TOPLEFT", button.picture, "TOPLEFT", (MIDDLE - 1) * Icons.SIZE, (1 - MIDDLE) * Icons.SIZE)
     button.masked = false -- whether the diamond is on its textures
     button:SetScript("OnClick", ns.Guard(function(self) ns.Talk.Answer(self.answer) end))
     button:SetScript("OnEnter", ns.Guard(Tip))
@@ -111,12 +130,13 @@ local function Make(index)
     return button
 end
 
--- The answer's picture on both layers; the diamond on a cursor's piece only. Greyed where the game refuses it.
+-- The answer's picture on both layers; the diamond on a cursor's piece with a tip only. Greyed where the game
+-- refuses it.
 local function Paint(button, answer)
-    local picture = answer.picture
-    local masked = picture.file ~= nil
+    local picture = Picture(answer)
+    local masked = picture.tip == true
     for _, texture in ipairs({ button.picture, button.lit }) do
-        if masked then
+        if picture.file then
             texture:SetTexture(picture.file)
             texture:SetTexCoord(unpack(PIECE))
         else
@@ -143,25 +163,23 @@ function Icons.Draw(talk)
         if row then row:Hide() end
         return
     end
-    if not row then
-        row = CreateFrame("Frame", nil, ns.Look.Root())
-        shade = ns.Look.Shade(row)
-    end
+    if not row then row = CreateFrame("Frame", nil, ns.Look.Root()) end
+    local side = Icons.SIZE + Icons.INSET * 2
     row:ClearAllPoints()
     row:SetPoint("BOTTOM", ns.Box.Frame(), "TOP", 0, Icons.GAP)
-    row:SetSize(#shown * Icons.SIZE + (#shown - 1) * Icons.SPACE + Icons.PAD * 2, Icons.SIZE + Icons.PAD * 2)
+    row:SetSize(#shown * side + (#shown - 1) * Icons.SPACE, side)
     for index, answer in ipairs(shown) do
         local button = buttons[index] or Make(index)
         button.answer = answer
         Paint(button, answer)
         button:ClearAllPoints()
-        button:SetPoint("TOPLEFT", row, "TOPLEFT", Icons.PAD + (index - 1) * (Icons.SIZE + Icons.SPACE), -Icons.PAD)
+        button:SetPoint("TOPLEFT", row, "TOPLEFT", (index - 1) * (side + Icons.SPACE), 0)
+        button.plate:SetLit(false)
         button:Show()
     end
     for index = #shown + 1, #buttons do
         buttons[index].answer = nil
         buttons[index]:Hide()
     end
-    shade:SetStrength(1)
     row:Show()
 end

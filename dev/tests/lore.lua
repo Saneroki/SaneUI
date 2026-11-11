@@ -44,6 +44,7 @@ function methods:AddMaskTexture(mask) self._masks = self._masks or {}; self._mas
 function methods:RemoveMaskTexture(mask) if self._masks then self._masks[mask] = nil end end
 
 bit = { band = function(a, b) return (a % (2 * b) >= b) and b or 0 end }
+CreateColor = function(r, g, b, a) return { r = r, g = g, b = b, a = a } end -- the plates' gradient (Core's Shape)
 ChatTypeInfo = { MONSTER_EMOTE = { r = 1, g = 0.5, b = 0.25 } }
 GOODBYE, ACCEPT, DECLINE, COMPLETE_QUEST = "Goodbye", "Accept", "Decline", "Complete Quest"
 INVTYPE_CHEST, INVTYPE_FINGER, INVTYPE_WEAPONMAINHAND, INVTYPE_WEAPON = "Chest", "Finger", "Main Hand", "One-Hand"
@@ -254,9 +255,24 @@ local function Order()
     return order
 end
 local order = Order()
-check(table.concat(order, "|") == "A Threat Within|Wolves Across the Border|Tell me more.|Kobold Camp Cleanup|Goodbye",
-      "answers: to hand in, offered, the options in the game's order, not done yet, Goodbye; the trainer not among them ("
+check(table.concat(order, "|") == "A Threat Within|Wolves Across the Border|Tell me more.|Kobold Camp Cleanup",
+      "answers: to hand in, offered, the options in the game's order, not done yet; the trainer and Goodbye not among them ("
       .. table.concat(order, "|") .. ")")
+
+-- Each answer a bar of its own, apart from the next: its border grey and its words gold under the mouse.
+local tell
+for _, frame in ipairs(W.frames) do
+    if frame.answer and frame.text and frame.text._text == "Tell me more." then tell = frame end
+end
+check(tell.plate and tell.plate.lit == false and tell.plate.shape.look.alpha == 0.6,
+      "an answer on a plate of its own, as solid as the setting says at first (60 %)")
+tell._scripts.OnEnter(tell)
+check(tell.plate.lit and tell.text._color[2] == 0.82, "under the mouse: its border lit, its words gold")
+tell._scripts.OnLeave(tell)
+check(not tell.plate.lit, "and back as it was")
+SaneUI.Core.Set(ns.name, "shade", 0)
+check(tell.plate.shape.look.alpha == 0, "Shade behind the words at 0: no plate, the words alone over the world")
+SaneUI.Core.Set(ns.name, "shade", 60)
 
 -- An NPC's services as big pictures over the talk (the icons in sight, by their place in the row).
 local function Pictures()
@@ -268,12 +284,17 @@ local function Pictures()
     return list
 end
 local pictures = Pictures()
-check(#pictures == 1 and pictures[1].answer.text == "Train me.", "the trainer stands as a picture, without words")
+check(#pictures == 2 and pictures[1].answer.text == "Train me.", "the trainer stands as a picture, without words")
+local hand = pictures[2]
+check(hand.answer.goodbye and hand.picture:GetTexture() == "Interface\\CURSOR\\UIOpenhandCursor2x"
+      and not (hand.picture._masks and hand.picture._masks[hand.mask]),
+      "Goodbye at the row's end, the game's open hand, nothing of it cut away")
 local trainer = pictures[1]
 local _, under, edge = trainer:GetParent():GetPoint(1)
 check(under == ns.Box.Frame() and edge == "TOP", "in a row over the box")
-check(trainer.picture:GetTexture() == "Interface\\CURSOR\\UITrainerCursor2x" and trainer:GetWidth() == ns.Icons.SIZE,
-      "big, in the game's own large picture of a trainer")
+check(trainer.picture:GetTexture() == "Interface\\CURSOR\\UITrainerCursor2x" and trainer.picture:GetWidth() == ns.Icons.SIZE
+      and trainer:GetWidth() == ns.Icons.SIZE + ns.Icons.INSET * 2,
+      "big, in the game's own large picture of a trainer, on a plate of its own")
 check(trainer.picture._masks and trainer.picture._masks[trainer.mask], "the cursor's tip cut away by the diamond")
 trainer._scripts.OnEnter(trainer)
 check(GameTooltip:IsOwned(trainer) and GameTooltip._text == "Train me.", "the mouse on it shows its words")
@@ -290,7 +311,7 @@ check(#Pictures() == 0 and table.concat(order, "|")
       == "A Threat Within|Wolves Across the Border|Tell me more.|Train me.|Kobold Camp Cleanup|Goodbye",
       "Services as icons off: the trainer among the answers again, in the game's order")
 SaneUI.Core.Set(ns.name, "icons", true)
-check(#Pictures() == 1 and #Order() == 5, "on again: a picture over the talk")
+check(#Pictures() == 2 and #Order() == 4, "on again: the pictures over the talk")
 
 -- The words: the first paragraph, the face talking, which of how many.
 local words
@@ -514,11 +535,11 @@ Click(vestRow, "RightButton")
 W.Wait(1)
 vestRow._scripts.OnDoubleClick(vestRow, "RightButton")
 check(#said == 0, "with a reward to choose no right click hands anything in")
-check(not vestRow.mark:IsShown(), "nor chooses one")
+check(not vestRow.plate.chosen, "nor chooses one")
 Click(box, "LeftButton")
 check(#said == 0, "a left click on the words hands nothing in")
 Click(vestRow, "LeftButton")
-check(vestRow.mark:IsShown() and #said == 0, "a left click on a reward chooses it, and only that")
+check(vestRow.plate.chosen and #said == 0, "a left click on a reward chooses it, and only that")
 W.Wait(1)
 Click(Reward("Band of Thorns"), "RightButton")
 Click(vestRow, "RightButton")
@@ -806,10 +827,10 @@ W.Fire("GOSSIP_SHOW")
 W.Wait(0)
 check(#said == 0 and talkRoot:IsShown(), "an innkeeper with more than one service: the talk")
 pictures = Pictures()
-check(#pictures == 3 and pictures[1].answer.text == "Make this inn your home."
+check(#pictures == 4 and pictures[4].answer.goodbye and pictures[1].answer.text == "Make this inn your home."
       and pictures[2].answer.text == "Let me browse your goods."
       and pictures[3].answer.text == "I would like to check my deposit box.",
-      "the hearthstone, the goods and the bank as pictures, in the game's order")
+      "the hearthstone, the goods and the bank as pictures, in the game's order, Goodbye last")
 check(pictures[1].picture:GetTexture() == "Interface\\CURSOR\\UIInnkeeperCursor2x"
       and pictures[2].picture:GetTexture() == "Interface\\CURSOR\\UIBuyCursor2x",
       "the inn as the hearthstone, the goods as the vendor's bag: the game's large pictures")
@@ -824,7 +845,7 @@ for _, line in ipairs(GameTooltip._lines or {}) do refusal = refusal or line == 
 check(GameTooltip._text == "I would like to check my deposit box." and refusal, "its tooltip says why the game refuses it")
 bank._scripts.OnLeave(bank)
 order = Order()
-check(table.concat(order, "|") == "What is there to do here?|I have the package.|Goodbye",
+check(table.concat(order, "|") == "What is there to do here?|I have the package.",
       "words to say and an option marked as a quest's stay in the column (" .. table.concat(order, "|") .. ")")
 W.Wait(1)
 said = {}
@@ -840,7 +861,7 @@ Frames(1)
 gossip.options = { { name = "Hello.", orderIndex = 1 }, { name = "Bye.", orderIndex = 2 } }
 GossipFrame:Show()
 W.Fire("GOSSIP_SHOW")
-check(talkRoot:IsShown() and #Pictures() == 0, "no service: no row over the talk")
+check(talkRoot:IsShown() and #Pictures() == 1 and Pictures()[1].answer.goodbye, "no service: Goodbye alone over the talk")
 GossipFrame:Hide()
 W.Fire("GOSSIP_CLOSED", true)
 W.Wait(1)
@@ -851,7 +872,7 @@ gossip.options = { { name = "I would like to check my deposit box.", orderIndex 
 GossipFrame:Show()
 W.Fire("GOSSIP_SHOW")
 pictures = Pictures()
-check(#pictures == 3 and pictures[1].picture._atlas == "banker"
+check(#pictures == 4 and pictures[1].picture._atlas == "banker"
       and pictures[2].picture._masks and pictures[2].picture._masks[pictures[2].mask]
       and not (pictures[1].picture._masks and pictures[1].picture._masks[pictures[1].mask]),
       "each picture cut as its kind needs, whichever icon showed what before")
@@ -910,8 +931,8 @@ local lines = Lines()
 local column, top, foot = Column()
 local right, left, moved = Sides(1)
 check(moved == 0 and right <= 1365 - ns.Answers.MARGIN, "at Size 100 % the talk stays in the middle, the column fits")
-check(#lines == 15 and lines[1].text._text == "The bank" and lines[15].text._text == "Goodbye",
-      "a guard's fourteen answers and Goodbye, all in sight while they fit the screen")
+check(#lines == 14 and lines[1].text._text == "The bank" and lines[14].text._text == "The tram",
+      "a guard's fourteen answers, all in sight while they fit the screen")
 check(top > ns.Box.Top() and foot == ns.Answers.MARGIN, "the column lifted until its foot stands on the screen's")
 check(not Arrow("top"):IsShown() and not Arrow("bottom"):IsShown() and column._wheel == false,
       "no arrows, no wheel while everything fits")
@@ -932,18 +953,18 @@ check(lines[1].text._text == "The auction house" and #lines == 12, "the wheel do
 check(Arrow("top"):IsShown() and Arrow("bottom"):IsShown(), "arrows over and under it, more both ways")
 for _ = 1, 6 do Arrow("bottom")._scripts.OnClick(Arrow("bottom")) end
 lines = Lines()
-check(lines[1].text._text == "The gryphon master" and lines[#lines].text._text == "Goodbye",
+check(lines[1].text._text == "The inn" and lines[#lines].text._text == "The tram",
       "a click on the arrow goes on a line, no further than the last line")
 check(Arrow("top"):IsShown() and not Arrow("bottom"):IsShown(), "at the end: the arrow over it alone")
 said = {}
-lines[#lines - 1]._scripts.OnClick(lines[#lines - 1])
+lines[#lines]._scripts.OnClick(lines[#lines])
 check(said[1] == "option 14", "a line brought into sight answers as ever")
 column._scripts.OnMouseWheel(column, 1)
-check(Lines()[1].text._text == "The inn", "the wheel up: a line back")
+check(Lines()[1].text._text == "The auction house", "the wheel up: a line back")
 -- The words turned: the box's height changes and the column is placed anew.
 UIParent:SetHeight(1200)
 Click(box, "LeftButton")
-check(#Lines() == 15, "the screen grown, the next paragraph: the column placed anew, everything in sight")
+check(#Lines() == 14, "the screen grown, the next paragraph: the column placed anew, everything in sight")
 UIParent:SetHeight(768)
 GossipFrame:Hide()
 W.Fire("GOSSIP_CLOSED", true)
@@ -952,7 +973,7 @@ Frames(1)
 Guard()
 check(Lines()[1].text._text == "The bank", "a new talk starts at its first line")
 SaneUI.Core.Set(ns.name, "size", 100)
-check(#Lines() == 15 and not Arrow("top"):IsShown(), "Size back at 100 %: everything in sight again")
+check(#Lines() == 14 and not Arrow("top"):IsShown(), "Size back at 100 %: everything in sight again")
 check(select(3, Sides(1)) == 0, "and the talk in the middle again")
 GossipFrame:Hide()
 W.Fire("GOSSIP_CLOSED", true)

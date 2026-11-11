@@ -3,13 +3,15 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Lore - Answers
 --  What you can answer, a column beside the words (Saneroki, 2026-10-28): its
---  top level with the box's top, right of it. A line an answer, each on its own
---  soft shade, darker under the mouse: the game's picture for its kind at the
+--  top level with the box's top, right of it. A line an answer, each a dark bar
+--  of its own (Look.Plate), its border grey and its words gold under the mouse,
+--  apart from the next (Saneroki, 2026-11-11): the game's picture for its kind at the
 --  left (a quest to hand in, offered, not done yet; the NPC's own picture for
 --  its other options), the words beside it. A quest far below your level is
 --  dimmed, as the game does; an answer that cannot be given yet (a quest not
 --  done) is greyed out. A click gives the answer (Talk.Answer). An NPC's
---  service with a large picture stands over the talk instead (Icons.lua).
+--  service with a large picture, and Goodbye, stand over the talk instead
+--  (Icons.lua).
 --  Always on the screen (Saneroki, 2026-11-11: a guard's many answers went
 --  past its bottom, out of reach): a column that would reach past the screen's
 --  foot is lifted until it stands on it; one taller than the screen shows the
@@ -28,7 +30,7 @@ local Answers = {}
 ns.Answers = Answers
 
 Answers.WIDTH = 288 -- a line's width
-Answers.GAP = 34    -- between the box and the column
+Answers.GAP = 10    -- between the box and the column, as between the box and the quest
 Answers.SPACE = 4   -- between two lines
 Answers.PAD = 7     -- inside a line's shade
 Answers.ICON = 16
@@ -56,7 +58,7 @@ local first = 1   -- the first line shown
 local drawn       -- the talk they are of: a new one starts at its first line
 
 local function Hover(line, on)
-    line.shade:SetStrength(on and 2 or 1)
+    line.plate:SetLit(on)
     if not line.answer or line.answer.disabled then return end
     if on then line.text:SetTextColor(1, 0.82, 0) else line.text:SetTextColor(1, 1, 1) end
 end
@@ -65,7 +67,7 @@ local function Line(index)
     if lines[index] then return lines[index] end
     local line = CreateFrame("Button", nil, column)
     line:SetWidth(Answers.WIDTH)
-    line.shade = ns.Look.Shade(line)
+    line.plate = ns.Look.Plate(line)
     line.icon = line:CreateTexture(nil, "ARTWORK")
     line.icon:SetSize(Answers.ICON, Answers.ICON)
     line.icon:SetPoint("TOPLEFT", line, "TOPLEFT", Answers.PAD, -Answers.PAD)
@@ -100,8 +102,9 @@ local function Fill(line, answer)
     else
         line.text:SetTextColor(1, 1, 1)
     end
-    line.shade:SetStrength(1)
+    line.plate:SetLit(false)
     line:SetHeight(math.max(Answers.ICON, Core.Plain(line.text:GetStringHeight()) or 0) + Answers.PAD * 2)
+    line.plate:Fit()
 end
 
 local function Arrow(direction)

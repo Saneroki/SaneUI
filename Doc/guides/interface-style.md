@@ -335,22 +335,28 @@ Speed Leveling's guide, straight on the world without a window (`src/SpeedLeveli
 ### The talk over the world
 
 Lore's talk with an NPC (`src/Lore/`; Saneroki, 2026-10-28: the dialogues "the same way, but more transparent"), as
-the guide over the world: no window, no paper.
+the guide over the world: no window, no paper. Redesigned 2026-11-11 (Saneroki: the shades and the answers "fading
+into each other ... doesn't look good"; of the layouts offered, side by side; Goodbye a picture over the talk too):
+every part on a plate of its own in the make of the loot window and the guide's steps.
 
-- **See-through over the world:** each part on a soft dark shade whose sides fade out into the world (its darkness a
-  setting, 30 % at first), the rest of the interface faded out meanwhile.
-- **Low in the middle:** the NPC's own 3D face with no frame or background at the left, its name beside it in the
-  game's gold, the paragraph under the name in white, *2/4* small and grey at the bottom right.
-- **The answers in a column right of the words,** a shade a line, darker under the mouse, the game's own pictures
-  for a quest's kind. Always on the screen: lifted, else a line at a time under the game's small scroll arrows.
-- **The NPC's services as big pictures over the talk** (Saneroki, 2026-11-11: "big icons that don't have any text on
-  them"): a row centred over the box on its shade, the game's own large picture of each kind (the cursor it shows over
-  such an NPC, its tip cut away; the map's for the bank and the auction house), lit under the mouse, greyed where the
+- **Plates, never fading:** round corners (6), a thin border nearly black, a dark grey darkening to its foot, as solid
+  as a setting (60 % at first); the parts stand 10 apart, so nothing runs into anything. The rest of the interface
+  faded out meanwhile.
+- **Side by side, low in the middle:** the words' plate (the NPC's own 3D face with no frame at the left, its name
+  beside it in the game's gold, the paragraph under the name in white, *2/4* small and grey at the bottom right); the
+  answers beside it, the quest's plate under it.
+- **The answers, each a dark bar,** its border grey and its words gold under the mouse, the game's own pictures for a
+  quest's kind. Always on the screen: lifted, else a line at a time under the game's small scroll arrows.
+- **The pictures over the words** (Saneroki, 2026-11-11: "big icons that don't have any text on them"; "the goodbye
+  should also be a top icon"): a row centred over the words, each on a plate of its own, the game's own large picture
+  of each kind (the cursor it shows over such an NPC, its tip cut away; the map's for the bank and the auction house),
+  and last Goodbye (Decline on a quest offered) as the game's raised open hand; lit under the mouse, greyed where the
   game refuses it; the words in the tooltip.
-- **The quest under the words,** as wide: its title in gold, headings in gold, each reward a line: its icon, its name
-  in its quality's colour, under it what it is in grey (*Leather · Chest*, *Can't use* in red), at the right what it
-  sells for and what it changes (green up, red down).
-- **Words in Expressway** with a thin dark outline, as the guide over the world.
+- **The quest under the words,** as wide: its title in gold, headings in gold, each reward a bar as the loot window's
+  lines, in its quality's colour deepened so its words read (green for uncommon, grey for common): its icon, its name
+  in white, under it what it is (*Leather · Chest*, *Can't use* in red), at the right what it sells for and what it
+  changes (green up, red down); a reward chosen, its border gold.
+- **Words in the game's outlined nameplate font,** as the loot window's.
 
 ### The loot window
 

@@ -5,7 +5,8 @@
 -- face is a dashed box. The module is LabTalk in the console: LabGossip(n) opens the talk again with the first n
 -- options (LabGossip() all of them), LabGuard() a city guard's with fourteen places to ask the way to (its column lifted
 -- onto the screen; SaneUI.Core.Set("Lore", "size", 150) makes it taller than the screen: the wheel and the arrows go
--- through it), LabTalk.Talk.Redraw() draws it anew.
+-- through it), LabQuest("detail"), ("progress") or ("complete") a quest at that screen, its rewards read,
+-- LabTalk.Talk.Redraw() draws it anew.
 
 -- The game's gossip and quest windows, closed, as Lore's Native.lua holds them (the lab loads neither).
 CreateFrame("Frame", "GossipFrame", UIParent):Hide()
@@ -74,12 +75,68 @@ C_GossipInfo.CloseGossip = function()
     GossipFrame:Hide()
     Lab.Fire("GOSSIP_CLOSED")
 end
+-- A quest of Eagan Peltskinner's at each of its screens, LabQuest("detail"), ("progress") or ("complete"): its words,
+-- what it asks for, three rewards to choose from (leather, mail, a sword) and three potions besides, experience and
+-- money; the items are the game's own from the data master.
+local QUEST = {
+    id = 33, giver = "Eagan Peltskinner", title = "Wolves Across the Border",
+    text = "Hey there, friend. The wolves have grown bold of late, coming down from the hills to prey on our "
+        .. "livestock.\n\n<Eagan points to the tree line.> Bring me their meat and I'll see you rewarded. "
+        .. "Mind the big ones near the river.",
+    objectives = "Bring 8 Tough Wolf Meat to Eagan Peltskinner in Northshire.",
+    progress = "Have you brought the meat? The farmers are counting on us.",
+    reward = "Fine work! That will keep the wolves away for a while. Take one of these, as promised.",
+    required = { { 750, 8 } }, choices = { { 7280, 1 }, { 4946, 1 }, { 1161, 1 } }, rewards = { { 118, 3 } },
+    xp = 450, money = 1500,
+}
+local stage -- the screen shown: "detail", "progress" or "complete"
+local function Things(kind)
+    return kind == "choice" and QUEST.choices or kind == "reward" and QUEST.rewards or QUEST.required
+end
+GetQuestID = function() return QUEST.id end
+GetTitleText = function() return QUEST.title end
+GetQuestText = function() return QUEST.text end
+GetObjectiveText = function() return QUEST.objectives end
+GetProgressText = function() return QUEST.progress end
+GetRewardText = function() return QUEST.reward end
+GetSuggestedGroupSize = function() return 0 end
+IsQuestCompletable = function() return true end
+GetQuestMoneyToGet = function() return 0 end
+GetNumQuestChoices = function() return stage == "progress" and 0 or #QUEST.choices end
+GetNumQuestRewards = function() return stage == "progress" and 0 or #QUEST.rewards end
+GetNumQuestItems = function() return stage == "progress" and #QUEST.required or 0 end
+GetQuestItemInfo = function(kind, index)
+    local thing = Things(kind)[index]
+    local name, _, quality, _, _, _, _, _, _, icon = C_Item.GetItemInfo(thing[1])
+    return name, icon, thing[2], quality, true, thing[1]
+end
+GetQuestItemLink = function(kind, index)
+    local _, link = C_Item.GetItemInfo(Things(kind)[index][1])
+    return link
+end
+GetRewardMoney = function() return QUEST.money end
+GetRewardXP = function() return QUEST.xp end
+GetRewardHonor = function() return 0 end
+GetRewardTitle = function() return nil end
+C_QuestLog = C_QuestLog or {}
+C_QuestLog.ShouldShowQuestRewards = function() return true end
+local function Finished(what)
+    print("Answered: " .. what)
+    QuestFrame:Hide()
+    Lab.Fire("QUEST_FINISHED")
+end
+AcceptQuest = function() Finished("accept") end
+CompleteQuest = function() Finished("complete") end
+GetQuestReward = function(choice) Finished("the reward " .. choice) end
+CloseQuest = function() Finished("goodbye") end
+
 -- Space bound while the talk shows (Keys.lua): the lab has no key bindings.
 SetOverrideBindingClick = SetOverrideBindingClick or function() end
 ClearOverrideBindings = ClearOverrideBindings or function() end
 local named = UnitName
 UnitName = function(unit, ...)
     if unit == "npc" then return guard and "Stormwind City Guard" or "Innkeeper Farley" end
+    if unit == "questnpc" then return QUEST.giver end
     return named(unit, ...)
 end
 
@@ -97,6 +154,13 @@ function LabGuard()
     guard = true
     GossipFrame:Show()
     Lab.Fire("GOSSIP_SHOW")
+end
+
+function LabQuest(screen)
+    stage = screen or "detail"
+    if GossipFrame:IsShown() then C_GossipInfo.CloseGossip() end
+    QuestFrame:Show()
+    Lab.Fire(stage == "detail" and "QUEST_DETAIL" or stage == "progress" and "QUEST_PROGRESS" or "QUEST_COMPLETE", 0)
 end
 
 Lab.OnLogin(function()
