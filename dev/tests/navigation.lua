@@ -7314,6 +7314,7 @@ do
     local before = #W.printed
     SlashCmdList.SANEUI("nodes")
     local said = table.concat(W.printed, "\n", before + 1)
+    check(said:find("it answers the points an addon asks: yes", 1, true), "/sane nodes: this build's minimap answers ours")
     check(said:find("UpdateMouseoverAtPoint yes", 1, true) and said:find("Found herbs yes", 1, true)
         and said:find("the finder on now: herb", 1, true) and said:find("1 found now, 1 drawn", 1, true)
         and said:find("lines read: Silverleaf", 1, true) and said:find("a look now: 625 points asked", 1, true)
@@ -7327,6 +7328,19 @@ do
     check(said:find("625 answered, 0 lines read, 625 hidden by the game, 0 herbs or ore named", 1, true),
         "lines the game keeps secret: counted as hidden, none named")
     C_TooltipInfo.GetMinimapMouseover = ask
+end
+-- Forever from build 70862: its minimap answers no point an addon asks, only the real mouse: nothing found there.
+do
+    local build = W.build
+    W.build = Found.SILENT
+    check(Found.SILENT == 70862 and not Found.Answers(), "Forever's build 70862: the minimap answers no point of ours")
+    local before = #W.printed
+    SlashCmdList.SANEUI("nodes")
+    check(table.concat(W.printed, "\n", before + 1):find("it answers the points an addon asks: no", 1, true),
+        "/sane nodes says so")
+    W.build = Found.SILENT - 1
+    check(Found.Answers(), "a build before it: it answers")
+    W.build = build
 end
 gather.dots[1] = nil
 player.x = 0.25

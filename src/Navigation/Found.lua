@@ -21,8 +21,10 @@ local _, ns = ...
 --  out to where the answer stops halved a few times, to the left and right,
 --  then down and up from between them. How far a dot answers is learnt from
 --  those edges, and the sweep's step follows it. A client whose minimap does not
---  answer so (Retail) finds none (Found.Works): no pictures, and no far ones on
---  the screen (Glints.lua); its finders still switch, the game's own dots show.
+--  answer so finds none (Found.Answers, Found.Works): no pictures, and no far
+--  ones on the screen (Glints.lua); its finders still switch, the game's own dots
+--  show. So Retail, and Forever from build 70862 on (Found.SILENT): its minimap
+--  answers only what lies under the real mouse, whatever point is asked.
 --
 --  A sweep done, the dots of the kind whose finder is on are what the game
 --  shows now: one it covered and found no more is gone. Those it did not cover,
@@ -51,6 +53,10 @@ Found.KEEP = 300    -- seconds one of the kind whose finder is off is kept
 Found.FAR = 2       -- and how far it may be: so many of the minimap's radii
 Found.LOOTED = 10   -- yards: a looted node takes the nearest found one this near with it
 Found.MOST = 60     -- pictures drawn at most
+-- The first build of Forever whose minimap answers no point an addon asks, only what lies under the real mouse
+-- (1.60.1.70862, 2026-11-07: Minimap:UpdateMouseoverAtPoint no longer moves its point). From it on nothing is
+-- found (Found.Answers).
+Found.SILENT = 70862
 -- The leather ring Saneroki picked for the found ones (dev/tools/mark-art), round here; the far sparkles have it with
 -- its point (Glints.lua). Its picture is drawn round the middle of its hole; in the picture's side, the hole's radius
 -- and the ring's outer one (the art tool keeps 2 of 256 texels clear round it).
@@ -508,10 +514,25 @@ function Found.Update()
     drawn.count = nil
 end
 
+-- Whether the minimap has the calls a sweep asks it with.
+local function Asked(minimap)
+    local tooltips = rawget(_G, "C_TooltipInfo")
+    return minimap ~= nil and minimap.UpdateMouseoverAtPoint ~= nil and minimap.SetUsingSoftCursor ~= nil
+        and tooltips ~= nil and tooltips.GetMinimapMouseover ~= nil
+end
+
+-- Whether this client's minimap answers the points an addon asks: its calls there, in a Forever build before
+-- Found.SILENT. Where it does not, nothing is found (Start): the game's own dots show alone, no far ones.
+function Found.Answers()
+    if not (Core.FOREVER and Asked(rawget(_G, "Minimap"))) then return false end
+    local _, build = Core.Ask(GetBuildInfo)
+    build = tonumber(build)
+    return build ~= nil and build < Found.SILENT
+end
+
 function Found.Start()
     local minimap = rawget(_G, "Minimap")
-    if overlay or not minimap or not minimap.UpdateMouseoverAtPoint or not minimap.SetUsingSoftCursor
-        or not (C_TooltipInfo and C_TooltipInfo.GetMinimapMouseover) then return end
+    if overlay or not Found.Answers() then return end
     overlay = CreateFrame("Frame", nil, minimap)
     overlay:SetAllPoints(minimap)
     overlay:SetFrameLevel(minimap:GetFrameLevel() + 2)
@@ -590,8 +611,10 @@ function Found.Check(lines)
     Add("its minimap: %s; UpdateMouseoverAtPoint %s, SetUsingSoftCursor %s; C_TooltipInfo.GetMinimapMouseover %s",
         Said(minimap ~= nil), Said(minimap and minimap.UpdateMouseoverAtPoint ~= nil),
         Said(minimap and minimap.SetUsingSoftCursor ~= nil), Said(tooltips and tooltips.GetMinimapMouseover ~= nil))
+    Add("it answers the points an addon asks: %s (Forever before build %d, its calls there)", Said(Found.Answers()),
+        Found.SILENT)
     if not overlay then
-        Add("our frame over it: none (a call above was missing at login): nothing is found")
+        Add("our frame over it: none (the minimap answers no point of ours): nothing is found")
     else
         Add("our frame over it: shown %s, in sight %s; the minimap in sight %s, %s wide, scale %s; its level %s, ours %s",
             Method(overlay, "IsShown"), Method(overlay, "IsVisible"), Method(minimap, "IsVisible"),
@@ -612,7 +635,8 @@ function Found.Check(lines)
         minimap and select(2, pcall(SweepKind, minimap)) or "none", Said(heard.stop))
     Add("since login: %d sweeps; %s; %d found now, %d drawn", sweeps, Counted(heard), #found, drawn.shown or 0)
     if heard.texts[1] then Add("lines read: %s", table.concat(heard.texts, "; ")) end
-    local probe = overlay and minimap and Probe(minimap)
+    -- (asked wherever the calls are, so a build that answers again shows here)
+    local probe = Asked(minimap) and Probe(minimap)
     if probe then
         Add("a look now: %s%s", Counted(probe), probe.problem and ("; it failed: " .. probe.problem) or "")
         if probe.texts[1] then Add("its lines: %s", table.concat(probe.texts, "; ")) end

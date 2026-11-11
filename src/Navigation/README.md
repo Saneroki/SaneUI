@@ -175,7 +175,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   until the button is pressed again: the button counts as the page, the short way between the two is free, and a
   menu one of its cells opened holds it. The button again, its X or Esc closes it too, and so does the map filling
   the screen; the wheel scrolls it on a low screen.
-- **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): the herbs and ore the game's minimap
+- **Found herbs and ore** (the pin filter's *Found herbs* and *Found ore*): **none in Forever from build 70862 on**
+  (2026-11-07): its minimap answers no point an addon asks any more, only what lies under the real mouse
+  (`Found.SILENT`, `Found.Answers`), so nothing is found, the game's own dots show alone and the far ones' switch is
+  gone; the switches still turn the finders on and off. Before it: the herbs and ore the game's minimap
   shows around you now, each in the picture of what it gives (Peacebloom's flower, Copper Ore's lump) in a round
   ring of stitched leather (the far herbs and ore below wear it with a point), grey while your skill is too low for it; on our small map and on the game's
   own minimap alike. Each switch is also its finder: *Found herbs* on puts Find Herbs on, off takes it off (or
@@ -1173,7 +1176,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
-| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there); what is found goes to `Core.Sight` for the guide's detours; `/sane nodes` |
+| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there); what is found goes to `Core.Sight` for the guide's detours; `/sane nodes`. Nothing found where the minimap answers no point of ours (Retail; Forever from build 70862, `Found.SILENT`) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
