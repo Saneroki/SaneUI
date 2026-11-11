@@ -7573,7 +7573,8 @@ end)()
         and shown[1].icon._shown and shown[1]._points[1][5] == 0
         and shown[2]._points[1][5] == -(RareTracker.HEIGHT + RareTracker.GAP),
         "the chest on the minimap too: its notice over the rare's, the game's icon of its mark; the rare told once")
-    check(not RareTracker.Found({ kind = "rare", thing = "npc:70", name = "A rare" }), "told again only after a while")
+    check(not RareTracker.Found({ kind = "rare", thing = "npc:70", name = "A rare" }) and #shown == 2,
+        "seen again while its notice shows: that one kept, no other, no sound")
 
     -- The mouse on it: its pin's tooltip; a double click: the map pin there; a drag moves them; a right click: away
     notice._mouseOver = true
@@ -7610,16 +7611,60 @@ end)()
     shown[1]._scripts.OnClick(shown[1], "RightButton")
     check(#shown == 0, "each away")
 
+    -- How long: until it is over, no time. A rare's mark followed as it walks; dead, it goes; a chest's mark gone (taken);
+    -- the creature seen dead; you far from it
+    local v3 = { name = "A third rare", atlasName = "VignetteKill", objectGUID = "Creature-0-1-2-3-72-0000AE", onMinimap = true }
+    local at, position = 0.7, C_VignetteInfo.GetVignettePosition
+    C_VignetteInfo.GetVignetteInfo = function(guid) if guid == "v3" then return v3 end end
+    C_VignetteInfo.GetVignettePosition = function(guid, map)
+        if guid == "v3" and map == 1429 then return CreateVector2D(at, 0.3) end
+    end
+    local function Looked(seconds)
+        W.Wait(seconds or 0)
+        RareTracker.holder._scripts.OnUpdate(RareTracker.holder, 1)
+    end
+    W.Fire("VIGNETTE_MINIMAP_UPDATED", "v3", true)
+    local third = shown[1]
+    check(#shown == 1 and third.find.vignette == "v3" and third.find.guid == "Creature-0-1-2-3-72-0000AE"
+        and third.where:GetText() == "91 m west", "a rare's mark: its notice, its mark and its creature kept, 100 yards west")
+    at = 0.725
+    Looked(600)
+    check(#shown == 1 and not third.gone and near(third.find.x, 0.725) and near(third.pin.x, 0.725)
+        and third.where:GetText() == "46 m west", "ten minutes on: still there, no time ends it; where its mark is now")
+    v3.isDead = true
+    Looked()
+    check(third.gone, "the rare dead: it fades out")
+    Looked(RareTracker.FADE_OUT)
+    check(#shown == 0, "and goes")
+    RareTracker.Found({ kind = "treasure", thing = "object:97", name = "A chest", vignette = "v5", map = 1429, x = 0.75, y = 0.3 })
+    Looked()
+    Looked(RareTracker.FADE_OUT)
+    check(#shown == 0, "a chest whose mark is gone (taken): it goes")
+    local guid, dead = rawget(_G, "UnitGUID"), rawget(_G, "UnitIsDead")
+    RareTracker.Found({ kind = "rare", thing = "npc:73", name = "A fourth rare", guid = "Creature-0-1-2-3-73-0000AF", map = 1429,
+                        x = 0.75, y = 0.3 })
+    Looked()
+    check(#shown == 1 and not shown[1].gone and shown[1].where:GetText() == TEXT.near, "a rare where you stand: near you")
+    UnitGUID = function(unit) return unit == "target" and "Creature-0-1-2-3-73-0000AF" or nil end
+    UnitIsDead = function(unit) return unit == "target" end
+    Looked()
+    Looked(RareTracker.FADE_OUT)
+    check(#shown == 0, "the creature seen dead (your target): it goes")
+    UnitGUID, UnitIsDead = guid, dead
+    RareTracker.Found({ kind = "rare", thing = "npc:74", name = "A fifth rare", map = 1429, x = 0.75, y = 0.3 })
+    player.x = 0.05
+    Looked()
+    Looked(RareTracker.FADE_OUT)
+    check(#shown == 0, "far from it (1400 yards): it goes")
+    player.x = 0.75
+    C_VignetteInfo.GetVignettePosition = position
+
     -- The test command: Core's nearest rare on your map; its time, then it fades out and goes
     SlashCmdList.SANEUI("testraretracker")
     check(#shown == 1 and shown[1].find.thing == "npc:70" and shown[1].name:GetText() == "An Old Rare"
         and shown[1].find.x and RareTracker.holder._shown, "/sane testraretracker: a notice of the nearest rare of Core's data")
-    W.Wait(RareTracker.FADE_IN + RareTracker.HOLD + 0.1)
-    RareTracker.holder._scripts.OnUpdate(RareTracker.holder, 1)
-    check(#shown == 1 and shown[1].gone, "its time up: it fades out")
-    W.Wait(RareTracker.FADE_OUT + 0.1)
-    RareTracker.holder._scripts.OnUpdate(RareTracker.holder, 1)
-    check(#shown == 0 and not RareTracker.holder._shown, "and goes")
+    RareTracker.Hide()
+    check(#shown == 0 and not RareTracker.holder._shown, "gone with the rest")
     SlashCmdList.SANEUI("testraretracker chest")
     check(#shown == 1 and shown[1].find.kind == "treasure" and shown[1].find.x and shown[1].what:GetText() == TEXT.treasure,
         "chest: a treasure's notice")
@@ -7655,8 +7700,10 @@ end)()
     UnitName = function() return "Another Rare" end
     W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
     check(#shown == 1 and shown[1].find.thing == "npc:71" and shown[1].name:GetText() == "Another Rare"
-        and shown[1].what:GetText() == "Rare, Level 30" and shown[1].where:GetText() == TEXT.near,
-        "a rare's nameplate: told, its level as the game shows it, near you (Core's data knows no point of it)")
+        and shown[1].what:GetText() == "Rare, Level 30" and shown[1].where:GetText() == TEXT.near
+        and near(shown[1].find.x, 0.75) and shown[1].find.guid == "Creature-0-1-2-3-71-0000AD",
+        "a rare's nameplate: told, its level as the game shows it, near you (where you see it from: Core's data knows no "
+        .. "point of it)")
     for name, fn in pairs(units) do _G[name] = fn end
 
     UIParent._top, UIParent._right, window._bottom, window._shown, ns.Canvas.camera = top, right, windowBottom, windowShown, camera

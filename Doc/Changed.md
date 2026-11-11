@@ -20,6 +20,23 @@ Saneroki: "Sometimes there are a lot of conversation options. Like talking to a 
 - **Tests:** `dev/tests/lore.lua` (188): a city guard's fourteen answers and Goodbye on a 16:9 screen, lifted with its foot on the margin at Size 100 %; at 150 % the twelve that fit, the arrows and the wheel, a click to the end and no further, a line brought into sight answering, the wheel back, the talk moved left to the margins, the column placed anew as the words turn, a new talk at its first line, Size back at 100 % and the talk in the middle again. The lab scene `talk`: `LabGuard()`. Lore's README, `Doc/ideas/Dialogue.md` (decided), `Doc/guides/interface-style.md`, `Doc/guides/ui-lab.md`, `Doc/changelog.txt`.
 - A `/reload` takes it in.
 
+### Navigation: the rare tracker's notices stay until the find is over (Saneroki, 2026-11-11)
+Saneroki: "it should not remove the tracker window when you double click on it. Only right click, the rare dead or
+rightclicking it will remove the window. Reload and moving far enough away from it will also remove it eventually".
+Card #108.
+- **`src/Navigation/RareTracker.lua`:** no time ends a notice (`HOLD` gone). Every `LOOK` second `Over` asks: its mark
+  (the game's vignette, kept as `vignette`) gone or dead (a rare killed, a chest taken, out of the game's reach), the
+  creature (`guid`) seen dead (`Dead`: the target, the mouseover, each nameplate's `namePlateUnitToken`), or the
+  player `FAR` (400) yards away, on another plane or with no place (an instance): then it fades out and goes. A
+  right click still sends it away, a double click only puts the map pin. `Follow`: a rare's notice keeps its mark's
+  place as it walks (the pin too). A rare seen in person without a point of Core's data stands where the player saw it
+  from. Seen again while its notice shows (`Again`): that notice kept and given what it lacked, no sound, no new one.
+  Under `NEAR` (25) yards: *Near you*.
+- **`src/Navigation/Navigation.lua`:** the switch's tip says how a notice ends.
+- **Tests:** `dev/tests/navigation.lua` (1737): seen again while shown; ten minutes on still there, its mark followed;
+  its mark dead, a chest's mark gone, the creature seen dead, far away: each goes; a nameplate's rare where you stood.
+- A `/reload` takes it in.
+
 ### Navigation: the travel overlay a little higher (Saneroki, 2026-11-11)
 Saneroki: "move both widgets a little more up", kept for the travel overlay once the Sane Rare tracker went under the
 minimap.

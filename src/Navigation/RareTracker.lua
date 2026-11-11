@@ -20,15 +20,20 @@ local _, ns = ...
 --                   click on a pin does; a right click sends it away; a drag with the left button moves the notices,
 --                   kept where they are let go (ns.store.rareTracker; /sane testraretracker reset: under the minimap
 --                   again)
---      how long     RareTracker.HOLD seconds, and as long as the mouse is on it; then it fades out. At most
---                   RareTracker.MOST at once, the newest nearest their place, the others under it (over it in the
---                   screen's lower half); the same thing told again only after RareTracker.AGAIN seconds
+--      how long     until it is sent away (a right click), the rare is dead or the treasure taken (its mark gone or
+--                   dead, the creature seen dead: your target, the mouse on it, its nameplate), or you are
+--                   RareTracker.FAR yards from it, in another part of the world or an instance; then it fades out
+--                   (Saneroki, 2026-11-11). A /reload ends them too. At most RareTracker.MOST at once, the newest
+--                   nearest their place, the others under it (over it in the screen's lower half); the same thing
+--                   seen again while its notice shows: that notice kept, no sound; told again only after
+--                   RareTracker.AGAIN seconds
 --      settings     Sane Rare tracker (on), what it tells of (rares, treasures, events), its sound
 --      /sane testraretracker  a notice as a find brings it, with its sound: the nearest rare of Core's data on
 --                   your map, else a made-up one ahead of you; "chest" a treasure's, "event" an event's; "reset" the
 --                   notices' place under the minimap again
 --
---      RareTracker.Found(find, test)  tells of a find: { kind, thing, name, map, x, y, level, elite, atlas };
+--      RareTracker.Found(find, test)  tells of a find: { kind, thing, name, map, x, y, level, elite, atlas, vignette
+--                                     (the game's mark of it), guid (the creature's) };
 --                                     test: whatever the settings say and whenever it was told last
 --      RareTracker.Kind(atlas)        what a mark of the game's is: "rare", "treasure" or "event"
 --      RareTracker.Hide()             every notice gone (the module stands down, the switch goes off)
@@ -49,7 +54,8 @@ RareTracker.ICON = 40
 RareTracker.PAD = 6
 RareTracker.NAME, RareTracker.LINE = 19, 14 -- the words' sizes
 RareTracker.DARK = 0.5   -- the shade
-RareTracker.HOLD = 40
+RareTracker.FAR = 400    -- yards from it: it goes
+RareTracker.NEAR = 25    -- yards from it: near you
 RareTracker.FADE_IN, RareTracker.FADE_OUT = 0.25, 1
 RareTracker.MOST = 3
 RareTracker.AGAIN = 300
@@ -158,18 +164,61 @@ end
 -------------------------------------------------------------------------------
 --  Where it is, from you
 -------------------------------------------------------------------------------
--- How far a find is and which way, in words; nil where that cannot be told (no place, another plane).
-local function Where(find)
+-- How far a find is from you in yards, and which way (degrees from north, clockwise); math.huge where you are in another
+-- part of the world (another plane) or the game tells no place of yours (an instance); nil where it has no place.
+local function Yards(find)
     if not (find.map and find.x and find.y) then return nil end
     local home, u, v = Coords.PlaneOf(find.map), nil, nil
     if home then u, v = Coords.MapToPlane(find.map, find.x, find.y, home) end
+    if not u then return nil end
     local plane, pu, pv = Coords.Player()
-    if not (u and pu) or plane ~= home then return nil end
+    if plane ~= home or not pu then return math.huge end
     local east, north = u - pu, v - pv
-    local yards = math.sqrt(east * east + north * north)
-    local turn = math.deg(math.atan2(east, north)) % 360 -- from north, clockwise
-    local way = TEXT.ways[math.floor((turn + 22.5) / 45) % 8 + 1]
-    return TEXT.away:format(Core.Distance(yards), way)
+    return math.sqrt(east * east + north * north), math.deg(math.atan2(east, north)) % 360
+end
+
+-- How far a find is and which way, in words: near you where it has no place or stands close.
+local function Where(find)
+    local yards, turn = Yards(find)
+    if not yards or yards <= RareTracker.NEAR or yards == math.huge then return TEXT.near end
+    return TEXT.away:format(Core.Distance(yards), TEXT.ways[math.floor((turn + 22.5) / 45) % 8 + 1])
+end
+
+-- Whether the game shows that creature dead now: your target, the one under the mouse, one with a nameplate.
+local function Dead(guid)
+    local function Is(unit)
+        return unit ~= nil and Core.Ask(UnitGUID, unit) == guid and Core.Ask(UnitIsDead, unit) == true
+    end
+    if Is("target") or Is("mouseover") then return true end
+    local plates = rawget(_G, "C_NamePlate")
+    local list = type(plates) == "table" and Core.Ask(plates.GetNamePlates)
+    for _, plate in ipairs(type(list) == "table" and list or {}) do
+        if Is(Core.Plain(plate.namePlateUnitToken)) then return true end
+    end
+    return false
+end
+
+-- A find's place as its mark has it now (a rare walks); whether it is over: its mark gone (dead, taken, out of the game's
+-- reach) or dead, the creature seen dead, or you too far from it.
+local function Follow(notice)
+    local find = notice.find
+    if not (find.vignette and find.map) then return end
+    local position = Core.Ask(C_VignetteInfo.GetVignettePosition, find.vignette, find.map)
+    local x, y = type(position) == "table" and Core.Plain(position.x), type(position) == "table" and Core.Plain(position.y)
+    if x and y then
+        find.x, find.y = x, y
+        notice.pin.x, notice.pin.y = x, y
+    end
+end
+
+local function Over(find)
+    if find.vignette then
+        local info = Core.Ask(C_VignetteInfo.GetVignetteInfo, find.vignette)
+        if type(info) ~= "table" or Core.Plain(info.isDead) == true then return true end
+    end
+    if find.guid and Dead(find.guid) then return true end
+    local yards = Yards(find)
+    return yards ~= nil and yards > RareTracker.FAR
 end
 
 -- What it is, and its level: "Rare Elite, Level 24", "Treasure".
@@ -390,7 +439,7 @@ function Let(notice)
     end
 end
 
--- Every RareTracker.LOOK seconds while one shows: how far each is now, and those whose time is up fade out and go.
+-- Every RareTracker.LOOK seconds while one shows: where each is now and how far; one that is over fades out and goes.
 function Look(_, elapsed)
     since = since + (elapsed or 0)
     if since < RareTracker.LOOK then return end
@@ -398,13 +447,16 @@ function Look(_, elapsed)
     local now = GetTime()
     for index = #shown, 1, -1 do
         local notice = shown[index]
-        if notice.gone and now >= notice.gone then
-            Let(notice)
-        elseif not notice.gone and now >= notice.ends and not notice:IsMouseOver() then
-            notice.gone = now + RareTracker.FADE_OUT
-            notice.fade:To(0, RareTracker.FADE_OUT)
+        if notice.gone then
+            if now >= notice.gone then Let(notice) end
         else
-            notice.where:SetText(Where(notice.find) or TEXT.near)
+            Follow(notice)
+            if Over(notice.find) then
+                notice.gone = now + RareTracker.FADE_OUT
+                notice.fade:To(0, RareTracker.FADE_OUT)
+            else
+                notice.where:SetText(Where(notice.find))
+            end
         end
     end
 end
@@ -443,14 +495,30 @@ local function Known(find)
     if find.elite == nil then find.elite = NPCS:Get(npc, "rank") == "rareelite" end
 end
 
+-- A thing seen again while its notice shows: that notice keeps it, with what was not known yet (its mark, its place).
+local function Again(notice, find)
+    local had = notice.find
+    had.vignette, had.guid = had.vignette or find.vignette, had.guid or find.guid
+    if find.x and find.y and (find.vignette or not had.vignette) then
+        had.map, had.x, had.y = find.map, find.x, find.y
+        notice.pin.map, notice.pin.x, notice.pin.y = find.map, find.x, find.y
+    end
+end
+
 function RareTracker.Found(find, test)
     if not (find and find.thing and find.kind) then return false end
+    local old
+    for _, each in ipairs(shown) do
+        if each.find and each.find.thing == find.thing and not each.gone then old = each break end
+    end
+    if old and not test then
+        Again(old, find)
+        return false
+    end
     if not test and not (Wanted(find.kind) and Fresh(find.thing)) then return false end
     seen[find.thing] = GetTime()
     Known(find)
-    for _, each in ipairs(shown) do
-        if each.find and each.find.thing == find.thing then Let(each) break end -- told again: the old one goes
-    end
+    if old then Let(old) end -- the test's: anew
     if #shown >= RareTracker.MOST then Let(shown[#shown]) end
     local notice = table.remove(spare) or Make()
     notice.find = find
@@ -461,12 +529,12 @@ function RareTracker.Found(find, test)
     notice.what:SetText(What(find))
     local colour = find.kind == "rare" and SILVER or find.kind == "treasure" and GOLD or LIGHT
     notice.what:SetTextColor(colour[1], colour[2], colour[3])
-    notice.where:SetText(Where(find) or TEXT.near)
+    notice.where:SetText(Where(find))
     Picture(notice, find)
     table.insert(shown, 1, notice)
     Holder()
     Stack()
-    notice.ends, notice.gone = GetTime() + RareTracker.FADE_IN + RareTracker.HOLD, nil
+    notice.gone = nil
     notice:Show()
     notice.fade:To(1, RareTracker.FADE_IN, 0)
     holder:Show()
@@ -489,12 +557,14 @@ local function Vignette(guid)
     local atlas = Core.Plain(info.atlasName)
     local kind = RareTracker.Kind(atlas)
     local id = Core.Plain(info.vignetteID)
-    local thing = Thing(Core.Plain(info.objectGUID)) or ("vignette:" .. tostring(id or guid))
-    if not (Wanted(kind) and Fresh(thing)) then return end
+    local creature = Core.Plain(info.objectGUID)
+    local thing = Thing(creature) or ("vignette:" .. tostring(id or guid))
+    if not Wanted(kind) then return end
     local map = Core.Ask(C_Map.GetBestMapForUnit, "player")
     local position = map and Core.Ask(C_VignetteInfo.GetVignettePosition, guid, map)
     local x, y = type(position) == "table" and Core.Plain(position.x), type(position) == "table" and Core.Plain(position.y)
-    RareTracker.Found({ kind = kind, thing = thing, name = Core.Plain(info.name), atlas = atlas,
+    RareTracker.Found({ kind = kind, thing = thing, name = Core.Plain(info.name), atlas = atlas, vignette = guid,
+                        guid = type(creature) == "string" and creature:find("^Creature") and creature or nil,
                         elite = type(atlas) == "string" and atlas:find("Elite", 1, true) ~= nil or nil,
                         map = map, x = x or nil, y = y or nil })
 end
@@ -513,13 +583,19 @@ local function Unit(unit)
     if Core.Ask(UnitExists, unit) ~= true or Core.Ask(UnitIsPlayer, unit) == true or Core.Ask(UnitIsDead, unit) == true then
         return
     end
-    local thing = Thing(Core.Ask(UnitGUID, unit))
-    if not (thing and Wanted("rare") and Fresh(thing)) then return end
+    local guid = Core.Ask(UnitGUID, unit)
+    local thing = Thing(guid)
+    if not (thing and Wanted("rare")) then return end
+    -- Where it stands: the nearest point of Core's data, else where you see it from (a nameplate's reach)
     local map = Core.Ask(C_Map.GetBestMapForUnit, "player")
     local x, y
     if map then x, y = Nearest(thing, map) end
+    if map and not x then
+        local here = Core.Ask(C_Map.GetPlayerMapPosition, map, "player")
+        if type(here) == "table" then x, y = Core.Plain(here.x), Core.Plain(here.y) end
+    end
     local level = Core.Ask(UnitLevel, unit)
-    RareTracker.Found({ kind = "rare", thing = thing, name = Core.Ask(UnitName, unit), elite = rank == "rareelite",
+    RareTracker.Found({ kind = "rare", thing = thing, name = Core.Ask(UnitName, unit), elite = rank == "rareelite", guid = guid,
                         level = type(level) == "number" and level > 0 and level or nil, map = map, x = x, y = y })
 end
 

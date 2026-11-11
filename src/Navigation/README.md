@@ -78,10 +78,13 @@ is small, and the maps of the dungeons and raids. The plan is in
   marks on the minimap, and by the rare itself as soon as you see it (its nameplate, your target, the mouse on it), for
   the rares the game gives no mark. The mouse on it: its tooltip as on the map. A double click puts the map pin on it
   and the golden line leads there, as on a pin; a right click sends it away; a drag with the left button moves the
-  notices, kept where you let them go (`/sane testraretracker reset`: under the minimap again). It goes after 40
-  seconds (not while the mouse is on it), three at most, the newest nearest their place, the others under it (over it
-  in the screen's lower half); the same one comes again after 5 minutes at the earliest; never inside an instance, never
-  a dead one. Settings, page Navigation, section *Sane Rare tracker*: on or off, what it tells of (rares, treasures,
+  notices, kept where you let them go (`/sane testraretracker reset`: under the minimap again). It stays until you
+  right click it, the rare is dead or the treasure taken (its mark gone or dead, or the creature seen dead: your
+  target, the mouse on it, its nameplate), or you are 400 yards from it (another part of the world, an instance); a
+  `/reload` clears them. A rare's notice follows its mark as it walks; one seen in person stands where you saw it from,
+  where Core's data knows no point of it. Three at most, the newest nearest their place, the others under it (over it
+  in the screen's lower half); seen again while its notice shows, that one stays, without a sound; the same one comes
+  again after 5 minutes at the earliest; never inside an instance, never a dead one. Settings, page Navigation, section *Sane Rare tracker*: on or off, what it tells of (rares, treasures,
   events), its sound (*War horn*, *Find chime*, *Raid warning*, *None*). **`/sane testraretracker`** shows one as a find
   would: the nearest rare of Core's data on your map, else a made-up one ahead of you; `chest` a treasure's, `event` an
   event's.
@@ -1103,6 +1106,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the rare tracker's notices stay:** Saneroki: "it should not remove the tracker window when you double
+  click on it. Only right click, the rare dead or rightclicking it will remove the window. Reload and moving far enough
+  away from it will also remove it eventually" (`RareTracker.lua`: `Over`, `Dead`, `Follow`; `FAR`, 400 yards).
 - **2026-11-11, the travel overlay a little higher:** Saneroki: "move both widgets a little more up", kept for the
   travel overlay once the Sane Rare tracker went under the minimap: its words over the line `TripView.HIGHER` (60)
   over a toast's height, no longer level with the toast of a new level.
