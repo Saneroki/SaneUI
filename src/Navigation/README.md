@@ -85,11 +85,13 @@ is small, and the maps of the dungeons and raids. The plan is in
   2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
   *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
   yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
-  show as one: in their icon where all have the same (two trainers: the trainer's), else the game's round plus;
-  its tooltip what is there, each with its own pin's icon before its name, each name once (two Priest Trainers:
-  one line); no tooltip says a word twice. **A double click on any pin**, on the small map and the
+  stand side by side, a cloud round their middle, each in the direction it lies: they lose a little of their place,
+  pushed aside, and stand each at its own place again as you zoom in. Only several spawns of one and the same thing
+  close together (a herb's, a creature's) are one marker, in its picture, its tooltip naming it once; no tooltip says
+  a word twice. Treasure, possible herbs and possible ore show only up close (the view at most `Pins.CLOSER`, 1500
+  yards high). **A double click on any pin**, on the small map and the
   full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so). **A
-  click** on a gathered one zooms in; on the full map a quest in your log leads the game's arrow to it and shows
+  click** on a marker of one thing's spawns zooms in; on the full map a quest in your log leads the game's arrow to it and shows
   its text, and a quest giver's quests show in the quest log (below); on any other pin it is a click on the map
   there (a ping). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
   whole shows only travel and places; the minimap no
@@ -185,8 +187,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   mark too, so you see which pins are whose. An item many creatures may drop: only those that give it often, twelve
   at most. A pin's tooltip says what stands there, the quests it is for and what is left of the objective in the
   game's words; a click on the full map shows the quest in the log, as on its question mark. An objective done takes
-  its pins away. What a quest asks for stands as that, not as the rare or the herb it is as well. Near each other they
-  are one marker, as other pins are, but only with each other, so the plus never hides one. A quest the data does not
+  its pins away. What a quest asks for stands as that, not as the rare or the herb it is as well. A creature's spawns
+  near each other are one marker in its picture; other things stand beside it in the cloud. A quest the data does not
   hold has the game's question mark and area alone, and so has every quest in Retail until its data comes.
 - **The quest log**, a window over the full map and on the screen while the map is small (**the button *Quest Log* on
   the full map's bar turns it on or off, in both**; no pin, no close button; drag its title bar to move it, dock it at
@@ -299,8 +301,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   filter switches it off.
 - **At a flight master:** talking to one fills the screen with this map in place of the game's flight map, the full
   map as it always is (both continents, its view, every pin, the quest log), zoomed out to the whole world: its
-  flight points large, over every other pin, the one you stand at glowing; the mouse on one draws the
-  way there, hop by hop as the master flies it, and its tooltip says what the flight costs; a click on it flies
+  flight points large, over every other pin, the one you stand at glowing, at each one's right its name and what the
+  flight there costs (the text larger the closer you zoom, under every pin so it never covers one or takes its
+  click); the mouse on one draws the way there, hop by hop as the master flies it, and its tooltip says what the
+  flight costs; a click on it flies
   there, as the game's flight map does. A flight point you cannot fly to from here is red, as one you have not found
   yet is everywhere on the map. Back to the corner (Esc)
   ends the talk. Hold Shift as you talk to the flight master for the game's own flight map (whatever *Show the
@@ -410,10 +414,13 @@ is small, and the maps of the dungeons and raids. The plan is in
   to its grid's edge), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
   the coast is cut alike at every zoom; a tile on a coast (`Coasts.lua`) is cut by a mask of its own instead, at
   four times the overview's detail (`Art/Coasts/<key>.blp`, 128 x 128), so a pier a few yards wide is not lost up
-  close; under it the canvas' sea colour.
+  close; under it the canvas' sea: its colour, and over that its waves (`Art/Sea.blp`: the game's own ocean
+  texture, its light alone in `Canvas.WAVE`'s colour; repeated over the plane, so the waves move with the land, each
+  copy `Canvas.SEA_SIZE` units wide at every zoom), in the open sea, the lakes and the rivers alike.
 - **Blended** (`Canvas.lua`): the art of Parchment over the terrain of Scrying, its alpha by the view's height in
   yards (`Canvas.Blend`: whole from `Canvas.BLEND[1]` up, gone at `Canvas.BLEND[2]` and below, by the zoom's
-  factor between), the sea's colour between Parchment's and Scrying's alike. Only a layer that shows is drawn:
+  factor between), the sea's colour between Parchment's and Scrying's alike, the waves fading with it (Parchment's
+  paper has none). Only a layer that shows is drawn:
   far out the art alone, close in the terrain alone.
 - **Art** (`Art.lua`), the view *Parchment*: Blizzard's world map and every plane's (a continent's, the isle's
   own; `C_Map.GetMapArtLayers`, `GetMapArtLayerTextures`) over their boxes, their paper frames faded off
@@ -454,14 +461,21 @@ is small, and the maps of the dungeons and raids. The plan is in
   changed, the objects', places' and ways' when Core's places change; at a zone's level every zone in view (on
   Zephras Isle the isle itself), further out the continent and its zones for travel and places only (only the
   places' and ways' part read). A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
-  or the isle's). `Pins.Gather`: pins nearer than `Pins.GATHER` units on the screen are one marker, a quest never
-  (its grid's cells by number). Herbs and ore, a zone's thousands of places: of each kind at most one in a cell of
-  that grid is sorted and gathered, the others there ride with it (its `with`), counted and named in its marker.
+  or the isle's). At the world each plane in view and its zones (the docks stand on the zones' maps), `Pins.WORLD`'s
+  kinds alone; at a continent's zoom every plane in view (`InView`). `Pins.CLOSE`'s kinds (treasure, herb, ore) only
+  while `view.span` is at most `Pins.CLOSER`. `Pins.Spread` (Saneroki, 2026-11-11, in place of the gather's markers
+  and their plus): in the list's order (the higher kind first) each pin joins the first cloud whose outer ring and one
+  size more it lies within (`Ring`), else makes its own; a cloud's middle the mean of its members' places, its step
+  `Pins.SPACE` times its largest member's size (`Pins.Size`); laid out (`Lay`) the first at the middle, the rest by
+  their distance from it into rings of 6 r, each ring's in the order they lie round it; each pin's `sx`, `sy` the units
+  it stands off its place (`PinView` adds them). Herbs, ore and a quest's creatures, a zone's thousands of places: one
+  thing's spawns within `Pins.GATHER` units of each other (this cell of that grid or one beside it) ride with the first
+  (its `with`) and are one marker of that thing, so never a plus.
   The filter is the multi-choice setting `pins`.
 - **PinView** (`PinView.lua`): a pooled button per pin, kept by its key while it stays in view, at a fixed size, in
   the game's looks (its quest disc and marks, `UI-QuestPoi-*`, `Quest-In-Progress-Icon-*`); a higher kind over a
-  lower one by its frame level (`PinView.TIERS`: kinds that share one are gathered where they would cover each
-  other), all under the marks; a kept button's look made again only when its pin's changed, its shown state told the
+  lower one by its frame level (`PinView.TIERS`: kinds that share one may stand together in a cloud), all under the
+  marks; a kept button's look made again only when its pin's changed, its shown state told the
   game only when it changed. A press on a pin is the map's (a drag moves the map,
   `Canvas.Press`/`Release`); a plain click is the pin's. Tooltips with a quest's objectives as the game tells them.
 - **Goals** (`Goals.lua`): what the quests in the log still ask of the world: Core's set *Quests* (`objectives`) says
@@ -472,7 +486,7 @@ is small, and the maps of the dungeons and raids. The plan is in
   the open objectives did: a count going up is no such change, the tooltip asks the game for the words. `Pins.lua` makes
   them pins of the kind `goal` (the part `goal` of `data`; keys of their own, `goal:npc:69@1429:3`; in the cells of `MANY`,
   so a creature's hundred spawns cost what a herb's do). Core's own pin of a thing wanted stands aside, a quest offer's
-  not, and the game's pins hide them as any data's. `Pins.Gather` gathers them among themselves (`goalCells`).
+  not, and the game's pins hide them as any data's. One creature's near spawns ride together (`MANY`, by its thing).
   `PinView.Light`, told by the log with `Areas.Hover` (`QuestLog.lua`, `Point`): a pin tied to the quest under the
   mouse, by its `quest` or its `goals`, or a marker with such a pin in it, has the fainter glow (`LIT`, `LIT_ALPHA`).
   No frames but those of the pins. A new kind of the filter, so `version` 5 of the settings puts it on.
@@ -552,7 +566,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   time shows no flight point at its world map: at the master's map). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
   node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), red where not reachable (`Pins.RED`, its colour
   taken out first, as a flight point not found), their lines
-  `Taxi.Lines`; shown whatever the pin filter says, never gathered, at the pins' top level (`PinView`); a click
+  `Taxi.Lines`; shown whatever the pin filter says, at the pins' top level (`PinView`), at each one's right its name
+  and price (`Taxi.Label`: a font string on `PinView`'s layer of names, at the pins' layer's level so under every
+  button, anchored to the button's right, `PinView.LABEL.GAP` apart; its size `LABEL.MAX` at a view `LABEL.AT` yards
+  high, `LABEL.STEP` less for each doubling, `LABEL.MIN` at least, one of `Core.Font`'s per size; shown with its
+  button, `PinView.Fit`); a click
   `Taxi.Fly` (`TakeTaxiNode` of its slot; on another a click does nothing, no ping). The mouse on one: `Paths.Show`
   draws `Taxi.Ways`, each hop of `GetNumRoutes`/`TaxiGetNodeSlot` (slots back to nodes) by its flight's path in
   *Travel* (`Paths.FromPath`), else straight between the two flight points where the plane of the pin's map has them
@@ -1020,7 +1038,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Outlines.lua` | The zones that have an outline, by their plane's instance (the isle's too): made by `dev/tools/terrain-art`, not by hand; Forever's world, read in Forever only (its TOC line) |
 | `Coasts.lua` | The tiles on a coast, which have a finer mask of their own, by their plane's instance: made by `dev/tools/terrain-art`, not by hand; Forever's, read in Forever only |
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
-| `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, gathered. No frames |
+| `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, side by side in a cloud where they would cover each other. No frames |
 | `Goals.lua` | What your quests still ask of the world and where exactly it stands: the open objectives' things at every spawn Core's data knows. No frames |
 | `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
 | `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
@@ -1058,10 +1076,22 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent (or the isle), in the terrain's blocks, made by `dev/tools/terrain-art` |
 | `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world, continent and isle maps |
+| `Art/Sea.blp` | The sea's waves: the game's own ocean texture (its first frame), its light alone in white, made by `dev/tools/terrain-art --sea` |
 
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the sea's waves:** Saneroki: "The map shows atm a solid color as the water. Can we make it a ocean
+  like texture" (`Art/Sea.blp` from the game's own ocean texture, `Canvas.lua`'s `Waves`).
+- **2026-11-11, the flight points' names at a flight master:** Saneroki: "On the right of the big Flightpath icons,
+  can you write the name of the flightpath lockation and its price and the size of the text adjusts to the zoomlevel
+  and is always behind the flightpath icons" (`Taxi.Label`, `PinView.LABEL`: a layer of its own under the pins').
+- **2026-11-11, a cloud of pins in place of the plus; ships at the world; treasure, herbs and ore up close:** Saneroki:
+  "when you zoom out on the map to the farthest level the ships are not visible anymore." "Instead of the maps + that
+  combines map pins, can we have a system where it shows the icons next to each other in a cluster [...] like a
+  cloud of pins and when you zoom in they become more accurate." "Map pins for Treasure, possible ore and herbs
+  should only be visible when you are really cloasly zoomed in." `Pins.Spread`, the world's zones in `Maps`,
+  `Pins.CLOSE`.
 - **2026-11-11, the flight master's map zoomed out; every continent's pins at the middle zoom:** Saneroki: "When we
   opent he flightmaster map, can you make sure that it is fully zoomed out to max level where we can see both
   continents": it opens at the world whole (and a view at the world whole stays so at a new size, `Camera:Frame`).

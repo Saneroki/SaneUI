@@ -18,10 +18,11 @@ local _, ns = ...
 --                  sword or sack, or the game's speech bubble; no glow of its own. The tooltip what stands there, the
 --                  quests it is for and the game's words of what is open; a click on the full map as on the quest's pin
 --      the mouse on a quest in the quest log  that quest's pins glow a little (Light)
---      gathered    pins that would cover each other: one marker, in their icon where all have the same one (two
---                  trainers: the trainer's), else the game's plus (PinView.PLUS; Saneroki, 2026-10-23); its
---                  tooltip what is there, each with its own pin's icon before its name; a click zooms in, a double
---                  click puts the game's map pin on the first
+--      a cloud    pins that would cover each other stand side by side round their middle (Pins.Spread; Saneroki,
+--                  2026-11-11, in place of one marker with the game's plus), each its own pin; closer in each stands
+--                  at its own place. Many spawns of one thing in one spot (a herb's, a creature's) are one marker in
+--                  its picture: its tooltip what is there; a click zooms in, a double click puts the game's map pin
+--                  on the first
 --      what it gives  on a rare's, a chest's, a herb's and a vein's tooltip, and on the dots of a dungeon's enemies and its
 --                  bosses' loot (Dungeons.lua): each item with how often it comes, from Core's Data.Drops: what shipped
 --                  and what play counted. A percent once enough came, until then how many of how many; the likeliest
@@ -33,7 +34,8 @@ local _, ns = ...
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
 --      a flight master  open (Taxi.lua): the flight points large and over all, the one you stand at glowing, a click
---                  on one flies there, its tooltip what it costs
+--                  on one flies there, its tooltip what it costs; its name and price at its right, sized by the zoom,
+--                  under every pin (PinView.LABEL)
 --      a flight point, a dock  on the full map a click keeps its ways drawn (Paths.lua), its pin glowing; again: no more
 --      a click     its own, where it has one (Act; above): Shift and a click on one that leads into another
 --                  map opens that map; else as a click on the map there (Canvas.lua: the map under it opens, or
@@ -61,16 +63,21 @@ PinView.DROPS = 8     -- what a thing gives, lines of a tooltip at most (a gathe
 PinView.DROPPERS = { rare = true, treasure = true, herb = true, ore = true } -- the kinds of pin that tell what they give
 
 -- The pins' own levels over their layer, by kind (a gathered marker: its first pin's), in Pins' order: a higher kind
--- stands over a lower one. Kinds that share a level are those Pins.Gather gathers where they would cover each other
+-- stands over a lower one. Kinds that share a level are those that may stand together in a cloud (Pins.Spread)
 -- (the game's own marks nearby aside); at most PinView.LEVELS, all under the marks (Canvas.LEVELS).
 PinView.TIERS = { log = 6, quest = 5, rare = 4, goal = 4, entrance = 3, flight = 3, travel = 3, place = 3, treasure = 2,
                   service = 1 }
 PinView.LEVELS = 6
+-- At a flight master a flight point's name and price at its right (Saneroki, 2026-11-11), its size by the zoom: LABEL.MAX
+-- points with the view LABEL.AT yards high, LABEL.STEP less each time the view is twice as high, LABEL.MIN at least; on
+-- a layer under every pin, so it never covers one nor takes its click.
+PinView.LABEL = { MIN = 9, MAX = 15, AT = 2000, STEP = 2, GAP = 3 }
 PinView.MODEL_WIDTH, PinView.MODEL_HEIGHT = 170, 210 -- a rare's model beside its tooltip (Alt held)
 PinView.MODEL_GAP = 8     -- between the tooltip and the model
 PinView.MODEL_TURN = -0.5 -- radians: a little from the side, as the tooltips turn a creature
 
 local layer, holder, view
+local words -- the flight points' names at a flight master: a layer under the pins' (PinView.LABEL)
 local used, free = {}, {} -- [key] = button while in view; buttons let go
 local hovered             -- the pin's button the mouse is on (Tip), for the rare's model
 local tipped              -- the pin's button whose tooltip was drawn last: again when an item it asked for has come
@@ -489,13 +496,47 @@ function PinView.Build(canvasHolder)
     layer = CreateFrame("Frame", nil, holder)
     layer:SetSize(1, 1)
     layer:SetPoint("CENTER")
+    words = CreateFrame("Frame", nil, holder)
+    words:SetSize(1, 1)
+    words:SetPoint("CENTER")
     return layer
 end
 
--- The layer at that frame level (the canvas' order: over the map and the game's minimap), its buttons over it.
+-- The layer at that frame level (the canvas' order: over the map and the game's minimap), its buttons over it, the
+-- flight points' names at that level too, under every button.
 function PinView.Stack(level)
     layer:SetFrameLevel(level)
+    words:SetFrameLevel(level)
     for _, button in pairs(used) do Level(button) end
+end
+
+-- The names' size for a view so many yards high (PinView.LABEL), as one of Core's fonts made for it.
+local function LabelFont(span)
+    local label = PinView.LABEL
+    local size = label.MAX - label.STEP * math.log(math.max(span or label.AT, 1) / label.AT) / math.log(2)
+    size = math.floor(math.max(label.MIN, math.min(label.MAX, size)) + 0.5)
+    return Core.Font("SaneUINavigationTaxi" .. size, "GameFontNormal", size, "OUTLINE") or "GameFontNormal", size
+end
+
+-- A button's name at its right: a flight point's at a flight master (Taxi.Label), in font of size points, else none.
+local function Name(button, pin, font, size)
+    local text = pin.taxi and not pin.gathered and ns.Taxi.Label(pin.taxi, pin.name)
+    local label = button.label
+    if not text then
+        button.labeled = false
+        if label then label:Hide() end
+        return
+    end
+    if not label then
+        label = words:CreateFontString(nil, "OVERLAY")
+        button.label = label
+    end
+    label:SetFontObject(font)
+    label.size = size
+    label:SetText(text)
+    label:ClearAllPoints()
+    label:SetPoint("LEFT", button, "RIGHT", PinView.LABEL.GAP, 0)
+    button.labeled = true
 end
 
 local seen = {}
@@ -511,7 +552,9 @@ function PinView.Place(laidView, small)
         local link = map and u and ns.Coords.Link(map, view.map)
         if link then pu, pv = link.du + link.su * u, link.dv + link.sv * v end
     end
-    local drawn = Pins.Gather(Pins.For(view, small, pu, pv), view.k)
+    local drawn = Pins.Spread(Pins.For(view, small, pu, pv), view.k)
+    local font, size
+    if ns.Taxi.On() then font, size = LabelFont(view.span) end
     for index = 1, #drawn do
         local pin = drawn[index]
         local button = used[pin.key]
@@ -523,14 +566,17 @@ function PinView.Place(laidView, small)
         button.pin = pin
         Look(button, pin)
         Level(button)
-        button.x, button.y = (pin.pu - view.u) * view.k, (pin.pv - view.v) * view.k
+        -- (in a cloud, pushed aside from its own place: Pins.Spread)
+        button.x, button.y = (pin.pu - view.u) * view.k + (pin.sx or 0), (pin.pv - view.v) * view.k + (pin.sy or 0)
         button:ClearAllPoints()
         button:SetPoint("CENTER", holder, "CENTER", button.x, button.y)
+        if font or button.labeled then Name(button, pin, font, size) end
     end
     for key, button in pairs(used) do
         if not seen[key] then
             button:Hide()
-            button.pin, button.inside = nil, false
+            if button.label then button.label:Hide() end
+            button.pin, button.inside, button.labeled = nil, false, false
             used[key] = nil
             free[#free + 1] = button
         end
@@ -548,6 +594,7 @@ function PinView.Fit()
             button.inside = inside
             button:SetShown(inside)
         end
+        if button.label then button.label:SetShown(inside and button.labeled or false) end
     end
 end
 
@@ -555,7 +602,8 @@ end
 function PinView.Clear()
     for key, button in pairs(used) do
         button:Hide()
-        button.pin, button.inside = nil, false
+        if button.label then button.label:Hide() end
+        button.pin, button.inside, button.labeled = nil, false, false
         used[key] = nil
         free[#free + 1] = button
     end

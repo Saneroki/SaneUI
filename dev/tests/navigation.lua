@@ -809,6 +809,10 @@ local Core = SaneUI.Core
 SaneUIDB = { modules = { Navigation = { options = { view = "overlay" } } } }
 W.Fire("ADDON_LOADED", "SaneUI")
 local ns = W.LoadAddon(root, "Navigation", "SaneUI_Navigation")
+-- Treasure, herbs and ore show only up close (Pins.CLOSER yards): the tests' small canvas looks at them from farther
+-- out, so the limit is lifted here and tested on its own below (the cloud's test).
+local CLOSER = ns.Pins.CLOSER
+ns.Pins.CLOSER = math.huge
 W.Fire("ADDON_LOADED", "SaneUI_Navigation")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Navigation == ns and not ns.off, "the module is made and started")
@@ -2408,8 +2412,8 @@ ns.Terrain.CAP = tilesBefore
 --  Pins: the game's and Core's, one per thing, filtered, gathered; always over the map
 -------------------------------------------------------------------------------
 local Pins = ns.Pins
--- The pins drawn now, by the thing each stands for (Core's: its thing; a gathered marker: "gathered:" and its first
--- pin's; laid: also those laid out past the canvas' edge, out of sight there).
+-- The pins drawn now, by the thing each stands for (Core's: its thing; a marker of one thing's spawns: "gathered:" and
+-- its first pin's; laid: also those laid out past the canvas' edge, out of sight there).
 local function Drawn(laid)
     local list, count = {}, 0
     for _, widget in ipairs(W.frames) do
@@ -2425,7 +2429,7 @@ end
 full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
 local pins, count = Drawn()
-check(full.level == "zone" and count == 12, "the zone's pins: 13 things, two of them near each other gathered into one")
+check(full.level == "zone" and count == 13, "the zone's pins: 13 things, each its own pin (two near each other side by side)")
 -- (a function of its own: the main chunk has as many locals as Lua lets it)
 ;(function()
     -- A thing of Core's data with several points on a map: a pin at each, each its own key, the thing's apart (one
@@ -2639,17 +2643,20 @@ do
         "a way of three ports: from its second the third, the first, and the second last; a port it stops at twice in a row once")
     check(Pins.Ports(record, nil, 2) == nil and Pins.Ports(record, round, 4) == nil, "none without its timetable or a stop there")
 end
-local marker = pins["gathered:npc:69"]
-check(marker and #marker.pin.gathered == 2 and marker.icon._atlas == ns.PinView.PLUS and not marker.count
-    and not pins["object:1617"], "an innkeeper and a herb 40 yards apart cover each other at this zoom: one marker, the "
-    .. "game's plus (their icons differ), no number")
+-- An innkeeper and a herb 40 yards apart would cover each other at this zoom: side by side in a cloud (Pins.Spread),
+-- each its own pin in its own icon, pushed from its place, no marker with the game's plus.
+pins = Drawn()
+local inn, silverleaf = pins["npc:69"], pins["object:1617"]
+local apart = inn and silverleaf and math.sqrt((inn.x - silverleaf.x) ^ 2 + (inn.y - silverleaf.y) ^ 2) or 0
+check(inn and silverleaf and not pins["gathered:npc:69"] and inn.icon._atlas == "innkeeper"
+    and silverleaf.icon._atlas == "professions_tracking_herb"
+    and apart >= math.max(inn._width, silverleaf._width) * Pins.SPACE - 0.01
+    and (inn.pin.sx ~= 0 or inn.pin.sy ~= 0 or silverleaf.pin.sx ~= 0 or silverleaf.pin.sy ~= 0),
+    "an innkeeper and a herb that would cover each other: side by side in a cloud, each in its own icon, not the plus")
 GameTooltip._lines = nil
-marker._scripts.OnEnter(marker)
-check(GameTooltip._text == "|A:innkeeper:16:16|a " .. Core.UNCONFIRMED_MARK .. "Innkeeper" and GameTooltip._lines
-    and #GameTooltip._lines == 2 and GameTooltip._lines[1] == "|A:professions_tracking_herb:16:16|a Silverleaf"
-    and GameTooltip._lines[2] == Pins.TEXT.unverified,
-    "its tooltip: each thing there with its own pin's icon before its name, the red ! after it where the thing is not "
-    .. "yet confirmed (the innkeeper, not the herb), and then Unconfirmed Data")
+inn._scripts.OnEnter(inn)
+check(GameTooltip._text == Core.UNCONFIRMED_MARK .. "Innkeeper", "each its own tooltip: the innkeeper's, its red ! (not yet confirmed)")
+inn._scripts.OnLeave(inn)
 -- What a thing gives, on its pin's tooltip: how often, as Core counted it; the likeliest first, at most so many lines
 ;(function()
     local Tally, Pelt, Charm, Gem, Hide, Note = Core.Data.Tally, 3000, 3001, 3002, 3003, 3004
@@ -2710,9 +2717,8 @@ check(GameTooltip._text == "|A:innkeeper:16:16|a " .. Core.UNCONFIRMED_MARK .. "
         Tally.Loot("object:1617", "gather", 0)
         if index == 1 then Tally.Drop("object:1617", "gather", Gem, 0, 1) end
     end
-    lines = Tipped(marker)
-    check(lines[#lines] == Pins.TEXT.unverified and table.concat(lines, "\n"):find("    [^\n]*Moon Gem | 1 of 4"),
-        "a gathered marker: what a herb gives inset under its name")
+    lines = Tipped(Drawn()["object:1617"])
+    check(table.concat(lines, "\n"):find("Moon Gem | 1 of 4", 1, true), "the herb's own pin in the cloud: what it gives")
     W.methods.AddDoubleLine, C_Item.GetItemInfo = nil, itemInfo
 end)()
 -- What your quests still ask for, at every spawn Core knows of it; no glow until the mouse is on the quest in the log
@@ -2820,7 +2826,8 @@ end)()
     Again()
     check(#Buttons("npc:900") == 0 and #Buttons("npc:901") == 1, "an objective done: its pins go, the others stay")
     open[1].finished = nil
-    -- Near each other: gathered among themselves, in their own picture, never into a marker of other things
+    -- Near each other: one creature's spawns in one spot a marker of their own, in its picture, never with other
+    -- things (those stand beside it in the cloud)
     PLACES[900] = { { map = 1429, x = 70, y = 30 }, { map = 1429, x = 70.3, y = 30 }, { map = 1429, x = 25.2, y = 55 } }
     PLACES[901] = { { map = 1429, x = 70.1, y = 30 } }
     Pins.DataChanged()
@@ -2837,8 +2844,8 @@ end)()
             check(goals == 0 or others == 0, "objectives gather among themselves alone")
         end
     end
-    check(marker and #marker.pin.gathered >= 3 and marker.icon._texture == marker.pin.gathered[1].texture
-        and marker.plus == false, "a creature's and an item's spawns close together: one marker in a picture of theirs, not the plus")
+    check(marker and #marker.pin.gathered >= 2 and marker.icon._texture == marker.pin.gathered[1].texture
+        and marker.plus == false, "a creature's spawns close together: one marker in its picture, not the plus")
     PinView.Light(7)
     check(marker.glow._shown, "a marker holding the quest's pins glows with them")
     PinView.Light(nil)
@@ -2875,13 +2882,12 @@ check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas
 check(pins["quest:7"]._level > pins["npc:72"]._level and pins["npc:72"]._level > pins["flight:2"]._level
     and pins["flight:2"]._level > pins["place:2"]._level,
     "a higher kind always over a lower one: a quest in your log, a quest to take, a flight point, a service")
--- A click on the marker zooms in until they part.
-local release = marker._scripts.OnMouseUp
-marker._scripts.OnMouseDown(marker, "LeftButton")
-release(marker, "LeftButton")
+-- Closer in the cloud parts: each at its own place again.
+Canvas.ZoomTo(inn.pin.pu, inn.pin.pv, 3)
 pins, count = Drawn()
-check(full.k > 0.4 and pins["npc:69"] and pins["object:1617"] and pins["npc:69"].icon._atlas == "innkeeper"
-    and pins["object:1617"].icon._atlas == "professions_tracking_herb", "a click on it zooms in: they part, each in its own icon")
+check(full.k > 0.4 and pins["npc:69"] and pins["object:1617"] and pins["npc:69"].pin.sx == 0 and pins["npc:69"].pin.sy == 0
+    and pins["object:1617"].pin.sx == 0 and pins["object:1617"].pin.sy == 0,
+    "zoomed in: they part, each at its own place (no longer pushed aside)")
 -- The filter: services off.
 local chosen = {}
 for key, on in pairs(ns.options.pins) do chosen[key] = on end
@@ -6043,6 +6049,19 @@ end)()
     check(locked and locked.pin.dim and locked.pin.tint == ns.Pins.RED and not there.pin.tint and not here.pin.tint
         and locked.pin.lines[1][1] == ns.TEXT.taxiFar,
         "one the master does not fly to (not found yet): red, as everywhere on the map, and says so")
+    -- At each one's right its name and what the flight costs, sized by the zoom, on a layer under every pin.
+    local label = there.label
+    check(label and label._text == "Far  1s50c" and label._shown ~= false and here.label._text == "Near"
+        and locked.label._text == "Locked" and label._parent._level < there._level and label._parent._level < here._level,
+        "a flight point's name and price at its right (the one you stand at, the one not flown to: the name), under the pins")
+    local near = label.size
+    ns.Canvas.Fit(full, ns.Coords.WorldMap(), frame._width, frame._height)
+    Canvas.Layout()
+    local far = there.label.size
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height)
+    Canvas.Layout()
+    check(near == ns.PinView.LABEL.MAX and far == ns.PinView.LABEL.MIN and there.label.size == near,
+        "the names' size follows the zoom: the smallest at the world, the largest close in")
     local lines = there.pin.lines
     check(lines and lines[1] == "1s50c" and lines[2][1] == ns.TEXT.taxiFly
         and here.pin.lines[1][1] == ns.TEXT.taxiHere, "the tooltip: what the flight costs, a click flies there; here: you are")
@@ -6101,11 +6120,12 @@ end)()
         Window.Toggle()
         Window.frame._group:Run(1)
     end
-    local together = Pins.Gather({ { kind = "flight", key = "a", pu = 0, pv = 0, order = 6 },
+    local together = Pins.Spread({ { kind = "flight", key = "a", pu = 0, pv = 0, order = 6 },
                                    { kind = "travel", key = "b", pu = 0, pv = 0, order = 5 },
                                    { kind = "flight", key = "c", pu = 0, pv = 0, order = 6 } }, 1)
-    check(#together == 3 and not together[1].gathered and not together[2].gathered,
-        "flight points and ways of travel on one spot: never gathered, each its own pin")
+    check(#together == 3 and not together[1].gathered and not together[2].gathered and together[1].sx == 0
+        and together[2].sx ^ 2 + together[2].sy ^ 2 > 0 and together[3].sx ^ 2 + together[3].sy ^ 2 > 0,
+        "flight points and ways of travel on one spot: each its own pin, side by side round the first")
     for _ = 1, 3 do if full.level ~= "world" then full:StepOut() end end
     Canvas.Layout()
     local kinds, flights = {}, 0
@@ -6115,8 +6135,22 @@ end)()
     end
     local others = false
     for kind in pairs(kinds) do if not Pins.WORLD[kind] then others = true end end
-    check(full.level == "world" and flights > 0 and not others,
-        "zoomed out to the world: the flight points and ways of travel still there, nothing else")
+    check(full.level == "world" and flights > 0 and kinds.travel and not others,
+        "zoomed out to the world: the flight points and the ships' docks (from the zones' maps) still there, nothing else")
+    -- Treasure, herbs and ore only up close (Pins.CLOSER yards high at most): Elwynn 3000 yards high, then 1000.
+    Pins.CLOSER = CLOSER
+    local function Herbs(span)
+        full:Show(1415, 0, -9250, full.height / span)
+        Canvas.Layout()
+        local count = 0
+        for _, each in ipairs(Pins.For(Canvas.view, false)) do
+            local first = each.gathered and each.gathered[1] or each
+            if first.kind == "herb" then count = count + 1 end
+        end
+        return count
+    end
+    check(Herbs(3000) == 0 and Herbs(1000) > 0, "herbs (treasure, ore) only up close: none 3000 yards high, there 1000 high")
+    Pins.CLOSER = math.huge
     ns.Canvas.Fit(full, 1429, frame._width, frame._height) -- Elwynn whole again, in its own plane
     Canvas.Layout()
     local pin = { kind = "flight", id = 2, map = 1429, key = "flight:2", name = "Near" }

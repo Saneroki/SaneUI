@@ -10,7 +10,7 @@ local _, ns = ...
 --                              continents' travel and places further out, their flight points and ways of
 --                              travel at the world; one map at
 --                              a time (Retail), the map shown's
---      Pins.Gather(list, k)    pins that would cover each other on the screen, gathered (Gather below)
+--      Pins.Spread(list, k)    pins that would cover each other on the screen, side by side in a cloud (Spread)
 --      Pins.Standing(quest, id) where a quest of Core's data stands for this character, and why (offered, low,
 --                              later, log, done, never)
 --      Pins.Offered(quest)     whether this character can take a quest of Core's data now
@@ -47,7 +47,12 @@ Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true }
 -- portals), each to be hovered for where it goes (Paths.lua; Saneroki, 2026-11-11).
 Pins.WORLD = { flight = true, travel = true }
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
-Pins.GATHER = 18      -- units: pins nearer each other than this on the screen are gathered into one marker
+Pins.GATHER = 18      -- units: the cell many spawns of one thing (herbs, ore, a quest's creatures) ride together in
+Pins.SPACE = 1.1      -- pins that would cover each other stand in a cloud, so many times their size apart (Spread)
+-- Kinds shown only up close, the view no higher than Pins.CLOSER yards (Saneroki, 2026-11-11: "Map pins for Treasure,
+-- possible ore and herbs should only be visible when you are really cloasly zoomed in").
+Pins.CLOSE = { treasure = true, herb = true, ore = true }
+Pins.CLOSER = 1500
 Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, flight = 18, travel = 22, entrance = 22,
               place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18,
               foundHerb = 14, foundOre = 14 } -- (the found ones are drawn by Found.lua)
@@ -642,7 +647,7 @@ local NONE = {}
 -- The maps whose pins the view shows: each zone in view (and the zone in the middle, should it have none of
 -- its own), further out the continent itself too (its flight points, as the game's continent map has them) and the
 -- other continents in view (their own maps');
--- at the world every plane in view (each continent and the isle: Pins.WORLD's kinds alone). One map at a time
+-- at the world every plane in view and its zones (each continent and the isle: Pins.WORLD's kinds alone). One map at a time
 -- (Retail): the map shown, as the game's own map asks for its pins; at the world none there.
 -- Whether a plane (a continent, the isle) lies in the view, in the view's plane.
 local function InView(plane, view)
@@ -659,7 +664,12 @@ local function Maps(view)
     if view.level == "world" then
         if view.shown then return maps end
         for _, plane in ipairs(Coords.Planes()) do
-            if InView(plane, view) then maps[#maps + 1] = plane end
+            if InView(plane, view) then
+                maps[#maps + 1] = plane
+                -- and its zones: the docks of the ships stand on their maps (Saneroki, 2026-11-11: "when you zoom out
+                -- on the map to the farthest level the ships are not visible anymore")
+                for _, zone in ipairs(Coords.Zones(plane)) do maps[#maps + 1] = zone.map end
+            end
         end
         return maps
     end
@@ -705,8 +715,8 @@ local ZONE_PARTS, FAR_PARTS = { "npc", "object", "way", "goal" }, { "way" }
 -- sorted and gathered, the others there ride with it (its with), so its marker still counts and names them all. So
 -- too a creature's many spawns.
 local ROW = 2 ^ 20
-local MANY = { herb = 1, ore = 2, goal = 3 }
-local firsts = {}           -- [cell and kind] = the first herb or ore in it (scratch)
+local MANY = { herb = true, ore = true, goal = true }
+local firsts = {}           -- [cell and thing] = the first spawn of a herb, an ore, a quest's creature in it (scratch)
 local rides, rode = {}, 0   -- the lists of those that ride with one, used again
 
 -- The pins in view, as the filter lets them through, for the view as the canvas laid it out (Canvas.view);
@@ -742,7 +752,7 @@ function Pins.For(view, small, pu, pv)
                     -- (at a flight master the flight points always: Taxi.lua)
                     wanted = (Shows(kind) or kind == "flight" and ns.Taxi.On()) and (not small or SMALL[kind])
                         and (not continentLevel or Pins.CONTINENT[kind]) and (view.level ~= "world" or Pins.WORLD[kind])
-                        and true or false
+                        and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER) and true or false
                     shown[kind] = wanted
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
@@ -754,9 +764,22 @@ function Pins.For(view, small, pu, pv)
                         if pass == 0 then taken[pin.key] = true end
                         pin.pu, pin.pv = u, v -- in the view's plane, for this layout
                         pin.order = ORDER[kind] or 0
+                        -- One thing's spawns nearer each other than a cell ride together (this cell or one beside it),
+                        -- so a marker is one picture, never a plus.
                         local many = pass > 0 and MANY[kind]
-                        local cell = many and (floor(u * k / size) * ROW + floor(v * k / size)) * 4 + many
-                        local first = cell and firsts[cell]
+                        local cell, first
+                        if many then
+                            local cx, cy, thing = floor(u * k / size), floor(v * k / size), pin.thing or kind
+                            cell = (cx * ROW + cy) .. thing
+                            for dx = -1, 1 do
+                                for dy = -1, 1 do
+                                    local other = not first and firsts[((cx + dx) * ROW + cy + dy) .. thing]
+                                    if other and ((other.pu - u) ^ 2 + (other.pv - v) ^ 2) * k * k < size * size then
+                                        first = other
+                                    end
+                                end
+                            end
+                        end
                         if first then
                             local with = first.with
                             if not with then
@@ -767,7 +790,7 @@ function Pins.For(view, small, pu, pv)
                             end
                             with[#with + 1] = pin
                         else
-                            if cell then firsts[cell] = pin end
+                            if cell and not firsts[cell] then firsts[cell] = pin end
                             pin.with = nil
                             found[#found + 1] = pin
                         end
@@ -783,78 +806,104 @@ function Pins.For(view, small, pu, pv)
     return found
 end
 
--- Pins nearer each other on the screen than Pins.GATHER units become one marker, at the first one (the one
--- drawn highest), in its icon; quests in the log and offered are never gathered, nor what the game tells is near,
--- nor flight points and the ways of travel (Pins.WORLD: each to be hovered);
--- the quests' objectives only among themselves (goalCells), so none vanishes into a marker of other things.
--- list: For's, sorted; k: the zoom (units a yard). Gives a list of pins and markers ({ gathered = { pins },
--- pu, pv, key }); a herb or ore with others riding with it (For) is a marker of them all.
--- The grid's cells by number (ROW), each a list of the spots { x, y, pin, index } that stand in it, n of them; the
--- lists and the spots are kept to be used again.
-local cells, goalCells, lists, spots = {}, {}, {}, {}
+-- Pins that would cover each other on the screen stand side by side, a cloud round their middle, in place of one
+-- marker (Saneroki, 2026-11-11: "a system where it shows the icons next to each other in a cluster, They loose map
+-- location accuracy, because they are pushed aside but become precise when you zoom in"): the first one (drawn
+-- highest) at the cloud's middle, the others in rings round it, the nearer ones to the middle in the inner rings,
+-- each ring's in the order they lie round it, Pins.SPACE times the largest one's size apart. Closer in they stand
+-- apart by themselves, each at its own place. A pin with others of the same thing riding with it (For: one herb's,
+-- one ore's, one creature's spawns in one cell) is a marker of them all, in their picture.
+-- list: For's, sorted; k: the zoom (units a yard). Gives the pins and markers, each with sx, sy: the units it stands
+-- off its own place on the screen (0, 0 for one alone); ax, ay that place, room its size (units: scratch).
+local function Size(pin)
+    local first = pin.gathered and pin.gathered[1] or pin
+    return (first.size or Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
+end
+Pins.Size = Size
 
--- A pin into a spot's marker, made at the spot's first pin, each with what rides with it.
-local function Join(spot, pin, out)
-    local gathered = spot.gathered
-    if not gathered then
-        local first = spot.pin
-        gathered = { first }
-        for _, rider in ipairs(first.with or NONE) do gathered[#gathered + 1] = rider end
-        spot.gathered = gathered
-        spot.marker = { gathered = gathered, pu = first.pu, pv = first.pv, key = "gathered:" .. first.key,
-                        kind = "gathered", order = first.order }
-        out[spot.index] = spot.marker
-    end
-    if pin == spot.pin then return end
-    gathered[#gathered + 1] = pin
-    for _, rider in ipairs(pin.with or NONE) do gathered[#gathered + 1] = rider end
+-- A marker of a pin and those riding with it.
+local function Marker(pin)
+    local gathered = { pin }
+    for _, rider in ipairs(pin.with) do gathered[#gathered + 1] = rider end
+    return { gathered = gathered, pu = pin.pu, pv = pin.pv, key = "gathered:" .. pin.key, kind = "gathered",
+             order = pin.order }
 end
 
-function Pins.Gather(list, k)
-    wipe(cells)
-    wipe(goalCells)
-    local out, used, made = {}, 0, 0
-    local size = Pins.GATHER
-    for _, pin in ipairs(list) do
-        if pin.kind == "log" or pin.kind == "quest" or pin.live or Pins.WORLD[pin.kind] then
-            out[#out + 1] = pin
-        else
-            local x, y = pin.pu * k, pin.pv * k
-            local cx, cy = math.floor(x / size), math.floor(y / size)
-            local grid = pin.kind == "goal" and goalCells or cells
-            local into
-            for dx = -1, 1 do
-                for dy = -1, 1 do
-                    local cell = not into and grid[(cx + dx) * ROW + cy + dy]
-                    if cell then
-                        for index = 1, cell.n do
-                            local spot = cell[index]
-                            if (spot.x - x) ^ 2 + (spot.y - y) ^ 2 < size * size then into = spot break end
-                        end
-                    end
-                end
-            end
-            if into then
-                Join(into, pin, out)
-            else
-                out[#out + 1] = pin
-                local key = cx * ROW + cy
-                local cell = grid[key]
-                if not cell then
-                    used = used + 1
-                    cell = lists[used] or {}
-                    lists[used], cell.n = cell, 0
-                    grid[key] = cell
-                end
-                made = made + 1
-                local spot = spots[made] or {}
-                spots[made] = spot
-                spot.x, spot.y, spot.pin, spot.index, spot.gathered, spot.marker = x, y, pin, #out, nil, nil
-                cell.n = cell.n + 1
-                cell[cell.n] = spot
-                if pin.with then Join(spot, pin, out) end -- others ride with it: they cover each other already
-            end
+-- The rings round a cloud's middle: how many ring r holds (6 r), its first one's slot (1 + 3 r (r - 1)).
+local function Ring(slot)
+    local r = 0
+    while 1 + 3 * r * (r + 1) < slot do r = r + 1 end
+    return r
+end
+
+local clouds, used = {}, 0 -- the clouds of a layout: { x, y (its middle, units), n, step, members }, kept to be reused
+local order, angles = {}, {}
+
+-- A cloud's members in their places round its middle.
+local function Lay(cloud)
+    local members, x, y, step = cloud.members, cloud.x, cloud.y, cloud.step
+    -- The first (drawn highest) at the middle; the rest by how far they lie from it, then round it.
+    local first = members[1]
+    first.sx, first.sy = x - first.ax, y - first.ay
+    wipe(order)
+    for index = 2, cloud.n do order[#order + 1] = members[index] end
+    table.sort(order, function(a, b) return (a.ax - x) ^ 2 + (a.ay - y) ^ 2 < (b.ax - x) ^ 2 + (b.ay - y) ^ 2 end)
+    local index, slot = 1, 2
+    while index <= #order do
+        local r = Ring(slot)
+        local count = math.min(6 * r, #order - index + 1)
+        wipe(angles)
+        for i = 0, count - 1 do
+            local member = order[index + i]
+            angles[i + 1] = member
+            member.turn = math.atan2(member.ay - y, member.ax - x)
         end
+        table.sort(angles, function(a, b) return a.turn < b.turn end)
+        local start = angles[1].turn
+        for i, member in ipairs(angles) do
+            local angle = start + (i - 1) * 2 * math.pi / count
+            member.sx = x + math.cos(angle) * r * step - member.ax
+            member.sy = y + math.sin(angle) * r * step - member.ay
+        end
+        index, slot = index + count, slot + count
+    end
+end
+
+function Pins.Spread(list, k)
+    local out = {}
+    used = 0
+    for _, pin in ipairs(list) do
+        local shown = pin.with and Marker(pin) or pin
+        shown.ax, shown.ay, shown.sx, shown.sy = pin.pu * k, pin.pv * k, 0, 0
+        shown.room = Size(shown)
+        out[#out + 1] = shown
+        -- Into the first cloud whose rings it would cover, else a cloud of its own.
+        local into
+        for index = 1, used do
+            local cloud = clouds[index]
+            -- (its outer ring, and one size more: a pin nearer would cover one of it)
+            local reach = (Ring(cloud.n) + 1) * math.max(cloud.step, shown.room * Pins.SPACE)
+            if (shown.ax - cloud.x) ^ 2 + (shown.ay - cloud.y) ^ 2 < reach * reach then into = cloud break end
+        end
+        if into then
+            into.n = into.n + 1
+            into.members[into.n] = shown
+            into.step = math.max(into.step, shown.room * Pins.SPACE)
+            -- (its middle the mean of its members' places)
+            into.x = into.x + (shown.ax - into.x) / into.n
+            into.y = into.y + (shown.ay - into.y) / into.n
+        else
+            used = used + 1
+            local cloud = clouds[used] or { members = {} }
+            clouds[used] = cloud
+            cloud.x, cloud.y, cloud.n, cloud.step = shown.ax, shown.ay, 1, shown.room * Pins.SPACE
+            cloud.members[1] = shown
+        end
+    end
+    for index = 1, used do
+        local cloud = clouds[index]
+        if cloud.n > 1 then Lay(cloud) end
+        for i = cloud.n + 1, #cloud.members do cloud.members[i] = nil end
     end
     return out
 end
