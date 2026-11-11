@@ -27,15 +27,18 @@ x = 0.5
 y = 0.5
 size = 0.27
 crop = 0.5
+match = true  # round 3's first run: the cleared disc came out lighter and bluer than the sea round it
 words = "Open ocean and nothing else: deep dark navy blue water with long gentle swells and faint wind streaks, a little lighter towards the coasts. No whirlpool, no storm, no clouds, nothing in the water."
 
+# The first words of round 3 (a throat "growing darker further down but never black") still gave a black hole
+# with three models of four: the words name no dark, deep or black now, and say what the bottom shows.
 [[spot]]
 name = "maelstrom"
 x = 0.5
 y = 0.518
 size = 0.1055
 crop = 0.25
-words = "In the middle, seen straight down into it, a great maelstrom like a siphon: the sea turns round it in a spiral of white foam and churned streaks that narrows inward into a deep funnel, the funnel's steep walls of dark blue-green water lit by the sun and streaked with foam spiralling down into the depths, its throat deep teal water growing darker further down but never black. A thin, loose spiral of grey storm cloud turns over it round the same eye. Round it the water is rough and streaked with foam, calming towards the edges."
+words = "In the middle, seen straight down into it, a great maelstrom like a siphon: the sea turns round it in a spiral of white foam and churned streaks that narrows inward into a funnel, its steep walls of blue-green water lit by the sun and streaked with foam spiralling down, and at the bottom of the funnel a small swirl of bright teal water and foam where the sunlight still reaches. A thin, loose spiral of grey storm cloud turns over it round the same eye. Round it the water is rough and streaked with foam, calming towards the edges."
 
 [[spot]]
 name = "serpent"

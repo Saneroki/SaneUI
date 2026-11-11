@@ -220,6 +220,38 @@ def disc(side, middle, radius):
     return t * t * (3 - 2 * t)
 
 
+def blurred(values, sigma):
+    """A Gaussian blur of an array (rows, columns[, channels]) along its first two axes, by numpy alone."""
+    reach = max(1, int(3 * sigma))
+    kernel = np.exp(-0.5 * (np.arange(-reach, reach + 1) / sigma) ** 2)
+    kernel /= kernel.sum()
+    for axis in (0, 1):
+        values = np.apply_along_axis(lambda line: np.convolve(np.pad(line, reach, mode="edge"), kernel, "valid"),
+                                     axis, values)
+    return values
+
+
+def matched(painted, original, mask, sea, middle, radius):
+    """The painted disc's broad tone pulled to the sea's round it, point by point: the target is the original's tone
+    outside the disc (over the open sea) spread inward by a wide blur weighted by where it is known, so every edge
+    meets its own neighbour; the disc's own broad tone (blurred) is replaced by it and its finer detail kept. Worked
+    at an eighth of the size, the tones being broad."""
+    side = mask.shape[0]
+    small = max(16, side // 8)
+    shrink = lambda image: np.asarray(image.resize((small, small), Image.Resampling.BOX), np.float32)
+    known = shrink(Image.fromarray(((1 - mask) * sea * 255).astype(np.uint8))) / 255
+    if known.sum() < 10:
+        return painted
+    sigma = radius / 8 / 2
+    weight = blurred(known, sigma)
+    target = blurred(shrink(original) * known[..., None], sigma) / np.maximum(weight, 1e-3)[..., None]
+    broad = blurred(shrink(painted), radius / 8 / 6)
+    shift = Image.fromarray(np.clip((target - broad) / 2 + 128, 0, 255).astype(np.uint8))
+    shift = np.asarray(shift.resize((side, side), Image.Resampling.BILINEAR), np.float32) * 2 - 256
+    out = np.asarray(painted, np.float32) + shift * mask[..., None]
+    return Image.fromarray(np.clip(out, 0, 255).round().astype(np.uint8))
+
+
 def paint(picture, spots_file, out, workflow, seed, only, dry=False):
     spec = tomllib.loads(Path(spots_file).read_text(encoding="utf-8"))
     base = Image.open(picture).convert("RGB")
@@ -255,6 +287,9 @@ def paint(picture, spots_file, out, workflow, seed, only, dry=False):
         if painted.size != (side, side):
             painted = painted.resize((side, side), Image.Resampling.LANCZOS)
         painted.save(out / f"{spot['name']}.png")
+        if spot.get("match"):  # a spot that only clears: its tone that of the sea round it
+            painted = matched(painted, done.crop((left, top, left + side, top + side)), mask,
+                              sea[top:top + side, left:left + side], (cx - left, cy - top), spot["size"] * width / 2)
         done.paste(painted, (left, top), Image.fromarray((mask * 255).round().astype(np.uint8)))
         print(f"{spot['name']}: {side} x {side} at {left}, {top}")
     if dry:
