@@ -422,6 +422,17 @@ the game's own art and the game's own API.
   boat and the walk on. "Turn it off but just show a ingame message to use the heartstone to speed it up." So the line
   never takes the hearthstone (nor Astral Recall, to the same place): where it would bring the player to the pin at
   least two minutes sooner, the chat says so once for that pin, and from home the line leads on.
+- **Coloured by its danger (Saneroki, 2026-11-11):** "Color the golden routing line in depending on how dangerous it
+  is. So we know where which enemies spawn and what their level is. Can we make a routing show fx red if the enemies
+  level range is clearly above me." So a walk is gold where it is safe, orange where enemies of the player's side 3 or
+  4 levels above them spawn near it, red at 5 or more (the game's own steps and colours of a creature's difficulty);
+  friendly guards, critters, rares and pets count for nothing. Built (`Danger.lua`, the set *FactionTemplates*).
+- **Waypoints dragged (Saneroki, 2026-11-11):** "Can we also implement it to make it possible to drag the route to
+  reroute around? So that if we drag the route on the map it will put a new waypoint there that the routing goes to
+  first and then to the map pin." So a drag of the line on the full map puts a waypoint where it is let go, on the
+  stretch dragged; the line goes to each in turn, then to the pin; a waypoint is dragged to move it, right clicked
+  away, gone once passed, and all go when the pin moves. Built (`Planner.Via`, `Canvas.lua`, `Marks.Vias`). Not
+  decided: whether the planner should also go round red stretches by itself.
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 - **A way for the guide's arrow (Saneroki, 2026-10-31; replaced 2026-11-07):** the guide's arrow followed the routing

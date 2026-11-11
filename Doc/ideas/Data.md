@@ -103,7 +103,7 @@ the rest.
 | `SaneUI_Data_Talents` | Talents (the class trees), Legacy (the three Legacy trees, their challenges and reward track) | Tooltips, later a talent window | first talent looked at |
 | `SaneUI_Data_Collections` | Achievements, Mounts (the journal's mounts, by their spells), TransmogSets (Saneroki, 2026-10-20) | Tooltips, later a collections window | first asked for |
 | `SaneUI_Data_Market` | Vendors; Prices (a series) | Economy, Tooltips | auction house, vendor, first price shown |
-| `SaneUI_Data_Game` | CVarLabels, Currencies, Factions, Holidays, Icons (every icon of the client's, its name and what shows it, for Sane Macros' picture window; Saneroki, 2026-11-04), other tables from the game's own code | Settings | options first opened |
+| `SaneUI_Data_Game` | CVarLabels, Currencies, Factions, FactionTemplates (each faction template's reaction to each side's players, from the client's table, for the route's danger; Saneroki, 2026-11-11), Holidays, Icons (every icon of the client's, its name and what shows it, for Sane Macros' picture window; Saneroki, 2026-11-04), other tables from the game's own code | Settings | options first opened |
 | `SaneUI_Data_Characters` | No shipped data: the characters' own data (*Characters*) | Tooltips (counts on alts), Economy, later bags and a character sheet | soon after every login |
 
 - A set's name is unique across packs: a module asks for `"Items"`, never for a pack.
@@ -1223,7 +1223,7 @@ Set *NPCs*, keyed by creature ID, pack World:
 | `level` | The lowest and highest level seen; a boss (`??`) |
 | `rank` | Normal, elite, rare, rare elite, boss (`UnitClassification`) |
 | `type`, `family` | Beast, humanoid, undead, ...; wolf, cat, ... (what can be skinned follows from it) |
-| `reaction` | Friendly, neutral or hostile, per side (`UnitReaction`), and its faction |
+| `reaction` | Friendly, neutral or hostile, per side (`UnitReaction`), and its faction; until play tells it, its faction template's in the set *FactionTemplates* (the client's table, by the game's rule; 2026-11-11, for the route's danger) |
 | `stats` | Health and mana per level seen (`UnitHealthMax`, `UnitPowerMax`); armour, resistances, damage and attack speed where our data has them (the game gives an addon those for the player and pets, *to try* for others) |
 | `abilities` | The spells it casts (references to *CreatureSpells*) |
 | `auras` | The buffs it carries at rest (references to *CreatureSpells* or *Auras*) |

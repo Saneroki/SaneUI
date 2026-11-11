@@ -134,6 +134,7 @@ Planner.SAME = 1         -- yards apart two places are one: the pin on the place
 Planner.LEAD = 15        -- yards along the line ahead of the player the way asked for turns to (Ahead)
 Planner.THERE = 8        -- yards from a leg's end that count as at it: on with the next leg (Ahead)
 Planner.SOONER = 120     -- seconds sooner at the pin the hearthstone must bring the player to be told of it (Quicker)
+Planner.VIAS = 8         -- waypoints at most on the way to the pin (Planner.Via): each is a journey of its own
 Planner.HEARTHSTONE, Planner.HOMEWARD = 6948, 8690 -- the hearthstone: its item, its spell
 Planner.RECALL = 556     -- the shaman's Astral Recall: to the hearthstone's place too, a spell with its own cooldown
 Planner.FLIER = 1225490  -- the Legacy perk Frequent Flier: its spell (flights 20 % faster, half price)
@@ -148,8 +149,10 @@ local Trips = Core.Data.Trips()
 -- A way followed: target ({ map, u, v, at }: where it leads, in its plane), plan (the journey: { legs, at (the leg the
 -- player is on), cut, target }), job (the plan being made: a job of Core's scheduler), lastPlan, nextLook, onTaxi,
 -- failed (the target no journey reached, until the next plan asked for: Looked plans none for it again).
+-- vias: the waypoints the line goes to first, in order (Planner.Via: the pin's alone, dragged on the full map), each a
+-- place in its plane ({ map, u, v, at }).
 local function NewWay()
-    return { lastPlan = -math.huge, nextLook = 0, onTaxi = false }
+    return { lastPlan = -math.huge, nextLook = 0, onTaxi = false, vias = {} }
 end
 local pin, guide = NewWay(), NewWay() -- the way to the map pin, drawn; the way to the place asked for, while the pin's
                                       -- does not lead there
@@ -1186,9 +1189,9 @@ local function Measure(legs)
 end
 
 -- A way made: its legs, the player at its start (the cut follows them from there, Planner.Track); the pin's drawn.
-local function Show(way, legs)
+local function Show(way, legs, vias)
     Measure(legs)
-    way.plan = { legs = legs, at = 1, target = way.target, cut = { leg = 1, index = 1, t = 0 } }
+    way.plan = { legs = legs, at = 1, target = way.target, cut = { leg = 1, index = 1, t = 0 }, vias = vias }
     if way == pin then
         ns.Route.Show(way.plan)
         Settle()
@@ -1196,9 +1199,12 @@ local function Show(way, legs)
 end
 
 -- The journey made, each walk as it was found (or straight); keep: a leg in front of it (the flight the player is
--- on, or the boat or zeppelin).
-local function Draw(way, steps, keep)
+-- on, or the boat or zeppelin). Each leg knows the waypoint it leads to (toward: one of the way's vias, false: the
+-- target; the leg in front, the first), and the plan the waypoints it was made for (vias), so a waypoint passed is
+-- known as one (Passed).
+local function Draw(way, steps, keep, vias)
     local legs = { keep }
+    if keep then keep.toward = vias and vias[1] or false end
     for _, step in ipairs(steps) do
         if step.kind == "walk" then
             local points = {}
@@ -1218,8 +1224,9 @@ local function Draw(way, steps, keep)
         else
             legs[#legs + 1] = { kind = step.kind, ship = true, points = ShipPoints(step) }
         end
+        legs[#legs].toward = step.toward or false
     end
-    Show(way, legs)
+    Show(way, legs, vias)
 end
 
 -- Whether two places are one.
@@ -1253,16 +1260,39 @@ end
 
 -- The plan made as a job (Find), drawn once found; start: { map, u, v, from (the player's floor), keep (the leg drawn
 -- in front of it) }. None found: the leg in front stays, or the way goes (the pin's across the sea, told once). The
--- pin's from where the player stands: told where the hearthstone would be quicker (Quicker, Tell).
+-- pin's from where the player stands: told where the hearthstone would be quicker (Quicker, Tell). With waypoints
+-- (way.vias), a journey to each in turn and on to the target, each step knowing the waypoint it leads to (toward); a
+-- waypoint no journey reaches is left out (the next one planned from where the one before ended), and no word of the
+-- hearthstone: the way is the player's own.
+local function Stages(start, goal, vias)
+    local all, from = {}, start
+    for index = 1, #vias + 1 do
+        local stop = vias[index] or goal
+        local found = Find(from, stop)
+        if found then
+            for _, step in ipairs(found) do
+                step.toward = vias[index] or false
+                all[#all + 1] = step
+            end
+            from = { map = stop.map, u = stop.u, v = stop.v }
+        elseif not vias[index] then
+            return nil
+        end
+    end
+    return all
+end
+
 local function Make(way, start)
     Stop(way)
     made = made + 1
     local goal, steps, home = way.target, nil, nil
+    local vias = {} -- the waypoints as they are now: a copy, so one put or passed meanwhile changes nothing of this plan
+    for index, via in ipairs(way.vias) do vias[index] = via end
     way.job = Core.Steps.Run({ name = "navigation: route " .. made, label = "navigation: route", done = function(problem)
         way.job = nil
         if problem or goal ~= way.target then return end -- failed (noted by the scheduler), or another place since
         if home then Tell(goal, home) end
-        if steps then return Draw(way, steps, start.keep) end
+        if steps then return Draw(way, steps, start.keep, vias) end
         if way == pin and start.map ~= goal.map and Travel:Ready() and not told.sea and not home then
             told.sea = true
             ns.Print(Planner.TEXT.sea)
@@ -1274,6 +1304,10 @@ local function Make(way, start)
             Settle()
         end
     end }, function()
+        if vias[1] then
+            steps = Stages(start, goal, vias)
+            return
+        end
         local seconds
         steps, seconds = Find(start, goal)
         if way == pin and not start.keep and not Same(told.home, goal) and not Planner.Ghost() then
@@ -1439,6 +1473,11 @@ Planner.TEXT = {
     only = "use %s to get to the map pin: no other way there is known yet.",
 }
 
+-- The waypoints' marks on the map anew (Marks.Vias), where it is drawn.
+local function Marked()
+    if ns.Canvas and ns.Canvas.Laid() then ns.Safe("marks", ns.Marks.Vias, ns.Canvas.view) end
+end
+
 -- The game's map pin in its plane, or nil.
 local function Pinned()
     return InPlane(Live.Waypoint())
@@ -1448,7 +1487,13 @@ end
 function Planner.Update()
     Stop(pin)
     local wanted = ns.Pins.Shows("route") and not ns.off
+    local was = pin.target
     pin.target = wanted and Pinned() or nil
+    -- The waypoints were the way to that pin: another place, or none, and they go.
+    if pin.vias[1] and not Same(was, pin.target) then
+        wipe(pin.vias)
+        Marked()
+    end
     local before = pin.plan
     if pin.plan then
         pin.plan = nil
@@ -1481,6 +1526,7 @@ local function Fly(now)
     local plan = pin.plan
     if plan and plan.legs[1] and plan.legs[1].flying and not pin.job then
         pin.lastPlan = now
+        flying.toward = plan.legs[1].toward
         plan.legs[1], plan.at = flying, 1
         plan.cut.leg, plan.cut.index, plan.cut.t = 1, 1, 0
         return ns.Route.Show(plan)
@@ -1541,9 +1587,40 @@ local function Follow(plan, map, u, v)
     return moved
 end
 
--- Where along its line the player is, the pin's drawn from there.
+-- A waypoint taken off the list; true where it was on it.
+local function Gone(vias, via)
+    for index = #vias, 1, -1 do
+        if vias[index] == via then
+            table.remove(vias, index)
+            return true
+        end
+    end
+    return false
+end
+
+-- The waypoints the player is past: the next one once within Planner.THERE yards of it, and those the plan led to
+-- before the leg the line is at now (its cut; a leg of no known waypoint, none). Taken off the way, whose plan goes
+-- on as it is; their marks anew.
+local function Passed(way, map, u, v)
+    local vias = way.vias
+    local next = vias[1]
+    if not next then return end
+    local changed = next.map == map and Distance(u, v, next.u, next.v) <= Planner.THERE and Gone(vias, next)
+    local plan = way.plan
+    local leg = plan and plan.vias and plan.legs[plan.cut.leg]
+    if leg and leg.toward ~= nil then
+        for _, via in ipairs(plan.vias) do
+            if via == leg.toward then break end
+            if Gone(vias, via) then changed = true end
+        end
+    end
+    if changed then Marked() end
+end
+
+-- Where along its line the player is, the pin's drawn from there; the pin's waypoints passed.
 local function Walked(way, map, u, v)
     if way.plan and u and Follow(way.plan, map, u, v) and way == pin then ns.Route.Cut(way.plan) end
+    if way == pin and u then Passed(way, map, u, v) end
 end
 
 -- Every Planner.FOOT seconds the floor the player stands on (a lift of a line ridden, Rode; on a trip none).
@@ -1602,6 +1679,59 @@ function Planner.Track(map, u, v, now)
     Walked(pin, map, u, v)
     Stand(map, u, v, now)
     Looked(pin, map, u, v, now)
+end
+
+-------------------------------------------------------------------------------
+--  Waypoints (Saneroki, 2026-11-11: "if we drag the route on the map it will put a new waypoint there that the
+--  routing goes to first and then to the map pin")
+-------------------------------------------------------------------------------
+-- The pin's waypoints, in order (not to be changed).
+function Planner.Vias()
+    return pin.vias
+end
+
+-- The stage after a waypoint's (Route.Grab's keys): the next waypoint's, or the pin's ("pin").
+function Planner.After(via)
+    for index, each in ipairs(pin.vias) do
+        if each == via then return pin.vias[index + 1] or "pin" end
+    end
+    return "pin"
+end
+
+-- A waypoint put at a point of a plane (map, u, v) where the line was let go: on the stage key (Route.Grab: the
+-- waypoint it leads to, or "pin"), so before that waypoint; or, moving, that waypoint moved there. At most
+-- Planner.VIAS. Planned anew at once from where the player is.
+function Planner.Via(key, map, u, v, moving)
+    if not pin.target or not map or not u then return end
+    local place = { map = map, u = u, v = v, at = Coords.ZoneAt(map, u, v) or map }
+    local vias = pin.vias
+    if moving then
+        local found = false
+        for index, via in ipairs(vias) do
+            if via == moving then vias[index], found = place, true end
+        end
+        if not found then return end
+    else
+        if #vias >= Planner.VIAS then return end
+        local at = #vias + 1
+        for index, via in ipairs(vias) do
+            if via == key then at = index end
+        end
+        table.insert(vias, at, place)
+    end
+    Marked()
+    Plan(pin)
+    Settle()
+end
+
+-- A waypoint taken away (a right click on its mark): planned anew without it.
+function Planner.Drop(via)
+    if not Gone(pin.vias, via) then return end
+    Marked()
+    if pin.target then
+        Plan(pin)
+        Settle()
+    end
 end
 
 -------------------------------------------------------------------------------

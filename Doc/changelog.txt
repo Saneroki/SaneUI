@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map: the golden line to the map pin shows how dangerous its way
+  is: orange where enemies a few levels above you spawn near it,
+  red where they are far above you. Drag the line on the full map
+  to put a waypoint there: the line goes there first, then on to
+  the pin. Drag a waypoint to move it, right-click it to take it
+  away.
 - Map: a dungeon's or raid's map opens whole on the full map, clear
   of its bar and the quest log. Inside a dungeon, scroll the minimap
   out once more past its farthest step for the dungeon's whole map

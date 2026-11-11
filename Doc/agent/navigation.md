@@ -30,7 +30,10 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 5. The map pin and the route (`Planner.lua`, `Search.lua`, `Walk.lua`, `Gates.lua`, `Lifts.lua`; `Route.lua` draws the
    golden pulsing line, always from the player): on foot over Core's set *Walking*, by the flights the character knows,
    boats, zeppelins, the tram, lifts, portals, the hearthstone and the teleports it has (Core's set *Travel*,
-   `Data.Ships`, `Data.Trips`; a portal of one class, the mages' own, only for that class). The trip underway and the
+   `Data.Ships`, `Data.Trips`; a portal of one class, the mages' own, only for that class). A walk orange or red where
+   enemies of your side well above your level spawn near it (`Danger.lua`: Core's *CreatureSpawns*, *NPCs*,
+   *FactionTemplates*); the line dragged on the full map puts a waypoint it goes to first (`Planner.Via`, `Canvas.lua`,
+   `Marks.Vias`). The trip underway and the
    docks' times: `TripView.lua`, `DockWatch.lua`. The mouse on a flight point's or a dock's pin draws its ways
    (`Paths.lua`); on a zone lit up the full map names it with its levels and fishing skill (`Label.lua`, Core's set
    *Fishing*); while dead the map pin stands at the corpse, the one before back once alive (`Corpse.lua`). At a
@@ -53,7 +56,7 @@ cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`T
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the Sane Rare tracker (`RareTracker`: finds near
 you told by a notice and a horn, `/sane testraretracker`); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
-`Planner`, `Corpse`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
+`Planner`, `Corpse`, `Danger`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,
 `indoor-art` and `mark-art`, never by hand.
@@ -75,7 +78,7 @@ character, learnt at a flight master).
   (`src/Core/Data/Quests.lua`, the quest watchers), with `Data.Map()` and the learnt teleports (`Data/Teleports.lua`)
   (`Doc/ideas/Data-build.md`). Not built: `Data.Areas()` (1d.5, *Areas and the map*).
 - The sets: every set Navigation reads has entries (Zones, Places, Travel, NPCs, Objects, Quests, Spawns, Walking,
-  Tiles, Indoors, Overlays, Dungeons, Bosses, Encounters, Items), and QuestAreas, PatrolPaths and CreatureSpawns are
+  Tiles, Indoors, Overlays, Dungeons, Bosses, Encounters, Items, FactionTemplates), and QuestAreas, PatrolPaths and CreatureSpawns are
   filled too (`ls -la assets/data/`); only Guides is empty, and no tool writes it.
 - Core's windows: the holder (`src/Core/Holder.lua`), the board (`Board.lua`) and the Edit Mode box and dialog
   (`Selection.lua`) are built. Navigation needs neither the holder nor the board: it keeps the game's map itself

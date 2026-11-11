@@ -26,6 +26,17 @@ local _, ns = ...
 --  blue; a portal's violet; the hearthstone's and the teleports' pale blue,
 --  straight to where they bring one (the art is grey: each shows its colour as it is).
 --
+--  A walk takes the colour of its danger (Danger.lua; Saneroki, 2026-11-11: "Color the golden routing line in
+--  depending on how dangerous it is"): gold where no enemy near it is a few levels above you, orange where one is
+--  Danger.ORANGE levels above you or more, red where Danger.RED or more (the game's colours of those steps), told
+--  every Route.SAMPLE yards along it, so the colour changes where the danger does.
+--
+--  Dragged on the full map (Canvas.lua), the line puts a waypoint where it is let go (Planner.Via; Saneroki,
+--  2026-11-11: "if we drag the route on the map it will put a new waypoint there that the routing goes to first
+--  and then to the map pin"): Route.Grab tells which stage of the way lies under the mouse (from you or a
+--  waypoint to the next waypoint or the pin), Route.Bend draws two faint lines from that stage's ends to the
+--  mouse while it is dragged.
+--
 --  A corner of a leg that turns more than Route.BEND degrees is drawn as a curve:
 --  from a point before it to one after it, the corner its middle point (a curve of
 --  the corner and its two neighbours, so short parts one after the other make one
@@ -55,6 +66,11 @@ Route.COLOURS = {
     boat = { 0.4, 0.75, 1 }, zeppelin = { 0.4, 0.75, 1 }, tram = { 0.4, 0.75, 1 },
     lift = { 1, 0.78, 0.25 }, portal = { 0.7, 0.5, 1 }, hearth = { 0.6, 0.8, 1 }, teleport = { 0.6, 0.8, 1 },
 }
+-- A walk's colour by its danger (Danger.At: 1, 2): the game's own colours of very difficult and impossible
+-- (QuestDifficultyColors), these where it has none.
+Route.DANGER = { { 1, 0.5, 0.25, game = "verydifficult" }, { 1, 0.1, 0.1, game = "impossible" } }
+Route.SAMPLE = 20  -- yards along a walk between two looks at its danger (Danger.CELL is 50)
+Route.GRAB = 4     -- units off the line's edge a press still takes it (Grab)
 
 -- The lines' thickness, at the size the pin filter's slider for the route asks (set at each layout, Place).
 local THICKNESS = { edge = Route.THICK + 3, fill = Route.THICK, glint = Route.THICK }
@@ -127,7 +143,7 @@ local function Segment(x1, y1, x2, y2, length, colour, faint, leg, index, t0, t1
     count = count + 1
     local part = parts[count] or {}
     parts[count] = part
-    part.x1, part.y1, part.x2, part.y2, part.length, part.entry = x1, y1, x2, y2, length, entry
+    part.x1, part.y1, part.x2, part.y2, part.length, part.entry, part.colour = x1, y1, x2, y2, length, entry, colour
     part.leg, part.index, part.t0, part.t1, part.along, part.from, part.to = leg, index, t0, t1, along, nil, nil
 end
 
@@ -232,6 +248,11 @@ local function Head(edge)
     end
     head.x1, head.y1, head.x2, head.y2, head.length, head.from = x1, y1, x2, y2, length, nil
     head.along = (along or length) - length
+    -- In the colour of the piece the player is on (a walk's danger there).
+    if on and on.colour ~= head.colour then
+        head.colour = on.colour
+        Colour(head.entry, on.colour, false)
+    end
     Refit(head, edge, 1)
 end
 
@@ -257,11 +278,35 @@ end
 -- ends there (a, the end on the part before; b, on the part after). Reused.
 local xs, ys, numbers, reaches, pieces, ax, ay, bx, by = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local box = {}      -- the view's rectangle with its margin, in the holder's units
-local laying = {}   -- the leg being laid out: number, colour, faint, from (the first of its parts not passed)
+local laying = {}   -- the leg being laid out: number, colour, faint, from (the first of its parts not passed), points
+                    -- (its own), risky (a walk, coloured by its danger)
 local along = 0     -- units along that leg laid out so far
+local hues          -- Route.DANGER's colours as the game has them, once
+
+-- The colour of a danger (Danger.At) on the leg being laid out: its own where there is none.
+local function Hue(risk)
+    if risk == 0 then return laying.colour end
+    if not hues then
+        hues = {}
+        local game = rawget(_G, "QuestDifficultyColors")
+        for step, colour in ipairs(Route.DANGER) do
+            local own = type(game) == "table" and game[colour.game]
+            hues[step] = type(own) == "table" and type(own.r) == "number" and { own.r, own.g, own.b } or colour
+        end
+    end
+    return hues[risk] or laying.colour
+end
+
+-- The danger at the share t of the leg's part index (from its point index to the next), on their plane.
+local function Risk(index, t)
+    local a, b = laying.points[index], laying.points[index + 1]
+    if not b or a.map ~= b.map then return 0 end
+    return ns.Danger.At(a.map, a.u + (b.u - a.u) * t, a.v + (b.v - a.v) * t)
+end
 
 -- One piece of the leg's line, in the way's order: made where it is not passed and may reach into the view. index,
--- t0, t1: the way's part it stands for (from point index to the next), and the share of it.
+-- t0, t1: the way's part it stands for (from point index to the next), and the share of it. A walk's in runs of one
+-- danger, looked at every Route.SAMPLE yards (none of them shorter than 2 units), each a piece of its own.
 local function Piece(x1, y1, x2, y2, index, t0, t1)
     local length = sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
     local start = along
@@ -270,7 +315,24 @@ local function Piece(x1, y1, x2, y2, index, t0, t1)
         or min(y1, y2) > box.top then
         return
     end
-    Segment(x1, y1, x2, y2, length, laying.colour, laying.faint, laying.number, index, t0, t1, start)
+    local a, b = laying.points[index], laying.points[index + 1]
+    if not (laying.risky and b) then
+        return Segment(x1, y1, x2, y2, length, laying.colour, laying.faint, laying.number, index, t0, t1, start)
+    end
+    local yards = sqrt((b.u - a.u) ^ 2 + (b.v - a.v) ^ 2) * (t1 - t0)
+    local n = max(1, min(ceil(yards / Route.SAMPLE), floor(length / 2)))
+    local span = t1 - t0
+    local from, risk = 0, Risk(index, t0 + span * 0.5 / n)
+    for k = 1, n do
+        local after = k < n and Risk(index, t0 + span * (k + 0.5) / n) or nil
+        if after ~= risk then
+            local to = k / n
+            Segment(x1 + (x2 - x1) * from, y1 + (y2 - y1) * from, x1 + (x2 - x1) * to, y1 + (y2 - y1) * to,
+                length * (to - from), Hue(risk), laying.faint, laying.number, index, t0 + span * from, t0 + span * to,
+                start + length * from)
+            from, risk = to, after
+        end
+    end
 end
 
 -- The curve at the run's corner j, at s (0 at its end on the part before, 1 on the part after): the corner its
@@ -367,18 +429,22 @@ function Route.Place(view)
         local fromLeg, fromIndex = cut and cut.leg or 1, cut and cut.index or 1
         box.left, box.right = (view.left - view.u) * view.k, (view.right - view.u) * view.k
         box.bottom, box.top = (view.bottom - view.v) * view.k, (view.top - view.v) * view.k
+        -- The walks' danger, once the enemies are worked out (asked for here: drawn again once they are, Again).
+        local danger = ns.Danger.Ready() or (ns.Danger.Work() and false)
         for index, leg in ipairs(way.legs) do
             if index >= fromLeg then
                 laying.number, laying.colour = index, Route.COLOURS[leg.kind] or Route.COLOURS.walk
                 laying.faint = index > (way.at or 1) + 1 -- the legs after the next are drawn fainter
                 laying.from = index == fromLeg and fromIndex or 1
+                laying.points, laying.risky = leg.points, danger and leg.kind == "walk"
                 Lay(leg.points, view, Route.STRAY * scale, Route.PIECE * scale)
             end
         end
         local leg = cut and way.legs[cut.leg]
         if leg then
             head.entry = Next()
-            Colour(head.entry, Route.COLOURS[leg.kind] or Route.COLOURS.walk, false)
+            head.colour = Route.COLOURS[leg.kind] or Route.COLOURS.walk
+            Colour(head.entry, head.colour, false)
             Hide(head.entry)
             head.to = 0
         end
@@ -412,6 +478,94 @@ function Route.Cut(newWay)
     Head(edge)
 end
 
+-- The way drawn anew as it is (its danger worked out, a level gained).
+function Route.Again()
+    if way and ns.Canvas.Laid() then Route.Place(ns.Canvas.view) end
+end
+
+-- A leg's stage (Planner.Via): from the player or a waypoint to the next waypoint or the pin, named by where it
+-- leads: the waypoint (the leg's toward), or "pin".
+local function Stage(leg)
+    return leg and leg.toward or "pin"
+end
+
+-- The stage of the way whose line, as drawn, lies within its edge and Route.GRAB units of x, y (the holder's units),
+-- the nearest; nil where none does.
+function Route.Grab(x, y)
+    if not way or not laid then return nil end
+    local reach = THICKNESS.edge / 2 + Route.GRAB
+    local best, stage
+    for index = first, count do
+        local part = parts[index]
+        if part.from and part.to and part.to > part.from then
+            local dx, dy = part.x2 - part.x1, part.y2 - part.y1
+            local ax, ay = part.x1 + dx * part.from, part.y1 + dy * part.from
+            local bx, by = part.x1 + dx * part.to, part.y1 + dy * part.to
+            local ex, ey = bx - ax, by - ay
+            local long = ex * ex + ey * ey
+            local s = long > 0 and max(0, min(1, ((x - ax) * ex + (y - ay) * ey) / long)) or 0
+            local gap = sqrt((x - ax - ex * s) ^ 2 + (y - ay - ey * s) ^ 2)
+            if gap <= reach and (not best or gap < best) then best, stage = gap, Stage(way.legs[part.leg]) end
+        end
+    end
+    return stage
+end
+
+-- Where a stage begins (the player, on the stage they are on) and where a stage ends, in its plane: map, u, v.
+local function Begins(stage)
+    local cut = way.cut
+    if cut and cut.pu and Stage(way.legs[cut.leg]) == stage then return cut.map, cut.pu, cut.pv end
+    for _, leg in ipairs(way.legs) do
+        if Stage(leg) == stage then
+            local point = leg.points[1]
+            return point.map, point.u, point.v
+        end
+    end
+end
+
+local function Ends(stage)
+    for index = #way.legs, 1, -1 do
+        local leg = way.legs[index]
+        if Stage(leg) == stage then
+            local point = leg.points[#leg.points]
+            return point.map, point.u, point.v
+        end
+    end
+end
+
+-- While the line or a waypoint is dragged: two faint lines to x, y (the holder's units) from where stage from begins
+-- and where stage to ends; Route.Unbend takes them away.
+local bent = {}
+local function Bent(index, map, u, v, x, y)
+    local line = bent[index]
+    if not line then
+        line = Line(Route.FILL, 3)
+        bent[index] = line
+    end
+    local sx, sy
+    if map then sx, sy = Spot(map, u, v) end
+    if not sx then return line:Hide() end
+    local colour = Route.COLOURS.walk
+    line:SetVertexColor(colour[1], colour[2], colour[3], 0.6)
+    line:SetStartPoint("CENTER", holder, sx, sy)
+    line:SetEndPoint("CENTER", holder, x, y)
+    line:SetThickness(THICKNESS.fill * 0.6)
+    line:SetTexCoord(0, sqrt((x - sx) ^ 2 + (y - sy) ^ 2) / Route.PERIOD, 0, 1)
+    line:Show()
+end
+
+function Route.Bend(x, y, from, to)
+    if not way or not laid then return Route.Unbend() end
+    local map, u, v = Begins(from)
+    Bent(1, map, u, v, x, y)
+    map, u, v = Ends(to)
+    Bent(2, map, u, v, x, y)
+end
+
+function Route.Unbend()
+    for _, line in ipairs(bent) do line:Hide() end
+end
+
 -- A step of the canvas' tracker (the player's place): the planner sees where along the way the player is.
 function Route.Track(map, u, v, now)
     if ns.Planner and ns.Planner.Track then ns.Planner.Track(map, u, v, now) end
@@ -420,6 +574,7 @@ end
 -- Out of sight (the window hidden): the lines go, the way is kept.
 function Route.Clear()
     for _, entry in ipairs(lines) do Hide(entry) end
+    Route.Unbend()
     used, count, first, on = 0, 0, 1, nil
     head.entry, laid = nil, nil
 end

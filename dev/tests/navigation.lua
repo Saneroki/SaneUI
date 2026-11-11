@@ -105,6 +105,7 @@ local cursorX, cursorY = 100, 100
 GetCursorPosition = function() return cursorX, cursorY end
 local ctrl = false
 IsControlKeyDown = function() return ctrl end
+IsModifierKeyDown = function() return ctrl end
 IsIndoors = function() return false end
 GetPlayerFacing = function() return 1.5 end
 IsInRaid = function() return false end
@@ -5921,6 +5922,211 @@ check(shownWay == nil, "the pin taken away: no line")
     check(shownWay ~= before and shownWay and near(shownWay.legs[1].points[1].v, wv - 60),
         "off the line by more than Planner.OFF yards: planned again from where the player is")
     IsIndoors = indoors
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- The golden line coloured by how dangerous its way is (Danger.lua; Saneroki, 2026-11-11: "show fx red if the enemies
+-- level range is clearly above me"), and dragged on the full map to a waypoint the line goes to first, then on to the
+-- pin (Canvas.lua, Route.Grab, Planner.Via, Marks.Vias; Saneroki, 2026-11-11). Core's creatures, their facts and the
+-- faction templates' reactions stood in for here, on Kalimdor's plane (u = x * 24000 - 12000, v = 20000 - y * 40000).
+;(function()
+    local Danger, Route = ns.Danger, ns.Route
+    local Creatures, Facts, Templates = Core.Data.Set("CreatureSpawns"), Core.Data.Set("NPCs"), Core.Data.Set("FactionTemplates")
+    local kept = { Creatures.Each, Creatures.Ready, Facts.Get, Facts.Ready, Templates.Get, Templates.Ready, UnitLevel }
+    local function Point(u, v) return { map = 1414, x = (u + 12000) / 240, y = (20000 - v) / 400 } end
+    local spawns = { [951] = { Point(5000, 1000) }, [952] = { Point(5000, 1400) }, [953] = { Point(5000, 1800) },
+                     [954] = { Point(5000, 2200) }, [955] = { Point(5000, 2600) }, [956] = { Point(5000, 3000) } }
+    local facts = { [951] = { levelMin = 30, levelMax = 31, kind = "beast", faction = 14 },
+                    [952] = { levelMin = 23, levelMax = 24, kind = "humanoid", faction = 14 },
+                    [953] = { levelMin = 60, kind = "humanoid", faction = 12 },
+                    [954] = { levelMin = 40, kind = "critter", faction = 14 },
+                    [955] = { levelMin = 40, kind = "beast", rank = "rare", faction = 14 },
+                    [956] = { levelMin = 7, levelMax = 40, kind = "beast", faction = 14 } }
+    local reactions = { [14] = "hostile", [12] = "friendly" }
+    local walks = 0
+    Creatures.Each = function(_, fn, done)
+        walks = walks + 1
+        for id, points in pairs(spawns) do fn(id, { points = points }) end
+        done(nil)
+        return { Stop = function() end }
+    end
+    local function Yes() return true end
+    Creatures.Ready, Facts.Ready, Templates.Ready = Yes, Yes, Yes
+    Facts.Get = function(_, id, field)
+        local fact = facts[id]
+        if field then return fact and fact[field] end
+        return fact
+    end
+    Templates.Get = function(_, id, side) return side == "alliance" and reactions[id] or nil end
+    UnitLevel = function() return 20 end
+    check(not Danger.Ready() and Danger.At(1414, 5000, 1000) == 0, "nothing known before the enemies are worked out")
+    Danger.Work()
+    check(Danger.Ready() and walks == 1 and Danger.At(1414, 5000, 1000) == 2 and Danger.At(1414, 5010, 990) == 2
+        and Danger.At(1414, 5000, 1400) == 1 and Danger.At(1414, 5000, 1200) == 0,
+        "worked out once: red near an enemy far above you, orange near one three levels above, nothing between them")
+    check(Danger.At(1414, 5000, 1800) == 0 and Danger.At(1414, 5000, 2200) == 0 and Danger.At(1414, 5000, 2600) == 0
+        and Danger.At(1414, 5000, 3000) == 0 and Danger.At(1415, 5000, 1000) == 0,
+        "no danger: a guard friendly to your side, a critter, a rare, one seen at many levels; another plane")
+    UnitLevel = function() return 26 end
+    check(Danger.At(1414, 5000, 1000) == 1 and Danger.At(1414, 5000, 1400) == 0 and walks == 1,
+        "a level gained: the steps anew from the same enemies")
+    UnitLevel = function() return 20 end
+
+    -- The line: gold, red past the first enemies, gold, orange past the second, each where the danger is.
+    local using, was = Canvas.camera, { full.map, full.u, full.v, full.k }
+    Canvas.Use(full)
+    full:Show(1414, 5000, 1200, 0.2) -- the whole line inside the canvas
+    Canvas.Layout()
+    local view = Canvas.view
+    local function Holder(u, v) return (u - view.u) * view.k, (v - view.v) * view.k end
+    Route.Show({ legs = { { kind = "walk", toward = false, points = { { map = 1414, u = 5000, v = 800 },
+        { map = 1414, u = 5000, v = 1600 } } } } })
+    local game = rawget(_G, "QuestDifficultyColors")
+    local red = game and game.impossible and game.impossible.g or Route.DANGER[2][2]
+    local orange = game and game.verydifficult and game.verydifficult.g or Route.DANGER[1][2]
+    local reds, oranges, golds, inside = 0, 0, 0, true
+    local _, low = Holder(5000, 950)
+    local _, high = Holder(5000, 1050)
+    for _, widget in ipairs(W.frames) do
+        local colour = widget._kind == "Line" and widget._shown and widget._start and widget._vertex
+        if colour and colour[4] == 0.9 and colour[1] == 1 then -- a fill (its edge dark, its glint brighter)
+            if near(colour[2], red) then
+                reds = reds + 1
+                local y1, y2 = widget._start[2], widget._end[2]
+                if math.min(y1, y2) < low - 0.5 * view.k * Route.SAMPLE or math.max(y1, y2) > high + 0.5 * view.k * Route.SAMPLE then
+                    inside = false
+                end
+            elseif near(colour[2], orange) then
+                oranges = oranges + 1
+            elseif near(colour[2], Route.COLOURS.walk[2]) then
+                golds = golds + 1
+            end
+        end
+    end
+    check(reds >= 1 and oranges >= 1 and golds >= 3 and inside,
+        "a walk coloured by its danger: red where the enemies far above you spawn, orange by the others, gold between")
+    check(Route.Grab(Holder(5000, 1200)) == "pin" and Route.Grab(Holder(5003, 1200)) == "pin"
+        and Route.Grab(Holder(5100, 1200)) == nil, "the line under the mouse: its stage (to the pin); off it, none")
+
+    -- A press on it on the full map and a drag: the map stays, a ghost of the waypoint under the mouse with two faint
+    -- lines from the stage's ends to it; let go: the waypoint there.
+    local put
+    local via = ns.Planner.Via
+    ns.Planner.Via = function(...) put = { ... } end
+    local function Aim(u, v)
+        cursorX, cursorY = frame._width / 2 + (u - full.u) * full.k, frame._height / 2 + (v - full.v) * full.k
+    end
+    local cx, cy = cursorX, cursorY
+    local u0, v0 = full.u, full.v
+    Aim(5000, 1200)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    Aim(5300, 1200)
+    frame._scripts.OnUpdate(frame, 0.016)
+    local gx, gy = Holder(5300, 1200)
+    local sx, sy = Holder(5000, 800)
+    local ghost, bent = false, false
+    for _, widget in ipairs(W.frames) do
+        if widget._atlas == "Waypoint-MapPin-Untracked" and widget._shown and widget.x and near(widget.x, gx) and near(widget.y, gy) then
+            ghost = true
+        end
+        if widget._kind == "Line" and widget._shown and widget._start and near(widget._start[1], sx) and near(widget._start[2], sy)
+            and near(widget._end[1], gx) and near(widget._end[2], gy) then
+            bent = true
+        end
+    end
+    check(near(full.u, u0) and near(full.v, v0) and ghost and bent and not put,
+        "dragging the line: the map stays, a ghost of the waypoint under the mouse, faint lines from the stage's start to it")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    check(put and put[1] == "pin" and put[2] == 1414 and near(put[3], 5300) and near(put[4], 1200) and put[5] == nil,
+        "let go: a waypoint where the mouse is, on the stage pressed")
+    bent = false
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Line" and widget._shown and widget._start and near(widget._end[1], gx) and near(widget._end[2], gy) then
+            bent = true
+        end
+    end
+    check(not bent and not frame._scripts.OnUpdate, "the faint lines gone, nothing runs any more")
+    put = nil
+    Canvas.Use(ns.Window.small)
+    Canvas.Layout()
+    Aim(5000, 1200)
+    local su = ns.Window.small.u
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    Aim(5300, 1200)
+    frame._scripts.OnUpdate(frame, 0.016)
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    check(not put and not near(ns.Window.small.u, su), "on the small map a drag on the line moves the map, as ever")
+    ns.Planner.Via = via
+    Canvas.Use(full)
+    Canvas.Layout()
+
+    -- The planner: a pin, then a waypoint on its way: the line to the waypoint first, then on to the pin.
+    local Planner = ns.Planner
+    player.map, player.x, player.y = 1414, (4000 + 12000) / 24000, (20000 - 1200) / 40000
+    waypoint = { uiMapID = 1414, position = CreateVector2D((6000 + 12000) / 24000, (20000 - 1200) / 40000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    Frames(8)
+    local before = shownWay
+    Planner.Via("pin", 1414, 5000, 1400)
+    Frames(8)
+    local vias = Planner.Vias()
+    local first, last = vias[1], shownWay and shownWay.legs[#shownWay.legs]
+    local toVia, end1
+    for _, leg in ipairs(shownWay and shownWay.legs or {}) do
+        if leg.toward == first then toVia, end1 = leg, leg.points[#leg.points] end
+    end
+    check(before and #vias == 1 and shownWay ~= before and toVia and near(end1.u, 5000) and near(end1.v, 1400)
+        and last and last.toward == false and near(last.points[#last.points].u, 6000),
+        "a waypoint put: the line to it first, then on to the pin")
+    local mark
+    for _, widget in ipairs(W.frames) do if widget.via == first and widget._shown then mark = widget end end
+    check(mark and mark.icon._atlas == "Waypoint-MapPin-Untracked", "its mark on the map: the map pin's art, grey")
+    -- Another before it (dragged on the stage that leads to it), one after it (on the pin's): in their order.
+    Planner.Via(first, 1414, 4500, 1500)
+    Planner.Via("pin", 1414, 5500, 1500)
+    check(#vias == 3 and vias[2] == first and near(vias[1].u, 4500) and near(vias[3].u, 5500),
+        "waypoints in the order of the stages they were put on")
+    Frames(8)
+    -- Its mark dragged: the waypoint moved; right clicked: away.
+    for _, widget in ipairs(W.frames) do if widget.via == first and widget._shown then mark = widget end end
+    Aim(5000, 1400)
+    mark._scripts.OnMouseDown(mark, "LeftButton")
+    Aim(5000, 1600)
+    frame._scripts.OnUpdate(frame, 0.016)
+    mark._scripts.OnMouseUp(mark, "LeftButton")
+    check(#vias == 3 and vias[2] ~= first and near(vias[2].u, 5000) and near(vias[2].v, 1600),
+        "a waypoint's mark dragged: the waypoint moved there")
+    Frames(8)
+    local moved = vias[2]
+    for _, widget in ipairs(W.frames) do if widget.via == moved and widget._shown then mark = widget end end
+    mark._scripts.OnMouseUp(mark, "RightButton")
+    check(#vias == 2 and vias[1].u == 4500 and vias[2].u == 5500, "right clicked: that waypoint away")
+    Frames(8)
+    -- Passed: the player by the first, then on the stage after the next: both off the list.
+    Planner.Track(1414, 4500, 1500, GetTime() + 550)
+    check(#vias == 1 and near(vias[1].u, 5500), "the player by a waypoint: passed, off the list")
+    local onward
+    for index, leg in ipairs(shownWay.legs) do if leg.toward == false then onward = onward or index end end
+    local tail = shownWay.legs[onward].points
+    Planner.Track(1414, tail[1].u + (tail[2].u - tail[1].u) * 0.5, tail[1].v + (tail[2].v - tail[1].v) * 0.5, GetTime() + 551)
+    check(#vias == 0, "on the way on to the pin: the waypoint before it passed too")
+    -- The pin moved: its waypoints go.
+    Planner.Via("pin", 1414, 5200, 1500)
+    Frames(8)
+    waypoint = { uiMapID = 1414, position = CreateVector2D((6500 + 12000) / 24000, (20000 - 1200) / 40000) }
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+    check(#vias == 0, "the pin moved: its waypoints gone with it")
+    Frames(8)
+
+    cursorX, cursorY = cx, cy
+    full:Show(was[1], was[2], was[3], was[4])
+    Canvas.Use(using)
+    Canvas.Layout()
+    Creatures.Each, Creatures.Ready, Facts.Get, Facts.Ready, Templates.Get, Templates.Ready, UnitLevel = unpack(kept)
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

@@ -48,6 +48,9 @@ Sets, and what each takes:
   year) with how many hours all its stages last. A start for any month or day (a weekly event) is left out: the
   client's rule for those is not ours to guess.
 - Factions: those the reputation panel shows (a reputation index) and the headers they stand under.
+- FactionTemplates: every faction template's reaction to each side's players (friendly, neutral, hostile), by the
+  game's rule against the templates of that side's races; none for a side whose races it meets differently. An
+  NPC's template is its `faction` in NPCs: the map's route reads from it where enemies stand.
 - Encounters: the bosses of the instances Forever's client has: name, instance, order, difficulty.
 - QuestAreas: the areas the client holds for quests' objectives (QuestPOIBlob with its points), for quests the
   master has: each on its zone map as cells of a 100 x 100 grid in runs per row (a cell is in when its middle
@@ -778,6 +781,46 @@ def characters(t, w):
                                       "armor": num(row["ArmorTypeMask"]) or None})
 
 
+def named(row, column):
+    """The factions a template's list names (Enemies[0..7], Friend[0..7]), without the empty ones."""
+    return {num(row.get(f"{column}[{index}]") or 0) for index in range(8)} - {0}
+
+
+def reaction(creature, player):
+    """How a creature of one faction template meets a player of another, by the game's rule: a faction its enemies or
+    friends name first; else hostile where its enemy groups hold the player's group, friendly where its friend groups
+    do (or the player's friend groups hold its own), else neutral."""
+    faction, group = num(player["Faction"]), num(player["FactionGroup"])
+    if faction and faction in named(creature, "Enemies"):
+        return "hostile"
+    if faction and faction in named(creature, "Friend"):
+        return "friendly"
+    if num(creature["EnemyGroup"]) & group:
+        return "hostile"
+    if num(creature["FriendGroup"]) & group or num(creature["FactionGroup"]) & num(player["FriendGroup"]):
+        return "friendly"
+    return "neutral"
+
+
+def reactions(t, w):
+    """FactionTemplates: each template's reaction to each side's players, worked out against the templates of that side's
+    races (those Races holds: with racial abilities); where its races disagree, none for that side."""
+    templates = t("FactionTemplate")
+    races = {row["ChrRacesID"] for row in t("ChrRaceRacialAbility").values()}
+    sides = defaultdict(list)
+    for key, row in t("ChrRaces").items():
+        template = templates.get(row["FactionID"]) if key in races else None
+        side = SIDES.get(num(template["FactionGroup"]) & 6) if template else None
+        if side in ("alliance", "horde"):
+            sides[side].append(template)
+    for key, row in sorted(templates.items(), key=lambda item: num(item[0])):
+        fields = {"faction": num(row["Faction"]) or None}
+        for side, players in sorted(sides.items()):
+            found = {reaction(row, player) for player in players}
+            fields[side] = found.pop() if len(found) == 1 else None
+        w.stage("FactionTemplates", num(key), fields)
+
+
 def places(t, w):
     """Maps and Areas: the game's own lists, which zone maps alone do not hold."""
     for key, row in sorted(t("Map").items(), key=lambda item: num(item[0])):
@@ -846,6 +889,7 @@ def main():
     auras(t, spells, player, kept_items, w)
     currencies(t, w)
     characters(t, w)
+    reactions(t, w)
     places(t, w)
     collections(t, spells, kept_items, w)
     quest_areas(t, folder, w)

@@ -465,6 +465,30 @@ check("a faction's name in a racial is no name", (staged["Racials", 696]["name"]
 check("a race by its abilities, its side by its template", (staged["Races", 2]["side"], ("Races", 13) in staged), ("horde", False))
 check("a class's colour", staged["Classes", 7]["color"], "0070DE")
 check("an area below level 0 has no level", "level" in staged["Areas", 2521], False)
+
+# --- how each faction template meets each side's players ----------------------------------------------------------------
+def template(faction, group, friends=0, enemies=0, enemy=(), friend=()):
+    row = {"Faction": str(faction), "FactionGroup": str(group), "FriendGroup": str(friends), "EnemyGroup": str(enemies)}
+    for index in range(8):
+        row[f"Enemies[{index}]"] = str(enemy[index]) if index < len(enemy) else "0"
+        row[f"Friend[{index}]"] = str(friend[index]) if index < len(friend) else "0"
+    return row
+sides = {"ChrRaceRacialAbility": {"1": {"ChrRacesID": "1"}, "2": {"ChrRacesID": "2"}, "3": {"ChrRacesID": "3"}},
+         "ChrRaces": {"1": {"FactionID": "1"}, "2": {"FactionID": "2"}, "3": {"FactionID": "3"}, "9": {"FactionID": "1"}},
+         "FactionTemplate": {"1": template(1, 3, 2, 12), "2": template(2, 5, 4, 10), "3": template(3, 3, 2, 12),
+                             "7": template(7, 0), "12": template(72, 2, 2, 4), "14": template(14, 8, 0, 1),
+                             "35": template(31, 0, 1, 0), "50": template(50, 8, 0, 0, enemy=(1,)),
+                             "51": template(51, 0, 0, 1, friend=(2,))}}
+writer = gd.Writer("forever", 70755, None)
+gd.reactions(sides.__getitem__, writer)
+staged = {line["key"]: line["fields"] for line in writer.lines if line["set"] == "FactionTemplates"}
+check("a city's guards: friends of their side, foes of the other", (staged[12]["alliance"], staged[12]["horde"]), ("friendly", "hostile"))
+check("a monster is everyone's foe, a creature nobody's", (staged[14]["alliance"], staged[14]["horde"], staged[7]["horde"]),
+      ("hostile", "hostile", "neutral"))
+check("a template friendly to all players", (staged[35]["alliance"], staged[35]["horde"]), ("friendly", "friendly"))
+check("a faction its friends name is a friend before the groups", staged[51]["horde"], "friendly")
+check("a side whose races it meets differently has no reaction", ("alliance" in staged[50], staged[50]["horde"]), (False, "neutral"))
+check("its faction kept", staged[12]["faction"], 72)
 spells = Thing(effects={"7": [{"DifficultyID": "1", "EffectIndex": "0"},
                               {"DifficultyID": "0", "EffectIndex": "1", "Effect": "2", "EffectAura": "0", "EffectBasePointsF": "88.5", "EffectRealPointsPerLevel": "0.6",
                                "EffectAuraPeriod": "0", "EffectChainTargets": "3", "EffectMiscValue[0]": "0", "EffectTriggerSpell": "0"}]})

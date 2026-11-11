@@ -1,6 +1,6 @@
 # Sane UI: Navigation
 
-**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, through portals and by the teleports a character has (the hearthstone told in the chat where it is quicker); the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, through portals and by the teleports a character has (the hearthstone told in the chat where it is quicker), on foot coloured by how dangerous they are, through waypoints dragged on the full map; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
@@ -330,6 +330,16 @@ is small, and the maps of the dungeons and raids. The plan is in
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
   counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
   filter switches it off.
+- **How dangerous the way is:** on foot the line shows it: golden where no enemy near it is far above you, orange
+  where enemies that spawn near it are 3 or 4 levels above you, red where they are 5 or more above you (the game's own
+  colours of those levels). Only creatures hostile to your side count (Core's data: where each spawns, its levels and
+  its faction, and the client's own table of how each faction meets each side), no rares, critters or pets; after a
+  level up the colours change with you.
+- **Waypoints:** drag the golden line on the full map and let go: a waypoint stands there, and the line goes there
+  first, then on to the map pin, so you lead it round a red stretch or along the way you like. While you drag, a grey
+  pin follows the mouse and two faint lines show the new bend. Drag the line again for more waypoints (up to 8), each
+  on the stretch you dragged. A waypoint is the map pin's art, small and grey: drag it to move it (on the small map
+  too), right click it to take it away. It is gone once you have passed it, and all of them when the map pin moves.
 - **At a flight master:** talking to one fills the screen with this map in place of the game's flight map, the full
   map as it always is (both continents, its view, every pin, the quest log), zoomed out to the whole world: its
   flight points large, over every other pin, the one you stand at glowing, at each one's right its name and what the
@@ -635,6 +645,16 @@ is small, and the maps of the dungeons and raids. The plan is in
   pin one had back as it was, or none, where the pin is still ours; a pin set since stays. `Corpse.GiveBack` does
   the same when the module stands down. The planner's journey for a ghost (`Planner.Ghost`) has no flight points,
   teleports or hearthstone.
+- **Danger** (`Danger.lua`, no frames): how dangerous a place is for the player (Saneroki, 2026-11-11). Once, a job of
+  Core's scheduler, when the route first asks (`Danger.Work`): every creature of Core's set *CreatureSpawns* that is
+  hostile to the player's side (its faction template, *NPCs*' `faction`, and that template's reaction in the set
+  *FactionTemplates*, which `dev/tools/game-data` works out from the client's table by the game's rule), no critter,
+  no rare, rare elite, world boss or trivial one, whose levels span at most `Danger.SPAN` (3); each of its points marks
+  the cells of a grid of `Danger.CELL` (50) yards on its plane within `Danger.REACH` (25) yards of it with its lowest
+  level, a cell keeping the highest. `Danger.At(plane, u, v)` then gives the step against the player's level: 2 at
+  `Danger.RED` (5) levels above or more, 1 at `Danger.ORANGE` (3), else 0, as the game's `DifficultyUtil` steps its
+  colours. A level up colours the line anew a second later (`Route.Again`); the three sets' stamps work it out again.
+  In Retail, without Core's data, every place is 0.
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
@@ -646,7 +666,20 @@ is small, and the maps of the dungeons and raids. The plan is in
   (a curve of three points of the way, so short parts one after the other make one smooth line), in pieces turning
   about `Route.BEND` degrees each: it cuts the corner no deeper than `Route.STRAY` units at every zoom, never past
   the middle of a part. The art runs on from piece to piece and each glint starts at the pulse's moment
-  (`Route.PULSE`), so the pieces pulse as one line; the head meets the line on the curve.
+  (`Route.PULSE`), so the pieces pulse as one line; the head meets the line on the curve. A walk's pieces are cut
+  where its danger changes (`Danger.At`, looked at every `Route.SAMPLE` yards, no piece shorter than 2 units): gold,
+  or the game's `QuestDifficultyColors` of very difficult (orange) and impossible (red), `Route.DANGER` where it has
+  none; the head takes the colour of the piece the player is on. `Route.Grab(x, y)` tells the stage of the line drawn
+  within its edge and `Route.GRAB` units of a point (the waypoint its leg leads to, `leg.toward`, or `"pin"`);
+  `Route.Bend` draws two faint lines from that stage's start (the player, on the stage they are on) and end to the
+  mouse while it is dragged, `Route.Unbend` takes them away.
+- **Dragging the line** (`Canvas.lua`; Saneroki, 2026-11-11: "if we drag the route on the map it will put a new
+  waypoint there that the routing goes to first and then to the map pin"): a left press on the full map (not at the
+  world, no modifier held) where `Route.Grab` finds the line is a drag of it, not of the map (`grab`): past
+  `Canvas.DRAG` the map stays, a ghost of the waypoint stands under the mouse (`Marks.Ghost`) with the faint lines;
+  let go, `Planner.Via` puts the waypoint there on that stage; not moved, it is a click as ever. A press on a
+  waypoint's mark (`Canvas.Press` with its waypoint) drags that one, small map or full; a click on one is no click
+  on the map. On the small map a drag on the line moves the map, as before.
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
   on it), in two looks (`Dress`), each with its place and size (`window:Use`): over the full map
   (`store.questLogPlace`) in the layer `DIALOG` with its dark background, the mouse taken, every objective; and
@@ -971,7 +1004,15 @@ is small, and the maps of the dungeons and raids. The plan is in
   one brought a character, learnt by Core (`src/Core/Data/Teleports.lua`, Core's learned data); the plan is made
   again when Core learnt one (*Travel*'s stamp). Without walking data, straight lines. On a flight (Core's `Data.Trips`) its way on is the
   line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
-  it; without a pin that leg alone.
+  it; without a pin that leg alone. **Waypoints** (`Planner.Via`, `Planner.Drop`, `Planner.Vias`, `Planner.After`):
+  the pin's way keeps a list (`vias`, at most `Planner.VIAS`, 8), each a place in its plane; a new one goes on the
+  stage dragged (before the waypoint that stage leads to, or last), and the way is planned anew at once. A plan with
+  waypoints is a journey to each in turn and on to the pin (`Stages`: `Find` per stage; a waypoint no journey
+  reaches is left out; no word of the hearthstone), each leg knowing the waypoint it leads to (`leg.toward`, false
+  for the pin's stage, the leg in front the first's) and the plan the list it was made for (`plan.vias`, a copy), so
+  one put or passed meanwhile mixes nothing up. Passed (`Passed`, at each step of the tracker): the next one within
+  `Planner.THERE` yards, and those the plan led to before the leg the line is at; taken off, the plan going on as it
+  is. The pin moved or gone: the list is emptied (`Planner.Update`).
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
   pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second, at
   every zoom: `Marks.MemberSize`, from `Marks.MEMBER`'s 44 out at a continent, `Marks.WIDE`, to 22 at the nearest
@@ -981,7 +1022,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   member's new place (`Marks.Glide`, a frame's `OnUpdate` set only while one is on its way), over the time since
   the place last changed, the time to the next look at least and `Marks.GLIDE` (1 second) at most, so a member the
   game tells of only now and then glides on too; at once where the mark stood for another member (`UnitGUID`), on
-  another plane, or lies farther than `Marks.LEAP` (200 yards: a portal).
+  another plane, or lies farther than `Marks.LEAP` (200 yards: a portal). The waypoints (`Marks.Vias`, at each
+  layout and when the list changes): a button each, the map pin's art (`Waypoint-MapPin-Untracked`) desaturated at
+  `Marks.VIA` (20), its tooltip `ns.TEXT.via`; the left button the map's (`Canvas.Press` with its waypoint: a drag
+  moves it), a right click `Planner.Drop`. `Marks.Ghost`: the same art, faint, under the mouse while one is dragged.
 - **Indoors** (`Indoors.lua`): inside a building or a cave (`Live.Indoors`: the game's `IsIndoors`, or its minimap
   showing its indoor plan, its view's radius under `Live.PLAN` of its step's outdoors, `Live.OUTDOORS`: the halls one
   may ride through, which the game's `WMOAreaTable` counts as outdoors, so `IsIndoors` says no there; Ironforge's
@@ -1108,11 +1152,12 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, whole beside the bar and the quest log, zoomed and dragged; inside one the small map's whole map, a wheel notch out past the game's minimap |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
-| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
+| `Danger.lua` | How dangerous a place is for you: a grid per plane of the highest level of the enemies of your side spawning near each cell (Core's *CreatureSpawns*, *NPCs*, *FactionTemplates*), stepped against your level as the game's colours are. No frames |
+| `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold (a walk orange or red where enemies above you spawn near it), flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue; the stage under the mouse and the bend while it is dragged |
 | `Paths.lua` | The ways of the flight point or dock under the mouse: each flight of your side from it white, a ship's way round light blue, its leaps along our sea lanes round the Maelstrom |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's tooltip as a dungeon boss's, its 3D model beside it with Alt |
 | `RareTracker.lua` | The Sane Rare tracker: rares, treasures, books and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover; a chest or book the interact key picks; a book still needed within 100 yards) told at once by a notice at the screen's right edge under the minimap, dragged where you like (its model or icon, name, rank and level, how far and which way) and the game's war horn; a double click: the map pin there, a right click: away; `/sane testraretracker` |
-| `Marks.lua` | The player's arrow, the map pin, the party, the pings |
+| `Marks.lua` | The player's arrow, the map pin, the waypoints (and the ghost of one dragged), the party, the pings |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
@@ -1139,6 +1184,14 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the line coloured by its danger; waypoints dragged:** Saneroki: "Color the golden routing line in
+  depending on how dangerous it is. So we know where which enemies spawn and what their level is. Can we make a
+  routing show fx red if the enemies level range is clearly above me. Can we also implement it to make it possible to
+  drag the route to reroute around? So that if we drag the route on the map it will put a new waypoint there that the
+  routing goes to first and then to the map pin". `Danger.lua` (Core's new set *FactionTemplates*, the client's
+  reactions, so friendly guards are no danger), the walks' pieces by danger (`Route.lua`); the line dragged on the full
+  map (`Canvas.lua`'s `grab`, `Route.Grab`, `Route.Bend`), the waypoints (`Planner.Via`, `Stages`, `Passed`;
+  `Marks.Vias`, `Marks.Ghost`). Cards #464, #465.
 - **2026-11-11, the party's marks glide, smaller in close:** Saneroki: "can the movement of them become smoother?
   right now they jitter to the new position all the time", then "it should be smaller when you are zoomed in
   closer". `Marks.Glide`, `Aim`, `Along`; `Marks.MEMBER` 44 far out to 22 in close.

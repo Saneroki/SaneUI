@@ -356,6 +356,7 @@ local function Draw()
     ns.Safe("paths", ns.Paths.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
+    ns.Safe("marks", ns.Marks.Vias, view)
     ns.Safe("marks", ns.Marks.Group, view) -- at once at the new zoom, their size too
 end
 
@@ -520,6 +521,10 @@ local tracking = ns.Guard(Track) -- made once
 --  The mouse
 -------------------------------------------------------------------------------
 local pressX, pressY, lastX, lastY, moved
+-- A drag of the golden line or of a waypoint (Route.Grab, Marks.Vias), in place of the map's: key (the stage of the
+-- line pressed: a new waypoint goes on it, Planner.Via), via (the waypoint moved), from and to (the stages the faint
+-- lines run from and to, Route.Bend); nil while a drag is the map's.
+local grab
 
 -- The mouse in the canvas' units.
 local function Cursor()
@@ -536,15 +541,55 @@ local function FromMiddle()
     return x - middleX, y - middleY
 end
 
+-- The mouse in the plane of the view (the camera's map), from the canvas' middle (FromMiddle); nil off it.
+local function Pointed(x, y)
+    if not x or camera.map ~= view.map then return nil end
+    return camera.u + x / camera.k, camera.v + y / camera.k
+end
+
+-- A press on the golden line on the full map, the map not whole on the screen (not at the world) and no modifier
+-- held (Ctrl and a click, Shift and a click are the map's): a drag of it puts a waypoint where it is let go. The
+-- line under the mouse as drawn (Route.Grab); nil where none is.
+local function Grab()
+    if camera ~= ns.Window.full or lost or not laid or camera.level == "world" or IsModifierKeyDown() then return nil end
+    local u, v = Pointed(FromMiddle())
+    local key = u and ns.Route.Grab((u - view.u) * view.k, (v - view.v) * view.k)
+    return key and { key = key, from = key, to = key } or nil
+end
+
+-- The line or a waypoint dragged: where the waypoint would go, the faint lines to it.
+local function Bend()
+    local u, v = Pointed(FromMiddle())
+    if not u then return end
+    ns.Safe("route", ns.Route.Bend, (u - view.u) * view.k, (v - view.v) * view.k, grab.from, grab.to)
+    ns.Safe("marks", ns.Marks.Ghost, view, view.map, u, v)
+end
+
+-- The drag of the line or a waypoint over: its faint lines and ghost gone; let go (not dropped), the waypoint put
+-- where the mouse is (Planner.Via).
+local function Unbend(dragged, put)
+    ns.Safe("route", ns.Route.Unbend)
+    ns.Safe("marks", ns.Marks.Ghost, view, nil)
+    local u, v = Pointed(FromMiddle())
+    if put and u then ns.Safe("route", ns.Planner.Via, dragged.key, view.map, u, v, dragged.via) end
+end
+
 local function Drag()
     local x, y = Cursor()
     if not moved then
         if math.abs(x - pressX) + math.abs(y - pressY) < Canvas.DRAG then return end
         moved, lastX, lastY = true, pressX, pressY
-        known = false
-        Native() -- the game's minimap goes: the view no longer follows
+        if not grab then
+            known = false
+            Native() -- the game's minimap goes: the view no longer follows
+        end
     end
     if x == lastX and y == lastY then return end
+    if grab then
+        lastX, lastY = x, y
+        lastInput = GetTime()
+        return Bend()
+    end
     camera:Pan(x - lastX, y - lastY)
     lastX, lastY = x, y
     lastInput = GetTime()
@@ -552,11 +597,14 @@ local function Drag()
 end
 local dragging = ns.Guard(Drag) -- made once: the per-frame step while the left button is held
 
-local function Down(_, button)
+-- own: the press is the canvas' own (not a pin's or a mark's, Canvas.Press): on the golden line, a drag of it.
+local function Down(own, button)
     if held then return end -- on the window's way: its camera is not the one shown (Morph), no drag nor click
     lastInput = GetTime()
+    if grab then Unbend() end -- another button during a drag of the line: that drag ends, nothing put
     pressed, moved = button, false
     pressX, pressY = Cursor()
+    grab = own and button == "LeftButton" and Grab() or nil
     if button == "LeftButton" then frame:SetScript("OnUpdate", dragging) end
 end
 
@@ -606,17 +654,21 @@ local function Into(x, y)
     return true
 end
 
--- The press is over: true when it was a click (not a drag, the button that was pressed).
+-- The press is over: true when it was a click (not a drag, the button that was pressed; not on a waypoint's mark). A
+-- drag of the line or a waypoint puts the waypoint where it is let go.
 local function Finish(button)
     frame:SetScript("OnUpdate", nil)
     if button ~= pressed then return false end
     pressed = nil
     lastInput = GetTime()
+    local dragged = grab
+    grab = nil
+    if dragged then Unbend(dragged, moved) end
     if moved then
         moved = false
         return false
     end
-    return true
+    return not (dragged and dragged.via)
 end
 
 -- The last plain left click, for a double click: when, where the mouse was (from the view's middle), and what the
@@ -673,9 +725,13 @@ local function Up(_, button)
 end
 
 -- A pin was pressed (PinView.lua): the map takes the press as its own, so a drag that starts on a pin moves
--- the map. Let go: a drag is the map's; a click as on the map, but the pin's own first (Clicked).
-function Canvas.Press(button)
+-- the map. Let go: a drag is the map's; a click as on the map, but the pin's own first (Clicked). A waypoint's mark
+-- (via: its waypoint, Marks.Vias) pressed with the left button: a drag of it moves the waypoint, small or full.
+function Canvas.Press(button, via)
     Down(nil, button)
+    if via and button == "LeftButton" and pressed and not lost and laid and camera.level ~= "world" then
+        grab = { via = via, key = via, from = via, to = ns.Planner.After(via) }
+    end
 end
 
 function Canvas.Release(button, pin)
@@ -832,6 +888,10 @@ end
 local function Gone()
     frame:SetScript("OnUpdate", nil)
     pressed, moved = nil, false
+    if grab then
+        grab = nil
+        Unbend()
+    end
 end
 
 -------------------------------------------------------------------------------

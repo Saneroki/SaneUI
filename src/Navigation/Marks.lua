@@ -10,6 +10,10 @@ local _, ns = ...
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's), at
 --                           a fixed size; a click leads the game's arrow to it or not, Ctrl-click
 --                           takes it away
+--      the waypoints        where the golden line goes first (Planner.Via, dragged on the full map):
+--                           the game's map pin, smaller and grey (Marks.VIA); dragged, one moves;
+--                           a right click takes it away; while the line or one is dragged, a ghost
+--                           of it under the mouse (Marks.Ghost)
 --      the party, the raid  the game's party blip in each member's class colour, a few times a
 --                           second while the map is shown (the pin filter's Party and raid), at
 --                           every zoom, largest far out and smaller as the map zooms in
@@ -30,6 +34,7 @@ ns.Marks = Marks
 
 Marks.ARROW = 27  -- the player's arrow, as Blizzard's map draws it (GroupMembersDataProvider)
 Marks.PIN = 30    -- the map pin, as Blizzard's (WaypointLocationDataProvider)
+Marks.VIA = 20    -- a waypoint: the map pin's art, smaller, without its colour
 Marks.MEMBER = { 44, 22 } -- a member of the party or raid: its side out at Marks.WIDE and farther, and at the
                           -- nearest zoom (Camera.NEAR), between them smaller by one step at each notch in
 Marks.WIDE = 0.05  -- the zoom (the canvas' units per yard) out from which the members' marks are their largest:
@@ -48,6 +53,8 @@ local nextGroup = 0
 local glider       -- a frame of the layer's whose OnUpdate glides the members' marks, set only while one is on its way
 local gliding      -- whether it is set
 local seen         -- the view the members' marks were placed in (Canvas.view)
+local vias = {}    -- the waypoints' marks, made as many as needed; each knows its waypoint (button.via)
+local ghost        -- where a waypoint dragged would go (Marks.Ghost)
 
 -- The game's own words for its map pin.
 local function Tip(button)
@@ -104,10 +111,12 @@ function Marks.Build(canvasHolder)
     glider = CreateFrame("Frame", nil, layer)
 end
 
--- The layer at that frame level (the canvas' order, Canvas.lua: over the game's minimap), the pin over it.
+-- The layer at that frame level (the canvas' order, Canvas.lua: over the game's minimap), the pin and the
+-- waypoints over it.
 function Marks.Stack(level)
     layer:SetFrameLevel(level)
     pin:SetFrameLevel(level + 1)
+    for _, button in ipairs(vias) do button:SetFrameLevel(level + 1) end
 end
 
 -- A point of a plane, at the view's place (the canvas' origin and zoom); nil when not linked.
@@ -133,6 +142,86 @@ function Marks.Player(view, map, u, v, facing)
     if u then x, y = Spot(view, map, u, v) end
     if x and facing then arrow:SetRotation(facing) end
     Put(arrow, x, y, Marks.ARROW / 2)
+end
+
+-- A waypoint's words: what it is, what the mouse does to it.
+local function ViaTip(button)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT", -12, -4)
+    GameTooltip:SetText(ns.TEXT.via, 1, 1, 1)
+    GameTooltip:AddLine(ns.TEXT.viaTip, nil, nil, nil, true)
+    GameTooltip:Show()
+end
+
+-- The left button is the map's (Canvas.Press: a drag moves the waypoint), the right one takes it away.
+local function ViaDown(button, mouse)
+    if mouse == "LeftButton" then ns.Canvas.Press(mouse, button.via) end
+end
+
+local function ViaUp(button, mouse)
+    if mouse == "LeftButton" then
+        ns.Canvas.Release(mouse)
+    elseif mouse == "RightButton" and button.via then
+        GameTooltip_Hide()
+        Sound("UI_MAP_WAYPOINT_REMOVE")
+        ns.Planner.Drop(button.via)
+    end
+end
+
+-- A waypoint's look: the map pin's art without its colour.
+local function Look(texture)
+    texture:SetAtlas("Waypoint-MapPin-Untracked")
+    texture:SetDesaturated(true)
+end
+
+-- The mark of the waypoint at index, made when there is none.
+local function Via(index)
+    local button = vias[index]
+    if button then return button end
+    button = CreateFrame("Button", nil, layer)
+    button:SetSize(Marks.VIA, Marks.VIA)
+    button.icon = button:CreateTexture(nil, "ARTWORK")
+    button.icon:SetAllPoints()
+    Look(button.icon)
+    button:SetHighlightAtlas("Waypoint-MapPin-Highlight", "ADD")
+    button:RegisterForClicks() -- the press and the release are the map's and the mark's (ViaDown, ViaUp)
+    button:SetScript("OnMouseDown", ns.Guard(ViaDown))
+    button:SetScript("OnMouseUp", ns.Guard(ViaUp))
+    button:SetScript("OnEnter", ns.Guard(ViaTip))
+    button:SetScript("OnLeave", GameTooltip_Hide)
+    button:SetFrameLevel(pin:GetFrameLevel())
+    vias[index] = button
+    return button
+end
+
+-- The pin's waypoints (Planner.Vias), each where it stands.
+function Marks.Vias(view)
+    if not layer then return end
+    local list = ns.Planner.Vias()
+    for index, via in ipairs(list) do
+        local button = Via(index)
+        button.via = via
+        local x, y = Spot(view, via.map, via.u, via.v)
+        Put(button, x, y, Marks.VIA / 2)
+    end
+    for index = #list + 1, #vias do
+        vias[index].via = nil
+        Put(vias[index], nil)
+    end
+end
+
+-- While the line or a waypoint is dragged (Canvas.lua): a ghost of a waypoint at a point of a plane (map, u, v), or
+-- none (no map).
+function Marks.Ghost(view, map, u, v)
+    if not layer then return end
+    if not ghost then
+        ghost = layer:CreateTexture(nil, "OVERLAY", nil, 6)
+        Look(ghost)
+        ghost:SetSize(Marks.VIA, Marks.VIA)
+        ghost:SetAlpha(0.7)
+    end
+    local x, y
+    if map then x, y = Spot(view, map, u, v) end
+    Put(ghost, x, y, Marks.VIA / 2)
 end
 
 -- The map pin, where the game has it.
@@ -260,6 +349,7 @@ function Marks.Fit()
     if not arrow then return end
     Fit(pair)
     Fit(members)
+    Fit(vias)
 end
 
 -- Out of sight, all of them.
@@ -267,6 +357,8 @@ function Marks.Clear()
     if not arrow then return end
     Put(arrow, nil)
     Put(pin, nil)
+    for _, button in ipairs(vias) do Put(button, nil) end
+    if ghost then Put(ghost, nil) end
     for _, texture in ipairs(members) do
         texture.who = nil
         Put(texture, nil)

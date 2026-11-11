@@ -215,7 +215,7 @@ part of Core.
 | Characters | No sets: saved data only (*Characters*) |
 | Talents | Talents (trait node ID), Legacy (`node:<ID>`, `challenge:<ID>`, `reward:<level>`) |
 | Market | Vendors (the vendor's creature ID); the series *Prices* (step 1c.2) |
-| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), Holidays (holiday ID), Races (race ID), Racials (the game's ability ID), Classes (class ID), Maps (map ID), Areas (area ID), PatchNotes (the build), Icons (the icon's file number) |
+| Game | CVarLabels (the CVar's name), Currencies (currency ID), Factions (faction ID), FactionTemplates (faction template ID: each one's reaction to each side's players, worked out from the client's table; an NPC's `faction`), Holidays (holiday ID), Races (race ID), Racials (the game's ability ID), Classes (class ID), Maps (map ID), Areas (area ID), PatchNotes (the build), Icons (the icon's file number) |
 | Collections | Achievements (achievement ID), Mounts (mount ID), TransmogSets (transmog set ID) |
 
 - **A text key `<kind>:<ID>`** where one set holds things whose IDs overlap (a creature and an object can have
@@ -1399,7 +1399,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
 | `dev/tools/icon-data` | The game's icons as staging for the set *Icons*, both games (*The icons*): `icons-forever.jsonl`, `icons-retail.jsonl`. |
-| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes; the beta is gone, so they and `base` are history) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, Encounters, Races, Racials, Classes, Maps and Areas; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
+| `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes; the beta is gone, so they and `base` are history) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, FactionTemplates, Encounters, Races, Racials, Classes, Maps and Areas; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |
 
 ## Tests
 

@@ -838,7 +838,8 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
             "Fishing", "Travel",
             "Places", "Drops", "Tiles", "Overlays", "Encounters", "Bosses", "Indoors", "Dungeons", "Spawns", "QuestAreas", "PatrolPaths",
             "CreatureSpawns", "Walking", "Guides", "Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines",
-            "Professions", "Talents", "Legacy", "Vendors", "CVarLabels", "Currencies", "Factions", "Holidays", "Achievements",
+            "Professions", "Talents", "Legacy", "Vendors", "CVarLabels", "Currencies", "Factions", "FactionTemplates", "Holidays",
+            "Achievements",
             "Mounts", "TransmogSets", "PatchNotes", "Races", "Racials", "Classes", "Maps", "Areas", "Icons"]
     check("every set of the plan has its schema", sorted(real.schemas), sorted(plan))
     report = importer.run(real, importer.read_staging(staging))

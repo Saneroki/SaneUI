@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Navigation
-## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, a click pings the place to your group, a double click puts the map pin there; draw it as Parchment (Blizzard's maps joined into one) or as Scrying (the land as it lies). Pins of your quests, flight points, rares, places and party; the maps of the dungeons and raids; the quest log over the full map, pinned to the screen if you like; a golden line to the map pin, on foot and by flight. The game's map keys open it. Settings: the page Navigation.
+## Notes: Sane UI's minimap and map in one window. Small in the screen's top right corner it is the minimap; move the mouse into that corner and it fills the screen as the map. Drag it, zoom it with the mouse wheel from a zone out to the whole world, right click for one map out, a click pings the place to your group, a double click puts the map pin there; draw it as Parchment (Blizzard's maps joined into one) or as Scrying (the land as it lies). Pins of your quests, flight points, rares, places and party; the maps of the dungeons and raids; the quest log over the full map, pinned to the screen if you like; a golden line to the map pin, on foot and by flight, orange or red where enemies above your level spawn; drag it on the full map for a waypoint. The game's map keys open it. Settings: the page Navigation.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -39,6 +39,8 @@ Lifts.lua
 Planner.lua
 # While you are dead: the map pin at your corpse, the one you had back once you live again. Knows no frames
 Corpse.lua
+# How dangerous a place is for you: the enemies spawning near it by their levels, for the golden line's colours. Knows no frames
+Danger.lua
 # At a flight master: our full map in place of the game's flight map (Shift: the game's), its flight points to click
 Taxi.lua
 # The frame the map is drawn in, the same for both views: its layers, the player's place, the mouse

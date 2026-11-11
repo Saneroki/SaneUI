@@ -1,0 +1,8 @@
+set = "FactionTemplates"
+key = "int"              # the game's faction template ID (FactionTemplate; an NPC's faction in the set NPCs)
+about = "How a creature of each faction template meets each side's players: friendly, neutral or hostile, as the client's table says."
+
+[fields]
+faction  = { type = "int", min = 0 }   # the faction it belongs to (Factions, where the reputation panel shows it)
+alliance = { type = "enum", values = ["friendly", "neutral", "hostile"] }  # towards the Alliance's players; none where its races disagree
+horde    = { type = "enum", values = ["friendly", "neutral", "hostile"] }  # towards the Horde's players
