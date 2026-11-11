@@ -590,9 +590,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   path's heading at both ends, `Paths.PIECES` pieces between two points (`Sail`, `Sailed`); the lanes share
   stretches where ships share a sea (`NORTH` round Kalimdor from Auberdine, `PART` north of the Maelstrom,
   `MENETHIL` into its bay), kept clear of the terrain's coasts, the world map's painted islands and its Maelstrom
-  (centre 0.497, 0.509: 190 of 2004 pixels clear). A zeppelin has none (it flies): as before. Straight lines from
-  point to point, the dark edge and the route's art in `Route.COLOURS`, only near the view, cut at the canvas' edge
-  (`Paths.Fit`), laid out again with the map.
+  (centre 0.497, 0.509: 190 of 2004 pixels clear). A zeppelin flies over the land: the two whose straight line
+  crossed the Maelstrom have a lane bent round it (Orgrimmar–Grom'gol 285 under it, Orgrimmar–the Undercity 302
+  over it), the others none (as before). Straight lines from point to point, the dark edge and the route's art in
+  `Route.COLOURS`, only near the view, cut at the canvas' edge (`Paths.Fit`), laid out again with the map.
 - **Taxi** (`Taxi.lua`, no frames of its own): hooks after the game's flight maps' `OnShow` and `OnHide` (`TaxiFrame`;
   `FlightMapFrame` once `Blizzard_FlightMap` has loaded, `EventUtil.ContinueOnAddOnLoaded`), as the game shows them by
   its own code. Shown without Shift (the module up; `nativeMap` is the world map's, not looked at): made tiny and clear (`Core.Lend`,
@@ -1147,6 +1148,8 @@ Tests: `dev/tests/navigation.lua`.
   around it. Ships also sometimes travel to several ports in a loop. It would be nice to see all the ship route the
   ship goes [...] while its map pin is hovered or clicked." (`Paths.LANES`; the loop Menethil Harbor, Southshore,
   Auberdine an outer and an inner way; every boat of *Travel* checked against the routes Forever has. Card #461.)
+  Asked whether the zeppelins' lines should bend round the Maelstrom too: "Yes, bend them" (the two that crossed
+  it; the others fly far from it).
 - **2026-11-11, the sea's waves:** Saneroki: "The map shows atm a solid color as the water. Can we make it a ocean
   like texture" (`Art/Sea.blp` from the game's own ocean texture, `Canvas.lua`'s `Waves`).
 - **2026-11-11, the flight points' names at a flight master:** Saneroki: "On the right of the big Flightpath icons,

@@ -9,7 +9,8 @@ The bigger changes of each version, newest first.
 - The map draws a ship's whole way when you hover or click its dock:
   through the open sea where the boat sails out of sight behind the
   loading screen, around the Maelstrom, and every port of a ship
-  that sails a loop (Menethil Harbor, Southshore, Auberdine).
+  that sails a loop (Menethil Harbor, Southshore, Auberdine). The
+  zeppelins from Orgrimmar fly around the Maelstrom too.
 - Talking to an NPC looks new: the words, the answers and the quest
   each stand on a dark plate of their own, side by side, its round
   edges fading softly into the world but never into the next one.

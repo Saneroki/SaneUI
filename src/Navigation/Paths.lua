@@ -32,8 +32,9 @@ local _, ns = ...
 --  has nothing between. There each boat's way follows a lane of ours (LANES)
 --  through the open sea alone, round the Maelstrom, as a smooth curve joined to
 --  the game's path where the boat leaves and where it comes in, so the whole
---  round shows, every port of a loop. A way with no lane (a zeppelin flies
---  straight) is drawn as before.
+--  round shows, every port of a loop. A zeppelin flies over the land: the two
+--  whose straight line crossed the Maelstrom have a lane bent round it, the
+--  others none. A way with no lane is drawn as before.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
@@ -49,8 +50,8 @@ Paths.PIECES = 8   -- pieces of a lane's curve between two of its points
 -- The sea lanes, by the boat's way (its key in the set Travel): one a leap, in the order the boat leaps (a way of two
 -- docks: one lane, sailed there and back). Each is points on WoW: Forever's world map (0 to 1, as Coords.ToWorldMap),
 -- from the sea off one dock to the sea off the other; a leap takes it from the end nearer where the boat leaves. Kept
--- clear of the coasts (the terrain's), the Maelstrom and the islands the world map paints. Forever's alone: the
--- world maps differ.
+-- clear of the coasts (the terrain's), the Maelstrom and the islands the world map paints; a zeppelin's of the
+-- Maelstrom alone. Forever's alone: the world maps differ.
 -- Stretches several lanes share, so ships on one sea draw one line: from Auberdine round Kalimdor's north; where the
 -- ways from there part, north of the Maelstrom; from there into Menethil Harbor's bay.
 local NORTH = { { 0.1627, 0.2530 }, { 0.1926, 0.2193 }, { 0.2255, 0.1916 }, { 0.2869, 0.1662 }, { 0.3643, 0.1961 },
@@ -98,6 +99,10 @@ Paths.LANES = Core.FOREVER and {
                   { 0.7834, 0.8308 }, { 0.8283, 0.7784 }, { 0.8683, 0.7111 }, { 0.8957, 0.6437 } } },
     -- Auberdine - Stormwind Harbor: round Kalimdor's north, past the Maelstrom's north-east, down the coast
     [11616] = { Lane(NORTH, PART, { { 0.5838, 0.3892 }, { 0.6312, 0.4716 }, { 0.6562, 0.5614 }, { 0.6662, 0.6250 } }) },
+    -- The zeppelin Orgrimmar - Grom'gol: under the Maelstrom
+    [285] = { { { 0.3792, 0.5352 }, { 0.4466, 0.6452 }, { 0.5289, 0.6774 }, { 0.6238, 0.7186 } } },
+    -- The zeppelin Orgrimmar - the Undercity: over the Maelstrom
+    [302] = { { { 0.4092, 0.3518 }, { 0.5040, 0.2994 }, { 0.5988, 0.2507 } } },
 } or {}
 
 local Travel = Core.Data.Set("Travel")
