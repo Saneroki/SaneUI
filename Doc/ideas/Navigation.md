@@ -749,7 +749,10 @@ Three spaces, converted only in `Coords.lua`:
   `dev/tools/terrain-art` from the game's minimap textures, BLP2 DXT1 like theirs), a continent in a few dozen
   textures, the world in under fifty. It is drawn under the tiles at every zoom, so the land never goes black
   while they load (open question *Far zoom*, answered: terrain at every zoom).
-- **Sea tiles** have no file: the ground shows, the sea's colour.
+- **Sea tiles** have no file: the ground shows, the sea's colour, and over it the sea's waves (built 2026-11-11,
+  Saneroki: "Can we make it a ocean like texture"): the game's own ocean texture, its light alone (`Art/Sea.blp`,
+  `dev/tools/terrain-art --sea`), repeated over the plane so the waves move with the land, the same size on the
+  screen at every zoom; they fade into Parchment's paper with the sea's colour.
 - **The water cut away (built 2026-10-19):** `dev/tools/terrain-art` reads the game's terrain files (each map
   chunk's heights, water and liquid type; magma and slime stay) and makes the overview's alpha the land: where
   the ground lies above the water's surface, sampled 2 yards apart, rivers and lakes too. The overview's colour

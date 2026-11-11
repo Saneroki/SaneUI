@@ -47,6 +47,13 @@ frames off.
   assets/optimized/Navigation/Art/Sketches/<continent>-<row>-<column>.blp   as the terrain's overview
   assets/optimized/Navigation/Art/Edge.blp 256 x 256: a map's box, its frame faded off
 
+The sea's waves, laid over the sea's colour wherever no land is (src/Navigation/Canvas.lua): the game's own ocean
+texture, the first frame of the ones it lays over its seas (XTextures/ocean/ocean_h.1.blp, file ID 219855), its
+alpha alone in white, so the code tints the light on the waves and fades it. It tiles seamlessly, as in the game.
+Made by itself, from that one file (--sea).
+
+  assets/optimized/Navigation/Art/Sea.blp 1024 x 1024: the waves' light
+
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
 
@@ -66,6 +73,7 @@ drawn: the other maps' textures, outlines and lines of Outlines.lua stay as they
 Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
 Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables> <map art> [--maps <id>[,<id>...]]
+        dev/tools/terrain-art --sea <the game's ocean texture, as it stores it>
 """
 import csv
 import io
@@ -87,6 +95,8 @@ TERRAIN = ART / "Terrain"
 ZONES = ART / "Zones"
 SKETCHES = ART / "Sketches"
 EDGE = ART / "Edge.blp"
+SEA = ART / "Sea.blp"
+WAVES = 1024       # the side of the game's ocean texture, and of the sea's
 COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
@@ -745,8 +755,23 @@ def sample(grid, rows, columns):
             + grid[r0 + 1, c0] * fr * (1 - fc) + grid[r0 + 1, c0 + 1] * fr * fc)
 
 
+def sea(texture):
+    """The sea's waves: the alpha of the game's ocean texture, in white (the code gives it its colour)."""
+    with Image.open(texture) as image:
+        waves = image.convert("RGBA").getchannel("A")
+    if waves.size != (WAVES, WAVES):
+        sys.exit(f"{texture} is {waves.width} x {waves.height}, not the ocean texture's {WAVES} x {WAVES}")
+    white = Image.new("L", waves.size, 255)
+    size = write(SEA, Image.merge("RGBA", (white, white, white, waves)))
+    print(f"The sea's waves: {SEA.relative_to(ROOT)}, {size / 1e6:.1f} MB.")
+
+
 def main():
     args, maps = sys.argv[1:], None
+    if args[:1] == ["--sea"]:
+        if len(args) != 2:
+            sys.exit(__doc__)
+        return sea(Path(args[1]))
     if "--maps" in args:
         at = args.index("--maps")
         maps = {int(map_id) for map_id in args[at + 1].split(",")}

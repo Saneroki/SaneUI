@@ -2055,6 +2055,7 @@ end)()
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
     check(small.follow and minimap._shown and not Canvas.Laid(), "not ticked, in an instance: the game's minimap, the map there")
+    check(not Shown()[Canvas.SEA], "in an instance the sea in its colour alone: no waves")
     player.map, player.x = 1429, wasX
     tracker._scripts.OnUpdate(tracker, 0.016)
     Core.Set(ns.name, "followMap", true)
@@ -2343,6 +2344,19 @@ check(bar and bar._shown, "full: the view buttons")
 shown = Shown()
 check(Count(shown, 801, 804) == 4 and Count(shown, 142901, 142912) == 0 and Count(shown, 141501, 141512) == 0
     and Overviews(shown, 0, "Sketches") == 0, "Scrying up close: the tiles, no map art")
+do -- The sea's waves over the view's rectangle, laid by the plane: a corner's texture coordinate is a whole number of
+   -- copies from the plane's own, so a layout anywhere goes on with the same waves; a copy SEA_SIZE units wide.
+    local waves, view, size = shown[Canvas.SEA], Canvas.view, Canvas.SEA_SIZE
+    local c, corner = waves and waves._coords, waves and waves._points[1]
+    local function Whole(x) return near(x, math.floor(x + 0.5)) end
+    check(c and corner and near(waves._alpha, Canvas.WAVE[4]) and c[1] >= 0 and c[1] < 1 and c[3] >= 0 and c[3] < 1
+        and near(c[2] - c[1], (view.right - view.left) * view.k / size)
+        and near(c[4] - c[3], (view.top - view.bottom) * view.k / size)
+        and Whole(c[1] - view.left * view.k / size) and Whole(c[3] + view.top * view.k / size)
+        and corner[1] == "TOPLEFT" and corner[2] == waves._parent and near(corner[4], (view.left - view.u) * view.k)
+        and near(corner[5], (view.top - view.v) * view.k),
+        "Scrying: the sea's waves over the whole view, on the holder, laid by the plane, a copy SEA_SIZE units wide")
+end
 local function Button(key)
     for _, widget in ipairs(W.frames) do if widget.key == key and widget._scripts.OnClick then return widget end end
 end
@@ -2355,6 +2369,7 @@ shown = Shown()
 check(ns.options.view == "sketches" and Button("sketches")._lit and Count(shown, 801, 804) == 0
     and Count(shown, 141501, 141512) > 0 and Overviews(shown, 0, "Sketches") > 0 and Count(shown, 142901, 142912) > 0,
     "Sketches: the continent's map, the stitched map over it, the zone's own map over that")
+check(not shown[Canvas.SEA], "Sketches: the paper past the map, no waves")
 local outline = shown[142901] and shown[142901]._mask
 local framed = true
 for file = 141501, 141512 do if shown[file] and (not shown[file]._mask or shown[file]._mask._texture ~= ns.Art.EDGE) then framed = false end end
@@ -2389,6 +2404,8 @@ do
     local faded = Canvas.Blend(Canvas.view.span)
     check(faded > 0 and faded < 1 and near(artLayer._alpha, faded) and Count(shown, 141501, 141512) > 0
         and Overviews(shown, 0) > 0, "Blended between: the terrain under, the art over it, faded")
+    check(shown[Canvas.SEA] and near(shown[Canvas.SEA]._alpha, Canvas.WAVE[4] * (1 - faded)),
+        "Blended between: the waves faded as the sea's colour goes over into the paper")
     full:Show(1415, 500, -8950, high / 800)
     Canvas.Layout()
     shown = Shown()
