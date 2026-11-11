@@ -103,9 +103,10 @@ is small, and the maps of the dungeons and raids. The plan is in
   *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
   yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
   stand side by side, a cloud round their middle, each in the direction it lies: they lose a little of their place,
-  pushed aside, and stand each at its own place again as you zoom in. Only several spawns of one and the same thing
-  close together (a herb's, a creature's) are one marker, in its picture, its tooltip naming it once; no tooltip says
-  a word twice. Treasure, possible herbs and possible ore show only up close (the view at most `Pins.CLOSER`, 1500
+  pushed aside, and stand each at its own place again as you zoom in. Pins of one icon close together (trainers,
+  vendors, portals; several spawns of one herb or creature) are one marker in that icon, its tooltip naming what is
+  there once each, and part as you zoom in; quests, flight points and docks never combine, each to be hovered or
+  clicked for itself. No tooltip says a word twice. Treasure, possible herbs and possible ore show only up close (the view at most `Pins.CLOSER`, 1500
   yards high). **A double click on any pin**, on the small map and the
   full one, puts the game's map pin where it stands (the golden line leads there; the tooltips do not say so). **A
   click** on a marker of one thing's spawns zooms in; on the full map a quest in your log leads the game's arrow to it and shows
@@ -481,9 +482,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   or the isle's). At the world each plane in view and its zones (the docks stand on the zones' maps), `Pins.WORLD`'s
   kinds alone; at a continent's zoom every plane in view (`InView`). `Pins.CLOSE`'s kinds (treasure, herb, ore) only
   while `view.span` is at most `Pins.CLOSER`. `Pins.Spread` (Saneroki, 2026-11-11, in place of the gather's markers
-  and their plus): in the list's order (the higher kind first) each pin joins the first cloud whose outer ring and one
+  and their plus): first `Combine`, pins of one icon (`Icon`: atlas or picture, tint, grey) within `Pins.COMBINE`
+  times its size of the first one in it one marker there (not `Apart`: quests, flight points, docks, a flight
+  master's); then in the list's order (the higher kind first) each pin joins the first cloud whose outer ring and one
   size more it lies within (`Ring`), else makes its own; a cloud's middle the mean of its members' places, its step
-  `Pins.SPACE` times its largest member's size (`Pins.Size`); laid out (`Lay`) the first at the middle, the rest by
+  `Pins.SPACE` (0.85) times its largest member's size (`Pins.Size`); laid out (`Lay`) the first at the middle, the rest by
   their distance from it into rings of 6 r, each ring's in the order they lie round it; each pin's `sx`, `sy` the units
   it stands off its place (`PinView` adds them). Herbs, ore and a quest's creatures, a zone's thousands of places: one
   thing's spawns within `Pins.GATHER` units of each other (this cell of that grid or one beside it) ride with the first
@@ -1099,6 +1102,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, pins of one icon combined, a smaller gap:** Saneroki: "map pins that share the same icon, for example
+  all trainers, vendors, portals etc should be combined into one icon and split if you zoom in close enough. Right
+  now the pins have to big of a gap between them and show to many." (`Pins.lua` `Combine`, `Pins.COMBINE`;
+  `Pins.SPACE` 0.85).
 - **2026-11-11, the Sane Rare tracker; a rare's tooltip as a boss's:** Saneroki: a rare's tooltip on the map with "the
   icons like the bosses tooltip we had in instances", and a warning that shows "a widget on screen when it finds a rare,
   chest or other things" and "plays a little trumpet horn sound"; "give me a command /sane testraretracker"; its name is

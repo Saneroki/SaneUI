@@ -17,9 +17,10 @@ The bigger changes of each version, newest first.
 - The map's water shows the game's own ocean waves in place of one
   flat colour: the open sea, lakes and rivers alike, moving with the
   map as you drag it.
-- Map pins that would cover each other stand side by side in a
-  small cloud instead of one marker with a plus; zoom in and each
-  stands at its own place. Treasure, herbs and ore show only up
+- Map pins of one kind close together (trainers, vendors, portals)
+  are one icon, and the others that would cover each other stand
+  side by side in a small cloud instead of one marker with a plus;
+  zoom in and each stands at its own place. Treasure, herbs and ore show only up
   close; ships stay on the map zoomed all the way out. At a flight
   master each flight point's name and price stand beside it.
 - Talking to an NPC, its services stand as big pictures without

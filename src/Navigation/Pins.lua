@@ -48,7 +48,12 @@ Pins.CONTINENT = { flight = true, travel = true, entrance = true, place = true }
 Pins.WORLD = { flight = true, travel = true }
 Pins.NEAR = 300       -- yards: services on the small view only so near the player
 Pins.GATHER = 18      -- units: the cell many spawns of one thing (herbs, ore, a quest's creatures) ride together in
-Pins.SPACE = 1.1      -- pins that would cover each other stand in a cloud, so many times their size apart (Spread)
+Pins.SPACE = 0.85     -- pins that would cover each other stand in a cloud, so many times their size apart (Spread):
+                      -- a little less than their size, the game's icons having room round them
+-- Pins of one icon nearer each other than so many times its size are one marker in it, parted as you zoom in
+-- (Saneroki, 2026-11-11: "map pins that share the same icon, for example all trainers, vendors, portals etc should be
+-- combined into one icon and split if you zoom in close enough").
+Pins.COMBINE = 1.5
 -- Kinds shown only up close, the view no higher than Pins.CLOSER yards (Saneroki, 2026-11-11: "Map pins for Treasure,
 -- possible ore and herbs should only be visible when you are really cloasly zoomed in").
 Pins.CLOSE = { treasure = true, herb = true, ore = true }
@@ -812,7 +817,8 @@ end
 -- highest) at the cloud's middle, the others in rings round it, the nearer ones to the middle in the inner rings,
 -- each ring's in the order they lie round it, Pins.SPACE times the largest one's size apart. Closer in they stand
 -- apart by themselves, each at its own place. A pin with others of the same thing riding with it (For: one herb's,
--- one ore's, one creature's spawns in one cell) is a marker of them all, in their picture.
+-- one ore's, one creature's spawns in one cell) is a marker of them all, in their picture; so are near pins of one
+-- icon (Combine: two trainers, three vendors), parted as you zoom in.
 -- list: For's, sorted; k: the zoom (units a yard). Gives the pins and markers, each with sx, sy: the units it stands
 -- off its own place on the screen (0, 0 for one alone); ax, ay that place, room its size (units: scratch).
 local function Size(pin)
@@ -869,13 +875,66 @@ local function Lay(cloud)
     end
 end
 
+-- Pins hovered or clicked each for itself are never combined: quests (in the log, to take), flight points and docks
+-- (the ways they show), a flight master's.
+local function Apart(pin)
+    return pin.kind == "log" or pin.kind == "quest" or pin.kind == "flight" or pin.dock ~= nil or pin.taxi ~= nil
+end
+
+-- The icon a pin shows, as one text (PinView's Look: its atlas or picture, its tint, grey or not).
+local function Icon(pin)
+    local first = pin.gathered and pin.gathered[1] or pin
+    return tostring(first.atlas or first.texture or "") .. "/" .. tostring(first.tint) .. "/" .. tostring(first.grey or first.dim or false)
+end
+
+local byIcon, where = {}, {} -- (scratch) [icon] = the pins and markers in that icon so far; [pin or marker] = its place in the list
+
+-- Near pins of one icon as one marker in it (Pins.COMBINE), in the list's order: the first stays where it is, the next
+-- ones within that many of its size join it. Gives the list with them combined, each with ax, ay, room.
+local function Combine(list, k)
+    local out = {}
+    wipe(byIcon)
+    wipe(where)
+    for _, pin in ipairs(list) do
+        local shown = pin.with and Marker(pin) or pin
+        shown.ax, shown.ay = pin.pu * k, pin.pv * k
+        shown.room = Size(shown)
+        local icon = not Apart(pin) and Icon(shown)
+        local same, into = icon and byIcon[icon]
+        if same then
+            local reach = shown.room * Pins.COMBINE
+            for index, other in ipairs(same) do
+                if (other.ax - shown.ax) ^ 2 + (other.ay - shown.ay) ^ 2 < reach * reach then into = index break end
+            end
+        end
+        if into then
+            local other = same[into]
+            if not other.gathered then
+                -- (a pin alone so far: a marker of it now, in its place in the list)
+                local marker = { gathered = { other }, pu = other.pu, pv = other.pv, key = "gathered:" .. other.key,
+                                 kind = "gathered", order = other.order, ax = other.ax, ay = other.ay, room = other.room }
+                out[where[other]], where[marker], same[into] = marker, where[other], marker
+                other = marker
+            end
+            for _, each in ipairs(shown.gathered or { shown }) do other.gathered[#other.gathered + 1] = each end
+        else
+            out[#out + 1] = shown
+            where[shown] = #out
+            if icon then
+                same = same or {}
+                byIcon[icon] = same
+                same[#same + 1] = shown
+            end
+        end
+    end
+    return out
+end
+
 function Pins.Spread(list, k)
     local out = {}
     used = 0
-    for _, pin in ipairs(list) do
-        local shown = pin.with and Marker(pin) or pin
-        shown.ax, shown.ay, shown.sx, shown.sy = pin.pu * k, pin.pv * k, 0, 0
-        shown.room = Size(shown)
+    for _, shown in ipairs(Combine(list, k)) do
+        shown.sx, shown.sy = 0, 0
         out[#out + 1] = shown
         -- Into the first cloud whose rings it would cover, else a cloud of its own.
         local into

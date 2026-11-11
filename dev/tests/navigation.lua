@@ -6144,6 +6144,21 @@ end)()
     check(#together == 3 and not together[1].gathered and not together[2].gathered and together[1].sx == 0
         and together[2].sx ^ 2 + together[2].sy ^ 2 > 0 and together[3].sx ^ 2 + together[3].sy ^ 2 > 0,
         "flight points and ways of travel on one spot: each its own pin, side by side round the first")
+    -- Near pins of one icon one marker in it (two trainers), parted as you zoom in; another icon beside them (a
+    -- vendor); flight points never combined (each to be hovered for its ways).
+    local function Near(k)
+        return Pins.Spread({ { kind = "service", key = "t1", atlas = "trainer", pu = 0, pv = 0, order = 2 },
+                             { kind = "service", key = "t2", atlas = "trainer", pu = 0.1, pv = 0, order = 2 },
+                             { kind = "service", key = "v1", atlas = "vendor", pu = 0.05, pv = 0, order = 2 },
+                             { kind = "flight", key = "f1", atlas = "TaxiNode_Neutral", pu = 0, pv = 0.05, order = 6 },
+                             { kind = "flight", key = "f2", atlas = "TaxiNode_Neutral", pu = 0, pv = 0.06, order = 6 } }, k)
+    end
+    local far, close = Near(1), Near(1000)
+    local marker
+    for _, each in ipairs(far) do if each.gathered then marker = each end end
+    check(#far == 4 and marker and #marker.gathered == 2 and marker.gathered[1].atlas == "trainer"
+        and marker.gathered[2].atlas == "trainer" and #close == 5,
+        "two trainers close together: one marker in their icon (the vendor and each flight point their own), apart close in")
     for _ = 1, 3 do if full.level ~= "world" then full:StepOut() end end
     Canvas.Layout()
     local kinds, flights = {}, 0
