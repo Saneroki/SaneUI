@@ -121,8 +121,11 @@ Decided (Saneroki, 2026-10-16):
   (secret values) and the combat log is closed, so only the spells it shows come in as they come, the rest once the
   fight is over (still on: with the time they came; one that came and went inside the fight is not seen). For an aura,
   *interruptible* is told of the cast that gave it where that cast was seen (out of a fight); what can remove an aura
-  is its dispel type and whether it can be stolen. Open: whether Forever's open world hides less than its dungeons
-  (`Doc/ideas/Data.md`, *What the game shows, and what it hides*); the window gets more in a fight by itself then.
+  is its dispel type and whether it can be stolen. Asked of the game (`/sane secrets`, Forever build 70888,
+  2026-11-11): of 32,467 spells, 32,465 are hidden in a fight as auras and as casts, two of Blizzard's test spells the
+  only exceptions, so no real spell comes in during a fight; your own casts are still plain (casts are hidden only for
+  units other than you and your pet). Should a later build mark spells as never hidden, the window gets them in a
+  fight by itself.
 
 ## Its parts
 

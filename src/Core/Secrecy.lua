@@ -8,7 +8,7 @@ local Core = SaneUI.Core
 --  visible?"). The client's own tables carry no flag to read it from, so
 --  /sane secrets asks C_Secrets about every spell there is, out of a fight, a
 --  slice of Secrecy.STEP numbers a frame, and keeps the answer in Core's store
---  (SaneUIDB.modules.SaneUI.secrecy), which the game writes at the next
+--  (SaneUIDB.modules.Core.secrecy), which the game writes at the next
 --  /reload. Each spell is asked twice, as an aura (GetSpellAuraSecrecy) and as a
 --  cast (GetSpellCastSecrecy); the game's answer is its base secrecy, one of
 --      0  NeverSecret         plain, in a fight too
