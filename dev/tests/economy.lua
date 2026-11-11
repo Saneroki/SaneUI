@@ -1,7 +1,7 @@
 -- Runs the Economy module against the stand-in client (wowstub.lua): what is worth buying and selling right now from
 -- made-up prices, the server asked one item at a time, a purchase and a post from a click only, what is bought going by the
 -- server's answer and never over the line's limit, the tab on the game's window and the gold on sale; Send to banker on the
--- mail window's Send Mail tab (what goes, the name and the tick kept, the mail filled in for the player's Send, the next one
+-- mail window's Send Mail tab (what goes, recipes too, the name and the tick kept, the mail filled in for the player's Send, the next one
 -- after it, unticked as the game made it, a reply, when it opens on Send Mail, Send by itself in the profile Speedleveling);
 -- and standing down.
 -- The look can only be judged in the game.
@@ -583,10 +583,11 @@ local Banker = ns.Banker
 local stacks = Banker.Goods()
 local goes = {}
 for _, stack in ipairs(stacks) do goes[stack.id] = (goes[stack.id] or 0) + 1 end
-check(#stacks == 20 and goes[2589] == 2 and goes[2770] and goes[17029] and goes[2592] == 12, "what goes: trade goods and reagents: " .. #stacks)
+check(#stacks == 21 and goes[2589] == 2 and goes[2770] and goes[17029] and goes[2592] == 12, "what goes: trade goods and reagents: " .. #stacks)
+check(goes[2553], "and recipes: the bags' Professions")
 check(goes[248549] and goes[248683] and goes[262887] and goes[264152], "and the crafting orders: waylaid crates, sealed writs, a craftsman's writ")
-check(not (goes[6948] or goes[2318] or goes[22593] or goes[2553] or goes[3000]),
-    "never the hearthstone, what is soulbound, a quest's writ, a recipe, nor a name that only looks like a writ's")
+check(not (goes[6948] or goes[2318] or goes[22593] or goes[3000]),
+    "never the hearthstone, what is soulbound, a quest's writ, nor a name that only looks like a writ's")
 
 -- Unticked: the mailbox as the game made it
 OpenMail()
@@ -615,14 +616,14 @@ PressSend()
 check(#mails == 1 and mails[1].name == "Bank Alt" and mails[1].count == 12 and mails[1].subject == today, "the player's Send sends it")
 Delivered()
 W.Wait(0.6)
-check(Attached() == 8 and To:GetText() == "Bank Alt" and Subject:GetText() == today and more:GetText() == "",
+check(Attached() == 9 and To:GetText() == "Bank Alt" and Subject:GetText() == today and more:GetText() == "",
     "it went: the next mail is filled in the same way, the last one")
 PressSend()
 Delivered()
 W.Wait(0.6)
-check(#mails == 2 and mails[2].count == 8 and Attached() == 0 and To:GetText() == "" and Subject:GetText() == "",
+check(#mails == 2 and mails[2].count == 9 and Attached() == 0 and To:GetText() == "" and Subject:GetText() == "",
     "all gone: the next mail is the player's own, nothing filled in")
-check(bagged[0][9] and bagged[0][10] and bagged[0][11] and bagged[0][12] and bagged[0][13], "what never goes is still in the bags")
+check(bagged[0][9] and bagged[0][10] and bagged[0][11] and not bagged[0][12] and bagged[0][13], "what never goes is still in the bags, the recipe gone")
 
 -- Unticked again: what was ours comes off, and the tab is the game's
 bagged[0][14] = { id = 2770, count = 4 }

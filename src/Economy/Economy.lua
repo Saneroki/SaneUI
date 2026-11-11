@@ -68,7 +68,7 @@ ns.TEXT = {
 
     -- Send to banker, the tick on the mail window's Send Mail tab
     banker = "Send to banker",
-    bankerTip = "Ticked, the mailbox opens on Send Mail with your banker in To:, today's date as the subject and every trade good, reagent, waylaid crate and writ in your bags that is not soulbound on the mail: press Send. Twelve stacks go in a mail; after one went the next is ready the same way. Unticked, Send Mail is as the game made it.",
+    bankerTip = "Ticked, the mailbox opens on Send Mail with your banker in To:, today's date as the subject and every trade good, reagent, recipe, waylaid crate and writ in your bags that is not soulbound on the mail: press Send. Twelve stacks go in a mail; after one went the next is ready the same way. Unticked, Send Mail is as the game made it.",
     bankerWho = "Your banker: %s, remembered for your %s characters on %s. The name in To: while this is ticked is your banker.",
     bankerNone = "Type your banker's name in To: while this is ticked: it is remembered for your %s characters on %s.",
     bankerMe = "You play your banker: nothing is filled in here.",

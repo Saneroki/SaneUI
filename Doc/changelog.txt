@@ -14,10 +14,10 @@ The bigger changes of each version, newest first.
   Send Mail tab with your banker's name in To:. From then on the
   mailbox opens on Send Mail with the mail to your banker filled in:
   its name, today's date as the subject, and every trade good,
-  reagent, waylaid crate and writ that is not soulbound. Just press
-  Send; the next mail follows the same way. With Speed Leveling on it
-  goes by itself; hold Shift to keep it for this visit. Unticked, the
-  mailbox is the game's own.
+  reagent, recipe, waylaid crate and writ that is not soulbound. Just
+  press Send; the next mail follows the same way. With Speed Leveling
+  on it goes by itself; hold Shift to keep it for this visit.
+  Unticked, the mailbox is the game's own.
 - At a flight master Sane UI's full map opens in place of the game's
   flight map, its flight points large: click one to fly there, the
   mouse on it shows the way and what it costs. Hold Shift as you

@@ -8,8 +8,8 @@ local _, ns = ...
 --      [ Inbox ][ Send Mail ]  [x] Send to banker   1 more mail
 --
 --  Ticked, the mailbox opens on Send Mail, its To: holds your banker, its
---  subject today's date, and every trade good, reagent, waylaid crate and writ
---  in the bags that is not soulbound is on the mail: press Send. A mail holds
+--  subject today's date, and every trade good, reagent, recipe, waylaid crate
+--  and writ in the bags that is not soulbound is on the mail: press Send. A mail holds
 --  ATTACHMENTS_MAX_SEND stacks; when one went (MAIL_SEND_SUCCESS, after which
 --  the game empties its boxes) the next is filled in the same way, for the next
 --  press. Unticked, what we put there comes off again, and the tab is the
@@ -21,7 +21,9 @@ local _, ns = ...
 --  itself, and with nothing to go, the mailbox opens on the inbox as ever.
 --
 --  What goes (Banker.Goods): the item classes Trade Goods and Reagent (the
---  bags' category Trade Goods), and Forever's crafting orders, told by the
+--  bags' category Trade Goods), Recipe and Profession (its category
+--  Professions: recipes, patterns, plans; Saneroki, 2026-11-09, again on
+--  2026-11-11: "Yes, send them"), and Forever's crafting orders, told by the
 --  game's English names (Sane UI's clients are English): "Waylaid Crate",
 --  "Waylaid Crate: Journeyman Ore", "Waylaid Supplies: Copper Bars", "Sealed
 --  Apprentice's Writ", "Craftsman's Writ: Wizardweave Turban"; never what is
@@ -46,7 +48,10 @@ ns.Banker = Banker
 
 local TEXT, SIZE = ns.TEXT, ns.SIZE.banker
 local CLASS = Enum and Enum.ItemClass or {}
-local GOODS = { [CLASS.Tradegoods or 7] = true, [CLASS.Reagent or 5] = true } -- the game's item classes that go
+-- The game's item classes that go: the bags' categories Trade Goods and Professions (Forever has no item of the class
+-- Profession; its profession items are the recipes).
+local GOODS = { [CLASS.Tradegoods or 7] = true, [CLASS.Reagent or 5] = true, [CLASS.Recipe or 9] = true,
+                [CLASS.Profession or 19] = true }
 local QUEST = CLASS.Questitem or 12
 local ORDERS = { "^Waylaid ", "Writ$", "Writ[:%s%-]" } -- the crafting orders' names: crates, supplies, writs
 local STEP = 0.5        -- seconds after a change before the mail is filled in: the bags and the game's boxes catch up
