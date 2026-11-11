@@ -86,7 +86,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
 TILES = ROOT / "assets" / "data" / "Tiles" / "Tiles.jsonl"
@@ -99,6 +99,8 @@ EDGE = ART / "Edge.blp"
 SEA = ART / "Sea.blp"
 WAVES = 1024       # the side of the game's ocean texture
 SEA_SIDE = 256     # the side of the sea's: a quarter, for small waves
+SEA_BLUR = 1.0     # pixels of the sea's texture its waves are softened by (Saneroki, 2026-11-11: "a slight blur on it
+                   # so it is not so sharp"); 0.7 hardly showed, 1.5 smeared the pattern
 COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
@@ -759,8 +761,9 @@ def sample(grid, rows, columns):
 
 def sea(texture):
     """The sea's waves: the alpha of the game's ocean texture, in white (the code gives it its colour), SEA_SIDE on a
-    side. Made smaller with its neighbours around it (three by three copies, the middle one kept), so the filter reads
-    across its edges as across the rest and the copies still meet without a seam."""
+    side, softened by SEA_BLUR. Made smaller and softened with its neighbours around it (three by three copies, the
+    middle one kept), so the filters read across its edges as across the rest and the copies still meet without a
+    seam."""
     with Image.open(texture) as image:
         waves = image.convert("RGBA").getchannel("A")
     if waves.size != (WAVES, WAVES):
@@ -770,6 +773,7 @@ def sea(texture):
         for y in range(3):
             plane.paste(waves, (x * WAVES, y * WAVES))
     plane = plane.resize((3 * SEA_SIDE, 3 * SEA_SIDE), Image.Resampling.LANCZOS)
+    plane = plane.filter(ImageFilter.GaussianBlur(SEA_BLUR))  # softened across the copies' edges too: still seamless
     waves = plane.crop((SEA_SIDE, SEA_SIDE, 2 * SEA_SIDE, 2 * SEA_SIDE))
     white = Image.new("L", waves.size, 255)
     size = write(SEA, Image.merge("RGBA", (white, white, white, waves)))

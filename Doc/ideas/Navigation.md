@@ -771,8 +771,10 @@ Three spaces, converted only in `Coords.lua`:
 - **Sea tiles** have no file: the ground shows, the sea's colour, and over it the sea's waves (built 2026-11-11,
   Saneroki: "Can we make it a ocean like texture"): the game's own ocean texture, its light alone (`Art/Sea.blp`,
   `dev/tools/terrain-art --sea`), repeated over the plane so the waves move with the land, the same size on the
-  screen at every zoom; they fade into Parchment's paper with the sea's colour.
-- **A painted sea under the continents (a concept, 2026-11-11):** Saneroki: "use Comfyui to generate a ocean that we
+  screen at every zoom; they fade into Parchment's paper with the sea's colour. Softened by a pixel (Saneroki,
+  2026-11-11: "I love the water textures, espc inlands. Can we just put a slight blur on it so it is not so sharp":
+  `SEA_BLUR` in the tool).
+- **A painted sea under the continents (a concept, 2026-11-11; dropped the same day):** Saneroki: "use Comfyui to generate a ocean that we
   can put underneath the continents. So comfy ui can try to make coastlines and add tiny ships or sea monsters or
   scenarios to it", and an A/B against the waves. Round 1: the full map zoomed all the way out as it is drawn on 4K
   (`dev/tools/sea-art`), only the open sea painted around the land, which comes back untouched (`qwen21-inpaint`,
@@ -789,9 +791,12 @@ Three spaces, converted only in `Coords.lua`:
   maelstrom the size of the one on his world map (some 14.5 % of its width) and six scenes (a serpent round a
   galleon, a kraken, a naval battle, a leviathan, pirates, a giant turtle) each painted in a crop of its own, with
   four models (Qwen-Image 2.1, FLUX.2 dev, Z-Image Turbo, FLUX.2 klein); by hand in ComfyUI with
-  `qwen21-inpaint-crop`. In the game a pick would be one more texture
-  under the terrain at the far zooms (the canvas' view at the farthest zoom, 4096 x 2208 at most), giving way to the
-  waves as the view comes close.
+  `qwen21-inpaint-crop`. Round 4: "I don't think that the events should be their own picture [...] ask the most
+  photorealistic image generator to make 1 4k image [...] a whirlpool with no black center"; pilots with FLUX.2 dev
+  painting the whole sea at once painted new continents from the sea's colour alone, then grew scenes out of the
+  coasts. **Dropped:** "do n't use ai at all. It doesn't give the results I was looking for. I love the water
+  textures, espc inlands." The sea stays the waves (*Sea tiles*); `dev/tools/sea-art`, its sets and the page `/sea/`
+  stay as the record, unused.
 - **The water cut away (built 2026-10-19):** `dev/tools/terrain-art` reads the game's terrain files (each map
   chunk's heights, water and liquid type; magma and slime stay) and makes the overview's alpha the land: where
   the ground lies above the water's surface, sampled 2 yards apart, rivers and lakes too. The overview's colour
