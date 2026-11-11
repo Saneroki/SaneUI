@@ -61,7 +61,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   window shows the game's own minimap, ticked or not.
 - **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
-  steps. Out of it, our map is back.
+  steps. One notch out past its widest step shows a dungeon's or raid's whole map there instead (where we have one),
+  its bosses as on the full map, smaller; a notch in, a right or a middle click brings the game's minimap back at its
+  widest step. Left so, it stays through the full screen and back and into the next dungeon. Out of it, our map is back.
 - **What a thing gives.** Hover a rare, a chest, a herb or a vein, on the map or a found node: its tooltip lists what it gives, the
   likeliest first, each with how often: `Fang Charm 7.5% (3 of 40)`, `Moon Gem 1 of 40` while too few came, `12%` where only our data
   says so. So do the red dots of a dungeon's enemies; a boss's loot has it at each item's right. All of it is Core's `Data.Drops()`
@@ -269,7 +271,8 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
-  over the map, and beside it its floors. Where the data knows them, each boss as its own 3D model where it stands
+  over the map, and beside it its floors; each floor opens whole, under the bar and beside the quest log, so the
+  farthest zoom always shows all of it. Where the data knows them, each boss as its own 3D model where it stands
   (the game's model of the boss's look; the game's boss mark only where it has no look, or its model would reach
   past the view's edge). Its tooltip is a creature's: its name in a foe's red, under it the dungeon and *Boss*, its
   model in the portrait's place with the boss's dragon and *??* for its level (in Sane UI's tooltips); then the
@@ -535,7 +538,15 @@ is small, and the maps of the dungeons and raids. The plan is in
 - **Dungeons** (`Dungeons.lua`): the maps of kind *Dungeon* under the world map (`C_Map.GetMapChildrenInfo`), one
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
-  `Dungeons.NEAR` times) and moved by a drag (its step runs only while a drag goes on); no player's arrow and no
+  `Dungeons.NEAR` times) and moved by a drag (its step runs only while a drag goes on); fitted into the room the
+  bar's row (`2 * TopBar.INSET + TopBar.BUTTON_HEIGHT`) and the quest log leave (`Room`: the log's side, its box
+  `QuestLog.Box` and the bar's gap, at most `Dungeons.SIDE` of the width), measured as it opens, when its size
+  changes and when the log comes or goes (`Dungeons.Refit`, from `Window.Lay`), not at each step of a drag; on
+  the small map (`Dungeons.Whole`: in an instance, `Canvas.lua`'s `Wheel` one notch out at the game's step 0) the
+  whole small view, the floor never zoomed or dragged there, its marks, models and dots at `Dungeons.SMALL` of
+  their size; wished (kept through the full screen and back, `Dungeons.Small` at each layout of the small view,
+  looked at anew after a loading screen) until a notch in, a right or a middle click (`Dungeons.Out`), and the
+  game's minimap out of sight under it meanwhile (`Hybrid.Hide`, `whole` in `Canvas.lua`); no player's arrow and no
   group (Forever tells no place inside an instance). `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
   stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
   adds the dungeons the game has no map of: walked once it is there (`Each`), each floor keyed `"<instance>:<floor>"`
@@ -1091,7 +1102,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the teleports it has (the hearthstone told in the chat where it is quicker); where along it the player is. No frames |
 | `Label.lua` | The zone under the mouse named at the top of the full map: its name, its levels, the fishing skill its waters ask (Core's set *Fishing*) |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
-| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, zoomed and dragged |
+| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, whole beside the bar and the quest log, zoomed and dragged; inside one the small map's whole map, a wheel notch out past the game's minimap |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold, flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue |
 | `Paths.lua` | The ways of the flight point or dock under the mouse: each flight of your side from it white, a ship's way round light blue, its leaps along our sea lanes round the Maelstrom |
@@ -1124,6 +1135,12 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, a dungeon's map whole in view, on both maps:** Saneroki: the dungeon and raid maps with the bosses' 3D
+  models and loot still in the game, and "make the minimap and the fullscreen map fit the entire map in the view. So the
+  zoomlevel is adjusted so it is always possible to see the entire dungeon map". The full map fits a floor into the
+  room under its bar and beside the quest log (`Dungeons.lua`: `Room`, `Dungeons.Refit`, `Dungeons.SIDE`; `QuestLog.Box`);
+  inside a dungeon the small map shows its whole map one wheel notch out past the game's widest step
+  (`Dungeons.Whole`, `Dungeons.Small`, `Dungeons.SMALL`; `Canvas.lua`'s `whole`), kept until wheeled in or clicked away.
 - **2026-11-11, the party's marks much bigger, with the zoom, at every zoom:** Saneroki: "The party members on the
   map, can you make its icons much bigger, scale with the zoom level on the map and is always visible on all zoom
   levels". `Marks.MemberSize` (22 to 44 in place of 14), `Marks.Group` at once from `Canvas.lua`'s `Draw`; no longer

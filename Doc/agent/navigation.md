@@ -19,7 +19,10 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    *Tiles*); the map starts as Scrying where it can be drawn, else Parchment (`ns.FALLBACK`, `Fallback`, `Several`).
 3. The game's `Minimap` lies over our ground in the small view (`Hybrid.lua`), so its live dots stay; other addons'
    minimap buttons are held for the satchel (`Strays.lua`, `Satchel.lua`); all given back exactly. The satchel's
-   section Sane UI starts with the line of Core's sound profiles (`AudioLine.lua`, `Core.Audio`).
+   section Sane UI starts with the line of Core's sound profiles (`AudioLine.lua`, `Core.Audio`). In an instance the
+   game's minimap alone is the small map (`lost` in `Canvas.lua`); one wheel notch out past its widest step shows a
+   dungeon's whole map there instead (`Dungeons.Whole`, `Dungeons.Small`; 2026-11-11). The dungeons' maps on the full
+   map open whole under the bar and beside the quest log (`Dungeons.lua`, `Room`).
 4. Pins (`Pins.lua`, no frames; `PinView.lua` draws them): the game's answers (`Live.lua`) and Core's data
    (`Data.Map():On`: Spawns, Places, Travel; the sets Quests, NPCs, Objects), one per thing, the game's word wins;
    filtered by the setting `pins` (multi) and the pin filter. The kind `goal` (`Goals.lua`): the exact spawns of the

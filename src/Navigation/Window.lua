@@ -100,10 +100,11 @@ local function Placed()
     ns.Canvas.Open()
 end
 
--- The quest log in or out while the window stands full (TopBar's button).
+-- The quest log in or out while the window stands full (TopBar's button); a dungeon's map fitted anew beside it.
 function Window.Lay()
     if not frame or going ~= nil or not (handle.edge and handle.edge.full) then return end
     ns.QuestLog.Lay(true)
+    ns.Safe("dungeons", ns.Dungeons.Refit)
     ns.TopBar.Update()
 end
 

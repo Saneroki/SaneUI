@@ -127,6 +127,9 @@ local known = false -- the player's place is known in the view's plane
 -- The small view follows the player where the game tells no place of the player (an instance): the game's
 -- minimap alone is the map there, and nothing of ours is drawn but the sea (Lost; Hybrid.Place).
 local lost = false
+-- There the small view was wheeled out past the game's widest step: the dungeon's whole map stands over it
+-- (Dungeons.Small), and the game's minimap out of sight under it.
+local whole = false
 local lastInput = 0 -- when the mouse last did something to the map
 local pressed -- the mouse button held on the map (Down), nil while none
 local seenU, seenV -- the player's place at the tracker's last look
@@ -362,8 +365,10 @@ local function Here(map, u, v)
     return (u - view.u) * view.k, (v - view.v) * view.k
 end
 
--- The game's minimap for the view as it is now; on the full map, on the player at once.
+-- The game's minimap for the view as it is now; on the full map, on the player at once. Out of sight under a
+-- dungeon's whole map on the small view (whole).
 local function Native()
+    if whole then return ns.Guarded(ns.Hybrid.Hide) end
     local width, height = frame:GetSize()
     ns.Guarded(ns.Hybrid.Place, camera, width, height, known, lost)
     local map, u, v = Live.Player()
@@ -408,6 +413,7 @@ function Canvas.Layout()
     nextZone, zoneOwed = GetTime() + Canvas.LOOK, false -- the zone in the middle was just asked
     local _, u = Live.Player()
     lost = Lost(u)
+    whole = camera == ns.Window.small and ns.Guarded(ns.Dungeons.Small, lost) or false
     Stack()
     Draw()
     Native()
@@ -783,6 +789,8 @@ local function Wheel(_, delta)
     if held then return end -- on the window's way: its camera is not the one shown (Morph)
     lastInput = GetTime()
     local width, height = frame:GetSize()
+    -- In a dungeon, out past the game's widest step: the dungeon's whole map, where we have one (Dungeons.Whole).
+    if lost and delta < 0 and camera.native == 0 and ns.Dungeons.Whole() then return Canvas.Layout() end
     if (known or lost) and ns.Hybrid.Wheel(camera, delta, ns.Hybrid.Side(width, height)) then
         camera:Settle()
         return Zoomed()

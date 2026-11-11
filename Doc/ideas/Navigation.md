@@ -188,6 +188,10 @@ minimap) and the full-screen window (the world map) show the same map with the s
     Deadmines, Shadowfang Keep, the Stockade, Blackfathom Deeps) as small red dots.
   - **The bosses in full 3D:** each boss as its 3D game model where it stands, in every zoom of the instance maps
     (the three zooms to come too).
+  - **Always whole in view (Saneroki, 2026-11-11):** "make the minimap and the fullscreen map fit the entire map in
+    the view. So the zoomlevel is adjusted so it is always possible to see the entire dungeon map." Built the same
+    day: the full map opens a floor whole in the room under its bar and beside the quest log; inside a dungeon the
+    small map shows the whole map one wheel notch out past the game's widest minimap step, until wheeled in again.
 - **Indoor maps only inside buildings and caves (Saneroki, 2026-10-21):** the world map's indoor maps lie over the
   map inside a building or a cave, never on a street; Stormwind's and Orgrimmar's streets and squares (each city is
   one building to the game) keep the city's own map.

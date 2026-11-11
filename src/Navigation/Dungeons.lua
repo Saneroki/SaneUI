@@ -14,7 +14,15 @@ local _, ns = ...
 --      a floor      the game's floors of the dungeon (C_Map.GetMapGroupMembersInfo) or the set's,
 --                   chosen in the bar's dropdown beside it; the first shown is its lowest
 --      the art      the game's own map art of the floor (Art.Of; the set's: its tiles, the game's
---                   files), fitted into the view whole
+--                   files), fitted into the view whole: on the full map into the room its bar and the
+--                   quest log leave free (under the bar, beside the log where it stands over the view's
+--                   left or right), so the whole floor is always in sight at the farthest zoom (Saneroki,
+--                   2026-11-11)
+--      small map    inside a dungeon the small view is the game's own minimap (Canvas.lua); one notch of
+--                   the wheel out past its widest step shows the dungeon's whole map there instead, its
+--                   bosses and enemies at Dungeons.SMALL of their size; a notch in, a right or a middle
+--                   click: the game's minimap again at its widest step. Kept through the full screen and
+--                   back and into the next dungeon until then (Dungeons.Whole, Dungeons.Small)
 --      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place and the
 --                   boss's own 3D model standing on it (the game's model of its display), the same size at
 --                   every zoom; a model that would reach past the view's edge is hidden (the engine does not
@@ -28,9 +36,9 @@ local _, ns = ...
 --                   The mark shows only where no model stands (no look, or at the view's edge)
 --      enemies      where the set has them, each enemy as a small red dot where it stands (under the bosses),
 --                   its name in the tooltip
---      the mouse    the wheel zooms around the mouse (from the whole map up to Dungeons.NEAR times
---                   nearer), a drag moves it, a right click goes back to the map it was opened from
---                   (the map stays under the dungeon's view, as it was)
+--      the mouse    on the full map the wheel zooms around the mouse (from the whole map up to
+--                   Dungeons.NEAR times nearer), a drag moves it, a right click goes back to the map it
+--                   was opened from (the map stays under the dungeon's view, as it was)
 --      also         a pin that leads into a dungeon (Shift and a click on its entrance) opens its map here
 --                   (Canvas.Show)
 --      no player    Forever tells no place of the player inside an instance, nor of the party or raid
@@ -52,6 +60,8 @@ Dungeons.BOSS = "vignettekillboss" -- a boss's mark: the game's own
 Dungeons.BOSS_SIZE = 26
 Dungeons.MODEL_WIDTH, Dungeons.MODEL_HEIGHT = 72, 88 -- a boss's model standing on its mark, in screen units
 Dungeons.FACING = 0.35 -- radians: the models turned a little from facing the view, so they read as figures
+Dungeons.SMALL = 0.5 -- the small map's bosses' marks and models and enemies' dots: so much of their size
+Dungeons.SIDE = 1 / 3 -- the quest log beside a floor on the full map takes at most so much of the view's width
 Dungeons.TEXT = {
     dungeons = Core.Word("DUNGEONS", "Dungeons"),
     floor = "Floor",
@@ -108,8 +118,13 @@ local shown       -- the floor shown, nil while the map is
 local floors      -- the floors of the dungeon shown (one at least)
 local kept        -- what the floor shown is drawn from, gathered once (Gather): its art, bosses, enemies and instance
 local NONE = {}
-local zoom, panX, panY = 1, 0, 0 -- the zoom (1: whole), the art's middle from the view's, in screen units
+local zoom, panX, panY = 1, 0, 0 -- the zoom (1: whole), the art's middle from the room's, in screen units
 local dragX, dragY -- where the cursor was at the last step of a drag
+local onSmall = false -- the view stands on the small map (Dungeons.Small), not the full one
+local wanted = false  -- the small map was wheeled out to a dungeon's whole map: kept until wheeled in (Dungeons.Out)
+-- The room a floor is fitted into whole (Room): its size, its middle from the view's; the art's middle (Place).
+local roomWidth, roomHeight, roomX, roomY = 1, 1, 0, 0
+local midX, midY = 0, 0
 
 -- The floors of a map's dungeon: the members of its map group, lowest first; only itself without a group.
 local function Floors(map)
@@ -252,14 +267,40 @@ end
 -------------------------------------------------------------------------------
 --  The view
 -------------------------------------------------------------------------------
--- The art's size on the screen at zoom 1: the whole map in the view, as large as fits.
-local function Fit(art)
+-- The room of the view a floor is fitted into whole: on the full map all of it but its bar's row at the top
+-- (TopBar.lua) and the quest log's side where the log stands over the view (its left or right, at most
+-- Dungeons.SIDE of its width, with the bar's gap); the small map all of it. Measured as the view opens, when its size
+-- changes and when the log comes or goes (Dungeons.Refit), not at each step of a drag.
+local function Room()
     local width, height = frame:GetSize()
-    if width <= 0 or height <= 0 then return 1 end
-    return math.min(width / art.width, height / art.height)
+    width, height = width or 0, height or 0
+    local top, left, right = 0, 0, 0
+    if not onSmall then
+        local bar = ns.TopBar
+        top = 2 * bar.INSET + bar.BUTTON_HEIGHT
+        local logLeft, logRight = ns.QuestLog.Box()
+        local viewLeft, _, viewWidth = frame:GetRect()
+        if logLeft and viewLeft and viewWidth then
+            local scale = frame:GetEffectiveScale()
+            logLeft, logRight = logLeft / scale - viewLeft, logRight / scale - viewLeft
+            if logRight > 0 and logLeft < viewWidth then -- over the view: the side its middle is on
+                if logLeft + logRight < viewWidth then left = logRight + bar.INSET
+                else right = viewWidth - logLeft + bar.INSET end
+            end
+        end
+        left, right = math.min(left, width * Dungeons.SIDE), math.min(right, width * Dungeons.SIDE)
+    end
+    roomWidth, roomHeight = width - left - right, height - top
+    roomX, roomY = (left - right) / 2, -top / 2
 end
 
--- The art where the zoom and the drag put it; never so far that it leaves the view's middle. Every frame of a drag:
+-- The art's size on the screen at zoom 1: the whole map in the room, as large as fits.
+local function Fit(art)
+    if roomWidth <= 0 or roomHeight <= 0 then return 1 end
+    return math.min(roomWidth / art.width, roomHeight / art.height)
+end
+
+-- The art where the zoom and the drag put it; never so far that it leaves the room's middle. Every frame of a drag:
 -- what it places was gathered once (kept), it only moves it.
 local function Place()
     local art = kept and kept.art
@@ -267,11 +308,19 @@ local function Place()
     local scale = Fit(art) * zoom
     local halfX, halfY = art.width * scale / 2, art.height * scale / 2
     panX, panY = math.max(-halfX, math.min(halfX, panX)), math.max(-halfY, math.min(halfY, panY))
+    midX, midY = roomX + panX, roomY + panY
     content:SetScale(scale)
     content:ClearAllPoints()
-    content:SetPoint("CENTER", frame, "CENTER", panX / scale, panY / scale)
+    content:SetPoint("CENTER", frame, "CENTER", midX / scale, midY / scale)
     Dungeons.PlaceEnemies(art, scale)
     Dungeons.PlaceBosses(art, scale)
+end
+
+-- The room measured anew and the floor placed in it (the view's size changed, the quest log came or went).
+function Dungeons.Refit()
+    if not shown then return end
+    Room()
+    Place()
 end
 
 -- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's).
@@ -322,24 +371,29 @@ local function Update()
 end
 local updating = ns.Guard(Update) -- made once: set at every drag
 
--- The wheel: nearer or farther around the point under the mouse, which stays where it is.
+-- The wheel: nearer or farther around the point under the mouse, which stays where it is. On the small map the whole
+-- map alone: a notch in is the game's minimap again (Out).
 local function Wheel(_, delta)
     local art = kept and kept.art
     if not art then return end
+    if onSmall then
+        if delta > 0 then Dungeons.Out() end
+        return
+    end
     local was = zoom
     zoom = math.max(1, math.min(Dungeons.NEAR, zoom * ns.Camera.STEP ^ delta))
     if zoom == was then return end
     local x, y = Cursor()
     local left, bottom, width, height = frame:GetRect()
     if not left then return end
-    local mouseX, mouseY = x - left - width / 2, y - bottom - height / 2
+    local mouseX, mouseY = x - left - width / 2 - roomX, y - bottom - height / 2 - roomY
     local factor = zoom / was
     panX, panY = mouseX - (mouseX - panX) * factor, mouseY - (mouseY - panY) * factor
     Place()
 end
 
 local function Down(_, button)
-    if button ~= "LeftButton" then return end
+    if button ~= "LeftButton" or onSmall then return end -- the small map's whole map is not dragged
     dragX, dragY = Cursor()
     frame:SetScript("OnUpdate", updating)
 end
@@ -348,9 +402,17 @@ local function Up(_, button)
     if button == "LeftButton" then
         dragX, dragY = nil, nil
         frame:SetScript("OnUpdate", nil)
-    elseif button == "RightButton" then
+    elseif button == "RightButton" or button == "MiddleButton" and onSmall then
         Dungeons.Out()
     end
+end
+
+-- The small window's grip while the mouse is over its whole map, as over the map itself (Window.Hovered).
+local function Entered()
+    if onSmall then ns.Window.Hovered(true) end
+end
+local function Left()
+    if onSmall then ns.Window.Hovered(false) end
 end
 
 -------------------------------------------------------------------------------
@@ -661,9 +723,12 @@ local function Stand(mark, display, x, y)
         model:SetFacing(Dungeons.FACING)
     end
     local width, height = frame:GetSize()
-    local half = Dungeons.MODEL_WIDTH / 2
+    local share = onSmall and Dungeons.SMALL or 1
+    local modelWidth, modelHeight = Dungeons.MODEL_WIDTH * share, Dungeons.MODEL_HEIGHT * share
+    local half = modelWidth / 2
     local inside = x - half >= -width / 2 and x + half <= width / 2 and y >= -height / 2
-        and y + Dungeons.MODEL_HEIGHT <= height / 2
+        and y + modelHeight <= height / 2
+    model:SetSize(modelWidth, modelHeight)
     model:ClearAllPoints()
     model:SetPoint("BOTTOM", frame, "CENTER", x, y)
     model:SetShown(inside)
@@ -735,13 +800,15 @@ end
 function Dungeons.PlaceEnemies(art, scale)
     local enemies = kept and kept.enemies or NONE
     local base = over:GetFrameLevel()
+    local size = Dungeons.ENEMY_SIZE * (onSmall and Dungeons.SMALL or 1)
     for index, enemy in ipairs(enemies) do
         local foe = foes[index] or Foe()
         foes[index] = foe
         foe.npc, foe.instance = enemy.npc, kept.instance
+        foe:SetSize(size, size)
         foe:ClearAllPoints()
-        foe:SetPoint("CENTER", frame, "CENTER", panX + (enemy.x - 0.5) * art.width * scale,
-            panY - (enemy.y - 0.5) * art.height * scale)
+        foe:SetPoint("CENTER", frame, "CENTER", midX + (enemy.x - 0.5) * art.width * scale,
+            midY - (enemy.y - 0.5) * art.height * scale)
         foe:SetFrameLevel(base)
         foe:Show()
     end
@@ -753,11 +820,13 @@ end
 function Dungeons.PlaceBosses(art, scale)
     local bosses = kept and kept.bosses or NONE
     local base = over:GetFrameLevel()
+    local size = Dungeons.BOSS_SIZE * (onSmall and Dungeons.SMALL or 1)
     for index, boss in ipairs(bosses) do
         local mark = marks[index] or Mark()
         marks[index] = mark
         mark.name, mark.encounter, mark.display = boss.name, boss.encounter, boss.display
-        local x, y = panX + (boss.x - 0.5) * art.width * scale, panY - (boss.y - 0.5) * art.height * scale
+        local x, y = midX + (boss.x - 0.5) * art.width * scale, midY - (boss.y - 0.5) * art.height * scale
+        mark:SetSize(size, size)
         mark:ClearAllPoints()
         mark:SetPoint("CENTER", frame, "CENTER", x, y)
         mark:SetFrameLevel(base + 1)
@@ -797,7 +866,9 @@ function Dungeons.Build(canvasFrame)
     frame:SetScript("OnMouseWheel", ns.Guard(Wheel))
     frame:SetScript("OnMouseDown", ns.Guard(Down))
     frame:SetScript("OnMouseUp", ns.Guard(Up))
-    frame:SetScript("OnSizeChanged", ns.Guard(Place))
+    frame:SetScript("OnEnter", ns.Guard(Entered))
+    frame:SetScript("OnLeave", ns.Guard(Left))
+    frame:SetScript("OnSizeChanged", ns.Guard(Dungeons.Refit))
     frame:Hide()
     -- The set arrived: walked into the list (Walk); the floor shown drawn again with its bosses.
     SET:OnStamp(ns.Guard(function()
@@ -811,27 +882,67 @@ function Dungeons.Build(canvasFrame)
     return frame
 end
 
--- A dungeon's floor shown (map: any floor of it), whole, on the full map; the floors' dropdown with it. False for
--- a map that is no dungeon's, or one without art, or while the map is small.
-function Dungeons.Show(map)
-    if not frame or ns.Canvas.camera ~= ns.Window.full then return false end
+-- A dungeon's floor shown whole (map: any floor of it), on the small map (small) or the full one. False for a map
+-- that is no dungeon's, or one without art.
+local function Open(map, small)
     local entry, floor = Entry(map)
     if not entry or not ArtOf(map) then return false end
     map = floor.map
-    shown, floors = map, entry.floors
+    shown, floors, onSmall = map, entry.floors, small
     kept = Gather(map)
     zoom, panX, panY, dragX = 1, 0, 0, nil
     frame:SetFrameLevel(canvas:GetFrameLevel() + Dungeons.LEVEL)
     frame:Show()
+    Room()
     Draw()
     ns.Safe("bar", ns.TopBar.Update)
     return true
 end
 
+-- A dungeon's floor shown (map: any floor of it), whole, on the full map; the floors' dropdown with it. False for
+-- a map that is no dungeon's, or one without art, or while the map is small.
+function Dungeons.Show(map)
+    if not frame or ns.Canvas.camera ~= ns.Window.full then return false end
+    return Open(map, false)
+end
+
+-- The small map in a dungeon, wheeled out past the game's widest step (Canvas.lua, where the game's minimap alone is
+-- the map: lost): the dungeon's whole map in its place, wished so until wheeled in again or clicked away (Out). False
+-- where the game's dungeon has no map of ours (then the game's minimap stays).
+function Dungeons.Whole()
+    if not frame or ns.Canvas.camera ~= ns.Window.small then return false end
+    local here = Dungeons.Here()
+    if not here or not Open(here, true) then return false end
+    wanted = true
+    return true
+end
+
+-- At each layout of the small map (Canvas.Layout; lost: in an instance, the game's minimap alone is the map there):
+-- the dungeon's whole map as it was wished, in the dungeon the player is in; gone outside one. True while it shows,
+-- and the game's minimap stands out of sight under it.
+function Dungeons.Small(lost)
+    if not frame then return false end
+    if not lost then
+        if onSmall then Dungeons.Close() end
+        return false
+    end
+    if onSmall then return true end
+    if not wanted or shown then return false end
+    local here = Dungeons.Here()
+    return here and Open(here, true) or false
+end
+
+-- A loading screen: another dungeon, or none, so the small map's whole map is looked at anew (Small, at the layout).
+ns.On("PLAYER_ENTERING_WORLD", function()
+    if not onSmall then return end
+    Dungeons.Close()
+    ns.Canvas.Refresh()
+end)
+
 -- The map again: the dungeon's view goes (the window going small, a map chosen in the bar).
 function Dungeons.Close()
     if not frame or not shown then return end
-    shown, floors, kept, dragX = nil, nil, nil, nil
+    shown, floors, kept, dragX, onSmall = nil, nil, nil, nil, false
     frame:SetScript("OnUpdate", nil)
     frame:Hide()
     for _, texture in ipairs(tiles) do texture:SetTexture(nil) end -- its files let go
@@ -848,12 +959,16 @@ function Dungeons.Close()
 end
 
 -- A right click: back to the map it was opened from. That map stays under the dungeon's view as it was (from the
--- bar, a pin's entrance, or the full map opened inside), so the view only goes.
+-- bar, a pin's entrance, or the full map opened inside), so the view only goes. On the small map (a notch in too,
+-- or the middle button) the game's minimap again, at its widest step, and no longer wished.
 function Dungeons.Out()
+    local small = onSmall
+    if small then wanted = false end
     Dungeons.Close()
+    if small then ns.Canvas.Refresh() end
 end
 
--- The floor shown (nil: none), and the floors of its dungeon.
+-- The floor shown (nil: none), the floors of its dungeon, and whether it stands on the small map.
 function Dungeons.Shown()
-    return shown, floors
+    return shown, floors, onSmall
 end

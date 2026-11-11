@@ -1685,6 +1685,16 @@ function QuestLog.Shown()
     return frame and frame:IsShown() or false
 end
 
+-- Its box on the screen while it shows, in the screen's pixels: left, right, bottom, top (a dungeon's map is fitted
+-- beside it, Dungeons.lua); nil while it is hidden or has no place yet.
+function QuestLog.Box()
+    if not (frame and frame:IsShown()) then return nil end
+    local left, bottom, width, height = frame:GetRect()
+    if not (left and width) then return nil end
+    local scale = frame:GetEffectiveScale()
+    return left * scale, (left + width) * scale, bottom * scale, (bottom + height) * scale
+end
+
 -- For the test: its set.
 function QuestLog.Rest()
     return rest

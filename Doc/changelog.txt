@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map: a dungeon's or raid's map opens whole on the full map, clear
+  of its bar and the quest log. Inside a dungeon, scroll the minimap
+  out once more past its farthest step for the dungeon's whole map
+  with its bosses; scroll in or right-click for the minimap again.
 - Map: party and raid members are much bigger dots, growing as you
   zoom in, and show at every zoom on the minimap and the full map.
 - The map draws a ship's whole way when you hover or click its dock:

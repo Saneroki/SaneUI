@@ -7162,8 +7162,30 @@ end)()
     check(Canvas.Show("90:1") and Dungeons.Shown() == "90:1" and Shown(9001, 9012) == 12,
         "its upper floor shown, in the game's tiles the set names")
     local marks = Marks()
-    check(#marks == 1 and marks[1]._points[1][4] < 0 and near(marks[1]._points[1][5], 0),
-        "its boss's mark where it stands: a quarter across, half down")
+    local under = 2 * ns.TopBar.INSET + ns.TopBar.BUTTON_HEIGHT -- the bar's row over the map
+    check(#marks == 1 and near(marks[1]._points[1][4], -0.25 * 1002 * (868 - under) / 668)
+        and near(marks[1]._points[1][5], -under / 2),
+        "its boss's mark where it stands: a quarter across, half down; the floor whole under the bar, as tall as the room")
+    -- The quest log over the view's left, then its right (screen pixels): the floor whole beside it.
+    do
+        local box = ns.QuestLog.Box
+        Dungeons.frame.GetRect = function() return 0, 0, 1600, 868 end
+        local function At(logLeft, logRight)
+            ns.QuestLog.Box = function() return logLeft, logRight, 0, 800 end
+            Dungeons.Refit()
+            return marks[1]._points[1][4]
+        end
+        local function Expected(left, right)
+            local scale = math.min((1600 - left - right) / 1002, (868 - under) / 668)
+            return (left - right) / 2 - 0.25 * 1002 * scale
+        end
+        check(near(At(12, 332), Expected(332 + ns.TopBar.INSET, 0)), "the quest log at the view's left: the floor beside it")
+        check(near(At(1268, 1588), Expected(0, 1600 - 1268 + ns.TopBar.INSET)), "at its right: beside it there")
+        check(near(At(12, 1500), Expected(1600 / 3, 0)), "a wide one takes a third of the view at most")
+        ns.QuestLog.Box, Dungeons.frame.GetRect = box, nil
+        Dungeons.Refit()
+        check(near(marks[1]._points[1][4], Expected(0, 0)), "the log gone: the whole view's width again")
+    end
     -- The game's spells and items: one spell it does not know; one item loaded, one it loads on asking.
     local loaded, asked = { [901] = true }, {}
     local spellInfo, itemInfo, itemIcon, request = C_Spell.GetSpellInfo, C_Item.GetItemInfo, C_Item.GetItemIconByID,
@@ -7357,6 +7379,58 @@ end)()
     check(Dungeons.Show("90:2") and Shown(9101, 9102) == 2 and Shown(9001, 9012) == 0 and #Marks() == 1,
         "the lower floor: its own tiles and boss")
     check(not Marks()[1].model or not Marks()[1].model._shown, "a boss without a look: its mark alone")
+    -- The small map inside it: the game's minimap at its widest step, then a notch out: the dungeon's whole map there.
+    Dungeons.Close()
+    W.SmallAndBack(function()
+        local function Look()
+            W.Wait(Canvas.LOOK)
+            tracker._scripts.OnUpdate(tracker, 0.016)
+        end
+        local view = Dungeons.frame
+        view._width, view._height = 200, 200 -- as large as the small canvas (it stands on all of it)
+        player.map = 500 -- the game tells no place of the player inside
+        small.native = 0
+        Look()
+        Canvas.Layout()
+        check(minimap._shown and minimap._zoom == 0 and not Dungeons.Shown() and not Canvas.Laid(),
+            "the small map inside: the game's minimap, at its widest step")
+        frame._scripts.OnMouseWheel(frame, -1)
+        W.Wait(0)
+        local floor, _, onSmall = Dungeons.Shown()
+        local boss = Marks()[1]
+        check(floor == "90:1" and onSmall and view._shown and not minimap._shown,
+            "a notch out past it: the dungeon's whole map at its lowest floor, the game's minimap out of sight under it")
+        check(boss and near(boss._points[1][4], -0.25 * 200) and near(boss._points[1][5], 0) and boss.model._shown
+            and boss.model._width == Dungeons.MODEL_WIDTH * Dungeons.SMALL and boss._width == Dungeons.BOSS_SIZE * Dungeons.SMALL,
+            "the whole floor as wide as the small view (no bar there); its boss's model on it, at a smaller size")
+        view._scripts.OnMouseWheel(view, -1)
+        view._scripts.OnMouseDown(view, "LeftButton")
+        check(Dungeons.Shown() == "90:1" and not view._scripts.OnUpdate, "farther out it stays whole; not dragged")
+        Canvas.Layout()
+        W.Fire("PLAYER_ENTERING_WORLD")
+        check(Dungeons.Shown() == "90:1" and select(3, Dungeons.Shown()) and not minimap._shown,
+            "kept through a layout and a loading screen")
+        view._scripts.OnMouseWheel(view, 1)
+        check(not Dungeons.Shown() and not view._shown and minimap._shown and minimap._zoom == 0 and small.native == 0,
+            "a notch in: the game's minimap again, at its widest step")
+        frame._scripts.OnMouseWheel(frame, -1)
+        W.Wait(0)
+        view._scripts.OnMouseUp(view, "MiddleButton")
+        check(not Dungeons.Shown() and minimap._shown, "the middle button: the game's minimap again")
+        frame._scripts.OnMouseWheel(frame, -1)
+        W.Wait(0)
+        player.map = 1429
+        Look()
+        check(not Dungeons.Shown() and not view._shown and Canvas.Laid(), "out of the dungeon: our map again")
+        player.map = 500
+        Look()
+        check(Dungeons.Shown() == "90:1" and not minimap._shown, "into a dungeon again: its whole map, as it was left")
+        view._scripts.OnMouseUp(view, "RightButton")
+        check(not Dungeons.Shown() and minimap._shown, "a right click: the game's minimap again, no longer wished")
+        player.map = 1429
+        Look()
+        view._width, view._height = 1600, 868
+    end)
     UnitPosition, GetInstanceInfo = before, instance
     Dungeons.Close()
     check(#Marks() == 0 and not model._shown and model._cleared, "closed: no marks, the models let go")
