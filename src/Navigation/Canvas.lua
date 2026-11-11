@@ -82,10 +82,11 @@ Canvas.GROUND = { 22 / 255, 38 / 255, 50 / 255 } -- the sea: where neither land 
 Canvas.PAPER = { 0.33, 0.29, 0.21 }             -- the sketches' sea past the world map: its paper, darker
 -- The sea's waves over the ground (Waves): the game's own ocean texture, its light alone (Art/Sea.blp, made by
 -- dev/tools/terrain-art), in WAVE's colour and alpha. Repeated over the plane, so the waves move with the map, each
--- copy SEA_SIZE units on a side at every zoom (the game's texture at its own size on a 4K screen); where the paper
--- shows instead of the sea (Sketches, Blended far out), they fade as the sea's colour does.
+-- copy SEA_SIZE units on a side at every zoom (small waves: the game's texture at a quarter of its size, 256 x 256,
+-- its own size on a 4K screen); where the paper shows instead of the sea (Sketches, Blended far out), they fade as the
+-- sea's colour does.
 Canvas.SEA = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Sea"
-Canvas.SEA_SIZE = 364
+Canvas.SEA_SIZE = 91
 Canvas.WAVE = { 120 / 255, 170 / 255, 190 / 255, 0.4 }
 -- The view Blended: Blizzard's map art over the terrain whole while the view is BLEND[1] yards high or more, gone at
 -- BLEND[2] or less; between, faded by the zoom's own steps (each a factor), so every step changes it alike.

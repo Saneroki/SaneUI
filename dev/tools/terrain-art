@@ -49,10 +49,11 @@ frames off.
 
 The sea's waves, laid over the sea's colour wherever no land is (src/Navigation/Canvas.lua): the game's own ocean
 texture, the first frame of the ones it lays over its seas (XTextures/ocean/ocean_h.1.blp, file ID 219855), its
-alpha alone in white, so the code tints the light on the waves and fades it. It tiles seamlessly, as in the game.
-Made by itself, from that one file (--sea).
+alpha alone in white, so the code tints the light on the waves and fades it. Made a quarter of its size, for small
+waves (a copy is drawn 91 units wide: the texture's own size on a 4K screen); made smaller as a tile of a larger
+plane, so it still tiles seamlessly, as in the game. Made by itself, from that one file (--sea).
 
-  assets/optimized/Navigation/Art/Sea.blp 1024 x 1024: the waves' light
+  assets/optimized/Navigation/Art/Sea.blp 256 x 256: the waves' light
 
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
@@ -96,7 +97,8 @@ ZONES = ART / "Zones"
 SKETCHES = ART / "Sketches"
 EDGE = ART / "Edge.blp"
 SEA = ART / "Sea.blp"
-WAVES = 1024       # the side of the game's ocean texture, and of the sea's
+WAVES = 1024       # the side of the game's ocean texture
+SEA_SIDE = 256     # the side of the sea's: a quarter, for small waves
 COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
@@ -756,11 +758,19 @@ def sample(grid, rows, columns):
 
 
 def sea(texture):
-    """The sea's waves: the alpha of the game's ocean texture, in white (the code gives it its colour)."""
+    """The sea's waves: the alpha of the game's ocean texture, in white (the code gives it its colour), SEA_SIDE on a
+    side. Made smaller with its neighbours around it (three by three copies, the middle one kept), so the filter reads
+    across its edges as across the rest and the copies still meet without a seam."""
     with Image.open(texture) as image:
         waves = image.convert("RGBA").getchannel("A")
     if waves.size != (WAVES, WAVES):
         sys.exit(f"{texture} is {waves.width} x {waves.height}, not the ocean texture's {WAVES} x {WAVES}")
+    plane = Image.new("L", (3 * WAVES, 3 * WAVES))
+    for x in range(3):
+        for y in range(3):
+            plane.paste(waves, (x * WAVES, y * WAVES))
+    plane = plane.resize((3 * SEA_SIDE, 3 * SEA_SIDE), Image.Resampling.LANCZOS)
+    waves = plane.crop((SEA_SIDE, SEA_SIDE, 2 * SEA_SIDE, 2 * SEA_SIDE))
     white = Image.new("L", waves.size, 255)
     size = write(SEA, Image.merge("RGBA", (white, white, white, waves)))
     print(f"The sea's waves: {SEA.relative_to(ROOT)}, {size / 1e6:.1f} MB.")
