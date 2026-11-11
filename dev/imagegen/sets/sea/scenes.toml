@@ -1,0 +1,86 @@
+# The sea's spots, painted one by one in crops of their own by dev/tools/sea-art paint (round 3, Saneroki,
+# 2026-11-11): from round 2's maelstrom-1, his pick ("With that in mind I like mealstrom-1 the most"), its whirlpool
+# taken out (clear) and a smaller one painted in (maelstrom): "The whirlwind is to big. Compare the size to this size
+# in the middle and the very center of the whirlwind is to black. It should be more like a siphon instead of a black
+# hole." Then room "to add fantastical beasts and ship/monster battles".
+#
+# Each spot: x, y its middle on the canvas (0 to 1 from the top left); size the disc painted, crop the square the model
+# paints in (it reads the land and sea round the disc), both as shares of the canvas' width. The canvas is the full
+# map's view at the farthest zoom (1365.33 x 736 units); the world map's frame stands in it from x 0.136 to 0.864 and
+# y 0.05 to 0.95. The maelstrom: in his picture of the world map its middle at 0.5, 0.52 of the frame and some 14.5 %
+# of its width across, so on the canvas at 0.5, 0.518 and 0.1055 wide. Every scene stands in open water: the disc is
+# painted only over the open sea in any case.
+#
+#   dev/tools/sea-art paint assets/generated/sea/round-2/maelstrom-1.png dev/imagegen/sets/sea/scenes.toml \
+#       assets/generated/sea/round-3/clear --only clear
+#   dev/tools/sea-art upscale assets/generated/sea/round-3/clear/painted.png assets/generated/sea/round-3/base.png
+#   dev/tools/sea-art paint assets/generated/sea/round-3/base.png dev/imagegen/sets/sea/scenes.toml \
+#       assets/generated/sea/round-3/<workflow> --workflow <workflow> --only maelstrom,serpent,kraken,battle,leviathan,pirates,turtle
+# No place's name in the words: names come back as lettering.
+
+before = "A photorealistic satellite photograph of a fantasy world's ocean, taken from very high above and straight down: no perspective, no tilt, no horizon."
+style = "Real water and real light in natural colours, sharp fine detail, all one photograph: whatever is in the water sits in the same water, light and colours as the sea round it, its foam, wakes and shadows joining the waves. No text, no letters, no labels, no frame, no border."
+
+[[spot]]
+name = "clear"
+x = 0.5
+y = 0.5
+size = 0.27
+crop = 0.5
+words = "Open ocean and nothing else: deep dark navy blue water with long gentle swells and faint wind streaks, a little lighter towards the coasts. No whirlpool, no storm, no clouds, nothing in the water."
+
+[[spot]]
+name = "maelstrom"
+x = 0.5
+y = 0.518
+size = 0.1055
+crop = 0.25
+words = "In the middle, seen straight down into it, a great maelstrom like a siphon: the sea turns round it in a spiral of white foam and churned streaks that narrows inward into a deep funnel, the funnel's steep walls of dark blue-green water lit by the sun and streaked with foam spiralling down into the depths, its throat deep teal water growing darker further down but never black. A thin, loose spiral of grey storm cloud turns over it round the same eye. Round it the water is rough and streaked with foam, calming towards the edges."
+
+[[spot]]
+name = "serpent"
+x = 0.10
+y = 0.30
+size = 0.08
+crop = 0.25
+words = "In the middle, a colossal sea serpent, its long scaled body coiled in loops through the water round a sinking three-masted galleon, both half under the waves, white foam churned where they meet."
+
+[[spot]]
+name = "kraken"
+x = 0.12
+y = 0.72
+size = 0.08
+crop = 0.25
+words = "In the middle, a giant kraken dragging a warship under: its huge pale tentacles spread across the water round the tilted ship, the sea churned white round them."
+
+[[spot]]
+name = "battle"
+x = 0.47
+y = 0.14
+size = 0.07
+crop = 0.25
+words = "In the middle, a naval battle: two lines of tall-masted warships with white sails firing broadsides at each other, grey cannon smoke drifting low over the water between them, long wakes behind them."
+
+[[spot]]
+name = "leviathan"
+x = 0.50
+y = 0.86
+size = 0.08
+crop = 0.25
+words = "In the middle, a leviathan, a whale-like sea beast many times larger than a ship, surfacing beside a few small fishing ships, water pouring off its dark back in white foam."
+
+[[spot]]
+name = "pirates"
+x = 0.89
+y = 0.30
+size = 0.08
+crop = 0.25
+words = "In the middle, pirate ships with black sails attacking a convoy of merchant ships, grappled hull to hull, smoke and fire on one deck, their wakes crossing."
+
+[[spot]]
+name = "turtle"
+x = 0.87
+y = 0.74
+size = 0.08
+crop = 0.25
+words = "In the middle, a giant sea turtle the size of an island swimming slowly, its shell overgrown with green moss, rocks and a few trees, small ships sailing beside it, a long wake behind it."

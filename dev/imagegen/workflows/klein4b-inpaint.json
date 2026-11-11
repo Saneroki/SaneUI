@@ -1,0 +1,255 @@
+{
+ "9": {
+  "inputs": {
+   "filename_prefix": "imagegen/{name}",
+   "images": [
+    "107",
+    0
+   ]
+  },
+  "class_type": "SaveImage",
+  "_meta": {
+   "title": "Save Image"
+  }
+ },
+ "75:61": {
+  "inputs": {
+   "sampler_name": "euler"
+  },
+  "class_type": "KSamplerSelect",
+  "_meta": {
+   "title": "KSamplerSelect"
+  }
+ },
+ "75:62": {
+  "inputs": {
+   "steps": 4,
+   "width": 1024,
+   "height": 1024
+  },
+  "class_type": "Flux2Scheduler",
+  "_meta": {
+   "title": "Flux2Scheduler"
+  }
+ },
+ "75:63": {
+  "inputs": {
+   "cfg": 1,
+   "model": [
+    "106",
+    0
+   ],
+   "positive": [
+    "75:74",
+    0
+   ],
+   "negative": [
+    "75:67",
+    0
+   ]
+  },
+  "class_type": "CFGGuider",
+  "_meta": {
+   "title": "CFG Guider"
+  }
+ },
+ "75:64": {
+  "inputs": {
+   "noise": [
+    "75:73",
+    0
+   ],
+   "guider": [
+    "75:63",
+    0
+   ],
+   "sampler": [
+    "75:61",
+    0
+   ],
+   "sigmas": [
+    "75:62",
+    0
+   ],
+   "latent_image": [
+    "105",
+    0
+   ]
+  },
+  "class_type": "SamplerCustomAdvanced",
+  "_meta": {
+   "title": "SamplerCustomAdvanced"
+  }
+ },
+ "75:65": {
+  "inputs": {
+   "samples": [
+    "75:64",
+    0
+   ],
+   "vae": [
+    "75:72",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE Decode"
+  }
+ },
+ "75:67": {
+  "inputs": {
+   "text": "",
+   "clip": [
+    "75:71",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Negative Prompt)"
+  }
+ },
+ "75:73": {
+  "inputs": {
+   "noise_seed": 0
+  },
+  "class_type": "RandomNoise",
+  "_meta": {
+   "title": "RandomNoise"
+  }
+ },
+ "75:70": {
+  "inputs": {
+   "unet_name": "flux-2-klein-4b-fp8.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "UNETLoader",
+  "_meta": {
+   "title": "Load Diffusion Model"
+  }
+ },
+ "75:71": {
+  "inputs": {
+   "clip_name": "qwen_3_4b.safetensors",
+   "type": "flux2",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "Load CLIP"
+  }
+ },
+ "75:72": {
+  "inputs": {
+   "vae_name": "flux2-vae.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "Load VAE"
+  }
+ },
+ "75:74": {
+  "inputs": {
+   "text": "{prompt}",
+   "clip": [
+    "75:71",
+    0
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "101": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "ref1.png"
+  },
+  "_meta": {
+   "title": "ref1"
+  }
+ },
+ "102": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "ref2.png"
+  },
+  "_meta": {
+   "title": "ref2"
+  }
+ },
+ "103": {
+  "class_type": "ImageToMask",
+  "inputs": {
+   "image": [
+    "102",
+    0
+   ],
+   "channel": "red"
+  },
+  "_meta": {
+   "title": "mask: white is repainted"
+  }
+ },
+ "104": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "101",
+    0
+   ],
+   "vae": [
+    "75:72",
+    0
+   ]
+  }
+ },
+ "105": {
+  "class_type": "SetLatentNoiseMask",
+  "inputs": {
+   "samples": [
+    "104",
+    0
+   ],
+   "mask": [
+    "103",
+    0
+   ]
+  }
+ },
+ "106": {
+  "class_type": "DifferentialDiffusion",
+  "inputs": {
+   "model": [
+    "75:70",
+    0
+   ],
+   "strength": 1.0
+  }
+ },
+ "107": {
+  "class_type": "ImageCompositeMasked",
+  "inputs": {
+   "destination": [
+    "101",
+    0
+   ],
+   "source": [
+    "75:65",
+    0
+   ],
+   "x": 0,
+   "y": 0,
+   "resize_source": false,
+   "mask": [
+    "103",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "only the mask changes"
+  }
+ }
+}

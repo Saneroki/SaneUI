@@ -762,9 +762,17 @@ Three spaces, converted only in `Coords.lua`:
   look like realistically blend into the ocean. Can we use a much more realistic fantasy style map where it has that
   huge whirlwind / whirlpool combination in the middle". Round 2: a photograph from orbit, one colossal maelstrom in
   the middle (the whirlpool and a storm turning over it), *maelstrom* without ships, *ships* with ships only as
-  specks and wakes, three seeds each. Waits for his pick. In the game a pick would be one more texture
-  under the terrain at the far zooms (the canvas' view at the farthest zoom, 2048 x 1104), giving way to the waves
-  as the view comes close.
+  specks and wakes, three seeds each. His pick: *maelstrom-1*, but "The whirlwind is to big. Compare the size to this
+  size in the middle and the very center of the whirlwind is to black. It should be more like a siphon instead of a
+  black hole", and "try out other models and higher resolutions so I can make myself a better picture and the image
+  gen has more room to add fantastical beasts and ship/monster battles". Round 3 (`dev/imagegen/sets/sea/scenes.toml`,
+  the GPU runner's job `sea-round3`): maelstrom-1's whirlpool cleared, the picture made 4096 x 2208, a siphon
+  maelstrom the size of the one on his world map (some 14.5 % of its width) and six scenes (a serpent round a
+  galleon, a kraken, a naval battle, a leviathan, pirates, a giant turtle) each painted in a crop of its own, with
+  four models (Qwen-Image 2.1, FLUX.2 dev, Z-Image Turbo, FLUX.2 klein); by hand in ComfyUI with
+  `qwen21-inpaint-crop`. In the game a pick would be one more texture
+  under the terrain at the far zooms (the canvas' view at the farthest zoom, 4096 x 2208 at most), giving way to the
+  waves as the view comes close.
 - **The water cut away (built 2026-10-19):** `dev/tools/terrain-art` reads the game's terrain files (each map
   chunk's heights, water and liquid type; magma and slime stay) and makes the overview's alpha the land: where
   the ground lies above the water's surface, sampled 2 yards apart, rivers and lakes too. The overview's colour

@@ -7,6 +7,17 @@ with the waves it draws now (Art/Sea.blp, Canvas.lua's Waves), B with a painting
   dev/tools/sea-art inputs <client tables>   the land, ComfyUI's image 1 and mask, and side A
   dev/tools/sea-art page <round folder>      side B of every painting in that folder (an earlier round's gone),
                                              and the page (/sea/ of dev/tools/web-pages, saneui showsea)
+  dev/tools/sea-art upscale <painting> <out picture>
+                                             the painting made BIG (4x-UltraSharpV2, then to its size), the land put
+                                             back over it sharp at that size
+  dev/tools/sea-art paint <picture> <spots.toml> <out folder> [--workflow W] [--seed N] [--only a,b] [--dry-run]
+                                             each spot painted in a crop of its own (one painted before is kept),
+                                             then put back: <out>/painted.png; --dry-run writes the crops alone
+  dev/tools/sea-art round <spots.toml> <round folder> <painting> <workflow,...>
+                                             a whole round, going on where it stopped (the GPU runner's job sea):
+                                             the spot clear in the painting (Qwen), made BIG, every other spot with
+                                             each workflow, the page
+  dev/tools/sea-art status <spots.toml> <round folder> <workflow,...>   how far a round is: "N of M paintings made"
 
 The view (Navigation's own numbers): the full map's canvas is the screen less the title bar, 1365.33 x 736 units
 (Core's Window.BAR, 32), 2.8125 pixels a unit on 4K at UI scale 1; at the farthest zoom the world map's frame stands
@@ -22,19 +33,35 @@ edge, grown two pixels into the coast's soft fringe and softened, so surf may re
 lakes and rivers inside the land stay as they are). The workflow puts the land back untouched. Side B is the painting,
 made as large as the canvas, under the land at 4K, as it would lie under the terrain in the game.
 
+Larger, and spot by spot (Saneroki, 2026-11-11: "try out other models and higher resolutions so I can make myself a
+better picture and the image gen has more room to add fantastical beasts and ship/monster battles"): a painting is made
+BIG, 4096 x 2208 (a little past the 4K canvas), by an upscale model, which sharpens and adds nothing, and the land is
+laid back over it sharp. Then each spot of a spots file (dev/imagegen/sets/sea/scenes.toml: its middle and its size
+as shares of the canvas, the square the model paints in, the words) is painted in a crop of its own, so the model
+gives it its full detail: the crop (a square, its side in 16s) and a mask, a soft disc of the spot's size and only
+over the open sea (the land never changes), through any inpaint workflow (image 1 the crop, image 2 the mask, width
+and height set to the crop's side), each through imagegen's Server, so ComfyUI's window shows it. The crops are put
+back where they came from, in the order of the file.
+
 Everything is written into assets/generated/sea/ (concept pictures, never in the repository):
-  land-4k.png   the land alone (RGBA), the canvas at 4K
+  land-4k.png   the land alone (RGBA), the canvas at 4K;  land-big.png  the same at BIG
   input.png     image 1;  mask.png  image 2
   A-4k.png      side A;   A.jpg, B-<painting>.jpg  the page's pictures;  index.html  the page: a slider between A and
                 the B chosen, the whole canvas or its 4K pixels
 
 Needs Python with Pillow and NumPy.
 """
+import argparse
 import csv
 import html
+import importlib.machinery
+import importlib.util
+import io
 import sys
+import tomllib
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,6 +79,9 @@ FIT = 0.9                     # Camera.FIT: the world map's frame in so much of 
 ASPECT = 1.5                  # the world map's width over its height
 WORLD = "947"                 # the world map
 PAINTING = (2048, 1104)       # the painting: the canvas' shape, its sides in 16s
+BIG = (4096, 2208)            # a painting made larger: twice that
+FEATHER = 0.15                # a spot's disc fades out over so much of its radius
+UPSCALE = "upscale-ultrasharp"
 SEA = (22, 38, 50)            # Canvas.GROUND
 WAVE, WAVE_ALPHA, WAVE_UNITS = (120, 170, 190), 0.4, 91  # Canvas.WAVE, Canvas.SEA_SIZE
 
@@ -60,10 +90,10 @@ def size4k():
     return round(CANVAS[0] * UNIT), round(CANVAS[1] * UNIT)
 
 
-def land(tables):
-    """Both continents' overviews where the world map puts them, on the canvas at 4K (RGBA)."""
-    width, height = size4k()
-    frame_h = CANVAS[1] * FIT * UNIT
+def land(tables, size):
+    """Both continents' overviews where the world map puts them, on the canvas at size (RGBA)."""
+    width, height = size
+    frame_h = height * FIT
     frame_w = frame_h * ASPECT
     x0, y0 = (width - frame_w) / 2, (height - frame_h) / 2
     rows = [r for r in csv.DictReader(open(tables / "UiMapAssignment.csv", encoding="utf-8")) if r["UiMapID"] == WORLD]
@@ -98,17 +128,23 @@ def land(tables):
     return picture
 
 
-def inputs(tables):
-    OUT.mkdir(parents=True, exist_ok=True)
-    whole = land(tables)
-    whole.save(OUT / "land-4k.png")
-    small = whole.resize(PAINTING, Image.Resampling.LANCZOS)
-    Image.alpha_composite(Image.new("RGBA", PAINTING, SEA + (255,)), small).convert("RGB").save(OUT / "input.png")
-    # The open sea alone: what is sea and joined to the picture's edge (its corner is always open sea).
-    sea = small.getchannel("A").point(lambda a: 255 if a < 128 else 0)
+def open_sea(alpha):
+    """White where the open sea is: sea, and joined to the picture's edge (its corner is always open sea); grown two
+    pixels into the coast's soft fringe and softened."""
+    sea = alpha.point(lambda a: 255 if a < 128 else 0)
     ImageDraw.floodfill(sea, (0, 0), 128)
     sea = sea.point(lambda v: 255 if v == 128 else 0)
-    sea.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(1.5)).save(OUT / "mask.png")
+    return sea.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(1.5))
+
+
+def inputs(tables):
+    OUT.mkdir(parents=True, exist_ok=True)
+    whole = land(tables, size4k())
+    whole.save(OUT / "land-4k.png")
+    land(tables, BIG).save(OUT / "land-big.png")
+    small = whole.resize(PAINTING, Image.Resampling.LANCZOS)
+    Image.alpha_composite(Image.new("RGBA", PAINTING, SEA + (255,)), small).convert("RGB").save(OUT / "input.png")
+    open_sea(small.getchannel("A")).save(OUT / "mask.png")
     # Side A: the sea's colour, the waves as Canvas.lua lays them (a copy WAVE_UNITS wide), the land over them.
     width, height = whole.size
     tile = round(WAVE_UNITS * UNIT)
@@ -122,7 +158,149 @@ def inputs(tables):
     over.putalpha(light.point(lambda v: int(v * WAVE_ALPHA)))
     side_a = Image.alpha_composite(Image.new("RGBA", whole.size, SEA + (255,)), over)
     Image.alpha_composite(side_a, whole).convert("RGB").save(OUT / "A-4k.png")
-    print(f"Written into {OUT.relative_to(ROOT)}: land-4k.png, input.png, mask.png, A-4k.png.")
+    print(f"Written into {OUT.relative_to(ROOT)}: land-4k.png, land-big.png, input.png, mask.png, A-4k.png.")
+
+
+# --- ComfyUI, through imagegen's own Server (its queue shows every job) -------------------------------------------
+
+def imagegen():
+    loader = importlib.machinery.SourceFileLoader("imagegen", str(ROOT / "dev" / "tools" / "imagegen"))
+    module = importlib.util.module_from_spec(importlib.util.spec_from_loader("imagegen", loader))
+    loader.exec_module(module)
+    return module
+
+
+class Comfy:
+    def __init__(self):
+        self.gen = imagegen()
+        self.server = self.gen.Server("127.0.0.1:8188")
+        self.gen.library()  # the workflows as templates in ComfyUI's window, when one is new or changed
+        self.uploaded = {}
+
+    def run(self, workflow, name, prompt, refs, seed=1, settings=None):
+        """One picture: the workflow (a name in dev/imagegen/workflows/) filled as imagegen fills it."""
+        graph = json_load(self.gen.find_workflow(workflow))
+        for ref in refs:
+            if ref not in self.uploaded:
+                self.uploaded[ref] = self.server.upload(ref)
+        job = {"name": name, "prompt": prompt, "refs": list(refs)}
+        graph = self.gen.fill(graph, job, seed, settings or {}, self.uploaded)
+        entry = self.server.wait(self.server.queue(graph, title=name))
+        pictures = list(self.server.pictures(entry))
+        if not pictures:
+            sys.exit(f"ComfyUI made no picture for {name}: {entry.get('status')}")
+        return Image.open(io.BytesIO(pictures[-1]))
+
+
+def json_load(path):
+    import json
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def lay_land(picture):
+    """The land laid over a picture, sharp, from the land made at BIG (resized to the picture's size)."""
+    with Image.open(OUT / "land-big.png") as big:
+        sharp = big.convert("RGBA").resize(picture.size, Image.Resampling.LANCZOS)
+    return Image.alpha_composite(picture.convert("RGBA"), sharp).convert("RGB")
+
+
+def upscale(painting, out):
+    comfy = Comfy()
+    larger = comfy.run(UPSCALE, f"sea-{Path(out).stem}", "", [Path(painting)],
+                       settings={"width": BIG[0], "height": BIG[1]})
+    lay_land(larger.convert("RGB").resize(BIG, Image.Resampling.LANCZOS)).save(out)
+    print(f"{painting} made {BIG[0]} x {BIG[1]}, the land laid back: {out}")
+
+
+def disc(side, middle, radius):
+    """A soft disc on a square of side pixels: whole within, fading out over its last FEATHER of the radius."""
+    y, x = np.mgrid[0:side, 0:side]
+    r = np.hypot(x + 0.5 - middle[0], y + 0.5 - middle[1]) / radius
+    t = np.clip((1 - r) / FEATHER, 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def paint(picture, spots_file, out, workflow, seed, only, dry=False):
+    spec = tomllib.loads(Path(spots_file).read_text(encoding="utf-8"))
+    base = Image.open(picture).convert("RGB")
+    width, height = base.size
+    with Image.open(OUT / "land-big.png") as big:
+        sea = np.asarray(open_sea(big.getchannel("A").resize(base.size, Image.Resampling.LANCZOS)), np.float32) / 255
+    out = Path(out)
+    (out / "crops").mkdir(parents=True, exist_ok=True)
+    comfy, done = None, base.copy()
+    for spot in spec["spot"]:
+        if only and spot["name"] not in only:
+            continue
+        side = min(round(spot["crop"] * width / 16) * 16, height // 16 * 16)
+        cx, cy = spot["x"] * width, spot["y"] * height
+        left = int(min(max(round(cx - side / 2), 0), width - side))
+        top = int(min(max(round(cy - side / 2), 0), height - side))
+        mask = disc(side, (cx - left, cy - top), spot["size"] * width / 2) * sea[top:top + side, left:left + side]
+        crop_file, mask_file = out / "crops" / f"{spot['name']}.png", out / "crops" / f"{spot['name']}-mask.png"
+        done.crop((left, top, left + side, top + side)).save(crop_file)
+        Image.fromarray((mask * 255).round().astype(np.uint8)).convert("RGB").save(mask_file)
+        words = " ".join(part for part in (spec.get("before", ""), spot["words"], spec.get("style", "")) if part)
+        if dry:
+            print(f"{spot['name']}: {side} x {side} at {left}, {top}, the disc {spot['size'] * width:.0f} px "
+                  f"({mask.max():.2f} at most over the open sea)")
+            continue
+        made = out / f"{spot['name']}.png"
+        if made.exists():  # painted before (a round stopped and going on)
+            painted = Image.open(made).convert("RGB")
+        else:
+            comfy = comfy or Comfy()
+            painted = comfy.run(workflow, f"sea-{spot['name']}", words, [crop_file, mask_file], seed,
+                                {"width": side, "height": side}).convert("RGB")
+        if painted.size != (side, side):
+            painted = painted.resize((side, side), Image.Resampling.LANCZOS)
+        painted.save(out / f"{spot['name']}.png")
+        done.paste(painted, (left, top), Image.fromarray((mask * 255).round().astype(np.uint8)))
+        print(f"{spot['name']}: {side} x {side} at {left}, {top}")
+    if dry:
+        return
+    done.save(out / "painted.png")
+    print(f"Painted with {workflow}, seed {seed}: {out / 'painted.png'}")
+
+
+def scenes(spots_file):
+    """The spots of a round painted on the big picture: all but the one that clears the painting."""
+    return [spot["name"] for spot in tomllib.loads(Path(spots_file).read_text(encoding="utf-8"))["spot"]
+            if spot["name"] != "clear"]
+
+
+def status(spots_file, folder, workflows):
+    folder, names = Path(folder), scenes(spots_file)
+    steps = [folder / "clear" / "painted.png", folder / "base.png"]
+    steps += [folder / workflow / f"{name}.png" for workflow in workflows for name in names]
+    made = sum(step.exists() for step in steps)
+    print(f"{made} of {len(steps)} paintings made" + ("" if made < len(steps) else
+          f"; the page: {(folder / 'pictures').relative_to(ROOT) if folder.is_absolute() else folder / 'pictures'}"))
+    return made == len(steps)
+
+
+def round_(spots_file, folder, painting, workflows):
+    folder = Path(folder)
+    if not (folder / "clear" / "painted.png").exists():
+        paint(painting, spots_file, folder / "clear", "qwen21-inpaint", 1, {"clear"})
+    if not (folder / "base.png").exists():
+        upscale(folder / "clear" / "painted.png", folder / "base.png")
+    (folder / "pictures").mkdir(parents=True, exist_ok=True)
+    failed = []
+    for workflow in workflows:  # one that fails leaves the others to go on; the round runs again for it
+        try:
+            if not (folder / workflow / "painted.png").exists() or not all(
+                    (folder / workflow / f"{name}.png").exists() for name in scenes(spots_file)):
+                paint(folder / "base.png", spots_file, folder / workflow, workflow, 1, set(scenes(spots_file)))
+            Image.open(folder / workflow / "painted.png").save(folder / "pictures" / f"{workflow}.png")
+        except (SystemExit, Exception) as error:
+            failed.append(workflow)
+            print(f"{workflow} failed: {error}", file=sys.stderr)
+    if any((folder / "pictures").glob("*.png")):
+        page(folder / "pictures")
+    status(spots_file, folder, workflows)
+    if failed:
+        sys.exit(f"Not painted: {', '.join(failed)}")
 
 
 PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -195,6 +373,25 @@ def main():
         return inputs(Path(args[1]))
     if len(args) == 2 and args[0] == "page":
         return page(Path(args[1]))
+    if len(args) == 3 and args[0] == "upscale":
+        return upscale(args[1], args[2])
+    if len(args) >= 4 and args[0] == "paint":
+        parser = argparse.ArgumentParser(prog="sea-art paint")
+        parser.add_argument("picture")
+        parser.add_argument("spots")
+        parser.add_argument("out")
+        parser.add_argument("--workflow", default="qwen21-inpaint")
+        parser.add_argument("--seed", type=int, default=1)
+        parser.add_argument("--only", default="")
+        parser.add_argument("--dry-run", action="store_true")
+        opts = parser.parse_args(args[1:])
+        return paint(opts.picture, opts.spots, opts.out, opts.workflow, opts.seed,
+                     {name for name in opts.only.split(",") if name}, opts.dry_run)
+    if len(args) == 5 and args[0] == "round":
+        return round_(args[1], args[2], args[3], [w for w in args[4].split(",") if w])
+    if len(args) == 4 and args[0] == "status":
+        status(args[1], args[2], [w for w in args[3].split(",") if w])
+        return
     sys.exit(__doc__)
 
 

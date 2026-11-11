@@ -413,6 +413,18 @@ of their own. (The painted world, the Atlas, went 2026-11-09; what it taught sta
   `dev/tools/sea-art` (`saneui makesea`, `saneui showsea`), the words in `dev/imagegen/sets/sea/ocean.txt`. The
   inpaint workflow's words do not see image 1: they say what the whole picture shows, never "image 1". About 40 s
   a painting at 2048 x 1104.
+  - **Larger, spot by spot** (round 3: "try out other models and higher resolutions [...] more room to add
+    fantastical beasts and ship/monster battles"): `sea-art upscale` makes a painting 4096 x 2208
+    (`upscale-ultrasharp`: 4x-UltraSharpV2, then to the size; it sharpens and adds nothing) and lays the land back
+    sharp; `sea-art paint` paints each spot of `dev/imagegen/sets/sea/scenes.toml` (a disc on the canvas, the words)
+    in a crop of its own, so the model gives a beast or a battle its full detail, and puts it back. Any inpaint
+    workflow serves: `qwen21-inpaint`, `flux2dev-turbo-inpaint`, `zimage-turbo-inpaint`, `klein4b-inpaint` (the same
+    graph each: image 1 the picture, image 2 the mask, the model through DifferentialDiffusion, the land put back).
+    A whole round is the GPU runner's job (`sea-art round`, going on where it stopped).
+  - **By hand in ComfyUI:** `qwen21-inpaint-crop` (a template there) takes one big picture whose mask is painted on
+    it in ComfyUI's mask editor (right click on Load Image, *Open in MaskEditor*), crops round the mask, paints the
+    crop at 1024 and stitches it back (the node pack ComfyUI-Inpaint-CropAndStitch, `✂️ Inpaint Crop` and
+    `✂️ Inpaint Stitch`, installed 2026-11-11), so a beast goes anywhere on the 4096 picture at full detail.
 
 ## Asking for interface art
 

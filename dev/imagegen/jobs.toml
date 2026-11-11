@@ -42,3 +42,18 @@ priority = 2
 command = ["dev/tools/map-layers", "paint", "--levels", "far"]
 status = ["dev/tools/map-layers", "status", "--levels", "far"]
 done = '^(\d+) of \1 paintings made'
+
+# The painted sea, round 3 (Saneroki, 2026-11-11: from round 2's maelstrom-1, "The whirlwind is to big [...] It should
+# be more like a siphon instead of a black hole", and "try out other models and higher resolutions [...] more room to
+# add fantastical beasts and ship/monster battles"): the old whirlpool cleared, the picture made 4096 x 2208, then the
+# siphon maelstrom and six scenes painted each in a crop of its own with four models (dev/imagegen/sets/sea/scenes.toml),
+# the page /sea/ (saneui showsea). 30 paintings, about a quarter of an hour; goes on where it stopped.
+[[job]]
+name = "sea-round3"
+priority = 10
+command = ["dev/tools/sea-art", "round", "dev/imagegen/sets/sea/scenes.toml", "assets/generated/sea/round-3",
+           "assets/generated/sea/round-2/maelstrom-1.png",
+           "qwen21-inpaint,flux2dev-turbo-inpaint,zimage-turbo-inpaint,klein4b-inpaint"]
+status = ["dev/tools/sea-art", "status", "dev/imagegen/sets/sea/scenes.toml", "assets/generated/sea/round-3",
+          "qwen21-inpaint,flux2dev-turbo-inpaint,zimage-turbo-inpaint,klein4b-inpaint"]
+done = '^(\d+) of \1 paintings made'

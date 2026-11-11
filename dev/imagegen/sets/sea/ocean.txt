@@ -16,6 +16,7 @@
 # style map where it has that huge whirlwind / whirlpool combination in the middle" (Saneroki, 2026-11-11). Its words
 # are gone. Round 2: a photograph from orbit, one colossal maelstrom (the whirlpool and a storm turning over it); the
 # ships, if any, only as such a photograph shows them.
+# Round 3 (from maelstrom-1, his pick: larger, a smaller siphon maelstrom, scenes, four models): scenes.toml.
 workflow: qwen21-inpaint
 count: 3
 out: assets/generated/sea/round-2
