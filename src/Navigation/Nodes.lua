@@ -8,10 +8,12 @@ local _, ns = ...
 --
 --      Nodes.Find(name)        the herb's or ore's record of Objects ({ key, name, kind, skill, ... }), nil for
 --                              anything else (the data has the names in English)
+--      Nodes.Of(key)           the same by its key in Objects (the object's ID), nil for anything but a herb or ore
 --      Nodes.Picture(node)     the file ID of what it gives (its herb, its ore), nil while not known
 --      Nodes.TooHard(node)     whether your skill (with its bonus) is below what it needs, or you have none
 --      Nodes.Reach(skill)      what you reach in a skill line with its bonus; false: not learned; nil: not told
 --      Nodes.Active()          the kind whose finder is on now ("herb", "ore", "fish"), nil for none
+--      Nodes.Has(kind)         whether this character has that kind's finder (the game's tracking lists it)
 --      Nodes.Wanted()          the kinds the pin filter wants found, as one string ("herb fish")
 --
 --  The finders follow the pin filter's kinds Found herbs, Found ore and Found fishing pools (Apply): the one
@@ -54,6 +56,7 @@ local WAIT = "navigation: finders" -- what waits for the fight's end
 local HERB, METAL, GOODS = 9, 7, 7 -- the game's item class Trade Goods and its subclasses Herb, Metal & Stone
 
 local named = {}   -- [name] = its record, or false: none
+local keyed = {}   -- [object key] = its record, or false: none
 local pictures = {} -- [object key] = file ID, or false: none known yet
 local moving = 0   -- yards moved since the last turn
 local switched = nil -- when a switch of ours was made last (GetTime)
@@ -62,23 +65,40 @@ local ticker, loud, reviving
 -------------------------------------------------------------------------------
 --  What a herb or ore is
 -------------------------------------------------------------------------------
+-- A herb's or ore's record of Objects, as Find and Of give it (one table per key, a number where it is one: the set's
+-- index gives its keys as words); nil for anything else.
+local function Record(key)
+    key = tonumber(key) or key
+    local known = keyed[key]
+    if known == nil then
+        known = false
+        local record = OBJECTS:Get(key)
+        if type(record) == "table" and Nodes.DRAWN[record.kind] then
+            known = { key = key, name = record.name, kind = record.kind, skill = record.skill,
+                      skillLevel = tonumber(record.skillLevel) or 0, yellowAt = record.yellowAt, greyAt = record.greyAt }
+        end
+        keyed[key] = known
+    end
+    return known or nil
+end
+
 function Nodes.Find(name)
     if type(name) ~= "string" or name == "" or not OBJECTS:Ready() then return nil end
     local known = named[name]
     if known == nil then
         known = false
         for _, key in ipairs(OBJECTS:Keys("byName", name)) do
-            local record = OBJECTS:Get(key)
-            if type(record) == "table" and Nodes.DRAWN[record.kind] then
-                known = { key = key, name = record.name, kind = record.kind, skill = record.skill,
-                          skillLevel = tonumber(record.skillLevel) or 0, yellowAt = record.yellowAt,
-                          greyAt = record.greyAt }
-                break
-            end
+            known = Record(key) or false
+            if known then break end
         end
         named[name] = known
     end
     return known or nil
+end
+
+function Nodes.Of(key)
+    if key == nil or not OBJECTS:Ready() then return nil end
+    return Record(key)
 end
 
 -- Whether herbs and ore can be told by their names here: Core's set Objects is there (not in Retail, until its data
@@ -173,12 +193,25 @@ local function Finders()
     return places, on, lit
 end
 
--- The kind whose finder is on, as the game told it last: asked once, then again only after the game says its
--- tracking changed (or a switch of ours), not each time Found.lua looks (every frame the game's minimap shows).
-local active, told = nil, false
+-- The kind whose finder is on and the finders this character has, as the game told them last: asked once, then
+-- again only after the game says its tracking changed (or a switch of ours), not each time Found.lua looks (every
+-- frame the game's minimap shows).
+local active, has, told = nil, {}, false
+local function Told()
+    if not told then
+        has, active = Finders()
+        told = true
+    end
+end
+
 function Nodes.Active()
-    if not told then active, told = select(2, Finders()), true end
+    Told()
     return active
+end
+
+function Nodes.Has(kind)
+    Told()
+    return has[kind] ~= nil
 end
 
 local function Changed()
@@ -380,7 +413,10 @@ function Nodes.Start()
     ns.On("PLAYER_UNGHOST", Revived)
     ns.On("SKILL_LINES_CHANGED", function() wipe(skills) end)
     ns.On("GET_ITEM_INFO_RECEIVED", function() wipe(pictures) end)
-    OBJECTS:OnStamp(function() wipe(named) end)
+    OBJECTS:OnStamp(function()
+        wipe(named)
+        wipe(keyed)
+    end)
     DROPS:OnStamp(function() wipe(pictures) end)
     Core.Data.Prepare("Objects")
     Nodes.Update()

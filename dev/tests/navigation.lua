@@ -7350,6 +7350,74 @@ gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
 check(#Pictures() == 0, "a herb left far behind, out of the minimap's reach: forgotten, not drawn when back")
 Sweeps(40)
 
+-- Where herbs and ore can be (Core's spawns): their pictures under the game's minimap, half opaque. The one the mouse
+-- points at, as the game answers only for the real mouse (Forever from 70862): found, whole, on its spawn.
+do
+    local wasX, wasY = player.x, player.y
+    player.x, player.y = 0.52, 0.5 -- on Silverleaf's spawn
+    Sweeps(2)
+    local under
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == minimap and widget ~= gather.overlay and widget._alpha == Found.POSSIBLE then under = widget end
+    end
+    local function Under()
+        local list = {}
+        for _, widget in ipairs(W.frames) do
+            if under and widget._parent == under and widget._kind == "Texture" and widget._shown and widget._texture == 3765 then
+                list[#list + 1] = widget
+            end
+        end
+        return list
+    end
+    local possible = Under()
+    local at = possible[1] and possible[1]._points[1]
+    check(under and #possible == 1 and at and math.abs(at[4]) < 0.5 and math.abs(at[5]) < 0.5 and #Pictures() == 0,
+        "Silverleaf's spawn where you stand: its picture under the game's minimap, half opaque; none found")
+    check(not Found.Draws("herb"), "the game's minimap out of sight: the small view's possible herbs are its pins'")
+    gather.overlay.IsVisible = function() return true end
+    check(Found.Draws("herb") and not Found.Draws("rare"), "in sight: the small view's possible herbs are Found's, under the dots")
+    gather.overlay.IsVisible = nil
+    local ask = C_TooltipInfo.GetMinimapMouseover
+    C_TooltipInfo.GetMinimapMouseover = function()
+        local lines = {}
+        if minimap._mouseOver then
+            for _, dot in ipairs(gather.dots) do
+                if (dot[1] - (cursorX - 600)) ^ 2 + (dot[2] - (cursorY - 400)) ^ 2 <= 64 then
+                    lines[#lines + 1] = { leftText = dot[3] }
+                end
+            end
+        end
+        return { lines = lines }
+    end
+    gather.dots[1] = { 3, -2, "Silverleaf" } -- the game's dot, a little off the spawn as it draws it
+    local wasCursorX, wasCursorY = cursorX, cursorY
+    minimap._mouseOver, cursorX, cursorY, W.foci = true, 604, 397, { minimap }
+    gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
+    local herbs = Pictures()
+    local point = herbs[1] and herbs[1]._points[1]
+    check(#Found.Each() == 1 and Found.Each()[1].spawn and #herbs == 1 and math.abs(point[4]) < 0.5
+        and math.abs(point[5]) < 0.5 and #Under() == 0,
+        "the mouse on its dot: found, whole, on its spawn; the half opaque one not under it")
+    W.foci = { herbs[1] }
+    gather.dots[1] = nil
+    cursorX, cursorY = 600, 400
+    gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
+    check(#Found.Each() == 1, "the mouse on our picture, not the minimap: kept, the game's tooltip is not asked of it")
+    W.foci = { minimap }
+    gather.overlay._scripts.OnUpdate(gather.overlay, 0.016)
+    check(#Found.Each() == 0 and #Pictures() == 0 and #Under() == 1,
+        "the mouse on its place and the game names nothing there: gathered, its spawn half opaque again")
+    local before = #W.printed
+    SlashCmdList.SANEUI("nodes")
+    check(table.concat(W.printed, "\n", before + 1):find("under the mouse: %d+ frames it named a herb or ore, 1 found so; "
+        .. "spawns around you: 1 %(herbs yes, ore yes%), 1 drawn"), "/sane nodes tells what the mouse found and the spawns")
+    C_TooltipInfo.GetMinimapMouseover = ask
+    minimap._mouseOver, cursorX, cursorY, W.foci = false, wasCursorX, wasCursorY, {}
+    player.x, player.y = wasX, wasY
+    Sweeps(2)
+    check(#Under() == 0, "far from it again: no spawn drawn")
+end
+
 -- Sparkles (Sparkles.lua): the game's settings for its interact key, the sparkles on the herb's gather.plate.
 check(C_CVar.GetCVar("softTargetInteract") == "3" and C_CVar.GetCVar("SoftTargetIconGameObject") == "1"
     and C_CVar.GetCVar("SoftTargetInteractRange") == "20", "the interact key's settings as the sparkles need them")

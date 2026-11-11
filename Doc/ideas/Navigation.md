@@ -1897,8 +1897,11 @@ battlemaster, spirit healer, meeting stone.
     herbs*, *Found ore*, the new *Found fishing pools*); alive again after dying, the finder wanted comes back on by
     itself. Fishing pools get no picture of ours (no records): the game's minimap dots show them.
   - **Gone from Forever's build 70862 (2026-11-07):** its minimap answers no point an addon asks, only what lies
-    under the real mouse (Saneroki's `/sane nodes`, 2026-11-11: 12040 points asked, none answered); Found stands down
-    there (`Found.SILENT`) and nothing is found; what takes its place is Saneroki's call (card #468).
+    under the real mouse (Saneroki's `/sane nodes`, 2026-11-11: 12040 points asked, none answered): no sweep there
+    (`Found.SILENT`). In its place (Saneroki, 2026-11-11: "make it spawn pictures from our data and see if you can make
+    the far away arrows still work with found nodes"; "50% transparent if it is a possible one and 100% solid if it is
+    a found node"): Core's spawns around you in their pictures, half opaque, under the game's dots; the dot under the
+    mouse found on its spawn, whole, with its far mark.
   - **A finder on means its kind on (2026-11-11):** a finder switched on outside the pin filter (the game's menu,
     the spell, a macro) switches its kind on there, so the game's dots never show without our pictures and the far
     ones (Saneroki saw only the game's dots: both his characters' profile had *Found herbs* and *Found ore* off).

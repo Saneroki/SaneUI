@@ -434,6 +434,11 @@ function Hybrid.Hide()
     if taken then Parts():Hide() end
 end
 
+-- Whether it stands on the full map now (Wide), not in the small view.
+function Hybrid.Wide()
+    return wide ~= nil
+end
+
 -- Whether it shows now. Our marks stay over it all the same; the party's are looked at more often meanwhile, so they
 -- lie over its own dots of them, which it moves at each frame (Marks.lua).
 function Hybrid.Shown()

@@ -640,6 +640,12 @@ local function DataOn(map, part)
     return list
 end
 
+-- A map's objects of Core's data as pins (its herbs' and ore's every spawn among them: kind, thing "object:<id>",
+-- home, u, v), read once and kept as For keeps them; for the herbs and ore drawn on the game's minimap (Found.lua).
+function Pins.ObjectsOn(map)
+    return DataOn(map, "object")
+end
+
 -------------------------------------------------------------------------------
 --  The pins in view
 -------------------------------------------------------------------------------
@@ -757,7 +763,9 @@ function Pins.For(view, small, pu, pv)
                     -- (at a flight master the flight points always: Taxi.lua)
                     wanted = (Shows(kind) or kind == "flight" and ns.Taxi.On()) and (not small or SMALL[kind])
                         and (not continentLevel or Pins.CONTINENT[kind]) and (view.level ~= "world" or Pins.WORLD[kind])
-                        and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER) and true or false
+                        and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER)
+                        -- (the small view's herbs and ore where the game's minimap shows: Found.lua's, under its dots)
+                        and not (small and ns.Found.Draws(kind)) and true or false
                     shown[kind] = wanted
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)

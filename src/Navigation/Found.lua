@@ -20,17 +20,31 @@ local _, ns = ...
 --  names a herb or ore (Nodes.Find) is narrowed to its dot's middle: the way
 --  out to where the answer stops halved a few times, to the left and right,
 --  then down and up from between them. How far a dot answers is learnt from
---  those edges, and the sweep's step follows it. A client whose minimap does not
---  answer so finds none (Found.Answers, Found.Works): no pictures, and no far
---  ones on the screen (Glints.lua); its finders still switch, the game's own dots
---  show. So Retail, and Forever from build 70862 on (Found.SILENT): its minimap
---  answers only what lies under the real mouse, whatever point is asked.
+--  those edges, and the sweep's step follows it. Forever from build 70862 on
+--  (Found.SILENT) its minimap answers only what lies under the real mouse,
+--  whatever point is asked (Found.Answers): there no sweep is made.
+--
+--  Under the mouse: wherever the game's minimap answers for the real mouse, a
+--  herb or ore it names there is found (Hover), at the place of that herb's or
+--  ore's spawn of Core's data nearest the mouse within a dot's reach, else where
+--  the mouse is; one found there that the game names no more (its finder on, the
+--  mouse right on it and on the minimap itself) is gone.
+--
+--  Where they can be: every spawn of Core's data of a herb or an ore around you,
+--  while its kind is shown and you have its finder (Nodes.Has), in its picture,
+--  Found.POSSIBLE opaque, on a frame under the game's minimap, so its own dot of
+--  one up now stands on the picture of what it is; a found one is drawn whole
+--  over it. In the small view and on the game's own minimap, not on the full map
+--  (its pins Possible herbs and Possible ore: Pins.lua leaves the small view's
+--  to these, Found.Draws).
 --
 --  A sweep done, the dots of the kind whose finder is on are what the game
 --  shows now: one it covered and found no more is gone. Those it did not cover,
 --  and those of the other kind (the finders take turns, Nodes.lua), are kept,
 --  until you loot a node beside one, go far from it, or it is Found.KEEP
---  seconds old.
+--  seconds old; so is one found under the mouse (Prune). A client without the
+--  minimap's answers or Core's herbs and ore (Retail) finds none (Found.Works):
+--  no pictures, no far ones on the screen (Glints.lua); its finders still switch.
 --
 --  Kept in yards in the player's plane (Coords.lua), so they stay put while you
 --  move; drawn at their distance from you (the minimap's middle) times the
@@ -49,7 +63,7 @@ ns.Found = Found
 
 Found.ASKS = 40     -- points asked at most in a frame
 Found.REST = 0.4    -- seconds between the end of a sweep and the next
-Found.KEEP = 300    -- seconds one of the kind whose finder is off is kept
+Found.KEEP = 300    -- seconds one is kept that no sweep found again (one under the mouse: since it was there last)
 Found.FAR = 2       -- and how far it may be: so many of the minimap's radii
 Found.LOOTED = 10   -- yards: a looted node takes the nearest found one this near with it
 Found.MOST = 60     -- pictures drawn at most
@@ -57,6 +71,12 @@ Found.MOST = 60     -- pictures drawn at most
 -- (1.60.1.70862, 2026-11-07: Minimap:UpdateMouseoverAtPoint no longer moves its point). From it on nothing is
 -- found (Found.Answers).
 Found.SILENT = 70862
+Found.POSSIBLE = 0.5 -- where a herb or ore can be (Core's spawns): so opaque; a found one whole (Saneroki, 2026-11-11)
+Found.NEAR = 1.5     -- the spawns around you read: so many of the minimap's radii
+Found.MOVED = 0.25   -- read again once you moved so much of that, or after Found.FRESH seconds
+Found.FRESH = 5
+Found.SPAWNS = 120   -- possible places drawn at most
+Found.LOOK = 1       -- seconds between two looks for found ones too old or too far (no sweep settles them)
 -- The leather ring Saneroki picked for the found ones (dev/tools/mark-art), round here; the far sparkles have it with
 -- its point (Glints.lua). Its picture is drawn round the middle of its hole; in the picture's side, the hole's radius
 -- and the ring's outer one (the art tool keeps 2 of 256 texels clear round it).
@@ -74,7 +94,13 @@ local STEP = 1.5     -- the sweep's step in reaches: a spot is at most step / sq
 local HALVINGS = 4   -- how often the way to a dot's edge is halved
 
 local overlay        -- our frame over the game's minimap, its child
+local under          -- and the one under it, its child too, for where herbs and ore can be
+local answers        -- whether its minimap answers the points asked (Found.Answers, at the start)
 local pictures = {}  -- the textures drawn: { icon, mask, ring }
+local possible = {}  -- under: { icon, mask, ring } each
+local near = { list = {}, version = 0 } -- the spawns around you: list of { u, v, kind, key, node }; where read
+local pruned = 0     -- when found ones were last looked at for their age and distance
+local NONE = {}
 local found = {}     -- { u, v, plane, kind, node, picture, seen, swept }
 local sweep          -- the sweep going on: { points, at, kind, plane, half, round, number }
 local sweeps = 0     -- sweeps made, a number for each
@@ -82,7 +108,7 @@ local nextSweep = 0  -- when the next may begin
 local drawn = {}     -- what the pictures were last drawn for: plane, u, v, scale, facing, count; shown: how many
 -- What the minimap answered since login, for /sane nodes: points asked, answers with lines, lines read, lines the game
 -- hid (secret), herbs or ore named; the first texts read.
-local heard = { asks = 0, answers = 0, lines = 0, hidden = 0, named = 0, texts = {}, known = {} }
+local heard = { asks = 0, answers = 0, lines = 0, hidden = 0, named = 0, texts = {}, known = {}, pointed = 0, learnt = 0 }
 local TEXTS = 8      -- texts kept at most
 
 local function Minimap()
@@ -112,20 +138,32 @@ local function Shown(kind)
     return ns.Pins.Shows(Nodes.FOUND[kind])
 end
 
+-- Whether a kind's spawns are drawn: shown, a herb or ore, and you have its finder (its dots can show).
+local function Spawning(kind)
+    return Nodes.DRAWN[kind] and Shown(kind) and Nodes.Has(kind) or false
+end
+
 -------------------------------------------------------------------------------
 --  Asking the minimap
 -------------------------------------------------------------------------------
 local cx, cy, pixels -- the minimap's middle on the screen and its scale, for one frame's asks
 
--- The first herb or ore a tooltip's line names: its names one per line (|n), without colours, pictures and links
--- (Core.Fuzzy.Plain).
-local function Named(text)
+-- The herbs and ore a tooltip's line names, into out: its names one per line (|n), without colours, pictures and
+-- links (Core.Fuzzy.Plain).
+local function Names(text, out)
     text = Core.Fuzzy.Plain((text:gsub("|n", "\n")))
     for name in text:gmatch("[^\n]+") do
         local node = Nodes.Find(name:match("^%s*(.-)%s*$"))
-        if node then return node end
+        if node then out[#out + 1] = node end
     end
-    return nil
+    return out
+end
+
+-- The first of them.
+local first = {}
+local function Named(text)
+    wipe(first)
+    return Names(text, first)[1]
 end
 
 -- The first herb or ore the minimap's tooltip names at x, y units from its middle, or nil; what it answered counted
@@ -213,17 +251,20 @@ local function Remove(index)
     drawn.count = nil
 end
 
--- A dot found in this sweep: the one kept of that node this near is moved there, else it is new.
-local function Note(node, u, v, plane, near)
-    local now = GetTime()
+-- A dot found (by this sweep, or under the mouse: spawn, the key of the spawn it stands on): the one kept of that
+-- node this near is moved there, else it is new.
+local function Note(node, u, v, plane, close, spawn)
+    local now, number = GetTime(), sweep and sweep.number
     for _, kept in ipairs(found) do
-        if kept.node.key == node.key and kept.plane == plane and (kept.u - u) ^ 2 + (kept.v - v) ^ 2 < near * near then
-            kept.u, kept.v, kept.seen, kept.swept = u, v, now, sweep.number
-            drawn.count = nil
+        if kept.node.key == node.key and kept.plane == plane and (kept.u - u) ^ 2 + (kept.v - v) ^ 2 < close * close then
+            -- (drawn again only where it moved: one under the mouse is noted at every frame)
+            if kept.u ~= u or kept.v ~= v or (spawn and kept.spawn ~= spawn) then drawn.count = nil end
+            kept.u, kept.v, kept.seen, kept.swept, kept.spawn = u, v, now, number or kept.swept, spawn or kept.spawn
             return
         end
     end
-    found[#found + 1] = { u = u, v = v, plane = plane, kind = node.kind, node = node, seen = now, swept = sweep.number }
+    found[#found + 1] = { u = u, v = v, plane = plane, kind = node.kind, node = node, seen = now, swept = number,
+                          spawn = spawn }
     drawn.count = nil
     if ns.Glints then ns.Glints.Found() end -- (the far ones' frame rests while nothing is found)
 end
@@ -247,6 +288,122 @@ local function Settle(plane, pu, pv, scale)
             and Covered(entry, pu, pv, half * 0.9, sweep.round) then
             Remove(index)
         elseif now - entry.seen > Found.KEEP or not Covered(entry, pu, pv, half * Found.FAR, true) then
+            Remove(index)
+        end
+    end
+end
+
+-- Found ones too old or too far, looked at every Found.LOOK seconds where no sweep settles them (found under the
+-- mouse); one of another plane at once.
+local function Prune(plane, pu, pv, scale)
+    local now = GetTime()
+    if now - pruned < Found.LOOK then return end
+    pruned = now
+    local half = (Minimap():GetWidth() / 2) / scale
+    for index = #found, 1, -1 do
+        local entry = found[index]
+        if entry.plane ~= plane or now - entry.seen > Found.KEEP or not Covered(entry, pu, pv, half * Found.FAR, true) then
+            Remove(index)
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+--  Where they can be: Core's spawns around you
+-------------------------------------------------------------------------------
+-- The spawns of the herbs and ore drawn (Spawning) within Found.NEAR of the minimap's radii around you (half: the
+-- minimap's half side, in its units), read from Core's data per zone (Pins.ObjectsOn) into the player's plane; read
+-- again once you moved Found.MOVED of that, the zoom changed, or after Found.FRESH seconds (a switch, a finder learnt).
+local function Near(plane, pu, pv, scale, half)
+    local radius, now = half / scale * Found.NEAR, GetTime()
+    if near.plane == plane and near.radius == radius and now - near.at < Found.FRESH
+        and (near.u - pu) ^ 2 + (near.v - pv) ^ 2 < (radius * Found.MOVED) ^ 2 then return end
+    near.plane, near.u, near.v, near.radius, near.at = plane, pu, pv, radius, now
+    near.version = near.version + 1
+    local list = near.list
+    wipe(list)
+    if not (Spawning("herb") or Spawning("ore")) then return end
+    local far = radius * (1 + Found.MOVED) -- (what stays near until the next read)
+    for _, zone in ipairs(Coords.Zones(plane)) do
+        local box = zone.box
+        if box.u <= pu + far and box.u + box.width >= pu - far and box.v >= pv - far and box.v - box.height <= pv + far then
+            local pins = ns.Pins.ObjectsOn(zone.map)
+            local link = pins[1] and Coords.Link(pins[1].home, plane)
+            for _, pin in ipairs(link and pins or NONE) do
+                if Spawning(pin.kind) then
+                    local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
+                    if (u - pu) ^ 2 + (v - pv) ^ 2 <= far * far then
+                        local node = Nodes.Of(tonumber(tostring(pin.thing):match("^object:(%d+)$")))
+                        if node then list[#list + 1] = { u = u, v = v, kind = pin.kind, key = pin.key, node = node } end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- The spawn of that herb or ore nearest u, v within close yards, or nil.
+local function Nearest(node, u, v, close)
+    local best, nearest = nil, close * close
+    for _, spawn in ipairs(near.list) do
+        if spawn.node == node then
+            local distance = (spawn.u - u) ^ 2 + (spawn.v - v) ^ 2
+            if distance < nearest then best, nearest = spawn, distance end
+        end
+    end
+    return best
+end
+
+-------------------------------------------------------------------------------
+--  Under the mouse: what the game's minimap names for the real mouse
+-------------------------------------------------------------------------------
+local hovered = {} -- the herbs and ore under the mouse now (scratch)
+
+-- Whether the mouse is on the minimap itself, not on one of our pictures over it (which takes its tooltip).
+local function Focused(minimap)
+    local foci = Core.Ask(rawget(_G, "GetMouseFoci"))
+    if type(foci) == "table" then return foci[1] == minimap end
+    return Core.Ask(rawget(_G, "GetMouseFocus")) == minimap
+end
+
+local function Among(list, node)
+    for _, each in ipairs(list) do
+        if each == node then return true end
+    end
+    return false
+end
+
+-- The real mouse over the minimap: each herb and ore its tooltip names there found, on the spawn of it nearest the
+-- mouse within a dot's reach (else where the mouse is); one found right under the mouse that the game names no more,
+-- of the finder on now, gathered (the minimap itself under the mouse: its tooltip, not ours).
+local function Hover(minimap, plane, pu, pv, scale, facing)
+    if Core.Plain(minimap:IsMouseOver()) ~= true then return end
+    local mx, my = GetCursorPosition()
+    local s = minimap:GetEffectiveScale()
+    local mcx, mcy = minimap:GetCenter()
+    if not (mx and my and s and s > 0 and mcx) then return end
+    local u, v = ToPlane(mx / s - mcx, my / s - mcy, pu, pv, scale, facing)
+    wipe(hovered)
+    local data = Core.Ask(C_TooltipInfo.GetMinimapMouseover)
+    local lines = type(data) == "table" and data.lines
+    for _, line in ipairs(type(lines) == "table" and lines or NONE) do
+        local text = type(line) == "table" and Core.Plain(line.leftText)
+        if type(text) == "string" then Names(text, hovered) end
+    end
+    local close = reach * 1.5 / scale -- yards: how far from its middle a dot answers, and a little more
+    if hovered[1] then heard.pointed = heard.pointed + 1 end
+    for _, node in ipairs(hovered) do
+        local spawn = Nearest(node, u, v, close)
+        local count = #found
+        Note(node, spawn and spawn.u or u, spawn and spawn.v or v, plane, close, spawn and spawn.key)
+        if #found > count then heard.learnt = heard.learnt + 1 end
+    end
+    if not Focused(minimap) then return end
+    local active, gone = Nodes.Active(), (reach / 2 / scale) ^ 2
+    for index = #found, 1, -1 do
+        local entry = found[index]
+        if entry.plane == plane and entry.kind == active and (entry.u - u) ^ 2 + (entry.v - v) ^ 2 < gone
+            and not Among(hovered, entry.node) then
             Remove(index)
         end
     end
@@ -276,11 +433,11 @@ end
 
 -- Whether a point is inside a dot this sweep found already (at the player's place now).
 local function Known(x, y, pu, pv, scale, facing)
-    local near = reach * reach
+    local close = reach * reach
     for _, entry in ipairs(found) do
         if entry.swept == sweep.number then
             local ex, ey = ToMinimap(entry.u, entry.v, pu, pv, scale, facing)
-            if (ex - x) ^ 2 + (ey - y) ^ 2 < near then return true end
+            if (ex - x) ^ 2 + (ey - y) ^ 2 < close then return true end
         end
     end
     return false
@@ -416,12 +573,81 @@ end
 local function Hide(picture)
     picture.icon:Hide()
     picture.ring:Hide()
-    picture.button:Hide()
-    picture.button.entry = nil
+    if picture.button then
+        picture.button:Hide()
+        picture.button.entry = nil
+    end
+end
+
+-- A place a herb or ore can be: its picture in the ring as a found one's, on the frame under the minimap (its alpha
+-- Found.POSSIBLE), taking no mouse: the game's own dot over it keeps its tooltip.
+local function Possible(index)
+    local picture = possible[index]
+    if picture then return picture end
+    local icon = under:CreateTexture(nil, "ARTWORK")
+    local mask = under:CreateMaskTexture()
+    Found.Round(icon, mask)
+    local ring = under:CreateTexture(nil, "OVERLAY")
+    ring:SetTexture(Found.RING)
+    picture = { icon = icon, mask = mask, ring = ring }
+    possible[index] = picture
+    return picture
+end
+
+-- One picture at x, y of its frame, side wide (its hole).
+local function Lay(picture, frame, file, x, y, side, low)
+    local icon = picture.icon
+    icon:SetTexture(file)
+    icon:ClearAllPoints()
+    icon:SetPoint("CENTER", frame, "CENTER", x, y)
+    icon:SetDesaturated(low)
+    Found.Ring(picture.ring, icon, side)
+    icon:Show()
+    picture.ring:Show()
+end
+
+-- Whether x, y (units from the minimap's middle) lies inside it, edge from the middle (round, or square).
+local function Inside(x, y, edge, round)
+    if round then return x * x + y * y <= edge * edge end
+    return math.abs(x) <= edge and math.abs(y) <= edge
+end
+
+local taken = {} -- spawns a found one stands on (scratch)
+
+-- The spawns around you in their pictures, but where a found one stands; in the small view and on the game's own
+-- minimap, not on the full map (its own pins there).
+local function DrawPossible(pu, pv, scale, facing, half, round)
+    local shown = 0
+    if not ns.Hybrid.Wide() then
+        wipe(taken)
+        for _, entry in ipairs(found) do
+            if entry.spawn then taken[entry.spawn] = true end
+        end
+        for _, spawn in ipairs(near.list) do
+            if shown >= Found.SPAWNS then break end
+            local file = spawn.picture
+            if file == nil then
+                file = Nodes.Picture(spawn.node) or false
+                spawn.picture = file or nil
+            end
+            if file and not taken[spawn.key] and Spawning(spawn.kind) then
+                local x, y = ToMinimap(spawn.u, spawn.v, pu, pv, scale, facing)
+                local kind = Nodes.FOUND[spawn.kind]
+                local side = ns.Pins.SIZE[kind] * ns.PinScale(kind)
+                if Inside(x, y, half - side / 2, round) then
+                    shown = shown + 1
+                    Lay(Possible(shown), under, file, x, y, side, Nodes.TooHard(spawn.node))
+                end
+            end
+        end
+    end
+    for index = shown + 1, #possible do Hide(possible[index]) end
+    drawn.possible = shown
 end
 
 local function Draw(plane, pu, pv, scale, facing)
     local half, round, shown = Minimap():GetWidth() / 2, Round(), 0
+    DrawPossible(pu, pv, scale, facing, half, round)
     for _, entry in ipairs(found) do
         if shown >= Found.MOST then break end
         local file = entry.picture or Nodes.Picture(entry.node)
@@ -430,18 +656,10 @@ local function Draw(plane, pu, pv, scale, facing)
             local x, y = ToMinimap(entry.u, entry.v, pu, pv, scale, facing)
             local kind = Nodes.FOUND[entry.kind]
             local side = ns.Pins.SIZE[kind] * ns.PinScale(kind)
-            local edge = half - side / 2
-            if (round and x * x + y * y <= edge * edge) or (not round and math.abs(x) <= edge and math.abs(y) <= edge) then
+            if Inside(x, y, half - side / 2, round) then
                 shown = shown + 1
                 local picture = Picture(shown)
-                local icon, ring = picture.icon, picture.ring
-                icon:SetTexture(file)
-                icon:ClearAllPoints()
-                icon:SetPoint("CENTER", overlay, "CENTER", x, y)
-                icon:SetDesaturated(Nodes.TooHard(entry.node))
-                Found.Ring(ring, icon, side)
-                icon:Show()
-                ring:Show()
+                Lay(picture, overlay, file, x, y, side, Nodes.TooHard(entry.node))
                 picture.button.entry = entry
                 picture.button:Show()
             end
@@ -460,24 +678,32 @@ local function Update()
     local scale = pu and Scale(minimap)
     if not scale then
         for _, picture in ipairs(pictures) do Hide(picture) end
-        drawn.count, drawn.shown = nil, 0
+        for _, picture in ipairs(possible) do Hide(picture) end
+        drawn.count, drawn.shown, drawn.possible = nil, 0, 0
         heard.stop = pu and "the game tells no radius of its minimap" or "the game tells no place of yours"
         return
     end
     heard.stop = nil
     local facing = Turned() and Core.Plain(Core.Ask(GetPlayerFacing)) or nil
     if sweep and (sweep.plane ~= plane or sweep.kind ~= SweepKind(minimap)) then sweep = nil end
-    -- (a level the game's minimap was given since, Hybrid.lua: ours over it again)
-    if overlay:GetFrameLevel() <= minimap:GetFrameLevel() then overlay:SetFrameLevel(minimap:GetFrameLevel() + 2) end
-    if not sweep and GetTime() >= nextSweep then
+    -- (a level the game's minimap was given since, Hybrid.lua: ours over it again, and the possible ones under it)
+    local level = minimap:GetFrameLevel()
+    if overlay:GetFrameLevel() <= level then overlay:SetFrameLevel(level + 2) end
+    if under:GetFrameLevel() >= level and level > 0 then under:SetFrameLevel(level - 1) end
+    if answers and not sweep and GetTime() >= nextSweep then
         local kind = SweepKind(minimap)
         -- None now (no finder on, a fight, the mouse on the minimap): looked at again after a rest, not each frame.
         if kind then Begin(kind, plane, Minimap():GetWidth() / 2, Round()) else nextSweep = GetTime() + Found.REST end
     end
     if sweep then Sweep(minimap, plane, pu, pv, scale, facing) end
+    Near(plane, pu, pv, scale, minimap:GetWidth() / 2)
+    Hover(minimap, plane, pu, pv, scale, facing)
+    Prune(plane, pu, pv, scale)
+    local wide = ns.Hybrid.Wide()
     if drawn.count == #found and drawn.plane == plane and drawn.u == pu and drawn.v == pv and drawn.scale == scale
-        and drawn.facing == facing then return end
+        and drawn.facing == facing and drawn.near == near.version and drawn.wide == wide then return end
     drawn.count, drawn.plane, drawn.u, drawn.v, drawn.scale, drawn.facing = #found, plane, pu, pv, scale, facing
+    drawn.near, drawn.wide = near.version, wide
     Draw(plane, pu, pv, scale, facing)
 end
 
@@ -500,17 +726,28 @@ function Found.Each()
     return found
 end
 
--- Whether herbs and ore are found here: the game's minimap answers what its dots are (Start).
+-- Whether herbs and ore are found here: the game's minimap names what lies under the mouse and Core knows its
+-- herbs and ore (Start).
 function Found.Works()
     return overlay ~= nil
 end
 
--- Shown while the module is on and the filter shows either kind; it runs only while the game's minimap shows.
+-- Whether the small view's possible herbs or ore of a kind (the pins Possible herbs, Possible ore) are drawn here
+-- now, under the game's minimap's dots: Pins.lua leaves that view's to these.
+function Found.Draws(kind)
+    if not (overlay and Nodes.DRAWN[kind]) then return false end
+    return ns.Hybrid.Taken() and not ns.Hybrid.Wide() and Core.Plain(overlay:IsVisible()) == true and Spawning(kind)
+end
+
+-- Shown while the module is on and the filter shows either kind; it runs only while the game's minimap shows. The
+-- spawns around you read again (a kind switched).
 function Found.Update()
     if not overlay then return end
     local wanted = not ns.off and (Shown("herb") or Shown("ore"))
     overlay:SetShown(wanted)
+    under:SetShown(wanted)
     if not wanted then sweep = nil end
+    near.plane = nil
     drawn.count = nil
 end
 
@@ -530,13 +767,21 @@ function Found.Answers()
     return build ~= nil and build < Found.SILENT
 end
 
+-- Our frames on the game's minimap, where it names what lies under the mouse and Core knows its herbs and ore; a
+-- sweep besides where it answers the points asked (Found.Answers).
 function Found.Start()
     local minimap = rawget(_G, "Minimap")
-    if overlay or not Found.Answers() then return end
+    local tooltips = rawget(_G, "C_TooltipInfo")
+    if overlay or not minimap or not (tooltips and tooltips.GetMinimapMouseover) or not Nodes.Known() then return end
+    answers = Found.Answers()
     overlay = CreateFrame("Frame", nil, minimap)
     overlay:SetAllPoints(minimap)
     overlay:SetFrameLevel(minimap:GetFrameLevel() + 2)
     overlay:SetScript("OnUpdate", ns.Guard(Update))
+    under = CreateFrame("Frame", nil, minimap)
+    under:SetAllPoints(minimap)
+    under:SetFrameLevel(math.max(minimap:GetFrameLevel() - 1, 0))
+    under:SetAlpha(Found.POSSIBLE)
     ns.On("LOOT_READY", Looted)
     ns.On("PLAYER_ENTERING_WORLD", function()
         wipe(found)
@@ -550,7 +795,9 @@ end
 function Found.Hide()
     if not overlay then return end
     overlay:Hide()
-    Minimap():SetUsingSoftCursor(false)
+    under:Hide()
+    local minimap = Minimap()
+    if answers and minimap.SetUsingSoftCursor then minimap:SetUsingSoftCursor(false) end
 end
 
 -------------------------------------------------------------------------------
@@ -614,12 +861,13 @@ function Found.Check(lines)
     Add("it answers the points an addon asks: %s (Forever before build %d, its calls there)", Said(Found.Answers()),
         Found.SILENT)
     if not overlay then
-        Add("our frame over it: none (the minimap answers no point of ours): nothing is found")
+        Add("our frames on it: none (no minimap tooltip, or no herbs and ore of Core's here): nothing is found")
     else
-        Add("our frame over it: shown %s, in sight %s; the minimap in sight %s, %s wide, scale %s; its level %s, ours %s",
+        Add("our frames on it: shown %s, in sight %s; the minimap in sight %s, %s wide, scale %s; its level %s, ours %s"
+            .. " over it and %s under it; on the full map %s",
             Method(overlay, "IsShown"), Method(overlay, "IsVisible"), Method(minimap, "IsVisible"),
             Method(minimap, "GetWidth"), Method(minimap, "GetEffectiveScale"), Method(minimap, "GetFrameLevel"),
-            Method(overlay, "GetFrameLevel"))
+            Method(overlay, "GetFrameLevel"), Method(under, "GetFrameLevel"), Said(ns.Hybrid.Wide()))
     end
     Add("the pin filter: Found herbs %s, Found ore %s; the finder on now: %s; the module %s",
         Said(Shown("herb")), Said(Shown("ore")), Said(Nodes.Active()), ns.off and "stood down" or "running")
@@ -634,6 +882,8 @@ function Found.Check(lines)
         Said(InCombatLockdown()), Method(minimap, "IsMouseOver"),
         minimap and select(2, pcall(SweepKind, minimap)) or "none", Said(heard.stop))
     Add("since login: %d sweeps; %s; %d found now, %d drawn", sweeps, Counted(heard), #found, drawn.shown or 0)
+    Add("under the mouse: %d frames it named a herb or ore, %d found so; spawns around you: %d (herbs %s, ore %s), %d drawn",
+        heard.pointed, heard.learnt, #near.list, Said(Spawning("herb")), Said(Spawning("ore")), drawn.possible or 0)
     if heard.texts[1] then Add("lines read: %s", table.concat(heard.texts, "; ")) end
     -- (asked wherever the calls are, so a build that answers again shows here)
     local probe = Asked(minimap) and Probe(minimap)
