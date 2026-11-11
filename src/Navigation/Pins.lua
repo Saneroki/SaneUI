@@ -52,8 +52,8 @@ Pins.SPACE = 0.85     -- pins that would cover each other stand in a cloud, so m
                       -- a little less than their size, the game's icons having room round them
 -- Pins of one icon nearer each other than so many times its size are one marker in it, parted as you zoom in
 -- (Saneroki, 2026-11-11: "map pins that share the same icon, for example all trainers, vendors, portals etc should be
--- combined into one icon and split if you zoom in close enough").
-Pins.COMBINE = 1.5
+-- combined into one icon and split if you zoom in close enough"; then "a bit bigger so they get merged sooner").
+Pins.COMBINE = 2.5
 -- Kinds shown only up close, the view no higher than Pins.CLOSER yards (Saneroki, 2026-11-11: "Map pins for Treasure,
 -- possible ore and herbs should only be visible when you are really cloasly zoomed in").
 Pins.CLOSE = { treasure = true, herb = true, ore = true }

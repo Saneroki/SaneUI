@@ -106,6 +106,10 @@ Saneroki: "Can you change it a little. Remove the extra tab but add a checkbox t
 - **`src/Economy/Economy.lua`:** the words of the tick, `SIZE.banker` smaller, the option *Open on Banker* gone, *Send by itself*'s tip. `src/Core/Presets.lua`, `src/Core/README.md`, `src/Inventory/Talks.lua`: their words on it.
 - **Tests:** `dev/tests/economy.lua` (104): what goes (crates, writs; not the hearthstone, the soulbound, a quest's writ, a recipe, a name like a writ's); unticked as the game made it; ticked with a name in To:, the mail filled in, the player's Send, the next mail, the end; unticked again; what the player wrote kept; opening on Send Mail; the inbox and a reply; on the banker, with nothing to go; Send by itself, once while on its way, the next by itself, Shift; standing down. README, `Doc/ideas/Economy.md`, `Doc/agent/README.md`.
 
+### Map: pins of one icon merge from farther apart (Saneroki, 2026-11-11)
+Saneroki: "I think the merge distance should be a bit bigger so they get merged sooner when zooming in." `src/Navigation/Pins.lua`: `Pins.COMBINE` 1.5 to 2.5 (times the icon's size): pins of one icon are one marker from farther apart, and part only closer in.
+- A `/reload` takes it in.
+
 ### Map: pins of one icon combined into one, parted as you zoom in; a smaller gap in the cloud (Saneroki, 2026-11-11)
 Saneroki: "map pins that share the same icon, for example all trainers, vendors, portals etc should be combined into one icon and split if you zoom in close enough. Right now the pins have to big of a gap between them and show to many."
 - **`src/Navigation/Pins.lua`:** `Combine` before the cloud: in the list's order, a pin of one icon (`Icon`: its atlas or picture, tint, grey) within `Pins.COMBINE` (1.5) times its size of the first of that icon so far joins it as one marker there (the gathered marker, in that icon, its tooltip naming what is there once each; a click zooms in); never `Apart` ones: quests in the log and to take, flight points, docks, a flight master's. `Pins.SPACE` 1.1 to 0.85: the cloud's pins a little nearer than their size (the game's icons have room round them).
