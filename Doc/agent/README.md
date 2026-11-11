@@ -39,7 +39,7 @@ the tests: [development.md](development.md). What is not built yet stands in eac
   `SaneUIData_Shared`, `SaneUIData_Market`, `SaneUIData_Scans` (`Doc/guides/data.md`, *Saved variables*).
 - `/sane` (`/saneui`) lists the modules and their commands. Core: `errors`, `options` (`config`, `settings`),
   `window`, `profile`, `data`, `feedback`, `arrange`; Abilities `abilities`; Social `social`; Combat `auras`, `meter`, `reminders`, `macros`;
-  Guild `guild`; Loot `loot`; Navigation `map`; Nameplates `range`; Speed Leveling `guides`, `key`
+  Guild `guild`; Loot `loot`; Navigation `map`, `testraretracker`; Nameplates `range`; Speed Leveling `guides`, `key`
   (`rg -n 'Core.Command\(' src`).
 - Art ships from `assets/optimized/<Module>/Art/` (`dev/build` puts it into the addon's `Art/`); `src/` holds no
   pictures or sounds. XML only for templates and key bindings (`Bindings.xml`, `Core/Settings/*.xml`,

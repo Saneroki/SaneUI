@@ -66,6 +66,8 @@ Route.lua
 Paths.lua
 # The pins drawn: a button each, in the game's own looks
 PinView.lua
+# The Sane Rare tracker: a rare, a treasure or an event near you told at once, by a notice on the screen and a horn
+RareTracker.lua
 # Over the map at a fixed size: the party, the player's arrow, the map pin
 Marks.lua
 # The game's minimap over ours, for its live dots; taken and given back

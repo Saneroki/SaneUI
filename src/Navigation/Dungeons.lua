@@ -509,6 +509,8 @@ local function ItemLine(id, mark)
     return Iconed(Core.Ask(C_Item.GetItemIconByID, id), (mark or "") .. name), r, g, b
 end
 Dungeons.ItemLine = ItemLine
+-- A rare's tooltip on the map is drawn as a boss's (PinView.lua): its abilities' and items' lines and details.
+Dungeons.SpellLine, Dungeons.SpellDetails, Dungeons.ItemDetails = SpellLine, SpellDetails, ItemDetails
 
 -- How often an item came from a boss of that name, in words (Core's Drops: the set Encounters names no creature, so its
 -- name finds it among those that gave the item); nil where nobody counted it.

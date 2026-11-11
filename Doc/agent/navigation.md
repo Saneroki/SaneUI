@@ -48,7 +48,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
 The file list with a line each: `src/Navigation/README.md`, section *Files* (line 828). The groups: the window and its
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
-(`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
+(`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the Sane Rare tracker (`RareTracker`: finds near
+you told by a notice and a horn, `/sane testraretracker`); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
 `Planner`, `Corpse`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,

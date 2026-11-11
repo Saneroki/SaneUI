@@ -2171,6 +2171,15 @@ check(head(panel).model == 11622 and head(panel).modelKind == "display" and head
 check(row(panel, 5).icon == 132338 and row(panel, 5).left == "Cleave" and row(panel, 6).indent and row(panel, 6).font == "sub"
     and row(panel, 6).left == "Hits the target and those beside it." and row(panel, 9).left == "+12 Strength",
     "a row's icon at its start; the details with Alt set in under it, small")
+-- A rare on the map (Core.TipLook by its creature): the game's model of that NPC, a rare's silver dragon, its level
+W.methods.SetCreature = function(self, npc) self._creature = npc end
+tip:Fill(nil, { { "Mother Fang", nil, { 1, 0.3, 0.25 } }, { "Rare" }, { "Beast" } }, true)
+Core.TipLook(tip, { creature = 471, dragon = "silver", badge = "10" })
+frame()
+check(head(panel).model == "creature:471" and head(panel).modelKind == "creature" and head(panel).dragon == "silver"
+    and head(panel).badge == "10" and panel.figure and panel.figure._creature == 471,
+    "a rare on the map: its own model by its creature in the portrait's place, a rare's silver dragon, its level on the plaque")
+W.methods.SetCreature = nil
 tip:Fill(nil, { { "Close" }, { "Closes the window." } })
 check(panel:IsShown() and tip:GetAlpha() == 0 and row(panel, 2).left == "Closes the window." and head(panel).icon == nil and not head(panel).strip,
     "lines written into it after a spell's are a hint, not that spell")

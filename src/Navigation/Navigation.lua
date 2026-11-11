@@ -78,6 +78,14 @@ ns.TEXT = {
     classicMap = Core.Word("WORLD_MAP", "World Map"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
     about = "the map full screen and back (/sane map reset: the window's first place and size)",
+    -- The Sane Rare tracker (RareTracker.lua).
+    rareTracker = "Sane Rare tracker",
+    rareOn = "Tell of finds near you",
+    rareOnTip = "A rare, a treasure or an event near you is told the moment the game shows it: a horn, and a notice below the top of the screen, left of its middle: the rare's own 3D model, its name, what it is and its level, how far it is and which way. The mouse on it: its tooltip as on the map, with its abilities and its loot. A click puts the map pin on it and the golden line leads there; a right click sends it away. It goes by itself after 40 seconds, and the same one is told again after 5 minutes at the earliest; never inside a dungeon or raid. /sane testraretracker shows one (chest, event: theirs).",
+    rareKinds = "What it tells of",
+    rareKindsTip = "Rares: the game's mark of one near you, or the rare itself as soon as you see it (its nameplate, your target, the mouse on it). Treasures: the game's mark of a chest near you. Events: the game's other marks near you.",
+    rareSound = "Its sound",
+    rareSoundTip = "What plays when the Sane Rare tracker tells of something: one of the game's own sounds, at the game's master volume. Chosen here, it plays once.",
     stopped = "the map is closed until the next /reload; the game's own minimap and map are back.",
     reset = "the map window is back at its first place and size.",
 }
@@ -220,6 +228,11 @@ local GLINTS = { key = "nodeGlints", default = true, text = ns.TEXT.nodeGlints, 
 local TURNS = { key = "nodeYards", default = 15, min = 0, max = 50, step = 1, distance = true,
                 text = ns.TEXT.nodeYards, tip = ns.TEXT.nodeYardsTip, hidden = function() return ns.Nodes.TOGETHER end }
 
+-- The Sane Rare tracker's: what it tells of (RareTracker.Kind), and its sounds (RareTracker.SOUNDS; none: silent).
+local RARE_KINDS = { { "rare", "|A:dungeonskull:16:16|a Rares" }, { "treasure", "|A:vignetteloot:16:16|a Treasures" },
+                     { "event", "|A:vignetteevent:16:16|a Events" } }
+local RARE_SOUNDS = { { "horn", "War horn" }, { "chime", "Find chime" }, { "warning", "Raid warning" }, { "none", "None" } }
+
 local OPTIONS = {
     -- Every view a choice while the settings are first read; at login only those offered, and the view the map
     -- starts in here the default (Offer). One view alone: no setting (ns.Several).
@@ -240,6 +253,11 @@ local OPTIONS = {
     { key = "questLogRestGroup", default = false, text = ns.TEXT.questLogRestGroup, tip = ns.TEXT.questLogRestGroupTip,
       parent = "questLogRest" },
     SPARKLES, GLINTS, TURNS,
+    { key = "rareTracker", default = true, text = ns.TEXT.rareOn, tip = ns.TEXT.rareOnTip, header = ns.TEXT.rareTracker },
+    { key = "rareKinds", default = { rare = true, treasure = true, event = true }, multi = true, choices = RARE_KINDS,
+      text = ns.TEXT.rareKinds, tip = ns.TEXT.rareKindsTip, parent = "rareTracker" },
+    { key = "rareSound", default = "horn", choices = RARE_SOUNDS, text = ns.TEXT.rareSound, tip = ns.TEXT.rareSoundTip,
+      parent = "rareTracker" },
 }
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, #OPTIONS + 1)
@@ -310,6 +328,11 @@ Core.Options(ns.name, OPTIONS, { version = 5, upgrade = Upgrade, changed = funct
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
     if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end
+    if key == "rareTracker" then
+        if ns.options.rareTracker == false then ns.Guarded(ns.RareTracker.Hide) end
+        return
+    end
+    if key == "rareSound" then return ns.Guarded(ns.RareTracker.Sound) end
     if key == "nodeGlints" then return ns.Guarded(ns.Glints.Update) end
     if key == "nodeYards" then return ns.Guarded(ns.Nodes.Update) end
 end })
@@ -384,6 +407,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Glints.Hide)
     ns.Safe("giving back", ns.Corpse.GiveBack)
     ns.Safe("giving back", ns.Taxi.GiveBack)
+    ns.Safe("giving back", ns.RareTracker.Hide)
 end
 
 function ns.OnLoad()
@@ -407,6 +431,7 @@ function ns.OnLogin()
     ns.Glints.Start()
     ns.Corpse.Start()
     ns.Taxi.Start()
+    ns.RareTracker.Start()
 end
 
 Core.Command("map", ns.TEXT.about, function(rest)

@@ -488,7 +488,8 @@ end
 --  map), as a creature's panel: its name; under it, as large and close, its
 --  first line (the dungeon: as a creature's title), then small its next lines
 --  up to its first section (Boss); its 3D model in the portrait's place (its
---  display, the face in view; the skull where none loads), the look's dragon round
+--  display, or its creature's: a rare on the map; the face in view; the skull where
+--  none loads), the look's dragon round
 --  it, its level on the plaque. Then its sections, each under the divider its
 --  heading line names (Core.TipSection), its own lines in them: one with an icon
 --  before it has the icon at the row's start, a line set in (its details, with
@@ -545,6 +546,7 @@ local function Figure(ctx)
     if ctx.options.icons then
         head.icon = SKULL
         if look.display then head.model, head.modelKind, head.modelZoom = look.display, "display", 1 end
+        if look.creature then head.model, head.modelKind, head.modelZoom = "creature:" .. look.creature, "creature", 1 end
     end
     head.dragon = look.dragon
     head.badge = look.badge

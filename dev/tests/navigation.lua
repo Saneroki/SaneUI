@@ -2703,8 +2703,9 @@ inn._scripts.OnLeave(inn)
     end
     local lines = Tipped(rare)
     local text = table.concat(lines, "\n")
-    check(lines[1] == Pins.TEXT.dropsCorpse and text:find("Thick Hide (skinned) | 1 of 1", 1, true),
-        "a rare's tooltip: what it drops, under its heading; another way said; too few, how many of how many")
+    check(lines[1] == ns.PinView.TEXT.rare and lines[2] == Pins.TEXT.dropsCorpse
+        and text:find("Thick Hide (skinned) | 1 of 1", 1, true),
+        "a rare's tooltip: Rare under its name, what it drops under its heading; another way said; too few, how many of how many")
     check(text:find("Wolf Pelt | 100% (40 of 40)", 1, true) and text:find("Fang Charm | 7.5% (3 of 40)", 1, true)
         and text:find("Moon Gem | 1 of 40", 1, true), "how often each came, a percent once enough did")
     check(not text:find("Torn Note", 1, true), "an item only for those on a quest: not while you are not")
@@ -2714,7 +2715,7 @@ inn._scripts.OnLeave(inn)
     local most = ns.PinView.DROPS
     ns.PinView.DROPS = 2
     lines = Tipped(rare)
-    check(#lines == 4 and lines[4] == ns.Dungeons.TEXT.more:format(2), "at most so many lines, and how many more")
+    check(#lines == 5 and lines[5] == ns.Dungeons.TEXT.more:format(2), "at most so many lines, and how many more")
     ns.PinView.DROPS = most
     rare._mouseOver = true
     W.items[Gem] = nil
@@ -7479,8 +7480,152 @@ end)()
         "Forever again: every view, kind and switch back, the sparkles' settings set, the module running")
 end)()
 
+-- The Sane Rare tracker (RareTracker.lua): a rare's tooltip on the map as a dungeon boss's; the game's mark of a rare near
+-- you told at once by a notice and the war horn; the mouse, a click and a right click on it, its time; each told once;
+-- what it tells of, its switch, an instance; a rare seen in person; the test command.
+;(function()
+    local RareTracker, PinView, TEXT = ns.RareTracker, ns.PinView, ns.RareTracker.TEXT
+    local NPCS = Core.Data.Set("NPCs")
+    local saved = { IsAltKeyDown = rawget(_G, "IsAltKeyDown"), IsInInstance = rawget(_G, "IsInInstance"), PlaySound = PlaySound,
+                    info = C_VignetteInfo.GetVignetteInfo, spellInfo = C_Spell.GetSpellInfo,
+                    spellWords = C_Spell.GetSpellDescription }
+    local alt, played, asked = false, {}, nil
+    IsAltKeyDown = function() return alt end
+    PlaySound = function(kit, channel) played[#played + 1] = { kit, channel } end
+    W.methods.SetCreature = function(self, npc) asked, self._creature = npc, npc end
+    C_Spell.GetSpellInfo = function(id) if id == 133 then return { name = "Fireball", iconID = 135812 } end end
+    C_Spell.GetSpellDescription = function(id) if id == 133 then return "Hurls a ball of fire." end end
+    -- Core's NPCs know more of the rare than the test's set holds: its rank, level, kind, side, ability, its respawn
+    local facts = { rank = "rareelite", levelMax = 24, kind = "beast", alliance = "neutral", abilities = { 133 }, respawn = 2700 }
+    NPCS.Get = function(self, key, field)
+        if key == 70 and facts[field] ~= nil then return facts[field] end
+        return getmetatable(self).__index.Get(self, key, field)
+    end
+
+    -- Its tooltip on the map, as a boss's
+    local rare = CreateFrame("Button", nil, UIParent) -- as the rare's pin on the map: its button holds the pin
+    rare.pin = { kind = "rare", key = "npc:70", name = "A rare", live = true }
+    rare._mouseOver = true
+    GameTooltip._lines = nil
+    PinView.Tip(rare)
+    local look, lines = Core.LookOf(GameTooltip), GameTooltip._lines or {}
+    check(look and look.creature == 70 and look.dragon == "silver" and look.badge == "24",
+        "a rare's tooltip as a dungeon boss's: its own model by its creature, a rare's silver dragon, its level on the plaque")
+    check(lines[1] == PinView.TEXT.rare .. " " .. PinView.TEXT.elite and lines[2] == "Beast"
+        and lines[3] == PinView.TEXT.respawn:format(rawget(_G, "SecondsToTime") and SecondsToTime(2700) or "45 min"),
+        "under its name: Rare Elite, its kind, when it comes back")
+    check(lines[4] == ns.Dungeons.TEXT.abilities and lines[5]:find("Fireball", 1, true)
+        and lines[5]:find("135812", 1, true), "then its abilities, a section, each with the game's icon and name")
+    alt = true
+    GameTooltip._lines = nil
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 1)
+    check(table.concat(GameTooltip._lines or {}, "\n"):find("    Hurls a ball of fire.", 1, true),
+        "Alt held: drawn again, each ability's description under it")
+    alt = false
+    W.Fire("MODIFIER_STATE_CHANGED", "LALT", 0)
+    rare._mouseOver = false
+    PinView.Untip()
+    rare.pin = nil
+
+    -- The game's marks on the minimap: the rare told at once, then the chest
+    C_VignetteInfo.GetVignetteInfo = function(guid)
+        if guid == "v1" then
+            return { name = "A rare", atlasName = "VignetteKillElite", objectGUID = "Creature-0-1-2-3-70-0000AB", onMinimap = true }
+        end
+        if guid == "v2" then
+            return { name = "A chest", atlasName = "VignetteLoot", objectGUID = "GameObject-0-1-2-3-1617-0000AC", onMinimap = true }
+        end
+    end
+    W.Fire("VIGNETTE_MINIMAP_UPDATED", "v1", true)
+    local shown = RareTracker.shown
+    local notice = shown[1]
+    check(#shown == 1 and notice._shown and notice.name:GetText() == "A rare" and notice.what:GetText() == "Rare Elite, Level 24",
+        "the game's mark of a rare near you: a notice at once, its name, Rare Elite and its level")
+    check(notice._points[1][1] == "TOP" and notice._points[1][2] == UIParent and notice._points[1][4] == -RareTracker.LEFT
+        and notice._points[1][5] == -Core.TOAST_TOP, "below the screen's top, left of its middle")
+    check(asked == 70 and notice.model._creature == 70 and notice.model._shown and not notice.icon._shown,
+        "the rare's own 3D model at its left, by its creature")
+    check(played[#played][1] == RareTracker.SOUNDS.horn and played[#played][2] == "Master", "and the game's war horn")
+    check(notice.where:GetText():find("^%d+ m north%-west$"), "how far it is and which way: " .. tostring(notice.where:GetText()))
+    W.Fire("VIGNETTES_UPDATED")
+    check(#shown == 2 and shown[1].find.kind == "treasure" and shown[1].name:GetText() == "A chest" and shown[2] == notice
+        and shown[1].icon._shown and shown[1]._points[1][5] == -Core.TOAST_TOP
+        and shown[2]._points[1][5] == -Core.TOAST_TOP - RareTracker.HEIGHT - RareTracker.GAP,
+        "the chest on the minimap too: its notice over the rare's, the game's icon of its mark; the rare told once")
+    check(not RareTracker.Found({ kind = "rare", thing = "npc:70", name = "A rare" }), "told again only after a while")
+
+    -- The mouse on it: its pin's tooltip; a click: the map pin there; a right click: away
+    notice._mouseOver = true
+    GameTooltip._lines = nil
+    notice._scripts.OnEnter(notice)
+    check(GameTooltip:GetOwner() == notice and Core.LookOf(GameTooltip).creature == 70
+        and GameTooltip._lines[#GameTooltip._lines] == TEXT.click, "the mouse on it: its tooltip as on the map, and what a click does")
+    notice._mouseOver = false
+    notice._scripts.OnLeave(notice)
+    notice._scripts.OnClick(notice, "LeftButton")
+    local map, x, y = ns.Live.Waypoint()
+    check(map == 1429 and near(x, 0.6) and near(y, 0.2) and #shown == 1 and not notice._shown,
+        "a click: the game's map pin where it stands, and the notice goes")
+    shown[1]._scripts.OnClick(shown[1], "RightButton")
+    check(#shown == 0 and ns.Live.Waypoint() == 1429, "a right click: away, the map pin as it was")
+
+    -- The test command: Core's nearest rare on your map; its time, then it fades out and goes
+    SlashCmdList.SANEUI("testraretracker")
+    check(#shown == 1 and shown[1].find.thing == "npc:70" and shown[1].name:GetText() == "An Old Rare"
+        and shown[1].find.x and RareTracker.holder._shown, "/sane testraretracker: a notice of the nearest rare of Core's data")
+    W.Wait(RareTracker.FADE_IN + RareTracker.HOLD + 0.1)
+    RareTracker.holder._scripts.OnUpdate(RareTracker.holder, 1)
+    check(#shown == 1 and shown[1].gone, "its time up: it fades out")
+    W.Wait(RareTracker.FADE_OUT + 0.1)
+    RareTracker.holder._scripts.OnUpdate(RareTracker.holder, 1)
+    check(#shown == 0 and not RareTracker.holder._shown, "and goes")
+    SlashCmdList.SANEUI("testraretracker chest")
+    check(#shown == 1 and shown[1].find.kind == "treasure" and shown[1].find.x and shown[1].what:GetText() == TEXT.treasure,
+        "chest: a treasure's notice")
+    RareTracker.Hide()
+
+    -- What it tells of, its switch, an instance
+    Core.Set(ns.name, "rareKinds", { rare = true })
+    check(not RareTracker.Found({ kind = "treasure", thing = "object:99", name = "A box" }), "a kind not ticked: not told")
+    Core.Set(ns.name, "rareKinds", { rare = true, treasure = true, event = true })
+    SlashCmdList.SANEUI("testraretracker event")
+    Core.Set(ns.name, "rareTracker", false)
+    check(#shown == 0 and not RareTracker.Found({ kind = "treasure", thing = "object:99", name = "A box" }),
+        "switched off: every notice gone, nothing told")
+    Core.Set(ns.name, "rareTracker", true)
+    IsInInstance = function() return true, "party" end
+    check(not RareTracker.Found({ kind = "treasure", thing = "object:99", name = "A box" }), "never inside an instance")
+    IsInInstance = saved.IsInInstance
+    local count = #played
+    Core.Set(ns.name, "rareSound", "chime")
+    check(#played == count + 1 and played[#played][1] == RareTracker.SOUNDS.chime, "a sound chosen: it plays once")
+    Core.Set(ns.name, "rareSound", "horn")
+
+    -- A rare seen in person, which the game gives no mark: its nameplate
+    local units = {}
+    for _, name in ipairs({ "UnitExists", "UnitIsPlayer", "UnitIsDead", "UnitClassification", "UnitGUID", "UnitLevel", "UnitName" }) do
+        units[name] = rawget(_G, name)
+    end
+    UnitExists = function(unit) return unit == "nameplate1" end
+    UnitIsPlayer, UnitIsDead = function() return false end, function() return false end
+    UnitClassification = function(unit) return unit == "nameplate1" and "rare" or "normal" end
+    UnitGUID = function(unit) return unit == "nameplate1" and "Creature-0-1-2-3-71-0000AD" or nil end
+    UnitLevel = function() return 30 end
+    UnitName = function() return "Another Rare" end
+    W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate1")
+    check(#shown == 1 and shown[1].find.thing == "npc:71" and shown[1].name:GetText() == "Another Rare"
+        and shown[1].what:GetText() == "Rare, Level 30" and shown[1].where:GetText() == TEXT.near,
+        "a rare's nameplate: told, its level as the game shows it, near you (Core's data knows no point of it)")
+    for name, fn in pairs(units) do _G[name] = fn end
+
+    NPCS.Get, W.methods.SetCreature = nil, nil
+    IsAltKeyDown, PlaySound, C_VignetteInfo.GetVignetteInfo = saved.IsAltKeyDown, saved.PlaySound, saved.info
+    C_Spell.GetSpellInfo, C_Spell.GetSpellDescription = saved.spellInfo, saved.spellWords
+end)()
+
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")
+check(#ns.RareTracker.shown == 0 and not ns.RareTracker.holder._shown, "standing down: the Sane Rare tracker's notices gone")
 check(ns.off and not Window.frame:IsShown() and not Hybrid.Taken() and next(overrides) == nil and minimap:GetParent() == container,
     "standing down: the window goes, the game's minimap and keys are back")
 check(C_CVar.GetCVar("softTargetInteract") == "1" and C_CVar.GetCVar("Sound_EnableSFX") == "1" and not gather.overlay._shown,

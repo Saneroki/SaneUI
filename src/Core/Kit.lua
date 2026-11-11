@@ -130,8 +130,9 @@ function Core.Unconfirmed(tooltip)
 end
 
 -- A tooltip about a creature that is no unit of the game's (a boss on a dungeon's map): its look, which Sane UI's
--- tooltips (the module Tooltips) draw like a unit's: { display (its 3D model: the game's creature display), dragon
--- ("boss", "elite", "silver": round its portrait), badge (its level: "??" for a boss) }. Its lines are written into
+-- tooltips (the module Tooltips) draw like a unit's: { display (its 3D model: the game's creature display), or
+-- creature (its model by the NPC's ID: a rare on the map), dragon ("boss", "elite", "silver": round its portrait),
+-- badge (its level: "??" for a boss) }. Its lines are written into
 -- the tooltip as ever: the name, then under it its title and what it is, then its sections, each headed by a line of
 -- Core.TipSection; the game's own tooltip shows them as they are. Kept until the tooltip is cleared (its next
 -- SetOwner); set it right after SetOwner.

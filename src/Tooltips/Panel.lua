@@ -293,6 +293,11 @@ local LOAD = {
     display = function(figure, head)
         return pcall(figure.SetDisplayInfo, figure, head.model), false
     end,
+    -- A creature by its ID ("creature:<id>": a rare on the map, Core.TipLook): the game's model of that NPC
+    creature = function(figure, head)
+        local npc = tonumber(tostring(head.model):match("^creature:(%d+)$"))
+        return npc ~= nil and pcall(figure.SetCreature, figure, npc), false
+    end,
 }
 
 -- The model the picture's place shows: what kind, which (it is given anew when this changes).

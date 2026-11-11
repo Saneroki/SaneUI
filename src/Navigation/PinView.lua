@@ -30,7 +30,13 @@ local _, ns = ...
 --      a dock      a boat's, a zeppelin's or the tram's: under its name when it next comes here and leaves,
 --                  counting down while the tooltip shows (DockWatch.Timer; Saneroki, 2026-11-09), then its ports;
 --                  its way round drawn over the map while the mouse is on it, a flight point's flights too (Paths.lua)
---      a rare      with Alt held, its 3D model (the game's, by its creature: SetCreature) stands beside the
+--      a rare      its tooltip as a dungeon boss's (Dungeons.lua): a creature's panel (Core.TipLook: its own 3D
+--                  model in the portrait's place, the silver dragon of a rare round it, its level on the plaque),
+--                  its name in its side's colour, under it Rare or Rare Elite, its kind and when it comes back;
+--                  then the sections Abilities and its loot, each with the game's icons, and with Alt each one's
+--                  details (an ability's description, an item's effects and stats). Also the Sane Rare tracker's
+--                  notice's (RareTracker.lua: PinView.Tip). With Alt held, its 3D model (the game's, by its
+--                  creature: SetCreature) stands beside the
 --                  tooltip, at its left, or at its right where the left has no room; Alt let go, or the
 --                  mouse off the pin, and it goes. Where the game has no model of it, nothing stands there
 --      a flight master  open (Taxi.lua): the flight points large and over all, the one you stand at glowing, a click
@@ -134,8 +140,9 @@ end
 
 -- What a thing ("npc:69", "object:1617") gives on the tooltip being written, the likeliest first, at most limit lines: under a
 -- heading, or inset under its name (a gathered marker). An item only for those on a quest only while you are. How many lines
--- it wrote, and whether one of them is not yet confirmed (the red ! before its name).
-function PinView.Drops(key, limit, inset)
+-- it wrote, and whether one of them is not yet confirmed (the red ! before its name). details(item): what goes under each
+-- item's line (a rare's, with Alt: Dungeons.ItemDetails).
+function PinView.Drops(key, limit, inset, details)
     local shown, more, doubt = 0, 0, false
     for _, entry in ipairs(Core.Data.Drops():Of(key)) do
         if entry.quest == 0 or Core.Plain(Core.Ask(C_QuestLog.IsOnQuest, entry.quest)) == true then
@@ -155,6 +162,7 @@ function PinView.Drops(key, limit, inset)
                     else
                         GameTooltip:AddLine(words, r or 1, g or 1, b or 1)
                     end
+                    if details then details(entry.item) end
                 end
             end
         end
@@ -184,6 +192,67 @@ local function Lines(pin)
             Say(line[1], line[2], line[3], line[4], true)
         end
     end
+end
+
+-- A rare's creature (its NPC ID), from its pin's key ("npc:<id>": Core's data, or the game's mark of it).
+local function Creature(pin)
+    if not pin or pin.kind ~= "rare" or pin.gathered then return nil end
+    return tonumber(tostring(pin.key):match("^npc:(%d+)$"))
+end
+
+-- A rare's tooltip as a dungeon boss's (Dungeons.lua, BossTip): its look (Core.TipLook), drawn by Sane UI's tooltips
+-- as a creature's panel: its model by its creature, the silver dragon, its level on the plaque. Core's NPCs tell its rank,
+-- levels, kind, side, abilities and how long it takes to come back, where they know them.
+local NPC_FACTS = Core.Data.Set("NPCs")
+PinView.FRIEND, PinView.NEUTRAL = { 0.25, 1, 0.25 }, { 1, 1, 0 } -- a rare's name: friendly, neutral (a foe: Dungeons.FOE)
+PinView.TEXT = { rare = Core.Word("RARE", "Rare"), elite = Core.Word("ELITE", "Elite"), respawn = "Respawns after %s" }
+local faction -- the player's side, asked once
+local function RareLook(npc)
+    local level = tonumber(NPC_FACTS:Get(npc, "levelMax") or NPC_FACTS:Get(npc, "levelMin"))
+    local boss = NPC_FACTS:Get(npc, "boss") == true
+    return { creature = npc, dragon = "silver", badge = boss and "??" or level and tostring(level) or nil }
+end
+
+local function RareColour(npc)
+    faction = faction or Core.Plain(UnitFactionGroup("player"))
+    local side = NPC_FACTS:Get(npc, faction == "Horde" and "horde" or "alliance")
+    local colour = side == "friendly" and PinView.FRIEND or side == "neutral" and PinView.NEUTRAL or ns.Dungeons.FOE
+    return colour[1], colour[2], colour[3]
+end
+
+-- Under its name: Rare or Rare Elite, its kind, when it comes back.
+local function RareLines(npc)
+    local words = PinView.TEXT.rare
+    if NPC_FACTS:Get(npc, "rank") == "rareelite" then words = words .. " " .. PinView.TEXT.elite end
+    GameTooltip:AddLine(words, 0.8, 0.82, 0.88)
+    local kind = NPC_FACTS:Get(npc, "kind")
+    if type(kind) == "string" and kind ~= "other" then GameTooltip:AddLine((kind:gsub("^%l", string.upper)), 1, 1, 1) end
+    local respawn = tonumber(NPC_FACTS:Get(npc, "respawn"))
+    if respawn and respawn > 0 then
+        local time = Core.Ask(rawget(_G, "SecondsToTime"), respawn) or ("%d min"):format(math.ceil(respawn / 60))
+        GameTooltip:AddLine(PinView.TEXT.respawn:format(time), 0.6, 0.6, 0.6)
+    end
+end
+
+-- Its abilities, a section as a boss's: each with its icon and name as the game has them, with Alt its description.
+-- Whether those shown are not yet confirmed (Core's data of it).
+local function RareAbilities(npc, alt)
+    local shown, more = 0, 0
+    for _, id in ipairs(NPC_FACTS:Get(npc, "abilities") or {}) do
+        if shown >= ns.Dungeons.LINES then
+            more = more + 1
+        else
+            local words = ns.Dungeons.SpellLine(id)
+            if words then
+                if shown == 0 then Core.TipSection(GameTooltip, ns.Dungeons.TEXT.abilities) end
+                shown = shown + 1
+                GameTooltip:AddLine(words, 1, 1, 1)
+                if alt then ns.Dungeons.SpellDetails(id) end
+            end
+        end
+    end
+    if more > 0 and shown > 0 then GameTooltip:AddLine(ns.Dungeons.TEXT.more:format(more), 0.6, 0.6, 0.6) end
+    return shown > 0 and NPC_FACTS:Unverified(npc) == true
 end
 
 -- A dock's tooltip, while it shows: drawn again as its timer's second turns (the game's tooltip asks its owner's
@@ -231,7 +300,14 @@ function Tip(button)
     end
     local heading = pin.role or pin.name or "?"
     said[heading] = true
-    GameTooltip:SetText(pin.doubt and Core.UNCONFIRMED_MARK .. heading or heading, 1, 1, 1)
+    local npc, alt = Creature(pin), IsAltKeyDown()
+    if npc then
+        Core.TipLook(GameTooltip, RareLook(npc))
+        GameTooltip:SetText(pin.doubt and Core.UNCONFIRMED_MARK .. heading or heading, RareColour(npc))
+        RareLines(npc)
+    else
+        GameTooltip:SetText(pin.doubt and Core.UNCONFIRMED_MARK .. heading or heading, 1, 1, 1)
+    end
     if pin.kind == "log" and pin.quest then
         if pin.complete then GameTooltip:AddLine(Pins.TEXT.turnIn, 0.2, 1, 0.2) end
         local objectives = Core.Ask(C_QuestLog.GetQuestObjectives, pin.quest)
@@ -254,9 +330,10 @@ function Tip(button)
         Lines(pin)
         if pin.kind == "goal" then Say(Pins.TEXT.open, 0.5, 0.5, 0.5) end
         local key, unsure = Dropper(pin), false
+        if npc then unsure = RareAbilities(npc, alt) end
         if key then
-            local _
-            _, unsure = PinView.Drops(key, PinView.DROPS)
+            local _, doubt = PinView.Drops(key, PinView.DROPS, nil, npc and alt and ns.Dungeons.ItemDetails or nil)
+            unsure = unsure or doubt
         end
         if pin.unverified or unsure then GameTooltip:AddLine(Pins.TEXT.unverified, 0.5, 0.5, 0.5) end
     end
@@ -314,12 +391,6 @@ function PinView.Act(pin)
     return false
 end
 
--- A rare's creature (its NPC ID), from its pin's key ("npc:<id>": Core's data, or the game's mark of it).
-local function Creature(pin)
-    if not pin or pin.kind ~= "rare" or pin.gathered then return nil end
-    return tonumber(tostring(pin.key):match("^npc:(%d+)$"))
-end
-
 -- The model's frame, made the first time Alt is held over a rare: see-through, over the tooltips' layer, unseen
 -- until the game has the model (OnModelLoaded).
 local function Stage()
@@ -370,6 +441,9 @@ local function Left()
     Model()
     ns.Safe("paths", ns.Paths.Hide)
 end
+-- A pin's tooltip off the map, and its end (the Sane Rare tracker's notice, RareTracker.lua): the button holds the pin
+-- (button.pin), as a pin's own does.
+PinView.Tip, PinView.Untip = Tip, Left
 
 local function Down(button, mouse)
     ns.Canvas.Press(mouse)
@@ -611,7 +685,11 @@ function PinView.Clear()
     if stage then stage:Hide() end
 end
 
--- Alt pressed or let go over a rare's pin: its model comes or goes.
+-- Alt pressed or let go over a rare's pin: its tooltip drawn again (each ability's and item's details) and its model
+-- comes or goes.
 ns.On("MODIFIER_STATE_CHANGED", function()
+    if hovered and Creature(hovered.pin) and hovered:IsMouseOver() and GameTooltip:GetOwner() == hovered then
+        return Tip(hovered)
+    end
     if hovered or (stage and stage:IsShown()) then Model() end
 end)

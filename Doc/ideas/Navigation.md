@@ -1894,6 +1894,16 @@ battlemaster, spirit healer, meeting stone.
   *Quest areas*) in one quiet colour, with its spawn points as small dots; a click elsewhere hides it. One
   rare at a time.
 - **Data:** Core's *NPCs* (rank, level, respawn, abilities) and *Spawns*; loot from Core's *Drops*.
+- **Tooltip as a dungeon boss's (built 2026-11-11, Saneroki: "the icons like the bosses tooltip we had in
+  instances"):** `Core.TipLook` by its creature: its model in the portrait's place, a rare's silver dragon, its level
+  on the plaque; *Rare* or *Rare Elite*, its kind, its respawn; *Abilities* and its loot with the game's icons, Alt
+  their details (`PinView.lua`). *Seen at* waits for Core's character data.
+- **The Sane Rare tracker (built 2026-11-11, card #108):** a rare, a treasure or an event near you told at once: the
+  game's marks on the minimap, and a rare's nameplate, target or mouseover for the rares without one; a notice left
+  of the screen's top middle (model or icon, name, rank and level, how far and which way) and the game's war horn; a
+  click the map pin there, a right click away; 40 seconds, three at most, once in 5 minutes per thing, never in an
+  instance. Settings: on, what it tells of, its sound; `/sane testraretracker` (`RareTracker.lua`). Rares seen and
+  killed are not kept: that is Core's character data, still to come.
 - **Tooltip:** name, level, elite, *Seen at*, respawn where known, loot. Filters: elites only; killed today
   hidden (on).
 

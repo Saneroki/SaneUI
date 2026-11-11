@@ -6,6 +6,41 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the Sane Rare tracker; a rare's tooltip as a dungeon boss's (Saneroki, 2026-11-11)
+Saneroki: a rare's tooltip on the map with "the icons like the bosses tooltip we had in instances", and a warning that
+shows "a widget on screen when it finds a rare, chest or other things" and "plays a little trumpet horn sound"; "give
+me a command /sane testraretracker"; its name is the Sane Rare tracker. Card #108.
+- **`src/Navigation/RareTracker.lua` (new, in the TOC after `PinView.lua`):** a find told at once: the game's marks on
+  the minimap (`VIGNETTE_MINIMAP_UPDATED`, `VIGNETTES_UPDATED`: `onMinimap`, not `isDead`; `RareTracker.Kind` by the
+  atlas: Loot a treasure, Kill a rare, else an event) and a rare creature itself (`NAME_PLATE_UNIT_ADDED`, the target,
+  the mouseover: `UnitClassification` rare or rareelite, alive, no player; its place the nearest point of Core's data
+  within `REACH`, 250 yards). Not inside an instance; a thing told again after `AGAIN` (300 s) at the earliest. The
+  notice: below the screen's top, `LEFT` (340) left of its middle (a new level's notice stands right of it), outlined
+  Expressway on the dark shade with fading sides as the level's: the rare's model (`SetCreature`) or the mark's
+  icon, its name in gold, *Rare Elite, Level 24* (Core's NPCs fill in the level and the rank the game did not give),
+  how far and which way (`Core.Distance`, eight compass words; every `LOOK` second). The mouse on it: the pin's
+  tooltip (`PinView.Tip`) and what a click does; a click the game's map pin there (`PinView.Drop`: the golden line),
+  a right click away; `HOLD` 40 s, not while the mouse is on it, then a second's fade; `MOST` 3, the newest on top.
+  The sound on the game's master channel. `/sane testraretracker` (`chest`, `event`): the nearest rare (or chest) of
+  Core's data on your map, else a made-up one `AHEAD` 80 yards north-east.
+- **`src/Navigation/PinView.lua`:** a rare's tooltip as a boss's: `Core.TipLook` with its creature, the silver
+  dragon and its level (`??` for a boss); its name in its side's colour (Core's NPCs: friendly green, neutral yellow,
+  else `Dungeons.FOE`); under it *Rare* or *Rare Elite*, its kind, *Respawns after* its respawn; *Abilities* (Core's
+  NPCs' spells, `Dungeons.LINES` at most, with Alt each description); its loot with Alt each item's details
+  (`PinView.Drops`' new `details`). Alt redraws the tooltip. `PinView.Tip` and `PinView.Untip` for the notice.
+- **`src/Navigation/Dungeons.lua`:** `Dungeons.SpellLine`, `SpellDetails`, `ItemDetails` for the rare's tooltip.
+- **`src/Navigation/Navigation.lua`:** the section *Sane Rare tracker* on the page Navigation: `rareTracker` (on),
+  `rareKinds` (rares, treasures, events), `rareSound` (*War horn*, the game's sound kit 44292; *Find chime*, 45142;
+  *Raid warning*, 8959; *None*; chosen, it plays once); started at login, its notices gone when the module stands down.
+- **`src/Tooltips/Kinds/Unit.lua`, `src/Tooltips/Panel.lua`, `src/Core/Kit.lua`:** `Core.TipLook`'s `creature`: the
+  portrait's model by the NPC's ID (`SetCreature`, the key `creature:<id>`), for a rare on the map.
+- **Tests:** `dev/tests/navigation.lua` (1724, and 28 in Retail): the rare's tooltip as a boss's (its look, Rare Elite,
+  its kind and respawn, its abilities, Alt's description); the game's mark of a rare and a chest on the minimap told
+  once each, the notice's place, model, words, distance and horn; the mouse, a click (the map pin), a right click;
+  the test command, its time and fade; what it tells of, the switch, an instance, a sound chosen; a rare's nameplate;
+  standing down. `dev/tests/tooltips.lua` (608): a look by its creature.
+- A game restart takes it in (a new file in Navigation's TOC).
+
 ### Navigation: the sea's waves (Saneroki, 2026-11-11)
 Saneroki: "The map shows atm a solid color as the water. Can we make it a ocean like texture".
 - **`assets/optimized/Navigation/Art/Sea.blp` (new, 1024 x 1024, 1.4 MB):** the game's own ocean texture, the first frame of those it lays over its seas (`XTextures/ocean/ocean_h.1.blp`, file ID 219855, read from Forever's install), its alpha alone in white: the light on the waves. Made by `dev/tools/terrain-art --sea <that file>` (new mode, `sea()`); BLP2 DXT5 with mipmaps like the terrain's.
