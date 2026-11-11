@@ -82,7 +82,6 @@ local surveying -- the steps are being measured: what the game says meanwhile is
 local radii = { [true] = {}, [false] = {} } -- [indoors (Live.Indoors)][zoom step] = the view's radius in yards
 local cut -- the mask it is cut by now
 local wide -- on the full map: { side, x, y (the player's place in the holder's units), holder }
-local square -- the small view: the side of the game's minimap in its middle, as last placed (Hybrid.Square)
 local ground -- whether the game's minimap draws its own ground now, as last set (nil: not set by us yet)
 local areas  -- whether its own areas show now, as last set
 
@@ -409,7 +408,6 @@ function Hybrid.Place(camera, width, height, known, lost)
     minimap:ClearAllPoints()
     minimap:SetPoint("CENTER", canvas, "CENTER")
     Set(minimap, size, step, Hybrid.MASK)
-    square = size
     minimap:Show()
 end
 
@@ -436,23 +434,10 @@ function Hybrid.Hide()
     if taken then Parts():Hide() end
 end
 
--- Whether it shows now (our player's arrow stays over it all the same, Marks.lua).
+-- Whether it shows now. Our marks stay over it all the same; the party's are looked at more often meanwhile, so they
+-- lie over its own dots of them, which it moves at each frame (Marks.lua).
 function Hybrid.Shown()
     return taken and Parts():IsShown() or false
-end
-
--- The square the game's minimap covers while it shows, in the holder's units: its middle (x, y) and half its side;
--- nil while it is out of sight. The game draws the party and raid there itself, moved at each frame, so our marks
--- stand down inside it (Marks.lua).
-function Hybrid.Square()
-    if not Hybrid.Shown() then return nil end
-    if wide then
-        if not wide.x then return nil end
-        return wide.x, wide.y, wide.side / 2
-    end
-    if not square then return nil end
-    local edge = ns.Canvas.edge
-    return -edge.x, -edge.y, square / 2 / edge.scale
 end
 
 -- The wheel over a view that follows the player (size: Hybrid.Side of it): the game's steps first. True

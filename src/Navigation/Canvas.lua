@@ -353,6 +353,7 @@ local function Draw()
     ns.Safe("paths", ns.Paths.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
+    ns.Safe("marks", ns.Marks.Group, view) -- at once at the new zoom, their size too
 end
 
 -- The player's place in the holder's units while it is on the view's plane (map, u, v from Live.Player), else nil.

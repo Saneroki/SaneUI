@@ -1323,11 +1323,6 @@ check(minimap._shown and minimap._width == 20, "however thin a view: the square 
 frame._width, frame._height = 200, 200
 Canvas.Layout()
 check(minimap._shown and minimap._mask == Hybrid.MASK, "square again: shown, square")
-do
-    local x, y, half = Hybrid.Square()
-    check(x and near(x, -Canvas.edge.x) and near(y, -Canvas.edge.y) and near(half, 100),
-        "the square it covers, in the holder's units: the view's middle, half its side (the party's marks stand down there)")
-end
 IsIndoors = function() return true end
 W.Fire("ZONE_CHANGED_INDOORS")
 Canvas.Layout()
@@ -2307,9 +2302,6 @@ do
     check(arrow._shown and arrow._points[1][2] == holder and near(arrow._points[1][4], (u - Canvas.view.u) * full.k)
         and near(arrow._points[1][5], (v - Canvas.view.v) * full.k),
         "full: our arrow on the player, over the game's minimap there too")
-    local x, y, half = Hybrid.Square()
-    check(x and near(x, minimap._points[1][4]) and near(y, minimap._points[1][5]) and near(half, minimap._width / 2),
-        "full: the square it covers, on the player")
     local chosen = Core.Copy(ns.options.pins)
     chosen.minimap = nil
     Core.Set(ns.name, "pins", chosen)
@@ -4543,33 +4535,70 @@ for _, widget in ipairs(W.frames) do
 end
 check(not ns.Window.handle.hovered, "off the map: unseen again")
 
--- The party: the game's blip in the class' colour, where the game tells.
-IsInGroup = function() return true end
-ns.Marks.Group(Canvas.view, GetTime() + 10)
-local blip
-for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget.x then blip = widget end end
-check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member on the map, in the class' colour")
-check(blip._shown == Canvas.Inside(blip.x, blip.y, ns.Marks.MEMBER / 2), "shown while wholly inside the canvas")
--- Under the game's minimap its own blip stands for the member, moved at each frame: ours stands down there, at once
--- (each step of the tracker, not at the next look at the party), and comes back past its square.
-do
-    local square, inside = Hybrid.Square, Canvas.Inside
+-- The party: the game's blip in the class' colour, where the game tells, at every zoom, larger as the map zooms in
+-- (Saneroki, 2026-11-11: much bigger, with the zoom, always in sight), over the game's minimap too.
+;(function()
+    local Marks, view = ns.Marks, Canvas.view
+    IsInGroup = function() return true end
+    Marks.Group(view, GetTime() + 10)
+    local blip
+    for _, widget in ipairs(W.frames) do if widget._atlas == Marks.BLIP and widget.x then blip = widget end end
+    check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member on the map, in the class' colour")
+    local size = Marks.MemberSize(view.k)
+    check(near(blip._width, size) and near(blip._height, size) and near(blip.half, size / 2)
+        and blip._shown == Canvas.Inside(blip.x, blip.y, size / 2),
+        "at its size for the view's zoom, shown while wholly inside the canvas")
+    -- Its size: the smallest out from Marks.WIDE, the largest at the nearest zoom, the same step larger at each notch.
+    local small, large, step, NEAR = Marks.MEMBER[1], Marks.MEMBER[2], ns.Camera.STEP, ns.Camera.NEAR
+    local notch = Marks.MemberSize(step) / Marks.MemberSize(1)
+    check(near(Marks.MemberSize(Marks.WIDE), small) and near(Marks.MemberSize(Marks.WIDE / 100), small)
+        and near(Marks.MemberSize(NEAR), large) and near(Marks.MemberSize(NEAR * 4), large) and large >= 2 * small
+        and notch > 1 and near(Marks.MemberSize(0.2 * step) / Marks.MemberSize(0.2), notch),
+        "far out its smallest, in close twice that at least, between them one step larger at each notch of the wheel")
+    local scale, plain = ns.PinScale, Marks.MemberSize(1) / ns.PinScale("group")
+    ns.PinScale = function(kind) return kind == "group" and 2 or 1 end
+    check(near(Marks.MemberSize(1), 2 * plain), "the pin filter's slider on top")
+    ns.PinScale = scale
+    -- A notch of the wheel: sized and placed at the new zoom at once, not at the next look at the party.
+    local camera = Canvas.camera
+    local k, native, x = view.k, camera.native, blip.x
+    frame._scripts.OnMouseWheel(frame, 1)
+    W.Wait(0)
+    check(view.k > k and near(blip._width, Marks.MemberSize(view.k)) and blip._width > size
+        and near(blip.x / view.k, x / k),
+        "a notch in: larger at once, where it stands at the new zoom")
+    camera.k, camera.native = k, native
+    Canvas.Layout()
+    check(near(view.k, k) and near(blip._width, size), "out again: as large as before")
+    -- Over the game's minimap ours show too, the party looked at every Marks.OVER there (the game moves its own dots
+    -- at each frame, under ours), else every Marks.GROUP.
+    local shown, inside, ask, asked = Hybrid.Shown, Canvas.Inside, C_Map.GetPlayerMapPosition, 0
+    C_Map.GetPlayerMapPosition = function(map, unit)
+        if unit == "party1" then asked = asked + 1 end
+        return ask(map, unit)
+    end
     Canvas.Inside = function() return true end -- the member within the canvas
-    Hybrid.Square = function() return blip.x + 3, blip.y - 3, 10 end
-    ns.Marks.Group(Canvas.view, GetTime() + 10.1)
-    check(not blip._shown and blip.x, "the member under the game's minimap: its own dot alone, not ours")
-    Hybrid.Square = function() return blip.x + 30, blip.y, 10 end
-    ns.Marks.Fit()
-    check(blip._shown, "past its square: ours")
-    Hybrid.Square = function() return nil end
-    ns.Marks.Group(Canvas.view, GetTime() + 10.2)
-    check(blip._shown, "the game's minimap out of sight: ours")
-    Hybrid.Square, Canvas.Inside = square, inside
-    ns.Marks.Fit()
-end
-IsInGroup = function() return false end
-ns.Marks.Group(Canvas.view, GetTime() + 20)
-check(not blip._shown and not blip.x, "out of the group: gone")
+    Hybrid.Shown = function() return true end
+    local now = GetTime() + 30
+    Marks.Group(view, now)
+    Marks.Fit()
+    check(blip._shown and asked == 1, "the game's minimap shown: ours over it, at once")
+    Marks.Group(view, now + Marks.OVER / 2)
+    local early = asked
+    Marks.Group(view, now + Marks.OVER)
+    check(early == 1 and asked == 2 and blip._shown, "looked at again after Marks.OVER")
+    Hybrid.Shown = function() return false end
+    Marks.Group(view, now + 2 * Marks.OVER)
+    early = asked
+    Marks.Group(view, now + 3 * Marks.OVER)
+    Marks.Group(view, now + 2 * Marks.OVER + Marks.GROUP)
+    check(early == 3 and asked == 4 and blip._shown, "the game's minimap out of sight: after Marks.GROUP")
+    Hybrid.Shown, Canvas.Inside, C_Map.GetPlayerMapPosition = shown, inside, ask
+    Marks.Fit()
+    IsInGroup = function() return false end
+    Marks.Group(view, GetTime() + 60)
+    check(not blip._shown and not blip.x, "out of the group: gone")
+end)()
 
 -- Zephras Isle, drawn as a continent is, as a zone: standing on it the view follows the player into its plane; its
 -- pins, its map in the selector; out to the world and in again over it by a click; the map pin put on it.

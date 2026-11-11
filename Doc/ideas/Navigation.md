@@ -375,6 +375,9 @@ When the window fills the screen:
 - **Always on top (Saneroki, 2026-10-20):** pins, quest areas, the route and every other notation on the map
   stand over the map in every view and at every zoom, never behind it (the art, the terrain,
   the game's minimap all lie under them).
+- **The party's marks (Saneroki, 2026-11-11; built):** "much bigger, scale with the zoom level on the map and is
+  always visible on all zoom levels": the party and raid in their class colours larger as the map zooms in, at
+  every zoom, over the game's minimap too (its own dots of them under ours).
 
 ## Our own data
 

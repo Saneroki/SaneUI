@@ -122,7 +122,8 @@ is small, and the maps of the dungeons and raids. The plan is in
   its text, and a quest giver's quests show in the quest log (below); on any other pin it is a click on the map
   there (a ping). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
   whole shows only travel and places; the minimap no
-  books or treasures, services only near you. The party and raid in their class colours.
+  books or treasures, services only near you. The party and raid in their class colours, at every zoom and over
+  the game's minimap too, larger as you zoom in.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
   with its icon large before its words, in sections under their titles: *Around you* (the route, the minimap's
   dots, the party and raid), *Quests*, *Travel*, *Towns and services*, *Rares and treasures*, *Gathering*; it
@@ -961,8 +962,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   line's first leg, drawn anew from the player every `Planner.AGAIN` seconds, the plan from where it lands after
   it; without a pin that leg alone.
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
-  pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second;
-  none where the game's minimap lies over the map, whose own dots of them move at every frame: `Hybrid.Square`).
+  pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second, at
+  every zoom: `Marks.MemberSize`, from `Marks.MEMBER`'s 22 out at a continent, `Marks.WIDE`, to 44 at the nearest
+  zoom, the same step larger at each notch, the pin filter's slider on top; placed and sized anew as the view is
+  laid out; over the game's minimap too, there every `Marks.OVER`, 0.1 seconds, so ours lie over its own dots of
+  them, which it moves at every frame).
 - **Indoors** (`Indoors.lua`): inside a building or a cave (`Live.Indoors`: the game's `IsIndoors`, or its minimap
   showing its indoor plan, its view's radius under `Live.PLAN` of its step's outdoors, `Live.OUTDOORS`: the halls one
   may ride through, which the game's `WMOAreaTable` counts as outdoors, so `IsIndoors` says no there; Ironforge's
@@ -1120,6 +1124,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-11, the party's marks much bigger, with the zoom, at every zoom:** Saneroki: "The party members on the
+  map, can you make its icons much bigger, scale with the zoom level on the map and is always visible on all zoom
+  levels". `Marks.MemberSize` (22 to 44 in place of 14), `Marks.Group` at once from `Canvas.lua`'s `Draw`; no longer
+  standing down under the game's minimap (`Hybrid.Square` gone), looked at every `Marks.OVER` there instead.
 - **2026-11-11, books and chests for the rare tracker in Forever:** Saneroki: "Does that work also with things like
   treasures and other things like for example the books that are spread in the world that you need to gather", then
   "Yes, build it". Forever's client has no marks for them; the 36 books the librarians ask for are books in Core's
