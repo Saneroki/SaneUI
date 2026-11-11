@@ -24,6 +24,12 @@
   corner-br.blp    white beyond it (CLAMPTOWHITE), it rounds that corner alone: at any radius, on a
                    shape of any height (a nameplate's bar and its cast bar under it: round at the
                    outside, square where they meet).
+  soft-corner.blp  the top left corner of a plate whose edge fades out softly (Lore's talk): white, its alpha whole
+                   inside a round corner (SOFT_RADIUS of the picture) whose arc is centred SOFT_FADE + SOFT_RADIUS in
+                   from both sides, falling smoothly to nothing over SOFT_FADE towards the picture's edges. Past the
+                   arc's centre the last column and row are the straight edge's own fade. Drawn as a texture, not a
+                   mask: a plate is nine pieces of it, the corners turned by their texture coordinates, the sides that
+                   last column or row stretched, the middle whole; its corners as large as a part wants them.
 
 A mask is stretched whole (Tooltips found it: no slice margins), so a circle stays a circle only
 in a square, and a bar's end only at its own proportion; the corners' pieces are squares. The game
@@ -58,6 +64,8 @@ CAP = (64, 256)  # a bar's end: width, height
 CORNER = 64      # a corner, square
 RING = 0.86      # a ring's hole, a share of its width
 RING_WIDE = 0.81 # the wider ring's
+SOFT_FADE = 0.5      # a soft corner's fade, a share of its side
+SOFT_RADIUS = 0.375  # the round of its whole part, a share of its side (the two together short of the side)
 SAMPLES = 4  # a side's samples per texel
 
 
@@ -103,6 +111,19 @@ def corner(size, top, left):
     y = (size - axis) if top else axis
     inside = (x[None, :] ** 2 + y[:, None] ** 2) <= size ** 2
     return inside.reshape(size, SAMPLES, size, SAMPLES).mean(axis=(1, 3))
+
+
+def soft_corner(size):
+    """The alpha of each texel (size x size) of a soft plate's top left corner: whole inside the round corner whose arc
+    is centred (fade + radius) in from both sides, smoothly to nothing over the fade beyond it (smoothstep)."""
+    fade, radius = SOFT_FADE * size, SOFT_RADIUS * size
+    middle = fade + radius
+    axis = samples(size).reshape(-1)
+    beyond = np.maximum(middle - axis, 0)  # how far past the arc's centre towards the picture's edge
+    out = np.sqrt(beyond[None, :] ** 2 + beyond[:, None] ** 2) - radius
+    share = np.clip(out / fade, 0, 1)
+    alpha = 1 - share * share * (3 - 2 * share)
+    return alpha.reshape(size, SAMPLES, size, SAMPLES).mean(axis=(1, 3))
 
 
 def dxt5(alpha):
@@ -151,6 +172,8 @@ MASKS = {
                       [(CORNER - 1, 0, 0), (0, CORNER - 1, 255), (0, 0, 255), (CORNER - 1, CORNER - 1, 255)]),
     "corner-br.blp": (CORNER, CORNER, lambda w, h: corner(w, top=False, left=False),
                       [(CORNER - 1, CORNER - 1, 0), (0, 0, 255), (0, CORNER - 1, 255), (CORNER - 1, 0, 255)]),
+    # Nothing at the picture's corner, whole at the far one (the plate's middle).
+    "soft-corner.blp": (CORNER, CORNER, lambda w, h: soft_corner(w), [(0, 0, 0), (CORNER - 1, CORNER - 1, 255)]),
 }
 
 wanted = sys.argv[1:] or list(MASKS)

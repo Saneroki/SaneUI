@@ -39,123 +39,25 @@ local _, ns = ...
 --  bags-full page.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local J = Core.Journal
 local S = ns.SIZE
 local Row = {}
 ns.Row = Row
 
--- As the nameplates' bars (Nameplates' Bar.lua): the game's raid frames' health fill, a round of a quarter of the
--- height, a border nearly black, grey on what the mouse is on (a nameplate's on your target).
-local FILL = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
+-- The bar, its round ends, its font and its colours are Core's (Shape.Bar), shared with a quest's rewards in Lore's
+-- talk (Saneroki, 2026-11-11: rolling on loot and choosing a quest's reward look the same).
+local Shape = Core.Shape
+local FILL = Shape.FILL
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local CAP = 1 / 4
-local BORDER = { 0, 0, 0, 0.9 }
-local HOVER = { 0.5, 0.5, 0.5, 1 }
--- The game's font objects for its nameplates' names: their face and outline.
-local FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate" }
-local DARK = { 0.16, 0.16, 0.18 } -- a bar of no thing (the A)
+local CAP = Shape.BAR_ROUND
+local Caps = Shape.Caps
 local SOFT = { 0.88, 0.88, 0.88 } -- the line under the name
 local SHADE = { 0.07, 0.07, 0.09, 0.6 } -- under the time left: a nameplate's dark where health is missing, the bar seen through
 Row.OFF_WHITE = { 238 / 255, 229 / 255, 208 / 255 }
-
-function Row.Color(quality)
-    local colors = rawget(_G, "ITEM_QUALITY_COLORS")
-    local color = colors and quality and colors[quality]
-    if not color then return 1, 1, 1 end
-    return color.r, color.g, color.b
-end
-
--- The game's gold, as its quest things are marked.
-function Row.Gold()
-    local gold = rawget(_G, "NORMAL_FONT_COLOR")
-    if type(gold) == "table" and gold.r then return gold.r, gold.g, gold.b end
-    return 1, 0.82, 0
-end
-
--- The face and outline of the game's font for its nameplates (asked once); Kalam outlined where it has none.
-local face
-local function Face()
-    if face then return face end
-    for _, name in ipairs(FONTS) do
-        local object = rawget(_G, name)
-        local file, _, flags
-        if type(object) == "table" and object.GetFont then file, _, flags = object:GetFont() end
-        if type(file) == "string" then
-            face = { name = name, file = file, flags = (flags and flags ~= "") and flags or "OUTLINE" }
-            return face
-        end
-    end
-    face = { file = J.FONT_BOLD, flags = "OUTLINE" }
-    return face
-end
-
--- size: in 1080p pixels, as Sane UI's other words. On the game's font object, as Nameplates' Text.lua: its shadow is
--- the game's, none of ours.
-function Row.Font(fs, size)
-    local look = Face()
-    if look.name then fs:SetFontObject(look.name) end
-    fs:SetFont(look.file, size * J.PX, look.flags)
-end
-
--- A bar behind a frame of that height, as the nameplates make theirs:
---      bar:Paint(r, g, b)   the fill's colour
---      bar:SetLit(on)       the border grey, under the mouse
--- The border is a plate of two halves behind the fill, each round at its own two corners by Core's corner masks (a
--- texture takes three masks at most), so its round is the same at any width; the fill a screen pixel inside it, its
--- ends round by Core's two caps.
--- Two caps over a texture laid at a region's two ends (anchor), rounding them as a bar of that height is rounded;
--- made on the texture's own frame, as a mask must be.
-local function Caps(texture, anchor, height)
-    for _, side in ipairs({ "LEFT", "RIGHT" }) do
-        local cap = texture:GetParent():CreateMaskTexture()
-        cap:SetTexture(side == "LEFT" and Core.Shape.CAP_LEFT or Core.Shape.CAP_RIGHT, "CLAMPTOWHITE", "CLAMPTOWHITE")
-        cap:SetPoint("TOP" .. side, anchor, "TOP" .. side)
-        cap:SetPoint("BOTTOM" .. side, anchor, "BOTTOM" .. side)
-        cap:SetWidth(math.max(height * CAP, 0.01))
-        texture:AddMaskTexture(cap)
-    end
-end
-
-function Row.Bar(frame, height)
-    local bar = { lit = false }
-    local pixel = Core.Pixels(frame, 1)
-    local radius = height * CAP
-    bar.halves = {}
-    for index, corners in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } }) do
-        local half = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
-        half:SetTexture(WHITE)
-        half:SetPoint(corners[1], frame, corners[1])
-        half:SetPoint(corners[2], frame, corners[2])
-        half:SetHeight(height / 2)
-        for _, corner in ipairs(corners) do
-            local mask = frame:CreateMaskTexture()
-            mask:SetTexture(Core.Shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
-            mask:SetPoint(corner, half, corner)
-            mask:SetSize(radius, radius)
-            half:AddMaskTexture(mask)
-        end
-        bar.halves[index] = half
-    end
-    bar.fill = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
-    bar.fill:SetTexture(FILL)
-    bar.fill:SetPoint("TOPLEFT", frame, "TOPLEFT", pixel, -pixel)
-    bar.fill:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, pixel)
-    bar.inner = height - 2 * pixel
-    bar.pixel = pixel
-    Caps(bar.fill, bar.fill, bar.inner)
-    function bar.Paint(_, r, g, b)
-        bar.colour = { r, g, b }
-        bar.fill:SetVertexColor(r, g, b, 1)
-    end
-    function bar.SetLit(_, on)
-        bar.lit = on and true or false
-        local colour = bar.lit and HOVER or BORDER
-        for _, half in ipairs(bar.halves) do half:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
-    end
-    bar:Paint(DARK[1], DARK[2], DARK[3])
-    bar:SetLit(false)
-    return bar
-end
+Row.Color = Shape.Quality
+Row.Gold = Shape.Gold
+Row.Font = Shape.BarFont
+-- A bar behind a frame of that height, as the nameplates make theirs: bar:Paint(r, g, b), bar:SetLit(on).
+Row.Bar = Shape.Bar
 
 -- The colour of a share left, as the game blends a health bar's (HealthBar_OnValueChanged, smooth): green to half
 -- way, yellow there, then red at nothing.

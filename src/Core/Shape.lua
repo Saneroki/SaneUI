@@ -69,6 +69,10 @@ Shape.RING_WIDE = "Interface\\AddOns\\" .. ADDON .. "\\Art\\ring-wide"
 -- their outer side, round with that radius; laid over the bar's ends with CLAMPTOWHITE (dev/tools/shape-art).
 Shape.CAP_LEFT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\cap-left"
 Shape.CAP_RIGHT = "Interface\\AddOns\\" .. ADDON .. "\\Art\\cap-right"
+-- The top left corner of a plate whose edge fades out softly, drawn as a texture (Lore's talk): white, its alpha whole
+-- inside a round corner and fading to nothing towards the picture's edges (half of it the fade, three eighths the
+-- round); its last column and row are the straight edge's fade (dev/tools/shape-art).
+Shape.SOFT_CORNER = "Interface\\AddOns\\" .. ADDON .. "\\Art\\soft-corner"
 -- One corner of a rectangle cut round (dev/tools/shape-art): laid over that corner as large as the radius, wrapped with
 -- white beyond it, it rounds that corner alone, at any radius, on a shape of any height.
 Shape.CORNER = {
@@ -343,6 +347,139 @@ function Shape.New(host, settings, rect)
         shape.circles[index] = circle
     end
     return shape
+end
+
+-------------------------------------------------------------------------------
+--  A thing's bar, as the nameplates draw theirs (Saneroki, 2026-10-29 for the
+--  loot window's lines; 2026-11-11: a quest's rewards "like the party roll
+--  window", so rolling on loot and choosing a quest's reward look the same).
+--  The game's shaded health fill (its raid frames') in a colour, its corners
+--  round a quarter of its height (the caps), behind it a border of one screen
+--  pixel, nearly black, round with it (the corner masks), grey under the mouse
+--  as a nameplate's on your target, gold round a thing chosen. Its words in the
+--  game's outlined font of its nameplates.
+--
+--      local bar = Shape.Bar(frame, height)   -- behind a frame of that height: bar:Paint(r, g, b), bar:SetLit(on),
+--                                             -- bar:SetChosen(on); bar.fill, bar.inner (its fill's height), bar.pixel
+--      Shape.Caps(texture, anchor, height)    -- a texture's two ends round as a bar of that height (a picture at a
+--                                             -- bar's left end, a line over its foot)
+--      Shape.BarFont(fontString, size)        -- the game's outlined nameplate font, size in 1080p pixels
+--      Shape.Quality(quality), Shape.Gold()   -- a quality's colour, the game's gold
+-------------------------------------------------------------------------------
+Shape.FILL = "Interface\\RaidFrame\\Raid-Bar-Hp-Fill"
+Shape.BAR_ROUND = 1 / 4                 -- a bar's corners round so much of its height
+Shape.BAR_BORDER = { 0, 0, 0, 0.9 }     -- nearly black
+Shape.BAR_LIT = { 0.5, 0.5, 0.5, 1 }    -- under the mouse
+Shape.BAR_DARK = { 0.16, 0.16, 0.18 }   -- a bar of no thing
+-- The game's font objects for its nameplates' names: their face and outline.
+Shape.BAR_FONTS = { "SystemFont_NamePlate_Outlined", "SystemFont_NamePlate" }
+
+function Shape.Quality(quality)
+    local colors = rawget(_G, "ITEM_QUALITY_COLORS")
+    local color = colors and quality and colors[quality]
+    if not color then return 1, 1, 1 end
+    return color.r, color.g, color.b
+end
+
+-- The game's gold, as its quest things are marked.
+function Shape.Gold()
+    local gold = rawget(_G, "NORMAL_FONT_COLOR")
+    if type(gold) == "table" and gold.r then return gold.r, gold.g, gold.b end
+    return 1, 0.82, 0
+end
+
+-- The face and outline of the game's font for its nameplates (asked once); Core's bold font outlined where it has none.
+local face
+local function Face()
+    if face then return face end
+    for _, name in ipairs(Shape.BAR_FONTS) do
+        local object = rawget(_G, name)
+        local file, _, flags
+        if type(object) == "table" and object.GetFont then file, _, flags = object:GetFont() end
+        if type(file) == "string" then
+            face = { name = name, file = file, flags = (flags and flags ~= "") and flags or "OUTLINE" }
+            return face
+        end
+    end
+    face = { file = Core.Journal.FONT_BOLD, flags = "OUTLINE" }
+    return face
+end
+
+-- size: in 1080p pixels, as Sane UI's other words. On the game's font object, as Nameplates' Text.lua: its shadow is
+-- the game's, none of ours.
+function Shape.BarFont(fs, size)
+    local look = Face()
+    if look.name then fs:SetFontObject(look.name) end
+    fs:SetFont(look.file, size * Core.Journal.PX, look.flags)
+end
+
+-- Two caps over a texture laid at a region's two ends (anchor), rounding them as a bar of that height is rounded;
+-- made on the texture's own frame, as a mask must be.
+function Shape.Caps(texture, anchor, height)
+    for _, side in ipairs({ "LEFT", "RIGHT" }) do
+        local cap = texture:GetParent():CreateMaskTexture()
+        cap:SetTexture(side == "LEFT" and Shape.CAP_LEFT or Shape.CAP_RIGHT, "CLAMPTOWHITE", "CLAMPTOWHITE")
+        cap:SetPoint("TOP" .. side, anchor, "TOP" .. side)
+        cap:SetPoint("BOTTOM" .. side, anchor, "BOTTOM" .. side)
+        cap:SetWidth(math.max(height * Shape.BAR_ROUND, 0.01))
+        texture:AddMaskTexture(cap)
+    end
+end
+
+-- The border is a plate of two halves behind the fill, each round at its own two corners by the corner masks (a
+-- texture takes three masks at most), so its round is the same at any width; the fill a screen pixel inside it, its
+-- ends round by the two caps.
+function Shape.Bar(frame, height)
+    local bar = { lit = false, chosen = false }
+    local pixel = Core.Pixels(frame, 1)
+    local radius = height * Shape.BAR_ROUND
+    bar.halves = {}
+    for index, corners in ipairs({ { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } }) do
+        local half = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+        half:SetTexture(WHITE)
+        half:SetPoint(corners[1], frame, corners[1])
+        half:SetPoint(corners[2], frame, corners[2])
+        half:SetHeight(height / 2)
+        for _, corner in ipairs(corners) do
+            local mask = frame:CreateMaskTexture()
+            mask:SetTexture(Shape.CORNER[corner], "CLAMPTOWHITE", "CLAMPTOWHITE")
+            mask:SetPoint(corner, half, corner)
+            mask:SetSize(radius, radius)
+            half:AddMaskTexture(mask)
+        end
+        bar.halves[index] = half
+    end
+    bar.fill = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+    bar.fill:SetTexture(Shape.FILL)
+    bar.fill:SetPoint("TOPLEFT", frame, "TOPLEFT", pixel, -pixel)
+    bar.fill:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -pixel, pixel)
+    bar.inner = height - 2 * pixel
+    bar.pixel = pixel
+    Shape.Caps(bar.fill, bar.fill, bar.inner)
+    local function Border()
+        local colour = bar.lit and Shape.BAR_LIT or Shape.BAR_BORDER
+        local r, g, b, a = colour[1], colour[2], colour[3], colour[4]
+        if bar.chosen and not bar.lit then
+            r, g, b = Shape.Gold()
+            a = 1
+        end
+        for _, half in ipairs(bar.halves) do half:SetVertexColor(r, g, b, a) end
+    end
+    function bar.Paint(_, r, g, b)
+        bar.colour = { r, g, b }
+        bar.fill:SetVertexColor(r, g, b, 1)
+    end
+    function bar.SetLit(_, on)
+        bar.lit = on and true or false
+        Border()
+    end
+    function bar.SetChosen(_, on)
+        bar.chosen = on and true or false
+        Border()
+    end
+    bar:Paint(Shape.BAR_DARK[1], Shape.BAR_DARK[2], Shape.BAR_DARK[3])
+    bar:SetLit(false)
+    return bar
 end
 
 -- A round icon: a mask of the same circle over the whole texture (the game's round portrait mask where

@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Lore - Answers
 --  What you can answer, a column beside the words (Saneroki, 2026-10-28): its
 --  top level with the box's top, right of it. A line an answer, each a dark bar
---  of its own (Look.Plate), its border grey and its words gold under the mouse,
+--  of its own (Look.Plate), lighter and its words gold under the mouse,
 --  apart from the next (Saneroki, 2026-11-11): the game's picture for its kind at the
 --  left (a quest to hand in, offered, not done yet; the NPC's own picture for
 --  its other options), the words beside it. A quest far below your level is
@@ -67,7 +67,7 @@ local function Line(index)
     if lines[index] then return lines[index] end
     local line = CreateFrame("Button", nil, column)
     line:SetWidth(Answers.WIDTH)
-    line.plate = ns.Look.Plate(line)
+    line.plate = ns.Look.Plate(line, ns.Look.BAR)
     line.icon = line:CreateTexture(nil, "ARTWORK")
     line.icon:SetSize(Answers.ICON, Answers.ICON)
     line.icon:SetPoint("TOPLEFT", line, "TOPLEFT", Answers.PAD, -Answers.PAD)

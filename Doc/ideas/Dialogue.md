@@ -220,6 +220,15 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 
 Saneroki, 2026-11-11:
 
+- **The rewards as the loot rolls' lines:** "Can you make the look of the choosen items look like the party roll window
+  for items. So that rolling on loot or choosing the quest reward looks the same." Each reward (to choose, besides, and
+  what a quest asks for) is a line of the loot rolls' make, Core's `Shape.Bar` shared with Loot; Claude's picks, for
+  Saneroki to change: the reward chosen with a gold border; on the coloured bars a rise in white (the green arrow says
+  better), a drop in red.
+- **Soft edges:** "instead of the black sharp border, can you make a fuzzy fadeout with rounded corners so they blend
+  naturally into the world." The plates have no border now; each fades out softly with round corners, the fade inside
+  its own part so two parts still never run into each other (the panels 16 wide, the bars 7). Claude's picks, for
+  Saneroki to change: those widths; under the mouse a little lighter; a reward chosen golden and at least 75 % solid.
 - **The talk redesigned:** "I don't like how the dialogue background and the dialogue options are fading into each
   other. It doesn't look good. Can you redesign the placement and look of the dialogue view Also incl quest rewards
   etc." Of the layouts offered, "Side by side is good", and "I think the goodbye should also be a top icon." The look

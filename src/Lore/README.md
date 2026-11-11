@@ -5,10 +5,10 @@
 ## TL;DR
 Lore is the world's words (plan: [Doc/ideas/Lore.md](../../Doc/ideas/Lore.md)). Its first part is the talk with an
 NPC ([Doc/ideas/Dialogue.md](../../Doc/ideas/Dialogue.md)): instead of the game's gossip and quest windows, the NPC's
-own 3D face, name and words stand low in the middle of the screen on a dark plate of round corners over the world, a
+own 3D face, name and words stand low in the middle of the screen on a dark plate whose round edge fades softly into the world, a
 paragraph at a time. What you can answer stands beside them as dark bars; the NPC's services (the hearthstone, a
 vendor's goods, a trainer, flights, the bank) and Goodbye as big pictures without words over them; a quest's objectives
-and rewards on a plate under them, each reward a bar in its quality's colour, as the loot window's lines. While you talk the rest of the interface fades out; the rewards' tooltips, the game's questions and its error
+and rewards on a plate under them, each reward a line of the group's loot rolls (its bar in its quality's colour). While you talk the rest of the interface fades out; the rewards' tooltips, the game's questions and its error
 lines stay in sight. Each reward says, without its tooltip, what it is (Leather · Chest, Plate · Legs, a weapon's
 kind, a ring by its slot), whether you can use it, what a vendor pays for it and what it changes against what you
 wear (item level, stats). The words wait for you: a left click turns them, a right click accepts or says goodbye,
@@ -23,7 +23,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
     board, a book) shows the game's quest book;
   - **the name** in the game's gold beside it, **the words** under the name, one paragraph at a time, an action
     in `<...>` in the game's emote colour; at the bottom right which paragraph of how many (*2/4*);
-  - **the answers** in a column right of the words, each a dark bar of its own (its border grey and its words gold
+  - **the answers** in a column right of the words, each a dark bar of its own (a little lighter and its words gold
     under the mouse), in this order: quests to hand in, quests offered, the NPC's other options (words to say),
     quests not done yet. Each has the game's picture for its kind; a quest far below your level is dimmed. The column always stays on the screen: a long one (a city guard's way
     to every place) is lifted until it ends above the screen's bottom; one taller than the screen (a large *Size*)
@@ -40,9 +40,10 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
     the column;
   - **a quest**, under the words on a plate of its own: its title, its objectives and the group it is for when it is
     offered, what it asks for while in progress, its rewards when offered and handed in.
-  - **the look:** every part on a plate of its own as the loot window's lines and the guide's steps (round corners,
-    a thin border nearly black, dark grey darkening to the foot), apart from the next, nothing fading into anything;
-    the words in the game's outlined nameplate font. *Shade behind the words* says how solid the plates are.
+  - **the look:** every part on a dark plate of its own with round corners and no border, its edge fading softly
+    into the world (the panels more widely than the bars), the fade inside the part, so two parts side by side never
+    run into each other; the words in the game's outlined nameplate font. *Shade behind the words* says how solid the
+    plates are.
 - **Going on:** the words wait for you.
   - **A left click** on the words, or on the quest under them, shows the next paragraph, after the last the first
     again. It only turns the words: it never answers.
@@ -58,10 +59,12 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
     themselves.
   - **Speed Leveling** takes and hands in the guide's quests as ever (its *Take the guide's quests*, *Hand in the
     guide's quests*): the words waiting do not hold it up.
-- **The rewards** (offered and handed in), each a bar in its quality's colour, deepened (green for an uncommon
-  thing, grey for a common one), its name in white: the ones to choose from first (*Choose one*), then what you get besides,
+- **The rewards** (offered and handed in), each a line as the group's loot rolls draw theirs, so choosing a reward and
+  rolling on loot look the same: the bar in its quality's colour (green for an uncommon thing, a light grey for a
+  common one, the game's gold for a quest's own thing), its picture round with the bar's left end, the game's green
+  arrow before the name where it betters what you wear: the ones to choose from first (*Choose one*), then what you get besides,
   then experience, money, honor and a title in one line. A reward's line:
-  - its icon with how many, its name in its quality's colour;
+  - its icon with how many, its name in white, at the right what a vendor pays for all of it;
   - under the name **what it is**: armour by its kind and slot (*Leather · Chest*, *Plate · Feet*); a cloak, a
     ring, a neck, a trinket, a shirt by its slot alone (anybody wears them); a weapon by its kind (*Daggers*,
     *Two-Handed Axes*), with its hand where only one hand holds it (*One-Handed Swords · Main Hand*); anything else
@@ -197,10 +200,17 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   through the game's frames or ours. The talk shows for that moment and goes with the game's `QUEST_FINISHED`.
 - **The look** (`Look.lua`, `Box.lua`, `Answers.lua`, `Quest.lua`, `Icons.lua`;
   [interface-style.md](../../Doc/guides/interface-style.md), *The talk over the world*): each part on a plate
-  (`Look.Plate`: Core's `Shape.New` with `Look.ROUND` 6 and `Look.TRIM` 1, `Follow` and `Fit` at its frame's size):
-  `Look.DARK`'s grey darkening to its foot, a reward's quality colour (`C_Item.GetItemQualityColor`) times
-  `Look.DEEP`, as solid as *Shade behind the words* (`Look.SHADE` 60 at first), its border `Look.BORDER` nearly black,
-  `Look.LIT` grey under the mouse, `Look.GOLD` round a reward chosen. The parts stand `Box.GAP`, `Answers.GAP` and
+  (`Look.Plate(frame, corner)`: nine pieces of Core's `Shape.SOFT_CORNER`, the corners turned by their texture
+  coordinates and `corner` large, never more than half the frame's width or height (`plate:Fit`), the sides its last
+  column or row stretched, the middle its whole part; the fade, half the corner, wholly inside the frame;
+  `Look.PANEL` 32 for the words and the quest, `Look.BAR` 14 for an answer and a picture): `Look.DARK`, as solid as
+  *Shade behind the words* (`Look.SHADE` 60 at first); under the mouse `Look.LIGHT` of the way to white. No border. A
+  reward's line is the loot rolls' (`Quest.lua`): Core's `Shape.Bar` (the bar Loot's lines and rolls are made of,
+  `Quest.ROW` 38 high as theirs) painted `Shape.Quality`, `Shape.Gold` for an item the quest asks for; the picture
+  in a holder at its left end inside its border, round by `Shape.Caps`; `bags-greenarrow` before the name where the
+  reward betters what is worn (`Better`: an empty slot, a higher item level; not where it cannot be used); the words
+  by `Shape.BarFont` (18 and 13 as a loot line's), white, the line under the name `SOFT`, a rise white and a drop in
+  the game's red (`Change`); `bar:SetLit` grey under the mouse, `bar:SetChosen` gold round the reward chosen. The parts stand `Box.GAP`, `Answers.GAP` and
   `Icons.GAP` (10) apart. The words in the game's font of its nameplates (`SystemFont_NamePlate_Outlined`, its file
   and outline at `Look.SIZES`), the game's gold for names and headings. One frame of ours (strata `HIGH`, so the game's questions and tooltips stand
   over it) holds every part, sized by *Size*; it appears and goes with a quick fade of its alpha. The face is a
@@ -220,7 +230,9 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   setting), a city guard's fourteen answers kept on the screen (lifted at Size 100 %; at 150 % the lines that fit,
   the wheel and the arrows through the rest, the talk moved left, the column placed anew as the words turn, a new
   talk at its first line), the look (an answer on its plate, lit under the mouse, the plates following *Shade behind
-  the words* down to none; a reward chosen, its border gold), Goodbye as the hand at the row's end, the settings,
+  the words* down to none, of nine pieces of the soft corner; a reward a loot roll's line of Core's bar, as high, the
+  green arrow on an upgrade and none where it cannot be used, its border gold when chosen), Goodbye as the hand
+  at the row's end, the settings,
   Retail, standing down. The interface lab's scene `talk` (`saneui showuilab`)
   draws an innkeeper's talk with the real code, `LabGuard()` a guard's, `LabQuest("detail")`, `("progress")` and
   `("complete")` a quest with its rewards.
@@ -261,4 +273,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   and the like as big icons with no text on them, over the talk, to click them quickly). The same day, the column of
   answers always on the screen (Saneroki: a guard's many answers went so far down that some were off the screen and
   could not be clicked). Then the talk redesigned (Saneroki: the shades and the answers faded into each other; side by
-  side, Goodbye a picture over the talk too): every part on a plate of its own, as the loot window's lines.
+  side, Goodbye a picture over the talk too): every part on a plate of its own, as the loot window's lines. Then
+  their edges soft (Saneroki: "instead of the black sharp border ... a fuzzy fadeout with rounded corners so they
+  blend naturally into the world"): no border, the edge fading into the world inside each part. And the rewards as the
+  group's loot rolls' lines (Saneroki: "So that rolling on loot or choosing the quest reward looks the same").

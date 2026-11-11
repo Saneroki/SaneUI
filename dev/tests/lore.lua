@@ -264,14 +264,17 @@ local tell
 for _, frame in ipairs(W.frames) do
     if frame.answer and frame.text and frame.text._text == "Tell me more." then tell = frame end
 end
-check(tell.plate and tell.plate.lit == false and tell.plate.shape.look.alpha == 0.6,
+check(tell.plate and tell.plate.lit == false and tell.plate.alpha == 0.6,
       "an answer on a plate of its own, as solid as the setting says at first (60 %)")
+check(#tell.plate.pieces == 9 and tell.plate.pieces[1]:GetTexture() == SaneUI.Core.Shape.SOFT_CORNER
+      and tell.plate.pieces[1]:GetWidth() == ns.Look.BAR,
+      "of nine pieces of Core's soft corner, the bar's corners as large as Look.BAR: no border, its edge fading out")
 tell._scripts.OnEnter(tell)
 check(tell.plate.lit and tell.text._color[2] == 0.82, "under the mouse: its border lit, its words gold")
 tell._scripts.OnLeave(tell)
 check(not tell.plate.lit, "and back as it was")
 SaneUI.Core.Set(ns.name, "shade", 0)
-check(tell.plate.shape.look.alpha == 0, "Shade behind the words at 0: no plate, the words alone over the world")
+check(tell.plate.alpha == 0, "Shade behind the words at 0: no plate, the words alone over the world")
 SaneUI.Core.Set(ns.name, "shade", 60)
 
 -- An NPC's services as big pictures over the talk (the icons in sight, by their place in the row).
@@ -535,11 +538,16 @@ Click(vestRow, "RightButton")
 W.Wait(1)
 vestRow._scripts.OnDoubleClick(vestRow, "RightButton")
 check(#said == 0, "with a reward to choose no right click hands anything in")
-check(not vestRow.plate.chosen, "nor chooses one")
+check(not vestRow.bar.chosen, "nor chooses one")
 Click(box, "LeftButton")
 check(#said == 0, "a left click on the words hands nothing in")
 Click(vestRow, "LeftButton")
-check(vestRow.plate.chosen and #said == 0, "a left click on a reward chooses it, and only that")
+check(vestRow.bar.chosen and #said == 0, "a left click on a reward chooses it, and only that, its border gold")
+-- A line of the loot rolls' make: Core's bar in the thing's quality colour, the green arrow on an upgrade.
+check(vestRow.bar.fill:GetTexture() == SaneUI.Core.Shape.FILL and vestRow:GetHeight() == ns.Quest.ROW,
+      "a reward is a loot roll's line: Core's bar of the nameplates' make, as high as a loot line")
+check(Reward("Band of Thorns").upgrade:IsShown() and not Reward("Plate Girdle").upgrade:IsShown(),
+      "the game's green arrow on a reward for an empty slot, none on one you cannot use")
 W.Wait(1)
 Click(Reward("Band of Thorns"), "RightButton")
 Click(vestRow, "RightButton")

@@ -9,7 +9,7 @@ local _, ns = ...
 --  bank, the auction house, a battlemaster, transmogrification; and at the
 --  row's end leaving (Saneroki, 2026-11-11: "the goodbye should also be a top
 --  icon"): Goodbye, or Decline on a quest offered, as the game's open hand. Each
---  on a plate of its own (Look.Plate), its border grey under the mouse. A click
+--  on a plate of its own (Look.Plate), a little lighter under the mouse. A click
 --  gives that answer (Talk.Answer); the mouse on one shows its words in the
 --  tooltip, and why the game refuses it where it does (its picture greyed then).
 --  The answers' column keeps the rest: quests, words to say, an option the
@@ -109,7 +109,7 @@ end
 local function Make(index)
     local button = CreateFrame("Button", nil, row)
     button:SetSize(Icons.SIZE + Icons.INSET * 2, Icons.SIZE + Icons.INSET * 2)
-    button.plate = ns.Look.Plate(button)
+    button.plate = ns.Look.Plate(button, ns.Look.BAR)
     button.picture = button:CreateTexture(nil, "ARTWORK")
     button.lit = button:CreateTexture(nil, "HIGHLIGHT")
     button.lit:SetBlendMode("ADD")

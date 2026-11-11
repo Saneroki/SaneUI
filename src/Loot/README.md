@@ -132,7 +132,9 @@ rises over the world, also what was taken at once: that is how you see what you 
   Consumable, Questitem; junk by quality 0), `Slots.Wanted` whether one takes it, `Slots.Note` the line under a name,
   `Slots.Item(id)` a line for an item by its ID (the list *Your items*).
 - **The window** (`Window.lua`, `Row.lua`): no art of its own; a scroll frame, rows made once and used again, each a
-  bar made as Nameplates' (`Row.Bar`): the game's `Interface\RaidFrame\Raid-Bar-Hp-Fill` a screen pixel inside a
+  bar made as Nameplates' (`Row.Bar`, Core's `Shape.Bar`, which Lore's quest rewards are made of too, so rolling on
+  loot and choosing a quest's reward look the same; `Row.Font`, `Row.Color`, `Row.Gold` are Core's `Shape.BarFont`,
+  `Shape.Quality`, `Shape.Gold`): the game's `Interface\RaidFrame\Raid-Bar-Hp-Fill` a screen pixel inside a
   border of two halves (`WHITE8X8`, black at 0.9, grey under the mouse) round at their corners by Core's
   `Shape.CORNER` masks, the fill's ends by `Shape.CAP_LEFT`/`CAP_RIGHT`, both a quarter of the height; the fill in
   `ITEM_QUALITY_COLORS`, the game's gold `NORMAL_FONT_COLOR` for a quest's thing (`Slots.Quest`). The words in the
