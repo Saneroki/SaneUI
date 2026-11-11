@@ -54,6 +54,10 @@ waves (a copy is drawn 91 units wide: the texture's own size on a 4K screen); ma
 plane, so it still tiles seamlessly, as in the game. Made by itself, from that one file (--sea).
 
   assets/optimized/Navigation/Art/Sea.blp 256 x 256: the waves' light
+  assets/optimized/Navigation/Art/SeaShade.blp 256 x 256: the sea's shade, slow patches of darker water drawn over
+                                             the waves, so their copies do not show as tiles (Saneroki, 2026-11-11:
+                                             "it is very tiled"): a tileable noise (white noise softened in the
+                                             frequency domain, so it repeats seamlessly by itself), alpha only
 
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
@@ -97,10 +101,15 @@ ZONES = ART / "Zones"
 SKETCHES = ART / "Sketches"
 EDGE = ART / "Edge.blp"
 SEA = ART / "Sea.blp"
+SHADE = ART / "SeaShade.blp"
 WAVES = 1024       # the side of the game's ocean texture
 SEA_SIDE = 256     # the side of the sea's: a quarter, for small waves
 SEA_BLUR = 1.0     # pixels of the sea's texture its waves are softened by (Saneroki, 2026-11-11: "a slight blur on it
                    # so it is not so sharp"); 0.7 hardly showed, 1.5 smeared the pattern
+SHADE_SIDE = 256   # the sea's shade: a soft noise, drawn some 1100 units across (Canvas.SEA_LAYERS)
+SHADE_SEED = 7     # its random numbers, fixed: the same file every time
+SHADE_SLOPE = 2.6  # how soft: its frequencies fall off by 1 / f ** (SLOPE / 2)
+SHADE_FROM = 0.35  # the noise under this is no shade, over it shade growing to whole
 COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
@@ -778,6 +787,24 @@ def sea(texture):
     white = Image.new("L", waves.size, 255)
     size = write(SEA, Image.merge("RGBA", (white, white, white, waves)))
     print(f"The sea's waves: {SEA.relative_to(ROOT)}, {size / 1e6:.1f} MB.")
+    write(SHADE, shade())
+    print(f"The sea's shade: {SHADE.relative_to(ROOT)}.")
+
+
+def shade():
+    """The sea's shade: white noise softened by 1 / f ** (SHADE_SLOPE / 2) through the Fourier transform (whose waves
+    repeat across the square, so the noise tiles seamlessly), scaled to 0 to 1; its alpha nothing under SHADE_FROM,
+    then growing to whole."""
+    rng = np.random.default_rng(SHADE_SEED)
+    f = np.fft.fftfreq(SHADE_SIDE)
+    fx, fy = np.meshgrid(f, f)
+    amp = 1 / np.maximum(np.hypot(fx, fy), 1 / SHADE_SIDE) ** (SHADE_SLOPE / 2)
+    amp[0, 0] = 0
+    field = np.real(np.fft.ifft2(np.fft.fft2(rng.standard_normal((SHADE_SIDE, SHADE_SIDE))) * amp))
+    field = (field - field.min()) / (field.max() - field.min())
+    alpha = (np.clip((field - SHADE_FROM) / (1 - SHADE_FROM), 0, 1) * 255).round().astype(np.uint8)
+    white = np.full(alpha.shape, 255, np.uint8)
+    return Image.fromarray(np.dstack([white, white, white, alpha]), "RGBA")
 
 
 def main():

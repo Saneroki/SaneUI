@@ -455,9 +455,12 @@ is small, and the maps of the dungeons and raids. The plan is in
   to its grid's edge), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
   the coast is cut alike at every zoom; a tile on a coast (`Coasts.lua`) is cut by a mask of its own instead, at
   four times the overview's detail (`Art/Coasts/<key>.blp`, 128 x 128), so a pier a few yards wide is not lost up
-  close; under it the canvas' sea: its colour, and over that its waves (`Art/Sea.blp`: the game's own ocean
-  texture, its light alone in `Canvas.WAVE`'s colour; repeated over the plane, so the waves move with the land, each
-  copy `Canvas.SEA_SIZE` units wide at every zoom), in the open sea, the lakes and the rivers alike.
+  close; under it the canvas' sea: its colour, and over that its layers (`Canvas.SEA_LAYERS`), repeated over the
+  plane, so they move with the land, each copy its size in units at every zoom, in the open sea, the lakes and the
+  rivers alike: the waves (`Art/Sea.blp`: the game's own ocean texture, its light alone, softened by a pixel) twice,
+  small and larger by no whole factor, shifted and turned half round, so the two grids never line up alike and no
+  copy shows as a tile; over them a soft shade (`Art/SeaShade.blp`, a tileable noise) in slow patches of darker
+  water.
 - **Blended** (`Canvas.lua`): the art of Parchment over the terrain of Scrying, its alpha by the view's height in
   yards (`Canvas.Blend`: whole from `Canvas.BLEND[1]` up, gone at `Canvas.BLEND[2]` and below, by the zoom's
   factor between), the sea's colour between Parchment's and Scrying's alike, the waves fading with it (Parchment's
@@ -1180,6 +1183,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent (or the isle), in the terrain's blocks, made by `dev/tools/terrain-art` |
 | `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world, continent and isle maps |
 | `Art/Sea.blp` | The sea's waves: the game's own ocean texture (its first frame), its light alone in white, made by `dev/tools/terrain-art --sea` |
+| `Art/SeaShade.blp` | The sea's shade: a tileable soft noise, alpha only, made by `dev/tools/terrain-art --sea` |
 
 Tests: `dev/tests/navigation.lua`.
 
@@ -1235,6 +1239,9 @@ Tests: `dev/tests/navigation.lua`.
   Auberdine an outer and an inner way; every boat of *Travel* checked against the routes Forever has. Card #461.)
   Asked whether the zeppelins' lines should bend round the Maelstrom too: "Yes, bend them" (the two that crossed
   it; the others fly far from it).
+- **2026-11-11, the sea less tiled:** Saneroki: "so instead of a blurr, can we do something else to make the ocean
+  less repetitive? it is very tiled", then, of two layers and of two layers and a soft shade on a 4K mock-up: "two
+  layers and shade" (`Canvas.SEA_LAYERS`, `Art/SeaShade.blp`).
 - **2026-11-11, the sea's waves:** Saneroki: "The map shows atm a solid color as the water. Can we make it a ocean
   like texture" (`Art/Sea.blp` from the game's own ocean texture, `Canvas.lua`'s `Waves`).
 - **2026-11-11, the flight points' names at a flight master:** Saneroki: "On the right of the big Flightpath icons,

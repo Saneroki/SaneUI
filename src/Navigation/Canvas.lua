@@ -8,7 +8,7 @@ local _, ns = ...
 --
 --      canvas (clips what it holds; the ground: one colour)
 --       ├─ holder (at the canvas' middle; moved by a drag and by following)
---       │    ├─ waves     the sea's waves over the ground, the game's own ocean texture (Waves)
+--       │    ├─ sea       the sea's layers over the ground: the game's own waves twice, a soft shade (Waves)
 --       │    ├─ terrain   the game's minimap textures and the overview (Terrain.lua)
 --       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
 --       │    ├─ indoors   the indoor map of the building the player is in (Indoors.lua)
@@ -80,14 +80,23 @@ ns.Canvas = Canvas
 Canvas.GROUND = { 22 / 255, 38 / 255, 50 / 255 } -- the sea: where neither land nor art is (the terrain's water
                                                 -- is cut away to it, dev/tools/terrain-art)
 Canvas.PAPER = { 0.33, 0.29, 0.21 }             -- the sketches' sea past the world map: its paper, darker
--- The sea's waves over the ground (Waves): the game's own ocean texture, its light alone (Art/Sea.blp, made by
--- dev/tools/terrain-art), in WAVE's colour and alpha. Repeated over the plane, so the waves move with the map, each
--- copy SEA_SIZE units on a side at every zoom (small waves: the game's texture at a quarter of its size, 256 x 256,
--- its own size on a 4K screen); where the paper shows instead of the sea (Sketches, Blended far out), they fade as the
--- sea's colour does.
+-- The sea over the ground (Waves): layers repeated over the plane, so they move with the map, each copy `size` units
+-- on a side at every zoom; where the paper shows instead of the sea (Sketches, Blended far out), they fade as the
+-- sea's colour does. The game's own ocean texture, its light alone (Art/Sea.blp, made by dev/tools/terrain-art: a
+-- quarter of its size, 256 x 256, its own size on a 4K screen, softened by a pixel), twice: small, and larger by a
+-- factor that does not divide into the first, shifted and turned half round (its streaks still run the same way), so
+-- the two grids never line up alike in view and no copy shows as a tile (Saneroki, 2026-11-11: "it is very tiled");
+-- over them a soft shade (Art/SeaShade.blp, a tileable noise made by the same tool): slow patches of darker water,
+-- deeper and shallower seas, hundreds of units across.
+--   file, size (units a copy's side), colour, alpha, turned (half round), shift (where the copies start, 0 to 1)
 Canvas.SEA = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Sea"
-Canvas.SEA_SIZE = 91
-Canvas.WAVE = { 120 / 255, 170 / 255, 190 / 255, 0.4 }
+Canvas.SEA_SHADE = "Interface\\AddOns\\SaneUI_Navigation\\Art\\SeaShade"
+Canvas.SEA_LAYERS = {
+    { file = Canvas.SEA, size = 91, colour = { 120 / 255, 170 / 255, 190 / 255 }, alpha = 0.34 },
+    { file = Canvas.SEA, size = 157, colour = { 120 / 255, 170 / 255, 190 / 255 }, alpha = 0.28, turned = true,
+      shift = { 0.37, 0.61 } },
+    { file = Canvas.SEA_SHADE, size = 1100, colour = { 8 / 255, 16 / 255, 24 / 255 }, alpha = 0.45 },
+}
 -- The view Blended: Blizzard's map art over the terrain whole while the view is BLEND[1] yards high or more, gone at
 -- BLEND[2] or less; between, faded by the zoom's own steps (each a factor), so every step changes it alike.
 Canvas.BLEND = { 9000, 1200 }
@@ -107,7 +116,7 @@ Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is abov
 Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own ground: over that, under the pins (Stack)
 
 local frame, holder, camera, tracker, layers, hover, ground
-local waves -- the sea's waves (Waves); nil while the file is missing: the sea is one colour
+local waves = {} -- the sea's layers (Waves): { texture, spec } each; one whose file is missing left out
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
 local morph       -- on the window's way: { a = where it comes from, b = where it goes, now = where it is }
 -- Where the layers were laid out: the origin (u, v), the zoom (k), the view in the plane with its margin
@@ -296,26 +305,36 @@ function Canvas.Blend(span)
     return x * x * (3 - 2 * x)
 end
 
--- The sea's waves over the view's rectangle (as laid out), shown so much (0 to 1). They are laid by the plane, so a
--- drag or a step of following moves them with the land; each texture coordinate counted from a copy's corner near
--- the rectangle, so the numbers stay small however far out the plane reaches.
+-- The sea's layers over the view's rectangle (as laid out), shown so much (0 to 1). They are laid by the plane, so a
+-- drag or a step of following moves them with the land; a layer turned half round reads the plane's coordinates
+-- negated; each texture coordinate counted from a copy's corner near the rectangle, so the numbers stay small however
+-- far out the plane reaches.
+local NO_SHIFT = { 0, 0 }
 local function Waves(shown)
-    if not waves then return end
-    if shown <= 0 then return waves:Hide() end
-    local k, size = view.k, Canvas.SEA_SIZE
-    local left, top = view.left * k / size, -view.top * k / size
-    local x, y = math.floor(left), math.floor(top)
-    waves:ClearAllPoints()
-    waves:SetPoint("TOPLEFT", holder, "CENTER", (view.left - view.u) * k, (view.top - view.v) * k)
-    waves:SetPoint("BOTTOMRIGHT", holder, "CENTER", (view.right - view.u) * k, (view.bottom - view.v) * k)
-    waves:SetTexCoord(left - x, view.right * k / size - x, top - y, -view.bottom * k / size - y)
-    waves:SetAlpha(Canvas.WAVE[4] * shown)
-    waves:Show()
+    local k = view.k
+    for _, layer in ipairs(waves) do
+        local texture, spec = layer.texture, layer.spec
+        if shown <= 0 then
+            texture:Hide()
+        else
+            local size, shift = spec.size, spec.shift or NO_SHIFT
+            local s0, s1 = view.left * k / size + shift[1], view.right * k / size + shift[1]
+            local t0, t1 = -view.top * k / size + shift[2], -view.bottom * k / size + shift[2]
+            if spec.turned then s0, s1, t0, t1 = -s0, -s1, -t0, -t1 end
+            local x, y = math.floor(math.min(s0, s1)), math.floor(math.min(t0, t1))
+            texture:ClearAllPoints()
+            texture:SetPoint("TOPLEFT", holder, "CENTER", (view.left - view.u) * k, (view.top - view.v) * k)
+            texture:SetPoint("BOTTOMRIGHT", holder, "CENTER", (view.right - view.u) * k, (view.bottom - view.v) * k)
+            texture:SetTexCoord(s0 - x, s1 - x, t0 - y, t1 - y)
+            texture:SetAlpha(spec.alpha * shown)
+            texture:Show()
+        end
+    end
 end
 
 -- Every layer's textures let go: nothing of ours drawn but the sea (the canvas' ground), in one colour.
 local function Empty()
-    if waves then waves:Hide() end
+    for _, layer in ipairs(waves) do layer.texture:Hide() end
     ns.Safe("terrain", ns.Terrain.Clear)
     ns.Safe("map art", ns.Art.Clear)
     ns.Safe("indoors", ns.Indoors.Clear)
@@ -909,13 +928,16 @@ function Canvas.Build(parent)
     holder = CreateFrame("Frame", nil, frame)
     holder:SetSize(1, 1)
     holder:SetPoint("CENTER")
-    waves = holder:CreateTexture(nil, "BACKGROUND", nil, -8) -- under every layer: their frames stand over the holder
-    if waves:SetTexture(Canvas.SEA, "REPEAT", "REPEAT") == false then -- the file is missing: the sea in one colour
-        waves:Hide()
-        waves = nil
-    else
-        waves:SetVertexColor(Canvas.WAVE[1], Canvas.WAVE[2], Canvas.WAVE[3])
-        waves:Hide()
+    -- The sea's layers, under every layer of the map (their frames stand over the holder), in their order.
+    waves = {}
+    for index, spec in ipairs(Canvas.SEA_LAYERS) do
+        local texture = holder:CreateTexture(nil, "BACKGROUND", nil, index - 8)
+        texture:Hide()
+        if texture:SetTexture(spec.file, "REPEAT", "REPEAT") ~= false then -- a file missing: that layer is left out
+            texture:SetVertexColor(spec.colour[1], spec.colour[2], spec.colour[3])
+            texture.layer = index
+            waves[#waves + 1] = { texture = texture, spec = spec }
+        end
     end
     layers = { terrain = ns.Terrain.Build(holder) }
     layers.art, layers.light = ns.Art.Build(holder)

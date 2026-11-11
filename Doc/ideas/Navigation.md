@@ -773,7 +773,10 @@ Three spaces, converted only in `Coords.lua`:
   `dev/tools/terrain-art --sea`), repeated over the plane so the waves move with the land, the same size on the
   screen at every zoom; they fade into Parchment's paper with the sea's colour. Softened by a pixel (Saneroki,
   2026-11-11: "I love the water textures, espc inlands. Can we just put a slight blur on it so it is not so sharp":
-  `SEA_BLUR` in the tool).
+  `SEA_BLUR` in the tool). Less tiled ("it is very tiled"; his pick of a 4K mock-up, "two layers and shade"): the
+  waves twice, the second 157 units a copy against the first's 91 (no whole factor), shifted and turned half round,
+  and over them a soft shade 1100 units a copy (`Art/SeaShade.blp`, a tileable noise from fixed random numbers):
+  `Canvas.SEA_LAYERS`.
 - **A painted sea under the continents (a concept, 2026-11-11; dropped the same day):** Saneroki: "use Comfyui to generate a ocean that we
   can put underneath the continents. So comfy ui can try to make coastlines and add tiny ships or sea monsters or
   scenarios to it", and an A/B against the waves. Round 1: the full map zoomed all the way out as it is drawn on 4K
