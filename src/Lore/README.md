@@ -32,10 +32,11 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
     screen's right side, the whole talk moves left;
   - **the services** in a row over the talk, as big pictures without words: the hearthstone (*Make this inn your
     home*), a vendor's goods (the bag), a trainer (the book), a flight master (the winged boot), a battlemaster (the
-    two shields), transmogrification (the helmet), the bank and the auction house (their map pictures). A click on
+    two shields), transmogrification (the helmet), the bank and the auction house (their map pictures), the spirit
+    healer's resurrection (the game's Guardian Spirit, a hooded spirit). A click on
     one takes it; the mouse on one shows its words, and where the game refuses it for now its picture is greyed and
-    the tooltip says why. A tabard, a guild charter, a trainer's unlearning, the spirit healer and an option the game
-    marks *(Quest)* keep their words in the column. **Goodbye** (on a quest offered *Decline*) is the last picture,
+    the tooltip says why. A tabard, a guild charter, a trainer's unlearning and an option the game marks *(Quest)*
+    keep their words in the column. **Goodbye** (on a quest offered *Decline*) is the last picture,
     the game's raised open hand. Each picture on a dark plate of its own. *Services as icons* off: all of them in
     the column;
   - **a quest**, under the words on a plate of its own: its title, its objectives and the group it is for when it is
@@ -81,6 +82,10 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
     with that reward at once.
   - **A quest that costs money** to hand in says the price in its answer (*Complete Quest, paying 1g*), and is
     handed in only by a click on it, never by Space or a right click.
+- **At the spirit healer:** the game asks twice before it resurrects you (what it costs, then whether you are sure),
+  below level 10 once. Under its last question stands a tick, **Don't ask me again**: accepted with it ticked, the
+  setting *Ask at the spirit healer* goes off, and from then on choosing the resurrection resurrects you at once,
+  the costs the same. Lore's page turns the questions back on.
 - **Ending:** *Goodbye*, *Decline*, Esc, walking away (the game ends the talk), or a fight. When the talk turns into
   another window (a vendor, a trainer, a flight map), that window opens and the talk goes.
 - **In a fight:** the talk ends when the fight begins and the interface is back at once. A talk begun in a fight
@@ -107,6 +112,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   | *Space goes on* | on |
   | *Services as icons* (an NPC's services as big pictures over the talk; off: in the column) | on |
   | *Straight to the service* (an NPC's only service at once; Shift: the talk) | on |
+  | *Ask at the spirit healer* (off: the window's *Don't ask me again*, it resurrects you at once) | on |
 
 ## Technical details
 - **The game's windows held, never changed** (`Native.lua`): `GossipFrame` and `QuestFrame` get a hidden frame of
@@ -185,6 +191,18 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   new talk starts at its first line. Across: when the box's half, `Answers.GAP` and `Answers.WIDTH` reach past the
   screen's right margin, `Box.Shift` moves the box (and the quest's frame, the column and the pictures hung on it) left
   that far, but not past the left margin; what is still over, the column's offset takes over the box's right side.
+- **The spirit healer** (`Spirit.lua`): its option is the game's kind 4 (`GossipNPCOptionDisplayInfo`: icon
+  `HealerGossipIcon`, 132054), drawn as `Interface\Icons\Spell_Holy_GuardianSpirit` (`Icons.lua`, its border cut off by
+  its texture coordinates). The game asks with `StaticPopup_Show("XP_LOSS")` on `CONFIRM_XP_LOSS` (below
+  `MIN_RES_SICKNESS_LEVEL` `XP_LOSS_NO_SICKNESS_NO_DURABILITY`, one step); `XP_LOSS`'s first `OnAccept` (its data the
+  sickness's time) turns its text to `CONFIRM_XP_LOSS_AGAIN` and keeps it open, the second calls
+  `C_PlayerInteractionManager.ConfirmationInteraction` and `ClearInteraction` of `Enum.PlayerInteractionType.SpiritHealer`
+  (not restricted). Followed, never changed: `hooksecurefunc` on `StaticPopup_Show` and on both dialogs' `OnAccept`
+  (read from their table at the click). On the last step (`XP_LOSS`'s accept with data, or the one-step window's
+  show) a `UICheckButtonTemplate` of ours, its label *Don't ask me again*, stands centred under the window (strata
+  `DIALOG`, over its level, ignoring the faded interface's alpha), gone with it (`OnUpdate`: the window hidden or
+  showing another dialog); the last accept with it ticked sets `spiritAsk` off. Off, `StaticPopup_Show` of either is
+  answered in the same frame with the window's own two calls and `StaticPopup_Hide`, so nothing is seen.
 - **Space** (`Keys.lua`): `SetOverrideBindingClick` on a button of ours (`SaneUILoreContinue`) while the talk shows,
   `ClearOverrideBindings` when it ends; never in a fight (the talk ends before the lock).
 - **Esc** ends the talk through Core's one stand-in in `UISpecialFrames` (`Core.Escape`).
@@ -231,7 +249,9 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   the wheel and the arrows through the rest, the talk moved left, the column placed anew as the words turn, a new
   talk at its first line), the look (an answer on its plate, lit under the mouse, the plates following *Shade behind
   the words* down to none, of nine pieces of the soft corner; a reward a loot roll's line of Core's bar, as high, the
-  green arrow on an upgrade and none where it cannot be used, its border gold when chosen), Goodbye as the hand
+  green arrow on an upgrade and none where it cannot be used, its border gold when chosen), the spirit healer's
+  resurrection a picture and its questions (the tick on the last step only, cancelled or unticked nothing kept, ticked
+  and accepted never asked again, both windows answered at once then, on again from the setting), Goodbye as the hand
   at the row's end, the settings,
   Retail, standing down. The interface lab's scene `talk` (`saneui showuilab`)
   draws an innkeeper's talk with the real code, `LabGuard()` a guard's, `LabQuest("detail")`, `("progress")` and
@@ -252,6 +272,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
 | `Icons.lua` | An NPC's services as big pictures without words in a row over the talk |
 | `Keys.lua` | Space goes on while the talk shows |
 | `Service.lua` | Straight to an NPC's only service, no talk before it; Shift shows the talk |
+| `Spirit.lua` | The spirit healer's questions: Don't ask me again under the last one, then resurrected at once |
 | `Talk.lua` | The talk as the game tells it, Continue, the answers' calls, fights |
 
 ## Not there yet
@@ -276,4 +297,5 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   side, Goodbye a picture over the talk too): every part on a plate of its own, as the loot window's lines. Then
   their edges soft (Saneroki: "instead of the black sharp border ... a fuzzy fadeout with rounded corners so they
   blend naturally into the world"): no border, the edge fading into the world inside each part. And the rewards as the
-  group's loot rolls' lines (Saneroki: "So that rolling on loot or choosing the quest reward looks the same").
+  group's loot rolls' lines (Saneroki: "So that rolling on loot or choosing the quest reward looks the same"). Then the
+  spirit healer's resurrection a big picture too, and "Don't ask me again" on its last question, counting for both.

@@ -132,6 +132,34 @@ CompleteQuest = function() Said("complete") end
 GetQuestReward = function(choice) Said("reward " .. choice) end
 CloseQuest = function() Said("close quest") end
 StaticPopup_Show = function(which) Said("popup " .. which) end
+-- The game's resurrection windows at the spirit healer, as its code has them: XP_LOSS of two steps (its first accept
+-- turns it to the second and keeps it open), the one-step one below the sickness's level; one window frame shows them.
+local asking = W.NewWidget("Frame", "StaticPopup2", UIParent)
+asking:Hide()
+Enum.PlayerInteractionType = Enum.PlayerInteractionType or {}
+Enum.PlayerInteractionType.SpiritHealer = 18
+C_PlayerInteractionManager = {
+    ConfirmationInteraction = function(kind) Said("confirm " .. kind) end,
+    ClearInteraction = function(kind) Said("clear " .. kind) end,
+}
+StaticPopupDialogs.XP_LOSS = { OnAccept = function(dialog, data)
+    if data then
+        dialog.data = nil
+        return 1
+    end
+    C_PlayerInteractionManager.ConfirmationInteraction(Enum.PlayerInteractionType.SpiritHealer)
+    C_PlayerInteractionManager.ClearInteraction(Enum.PlayerInteractionType.SpiritHealer)
+end }
+StaticPopupDialogs.XP_LOSS_NO_SICKNESS_NO_DURABILITY = { OnAccept = function()
+    C_PlayerInteractionManager.ConfirmationInteraction(Enum.PlayerInteractionType.SpiritHealer)
+    C_PlayerInteractionManager.ClearInteraction(Enum.PlayerInteractionType.SpiritHealer)
+end }
+StaticPopup_Visible = function(which)
+    if asking:IsShown() and asking.which == which then return asking:GetName(), asking end
+end
+StaticPopup_Hide = function(which)
+    if asking.which == which then asking:Hide() end
+end
 UnitExists = function() return true end
 UnitGUID = function() return "Creature-0-1-2-3-4-5" end
 local names = { npc = "Marshal Dughan", questnpc = "Marshal Dughan" }
@@ -989,6 +1017,81 @@ W.Wait(1)
 Frames(1)
 UIParent:SetHeight(0)
 UIParent:SetWidth(0)
+
+-------------------------------------------------------------------------------
+--  The spirit healer: its resurrection a big picture; Don't ask me again
+-------------------------------------------------------------------------------
+GossipFrame:Show()
+gossip.text = "It is not yet your time. I shall aid your journey back to the realm of the living..."
+gossip.available, gossip.active = {}, {}
+gossip.options = { { name = "Return me to life.", orderIndex = 1, icon = 132054 } }
+W.Fire("GOSSIP_SHOW")
+pictures = Pictures()
+check(#pictures == 2 and pictures[1].answer.text == "Return me to life."
+      and pictures[1].picture:GetTexture() == "Interface\\Icons\\Spell_Holy_GuardianSpirit",
+      "the spirit healer's resurrection a big picture: the game's Guardian Spirit")
+check(#Order() == 0, "and nothing left in the column (Goodbye a picture too)")
+GossipFrame:Hide()
+W.Fire("GOSSIP_CLOSED", true)
+W.Wait(1)
+Frames(1)
+-- The game asks: its window shows (StaticPopup_Show), its accept on each step.
+local function GameAsks(which)
+    asking.which, asking.data = which, which == "XP_LOSS" and 120 or nil
+    asking:Show()
+    StaticPopup_Show(which, 120, nil, asking.data)
+end
+local function Accept()
+    if not StaticPopupDialogs[asking.which].OnAccept(asking, asking.data) then asking:Hide() end
+end
+local function Tick()
+    for _, frame in ipairs(W.frames) do
+        if frame.label and frame.label._text == "Don't ask me again" then return frame end
+    end
+end
+check(ns.options.spiritAsk == true, "Ask at the spirit healer is on at first")
+said = {}
+GameAsks("XP_LOSS")
+check(asking:IsShown() and (not Tick() or not Tick():IsShown()), "the first step: no tick yet")
+Accept()
+local tick = Tick()
+check(asking:IsShown() and tick and tick:IsShown() and not tick:GetChecked(),
+      "the second step: the tick Don't ask me again under the window, not ticked")
+local _, under = tick:GetPoint(1)
+check(under == asking and tick._ignoreAlpha == true, "under the game's window, in sight over a faded interface")
+Accept()
+check(said[#said - 1] == "confirm 18" and said[#said] == "clear 18" and not asking:IsShown(),
+      "accepted unticked: the game resurrects as ever")
+check(ns.options.spiritAsk == true and not tick:IsShown(), "still asked next time, the tick gone with its window")
+-- Cancelled: the tick goes with the window, nothing kept.
+GameAsks("XP_LOSS")
+Accept()
+tick:SetChecked(true)
+asking:Hide()
+tick._scripts.OnUpdate(tick, 0.1)
+check(not tick:IsShown() and ns.options.spiritAsk == true, "ticked but cancelled: the tick gone, still asked")
+-- Ticked and accepted: never asked again.
+GameAsks("XP_LOSS")
+Accept()
+tick:SetChecked(true)
+Accept()
+check(ns.options.spiritAsk == false, "ticked and accepted: Ask at the spirit healer off")
+said = {}
+GameAsks("XP_LOSS")
+check(said[1] == "popup XP_LOSS" and said[2] == "confirm 18" and said[3] == "clear 18" and not asking:IsShown(),
+      "from then on: no question, the spirit healer confirmed at once, its window hidden")
+said = {}
+GameAsks("XP_LOSS_NO_SICKNESS_NO_DURABILITY")
+check(said[2] == "confirm 18" and not asking:IsShown(), "below the sickness's level too")
+-- On again: asked; the one-step window has the tick at once.
+SaneUI.Core.Set(ns.name, "spiritAsk", true)
+said = {}
+GameAsks("XP_LOSS_NO_SICKNESS_NO_DURABILITY")
+check(#said == 1 and asking:IsShown() and tick:IsShown(), "on again: asked, the one-step window with its tick at once")
+tick:SetChecked(true)
+Accept()
+check(ns.options.spiritAsk == false and said[2] == "confirm 18", "ticked there and accepted: resurrected, not asked again")
+SaneUI.Core.Set(ns.name, "spiritAsk", true)
 
 -------------------------------------------------------------------------------
 --  The settings

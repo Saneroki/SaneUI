@@ -6,7 +6,8 @@ local _, ns = ...
 --  (Saneroki, 2026-11-11: big icons with no text on them, "over the
 --  conversation window so you can quickly click them"): the hearthstone (an
 --  inn made your home), a vendor's goods, a trainer, a flight master, the
---  bank, the auction house, a battlemaster, transmogrification; and at the
+--  bank, the auction house, a battlemaster, transmogrification, the spirit
+--  healer's resurrection (Saneroki, 2026-11-11); and at the
 --  row's end leaving (Saneroki, 2026-11-11: "the goodbye should also be a top
 --  icon"): Goodbye, or Decline on a quest offered, as the game's open hand. Each
 --  on a plate of its own (Look.Plate), a little lighter under the mouse. A click
@@ -14,13 +15,13 @@ local _, ns = ...
 --  tooltip, and why the game refuses it where it does (its picture greyed then).
 --  The answers' column keeps the rest: quests, words to say, an option the
 --  game marks as a quest's, and what has no large picture in the game (a
---  tabard, a guild charter, a trainer's unlearning, the spirit healer).
+--  tabard, a guild charter, a trainer's unlearning).
 --  A kind is known by the game's own icon of it (option.icon) and drawn as the
 --  game's own large picture of it: the cursor the game shows over such an NPC
 --  (its 128 piece; the cursor's tip in that piece's top left corner cut away by
 --  the game's diamond mask, laid so that its edge runs between the tip and the
 --  picture), the bank and the auction house, which have no cursor, by their
---  map icons. Off (the setting Services as icons) they stand in the column.
+--  map icons, the spirit healer by the game's Guardian Spirit. Off (the setting Services as icons) they stand in the column.
 --  The hand has no tip: nothing of it is cut.
 --
 --      Icons.Picture(option)   the large picture of a gossip option's kind, nil for none
@@ -57,6 +58,9 @@ local PICTURES = {
     [132051] = { file = CURSOR .. "UICursorPVP2x", tip = true },           -- BattleMasterGossipIcon
     [1673939] = { file = CURSOR .. "UITransmogrifyCursor2x", tip = true }, -- transmogrifyGossipIcon
     [132050] = { atlas = "banker" },                           -- BankerGossipIcon: the map's
+    -- HealerGossipIcon, the spirit healer's (GossipNPCOptionDisplayInfo: its kind 4): the game's Guardian Spirit, a
+    -- hooded spirit as the spirit healer is, its own border cut off.
+    [132054] = { file = "Interface\\Icons\\Spell_Holy_GuardianSpirit", coords = { 0.08, 0.92, 0.08, 0.92 } },
     [528409] = { atlas = "auctioneer" },                       -- the auction house's: the map's
 }
 
@@ -138,7 +142,7 @@ local function Paint(button, answer)
     for _, texture in ipairs({ button.picture, button.lit }) do
         if picture.file then
             texture:SetTexture(picture.file)
-            texture:SetTexCoord(unpack(PIECE))
+            texture:SetTexCoord(unpack(picture.coords or PIECE))
         else
             texture:SetAtlas(picture.atlas)
         end

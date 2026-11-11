@@ -31,6 +31,8 @@ local ADDON, ns = ...
 --    Keys.lua     Space goes on while the talk shows
 --    Service.lua  straight to an NPC's only service (a vendor's goods, a flight
 --                 master's map), with no talk before it; Shift shows the talk
+--    Spirit.lua   the spirit healer's questions: Don't ask me again, then it
+--                 resurrects you at once
 --    Talk.lua     the talk as the game tells it (gossip, a quest's greeting,
 --                 offer, progress, reward): the words a paragraph at a time, the
 --                 answers, what Continue does
@@ -64,6 +66,9 @@ ns.TEXT = {
     spaceTip = "While a talk shows, Space shows the next paragraph; on the last one it does what needs no choosing: it accepts the quest offered, hands in a quest whose reward is chosen (or that has one or none to choose), takes the only answer there is, or says goodbye. Space jumps again once the talk ends.",
     icons = "Services as icons",
     iconsTip = "An NPC's services as big pictures without words in a row over the talk, a click away: the hearthstone (to make the inn your home), a vendor's goods, a trainer, a flight master, the bank, the auction house, a battlemaster; and at the row's end a raised hand for Goodbye (Decline on a quest offered). The mouse on one shows its words. Off: they stand among the answers with their words.",
+    spiritAsk = "Ask at the spirit healer",
+    spiritAskTip = "Before the spirit healer resurrects you, the game asks twice: what it costs (your items' durability, Resurrection Sickness), then whether you are sure. Off (the window's Don't ask me again): choosing the resurrection resurrects you at once, the costs the same.",
+    dontAsk = "Don't ask me again",
     service = "Straight to the service",
     serviceTip = "Talking to a vendor, a flight master, a trainer, a banker, the auction house or a battlemaster that has no quest for you and no other service, its window opens at once, without the talk before it, even with something to talk about beside it; as a scene or in the game's own windows alike. Hold Shift as you talk to them for the talk and its choices. Never in the talk that opens again after a quest handed in there.",
 
@@ -112,6 +117,7 @@ local OPTIONS = {
     { key = "space", default = true, text = ns.TEXT.space, tip = ns.TEXT.spaceTip, parent = "talk" },
     { key = "icons", default = true, text = ns.TEXT.icons, tip = ns.TEXT.iconsTip, parent = "talk" },
     { key = "service", default = true, text = ns.TEXT.service, tip = ns.TEXT.serviceTip },
+    { key = "spiritAsk", default = true, text = ns.TEXT.spiritAsk, tip = ns.TEXT.spiritAskTip },
 }
 Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key == "talk" then
@@ -128,6 +134,7 @@ end })
 -- Standing down: no key of ours, the interface in sight, our talk hidden, the game's windows its own again.
 function ns.GiveBack()
     ns.Safe("give back", ns.Keys.GiveBack)
+    ns.Safe("give back", ns.Spirit.GiveBack)
     ns.Safe("give back", ns.Quiet.GiveBack)
     ns.Safe("give back", ns.Talk.GiveBack)
     ns.Native.GiveBack()
@@ -139,5 +146,6 @@ end
 
 function ns.OnLogin()
     ns.Service.Start()
+    ns.Spirit.Start()
     ns.Talk.Start()
 end

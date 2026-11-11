@@ -213,6 +213,7 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 | Space goes on | on |
 | Services as icons (an NPC's services as big pictures over the talk; off: in the column) | on |
 | Straight to the service (an NPC's only service at once; Shift: the talk) | on |
+| Ask at the spirit healer (off: Don't ask me again, it resurrects you at once) | on |
 
 - **Moving the talk:** in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`): still to come.
 
@@ -220,6 +221,11 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 
 Saneroki, 2026-11-11:
 
+- **The spirit healer:** "Resurrect at the spirit needs to be a big icon as well. Can you add a "Don't ask me again"
+  button to the window that opens when you ask for resurection. ... Can you add a "Don't ask me again to the 2nd window
+  but it counts for both?" (`src/Lore/Spirit.lua`). Claude's picks, for Saneroki to change: the picture is the game's
+  Guardian Spirit; the tick under the game's window (its own checkbox, a frame of ours), kept only when the last step is
+  accepted ticked; the setting *Ask at the spirit healer* on Lore's page turns the questions back on.
 - **The rewards as the loot rolls' lines:** "Can you make the look of the choosen items look like the party roll window
   for items. So that rolling on loot or choosing the quest reward looks the same." Each reward (to choose, besides, and
   what a quest asks for) is a line of the loot rolls' make, Core's `Shape.Bar` shared with Loot; Claude's picks, for

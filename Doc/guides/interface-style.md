@@ -351,7 +351,8 @@ corners so they blend naturally into the world") with soft edges.
   quest's kind. Always on the screen: lifted, else a line at a time under the game's small scroll arrows.
 - **The pictures over the words** (Saneroki, 2026-11-11: "big icons that don't have any text on them"; "the goodbye
   should also be a top icon"): a row centred over the words, each on a plate of its own, the game's own large picture
-  of each kind (the cursor it shows over such an NPC, its tip cut away; the map's for the bank and the auction house),
+  of each kind (the cursor it shows over such an NPC, its tip cut away; the map's for the bank and the auction house;
+  the Guardian Spirit for the spirit healer),
   and last Goodbye (Decline on a quest offered) as the game's raised open hand; lit under the mouse, greyed where the
   game refuses it; the words in the tooltip.
 - **The quest under the words,** as wide: its title in gold, headings in gold, each reward a line of the group's loot

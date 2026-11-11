@@ -29,5 +29,7 @@ Icons.lua
 Keys.lua
 # Straight to an NPC's only service (a vendor's goods, a flight master's map), with no talk before it
 Service.lua
+# The spirit healer's questions: Don't ask me again, then it resurrects you at once
+Spirit.lua
 # The talk as the game tells it, and what each answer does
 Talk.lua

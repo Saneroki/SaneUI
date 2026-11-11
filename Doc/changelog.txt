@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- At the spirit healer, Return me to life is a big picture over the
+  talk, and its last question has a tick Don't ask me again: from
+  then on the spirit healer resurrects you at once. Lore's options
+  bring the questions back.
 - Map: the golden line to the map pin shows how dangerous its way
   is: orange where enemies a few levels above you spawn near it,
   red where they are far above you. Drag the line on the full map
