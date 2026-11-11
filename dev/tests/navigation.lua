@@ -7309,6 +7309,25 @@ check(gather.asked > 0, "gather.asked the game's minimap")
 gather.dots[1] = { 20, 30, "Silverleaf" }
 Sweeps(40)
 check(#Pictures() == 1, "a herb on the game's minimap: drawn")
+-- /sane nodes: each step told and kept in the store; a line the game hides counted as hidden.
+do
+    local before = #W.printed
+    SlashCmdList.SANEUI("nodes")
+    local said = table.concat(W.printed, "\n", before + 1)
+    check(said:find("UpdateMouseoverAtPoint yes", 1, true) and said:find("Found herbs yes", 1, true)
+        and said:find("the finder on now: herb", 1, true) and said:find("1 found now, 1 drawn", 1, true)
+        and said:find("lines read: Silverleaf", 1, true) and said:find("a look now: 625 points asked", 1, true)
+        and not said:find("failed", 1, true), "/sane nodes: the calls, the filter, the finder, what was read and drawn")
+    check(ns.store.nodes and #ns.store.nodes.lines >= 8 and ns.store.nodes.lines[1]:find("^the game"),
+        "its lines kept in the store for the saved settings")
+    local ask = C_TooltipInfo.GetMinimapMouseover
+    C_TooltipInfo.GetMinimapMouseover = function() return { lines = { { leftText = W.Secret("Silverleaf") } } } end
+    SlashCmdList.SANEUI("nodes")
+    said = ns.store.nodes.lines[#ns.store.nodes.lines]
+    check(said:find("625 answered, 0 lines read, 625 hidden by the game, 0 herbs or ore named", 1, true),
+        "lines the game keeps secret: counted as hidden, none named")
+    C_TooltipInfo.GetMinimapMouseover = ask
+end
 gather.dots[1] = nil
 player.x = 0.25
 Sweeps(40)

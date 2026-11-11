@@ -406,6 +406,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   every Sane UI window; the section *Expand window* on the page: whether the corner fills the screen, the
   animation, the background.
 - `/sane map reset`: the window's first place and size.
+- `/sane nodes`: what finding herbs and ore on the minimap sees now, step by step: the game's calls, our frame over
+  its minimap, the pin filter and the finder on, Core's names, your place and the minimap's scale, what it answered
+  since login (points asked, lines read, lines the game keeps secret, herbs and ore named, found and drawn) and a
+  look over the whole minimap now; kept in Navigation's store (`nodes`) too, so the next `/reload` writes it to
+  the saved settings.
 
 ## How it works
 - **Three spaces, converted in one file** (`Coords.lua`): a map's own (0 to 1), the world's yards (X to the
@@ -1168,7 +1173,7 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
 | `Hybrid.lua` | The game's minimap over ours: taken, placed, given back |
-| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there); what is found goes to `Core.Sight` for the guide's detours |
+| `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there); what is found goes to `Core.Sight` for the guide's detours; `/sane nodes` |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |

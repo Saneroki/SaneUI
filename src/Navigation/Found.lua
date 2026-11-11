@@ -73,7 +73,11 @@ local found = {}     -- { u, v, plane, kind, node, picture, seen, swept }
 local sweep          -- the sweep going on: { points, at, kind, plane, half, round, number }
 local sweeps = 0     -- sweeps made, a number for each
 local nextSweep = 0  -- when the next may begin
-local drawn = {}     -- what the pictures were last drawn for: plane, u, v, scale, facing, count
+local drawn = {}     -- what the pictures were last drawn for: plane, u, v, scale, facing, count; shown: how many
+-- What the minimap answered since login, for /sane nodes: points asked, answers with lines, lines read, lines the game
+-- hid (secret), herbs or ore named; the first texts read.
+local heard = { asks = 0, answers = 0, lines = 0, hidden = 0, named = 0, texts = {}, known = {} }
+local TEXTS = 8      -- texts kept at most
 
 local function Minimap()
     return overlay and overlay:GetParent()
@@ -118,16 +122,32 @@ local function Named(text)
     return nil
 end
 
--- The first herb or ore the minimap's tooltip names at x, y units from its middle, or nil.
-local function Ask(minimap, x, y)
+-- The first herb or ore the minimap's tooltip names at x, y units from its middle, or nil; what it answered counted
+-- in tally (heard at first).
+local function Ask(minimap, x, y, tally)
+    tally = tally or heard
     minimap:UpdateMouseoverAtPoint((cx + x) * pixels, (cy + y) * pixels)
+    tally.asks = tally.asks + 1
     local data = Core.Ask(C_TooltipInfo.GetMinimapMouseover)
     local lines = type(data) == "table" and data.lines
     if type(lines) ~= "table" then return nil end
+    if lines[1] then tally.answers = tally.answers + 1 end
     for _, line in ipairs(lines) do
-        local text = type(line) == "table" and Core.Plain(line.leftText)
+        local raw = type(line) == "table" and line.leftText
+        local text = Core.Plain(raw)
+        if Core.Secret(raw) then tally.hidden = tally.hidden + 1 end
+        if type(text) == "string" then
+            tally.lines = tally.lines + 1
+            if #tally.texts < TEXTS and not tally.known[text] then
+                tally.known[text] = true
+                tally.texts[#tally.texts + 1] = text
+            end
+        end
         local node = type(text) == "string" and Named(text)
-        if node then return node end
+        if node then
+            tally.named = tally.named + 1
+            return node
+        end
     end
     return nil
 end
@@ -422,6 +442,7 @@ local function Draw(plane, pu, pv, scale, facing)
         end
     end
     for index = shown + 1, #pictures do Hide(pictures[index]) end
+    drawn.shown = shown
 end
 
 -------------------------------------------------------------------------------
@@ -433,9 +454,11 @@ local function Update()
     local scale = pu and Scale(minimap)
     if not scale then
         for _, picture in ipairs(pictures) do Hide(picture) end
-        drawn.count = nil
+        drawn.count, drawn.shown = nil, 0
+        heard.stop = pu and "the game tells no radius of its minimap" or "the game tells no place of yours"
         return
     end
+    heard.stop = nil
     local facing = Turned() and Core.Plain(Core.Ask(GetPlayerFacing)) or nil
     if sweep and (sweep.plane ~= plane or sweep.kind ~= SweepKind(minimap)) then sweep = nil end
     -- (a level the game's minimap was given since, Hybrid.lua: ours over it again)
@@ -508,3 +531,98 @@ function Found.Hide()
     overlay:Hide()
     Minimap():SetUsingSoftCursor(false)
 end
+
+-------------------------------------------------------------------------------
+--  /sane nodes: what the finding sees now, step by step, from the game's calls to the pictures drawn; kept in
+--  Navigation's store too (nodes), so the next /reload or logout writes it to the saved settings.
+-------------------------------------------------------------------------------
+Found.PROBE = 25 -- a look over the whole minimap: so many points a side
+
+-- A value as words: hidden where the game keeps it secret, none for nil, a number to two places.
+local function Said(value)
+    if Core.Secret(value) then return "hidden" end
+    if value == nil then return "none" end
+    if type(value) == "number" then return (("%.2f"):format(value):gsub("%.00$", "")) end
+    if type(value) == "boolean" then return value and "yes" or "no" end
+    return tostring(value)
+end
+
+-- A frame's method asked safely: its answer as words.
+local function Method(frame, name)
+    local method = frame and frame[name]
+    if type(method) ~= "function" then return "none" end
+    local ok, value = pcall(method, frame)
+    return ok and Said(value) or "failed"
+end
+
+-- One look over the whole minimap now, Found.PROBE points a side: what answered, read and hidden, the names read.
+local function Probe(minimap)
+    local tally = { asks = 0, answers = 0, lines = 0, hidden = 0, named = 0, texts = {}, known = {} }
+    cx, cy = minimap:GetCenter()
+    pixels = minimap:GetEffectiveScale()
+    if not cx then return nil end
+    local half, step = minimap:GetWidth() / 2, minimap:GetWidth() / Found.PROBE
+    minimap:SetUsingSoftCursor(true)
+    local ok, problem = pcall(function()
+        for row = 0, Found.PROBE - 1 do
+            for column = 0, Found.PROBE - 1 do
+                Ask(minimap, -half + (column + 0.5) * step, -half + (row + 0.5) * step, tally)
+            end
+        end
+    end)
+    minimap:SetUsingSoftCursor(false)
+    tally.problem = not ok and tostring(problem) or nil
+    return tally
+end
+
+local function Counted(tally)
+    return ("%d points asked, %d answered, %d lines read, %d hidden by the game, %d herbs or ore named")
+        :format(tally.asks, tally.answers, tally.lines, tally.hidden, tally.named)
+end
+
+-- The report's lines, added to lines as they are made (a step that fails leaves those before it).
+function Found.Check(lines)
+    local function Add(text, ...) lines[#lines + 1] = text:format(...) end
+    local version, build = GetBuildInfo()
+    Add("the game: %s, build %s (%s)", Said(version), Said(build), Said(Core.GAME))
+    local minimap = rawget(_G, "Minimap")
+    local tooltips = rawget(_G, "C_TooltipInfo")
+    Add("its minimap: %s; UpdateMouseoverAtPoint %s, SetUsingSoftCursor %s; C_TooltipInfo.GetMinimapMouseover %s",
+        Said(minimap ~= nil), Said(minimap and minimap.UpdateMouseoverAtPoint ~= nil),
+        Said(minimap and minimap.SetUsingSoftCursor ~= nil), Said(tooltips and tooltips.GetMinimapMouseover ~= nil))
+    if not overlay then
+        Add("our frame over it: none (a call above was missing at login): nothing is found")
+    else
+        Add("our frame over it: shown %s, in sight %s; the minimap in sight %s, %s wide, scale %s; its level %s, ours %s",
+            Method(overlay, "IsShown"), Method(overlay, "IsVisible"), Method(minimap, "IsVisible"),
+            Method(minimap, "GetWidth"), Method(minimap, "GetEffectiveScale"), Method(minimap, "GetFrameLevel"),
+            Method(overlay, "GetFrameLevel"))
+    end
+    Add("the pin filter: Found herbs %s, Found ore %s; the finder on now: %s; the module %s",
+        Said(Shown("herb")), Said(Shown("ore")), Said(Nodes.Active()), ns.off and "stood down" or "running")
+    Add("herbs and ore known by name (Core's Objects): %s (%s); Silverleaf known: %s, Copper Vein known: %s",
+        Said(Nodes.Known()), Said(Core.Data.Set("Objects"):State()), Said(Nodes.Find("Silverleaf") ~= nil),
+        Said(Nodes.Find("Copper Vein") ~= nil))
+    local plane, pu, pv = Coords.Player()
+    Add("your place: plane %s at %s, %s; the minimap's radius %s yards, %s units a yard; turned %s, round %s",
+        Said(plane), Said(pu), Said(pv), Said(Core.Ask(C_Minimap.GetViewRadius)),
+        Said(minimap and Scale(minimap)), Said(Turned()), Said(Round()))
+    Add("in a fight %s; the mouse over the minimap %s; a sweep may go on now for: %s; stopped at the last frame: %s",
+        Said(InCombatLockdown()), Method(minimap, "IsMouseOver"),
+        minimap and select(2, pcall(SweepKind, minimap)) or "none", Said(heard.stop))
+    Add("since login: %d sweeps; %s; %d found now, %d drawn", sweeps, Counted(heard), #found, drawn.shown or 0)
+    if heard.texts[1] then Add("lines read: %s", table.concat(heard.texts, "; ")) end
+    local probe = overlay and minimap and Probe(minimap)
+    if probe then
+        Add("a look now: %s%s", Counted(probe), probe.problem and ("; it failed: " .. probe.problem) or "")
+        if probe.texts[1] then Add("its lines: %s", table.concat(probe.texts, "; ")) end
+    end
+end
+
+Core.Command("nodes", "what finding herbs and ore on the minimap sees now, kept for the saved settings", ns.Guard(function()
+    local lines = {}
+    local ok, problem = pcall(Found.Check, lines)
+    if not ok then lines[#lines + 1] = "the check failed: " .. tostring(problem) end
+    for _, line in ipairs(lines) do ns.Print(line) end
+    if ns.store then ns.store.nodes = { at = GetServerTime(), lines = lines } end
+end))
