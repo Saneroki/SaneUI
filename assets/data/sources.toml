@@ -143,3 +143,8 @@ about = "The original game's drop chances (patch 1.12), only where every record 
 kind = "batch"
 game = "forever"
 about = "The original game's fishing skill of each area (patch 1.12): the base its servers measure a cast against, only where every record of it agrees and Forever's client still has the area under its old name. Unverified: Forever tells no area's fishing skill; play confirms it."
+
+[24]
+kind = "batch"
+game = "forever"
+about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-11-12, a newer reading of what batches 5 and 17 read, checked against Forever's client 70755: the same fields on the same terms, and where the newer reading says otherwise than the one before did, it corrects what the master took from that (never a fact of the game, of its servers or of a person). Unverified: the game's word or our own sightings replace it entry by entry."
