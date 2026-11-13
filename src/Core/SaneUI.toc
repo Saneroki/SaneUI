@@ -53,8 +53,6 @@ Seat.lua
 HealthMarks.lua
 # The buffs and debuffs seen on whoever you can attack, kept as a history for a view to show
 AuraLog.lua
-# A druid's mana in a form sent to its group, and the group's kept for the views
-Mana.lua
 # Which spells the game hides from addons, asked of the game, for the developer's lists (/sane secrets)
 Secrecy.lua
 # A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs

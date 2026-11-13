@@ -134,13 +134,13 @@ Sunder Armor), as you choose, nothing fixed.
   nameplate: a round green bar (the game's green for health, for everyone: no class colours; your target's and your
   focus's red, a nameplate's red for a foe, while you can attack it), and under it the
   unit's power in a bar half as high, in the game's colour for it, with the power and how much is left on its
-  right ("2.4k | 80%"). A druid's mana always shows, on every frame (Saneroki, 2026-11-13): in a form whose power is
-  not mana its mana first, under the health bar, and the form's energy or rage under that; so does yours in a
-  specialization whose power is not mana but who has mana too. The game tells a druid's mana in a form to that druid
-  alone: another druid's shows as its own Sane UI tells it to the group (in a fight too, but in the game's lockdown of
-  boss fights); without it, its form's power stands alone as anyone's. Your target's and focus's frames keep a slot for
-  each power their unit shows, so the row under them moves down for the second; in a fight the bars show at once and
-  the row's click area follows once it is over. Inside the health bar, on the
+  right ("2.4k | 80%"). Your own druid's mana always shows (Saneroki, 2026-11-13): in a form whose power is not mana
+  your mana first, under the health bar, and the form's energy or rage under that; so does yours in a specialization
+  whose power is not mana but who has mana too. The game tells a druid's mana in a form to that druid alone, so
+  another druid's frame shows the one power it shows now (Saneroki, 2026-11-13: "revert back to how it was with only
+  one class bar"). Your target's and focus's frames keep a slot for each power their unit shows (two while it is you),
+  so the row under them moves down for the second; in a fight the bars show at once and the row's click area follows
+  once it is over. Inside the health bar, on the
   left the level (coloured by how hard the unit is to you, a skull
   where it is too high to tell) and the raid marker beside it; then the name, from the left, a player's first
   name and surname (none on your own frame); on the right the health and how much is left ("850 | 85%"), *Dead*
@@ -249,9 +249,9 @@ Sunder Armor), as you choose, nothing fixed.
   one's full and grey, and who has an enemy's aggro has a solid red border instead of the black one, in a fight too, where the game
   hides threat from addons (Saneroki, 2026-11-09: "Grooup windows should show always the class resource and aggro"). Every
   member's class resource as a line inside the bar, so the frame is no taller for it: a healer's mana, everyone else's the power
-  they show now (a warrior's rage, a rogue's energy); a druid's mana always, along the bottom, and in a form whose power is
-  not mana the form's energy or rage in a line as thin along the top (Saneroki, 2026-11-13; another druid's mana as its own
-  Sane UI tells it); an icon floating over the name, which goes on behind it, for each aura you show
+  they show now (a warrior's rage, a rogue's energy, a druid's in its form); on your own slot as a druid in a form whose
+  power is not mana your mana along the bottom and the form's energy or rage in a line as thin along the top (Saneroki,
+  2026-11-13); an icon floating over the name, which goes on behind it, for each aura you show
   on these frames whose settings want it, four at most (*Aura icons on the health bars*, below, *Aura icons*: a buff or HoT the member is
   missing, say). A unit out of your reach is fainter. A click targets, a right click opens the game's menu,
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
@@ -701,10 +701,9 @@ Sunder Armor), as you choose, nothing fixed.
     (`Alternate`: a druid, or your power not mana while you have mana; asked again on `PLAYER_SPECIALIZATION_CHANGED`),
     else as many as the unit shows (`face.powersShown`); the face is the health bar's height, the rest hangs under it,
     the row under the slots or under the powers shown where there are more (`Bar.Fit`). The powers (`Bar.Kinds`): the
-    unit's own; a druid in a form whose power is not mana (Core's `Core.FormPower`) and your own `Alternate`, mana
-    first and the unit's own second. Mana is read through `Bar.Read`, which takes Core's `Core.Mana` (what a member's
-    Sane UI shared, else the game's), the words too (`Text.Powers`); `Core.OnMana` fills the powers of the frame whose
-    unit's key it names.
+    unit's own; you as a druid in a form whose power is not mana (Core's `Core.FormPower`: for yourself alone) and
+    your own `Alternate`, mana first and the unit's own second. Each power is read through `Bar.Read` (mana by Core's
+    `Core.Mana`), the words too (`Text.Powers`).
   - `Auras.lua` (`ns.UnitAuras`): per frame and kind (`Auras.KINDS`: buffs, control, debuffs) a container of the
     game's (`CustomAuraContainerTemplate`, as the nameplates'), each on the frame's `roof` at its `point`
     (`BOTTOMLEFT`, `BOTTOM`, `BOTTOMRIGHT`): the game sizes a container to what it holds, so the one in the middle
@@ -884,10 +883,9 @@ Sunder Armor), as you choose, nothing fixed.
   `face.roomed` places your buffs' icons after each layout. `face.tint` (`Face.Tint`, at each fill): a player's class colour from the
   game's `RAID_CLASS_COLORS` (`groupClass`), a creature's by `UnitReaction` (4 `UnitBar.CALM`, under it `Face.HOSTILE`, the game's
   `FACTION_BAR_COLORS[2]`), else `UnitBar.GREEN`. The power line on every member (`Power`): `UnitPowerType`, a healer's mana
-  where `UnitPowerMax` has one, `UnitBar.Power` (none where the most is 0); a druid in a form (`Core.FormPower`) its mana
-  there and the form's power in `face.form`, the same line along the bar's top (its mana through `Core.Mana`, `Core.OnMana`
-  telling `Face.Mana` of a member's); the samples' by class (`Group.POWERS`), a made-up druid tank's or damage dealer's
-  form by `Group.FORMS`. Aggro: a
+  where `UnitPowerMax` has one, `UnitBar.Power` (none where the most is 0); you as a druid in a form (`Core.FormPower`,
+  for yourself alone) your mana there and the form's power in `face.form`, the same line along the bar's top; the
+  samples' by class (`Group.POWERS`; `face.form` hidden). Aggro: a
   plain `UnitThreatSituation` paints the border (`Face.AGGRO`, 2, up: `Face.AGGRO_BORDER`); a hidden one (a fight) leaves it
   black and goes as it is into `face.threat` (`Face.Threat`: its `SetValue` gives both halves the value), two `StatusBar`s
   over the border (`edges` one level under them, the health over them), the face's upper and lower half, of
@@ -1068,7 +1066,7 @@ Sunder Armor), as you choose, nothing fixed.
 | `Keys.lua` | Your spellbook, pet book and talents keys opening ours |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
-| `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar (your target's and focus's red on a foe), the power bars under it (a druid's mana and form, its mana through `Core.Mana`), the row |
+| `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar (your target's and focus's red on a foe), the power bars under it (your druid's mana and form), the row |
 | `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
@@ -1102,11 +1100,15 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-13:** another druid's mana: one power again (Saneroki: "It doesn't show on the party members [...] revert
+  back to how it was with only one class bar"): the game tells a druid's mana in a form to that druid alone, and
+  sending it between Sane UIs never came through, so another druid's frames show the power it shows now. Your own keep
+  your mana beside the form's power.
 - **2026-11-13:** another druid's mana (Saneroki: "When I as a warrior look at the druids nameplates or party plates it
   does not show me the manabar"; "Yes, let my druid send its mana to the party. On unit frame the bars should be like it
-  was before. Put them below the mana bar on unit frames."): the game tells it to that druid alone, so a druid's Sane
-  UI sends it to its group (Core's `Mana.lua`) and every view reads it through `Core.Mana`. On the unit frames the
-  form's power under the mana again; your target's and focus's frames keep a slot for each.
+  was before. Put them below the mana bar on unit frames."): sent by a druid's Sane UI to its group (taken back the
+  same day). On the unit frames the form's power under the mana again; your target's and focus's frames keep a slot
+  for each.
 - **2026-11-13:** your own slot among the group frames shows your name and your health's share; its cog stands at the far
   left, in front of your name (Saneroki), no longer at the far right in place of the health.
 - **2026-11-13:** a druid's mana always in sight (Saneroki: "on all nameplates, unitplates and party plates the druids

@@ -1371,7 +1371,6 @@ a group of strangers (a group found by the game's finder) weighs less than the g
 | Discoveries | General game knowledge our data lacked or had otherwise (table below) | In each member's bundle, at most one in 15 minutes (*Bundles*) |
 | Counts | Loots and drops per creature, gathers and yields per node, where (cells) and for which quest (*What every kill teaches*), of the current build period | In the same bundle |
 | Patch findings | What a patch check found | One bundle per set and patch for the whole guild |
-| A druid's mana | Its mana and most while in a form whose power is not mana, to its group only, live and never kept (not data; Core's `Mana.lua`, Saneroki, 2026-11-13) | Every 2 seconds at most while it changes, every 6 while it stays |
 
 What the game shows while playing, and Core's watchers notice (*Learned*):
 

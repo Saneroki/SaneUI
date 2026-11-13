@@ -25,8 +25,8 @@ local _, ns = ...
 --    bottom  every member's class resource (Saneroki, 2026-11-09: "show
 --            always the class resource"), a line inside the bar as on a
 --            nameplate, so the frame is no taller for it
---    top     a druid's form's rage or energy, a line as that one, while its
---            mana stays along the bottom (Saneroki, 2026-11-13)
+--    top     your druid's form's rage or energy, a line as that one, while
+--            your mana stays along the bottom (Saneroki, 2026-11-13)
 --  and on it Core's barrier and lost maximum health. A player's health in their
 --  class's colour (Saneroki, 2026-11-06; the switch Class colours, else green as
 --  every unit frame), a creature beside a party by how it stands to you (neutral
@@ -57,12 +57,12 @@ local _, ns = ...
 --
 --  The power line: a healer's mana (the game's assigned role), everyone else's
 --  the power they show now (a warrior's rage, a rogue's energy, a mage's
---  mana); none on a unit without one. A druid's mana always (Core.FormPower):
---  in a form whose power is not mana its mana along the bottom and the form's
---  power along the top (face.form). The game tells a druid's mana in a form
---  to that druid alone: another druid's comes from what its own Sane UI
---  shares (Core.Mana, Core's Mana.lua); where nobody tells it, the form's
---  power along the bottom as anyone's.
+--  mana); none on a unit without one. Your own slot as a druid in a form
+--  whose power is not mana (Core.FormPower): your mana along the bottom and
+--  the form's power along the top (face.form). The game tells a druid's mana
+--  in a form to that druid alone, so another druid's slot shows the form's
+--  power alone, as anyone's (Saneroki, 2026-11-13: "revert back to how it
+--  was with only one class bar").
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -302,7 +302,7 @@ end
 local KIND = { type = Bar.MANA, token = "MANA" } -- read again each time: the power line's kind
 
 -- The power line, on every member: a healer's mana where they have it, else the power they show now; none where the
--- unit has none. A druid in a form whose power is not mana: its mana along the bottom, the form's along the top.
+-- unit has none. You as a druid in a form whose power is not mana: your mana along the bottom, the form's along the top.
 local function Power(face, unit)
     local form, token = Core.FormPower(unit)
     if form then
@@ -317,13 +317,6 @@ local function Power(face, unit)
     local mana = RoleOf(unit) == "HEALER" and Bar.Raw(UnitPowerMax, unit, Bar.MANA)
     if KIND.type == nil or (mana and Plain(mana) ~= 0) then KIND.type, KIND.token = Bar.MANA, "MANA" end
     face.power:SetShown(Bar.Power(face.power, unit, KIND))
-end
-
--- A member's Sane UI told its mana or stopped (Core.OnMana: by the player's key): that member's power lines anew.
-function Face.Mana(face, key)
-    local unit = face.unit
-    if ns.off or face.small or not unit or Core.PlayerKey(unit) ~= key then return end
-    Power(face, unit)
 end
 
 -- Fainter while the unit is out of your reach; the game's answer may be hidden, and the alpha takes it as it is.
@@ -545,7 +538,7 @@ end
 -- Made-up values instead of a unit (the preview): sample = { you (your own slot), raid, name, health (a share), most, mana (a share, or nil),
 -- role, mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's
 -- answer), rez, aggro, word (Dead, Offline), colour (theirs), class (a player's), reaction (a creature's), power (its
--- kind's token, nil: mana), form (a druid's form's power's token over its mana, or nil), formShare (its share) }.
+-- kind's token, nil: mana) }.
 function Face.Sample(face, sample)
     if face.small then
         Colour(face, Face.Tint(sample.class ~= nil, sample.class, sample.reaction))
@@ -564,11 +557,7 @@ function Face.Sample(face, sample)
         face.power:SetStatusBarColor(Bar.PowerColour(sample.power or "MANA"))
         face.power:SetValue(sample.mana)
     end
-    face.form:SetShown(sample.form ~= nil and sample.mana ~= nil)
-    if sample.form then
-        face.form:SetStatusBarColor(Bar.PowerColour(sample.form))
-        face.form:SetValue(sample.formShare or 1)
-    end
+    face.form:Hide()
     face.threat:SetValue(0)
     Border(face, sample.aggro)
     ReadyIcon(face, sample.ready)

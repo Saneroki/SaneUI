@@ -16,8 +16,6 @@ local Core = SaneUI.Core
 --                                      or when its parts do not all fit in the queue
 --      Wire.SendBlock("G", text, "GUILD", nil, tag)   with a tag of the sender's own (a record's kind), so that
 --      Wire.Drop("G", tag)             what still waits of it can be dropped (a switch turned off)
---      Wire.SendLive("M", { ... }, "PARTY")      a live message: now or never, in a fight too (below)
---      Wire.ListenLive("M", fn)        fn(sender, fields, channel, name) at once, in a fight too
 --
 --  A message is its kind (letters) with the protocol number, the game version's sign, then its fields, all
 --  cut by tabs: "G1\tf\thello\t...". A kind, protocol or game version not this client's is ignored, and so
@@ -36,11 +34,6 @@ local Core = SaneUI.Core
 --  in a fight or while the game holds addon messages back (InChatMessagingLockdown); a message waits for at
 --  most ten minutes when urgent, an hour in bulk, and at most 300 wait. The queue's frame runs only while
 --  something waits.
---
---  A live message (Saneroki, 2026-11-13: a druid's mana to its group, Mana.lua) is a value that is of no use
---  later: it goes at once, in a fight too, where the game lets addon messages go and the budget has room (the
---  queue's own: a live one costs a message of it), else not at all; never queued. Its kind is taken in as it
---  comes, past the inbox, in a fight too, so its listener does only a little.
 -------------------------------------------------------------------------------
 local Wire = {}
 Core.Wire = Wire
@@ -80,7 +73,6 @@ local TEXT = {
 }
 
 local listeners, blockListeners = {}, {} -- [kind] = { fn, ... }
-local live = {}                          -- [kind] = true: taken in as it comes (Wire.ListenLive)
 local registered = false
 local urgent, bulk = {}, {}              -- what waits: { text, channel, target, at }
 local tokens, last, slowUntil = Wire.BURST, nil, 0
@@ -211,19 +203,12 @@ function Wire.Drop(kind, tag)
     return dropped
 end
 
--- Whether the game lets addon messages go now; and the queue (fight: false) waits out a fight too.
-local function Open(fight)
-    if fight ~= false and InCombatLockdown() then return false end
+-- Whether the game lets addon messages go now.
+local function Open()
+    if InCombatLockdown() then return false end
     local info = rawget(_G, "C_ChatInfo")
     if info and info.InChatMessagingLockdown and Core.Ask(info.InChatMessagingLockdown) == true then return false end
     return true
-end
-
--- The budget's messages grown back since the last look, at the rate now (half after a throttle).
-local function Refill(now)
-    local rate = now < slowUntil and Wire.RATE / 2 or Wire.RATE
-    tokens = math.min(Wire.BURST, tokens + (now - (last or now)) * rate)
-    last = now
 end
 
 local function Expired(list, hold, now)
@@ -239,7 +224,9 @@ local function Step()
         frame:Hide()
         return
     end
-    Refill(now)
+    local rate = now < slowUntil and Wire.RATE / 2 or Wire.RATE
+    tokens = math.min(Wire.BURST, tokens + (now - (last or now)) * rate)
+    last = now
     if not Open() then return end
     local info = rawget(_G, "C_ChatInfo")
     if not (info and info.SendAddonMessage) then
@@ -276,29 +263,6 @@ function Pump()
         last = last or Now()
         frame:Show()
     end
-end
-
--- A live message sent now, in a fight too, where the game lets it go and the budget has a message for it; else not
--- at all, never queued. true: the game took it.
-function Wire.SendLive(kind, fields, channel)
-    if not Wire.CHANNELS[channel] or channel == "WHISPER" then return false end
-    local text = Wire.Text(kind, fields)
-    if #text > Wire.MAX then return false end
-    local info = rawget(_G, "C_ChatInfo")
-    if not (info and info.SendAddonMessage) or not Open(false) then return false end
-    local now = Now()
-    Refill(now)
-    if tokens < 1 then return false end
-    local ok, result = pcall(info.SendAddonMessage, Wire.PREFIX, text, channel)
-    result = ok and Core.Plain(result) or nil
-    if THROTTLED[result] then
-        slowUntil = now + Wire.SLOW
-        tokens = 0
-        return false
-    end
-    if not ok or result == HELD then return false end
-    tokens = tokens - 1
-    return result == nil or result == DONE or result == true
 end
 
 -- How many messages wait to be sent.
@@ -402,8 +366,6 @@ local function Heard(prefix, text, channel, name)
     if Core.Plain(prefix) ~= Wire.PREFIX then return end
     text, channel, name = Core.Plain(text), Core.Plain(channel), Core.Plain(name)
     if type(text) ~= "string" or type(name) ~= "string" then return end
-    local kind = text:match("^(%a+)%d")
-    if kind and live[kind] then return Wire.Take(text, channel, name) end -- a live one: at once, in a fight too
     if tail - head + 1 >= Wire.INBOX then return end
     tail = tail + 1
     inbox[tail] = { text = text, channel = channel, name = name }
@@ -423,13 +385,6 @@ function Wire.Listen(kind, fn)
     listeners[kind] = listeners[kind] or {}
     table.insert(listeners[kind], fn)
     Register()
-end
-
--- fn(sender, fields, channel, name) for every message of that kind, as it comes, in a fight too: a live one
--- (Wire.SendLive); fn does only a little.
-function Wire.ListenLive(kind, fn)
-    live[kind] = true
-    Wire.Listen(kind, fn)
 end
 
 -- fn(sender, text, channel, name) for every block of that kind, once whole.

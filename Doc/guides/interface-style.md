@@ -414,9 +414,10 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
   frame round it. A fixed width: every frame as wide as the others, whatever it shows; the rank's gold or silver
   line lies inside the border (on a nameplate it reaches outwards).
 - **Power bars under the health bar:** half its height, in the game's colour for each power, the power and its
-  share on the left in a smaller size ("2.4k | 80%"; Saneroki, 2026-11-07: "can you put the number on the left side?"); a druid's mana bar always, its form's power under it (Saneroki,
-  2026-11-13: "On unit frame the bars should be like it was before. Put them below the mana bar"; on the group
-  frames and nameplates a line along the bar's top, the mana's along its bottom).
+  share on the left in a smaller size ("2.4k | 80%"; Saneroki, 2026-11-07: "can you put the number on the left side?"); your druid's mana bar always, its form's power under it (Saneroki,
+  2026-11-13: "On unit frame the bars should be like it was before. Put them below the mana bar"; on your group
+  slot a line along the bar's top, the mana's along its bottom); another druid shows one power (Saneroki, 2026-11-13:
+  "revert back to how it was with only one class bar").
 - **Auras around them:** the three most important debuffs above a frame from its left, buffs from its right,
   crowd control right of it: small square icons cropped in a thin dark edge, the time gone as a swipe.
 - **Rows under them, like a nameplate's cast bar:** the target's target appears under the target's frame while

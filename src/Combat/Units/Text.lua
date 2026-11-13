@@ -344,7 +344,7 @@ end
 
 -- A power's words on its bar: "3.2k | 85%"; none for an empty one.
 local function PowerWords(text, unit, kind)
-    local now, most = ns.UnitBar.Read(unit, kind) -- mana through Core.Mana: another druid's as its Sane UI shared it
+    local now, most = ns.UnitBar.Read(unit, kind)
     local plainNow, plainMost = Plain(now), Plain(most)
     if type(now) == "nil" or type(most) == "nil" or plainMost == 0 then
         text:SetText("")

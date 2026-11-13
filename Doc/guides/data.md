@@ -1257,9 +1257,7 @@ SaneUIData_Characters["forever"] = {
 
 *The transport is built (2026-10-20, ahead of 1f, for the guild's records): `Core.Wire` (`src/Core/Data/Wire.lua`):
 `Wire.Listen(kind, fn)`, `Wire.Send(kind, fields, channel, target, urgent)`, `Wire.ListenBlock(kind, fn)`,
-`Wire.SendBlock(kind, text, channel, target, tag)`, `Wire.Drop(kind, tag)`, and for a value of no use later
-`Wire.SendLive(kind, fields, channel)` and `Wire.ListenLive(kind, fn)` (2026-11-13: sent at once, in a fight too, where
-the game lets addon messages go and the budget has a message, else not at all; taken in as it comes, past the inbox). A block's part is the kind P (`P1\t<sign>\t<kind>\t<transfer>\t<part>\t<parts>\t<size>\t<text>`,
+`Wire.SendBlock(kind, text, channel, target, tag)`, `Wire.Drop(kind, tag)`. A block's part is the kind P (`P1\t<sign>\t<kind>\t<transfer>\t<part>\t<parts>\t<size>\t<text>`,
 200 Base64 characters a part; its numbers are taken only as digits); the sign of a game version: `f` Forever, `b` its
 beta, `p` its test realm. A block is queued only when all its parts fit in the queue (a block in part is of no use),
 each part with the sender's tag (a record's kind), so that `Wire.Drop` takes out what still waits of it (a switch
@@ -1274,9 +1272,6 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
   the row of the step's first line in the guide's text; letters: `w` waiting there, `c` busy with a class quest on top
   of it, `a` asking for the others' places), to the party or the raid only, as the place changes, nothing when it follows no guide (an empty key: forget me). Not
   data and never kept: it lives while the group does (`src/SpeedLeveling/Party.lua`, its README's *In a party*).
-- **A druid's mana** *(Saneroki, 2026-11-13)*: kind `M` (its mana now and its most, digits), a live message, to the
-  party, the raid or the instance group, only while a druid shows another power than mana (the game tells its mana
-  then to that druid alone). Kept per player for 15 seconds, never saved, not data (`src/Core/Mana.lua`).
 - **What was confirmed and learned** *(Saneroki, 2026-10-23)*: kind `V` (set, key, the parts cut by commas, `*` the
   whole entry), one message per entry; learned rows as a block of kind `L` (`set\028key\028row`, the rows cut by
   \029, at most `Confirm.ROWS`). Sent to the guild and the raid or else the party, `Confirm.GAP` seconds apart, never

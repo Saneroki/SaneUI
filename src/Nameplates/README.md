@@ -64,10 +64,8 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   dragon), silver and thin on a rare (its silver dragon, also a rare elite); and behind that, the red glow.
 - **The power line:** along the bottom of the bar, inside it, a third of its height: the unit's mana, rage or
   energy in the game's colours, without a background: spent power shows nothing, the bar is seen through it.
-  None on a unit without power. A druid's mana always (Saneroki, 2026-11-13): in a form whose power is not mana its
-  mana stays along the bottom and the form's rage or energy runs in a line as thin along the top; where the game keeps
-  a druid's mana back, the form's power along the bottom as anyone's. The game tells a druid's mana in a form to that
-  druid alone: another druid's shows as its own Sane UI tells its group (Core's `Mana.lua`, in a fight too).
+  None on a unit without power; a druid in a form shows the form's rage or energy alone (Saneroki, 2026-11-13:
+  "revert back to how it was with only one class bar": the game tells a druid's mana in a form to that druid alone).
 - **Combo points:** as a rogue, or a druid in cat form, your combo points show in a row of their own right under
   the bar of the unit you have them on (your target or not), a third as high, inside the same outline (a cast's bar comes under them), one segment
   each (five), a pixel apart, lit as you build them; a point not built shows the bar's dark. No row while you
@@ -221,10 +219,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 - **The power line** (`Bar.Power`): a `StatusBar` inside the bar along its bottom, `Bar.LINE` (a third) of the
   bar's height (two pixels at least), from 0 to `UnitPowerMax`, at `UnitPower` (both as the game gives them), in
   the game's `PowerBarColor` for `UnitPowerType`'s token; hidden where the most is a plain 0 or the setting is
-  off; no background. A druid in a form whose power is not mana (Core's `Core.FormPower`): mana in that line, the
-  form's power in `dress.form`, the same line along the bar's top (both masked by the bar's caps, hidden by
-  `Bar.Clear`). Mana through `Core.Mana` (what the member's Sane UI shared, else the game's); `Core.OnMana`, heard
-  from `Bar.lua`'s load, fills the plates whose unit's key it names.
+  off; no background.
 - **The line** (`Text.lua`): on a frame above the bar's (its level three above the bar's), in the game's nameplate
   font's face and outline (`SystemFont_NamePlate_Outlined`'s `GetFont`), `Text.SMALLER` (0.72) of its height, set on
   every text of ours once (`SetFont`), so later changes of the game's font object change none. Each piece has its room (`dress.room[piece]`, none while it does not
@@ -475,10 +470,9 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
-- **2026-11-13:** another druid's mana on its plate as its own Sane UI tells it (Saneroki: "let my druid send its mana
-  to the party"; Core's `Mana.lua`).
-- **2026-11-13:** a druid's mana always in sight (Saneroki: "on all nameplates, unitplates and party plates the druids
-  manabar is visible"): its mana along the bar's bottom, a form's rage or energy along its top.
+- **2026-11-13:** a druid's mana along the bar's bottom and its form's rage or energy along its top, then taken back
+  (Saneroki: "revert back to how it was with only one class bar"): the game tells another druid's mana in a form to
+  nobody else, and sending it between Sane UIs never came through. One power line, as before.
 - **2026-11-13:** the auras' row back in the stacking (Saneroki: "add the buffs / debuffs/ ccs row as well so those
   will be visible"): our bar, a row of auras and `Auras.GAP`; the bar alone with *Health bar only*.
 - **2026-11-13:** plates stacked bar to bar (Saneroki: "the same height as the healthbar, without the buffs and

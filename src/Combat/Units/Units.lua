@@ -8,11 +8,12 @@ local _, ns = ...
 --  the level and the raid marker on its left, the name after them
 --  (a player's first name and surname; none on your own frame), the health and
 --  how much is left on its right; under it the unit's power at half its height
---  with the same words on its left (a druid's mana always, Saneroki,
---  2026-11-13: in a form whose power is not mana its mana first and the
---  form's rage or energy under it, another druid's as its Sane UI shares it,
---  Core.Mana; so your own where you have mana beside another power; the frame
---  keeps a slot for each, Slots);
+--  with the same words on its left (your own druid's mana always, Saneroki,
+--  2026-11-13: in a form whose power is not mana your mana first and the
+--  form's rage or energy under it, Core.FormPower; so your own where you have
+--  mana beside another power; the frame keeps a slot for each, Slots; the game
+--  tells another druid's mana in a form to nobody else, so its frame shows
+--  the one power it shows now);
 --  around it the auras that matter most (Auras.lua). Under each, as a cast bar
 --  under a nameplate, a row while its unit is there, with that unit's name
 --  alone: your target's target under your target's frame, your focus's target
@@ -144,9 +145,9 @@ function Units.Each(fn)
 end
 
 -- The power slots a frame keeps under its health bar, and its button's height with them: two on your own while you may
--- have two powers (Alternate), else as many as its unit shows now (a druid as your target or focus: its mana and its
--- form's). A secure button changes its size out of a fight only: in one the bars show at once, and the button (with
--- the row's under it) follows once the fight is over.
+-- have two powers (Alternate), else as many as its unit shows now (you as your own target or focus, a druid in a form:
+-- your mana and the form's). A secure button changes its size out of a fight only: in one the bars show at once, and
+-- the button (with the row's under it) follows once the fight is over.
 local function Wanted(face)
     return face.alternate and 2 or math.max(face.powersShown or 1, 1)
 end
@@ -408,8 +409,8 @@ local function Unwatch(button)
 end
 
 -- Whether a frame keeps two power slots and shows your mana beside another power: your own, while you may have two
--- powers (a druid, by its forms; in a specialization whose power is not mana but who has mana too). Any druid's shows
--- on any frame anyway (Core.FormPower). Asked out of a fight.
+-- powers (a druid, by its forms; in a specialization whose power is not mana but who has mana too); you as your target
+-- or focus show both too (Core.FormPower). Asked out of a fight.
 local function Alternate(kind)
     if kind.unit ~= "player" then return false end
     local _, class = Core.Ask(UnitClass, "player")
@@ -514,14 +515,6 @@ function Units.Start()
         end
     end)
     ns.On("PLAYER_LEVEL_UP", Core.Later(Again))
-    -- A member's Sane UI told its mana (a druid in a form, Core's Mana.lua; none before the game's restart): its
-    -- frames' powers anew.
-    if Core.OnMana then Core.OnMana(ns.Guard(function(key)
-        for _, kind in ipairs(Units.KINDS) do
-            local face = kind.button and kind.button.face
-            if face and not face.sample and not ns.off and Core.PlayerKey(face.unit) == key then Powers(face, face.unit) end
-        end
-    end)) end
     -- Once the world shows (the game's fonts and scales set up, also after a /reload), every frame measured anew.
     ns.On("PLAYER_ENTERING_WORLD", Core.Later(function()
         if ns.off then return end

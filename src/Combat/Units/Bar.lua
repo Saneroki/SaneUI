@@ -5,10 +5,10 @@ local _, ns = ...
 --  A unit frame's bars, in the look of a nameplate's (the module Nameplates):
 --  one rectangle round at its corners, framed by one thin border, holding a
 --  stack of bars a screen pixel apart (the border's dark between them): the
---  unit's health, under it its power at half that height (a druid's mana
---  always, Saneroki, 2026-11-13: in a form whose power is not mana its mana
---  first and the form's rage or energy under it, Core.FormPower; so your own
---  frame where you have mana beside another power), and, while it shows, a row
+--  unit's health, under it its power at half that height (your own druid's
+--  mana always, Saneroki, 2026-11-13: in a form whose power is not mana your
+--  mana first and the form's rage or energy under it, Core.FormPower; so your
+--  own frame where you have mana beside another power), and, while it shows, a row
 --  of its own (your target's target, your focus's target, your pet with its
 --  resource under it: frame.rowPower), as a cast bar hangs under a nameplate's
 --  bar. What runs only for a while stands above the health bar (frame.above:
@@ -387,8 +387,8 @@ local function PowerColour(token)
 end
 Bar.PowerColour = PowerColour -- a power's colour by its token, as the game has it
 
--- A power of the unit, now and most, as the game gives them (hidden or not; tested with type() only); its mana through
--- Core.Mana, so another druid's mana in a form comes from what its own Sane UI shared. kind: { type, token }.
+-- A power of the unit, now and most, as the game gives them (hidden or not; tested with type() only). kind: { type,
+-- token }.
 function Bar.Read(unit, kind)
     if kind.type == nil then return nil, nil end
     if kind.type == Bar.MANA then return Core.Mana(unit) end
@@ -412,7 +412,7 @@ end
 
 Bar.Power = Power
 
--- The powers a frame shows: the unit's own; a druid in a form whose power is not mana (Core.FormPower), and you on a
+-- The powers a frame shows: the unit's own; you as a druid in a form whose power is not mana (Core.FormPower), and on a
 -- frame that tells it (frame.alternate: your mana beside another power), mana first and the unit's own under it. Each
 -- { type = the game's number, token = its name }; a unit without a power has an empty slot. Kept on the frame
 -- (frame.kinds), made anew only when the unit's power changed: asked at every beat of a power.

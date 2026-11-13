@@ -584,54 +584,20 @@ check(not dress.power:IsShown(), "no power: no line")
 units.nameplate1.powerMost = 100
 W.Fire("UNIT_MAXPOWER", "nameplate1")
 
--- A druid's mana always (Saneroki, 2026-11-13): in a form its mana along the bottom, the form's power along the top.
+-- Another druid in a form: the one power it shows now, along the bottom (Saneroki, 2026-11-13: "revert back to how it
+-- was with only one class bar"; the game tells a druid's mana in a form to that druid alone).
 do
     local kind, most, now, class = UnitPowerType, UnitPowerMax, UnitPower, UnitClass
-    local fern = { form = 3, token = "ENERGY", energy = 60, mana = 900, manaMost = 1200 }
     local function Mine(unit) return unit == "nameplate1" end
     UnitClass = function(unit) if Mine(unit) then return "Druid", "DRUID" end return class(unit) end
-    UnitPowerType = function(unit) if Mine(unit) then return fern.form, fern.token end return kind(unit) end
-    UnitPowerMax = function(unit, power)
-        if not Mine(unit) then return most(unit, power) end
-        if (power or fern.form) == 0 then return fern.manaMost end
-        return 100
-    end
-    UnitPower = function(unit, power)
-        if not Mine(unit) then return now(unit, power) end
-        if (power or fern.form) == 0 then return fern.mana end
-        return fern.energy
-    end
+    UnitPowerType = function(unit) if Mine(unit) then return 3, "ENERGY" end return kind(unit) end
+    UnitPowerMax = function(unit, power) if Mine(unit) then return power == 0 and 1200 or 100 end return most(unit, power) end
+    UnitPower = function(unit, power) if Mine(unit) then return power == 0 and 900 or 60 end return now(unit, power) end
     W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
-    check(dress.power:IsShown() and dress.power._value == 900 and dress.power._max == 1200 and dress.form:IsShown()
-        and dress.form._value == 60 and dress.form._max == 100, "a druid in cat form: its mana along the bottom, energy along the top")
-    check(dress.form._points[1][1] == "TOPLEFT" and dress.form._points[1][2] == dress.health and dress.form._points[2][1] == "TOPRIGHT"
-        and dress.form._height == dress.power._height and #dress.form:GetStatusBarTexture()._masks == 2,
-        "the top line inside the bar, as thin as the bottom one, cut at both ends")
-    fern.energy = 30
-    W.Fire("UNIT_POWER_UPDATE", "nameplate1", "ENERGY")
-    check(dress.form._value == 30 and dress.power._value == 900, "a beat of energy: the top line follows")
-    Core.Set(ns.name, "power", false)
-    check(not dress.power:IsShown() and not dress.form:IsShown(), "Power line off: neither")
-    Core.Set(ns.name, "power", true)
-    check(dress.power:IsShown() and dress.form:IsShown(), "on again: both")
-    fern.manaMost = 0
-    W.Fire("UNIT_MAXPOWER", "nameplate1")
-    check(dress.power:IsShown() and dress.power._value == 30 and dress.power._max == 100 and not dress.form:IsShown(),
-        "its mana kept back by the game: the energy along the bottom, as anyone's")
-    local plain = units.nameplate1
-    local who = { player = plain.player, name = plain.name, surname = plain.surname }
-    plain.player, plain.name, plain.surname = true, "Fern", "Moss"
-    W.Fire("CHAT_MSG_ADDON", "SaneUI", "M1\tf\t700\t1200", "PARTY", "Fern Moss")
-    check(dress.power:IsShown() and dress.power._value == 700 and dress.power._max == 1200 and dress.form:IsShown()
-        and dress.form._value == 30, "its Sane UI tells its mana: along the bottom again, the energy on top")
-    fern.manaMost, fern.form, fern.token = 1200, 0, "MANA"
-    W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
-    check(dress.power._value == 900 and dress.power._max == 1200 and not dress.form:IsShown(),
-        "out of the form: its mana alone, as the game gives it")
-    plain.player, plain.name, plain.surname = who.player, who.name, who.surname
+    check(dress.power:IsShown() and dress.power._value == 60 and dress.power._max == 100 and dress.form == nil,
+        "a druid in cat form: its energy along the bottom, one line")
     UnitPowerType, UnitPowerMax, UnitPower, UnitClass = kind, most, now, class
     W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
-    check(dress.power._value == 70 and not dress.form:IsShown(), "anyone else: the power it shows, along the bottom alone")
 end
 
 -- Just after a /reload the game may measure texts endless: the bar gets a guess, never endless, and is measured
