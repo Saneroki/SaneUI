@@ -89,10 +89,12 @@ Decided (Saneroki, 2026-10-16):
   black and white lists by a right click on an icon, and a window to add auras to either list.
 - **A druid's mana always** (Saneroki, 2026-11-13; built): "on all nameplates, unitplates and party plates the druids
   manabar is visible. When they have the energy or Rage bar, show the mana bar at the bottom of the healthbar like it
-  does now and put the other, rage or energy bar when they have it, ontop." On the unit frames the mana stays under
-  the health bar and the form's power stands in a bar as high directly on top of it; on the group frames and the
-  nameplates the mana line along the bar's bottom, the form's along its top (`Core.FormPower`). Where the game keeps
-  another druid's mana back, the form's power alone where anyone's stands.
+  does now and put the other, rage or energy bar when they have it, ontop." Then: "Yes, let my druid send its mana to
+  the party. On unit frame the bars should be like it was before. Put them below the mana bar on unit frames." So on
+  the unit frames the mana first under the health bar and the form's power under it (your target's and focus's keep a
+  slot for each); on the group frames and the nameplates the mana line along the bar's bottom, the form's along its
+  top (`Core.FormPower`). The game tells a druid's mana in a form to that druid alone, so a druid's Sane UI sends it
+  to its group (Core's `Mana.lua`); where nobody tells it, the form's power alone where anyone's stands.
 - **Your own slot among the group frames** (Saneroki, 2026-11-13; built): "change the name of my own frame in a party
   to my actual name, Put the cogwheel infront of my name and add the % health of my own frame as well". Your name and
   health's share as on every slot; the cog at the far left, the line after it.

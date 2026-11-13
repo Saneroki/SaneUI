@@ -12,8 +12,10 @@ The bigger changes of each version, newest first.
   the row of auras over it, and a click on a bar always goes to its
   own plate.
 - A druid's mana always shows on the unit frames, the party and
-  raid frames and the nameplates. In bear or cat form the mana stays
-  where it was and the rage or energy shows on top of the health bar.
+  raid frames and the nameplates. In bear or cat form the rage or
+  energy shows under the mana on the unit frames, and along the top
+  of the bar on the party frames and nameplates. A druid's Sane UI
+  tells its mana to the party, so your party sees it too.
 - Aura history on the Combat full screen: every buff and debuff
   seen on enemies and bosses, newest on top, with whom it was on,
   from whom, when it came, its duration, whether it can be

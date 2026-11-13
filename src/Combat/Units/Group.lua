@@ -505,6 +505,8 @@ local function ReadyEnded()
 end
 
 function Group.Start()
+    -- A member's Sane UI told its mana (a druid in a form, Core's Mana.lua; none before the game's restart).
+    if Core.OnMana then Core.OnMana(ns.Guard(function(key) EachFace(Face.Mana, key) end)) end
     -- The group changed: every face reads its slot anew at once (a header gives a slot the same token whoever fills it,
     -- and no event of the unit's tells of its new member; a fight holds the rest back), then the sizes and the driver.
     local Applied = Core.Later(Group.Apply)

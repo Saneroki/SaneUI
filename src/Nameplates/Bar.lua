@@ -28,7 +28,9 @@ local _, ns = ...
 --                 bottom, in the game's colour for that power; no background:
 --                 spent power shows nothing. A druid in a form whose power is
 --                 not mana (Core.FormPower): its mana along the bottom, the
---                 form's power in a line as that along the top (dress.form)
+--                 form's power in a line as that along the top (dress.form);
+--                 another druid's mana as its own Sane UI shares it (Core.Mana,
+--                 Core's Mana.lua: the game tells it to that druid alone)
 --    the border   one pixel: black; grey on your target (a hint), orange on
 --                 your focus (the game's colour for it); on a player you
 --                 know, by how (Bar.KIN): green your guild, blue your party,
@@ -444,10 +446,13 @@ local function PowerColour(token)
 end
 
 -- One power on its line as the game gives it: kind, the game's number (nil: the power the unit shows now), and its
--- token. Whether it has one (a most above 0, as far as can be told: a hidden most shows the line).
+-- token. Whether it has one (a most above 0, as far as can be told: a hidden most shows the line). Mana through
+-- Core.Mana: another druid's as its Sane UI shared it.
 local function Line(line, unit, kind, token)
     local most, now -- as the game gives them, hidden or not: tested with type() only
-    if kind then
+    if kind == Core.MANA then
+        now, most = Core.Mana(unit)
+    elseif kind then
         most, now = Raw(UnitPowerMax, unit, kind), Raw(UnitPower, unit, kind)
     else
         most, now = Raw(UnitPowerMax, unit), Raw(UnitPower, unit)
@@ -482,6 +487,17 @@ function Bar.Power(dress, unit)
         power:SetShown(on)
         ns.Resource.Again()
     end
+end
+
+-- A member's Sane UI told its mana or stopped (Core.OnMana, by the player's key; none before the game's restart):
+-- that player's plate's lines anew.
+if Core.OnMana then
+    Core.OnMana(ns.Guard(function(key)
+        if ns.off then return end
+        for unit, dress in pairs(ns.Plate.shown) do
+            if Core.PlayerKey(unit) == key then Bar.Power(dress, unit) end
+        end
+    end))
 end
 
 -- The bar as made, full, without power, glow or rank: a plate the game hands out again never shows the last

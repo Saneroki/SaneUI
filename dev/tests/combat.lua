@@ -490,9 +490,13 @@ do
         Face.Fill(face)
         check(face.power._shown and face.power._value == 40 and not face.form._shown,
             "its mana kept back by the game: the energy along the bottom, as anyone's")
+        W.Fire("CHAT_MSG_ADDON", "SaneUI", "M1\tf\t700\t1200", "PARTY", "Fern Moss")
+        check(face.power._shown and face.power._value == 700 and face.power._max == 1200 and face.form._shown
+            and face.form._value == 40, "its Sane UI tells its mana: along the bottom again, the energy on top")
         units.party2.powerType, units.party2.powerToken, units.party2.power, units.party2.powerMost = 0, "MANA", 900, 1200
         Face.Fill(face)
-        check(face.power._shown and face.power._value == 900 and not face.form._shown, "out of the form: its mana alone")
+        check(face.power._shown and face.power._value == 900 and not face.form._shown,
+            "out of the form: its mana alone, as the game gives it (what it shared counts only in a form)")
         units.party2 = rolf
         Face.Fill(face)
         check(not face.form._shown and face.power._value == 10, "a warrior again: its rage alone")
@@ -1617,20 +1621,20 @@ do
     check(not watched[target.face.rowButton] and watched[target], "Your target's target off: no row, the frame stays")
     Core.Set(ns.name, "unitTargetTarget", true)
     units.pet = nil
-    -- A druid: its mana always under the health bar, a form's power on top of it (Saneroki, 2026-11-13).
+    -- A druid: your frame keeps two power slots, mana always, a form's power under it (Saneroki, 2026-11-13: "like it
+    -- was before").
     units.player.class, units.player.powerType, units.player.powerToken = "DRUID", 3, "ENERGY"
     units.player.power, units.player.powerMost, units.player.mana, units.player.manaMost = 80, 100, 2400, 3000
     ns.Units.Apply()
     do
         local pixel = Core.Pixels(face, 1)
-        check(player._height == Units.HEIGHT + Units.POWER and face.powersShown == 2
+        check(player._height == Units.HEIGHT + 2 * Units.POWER and face.slots == 2 and face.powersShown == 2
             and face.powers[1].value._text == "2.4k | 80%" and face.powers[2].value._text == "80 | 80%" and face.powers[2]._shown,
-            "a druid in cat form: mana in the bar under the health, energy in the one on top; the button no higher")
-        check(near(face.powers[1]._points[1][5], -(Units.HEIGHT + pixel)) and near(face.powers[2]._points[2][5], 0)
-            and near(face.powers[2]._points[1][5], Units.POWER - pixel) and near(face.health._points[1][5], -pixel)
-            and near(face.border[1]._points[1][5], Units.POWER) and near(-face.border[2]._points[1][5], Units.POWER)
-            and near(face.roof._points[1][5], Units.POWER),
-            "the energy right on the health bar, a pixel apart, the health where it was; the outline around it, the auras on it")
+            "a druid in cat form: mana in the first bar, energy under it")
+        check(near(face.powers[1]._points[1][5], -(Units.HEIGHT + pixel))
+            and near(face.powers[2]._points[1][5], -(Units.HEIGHT + Units.POWER + pixel))
+            and near(face.border[1]._points[1][5], 0) and near(-face.border[2]._points[1][5], 2 * Units.POWER),
+            "both under the health bar, a pixel apart, nothing above it")
     end
     do -- a power's words on its bar's left, the health's on its right (Saneroki, 2026-11-07)
         local left = true
@@ -1647,26 +1651,49 @@ do
     units.player.powerType, units.player.powerToken, units.player.power, units.player.powerMost = 0, "MANA", 2400, 3000
     W.Fire("UNIT_DISPLAYPOWER", "player")
     check(face.powersShown == 1 and not face.powers[2]._shown and face.powers[1].value._text == "2.4k | 80%"
-        and player._height == Units.HEIGHT + Units.POWER and near(face.border[1]._points[1][5], 0),
-        "out of the form: the mana bar alone, nothing on top")
+        and player._height == Units.HEIGHT + 2 * Units.POWER,
+        "out of the form: the mana bar alone (your frame keeps both slots: it changes out of a fight only)")
     check(face.kinds ~= kinds and #face.kinds == 1, "another power: the kinds anew")
-    -- Your target a druid in bear form: its mana under its health too, the rage on top.
+    -- Your target a druid in bear form: its mana under its health, the rage under that; a slot for each.
     local aimed, aimShown = units.target, target._shown
-    units.target = { name = "Bramble", player = true, class = "DRUID", health = 900, most = 1000, powerType = 1,
-                     powerToken = "RAGE", power = 30, powerMost = 100, mana = 1500, manaMost = 2000 }
+    local aim, row = target.face, target.face.rowButton
+    units.target = { name = "Bramble", surname = "Oak", player = true, class = "DRUID", health = 900, most = 1000,
+                     powerType = 1, powerToken = "RAGE", power = 30, powerMost = 100, mana = 1500, manaMost = 2000 }
     target:Show()
     W.Fire("PLAYER_TARGET_CHANGED")
-    local aim = target.face
     check(aim.powersShown == 2 and aim.powers[1].value._text == "1.5k | 75%" and aim.powers[2].value._text == "30 | 30%"
-        and aim.powers[2]._shown and near(aim.border[1]._points[1][5], Units.POWER),
-        "a druid as your target: mana under its health, rage on top")
-    units.target.manaMost = 0
+        and aim.powers[2]._shown and near(aim.border[1]._points[1][5], 0) and near(-aim.border[2]._points[1][5], 2 * Units.POWER)
+        and target._height == Units.HEIGHT + 2 * Units.POWER and aim.slots == 2,
+        "a druid as your target: mana under its health, rage under it, the button a slot higher (out of a fight)")
+    units.target = { name = "Kobold Miner", level = 22, health = 40, most = 120, foe = true, reaction = 2, powerType = 1,
+                     powerToken = "RAGE", power = 10, powerMost = 100 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(aim.powersShown == 1 and target._height == Units.HEIGHT + Units.POWER and aim.slots == 1,
+        "one power again: one slot, the row's button right under it")
+    W.combat = true
+    units.target = { name = "Bramble", surname = "Oak", player = true, class = "DRUID", health = 900, most = 1000,
+                     powerType = 1, powerToken = "RAGE", power = 30, powerMost = 100, mana = 1500, manaMost = 2000 }
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(aim.powersShown == 2 and aim.powers[2]._shown and target._height == Units.HEIGHT + Units.POWER
+        and Core.Owed("unit frame slots target"), "in a fight: both bars at once, the button waits for the fight's end")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(target._height == Units.HEIGHT + 2 * Units.POWER and aim.slots == 2, "after it: the slot")
+    -- The game keeps another druid's mana back in a form: none, until its own Sane UI tells it.
+    units.target.manaMost, units.target.mana = 0, nil
     W.Fire("UNIT_MAXPOWER", "target")
-    check(aim.powersShown == 1 and aim.powers[1].value._text == "30 | 30%" and not aim.powers[2]._shown
-        and near(aim.border[1]._points[1][5], 0), "its mana kept back by the game: the rage under the health, as anyone's")
+    check(aim.powersShown == 1 and aim.powers[1].value._text == "30 | 30%" and not aim.powers[2]._shown,
+        "its mana kept back by the game: the rage alone, as anyone's")
+    W.combat = true
+    W.Fire("CHAT_MSG_ADDON", "SaneUI", "M1\tf\t1200\t2000", "PARTY", "Bramble Oak")
+    check(aim.powersShown == 2 and aim.powers[1].value._text == "1.2k | 60%" and aim.powers[1]._value == 1200
+        and aim.powers[2].value._text == "30 | 30%", "its Sane UI tells its mana, in a fight too: mana first again, rage under it")
+    W.combat = false
+    W.Fire("PLAYER_REGEN_ENABLED")
     units.target = aimed
     if not aimShown then target:Hide() end
     W.Fire("PLAYER_TARGET_CHANGED")
+    check(target._height == Units.HEIGHT + Units.POWER, "another target: one slot again")
     units.player.class, units.player.powerType, units.player.powerToken = "WARRIOR", 1, "RAGE"
     units.player.power, units.player.powerMost, units.player.mana, units.player.manaMost = 30, 100, nil, nil
     ns.Units.Apply()

@@ -618,9 +618,17 @@ do
     W.Fire("UNIT_MAXPOWER", "nameplate1")
     check(dress.power:IsShown() and dress.power._value == 30 and dress.power._max == 100 and not dress.form:IsShown(),
         "its mana kept back by the game: the energy along the bottom, as anyone's")
+    local plain = units.nameplate1
+    local who = { player = plain.player, name = plain.name, surname = plain.surname }
+    plain.player, plain.name, plain.surname = true, "Fern", "Moss"
+    W.Fire("CHAT_MSG_ADDON", "SaneUI", "M1\tf\t700\t1200", "PARTY", "Fern Moss")
+    check(dress.power:IsShown() and dress.power._value == 700 and dress.power._max == 1200 and dress.form:IsShown()
+        and dress.form._value == 30, "its Sane UI tells its mana: along the bottom again, the energy on top")
     fern.manaMost, fern.form, fern.token = 1200, 0, "MANA"
     W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
-    check(dress.power._value == 900 and dress.power._max == 1200 and not dress.form:IsShown(), "out of the form: its mana alone")
+    check(dress.power._value == 900 and dress.power._max == 1200 and not dress.form:IsShown(),
+        "out of the form: its mana alone, as the game gives it")
+    plain.player, plain.name, plain.surname = who.player, who.name, who.surname
     UnitPowerType, UnitPowerMax, UnitPower, UnitClass = kind, most, now, class
     W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
     check(dress.power._value == 70 and not dress.form:IsShown(), "anyone else: the power it shows, along the bottom alone")

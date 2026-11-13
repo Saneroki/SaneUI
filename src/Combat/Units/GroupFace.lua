@@ -59,8 +59,10 @@ local _, ns = ...
 --  the power they show now (a warrior's rage, a rogue's energy, a mage's
 --  mana); none on a unit without one. A druid's mana always (Core.FormPower):
 --  in a form whose power is not mana its mana along the bottom and the form's
---  power along the top (face.form); where the game keeps a druid's mana back,
---  the form's along the bottom as anyone's.
+--  power along the top (face.form). The game tells a druid's mana in a form
+--  to that druid alone: another druid's comes from what its own Sane UI
+--  shares (Core.Mana, Core's Mana.lua); where nobody tells it, the form's
+--  power along the bottom as anyone's.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -315,6 +317,13 @@ local function Power(face, unit)
     local mana = RoleOf(unit) == "HEALER" and Bar.Raw(UnitPowerMax, unit, Bar.MANA)
     if KIND.type == nil or (mana and Plain(mana) ~= 0) then KIND.type, KIND.token = Bar.MANA, "MANA" end
     face.power:SetShown(Bar.Power(face.power, unit, KIND))
+end
+
+-- A member's Sane UI told its mana or stopped (Core.OnMana: by the player's key): that member's power lines anew.
+function Face.Mana(face, key)
+    local unit = face.unit
+    if ns.off or face.small or not unit or Core.PlayerKey(unit) ~= key then return end
+    Power(face, unit)
 end
 
 -- Fainter while the unit is out of your reach; the game's answer may be hidden, and the alpha takes it as it is.

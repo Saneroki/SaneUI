@@ -7,15 +7,14 @@ local _, ns = ...
 --  stack of bars a screen pixel apart (the border's dark between them): the
 --  unit's health, under it its power at half that height (a druid's mana
 --  always, Saneroki, 2026-11-13: in a form whose power is not mana its mana
---  stays under the health bar and the form's rage or energy stands directly
---  on top of it, Core.FormPower; so your own frame where you have mana beside
---  another power), and, while it shows, a row of its own (your target's
---  target, your focus's target, your pet with its resource under it:
---  frame.rowPower), as a cast bar hangs under a nameplate's bar. What runs
---  only for a while stands above the health bar (frame.above: the unit's cast
---  right on it or on the form's power, the game's timers on you over that:
---  Cast.lua, Timers.lua; never a button of the game's, so it comes and goes
---  in a fight too), with the auras over all that
+--  first and the form's rage or energy under it, Core.FormPower; so your own
+--  frame where you have mana beside another power), and, while it shows, a row
+--  of its own (your target's target, your focus's target, your pet with its
+--  resource under it: frame.rowPower), as a cast bar hangs under a nameplate's
+--  bar. What runs only for a while stands above the health bar (frame.above:
+--  the unit's cast right on it, the game's timers on you over that: Cast.lua,
+--  Timers.lua; never a button of the game's, so it comes and goes in a fight
+--  too), with the auras over all that
 --  (frame.roof: they stand on it, Auras.lua); what runs over the health bar
 --  lies on it, the same size (frame.over: your breath, Timers.lua). The
 --  stack's first bar is round at its top, its last at its bottom. The health
@@ -23,7 +22,8 @@ local _, ns = ...
 --  it is; only the outline reaches further up or down. The frame's
 --  face is as high as the health bar; the rest hangs under it and stands on
 --  it, inside the same outline; its button is as high as the health and the
---  power slot it keeps under it, and the row's button under that. The frame is
+--  power slots it keeps (frame.slots, Units.lua), and the row's button under
+--  that. The frame is
 --  always as wide as it is: nothing it shows changes its size, and its border
 --  and rank's line lie inside it (a nameplate's rank line reaches outwards), so
 --  an elite's or a boss's frame is no wider than another's; every piece is laid
@@ -44,7 +44,7 @@ local _, ns = ...
 --                 on your target's and your focus's frames red while you
 --                 can attack the unit (Bar.HOSTILE)
 --    the powers   the unit's mana, rage or energy, in the game's colour for each;
---                 a druid's form's on top of the health bar, its mana under it
+--                 a druid's mana first, its form's under it
 --    the row      health again, its own unit's: a target's target in the light
 --                 yellow of a nameplate's neutral creature (Bar.CALM), your
 --                 pet green, with its power under it in the game's colour
@@ -206,9 +206,8 @@ Bar.End, Bar.Ends = End, Ends
 
 -- The bar's pieces on the frame, each layer on a frame of its own one level above the last: the glow, then the
 -- rank's line and the border, then the bars (the texts above it all). sizes: how high the health bar, a power bar and
--- the row and its power (rowPower, where its unit has one) are; the frame says how many powers show
--- (frame.powersShown: the first under the health bar, the second on top of it) and whether the row does
--- (frame.rowShown).
+-- the row and its power (rowPower, where its unit has one) are; the frame says how many power slots it keeps
+-- (frame.slots: its button's), how many powers show (frame.powersShown) and whether the row does (frame.rowShown).
 function Bar.Make(frame, sizes)
     local level = Plain(frame:GetFrameLevel()) or 1
     local glow = CreateFrame("Frame", nil, frame)
@@ -230,7 +229,7 @@ function Bar.Make(frame, sizes)
     frame.border:SetVertexColor(Bar.BORDER[1], Bar.BORDER[2], Bar.BORDER[3], Bar.BORDER[4])
     frame.health = Health(frame, level + 3)
     frame.healthHeight, frame.powerHeight, frame.rowHeight = sizes.health, sizes.power, sizes.row
-    frame.powersShown, frame.powers = 1, {}
+    frame.slots, frame.powersShown, frame.powers = 1, 1, {}
     for index = 1, 2 do
         local power = Health(frame, level + 3)
         power:SetValue(0)
@@ -255,25 +254,20 @@ end
 
 -- Laid out for the frame's sizes, the unit's rank, its powers and the row, all inside the frame's edge: the border on
 -- it, the rank's line a pixel inside it, the bars inside both, one under the other a pixel apart: what stands above
--- the health bar while it shows, a druid's form's power right on it, the health, the power under it, the row while it
--- shows (under the power slot the frame keeps, where its button is) and its power; what lies over the health bar round
--- as it is; the glow beyond the edge; every round a quarter of the health bar's height.
+-- the health bar while it shows, the health, each power shown, the row while it shows and its power; what lies over
+-- the health bar round as it is; the glow beyond the edge; every round a quarter of the health bar's height. The row
+-- stands under the power slots the frame keeps, where its button is, or under the powers shown where there are more
+-- (a druid as your target in a fight: the slots grow once it is over, Units.lua).
 function Bar.Fit(frame)
     local height, powerHeight, rowHeight = frame.healthHeight, frame.powerHeight, frame.rowHeight
     local pixel = Core.Pixels(frame, 1)
     local radius = height * Bar.CAP
     local inset = pixel * frame.rank.width -- the border and the rank's line
     local shown = math.min(frame.powersShown or 0, #frame.powers)
-    local under, top = math.min(shown, 1), shown >= 2 and frame.powers[2] or nil
-    local rowTop = height + powerHeight
+    local rowTop = height + math.max(frame.slots or 1, shown) * powerHeight
     -- The stack, top to bottom: { bar, its top and its height below the frame's top }. What stands above the health bar
-    -- rests on it, a pixel over it, wherever the rank's line has put its top: a druid's form's power nearest, then
-    -- what runs for a while.
+    -- rests on it, a pixel over it, wherever the rank's line has put its top.
     local stack, rest = {}, inset - pixel
-    if top then
-        rest = rest - powerHeight
-        stack[1] = { top, rest, powerHeight }
-    end
     for _, bar in ipairs(frame.above) do
         if bar.on then
             rest = rest - bar.tall
@@ -284,9 +278,9 @@ function Bar.Fit(frame)
     end
     local above = math.max(-rest, 0)
     stack[#stack + 1] = { frame.health, 0, height }
-    if under > 0 then stack[#stack + 1] = { frame.powers[1], height, powerHeight } end
+    for index = 1, shown do stack[#stack + 1] = { frame.powers[index], height + (index - 1) * powerHeight, powerHeight } end
     if frame.rowShown then stack[#stack + 1] = { frame.row, rowTop, rowHeight } end
-    local bottom = frame.rowShown and (rowTop + rowHeight) or (height + under * powerHeight)
+    local bottom = frame.rowShown and (rowTop + rowHeight) or (height + shown * powerHeight)
     local rowPower = frame.rowPower
     if rowPower and frame.rowShown and rowPower.on then
         stack[#stack + 1] = { rowPower, bottom, frame.rowPowerHeight }
@@ -393,14 +387,21 @@ local function PowerColour(token)
 end
 Bar.PowerColour = PowerColour -- a power's colour by its token, as the game has it
 
+-- A power of the unit, now and most, as the game gives them (hidden or not; tested with type() only); its mana through
+-- Core.Mana, so another druid's mana in a form comes from what its own Sane UI shared. kind: { type, token }.
+function Bar.Read(unit, kind)
+    if kind.type == nil then return nil, nil end
+    if kind.type == Bar.MANA then return Core.Mana(unit) end
+    return Raw(UnitPower, unit, kind.type), Raw(UnitPowerMax, unit, kind.type)
+end
+
 -- One power on its bar, as the game gives it (hidden or not), in the game's colour; an empty bar where the unit has
 -- none (a most of 0, as far as can be told). kind: { type = the game's number, token = its name }. Whether it has one.
 local function Power(bar, unit, kind)
-    local most = kind.type and Raw(UnitPowerMax, unit, kind.type)
+    local now, most = Bar.Read(unit, kind)
     if type(most) ~= "nil" and Plain(most) ~= 0 then
         bar:SetStatusBarColor(PowerColour(kind.token))
         bar:SetMinMaxValues(0, most)
-        local now = Raw(UnitPower, unit, kind.type)
         if type(now) ~= "nil" then bar:SetValue(now) end
         return true
     end
@@ -412,10 +413,9 @@ end
 Bar.Power = Power
 
 -- The powers a frame shows: the unit's own; a druid in a form whose power is not mana (Core.FormPower), and you on a
--- frame that tells it (frame.alternate: your mana beside another power), mana first, under the health bar, and the
--- unit's own second, on top of it. Each { type = the game's number, token = its name }; a unit without a power has an
--- empty slot. Kept on the frame (frame.kinds), made anew only when the unit's power changed: asked at every beat of a
--- power.
+-- frame that tells it (frame.alternate: your mana beside another power), mana first and the unit's own under it. Each
+-- { type = the game's number, token = its name }; a unit without a power has an empty slot. Kept on the frame
+-- (frame.kinds), made anew only when the unit's power changed: asked at every beat of a power.
 function Bar.Kinds(frame, unit)
     local kind, token = Core.Ask(UnitPowerType, unit)
     local top = Core.FormPower(unit)

@@ -11,7 +11,8 @@ local Core = SaneUI.Core
 --      Core.Word("CLOSE", "Close")          -- the game's string of that name, or ours
 --      Core.RGB("26262B") -> r, g, b        -- nil for one that cannot be read; Core.Hex(r, g, b)
 --      Core.Pixels(frame, 2)                -- two of the screen's pixels in the frame's units
---      Core.FormPower(unit) -> kind, token  -- a druid's power in a form, shown on top of its mana (below)
+--      Core.FormPower(unit) -> kind, token  -- a druid's power in a form, shown beside its mana (below)
+--      Core.Mana(unit) -> now, most         -- a unit's mana: the game's, or what its Sane UI shared (Mana.lua)
 --      Core.Tip(region, title, text, anchor) -- its tooltip (title and text may be functions)
 --      Core.ShowTip(owner, title, text, anchor), Core.HideTip()
 --      Core.Unconfirmed(tooltip)            -- the line under a fact the game has not confirmed (Core.UNCONFIRMED);
@@ -87,18 +88,32 @@ function Core.Pixels(frame, count)
     return count * 768 / pixels / scale
 end
 
--- A druid's mana always in sight (Saneroki, 2026-11-13: on every nameplate, unit frame and group frame): the power
--- a druid shows now in a form whose power is not mana (rage, energy), as the game's number and token, while the game
--- gives its mana too (a most above none, or hidden); nil for anyone else, a druid out of a form, or one whose mana
--- the game keeps back. Its bars then show the mana where anyone's power stands, and this power on top.
+-- A druid's mana always in sight (Saneroki, 2026-11-13: on every nameplate, unit frame and group frame). The game
+-- tells a druid's mana in a form to that druid alone; another druid's Sane UI shares it with its group (Mana.lua).
 Core.MANA = rawget(_G, "Enum") and Enum.PowerType and Enum.PowerType.Mana or 0 -- the game's number for mana
+
+-- A unit's mana, now and most: what a member's own Sane UI shared, while it is fresh (Core.SharedMana, Mana.lua: the
+-- game keeps another druid's back in a form); else as the game gives it, hidden or not (tested with type() only).
+function Core.Mana(unit)
+    local shared = Core.SharedMana and Core.SharedMana(unit)
+    if shared then return shared.now, shared.most end
+    local ok, now = pcall(UnitPower, unit, Core.MANA)
+    local okMost, most = pcall(UnitPowerMax, unit, Core.MANA)
+    if not ok then now = nil end
+    if not okMost then most = nil end
+    return now, most
+end
+
+-- The power a druid shows now in a form whose power is not mana (rage, energy), as the game's number and token, while
+-- its mana is known (Core.Mana: a most above none, or hidden); nil for anyone else, a druid out of a form, or one whose
+-- mana nobody tells. Its bars then show the mana where anyone's power stands, and this power beside it.
 function Core.FormPower(unit)
     local _, class = Core.Ask(UnitClass, unit)
     if class ~= "DRUID" then return nil end
     local kind, token = Core.Ask(UnitPowerType, unit)
     if type(kind) ~= "number" or kind == Core.MANA then return nil end
-    local ok, most = pcall(UnitPowerMax, unit, Core.MANA)
-    if not ok or type(most) == "nil" or Core.Plain(most) == 0 then return nil end
+    local _, most = Core.Mana(unit)
+    if type(most) == "nil" or Core.Plain(most) == 0 then return nil end
     return kind, token
 end
 
