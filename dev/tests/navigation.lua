@@ -6399,29 +6399,38 @@ end)()
         and here.glow._shown and not there.pin.gathered and not there.pin.dim,
         "its flight points large (Taxi.SIZE), you are at the glowing one, the one to fly to clear")
     check(there._level == there._parent._level + 1 + ns.PinView.LEVELS, "over every other pin")
-    -- Nothing else of the pin filter on it (Saneroki, 2026-11-13): no quest, service, dock, quest area, party or minimap
-    -- dots; the filter's own switches untouched.
+    -- Nothing else of the pin filter on it but the party and the ships (Saneroki, 2026-11-13): no quest, service, place,
+    -- tram, quest area or minimap dots; the filter's own switches untouched.
     local function Kinds()
-        local kinds, count = {}, 0
+        local kinds, count, ships, others = {}, 0, 0, 0
         for _, pin in ipairs(ns.Pins.For(Canvas.view, false)) do
             if not kinds[pin.kind] then count = count + 1 end
             kinds[pin.kind] = true
+            if pin.kind == "travel" and pin.ship then ships = ships + 1
+            elseif pin.kind == "travel" then others = others + 1 end
         end
-        return kinds, count
+        return kinds, count, ships, others
     end
-    local kinds, count = Kinds()
+    local kinds, count, ships, others = Kinds()
     IsInGroup = function() return true end
     ns.Marks.Group(Canvas.view, GetTime() + 10)
     local blips, areas = 0, 0
     for _, widget in ipairs(W.frames) do
-        if widget._atlas == ns.Marks.BLIP and widget._shown and widget.who then blips = blips + 1 end
+        if widget._atlas == ns.Marks.BLIP and widget.who then blips = blips + 1 end
     end
     for _, widget in ipairs(areaFrames) do if widget._shown then areas = areas + 1 end end
     IsInGroup = function() return false end
     ns.Marks.Group(Canvas.view, GetTime() + 10)
-    check(kinds.flight and count == 1 and blips == 0 and areas == 0 and not minimap._shown
-        and ns.Pins.Shows("log") and ns.Pins.Shows("group") and not ns.Pins.Showing("log") and ns.Pins.Showing("flight"),
-        "at a flight master its flight points alone: no other pin, no quest area, no party, no minimap dots")
+    check(kinds.flight and kinds.travel and count == 2 and ships > 0 and others == 0 and blips > 0 and areas == 0
+        and not minimap._shown and ns.Pins.Shows("log") and not ns.Pins.Showing("log") and ns.Pins.Showing("flight")
+        and ns.Pins.Showing("group") and ns.Pins.Showing("travel"),
+        "at a flight master its flight points, the party and the ships' docks alone: no other pin, area or minimap dots")
+    ns.Canvas.Fit(full, 1415, frame._width, frame._height)
+    Canvas.Layout()
+    local _, _, _, tram = Kinds()
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height)
+    Canvas.Layout()
+    check(tram == 0, "the continent there: no tram, lift or portal, the ships alone of the ways of travel")
     check(locked and locked.pin.dim and locked.pin.tint == ns.Pins.RED and not there.pin.tint and not here.pin.tint
         and locked.pin.lines[1][1] == ns.TEXT.taxiFar,
         "one the master does not fly to (not found yet): red, as everywhere on the map, and says so")
@@ -6462,8 +6471,11 @@ end)()
     ns.Canvas.Fit(full, 1429, frame._width, frame._height)
     Canvas.Layout()
     local back, many = Kinds()
-    check(back.flight and many > 1 and ns.Pins.Showing("log") and ns.Taxi.Shows("flight") == nil,
-        "the full map without a flight master: the other pins back")
+    ns.Canvas.Fit(full, 1415, frame._width, frame._height)
+    Canvas.Layout()
+    local _, _, _, ways = Kinds()
+    check(back.flight and many > 2 and ways > 0 and ns.Pins.Showing("log") and ns.Taxi.Shows("flight") == nil,
+        "the full map without a flight master: the other pins back, the tram too")
     Window.Back()
     Window.frame._group:Run(1)
     IsShiftKeyDown = function() return true end

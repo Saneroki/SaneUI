@@ -24,9 +24,10 @@ local _, ns = ...
 --                   (Taxi.Label, PinView.LABEL: sized by the zoom, under every pin); the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
 --                   its way there hop by hop (GetNumRoutes, TaxiGetNodeSlot; each hop's path from Core's set
 --                   Travel, else straight between the two flight points as their continent's map has them: Paths.lua)
---      the others   none (Taxi.Shows; Saneroki, 2026-11-13): of all the pin filter shows, the full map has only the
---                   flight points while the master's is open (no quests, services, docks, quest areas, party, minimap
---                   dots); the player's arrow, the map pin and its golden line stay
+--      the others   none but the party and the ships (Taxi.Shows, Taxi.KEEP; Saneroki, 2026-11-13): of all the pin
+--                   filter shows, the full map has only those while the master's is open (no quests, services, places,
+--                   tram, lifts, portals, quest areas, minimap dots); the player's arrow, the map pin and its golden
+--                   line stay
 --      ours closed  (Esc, back to the corner) while the master is open: the game's closes too (CloseTaxiMap)
 --
 --  Whatever the switch Show the game's map says (the world map's). No frames of its own.
@@ -52,13 +53,25 @@ function Taxi.On()
     return open ~= nil
 end
 
+-- The pin filter's kinds the full map keeps at a flight master besides its flight points, as the filter says (Saneroki,
+-- 2026-11-13: "still show party members and ships"): the party, and of the ways of travel the ships alone (Pins.For:
+-- a pin's ship, the boats', the zeppelins' and their piers').
+Taxi.KEEP = { group = true, travel = true }
+
+-- Whether ours stands in for the flight master's map now: open, and the full map the one in use.
+function Taxi.Over()
+    return open ~= nil and ns.Canvas.camera == ns.Window.full
+end
+
 -- Whether the pin filter's kind shows on the full map while ours stands in for the flight master's: its flight points
--- alone, whatever the filter says (Saneroki, 2026-11-13: "remove all pins other then the flightpath pins when the
--- flightpath map is open"); nil where the filter says (no flight master, the small map). The player's arrow, the map
--- pin and its golden line are no pins of the filter: they stay.
+-- whatever the filter says, Taxi.KEEP's as it says, nothing else (Saneroki, 2026-11-13: "remove all pins other then
+-- the flightpath pins when the flightpath map is open"); nil where the filter says (no flight master, the small map).
+-- The player's arrow, the map pin and its golden line are no pins of the filter: they stay.
 function Taxi.Shows(kind)
-    if not open or ns.Canvas.camera ~= ns.Window.full then return nil end
-    return kind == "flight"
+    if not Taxi.Over() then return nil end
+    if kind == "flight" then return true end
+    if Taxi.KEEP[kind] then return nil end
+    return false
 end
 
 -- A flight point as the master tells it, while ours stands in for its map; nil else.

@@ -25,7 +25,8 @@ local _, ns = ...
 --  objective: { quest, index }, its words asked of the game when the tooltip shows), goals (a pin of what a quest of
 --  yours asks for, Goals.lua: { { quest, index }, ... }), and by kind: quest (its ID), complete,
 --  focused (the quest the game's arrow leads to), to (a map it opens), dim (a flight point not yet found), taxi (at a
---  flight master: the flight point's node, Taxi.lua; here: the one you stand at, size its size there), grey
+--  flight master: the flight point's node, Taxi.lua; here: the one you stand at, size its size there), ship (a boat's,
+--  a zeppelin's or a pier's: at a flight master the ways of travel that stay, Taxi.KEEP), grey
 --  (a quest too low), tint (its icon's colour: a quest for later, a flight point not yet found), order (drawn over
 --  a lower one).
 --
@@ -553,6 +554,7 @@ local function FromData(place)
         if not look then return nil end
         pin.kind, pin.atlas = look[1], look[2]
         pin.service = look[1] == "service"
+        pin.ship = what == "pier" or nil -- (at a flight master the ships stay: Taxi.KEEP)
         if place.to then pin.to, pin.click = place.to, "map" end
         if place.levelMin and place.levelMax then pin.lines = { Pins.TEXT.level:format(place.levelMin, place.levelMax) } end
         -- A dungeon's entrance whose map Core's set Dungeons has: Shift and a click opens it.
@@ -565,6 +567,7 @@ local function FromData(place)
     elseif kind == "travel" then
         -- Named by its kind where it has no name of its own (a lift).
         pin.kind, pin.atlas, pin.name = "travel", WAYS[what] or WAYS.boat, pin.name or Pins.WAY_WORDS[what]
+        pin.ship = (what == "boat" or what == "zeppelin") or nil -- (at a flight master the ships stay: Taxi.KEEP)
         if place.towards then
             -- A dock: the game's own way (its TaxiPath tables), where it goes from here.
             pin.unverified, pin.doubt, pin.lines = nil, nil, {}
@@ -786,6 +789,7 @@ function Pins.For(view, small, pu, pv)
     local left, right, top, bottom = view.left, view.right, view.top, view.bottom
     local standing = ns.Found.Taken() -- the spawns a found one stands on: no possible one there
     local maps = Maps(view)
+    local taxi = ns.Taxi.Over() -- at a flight master: of the ways of travel the ships alone (Taxi.KEEP)
     for _, map in ipairs(maps) do
         for _, pin in ipairs(LiveOn(map)) do hidden[pin.key] = true end
     end
@@ -798,7 +802,7 @@ function Pins.For(view, small, pu, pv)
                 local kind = pin.kind
                 local wanted = shown[kind]
                 if wanted == nil then
-                    -- (at a flight master the flight points alone: Taxi.lua)
+                    -- (at a flight master its flight points, the party and the ships alone: Taxi.Shows)
                     wanted = Showing(kind) and (not small or SMALL[kind])
                         and (not continentLevel or Pins.CONTINENT[kind]) and (view.level ~= "world" or Pins.WORLD[kind])
                         and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER)
@@ -807,7 +811,8 @@ function Pins.For(view, small, pu, pv)
                     shown[kind] = wanted
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
-                if wanted and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]
+                if wanted and not (taxi and kind == "travel" and not pin.ship)
+                    and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]
                                and not standing[pin.key]
                                and (kind == "goal" or kind == "quest" or not goals[pin.thing])) then
                     local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v

@@ -364,8 +364,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   too), right click it to take it away. It is gone once you have passed it, and all of them when the map pin moves.
 - **At a flight master:** talking to one fills the screen with this map in place of the game's flight map, the full
   map as it always is (both continents, its view, the quest log), zoomed out to the whole world, with no pin on it
-  but its flight points (no quests, services, docks, quest areas, party or minimap dots: whatever the pin filter
-  says; your arrow, the map pin and its golden line stay): large, the one you stand at glowing, at each one's right its name and what the
+  but its flight points, your party and the ships' docks (no quests, services, places, tram, lifts, portals, quest
+  areas or minimap dots, whatever the pin filter says; your arrow, the map pin and its golden line stay): the flight
+  points large, the one you stand at glowing, at each one's right its name and what the
   flight there costs (the text larger the closer you zoom, under every pin so it never covers one or takes its
   click); the mouse on one draws the way there, hop by hop as the master flies it, and its tooltip says what the
   flight costs; a click on it flies
@@ -657,9 +658,11 @@ is small, and the maps of the dungeons and raids. The plan is in
   time shows no flight point at its world map: at the master's map). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
   node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), red where not reachable (`Pins.RED`, its colour
   taken out first, as a flight point not found), their lines
-  `Taxi.Lines`; shown whatever the pin filter says and nothing else of it on the full map (`Taxi.Shows`, through
-  `Pins.Showing`: `Pins.For`, the found herbs and ore, `Areas.Place`, the party's marks, `Hybrid.Place`'s minimap dots;
-  the filter's own switches untouched, so the finders stay as they are), at the pins' top level (`PinView`), at each one's right its name
+  `Taxi.Lines`; shown whatever the pin filter says, and of the rest of it on the full map only `Taxi.KEEP`'s as it
+  says: the party, and of the ways of travel a pin with `ship` (a boat's, a zeppelin's, a pier's: `Pins.For`)
+  (`Taxi.Shows`, `Taxi.Over`, through `Pins.Showing`: `Pins.For`, the found herbs and ore, `Areas.Place`, the party's
+  marks, `Hybrid.Place`'s minimap dots; the filter's own switches untouched, so the finders stay as they are), at the
+  pins' top level (`PinView`), at each one's right its name
   and price (`Taxi.Label`: a font string on `PinView`'s layer of names, at the pins' layer's level so under every
   button, anchored to the button's right, `PinView.LABEL.GAP` apart; its size `LABEL.MAX` at a view `LABEL.AT` yards
   high, `LABEL.STEP` less for each doubling, `LABEL.MIN` at least, one of `Core.Font`'s per size; shown with its
@@ -1219,6 +1222,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-13, the party and the ships at a flight master too:** Saneroki: "keep them but still show party members
+  and ships" (the arrow, the map pin and its line). `Taxi.KEEP`, `Taxi.Over`; a pin's `ship` (boats, zeppelins,
+  piers): the tram, lifts, portals and the game's ways into another map stay off there.
 - **2026-11-13, at a flight master its flight points alone:** Saneroki: "can you remove all pins other then the
   flightpath pins when the flightpath map is open". `Taxi.Shows`, `Pins.Showing`: quests, services, docks, places,
   rares, herbs and ore, quest areas, the party and the minimap dots off the full map while the master's is open; the

@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: the party and the ships at a flight master too (Saneroki, 2026-11-13)
+Saneroki, of the arrow, the map pin and its golden line kept there: "keep them but still show party members and ships". The party's marks and the ships' docks show on the flight master's map as the pin filter says; the tram, lifts, portals and the game's ways into another map stay off there with the other pins.
+- **`src/Navigation/Taxi.lua`:** `Taxi.KEEP` (`group`, `travel`: as the filter says), `Taxi.Over` (the master's map open, the full map in use); `Taxi.Shows` gives nil for those.
+- **`src/Navigation/Pins.lua`:** a pin's `ship` (a boat's, a zeppelin's, a pier's); `Pins.For` at a flight master leaves out every way of travel without it.
+- **`src/Navigation/README.md`:** *At a flight master*, *Taxi*, the history.
+- **Tests:** `dev/tests/navigation.lua` (1821, 28 in Retail): at a flight master in Elwynn the flight points, the ships' docks and the party, nothing else; on the continent no tram there; without the master the tram back.
+- A `/reload` takes it in (changed files, none new).
+
 ### Navigation: at a flight master its flight points alone (Saneroki, 2026-11-13)
 Saneroki: "can you remove all pins other then the flightpath pins when the flightpath map is open". While our full map stands in for the flight master's, nothing of the pin filter shows on it but the flight points, at every zoom; the player's arrow, the map pin and its golden line stay.
 - **`src/Navigation/Taxi.lua`:** `Taxi.Shows(kind)`: while the master's map is open and the full map is in use, true for the flight points, false for every other kind; nil else (the filter says).

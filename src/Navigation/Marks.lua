@@ -298,7 +298,7 @@ local function Members(view, now, interval)
     seen = view
     local count = 0
     local box = view.map and Coords.Box(view.map)
-    if box and ns.Pins.Showing("group") and IsInGroup() then -- (at a flight master none: Taxi.Shows)
+    if box and ns.Pins.Showing("group") and IsInGroup() then -- (at a flight master too: Taxi.KEEP)
         local size = Marks.MemberSize(view.k)
         for _, member in ipairs(Live.Group(view.map)) do
             local u, v = Coords.ToPlane(box, member.x, member.y)
