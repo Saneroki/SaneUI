@@ -1035,17 +1035,21 @@ check(CVar("nameplateMinScale") == "1" and CVar("nameplateMaxScale") == "1" and 
 check(CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "0" and ns.options.foundCVars.nameplateShowOnlyNameForFriendlyPlayerUnits == "1",
     "friendly players not by name only while the module is on (their plates whole, dressed), yours kept")
 local function Near(a, b) return math.abs(a - b) < 1e-6 end
--- Stacking: the game stacks plates by its own plate's height; ours as high as our bar alone (no auras), bar to bar,
--- the share rounded up so two plates never lie over each other.
-local function Stacked(size)
-    return Text.Height(UIParent) * size / 100 / plateSize[2]
+-- Stacking: the game stacks plates by its own plate's height; ours as high as our bar and a row of auras over it, a
+-- gap to the next bar (the bar alone without auras), the share rounded up so two plates never lie over each other.
+local function Stacked(size, bare)
+    return (Text.Height(UIParent) + (bare and 0 or Auras.SIZE + Auras.GAP)) * size / 100 / plateSize[2]
 end
-local function Share(size) return ("%.2f"):format(math.ceil(Stacked(size) * 100 - 1e-6) / 100) end
+local function Share(size, bare) return ("%.2f"):format(math.ceil(Stacked(size, bare) * 100 - 1e-6) / 100) end
 local stacked = CVar("nameplateOverlapV")
-check(stacked == Share(125) and tonumber(stacked) >= Stacked(125) and Stacked(125) < 0.3
-    and ns.options.foundCVars.nameplateOverlapV == "1.1",
-    "plates stacked bar to bar (about a fifth of the game's plate), never over each other, the game's value kept")
+check(stacked == Share(125) and tonumber(stacked) >= Stacked(125) and Stacked(125) > 2 * Stacked(125, true)
+    and Stacked(125) < 0.7 and ns.options.foundCVars.nameplateOverlapV == "1.1",
+    "plates stacked as high as the bar and a row of auras over it, never over each other, the game's value kept")
 check(CVar("nameplateOverlapH") == "0.8", "side by side the game's own")
+Core.Set(ns.name, "style", "bar")
+check(CVar("nameplateOverlapV") == Share(125, true), "Health bar only: no auras, so bar to bar")
+Core.Set(ns.name, "style", "both")
+check(CVar("nameplateOverlapV") == stacked, "the auras back: their row's room back")
 Core.Set(ns.name, "plateSize", 200)
 check(CVar("nameplateOverlapV") == Share(200), "larger plates: farther apart")
 Core.Set(ns.name, "plateSize", 50)

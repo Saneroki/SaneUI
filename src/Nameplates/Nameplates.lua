@@ -154,6 +154,9 @@ local function Apply(key)
         ns.Guarded(ns.CombatText.Update)
     elseif key == "combatHeals" or key == "combatPictures" then
         return
+    elseif key == "style" then -- what the plates show, and how closely they stack (no auras: closer, Scale.Stacking)
+        ns.Guarded(ns.Plate.Refresh)
+        ns.Guarded(ns.Scale.Update)
     else
         ns.Guarded(ns.Plate.Refresh)
     end

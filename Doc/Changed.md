@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: the auras' row back in the stacking (Saneroki, 2026-11-13)
+Saneroki, of the plates stacked bar to bar: "actually, just add the buffs / debuffs/ ccs row as well so those will be visible." Stacked plates now stand as high apart as our bar and one row of auras over it, with a little gap to the next bar: your debuffs sit in that row, a foe's buffs and the crowd control stand beside the bar within its height. With *Plates show* at *Health bar only* there are no auras, so the plates stand bar to bar. Only our bar still clicks a plate.
+- **`src/Nameplates/Scale.lua`:** `Scale.Stacking`: `Text.Height`, plus `Auras.SIZE` and `Auras.GAP` unless `ns.Style()` is `"bar"`, times `Scale.Full()` over the game's plate height, rounded up (about 0.5 at 125%).
+- **`src/Nameplates/Nameplates.lua`:** *Plates show* changed: `Scale.Update` too, after `Plate.Refresh`.
+- **README:** *Stacking* in How to use and the technical details, *What clicks a plate*, the TL;DR, the history. `Plate.lua`'s header.
+- **Tests:** `dev/tests/nameplates.lua` (405): the stacking as the bar and a row of auras, more than twice the bar's alone; *Health bar only* bar to bar, the row's room back with the auras.
+- A `/reload` takes it in (changed files, none new).
+
 ### Nameplates: plates stacked bar to bar, only our bar clicks them (Saneroki, 2026-11-13)
 Saneroki, of the plates stacked as close as ours are high: "can you make it the same height as the healthbar? without the buffs and debuffs?" The game stacks plates by its own plate's height times `nameplateOverlapV`; that share is now our bar's alone, so stacked plates stand bar to bar and their auras and cast bars reach over the next. The game's click area around its name and bar (about half its plate high) would then reach over the next plate's bar, so a plate is now clicked on our bar alone.
 - **`src/Nameplates/Scale.lua`:** `Scale.Stacking`: `Text.Height` times `Scale.Full()` over the game's plate height, rounded up to two places (about 0.2 at 125%, was about 0.5); `Scale.AIR` and `Scale.LEAST` gone.

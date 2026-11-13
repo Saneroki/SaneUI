@@ -21,8 +21,9 @@ local _, ns = ...
 --  the mouse (their tooltip would pop up beside our bar), lose it under ours
 --  and get it back with the rest. The rest of the game's plate stays: its
 --  widgets and soft target icon. What clicks it is our bar alone (Click), not
---  the game's area around its name and bar: the plates stack bar to bar
---  (Scale.Stacking), and the game's would reach over the next plate's bar.
+--  the game's area around its name and bar: the plates stack as close as
+--  their bar and a row of auras (Scale.Stacking), and the game's would reach
+--  over the next plate's bar.
 --
 --  A player's plate is dressed like any other (bar, power line, the line,
 --  auras, cast bar) and shows while a fight with the player can start (the

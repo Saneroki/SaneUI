@@ -40,14 +40,16 @@ local _, ns = ...
 --  the module is on too: the game stacks them one above the other by the
 --  height of its own plate (C_NamePlate.GetNamePlateSize: its aura row,
 --  name, bar and cast bar, far higher than ours), times nameplateOverlapV.
---  That CVar is set to the share our bar takes of it, at the full size
---  (Saneroki, 2026-11-13: "the same height as the healthbar, without the
---  buffs and debuffs"): stacked plates stand bar to bar, the auras and cast
---  bars reaching over the next. What clicks a plate is then our bar alone
---  (Plate.lua, Click), so none takes the clicks meant for the next. Worked
---  out anew at every update and when one of the game's CVars its plate's
---  size comes from changes (Scale.SIZED). How closely they stand side by
---  side (nameplateOverlapH) stays the game's.
+--  That CVar is set to the share ours take of it, at the full size: our bar
+--  and a row of auras over it, a gap to the next plate's bar (Saneroki,
+--  2026-11-13: "add the buffs / debuffs / ccs row as well so those will be
+--  visible"); our bar alone while the plates show no auras (Health bar
+--  only). The cast bars reach over the next plate. What clicks a plate is
+--  our bar alone (Plate.lua, Click), so none takes the clicks meant for the
+--  next. Worked out anew at every update, when Plates show changes, and when
+--  one of the game's CVars its plate's size comes from changes
+--  (Scale.SIZED). How closely they stand side by side (nameplateOverlapH)
+--  stays the game's.
 --
 --  While on, the CVars are ours: set again a little after the game has its
 --  stored settings and Core's Sync has written a profile's (both come after
@@ -178,13 +180,17 @@ local function Restore(list)
     end
 end
 
--- How closely the game stacks plates (nameplateOverlapV, a share of its own plate's height): as high as our bar is at
--- the full size, the share rounded up (two plates never over each other). Nil while the game tells no size of its plate.
+-- How closely the game stacks plates (nameplateOverlapV, a share of its own plate's height): as high as ours are at the
+-- full size, our bar and a row of auras over it (a foe's buffs and the crowd control stand beside the bar, within it),
+-- Auras.GAP to the next plate's bar; the bar alone while the plates show no auras (Health bar only). The share rounded
+-- up (two plates never over each other). Nil while the game tells no size of its plate.
 function Scale.Stacking()
     local _, theirs = Core.Ask(C_NamePlate.GetNamePlateSize)
     theirs = Plain(theirs)
     if type(theirs) ~= "number" or theirs <= 0 then return nil end
-    local ours = ns.Text.Height(UIParent) * Scale.Full()
+    local high = ns.Text.Height(UIParent)
+    if ns.Style() ~= "bar" then high = high + ns.Auras.SIZE + ns.Auras.GAP end
+    local ours = high * Scale.Full()
     return ("%.2f"):format(math.ceil(ours / theirs * 100 - 1e-6) / 100)
 end
 

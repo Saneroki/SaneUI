@@ -4,7 +4,7 @@
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
-nameplate settings), where they stand, what clicks them, their cast bar and widgets; they stack bar to bar, and only our bar clicks them. Over the game's
+nameplate settings), where they stand, what clicks them, their cast bar and widgets; they stack as close as our bar and a row of its auras, and only our bar clicks them. Over the game's
 health bar it lays its own: a rectangle with round corners, everything on one line inside it, each piece only
 while it shows: your quest objective on the unit (a sword or a sack, "0/7"), its level, its raid marker, a
 player's item level ("i32"), your threat on it, its name, its health and how much is left ("1.32m | 100%"). The
@@ -101,9 +101,11 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
   at 60 yards is taken by the game at once. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
-- **Stacking:** where the game stacks plates (its options say which), it stacks them bar to bar: as close as our bar
-  is high at *Nameplate size*, the buffs and debuffs left out (they reach over the next plate). Only our bar clicks a
-  plate, so a click on a bar goes to its own plate. Side by side they stand as the game has them.
+- **Stacking:** where the game stacks plates (its options say which), it stacks them as close as ours are high at
+  *Nameplate size*: the bar and a row of auras over it (your debuffs; a foe's buffs and the crowd control beside the
+  bar fit in it), a little gap to the next plate's bar; with *Health bar only* (no auras) bar to bar. The cast bar
+  reaches over the next plate. Only our bar clicks a plate, so a click on a bar goes to its own plate. Side by side
+  they stand as the game has them.
 - **What plates show:** *Plates show* (Saneroki, 2026-11-09): *Health bar and spells* (at first) is all the above.
   *Health bar only*: the bar, its line and its outline, the combo points and the cast bar, but no auras around it
   (your debuffs, a foe's buffs, crowd control, the dispellable type above it) and none of Combat's tracked auras
@@ -174,7 +176,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   still takes clicks, in our bar's place (*What clicks a plate*).
 - **What clicks a plate** (`Plate.lua`, `Click`, Saneroki, 2026-11-13): our dress alone, its bar and border, not the
   game's area around its name and bar (`NamePlateUnitFrameMixin:UpdateHitTestArea`: about half its plate high and
-  20 units wider than its bar), which would reach over the next plate's bar now the plates stack bar to bar.
+  20 units wider than its bar), which would reach over the next plate's bar now the plates stack this close.
   `plate:SetAllHitTestPoints(dress)`: anchored to the dress, so it follows its size and scale by itself. The game lets
   an addon set it in a fight only on the tick it hands the plate its unit and right after its own code set it
   (`CanChangeHitTestPoints`), so it is set at `NAME_PLATE_UNIT_ADDED` and in a hook after the unit frame's
@@ -376,15 +378,18 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   changed; every frame as `Range.Drift` moves its distance on) and moves it every frame, eased, never past it (`Scale.Step`: each moment the same share of what is left,
   `exp(-elapsed / Scale.EASE)` (0.08 s) with its distance, `Scale.QUICK` (0.05 s) when selected or let go; within
   `Scale.SNAP` of its size, there).
-  **Stacking** (`Scale.Stacking`, Saneroki, 2026-11-13: the game stacked plates as if they were very big; then "the
-  same height as the healthbar, without the buffs and debuffs"): the game stacks plates one above the other by the
+  **Stacking** (`Scale.Stacking`, Saneroki, 2026-11-13: the game stacked plates as if they were very big; then "add
+  the buffs / debuffs / ccs row as well so those will be visible"): the game stacks plates one above the other by the
   height of its own plate (`C_NamePlate.GetNamePlateSize`, set by its `NamePlateDriverMixin:UpdateNamePlateSize` from
   its aura row, name, bar and cast bar: about 85 units on Forever's Cast focus style at Large, 68 at Medium), times
   `nameplateOverlapV` (`Scale.STACK`; its own value kept and given back like the others). Whenever the module is on,
-  it is in `Scale.ALWAYS`, set to the share our bar takes: `Text.Height` times `Scale.Full()`, over the game's height,
-  rounded up to two places (about 0.2 at 125%), so stacked plates stand bar to bar and never over each other; the
-  auras and cast bars reach over the next plate. What clicks a plate is then our bar alone (`Plate.lua`, *What clicks
-  a plate*). Worked out at every `Scale.Update` (the setting *Nameplate size* too) and
+  it is in `Scale.ALWAYS`, set to the share ours take: `Text.Height`, a row of auras (`Auras.SIZE`: your debuffs over
+  the bar; a foe's buffs and the crowd control stand beside it, bottom-aligned, within that height) and `Auras.GAP` to
+  the next bar, times `Scale.Full()`, over the game's height, rounded up to two places (about 0.5 at 125%), so stacked
+  plates never lie over each other; with *Plates show* at *Health bar only* (no auras, `ns.Style`) `Text.Height`
+  alone, bar to bar. The cast bars reach over the next plate. What clicks a plate is our bar alone (`Plate.lua`,
+  *What clicks a plate*), so no floor is needed. Worked out at every `Scale.Update` (the settings *Nameplate size* and
+  *Plates show* too) and
   `Scale.AGAIN` seconds after a change of one of the game's CVars its size comes from (`Scale.SIZED`:
   `nameplateSize`, `nameplateStyle`, `nameplateAuraScale`, `nameplateDebuffPadding`); kept as it was while the game
   tells no size. A CVar's value counts as ours when it is the same number however the game writes it (`Same`), so
@@ -470,6 +475,8 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 ## History
 - **2026-11-13:** a druid's mana always in sight (Saneroki: "on all nameplates, unitplates and party plates the druids
   manabar is visible"): its mana along the bar's bottom, a form's rage or energy along its top.
+- **2026-11-13:** the auras' row back in the stacking (Saneroki: "add the buffs / debuffs/ ccs row as well so those
+  will be visible"): our bar, a row of auras and `Auras.GAP`; the bar alone with *Health bar only*.
 - **2026-11-13:** plates stacked bar to bar (Saneroki: "the same height as the healthbar, without the buffs and
   debuffs"): `nameplateOverlapV` our bar's share of the game's plate, no floor; only our bar clicks a plate
   (`SetAllHitTestPoints`).
