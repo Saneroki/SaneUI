@@ -38,10 +38,13 @@ local _, ns = ...
 --  the game's hidden threat kind, as a bar takes a hidden value, full from
 --  having aggro up and empty under it (face.threat).
 --
---  Your own slot is a frame like all the others, with all of that (Saneroki,
---  2026-10-30). Two things differ: its name is the word Party or Raid, and at
---  its far right, in place of the health's words, a cog always stands, with the
---  tools' button on just that (GroupTools.lua).
+--  Your own slot is a frame like all the others, with all of that, your own
+--  name and health too (Saneroki, 2026-10-30; the name and health 2026-11-13).
+--  One thing differs: a cog always stands at its far left, in front of your
+--  name, with the tools' button on just that (GroupTools.lua); the line (the
+--  raid marker, the name, the role's mark, what floats from the left) starts
+--  after it (Face.MINE). The cog keeps that place whatever the line shows, so
+--  the tools' button over it, which may not move in a fight, never has to.
 --
 --  The same face stands on a secure unit button of the game's group headers
 --  (Face.Unit: it follows the button's unit), hearing that unit's events; small
@@ -70,6 +73,7 @@ Face.LINE, Face.LINE_MOST = 1 / 5, 8 -- the power line's height, a share of the 
 Face.INSET, Face.GAP = 3, 2 -- the words from the bar's ends, and between two pieces
 Face.BARE = 80       -- narrower than this: no health at all, the name has it all
 Face.ICON = 14       -- one of your reminders' icons, and the cog, square
+Face.MINE = Face.ICON + Face.GAP -- how much farther in your own slot's line starts: the cog's room before it
 Face.ICON_GAP = 1    -- between two of your reminders' icons
 Face.BIG_OFF, Face.BIG_MOST = 4, 32 -- the big icons are that much lower than the frame, and at most that high
 Face.ROLE = 10       -- the role's mark, square
@@ -225,10 +229,10 @@ function Face.Make(parent, sample, small)
     rez:Hide()
     face.ready, face.rez = ready, rez
     face.marks:Place("LEFT", rez, "RIGHT", 0, 0)
-    -- Your own slot's cog, at its far right.
+    -- Your own slot's cog, at its far left, in front of your name.
     local cog = face.floating:CreateTexture(nil, "OVERLAY")
     cog:SetSize(Face.ICON, Face.ICON)
-    cog:SetPoint("RIGHT", face.floating, "RIGHT", -Face.INSET, 0)
+    cog:SetPoint("LEFT", face.floating, "LEFT", Face.INSET, 0)
     cog:SetAtlas(Face.COG)
     cog:Hide()
     face.cog = cog
@@ -423,17 +427,20 @@ local function Rez(face, unit)
     RezIcon(face, Core.Ask(rawget(_G, "UnitHasIncomingResurrection"), unit) == true)
 end
 
--- Whether this is your own slot: the cog on it, and no health in words, that room the cog's.
+-- Whether this is your own slot: the cog on it at the far left, and the line after it (Face.MINE): the raid marker and
+-- the name (the level, empty here, leads them), the role's mark centred where the raid marker stands, the big icons
+-- that float from the left.
 local function Yours(face, mine)
-    face.mine = mine
     face.cog:SetShown(mine)
-    face.noHealth = mine and Face.ICON + Face.GAP or face.small and 0 or nil
-end
-
--- The unit's name; on your own slot the word for your group in its place.
-local function Name(face, unit)
-    if not face.mine then return Text.Name(face, unit) end
-    face.name:SetText(Core.Ask(IsInRaid) and ns.TEXT.groupRaid or ns.TEXT.groupParty)
+    if face.mine == mine then return end
+    face.mine = mine
+    local left = Face.INSET + (mine and Face.MINE or 0)
+    face.level:ClearAllPoints()
+    face.level:SetPoint("LEFT", face.top, "LEFT", left, 0)
+    face.ready:ClearAllPoints()
+    face.ready:SetPoint("LEFT", face.floating, "LEFT", left, 0)
+    face.role:ClearAllPoints()
+    face.role:SetPoint("TOPLEFT", face, "TOPLEFT", left + Face.GAP + (face.markSize - Face.ROLE) / 2, -Face.GAP)
 end
 
 -- Everything for the face's unit, as the game says it now.
@@ -460,7 +467,7 @@ function Face.Fill(face)
     Face.Ready(face)
     Rez(face, unit)
     Text.Raid(face, unit)
-    Name(face, unit)
+    Text.Name(face, unit)
     Text.Health(face, unit)
     Buffs(face, unit)
 end
@@ -506,7 +513,7 @@ local function Heard(face, event, _, info)
         ns.GroupReminders.Heard(unit) -- in a fight: when its auras changed, for your cast
         if Core.Restricted() or Buffed(info) then Buffs(face, unit) end
     elseif event == "UNIT_NAME_UPDATE" then
-        Name(face, unit)
+        Text.Name(face, unit)
     else -- gone offline, come back, dead or alive
         Face.Fill(face)
     end
@@ -559,7 +566,7 @@ function Face.Sample(face, sample)
     RezIcon(face, sample.rez == true)
     RoleIcon(face, sample.role)
     Text.Mark(face, sample.mark)
-    face.name:SetText(sample.you and (sample.raid and ns.TEXT.groupRaid or ns.TEXT.groupParty) or sample.name)
+    face.name:SetText(sample.you and Core.FullName("player") or sample.name)
     Text.Sample(face, math.floor(sample.most * sample.health), sample.most, sample.word)
     Icons(face, sample.icons, #sample.icons)
 end

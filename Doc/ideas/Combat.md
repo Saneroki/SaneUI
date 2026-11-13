@@ -93,6 +93,9 @@ Decided (Saneroki, 2026-10-16):
   the health bar and the form's power stands in a bar as high directly on top of it; on the group frames and the
   nameplates the mana line along the bar's bottom, the form's along its top (`Core.FormPower`). Where the game keeps
   another druid's mana back, the form's power alone where anyone's stands.
+- **Your own slot among the group frames** (Saneroki, 2026-11-13; built): "change the name of my own frame in a party
+  to my actual name, Put the cogwheel infront of my name and add the % health of my own frame as well". Your name and
+  health's share as on every slot; the cog at the far left, the line after it.
 - **Out of sight at rest** (Saneroki, 2026-11-01; built): "Unit frames and Actionbars are hidden by default but are
   visible on mouse over, missing health or class resource, always visible in combat, always visible in groups. If I
   hover over any actionbar all actionbars will be visible." On by default, a setting each; the quest log the same, its

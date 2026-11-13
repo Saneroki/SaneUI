@@ -6,6 +6,8 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Your own slot among the party and raid frames shows your name and
+  your health like every other, with the cog in front of your name.
 - Nameplates stack much closer: as close as their health bar and
   the row of auras over it, and a click on a bar always goes to its
   own plate.

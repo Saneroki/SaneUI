@@ -388,17 +388,23 @@ do
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
     -- Your own slot: no unit frame but the tools' button, and the game's manager out of sight.
-    check(first.face.mine and not second.face.mine and first.face.name._text == "Party" and first.face.cog._shown
-        and first.face.value._text == "" and first.face.health._value == 850 and not second.face.cog._shown,
-        "your own slot: its name is the word Party, the cog instead of the health's words, and otherwise a frame like any other")
-    check(first.face.cog._points[1][1] == "RIGHT" and first.face.cog._points[1][4] == -Face.INSET, "the cog at the far right")
+    check(first.face.mine and not second.face.mine and first.face.name._text == "Droopy Fairwind" and first.face.cog._shown
+        and first.face.value._text == "85%" and first.face.health._value == 850 and not second.face.cog._shown,
+        "your own slot: your name and health as any other's (Saneroki, 2026-11-13), and the cog")
+    check(first.face.cog._points[1][1] == "LEFT" and first.face.cog._points[1][2] == first.face.floating
+        and first.face.cog._points[1][4] == Face.INSET, "the cog at the far left")
+    check(first.face.level._points[1][4] == Face.INSET + Face.MINE and second.face.level._points[1][4] == Face.INSET
+        and first.face.raid._points[1][2] == first.face.level and first.face.name._points[1][2] == first.face.raid
+        and Face.MINE >= Face.ICON and first.face.ready._points[1][4] == Face.INSET + Face.MINE
+        and first.face.role._points[1][4] == second.face.role._points[1][4] + Face.MINE,
+        "your line after it: the raid marker, your name, the role's mark and the big icons, in front of none of them")
     check(CompactRaidFrameManager._parent ~= UIParent, "the game's raid manager at the screen's edge is out of sight")
     local tools
     for _, widget in ipairs(W.frames) do
         if widget._template == "SecureHandlerClickTemplate" and widget._refs then tools = widget end
     end
     check(tools and tools._shown and tools._parent == live and tools._points[1][2] == first and tools._width == ns.GroupTools.COG
-        and tools._points[1][4] == -(Face.INSET + Face.ICON / 2)
+        and tools._points[1][3] == "LEFT" and tools._points[1][4] == Face.INSET + Face.ICON / 2
         and tools:GetAttribute("_onclick"):find("panel:Show", 1, true), "the button lies on the cog alone and opens the panel by the game's secure means")
     check(first:GetAttribute("*type1") == "target" and first:GetAttribute("*type2") == "togglemenu", "the rest of the slot answers as any other's")
     local panel = tools._refs.panel
@@ -418,6 +424,9 @@ do
     Group.Apply()
     check(first.face.unit == "party1" and not first.face.mine and second.face.mine and tools._points[1][2] == second
         and not first.face.cog._shown and second.face.cog._shown, "the group changed: your slot is another button, the button goes with it")
+    check(first.face.level._points[1][4] == Face.INSET and second.face.level._points[1][4] == Face.INSET + Face.MINE
+        and first.face.name._text == "Tess Brook" and second.face.name._text == "Droopy Fairwind",
+        "and the line moves with it: after the cog on yours, at the edge on theirs")
     W.members[1] = { "player", "party1", "party2" }
     headers[1]:SetAttribute("yOffset", Group.GAP)
     Group.Apply()
@@ -489,7 +498,7 @@ do
         check(not face.form._shown and face.power._value == 10, "a warrior again: its rage alone")
     end
 
-    -- Your own slot shows your own role and raid marker, and the word changes with your group.
+    -- Your own slot shows your own role and raid marker, and your name whatever your group.
     local markOf = GetRaidTargetIndex
     GetRaidTargetIndex = function(unit) return unit == "player" and 3 or nil end
     UnitGroupRolesAssigned = function(unit) return unit == "player" and "HEALER" or "NONE" end
@@ -503,11 +512,12 @@ do
     incoming = false
     first.face:GetScript("OnEvent")(first.face, "INCOMING_RESURRECT_CHANGED", "player")
     first.face:GetScript("OnEvent")(first.face, "UNIT_NAME_UPDATE", "player")
-    check(first.face.name._text == "Party" and not first.face.rez._shown, "its name stays the word")
+    check(first.face.name._text == "Droopy Fairwind" and not first.face.rez._shown, "its name stays yours")
     UnitHasIncomingResurrection = nil
     IsInRaid = function() return true end
     Face.Fill(first.face)
-    check(first.face.name._text == ns.TEXT.groupRaid, "in a raid it says Raid")
+    check(first.face.name._text == "Droopy Fairwind" and first.face.value._text == "85%",
+        "in a raid too: your name and health, no word for the group")
     IsInRaid = function() return raid end
     GetRaidTargetIndex = markOf
     UnitGroupRolesAssigned = function() return "NONE" end
@@ -956,7 +966,8 @@ do
     check(last._points[1][4] == 840 and last._points[1][5] == 112 and last._width == 120 and last._height == 28,
         "the last at the top of the eighth column, touching its neighbours")
     local name = faces[2].name._text
-    check(faces[1].name._text == ns.TEXT.groupRaid and faces[1].cog._shown and not faces[2].cog._shown, "the first is your own slot")
+    check(faces[1].name._text == "Droopy Fairwind" and faces[1].cog._shown and not faces[2].cog._shown
+        and faces[1].value._text ~= "", "the first is your own slot: your name, the cog, its health")
     local rolled = 0
     for _, face in ipairs(faces) do
         if face.role._shown then rolled = rolled + 1 end

@@ -199,14 +199,14 @@ function Tools.Build(parent)
     end)
 end
 
--- The button on the cog of that frame (your slot), the cog's middle that far from its right edge; or out of sight
+-- The button on the cog of that frame (your slot), the cog's middle that far from its left edge; or out of sight
 -- without one. Out of a fight.
 function Tools.Over(slot, middle)
     if not button then return end
     button:ClearAllPoints()
     if slot then
         button:SetSize(Tools.COG, Tools.COG)
-        button:SetPoint("CENTER", slot, "RIGHT", -middle, 0)
+        button:SetPoint("CENTER", slot, "LEFT", middle, 0)
         button:SetFrameLevel((Core.Plain(slot:GetFrameLevel()) or 1) + 12)
     end
     button:SetShown(slot ~= nil)

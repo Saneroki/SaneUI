@@ -29,8 +29,8 @@ local _, ns = ...
 --  (one left, the next slid in), so every face reads its unit anew whenever the
 --  group changes, in a fight too. The game's state driver shows them while you
 --  are in a group; alone you have your own frame. Your own slot among them is
---  one of them, with the group's word for a name and a cog that opens the
---  group's tools (GroupTools.lua).
+--  one of them, your name and health on it too, and a cog in front of your
+--  name that opens the group's tools (GroupTools.lua).
 --
 --  Beside a party of five or less (Saneroki, 2026-11-06; the switch Pets and
 --  targets beside a party), right of each member's frame, two small ones, each

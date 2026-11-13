@@ -254,8 +254,10 @@ Sunder Armor), as you choose, nothing fixed.
   hovering shows its tooltip with the whole name, and `@mouseover` macros work on it. Alone, your own frame is all there is.
   Hover and click are the game's unit button's: nothing of ours takes the mouse from it.
 - **The group's tools:** your own slot among the frames is a frame like all the others, with its health, marks, buffs and everything else.
-  Two things differ: its name is the word *Party* or *Raid*, and a cog always stands at its far right, where another frame has its health in
-  words (your slot never shows those). The cog opens a small
+  It shows your own name and how much health you have left, as every slot does (Saneroki, 2026-11-13: "change the name of my own frame
+  in a party to my actual name, Put the cogwheel infront of my name and add the % health"). One thing differs: a cog always stands at
+  its far left, in front of your name; your raid marker, name and role's mark start after it. The cog keeps its place, so the button on it
+  is always over it, in a fight too. The cog opens a small
   panel, in a fight too, in place of the game's raid manager at the screen's edge, which is gone: *Ready Check*, *Role Check*, *Countdown*,
   *Make Everyone Assistant*, the raid markers on your target and on the ground (click one to set or take it off, the last clears them
   all), *Group menu* (the game's menu of you: converting to a raid or party, difficulty, and more), *Leave Group*. Who may use what is the
@@ -865,7 +867,9 @@ Sunder Armor), as you choose, nothing fixed.
   `raidtarget`, `worldmarker`, `togglemenu` (unit `player`) and `click`, whose `clickbutton` is the game's own button in
   `CompactRaidFrameManager.displayFrame` (`readyCheckButton`, `rolePollButton`, `countdownButton`, `everyoneIsAssistButton`). With secure buttons
   the panel is protected, so its opener and close button are `SecureHandlerClickTemplate`s, which work in a fight. The opener lies on the cog
-  of the button whose face has your unit (`face.mine`), moved after the fight if the group changes in one. Threat may be hidden in a fight
+  of the button whose face has your unit (`face.mine`), at the slot's left (`Tools.Over`: the cog's middle `Face.INSET` +
+  `Face.ICON` / 2 from it), moved after the fight if the group changes in one. On that face `Yours` starts the line
+  `Face.MINE` farther in (the empty `level` that leads the raid marker and the name, the ready check's icon, the role's mark). Threat may be hidden in a fight
   (`ShouldUnitThreatStateBeSecret`): addon code cannot turn a hidden number into a colour (a curve's `Evaluate` takes no secrets from addons), so the border stays black then.
 - **One unit (`Units/GroupFace.lua`):** its parts are the unit frames' (`UnitBar.Plate`, `Around`, `Strip`, `End`, `Ends`, `Power`;
   `UnitText.MakeLine`, `Raid`, `Mark`, `Name`, `Health`, `Sample`), without the glow's plates: forty frames stay light. `Face.Unit` follows
@@ -1091,6 +1095,8 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-13:** your own slot among the group frames shows your name and your health's share; its cog stands at the far
+  left, in front of your name (Saneroki), no longer at the far right in place of the health.
 - **2026-11-13:** a druid's mana always in sight (Saneroki: "on all nameplates, unitplates and party plates the druids
   manabar is visible"): on your frame, your target's and your focus's the mana stays under the health bar and a form's
   rage or energy stands on top of it; on the party and raid frames the mana line along the bottom, the form's along the
