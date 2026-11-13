@@ -395,7 +395,7 @@ function Hybrid.Place(camera, width, height, known, lost)
     local minimap = Parts()
     wide = nil
     Ground(lost or (camera ~= ns.Window.full and not ns.Terrain.Possible()), ns.Pins.Shows("minimapArea"))
-    if not lost and not ns.Pins.Shows("minimap") then return minimap:Hide() end
+    if not lost and not ns.Pins.Showing("minimap") then return minimap:Hide() end -- (at a flight master: Taxi.Shows)
     if camera == ns.Window.full then return Wide(minimap, camera, width, height, known) end
     if lost and not camera.native then camera.native = minimap:GetZoom() end
     local size = Hybrid.Side(width, height)

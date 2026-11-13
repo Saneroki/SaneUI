@@ -24,6 +24,9 @@ local _, ns = ...
 --                   (Taxi.Label, PinView.LABEL: sized by the zoom, under every pin); the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
 --                   its way there hop by hop (GetNumRoutes, TaxiGetNodeSlot; each hop's path from Core's set
 --                   Travel, else straight between the two flight points as their continent's map has them: Paths.lua)
+--      the others   none (Taxi.Shows; Saneroki, 2026-11-13): of all the pin filter shows, the full map has only the
+--                   flight points while the master's is open (no quests, services, docks, quest areas, party, minimap
+--                   dots); the player's arrow, the map pin and its golden line stay
 --      ours closed  (Esc, back to the corner) while the master is open: the game's closes too (CloseTaxiMap)
 --
 --  Whatever the switch Show the game's map says (the world map's). No frames of its own.
@@ -47,6 +50,15 @@ local map          -- the flight master's map (GetTaxiMapID): a map of its own i
 
 function Taxi.On()
     return open ~= nil
+end
+
+-- Whether the pin filter's kind shows on the full map while ours stands in for the flight master's: its flight points
+-- alone, whatever the filter says (Saneroki, 2026-11-13: "remove all pins other then the flightpath pins when the
+-- flightpath map is open"); nil where the filter says (no flight master, the small map). The player's arrow, the map
+-- pin and its golden line are no pins of the filter: they stay.
+function Taxi.Shows(kind)
+    if not open or ns.Canvas.camera ~= ns.Window.full then return nil end
+    return kind == "flight"
 end
 
 -- A flight point as the master tells it, while ours stands in for its map; nil else.

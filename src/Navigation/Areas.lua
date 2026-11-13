@@ -106,7 +106,7 @@ end
 -- zone's level; one map at a time (Retail), over the map shown.
 function Areas.Place(view, onSmall)
     small = onSmall and true or false
-    local quest = view.level == "zone" and ns.Pins.Shows(small and "minimapArea" or "area") and Quest()
+    local quest = view.level == "zone" and ns.Pins.Showing(small and "minimapArea" or "area") and Quest()
     if not quest then return HideAll() end
     layer:SetAlpha(ns.PinScale("area")) -- the pin filter's slider for the quest areas is their opacity
     local drawn = {}

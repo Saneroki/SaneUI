@@ -363,8 +363,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   on the stretch you dragged. A waypoint is the map pin's art, small and grey: drag it to move it (on the small map
   too), right click it to take it away. It is gone once you have passed it, and all of them when the map pin moves.
 - **At a flight master:** talking to one fills the screen with this map in place of the game's flight map, the full
-  map as it always is (both continents, its view, every pin, the quest log), zoomed out to the whole world: its
-  flight points large, over every other pin, the one you stand at glowing, at each one's right its name and what the
+  map as it always is (both continents, its view, the quest log), zoomed out to the whole world, with no pin on it
+  but its flight points (no quests, services, docks, quest areas, party or minimap dots: whatever the pin filter
+  says; your arrow, the map pin and its golden line stay): large, the one you stand at glowing, at each one's right its name and what the
   flight there costs (the text larger the closer you zoom, under every pin so it never covers one or takes its
   click); the mouse on one draws the way there, hop by hop as the master flies it, and its tooltip says what the
   flight costs; a click on it flies
@@ -656,7 +657,9 @@ is small, and the maps of the dungeons and raids. The plan is in
   time shows no flight point at its world map: at the master's map). The flight pins then (`Pins.lua`, `Taxi.Node`): `taxi` (the
   node), `size` `Taxi.SIZE`, `here` (glowing, as the focused quest), red where not reachable (`Pins.RED`, its colour
   taken out first, as a flight point not found), their lines
-  `Taxi.Lines`; shown whatever the pin filter says, at the pins' top level (`PinView`), at each one's right its name
+  `Taxi.Lines`; shown whatever the pin filter says and nothing else of it on the full map (`Taxi.Shows`, through
+  `Pins.Showing`: `Pins.For`, the found herbs and ore, `Areas.Place`, the party's marks, `Hybrid.Place`'s minimap dots;
+  the filter's own switches untouched, so the finders stay as they are), at the pins' top level (`PinView`), at each one's right its name
   and price (`Taxi.Label`: a font string on `PinView`'s layer of names, at the pins' layer's level so under every
   button, anchored to the button's right, `PinView.LABEL.GAP` apart; its size `LABEL.MAX` at a view `LABEL.AT` yards
   high, `LABEL.STEP` less for each doubling, `LABEL.MIN` at least, one of `Core.Font`'s per size; shown with its
@@ -1216,6 +1219,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-13, at a flight master its flight points alone:** Saneroki: "can you remove all pins other then the
+  flightpath pins when the flightpath map is open". `Taxi.Shows`, `Pins.Showing`: quests, services, docks, places,
+  rares, herbs and ore, quest areas, the party and the minimap dots off the full map while the master's is open; the
+  arrow, the map pin and the golden line stay.
 - **2026-11-11, the line coloured by its danger; waypoints dragged:** Saneroki: "Color the golden routing line in
   depending on how dangerous it is. So we know where which enemies spawn and what their level is. Can we make a
   routing show fx red if the enemies level range is clearly above me. Can we also implement it to make it possible to

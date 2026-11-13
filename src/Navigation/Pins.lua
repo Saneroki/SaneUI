@@ -719,6 +719,15 @@ local function Shows(kind)
 end
 Pins.Shows = Shows
 
+-- Whether a kind is drawn now: as the filter says, but at a flight master the full map's flight points alone
+-- (Taxi.Shows). The filter's switches themselves stay as they are (Shows: the finders follow them, Nodes.lua).
+local function Showing(kind)
+    local taxi = ns.Taxi.Shows(kind)
+    if taxi ~= nil then return taxi end
+    return Shows(kind)
+end
+Pins.Showing = Showing
+
 local SMALL = {}
 for _, entry in ipairs(Pins.KINDS) do SMALL[entry[1]] = entry.small end
 
@@ -789,8 +798,8 @@ function Pins.For(view, small, pu, pv)
                 local kind = pin.kind
                 local wanted = shown[kind]
                 if wanted == nil then
-                    -- (at a flight master the flight points always: Taxi.lua)
-                    wanted = (Shows(kind) or kind == "flight" and ns.Taxi.On()) and (not small or SMALL[kind])
+                    -- (at a flight master the flight points alone: Taxi.lua)
+                    wanted = Showing(kind) and (not small or SMALL[kind])
                         and (not continentLevel or Pins.CONTINENT[kind]) and (view.level ~= "world" or Pins.WORLD[kind])
                         and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER)
                         -- (the small view's herbs and ore where the game's minimap shows: Found.lua's, under its dots)
@@ -848,7 +857,7 @@ function Pins.For(view, small, pu, pv)
         local kind = ns.Nodes.FOUND[entry.kind]
         local wanted = shown[kind]
         if wanted == nil then
-            wanted = kind and Shows(kind) and (not small or SMALL[kind])
+            wanted = kind and Showing(kind) and (not small or SMALL[kind])
                 and (not Pins.CLOSE[kind] or (view.span or 0) <= Pins.CLOSER) and true or false
             shown[kind] = wanted
         end
