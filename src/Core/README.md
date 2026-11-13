@@ -587,7 +587,7 @@ but for a window to try those with (`/sane window`).
 | `Profiles.lua` | Where every module's settings live: a profile (Accountwide at first) or the character's own; the profiles |
 | `Unsaved.lua` | Changes made in the menus kept or taken back: the last save, what differs from it, Yes into the profiles ticked, No, a step waiting for the answer (`Core.Unsaved`; its window is `Settings/Save.lua`) |
 | `Serial.lua` | Plain values as a line of text and back (`Core.Serial.Write`, `Read`): a profile exported and imported |
-| `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`, `Unconfirmed` (the line *! Unconfirmed Data !*; `UNCONFIRMED_MARK`, the red ! before each such thing's name), `TipLook`/`TipSection`/`LookOf` (a creature on a map, drawn by the Tooltips module like a unit), `Pool`, `Confirm`, `AskText`, `Font`, `Sound`, `Lend` |
+| `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `FormPower` (a druid's power in a form, shown on top of its mana; `Core.MANA`), `Tip`, `Unconfirmed` (the line *! Unconfirmed Data !*; `UNCONFIRMED_MARK`, the red ! before each such thing's name), `TipLook`/`TipSection`/`LookOf` (a creature on a map, drawn by the Tooltips module like a unit), `Pool`, `Confirm`, `AskText`, `Font`, `Sound`, `Lend` |
 | `Dock.lua` | The zones at the screen's edges, and the shape that shows where a dragged window docks |
 | `Shape.lua` | A plate with round corners and a trim, square where it touches the screen's edge |
 | `Skin.lua` | A window's background and border on a Shape, one with an edge it is docked to |

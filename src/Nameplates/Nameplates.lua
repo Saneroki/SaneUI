@@ -16,7 +16,8 @@ local ADDON, ns = ...
 --  under ours (their alpha, nothing of theirs written):
 --    Bar.lua       the health bar, round at both ends (Core's cap masks), its
 --                  border by the unit's rank, a ring on your target and focus,
---                  the unit's power along its bottom, a red glow on aggro
+--                  the unit's power along its bottom (a druid's form's along its
+--                  top, its mana along the bottom), a red glow on aggro
 --    Text.lua      the line inside the bar: quest, raid marker, level, item
 --                  level, threat, name, health; the bar as wide as the line
 --    Resource.lua  your combo points on the power line of your target's bar
@@ -61,7 +62,7 @@ ns.TEXT = {
     control = "Crowd control",
     controlTip = "Right of the bar: stuns, fears, roots and the like on that creature or player, by anyone.",
     power = "Power line",
-    powerTip = "Along the bottom of each bar, inside it: the unit's mana, rage or energy.",
+    powerTip = "Along the bottom of each bar, inside it: the unit's mana, rage or energy. A druid's mana stays there in a form, its rage or energy along the top.",
     resource = "Combo points under the bar",
     resourceTip = "While you have combo points to build (a rogue, a druid in cat form), they show in your target's health bar, on its power line, one segment each.",
     barrier = "Barriers",

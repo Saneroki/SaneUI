@@ -87,6 +87,12 @@ Decided (Saneroki, 2026-10-16):
   with "<current> | <percentage>%" on its right; with several (a druid) the mana bar always, and the energy or rage
   bar too in that form. CC, debuffs and buffs as on the nameplates, at least the three most important of each;
   black and white lists by a right click on an icon, and a window to add auras to either list.
+- **A druid's mana always** (Saneroki, 2026-11-13; built): "on all nameplates, unitplates and party plates the druids
+  manabar is visible. When they have the energy or Rage bar, show the mana bar at the bottom of the healthbar like it
+  does now and put the other, rage or energy bar when they have it, ontop." On the unit frames the mana stays under
+  the health bar and the form's power stands in a bar as high directly on top of it; on the group frames and the
+  nameplates the mana line along the bar's bottom, the form's along its top (`Core.FormPower`). Where the game keeps
+  another druid's mana back, the form's power alone where anyone's stands.
 - **Out of sight at rest** (Saneroki, 2026-11-01; built): "Unit frames and Actionbars are hidden by default but are
   visible on mouse over, missing health or class resource, always visible in combat, always visible in groups. If I
   hover over any actionbar all actionbars will be visible." On by default, a setting each; the quest log the same, its

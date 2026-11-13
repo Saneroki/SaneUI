@@ -5,7 +5,8 @@ local _, ns = ...
 --  The health bar of our dress on a plate: a rectangle round at its corners,
 --  as large as the game's own health bar under it (the game's nameplate size
 --  and style), framed by one thin border, with the unit's power as a thin
---  line along its bottom, inside it.
+--  line along its bottom, inside it (a druid's mana always: in a form whose
+--  power is not mana its rage or energy along the top, Saneroki, 2026-11-13).
 --
 --  How it is round: the bar's fill, its background and the lines inside it
 --  are masked at both ends (Bar.End): by Core's caps (Shape.CAP_LEFT,
@@ -25,7 +26,9 @@ local _, ns = ...
 --                 for one that does, the game's colour for friends
 --    the power    the unit's mana, rage or energy, a thin line along the bar's
 --                 bottom, in the game's colour for that power; no background:
---                 spent power shows nothing
+--                 spent power shows nothing. A druid in a form whose power is
+--                 not mana (Core.FormPower): its mana along the bottom, the
+--                 form's power in a line as that along the top (dress.form)
 --    the border   one pixel: black; grey on your target (a hint), orange on
 --                 your focus (the game's colour for it); on a player you
 --                 know, by how (Bar.KIN): green your guild, blue your party,
@@ -249,18 +252,21 @@ function Bar.Make(dress)
     background:SetAllPoints(health)
     dress.health, dress.background = health, background
     dress.caps = Caps(health, health, health:GetStatusBarTexture(), background)
-    -- The unit's power: a line along the bar's bottom, inside it, its corners the bar's own.
-    local power = CreateFrame("StatusBar", nil, health)
-    power:SetPoint("BOTTOMLEFT", health, "BOTTOMLEFT")
-    power:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT")
-    power:SetStatusBarTexture(Bar.FILL)
-    power:SetMinMaxValues(0, 1)
-    power:SetValue(0)
-    -- No background: where the unit's power is spent, the bar is seen through the line.
-    for _, mask in ipairs(dress.caps) do power:GetStatusBarTexture():AddMaskTexture(mask) end
-    power:SetFrameLevel(level + 5) -- over the barrier, which lies on the bar
-    power:Hide()
-    dress.power = power
+    -- The unit's power: a line along the bar's bottom, inside it, its corners the bar's own; a druid's form's along
+    -- its top.
+    for _, side in ipairs({ "BOTTOM", "TOP" }) do
+        local power = CreateFrame("StatusBar", nil, health)
+        power:SetPoint(side .. "LEFT", health, side .. "LEFT")
+        power:SetPoint(side .. "RIGHT", health, side .. "RIGHT")
+        power:SetStatusBarTexture(Bar.FILL)
+        power:SetMinMaxValues(0, 1)
+        power:SetValue(0)
+        -- No background: where the unit's power is spent, the bar is seen through the line.
+        for _, mask in ipairs(dress.caps) do power:GetStatusBarTexture():AddMaskTexture(mask) end
+        power:SetFrameLevel(level + 5) -- over the barrier, which lies on the bar
+        power:Hide()
+        if side == "BOTTOM" then dress.power = power else dress.form = power end
+    end
     dress.rank = Bar.PLAIN
     dress.marks = Core.HealthMarks.New(dress, health, {
         masks = dress.caps, size = Bar.DISPEL, fit = function() Bar.Outline(dress) end })
@@ -269,7 +275,7 @@ function Bar.Make(dress)
 end
 
 -- Laid out for the dress's size and the unit's rank: the bar a pixel inside its border, the rank's line reaching
--- out from the same edge, the glow beyond it, the power line a third of the bar's height, every cap a quarter of what
+-- out from the same edge, the glow beyond it, the power lines a third of the bar's height, every cap a quarter of what
 -- it rounds.
 function Bar.Fit(dress)
     local height = Plain(dress:GetHeight()) or 0
@@ -280,6 +286,7 @@ function Bar.Fit(dress)
     local inner = height - 2 * edge
     dress.line = math.max(inner * Bar.LINE, pixel * 2)
     dress.power:SetHeight(dress.line)
+    dress.form:SetHeight(dress.line)
 end
 
 -- The outline (the border, the rank's line, the glow) around the bar, and around its cast bar too while a cast
@@ -436,21 +443,41 @@ local function PowerColour(token)
     return 0, 0.55, 1
 end
 
--- The unit's power along the bar's bottom, as the game gives it; none where the unit has none (a most of 0, as
--- far as can be told: a hidden most shows the line) or the setting is off. Tells the combo points when the line
--- came or went: they stand on it.
-function Bar.Power(dress, unit)
-    local power = dress.power
-    local most = nil
-    if unit and (ns.options or {}).power ~= false then most = Raw(UnitPowerMax, unit) end
-    local on = type(most) ~= "nil" and Plain(most) ~= 0
-    if on then
-        local _, token = Core.Ask(UnitPowerType, unit)
-        power:SetStatusBarColor(PowerColour(token))
-        power:SetMinMaxValues(0, most)
-        local now = Raw(UnitPower, unit)
-        if type(now) ~= "nil" then power:SetValue(now) end
+-- One power on its line as the game gives it: kind, the game's number (nil: the power the unit shows now), and its
+-- token. Whether it has one (a most above 0, as far as can be told: a hidden most shows the line).
+local function Line(line, unit, kind, token)
+    local most, now -- as the game gives them, hidden or not: tested with type() only
+    if kind then
+        most, now = Raw(UnitPowerMax, unit, kind), Raw(UnitPower, unit, kind)
+    else
+        most, now = Raw(UnitPowerMax, unit), Raw(UnitPower, unit)
     end
+    if type(most) == "nil" or Plain(most) == 0 then return false end
+    if not kind then
+        local _, shown = Core.Ask(UnitPowerType, unit)
+        token = shown
+    end
+    line:SetStatusBarColor(PowerColour(token))
+    line:SetMinMaxValues(0, most)
+    if type(now) ~= "nil" then line:SetValue(now) end
+    return true
+end
+
+-- The unit's power along the bar's bottom, as the game gives it; none where the unit has none or the setting is off.
+-- A druid in a form whose power is not mana (Core.FormPower): its mana there, the form's along the top. Tells the
+-- combo points when the bottom line came or went: they stand on it.
+function Bar.Power(dress, unit)
+    local power, form = dress.power, dress.form
+    local on, top = false, false
+    if unit and (ns.options or {}).power ~= false then
+        local kind, token = Core.FormPower(unit)
+        if kind then
+            on, top = Line(power, unit, Core.MANA, "MANA"), Line(form, unit, kind, token)
+        else
+            on = Line(power, unit)
+        end
+    end
+    if form:IsShown() ~= top then form:SetShown(top) end
     if power:IsShown() ~= on then
         power:SetShown(on)
         ns.Resource.Again()
@@ -463,6 +490,7 @@ function Bar.Clear(dress)
     dress.health:SetMinMaxValues(0, 1)
     dress.health:SetValue(1)
     dress.power:Hide()
+    dress.form:Hide()
     dress.danger = false
     Bar.Glow(dress, false)
     dress.marks:Set(nil)

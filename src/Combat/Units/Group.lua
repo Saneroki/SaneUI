@@ -284,6 +284,7 @@ Group.CLASSES = { -- the classes a made-up player is of, by the role it may have
     NONE = { "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST", "SHAMAN", "MAGE", "WARLOCK", "DRUID" },
 }
 Group.POWERS = { WARRIOR = "RAGE", ROGUE = "ENERGY" } -- a made-up player's power where it is no mana
+Group.FORMS = { TANK = "RAGE", NONE = "ENERGY" } -- a made-up druid's form's power by its role (bear, cat), over its mana
 local function Roll(icons)
     local sample = { name = Pick(NAMES.first) .. " " .. Pick(NAMES.last), health = 0.35 + math.random() * 0.65,
                      most = math.random(2, 30) * 1000, icons = {} }
@@ -291,6 +292,9 @@ local function Roll(icons)
     if Chance(0.35) then sample.role = Pick({ "TANK", "HEALER" }) end -- a tank or a healer
     sample.class = Pick(Group.CLASSES[sample.role or "NONE"])
     if sample.role ~= "HEALER" then sample.power = Group.POWERS[sample.class] end
+    if sample.class == "DRUID" and (sample.role == "TANK" or (sample.role == nil and Chance(0.5))) then
+        sample.form, sample.formShare = Group.FORMS[sample.role or "NONE"], math.random()
+    end
     if Chance(0.2) then sample.mark = math.random(1, 8) end
     if Chance(0.2) then sample.barrier = math.min(0.1 + math.random() * 0.3, 1 - sample.health) end
     if Chance(0.15) then sample.lost = 0.1 + math.random() * 0.3 end
@@ -305,6 +309,7 @@ local function Roll(icons)
         sample.word = dead and ns.UnitText.DEAD or ns.UnitText.OFFLINE
         sample.colour = dead and Face.DEAD or Face.OFFLINE
         sample.mana, sample.barrier, sample.lost, sample.dispel, sample.aggro = nil, nil, nil, nil, nil
+        sample.form = nil
         sample.icons = {}
         sample.rez = dead and Chance(0.5)
     end

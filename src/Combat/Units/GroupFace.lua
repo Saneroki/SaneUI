@@ -25,6 +25,8 @@ local _, ns = ...
 --    bottom  every member's class resource (Saneroki, 2026-11-09: "show
 --            always the class resource"), a line inside the bar as on a
 --            nameplate, so the frame is no taller for it
+--    top     a druid's form's rage or energy, a line as that one, while its
+--            mana stays along the bottom (Saneroki, 2026-11-13)
 --  and on it Core's barrier and lost maximum health. A player's health in their
 --  class's colour (Saneroki, 2026-11-06; the switch Class colours, else green as
 --  every unit frame), a creature beside a party by how it stands to you (neutral
@@ -51,8 +53,11 @@ local _, ns = ...
 --  tooltip and @mouseover.
 --
 --  The power line: a healer's mana (the game's assigned role), everyone else's
---  the power they show now (a warrior's rage, a rogue's energy, a druid's in
---  its form, a mage's mana); none on a unit without one.
+--  the power they show now (a warrior's rage, a rogue's energy, a mage's
+--  mana); none on a unit without one. A druid's mana always (Core.FormPower):
+--  in a form whose power is not mana its mana along the bottom and the form's
+--  power along the top (face.form); where the game keeps a druid's mana back,
+--  the form's along the bottom as anyone's.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -120,7 +125,8 @@ function Face.Big(face, height)
 end
 
 -- Laid out for its size: the border a screen pixel, the bar inside it (shorter where maximum health is lost), the
--- line along its bottom, the name's room; the health's words change where the frame turned narrow or wide.
+-- line along its bottom and a druid's form's along its top, the name's room; the health's words change where the frame
+-- turned narrow or wide.
 function Face.Fit(face)
     local width, height = Plain(face:GetWidth()) or 0, Plain(face:GetHeight()) or 0
     if width <= 0 or height <= 0 then return end
@@ -138,7 +144,9 @@ function Face.Fit(face)
     Bar.Ends(health, "both", round, tall)
     Bar.End(marks.lostEnd, marks.lost, "RIGHT", "both", round, tall)
     marks:Fit(inner)
-    face.power:SetHeight(math.max(math.min(tall * Face.LINE, Face.LINE_MOST), pixel * 2))
+    local line = math.max(math.min(tall * Face.LINE, Face.LINE_MOST), pixel * 2)
+    face.power:SetHeight(line)
+    face.form:SetHeight(line)
     Face.Big(face, height)
     local bare = width < Face.BARE
     local turned = bare ~= face.bare
@@ -183,16 +191,19 @@ function Face.Make(parent, sample, small)
     face.threat = threat
     local health = Bar.Strip(face, level + 3)
     face.health = health
-    local power = CreateFrame("StatusBar", nil, health)
-    power:SetFrameLevel(level + 5)
-    power:SetPoint("BOTTOMLEFT", health, "BOTTOMLEFT")
-    power:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT")
-    power:SetStatusBarTexture(Bar.FILL)
-    power:SetMinMaxValues(0, 1)
-    power:SetValue(0)
-    for _, mask in ipairs(health.ends) do power:GetStatusBarTexture():AddMaskTexture(mask) end
-    power:Hide()
-    face.power = power
+    -- The power lines inside the bar, its corners their own: along its bottom, and a druid's form's along its top.
+    for _, side in ipairs({ "BOTTOM", "TOP" }) do
+        local power = CreateFrame("StatusBar", nil, health)
+        power:SetFrameLevel(level + 5)
+        power:SetPoint(side .. "LEFT", health, side .. "LEFT")
+        power:SetPoint(side .. "RIGHT", health, side .. "RIGHT")
+        power:SetStatusBarTexture(Bar.FILL)
+        power:SetMinMaxValues(0, 1)
+        power:SetValue(0)
+        for _, mask in ipairs(health.ends) do power:GetStatusBarTexture():AddMaskTexture(mask) end
+        power:Hide()
+        if side == "BOTTOM" then face.power = power else face.form = power end
+    end
     face.marks = Core.HealthMarks.New(face, health, {
         masks = health.ends, size = Face.ICON, sample = sample, above = level + 8, fit = function() Face.Fit(face) end })
     Text.MakeLine(face, Face.INSET, Face.GAP)
@@ -285,8 +296,17 @@ end
 local KIND = { type = Bar.MANA, token = "MANA" } -- read again each time: the power line's kind
 
 -- The power line, on every member: a healer's mana where they have it, else the power they show now; none where the
--- unit has none.
+-- unit has none. A druid in a form whose power is not mana: its mana along the bottom, the form's along the top.
 local function Power(face, unit)
+    local form, token = Core.FormPower(unit)
+    if form then
+        KIND.type, KIND.token = form, token
+        face.form:SetShown(Bar.Power(face.form, unit, KIND))
+        KIND.type, KIND.token = Bar.MANA, "MANA"
+        face.power:SetShown(Bar.Power(face.power, unit, KIND))
+        return
+    end
+    face.form:Hide()
     KIND.type, KIND.token = Core.Ask(UnitPowerType, unit)
     local mana = RoleOf(unit) == "HEALER" and Bar.Raw(UnitPowerMax, unit, Bar.MANA)
     if KIND.type == nil or (mana and Plain(mana) ~= 0) then KIND.type, KIND.token = Bar.MANA, "MANA" end
@@ -509,7 +529,7 @@ end
 -- Made-up values instead of a unit (the preview): sample = { you (your own slot), raid, name, health (a share), most, mana (a share, or nil),
 -- role, mark (a raid marker's number, or nil), icons, barrier, lost (shares), dispel (a kind), ready (a ready check's
 -- answer), rez, aggro, word (Dead, Offline), colour (theirs), class (a player's), reaction (a creature's), power (its
--- kind's token, nil: mana) }.
+-- kind's token, nil: mana), form (a druid's form's power's token over its mana, or nil), formShare (its share) }.
 function Face.Sample(face, sample)
     if face.small then
         Colour(face, Face.Tint(sample.class ~= nil, sample.class, sample.reaction))
@@ -527,6 +547,11 @@ function Face.Sample(face, sample)
     if sample.mana then
         face.power:SetStatusBarColor(Bar.PowerColour(sample.power or "MANA"))
         face.power:SetValue(sample.mana)
+    end
+    face.form:SetShown(sample.form ~= nil and sample.mana ~= nil)
+    if sample.form then
+        face.form:SetStatusBarColor(Bar.PowerColour(sample.form))
+        face.form:SetValue(sample.formShare or 1)
     end
     face.threat:SetValue(0)
     Border(face, sample.aggro)

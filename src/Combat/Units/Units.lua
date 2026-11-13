@@ -8,8 +8,10 @@ local _, ns = ...
 --  the level and the raid marker on its left, the name after them
 --  (a player's first name and surname; none on your own frame), the health and
 --  how much is left on its right; under it the unit's power at half its height
---  with the same words on its left (on your own frame, where you may have two
---  powers, a druid's in a form, two slots: mana always, the form's under it);
+--  with the same words on its left (a druid's mana always: in a form whose
+--  power is not mana the mana stays under it and the form's rage or energy
+--  stands on top of the health bar; so your own where you have mana beside
+--  another power);
 --  around it the auras that matter most (Auras.lua). Under each, as a cast bar
 --  under a nameplate, a row while its unit is there, with that unit's name
 --  alone: your target's target under your target's frame, your focus's target
@@ -382,8 +384,9 @@ local function Unwatch(button)
     button:Hide()
 end
 
--- Whether a frame keeps two power slots: your own, while you may have two powers (a druid, by its forms; in a
--- specialization whose power is not mana but who has mana too). Asked out of a fight: the slots are the button's size.
+-- Whether a frame shows your mana beside another power: your own, while you may have two powers (a druid, by its
+-- forms; in a specialization whose power is not mana but who has mana too). Any druid's shows on any frame anyway
+-- (Core.FormPower). Asked out of a fight.
 local function Alternate(kind)
     if kind.unit ~= "player" then return false end
     local _, class = Core.Ask(UnitClass, "player")
@@ -394,7 +397,7 @@ local function Alternate(kind)
 end
 
 -- One frame and its row shown and the game's away, or ours hidden and the game's back, as their settings say; at
--- the size the setting Unit frame size says, with the power slots it keeps. Out of a fight.
+-- the size the setting Unit frame size says. Out of a fight.
 local function Kind(kind)
     local row = kind.row
     local wanted = not ns.off and ns.options[kind.option] ~= false
@@ -412,8 +415,6 @@ local function Kind(kind)
     local face = button.face
     Units.Marks(face)
     face.alternate = Alternate(kind)
-    face.slots = face.alternate and 2 or 1
-    button:SetHeight(Units.HEIGHT + face.slots * Units.POWER)
     Away(kind)
     Watch(button)
     if ns.options[row.option] ~= false then
@@ -498,7 +499,7 @@ function Units.Start()
         Again()
     end, 0.5))
     ns.On("UI_SCALE_CHANGED", Core.Later(Units.Apply))
-    -- Another specialization may have another power: your frame's slots anew (after a fight).
+    -- Another specialization may have another power: whether your frame shows your mana beside it, anew (after a fight).
     ns.On("PLAYER_SPECIALIZATION_CHANGED", Core.Later(Units.Apply))
     -- In Edit Mode every frame and row shows whether its unit is there or not (as a sample), to be placed; after it,
     -- as the game's unit watch says again.

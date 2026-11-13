@@ -553,6 +553,48 @@ check(not dress.power:IsShown(), "no power: no line")
 units.nameplate1.powerMost = 100
 W.Fire("UNIT_MAXPOWER", "nameplate1")
 
+-- A druid's mana always (Saneroki, 2026-11-13): in a form its mana along the bottom, the form's power along the top.
+do
+    local kind, most, now, class = UnitPowerType, UnitPowerMax, UnitPower, UnitClass
+    local fern = { form = 3, token = "ENERGY", energy = 60, mana = 900, manaMost = 1200 }
+    local function Mine(unit) return unit == "nameplate1" end
+    UnitClass = function(unit) if Mine(unit) then return "Druid", "DRUID" end return class(unit) end
+    UnitPowerType = function(unit) if Mine(unit) then return fern.form, fern.token end return kind(unit) end
+    UnitPowerMax = function(unit, power)
+        if not Mine(unit) then return most(unit, power) end
+        if (power or fern.form) == 0 then return fern.manaMost end
+        return 100
+    end
+    UnitPower = function(unit, power)
+        if not Mine(unit) then return now(unit, power) end
+        if (power or fern.form) == 0 then return fern.mana end
+        return fern.energy
+    end
+    W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
+    check(dress.power:IsShown() and dress.power._value == 900 and dress.power._max == 1200 and dress.form:IsShown()
+        and dress.form._value == 60 and dress.form._max == 100, "a druid in cat form: its mana along the bottom, energy along the top")
+    check(dress.form._points[1][1] == "TOPLEFT" and dress.form._points[1][2] == dress.health and dress.form._points[2][1] == "TOPRIGHT"
+        and dress.form._height == dress.power._height and #dress.form:GetStatusBarTexture()._masks == 2,
+        "the top line inside the bar, as thin as the bottom one, cut at both ends")
+    fern.energy = 30
+    W.Fire("UNIT_POWER_UPDATE", "nameplate1", "ENERGY")
+    check(dress.form._value == 30 and dress.power._value == 900, "a beat of energy: the top line follows")
+    Core.Set(ns.name, "power", false)
+    check(not dress.power:IsShown() and not dress.form:IsShown(), "Power line off: neither")
+    Core.Set(ns.name, "power", true)
+    check(dress.power:IsShown() and dress.form:IsShown(), "on again: both")
+    fern.manaMost = 0
+    W.Fire("UNIT_MAXPOWER", "nameplate1")
+    check(dress.power:IsShown() and dress.power._value == 30 and dress.power._max == 100 and not dress.form:IsShown(),
+        "its mana kept back by the game: the energy along the bottom, as anyone's")
+    fern.manaMost, fern.form, fern.token = 1200, 0, "MANA"
+    W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
+    check(dress.power._value == 900 and dress.power._max == 1200 and not dress.form:IsShown(), "out of the form: its mana alone")
+    UnitPowerType, UnitPowerMax, UnitPower, UnitClass = kind, most, now, class
+    W.Fire("UNIT_DISPLAYPOWER", "nameplate1")
+    check(dress.power._value == 70 and not dress.form:IsShown(), "anyone else: the power it shows, along the bottom alone")
+end
+
 -- Just after a /reload the game may measure texts endless: the bar gets a guess, never endless, and is measured
 -- anew once the world shows.
 local measure = methods.GetUnboundedStringWidth

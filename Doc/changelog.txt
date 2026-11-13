@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A druid's mana always shows on the unit frames, the party and
+  raid frames and the nameplates. In bear or cat form the mana stays
+  where it was and the rage or energy shows on top of the health bar.
 - Aura history on the Combat full screen: every buff and debuff
   seen on enemies and bosses, newest on top, with whom it was on,
   from whom, when it came, its duration, whether it can be

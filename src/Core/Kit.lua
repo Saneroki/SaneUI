@@ -3,13 +3,15 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Kit
 --  Small things every module needs and none should write again: the game's
---  own words, colours as hex, the screen's pixels, a tooltip on a region, a
---  pool of parts, the game's dialogs for a question or a name, a font at a
---  size, a sound, and a frame of the game's lent to us for a while.
+--  own words, colours as hex, the screen's pixels, a druid's two powers, a
+--  tooltip on a region, a pool of parts, the game's dialogs for a question or
+--  a name, a font at a size, a sound, and a frame of the game's lent to us for
+--  a while.
 --
 --      Core.Word("CLOSE", "Close")          -- the game's string of that name, or ours
 --      Core.RGB("26262B") -> r, g, b        -- nil for one that cannot be read; Core.Hex(r, g, b)
 --      Core.Pixels(frame, 2)                -- two of the screen's pixels in the frame's units
+--      Core.FormPower(unit) -> kind, token  -- a druid's power in a form, shown on top of its mana (below)
 --      Core.Tip(region, title, text, anchor) -- its tooltip (title and text may be functions)
 --      Core.ShowTip(owner, title, text, anchor), Core.HideTip()
 --      Core.Unconfirmed(tooltip)            -- the line under a fact the game has not confirmed (Core.UNCONFIRMED);
@@ -83,6 +85,21 @@ function Core.Pixels(frame, count)
     local _, pixels = Core.Ask(rawget(_G, "GetPhysicalScreenSize"))
     if not pixels or pixels <= 0 then return count end
     return count * 768 / pixels / scale
+end
+
+-- A druid's mana always in sight (Saneroki, 2026-11-13: on every nameplate, unit frame and group frame): the power
+-- a druid shows now in a form whose power is not mana (rage, energy), as the game's number and token, while the game
+-- gives its mana too (a most above none, or hidden); nil for anyone else, a druid out of a form, or one whose mana
+-- the game keeps back. Its bars then show the mana where anyone's power stands, and this power on top.
+Core.MANA = rawget(_G, "Enum") and Enum.PowerType and Enum.PowerType.Mana or 0 -- the game's number for mana
+function Core.FormPower(unit)
+    local _, class = Core.Ask(UnitClass, unit)
+    if class ~= "DRUID" then return nil end
+    local kind, token = Core.Ask(UnitPowerType, unit)
+    if type(kind) ~= "number" or kind == Core.MANA then return nil end
+    local ok, most = pcall(UnitPowerMax, unit, Core.MANA)
+    if not ok or type(most) == "nil" or Core.Plain(most) == 0 then return nil end
+    return kind, token
 end
 
 -------------------------------------------------------------------------------
