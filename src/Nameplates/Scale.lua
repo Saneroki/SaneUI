@@ -36,6 +36,20 @@ local _, ns = ...
 --  bar, auras and cast bar and makes the plate not clickable; off, their
 --  plates are whole and Plate.lua dresses them like every other.
 --
+--  And how closely the game stacks plates (Scale.Stacking), ours whenever
+--  the module is on too: the game stacks them one above the other by the
+--  height of its own plate (C_NamePlate.GetNamePlateSize: its aura row,
+--  name, bar and cast bar, far higher than ours), times nameplateOverlapV.
+--  That CVar is set to the share ours take of it: our bar and a row of our
+--  debuffs over it at the full size, a little air between, never under
+--  Scale.LEAST (the game's click area around its name and bar is about half
+--  its plate high: closer, a plate would take the clicks meant for the next).
+--  Worked out anew at every update and when one of the game's CVars its
+--  plate's size comes from changes (Scale.SIZED). How closely they stand
+--  side by side (nameplateOverlapH) stays the game's: its click area is
+--  wider than our bar, so plates nearer side by side would take each
+--  other's clicks.
+--
 --  While on, the CVars are ours: set again a little after the game has its
 --  stored settings and Core's Sync has written a profile's (both come after
 --  the login and would bring the game's scaling back), and whenever one of
@@ -74,10 +88,17 @@ Scale.CVARS = {
     nameplateSelectedAlpha = "1",
     nameplateNotSelectedAlpha = "1",
 }
--- And those ours whenever the module is on: friendly players' plates whole, not by name only.
+-- And those ours whenever the module is on: friendly players' plates whole, not by name only; how closely the game
+-- stacks plates, worked out at each update (Scale.Stacking).
 Scale.ALWAYS = {
     nameplateShowOnlyNameForFriendlyPlayerUnits = "0",
 }
+Scale.STACK = "nameplateOverlapV" -- how much of its plate's height the game keeps between two stacked plates
+Scale.AIR = 2      -- units of air between two stacked plates, at the full size (Scale.Full)
+Scale.LEAST = 0.5  -- the least share of the game's plate's height: its click area is about that high
+-- The game's CVars its plate's size comes from (NamePlateDriverMixin:GetNamePlateHeight): changed, the stacking is
+-- worked out anew a little later, after the game has set its new size.
+Scale.SIZED = { "nameplateSize", "nameplateStyle", "nameplateAuraScale", "nameplateDebuffPadding" }
 
 local waiting = false
 local active = false  -- the CVars ours: the plates on our curve
@@ -119,6 +140,15 @@ local function Found()
     return options.foundCVars
 end
 
+-- Whether a CVar's value is that one: the same text, or the same number however the game writes it ("0.5",
+-- "0.500000"), so a number of ours is not set again and again.
+local function Same(now, value)
+    now, value = tostring(now), tostring(value)
+    if now == value then return true end
+    local a, b = tonumber(now), tonumber(value)
+    return a ~= nil and b ~= nil and math.abs(a - b) < 0.001
+end
+
 -- Each CVar of a list ours, where this client has it; what it had before kept first (once, as it was first seen,
 -- also one already at our value: a value of the player's own, never a later value of ours). Whether all those
 -- there are ours.
@@ -128,7 +158,7 @@ local function Ours(list)
         local now = Core.Ask(C_CVar.GetCVarInfo, name)
         if now ~= nil then
             if found[name] == nil then found[name] = tostring(now) end
-            if tostring(now) ~= value then done = Put(name, value) and done end
+            if not Same(now, value) then done = Put(name, value) and done end
         end
     end
     return done
@@ -144,11 +174,22 @@ local function Restore(list)
             -- What was found before ours (kept whether it equalled ours or not); a found table wiped meanwhile (a
             -- reset of the settings, a profile moved) with the CVar still at ours: the game's default.
             local back = found[name]
-            if back == nil and tostring(now) == tostring(value) then back = default end
-            if back ~= nil and tostring(now) ~= tostring(back) then Put(name, tostring(back)) end
+            if back == nil and Same(now, value) then back = default end
+            if back ~= nil and not Same(now, back) then Put(name, tostring(back)) end
         end
         found[name] = nil
     end
+end
+
+-- How closely the game stacks plates (nameplateOverlapV, a share of its own plate's height): as high as ours are, our
+-- bar and a row of our debuffs over it at the full size and Scale.AIR, at least Scale.LEAST. Nil while the game tells
+-- no size of its plate.
+function Scale.Stacking()
+    local _, theirs = Core.Ask(C_NamePlate.GetNamePlateSize)
+    theirs = Plain(theirs)
+    if type(theirs) ~= "number" or theirs <= 0 then return nil end
+    local ours = (ns.Text.Height(UIParent) + ns.Auras.SIZE + Scale.AIR) * Scale.Full()
+    return ("%.2f"):format(math.max(ours / theirs, Scale.LEAST))
 end
 
 -- The share of the full size a plate has at that distance.
@@ -299,6 +340,8 @@ function Scale.Update()
         end
         if not ns.off then
             kept = true
+            -- The stacking as ours are high now; kept as it was while the game tells no size of its plate.
+            Scale.ALWAYS[Scale.STACK] = Scale.Stacking() or Scale.ALWAYS[Scale.STACK]
             Ours(Scale.ALWAYS)
         elseif kept then
             kept = false
@@ -337,10 +380,12 @@ end
 -- one of ours.
 Scale.AGAIN = 3
 local again = Core.Later(function() Scale.Update() end, Scale.AGAIN)
-local watched = {} -- [lower-case CVar name] = true
+local watched = {} -- [lower-case CVar name] = true: ours, and those the game's plate's size comes from
 for _, list in ipairs({ Scale.CVARS, Scale.ALWAYS }) do
     for name in pairs(list) do watched[name:lower()] = true end
 end
+for _, name in ipairs(Scale.SIZED) do watched[name:lower()] = true end
+watched[Scale.STACK:lower()] = true
 
 local function Changed(name)
     if (applied or kept) and type(name) == "string" and watched[name:lower()] then again() end

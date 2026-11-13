@@ -100,9 +100,11 @@ W.cvars.nameplateShowClassColor, W.cvars.nameplateShowFriendlyClassColor = "1", 
 -- Units as the game describes them, by token; "target" and "focus" are aliases set by the test.
 local units, plates = {}, {}
 local function Unit(unit) return units[unit] or {} end
+local plateSize = { 237.5, 85 } -- the game's plate (Forever's Cast focus style, Large): width, height
 C_NamePlate = {
     GetNamePlateForUnit = function(unit) return plates[unit] end,
     GetNamePlates = function() return {} end,
+    GetNamePlateSize = function() return plateSize[1], plateSize[2] end,
 }
 UnitName = function(unit) return Unit(unit).name, Unit(unit).surname end
 UnitIsPlayer = function(unit) return Unit(unit).player or false end
@@ -301,7 +303,8 @@ for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", n
                              nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000",
                              nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6",
                              floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1",
-                             enableFloatingCombatText = "1", nameplateShowOnlyNameForFriendlyPlayerUnits = "1" }) do
+                             enableFloatingCombatText = "1", nameplateShowOnlyNameForFriendlyPlayerUnits = "1",
+                             nameplateOverlapV = "1.1", nameplateOverlapH = "0.8", nameplateSize = "2" }) do
     W.cvarInfo[name] = { default = default }
 end
 W.LoadCore(root)
@@ -959,6 +962,36 @@ check(CVar("nameplateMinScale") == "1" and CVar("nameplateMaxScale") == "1" and 
 check(CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "0" and ns.options.foundCVars.nameplateShowOnlyNameForFriendlyPlayerUnits == "1",
     "friendly players not by name only while the module is on (their plates whole, dressed), yours kept")
 local function Near(a, b) return math.abs(a - b) < 1e-6 end
+-- Stacking: the game stacks plates by its own plate's height; ours far lower, so closer, as high as ours (the bar, a
+-- row of debuffs, the air between), never closer than Scale.LEAST.
+local function Stacked(size)
+    return (Text.Height(UIParent) + Auras.SIZE + Scale.AIR) * size / 100 / plateSize[2]
+end
+check(Near(tonumber(CVar("nameplateOverlapV")), tonumber(("%.2f"):format(Stacked(125))))
+    and Stacked(125) > Scale.LEAST and Stacked(125) < 0.7 and ns.options.foundCVars.nameplateOverlapV == "1.1",
+    "plates stacked as high as ours are (about half the game's plate), the game's value kept")
+check(CVar("nameplateOverlapH") == "0.8", "side by side the game's own: its click area is wider than our bar")
+Core.Set(ns.name, "plateSize", 200)
+check(Near(tonumber(CVar("nameplateOverlapV")), tonumber(("%.2f"):format(Stacked(200)))), "larger plates: farther apart")
+Core.Set(ns.name, "plateSize", 50)
+check(CVar("nameplateOverlapV") == "0.50", "small plates: never closer than the game's click area allows")
+Core.Set(ns.name, "plateSize", 125)
+-- The game's plate size changed in its options: ours worked out anew a little later, once it has its new size.
+plateSize[2] = 70
+C_CVar.SetCVar("nameplateSize", "1")
+W.Fire("CVAR_UPDATE", "nameplateSize", "1")
+W.Wait(Scale.AGAIN + 0.1)
+check(Near(tonumber(CVar("nameplateOverlapV")), tonumber(("%.2f"):format(Stacked(125)))) and Stacked(125) > 0.6
+    and CVar("nameplateSize") == "1", "the game's plates made smaller: ours a larger share of them, its size its own")
+plateSize[2] = 85
+C_CVar.SetCVar("nameplateSize", "2")
+W.Fire("CVAR_UPDATE", "nameplateSize", "2")
+W.Wait(Scale.AGAIN + 0.1)
+local sets = W.cvarSets
+W.cvars.nameplateOverlapV = ("%.6f"):format(tonumber(CVar("nameplateOverlapV"))) -- the game writing the number its way
+W.Fire("CVAR_UPDATE", "nameplateOverlapV", W.cvars.nameplateOverlapV)
+W.Wait(Scale.AGAIN + 0.1)
+check(W.cvarSets == sets, "the same number written another way is not set again (no loop of updates)")
 check(Near(Scale.Size(0), 1) and Near(Scale.Size(10), 1) and Near(Scale.Size(25), 0.75) and Near(Scale.Size(40), 0.5)
     and Near(Scale.Size(50), 0.375) and Near(Scale.Size(60), 0.25) and Near(Scale.Size(500), 0.25),
     "full within 10 yards, half at 40, a quarter at 60, straight between")
@@ -1234,7 +1267,7 @@ Core.Set(ns.name, "distance", true)
 check(CVar("nameplateMinAlpha") == "1" and ns.options.foundCVars.nameplateMinAlpha == "0.7", "on: ours, yours kept")
 ns.OnLogout()
 check(CVar("nameplateMinAlpha") == "0.7" and CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "1"
-    and next(ns.options.foundCVars) == nil, "the game about to write its settings: yours back, so a module gone leaves them alone")
+    and CVar("nameplateOverlapV") == "1.1" and next(ns.options.foundCVars) == nil, "the game about to write its settings: yours back, so a module gone leaves them alone")
 W.Fire("CVAR_UPDATE", "nameplateMinAlpha", "0.7")
 W.Wait(Scale.AGAIN + 0.1)
 check(CVar("nameplateMinAlpha") == "0.7", "and nothing of ours sets them again before the next login")
