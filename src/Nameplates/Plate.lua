@@ -20,7 +20,9 @@ local _, ns = ...
 --  Cast bar off (the game's shows then, Cast.lua). Its aura icons, which take
 --  the mouse (their tooltip would pop up beside our bar), lose it under ours
 --  and get it back with the rest. The rest of the game's plate stays: its
---  widgets and soft target icon, and what clicks it.
+--  widgets and soft target icon. What clicks it is our bar alone (Click), not
+--  the game's area around its name and bar: the plates stack bar to bar
+--  (Scale.Stacking), and the game's would reach over the next plate's bar.
 --
 --  A player's plate is dressed like any other (bar, power line, the line,
 --  auras, cast bar) and shows while a fight with the player can start (the
@@ -389,13 +391,43 @@ local function Shuffled(auras)
 end
 local OnShuffled = ns.Guard(Shuffled)
 
--- The game's health bar and aura container of a unit frame followed, once per bar (hooks after the game's own,
--- nothing replaced; a hook stays, and does nothing once the module stood down).
+-- What clicks a plate (Saneroki, 2026-11-13): our dress alone (the bar and its border), anchored to it, so it follows
+-- its size and scale by itself. The game lets an addon set it in a fight only on the tick it hands the plate its unit
+-- and right after its own code set it, so it is set as the dress comes on its unit (Added) and right after the game
+-- set its own (UpdateHitTestArea, hooked: Clicked). Never where the game made the plate not clickable (no points: by
+-- name only, widgets only).
+local function Click(dress)
+    local plate = dress.plate
+    if ns.off or not dress.unit or not Core.Ask(plate.CanChangeHitTestPoints, plate) then return end
+    local theirs = Core.Ask(plate.GetHitTestPoints, plate)
+    if type(theirs) ~= "table" or #theirs == 0 then return end
+    plate:SetAllHitTestPoints(dress)
+end
+
+-- The game set its click area on a unit frame's plate anew: ours again over it.
+local function Clicked(frame)
+    local dress = owners[frame]
+    if dress and dress.frame == frame then ns.Safe("clicks", Click, dress) end
+end
+local OnClicked = ns.Guard(Clicked)
+
+-- The game's own click area on the plate again (its own code, with its options) where a fight lets; else ours stays,
+-- over the game's bar, until the game sets the plate up for its next unit.
+local function Unclick(dress)
+    local plate, frame = dress.plate, dress.frame
+    local options = rawget(_G, "NamePlateSetupOptions")
+    if not frame or type(options) ~= "table" or type(frame.UpdateHitTestArea) ~= "function" then return end
+    if Core.Ask(plate.CanChangeHitTestPoints, plate) then frame:UpdateHitTestArea(options) end
+end
+
+-- The game's health bar, aura container and click area of a unit frame followed, once per bar (hooks after the game's
+-- own, nothing replaced; a hook stays, and does nothing once the module stood down).
 local function Follow(frame, bar)
     if bars[bar] then return end
     bars[bar] = frame
     bar:HookScript("OnShow", OnTurned)
     bar:HookScript("OnHide", OnTurned)
+    if type(frame.UpdateHitTestArea) == "function" then hooksecurefunc(frame, "UpdateHitTestArea", OnClicked) end
     local auras = rawget(frame, "AurasFrame")
     if type(auras) == "table" and type(auras.RefreshList) == "function" then
         containers[auras] = frame
@@ -453,6 +485,7 @@ local function Added(unit)
     for _, event in ipairs(Plate.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
     for _, event in ipairs(ns.Cast.EVENTS) do pcall(dress.RegisterUnitEvent, dress, event, unit) end
     Fit(dress)
+    ns.Safe("clicks", Click, dress) -- on this tick the game lets it, in a fight too
     Wear(dress) -- shown before it is filled: its texts measured while they show
     Fill(dress)
     Wear(dress)
@@ -562,7 +595,7 @@ end
 
 -- The game's plates as they were: every unit frame ours ever lay over and its parts in sight again, its aura icons
 -- with the mouse (the game hands them out again from its pool, and sets their alpha nowhere), then every dress off,
--- each by itself.
+-- each by itself, its plate's click area the game's own first (Unclick).
 function Plate.GiveBack()
     for _, frame in pairs(bars) do
         ns.Safe("give back", frame.SetAlpha, frame, 1)
@@ -570,7 +603,10 @@ function Plate.GiveBack()
         ns.Safe("give back", Parts, frame, 1)
     end
     for _, dress in pairs(dresses) do
-        if dress.unit then ns.Safe("give back", Off, dress) end
+        if dress.unit then
+            ns.Safe("give back", Unclick, dress)
+            ns.Safe("give back", Off, dress)
+        end
     end
 end
 

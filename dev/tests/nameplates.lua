@@ -279,8 +279,24 @@ local function GamePlate()
     frame.AurasFrame = GameAuras(frame)
     frame.name = W.NewWidget("FontString", nil, frame)
     plate.UnitFrame = frame
+    -- What clicks it: the game's own area ("game"), none by name only (frame._byName). In a fight the game lets an
+    -- addon set it only on the tick its own code did (plate._open) and errors otherwise.
+    plate._hit = { "game" }
+    W.Methods(plate, {
+        GetHitTestPoints = function(self) return self._hit end,
+        CanChangeHitTestPoints = function(self) return not W.combat or self._open == true end,
+        SetAllHitTestPoints = function(self, region)
+            if not self:CanChangeHitTestPoints() then error("hit test points locked in a fight") end
+            self._hit = { region }
+        end,
+    })
+    W.Methods(frame, { UpdateHitTestArea = function(self, options)
+        if type(options) ~= "table" then error("no setup options") end
+        plate._hit, plate._open = self._byName and {} or { "game" }, true
+    end })
     return plate
 end
+NamePlateSetupOptions = {} -- the game's options for its plates (its own code reads them)
 
 local function DressOf(plate)
     for _, widget in ipairs(W.frames) do
@@ -335,6 +351,21 @@ check(dress._points[1][1] == "CENTER" and dress._points[1][2] == row and dress._
     and high == math.ceil(14 * Text.SMALLER) + 2 * Text.PAD + 2 * Core.Pixels(dress, 1),
     "centred on the game's health bar row, as high as its line: the font, a little over and under, the border")
 check(dress.health._value == wolf and dress.health._max == units.nameplate1.most, "hidden health goes to the bar as the game gives it")
+-- What clicks it: our bar alone (the dress), not the game's area around its name and bar, which reaches over the next
+-- plate's bar now they stack bar to bar; ours again each time the game sets its own, none where it made none.
+local wolfPlate = plates.nameplate1
+check(wolfPlate._hit[1] == dress and #wolfPlate._hit == 1, "what clicks the plate: our bar alone")
+wolfPlate.UnitFrame:UpdateHitTestArea(NamePlateSetupOptions)
+check(wolfPlate._hit[1] == dress, "the game setting its own anew: ours again right after")
+wolfPlate.UnitFrame._byName = true
+wolfPlate.UnitFrame:UpdateHitTestArea(NamePlateSetupOptions)
+check(#wolfPlate._hit == 0, "the game made the plate not clickable (by name only): it stays so")
+wolfPlate.UnitFrame._byName = nil
+W.combat, wolfPlate._open = true, false
+wolfPlate.UnitFrame:UpdateHitTestArea(NamePlateSetupOptions)
+check(wolfPlate._hit[1] == dress and Core.errors["Nameplates: clicks"] == nil,
+    "in a fight too: right after the game's own code, the one time the game lets an addon")
+W.combat = false
 check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
 check(dress.name._text == "Young Wolf", "its name inside the bar")
 check(dress.marks and dress.marks.lostEnd and dress.marks.container._groups.dispel.filter == Core.HealthMarks.FOE,
@@ -1004,26 +1035,28 @@ check(CVar("nameplateMinScale") == "1" and CVar("nameplateMaxScale") == "1" and 
 check(CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "0" and ns.options.foundCVars.nameplateShowOnlyNameForFriendlyPlayerUnits == "1",
     "friendly players not by name only while the module is on (their plates whole, dressed), yours kept")
 local function Near(a, b) return math.abs(a - b) < 1e-6 end
--- Stacking: the game stacks plates by its own plate's height; ours far lower, so closer, as high as ours (the bar, a
--- row of debuffs, the air between), never closer than Scale.LEAST.
+-- Stacking: the game stacks plates by its own plate's height; ours as high as our bar alone (no auras), bar to bar,
+-- the share rounded up so two plates never lie over each other.
 local function Stacked(size)
-    return (Text.Height(UIParent) + Auras.SIZE + Scale.AIR) * size / 100 / plateSize[2]
+    return Text.Height(UIParent) * size / 100 / plateSize[2]
 end
-check(Near(tonumber(CVar("nameplateOverlapV")), tonumber(("%.2f"):format(Stacked(125))))
-    and Stacked(125) > Scale.LEAST and Stacked(125) < 0.7 and ns.options.foundCVars.nameplateOverlapV == "1.1",
-    "plates stacked as high as ours are (about half the game's plate), the game's value kept")
-check(CVar("nameplateOverlapH") == "0.8", "side by side the game's own: its click area is wider than our bar")
+local function Share(size) return ("%.2f"):format(math.ceil(Stacked(size) * 100 - 1e-6) / 100) end
+local stacked = CVar("nameplateOverlapV")
+check(stacked == Share(125) and tonumber(stacked) >= Stacked(125) and Stacked(125) < 0.3
+    and ns.options.foundCVars.nameplateOverlapV == "1.1",
+    "plates stacked bar to bar (about a fifth of the game's plate), never over each other, the game's value kept")
+check(CVar("nameplateOverlapH") == "0.8", "side by side the game's own")
 Core.Set(ns.name, "plateSize", 200)
-check(Near(tonumber(CVar("nameplateOverlapV")), tonumber(("%.2f"):format(Stacked(200)))), "larger plates: farther apart")
+check(CVar("nameplateOverlapV") == Share(200), "larger plates: farther apart")
 Core.Set(ns.name, "plateSize", 50)
-check(CVar("nameplateOverlapV") == "0.50", "small plates: never closer than the game's click area allows")
+check(CVar("nameplateOverlapV") == Share(50) and tonumber(Share(50)) < tonumber(stacked), "smaller plates: closer")
 Core.Set(ns.name, "plateSize", 125)
 -- The game's plate size changed in its options: ours worked out anew a little later, once it has its new size.
 plateSize[2] = 70
 C_CVar.SetCVar("nameplateSize", "1")
 W.Fire("CVAR_UPDATE", "nameplateSize", "1")
 W.Wait(Scale.AGAIN + 0.1)
-check(Near(tonumber(CVar("nameplateOverlapV")), tonumber(("%.2f"):format(Stacked(125)))) and Stacked(125) > 0.6
+check(CVar("nameplateOverlapV") == Share(125) and tonumber(Share(125)) > tonumber(stacked)
     and CVar("nameplateSize") == "1", "the game's plates made smaller: ours a larger share of them, its size its own")
 plateSize[2] = 85
 C_CVar.SetCVar("nameplateSize", "2")
@@ -1880,6 +1913,7 @@ dress.own.SetUnit = function() error("the game's container changed") end
 ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
     and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
+check(plates.nameplate1._hit[1] == "game", "what clicks it the game's own again")
 check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
 check(gameAuras.icons[1]:IsMouseEnabled() and gameAuras.icons[3]:IsMouseEnabled()
     and gameAuras.LossOfControlFrame.AuraItemFrame:IsMouseEnabled(), "the game's aura icons with the mouse again")
