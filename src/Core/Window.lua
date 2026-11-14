@@ -177,7 +177,7 @@ Window.TEXT = {
 Window.SETTINGS = "questlog-icon-setting" -- the game's cog (its quest log's settings)
 -- What a window was left as, kept with its place (Remember) through a drag and a reset: full screen, the game's own
 -- window, its tab, an element's ticks (Element.lua).
-Window.LEFT = { "full", "native", "tab", "fight", "mouse", "through" }
+Window.LEFT = { "full", "native", "tab", "fight", "peace", "mouse", "through" }
 -- The kinds of window (Saneroki, 2026-10-16; Doc/guides/windows.md, section 2): the options each kind has
 -- unless the module gives them itself. What the Combat module shows (unit frames, nameplates, buffs, action
 -- bars) is no window.

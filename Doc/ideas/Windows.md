@@ -328,7 +328,12 @@ checkboxes"): the menu on the main bar's page arrows and what stands beside the 
 druid's Bar 6 pager), since a button's right click is its spell's; no Unlock, the game's Edit Mode moves them.
 Where the element's right click was taken already, the lines go at the end of its menu (the game's unit menu, the
 guides', the meter's, an aura's); the minimap's right click steps the map out, so there it is Shift and the right
-click. A click-through element is reached by its box in Edit Mode.
+click. Then (Saneroki, 2026-11-14) "can you add a hide outside of combat": *Hide outside of combat*, the other way
+round from *Hide in combat*, and ticking one unticks the other, so nothing is out of sight for good. And for the quest
+log made click-through, "I meant to only have the invisible areas clickthrough, not the clickable areas": click-through
+lets the mouse through an element's empty parts alone, what you click on it (buttons, lines, items, its title bar, the
+bars' buttons, arrows and checkboxes) keeps it, so the menu stays where it was. One hidden outside of combat is
+reached by its box in Edit Mode, or in a fight.
 
 ## Open questions
 

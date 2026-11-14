@@ -38,10 +38,11 @@ local _, ns = ...
 --  "on the actionbars only on the pager arrows and checkboxes"): a right click
 --  on the main bar's page arrows, or on what a module puts beside a bar (the
 --  paged bars' checkboxes, a druid's Bar 6 pager: Abilities), opens Hide in
---  combat, Show on mouseover and Click-through for all bars at once; their
---  buttons' right click stays the game's. The game's Edit Mode moves them.
---  Click-through spares what stands beside them (ignoreInLayout), so the menu
---  stays at hand; it stands aside on the full screen, while something is
+--  combat, Hide outside of combat, Show on mouseover and Click-through for all
+--  bars at once; their buttons' right click stays the game's. The game's Edit
+--  Mode moves them. Click-through lets clicks through the bars' empty room
+--  alone: their buttons, arrows and checkboxes are what you click, so the menu
+--  stays at hand. It all stands aside on the full screen, while something is
 --  dragged and while your keys are set.
 --
 --  On the full screen every icon shows at full brightness (Saneroki,
@@ -362,15 +363,10 @@ local function Beside(bar)
     return area
 end
 
--- What stands beside a bar and keeps the mouse while the bars are click-through (the page arrows, a checkbox).
-local function Spared(frame)
-    return rawget(frame, "ignoreInLayout") == true
-end
-
 -- The bars as one element: the main bar's page arrows open its menu (what a module puts beside a bar opens its own).
 local function Element()
-    element = Core.Element.New({ name = ns.name, key = "actionBars", title = ns.TEXT.actionBars, frames = { unpack(Find()) },
-                                 spare = Spared })
+    element = Core.Element.New({ name = ns.name, key = "actionBars", title = ns.TEXT.actionBars,
+                                 frames = { unpack(Find()) } })
     local main = rawget(_G, "MainActionBar")
     local number = type(main) == "table" and rawget(main, "ActionBarPageNumber")
     for _, key in ipairs(Bars.PAGER) do

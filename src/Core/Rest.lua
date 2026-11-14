@@ -16,7 +16,8 @@ local Core = SaneUI.Core
 --  An element's own choices (Core.Element, its right click; Saneroki,
 --  2026-11-14) come on top, each switching the set on by itself: out of sight
 --  while you fight, the mouse on it too (Hide in combat); out of sight but while
---  the mouse is on it or its module holds it (Show on mouseover). Edit Mode and
+--  you fight, the mouse on it too (Hide outside of combat); out of sight but
+--  while the mouse is on it or its module holds it (Show on mouseover). Edit Mode and
 --  its window unlocked or filling the screen (Keep) keep it in sight; its module
 --  keeping it out of sight (Away: the minimap while the game's own is chosen)
 --  comes before everything.
@@ -53,7 +54,8 @@ local Core = SaneUI.Core
 --      rest:Enter()            -- the mouse came, told by a module that hears it itself; it goes off the hot frames
 --      rest:Switch(on)         -- on: at rest as said above; off: the frames as they were
 --      rest:InGroup(on)        -- on: at rest in a group too; off (as made): in sight in a group
---      rest:Element(fight, mouse)  -- an element's choices: out of sight in a fight; only the mouse (or hold) shows it
+--      rest:Element(fight, mouse, peace)  -- an element's choices: out of sight in a fight; only the mouse (or hold)
+--                              -- shows it; out of sight outside a fight
 --      rest:Keep(on)           -- in sight whatever else (its window unlocked, or filling the screen)
 --      rest:Away(on)           -- out of sight whatever else (its module keeps it so)
 --      rest:Watch(on)          -- the mouse looked for on its areas, where no door hears it
@@ -188,13 +190,19 @@ end
 -------------------------------------------------------------------------------
 local sets = {}
 
+-- Whether a fight, or peace, hides it now (an element's Hide in combat, Hide outside of combat).
+local function Hidden(set)
+    if fighting then return set.fight end
+    return set.peace
+end
+
 -- Whether a set is wanted in sight now: its module keeping it out of sight comes first; then Edit Mode and its window
--- unlocked or full (Keep); a fight it hides in; the mouse on it and its module's hold; the mouse alone; at rest (Switch)
--- what goes on; else in sight.
+-- unlocked or full (Keep); a fight or peace it hides in; the mouse on it and its module's hold; the mouse alone; at rest
+-- (Switch) what goes on; else in sight.
 local function Wanted(set)
     if set.away then return false end
     if Core.EditMode.active or set.kept then return true end
-    if set.fight and fighting then return false end
+    if Hidden(set) then return false end
     if set.over or (set.hold and Core.Safe(set.label, set.hold)) then return true end
     if set.mouse then return false end
     return not set.resting or busy or (grouped and not set.inGroup)
@@ -202,7 +210,7 @@ end
 
 -- The mouse looked for on its areas (Watch) while it is out of sight and the mouse would bring it.
 local function Seek(set, wanted)
-    if set.watching and not wanted and (set.mouse or set.resting) and not set.away and not (set.fight and fighting) then
+    if set.watching and not wanted and (set.mouse or set.resting) and not set.away and not Hidden(set) then
         if not set.seek:IsRunning() then set.seek:Start() end
     else
         set.seek:Stop()
@@ -261,7 +269,7 @@ end
 
 -- On while any of its reasons is: at rest (Switch), an element's choices (Element); off, its frames as they were.
 local function Turn(set)
-    local on = set.resting or set.fight or set.mouse or false
+    local on = set.resting or set.fight or set.peace or set.mouse or false
     if on == set.on then return set:Look() end
     set.on = on
     set.clock:Stop()
@@ -290,8 +298,8 @@ function sets:Switch(on)
     Turn(self)
 end
 
-function sets:Element(fight, mouse)
-    self.fight, self.mouse = fight and true or false, mouse and true or false
+function sets:Element(fight, mouse, peace)
+    self.fight, self.mouse, self.peace = fight and true or false, mouse and true or false, peace and true or false
     Turn(self)
 end
 
@@ -312,7 +320,7 @@ end
 
 -- Off for every reason: a set that cannot change stays in sight.
 local function Off(set)
-    set.resting, set.fight, set.mouse = false, false, false
+    set.resting, set.fight, set.peace, set.mouse = false, false, false, false
     Turn(set)
 end
 
@@ -329,7 +337,7 @@ end
 function Rest.New(options)
     local set = setmetatable({ label = options.label or "rest", frames = options.frames, hold = options.hold, hot = {},
                                lends = {}, on = false, over = false, inGroup = false, alpha = 1, from = 1, to = 1,
-                               resting = false, fight = false, mouse = false, kept = false, away = false,
+                               resting = false, fight = false, peace = false, mouse = false, kept = false, away = false,
                                watching = false },
                              { __index = sets })
     -- A frame of ours for the clock and the mouse's watch: the game's own are left alone. Above the screen's top

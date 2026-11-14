@@ -133,12 +133,12 @@ and while it is away (Edge).
 
 - **Where:** `store[key]`, `store` the module's (`Core.Store(module)`: `SaneUIDB.modules.<Module>`, for the
   account, not in profiles), `key` the window's (`"place"` at first, another name for a second window).
-- **What:** `{ x, y, width, height, dock, full, native, tab, fight, mouse, through }`: `x`, `y` the top left corner
+- **What:** `{ x, y, width, height, dock, full, native, tab, fight, peace, mouse, through }`: `x`, `y` the top left corner
   from the screen's lower left one; `width`, `height` only for a sizable window; `dock` a zone's name (a zone that no
   longer exists: the kept coordinates count); `full` it was left in full screen; `native` the game's own window was
-  chosen; `tab` the tab last chosen (none: the first); `fight`, `mouse`, `through` an element's ticks (*Hide in
-  combat*, *Show on mouseover*, *Click-through*: `Element.lua`). The last six are `Window.LEFT`, kept through a drag
-  and a reset.
+  chosen; `tab` the tab last chosen (none: the first); `fight`, `peace`, `mouse`, `through` an element's ticks
+  (*Hide in combat*, *Hide outside of combat*, *Show on mouseover*, *Click-through*: `Element.lua`). The last seven
+  are `Window.LEFT`, kept through a drag and a reset.
 - **Read with care:** a kept size larger than the screen is cut to it; a place that cannot be read gives the
   first place; `Reset` (Edit Mode's dialog, `/sane window reset all` for all: `Window.ResetAll`) puts the
   first place and size back and keeps what it was left as (`Window.LEFT`: `full`, `native`, `tab`, an element's ticks).

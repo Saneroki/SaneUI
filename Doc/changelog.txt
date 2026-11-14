@@ -10,11 +10,13 @@ The bigger changes of each version, newest first.
   frames and the group frames, the minimap (with Shift), the quest
   log, the chat, the meter, the aura bars, the guide and its arrow,
   the loot feed and roll cards. Unlock to move drags it anywhere,
-  Hide in combat takes it out of sight in a fight, Show on mouseover
-  shows it only while the mouse is on it, and Click-through lets
-  every click go through it to the world. In Edit Mode each one's
-  box has the same menu. The action bars have it too, for all bars
-  at once, on the page arrows and checkboxes beside them.
+  Hide in combat takes it out of sight in a fight, Hide outside of
+  combat until one, Show on mouseover shows it only while the mouse
+  is on it, and Click-through lets clicks go through its empty parts
+  to the world, while what you click on it still works. In Edit Mode
+  each one's box has the same menu. The action bars have it too,
+  for all bars at once, on the page arrows and checkboxes beside
+  them.
 - Your own slot among the party and raid frames shows your name and
   your health like every other, with the cog in front of your name.
 - Nameplates stack much closer: as close as their health bar and

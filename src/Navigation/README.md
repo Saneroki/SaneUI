@@ -1222,6 +1222,10 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-14, the quest log's click-through:** "I meant to only have the invisible areas clickthrough, not the
+  clickable areas" (Saneroki): Core's click-through now leaves what you click (`Core.Element.Used`), so the quest log's
+  lines, items, rewards and title bar keep their clicks and only the room around them lets the mouse through; its list
+  keeps the wheel while it is longer than its room. *Hide outside of combat* came to every element with it.
 - **2026-11-14, the minimap and the quest log as elements:** both are elements of Core's (`Core.Element`, Saneroki:
   every element's right click): *Unlock to move*, *Hide in combat*, *Show on mouseover* and *Click-through*, kept with the place (the quest log's per place, on the full map and alone).
   The minimap's right click still steps the map out: Shift and the right click opens its lines; the quest log's are on

@@ -5,59 +5,69 @@ local Core = SaneUI.Core
 --  What every element of Sane UI on the screen has on its right click
 --  (Saneroki, 2026-11-14): your unit frames, the group's, the minimap, the
 --  quest log, the chat, the meter, the reminder bars, the guide and its arrow,
---  the loot feed and roll cards, the game's action bars. Under its name, four
+--  the loot feed and roll cards, the game's action bars. Under its name, five
 --  lines:
---      Unlock to move     its box over it outside Edit Mode too, dragged by it
---                         until Lock (Window:Unlock; not kept: a /reload locks it)
---      Hide in combat     out of sight while you fight, the mouse on it too
---      Show on mouseover  out of sight but while the mouse is on it
---      Click-through      nothing of it takes the mouse: clicks, the mouse's
---                         coming and the wheel go on to what is under it
---  The three ticks are kept with its place, in the profile in use
+--      Unlock to move          its box over it outside Edit Mode too, dragged by
+--                              it until Lock (Window:Unlock; not kept: a /reload
+--                              locks it)
+--      Hide in combat          out of sight while you fight, the mouse on it too
+--      Hide outside of combat  out of sight but while you fight, the mouse on it
+--                              too (Saneroki, 2026-11-14); ticking one of the two
+--                              unticks the other, so it is never out of sight for
+--                              good
+--      Show on mouseover       out of sight but while the mouse is on it
+--      Click-through           its empty parts let the mouse through to what is
+--                              under it, what you click on it keeps it (Saneroki,
+--                              2026-11-14: "only have the invisible areas
+--                              clickthrough, not the clickable areas")
+--  The ticks are kept with its place, in the profile in use
 --  (Window:Remember), and stand aside while it is unlocked, in Edit Mode and
 --  while it fills the screen.
 --
 --  Out of sight is its alpha alone, by a set of Core.Rest: the module's own
 --  where it has one (Rest.New with window: the unit frames, the quest log),
---  else one made for it on the window's frame. Hidden in a fight it takes no
---  mouse either: its frames go through from the fight's first moment
---  (PLAYER_REGEN_DISABLED, while the game still lets its protected frames be
---  changed) to its end. Where no door of its own hears the mouse (a set made
---  here, or clicks going through), the set looks for the mouse on its
---  rectangle now and then (Rest's Watch).
+--  else one made for it on the window's frame. Hidden by a fight or by peace it
+--  takes no mouse either, nothing of it: its frames go through from the fight's
+--  first moment (PLAYER_REGEN_DISABLED, while the game still lets its protected
+--  frames be changed) to its end, or the other way round. Where no door of its
+--  own hears the mouse (a set made here, or clicks going through), the set looks
+--  for the mouse on its rectangle now and then (Rest's Watch).
 --
---  Click-through lends each frame of it but its box and grip (Core.Lend: its
---  clicks, its motion, its wheel off), given back exactly when the tick goes,
---  when it is unlocked or fills the screen. Frames it makes later are taken as
---  they come: when it shows, when its size changes, when a fight ends. In a
---  fight the game keeps protected frames as they are: those wait for its end.
+--  Click-through lends each frame of it but its box and grip (Core.Lend) what
+--  it does not use itself, given back exactly when the tick goes, when it is
+--  unlocked or fills the screen. What it uses: a frame you click (a button, a
+--  box to write in, a slider, the minimap, words with links, a script for a
+--  click) keeps all of the mouse; any other its clicks go, the mouse's coming
+--  but where a script hears it (a tooltip), the wheel but where a script turns
+--  it (a list that scrolls). Frames it makes later are taken as they come: when
+--  it shows, when its size changes, when a fight ends. In a fight the game keeps
+--  protected frames as they are: those wait for its end.
 --
 --  Where its menu opens: a right click on its box (unlocked, or in Edit Mode)
 --  and on its title bar; the game's own menu of a unit opened from one of its
 --  secure unit buttons (Menu.ModifyMenu: the lines at the end); and where its
 --  module puts it: its own right click (Element.RightClick, Element.Menu) or
---  its own menu (Element.Lines). A click-through one is reached by its box in
---  Edit Mode (or /sane arrange).
+--  its own menu (Element.Lines). Those are parts you click, so click-through
+--  leaves them; one hidden by a fight or by peace is reached by its box in Edit
+--  Mode (or /sane arrange), or while it is in sight.
 --
 --  An element may also be frames that are no window of ours (Element.New: the
 --  game's action bars, which its own Edit Mode places; Saneroki, 2026-11-14:
 --  "on the actionbars only on the pager arrows and checkboxes"). It has no
 --  Unlock then (its line says where it is moved, greyed); its ticks are kept in
---  the profile by its module and key as a window's are; the frames it spares
---  (spare: the pager arrows and checkboxes beside the bars) keep the mouse
---  while it is click-through, so its menu stays at hand there, but not in a
---  fight it hides in.
+--  the profile by its module and key as a window's are. In the game's Edit Mode
+--  its frames take the mouse as their own, the game's selection over them.
 --
 --      Core.Window.New(frame, { ..., element = true })  an element (New calls Element.Take)
 --          element = { mouse = { get = fn, set = fn } }   a tick its module keeps itself: the line reads and writes
 --                                                         that (the meter's own Show on mouseover), Core does nothing more
---      Core.Element.Lines(root, window)      its name and the four lines, in a menu of the module's own
+--      Core.Element.Lines(root, window)      its name and the five lines, in a menu of the module's own
 --      Core.Element.Menu(owner, window)      a menu of those alone at owner
 --      Core.Element.RightClick(frame, window)  a right click on frame (one that takes clicks) opens it
 --      Core.Element.TitleBar(window)         its title bar's right click (Window.lua, once the bar is made)
 --      Core.Element.Of(frame)                the element a frame is part of (it, or a frame it stands in), or nil
 --      Core.Element.Is(window)               whether a window is an element
---      Core.Element.Get(window, what)        "fight", "mouse", "through": whether it is ticked
+--      Core.Element.Get(window, what)        "fight", "peace", "mouse", "through": whether it is ticked
 --      Core.Element.Set(window, what, on)    ticked or not, kept, and so at once
 --      Core.Element.Sleep(window, on)        its module keeps it out of sight now, whatever is ticked (the minimap
 --                                            while the game's own is chosen), its clicks its own
@@ -66,28 +76,35 @@ local Core = SaneUI.Core
 --                                            own until it is back (off)
 --      Core.Element.Look(window)             as ticked, unlocked and its frames now
 --      Core.Element.LookAll()                every element as the profile in use has it (Window.PlaceAll)
+--      Core.Element.Used(frame)              whether a frame is one you click (click-through leaves it)
 --      local element = Core.Element.New({ name = "Combat", key = "actionBars", title = "Action bars",
---                                         frames = { ... }, spare = function(frame) end })
---                                            frames of the game's as one element: kept under that module and key;
---                                            spare(frame): one whose part keeps the mouse while it is click-through
+--                                         frames = { ... } })
+--                                            frames of the game's as one element: kept under that module and key
 --                                            (its frames for Rest.New's window, Element.Away, Element.RightClick)
 -------------------------------------------------------------------------------
 local Element = {}
 Core.Element = Element
 local Plain = Core.Plain
 
-Element.WHATS = { "fight", "mouse", "through" } -- the ticks, in the menu's order; each a key of its kept place
+Element.WHATS = { "fight", "peace", "mouse", "through" } -- the ticks, in the menu's order; each a key of its kept place
+Element.OTHER = { fight = "peace", peace = "fight" }      -- ticking one unticks the other: never out of sight for good
 Element.TEXT = {
     unlock = "Unlock to move", lock = "Lock",
     unlockTip = "Its box lies over it: drag it where you want it, then Lock. Edit Mode moves every element too.",
     locked = "Not in a fight: it holds the game's protected frames.",
     fight = "Hide in combat", fightTip = "Out of sight while you fight, and clicks go through it then.",
+    peace = "Hide outside of combat",
+    peaceTip = "Out of sight until you fight, and clicks go through it meanwhile. Its menu is then on its box in Edit Mode.",
     mouse = "Show on mouseover", mouseTip = "Out of sight until the mouse is on it.",
     through = "Click-through",
-    throughTip = "Clicks go through it to what is under it. Its menu is then on its box in Edit Mode.",
+    throughTip = "Clicks go through its empty parts to what is under it. What you click on it still takes them.",
     gameMoves = "Move in Edit Mode", gameMovesTip = "The game's own Edit Mode moves these: Esc > Edit Mode.",
-    spareTip = "Clicks go through it to what is under it, but for the arrows and checkboxes beside it, where its menu stays.",
 }
+-- What makes a frame one you click (Used): its kind takes clicks by itself, or a script of its hears them.
+Element.CLICKED = { "Button", "EditBox", "Slider", "Minimap" } -- a Button: a CheckButton too
+Element.CLICKS = { "OnClick", "OnMouseDown", "OnMouseUp", "OnDoubleClick", "OnHyperlinkClick" }
+Element.MOTION = { "OnEnter", "OnLeave" } -- a frame not clicked keeps the mouse's coming for these (a tooltip)
+Element.WHEEL = { "OnMouseWheel" }        -- and its wheel for this (a list that scrolls)
 -- The game's menus of a unit its secure buttons open (SecureTemplates' togglemenu: MENU_UNIT_<which>).
 Element.MENUS = { "SELF", "TARGET", "FOCUS", "PET", "OTHERPET", "OTHERBATTLEPET", "PARTY", "PLAYER", "RAID_PLAYER",
                   "RAID", "VEHICLE", "BOSS", "ARENAENEMY", "ENEMY_PLAYER" }
@@ -120,61 +137,85 @@ local function Ours(window, what)
     return not Theirs(window, what) and Element.Get(window, what)
 end
 
--- In sight whatever is ticked: unlocked, or filling the screen.
+-- In sight whatever is ticked: unlocked, filling the screen, or in Edit Mode (the game's selection over the game's
+-- frames of one of New's takes the mouse there).
 local function Kept(window)
-    return window.unlocked or window.lifted or false
+    return window.unlocked or window.lifted or Core.EditMode.active or false
 end
 
 -------------------------------------------------------------------------------
 --  Click-through
 -------------------------------------------------------------------------------
--- A frame of it going through: whatever of the mouse it takes, lent off. Once: one taken already is left. within: it is
--- part of a frame spared while it is click-through (taken now for a fight it hides in).
-local function Take(window, frame, within)
-    if window.through[frame] or Plain(frame:IsForbidden()) then return end
+-- Whether a script of a frame's hears any of these (a script its kind has not is none).
+local function Scripted(frame, scripts)
+    for _, script in ipairs(scripts) do
+        if Plain(frame:HasScript(script)) and frame:GetScript(script) then return true end
+    end
+    return false
+end
+
+function Element.Used(frame)
+    for _, kind in ipairs(Element.CLICKED) do
+        if Plain(frame:IsObjectType(kind)) then return true end
+    end
+    if frame.GetHyperlinksEnabled and Plain(frame:GetHyperlinksEnabled()) then return true end -- words with links
+    return Scripted(frame, Element.CLICKS)
+end
+
+-- A frame of it going through: what of the mouse it takes, lent off; all: all of it (hidden), else what it does not use
+-- itself (Click-through: one you click keeps it all). Once: one taken already is left.
+local function Take(window, frame, all)
+    if window.through[frame] then return end
+    local clicks, motion, wheel = Plain(frame:IsMouseClickEnabled()), Plain(frame:IsMouseMotionEnabled()),
+                                  Plain(frame:IsMouseWheelEnabled())
+    if not (clicks or motion or wheel) or (not all and Element.Used(frame)) then return end
     local lend = Core.Lend(frame)
-    if Plain(frame:IsMouseClickEnabled()) then lend:SetClicks(false) end
-    if Plain(frame:IsMouseMotionEnabled()) then lend:SetMotion(false) end
-    if Plain(frame:IsMouseWheelEnabled()) then lend:SetWheel(false) end
+    if clicks then lend:SetClicks(false) end
+    if motion and (all or not Scripted(frame, Element.MOTION)) then lend:SetMotion(false) end
+    if wheel and (all or not Scripted(frame, Element.WHEEL)) then lend:SetWheel(false) end
     if not lend:Lent() then return end
     window.through[frame] = lend
-    if within then window.within[frame] = true end
 end
 
--- The frame and all it holds, but the box and the grip, which bring its menu and its size; sparing: but the frames its
--- module spares too (an element of New's), and all they hold.
-local function Walk(window, frame, sparing, within)
-    if frame == window.box or frame == window.grip then return end
-    within = within or (window.spare and Core.Safe("element", window.spare, frame)) or false
-    if within and sparing then return end
-    Take(window, frame, within)
-    for _, child in ipairs({ frame:GetChildren() }) do Walk(window, child, sparing, within) end
+-- The frame and all it holds, but the box and the grip, which bring its menu and its size, and what no addon may touch.
+local function Walk(window, frame, all)
+    if frame == window.box or frame == window.grip or Plain(frame:IsForbidden()) then return end
+    Take(window, frame, all)
+    for _, child in ipairs({ frame:GetChildren() }) do Walk(window, child, all) end
 end
 
--- Every frame given back (a protected one in a fight once it is over: Lend's Return waits); only: those of a spared one.
-local function Free(window, only)
+-- Every frame given back (a protected one in a fight once it is over: Lend's Return waits).
+local function Free(window)
     for frame, lend in pairs(window.through) do
-        if not only or window.within[frame] then
-            window.through[frame], window.within[frame] = nil, nil
-            Core.Safe("element", lend.Return, lend)
-        end
+        window.through[frame] = nil
+        Core.Safe("element", lend.Return, lend)
     end
 end
 
--- Whether its clicks go through now: ticked, or hidden in a fight that is on; not while it sleeps, is unlocked or full.
-local function Going(window)
-    return not window.asleep and not Kept(window)
-        and (Ours(window, "through") or (fighting and Ours(window, "fight")))
+-- Whether a fight, or peace, hides it now.
+local function Hidden(window)
+    if fighting then return Ours(window, "fight") end
+    return Ours(window, "peace")
+end
+
+-- How the mouse goes through it now: "all" of it while it is hidden (a fight, or peace), "empty" its empty parts
+-- (Click-through), nil none: unticked, asleep (its module keeps its clicks), unlocked, full or in Edit Mode.
+local function Mode(window)
+    if window.asleep or Kept(window) then return nil end
+    if Hidden(window) then return "all" end
+    return Ours(window, "through") and "empty" or nil
 end
 
 local function Through(window)
-    if not Going(window) then return Free(window) end
-    -- What it spares keeps the mouse while it is click-through, not in a fight it hides in.
-    local sparing = not (fighting and Ours(window, "fight"))
-    if sparing then Free(window, true) end
+    local mode = Mode(window)
+    if mode ~= window.mode then -- another way: all given back first, then taken as this one asks
+        Free(window)
+        window.mode = mode
+    end
+    if not mode then return end
     -- Its frames, and what else its set holds (the quest log's items stand in a frame of their own).
     for _, frame in ipairs(window.rest and window.rest.frames or window.frames or { window.frame }) do
-        Walk(window, frame, sparing)
+        Walk(window, frame, mode == "all")
     end
 end
 
@@ -197,14 +238,14 @@ end
 
 function Element.Look(window)
     if not Element.Is(window) then return end
-    local fight, mouse, through = Ours(window, "fight"), Ours(window, "mouse"), Ours(window, "through")
+    local fight, peace, mouse = Ours(window, "fight"), Ours(window, "peace"), Ours(window, "mouse")
     local set = window.rest
-    if not set and (fight or mouse) then set = Made(window) end
+    if not set and (fight or peace or mouse) then set = Made(window) end
     if set then
         set:Keep(Kept(window))
         if set.made then set:Away(window.asleep) end
-        set:Watch(set.made or through)
-        set:Element(fight, mouse)
+        set:Watch(set.made or Ours(window, "through"))
+        set:Element(fight, mouse, peace)
         -- Off again, a set of its own gave its alpha back: as its module keeps it.
         if set.made and not set.on then window.frame:SetAlpha(window.asleep and 0 or 1) end
     end
@@ -220,6 +261,8 @@ function Element.Set(window, what, on)
     local theirs = Theirs(window, what)
     if theirs then return Core.Safe("element", theirs.set, on and true or false) end
     window:Remember(what, on and true or nil)
+    local other = Element.OTHER[what]
+    if on and other and not Theirs(window, other) then window:Remember(other, nil) end
     Element.Look(window)
 end
 
@@ -228,7 +271,7 @@ function Element.Join(window, set)
     if own == set then return end
     window.rest = set
     if own and own.made then
-        own:Element(false, false) -- off: its frame's alpha given back, the module's set takes it
+        own:Element(false, false, false) -- off: its frame's alpha given back, the module's set takes it
         own:Keep(false)
     end
     Element.Look(window)
@@ -278,7 +321,7 @@ function Element.Lines(root, window)
                                         Core.Guard("element", function()
                                             Element.Set(window, what, not Element.Get(window, what))
                                         end))
-        Tip(box, TEXT[what], what == "through" and window.spare and TEXT.spareTip or TEXT[what .. "Tip"])
+        Tip(box, TEXT[what], TEXT[what .. "Tip"])
     end
 end
 
@@ -337,8 +380,8 @@ end
 function Element.Take(window)
     if Element.Is(window) then return end
     elements[#elements + 1] = window
-    window.through, window.within = {}, {}
-    local again = Core.Guard("element", function() if Going(window) then Again() end end)
+    window.through = {}
+    local again = Core.Guard("element", function() if Mode(window) then Again() end end)
     for _, frame in ipairs(window.frames or { window.frame }) do
         owners[frame] = window
         frame:HookScript("OnShow", again)
@@ -381,21 +424,23 @@ end
 
 function Element.New(spec)
     local element = setmetatable({ frame = spec.frames[1], frames = spec.frames, name = spec.name, key = spec.key,
-                                   spare = spec.spare, options = { title = spec.title, element = spec.element or true } },
+                                   options = { title = spec.title, element = spec.element or true } },
                                  { __index = kept })
     Element.Take(element)
     return element
 end
 
 -- From a fight's first moment, while the game still lets protected frames change, to its end: an element hidden in a
--- fight lets the mouse through.
+-- fight lets the mouse through, one hidden outside of it takes it again.
 local function Fight(on)
     fighting = on
     for _, window in ipairs(elements) do
-        if Ours(window, "fight") then Core.Safe("element", Through, window) end
+        if Ours(window, "fight") or Ours(window, "peace") then Core.Safe("element", Through, window) end
     end
     if not on then Again() end -- what waited for the fight's end, and frames made in it
 end
 Core.On("PLAYER_REGEN_DISABLED", function() Fight(true) end)
 Core.On("PLAYER_REGEN_ENABLED", function() Fight(false) end)
 Core.On("PLAYER_ENTERING_WORLD", function() Fight(InCombatLockdown() == true) end)
+-- Edit Mode opened or closed: every element's frames their own there, as ticked after it.
+Core.EditMode.Watch(Core.Guard("element", function() Element.LookAll() end))

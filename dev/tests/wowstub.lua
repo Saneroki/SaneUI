@@ -536,6 +536,25 @@ function methods:GetNumPoints() return #self._points end
 function methods:SetWidth(width) Blocked(self, "SetWidth") self._width = width end
 function methods:SetScale(scale) Blocked(self, "SetScale") self._scale = scale end
 function methods:GetObjectType() return self._kind end
+-- Its kind, or one it is made from, as the game's widgets are (a CheckButton is a Button, a Button a Frame).
+W.MADE_FROM = { CheckButton = "Button", Button = "Frame", EditBox = "Frame", Slider = "Frame", StatusBar = "Frame",
+                ScrollFrame = "Frame", Cooldown = "Frame", Minimap = "Frame", EventFrame = "Frame",
+                ScrollingMessageFrame = "Frame", MessageFrame = "Frame", SimpleHTML = "Frame", Model = "Frame",
+                PlayerModel = "Model", GameTooltip = "Frame", ColorSelect = "Frame" }
+function methods:IsObjectType(kind)
+    local at = self._kind
+    while at do
+        if at == kind then return true end
+        at = W.MADE_FROM[at]
+    end
+    return false
+end
+-- Whether its kind has a script of that name: a click's only a button's.
+W.BUTTON_SCRIPTS = { OnClick = true, OnDoubleClick = true, PreClick = true, PostClick = true }
+function methods:HasScript(name)
+    if W.BUTTON_SCRIPTS[name] then return self:IsObjectType("Button") end
+    return true
+end
 function methods:GetScale() return self._scale or 1 end
 function methods:GetSize() return self._width, self._height end
 function methods:GetWidth() return self._width end
