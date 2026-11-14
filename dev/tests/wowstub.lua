@@ -901,7 +901,12 @@ function W.Install(env)
     end }
     env.MenuResponse = { Open = 1, Refresh = 2, Close = 3, CloseAll = 4 }
     env.MenuConstants = { VerticalGridDirection = 2, HorizontalGridDirection = 3 }
-    env.Menu = { ModifyMenu = function(tag, callback) W.menuModifiers = W.menuModifiers or {}; W.menuModifiers[tag] = callback end }
+    -- Each tag's callbacks, called in the order registered, as the game's registry does: W.menuModifiers[tag] runs them all.
+    env.Menu = { ModifyMenu = function(tag, callback)
+        W.menuModifiers = W.menuModifiers or {}
+        local before = W.menuModifiers[tag]
+        W.menuModifiers[tag] = before and function(...) before(...); callback(...) end or callback
+    end }
 
     -- The game's event registry: callbacks by event name and owner.
     env.EventRegistry = { callbacks = {} }

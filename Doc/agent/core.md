@@ -155,6 +155,28 @@ is seen on them. A protected frame made out of sight is not made harmless: its c
 `IsVisible` may answer a secret (`SecretWhenAnchoringSecret`, the aspect Shown), and testing one in a condition is an
 error: through `Core.Plain` every time, hidden meaning no.
 
+## Elements on the screen
+
+`Core.Element` (`Element.lua`, 2026-11-14): a window made with `element = true` (every module's piece that stands on
+the screen: unit and group frames, minimap, quest log, chat, meter, reminder bars, guide, arrow, loot feed and rolls;
+not the panels, talks, nor Combat's and Inventory's empty edge strips) has *Unlock to move*, *Hide in combat*, *Show on
+mouseover*, *Click-through* on its right click. Contracts and traps:
+- The ticks live in the window's kept place (`Window.LEFT`: carried through `Keep` and `Reset`), so per profile and per
+  place key (`window:Use` looks again); `Window.PlaceAll` calls `Element.LookAll`.
+- One alpha owner per frame: an element with its module's set of `Core.Rest` gets it by `Rest.New({ window = ... })`
+  (`Join`: the set Core made is switched off first); one without gets a set made on its frame (`made`, mouse looked for
+  by `Watch`). A module that hides its element itself goes through `Element.Sleep` (Navigation with the game's minimap
+  chosen), never its own `SetAlpha`, or the two fight.
+- Click-through lends clicks, motion and wheel apart (`SetClicks`, `SetMotion`, `SetWheel`: `SetMouse` would give a
+  motion-only frame its clicks back) on every frame under the window's frame and the module set's other frames, but its
+  box and grip. Edge's `Fill` calls `Element.Away(window, true)` before it notes the frame's mouse, and `Stop` calls it
+  with false after giving it back, or the lends would note Edge's state.
+- *Hide in combat* makes the frames go through from `PLAYER_REGEN_DISABLED` (`InCombatLockdown()` still false there:
+  the last moment protected frames may change) to `PLAYER_REGEN_ENABLED`; frames made in a fight wait for its end.
+- Secure unit buttons' right click is the game's menu (`togglemenu`): the lines come by `Menu.ModifyMenu` on
+  `MENU_UNIT_*` when the menu's owner (or a frame it stands in) is an element's frame. The stand-in client's
+  `Menu.ModifyMenu` keeps every callback of a tag (People's and ours), as the game's does.
+
 ## Profiles
 
 Saneroki, 2026-10-17; the standard profiles 2026-10-30. Each character uses a profile: *Accountwide* (new characters'
@@ -221,7 +243,7 @@ point of its zone (offset only by its `insets`), so it stays at its edge when th
 changes; a zone holds one window at a time (another shown there stands clear, `Clear`).
 A kept size is cut to the screen's; when the screen's size or the UI scale changes (`DISPLAY_SIZE_CHANGED`,
 `UI_SCALE_CHANGED`, one `Core.Later`), every shown window at rest is placed anew and one that stands full is told
-`docked` once. `window:Reset()` clears the place, keeps `full`, `native` and `tab`. In a fight a window holding
+`docked` once. `window:Reset()` clears the place, keeps what it was left as (`Window.LEFT`: `full`, `native`, `tab`, an element's ticks). In a fight a window holding
 protected frames is not moved, shown or hidden (`window:Locked()`): its placing waits for the fight's end, its close
 and Esc wait (`Core.AfterCombat(window, ...)`), and Esc is the game's meanwhile. `window:Escapes(on)`: Esc given up
 while a view over the window takes it (`Settings/Screen.lua`), taken again.

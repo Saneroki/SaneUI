@@ -583,7 +583,18 @@ for _ = 1, 20 do
 end
 check(not block._shown and not frame._wheel, "and it goes with the mouse, the wheel the game's")
 
-Set("meterHover", false)
+-- An element of Core's: its right click's Show on mouseover is its own tick; a right click with no name there, its lines.
+local Element = Core.Element
+check(Element.Is(handle) and Element.Get(handle, "mouse") == true, "an element: its Show on mouseover is its own tick")
+W.menus = {}
+frame.drag.person = nil
+frame.drag._scripts.OnMouseUp(frame.drag, "RightButton")
+local lines = W.menus[1]
+check(lines and lines[1].title == ns.TEXT.meter and lines[4].text == Element.TEXT.mouse and lines[4].checked(),
+    "a right click with no name under it: its Unlock and ticks, Show on mouseover ticked as its own setting")
+lines[4].fn()
+check(ns.options.meterHover == false and not Element.Get(handle, "mouse") and not handle.rest,
+    "unticked there: its own setting off, nothing of Core's out of sight")
 check(not frame:IsShown(), "without it the window itself is gone")
 W.Combat(true)
 check(frame:IsShown() and block._shown, "and a fight brings it")

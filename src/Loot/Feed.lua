@@ -196,7 +196,8 @@ function Feed.Start()
     holder:Hide()
     holder:SetScript("OnUpdate", ns.Guard(Tick))
     placed = Core.Window.New(holder, { store = Core.Store(ns.name), key = "feedPlace", title = ns.TEXT.feedView,
-                                        first = { point = "RIGHT", x = -300, y = -40 } })
+                                        first = { point = "RIGHT", x = -300, y = -40 },
+                                        element = true }) -- its Unlock and ticks on its box in Edit Mode (Core.Element)
     placed:Place()
     ns.On("CHAT_MSG_LOOT", ns.Guard(Looted))
     ns.On("CHAT_MSG_MONEY", ns.Guard(Money))

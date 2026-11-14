@@ -404,6 +404,7 @@ local function Build()
     end
     window = Core.Window.New(holder, {
         store = ns.store, key = "groupPlace", title = ns.TEXT.group, first = Group.FIRST, settings = settings,
+        element = true, -- the game's menu of a member ends with the group frames' Unlock and ticks (Core.Element)
         get = function(key) return ns.options[key] end,
         set = function(key, value) Core.Set(ns.name, key, value) end })
     window:Place()

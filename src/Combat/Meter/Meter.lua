@@ -276,7 +276,7 @@ end
 -- Whether it may be moved and sized now (Core's usable): not while locked, but in Edit Mode, where the game's own meter
 -- is arranged too.
 local function Free()
-    return Core.EditMode.active or not ns.options.meterLocked
+    return Core.EditMode.active or (handle and handle.unlocked) or not ns.options.meterLocked
 end
 
 -- The mouse came or left: all that stands only for it.
@@ -360,6 +360,9 @@ function Meter.Build()
         dock = true, dragDocked = true, sizable = true, grip = "hover",
         minWidth = Meter.LEAST_WIDTH, minHeight = Meter.LEAST_HEIGHT, usable = Free,
         docked = function() ns.Guarded(Sided) end,
+        -- An element (Core.Element): its right click's Show on mouseover is its own (When it shows).
+        element = { mouse = { get = function() return ns.options.meterHover end,
+                              set = function(on) Core.Set(ns.name, "meterHover", on) end } },
     })
     Meter.handle = handle
 
@@ -393,7 +396,9 @@ function Meter.Build()
     drag:EnableMouse(true)
     drag:Hide()
     drag:SetScript("OnMouseUp", ns.Guard(function(self, mouse)
-        if mouse == "RightButton" and self.person then Controls.Character(self, self.person) end
+        if mouse ~= "RightButton" then return end
+        if self.person then return Controls.Character(self, self.person) end
+        Core.Element.Menu(self, handle) -- no name there: the meter's own Unlock and ticks
     end))
     frame.drag = drag
     handle:DragBy(drag)

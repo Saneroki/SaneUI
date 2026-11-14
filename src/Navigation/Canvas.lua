@@ -694,7 +694,8 @@ end
 -- map pin goes on then: the pin clicked, else the place on the map as it was (Where).
 local last
 
--- A click on the map, or on a pin (pin: its record, PinView.lua). The right button steps one map out; Ctrl and the
+-- A click on the map, or on a pin (pin: its record, PinView.lua). The right button steps one map out (with Shift: the
+-- minimap's Unlock to move and ticks, Core.Element); Ctrl and the
 -- left puts the game's map pin there. Two plain left clicks on the same (a pin, or the map) within Canvas.DOUBLE,
 -- near each other: the map pin where the first was (the view may have changed in between). One: the pin's own
 -- (PinView.Act), else the map under the mouse opens, else a ping there, at once (Ping.Send: so the first click of a
@@ -708,6 +709,8 @@ local function Clicked(button, pin)
     if not x then return end
     if button == "RightButton" then
         last = nil
+        -- With Shift the minimap's own lines (Core.Element: Unlock to move and its ticks); alone it steps out.
+        if IsShiftKeyDown() and ns.Window.handle then return Core.Element.Menu(frame, ns.Window.handle) end
         if camera:StepOut() then Canvas.Layout() end
         return
     end

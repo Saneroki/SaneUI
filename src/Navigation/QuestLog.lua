@@ -1539,13 +1539,14 @@ function QuestLog.Build()
         usable = function() return not InCombatLockdown() end, -- its items cannot follow it in a fight
         lifted = function() ns.Guarded(Lifted) end,
         docked = function() ns.Guarded(Sided) end,
+        element = true, -- its title bar's right click: Unlock to move and the ticks, kept with each place (Core.Element)
     })
     QuestLog.handle = handle
     full = true
     tray = CreateFrame("Frame", nil, UIParent)
     tray:SetAllPoints(UIParent)
     tray:Hide()
-    rest = Core.Rest.New({ label = "quest log", frames = { frame, tray } })
+    rest = Core.Rest.New({ label = "quest log", frames = { frame, tray }, window = handle })
     rest:Hot(frame)
     frame:EnableMouse(true) -- over the full map: the map behind it is not clicked through it (Dress)
     frame:SetScript("OnEnter", ns.Guard(Hover))

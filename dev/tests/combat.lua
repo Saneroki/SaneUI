@@ -1413,6 +1413,16 @@ do
         and player:GetAttribute("*type1") == "target" and player:GetAttribute("*type2") == "togglemenu",
         "three secure unit buttons: a click targets, a right click opens the game's menu")
     check(watched[player] and watched[target] and watched[focus], "the game's unit watch shows each while its unit is there")
+    -- Each an element of Core's: the game's menu of its unit, opened from it or its row, ends with its own lines, and
+    -- its set at rest serves its ticks.
+    local Element = Core.Element
+    local you = Units.KINDS[1]
+    check(Element.Is(you.window) and Element.Of(you.row.button) == you.window and you.window.rest == you.rest,
+        "your frame an element, its row part of it, its set at rest serving it")
+    local lines = {}
+    W.menuModifiers.MENU_UNIT_SELF(you.row.button, W.Description(lines), { unit = "pet" })
+    check(lines[1] and lines[1].title == you.window.options.title and lines[2].text == Element.TEXT.unlock,
+        "the game's menu opened from it: its Unlock to move and ticks at the end")
     local face = player.face
     check(face.name._text == "" and face.level._text == "20" and face.value._text == "850 | 85%",
         "your frame: your level, no name, your health and how much is left")

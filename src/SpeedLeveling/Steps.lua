@@ -375,7 +375,7 @@ local function Build()
                                      first = { point = "TOPRIGHT", x = -70, y = -200 },
                                      -- moved in Edit Mode: which way it grows and the icons follow
                                      docked = function() ns.Guarded(Steps.Update) end,
-                                     unlockedMenu = function(owner) Steps.LockMenu(owner, window) end })
+                                     element = true }) -- its Unlock and ticks under the guides' menu (Core.Element)
     window:Place()
     spot:SetScript("OnUpdate", ns.Guard(Look))
 end
@@ -402,7 +402,7 @@ end
 --  The menu
 -------------------------------------------------------------------------------
 -- The guides for this character, kept and from packs, by group (a menu of its own each, its subgroups as titles):
--- the one to follow; then the window of the guides, to add one.
+-- the one to follow; then the window of the guides, to add one; last the view's Unlock to move and ticks.
 function Menu(owner)
     local util = rawget(_G, "MenuUtil")
     if not (util and util.CreateContextMenu) then return end
@@ -434,20 +434,10 @@ function Menu(owner)
                 ns.Guide.CheckSoon()
             end))
         end
-        Steps.LockItem(root, window)
+        -- The view's own: Unlock to move, Hide in combat, Show on mouseover, Click-through (Core.Element).
+        root:CreateDivider()
+        Core.Element.Lines(root, window)
     end))
-end
-
--- A menu's line that unlocks a window of the guide's, to drag it, or locks it again.
-function Steps.LockItem(root, which)
-    root:CreateButton(which.unlocked and ns.TEXT.lock or ns.TEXT.unlock, ns.Guard(function() which:Unlock(not which.unlocked) end))
-end
-
--- That line alone: a right click on the arrow, or on the box over a window unlocked.
-function Steps.LockMenu(owner, which)
-    local util = rawget(_G, "MenuUtil")
-    if not (util and util.CreateContextMenu) then return end
-    util.CreateContextMenu(owner, ns.Guard(function(_, root) Steps.LockItem(root, which) end))
 end
 
 -- A listed step's menu: go to it; the guides kept a line under it.

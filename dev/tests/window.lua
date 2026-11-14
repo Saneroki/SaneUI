@@ -2682,5 +2682,187 @@ end
     Core.general.animations = animations
 end)()
 
+-- An element's right click (Core.Element): Unlock to move, Hide in combat, Show on mouseover, Click-through; the ticks
+-- kept with its place, out of sight by a set of its own or its module's, its lines in the game's menu of a unit.
+;(function()
+    local Element = Core.Element
+    local animations = Core.general.animations
+    Core.general.animations = false -- each change where it goes at once
+    local children = rawget(methods, "GetChildren")
+    function methods:GetChildren() -- the frames under it, as the game's (no textures, no words)
+        local list = {}
+        for _, child in ipairs(self._children) do
+            if child._kind ~= "Texture" and child._kind ~= "FontString" then list[#list + 1] = child end
+        end
+        return unpack(list)
+    end
+    local store = Core.Store("Elements")
+    local frame = CreateFrame("Frame", nil, UIParent)
+    frame:SetSize(200, 100)
+    local button = CreateFrame("Button", nil, frame) -- a part that takes clicks and the wheel
+    button:EnableMouse(true)
+    button:EnableMouseWheel(true)
+    local hover = CreateFrame("Frame", nil, frame)   -- a part that takes the mouse's coming alone
+    hover:SetMouseMotionEnabled(true)
+    local element = Window.New(frame, { store = store, key = "meter", title = "Meter", element = true,
+                                        first = { point = "CENTER", x = 0, y = 0 } })
+    element:Place()
+    local plain = Window.New(CreateFrame("Frame", nil, UIParent), { store = store, key = "plain", first = { point = "TOP" } })
+    check(Element.Is(element) and not Element.Is(plain) and Element.Of(button) == element and not Element.Of(UIParent),
+        "an element is known, and so is the element a part of it stands in")
+
+    -- Its menu: its name, Unlock to move, the three ticks; on its box too.
+    local menu = Element.Menu(frame, element)
+    check(menu[1].title == "Meter" and menu[2].text == Element.TEXT.unlock and menu[3].text == Element.TEXT.fight
+        and menu[4].text == Element.TEXT.mouse and menu[5].text == Element.TEXT.through and menu[3].checkbox
+        and not menu[3].checked(), "its menu: its name, Unlock to move, the three ticks, none ticked")
+    check(Element.Menu(frame, plain) == nil, "a window that is no element has none")
+    menu[2].fn()
+    check(element.unlocked and element.box:IsShown(), "Unlock to move: its box over it")
+    check(Element.Menu(frame, element)[2].text == Element.TEXT.lock, "the line says Lock then")
+    element.box._scripts.OnMouseUp(element.box, "RightButton")
+    check(W.menus[#W.menus][1].title == "Meter", "a right click on its box: its menu")
+    Element.Menu(frame, element)[2].fn()
+    check(not element.unlocked and not element.box:IsShown(), "Lock: its box gone")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    menu = Element.Menu(frame, element)
+    check(menu[2].text == Element.TEXT.fight, "in Edit Mode no Unlock: every element is unlocked there")
+    element.box._scripts.OnMouseUp(element.box, "RightButton")
+    check(W.menus[#W.menus][1].title == "Meter", "a right click on its box in Edit Mode: its menu")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+
+    -- Hide in combat: kept with its place; out of sight and taking no mouse in a fight, the mouse bringing it no more.
+    Element.Menu(frame, element)[3].fn()
+    check(Element.Get(element, "fight") and Element.Menu(frame, element)[3].checked()
+        and Core.general.places["Elements:meter"].fight == true, "Hide in combat ticked: kept with its place, in the profile")
+    check(frame._alpha == 1 and button._mouse, "out of a fight in sight, its clicks its own")
+    local health = UnitHealth
+    UnitHealth = function() return 60 end
+    W.Fire("UNIT_HEALTH", "player")
+    W.Combat(true)
+    check(frame._alpha == 0, "in a fight out of sight, though something went on before it (your health)")
+    check(not button._mouse and not button._motion and not button._wheel and not hover._motion,
+        "and its clicks, the mouse's coming and the wheel go through it, from the fight's first moment")
+    frame._mouseOver = true
+    check(not element.rest.seek:IsRunning(), "the mouse is not looked for in a fight it hides in")
+    frame._mouseOver = false
+    W.Combat(false)
+    UnitHealth = health
+    W.Fire("UNIT_HEALTH", "player")
+    check(frame._alpha == 1 and button._mouse and button._motion and button._wheel and hover._motion and not hover._mouse,
+        "after it in sight, each frame's mouse given back as it was")
+    element:Unlock(true)
+    W.Combat(true)
+    check(frame._alpha == 1 and button._mouse, "unlocked: in sight in a fight too, taking the mouse")
+    W.Combat(false)
+    element:Unlock(false)
+    Element.Set(element, "fight", false)
+
+    -- Show on mouseover: out of sight, the mouse looked for on it now and then (its set made here has no door).
+    Element.Set(element, "mouse", true)
+    local set = element.rest
+    local function Seek(seconds) set.seek.frame:GetScript("OnUpdate")(set.seek.frame, seconds) end
+    local function Linger(seconds) set.hover.watch.frame:GetScript("OnUpdate")(set.hover.watch.frame, seconds) end
+    check(set.made and frame._alpha == 0 and set.seek:IsRunning(), "Show on mouseover: out of sight, the mouse looked for")
+    Seek(1)
+    check(frame._alpha == 0, "not on it: out of sight still")
+    frame._mouseOver = true
+    Seek(1)
+    check(frame._alpha == 1 and not set.seek:IsRunning(), "the mouse on it: in sight, the looking stopped")
+    frame._mouseOver = false
+    Linger(1)
+    check(frame._alpha == 0 and set.seek:IsRunning(), "gone: out of sight, looked for again")
+    W.Combat(true)
+    frame._mouseOver = true
+    Seek(1)
+    check(frame._alpha == 1 and button._mouse, "in a fight the mouse brings it too, its clicks its own")
+    frame._mouseOver = false
+    Linger(1)
+    W.Combat(false)
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(frame._alpha == 1, "in Edit Mode in sight")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(frame._alpha == 0, "and out of sight after it")
+    element:Unlock(true)
+    check(frame._alpha == 1, "unlocked in sight")
+    element:Unlock(false)
+    check(frame._alpha == 0, "locked out of sight again")
+    Element.Set(element, "mouse", false)
+    check(frame._alpha == 1 and not set.on and not set.seek:IsRunning(), "unticked: in sight, its set off")
+
+    -- Click-through: every part but its box goes through, given back exactly; unlocked or full its own.
+    Element.Set(element, "through", true)
+    check(not button._mouse and not button._wheel and not hover._motion and not frame._mouse,
+        "Click-through: nothing of it takes the mouse")
+    check(element.box._mouse, "but its box, which brings its menu in Edit Mode")
+    element:Unlock(true)
+    check(button._mouse and element.box:IsShown(), "unlocked: its parts their own, its box to drag")
+    element.box._scripts.OnDragStart(element.box)
+    element.box._scripts.OnDragStop(element.box)
+    element:Unlock(false)
+    check(not button._mouse and Element.Get(element, "through"), "locked: through again, the tick kept through a drag")
+    element:Reset()
+    check(Element.Get(element, "through") and Core.general.places["Elements:meter"].x == nil, "and through a reset")
+    local later = CreateFrame("Button", nil, frame)
+    later:EnableMouse(true)
+    frame._scripts.OnShow(frame)
+    W.Wait(0.3)
+    check(not later._mouse, "a part made later goes through too, a moment after it shows")
+    Element.Away(element, true)
+    check(button._mouse and later._mouse, "filling the screen: its parts their own")
+    Element.Away(element, false)
+    check(not button._mouse, "back at rest: through again")
+    Core.general.places["Elements:meter"].through = nil
+    Window.PlaceAll()
+    check(button._mouse and button._wheel and hover._motion and not hover._mouse and later._mouse,
+        "another profile without it ticked: as that one has it, every part given back exactly")
+
+    -- The game's menu of a unit opened from a secure button of an element: its lines after the game's.
+    local unit = CreateFrame("Button", nil, frame)
+    local lines = {}
+    W.menuModifiers.MENU_UNIT_TARGET(unit, W.Description(lines), { unit = "target" })
+    check(lines[1] and lines[1].title == "Meter" and lines[2].text == Element.TEXT.unlock,
+        "the game's menu of a unit, opened from a part of it: its lines")
+    local other = {}
+    W.menuModifiers.MENU_UNIT_SELF(UIParent, W.Description(other), { unit = "player" })
+    check(#other == 0, "opened from anything else: nothing of ours")
+
+    -- A set of its module's serves it (Rest.New's window): its own set given back.
+    Element.Set(element, "mouse", true)
+    local own = element.rest
+    local mine = Core.Rest.New({ label = "mine", frames = { frame }, window = element })
+    check(element.rest == mine and mine.on and mine.mouse and not own.on and frame._alpha == 0,
+        "its module's set serves it, its own off")
+    mine:Switch(true)
+    Element.Set(element, "mouse", false)
+    check(mine.on and mine.resting and not mine.mouse, "unticked: the module's own rest stays")
+    mine:Switch(false)
+    check(not mine.on and frame._alpha == 1, "and off with it")
+
+    -- Its module keeps it out of sight (Sleep: the minimap while the game's own is chosen), whatever is ticked.
+    local map = CreateFrame("Frame", nil, UIParent)
+    local part = CreateFrame("Button", nil, map)
+    part:EnableMouse(true)
+    local mapped = Window.New(map, { store = store, key = "map", title = "Map", element = true, first = { point = "TOP" } })
+    mapped:Place()
+    Element.Sleep(mapped, true)
+    check(map._alpha == 0, "asleep: out of sight")
+    Element.Set(mapped, "mouse", true)
+    Element.Set(mapped, "through", true)
+    check(map._alpha == 0 and not mapped.rest.seek:IsRunning() and part._mouse, "ticked asleep: out of sight still, the mouse not looked for, its clicks its own")
+    Element.Sleep(mapped, false)
+    check(map._alpha == 0 and mapped.rest.seek:IsRunning() and not part._mouse, "awake: as ticked")
+    Element.Set(mapped, "mouse", false)
+    check(map._alpha == 1, "unticked: in sight, not as it stood when its set came on")
+    Element.Sleep(mapped, true)
+    check(map._alpha == 0 and part._mouse, "asleep again: out of sight, its clicks its own")
+    Element.Sleep(mapped, false)
+    Element.Set(mapped, "through", false)
+    check(map._alpha == 1 and part._mouse, "awake and unticked: as it was")
+
+    methods.GetChildren = children
+    Core.general.animations = animations
+end)()
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

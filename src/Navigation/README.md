@@ -1222,6 +1222,11 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-14, the minimap and the quest log as elements:** both are elements of Core's (`Core.Element`, Saneroki:
+  every element's right click): *Unlock to move*, *Hide in combat*, *Show on mouseover* and *Click-through*, kept with the place (the quest log's per place, on the full map and alone).
+  The minimap's right click still steps the map out: Shift and the right click opens its lines; the quest log's are on
+  its title bar's right click. With the game's own minimap chosen ours sleeps through `Core.Element.Sleep`, whatever
+  is ticked.
 - **2026-11-13, the party and the ships at a flight master too:** Saneroki: "keep them but still show party members
   and ships" (the arrow, the map pin and its line). `Taxi.KEEP`, `Taxi.Over`; a pin's `ship` (boats, zeppelins,
   piers): the tram, lifts, portals and the game's ways into another map stay off there.

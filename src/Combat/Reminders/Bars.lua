@@ -34,7 +34,7 @@ end
 
 local function Clicked(icon, button)
     if icon.reminder and (button == "LeftButton" or button == "RightButton") then
-        ns.AuraLists.Menu(icon, Spell(icon.reminder))
+        ns.AuraLists.Menu(icon, Spell(icon.reminder), Core.Element.Of(icon)) -- the bar's own lines under the aura's
     end
 end
 
@@ -88,6 +88,7 @@ local function Make(number, place)
     local window = Core.Window.New(frame, {
         store = ns.store, key = "reminderBar" .. number, title = ns.TEXT.reminderBar:format(place),
         first = { point = "CENTER", x = 0, y = 240 - (place - 1) * (Bars.SIZE + 2 * Bars.GAP) },
+        element = true, -- its menu on its box in Edit Mode, and under an icon's own (Core.Element)
     })
     local row = CreateFrame("Frame", nil, window.inside)
     row:SetPoint("CENTER", frame, "CENTER", 0, 0)

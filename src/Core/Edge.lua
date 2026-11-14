@@ -398,6 +398,8 @@ function methods:Fill(on)
     if not left or not bottom then return end -- it has no place yet
     if on then Others(self) end
     if not self.away then
+        -- An element in sight and its clicks its own first (Element.lua): what is kept below is its own mouse.
+        Core.Safe("full screen", Core.Element.Away, window, true)
         -- At rest: what it goes back to is its size, its layer and its mouse now.
         self.away = true
         self.width, self.height = frame:GetSize()
@@ -531,6 +533,7 @@ function methods:Stop()
         window.grip:EnableMouse(true)
     end
     Content(self, nil)
+    Core.Safe("full screen", Core.Element.Away, window, false) -- an element as ticked again, at rest
 end
 
 -- If it may fill the screen (the section's first switch): docked along a screen edge, the window's

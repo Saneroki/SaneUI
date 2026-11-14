@@ -314,6 +314,19 @@ Notes for building it (from `references/`):
 - **Windows that are not open while Edit Mode is** (a talk window exists only at an NPC): to be arranged
   and sized there too, Core shows a preview of each in Edit Mode (plan; the guide, *Not built yet*).
 
+## Every element's right click (Saneroki, 2026-11-14; in Core)
+
+"All elements should have elements on the rightclick where you can unlock them to move around and adjust if they
+should be hidden in combat / show on mouseover", and "a option to make it clickthrough". Every piece of Sane UI that
+stands on the screen (unit and group frames, minimap, quest log, chat, meter, aura bars, guide, arrow, loot feed and
+rolls) has under its name *Unlock to move*, *Hide in combat*, *Show on mouseover* and *Click-through*, kept with its
+place in the profile (`src/Core/Element.lua`, `Doc/guides/windows.md`, section 4). Panels and talks are not elements:
+their title bar moves them, they open and close by themselves. Combat's and Inventory's windows are empty strips at
+rest (only their screen edge), so none either. The game's own action bars and buff list keep the game's Edit Mode.
+Where the element's right click was taken already, the lines go at the end of its menu (the game's unit menu, the
+guides', the meter's, an aura's); the minimap's right click steps the map out, so there it is Shift and the right
+click. A click-through element is reached by its box in Edit Mode.
+
 ## Open questions
 
 - **Saneroki to decide (2026-10-16, from the window work):**

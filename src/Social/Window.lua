@@ -15,7 +15,9 @@ local _, ns = ...
 --  a click on them goes through to the game, unless it is on a link or a name
 --  (Links.lua). The window takes only the mouse's coming (Core.Hover): then the
 --  button for the line to write in is there (Chrome), and a watch looks whether
---  the mouse is still there, until it has gone. The scroll bar is there while
+--  the mouse is still there, until it has gone. A right click on that button
+--  opens the chat's Unlock to move, Hide in combat, Show on mouseover and
+--  Click-through (Core.Element). The scroll bar is there while
 --  the list is scrolled up from its newest message (Bar).
 --
 --  Built from the game's parts: its scrolling list (which only makes rows for
@@ -582,6 +584,7 @@ local function Build()
         minWidth = Layout.MIN_WIDTH, minHeight = Layout.MIN_HEIGHT,
         docked = Placed, motion = Kind,
         filled = function(full) ns.Guarded(Filled, full) end,
+        element = true, -- Unlock to move and the ticks: the right click on its button, its box (Core.Element)
     })
     ns.Board.Take(handle) -- its full screen: Social's windows on Core's board
     -- Only the mouse's coming: a click on the window still goes into the game.
@@ -603,6 +606,7 @@ local function Build()
     write:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
     write:SetScript("OnClick", function() ns.Guarded(ns.Input.Toggle) end)
     ns.Menu.Button(write)
+    Core.Element.RightClick(write, handle) -- its right click: the chat's Unlock to move and ticks
 
     box = CreateFrame("Frame", nil, column, "WowScrollBoxList")
     box:SetPoint("TOPLEFT", column, "TOPLEFT", Layout.EDGE, -Layout.EDGE)

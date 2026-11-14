@@ -821,6 +821,9 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-14 — The chat as an element of Core's (`Core.Element`, Saneroki: every element's right click): a right click
+  on its button to write has *Unlock to move*, *Hide in combat*, *Show on mouseover* and *Click-through*, kept with its place; full screen it is in sight and takes the mouse whatever is
+  ticked.
 - 2026-11-07 — Discord's messages on the left, as a speaker's (Saneroki): the guild's Discord stream is read
   from its event (`CHAT_MSG_GUILD_DISCORD`), not taken as a note in the middle; one from Discord in the guild's
   chat is never yours.
