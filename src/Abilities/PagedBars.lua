@@ -17,7 +17,9 @@ local _, ns = ...
 --  free for a paged bar; with that switch off, Bar 1 shows the same row.
 --
 --  A druid's Bar 6 has its own checkbox, number and arrows (FormBar.lua): it is
---  not one of these. The choice is the character's own, kept with its
+--  not one of these. A right click on a checkbox opens the bars' own lines (Hide
+--  in combat, Show on mouseover, Click-through: Core.Element, where Combat has
+--  made the bars an element). The choice is the character's own, kept with its
 --  reservations, unticked at first.
 --
 --  As Bar 1's and the form bar's: a button asks for its own "actionpage" before
@@ -114,6 +116,7 @@ local function Make(entry)
     box:SetSize(PagedBars.BOX, PagedBars.BOX)
     box:SetFrameLevel(rawget(_G, entry.prefix .. "1"):GetFrameLevel() + 2)
     box:SetScript("OnClick", ns.Guard(Ticked))
+    Core.Element.RightClick(box) -- the bars' Hide in combat, Show on mouseover, Click-through (Combat's, Core.Element)
     Core.Tip(box, ns.TEXT.pagedText, ns.TEXT.pagedTip:format(entry.number))
     made[entry] = { header = header, box = box }
     -- The game lays out a bar's rows after the login and in Edit Mode: placed again beside it then, out of a fight.

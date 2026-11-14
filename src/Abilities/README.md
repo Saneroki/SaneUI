@@ -437,6 +437,10 @@ module keeps reserved buttons, saved bar layouts, Bar 1's page and the buttons t
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-14 — The bars' menu on what Abilities puts beside them (Saneroki: "on the actionbars only on the pager arrows
+  and checkboxes"): a right click on a paged bar's checkbox, or on a druid's Bar 6 arrows or checkbox, opens Combat's
+  action bars' *Hide in combat*, *Show on mouseover* and *Click-through* (`Core.Element.RightClick`, the element found
+  at the click); the Bar 6 arrows turn nothing on a right click (`FormBar.ARROW`).
 - 2026-11-09 — Bars 2 to 8 paged by stance or form, as the game pages Bar 1 (Saneroki: "this makes the bar into a
   paged bar (like the first one, bar one native) or activate the stance / forms specific page and change accordingly"):
   the checkbox *Page with your stance or form* beside each, for a warrior, a druid (not its Bar 6) or a rogue.

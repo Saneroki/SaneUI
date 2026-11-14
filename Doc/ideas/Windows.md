@@ -322,7 +322,10 @@ stands on the screen (unit and group frames, minimap, quest log, chat, meter, au
 rolls) has under its name *Unlock to move*, *Hide in combat*, *Show on mouseover* and *Click-through*, kept with its
 place in the profile (`src/Core/Element.lua`, `Doc/guides/windows.md`, section 4). Panels and talks are not elements:
 their title bar moves them, they open and close by themselves. Combat's and Inventory's windows are empty strips at
-rest (only their screen edge), so none either. The game's own action bars and buff list keep the game's Edit Mode.
+rest (only their screen edge), so none either. The game's buff list keeps the game's Edit Mode. The game's action
+bars are one element, all bars at once (Saneroki, 2026-11-14: "on the actionbars only on the pager arrows and
+checkboxes"): the menu on the main bar's page arrows and what stands beside the bars (the paged bars' checkboxes, a
+druid's Bar 6 pager), since a button's right click is its spell's; no Unlock, the game's Edit Mode moves them.
 Where the element's right click was taken already, the lines go at the end of its menu (the game's unit menu, the
 guides', the meter's, an aura's); the minimap's right click steps the map out, so there it is Shift and the right
 click. A click-through element is reached by its box in Edit Mode.

@@ -158,8 +158,8 @@ error: through `Core.Plain` every time, hidden meaning no.
 ## Elements on the screen
 
 `Core.Element` (`Element.lua`, 2026-11-14): a window made with `element = true` (every module's piece that stands on
-the screen: unit and group frames, minimap, quest log, chat, meter, reminder bars, guide, arrow, loot feed and rolls;
-not the panels, talks, nor Combat's and Inventory's empty edge strips) has *Unlock to move*, *Hide in combat*, *Show on
+the screen: unit and group frames, minimap, quest log, chat, meter, reminder bars, guide, arrow, loot feed and rolls,
+the game's action bars by `Element.New`; not the panels, talks, nor Combat's and Inventory's empty edge strips) has *Unlock to move*, *Hide in combat*, *Show on
 mouseover*, *Click-through* on its right click. Contracts and traps:
 - The ticks live in the window's kept place (`Window.LEFT`: carried through `Keep` and `Reset`), so per profile and per
   place key (`window:Use` looks again); `Window.PlaceAll` calls `Element.LookAll`.
@@ -173,6 +173,11 @@ mouseover*, *Click-through* on its right click. Contracts and traps:
   with false after giving it back, or the lends would note Edge's state.
 - *Hide in combat* makes the frames go through from `PLAYER_REGEN_DISABLED` (`InCombatLockdown()` still false there:
   the last moment protected frames may change) to `PLAYER_REGEN_ENABLED`; frames made in a fight wait for its end.
+- Frames that are no window of ours (the game's action bars) are one element by `Element.New` (a duck-typed table:
+  `frame`, `frames`, `options.title`, `Recall`/`Remember` on `Core.general.places["<module>:<key>"]`, no `Unlock`).
+  `spare(frame)` keeps a frame and all it holds out of click-through (the bars' pager arrows and checkboxes, so the
+  menu stays at hand), but not in a fight it hides in (`within`: those lends are freed when sparing again). Combat
+  lifts the bars' element (`Element.Away`) while something is dragged, keys are set or they stand on the full screen.
 - Secure unit buttons' right click is the game's menu (`togglemenu`): the lines come by `Menu.ModifyMenu` on
   `MENU_UNIT_*` when the menu's owner (or a frame it stands in) is an element's frame. The stand-in client's
   `Menu.ModifyMenu` keeps every callback of a tag (People's and ours), as the game's does.

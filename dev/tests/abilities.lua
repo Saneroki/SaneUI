@@ -2135,6 +2135,8 @@ do
     check(barSix[1].action == 145 and Number(pager) == "6", "past the last, the first again")
     Press(pager.down)
     check(barSix[1].action == 109 and Number(pager) == "10", "the arrow down the one before")
+    Press(pager.up, "RightButton")
+    check(barSix[1].action == 109 and pager.up._scripts.OnMouseUp, "a right click turns nothing: it opens the bars' menu (Core.Element)")
     InForm("form", "bonusbar:1")
     InForm("form", "bonusbar:3")
     check(barSix[1].action == 97, "the next change of form swaps it again")
