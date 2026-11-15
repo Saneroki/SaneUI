@@ -111,8 +111,11 @@ function Core.Secret(value)
     return issecretvalue ~= nil and issecretvalue(value)
 end
 
+-- Every answer of the game passes here, so the check is written out rather than asked of Core.Secret (half the time);
+-- the game's issecretvalue is read at each call, never kept: nil is plain, and needs no asking.
 function Core.Plain(value)
-    if Core.Secret(value) then return nil end
+    local secret = issecretvalue
+    if value ~= nil and secret ~= nil and secret(value) then return nil end
     return value
 end
 
@@ -120,7 +123,12 @@ local Plain = Core.Plain
 
 local function Answer(ok, a, b, c)
     if not ok then return nil end
-    return Plain(a), Plain(b), Plain(c)
+    local secret = issecretvalue
+    if secret == nil then return a, b, c end
+    if a ~= nil and secret(a) then a = nil end
+    if b ~= nil and secret(b) then b = nil end
+    if c ~= nil and secret(c) then c = nil end
+    return a, b, c
 end
 
 -- Asks the game: fn(...)'s first three answers, each nil when hidden. All nil when fn is not

@@ -712,8 +712,10 @@ and shows them on the map or puts the map pin there. The plan is in
   only one, not marked unconfirmed (the game's own ways). A pin at each of a thing's points (a herb's every spawn:
   its key the thing's and the point's, its `thing` the thing's); the game's pin hides every one of the data's for
   the same thing (a vignette's GUID names its creature). Kept per map until the game says it changed (the message
-  `LIVE`; the arrow's quest: the game's alone), Core's in parts: the NPCs' read again when the log or the level
-  changed, the objects', places' and ways' when Core's places change; at a zone's level every zone in view (on
+  `LIVE`; the arrow's quest: the game's alone), Core's in parts: the quest givers' read again when the quests in the
+  log are others (one taken, abandoned or handed in: `Goals.Log`, which counts `QUEST_TURNED_IN` too, for the log may
+  list a quest handed in a moment longer) or the level changed, never at a kill that only counts on; the other NPCs'
+  (`steady`), the objects', places' and ways' when Core's places change; at a zone's level every zone in view (on
   Zephras Isle the isle itself), further out the continent and its zones for travel and places only (only the
   places' and ways' part read). A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
   or the isle's). At the world each plane in view and its zones (the docks stand on the zones' maps), `Pins.WORLD`'s

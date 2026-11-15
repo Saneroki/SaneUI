@@ -12,6 +12,8 @@ local _, ns = ...
 --      Goals.Spots(thing)   its points by map: { [map] = { { map, x, y }, ... } }, x and y in percent
 --      Goals.Stale()        the log changed: read again when next asked
 --      Goals.Forget()       Core's data changed: nothing kept
+--      Goals.Log()          the quests in the log and the turn-ins so far, in one line, as last read (Pins.lua: the
+--                           quest givers' pins change only when it does, not at each kill)
 --
 --  The counts in an objective's words change with every kill, what is wanted only when one is done: so the pins
 --  are made again only then, and a tooltip asks the game for the words (PinView.lua).
@@ -30,6 +32,8 @@ local NONE = {}
 
 local wanted = {}  -- Goals.Wanted's answer
 local said         -- what is wanted, in one line: the same again changes nothing
+local inLog = ""   -- Goals.Log's answer
+local handedIn = 0 -- the quests turned in this session: one handed in may stay in the log's line a moment longer
 local stale = true -- the log said it changed since it was read
 local spots = {}   -- [thing] = its points by map, until Core's data changes
 local givers = {}  -- [item] = the things that give it, until Core's data changes
@@ -85,22 +89,23 @@ end
 function Goals.Read()
     if not stale then return false end
     stale = false
-    local found, parts = {}, {}
-    if QUESTS:Ready() then
-        for index = 1, Core.Ask(C_QuestLog.GetNumQuestLogEntries) or 0 do
-            local info = Core.Ask(C_QuestLog.GetInfo, index)
-            local quest = type(info) == "table" and not info.isHeader and not info.isHidden and Core.Plain(info.questID)
-            local record = quest and QUESTS:Get(quest)
-            local open = record and Core.Ask(C_QuestLog.GetQuestObjectives, quest)
-            for _, objective in ipairs(type(open) == "table" and record.objectives or NONE) do
-                local state = open[objective.index]
-                if type(state) == "table" and not Core.Plain(state.finished) then
-                    Want(found, quest, objective)
-                    parts[#parts + 1] = quest .. "/" .. objective.index
-                end
+    local found, parts, log = {}, {}, { handedIn }
+    local ready = QUESTS:Ready()
+    for index = 1, Core.Ask(C_QuestLog.GetNumQuestLogEntries) or 0 do
+        local info = Core.Ask(C_QuestLog.GetInfo, index)
+        local quest = type(info) == "table" and not info.isHeader and Core.Plain(info.questID)
+        if quest then log[#log + 1] = quest end
+        local record = ready and quest and not info.isHidden and QUESTS:Get(quest)
+        local open = record and Core.Ask(C_QuestLog.GetQuestObjectives, quest)
+        for _, objective in ipairs(type(open) == "table" and record.objectives or NONE) do
+            local state = open[objective.index]
+            if type(state) == "table" and not Core.Plain(state.finished) then
+                Want(found, quest, objective)
+                parts[#parts + 1] = quest .. "/" .. objective.index
             end
         end
     end
+    inLog = table.concat(log, " ")
     local line = table.concat(parts, " ")
     if line == said then return false end
     said, wanted = line, found
@@ -131,6 +136,16 @@ end
 function Goals.Stale()
     stale = true
 end
+
+function Goals.Log()
+    return inLog
+end
+
+-- A quest handed in: its givers' pins made anew (Live tells it as the quests' change), though the log may still list it.
+ns.On("QUEST_TURNED_IN", function()
+    handedIn = handedIn + 1
+    stale = true
+end)
 
 function Goals.Forget()
     wipe(spots)

@@ -15,6 +15,8 @@ What changed in each version of Sane UI Maps, newest first: a version's part is 
 - Classic windows can bring back the game's own quest log: its key opens it, everything else stays ours.
 - The Dungeons button stands left of the zone list; the quest log's scroll bar at the side it is docked to.
 - At a flight master each flight point's place, zone and price stand on three lines.
+- Smoother questing: a kill that counts toward a quest no longer rebuilds every pin of the map (five times less
+  work on the full map), and the pins are laid out faster.
 
 ## 0.3.2 (2026-11-15)
 

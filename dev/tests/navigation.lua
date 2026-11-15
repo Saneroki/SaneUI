@@ -2663,11 +2663,23 @@ check(full.level == "zone" and count == 13, "the zone's pins: 13 things, each it
         "a herb at two places on a map: a pin at each, each its own key, the thing's kept apart; the far one drawn alone")
     check(Pin("object:1685", true, -800, -9850) and not Pin("object:1685", true, 800, -8600),
         "a mailbox that is an object: on the small map only near the player, as every service")
-    -- The log changed: Core's quest givers read again with what the game tells; its objects, places and ways kept.
+    -- The log changed: what the game tells read again. A kill that only counts on (the same quests in the log) keeps
+    -- Core's quest givers' pins, for they go by the quests in it; a quest taken or handed in makes them anew. Its
+    -- objects, places and ways kept all the while.
     local place, herb, giver, quest = Pin("place:1"), Pin("object:1617"), Pin("npc:72"), Pin("quest:7")
     Pins.Changed("quests")
-    check(place and Pin("place:1") == place and herb and Pin("object:1617") == herb and giver and Pin("npc:72") ~= giver
-        and quest and Pin("quest:7") ~= quest, "the log changed: the quest givers' pins read again, the rest of Core's kept")
+    check(giver and Pin("npc:72") == giver and quest and Pin("quest:7") ~= quest,
+        "a kill counted on (the same quests in the log): the game's quest pins read again, Core's quest givers' kept")
+    quest = Pin("quest:7")
+    questLog[#questLog + 1] = { title = "A New Task", questID = 99, level = 5 }
+    Pins.Changed("quests")
+    check(place and Pin("place:1") == place and herb and Pin("object:1617") == herb and Pin("npc:72") ~= giver
+        and Pin("quest:7") ~= quest, "a quest taken: the quest givers' pins read again, the rest of Core's kept")
+    questLog[#questLog] = nil
+    Pins.Changed("quests")
+    giver = Pin("npc:72")
+    W.Fire("QUEST_TURNED_IN", 5)
+    check(Pin("npc:72") ~= giver, "a quest handed in: the quest givers' pins read again, though the log may list it a moment longer")
     giver, quest = Pin("npc:72"), Pin("quest:7")
     Pins.Changed("waypoint")
     check(Pin("npc:72") == giver and Pin("quest:7") ~= quest, "the arrow led elsewhere: only what the game tells read again")

@@ -40,7 +40,7 @@ Live.EVENTS = {
     VIGNETTES_UPDATED = "vignettes", VIGNETTE_MINIMAP_UPDATED = "vignettes",
     AREA_POIS_UPDATED = "points",
     TAXIMAP_OPENED = "flights", TAXI_NODE_STATUS_CHANGED = "flights",
-    PLAYER_LEVEL_UP = "level", QUEST_WATCH_LIST_CHANGED = "quests",
+    PLAYER_LEVEL_UP = "level", QUEST_WATCH_LIST_CHANGED = "quests", QUEST_TURNED_IN = "quests",
     ZONE_CHANGED = "zone", ZONE_CHANGED_INDOORS = "zone", ZONE_CHANGED_NEW_AREA = "zone", NEW_WMO_CHUNK = "zone",
 }
 

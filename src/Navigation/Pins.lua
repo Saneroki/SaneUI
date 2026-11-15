@@ -650,6 +650,18 @@ local function GoalsOn(map)
     return list
 end
 
+-- The pins of a map's NPCs that give no quest, kept while Core's places of that map stay the same list: what your
+-- quests and level change (Pins.Changed) are the quest givers' pins alone, so only theirs are made anew. The quest log
+-- changes at each kill of a quest's creature (QUEST_LOG_UPDATE), and Elwynn's 428 NPCs have 65 quest givers.
+local steady = {} -- [map] = { places = Core's list of that map, [index] = the pin of its NPC there, false for none }
+local givenFor   -- the log's quests the quest givers' pins were made for (Goals.Log): accepted, abandoned, handed in
+
+-- Whether a place of Core's data is an NPC that gives quests: its pin goes by where they stand for you (FromData).
+local function GivesQuests(place)
+    local what = place.what
+    return type(what) == "table" and type(what.quests) == "table" and what.quests[1] ~= nil
+end
+
 -- A map's pins of Core's data of one part (PARTS, and the objectives'). A thing with several points there (a herb's
 -- every spawn, a wanderer's places) has a pin at each: its key the thing's and its point's, the thing's own kept as its
 -- thing.
@@ -663,12 +675,27 @@ local function DataOn(map, part)
     end
     local places = Map:On(map)
     if not places then return {} end -- being read: asked again once they are (OnChange)
+    local kept = part == "npc" and steady[map]
+    if part == "npc" and (not kept or kept.places ~= places) then
+        kept = { places = places }
+        steady[map] = kept
+    end
     list = {}
     for index, place in ipairs(places) do
-        local pin = PARTS[place.kind] == part and FromData(place)
-        if pin then
-            pin.thing, pin.key = pin.key, pin.key .. "@" .. map .. ":" .. index
-            Add(list, pin, map, place.x, place.y)
+        if PARTS[place.kind] == part then
+            local pin -- (nil: not made yet; false: kept, its NPC has no pin)
+            if kept then pin = kept[index] end
+            if pin == nil then
+                pin = FromData(place)
+                if pin then pin.thing, pin.key = pin.key, pin.key .. "@" .. map .. ":" .. index end
+                if kept and not GivesQuests(place) then kept[index] = pin or false end
+            end
+            -- (a kept pin stands where it was placed: its plane and place are its map's, Placed)
+            if pin and pin.home and pin.map == map then
+                list[#list + 1] = pin
+            elseif pin then
+                Add(list, pin, map, place.x, place.y)
+            end
         end
     end
     data[part][map] = list
@@ -813,6 +840,11 @@ function Pins.For(view, small, pu, pv)
     rode = 0
     Me()
     if ns.Goals.Read() then wipe(data.goal) end
+    -- The quest givers' pins anew only once the quests in the log are others, not at each kill (QUEST_LOG_UPDATE)
+    if ns.Goals.Log() ~= givenFor then
+        givenFor = ns.Goals.Log()
+        wipe(data.npc)
+    end
     local continentLevel = view.level ~= "zone"
     -- What a quest of yours asks for stands as that, not as what else it is (a rare, a herb); a quest it offers aside.
     local goals = not continentLevel and Shows("goal") and ns.Goals.Wanted() or NONE
@@ -1062,29 +1094,35 @@ end
 function Pins.Spread(list, k)
     local out = {}
     used = 0
+    local space = Pins.SPACE
     for _, shown in ipairs(Combine(list, k)) do
         shown.sx, shown.sy = 0, 0
         out[#out + 1] = shown
-        -- Into the first cloud whose rings it would cover, else a cloud of its own.
+        -- Into the first cloud whose rings it would cover, else a cloud of its own. Each pin asks every cloud so far,
+        -- so the loop asks no function: a cloud keeps its rings (Ring(n) + 1), and the larger step is picked by hand.
         local into
+        local x, y, step = shown.ax, shown.ay, shown.room * space
         for index = 1, used do
             local cloud = clouds[index]
             -- (its outer ring, and one size more: a pin nearer would cover one of it)
-            local reach = (Ring(cloud.n) + 1) * math.max(cloud.step, shown.room * Pins.SPACE)
-            if (shown.ax - cloud.x) ^ 2 + (shown.ay - cloud.y) ^ 2 < reach * reach then into = cloud break end
+            local wider = cloud.step
+            if step > wider then wider = step end
+            local reach, dx, dy = cloud.rings * wider, x - cloud.x, y - cloud.y
+            if dx * dx + dy * dy < reach * reach then into = cloud break end
         end
         if into then
             into.n = into.n + 1
+            into.rings = Ring(into.n) + 1
             into.members[into.n] = shown
-            into.step = math.max(into.step, shown.room * Pins.SPACE)
+            into.step = math.max(into.step, step)
             -- (its middle the mean of its members' places)
-            into.x = into.x + (shown.ax - into.x) / into.n
-            into.y = into.y + (shown.ay - into.y) / into.n
+            into.x = into.x + (x - into.x) / into.n
+            into.y = into.y + (y - into.y) / into.n
         else
             used = used + 1
             local cloud = clouds[used] or { members = {} }
             clouds[used] = cloud
-            cloud.x, cloud.y, cloud.n, cloud.step = shown.ax, shown.ay, 1, shown.room * Pins.SPACE
+            cloud.x, cloud.y, cloud.n, cloud.rings, cloud.step = x, y, 1, Ring(1) + 1, step
             cloud.members[1] = shown
         end
     end
@@ -1120,8 +1158,11 @@ function Pins.Changed(what)
     wipe(joined)
     if what == nil then
         for _, lists in pairs(data) do wipe(lists) end
+        wipe(steady)
         ns.Goals.Stale()
-    elseif what == "quests" or what == "level" then
+    elseif what == "quests" then
+        ns.Goals.Stale() -- (the quest givers' pins: made anew by For once the log's quests are others)
+    elseif what == "level" then
         wipe(data.npc)
         ns.Goals.Stale()
     end
@@ -1131,6 +1172,7 @@ end
 -- Core's places changed: every map's data pins are read again.
 function Pins.DataChanged()
     for _, part in pairs(data) do wipe(part) end
+    wipe(steady)
     ns.Goals.Forget()
 end
 

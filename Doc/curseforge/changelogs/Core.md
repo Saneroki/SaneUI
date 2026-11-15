@@ -9,6 +9,7 @@ What changed in each version of Sane UI Core, newest first: a version's part is 
   see.
 - One options page for all Sane UI addons: Esc > Options > AddOns > Sane UI.
 - Profiles, off at first: turn them on to share your settings between your characters.
+- Light on your game: every question a Sane UI addon asks the game costs half the time it did.
 - Safe error handling: if a Sane UI addon runs into an error, that part goes back to the game's own until your
   next `/reload`, with one line in your chat. `/sane errors` lists them.
 - Sane UI's Discord: copy its link from the options page. A bug report, an idea or other feedback written there
