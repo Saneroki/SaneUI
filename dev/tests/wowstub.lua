@@ -890,7 +890,21 @@ function W.Install(env)
         function description:CreateCheckbox(text, isSelected, setSelected, data)
             local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {}, checkbox = true }
             list[#list + 1] = item
-            return { SetTooltip = function() end, AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
+            -- (a checkbox may hold a menu of its own too, as every element of the game's menus may: item.sub once
+            -- something is put in it)
+            local held = {}
+            local sub = Description(held)
+            for _, name in ipairs({ "CreateButton", "CreateCheckbox", "CreateRadio", "CreateTitle", "CreateDivider",
+                                    "CreateSpacer", "CreateFrame" }) do
+                local make = sub[name]
+                sub[name] = function(...)
+                    item.sub = held
+                    return make(...)
+                end
+            end
+            function sub:SetTooltip(fn) item.tooltip = fn end
+            function sub:AddInitializer(init) item.inits[#item.inits + 1] = init end
+            return sub
         end
         return description
     end

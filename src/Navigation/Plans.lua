@@ -48,7 +48,7 @@ Plans.PARTS = 20      -- parts of a plan shared at most
 Plans.BLOCK = 2800    -- bytes of rows in a part, unpacked
 Plans.TEXT = {
     first = "My markers",
-    newName = "Plan %d",
+    newName = "Sketch %d", -- (a plan is a sketch to players: Saneroki, 2026-11-15)
 }
 
 local colours = {}

@@ -15,7 +15,8 @@ local _, ns = ...
 --      the view          one button: Blended and Scrying in turn (Saneroki: "Blended and scrying will be one button
 --                        that just toggles the map views"), its words the view drawn; Parchment only in the
 --                        settings (the setting Map view); none where only one view is offered (ns.Several)
---      Draw and plan     a square with a pencil: the palette of drawing and planning (DrawBar.lua)
+--      Sketches          a dropdown: every sketch with its checkbox (shown) and its own menu, Draw on the map,
+--                        New sketch (DrawBar.lua; in place of the pencil button: Saneroki, 2026-11-15)
 --      Follow me         a checkbox: the map keeps you in its middle as you move and comes back to you, small and
 --                        full (the setting followMap; Canvas.lua), on at first
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
@@ -336,7 +337,7 @@ local function Build()
     followBox = FollowBox()
     viewButton = Button(TopBar.VIEW_WIDTH, "", "", "", Toggle)
     viewButton.key = "view"
-    draw = ns.DrawBar.Button(bar)
+    draw = ns.DrawBar.Menu(bar, TopBar.BUTTON_HEIGHT)
     -- the room between, for the search
     gap = CreateFrame("Frame", nil, bar)
     gap:SetPoint("TOP")

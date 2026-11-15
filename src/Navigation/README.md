@@ -363,28 +363,33 @@ and shows them on the map or puts the map pin there. The plan is in
   (the golden line leads there) and Delete (asked first); a double click puts the map pin there at once. The pin
   filter's *Your markers* shows or hides them all; the map's search finds them by their titles and descriptions
   (*markers* as the first word lists them all). They are kept for your account.
-- **Draw and plan** (Saneroki, 2026-11-15): the square with a pencil on the full map's bar (left of *Follow me*) opens
-  a small palette at the top right, under the bar (drag it by its head). Its tools: **Marker** (a click: a marker
+- **Sketches** (Saneroki, 2026-11-15), the dropdown on the full map's bar (left of *Follow me*; in place of the pencil
+  button: "When it is not active it says Sketches and when you click it it shows all the sketches with a checkbox in
+  front that toggle if the sketch is shown and the fold out to see more options"): it says *Sketches*, and while you
+  draw *Drawing:* and the sketch you draw in. Its menu: every sketch with a checkbox (shown or hidden) and its own
+  menu folding out (**Draw in it**, **Rename**, **Share**, **Delete**), then **Draw on the map** and **New sketch**.
+  Draw on the map opens a small palette at the top right, under the bar (drag it by its head). Its tools: **Marker** (a click: a marker
   there, its card to write in), **Pen** (drag: a line as the mouse goes), **Line**, **Arrow** (drag: from where you
   begin to where you let go), **Circle** (drag: round where you begin, as wide as you drag) and **Eraser** (a click on a
   drawing: away); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
   thick width. While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
   steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
-  - **Plans:** what you draw and mark goes into the **plan** chosen in the palette's dropdown (*My markers* at first;
-    your earlier markers are in it). Each plan in the dropdown has its own menu: **Shown** (its markers and drawings
+  - **Sketches** (*plans* in the code; Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing",
+    *Sketch* his pick): what you draw and mark goes into the **sketch** chosen in the palette's dropdown (*My markers*
+    at first; your earlier markers are in it). Each sketch in the dropdown has its own menu: **Shown** (its markers and drawings
     shown or hidden as one), **Rename**, **Share**: **Party** (**Raid** in a raid), **Guild** (each greyed outside one) or
     **Someone...**, which asks for a player (type a name: your group, guild, friends and those you spoke with show
-    under the field as you type, the game's own search, Tab chooses) and sends the plan to that player alone, **Delete** (with
-    all it holds, asked first); **New plan** makes another and chooses it. A plan shared goes whole, its markers and
-    drawings, and whoever gets it is asked (who shares which plan, how many markers and drawings) and keeps it as a plan
-    of its own, from you; shared again (after changes), it replaces their copy.
-  - **Undo** takes the active plan's newest drawing away; **Clear** all its drawings on the map shown (the dungeon's
+    under the field as you type, the game's own search, Tab chooses) and sends the sketch to that player alone, **Delete**
+    (with all it holds, asked first); **New sketch** makes another and chooses it. A sketch shared goes whole, its
+    markers and drawings, and whoever gets it is asked (who shares which sketch, how many markers and drawings) and
+    keeps it as a sketch of its own, from you; shared again (after changes), it replaces their copy.
+  - **Undo** takes the active sketch's newest drawing away; **Clear** all its drawings on the map shown (the dungeon's
     floor, or the zone in the map's middle), asked first.
   - Closing the palette (its X, Esc, the map going small) puts the tool away; Alt and a click still puts a marker.
 - **Sharing markers** (Saneroki, 2026-11-15): the card's fifth button, **Share**: this marker, or all of yours on its
   map, with your party (your raid in a raid), your guild (one you are not in is greyed) or **someone**: a player you
-  name, asked for as a plan's *Someone...* is. Whoever gets them sees a
+  name, asked for as a sketch's *Someone...* is. Whoever gets them sees a
   small card (who shares what, the first titles, the zone) and keeps them only with **Keep**; kept, they stand on
   their map like their own, *from* the one who shared them on their card and tooltip. A marker its maker shares again
   (after an edit or a move) changes the copy you kept, never adds a second one. The setting *Markers others share*
@@ -392,7 +397,7 @@ and shows them on the map or puts the map pin there. The plan is in
 - **The full map's title bar** (Saneroki, 2026-11-15: "Let the map view go to the very top behind the titleba so it is
   truely fullscreen"): the map fills the whole screen, up behind the title bar, which holds its controls with a soft
   shade behind them: at the left **Quest Log**, **Zone** and **Dungeons** (and a dungeon's floors), the search in the
-  middle, at the right the view's button, **Draw and plan**, **Follow me** and **Pins**, then *Classic windows* and the
+  middle, at the right the view's button, **Sketches**, **Follow me** and **Pins**, then *Classic windows* and the
   bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
 - **Zone** on the bar: the world, then every continent (a click shows it whole) with its zones under it, A to Z, and
   Zephras Isle; it says the zone shown. (The dropdown of continents went: Saneroki, 2026-11-15.)
@@ -896,7 +901,7 @@ and shows them on the map or puts the map pin there. The plan is in
   floors of the one shown. Right, from Core's *Classic windows* (or its first button) leftwards (`Place`, anew each
   time it shows): the pin filter (checkboxes), the box *Follow me* (the game's `UICheckButtonTemplate`; the setting
   `followMap`), the view's button (`Other`: Blended and Scrying in turn, `Core.Set(ns.name, "view", ...)`; shown only
-  while both are offered) and Draw and plan. `TopBar.Gap()` is the room between, where the search stands
+  while both are offered) and the dropdown Sketches (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
   (`FindBox.lua`); `TopBar.Top()` the bar's height, under which the zone's name (`Label.lua`), a dungeon's floor
   (`Dungeons.lua`, `Room`) and the palette (`DrawBar.lua`) stand. It says what the map shows after each layout.
 - **The search** (`Find.lua`, no frames; `FindBox.lua`): what can be found is read once, at the first search (the field
@@ -1419,9 +1424,9 @@ and shows them on the map or puts the map pin there. The plan is in
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
-| `Plans.lua` | Your plans: markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
+| `Plans.lua` | Your plans (*sketches* to players): markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
 | `Draw.lua` | Your drawings drawn on the map (the canvas' layer `sketch`) and on a dungeon's floor, the palette's tools at work (pen, line, arrow, circle, eraser, marker), your markers on a floor |
-| `DrawBar.lua` | The square with a pencil on the full map's bar and the palette: the tools, the colours, the widths, the plan's dropdown and its menus, Undo and Clear |
+| `DrawBar.lua` | The dropdown Sketches on the full map's bar (each sketch shown or hidden, its own menu) and the palette: the tools, the colours, the widths, the plan's dropdown and its menus, Undo and Clear |
 | `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
@@ -1438,6 +1443,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, plans are sketches to players:** Saneroki: "I don't like the word "plan" in front of each drawing. Is
+  sketch better or what else could it be instead of Plan?", then "Sketch": every word players read (the palette's
+  dropdown, its menus, the default names, the share and delete words, the card of a shared one). The code keeps
+  *plan*. Then: "The penciel icon should be replaced with a dropdown menu" (`DrawBar.Menu`, `SketchesMenu`).
 - **2026-11-15, the search's tooltips; the bosses' models zoom:** Saneroki: "When you mouse over an item or select it
   with the up and down arrows its tooltip should be shown. For example for items and npcs their tooltip is then shown
   on the right of the search suggestions" (`FindBox` `Tip`, `Untip`; `PinView.Creature` for any NPC of Core's data).

@@ -19,7 +19,7 @@ The bigger changes of each version, newest first.
   list reaches down the screen with a scroll bar. Searches that run
   into a problem say so and never close the map; every search field
   of Sane UI handles its errors the same way.
-- Share a map plan or markers with your party, guild or someone:
+- Share a map sketch or markers with your party, guild or someone:
   type a name, the game suggests players you know.
 - Bags: free slots and the waste bin clear and framed, icons with
   round corners; the bin asks before it deletes (or not, if you
@@ -39,11 +39,12 @@ The bigger changes of each version, newest first.
   game's world map. At the world the continents no longer light up
   under the mouse (their names still show), and the stray lines in
   the sea at the world's edges are gone.
-- Draw on the map: the pencil button on the full map's bar opens
-  a palette with a pen, lines, arrows, circles, an eraser and
+- Draw on the map: the Sketches dropdown on the full map's bar
+  lists your sketches (tick to show or hide, each with its own
+  menu) and opens a palette with a pen, lines, arrows, circles, an eraser and
   markers in six colours, on the world map and on dungeon maps.
-  Group your markers and drawings in plans, show or hide them, and
-  share a whole plan with your party, raid or guild.
+  Group your markers and drawings in sketches, show or hide them, and
+  share a whole sketch with your party, raid or guild.
 - Each window on a full screen can be a window of its own: the
   button beside its X takes it off the full screen, and from then
   on its key opens only that window (your bag keys only your bags).

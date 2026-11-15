@@ -6,7 +6,13 @@ local _, ns = ...
 --  that helps me to activate menues and helpers to drop pins and draw on the map and save those drawings and map
 --  pins together so they can be shared or grouped together"):
 --
---      the button   on the full map's bar, left of Follow me (TopBar.lua): the palette open or closed
+--      Sketches     the dropdown on the full map's bar (TopBar.lua; Saneroki, 2026-11-15: "The penciel icon should
+--                   be replaced with a dropdown menu. When it is not active it says Sketches and when you click it
+--                   it shows all the sketches with a checkbox in front that toggle if the sketch is shown and the
+--                   fold out to see more options for those sketches"): it says Sketches, and while you draw the
+--                   sketch you draw in; its menu every sketch with its checkbox (shown or hidden) and its own menu
+--                   folding out (Draw in it, Rename, Share, Delete), then Draw on the map (the palette open or
+--                   closed) and New sketch
 --      the palette  a small window in the kit's bronze under the bar at its right, dragged by its head:
 --                     the tools: marker, pen, line, arrow, circle, eraser (Draw.lua), the one on lit; a click on the
 --                     one on puts it away (the map's mouse its own again)
@@ -21,15 +27,21 @@ local Look = Core.Look
 local DrawBar = {}
 ns.DrawBar = DrawBar
 
-DrawBar.SIZE = 24        -- the bar's button
+DrawBar.WIDTH_MENU = 130 -- the bar's dropdown Sketches
 DrawBar.TOOL = 32        -- a tool's square
 DrawBar.SWATCH = 22      -- a colour's
 DrawBar.GAP = 4
 DrawBar.WIDTH = 6 * (32 + 4) - 4 + 2 * Look.INSIDE -- the palette: six tools in a row
+-- What players read calls a plan a sketch (Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing";
+-- he chose Sketch); the code keeps plan (Plans.lua).
 DrawBar.TEXT = {
-    button = "Draw and plan",
-    buttonTip = "Markers and drawings of your own on the map and on dungeon maps, grouped in plans you can show, hide and share. While a tool is on the left button draws and a right-drag moves the map. Alt and a click puts a marker at any time.",
-    title = "Draw and plan",
+    button = "Draw",
+    sketches = "Sketches",
+    drawing = "Drawing: %s",
+    drawOn = "Draw on the map",
+    drawIn = "Draw in it",
+    buttonTip = "Markers and drawings of your own on the map and on dungeon maps, grouped in sketches you can show, hide and share. While a tool is on the left button draws and a right-drag moves the map. Alt and a click puts a marker at any time.",
+    title = "Draw",
     tools = {
         marker = { "Marker", "A click: a marker there, its card open to write in." },
         pen = { "Pen", "Drag: a line as the mouse goes." },
@@ -39,22 +51,22 @@ DrawBar.TEXT = {
         erase = { "Eraser", "A click on a drawing: away." },
     },
     thin = "Thin", thick = "Thick",
-    plan = "Plan: %s",
+    plan = "Sketch: %s",
     shown = "Shown",
     rename = "Rename...",
-    renameAsk = "The plan's new name:",
+    renameAsk = "The sketch's new name:",
     share = "Share",
     shareParty = "Party", shareRaid = "Raid", shareGuild = "Guild", shareSomeone = "Someone...",
     shareTip = "To your party or raid, to your guild, or to someone you name: they are asked whether to keep it.",
-    shareWith = "Share the plan %s with someone",
-    shared = "The plan %s sent to your %s (%d %s).",
-    sharedTo = "The plan %s sent to %s (%d %s).",
+    shareWith = "Share the sketch %s with someone",
+    shared = "The sketch %s sent to your %s (%d %s).",
+    sharedTo = "The sketch %s sent to %s (%d %s).",
     part = "part", parts = "parts",
-    tooLarge = "The plan %s is too large to share: split it into smaller plans.",
+    tooLarge = "The sketch %s is too large to share: split it into smaller sketches.",
     delete = "Delete...",
-    deleteAsk = "Delete the plan %s with all its markers and drawings?",
-    new = "New plan...",
-    newAsk = "The new plan's name:",
+    deleteAsk = "Delete the sketch %s with all its markers and drawings?",
+    new = "New sketch...",
+    newAsk = "The new sketch's name:",
     undo = "Undo",
     clear = "Clear",
     clearAsk = "Clear the drawings of %s on this map?",
@@ -141,28 +153,63 @@ local function ShareMenu(item, plan)
 end
 DrawBar.ShareMenu = ShareMenu
 
--- Each plan: a radio (the active one), its own menu under it; then a new one.
+-- A sketch's name in the menus: from whom it came, where it came from someone.
+local function Named(plan)
+    local name = plan.name or "?"
+    if plan.from then name = name .. " (" .. DrawBar.TEXT.from:format(plan.from) .. ")" end
+    return name
+end
+
+-- A sketch's own options, under it in a menu: Rename, Share, Delete.
+local function Options(item, plan)
+    local Plans = ns.Plans
+    item:CreateButton(DrawBar.TEXT.rename, ns.Guard(function()
+        Core.AskText(DrawBar.TEXT.renameAsk, nil, nil, plan.name, ns.Guard(function(text) Plans.Rename(plan, text) end), 60)
+    end))
+    ShareMenu(item, plan)
+    item:CreateButton(DrawBar.TEXT.delete, ns.Guard(function()
+        Core.Confirm(DrawBar.TEXT.deleteAsk, plan.name or "", ns.Guard(function() Plans.Remove(plan) end))
+    end))
+end
+
+local function NewSketch(root)
+    root:CreateButton(DrawBar.TEXT.new, ns.Guard(function()
+        Core.AskText(DrawBar.TEXT.newAsk, nil, nil, "", ns.Guard(function(text) ns.Plans.New(text) end), 60)
+    end))
+end
+
+-- The palette's dropdown: each sketch a radio (the one drawn in), its own menu under it; then a new one.
 local function PlanMenu(_, root)
     local Plans = ns.Plans
     for _, plan in ipairs(Plans.List()) do
-        local name = plan.name or "?"
-        if plan.from then name = name .. " (" .. DrawBar.TEXT.from:format(plan.from) .. ")" end
-        local item = root:CreateRadio(name, ns.Guard(function() return Plans.Active() == plan end),
+        local item = root:CreateRadio(Named(plan), ns.Guard(function() return Plans.Active() == plan end),
             ns.Guard(function() Plans.SetActive(plan) end))
         item:CreateCheckbox(DrawBar.TEXT.shown, ns.Guard(function() return plan.shown ~= false end),
             ns.Guard(function() Plans.Show(plan, plan.shown == false) end))
-        item:CreateButton(DrawBar.TEXT.rename, ns.Guard(function()
-            Core.AskText(DrawBar.TEXT.renameAsk, nil, nil, plan.name, ns.Guard(function(text) Plans.Rename(plan, text) end), 60)
-        end))
-        ShareMenu(item, plan)
-        item:CreateButton(DrawBar.TEXT.delete, ns.Guard(function()
-            Core.Confirm(DrawBar.TEXT.deleteAsk, plan.name or "", ns.Guard(function() Plans.Remove(plan) end))
-        end))
+        Options(item, plan)
     end
     root:CreateDivider()
-    root:CreateButton(DrawBar.TEXT.new, ns.Guard(function()
-        Core.AskText(DrawBar.TEXT.newAsk, nil, nil, "", ns.Guard(function(text) Plans.New(text) end), 60)
-    end))
+    NewSketch(root)
+end
+
+-- The bar's dropdown Sketches: each sketch with its checkbox (shown or hidden) and its own menu folding out (Draw in
+-- it: the one drawn in, the palette open; Rename, Share, Delete); then Draw on the map (the palette open or closed)
+-- and New sketch.
+local function SketchesMenu(_, root)
+    local Plans = ns.Plans
+    for _, plan in ipairs(Plans.List()) do
+        local item = root:CreateCheckbox(Named(plan), ns.Guard(function() return plan.shown ~= false end),
+            ns.Guard(function() Plans.Show(plan, plan.shown == false) end))
+        item:CreateButton(DrawBar.TEXT.drawIn, ns.Guard(function()
+            Plans.SetActive(plan)
+            DrawBar.Open()
+        end))
+        Options(item, plan)
+    end
+    root:CreateDivider()
+    root:CreateCheckbox(DrawBar.TEXT.drawOn, ns.Guard(function() return palette ~= nil and palette:IsShown() end),
+        ns.Guard(function() DrawBar.Toggle() end))
+    NewSketch(root)
 end
 
 -------------------------------------------------------------------------------
@@ -297,9 +344,14 @@ function DrawBar.Update()
     for _, square in ipairs(widths) do Lit(square, square.width == width) end
     local plan = ns.Plans.Active()
     if planMenu.OverrideText then planMenu:OverrideText(DrawBar.TEXT.plan:format(plan.name or "")) end
-    if button then
-        if palette:IsShown() then button:LockHighlight() else button:UnlockHighlight() end
-    end
+    DrawBar.Said()
+end
+
+-- The bar's dropdown says Sketches, and while you draw the sketch you draw in.
+function DrawBar.Said()
+    if not (button and button.OverrideText) then return end
+    local drawing = palette and palette:IsShown()
+    button:OverrideText(drawing and DrawBar.TEXT.drawing:format(ns.Plans.Active().name or "") or DrawBar.TEXT.sketches)
 end
 
 function DrawBar.Open()
@@ -319,23 +371,14 @@ function DrawBar.Toggle()
     if palette and palette:IsShown() then DrawBar.Close() else DrawBar.Open() end
 end
 
--- The button on the full map's bar (TopBar.lua), a pencil drawn of lines on the game's grey square.
-function DrawBar.Button(bar)
-    button = Look.Square(bar, DrawBar.SIZE)
-    -- (two textures turned a quarter round: the bar's map lines are the route's alone)
-    local pencil = button:CreateTexture(nil, "ARTWORK")
-    pencil:SetColorTexture(Look.GOLD[1], Look.GOLD[2], Look.GOLD[3], 1)
-    pencil:SetSize(15, 3)
-    pencil:SetPoint("CENTER", 1, 1)
-    pencil:SetRotation(math.pi / 4)
-    local tip = button:CreateTexture(nil, "OVERLAY")
-    tip:SetColorTexture(1, 1, 1, 1)
-    tip:SetSize(4, 3)
-    tip:SetPoint("CENTER", -5, -5)
-    tip:SetRotation(math.pi / 4)
-    button:SetScript("OnClick", ns.Guard(DrawBar.Toggle))
-    Core.Tip(button, DrawBar.TEXT.button, DrawBar.TEXT.buttonTip, "ANCHOR_BOTTOM")
+-- The dropdown Sketches on the full map's bar (TopBar.lua), the game's own (WowStyle1DropdownTemplate), in place of
+-- the pencil button that was there.
+function DrawBar.Menu(bar, height)
+    button = CreateFrame("DropdownButton", nil, bar, "WowStyle1DropdownTemplate")
+    button:SetSize(DrawBar.WIDTH_MENU, height or 24)
+    button:SetupMenu(ns.Guard(SketchesMenu))
     DrawBar.button = button
+    DrawBar.Said()
     return button
 end
 

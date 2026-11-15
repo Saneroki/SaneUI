@@ -9068,10 +9068,28 @@ end)()
     check(first and first.name == Plans.TEXT.first and Plans.Active() == first, "the first plan, made when first needed, active")
     check(Close(Plans.Unpack(Plans.Pack(0.1234)), 0.1234) and Close(Plans.Unpack(Plans.Pack(-0.5)), -0.5),
         "a point's coordinates packed in three letters and back")
-    -- the palette from the bar's button: the pen on at first
-    DrawBar.button._scripts.OnClick(DrawBar.button)
+    -- the bar's dropdown Sketches (Saneroki, 2026-11-15: "The penciel icon should be replaced with a dropdown menu"):
+    -- it says Sketches; each sketch with its checkbox and its own menu; Draw on the map opens the palette, the pen on
+    local sketches = DrawBar.button
+    sketches:GenerateMenu()
+    local items = sketches._items
+    local drawOn
+    for _, item in ipairs(items) do if item.text == DrawBar.TEXT.drawOn then drawOn = item end end
+    local subWords = {}
+    for _, item in ipairs(items[1] and items[1].sub or {}) do subWords[#subWords + 1] = item.text end
+    check(sketches._kind == "DropdownButton" and sketches._override == DrawBar.TEXT.sketches and items[1].checkbox
+        and items[1].text == first.name and items[1].checked() and table.concat(subWords, "|") == table.concat({
+            DrawBar.TEXT.drawIn, DrawBar.TEXT.rename, DrawBar.TEXT.share, DrawBar.TEXT.delete }, "|") and drawOn,
+        "the bar's Sketches: each sketch ticked while shown, its own menu folding out; Draw on the map")
+    items[1].fn()
+    check(first.shown == false and not items[1].checked(), "its checkbox: the sketch hidden")
+    items[1].fn()
+    check(first.shown ~= false, "again: shown")
+    drawOn.fn()
     local palette = DrawBar.palette
-    check(palette and palette:IsShown() and Draw.Tool() == "pen", "the bar's button: the palette, the pen on")
+    check(palette and palette:IsShown() and Draw.Tool() == "pen" and drawOn.checked()
+        and sketches._override == DrawBar.TEXT.drawing:format(first.name),
+        "Draw on the map: the palette, the pen on; the dropdown says the sketch drawn in")
     palette.tools[3]._scripts.OnClick(palette.tools[3])
     check(Draw.Tool() == "line", "a tool chosen")
     -- a line: pressed, dragged, let go
