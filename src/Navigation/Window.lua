@@ -218,6 +218,7 @@ end
 -- The mouse is on the map, or has left it (Canvas.lua): the grip that sizes the small window is seen while it is.
 function Window.Hovered(on)
     if handle then handle:Hover(on) end
+    ns.Safe("satchel", ns.Satchel.Hover, on) -- the small map's face: its time, place and satchel
 end
 
 -- The game's minimap is ours now (Hybrid.lua): the small view starts at its zoom step, as the player had it.

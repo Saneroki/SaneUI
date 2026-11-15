@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Minimap: hover over it to see your local time at the top, where
+  you are at the bottom, and the satchel. The map's old, unused
+  flight points (zzOLD...) are gone from the map and its search.
 - Bags: every free slot has a bronze outline; the categories'
   empty slots and the waste bin show plain grey symbols. A hidden
   or switched-off category stays in the list, greyed, with how to

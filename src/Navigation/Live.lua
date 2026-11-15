@@ -10,7 +10,8 @@ local _, ns = ...
 --      Live.SetWaypoint(map, x, y), Live.ClearWaypoint(), Live.Tracked()
 --      Live.Group(map)         party and raid members on a map: { unit, x, y } each
 --      Live.Quests(map)        the game's quests on a map (C_QuestLog.GetQuestsOnMap)
---      Live.Flights(map)       the flight points of a map (C_TaxiMap.GetTaxiNodesForMap)
+--      Live.Flights(map)       the flight points of a map (C_TaxiMap.GetTaxiNodesForMap), not the retired ones
+--      Live.Retired(name)      whether a flight point is one the game keeps but no longer uses (its name "zz...")
 --      Live.Vignettes(map)     rares, chests and the like nearby: { guid, x, y, info } each
 --      Live.Points(map)        the game's own points on a map: its area POIs, with their info
 --      Live.Links(map)         the ways from a map into another (C_Map.GetMapLinksForMap)
@@ -150,8 +151,22 @@ function Live.Quests(map)
     return List(Core.Ask(C_QuestLog.GetQuestsOnMap, map))
 end
 
+-- Whether a flight point is one the game keeps but no longer uses: Blizzard marks such a record by a name that starts
+-- with "zz" (Forever's "zzOLDBolder'ok, Riverglades", "zzOLDRiverglades, Farholde Keep" and "zzOLDPowderfuse Port,
+-- Riverglades", nodes 3206 to 3208; Saneroki, 2026-11-15: "those are not used and should be removed from the map and
+-- search databases").
+function Live.Retired(name)
+    return type(name) == "string" and name:sub(1, 2):lower() == "zz"
+end
+
+-- The flight points the game's map has, without the retired ones (Live.Retired): the map's pins, the search, the
+-- flight master's map and the routes all read them here.
 function Live.Flights(map)
-    return List(Core.Ask(C_TaxiMap.GetTaxiNodesForMap, map))
+    local list = {}
+    for _, info in ipairs(List(Core.Ask(C_TaxiMap.GetTaxiNodesForMap, map))) do
+        if type(info) == "table" and not Live.Retired(Core.Plain(info.name)) then list[#list + 1] = info end
+    end
+    return list
 end
 
 function Live.Vignettes(map)

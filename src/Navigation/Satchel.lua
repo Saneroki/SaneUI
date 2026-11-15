@@ -51,6 +51,14 @@ local _, ns = ...
 --  holding it; and by its X, Esc, the button again, or the window going to the
 --  full screen. Where the screen is lower than the page, the wheel scrolls it.
 --  Only on the small view, while the window is the minimap.
+--
+--  The small map's face (Saneroki, 2026-11-15: "The current time, zone name / area
+--  name and the minimap bag should only be visible on the minimap on mouse over. Put
+--  the time at the top center of the minimap and the zone name in the center
+--  bottom"): your local time at its top, the name the game's minimap gives where
+--  you are (the area, else the zone) at its bottom in that minimap's colours, and
+--  the satchel's button in its corner, in sight only while the mouse is on the map
+--  or the satchel is open; read again every Satchel.FACE_TICK while they show.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Kit = Core.Look -- the kit's parts (Core.Look)
@@ -59,6 +67,12 @@ ns.Satchel = Satchel
 
 Satchel.SIZE = 28          -- the button's ring across, in units
 Satchel.INSET = 4          -- the button from the window's corner
+Satchel.FACE_CLOCK = 15    -- the face's time: its size
+Satchel.FACE_ZONE = 13     -- the face's zone: its size; never as wide as to run under the button
+Satchel.FACE_INSET = 6     -- the time from the map's top, the zone from its bottom
+Satchel.FACE_TICK = 1      -- seconds between two looks at the time and the zone while they show
+Satchel.CLOCK_INK = { 1, 1, 1 }        -- the time white, the zone yellow where the game names no side of it: as on
+Satchel.ZONE_INK = { 1, 0.82, 0 }      -- the game's own minimap (its clock, Minimap_Update's NORMAL_FONT_COLOR)
 Satchel.BAG = 133628       -- its picture: a leather satchel (INV_Misc_Bag_07, in both games)
 Satchel.GAP = 6            -- between the window and the satchel
 Satchel.LEAVE = 0.25       -- seconds off the page and its button before it closes: the way between the two is free
@@ -138,6 +152,9 @@ local calendar        -- the secure button over the Calendar's cell (Cover)
 local since = 0       -- seconds since the lines were last looked at
 local predicted = {}  -- [tracking index] = on: switched here, until the game's tracking says so too (a spell's cast)
 local small = false   -- the window stands small and is the minimap: the button shows
+local face, clockLine, zoneLine -- the small map's face: its frame (the button in it), the time, the zone
+local hovered = false -- the mouse is on the map (Satchel.Hover)
+local read = 0        -- seconds since the face's time and zone were read
 local came = false    -- the mouse has been on the page or its button since it opened (Gone)
 local away = 0        -- seconds the mouse has been off them
 
@@ -794,6 +811,48 @@ function Satchel.Fill()
     Wheel(nil, 0) -- the scroll within the new height; the calendar's secure button over its cell
 end
 
+-------------------------------------------------------------------------------
+--  The small map's face
+-------------------------------------------------------------------------------
+-- The time and the place as the game tells them now: the name its minimap gives (the area, else the zone), in its
+-- colour; never wider than the room between the two lower corners, where the button may stand.
+local function Read()
+    read = 0
+    clockLine:SetText(Core.ClockAt())
+    local title, colour = Zone()
+    local name = Core.Plain(Core.Ask(Game("GetMinimapZoneText")))
+    if type(name) ~= "string" or name == "" then name = title end
+    colour = colour or Satchel.ZONE_INK
+    zoneLine:SetText(name or "")
+    zoneLine:SetTextColor(colour[1], colour[2], colour[3])
+    local room = (tonumber(face:GetWidth()) or 0) - 2 * (Satchel.INSET + Satchel.SIZE + 2)
+    zoneLine:SetWidth(math.max(room, 1))
+end
+
+-- The face in sight while the mouse is on the small map or the satchel is open; read anew as it comes.
+local function Face()
+    if not face then return end
+    local on = small and (hovered or Satchel.Shown()) or false
+    if on and not face:IsShown() then
+        face:Show()
+        Read()
+    elseif not on then
+        face:Hide()
+    end
+end
+
+-- While it shows: the time and the place read again every Satchel.FACE_TICK.
+local function Ticked(_, elapsed)
+    read = read + (elapsed or 0)
+    if read >= Satchel.FACE_TICK then Read() end
+end
+
+-- The mouse came onto the small map (on) or left it (Window.Hovered).
+function Satchel.Hover(on)
+    hovered = on and true or false
+    Face()
+end
+
 function Satchel.Open()
     if not small then return end
     if not panel then Build() end
@@ -804,6 +863,7 @@ function Satchel.Open()
     panel:Raise()
     Satchel.Fill()
     Core.Escape(panel, function() ns.Guarded(Satchel.Close) end)
+    Face()
 end
 
 function Satchel.Close()
@@ -812,6 +872,7 @@ function Satchel.Close()
     panel:Hide()
     Core.Escape(panel, nil)
     for _, cell in ipairs(cells) do Empty(cell) end -- the held buttons wait out of sight again
+    Face()
 end
 
 function Satchel.Toggle()
@@ -833,7 +894,21 @@ local function ButtonTip(owner)
 end
 
 function Satchel.Build(canvas)
-    button = CreateFrame("Button", nil, canvas)
+    -- The small map's face: the time at the top, the place at the bottom, the button in a corner (Face).
+    face = CreateFrame("Frame", nil, canvas)
+    face:SetAllPoints()
+    face:Hide()
+    clockLine = face:CreateFontString(nil, "OVERLAY")
+    Kit.SetFont(clockLine, Satchel.FACE_CLOCK, true, Satchel.CLOCK_INK)
+    clockLine:SetPoint("TOP", 0, -Satchel.FACE_INSET)
+    zoneLine = face:CreateFontString(nil, "OVERLAY")
+    Kit.SetFont(zoneLine, Satchel.FACE_ZONE, true, Satchel.ZONE_INK)
+    zoneLine:SetPoint("BOTTOM", 0, Satchel.FACE_INSET)
+    zoneLine:SetWordWrap(false)
+    local ticker = CreateFrame("Frame", nil, face) -- the face's own look: it runs only while the face shows
+    ticker:SetScript("OnUpdate", ns.Guard(Ticked))
+    Satchel.face = face
+    button = CreateFrame("Button", nil, face)
     button:SetSize(Satchel.SIZE, Satchel.SIZE)
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetTexture(Satchel.BAG)
@@ -874,16 +949,18 @@ end
 
 -- Over what stands on the map (Canvas.lua lays the levels).
 function Satchel.Stack(level)
-    if button then button:SetFrameLevel(level) end
+    if face then face:SetFrameLevel(level) end
+    if button then button:SetFrameLevel(level + 1) end
 end
 
 -- The window stands small and is the minimap (on), or not (full, on its way, resting, gone): the button in the
--- corner at the screen's edge, or gone with the satchel.
+-- corner at the screen's edge, in sight with the face (Face), or gone with the satchel.
 function Satchel.Place(on)
     small = on and true or false
     if not button then return end
     if not small then
         Satchel.Close()
+        Face()
         return button:Hide()
     end
     local window = ns.Window.frame
@@ -895,6 +972,7 @@ function Satchel.Place(on)
     button:ClearAllPoints()
     button:SetPoint(corner, button:GetParent(), corner, dx, dy)
     button:Show()
+    Face()
     if panel and panel:IsShown() then Anchor() end
 end
 

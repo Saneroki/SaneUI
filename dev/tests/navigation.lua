@@ -1207,6 +1207,23 @@ GetPlayerFacing = function() return 1.5 end
 check(#Live.Group(1429) == 1 and Live.Group(1429)[1].unit == "party1", "Live: the party on a map")
 check(Live.Quests(1429)[1].questID == 7 and #Live.Quests(1415) == 0, "Live: the quests on a map")
 check(Live.Flights(1429)[1].name == "Goldshire", "Live: the flight points")
+-- A flight point the game keeps but no longer uses (its name "zz...", as Forever's three zzOLD ones): never on the map,
+-- in the search or in a route, which all read Live.Flights (Saneroki, 2026-11-15).
+;(function()
+    local nodes = C_TaxiMap.GetTaxiNodesForMap
+    C_TaxiMap.GetTaxiNodesForMap = function(map)
+        local list = nodes(map)
+        list[#list + 1] = { nodeID = 3206, name = "zzOLDBolder'ok, Riverglades", position = CreateVector2D(0.5, 0.5),
+                            faction = 0, atlasName = "TaxiNode_Neutral" }
+        return list
+    end
+    local names = {}
+    for _, info in ipairs(Live.Flights(1429)) do names[#names + 1] = info.name end
+    check(#names == 2 and names[1] == "Goldshire" and names[2] == "Crossroads"
+        and Live.Retired("zzOLDRiverglades, Farholde Keep") and Live.Retired("ZZ Test") and not Live.Retired("Booty Bay")
+        and not Live.Retired(nil), "Live: a retired flight point (its name zz...) left out")
+    C_TaxiMap.GetTaxiNodesForMap = nodes
+end)()
 check(#Live.Vignettes(1429) == 1 and Live.Vignettes(1429)[1].info.name == "A rare", "Live: rares nearby, where the game places them")
 check(Live.Points(1429)[1].name == "A point", "Live: the game's own points")
 check(#Live.Explored(1429) == 2 and #Live.Explored(1415) == 0, "Live: the explored parts")
@@ -1481,6 +1498,58 @@ end)()
     check(small.native == 0, "and out to the widest step again")
 end)()
 
+-- The small map's face (Satchel.lua; Saneroki, 2026-11-15): the time at its top, the place the game's minimap names at
+-- its bottom in that minimap's colour, the satchel's button in its corner, in sight only while the mouse is on the map
+-- (seen by the tracker too: over the game's minimap the canvas hears no OnEnter) or the satchel is open.
+;(function()
+    local Satchel, face = ns.Satchel, ns.Satchel.face
+    local clock, place, ticker
+    for _, child in ipairs(face and face._children or {}) do
+        if child._kind == "FontString" then
+            if child._points[1][1] == "TOP" then clock = child else place = child end
+        elseif child._scripts and child._scripts.OnUpdate then
+            ticker = child
+        end
+    end
+    check(face and face._parent == frame and Satchel.button._parent == face and clock and place and not face._shown,
+        "the small map's face, the satchel's button in it: out of sight while the mouse is off the map")
+    local was = { GetMinimapZoneText = rawget(_G, "GetMinimapZoneText"), C_PvP = rawget(_G, "C_PvP") }
+    GetMinimapZoneText = function() return "Goldshire" end
+    C_PvP = { GetZonePVPInfo = function() return "contested" end }
+    face._width = 200
+    frame._mouseOver = true
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local contested = Satchel.ZONE.contested
+    check(face._shown and clock._text == SaneUI.Core.ClockAt() and clock._points[1][5] == -Satchel.FACE_INSET
+        and place._text == "Goldshire" and place._points[1][1] == "BOTTOM" and place._points[1][5] == Satchel.FACE_INSET
+        and place._color[1] == contested[1] and place._color[2] == contested[2] and place._color[3] == contested[3]
+        and place._width == 200 - 2 * (Satchel.INSET + Satchel.SIZE + 2),
+        "the mouse on the map (over the game's minimap: the tracker sees it): the time at the top, the place the "
+        .. "game's minimap names at the bottom in its colour, never as wide as to run under the button")
+    GetMinimapZoneText = function() return "Lion's Pride Inn" end
+    ticker._scripts.OnUpdate(ticker, Satchel.FACE_TICK)
+    check(place._text == "Lion's Pride Inn", "read again every tick while it shows")
+    local hover
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == frame and widget ~= tracker and widget._scripts.OnUpdate then hover = widget end
+    end
+    frame._mouseOver = false
+    hover._scripts.OnUpdate(hover, 0.016)
+    check(not face._shown and not hover._scripts.OnUpdate, "the mouse off the map: the face out of sight again")
+    Satchel.Open()
+    check(face._shown, "the satchel open: its button stays in sight while the mouse goes over to its page")
+    Satchel.Close()
+    check(not face._shown, "and closed, out of sight")
+    Satchel.Hover(true)
+    Satchel.Place(false)
+    check(not face._shown, "the window not the minimap (full, on its way, resting): no face, whatever the mouse")
+    Satchel.Place(true)
+    check(face._shown, "the minimap again, the mouse still on it: the face back")
+    Satchel.Hover(false)
+    face._width = 0
+    GetMinimapZoneText, C_PvP = was.GetMinimapZoneText, was.C_PvP
+end)()
+
 -- Other addons' buttons held (Strays.lua), and the satchel (Satchel.lua): its button on the small map opens a page of
 -- the addons' buttons, the pins and the game's tracking.
 ;(function()
@@ -1489,7 +1558,8 @@ end)()
         and W.gameButton:GetParent() == cluster,
         "another addon's button on the minimap is held out of sight; its larger frame and the game's own button stay")
     local button = Satchel.button
-    check(button and button._shown and button._parent == frame and not Satchel.Shown(), "the satchel's button on the small map")
+    check(button and button._shown and button._parent == Satchel.face and not Satchel.Shown(),
+        "the satchel's button on the small map (in its face)")
     button._scripts.OnClick(button, "LeftButton")
     check(Satchel.Shown(), "a click opens the satchel")
     local function Cells()

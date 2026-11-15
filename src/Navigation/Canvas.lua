@@ -536,10 +536,14 @@ local function Again(now, u, walked)
     return small or now - lastInput > Canvas.AGAIN
 end
 
+local Entered -- the mouse came onto the canvas (The mouse, below)
 local function Track()
     local now = GetTime()
     if not camera.follow and now < nextLook then return end
     nextLook = now + Canvas.LOOK
+    -- The mouse onto the map over the game's minimap, whose own frame takes it there for its dots' tooltips: the
+    -- canvas hears no OnEnter then, so the look under it (and the small map's face, the grip) starts here.
+    if not hover:GetScript("OnUpdate") and Core.Plain(frame:IsMouseOver()) then Entered() end
     -- A zone the view's last moves owe (Moved): asked now that the Canvas.LOOK has passed, so a drag or a walk that
     -- ended within it does not leave the zone shown stale.
     if zoneOwed and now >= nextZone then
@@ -963,7 +967,7 @@ local function Over()
 end
 local hovering = ns.Guard(Over) -- made once: the look while the mouse is over the canvas
 
-local function Entered()
+function Entered()
     hover:SetScript("OnUpdate", hovering)
     ns.Window.Hovered(true)
 end

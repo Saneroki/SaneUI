@@ -98,7 +98,9 @@ and shows them on the map or puts the map pin there. The plan is in
   event's.
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
   where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side,
-  red while your character has not found them (the routes fly only the found ones);
+  red while your character has not found them (the routes fly only the found ones), never the ones the game keeps
+  but no longer uses (named *zz...*, as Forever's three *zzOLD* ones in the Riverglades: not on the map, in the
+  search nor in a route);
   rares (a skull; hold Alt over one and its 3D model stands beside the tooltip) and treasures (a chest) nearby; the
   game's points and ways into other maps), and what Core's data
   knows: quest givers with a quest you can take (the yellow !), with a quest too low to give you experience (a grey
@@ -139,8 +141,13 @@ and shows them on the map or puts the map pin there. The plan is in
   around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
   right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
   marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
+- **The small map's face:** while the mouse is on the small map (or the satchel is open) your local time stands at
+  its top, in the middle, the name the game's minimap gives where you are (the area, else the zone) at its bottom in
+  that minimap's colours (friendly, hostile, contested, a sanctuary), and the satchel in its corner; off the map, the
+  map alone.
 - **The satchel** (the leather satchel in the small map's lower corner at the screen's edge; the upper one where
-  the window stands in the screen's lower half): a click opens a page beside the map, in large cells easy to hit.
+  the window stands in the screen's lower half; in sight with the face): a click opens a page beside the map, in
+  large cells easy to hit.
   Beside its X the button with the circling arrows, *Classic minimap*: the game's own minimap instead of this one
   (the switch *Show the game's minimap*), and the same button on the game's minimap, *Sane UI window*, brings this
   one back, so the two go back and forth:
@@ -991,7 +998,12 @@ and shows them on the map or puts the map pin there. The plan is in
   same addon as a held button (its title or folder, letters and digits alone) is left out.
 - **The satchel** (`Satchel.lua`): its button on the canvas (level `Canvas.LEVELS.satchel`, over the marks), in the
   corner `Satchel.Place` picks from where the window stands, shown only while the window stands small and is the
-  minimap. The page is a frame of its own (strata `DIALOG`) in the kit's bronze (`Core.Look.Dress`: the heavy bronze frame,
+  minimap, inside the small map's face (`Satchel.face`, the canvas' whole rectangle: the time, `Core.ClockAt`, at its
+  top; `GetMinimapZoneText` at its bottom in `Satchel.ZONE`'s colour, never as wide as to run under the button; read
+  again every `Satchel.FACE_TICK` by a frame of its own while it shows), in sight only while the mouse is on the map
+  (`Satchel.Hover`, from `Window.Hovered`) or the page is open. The canvas hears no `OnEnter` where the mouse comes
+  onto the game's minimap over it (that frame takes the mouse for its dots' tooltips), so its tracker starts the look
+  under the mouse itself when it sees the mouse on the canvas. The page is a frame of its own (strata `DIALOG`) in the kit's bronze (`Core.Look.Dress`: the heavy bronze frame,
   its title, the game's X; left of the X, at its level, `Satchel.swap`: Core's `Window.Swap`, whose click closes the page and
   sets `nativeMinimap`, as the dropdown *Classic windows* does), beside the window toward the screen's middle, a scroll frame in it no higher than
   `Satchel.ROOM` of the screen. Its sections, each a title over the thin golden line (the zone's: none, `Title`) and a grid
@@ -1324,7 +1336,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Camera.Retail.lua` | Retail's camera: one map at a time from the game's map tree (into a map, out to the one over it, the wheel within it, its art's layer), following onto the map the player is on; Retail's two answers of the map tree (`Coords.PlaneOf`, `Coords.Box`). Read in Retail alone |
 | `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them, the top of the tree and the continents beside the world map (Retail's); the terrain's grid; the player's place. No frames |
 | `Camera.lua` | Where a view looks: middle, zoom, following, the level its zoom shows; drag, wheel, one map out. No frames |
-| `Live.lua` | What the game tells while playing, read when it changes. No frames |
+| `Live.lua` | What the game tells while playing, read when it changes; the flight points without the retired ones (`Live.Retired`: a name *zz...*). No frames |
 | `Ping.lua` | The game's minimap ping on our map: a click's ping sent by the place's yards from you (after a double click's time), the group's pings kept where they are. No frames |
 | `Canvas.lua` | The frame the map is drawn in: holder, layers, pools, layout, the tracker, the mouse |
 | `Terrain.lua` | The terrain layer: the game's minimap textures from Core's set *Tiles*, and the overview |
@@ -1360,7 +1372,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Art/mark-soft.blp` | The soft round mask of a herb's or ore's picture where it can be (Found.lua, PinView.lua): white, whole within half its radius and falling smoothly to clear at its edge, drawn by `dev/tools/mark-art --soft` (`assets/FarMarks/soft-mask.png`), made by `dev/tools/art FarMarks-soft` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
-| `Satchel.lua` | The satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
+| `Satchel.lua` | The small map's face under the mouse (the time at its top, the zone at its bottom, the satchel's button) and the satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
 | `AudioLine.lua` | The satchel's sound line: Core's sound profile in use in a dropdown, a cogwheel with the game's five sounds (checkbox and slider) and the profile's Save, Load, New and Delete |
 | `Native.lua` | The game's map kept closed; its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
@@ -1387,6 +1399,12 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the small map's face; the retired flight points:** Saneroki: "The current time, zone name / area name
+  and the minimap bag should only be visible on the minimap on mouse over. Put the time at the top center of the
+  minimap and the zone name in the center bottom" (`Satchel.face`, `Satchel.Hover`, the canvas' tracker). "There are
+  old flightpath pins that are not used anymore. I found at least 2 called "zzOLD..." those are not used and should
+  be removed from the map and search databases" (`Live.Retired`: Forever's nodes 3206 to 3208, the game's alone; Core's
+  data had none).
 - **2026-11-15, drawing on the map, and plans:** Saneroki: "Can we draw on the map too? I want a button somwhere that
   helps me to activate menues and helpers to drop pins and draw on the map and save those drawings and map pins
   together so they can be shared or grouped together. This will be especially helpful in instance maps". `Plans.lua`,
