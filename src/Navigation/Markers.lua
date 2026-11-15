@@ -84,6 +84,8 @@ Markers.TEXT = {
     deleteAsk = "Delete the marker %s?",
     placed = "%s, put %s",
     noPlace = "No marker here: zoom in onto a zone.",
+    inPlan = "in %s",
+    offerPlan = "%s shares the plan %s with you: %d markers, %d drawings.",
     share = "Share",
     shareTip = "This marker, or all of yours in its zone, to your party or raid, or to your guild: they are asked whether to keep them.",
     shareOne = "This marker with your %s",
@@ -97,6 +99,7 @@ Markers.TEXT = {
     no = Core.Word("NO", "No"),
     from = "from %s",
     hint = "Click: its card. Double click: the map pin here.",
+    hintFloor = "Click: its card.",
 }
 
 local card, look, reading, editing -- the card, its dressing, its two faces
@@ -135,6 +138,7 @@ end
 local function Changed()
     stale = true
     if ns.Canvas and ns.Canvas.Refresh then ns.Canvas.Refresh() end
+    if ns.Draw and ns.Draw.Changed then ns.Draw.Changed() end -- (a dungeon's floor shown)
 end
 
 -- The markers as pins: in their plane (Coords), their icon, their title as the heading and their words in the tooltip,
@@ -144,7 +148,7 @@ function Markers.Pins()
     stale = false
     wipe(pins)
     for _, marker in ipairs(Markers.List()) do
-        local home = type(marker.map) == "number" and Coords.PlaneOf(marker.map)
+        local home = type(marker.map) == "number" and ns.Plans.Visible(marker.plan) and Coords.PlaneOf(marker.map)
         local u, v
         if home then u, v = Coords.MapToPlane(marker.map, marker.x or 0, marker.y or 0, home) end
         if u then
@@ -160,6 +164,14 @@ function Markers.Pins()
     end
     return pins
 end
+
+-- The name of the map a marker stands on: a zone's, or a dungeon's and its floor's (Dungeons.Named).
+local function Where(map)
+    local named = ns.Dungeons and ns.Dungeons.Named and ns.Dungeons.Named(map)
+    if named then return named end
+    return type(map) == "number" and ns.Find and ns.Find.MapName(map) or ""
+end
+Markers.Where = Where
 
 local function Day(made)
     return made and date("%Y-%m-%d", made) or ""
@@ -181,9 +193,9 @@ local function Read(marker)
     look.title:SetText(marker.title or Markers.TEXT.untitled)
     Paint(reading.icon, marker.icon)
     reading.words:SetText(marker.text or "")
-    local zone = ns.Find and ns.Find.MapName(marker.map) or ""
-    local placed = Markers.TEXT.placed:format(zone, Day(marker.made))
+    local placed = Markers.TEXT.placed:format(Where(marker.map), Day(marker.made))
     if marker.from then placed = placed .. ", " .. Markers.TEXT.from:format(marker.from) end
+    if #ns.Plans.List() > 1 then placed = placed .. ", " .. Markers.TEXT.inPlan:format(ns.Plans.Of(marker).name or "") end
     reading.placed:SetText(placed)
     local words = (marker.text and marker.text ~= "") and (reading.words:GetStringHeight() or 0) or 0
     reading.height = math.max(Markers.ICON, words) + 8 + 16 + 8 + Markers.BUTTON
@@ -472,7 +484,8 @@ function Markers.New(spot)
     end
     local store = ns.store
     store.markerNext = (tonumber(store.markerNext) or 0) + 1
-    local marker = { id = store.markerNext, map = spot.map, x = spot.x, y = spot.y, title = "", text = "",
+    local marker = { id = store.markerNext, plan = ns.Plans.Active().id, map = spot.map, x = spot.x, y = spot.y,
+                     title = "", text = "",
                      icon = Markers.ICONS[1].key, made = Core.Ask(GetServerTime) }
     local list = Markers.List()
     list[#list + 1] = marker
@@ -539,7 +552,7 @@ local function Origin(marker)
     return marker.origin
 end
 
-local function Row(marker)
+function Markers.Row(marker)
     return table.concat({ Clean(Origin(marker), 80), tostring(marker.map), ("%.4f"):format(marker.x or 0),
         ("%.4f"):format(marker.y or 0), Clean(marker.icon, 16), Clean(marker.title, Markers.TITLE_MOST),
         Clean(marker.text, Markers.TEXT_MOST) }, "\031")
@@ -556,7 +569,7 @@ function Markers.Send(list, channel)
         size = 0
     end
     for _, marker in ipairs(list) do
-        local row = Row(marker)
+        local row = Markers.Row(marker)
         if size > 0 and size + #row > Markers.BLOCK then Flush() end
         rows[#rows + 1] = row
         size = size + #row + 1
@@ -597,19 +610,24 @@ function Markers.Share(button)
     end))
 end
 
--- A block's markers, read (see the file's head): the rows that hold, at most Markers.TAKE.
+-- One marker's row read (see the file's head): nil where it does not hold (a map that is no zone's number nor a
+-- dungeon's floor, a point off its map).
+function Markers.ReadRow(row)
+    local origin, map, x, y, icon, title, words = row:match("^(.-)\031(.-)\031(.-)\031(.-)\031(.-)\031(.-)\031(.*)$")
+    map, x, y = ns.Plans.MapOf(map), tonumber(x), tonumber(y)
+    if not (origin and origin ~= "" and map and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1) then return nil end
+    return { origin = Clean(origin, 80), map = map, x = x, y = y, icon = Icon(icon).key,
+             title = Clean(title, Markers.TITLE_MOST), text = Clean(words, Markers.TEXT_MOST) }
+end
+
+-- A block's markers, read: the rows that hold, at most Markers.TAKE.
 function Markers.Read(text)
     local rows = {}
     local version, rest = tostring(text or ""):match("^(%d+)\030(.*)$")
     if version ~= "1" or not rest then return rows end
     for row in (rest .. "\030"):gmatch("(.-)\030") do
         if #rows >= Markers.TAKE then break end
-        local origin, map, x, y, icon, title, words = row:match("^(.-)\031(.-)\031(.-)\031(.-)\031(.-)\031(.-)\031(.*)$")
-        map, x, y = tonumber(map), tonumber(x), tonumber(y)
-        if origin and origin ~= "" and map and map > 0 and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
-            rows[#rows + 1] = { origin = Clean(origin, 80), map = math.floor(map), x = x, y = y, icon = Icon(icon).key,
-                                title = Clean(title, Markers.TITLE_MOST), text = Clean(words, Markers.TEXT_MOST) }
-        end
+        rows[#rows + 1] = Markers.ReadRow(row)
     end
     return rows
 end
@@ -637,7 +655,9 @@ end
 local Ask
 local function Answer(keep)
     local share = table.remove(offers, 1)
-    if share and keep then Markers.Keep(share) end
+    if share and keep then
+        if share.plan then ns.Plans.Keep(share) else Markers.Keep(share) end
+    end
     Ask()
 end
 
@@ -684,20 +704,32 @@ function Ask()
     if #share.rows > 3 then names[#names + 1] = "..." end
     local words = #share.rows == 1 and Markers.TEXT.offerOne:format(share.sender, names[1])
         or Markers.TEXT.offerMany:format(share.sender, #share.rows, table.concat(names, ", "))
-    local zone = ns.Find and ns.Find.MapName(share.rows[1].map)
-    if zone then words = words .. " (" .. zone .. ")" end
+    if share.plan then
+        words = Markers.TEXT.offerPlan:format(share.sender, share.plan.name, #share.rows, #share.drawings)
+    end
+    local first = share.rows[1] or share.drawings and share.drawings[1]
+    local zone = first and Where(first.map)
+    if zone and zone ~= "" then words = words .. " (" .. zone .. ")" end
     offer.words:SetText(words)
     local height = (offer.words:GetStringHeight() or 14) + 12 + 28
     offer:SetHeight(height + Look.DRESS_HEAD + 4 + Look.INSIDE + 4)
     offer:Show()
 end
 
--- A block of markers heard (the wire, kind M): asked about, unless the setting says no or it holds none.
+-- A block of markers heard (the wire, kind M): asked about, unless the setting says no or it holds none; a part of a
+-- plan (version 2, Plans.Read) once all its parts came.
 function Markers.Heard(sender, text)
     if ns.off or not (ns.options and ns.options.markerShares) then return end
-    local rows = Markers.Read(text)
-    if #rows == 0 or #offers >= Markers.WAITING then return end
-    offers[#offers + 1] = { sender = tostring(sender or "?"), rows = rows }
+    if #offers >= Markers.WAITING then return end
+    if tostring(text or ""):sub(1, 2) == "2\030" then
+        local share = ns.Plans.Read(sender, text)
+        if not share or (#share.rows == 0 and #share.drawings == 0) then return end
+        offers[#offers + 1] = share
+    else
+        local rows = Markers.Read(text)
+        if #rows == 0 then return end
+        offers[#offers + 1] = { sender = tostring(sender or "?"), rows = rows }
+    end
     if #offers == 1 then Ask() end
 end
 

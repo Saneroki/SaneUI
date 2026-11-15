@@ -874,11 +874,14 @@ function W.Install(env)
             return { AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
         end
         function description:CreateRadio(text, isSelected, setSelected, data)
-            local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {} }
+            local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {}, sub = {} }
             list[#list + 1] = item
-            return { SetResponse = function(_, response) item.response = response end,
-                     SetTooltip = function(_, fn) item.tooltip = fn end,
-                     AddInitializer = function(_, init) item.inits[#item.inits + 1] = init end }
+            -- (a radio may hold a menu of its own, as every element of the game's menus may)
+            local sub = Description(item.sub)
+            function sub:SetResponse(response) item.response = response end
+            function sub:SetTooltip(fn) item.tooltip = fn end
+            function sub:AddInitializer(init) item.inits[#item.inits + 1] = init end
+            return sub
         end
         function description:CreateCheckbox(text, isSelected, setSelected, data)
             local item = { text = text, checked = isSelected, fn = setSelected, data = data, inits = {}, checkbox = true }

@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Draw on the map: the pencil button on the full map's bar opens
+  a palette with a pen, lines, arrows, circles, an eraser and
+  markers in six colours, on the world map and on dungeon maps.
+  Group your markers and drawings in plans, show or hide them, and
+  share a whole plan with your party, raid or guild.
 - Each window on a full screen can be a window of its own: the
   button beside its X takes it off the full screen, and from then
   on its key opens only that window (your bag keys only your bags).

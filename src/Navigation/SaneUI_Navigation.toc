@@ -74,6 +74,10 @@ RareTracker.lua
 Marks.lua
 # Your own markers on the map: put with Alt and a click, a title and words of your own on a card, kept for the account
 Markers.lua
+# Your plans: markers and drawings grouped, shown or hidden and shared as one. Knows no frames
+Plans.lua
+# Drawing on the map and on dungeon maps: your drawings shown, the palette's tools at work, markers on a dungeon's floor
+Draw.lua
 # The game's minimap over ours, for its live dots; taken and given back
 Hybrid.lua
 # The herbs and ore the game's minimap shows, found by asking it and drawn over it in their own pictures
@@ -97,6 +101,8 @@ DockWatch.lua
 TripView.lua
 # The bar over the full map: the quest log, the views, the map selector, the dungeons, the pin filter
 TopBar.lua
+# The button and palette of drawing and planning: the tools, colours, widths, the plan, undo and clear
+DrawBar.lua
 # What the full map's search finds: NPCs, items and where they come from, quests, places, zones, people. Knows no frames
 Find.lua
 # Where to farm a thing: the places thickest with what gives it, glowing on the full map. For the map's search

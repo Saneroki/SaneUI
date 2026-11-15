@@ -314,6 +314,7 @@ local function Place()
     content:SetPoint("CENTER", frame, "CENTER", midX / scale, midY / scale)
     Dungeons.PlaceEnemies(art, scale)
     Dungeons.PlaceBosses(art, scale)
+    ns.Safe("drawings", ns.Draw.Floor, frame, shown, art, scale, midX, midY, onSmall) -- your drawings and markers
 end
 
 -- The room measured anew and the floor placed in it (the view's size changed, the quest log came or went).
@@ -392,17 +393,50 @@ local function Wheel(_, delta)
     Place()
 end
 
+-- The floor's point under the mouse: its map and the point on its art (0 to 1; past its edge beyond); nil while
+-- none shows.
+function Dungeons.Point()
+    local art = kept and kept.art
+    if not art or not shown then return nil end
+    local x, y = Cursor()
+    local left, bottom = frame:GetLeft(), frame:GetBottom()
+    local width, height = frame:GetSize()
+    if not (left and bottom and width and height) then return nil end
+    local scale = Fit(art) * zoom
+    local px, py = x - left - width / 2, y - bottom - height / 2
+    return shown, (px - midX) / (art.width * scale) + 0.5, 0.5 - (py - midY) / (art.height * scale)
+end
+
+-- A press: the left button drags the floor; while a tool of the palette is on (Draw.lua) the left button is the
+-- tool's and the right one drags. Alt and a click puts a marker there (Markers.lua), as on the map.
+local pressX, pressY, panning
 local function Down(_, button)
-    if button ~= "LeftButton" or onSmall then return end -- the small map's whole map is not dragged
+    if onSmall then return end -- the small map's whole map is not dragged
+    local tool = ns.Draw.Tool()
+    if tool and button == "LeftButton" then return ns.Draw.PressFloor() end
+    if button ~= (tool and "RightButton" or "LeftButton") then return end
     dragX, dragY = Cursor()
+    pressX, pressY, panning = dragX, dragY, button
     frame:SetScript("OnUpdate", updating)
 end
 
 local function Up(_, button)
-    if button == "LeftButton" then
-        dragX, dragY = nil, nil
+    if button == "LeftButton" and ns.Draw.Busy() then return ns.Draw.Release() end
+    local moved = false
+    if button == panning then
+        local x, y = Cursor()
+        moved = pressX ~= nil and math.abs(x - pressX) + math.abs(y - pressY) > 4
+        dragX, dragY, panning = nil, nil, nil
         frame:SetScript("OnUpdate", nil)
-    elseif button == "RightButton" or button == "MiddleButton" and onSmall then
+    end
+    if button == "LeftButton" and not moved and not onSmall and (IsAltKeyDown() or ns.Markers.Moving()) then
+        local map, x, y = Dungeons.Point()
+        if not map or x < 0 or x > 1 or y < 0 or y > 1 then return end
+        if ns.Markers.Moving() then return ns.Markers.Put({ map = map, x = x, y = y }) end
+        return ns.Markers.New({ map = map, x = x, y = y })
+    end
+    if (button == "RightButton" and not moved) or (button == "MiddleButton" and onSmall) then
+        if ns.Markers.Moving() then return ns.Markers.Stay() end
         Dungeons.Out()
     end
 end
@@ -947,6 +981,7 @@ function Dungeons.Close()
     frame:Hide()
     for _, texture in ipairs(tiles) do texture:SetTexture(nil) end -- its files let go
     for _, foe in ipairs(foes) do foe:Hide() end
+    ns.Safe("drawings", ns.Draw.FloorClear)
     for _, mark in ipairs(marks) do
         mark:Hide()
         if mark.model then
@@ -966,6 +1001,17 @@ function Dungeons.Out()
     if small then wanted = false end
     Dungeons.Close()
     if small then ns.Canvas.Refresh() end
+end
+
+-- A floor's name for your markers' cards (Markers.lua): its dungeon's, and the floor's where it has several; nil for a
+-- map that is no dungeon's floor.
+function Dungeons.Named(map)
+    if map == nil then return nil end
+    local entry, floor = Entry(map)
+    if not entry then return nil end
+    local name = entry.name or "?"
+    if entry.floors and #entry.floors > 1 and floor and floor.name then name = name .. ", " .. floor.name end
+    return name
 end
 
 -- The floor shown (nil: none), the floors of its dungeon, and whether it stands on the small map.

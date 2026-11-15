@@ -344,6 +344,23 @@ and shows them on the map or puts the map pin there. The plan is in
   (the golden line leads there) and Delete (asked first); a double click puts the map pin there at once. The pin
   filter's *Your markers* shows or hides them all; the map's search finds them by their titles and descriptions
   (*markers* as the first word lists them all). They are kept for your account.
+- **Draw and plan** (Saneroki, 2026-11-15): the square with a pencil on the full map's bar (left of *Follow me*) opens
+  a small palette at the top right, under the bar (drag it by its head). Its tools: **Marker** (a click: a marker
+  there, its card to write in), **Pen** (drag: a line as the mouse goes), **Line**, **Arrow** (drag: from where you
+  begin to where you let go), **Circle** (drag: round where you begin, as wide as you drag) and **Eraser** (a click on a
+  drawing: away); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
+  thick width. While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
+  steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
+  floor's own map, move and zoom with it, and come back whenever that floor is opened.
+  - **Plans:** what you draw and mark goes into the **plan** chosen in the palette's dropdown (*My markers* at first;
+    your earlier markers are in it). Each plan in the dropdown has its own menu: **Shown** (its markers and drawings
+    shown or hidden as one), **Rename**, **Share** with your party (your raid in a raid) or your guild, **Delete** (with
+    all it holds, asked first); **New plan** makes another and chooses it. A plan shared goes whole, its markers and
+    drawings, and whoever gets it is asked (who shares which plan, how many markers and drawings) and keeps it as a plan
+    of its own, from you; shared again (after changes), it replaces their copy.
+  - **Undo** takes the active plan's newest drawing away; **Clear** all its drawings on the map shown (the dungeon's
+    floor, or the zone in the map's middle), asked first.
+  - Closing the palette (its X, Esc, the map going small) puts the tool away; Alt and a click still puts a marker.
 - **Sharing markers** (Saneroki, 2026-11-15): the card's fifth button, **Share**: this marker, or all of yours on its
   map, with your party (your raid in a raid) or your guild; one you are not in is greyed. Whoever gets them sees a
   small card (who shares what, the first titles, the zone) and keeps them only with **Keep**; kept, they stand on
@@ -896,6 +913,22 @@ and shows them on the map or puts the map pin there. The plan is in
   first, the words cut to their most), queued (`Markers.WAITING`), asked one at a time on a card of the kit
   (`Look.Dress`, Keep and No the red buttons), kept by origin (`Markers.Keep`: the maker's character key and number,
   `marker.origin`; `marker.from` the sender) while the setting `markerShares` is on.
+- **Drawing** (`Draw.lua`, `DrawBar.lua`, `Plans.lua`): drawings kept in `ns.store.drawings` (`{ id, plan, map,
+  kind, colour, width, points }`, the points on their map to four places: a zone's, else a dungeon's floor, as
+  `Dungeons.Shown` names it), plans in `ns.store.plans` (`{ id, name, shown, origin, from }`; `activePlan`; a
+  marker's `plan`, none: the first). On the canvas the layer `sketch` (`Canvas.LEVELS.sketch`, over the paths, under
+  the pins): each drawing's points to the holder's units (`Coords.MapToPlane` into the view's plane), its segments (a
+  pen's strokes, a line, an arrow and its head, a circle of `Draw.SIDES`), each the game's line in its colour over a
+  dark edge (`Draw.THICK`, `Draw.EDGE`), cut by hand at the canvas' edge (Liang-Barsky, again at `Canvas.Keep`:
+  `Draw.Fit`). On a dungeon's floor (`Dungeons.lua`'s `Place` calls `Draw.Floor` at every step and zoom) the same in
+  the view's units from its middle, cut at its frame, and your markers there as buttons with their titles (a click
+  their card). The mouse: with a tool on, `Canvas`'s and `Dungeons`'s left press is `Draw.Press`/`PressFloor`, the
+  right button drags (`Canvas.Under`, `Dungeons.Point`); a frame's `OnUpdate` follows while a drawing is under way (a
+  pen's point every `Draw.STEP` units, `Plans.POINTS` at most), let go it is kept when it is long enough
+  (`Draw.LEAST`). The eraser takes the drawing nearest within `Draw.REACH`. Sharing a plan (`Plans.Share`): Core's wire,
+  kind `M`, version 2, in parts of `Plans.BLOCK` bytes (`Plans.PARTS` at most), each with the plan's origin and the
+  share's own stamp; the points as three letters of base 36 each; heard (`Plans.Read`) the parts are put together by
+  sender, origin and stamp (`Plans.GATHERING` at once), then asked about on Markers' card, kept by `Plans.Keep`.
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
   docked hook, `FindBox.SetShown`), in its middle, as wide as the room between the title and the buttons leaves
   (`FindBox.WIDTH` at most); on Core's skin (round ends, the gold trim); the list under it on the same skin, strata
@@ -1332,6 +1365,9 @@ and shows them on the map or puts the map pin there. The plan is in
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
+| `Plans.lua` | Your plans: markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
+| `Draw.lua` | Your drawings drawn on the map (the canvas' layer `sketch`) and on a dungeon's floor, the palette's tools at work (pen, line, arrow, circle, eraser, marker), your markers on a floor |
+| `DrawBar.lua` | The square with a pencil on the full map's bar and the palette: the tools, the colours, the widths, the plan's dropdown and its menus, Undo and Clear |
 | `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
@@ -1347,6 +1383,18 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, drawing on the map, and plans:** Saneroki: "Can we draw on the map too? I want a button somwhere that
+  helps me to activate menues and helpers to drop pins and draw on the map and save those drawings and map pins
+  together so they can be shared or grouped together. This will be especially helpful in instance maps". `Plans.lua`,
+  `Draw.lua`, `DrawBar.lua`; the canvas' layer `sketch`, `Canvas.Under`; `Dungeons.Point`, `Dungeons.Named`, the floor's
+  drawings and markers, Alt and a click there; markers in plans (`plan`), a plan shared whole (kind `M`, version 2).
+  Card #481.
+- **2026-11-15, the world map cleaned up:** Saneroki: "The continent hover over has a outline that i don't like and
+  that is also wrong. So lets disable the continent highlighting [...] Keep the zone highlighting like it is now"
+  (`Art.Light`: on a world map only named). "there are areas on the map that need to be cleaned off [...] only show
+  like single lines" (`dev/tools/terrain-art`'s `RIM`: Kalimdor's north-east edge and the isle in its north-west
+  corner). "we need to add a whirlpool into the middle of the sea like it is on the original maps"
+  (`Canvas.WHIRLPOOL`, `Art/Whirlpool.blp`, `terrain-art --whirlpool`).
 - **2026-11-15, markers shared:** Saneroki: "Can we share markers with party and guild members?" The card's Share
   (`Markers.Share`, `Send`), the wire's kind `M`, the card that asks (`Heard`, `Read`, `Keep`), `origin` and `from`,
   the setting *Markers others share*. Card #481.

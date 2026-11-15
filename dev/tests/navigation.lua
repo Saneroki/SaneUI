@@ -8790,6 +8790,223 @@ end)()
     end
 end)()
 
+-- Drawing on the map and plans (Draw.lua, DrawBar.lua, Plans.lua; Saneroki, 2026-11-15): the palette from the bar's
+-- button; a line, a pen's stroke, an arrow and a circle drawn on the map in the plan active, cut at the view's edge;
+-- the eraser, undo, clear; plans shown and hidden; a plan shared in parts and kept, kept again in place; on a dungeon's
+-- floor a drawing and a marker (Alt and a click).
+;(function()
+    local Draw, DrawBar, Plans, Markers = ns.Draw, ns.DrawBar, ns.Plans, ns.Markers
+    local wasFull = Window.handle.edge.full
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    local full = Window.full
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height)
+    Canvas.Layout()
+    local box = ns.Coords.Box(1429)
+    local function At(x, y)
+        local u, v = ns.Coords.ToPlane(box, x, y)
+        cursorX, cursorY = frame._width / 2 + (u - full.u) * full.k, frame._height / 2 + (v - full.v) * full.k
+    end
+    local function Step() Draw.stroker._scripts.OnUpdate(Draw.stroker, 0.016) end
+    local function Close(a, b) return math.abs(a - b) < 2e-3 end
+    local function Lines()
+        local count = 0
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Line" and widget._shown and widget._parent and widget._parent._parent == holder
+                and widget._parent._level == frame:GetFrameLevel() + Canvas.LEVELS.sketch then
+                count = count + 1
+            end
+        end
+        return count
+    end
+    -- the plans: the first made at the first need, active
+    local first = Plans.List()[1]
+    check(first and first.name == Plans.TEXT.first and Plans.Active() == first, "the first plan, made when first needed, active")
+    check(Close(Plans.Unpack(Plans.Pack(0.1234)), 0.1234) and Close(Plans.Unpack(Plans.Pack(-0.5)), -0.5),
+        "a point's coordinates packed in three letters and back")
+    -- the palette from the bar's button: the pen on at first
+    DrawBar.button._scripts.OnClick(DrawBar.button)
+    local palette = DrawBar.palette
+    check(palette and palette:IsShown() and Draw.Tool() == "pen", "the bar's button: the palette, the pen on")
+    palette.tools[3]._scripts.OnClick(palette.tools[3])
+    check(Draw.Tool() == "line", "a tool chosen")
+    -- a line: pressed, dragged, let go
+    local before = #Plans.Drawings()
+    At(0.3, 0.3)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    check(Draw.Busy(), "pressed with a tool on: a drawing under way, the map not dragged")
+    At(0.5, 0.4)
+    Step()
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    local line = Plans.Drawings()[#Plans.Drawings()]
+    check(#Plans.Drawings() == before + 1 and line.kind == "line" and line.map == 1429 and line.plan == first.id
+        and Close(line.points[1], 0.3) and Close(line.points[2], 0.3) and Close(line.points[3], 0.5)
+        and Close(line.points[4], 0.4), "let go: a line kept in the plan, on its zone's map")
+    Canvas.Layout()
+    check(Lines() == 2, "drawn: its edge and its colour, on the layer over the map")
+    -- a pen's stroke, an arrow, a circle
+    palette.tools[2]._scripts.OnClick(palette.tools[2])
+    At(0.6, 0.6)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    for step = 1, 4 do
+        At(0.6 + step * 0.02, 0.6 + (step % 2) * 0.02)
+        Step()
+    end
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    local stroke = Plans.Drawings()[#Plans.Drawings()]
+    check(stroke.kind == "pen" and #stroke.points == 10, "the pen: a point each step the mouse went far enough")
+    palette.tools[4]._scripts.OnClick(palette.tools[4])
+    At(0.2, 0.7)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    At(0.3, 0.7)
+    Step()
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    palette.tools[5]._scripts.OnClick(palette.tools[5])
+    At(0.7, 0.2)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    At(0.76, 0.2)
+    Step()
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    Canvas.Layout()
+    check(Plans.Drawings()[#Plans.Drawings()].kind == "circle" and Lines() == 2 * (1 + 4 + 3 + Draw.SIDES),
+        "an arrow with its head, a circle of its sides")
+    -- too short: let go of
+    palette.tools[3]._scripts.OnClick(palette.tools[3])
+    local count = #Plans.Drawings()
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    Step()
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    check(#Plans.Drawings() == count, "a line too short to see: not kept")
+    -- the eraser takes the line under the mouse
+    palette.tools[6]._scripts.OnClick(palette.tools[6])
+    At(0.4, 0.35)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    local gone = true
+    for _, drawing in ipairs(Plans.Drawings()) do if drawing == line then gone = false end end
+    check(gone and #Plans.Drawings() == count - 1, "the eraser: the line under the mouse away")
+    -- a right-drag moves the map while a tool is on
+    local u0 = full.u
+    frame._scripts.OnMouseDown(frame, "RightButton")
+    cursorX = cursorX + 50
+    frame._scripts.OnUpdate(frame, 0.016)
+    frame._scripts.OnMouseUp(frame, "RightButton")
+    check(full.u ~= u0 and #Plans.Drawings() == count - 1, "a right-drag: the map moved, nothing drawn")
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height)
+    Canvas.Layout()
+    -- undo; a plan hidden; clear
+    check(Plans.Undo() and #Plans.Drawings() == count - 2, "undo: the newest drawing away")
+    Plans.Show(first, false)
+    Canvas.Layout()
+    check(Lines() == 0, "the plan hidden: none of its drawings")
+    Plans.Show(first, true)
+    Canvas.Layout()
+    check(Lines() > 0, "shown again")
+    -- a second plan, active: what is drawn goes there
+    local raid = Plans.New("Raid night")
+    check(Plans.Active() == raid and #Plans.List() == 2, "a new plan, active")
+    palette.tools[3]._scripts.OnClick(palette.tools[3])
+    At(0.1, 0.1)
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    At(0.2, 0.1)
+    Step()
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    local raidLine = Plans.Drawings()[#Plans.Drawings()]
+    At(0.15, 0.2)
+    local alt = rawget(_G, "IsAltKeyDown")
+    IsAltKeyDown = function() return true end
+    palette.tools[1]._scripts.OnClick(palette.tools[1])
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    IsAltKeyDown = alt
+    local raidMarker = Markers.List()[#Markers.List()]
+    Markers.card.editing.title:SetText("Pull here")
+    Markers.card.editing.save._scripts.OnClick(Markers.card.editing.save)
+    check(raidLine.plan == raid.id and raidMarker.plan == raid.id and raidMarker.title == "Pull here",
+        "the marker tool and a line: both in the plan active")
+    -- the plan shared, in parts, and kept by another as a plan of its own; shared again: replaced, not doubled
+    local Wire = Core.Wire
+    local sendBlock, sent = Wire.SendBlock, {}
+    Wire.SendBlock = function(kind, text, channel) sent[#sent + 1] = { kind = kind, text = text, channel = channel } return true end
+    local block = Plans.BLOCK
+    Plans.BLOCK = 60 -- (small parts: the marker's row and the line's apart)
+    check(Plans.Share(raid, "GUILD") == 2 and sent[1].kind == Markers.KIND and sent[2].text:find("^2\030"),
+        "shared with the guild: its parts, of kind M")
+    Plans.BLOCK = block
+    local function Theirs(text) return (text:gsub("^2\030[^\031]*", "2\030Player-1-0000BEEF:p9")) end
+    local plans = #Plans.List()
+    Markers.Heard("Brannoc Steelvein", Theirs(sent[2].text))
+    check(not (Markers.offer and Markers.offer:IsShown()), "one part heard: nothing asked yet")
+    Markers.Heard("Brannoc Steelvein", Theirs(sent[1].text))
+    check(Markers.offer:IsShown() and Markers.offer.words:GetText():find("Raid night", 1, true), "all parts: asked")
+    Markers.offer.keep._scripts.OnClick(Markers.offer.keep)
+    local kept = Plans.List()[#Plans.List()]
+    local markers, drawings = Plans.Holds(kept)
+    check(#Plans.List() == plans + 1 and kept.name == "Raid night" and kept.from == "Brannoc Steelvein"
+        and #markers == 1 and markers[1].title == "Pull here" and #drawings == 1 and drawings[1].kind == "line",
+        "kept: a plan of its own, from its sender, its marker and its line")
+    wipe(sent)
+    Plans.Share(raid, "GUILD")
+    Markers.Heard("Brannoc Steelvein", Theirs(sent[1].text))
+    Markers.offer.keep._scripts.OnClick(Markers.offer.keep)
+    markers, drawings = Plans.Holds(kept)
+    check(#Plans.List() == plans + 1 and #markers == 1 and #drawings == 1, "shared again: the plan filled anew, not doubled")
+    Wire.SendBlock = sendBlock
+    Plans.Remove(kept)
+    check(#Plans.List() == plans, "a plan deleted, with its markers and drawings")
+    -- clear: the active plan's drawings on the zone in view
+    check(Plans.Clear(1429) == 1 and #Plans.Holds(raid) == 1, "clear: the plan's drawings on this map, its markers stay")
+    -- on a dungeon's floor: a line and a marker, on the floor's own map
+    check(ns.Dungeons.Show("90:1"), "a dungeon's floor")
+    local view = ns.Dungeons.frame
+    palette.tools[3]._scripts.OnClick(palette.tools[3])
+    cursorX, cursorY = view._width / 2 - 40, view._height / 2
+    view._scripts.OnMouseDown(view, "LeftButton")
+    cursorX = view._width / 2 + 40
+    Step()
+    view._scripts.OnMouseUp(view, "LeftButton")
+    local onFloor = Plans.Drawings()[#Plans.Drawings()]
+    check(onFloor.map == "90:1" and onFloor.points[3] > onFloor.points[1], "a line on the floor's own map")
+    local floorLines = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Line" and widget._shown and widget._parent and widget._parent._parent == view then
+            floorLines = floorLines + 1
+        end
+    end
+    check(floorLines == 2, "drawn over the floor's art")
+    Draw.SetTool(nil)
+    IsAltKeyDown = function() return true end
+    view._scripts.OnMouseDown(view, "LeftButton")
+    view._scripts.OnMouseUp(view, "LeftButton")
+    IsAltKeyDown = alt
+    local floorMarker = Markers.List()[#Markers.List()]
+    Markers.card.editing.title:SetText("Boss pull")
+    Markers.card.editing.save._scripts.OnClick(Markers.card.editing.save)
+    check(floorMarker.map == "90:1" and floorMarker.title == "Boss pull", "Alt and a click on the floor: a marker there")
+    local pin
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Button" and widget.marker == floorMarker and widget._shown then pin = widget end
+    end
+    check(pin and pin.label:GetText() == "Boss pull", "on the floor in its icon, its title beside it")
+    check(ns.Dungeons.Named("90:1") and Markers.Where("90:1") == ns.Dungeons.Named("90:1"), "named by its dungeon")
+    ns.Dungeons.Close()
+    -- the palette goes with the bar, every tool with it
+    DrawBar.Open()
+    ns.TopBar.SetShown(false)
+    check(not palette:IsShown() and not Draw.Tool(), "the bar gone: the palette and its tool too")
+    ns.TopBar.SetShown(true, frame)
+    Plans.Remove(raid)
+    Markers.Remove(floorMarker)
+    for index = #Plans.Drawings(), 1, -1 do table.remove(Plans.Drawings(), index) end
+    Markers.Close()
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+end)()
+
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")
 check(#ns.RareTracker.shown == 0 and not ns.RareTracker.holder._shown, "standing down: the Sane Rare tracker's notices gone")

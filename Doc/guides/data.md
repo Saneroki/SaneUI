@@ -1277,6 +1277,9 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
   Navigation's `Markers.lua`), to the raid or party or the guild: "1", then a row a marker (its origin: the maker's
   character key and number; map, x, y, icon, title, words). Personal data the player chose to share: the one who gets
   them is asked first and keeps them in Navigation's saved settings, never in a `SaneUIData_` variable or the database.
+  A whole plan (markers and drawings, 2026-11-15) as version 2: "2", its head (origin, name, part, parts, the share's
+  stamp), then rows `m` (a marker's) and `d` (a drawing's: origin, map, kind, colour, width, its points as three letters
+  of base 36 each), in parts put together by sender, origin and stamp.
 - **Speed Leveling's place in a guide** *(Saneroki, 2026-11-05)*: kind `S` (the guide's key, at most 180 bytes of it;
   the row of the step's first line in the guide's text; letters: `w` waiting there, `c` busy with a class quest on top
   of it, `a` asking for the others' places), to the party or the raid only, as the place changes, nothing when it follows no guide (an empty key: forget me). Not

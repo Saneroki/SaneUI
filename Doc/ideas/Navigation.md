@@ -995,7 +995,14 @@ hidden but what the small view needs.
 - **Markers shared (Saneroki, 2026-11-15; built):** "Can we share markers with party and guild members?" The card's
   Share: one marker, or all of yours on its map, to the raid or party or the guild; whoever gets them is asked first
   (Keep or No), a kept one marked as from its sender, changed in place when its maker shares it again; the setting
-  *Markers others share* (on). Still to come (card #481): drawing on the map.
+  *Markers others share* (on).
+- **Drawing and plans (Saneroki, 2026-11-15; built):** "Can we draw on the map too? I want a button somwhere that helps
+  me to activate menues and helpers to drop pins and draw on the map and save those drawings and map pins together so
+  they can be shared or grouped together. This will be especially helpful in instance maps". A pencil square on the full
+  map's bar opens a palette: marker, pen, line, arrow, circle and eraser in six colours and two widths; while a tool is
+  on the left button draws and a right-drag moves the map. Markers and drawings go into the plan chosen; a plan shows
+  or hides as one and is shared whole with the party, raid or guild (asked before kept, replaced when shared again).
+  The same on a dungeon's floor, its things on the floor's own map.
 
 ## The game's map and minimap: kept out of sight, given back
 

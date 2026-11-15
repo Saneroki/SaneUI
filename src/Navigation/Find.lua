@@ -1620,7 +1620,11 @@ function Find.Show(entry, role)
         return place.map ~= nil and ns.Canvas.LookAt(place.map, place.x, place.y)
     end
     if entry.kind == "log" and ns.QuestLog.Focus then ns.QuestLog.Focus(entry.quest) end
-    if entry.kind == "marker" and ns.Markers then ns.Markers.Open(entry.marker) end -- (its card too)
+    if entry.kind == "marker" and ns.Markers then
+        ns.Markers.Open(entry.marker) -- (its card too)
+        -- one on a dungeon's floor: that floor's map
+        if ns.Dungeons.Named(entry.marker.map) then return ns.Dungeons.Show(entry.marker.map) end
+    end
     -- an item farmed: its places glow, the map at the best of them
     local places = entry.kind == "item" and ns.Farms.Of(entry) or NONE
     local farming = #places > 0 and { places = places, target = entry } or nil

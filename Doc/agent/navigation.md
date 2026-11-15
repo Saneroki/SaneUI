@@ -23,7 +23,11 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    full map, a click opens the card (Edit, Move, the map pin, Delete, Share); kept in `ns.store.markers` for the
    account; shared only by the card's Share (Core's wire, a block of kind `M`, to the raid or party or the guild),
    asked before kept, a copy changed when its maker shares it again (`origin`); the setting *Markers others share*;
-   the pin filter's *Your markers*; found by the map's search. Drawing on the map: card #481.
+   the pin filter's *Your markers*; found by the map's search.
+9. Drawing and plans (`Draw.lua`, `DrawBar.lua`, `Plans.lua`, 2026-11-15): the pencil square on the bar opens a palette
+   (marker, pen, line, arrow, circle, eraser; colours, widths; the plan's dropdown; undo, clear); drawings on the
+   canvas' layer `sketch` and on a dungeon's floor (Dungeons' `Place` calls `Draw.Floor`), cut at the view's edge by
+   hand; markers and drawings grouped in plans, shown, hidden and shared whole (kind `M`, version 2, in parts).
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the
    wheel zooms from the minimap's range to the world, follows the player, north-up only. The views (setting `view`,
@@ -67,7 +71,7 @@ The file list with a line each: `src/Navigation/README.md`, section *Files* (lin
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the Sane Rare tracker (`RareTracker`: finds near
-you told by a notice and a horn, `/sane testraretracker`); your markers (`Markers`); the map's search (`Find`, `FindBox`, `Farms`; `Search.lua` is the walking data's, not it); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
+you told by a notice and a horn, `/sane testraretracker`); your markers, drawings and plans (`Markers`, `Draw`, `DrawBar`, `Plans`); the map's search (`Find`, `FindBox`, `Farms`; `Search.lua` is the walking data's, not it); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
 `Planner`, `Corpse`, `Danger`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,

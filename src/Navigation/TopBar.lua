@@ -13,6 +13,7 @@ local _, ns = ...
 --                        map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
+--      Draw and plan     a square with a pencil left of Follow me: the palette of drawing and planning (DrawBar.lua)
 --      Follow me         a checkbox left of the pin filter: the map keeps you in its middle as you move and
 --                        comes back to you, small and full (the setting followMap; Canvas.lua), on at first
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
@@ -303,6 +304,9 @@ function TopBar.Build(canvas)
     pinMenu = Dropdown(TopBar.PINS_WIDTH, Filter, TopBar.TEXT.pins)
     pinMenu:SetPoint("RIGHT")
     followBox = FollowBox()
+    -- drawing and planning (DrawBar.lua): its button left of Follow me
+    local draw = ns.DrawBar.Button(bar)
+    draw:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0)
     TopBar.Arrange()
     bar:Hide()
     return bar
@@ -311,6 +315,7 @@ end
 -- In sight while the window fills the screen and stands there; its level over the canvas' again.
 function TopBar.SetShown(on, canvas)
     if not bar then return end
+    if not on then ns.Safe("drawings", ns.DrawBar.Hide) end -- (the palette and its tool go with the bar)
     if on and canvas then bar:SetFrameLevel(canvas:GetFrameLevel() + 30) end
     bar:SetShown(on)
     if on then TopBar.Update() end

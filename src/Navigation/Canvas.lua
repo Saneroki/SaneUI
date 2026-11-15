@@ -17,6 +17,7 @@ local _, ns = ...
 --       │    ├─ areas     the quest's areas (Areas.lua)
 --       │    ├─ route     the golden line (Route.lua)
 --       │    ├─ paths     the ways of the flight point or dock under the mouse (Paths.lua)
+--       │    ├─ sketch    the drawings of your plans shown (Draw.lua)
 --       │    ├─ pins      the pins of the game and of Core's data (PinView.lua)
 --       │    └─ marks     the party, the player's arrow, the map pin (Marks.lua)
 --       └─ the game's minimap, between the route and the pins, while it shows (Hybrid.lua): small, in the
@@ -112,7 +113,7 @@ Canvas.HOME = 400    -- yards across the view's shorter side a middle click come
                      -- is not ours (Home)
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
 Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, indoors = 4, light = 5, farms = 6, areas = 7, route = 8,
-                  paths = 9, pins = 12, marks = 20, satchel = 30 }
+                  paths = 9, sketch = 11, pins = 12, marks = 20, satchel = 30 }
 Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is above this
 Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own ground: over that, under the pins (Stack)
 
@@ -280,6 +281,7 @@ end
 local function Keep()
     ns.Safe("route", ns.Route.Fit, edge)
     ns.Safe("paths", ns.Paths.Fit, edge)
+    ns.Safe("drawings", ns.Draw.Fit, edge)
     ns.Safe("pins", ns.PinView.Fit, edge)
     ns.Safe("marks", ns.Marks.Fit, edge)
     ns.Guarded(ns.Hybrid.Keep)
@@ -341,6 +343,7 @@ local function Empty()
     ns.Safe("indoors", ns.Indoors.Clear)
     ns.Safe("areas", ns.Areas.Clear)
     ns.Safe("farms", ns.Farms.Hide)
+    ns.Safe("drawings", ns.Draw.Clear)
     ns.Safe("route", ns.Route.Clear)
     ns.Safe("paths", ns.Paths.Clear)
     ns.Safe("pins", ns.PinView.Clear)
@@ -376,6 +379,7 @@ local function Draw()
     ns.Safe("farms", ns.Farms.Place, view, camera == ns.Window.small) -- the places to farm a thing (Farms.lua)
     ns.Safe("route", ns.Route.Place, view)
     ns.Safe("paths", ns.Paths.Place, view)
+    ns.Safe("drawings", ns.Draw.Place, view, camera == ns.Window.small) -- your drawings (Draw.lua)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
     ns.Safe("marks", ns.Marks.Pin, view)
     ns.Safe("marks", ns.Marks.Vias, view)
@@ -619,15 +623,21 @@ local function Drag()
 end
 local dragging = ns.Guard(Drag) -- made once: the per-frame step while the left button is held
 
--- own: the press is the canvas' own (not a pin's or a mark's, Canvas.Press): on the golden line, a drag of it.
+-- own: the press is the canvas' own (not a pin's or a mark's, Canvas.Press): on the golden line, a drag of it. While
+-- a tool of the palette is on (Draw.lua) the left button is the tool's, and a drag with the right one moves the map.
 local function Down(own, button)
     if held then return end -- on the window's way: its camera is not the one shown (Morph), no drag nor click
     lastInput = GetTime()
     if grab then Unbend() end -- another button during a drag of the line: that drag ends, nothing put
+    local tool = own and not lost and ns.Draw.Tool()
+    if tool and button == "LeftButton" then
+        pressed = nil
+        return ns.Draw.Press()
+    end
     pressed, moved = button, false
     pressX, pressY = Cursor()
     grab = own and button == "LeftButton" and Grab() or nil
-    if button == "LeftButton" then frame:SetScript("OnUpdate", dragging) end
+    if button == "LeftButton" or (tool and button == "RightButton") then frame:SetScript("OnUpdate", dragging) end
 end
 
 -- Where the game's map pin goes for the mouse at x, y from the view's middle: on the zone there, else the continent
@@ -751,7 +761,18 @@ local function Clicked(button, pin)
 end
 
 local function Up(_, button)
+    if button == "LeftButton" and ns.Draw.Busy() then return ns.Draw.Release() end -- (a drawing let go)
     if Finish(button) then Clicked(button) end
+end
+
+-- The mouse on the map now (Draw.lua): its point in the view's plane and the spot under it ({ map, x, y }, as the
+-- game's map pin would go there; { } where none); nil off the map or before it was laid out.
+function Canvas.Under()
+    local x, y = FromMiddle()
+    if not x or not laid then return nil end
+    local u, v = Pointed(x, y)
+    if not u then return nil end
+    return u, v, Where(x, y)
 end
 
 -- A pin was pressed (PinView.lua): the map takes the press as its own, so a drag that starts on a pin moves
@@ -955,6 +976,7 @@ function Canvas.Build(parent)
     layers.indoors = ns.Indoors.Build(holder)
     layers.areas, layers.route = ns.Areas.Build(holder), ns.Route.Build(holder)
     layers.farms = ns.Farms.Build(holder)
+    layers.sketch = ns.Draw.Build(holder)
     layers.paths = ns.Paths.Build(holder)
     ns.PinView.Build(holder)
     ns.Marks.Build(holder)
