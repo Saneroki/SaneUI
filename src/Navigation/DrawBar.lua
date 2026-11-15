@@ -31,7 +31,7 @@ DrawBar.WIDTH_MENU = 130 -- the bar's dropdown Sketches
 DrawBar.TOOL = 32        -- a tool's square
 DrawBar.SWATCH = 22      -- a colour's
 DrawBar.GAP = 4
-DrawBar.WIDTH = 7 * (32 + 4) - 4 + 2 * Look.INSIDE -- the palette: seven tools in a row
+DrawBar.WIDTH = 8 * (32 + 4) - 4 + 2 * Look.INSIDE -- the palette: eight tools in a row
 -- What players read calls a plan a sketch (Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing";
 -- he chose Sketch); the code keeps plan (Plans.lua).
 DrawBar.TEXT = {
@@ -48,8 +48,9 @@ DrawBar.TEXT = {
         line = { "Line", "Drag: a straight line from where you begin to where you let go." },
         arrow = { "Arrow", "Drag: an arrow pointing where you let go." },
         circle = { "Circle", "Drag: a circle round where you begin, as wide as you drag." },
-        move = { "Move", "Drag a marker or a drawing to its new place." },
-        erase = { "Eraser", "A click on a drawing: away." },
+        route = { "Route", "Clicks: a numbered stop at each, a line between them. Choose the tool again for a new route." },
+        text = { "Text", "A click: words on the map there." },
+        erase = { "Eraser", "A click on a drawing or words: away. With any other tool, drag what is on the map to move it." },
     },
     thin = "Thin", thick = "Thick",
     plan = "Sketch: %s",
@@ -86,15 +87,10 @@ local GLYPHS = {
     line = { { -9, -9, 9, 9 } },
     arrow = { { -9, -9, 9, 9 }, { 9, 9, 2, 9 }, { 9, 9, 9, 2 } },
     erase = { { -7, -7, 7, 7 }, { -7, 7, 7, -7 } },
+    route = { { -9, -6, -2, 5 }, { -2, 5, 3, -3 }, { 3, -3, 9, 6 } },
+    text = { { -7, 8, 7, 8 }, { 0, 8, 0, -8 }, { -3, -8, 3, -8 } },
 }
 local function Glyph(square, key)
-    if key == "move" then
-        local hand = square:CreateTexture(nil, "ARTWORK")
-        hand:SetSize(DrawBar.TOOL - 10, DrawBar.TOOL - 10)
-        hand:SetPoint("CENTER")
-        hand:SetTexture("Interface\\CURSOR\\UI-Cursor-Move")
-        return
-    end
     if key == "marker" then
         local star = square:CreateTexture(nil, "ARTWORK")
         star:SetSize(DrawBar.TOOL - 12, DrawBar.TOOL - 12)

@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map drawing: drag anything you drew (markers, lines, words,
+  route stops) while the palette is open. New tools: Route (click
+  stops, numbered, with lines between) and Text. Marker icons come
+  in groups: raid marks, roles and classes, calls, crowd control,
+  the way through, what to mind, the world.
 - Map drawing: a Move tool drags your markers and drawings to a
   new place, on the map and on dungeon maps; a marker card's Move
   works again. Markers have many more icons: doors, stairs, bosses,

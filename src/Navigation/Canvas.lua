@@ -665,11 +665,12 @@ local function Down(own, button)
     lastInput = GetTime()
     if grab then Unbend() end -- another button during a drag of the line: that drag ends, nothing put
     local tool = not lost and ns.Draw.Tool()
-    -- the left button the tool's: on the map, and on a marker's pin too with the Move tool (it drags it); never while
-    -- a marker waits for its new place (its card's Move: the click puts it there)
-    if tool and button == "LeftButton" and (own or tool == "move") and not ns.Markers.Moving() then
+    -- the left button the tool's: on the map; on a pin too where something drawn stands under the mouse (a marker's
+    -- pin: the marker, dragged); never while a marker waits for its new place (its card's Move: the click puts it)
+    if tool and button == "LeftButton" and not ns.Markers.Moving() and (own or ns.Draw.Grab()) then
         pressed = nil
-        return ns.Draw.Press()
+        if own then return ns.Draw.Press() end
+        return
     end
     if not own then tool = nil end
     pressed, moved = button, false

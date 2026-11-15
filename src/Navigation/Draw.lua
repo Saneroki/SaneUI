@@ -9,9 +9,18 @@ local _, ns = ...
 --
 --      the tools   marker (a click: a marker there, Markers.New), pen (a drag: a stroke as the mouse goes), line
 --                  and arrow (a drag: from where it began to where it is let go), circle (a drag: its middle
---                  where it began, its edge where it is let go), eraser (a click on a drawing: away); in the
---                  palette's colour and width, into the active plan. While a tool is on the left button is the
---                  tool's, a drag with the right one moves the map (a right click still steps out)
+--                  where it began, its edge where it is let go), route (clicks: a numbered stop at each, a line
+--                  between; Saneroki, 2026-11-15, "activate it and click a couple of times on the map and it shows
+--                  you the positions with the number and line inbetween"), text (a click: words there, asked for;
+--                  "I also want to be able to add plain text to the drawings"), eraser (a click on a drawing or
+--                  words: away); in the palette's colour and width, into the active plan. While a tool is on the
+--                  left button is the tool's, a drag with the right one moves the map (a right click still steps
+--                  out)
+--      dragging    while a tool is on (the eraser's aside), a press on what stands there drags it to a new place
+--                  ("While in edit mode I want to be able to drag the markers, texts, lines, etc to new positions
+--                  ... without activating a specific move button"): a marker (onto the zone under the mouse), words,
+--                  a route's stop (that stop alone), a drawing (every point along); a marker pressed and let go
+--                  without moving opens its card
 --      on the map  the game's lines in the drawing's colour over a dark edge, as thick on the screen at every
 --                  zoom; an arrow's head and a circle drawn of lines too; cut at the view's edge by hand (the game
 --                  does not cut a line at a frame's edge)
@@ -28,7 +37,7 @@ local Coords = ns.Coords
 local Draw = {}
 ns.Draw = Draw
 
-Draw.TOOLS = { "marker", "pen", "line", "arrow", "circle", "move", "erase" }
+Draw.TOOLS = { "marker", "pen", "line", "arrow", "circle", "route", "text", "erase" }
 Draw.THICK = { 3, 6 }   -- a drawing's thickness in units, thin and thick
 Draw.EDGE = 2           -- units of dark edge round it
 Draw.STEP = 4           -- units the mouse goes before a pen's next point
@@ -38,21 +47,27 @@ Draw.HEAD = 12          -- units an arrow's head is long (and its width's share 
 Draw.SPREAD = 0.45      -- radians an arrow's head opens to each side
 Draw.SIDES = 40         -- a circle's sides
 Draw.PIN = 24           -- a marker on a dungeon's floor
-Draw.GRAB = 14          -- units from a marker's middle the Move tool takes it
+Draw.GRAB = 14          -- units from a marker's middle a press takes it (to drag it)
+Draw.STOP, Draw.STOP_BIG = 18, 22 -- a route's numbered stop across, thin and thick
+Draw.ROUND = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask" -- (the game's round picture: a stop)
+Draw.WORDS = { "GameFontNormalLargeOutline", "GameFontNormalHugeOutline" } -- words on the map, thin and thick
+Draw.WORDS_MOST = 80    -- letters of words on the map at most
 Draw.WHITE = "Interface\\Buttons\\WHITE8X8"
 Draw.TEXT = {
     noPlace = "Nothing to draw on here: zoom in onto a zone.",
     full = "That is all a stroke takes: let go and begin another.",
+    wordsAsk = "The words on the map:",
 }
 
 local tool        -- the tool on (nil: none, the map's own mouse)
 local current     -- the drawing under way: { surface, map, kind, colour, width, points, sx, sy (its last point on
                   -- the screen) }
 local stroker     -- the frame whose OnUpdate follows the mouse while a drawing is under way, or one is dragged
-local held        -- what the Move tool drags (Saneroki, 2026-11-15: "make it possible that map markers are draggable
-                  -- so you can move them to a different position"): { surface, thing (a marker or a drawing), marker
-                  -- (true for a marker), x, y (a drawing's: the mouse's last point on its map), sx, sy (a marker's last
-                  -- place on the screen) }
+local held        -- what a press drags (Saneroki, 2026-11-15: "make it possible that map markers are draggable so
+                  -- you can move them to a different position"): { surface, thing (a marker or a drawing), marker
+                  -- (true for a marker), stop (a route's stop: its number), x, y (a drawing's: the mouse's last point
+                  -- on its map), sx, sy (a marker's last place on the screen), moved (it went somewhere) }
+local route, routeOn -- the route under way (its drawing, kept in the plans) and its surface; nil while none
 
 -------------------------------------------------------------------------------
 --  The palette's choices
@@ -64,6 +79,7 @@ end
 -- A tool on (one of Draw.TOOLS), or none (nil): the map's mouse its own again.
 function Draw.SetTool(key)
     tool = key
+    route = nil -- (a route goes on only while its tool stays on: chosen again, a new one)
     if not key then current, held = nil, nil end
     if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end
 end
@@ -96,7 +112,7 @@ end
 -- A surface: the frame its lines are made in and anchored to (anchor: their points from its middle), its lines'
 -- pool, and what was placed (each segment's ends on the screen, unclipped, its drawing, thickness and colour).
 local function Surface(parent, anchor)
-    return { frame = parent, anchor = anchor, lines = {}, used = 0, placed = {} }
+    return { frame = parent, anchor = anchor, lines = {}, used = 0, placed = {}, labels = {}, words = {}, stops = {} }
 end
 
 local canvas, floor -- the canvas' surface, the floor's
@@ -160,11 +176,67 @@ local function Lay(surface, left, right, bottom, top)
         surface.lines[index].edge:Hide()
         surface.lines[index].fill:Hide()
     end
+    -- the words and the routes' numbered stops, over the lines, those whose point is inside the rectangle
+    local words, stops = 0, 0
+    for _, label in ipairs(surface.labels) do
+        if label.x >= left and label.x <= right and label.y >= bottom and label.y <= top then
+            local rgb = label.rgb
+            if label.stop then
+                stops = stops + 1
+                local stop = surface.stops[stops]
+                if not stop then
+                    stop = { ring = surface.frame:CreateTexture(nil, "OVERLAY", nil, 1),
+                             fill = surface.frame:CreateTexture(nil, "OVERLAY", nil, 2),
+                             number = surface.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightOutline") }
+                    stop.ring:SetTexture(Draw.ROUND)
+                    stop.ring:SetVertexColor(0, 0, 0, 0.75)
+                    stop.fill:SetTexture(Draw.ROUND)
+                    stop.number:SetDrawLayer("OVERLAY", 3)
+                    surface.stops[stops] = stop
+                end
+                local size = label.big and Draw.STOP_BIG or Draw.STOP
+                stop.ring:SetSize(size + 2 * Draw.EDGE, size + 2 * Draw.EDGE)
+                stop.fill:SetSize(size, size)
+                stop.fill:SetVertexColor(rgb[1], rgb[2], rgb[3], 1)
+                stop.number:SetText(label.stop)
+                for _, part in ipairs({ stop.ring, stop.fill, stop.number }) do
+                    part:ClearAllPoints()
+                    part:SetPoint("CENTER", surface.anchor, "CENTER", label.x, label.y)
+                    part:Show()
+                end
+                label.w, label.h = size, size
+            else
+                words = words + 1
+                local text = surface.words[words]
+                if not text then
+                    text = surface.frame:CreateFontString(nil, "OVERLAY", Draw.WORDS[1])
+                    surface.words[words] = text
+                end
+                text:SetFontObject(Draw.WORDS[label.big and 2 or 1])
+                text:SetText(label.text)
+                text:SetTextColor(rgb[1], rgb[2], rgb[3], 1)
+                text:ClearAllPoints()
+                text:SetPoint("CENTER", surface.anchor, "CENTER", label.x, label.y)
+                text:Show()
+                local wide = Core.Plain(text:GetStringWidth())
+                label.w = type(wide) == "number" and wide > 0 and wide or #label.text * (label.big and 11 or 8)
+                label.h = label.big and 24 or 18
+            end
+        end
+    end
+    for index = words + 1, #surface.words do surface.words[index]:Hide() end
+    for index = stops + 1, #surface.stops do
+        local stop = surface.stops[index]
+        stop.ring:Hide()
+        stop.fill:Hide()
+        stop.number:Hide()
+    end
 end
 
 -- A drawing's segments on the screen (ToScreen: a point of its map to the surface's units, nil off it): a pen's
--- strokes, a line, an arrow with its head, a circle of Draw.SIDES sides.
-local function Segments(drawing, ToScreen, out)
+-- strokes, a line, an arrow with its head, a circle of Draw.SIDES sides, a route's legs; and into labels its words,
+-- or a route's numbered stops.
+local function Segments(drawing, ToScreen, out, labels)
     local points = drawing.points
     local screen = {}
     for index = 1, #points - 1, 2 do
@@ -179,6 +251,19 @@ local function Segments(drawing, ToScreen, out)
         out[#out + 1] = { x1 = x1, y1 = y1, x2 = x2, y2 = y2, thick = thick, rgb = rgb, drawing = drawing }
     end
     local kind = drawing.kind
+    if kind == "text" then
+        if labels and #screen >= 2 then
+            labels[#labels + 1] = { x = screen[1], y = screen[2], text = drawing.text or "", rgb = rgb,
+                                    big = drawing.width == 2, drawing = drawing }
+        end
+        return
+    end
+    if kind == "route" and labels then
+        for index = 1, #screen - 1, 2 do
+            labels[#labels + 1] = { x = screen[index], y = screen[index + 1], stop = (index + 1) / 2, rgb = rgb,
+                                    big = drawing.width == 2, drawing = drawing }
+        end
+    end
     if kind == "circle" and #screen >= 4 then
         local cx, cy = screen[1], screen[2]
         local r = math.sqrt((screen[3] - cx) ^ 2 + (screen[4] - cy) ^ 2)
@@ -242,8 +327,9 @@ function Draw.Place(laidView, onSmall)
     if not canvas then return end
     view, small = laidView, onSmall
     wipe(canvas.placed)
+    wipe(canvas.labels)
     for _, drawing in ipairs(Shown(nil)) do
-        if type(drawing.map) == "number" then Segments(drawing, OnCanvas, canvas.placed) end
+        if type(drawing.map) == "number" then Segments(drawing, OnCanvas, canvas.placed, canvas.labels) end
     end
     Draw.Fit(ns.Canvas.edge)
 end
@@ -257,6 +343,7 @@ end
 function Draw.Clear()
     if not canvas then return end
     wipe(canvas.placed)
+    wipe(canvas.labels)
     Lay(canvas, 0, 0, 0, 0)
 end
 
@@ -292,15 +379,16 @@ local function Pin(index)
     button.icon:SetAllPoints()
     button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalOutline")
     button.label:SetPoint("LEFT", button, "RIGHT", 4, 0)
-    -- with the Move tool on, pressed: dragged (Hold); let go: put down; else a click opens its card
+    -- with a tool on (the eraser's aside), pressed: dragged (Hold); let go: put down (not moved: its card); else a click
+    -- opens its card
     button:SetScript("OnMouseDown", ns.Guard(function(self, mouse)
-        if mouse == "LeftButton" and tool == "move" and self.marker then Hold("floor", self.marker) end
+        if mouse == "LeftButton" and tool and tool ~= "erase" and self.marker then Hold("floor", self.marker) end
     end))
     button:SetScript("OnMouseUp", ns.Guard(function(_, mouse)
         if mouse == "LeftButton" and held then Draw.Release() end
     end))
     button:SetScript("OnClick", ns.Guard(function(self)
-        if tool == "move" then return end
+        if tool and tool ~= "erase" then return end -- (Draw.Release opened it)
         if self.marker then ns.Markers.Open(self.marker) end
     end))
     button:SetScript("OnEnter", ns.Guard(PinTip))
@@ -329,7 +417,8 @@ function Draw.Floor(dungeon, map, art, scale, midX, midY, onSmall)
     end
     floor.ToScreen = OnFloor
     wipe(floor.placed)
-    for _, drawing in ipairs(Shown(map)) do Segments(drawing, OnFloor, floor.placed) end
+    wipe(floor.labels)
+    for _, drawing in ipairs(Shown(map)) do Segments(drawing, OnFloor, floor.placed, floor.labels) end
     local width, height = dungeon:GetSize()
     width, height = width or 0, height or 0
     Lay(floor, -width / 2, width / 2, -height / 2, height / 2)
@@ -360,6 +449,7 @@ function Draw.FloorClear()
     if not floor then return end
     floor.shown = nil
     wipe(floor.placed)
+    wipe(floor.labels)
     Lay(floor, 0, 0, 0, 0)
     for _, button in ipairs(pins) do
         button:Hide()
@@ -419,9 +509,22 @@ local function Nearest(surface, sx, sy)
     return best
 end
 
--- The eraser: the drawing nearest the mouse within Draw.REACH units, away.
+-- The words or the route's stop at a point of the screen (as they were laid: their place and size), the topmost; nil
+-- where none.
+local function LabelAt(surface, sx, sy)
+    local labels = surface == "floor" and floor and floor.labels or canvas.labels
+    for index = #labels, 1, -1 do
+        local label = labels[index]
+        local w, h = label.w or Draw.STOP, label.h or Draw.STOP
+        if math.abs(label.x - sx) <= w / 2 + 2 and math.abs(label.y - sy) <= h / 2 + 2 then return label end
+    end
+    return nil
+end
+
+-- The eraser: the words or the drawing under the mouse (within Draw.REACH units of a line), away.
 local function Erase(surface, sx, sy)
-    local best = Nearest(surface, sx, sy)
+    local label = LabelAt(surface, sx, sy)
+    local best = label and label.drawing or Nearest(surface, sx, sy)
     if best then ns.Plans.Erase(best) end
 end
 
@@ -469,23 +572,36 @@ local function Drag()
         end
         local sx, sy = Screen(held.surface, spot.map, spot.x, spot.y)
         if sx and held.sx and math.abs(sx - held.sx) + math.abs(sy - held.sy) < 1 then return end
-        held.sx, held.sy = sx, sy
+        held.sx, held.sy, held.moved = sx, sy, true
         thing.map, thing.x, thing.y = spot.map, spot.x, spot.y
         return ns.Markers.Changed()
     end
     local x, y = MouseOn(held.surface, thing.map)
     if not x or (x == held.x and y == held.y) then return end
-    local dx, dy, points = x - held.x, y - held.y, thing.points
-    for index = 1, #points - 1, 2 do points[index], points[index + 1] = points[index] + dx, points[index + 1] + dy end
-    held.x, held.y = x, y
+    local points = thing.points
+    if held.stop then
+        -- a route's stop alone: onto the mouse
+        points[2 * held.stop - 1], points[2 * held.stop] = x, y
+    else
+        local dx, dy = x - held.x, y - held.y
+        for index = 1, #points - 1, 2 do points[index], points[index + 1] = points[index] + dx, points[index + 1] + dy end
+    end
+    held.x, held.y, held.moved = x, y, true
     Redraw(held.surface)
 end
 local dragged = ns.Guard(Drag) -- made once
 
--- The Move tool takes a marker or a drawing on a surface; held until the button is let go (Draw.Release).
-local function Hold(surface, marker, drawing)
+-- A press takes a marker or a drawing (or a route's stop) on a surface; held until the button is let go (Draw.Release).
+local function Hold(surface, marker, drawing, stop)
     if not (marker or drawing) then return end
-    held = { surface = surface, thing = marker or drawing, marker = marker ~= nil }
+    held = { surface = surface, thing = marker or drawing, marker = marker ~= nil, stop = stop }
+    if marker then
+        -- where it was pressed: a marker goes only once the mouse goes from there (pressed and let go: its card)
+        local a, b, c = Mouse(surface)
+        local map, x, y
+        if surface == "floor" then map, x, y = a, b, c else map, x, y = a and a.map, a and a.x, a and a.y end
+        if map and x then held.sx, held.sy = Screen(surface, map, x, y) end
+    end
     if drawing then
         held.x, held.y = MouseOn(surface, drawing.map)
         if not held.x then
@@ -496,6 +612,71 @@ local function Hold(surface, marker, drawing)
     stroker = stroker or CreateFrame("Frame")
     stroker:SetScript("OnUpdate", dragged)
     Draw.stroker = stroker -- (for the tests)
+end
+
+-- What stands at a point of the screen, taken to be dragged: a marker first (they stand over all), then words or a
+-- route's stop, then a drawing's line. True when something was taken.
+local function Grab(surface, sx, sy)
+    local marker = MarkerAt(surface, sx, sy)
+    if marker then
+        Hold(surface, marker)
+        return true
+    end
+    local label = LabelAt(surface, sx, sy)
+    if label then
+        Hold(surface, nil, label.drawing, label.stop)
+        return held ~= nil
+    end
+    local drawing = Nearest(surface, sx, sy)
+    if drawing then
+        Hold(surface, nil, drawing)
+        return held ~= nil
+    end
+    return false
+end
+
+-- The press on a pin of the map with a tool on (Canvas.lua): what stands under the mouse taken to be dragged (a
+-- marker's pin: the marker); false where nothing is (the pin's own click goes on).
+function Draw.Grab()
+    if not tool or tool == "erase" then return false end
+    local spot = Mouse("canvas")
+    if type(spot) ~= "table" or not spot.map or not spot.x then return false end
+    local sx, sy = Screen("canvas", spot.map, spot.x, spot.y)
+    return sx ~= nil and Grab("canvas", sx, sy)
+end
+
+local function Round(value) return math.floor(value * 10000 + 0.5) / 10000 end
+
+-- The route tool's click: a stop more on the route under way (on its own map, wherever the mouse is in its plane),
+-- else a route begun there, its first stop.
+local function AddStop(surface, map, x, y)
+    if route then
+        local kept = false
+        for _, drawing in ipairs(ns.Plans.Drawings()) do kept = kept or drawing == route end
+        if not kept or routeOn ~= surface then route = nil end
+    end
+    if route then
+        local rx, ry = MouseOn(surface, route.map)
+        if rx then
+            local points = route.points
+            if #points >= ns.Plans.POINTS * 2 then return UIErrorsFrame:AddMessage(Draw.TEXT.full, 1, 0.82, 0) end
+            points[#points + 1], points[#points + 2] = Round(rx), Round(ry)
+            return Redraw(surface)
+        end
+    end
+    route = ns.Plans.Add({ map = map, kind = "route", colour = Draw.Colour(), width = Draw.Width(), points = { x, y } })
+    routeOn = surface
+end
+
+-- The text tool's click: the words asked for (the game's box), then put there in the palette's colour and width.
+local function AddWords(map, x, y)
+    local colour, width, plan = Draw.Colour(), Draw.Width(), ns.Plans.Active().id
+    Core.AskText(Draw.TEXT.wordsAsk, nil, nil, "", ns.Guard(function(text)
+        text = tostring(text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+        if text == "" then return end
+        ns.Plans.Add({ map = map, kind = "text", colour = colour, width = width, plan = plan, points = { x, y },
+                       text = text:sub(1, Draw.WORDS_MOST) })
+    end), Draw.WORDS_MOST)
 end
 
 -- Each frame while the button is held: the drawing under way follows the mouse.
@@ -543,21 +724,18 @@ local function Press(surface)
     local a, b, c = Mouse(surface)
     local map, x, y
     if surface == "floor" then map, x, y = a, b, c else map, x, y = a and a.map, a and a.x, a and a.y end
-    if tool == "marker" then
-        if map and x then return ns.Markers.New({ map = map, x = x, y = y }) end
-        return UIErrorsFrame:AddMessage(Draw.TEXT.noPlace, 1, 0.1, 0.1)
-    end
-    if tool == "erase" or tool == "move" then
-        local sx, sy
-        if map and x then sx, sy = Screen(surface, map, x, y) end
-        if not sx then return end
-        if tool == "erase" then return Erase(surface, sx, sy) end
-        -- the Move tool: the marker under the mouse first (they stand over the drawings), else the drawing
-        local marker = MarkerAt(surface, sx, sy)
-        Hold(surface, marker, not marker and Nearest(surface, sx, sy) or nil)
+    local sx, sy
+    if map and x then sx, sy = Screen(surface, map, x, y) end
+    if tool == "erase" then
+        if sx then Erase(surface, sx, sy) end
         return
     end
+    -- what stands there already is dragged to a new place, whatever the tool (Saneroki, 2026-11-15)
+    if sx and Grab(surface, sx, sy) then return end
     if not (map and x) then return UIErrorsFrame:AddMessage(Draw.TEXT.noPlace, 1, 0.1, 0.1) end
+    if tool == "marker" then return ns.Markers.New({ map = map, x = x, y = y }) end
+    if tool == "route" then return AddStop(surface, map, x, y) end
+    if tool == "text" then return AddWords(map, x, y) end
     Begin(surface, map, x, y)
     Redraw(surface)
 end
@@ -578,12 +756,16 @@ end
 -- units on the screen), else let go of.
 function Draw.Release()
     if held then
-        -- what the Move tool held: put down where the mouse let go of it (kept as it is: the saved settings hold it)
+        -- what a press held: put down where the mouse let go of it (kept as it is: the saved settings hold it); a
+        -- marker pressed and let go without going anywhere: its card
         Drag()
         local was = held
         held = nil
         if stroker then stroker:SetScript("OnUpdate", nil) end
-        if was.marker then return ns.Markers.Changed() end
+        if was.marker then
+            if not was.moved then return ns.Markers.Open(was.thing) end
+            return ns.Markers.Changed()
+        end
         return Redraw(was.surface)
     end
     local drawing = current

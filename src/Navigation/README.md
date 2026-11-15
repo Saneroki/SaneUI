@@ -354,11 +354,14 @@ and shows them on the map or puts the map pin there. The plan is in
   your character. A search that runs into an error says so in the list and stops nothing: the map goes on, and the
   next key searches again (the error is in `/sane errors`).
 - **Your own markers** (Saneroki, 2026-11-15): **Alt and a click** on the map (small or full) puts a marker there and
-  opens its card: write its title and its description, pick its icon (the game's eight raid marks; for a dungeon's
-  way a boss, an elite, a skull, a door, stairs up and down, a jump, a portal, a trap, a chest, a locked chest, a key;
-  for the group a tank, a healer, damage, a summoning stone, a rallying banner, a lookout; fire, water, sneak, run, a
-  bomb, a question; a quest's !, a herb, an ore, an inn: Saneroki, 2026-11-15, "more custom map marker pin icon
-  options? like Doors, stairs, bosses, chests, jumps etc"), Save (Enter in the title too) or Cancel (a new one cancelled goes again). On the
+  opens its card: write its title and its description, pick its icon, the icons in groups each under its title
+  (Saneroki, 2026-11-15: "grouping them up together so similar things like class and roll icons, raid marks, etc are
+  grouped together to make it easier to find them"): *Raid marks*; *Roles and classes* (tank, healer, damage, the nine
+  classes, in Forever's own look); *Calls* (the game's pings: attack, assist, on my way, warning, threat, safe; a
+  target, an eye, turn, an arrow, yes, no); *Crowd control* (sleep, sheep, stun, kick); *The way through* (a boss, an
+  elite, a skull, a door, stairs up and down, a jump, a portal, a trap, a chest, a locked chest, a key, the end);
+  *What to mind* (fire, water, sneak, run, a bomb, a summoning stone, a rallying banner, a lookout, food, drink, a
+  question); *The world* (a quest's !, a herb, an ore, an inn); all the game's own pictures. Save (Enter in the title too) or Cancel (a new one cancelled goes again). On the
   map it stands in its icon at every zoom, its title beside it on the full map; the mouse on it shows its title and
   description; **a click** opens its card again (its icon, title, description, the zone and the day you put it) with
   four buttons: Edit, Move (then click on the map where it should stand, a drawing tool on or not; a right click: it
@@ -373,10 +376,15 @@ and shows them on the map or puts the map pin there. The plan is in
   menu folding out (**Draw in it**, **Rename**, **Share**, **Delete**), then **Draw on the map** and **New sketch**.
   Draw on the map opens a small palette at the top right, under the bar (drag it by its head). Its tools: **Marker** (a click: a marker
   there, its card to write in), **Pen** (drag: a line as the mouse goes), **Line**, **Arrow** (drag: from where you
-  begin to where you let go), **Circle** (drag: round where you begin, as wide as you drag), **Move** (drag a marker or a
-  drawing to its new place, on the map and on a dungeon's floor: Saneroki, 2026-11-15, "if the drawings and map
-  markers are dragable to reposition them, during the mode where you can draw on the map then that is perfect") and
-  **Eraser** (a click on a drawing: away); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
+  begin to where you let go), **Circle** (drag: round where you begin, as wide as you drag), **Route** (clicks: a numbered
+  stop at each, a line between them; the tool chosen again begins a new route: Saneroki, 2026-11-15, "activate it and
+  click a couple of times on the map and it shows you the positions with the number and line inbetween"), **Text** (a
+  click: words there, asked for, in the colour and width chosen: "I also want to be able to add plain text to the
+  drawings") and **Eraser** (a click on a drawing or words: away). **Dragging:** while any other tool is on, a press
+  on what stands on the map drags it to a new place, on the map and on a dungeon's floor ("While in edit mode I want
+  to be able to drag the markers, texts, lines, etc to new positions ... without activating a specific move
+  button"): a marker (pressed and let go without moving: its card), words, a route's stop (that stop alone), any
+  drawing (all of it); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
   thick width. While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
   steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
@@ -1471,6 +1479,13 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, dragging in edit mode; the Text and Route tools; the icons in groups:** Saneroki, with another addon's
+  marker icons and numbered route as input: "Can we also make it a little more userfriendly by grouping them up
+  together"; "the option to activate a custom "route" where you activate it and click a couple of times on the map
+  and it shows you the positions with the number and line inbetween"; "I also want to be able to add plain text";
+  "While in edit mode I want to be able to drag the markers, texts, lines, etc to new positions" (the Move tool went:
+  `Draw` `Grab`, `LabelAt`, `AddStop`, `AddWords`; `Plans.KINDS` route and text, a row's eighth field the words;
+  `Markers.ICON_GROUPS`, 65 icons).
 - **2026-11-15, the Move tool; more marker icons:** Saneroki: "can you make it possible that map markers are draggable
   so you can move them to a different position? the current move button on the map markers does not work" (with a
   tool on, the press was the tool's: the card's Move now takes the click first; `Draw` `Hold`, `Drag`, `MarkerAt`,

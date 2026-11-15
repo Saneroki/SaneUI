@@ -47,8 +47,9 @@ ns.Markers = Markers
 Markers.WIDTH = 320          -- the card's width
 Markers.WORDS = 96           -- the words' box, editing: its height
 Markers.ICON = 32            -- the marker's icon on its card
-Markers.PICK = 26            -- an icon to pick, editing
-Markers.PER_ROW = 9          -- icons to pick in a row
+Markers.PICK = 24            -- an icon to pick, editing
+Markers.PICK_GAP = 4         -- between two
+Markers.PER_ROW = 10         -- icons to pick in a row
 Markers.BUTTON = 30          -- the card's grey square buttons
 Markers.TITLE_MOST, Markers.TEXT_MOST = 60, 1000 -- letters a title and its words hold at most
 Markers.KIND = "M"           -- the wire's kind of markers shared
@@ -60,34 +61,71 @@ Markers.OFFER = 300          -- the offer card's width
 -- stairs, bosses, chests, jumps etc"), all in Forever's client. cut: a spell icon's frame cut off. A key is kept with
 -- a marker and shared: never renamed; a key not known here (an older or newer copy) shows the first.
 local ICON_CUT = 0.08
+local I = "Interface\\Icons\\"
+-- The groups the card's picker shows them in, in order, each under its title (Saneroki, 2026-11-15: "grouping them up
+-- together so similar things like class and roll icons, raid marks, etc are grouped together to make it easier to
+-- find them").
+Markers.ICON_GROUPS = {
+    { "marks", "Raid marks" }, { "group", "Roles and classes" }, { "calls", "Calls" }, { "control", "Crowd control" },
+    { "way", "The way through" }, { "mind", "What to mind" }, { "world", "The world" },
+}
+-- alt: the plain version of an atlas Forever draws in its own look (-c60), for a client without it (Retail).
+local function Class(key) return { key = key, group = "group", atlas = "groupfinder-icon-class-" .. key .. "-c60",
+                                   alt = "groupfinder-icon-class-" .. key } end
 Markers.ICONS = {
-    { key = "star", texture = 137001 }, { key = "circle", texture = 137002 }, { key = "diamond", texture = 137003 },
-    { key = "triangle", texture = 137004 }, { key = "moon", texture = 137005 }, { key = "square", texture = 137006 },
-    { key = "cross", texture = 137007 }, { key = "skull", texture = 137008 },
-    -- the dungeon's way
-    { key = "boss", atlas = "vignettekillboss" }, { key = "elite", atlas = "vignettekillelite" },
-    { key = "danger", atlas = "dungeonskull" }, { key = "door", atlas = "poi-door" },
-    { key = "up", atlas = "poi-door-arrow-up" }, { key = "down", atlas = "poi-door-arrow-down" },
-    { key = "jump", texture = "Interface\\Icons\\Ability_HeroicLeap", cut = ICON_CUT },
-    { key = "portal", texture = "Interface\\Icons\\Spell_Arcane_TeleportStormWind", cut = ICON_CUT },
-    { key = "trap", atlas = "vehicle-trap-red" },
-    { key = "chest", atlas = "vignetteloot" }, { key = "locked", atlas = "vignetteloot-locked" },
-    { key = "key", texture = "Interface\\Icons\\INV_Misc_Key_03", cut = ICON_CUT },
-    -- the group
-    { key = "tank", atlas = "groupfinder-icon-role-large-tank" }, { key = "healer", atlas = "groupfinder-icon-role-large-heal" },
-    { key = "damage", atlas = "groupfinder-icon-role-large-dps" }, { key = "summon", atlas = "Raid-Icon-SummonPending" },
-    { key = "rally", texture = "Interface\\Icons\\INV_BannerPVP_02", cut = ICON_CUT },
-    { key = "lookout", texture = "Interface\\Icons\\INV_Misc_Spyglass_03", cut = ICON_CUT },
-    -- what to mind
-    { key = "fire", texture = "Interface\\Icons\\Spell_Fire_Fire", cut = ICON_CUT },
-    { key = "water", texture = "Interface\\Icons\\Ability_Druid_AquaticForm", cut = ICON_CUT },
-    { key = "sneak", texture = "Interface\\Icons\\Ability_Stealth", cut = ICON_CUT },
-    { key = "run", texture = "Interface\\Icons\\Ability_Rogue_Sprint", cut = ICON_CUT },
-    { key = "bomb", texture = "Interface\\Icons\\INV_Misc_Bomb_04", cut = ICON_CUT },
-    { key = "unknown", texture = "Interface\\Icons\\INV_Misc_QuestionMark", cut = ICON_CUT },
+    { key = "star", group = "marks", texture = 137001 }, { key = "circle", group = "marks", texture = 137002 },
+    { key = "diamond", group = "marks", texture = 137003 }, { key = "triangle", group = "marks", texture = 137004 },
+    { key = "moon", group = "marks", texture = 137005 }, { key = "square", group = "marks", texture = 137006 },
+    { key = "cross", group = "marks", texture = 137007 }, { key = "skull", group = "marks", texture = 137008 },
+    -- the group: roles, then the classes
+    { key = "tank", group = "group", atlas = "groupfinder-icon-role-large-tank-c60", alt = "groupfinder-icon-role-large-tank" },
+    { key = "healer", group = "group", atlas = "groupfinder-icon-role-large-heal-c60", alt = "groupfinder-icon-role-large-heal" },
+    { key = "damage", group = "group", atlas = "groupfinder-icon-role-large-dps-c60", alt = "groupfinder-icon-role-large-dps" },
+    Class("warrior"), Class("paladin"), Class("hunter"), Class("rogue"), Class("priest"), Class("shaman"),
+    Class("mage"), Class("warlock"), Class("druid"),
+    -- calls: the game's pings, and what to do there
+    { key = "attack", group = "calls", atlas = "ping_marker_icon_attack" },
+    { key = "assist", group = "calls", atlas = "ping_marker_icon_assist" },
+    { key = "onmyway", group = "calls", atlas = "ping_marker_icon_onmyway" },
+    { key = "warning", group = "calls", atlas = "ping_marker_icon_warning" },
+    { key = "threat", group = "calls", atlas = "ping_marker_icon_threat" },
+    { key = "safe", group = "calls", atlas = "ping_marker_icon_nonthreat" },
+    { key = "target", group = "calls", atlas = "TargetCrosshairs" },
+    { key = "watch", group = "calls", atlas = "UI_Editor_Eye_Icon" },
+    { key = "turn", group = "calls", atlas = "common-icon-rotateright" },
+    { key = "arrow", group = "calls", atlas = "common-icon-forwardarrow" },
+    { key = "yes", group = "calls", atlas = "common-icon-checkmark" },
+    { key = "no", group = "calls", atlas = "common-icon-redx" },
+    -- crowd control
+    { key = "sleep", group = "control", texture = I .. "Spell_Nature_Sleep", cut = ICON_CUT },
+    { key = "sheep", group = "control", texture = I .. "Spell_Nature_Polymorph", cut = ICON_CUT },
+    { key = "stun", group = "control", texture = I .. "Spell_Frost_Stun", cut = ICON_CUT },
+    { key = "kick", group = "control", texture = I .. "Ability_Kick", cut = ICON_CUT },
+    -- the way through a dungeon
+    { key = "boss", group = "way", atlas = "vignettekillboss" }, { key = "elite", group = "way", atlas = "vignettekillelite" },
+    { key = "danger", group = "way", atlas = "dungeonskull" }, { key = "door", group = "way", atlas = "poi-door" },
+    { key = "up", group = "way", atlas = "poi-door-arrow-up" }, { key = "down", group = "way", atlas = "poi-door-arrow-down" },
+    { key = "jump", group = "way", texture = I .. "Ability_HeroicLeap", cut = ICON_CUT },
+    { key = "portal", group = "way", texture = I .. "Spell_Arcane_TeleportStormWind", cut = ICON_CUT },
+    { key = "trap", group = "way", atlas = "vehicle-trap-red" },
+    { key = "chest", group = "way", atlas = "vignetteloot" }, { key = "locked", group = "way", atlas = "vignetteloot-locked" },
+    { key = "key", group = "way", texture = I .. "INV_Misc_Key_03", cut = ICON_CUT },
+    { key = "finish", group = "way", atlas = "crossedflags" },
+    -- what to mind on the way
+    { key = "fire", group = "mind", texture = I .. "Spell_Fire_Fire", cut = ICON_CUT },
+    { key = "water", group = "mind", texture = I .. "Ability_Druid_AquaticForm", cut = ICON_CUT },
+    { key = "sneak", group = "mind", texture = I .. "Ability_Stealth", cut = ICON_CUT },
+    { key = "run", group = "mind", texture = I .. "Ability_Rogue_Sprint", cut = ICON_CUT },
+    { key = "bomb", group = "mind", texture = I .. "INV_Misc_Bomb_04", cut = ICON_CUT },
+    { key = "summon", group = "mind", atlas = "Raid-Icon-SummonPending" },
+    { key = "rally", group = "mind", texture = I .. "INV_BannerPVP_02", cut = ICON_CUT },
+    { key = "lookout", group = "mind", texture = I .. "INV_Misc_Spyglass_03", cut = ICON_CUT },
+    { key = "food", group = "mind", texture = I .. "INV_Misc_Food_15", cut = ICON_CUT },
+    { key = "drink", group = "mind", texture = I .. "INV_Drink_05", cut = ICON_CUT },
+    { key = "unknown", group = "mind", texture = I .. "INV_Misc_QuestionMark", cut = ICON_CUT },
     -- the world
-    { key = "quest", atlas = "questnormal" }, { key = "herb", atlas = "professions_tracking_herb" },
-    { key = "ore", atlas = "professions_tracking_ore" }, { key = "inn", atlas = "innkeeper" },
+    { key = "quest", group = "world", atlas = "questnormal" }, { key = "herb", group = "world", atlas = "professions_tracking_herb" },
+    { key = "ore", group = "world", atlas = "professions_tracking_ore" }, { key = "inn", group = "world", atlas = "innkeeper" },
 }
 Markers.TEXT = {
     new = "New marker",
@@ -160,6 +198,10 @@ Markers.Icon = Icon
 -- An icon on a texture: the raid mark's or spell icon's file (a spell icon's frame cut off), else the map icon's atlas.
 local function Paint(texture, key)
     local icon = Icon(key)
+    if not icon.texture and icon.alt and not Look.Has(icon.atlas) then
+        texture:SetTexCoord(0, 1, 0, 1)
+        return texture:SetAtlas(icon.alt)
+    end
     if icon.texture then
         texture:SetTexture(icon.texture)
         local cut = icon.cut or 0
@@ -247,6 +289,27 @@ local function Light()
         if button.key == picked then button:LockHighlight() else button:UnlockHighlight() end
         button.box:SetStrong(button.key == picked)
     end
+end
+
+-- An icon's button in the card's picker: its outline, its picture, lit while it is the one picked.
+local function Pick(icon)
+    local button = CreateFrame("Button", nil, editing)
+    button:SetSize(Markers.PICK, Markers.PICK)
+    button.box = Look.Outline(button)
+    local texture = button:CreateTexture(nil, "ARTWORK")
+    texture:SetPoint("CENTER")
+    texture:SetSize(Markers.PICK - 6, Markers.PICK - 6)
+    Paint(texture, icon.key)
+    local light = button:CreateTexture(nil, "HIGHLIGHT")
+    light:SetAllPoints()
+    light:SetColorTexture(Look.SHADE[1], Look.SHADE[2], Look.SHADE[3], Look.SHADE[4])
+    button.key = icon.key
+    button:SetScript("OnClick", ns.Guard(function()
+        picked = icon.key
+        Light()
+    end))
+    editing.icons[#editing.icons + 1] = button
+    return button
 end
 
 local function Edit(marker)
@@ -460,29 +523,26 @@ local function Build()
     words:SetMaxLetters(Markers.TEXT_MOST)
     y = y - Markers.WORDS - 8
     Label(Markers.TEXT.icon)
+    -- the icons by group, each under its title, Markers.PER_ROW in a row
     editing.icons = {}
-    for index, icon in ipairs(Markers.ICONS) do
-        local button = CreateFrame("Button", nil, editing)
-        button:SetSize(Markers.PICK, Markers.PICK)
-        local column, row = (index - 1) % Markers.PER_ROW, math.floor((index - 1) / Markers.PER_ROW)
-        button:SetPoint("TOPLEFT", column * (Markers.PICK + 6), y - row * (Markers.PICK + 6))
-        button.box = Look.Outline(button)
-        local texture = button:CreateTexture(nil, "ARTWORK")
-        texture:SetPoint("CENTER")
-        texture:SetSize(Markers.PICK - 6, Markers.PICK - 6)
-        Paint(texture, icon.key)
-        local light = button:CreateTexture(nil, "HIGHLIGHT")
-        light:SetAllPoints()
-        light:SetColorTexture(Look.SHADE[1], Look.SHADE[2], Look.SHADE[3], Look.SHADE[4])
-        button.key = icon.key
-        button:SetScript("OnClick", ns.Guard(function()
-            picked = icon.key
-            Light()
-        end))
-        editing.icons[index] = button
+    local step = Markers.PICK + Markers.PICK_GAP
+    for _, group in ipairs(Markers.ICON_GROUPS) do
+        local title = editing:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        title:SetPoint("TOPLEFT", 0, y)
+        title:SetText(group[2])
+        y = y - 14
+        local count = 0
+        for _, icon in ipairs(Markers.ICONS) do
+            if icon.group == group[1] then
+                count = count + 1
+                local column, row = (count - 1) % Markers.PER_ROW, math.floor((count - 1) / Markers.PER_ROW)
+                local button = Pick(icon)
+                button:SetPoint("TOPLEFT", column * step, y - row * step)
+            end
+        end
+        y = y - math.ceil(count / Markers.PER_ROW) * step - 4
     end
-    local rows = math.ceil(#Markers.ICONS / Markers.PER_ROW)
-    y = y - rows * (Markers.PICK + 6) - 6
+    y = y - 2
     local save = Look.Red(editing, Markers.TEXT.save, 100)
     save:SetPoint("TOPLEFT", 0, y)
     save:SetScript("OnClick", ns.Guard(Save))

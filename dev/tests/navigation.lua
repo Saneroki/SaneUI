@@ -9218,8 +9218,9 @@ end)()
     frame._scripts.OnMouseUp(frame, "LeftButton")
     check(#Plans.Drawings() == count, "a line too short to see: not kept")
     -- the eraser takes the line under the mouse
-    check(Draw.TOOLS[6] == "move" and Draw.TOOLS[7] == "erase", "the tools: Move before the eraser")
-    palette.tools[7]._scripts.OnClick(palette.tools[7])
+    check(Draw.TOOLS[6] == "route" and Draw.TOOLS[7] == "text" and Draw.TOOLS[8] == "erase" and #Draw.TOOLS == 8,
+        "the tools: route and text before the eraser; no Move tool")
+    palette.tools[8]._scripts.OnClick(palette.tools[8])
     At(0.4, 0.35)
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
@@ -9243,31 +9244,29 @@ end)()
     Plans.Show(first, true)
     Canvas.Layout()
     check(Lines() > 0, "shown again")
-    -- the Move tool (Saneroki, 2026-11-15: "map markers are draggable so you can move them to a different position";
-    -- "if the drawings and map markers are dragable to reposition them, during the mode where you can draw"): a
-    -- drawing dragged along, every point by as much; a marker dragged to where the mouse lets go
+    -- Dragging while a tool is on (Saneroki, 2026-11-15: "While in edit mode I want to be able to drag the markers,
+    -- texts, lines, etc to new positions ... without activating a specific move button"): a press on a drawing drags
+    -- it, every point along, whatever the tool; on a marker drags the marker; a marker pressed and let go: its card
     ;(function()
+        local function Drag(fromX, fromY, toX, toY)
+            At(fromX, fromY)
+            frame._scripts.OnMouseDown(frame, "LeftButton")
+            At(toX, toY)
+            Step()
+            frame._scripts.OnMouseUp(frame, "LeftButton")
+        end
         palette.tools[3]._scripts.OnClick(palette.tools[3])
-        At(0.5, 0.5)
-        frame._scripts.OnMouseDown(frame, "LeftButton")
-        At(0.6, 0.5)
-        Step()
-        frame._scripts.OnMouseUp(frame, "LeftButton")
+        Drag(0.5, 0.5, 0.6, 0.5)
         local moving = Plans.Drawings()[#Plans.Drawings()]
         local x1, y1, x2, y2 = moving.points[1], moving.points[2], moving.points[3], moving.points[4]
-        palette.tools[6]._scripts.OnClick(palette.tools[6])
-        check(Draw.Tool() == "move", "the Move tool on")
-        At(0.55, 0.5)
-        frame._scripts.OnMouseDown(frame, "LeftButton")
-        check(Draw.Busy(), "pressed on a drawing: held")
-        At(0.55, 0.6)
-        Step()
-        frame._scripts.OnMouseUp(frame, "LeftButton")
-        check(not Draw.Busy() and Close(moving.points[1], x1) and Close(moving.points[2], y1 + 0.1)
-            and Close(moving.points[3], x2) and Close(moving.points[4], y2 + 0.1),
-            "dragged: the drawing moved along with the mouse, every point by as much")
+        local drawings = #Plans.Drawings()
+        palette.tools[2]._scripts.OnClick(palette.tools[2])
+        Drag(0.55, 0.5, 0.55, 0.6)
+        check(not Draw.Busy() and #Plans.Drawings() == drawings and Close(moving.points[1], x1)
+            and Close(moving.points[2], y1 + 0.1) and Close(moving.points[3], x2) and Close(moving.points[4], y2 + 0.1),
+            "the pen on, a press on a line: the line dragged along, every point by as much; nothing drawn")
         check(Plans.Undo(), "(the line taken away again)")
-        -- a marker: made with the marker tool, then dragged
+        -- a marker: made with the marker tool, dragged with it on, a click on it its card
         palette.tools[1]._scripts.OnClick(palette.tools[1])
         At(0.7, 0.7)
         frame._scripts.OnMouseDown(frame, "LeftButton")
@@ -9275,17 +9274,16 @@ end)()
         local marker = Markers.List()[#Markers.List()]
         Markers.card.editing.save._scripts.OnClick(Markers.card.editing.save)
         Markers.Close()
-        palette.tools[6]._scripts.OnClick(palette.tools[6])
-        At(0.7, 0.7)
-        frame._scripts.OnMouseDown(frame, "LeftButton")
-        At(0.72, 0.76)
-        Step()
-        frame._scripts.OnMouseUp(frame, "LeftButton")
-        check(marker.map == 1429 and Close(marker.x, 0.72) and Close(marker.y, 0.76) and not Draw.Busy(),
-            "a marker dragged with the Move tool: it stands where the mouse let go")
-        -- its card's Move with a tool on: the click on the map puts it there, no new marker
-        palette.tools[1]._scripts.OnClick(palette.tools[1])
         local markers = #Markers.List()
+        Drag(0.7, 0.7, 0.72, 0.76)
+        check(marker.map == 1429 and Close(marker.x, 0.72) and Close(marker.y, 0.76) and not Draw.Busy()
+            and #Markers.List() == markers and not Markers.card:IsShown(),
+            "the marker tool on, a press on a marker: dragged to where the mouse let go, no new one")
+        Drag(0.72, 0.76, 0.72, 0.76)
+        check(Markers.card:IsShown() and Close(marker.x, 0.72) and #Markers.List() == markers,
+            "pressed and let go where it was: its card")
+        Markers.Close()
+        -- its card's Move with a tool on: the click on the map puts it there, no new marker
         Markers.Open(marker)
         Markers.card.reading.buttons[2]._scripts.OnClick(Markers.card.reading.buttons[2])
         At(0.65, 0.6)
@@ -9294,13 +9292,103 @@ end)()
         check(Close(marker.x, 0.65) and Close(marker.y, 0.6) and #Markers.List() == markers and not Markers.Moving(),
             "its card's Move with the marker tool on: the click puts it there, no new marker")
         Markers.Remove(marker)
-        -- more icons: doors, stairs, bosses, chests, a jump, the group's roles; a spell icon's frame cut off
-        local keys = {}
-        for _, icon in ipairs(Markers.ICONS) do keys[icon.key] = icon end
-        check(keys.door and keys.up and keys.down and keys.boss and keys.chest and keys.locked and keys.jump
-            and keys.tank and keys.healer and keys.damage and keys.trap and keys.portal and #Markers.ICONS >= 30
-            and keys.jump.cut and Markers.Icon("nothing known") == Markers.ICONS[1],
-            "the marker icons: doors, stairs, bosses, chests, a jump, the roles and more; an unknown key the first")
+
+        -- the text tool (Saneroki: "I also want to be able to add plain text to the drawings"): the words asked for,
+        -- put there in the palette's colour, laid on the map; dragged like the rest; the eraser takes them
+        local ask = Core.AskText
+        Core.AskText = function(_, _, _, _, done) done("  Pull to the left  ") end
+        palette.tools[7]._scripts.OnClick(palette.tools[7])
+        At(0.3, 0.6)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        Core.AskText = ask
+        Canvas.Layout()
+        local words = Plans.Drawings()[#Plans.Drawings()]
+        local laid
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "FontString" and widget._shown and widget._text == "Pull to the left" then laid = widget end
+        end
+        check(words.kind == "text" and words.text == "Pull to the left" and Close(words.points[1], 0.3)
+            and Close(words.points[2], 0.6) and laid, "the text tool: the words asked for, kept and laid on the map")
+        Drag(0.3, 0.6, 0.35, 0.65)
+        check(Close(words.points[1], 0.35) and Close(words.points[2], 0.65), "the words dragged to a new place")
+        palette.tools[8]._scripts.OnClick(palette.tools[8])
+        At(0.35, 0.65)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        local gone = true
+        for _, drawing in ipairs(Plans.Drawings()) do if drawing == words then gone = false end end
+        check(gone, "the eraser on the words: away")
+
+        -- the route tool (Saneroki: "activate it and click a couple of times on the map and it shows you the positions
+        -- with the number and line inbetween"): clicks a stop each, numbered, a line between; the tool chosen again, a
+        -- new route; a stop dragged alone
+        palette.tools[6]._scripts.OnClick(palette.tools[6])
+        local before = #Plans.Drawings()
+        for _, at in ipairs({ { 0.2, 0.2 }, { 0.3, 0.25 }, { 0.4, 0.2 } }) do
+            At(at[1], at[2])
+            frame._scripts.OnMouseDown(frame, "LeftButton")
+            frame._scripts.OnMouseUp(frame, "LeftButton")
+        end
+        Canvas.Layout()
+        local way = Plans.Drawings()[#Plans.Drawings()]
+        local numbers = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "FontString" and widget._shown and (widget._text == 1 or widget._text == 2 or widget._text == 3) then
+                numbers[widget._text] = true
+            end
+        end
+        check(#Plans.Drawings() == before + 1 and way.kind == "route" and #way.points == 6 and Close(way.points[3], 0.3)
+            and numbers[1] and numbers[2] and numbers[3], "three clicks: one route of three numbered stops")
+        Drag(0.3, 0.25, 0.3, 0.35)
+        check(Close(way.points[3], 0.3) and Close(way.points[4], 0.35) and Close(way.points[1], 0.2)
+            and Close(way.points[6], 0.2) and #Plans.Drawings() == before + 1, "a stop dragged: that stop alone moved")
+        palette.tools[6]._scripts.OnClick(palette.tools[6])
+        palette.tools[6]._scripts.OnClick(palette.tools[6])
+        At(0.6, 0.2)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        check(#Plans.Drawings() == before + 2 and #Plans.Drawings()[#Plans.Drawings()].points == 2,
+            "the tool chosen again: a new route begun")
+        Plans.Erase(Plans.Drawings()[#Plans.Drawings()])
+        Plans.Erase(way)
+
+        -- words and a route shared: their rows read back whole
+        local Wire = Core.Wire
+        local sendBlock, sent = Wire.SendBlock, {}
+        Wire.SendBlock = function(kind, text) sent[#sent + 1] = text return true end
+        local sketch = Plans.New("Words and ways")
+        Plans.Add({ map = 1429, kind = "text", colour = "red", width = 2, points = { 0.5, 0.5 }, text = "Wait here" })
+        Plans.Add({ map = 1429, kind = "route", colour = "gold", width = 1, points = { 0.1, 0.1, 0.2, 0.2 } })
+        Plans.Share(sketch, "GUILD")
+        Wire.SendBlock = sendBlock
+        local share = Plans.Read("Brannoc Steelvein", (sent[1]:gsub("^2\030[^\031]*", "2\030Player-1-0000BEEF:p8")))
+        local kinds = {}
+        for _, drawing in ipairs(share and share.drawings or {}) do kinds[drawing.kind] = drawing end
+        check(kinds.text and kinds.text.text == "Wait here" and kinds.text.width == 2 and #kinds.text.points == 2
+            and kinds.route and #kinds.route.points == 4, "shared: the words with their text, the route with its stops")
+        Plans.Remove(sketch)
+        Plans.SetActive(first)
+
+        -- the icons in groups, each under its title on the card (Saneroki: "grouping them up together so similar
+        -- things like class and roll icons, raid marks, etc are grouped together")
+        local groups, keys, unknown = {}, {}, false
+        for _, group in ipairs(Markers.ICON_GROUPS) do groups[group[1]] = 0 end
+        for _, icon in ipairs(Markers.ICONS) do
+            keys[icon.key] = icon
+            if groups[icon.group] then groups[icon.group] = groups[icon.group] + 1 else unknown = true end
+        end
+        check(not unknown and groups.marks == 8 and groups.group == 12 and groups.calls >= 10 and groups.way >= 12
+            and keys.warrior and keys.druid and keys.door and keys.up and keys.jump and keys.attack and keys.sleep
+            and #Markers.ICONS >= 60 and Markers.Icon("nothing known") == Markers.ICONS[1],
+            "the icons: raid marks, roles and classes, calls, crowd control, the way, what to mind, the world")
+        local titles = {}
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "FontString" and widget._parent == Markers.card.editing then titles[widget._text or ""] = true end
+        end
+        local all = true
+        for _, group in ipairs(Markers.ICON_GROUPS) do all = all and titles[group[2]] == true end
+        check(all and #Markers.card.editing.icons == #Markers.ICONS, "the card's picker: every group under its title")
         local texture = W.NewWidget("Texture")
         Markers.Paint(texture, "jump")
         check(texture._coords and Close(texture._coords[1], keys.jump.cut), "a spell icon painted with its frame cut off")

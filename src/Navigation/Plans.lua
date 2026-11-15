@@ -35,7 +35,8 @@ local Core = SaneUI.Core
 local Plans = {}
 ns.Plans = Plans
 
-Plans.KINDS = { pen = true, line = true, arrow = true, circle = true }
+Plans.KINDS = { pen = true, line = true, arrow = true, circle = true, route = true, text = true }
+Plans.ONE = { route = true, text = true } -- the kinds one point makes (a route's first stop, words)
 -- The colours to draw in, in the palette's order (the game's own where it has them: its gold, its raid warning's red).
 Plans.COLOURS = {
     { key = "gold", rgb = { 1, 0.82, 0 } }, { key = "red", rgb = { 1, 0.15, 0.1 } },
@@ -175,7 +176,8 @@ function Plans.Add(drawing)
     local points = {}
     for index, value in ipairs(drawing.points) do points[index] = math.floor(value * 10000 + 0.5) / 10000 end
     local kept = { id = Number("drawingNext"), plan = drawing.plan or Plans.Active().id, map = drawing.map,
-                   kind = drawing.kind, colour = drawing.colour, width = drawing.width, points = points }
+                   kind = drawing.kind, colour = drawing.colour, width = drawing.width, points = points,
+                   text = drawing.text }
     local drawings = Plans.Drawings()
     drawings[#drawings + 1] = kept
     Changed()
@@ -277,7 +279,8 @@ local function DrawingRow(drawing)
     local packed = {}
     for index, value in ipairs(drawing.points) do packed[index] = Pack(value) end
     return table.concat({ "d", Clean(Origin(drawing, "d"), 80), tostring(drawing.map), drawing.kind or "line",
-        drawing.colour or "gold", tostring(drawing.width == 2 and 2 or 1), table.concat(packed) }, "\031")
+        drawing.colour or "gold", tostring(drawing.width == 2 and 2 or 1), table.concat(packed),
+        Clean(drawing.text, 80) }, "\031")
 end
 
 local stamp = 0 -- shares sent since the login
@@ -318,7 +321,9 @@ end
 local function ReadDrawing(fields)
     local origin, map, kind, colour, width, points = fields[2], MapOf(fields[3]), fields[4], fields[5], fields[6], fields[7]
     if not (origin and origin ~= "" and map and Plans.KINDS[kind] and type(points) == "string") then return nil end
-    if #points % 6 ~= 0 or #points < 12 or #points > Plans.POINTS * 6 then return nil end
+    if #points % 6 ~= 0 or #points < (Plans.ONE[kind] and 6 or 12) or #points > Plans.POINTS * 6 then return nil end
+    local words = kind == "text" and Clean(fields[8], 80) or nil
+    if kind == "text" and words == "" then return nil end
     local list = {}
     for index = 1, #points, 3 do
         local value = Unpack(points:sub(index, index + 2))
@@ -326,7 +331,7 @@ local function ReadDrawing(fields)
         list[#list + 1] = value
     end
     return { origin = Clean(origin, 80), map = map, kind = kind, colour = colours[colour] and colour or "gold",
-             width = width == "2" and 2 or 1, points = list }
+             width = width == "2" and 2 or 1, points = list, text = words }
 end
 
 local gathering, gathered = {}, 0 -- [sender \t origin \t share] = the parts heard of a plan: { name, parts, got }
