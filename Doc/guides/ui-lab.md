@@ -132,9 +132,9 @@ The lab's server finds the files by the paths code gives them, as the game does,
 | --- | --- |
 | `Interface\AddOns\SaneUI\...`, `SaneUI_<Module>\...` | `assets/optimized/Core/...` (`<Module>`), then `BUILD/`, then the drafts |
 | `Interface\AddOns\SaneUI\Art\Journal\<piece>` | Core's textures (`dev/tools/journal-art`); only where one is missing the harness's `assets/generated/interface/pieces/<piece>.png` |
-| `Interface\...` | Blizzard's art, the newest export's (`dev/tools/blizzard where`) |
+| `Interface\...` | Blizzard's art, the newest export's (`dev/tools/blizzard where`); a sheet it has no name for (Forever's heavy bronze) from `assets/generated/game-art/sheets/` by its file ID |
 | a file ID (`GetItemInfo`'s icons) | the game's listfile (below) |
-| `Fonts\FRIZQT__.TTF` and the game's other fonts | stand-ins: the client ships them compiled, so they cannot be read |
+| `Fonts\FRIZQT__.TTF` and the game's other fonts | the game's own where pulled from its install into `assets/generated/game-art/fonts/fonts/` (by file ID, as the kit's tool does); else stand-ins |
 | `Interface\AddOns\SaneUI\Fonts\Kalam-Regular.ttf` | the addon's font, else `assets/fonts` by its name |
 
 BLP and TGA files become PNG once, in `assets/generated/ui-lab/` (local, with the saved variables of the lab's
@@ -145,7 +145,11 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
 - `client`: a folder of the client's tables as CSV. It gives the game's named colours (`GlobalColor`), its global
   strings, and the names and colours of classes and races. Without it the lab keeps a few of its own.
 - `listfile`: file IDs to paths (`id;path`).
-- `atlas`: the game's atlases (TSV: `name file fileDataID width height left right top bottom tileH tileV`).
+- `atlas`: the game's atlases (TSV: `name file fileDataID width height left right top bottom tileH tileV`). Over it
+  the lab reads Forever's own from the client tables of the newest export's build, beside `client`: an atlas's
+  member on Forever's own sheet first (the one Retail's build lacks), its largest picture, its size as the game
+  gives it, and its slice data, so an atlas the game slices by itself (the heavy bronze frame) is sliced in the
+  lab too.
 - `drafts`: more addon folders served from elsewhere, `{"SaneUI/Art/Journal": "assets/generated/interface/pieces"}`.
 - `fonts`: stand-ins for the game's fonts, by file name.
 
