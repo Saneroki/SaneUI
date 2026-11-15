@@ -35,6 +35,9 @@ module's colour its own. `<name>-avatar.png` is the project's avatar, `<name>-ba
    `Doc/changelog.txt` stays the whole suite's changelog (GitHub's readers); CurseForge never gets it.
 6. `saneui publish alpha Navigation --dry`, then without `--dry`: Core first, then Navigation, each tagged
    `published/<Module>/<version>-alpha`. Push the tags with main.
+7. A module's first upload waits for Core's project to be approved: CurseForge refuses a required dependency on
+   a project it does not show yet (error 1018, "Invalid slug in project relations", 2026-11-15). Once *SaneUI
+   Core* is approved, `saneui publish alpha Navigation` again: Core, already up, is passed over.
 
 ## CurseForge's moderation policies
 

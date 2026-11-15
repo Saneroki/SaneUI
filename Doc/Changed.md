@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### CurseForge: SaneUI Core's first file up, Navigation's after Core's review (Saneroki, 2026-11-15)
+Saneroki: "Upload them". `saneui publish alpha Navigation --yes`: *SaneUI Core 0.3.1 (alpha)* uploaded (CurseForge file 9636789, tag `published/Core/0.3.1-alpha`); *SaneUI Navigation 0.3.3 (alpha)* refused, error 1018: "Invalid slug in project relations: 'saneui-core' does not exist, is not accessible, or belongs to an unrelated root category", since Core's project waits for CurseForge's review. Navigation's file goes up once Core is approved.
+- **Docs:** `Doc/curseforge/README.md` (*Setting it up*, step 7).
+
 ### Navigation's first upload is 0.3.3 (Saneroki, 2026-11-15)
 Saneroki promoted Navigation again (`saneui promote Navigation alpha`: 0.3.3, tag `Navigation/0.3.3-alpha`), so the first upload to CurseForge holds the day's changes the tag 0.3.2 lacked.
 - **`Doc/curseforge/changelogs/Navigation.md`:** 0.3.2 was never uploaded, so the first file's changelog, 0.3.3, is the first alpha's words (what the module does, that it needs SaneUI Core); the list of changes since 0.3.2 left it, kept in `Doc/changelog.txt` (*Navigation 0.3.3*) and here.
