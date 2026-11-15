@@ -10,10 +10,13 @@ read [addon-standards.md](addon-standards.md).
 
 Sane UI redesigns every window and view it makes or recreates (Saneroki, 2026-10-30, replacing the journal look of
 2026-10-21): the layout stays Sane UI's own, but it is built from WoW: Forever's own images in the game's default
-fonts; the pencil drawing icons stay; no red buttons, but natural buttons with golden or silver, beaten-up metal
-borders. The parts are picked by number from the catalogue (`saneui showgameart`); the picks, the references (the
-character list, the character screen's top bar) and how Retail is served stand in
-[interface-style.md](interface-style.md), *The new direction*. What is built in the journal look (parchment,
+fonts, Friz Quadrata the main one; the pencil drawing icons stay; natural buttons with golden or silver, beaten-up
+metal borders, and Forever's red button for the important ones, as in a yes or no prompt (Saneroki, 2026-11-15). The
+main elements are the login screen's own (*The kit* in [interface-style.md](interface-style.md): the top bar, the
+character list's frame and search box, the square and the red buttons, the angled card, the grey box, the shop's
+title bar, the loading bar, the character window); further parts are picked by number from the catalogue (`saneui
+showgameart`); the picks and how Retail is served stand in [interface-style.md](interface-style.md), *The new
+direction*. What is built in the journal look (parchment,
 leather, Kalam, Sane UI's own painted art) keeps it until it is rebuilt from the picks. The game's
 native windows that Sane UI does not recreate stay as the game draws them, mostly untouched.
 

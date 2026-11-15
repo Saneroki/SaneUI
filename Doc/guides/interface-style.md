@@ -20,8 +20,10 @@ the picks; where this section and the rest disagree, this section wins. Saneroki
 - **Windows look like WoW: Forever's own style**, built from the game's own images instead of the leather and the
   paper. The layouts stay Sane UI's own.
 - **The pencil drawing icons stay.**
-- **The game's default fonts** instead of the hand-drawn font (Kalam).
-- **No red buttons.** Natural buttons with golden or silver, beaten-up metal borders.
+- **The game's default fonts** instead of the hand-drawn font (Kalam). Since 2026-11-15 Sane UI's main font is the
+  game's own Friz Quadrata (`Fonts\FRIZQT__.TTF`), the font of the login screen (*The kit*).
+- **Buttons:** natural buttons with golden or silver, beaten-up metal borders. Red buttons were out on 2026-10-30;
+  since 2026-11-15 Forever's red button is the important button, as in a yes or no prompt (*The kit*, 4).
 - **The references:**
   - the character list: the general look, structure and images to mimic. Its frame is `heavybronze-frame-basic`, its
     plate `heavybronze-frame-background`, its corners `heavybronze-vert-cornerbracket-*`, the cards
@@ -38,6 +40,65 @@ Retail's build, so it cannot be drawn there from the game's files. Forever's cod
 (`UI-Frame-Metal-CornerTopLeft`) and its table holds it as `...-c60-2x`, so a plain name should give each game its
 own picture. Each card says what Retail has: nothing said, the same file; *Retail: own look*, its own picture under
 that name; *Forever only*, none. What stands in for the last kind in Retail is still to be decided.
+
+### The kit (Saneroki, 2026-11-15)
+
+"I want to restyle windows fullscreens now. I don't like the styling we did previously. I want to be closer to Wow
+Forever styling with its native elements." His references are the login screen's own parts, the shop's, the loading
+screen's and the character window's; **these are the main elements of the redesign**. Each is rebuilt from Forever's
+own files beside his screenshot by `saneui makegamekit` (`dev/tools/game-art kit`; `/art/kit/` on 127.0.0.1 port 8768),
+so what is written here can be seen. Numbers are the catalogue's; *no number*: not in the catalogue. Retail, as on
+the catalogue's cards: nothing said, the same file; *Retail: own look*; *Forever only*.
+
+1. **The top bar of a full screen** (the character screen's SHOP, MENU, RULESET): `glues-characterselect-tophud-left-bg`,
+   `-middle-bg`, `-right-bg` (#62, #64, #66; the outer two reach 27 px past their buttons, their 280 px pictures
+   sliced 100 px at the outer end and 8 px at the inner), `-bg-divider` between two (#59), the selected one lit from below by
+   `-selected-left`, `-middle`, `-right` (#68); disabled `-dis-bg` (#63, #65, #67). A button is 64 px high. The words
+   in Friz Quadrata 15 with an outline, Forever's own colours: (0.84, 0.70, 0.50), lit (1.00, 0.89, 0.72), disabled
+   (0.56, 0.56, 0.56); the shop's mark `glues-characterselect-iconshop` (24 px) before its word. *Retail: own look*.
+2. **Windows** (the character list): "Windows in general look like the 2nd picture with its golden border and its
+   textured backgrounds and the golden thin outlines that we have on the search field". The plate
+   `heavybronze-frame-background` (#29) stretched over the window; the border `heavybronze-frame-basic` (#30, its
+   160 px picture sliced 34 px) 9 px outside it at the sides and 15 px at the top and bottom; the brackets
+   `heavybronze-vert-cornerbracket-TR` and `-BR` (#40, #38) on its right corners (*the window #1*). *Forever only*.
+   - The thin golden outline: the search box `glues-characterSelect-searchbar` (#58, 24 px high, 4 px ends kept).
+   - The icon style, "subtle golden brown": its glass `glues-characterSelect-icon-search` (#52, 14 px).
+   - The rows: the cards `glues-characterselect-card-singles` (#45), picked `-card-selected` (*no number*) with its
+     glow; a name in gold (Friz 18), its line in white and the class colour, the place in grey. *Retail: own look*.
+3. **Normal buttons:** `common-button-square-gray-up`, pressed `-down` (#167; 42 px), with a yellow icon (24 px):
+   `common-icon-zoomin`, `-zoomout`, `-rotateleft`, `-rotateright`, `-undo` (*no number*: icons). The character select's
+   rotate buttons and the character window's zoom and turn. *Retail: own look* (the icons: the same file).
+4. **Important buttons**, "like for example when asking yes no in a prompt": `128-RedButton` in three slices
+   (`128-redbutton-left`, `_128-redbutton-center`, `128-redbutton-right`: #151, #148, #155; 42 px high, words Friz 12
+   gold), pressed `-pressed`; **its disabled state is the grey button** (`-disabled`, the shop's grey price button).
+   The squares beside it: `128-redbutton-delete` (#149), `-refresh` (#154), `-exit` (#150), `-plus` (#153), `-minus`
+   (#152). `128-GoldRedButton` (*no number*) has a golden rim. *Retail: own look* (the gold and red: the same file).
+5. **Angled corners**, "that would also be an option" (the ruleset card): `Mode-Selection-Card-Regular` (#446, 260 ×
+   530), picked `-yellow-glow` (#447), its round icon in `Mode-Selection-Ring` (#698); the title in gold (Friz 18),
+   the words in white (Friz 15). *Forever only*.
+6. **The grey box**, "elements we can use for sections etc that are not main windows" (the shop's details box):
+   `generic-frame-chamfered-12d-2o` (*no number*), sliced 20 px: a thin grey rim with cut corners round 70% black, so
+   what lies behind shows through (the shop's blue makes it teal). Its buttons: a grey (disabled) and a red one.
+   `ui-frame-chamfered` (*no number*, sliced 35 px) is the same shape with a shadow.
+7. **The shop's title bar**, "could also be part of our design": the window `PortraitFrameTemplate` (#3) with the
+   header `shop-header-menu-bg-left`, `-middle`, `-right` (*no number*; 51 px high, a golden line along its foot),
+   tabs lit by `shop-header-menu-selected-left`, `-middle`, `-right` and `-selected-line-*`, `shop-header-menu-bg-divider`
+   between them, and the shared search box `common-search-border-left`, `-middle`, `-right` with
+   `common-search-magnifyingglass` (*no number*; the border *Retail: own look*).
+8. **The loading bar as a frame**, "a nice decoration for headlines and other things where we could put buttons or
+   text inside": the loading screen's `Interface\Glues\LoadingBar\Loading-BarBorder-Frame-v2` over
+   `Loading-BarBorder-Background-v2` (*no number*; files, no atlas), its pointed ends kept (40 px each on a bar 32 px
+   high), the middle stretched; the fill `Loading-BarFill` (blue) when it is a bar.
+9. **The character window**, "a prime example. It uses all the buttons, and outlines and background textures and
+   styles that I like our interface also should use": the window's metal (`PortraitFrameTemplate`, #3); the section
+   heads `UI-Character-Info-Title` (#364, 197 × 40; the head's words white, Friz) with the rows `-Line-Bounce` (#362)
+   every other line on `-Stat-BG` (#559), the label gold, the value white or green; the slots `-GearSlot` (#403), the
+   small top tabs `-StatTab` (#563) with `-StatTab-Selected`, the side tabs `common-sidetab` (#219), the small
+   `common-button-collapseExpand` (#158), the grey squares of 3, and `common-insideframe` (#70, sliced 53 px) round
+   a part. The slots, the top tabs and the plate *Forever only*; the rest *Retail: own look*.
+
+How each part is laid out comes from the newest export's templates (named in `dev/tools/game_art_kit.py` at each
+part); a Sane UI part uses the same atlas names, sizes and slices, so each game draws its own picture under the name.
 
 ## Scope
 

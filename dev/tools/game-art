@@ -5,6 +5,8 @@ what Sane UI's windows are built from.
 
   dev/tools/game-art make        cuts the catalogue into assets/generated/game-art (saneui makegameart)
   dev/tools/game-art find WORD   the numbers and atlases whose name holds WORD
+  dev/tools/game-art kit         Saneroki's references rebuilt from Forever's pieces into game-art/kit
+                                 (saneui makegamekit; game_art_kit.py beside this file)
 
 The page is one of dev/tools/web-pages' (saneui showgameart); overview.pdf beside it is the same numbers on paper, to read
 anywhere. A number stays with its piece from round to round (numbers.json beside the page), so a pick said once keeps
@@ -721,5 +723,9 @@ if __name__ == "__main__":
         find(sys.argv[2])
     elif sys.argv[1:] == ["make"]:
         make()
+    elif sys.argv[1:] == ["kit"]:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import game_art_kit
+        game_art_kit.make(sys.modules[__name__], OUT / "kit")
     else:
         sys.exit(__doc__)

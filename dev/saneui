@@ -58,6 +58,8 @@ GROUPS = {
         "makejournalart": (["dev/tools/journal-art"], "the journal look's textures for Core (Art/Journal)", None),
         "makegameart": (["dev/tools/game-art", "make"], "the game's own interface art cut out, numbered, on one page",
                         None),
+        "makegamekit": (["dev/tools/game-art", "kit"], "Saneroki's references rebuilt from Forever's own art (/art/kit/)",
+                        None),
         "showgameart": (["dev/tools/web-pages", "open", "art"],
                         "the numbered game art in the browser, to mark what to use", "game art, numbered"),
         "makecategoryart": (["dev/tools/category-art"], "the bags' category icons, pencil, from the chosen drawings", None),
