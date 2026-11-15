@@ -144,7 +144,7 @@ local emptyOf = {} -- [button] = the drawing of what goes into it
 local function MakeBag(index)
     local button = CreateFrame("Button", nil, strip)
     button:SetSize(Foot.BAG, Foot.BAG)
-    -- a pencil slot on the paper, the bag's icon in it (Core.Journal)
+    -- the game's slot, the bag's icon in it (Style.Slot)
     local inset = Foot.BAG * ns.Style.SLOT_ICON
     slotOf[button] = ns.Style.Slot(button, 1, "BACKGROUND")
     local face = CreateFrame("Frame", nil, button)

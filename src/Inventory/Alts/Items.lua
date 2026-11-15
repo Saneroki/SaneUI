@@ -171,7 +171,7 @@ local function DollSlots()
     return dollSlots
 end
 
--- A slot of the doll: one of the game's item buttons in a pencil slot on the paper (Core.Journal).
+-- A slot of the doll: one of the game's item buttons in the game's slot (Style.Slot).
 local function DollSlot(doll, slot)
     local button = Items.Button(doll)
     local small = slot.column == "ammo"

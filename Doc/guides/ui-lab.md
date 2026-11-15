@@ -101,7 +101,7 @@ prints its log.
   buttons take the mouse; when to buy and sell it: `LabBuying(2900)` as a row of the house's list, `LabBuying()` as yours,
   `LabSold(false)`, `LabScans(1)`; the panel's ground is white, as the lab does not load its art),
   `auralists` (Core and Combat from their TOCs with Core's built spell sets, `BUILD/SaneUI/Sets`: the aura lists' window with marks and a search typed; `LabSearch("rejuv")` in the console), `combat-full` (Core and Combat from their TOCs: Combat's full screen with Sane Macros and the action bars as windows, the bars
-  standing in; `LabMacros`, `LabBars.Full()`), `basics` (plain widgets), `journal-chat` (a chat window in Core's journal look), `inventory` (Core
+  standing in; `LabMacros`, `LabBars.Full()`), `basics` (plain widgets), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the
   scene's own XML on Blizzard's templates), `core` (Core from its TOC, with its window to try windows with; rest
@@ -121,8 +121,8 @@ prints its log.
   messages to the guild or group) comes back as the server sends it.
 - **A draft** (`dev/uilab/drafts/`) is code that is meant for the game but not chosen yet, written as an addon's
   file on the game's API alone. Once it is right, it moves into its module (`src/`) as it is, gets Core's guards
-  on its scripts (`ns.Guard`, a hard rule there), and joins the TOC. The journal window began as one; it is
-  Core's now (`src/Core/Journal.lua`).
+  on its scripts (`ns.Guard`, a hard rule there), and joins the TOC. The journal window began as one, became
+  Core's, and gave way to the kit (`src/Core/Look.lua`, 2026-11-15).
 
 ## Pictures and fonts
 
@@ -131,11 +131,10 @@ The lab's server finds the files by the paths code gives them, as the game does,
 | Path | Where the lab finds it |
 | --- | --- |
 | `Interface\AddOns\SaneUI\...`, `SaneUI_<Module>\...` | `assets/optimized/Core/...` (`<Module>`), then `BUILD/`, then the drafts |
-| `Interface\AddOns\SaneUI\Art\Journal\<piece>` | Core's textures (`dev/tools/journal-art`); only where one is missing the harness's `assets/generated/interface/pieces/<piece>.png` |
 | `Interface\...` | Blizzard's art, the newest export's (`dev/tools/blizzard where`); a sheet it has no name for (Forever's heavy bronze) from `assets/generated/game-art/sheets/` by its file ID |
 | a file ID (`GetItemInfo`'s icons) | the game's listfile (below) |
 | `Fonts\FRIZQT__.TTF` and the game's other fonts | the game's own where pulled from its install into `assets/generated/game-art/fonts/fonts/` (by file ID, as the kit's tool does); else stand-ins |
-| `Interface\AddOns\SaneUI\Fonts\Kalam-Regular.ttf` | the addon's font, else `assets/fonts` by its name |
+| `Interface\AddOns\SaneUI\Fonts\Kalam-Bold.ttf` | the addon's own fonts, else `assets/fonts` by their name |
 
 BLP and TGA files become PNG once, in `assets/generated/ui-lab/` (local, with the saved variables of the lab's
 runs). A missing texture is drawn as a magenta box and named in the log.
@@ -150,7 +149,7 @@ The settings of this computer are in `~/.config/saneui/uilab.json`, all optional
   member on Forever's own sheet first (the one Retail's build lacks), its largest picture, its size as the game
   gives it, and its slice data, so an atlas the game slices by itself (the heavy bronze frame) is sliced in the
   lab too.
-- `drafts`: more addon folders served from elsewhere, `{"SaneUI/Art/Journal": "assets/generated/interface/pieces"}`.
+- `drafts`: more addon folders served from elsewhere, `{"SaneUI/Art/Drafts": "assets/generated/..."}`.
 - `fonts`: stand-ins for the game's fonts, by file name.
 
 ## The page

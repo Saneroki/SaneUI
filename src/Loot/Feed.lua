@@ -4,7 +4,7 @@ local _, ns = ...
 --  Sane UI - Loot - Feed
 --  What you receive rises over the world, without a window, where Edit Mode
 --  placed it: a line a thing, its picture, its name in its quality's colour
---  with a thin dark outline (Kalam Bold, as Sane UI's combat text), how many
+--  with a thin dark outline (Kalam Bold, its hand-drawn font: Core.Look.HAND), how many
 --  ("x3") and, faint, how many you carry now. A new line comes in at the foot
 --  and pushes the older up; each stands a few seconds and fades. The same thing
 --  again while its line stands adds to that line. What comes while the lines
@@ -21,7 +21,6 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
-local J = Core.Journal
 local S = ns.SIZE
 local Feed = {}
 ns.Feed = Feed
@@ -57,7 +56,7 @@ local function NewLine()
     line.icon:SetPoint("LEFT")
     line.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     line.text = line:CreateFontString(nil, "OVERLAY")
-    line.text:SetFont(J.FONT_BOLD, 15 * J.PX, "OUTLINE")
+    line.text:SetFont(Core.Look.HAND, 15 * Core.Look.PX, "OUTLINE") -- its hand-drawn font, by Saneroki's word
     line.text:SetPoint("LEFT", line.icon, "RIGHT", S.gap, 0)
     line.text:SetJustifyH("LEFT")
     line.text:SetWordWrap(false)

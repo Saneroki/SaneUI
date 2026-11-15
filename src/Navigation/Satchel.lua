@@ -6,7 +6,7 @@ local _, ns = ...
 --  window's grip has the corner away from it; the upper one where the window
 --  stands in the screen's lower half): a leather satchel in the leather ring of
 --  the found herbs (Found.Ring). Its click opens the satchel beside the window,
---  a page of the journal (Core.Journal) with, under their titles, large cells
+--  a window in the kit's bronze (Core.Look.Dress) with, under their titles, large cells
 --  that are easy to hit:
 --
 --      the zone  its title the zone and subzone you are in, as big as the boxes' numbers and
@@ -45,7 +45,7 @@ local _, ns = ...
 --  can go back and forth"): the game's own minimap instead of ours (the switch
 --  Show the game's minimap), and its button Sane UI window brings ours back.
 --
---  A cell switched on shows its picture whole with a pencil tick, one switched
+--  A cell switched on shows its picture whole with the game's tick, one switched
 --  off faint and grey. Closed the first time the mouse leaves the page (Saneroki,
 --  2026-11-02), its button counting as the page, a menu one of its cells opened
 --  holding it; and by its X, Esc, the button again, or the window going to the
@@ -53,7 +53,7 @@ local _, ns = ...
 --  Only on the small view, while the window is the minimap.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Journal = Core.Journal
+local Kit = Core.Look -- the kit's parts (Core.Look)
 local Satchel = {}
 ns.Satchel = Satchel
 
@@ -64,7 +64,7 @@ Satchel.GAP = 6            -- between the window and the satchel
 Satchel.LEAVE = 0.25       -- seconds off the page and its button before it closes: the way between the two is free
 Satchel.COLUMNS = 6
 Satchel.CELL = { 72, 58 }  -- a cell's width and height: compact (Saneroki, 2026-10-25)
-Satchel.ICON = 28          -- a cell's picture, on the paper as it is (no pencil slot round it)
+Satchel.ICON = 28          -- a cell's picture, on the plate as it is (no slot round it)
 Satchel.ADDON = { 56, 84 } -- an addon's picture, twice the others' (Saneroki, 2026-10-25), and its row's height
 Satchel.HEAD = 22          -- a section's title and its rule
 Satchel.TITLE = 32         -- the zone's title over the boxes: as big as their numbers, no rule
@@ -73,16 +73,16 @@ Satchel.AFTER = 6          -- room under a section
 Satchel.ROOM = 0.8         -- the page takes at most so much of the screen's height; the wheel scrolls the rest
 Satchel.FAINT = 0.4        -- a cell switched off: its picture so faint
 Satchel.SPELL = { 0.0625, 0.9 } -- a tracking spell's icon cut inside its frame, as the game's menu cuts it
-Satchel.TICK = "\226\136\154"   -- the pencil tick: Kalam's root sign
+Satchel.TICK = 16          -- the tick on a cell switched on: the game's own (checkmark-minimal), this large
 Satchel.ROUND = "Interface\\CharacterFrame\\TempPortraitAlphaMask" -- an addon's picture cut round by it
 Satchel.TRIM = 0.08        -- of an addon's picture cut off at each side: an icon's own frame
 Satchel.BOX = { 102, 54 }  -- a box of the times, frame rate and ping: across (four fill the page's width) and high
 Satchel.BOX_GAP = 8        -- between two boxes, and under them
-Satchel.NUMBER = 40        -- a box's number and its word (Journal.Font's sizes)
-Satchel.WORD = 15
+Satchel.NUMBER = 30        -- a box's number and its word (Core.Look.SetFont's sizes; Friz Quadrata stands taller
+Satchel.WORD = 13          -- than the hand-drawn font did, so both a little smaller)
 Satchel.NUMBER_ROOM = 92   -- the number's widest: a longer one (a 12-hour clock's) comes out smaller
-Satchel.NUMBER_AT = 2      -- the number's and the word's middles from the box's: the word a pixel or two under the
-Satchel.WORD_AT = -13      -- digits, the two together in the box's middle (Saneroki, 2026-11-02)
+Satchel.NUMBER_AT = 6      -- the number's and the word's middles from the box's: the word a pixel or two under the
+Satchel.WORD_AT = -14      -- digits, the two together in the box's middle (Saneroki, 2026-11-02)
 Satchel.LINE = 16          -- a line under the boxes
 Satchel.LABEL = 76         -- a line's words before its value
 Satchel.EVERY = 1          -- seconds between two looks at the lines while the page is open
@@ -150,7 +150,7 @@ local function Game(name)
     return type(fn) == "function" and fn or nil
 end
 
--- The zone you are in, its subzone after it, and its colour on the paper.
+-- The zone you are in, its subzone after it, and its colour (the game's minimap's).
 local function Zone()
     local zone, sub = Core.Plain(Core.Ask(Game("GetZoneText"))) or "", Core.Plain(Core.Ask(Game("GetSubZoneText"))) or ""
     local title = sub ~= "" and sub ~= zone and (zone ~= "" and zone .. ", " .. sub or sub) or zone
@@ -158,8 +158,7 @@ local function Zone()
     local kind = Core.Plain(Core.Ask(pvp and pvp.GetZonePVPInfo or Game("GetZonePVPInfo")))
     local colour = Satchel.ZONE[kind]
     if not colour then return title, nil end
-    local r, g, b = Journal.Ink(colour[1], colour[2], colour[3])
-    return title, { r, g, b }
+    return title, { colour[1], colour[2], colour[3] }
 end
 
 -- The boxes under the zone's title, as the game tells them now: { number, word, tip }.
@@ -368,7 +367,7 @@ local function Cell(index)
     cell:RegisterForClicks("AnyUp")
     cell.shade = cell:CreateTexture(nil, "BACKGROUND")
     cell.shade:SetAllPoints()
-    cell.shade:SetColorTexture(Journal.SHADE[1], Journal.SHADE[2], Journal.SHADE[3], Journal.SHADE[4])
+    cell.shade:SetColorTexture(Kit.SHADE[1], Kit.SHADE[2], Kit.SHADE[3], Kit.SHADE[4])
     cell.shade:Hide()
     cell.spot = CreateFrame("Frame", nil, cell)
     cell.spot:SetPoint("TOP", 0, -3)
@@ -377,12 +376,12 @@ local function Cell(index)
     cell.round = cell.spot:CreateMaskTexture() -- an addon's picture is cut round by it
     cell.round:SetTexture(Satchel.ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     cell.round:SetAllPoints(cell.picture)
-    cell.tick = cell:CreateFontString(nil, "OVERLAY")
-    Journal.Font(cell.tick, 16, true, Journal.INK)
-    cell.tick:SetPoint("BOTTOMLEFT", cell.spot, "TOPRIGHT", -3, -9)
-    cell.tick:SetText(Satchel.TICK)
+    cell.tick = cell:CreateTexture(nil, "OVERLAY")
+    Kit.Atlas(cell.tick, "checkmark-minimal")
+    cell.tick:SetSize(Satchel.TICK, Satchel.TICK)
+    cell.tick:SetPoint("BOTTOMLEFT", cell.spot, "TOPRIGHT", -5, -9)
     cell.name = cell:CreateFontString(nil, "OVERLAY")
-    Journal.Font(cell.name, 12, false, Journal.INK)
+    Kit.SetFont(cell.name, 12, false, Kit.INK)
     cell.name:SetPoint("TOP", cell.spot, "BOTTOM", 0, -2)
     cell.name:SetWidth(Satchel.CELL[1] - 4)
     cell.name:SetMaxLines(2)
@@ -490,23 +489,23 @@ local function Dress(cell, item, size, height)
     if off then icon:SetDesaturated(true) end
     icon:SetAlpha(off and Satchel.FAINT or 1)
     cell.tick:SetShown(switch and item.on or item.ticked or false)
-    cell.name:SetAlpha(off and Journal.FAINT[4] or 1)
+    cell.name:SetAlpha(off and Kit.FAINT[4] or 1)
     cell:Show()
 end
 
--- A section's title over its rule at y on the sheet, in its colour (graphite unless given); the line under it if it
--- holds nothing.
+-- A section's title over its thin golden line at y on the sheet, in its colour (the game's gold unless given); the
+-- line under it if it holds nothing.
 local function Head(index, title, y, note, colour)
     local head = heads[index]
     if not head then
-        head = { text = sheet:CreateFontString(nil, "OVERLAY"), rule = Journal.Rule(sheet),
+        head = { text = sheet:CreateFontString(nil, "OVERLAY"), rule = Kit.Rule(sheet),
                  note = sheet:CreateFontString(nil, "OVERLAY") }
-        Journal.Font(head.text, 15, true, Journal.INK)
-        Journal.Font(head.note, 12, false, Journal.FAINT)
+        Kit.SetFont(head.text, 15, true, Kit.INK)
+        Kit.SetFont(head.note, 12, false, Kit.FAINT)
         head.note:SetJustifyH("LEFT")
         heads[index] = head
     end
-    colour = colour or Journal.INK
+    colour = colour or Kit.GOLD
     head.text:SetTextColor(colour[1], colour[2], colour[3], 1)
     head.text:SetText(title)
     head.text:ClearAllPoints()
@@ -527,10 +526,10 @@ end
 
 -- Words in bold at size, smaller where they are wider than room.
 local function Fit(text, words, size, room, colour)
-    Journal.Font(text, size, true, colour)
+    Kit.SetFont(text, size, true, colour)
     text:SetText(words)
     local wide = text:GetStringWidth() or 0
-    if wide > room then Journal.Font(text, size * room / wide, true, colour) end
+    if wide > room then Kit.SetFont(text, size * room / wide, true, colour) end
 end
 
 -- The zone's title at the sheet's top, as big as the boxes' numbers, in its colour. Returns where the sheet goes on.
@@ -557,12 +556,12 @@ local function Box(index)
     box = CreateFrame("Frame", nil, sheet)
     box:SetSize(Satchel.BOX[1], Satchel.BOX[2])
     box:EnableMouse(true)
-    Journal.Box(box, 0.5)
+    Kit.Outline(box, 0.5)
     box.number = box:CreateFontString(nil, "OVERLAY")
-    Journal.Font(box.number, Satchel.NUMBER, true, Journal.INK)
+    Kit.SetFont(box.number, Satchel.NUMBER, true, Kit.INK)
     box.number:SetPoint("CENTER", 0, Satchel.NUMBER_AT)
     box.word = box:CreateFontString(nil, "OVERLAY")
-    Journal.Font(box.word, Satchel.WORD, false, Journal.FAINT)
+    Kit.SetFont(box.word, Satchel.WORD, false, Kit.FAINT)
     box.word:SetPoint("CENTER", 0, Satchel.WORD_AT)
     box:SetScript("OnEnter", ns.Guard(BoxEntered))
     box:SetScript("OnLeave", ns.Guard(BoxLeft))
@@ -591,7 +590,7 @@ local function Boxes(figures, y)
     return y + (#figures > 0 and Satchel.BOX[2] + Satchel.BOX_GAP or 0)
 end
 
--- The lines under the boxes from y on, in two columns: each its words faint, its value in graphite. Returns where
+-- The lines under the boxes from y on, in two columns: each its words faint, its value white. Returns where
 -- the sheet goes on.
 local function Rows(lines, y)
     local column = Satchel.COLUMNS * Satchel.CELL[1] / 2
@@ -599,8 +598,8 @@ local function Rows(lines, y)
         local row = rows[index]
         if not row then
             row = { label = sheet:CreateFontString(nil, "OVERLAY"), value = sheet:CreateFontString(nil, "OVERLAY") }
-            Journal.Font(row.label, 12, false, Journal.FAINT)
-            Journal.Font(row.value, 12, false, Journal.INK)
+            Kit.SetFont(row.label, 12, false, Kit.FAINT)
+            Kit.SetFont(row.value, 12, false, Kit.INK)
             row.value:SetWordWrap(false)
             rows[index] = row
         end
@@ -712,7 +711,7 @@ local function Build()
     panel:EnableMouse(true)
     panel:Hide()
     Satchel.frame = panel
-    look = Journal.Dress(panel, Satchel.TEXT.title)
+    look = Kit.Dress(panel, Satchel.TEXT.title)
     look.close:SetScript("OnClick", ns.Guard(function() Satchel.Close() end))
     -- The game's minimap instead of ours, as the dropdown Classic windows chooses it (Window.lua): the window rests
     -- out of sight, and the satchel goes with it.
@@ -787,9 +786,9 @@ function Satchel.Fill()
     y = math.max(y - Satchel.AFTER, 1) -- no room under the last section: the page's own margin is there
     local width = Satchel.COLUMNS * Satchel.CELL[1]
     sheet:SetSize(width, y)
-    local _, chrome = Journal.Outer(width, 0)
+    local _, chrome = Kit.Outer(width, 0)
     local room = (tonumber(UIParent:GetHeight()) or 768) * Satchel.ROOM - chrome
-    panel:SetSize(Journal.Outer(width, math.max(math.min(y, room), 1)))
+    panel:SetSize(Kit.Outer(width, math.max(math.min(y, room), 1)))
     shown.alarm = Alarm()
     since = 0
     Wheel(nil, 0) -- the scroll within the new height; the calendar's secure button over its cell

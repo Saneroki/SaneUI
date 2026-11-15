@@ -1814,9 +1814,8 @@ end)()
     Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
     local texts, cells = Shown()
     local title = texts["Elwynn Forest, Goldshire"]
-    local r, g = Core.Journal.Ink(0.1, 1, 0.1)
-    check(title and near(title._color[1], r) and near(title._color[2], g),
-        "the satchel's first section: the zone and subzone you are in, in the friendly colour on the paper")
+    check(title and near(title._color[1], 0.1) and near(title._color[2], 1),
+        "the satchel's first section: the zone and subzone you are in, in the minimap's friendly colour")
     check(title._points[1][1] == "TOP" and title._points[1][3] == "TOP", "centred over the boxes")
     ;(function()
         local sizes = {}
@@ -1824,7 +1823,7 @@ end)()
         title.GetStringWidth = function() return Satchel.COLUMNS * Satchel.CELL[1] * 2 end
         Satchel.Fill()
         title.SetFont, title.GetStringWidth = nil, nil
-        check(near(sizes[1], Satchel.NUMBER * Core.Journal.PX) and sizes[2] < sizes[1] / 2 and sizes[2] > sizes[1] / 2.1,
+        check(near(sizes[1], Satchel.NUMBER * Core.Look.PX) and sizes[2] < sizes[1] / 2 and sizes[2] > sizes[1] / 2.1,
             "as big as the boxes' numbers; a long name comes out smaller, on one line")
         Satchel.Fill()
     end)()

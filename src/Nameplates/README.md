@@ -413,16 +413,14 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   amount, school) and hands it to `CombatText.Hit` (the combat log is closed to addons in this client); your own
   through `Core.OnUnit("UNIT_COMBAT", "player")` while *Over your character* is on, onto a point of ours on `UIParent`
   `CombatText.SELF` (-130: under its middle, about at your character's feet), at `Scale.Full()`. A number is a pooled frame on its host with one font
-  string (`Core.Journal.FONT_BOLD`, `OUTLINE`; the game's `CombatTextFont` face where that cannot be set) and one
-  texture, `CombatText.HEIGHT` high (times `CombatText.CRIT` 1.5 for a critical hit or heal, `CombatText.SMALL` 0.75
+  string (the game's combat text font, `DAMAGE_TEXT_FONT` else Friz Quadrata, `OUTLINE`; the game's `CombatTextFont`
+  face where that cannot be set), `CombatText.HEIGHT` high (times `CombatText.CRIT` 1.5 for a critical hit or heal, `CombatText.SMALL` 0.75
   for a glancing blow or a word, as the game's combat feedback); one animation group rises `CombatText.RISE` in
   `CombatText.TIME` and fades over its last `CombatText.FADE`, a critical one swells to `CombatText.SWELL` and back;
   `OnFinished` (guarded) returns it to the pool, as does the dress taken off (`CombatText.Clear`). Lanes
   `CombatText.LANES` in turn, at most `CombatText.MOST` a host (the oldest goes). What did no harm
-  (a WOUND of 0 is a miss, or a block by its flags) is the word from `CombatFeedbackText`; with the setting `combatPictures`
-  on (off by default, set by neither shared profile) and for `CombatText.PICTURES` (MISS, DODGE, PARRY and DEFLECT, BLOCK, EVADE, IMMUNE)
-  it is the drawing `Art/combat-<name>`, `CombatText.PICTURE` (30) square, white or tinted by `CombatText.TINTS`
-  (`SetVertexColor`: the immunity bright red), the word again where `SetTexture` finds no file. Colours, three only: physical white (school mask 1, or none told), any spell school red
+  (a WOUND of 0 is a miss, or a block by its flags) is the word from `CombatFeedbackText` (Saneroki, 2026-11-15: the game's words and font in place of our drawings
+  and Kalam Bold). Colours, three only: physical white (school mask 1, or none told), any spell school red
   (`CombatText.SPELL`), heals green (both the game's combat text colours); over you with a "-". Amounts in the game's abbreviation (`AbbreviateNumbers` with `Text.STEPS`), written with
   `SetFormattedText`. What the game hides (secret values) is never compared, only written into a text, the one thing
   open to addons (`format`, `..`), and a curve or number formatter refuses it from them. A hidden amount is written as it is. A hidden
@@ -461,8 +459,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 | `Cast.lua` | A unit's cast under its plate's bar: the icon with the seconds left, the spell and its target, cut to fit |
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off; how closely the game stacks plates |
-| `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character; drawings for what did no harm |
-| `Art/combat-*.blp` | The combat text's drawings (miss, dodge, parry, block, evade, immune): original art of Sane UI, drawn by an image model and picked by Saneroki (`assets/interface/combat-text/`; the miss drawn by code), traced by `dev/tools/combat-art` into `assets/CombatText/`, made into textures by `dev/tools/art` |
+| `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character, in the game's font; what did no harm the game's word |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; what clicks a plate (our bar alone); the game's own bar, name, auras and marks out of sight under it; strangers' and critters' plates hidden; `Plate.Foot`, the dress's frame right under its lowest row, for what another module shows right under a plate |
 
 ## Not there yet

@@ -31,7 +31,7 @@ Canvas.MEMBER_COLOR = ns.Style.SOFT   -- (Saneroki, 2026-10-23: darker, to be re
 
 local Layout, Cells, Columns, Menus, Categories = ns.Layout, ns.Cells, ns.Columns, ns.Menus, ns.Categories
 
--- The fonts of a canvas's words, Kalam (ns.Style): a category's head, a group member's, a part's; a list's line,
+-- The fonts of a canvas's words, Friz Quadrata (ns.Style): a category's head, a group member's, a part's; a list's line,
 -- plain and in a game colour.
 local fonts
 local function Fonts()

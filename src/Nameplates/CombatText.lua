@@ -18,13 +18,11 @@ local _, ns = ...
 --  feet, where the camera keeps it (CombatText.SELF; Saneroki, 2026-10-23).
 --  Your damage taken has a minus.
 --
---  Numbers in Sane UI's own font, Kalam Bold, outlined. What did no harm is
---  the game's word; with *Drawings for what did no harm* on a pencil drawing
---  in white, an immunity's in bright red (dev/tools/combat-art: miss, dodge,
---  parry, block, evade, immune; Art/combat-<name>.blp), larger than the numbers so it reads at a glance;
---  what has none (resist, absorb, reflect, interrupt) stays the word.
+--  Numbers in the game's own font (its combat text's, Friz Quadrata),
+--  outlined (Saneroki, 2026-11-15: the game's fonts and art in place of our
+--  own). What did no harm is the game's word (Miss, Dodge, ...).
 --
---  A number is a small frame of ours with one text and one picture, from a
+--  A number is a small frame of ours with one text, from a
 --  pool, on its host (a dress, so it follows the plate's place, size and
 --  fading; or our point over the middle), moved and faded by an animation of
 --  the game's (no OnUpdate); back to the pool when it is done or its plate
@@ -62,7 +60,6 @@ ns.CombatText = CombatText
 CombatText.HEIGHT = 15     -- a number's font height, before the plate's size
 CombatText.CRIT = 1.5      -- a critical hit or heal, times that (the game's combat feedback)
 CombatText.SMALL = 0.75    -- a glancing blow or a word, times that (the same)
-CombatText.PICTURE = 30    -- a drawing's side (Saneroki, 2026-10-23: smaller; its texture is made for 48)
 CombatText.ABOVE = 2       -- from the top of the bar to where a number starts
 CombatText.RISE = 34       -- how far it rises
 CombatText.TIME = 1.1      -- seconds it shows
@@ -72,16 +69,10 @@ CombatText.SWELL = 1.35    -- how large it swells
 CombatText.LANES = { 0, -22, 22, -11, 11 } -- where numbers at once stand, from the middle
 CombatText.MOST = 6        -- numbers on one host at once
 CombatText.SELF = -130     -- your character's point: this far from the screen's middle (down: about at its feet)
-CombatText.FONT = Core.Journal.FONT_BOLD
+CombatText.FONT = rawget(_G, "DAMAGE_TEXT_FONT") or Core.Look.FONT -- the game's combat text font
 CombatText.FLAGS = "OUTLINE"
--- The game's fonts, where Kalam cannot be set (its file missing).
+-- The game's fonts, where its font file cannot be set.
 CombatText.FALLBACK = { "CombatTextFont", "SystemFont_NamePlate_Outlined", "GameFontHighlight" }
--- The drawings, by the game's kinds of hits that did no harm.
-CombatText.ART = "Interface\\AddOns\\SaneUI_Nameplates\\Art\\combat-"
-CombatText.PICTURES = { MISS = "miss", DODGE = "dodge", PARRY = "parry", DEFLECT = "parry", BLOCK = "block",
-                        EVADE = "evade", IMMUNE = "immune" }
--- A drawing's colour where it is not white (Saneroki, 2026-10-23: an immunity bright red).
-CombatText.TINTS = { immune = { 1, 0.15, 0.1 } }
 -- The game's CVars for its own combat text: over units (off while ours is over the plates) and about you (off while
 -- ours is over your character).
 CombatText.CVARS = {
@@ -104,7 +95,7 @@ local waiting = false -- the CVars wait for the fight's end
 local you             -- the point about at your character's feet its own combat text rises from
 local listening = false
 
--- The font: Kalam Bold, outlined; the game's combat text font where Kalam cannot be set.
+-- The font: the game's combat text font, outlined; the game's font objects where its file cannot be set.
 local fallback
 local function SetFont(text, height)
     if text:SetFont(CombatText.FONT, height, CombatText.FLAGS) then return end
@@ -178,8 +169,6 @@ local function Make()
     number.text = number:CreateFontString(nil, "OVERLAY")
     number.text:SetPoint("BOTTOM")
     number.text:SetWordWrap(false)
-    number.picture = number:CreateTexture(nil, "OVERLAY")
-    number.picture:SetPoint("BOTTOM")
     local motion = number:CreateAnimationGroup()
     local rise = motion:CreateAnimation("Translation")
     rise:SetDuration(CombatText.TIME)
@@ -233,7 +222,6 @@ end
 -- (times CombatText.HEIGHT), swelling once where it is critical.
 function CombatText.Show(host, form, value, color, size, critical)
     local number = Take(host)
-    number.picture:Hide()
     SetFont(number.text, CombatText.HEIGHT * size)
     number.text:SetTextColor(color[1], color[2], color[3])
     number.text:SetFormattedText(form, value)
@@ -252,26 +240,9 @@ local function Damage(host, form, value, school, size, critical)
     CombatText.Show(host, form, value, CombatText.WHITE, size, critical)
 end
 
--- What did no harm, over a host: the game's word, or with the drawings switched on (*Drawings for what did no harm*)
--- its drawing, where it has one and the file is there.
+-- What did no harm, over a host: the game's word.
 function CombatText.Nothing(host, kind)
-    local name = (ns.options or {}).combatPictures and CombatText.PICTURES[kind] or nil
-    if not name then
-        CombatText.Show(host, "%s", Word(kind), CombatText.WHITE, CombatText.SMALL)
-        return
-    end
-    local number = Take(host)
-    if not number.picture:SetTexture(CombatText.ART .. name) then
-        Release(number)
-        CombatText.Show(host, "%s", Word(kind), CombatText.WHITE, CombatText.SMALL)
-        return
-    end
-    number.text:Hide()
-    local tint = CombatText.TINTS[name] or CombatText.WHITE
-    number.picture:SetVertexColor(tint[1], tint[2], tint[3])
-    number.picture:SetSize(CombatText.PICTURE, CombatText.PICTURE)
-    number.picture:Show()
-    Play(number, false)
+    CombatText.Show(host, "%s", Word(kind), CombatText.WHITE, CombatText.SMALL)
 end
 
 -- What a host's unit took (UNIT_COMBAT: its kind, flags, amount and school), as a number or a drawing over it; mine:

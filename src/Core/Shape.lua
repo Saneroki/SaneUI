@@ -401,7 +401,7 @@ local function Face()
             return face
         end
     end
-    face = { file = Core.Journal.FONT_BOLD, flags = "OUTLINE" }
+    face = { file = Core.Look.FONT, flags = "OUTLINE" }
     return face
 end
 
@@ -410,7 +410,7 @@ end
 function Shape.BarFont(fs, size)
     local look = Face()
     if look.name then fs:SetFontObject(look.name) end
-    fs:SetFont(look.file, size * Core.Journal.PX, look.flags)
+    fs:SetFont(look.file, size * Core.Look.PX, look.flags)
 end
 
 -- Two caps over a texture laid at a region's two ends (anchor), rounding them as a bar of that height is rounded;

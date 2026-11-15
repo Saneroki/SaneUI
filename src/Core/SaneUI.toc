@@ -42,8 +42,6 @@ Shape.lua
 Skin.lua
 # The kit: Sane UI's windows of WoW: Forever's own parts, the login screen's first (Doc/guides/interface-style.md)
 Look.lua
-# Sane UI's own look: the journal of paper bound in leather, pencil on the paper, Kalam (Art/Journal, Fonts)
-Journal.lua
 Edge.lua
 Window.lua
 Classic.lua

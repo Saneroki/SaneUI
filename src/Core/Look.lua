@@ -30,6 +30,11 @@ local Core = SaneUI.Core
 --      Look.Headline(parent)              -- the loading screen's bar: a frame for a headline, words or buttons in it
 --      Look.Slot(parent)                  -- an item's slot: the character window's gear slot
 --      Look.Tab(parent, height)           -- a tab of the full screen's top bar: tab:SetSelected, tab:SetEnd
+--      Look.Outline(frame)                -- the thin golden outline round frame (the search bar's): box:SetStrong(on)
+--      Look.Rule(parent)                  -- the thin golden line, unplaced
+--      Look.SetFont(fs, size, bold, colour) -- Friz Quadrata at a 1080p layout's size (Look.PX), white, the game's shadow
+--      Look.Dress(frame, title)           -- a window of its own in the bronze: its head, title, X and content frame;
+--      Look.Inner(w, h), Look.Outer(w, h) -- its content's size in a window that large, and the window round a content
 -------------------------------------------------------------------------------
 local Look = {}
 Core.Look = Look
@@ -39,6 +44,13 @@ Look.NAV = { 0.8392, 0.7020, 0.5020 }               -- Forever's top bar words (
 Look.NAV_LIT = { 1.0, 0.8863, 0.7176 }              -- under the mouse and chosen (_HIGHLIGHT)
 Look.NAV_OFF = { 0.5608, 0.5608, 0.5608 }           -- disabled (_DISABLED)
 Look.LINE = { 0.62, 0.50, 0.30 }                    -- the thin golden outline of the search bar, as a colour of our own
+Look.INK = { 1, 1, 1, 1 }                           -- words on the dark plates (HIGHLIGHT_FONT_COLOR)
+Look.GOLD = { 1, 0.82, 0, 1 }                       -- heads and labels (NORMAL_FONT_COLOR)
+Look.FAINT = { 0.6, 0.6, 0.6, 1 }                   -- what is only said in passing
+Look.SHADE = { 1, 0.82, 0, 0.12 }                   -- a row under the mouse: a gold glow
+Look.PX = 768 / 1080                                -- a 1080p layout's pixel in UI units (the windows' sizes are written in those)
+-- The loot feed's hand-drawn font (Kalam Bold, Core's Fonts), kept by Saneroki's word (2026-11-02: "Leave it").
+Look.HAND = "Interface\\AddOns\\SaneUI\\Fonts\\Kalam-Bold.ttf"
 
 -- The parts' sizes (UI units), as the game's templates have them.
 Look.EDGE = 7          -- the bronze frame's picture reaches this far past the window: its shadow, see-through
@@ -420,3 +432,90 @@ function Look.Tab(parent, height)
     SetSelected(tab, false)
     return tab
 end
+
+-------------------------------------------------------------------------------
+--  Words, outlines and a window of its own
+-------------------------------------------------------------------------------
+-- Friz Quadrata on a font string at a size in a 1080p layout's pixels, in a colour (white), with the game's shadow.
+-- bold: the game's font has no bold face; heads are told apart by their colour.
+function Look.SetFont(fs, size, bold, colour, alpha)
+    fs:SetFont(Look.FONT, size * Look.PX, "")
+    colour = colour or Look.INK
+    fs:SetTextColor(colour[1], colour[2], colour[3], alpha or colour[4] or 1)
+    fs:SetShadowColor(0, 0, 0, 1)
+    fs:SetShadowOffset(1, -1)
+end
+
+-- The thin golden line, unplaced (anchor its ends), one unit high.
+function Look.Rule(parent, layer)
+    return Look.Line(parent, 0.6, layer)
+end
+
+-- The thin golden outline round frame, a little dark inside (the character list's search bar): a box for a part, a
+-- button or a dropdown. box:SetStrong(on) brightens it (the mouse on it); box.parts all of it, to show or hide.
+local function Strong(box, on)
+    for _, line in ipairs(box.lines) do line:SetAlpha(on and 1 or 0.6) end
+end
+
+function Look.Outline(frame, layer)
+    local box = { lines = {}, parts = {}, SetStrong = Strong }
+    box.fill = frame:CreateTexture(nil, layer == "ARTWORK" and "BORDER" or "BACKGROUND")
+    box.fill:SetColorTexture(0, 0, 0, 0.35)
+    box.fill:SetAllPoints()
+    for index, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local line = frame:CreateTexture(nil, layer or "BORDER")
+        line:SetColorTexture(Look.LINE[1], Look.LINE[2], Look.LINE[3], 1)
+        if index <= 2 then
+            line:SetPoint(side .. "LEFT")
+            line:SetPoint(side .. "RIGHT")
+            line:SetHeight(1)
+        else
+            line:SetPoint("TOP" .. side)
+            line:SetPoint("BOTTOM" .. side)
+            line:SetWidth(1)
+        end
+        box.lines[index] = line
+        box.parts[index] = line
+    end
+    box.parts[5] = box.fill
+    Strong(box, false)
+    return box
+end
+
+-- A window of its own (not on a board: Navigation's satchel) in the bronze frame: inside its band a head to drag it
+-- by with its title at the left in the game's gold, the game's X at its right, the thin golden line under it, and
+-- its content frame under that, Look.INSIDE from the frame's sides and bottom.
+Look.DRESS_HEAD = 40   -- from the window's top to the line under its head: the band and a row of 30
+function Look.Inner(width, height)
+    return width - 2 * Look.INSIDE, height - Look.DRESS_HEAD - 4 - Look.INSIDE
+end
+
+function Look.Outer(width, height)
+    return width + 2 * Look.INSIDE, height + Look.DRESS_HEAD + 4 + Look.INSIDE
+end
+
+function Look.Dress(frame, title)
+    local look = { frame = Look.Frame(frame) }
+    local row = Look.DRESS_HEAD - Look.BAND
+    look.close = CreateFrame("Button", nil, frame, "UIPanelCloseButtonNoScripts")
+    look.close:SetPoint("TOPRIGHT", -Look.BAND + 2, -Look.BAND - (row - 24) / 2)
+    look.head = CreateFrame("Frame", nil, frame)
+    look.head:SetPoint("TOPLEFT", Look.BAND, -Look.BAND)
+    look.head:SetPoint("RIGHT", look.close, "LEFT")
+    look.head:SetHeight(row)
+    look.title = look.head:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    look.title:SetPoint("LEFT", Look.INSIDE - Look.BAND + 2, 0)
+    look.title:SetPoint("RIGHT", -4, 0)
+    look.title:SetJustifyH("LEFT")
+    look.title:SetWordWrap(false)
+    look.title:SetText(title or "")
+    local line = Look.Line(frame, 0.5)
+    line:SetPoint("TOPLEFT", Look.INSIDE, -Look.DRESS_HEAD)
+    line:SetPoint("TOPRIGHT", -Look.INSIDE, -Look.DRESS_HEAD)
+    look.content = CreateFrame("Frame", nil, frame)
+    look.content:SetPoint("TOPLEFT", Look.INSIDE, -(Look.DRESS_HEAD + 4))
+    look.content:SetPoint("BOTTOMRIGHT", -Look.INSIDE, Look.INSIDE)
+    look.close:SetFrameLevel(look.content:GetFrameLevel() + 20)
+    return look
+end
+

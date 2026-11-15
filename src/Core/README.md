@@ -620,7 +620,6 @@ but for a window to try those with (`/sane window`).
 | `Upgrade.lua` | Whether an item would make the character better (`Core.Upgrade`), for the loot, the bags and quest rewards |
 | `Expand.lua` | A window that opens while the mouse rests on it, and can be kept open |
 | `Bar.lua` | A progress bar whose value and size move |
-| `Journal.lua` | The journal look (`Core.Journal`): paper, leather and their text, drawn by code for the parts still in that look until they are rebuilt from Forever's own images (`Doc/guides/interface-style.md`) |
 | `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
 | `Objectives.lua` | `Core.UnitQuest(unit)`: what is still to do about a creature for a quest in your log, as the game says it in its tooltip data (`C_QuestLog.UnitIsRelatedToActiveQuest`, then `C_TooltipInfo.GetUnit`'s lines of the kind `QuestObjective`): `"kill"` or `"loot"` and the count of the first objective still open; `false` while the game hides it. Read by Nameplates and Combat's quest marks |
@@ -643,7 +642,9 @@ but for a window to try those with (`/sane window`).
   the heavy bronze frame (what they hold inside its band: `Board.BAND`, `HEAD` 40, `EDGE` 12), the board's layout
   tabs the character screen's top bar, a full window's title bar the shop's (`Window.FULL_BAR` 44), the title
   bar's buttons the grey square ones and its search box the character list's; the journal's dress gone from the
-  board (`Journal.lua` stays for the parts still in it).
+  board. Then the rest: Navigation's satchel and audio line, the combat text (the game's font and words, its
+  drawings and their setting gone), the bar font's fallback; `Journal.lua` and `Art/Journal` gone (the loot feed keeps
+  its hand-drawn Kalam Bold, `Look.HAND`, by Saneroki's word).
 - 2026-11-15 — Every element's options, built 2026-11-14 and taken out again (Saneroki: "Remove all those options again
   for now", to come back "only within the edit mode", which is to be redone: board #488): `Element.lua` is gone, the
   right clicks of the elements and the action bars are as before; `Doc/ideas/Windows.md`, *Every element's options*.

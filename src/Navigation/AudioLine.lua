@@ -16,10 +16,10 @@ local _, ns = ...
 --  the profile), Load (the profile set again), New (a profile of the settings
 --  now, named in the game's dialog) and Delete (the profile in use, asked first;
 --  not the last one). The satchel stays open while one of these menus or
---  dialogs is (Satchel's Held). On the paper: pencil boxes, words in graphite.
+--  dialogs is (Satchel's Held). In the kit's look: thin golden outlines, the game's font.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local Journal = Core.Journal
+local Kit = Core.Look -- the kit's parts (Core.Look)
 local Audio = Core.Audio
 local AudioLine = {}
 ns.AudioLine = AudioLine
@@ -36,7 +36,7 @@ AudioLine.COG_INSET = 4
 -- the row's height.
 AudioLine.SLIDER, AudioLine.PERCENT, AudioLine.CHECK, AudioLine.ROW = 120, 44, 40, 30
 AudioLine.STEPS = 20      -- the slider's steps from 0 to 100 %: 5 % each, as the game's own
-AudioLine.FAINT = "ff6e6154" -- faint graphite in a colour code: "(changed)"
+AudioLine.FAINT = "ff999999" -- faint grey in a colour code: "(changed)"
 AudioLine.TEXT = {
     sound = "Sound:",
     changed = "(changed)",
@@ -196,18 +196,18 @@ local function Left(button)
     GameTooltip:Hide()
 end
 
--- A dropdown of the game's own kind (SetupMenu opens its menu under it) in a pencil box.
+-- A dropdown of the game's own kind (SetupMenu opens its menu under it) in the kit's thin golden outline.
 local function Dropdown(width, generator)
     local menu = CreateFrame("DropdownButton", nil, line)
     menu:SetSize(width, AudioLine.HEIGHT)
-    menu.box = Journal.Box(menu, 0.5)
+    menu.box = Kit.Outline(menu, 0.5)
     menu:SetupMenu(ns.Guard(generator))
     menu:HookScript("OnEnter", ns.Guard(Entered))
     menu:HookScript("OnLeave", ns.Guard(Left))
     return menu
 end
 
--- The cogwheel's picture: the game's silver gear as it draws it (tinted graphite it is a dark blot), else the gear's
+-- The cogwheel's picture: the game's silver gear as it draws it, else the gear's
 -- icon.
 local function Gear(texture)
     local atlases = rawget(_G, "C_Texture")
@@ -222,21 +222,21 @@ local function Build(sheet)
     line = CreateFrame("Frame", nil, sheet)
     line:SetHeight(AudioLine.HEIGHT)
     word = line:CreateFontString(nil, "OVERLAY")
-    Journal.Font(word, 15, true, Journal.INK)
+    Kit.SetFont(word, 15, true, Kit.INK)
     word:SetPoint("LEFT", line, "LEFT", 2, 0)
     word:SetText(TEXT.sound)
     profiles = Dropdown(AudioLine.MENU, Profiles)
     profiles:SetPoint("LEFT", line, "LEFT", AudioLine.LABEL, 0)
     profiles.label = profiles:CreateFontString(nil, "OVERLAY")
-    Journal.Font(profiles.label, 14, false, Journal.INK)
+    Kit.SetFont(profiles.label, 14, false, Kit.INK)
     profiles.label:SetPoint("LEFT", 7, 0)
     profiles.label:SetPoint("RIGHT", -16, 0)
     profiles.label:SetJustifyH("LEFT")
     profiles.label:SetWordWrap(false)
-    local arrow = profiles:CreateFontString(nil, "OVERLAY")
-    Journal.Font(arrow, 12, true, Journal.INK)
-    arrow:SetPoint("RIGHT", -7, 0)
-    arrow:SetText("v")
+    local arrow = profiles:CreateTexture(nil, "OVERLAY") -- the game's small gold chevron
+    Kit.Atlas(arrow, "minimal-scrollbar-small-arrow-bottom")
+    arrow:SetSize(10, 8)
+    arrow:SetPoint("RIGHT", -6, 0)
     cog = Dropdown(AudioLine.HEIGHT, Settings)
     cog:SetPoint("LEFT", profiles, "RIGHT", AudioLine.GAP, 0)
     cog.icon = cog:CreateTexture(nil, "ARTWORK")

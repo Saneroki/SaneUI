@@ -45,7 +45,7 @@ function Style.Outlined(name, size, bold)
     return Style.Font(name, size, bold)
 end
 
--- A font object at a size in 1080p pixels, not grown (Core.Journal.FontObject's place).
+-- A font object at a size in 1080p pixels, not grown.
 function Style.FontObject(name, size, bold, flags)
     return Look.Font(name, size * Style.PX, flags, "GameFontHighlight")
 end
@@ -89,40 +89,15 @@ function Style.InkHex(r, g, b)
     return ("ff%02x%02x%02x"):format(math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
 
--- A colour of the game's that reads on the plate (Core.Journal.Ink's place): itself.
+-- A colour of the game's on the plate: itself (it reads on the dark bronze).
 function Style.Ink(r, g, b)
     return r, g, b
 end
 
--- The thin golden outline round frame (the search bar's, the character list's), a little dark inside: a box for a
--- part, a button or a check. box:SetStrong(on) brightens it (the mouse on it). weight: unused, as the pencil's was.
-local function Strong(box, on)
-    for _, line in ipairs(box.lines) do line:SetAlpha(on and 1 or 0.6) end
-end
-
+-- The thin golden outline round frame (the kit's: Core.Look.Outline), a little dark inside: a box for a part, a
+-- button or a check. box:SetStrong(on) brightens it (the mouse on it). weight: unused, as the pencil's was.
 function Style.Box(frame, weight, layer)
-    local box = { lines = {}, parts = {}, SetStrong = Strong }
-    box.fill = frame:CreateTexture(nil, layer == "ARTWORK" and "BORDER" or "BACKGROUND")
-    box.fill:SetColorTexture(0, 0, 0, 0.35)
-    box.fill:SetAllPoints()
-    for index, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
-        local line = frame:CreateTexture(nil, layer or "BORDER")
-        line:SetColorTexture(Look.LINE[1], Look.LINE[2], Look.LINE[3], 1)
-        if index <= 2 then
-            line:SetPoint(side .. "LEFT")
-            line:SetPoint(side .. "RIGHT")
-            line:SetHeight(1)
-        else
-            line:SetPoint("TOP" .. side)
-            line:SetPoint("BOTTOM" .. side)
-            line:SetWidth(1)
-        end
-        box.lines[index] = line
-        box.parts[index] = line
-    end
-    box.parts[5] = box.fill -- every part, to show or hide the box whole
-    Strong(box, false)
-    return box
+    return Look.Outline(frame, layer)
 end
 
 -- An item's slot behind a button: the game's empty bag slot (bags-item-slot-blank) at frame's edge (out: units
@@ -136,7 +111,7 @@ function Style.Slot(frame, out, layer)
     return slot
 end
 
--- The game's small pictures Inventory's rows and cells use (Core.Journal.Texture's place for its pieces): the
+-- The game's small pictures Inventory's rows and cells use, by the names the journal's pieces had: the
 -- chevron of a group that opens, the red X of the bin, the minimal checkbox.
 Style.PIECES = {
     arrow = "uitools-icon-chevron-down", -- pointing down, as the journal's was: the sidebar turns it

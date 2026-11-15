@@ -1350,51 +1350,32 @@ check(CVar("nameplateSelectedScale") == "1" and ns.options.foundCVars.nameplateS
     CombatText.Update() -- as at a login: ours set (a logout above, if any, put the game's back)
     check(CVar("floatingCombatTextCombatDamage_v2") == "0" and CVar("floatingCombatTextCombatHealing_v2") == "0"
         and CVar("enableFloatingCombatText") == "0", "the game's own combat text off while ours shows")
-    check(ns.options.combatPictures == false, "what did no harm: no drawings by default, in both profiles (none sets them)")
     W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
     local parry = dress.numbers[1]
-    check(parry.text:IsShown() and not parry.picture:IsShown() and parry.text._text == "parry"
-        and parry.text._color[2] == 1, "a parry by default: the game's word, white")
+    check(parry.text:IsShown() and parry.text._text == "parry" and parry.text._color[2] == 1, "a parry: the game's word, white")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 0, 1)
-    check(dress.numbers[2].text._text == "Miss" and not dress.numbers[2].picture:IsShown(), "a hit of nothing by default: the word too")
+    check(dress.numbers[2].text._text == "Miss", "a hit of nothing: the word too")
     CombatText.Clear(dress)
-    Core.Set(ns.name, "combatPictures", true) -- the drawings, from here on
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "CRITICAL", 1234, 4)
     local hit = dress.numbers and dress.numbers[1]
     check(hit and hit._parent == dress and hit.text._text[1].abbreviated == 1234 and hit.text._font[2] == CombatText.HEIGHT * CombatText.CRIT,
         "a critical hit rises over the plate, larger, in the game's abbreviation")
-    check(hit.text._font[1] == Core.Journal.FONT_BOLD and hit.text._font[3] == "OUTLINE", "in Kalam Bold, outlined")
+    check(hit.text._font[1] == CombatText.FONT and CombatText.FONT == (rawget(_G, "DAMAGE_TEXT_FONT") or Core.Look.FONT)
+        and hit.text._font[3] == "OUTLINE", "in the game's combat text font, outlined")
     check(hit.text._color[1] == 1 and hit.text._color[2] == 0.1 and hit.motion._playing and hit.swell._scale[1] == CombatText.SWELL,
         "a spell's damage (fire) red, and it swells once")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 0, 1)
     local miss = dress.numbers[2]
-    check(miss.picture:IsShown() and not miss.text:IsShown() and miss.picture._texture == CombatText.ART .. "miss"
-        and miss.picture._width == CombatText.PICTURE, "a hit of nothing: the drawing of a miss, not a word")
+    check(miss.text:IsShown() and miss.text._text == "Miss", "a hit of nothing: the game's word")
     check(miss._points[1][4] ~= hit._points[1][4], "two at once stand side by side")
-    W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
-    check(dress.numbers[3].picture._texture == CombatText.ART .. "parry", "a parry: its drawing")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "BLOCK", 0, 1)
-    check(dress.numbers[4].picture._texture == CombatText.ART .. "block" and dress.numbers[4].picture._vertex[2] == 1,
-        "a blow blocked whole: the shield, white")
-    W.Fire("UNIT_COMBAT", "nameplate1", "IMMUNE", "", 0, 1)
-    check(dress.numbers[5].picture._texture == CombatText.ART .. "immune" and dress.numbers[5].picture._vertex[1] == 1
-        and dress.numbers[5].picture._vertex[2] < 0.5, "an immunity: the bubble, bright red")
+    check(dress.numbers[3].text._text == "Block", "a blow blocked whole: the game's word")
     W.Fire("UNIT_COMBAT", "nameplate1", "RESIST", "", 0, 1)
-    check(dress.numbers[6].text:IsShown() and dress.numbers[6].text._text == "resist", "no drawing for a resist: the game's word")
-    Core.Set(ns.name, "combatPictures", false)
-    W.Fire("UNIT_COMBAT", "nameplate1", "PARRY", "", 0, 1)
-    local word = dress.numbers[#dress.numbers]
-    check(word.text:IsShown() and not word.picture:IsShown() and word.text._text == "parry", "drawings off: the game's word")
-    Core.Set(ns.name, "combatPictures", true)
-    W.gone = { [CombatText.ART .. "evade"] = true }
-    W.Fire("UNIT_COMBAT", "nameplate1", "EVADE", "", 0, 1)
-    check(dress.numbers[#dress.numbers].text:IsShown() and dress.numbers[#dress.numbers].text._text == "evade"
-        and not dress.numbers[#dress.numbers].picture:IsShown(), "a drawing's file missing: the word")
-    W.gone = nil
+    check(dress.numbers[4].text:IsShown() and dress.numbers[4].text._text == "resist", "a resist: the game's word")
     CombatText.Clear(dress)
     W.Fire("UNIT_COMBAT", "nameplate1", "HEAL", "", 80, 2)
-    check(dress.numbers[1].text._text.form == "+%s" and dress.numbers[1].text._color[2] == 1 and dress.numbers[1].text._color[1] < 0.5
-        and not dress.numbers[1].picture:IsShown(), "a heal: green, with a plus, no picture left from before")
+    check(dress.numbers[1].text._text.form == "+%s" and dress.numbers[1].text._color[2] == 1 and dress.numbers[1].text._color[1] < 0.5,
+        "a heal: green, with a plus")
     W.Fire("UNIT_COMBAT", "nameplate1", Secret(), Secret(), Secret(), Secret())
     check(#dress.numbers == 2 and dress.numbers[2].text._color[3] == 1, "a hidden hit: written as it is, white, nothing compared")
     -- Forever's own amount hidden (since 70755), the kind and flags plain: W.Secret errors when compared.
@@ -1402,8 +1383,8 @@ check(CVar("nameplateSelectedScale") == "1" and ns.options.foundCVars.nameplateS
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "", blow, 1)
     check(#dress.numbers == 3 and dress.numbers[3].text._text[1].abbreviated == blow, "a hidden amount: the game's abbreviation of it, never compared")
     W.Fire("UNIT_COMBAT", "nameplate1", "WOUND", "BLOCK", W.Secret(), 1)
-    check(#dress.numbers == 4 and dress.numbers[4].picture._texture == CombatText.ART .. "block",
-        "a hidden amount blocked whole: the shield, no number")
+    check(#dress.numbers == 4 and dress.numbers[4].text._text == "Block",
+        "a hidden amount blocked whole: the game's word, no number")
     dress.numbers[4].motion:Finish()
     dress.numbers[3].motion:Finish()
     W.Fire("UNIT_COMBAT", "nameplate1", "ENERGIZE", "", 10, 0)
@@ -1440,7 +1421,7 @@ check(CVar("nameplateSelectedScale") == "1" and ns.options.foundCVars.nameplateS
     W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 33)
     check(you.numbers[3].text._color[2] == 0.1, "physical and a spell school at once: red")
     W.Fire("UNIT_COMBAT", "player", "DODGE", "", 0, 1)
-    check(you.numbers[4].picture._texture == CombatText.ART .. "dodge", "your dodge: its drawing")
+    check(you.numbers[4].text._text == "Dodge", "your dodge: the game's word")
     Core.Set(ns.name, "combatSelf", false)
     W.Fire("UNIT_COMBAT", "player", "WOUND", "", 42, 1)
     check(#you.numbers == 0 and CVar("enableFloatingCombatText") == "1", "over your character off: none, the game's text about you back")
@@ -1489,7 +1470,6 @@ check(CVar("nameplateSelectedScale") == "1" and ns.options.foundCVars.nameplateS
     Core.Set(ns.name, "combatGame", true) -- ours again, as at the next login, the game's own found
     check(CVar("floatingCombatTextCombatDamage_v2") == "0" and ns.options.combatFoundCVars.floatingCombatTextCombatDamage_v2 == "1",
         "(ours again)")
-    Core.Set(ns.name, "combatPictures", false)
 
     -- A school the game hides, as the game has it: written into a text it stays hidden, and nothing else works on it.
     local hidden = {}

@@ -20,7 +20,7 @@ Settings of this computer (all optional) in ~/.config/saneui/uilab.json:
             colours, strings, class and race names
   listfile  the game's file IDs to paths (CSV: id;path), for textures given by file ID
   atlas     the game's atlases (TSV: name file fileDataID width height left right top bottom tileH tileV)
-  drafts    { "SaneUI/Art/Journal": "assets/generated/interface/pieces" }: addon folders served from elsewhere
+  drafts    { "SaneUI/Art/Drafts": "assets/generated/..." }: addon folders served from elsewhere
   fonts     { "frizqt__.ttf": "/usr/share/fonts/...ttf" }: stand-ins for the game's own fonts, which its client
             ships compiled and cannot be read
 """
@@ -236,7 +236,7 @@ def texture_file(path):
         hit = FIND.find(ROOT / "BUILD" / addon, inner)
         if hit:
             return hit
-        for prefix, folder in {**{"SaneUI/Art/Journal": "assets/generated/interface/pieces"}, **CONF.get("drafts", {})}.items():
+        for prefix, folder in CONF.get("drafts", {}).items():
             pre = prefix.replace("\\", "/").lower().rstrip("/") + "/"
             if rest.lower().startswith(pre):
                 hit = FIND.find(ROOT / folder, rest[len(pre):])

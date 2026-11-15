@@ -93,8 +93,6 @@ ns.TEXT = {
     combatSelfTip = "The same for what you take, rising from about your character's feet: damage with a minus.",
     combatHeals = "Heals",
     combatHealsTip = "Heals in green with a plus.",
-    combatPictures = "Drawings for what did no harm",
-    combatPicturesTip = "A miss, dodge, parry, block, evade or immunity as a pencil drawing instead of the game's word (\"Miss\", \"Dodge\", ...).",
     combatGame = "Instead of the game's",
     combatGameTip = "The game's own combat text is switched off while ours shows: its numbers over units, and its scrolling text about you (with it its notes on entering a fight, low health, reputation and honor). Off: both show.",
 }
@@ -132,7 +130,6 @@ local OPTIONS = {
     { key = "combatText", default = true, text = ns.TEXT.combatText, tip = ns.TEXT.combatTextTip, header = ns.TEXT.combatHeader },
     { key = "combatSelf", default = true, text = ns.TEXT.combatSelf, tip = ns.TEXT.combatSelfTip },
     { key = "combatHeals", default = true, text = ns.TEXT.combatHeals, tip = ns.TEXT.combatHealsTip },
-    { key = "combatPictures", default = false, text = ns.TEXT.combatPictures, tip = ns.TEXT.combatPicturesTip },
     { key = "combatGame", default = true, text = ns.TEXT.combatGame, tip = ns.TEXT.combatGameTip },
     { key = "combatFoundCVars", default = {} }, -- the game's combat text CVars as they were before ours (CombatText.lua)
 }
@@ -151,7 +148,7 @@ local function Apply(key)
         ns.Guarded(ns.Scale.Update)
     elseif key == "combatText" or key == "combatSelf" or key == "combatGame" then
         ns.Guarded(ns.CombatText.Update)
-    elseif key == "combatHeals" or key == "combatPictures" then
+    elseif key == "combatHeals" then
         return
     elseif key == "style" then -- what the plates show, and how closely they stack (no auras: closer, Scale.Stacking)
         ns.Guarded(ns.Plate.Refresh)

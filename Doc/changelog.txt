@@ -16,6 +16,8 @@ The bigger changes of each version, newest first.
   game's own font, its buttons (red for what matters). Inventory
   is wholly in it: the character window as the game's, the stats
   with its headings, the bags with the game's slots and icons.
+- The minimap's satchel, the sound line and the combat text in the
+  new look too: the combat text in the game's own font and words.
 - Where to farm: type "where to farm Silk Cloth" or a herb's name
   in the map's search and the places where its creatures or nodes
   stand thickest glow on the map, a pin in each, the best listed

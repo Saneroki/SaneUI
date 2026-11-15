@@ -14,8 +14,8 @@ cutting tool, outside the project.
 
 ## The new direction (Saneroki, 2026-10-30)
 
-**The journal described below is being replaced.** It stays in force for what is built, until a part is rebuilt from
-the picks; where this section and the rest disagree, this section wins. Saneroki's decisions:
+**The journal described below is replaced** (since 2026-11-15 nothing is built in it: *The kit*, *Built*); its
+sections stay as its record. Where this section and the rest disagree, this section wins. Saneroki's decisions:
 
 - **Windows look like WoW: Forever's own style**, built from the game's own images instead of the leather and the
   paper. The layouts stay Sane UI's own.
@@ -108,8 +108,12 @@ squares (3), its search box the character list's (2). Inventory is the first mod
 bronze, its words Friz Quadrata in the game's colours, the doll the character window's (9), the stats with its heads
 and bands, the bags' cells on the game's slot, its action buttons the red ones (4), the waste bin the red delete
 button, the category icons the game's own icons in place of our pencil drawings. Where Retail lacks Forever's
-picture (the heavy bronze, the gear slot) a stand-in of its own draws (`Look.STAND_IN`). Still in the journal look:
-Navigation's satchel and audio line, the loot feed's and the combat text's fonts (`Core.Journal`).
+picture (the heavy bronze, the gear slot) a stand-in of its own draws (`Look.STAND_IN`). Then the rest (card #495):
+Navigation's satchel (`Look.Dress`) and audio line, the combat text in the game's own font and words (its pencil
+drawings and their setting gone); `Core.Journal`, its textures (`Art/Journal`) and the tools that drew the journal's
+pieces, the bags' category drawings and the combat text's drawings are gone. The loot feed keeps its hand-drawn
+Kalam Bold (`Look.HAND`) by Saneroki's word ("Leave it", 2026-11-02). Nothing is built in the journal look any more:
+the sections on it below are its record.
 
 ## Scope
 

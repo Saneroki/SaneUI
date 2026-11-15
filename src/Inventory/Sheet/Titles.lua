@@ -3,10 +3,9 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Titles
 --  The titles, a window of its own on the module's board (the key "titles",
---  Board.lua) on the journal's page, as the game's sheet lists them (Camelot's TitleManagerPane): None first, then every title you know by
---  name, in lines on the journal's page (a light stripe on every other one,
---  the pencil's tick and shading on the one you wear, its light shading under
---  the mouse). A click wears that title (SetCurrentTitle, the game's own call).
+--  Board.lua), as the game's sheet lists them (Camelot's TitleManagerPane): None first, then every title you know by
+--  name, in lines (a light stripe on every other one, the game's tick and a
+--  gold glow on the one you wear, a lighter glow under the mouse). A click wears that title (SetCurrentTitle, the game's own call).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Titles = {}
@@ -15,7 +14,7 @@ ns.Titles = Titles
 -- A row, the tick's room; the list in the pane.
 Titles.ROW, Titles.CHECK = ns.Style.Fit(22), ns.Style.Fit(18)
 Titles.INSET = { 10, 4, 24, 10 }
-Titles.TICK = "\226\136\154" -- the tick drawn by hand: Kalam's root sign (the style's checkbox)
+Titles.TICK = 16 -- the tick on the title worn: the game's own (checkmark-minimal), this large
 Titles.NONE = -1
 
 local list
@@ -45,7 +44,7 @@ local function Wear(row)
     Game("SetCurrentTitle", row.data.id)
 end
 
--- A line on the paper, made once: its stripe, its shading while worn and under the mouse, the tick, the name.
+-- A line, made once: its stripe, its glow while worn and under the mouse, the tick, the name.
 local function Parts(row)
     if row.text then return end
     local paper = ns.Style
@@ -59,16 +58,14 @@ local function Parts(row)
     local light = row:CreateTexture(nil, "HIGHLIGHT")
     light:SetAllPoints()
     light:SetColorTexture(paper.SHADE[1], paper.SHADE[2], paper.SHADE[3], paper.SHADE[4])
-    row.check = row:CreateFontString(nil, "ARTWORK")
-    row.check:SetFontObject(paper.Font("SaneUITitlesTick", 15, true))
-    row.check:SetWidth(Titles.CHECK)
-    row.check:SetPoint("LEFT", 4, 0)
-    row.check:SetText(Titles.TICK)
+    row.check = ns.Style.Texture(row, "check", "ARTWORK")
+    row.check:SetSize(Titles.TICK, Titles.TICK)
+    row.check:SetPoint("LEFT", 4 + (Titles.CHECK - Titles.TICK) / 2, 0)
     row.text = row:CreateFontString(nil, "ARTWORK")
     row.text:SetFontObject(paper.Font("SaneUITitlesName", 14))
     row.text:SetJustifyH("LEFT")
     row.text:SetWordWrap(false)
-    row.text:SetPoint("LEFT", row.check, "RIGHT", 3, 0)
+    row.text:SetPoint("LEFT", 4 + Titles.CHECK + 3, 0)
     row.text:SetPoint("RIGHT", -3, 0)
     row:SetScript("OnClick", function(self) ns.Safe("character", Wear, self) end)
 end
