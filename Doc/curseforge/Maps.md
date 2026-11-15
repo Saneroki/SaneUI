@@ -1,8 +1,8 @@
 # Sane UI Maps: the CurseForge project
 
 What goes into the project's fields on CurseForge (authors.curseforge.com). The file uploads come from
-`saneui publish` (`dev/tools/release`); their changelog is the part *Navigation <version>* of
-`Doc/changelog.txt`.
+`saneui publish` (`dev/tools/release`); their changelog is this project's own,
+[changelogs/Navigation.md](changelogs/Navigation.md).
 
 | Field | Value |
 | --- | --- |
@@ -11,14 +11,15 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. |
 | Category | Map & Minimap (and Quests & Leveling) |
 | Avatar | `maps-avatar.png` of `saneui makelogos` (400 x 400) |
+| Banner | `maps-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![Sane UI Maps](<address>)`) |
 | Relations | Sane UI Core: Required Dependency (each upload sends it too) |
 | Release type | Alpha, by the module's stage |
 
 ## Description
 
-```markdown
-![Sane UI Maps](maps-banner.png)
+The editor set to *Markdown* when the project is made.
 
+```markdown
 **Sane UI Maps** puts your minimap and your world map into one window. Small, in the top right
 corner of the screen, it is your minimap. Move the mouse into that corner and it fills the screen as the
 world map: the same map, handled the same way, only bigger.

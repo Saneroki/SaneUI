@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### The CurseForge pages ready to paste (Saneroki, 2026-11-15)
+Saneroki: "I want to create the projects on curseforge for saneUI and SaneUI Navigation. Can you give me the files for the icons and a copy able summary and description for the addons".
+- **`Doc/curseforge/Core.md`, `Maps.md`:** each file's changelog is its project's own (`changelogs/<Module>.md`), no longer `Doc/changelog.txt`; the banner left the description to paste (a local file's name shows nothing on CurseForge) and is a field of its own: uploaded under the project's Images once it is made, put in at the top by its address; the editor set to *Markdown* when the project is made.
+
 ### Sane UI's Discord at its own address, discord.gg/saneui (Saneroki, 2026-11-15)
 Saneroki: "I have added a custom dicord link. I think our discord is now reachable at discord.gg/saneui" (it leads to the server SaneUI and never expires).
 - **`src/Core/Core.lua`:** `Core.DISCORD` is `https://discord.gg/saneui`: the Discord row of the page Sane UI copies it, and the line told in chat for a problem ends with discord.gg/saneui, short to type.

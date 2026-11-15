@@ -1,8 +1,8 @@
 # Sane UI Core: the CurseForge project
 
 What goes into the project's fields on CurseForge (authors.curseforge.com). The file uploads come from
-`saneui publish` (`dev/tools/release`); their changelog is the part *Sane UI <version>* of
-`Doc/changelog.txt`.
+`saneui publish` (`dev/tools/release`); their changelog is this project's own,
+[changelogs/Core.md](changelogs/Core.md).
 
 | Field | Value |
 | --- | --- |
@@ -11,14 +11,15 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Summary | The shared base of every Sane UI addon: one options page, profiles and safe error handling. |
 | Category | Libraries |
 | Avatar | `core-avatar.png` of `saneui makelogos` (400 x 400) |
+| Banner | `core-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![Sane UI Core](<address>)`) |
 | Slug | goes into `~/.config/saneui/curseforge.json` (`projects.Core.slug`): each module names it its dependency |
 | Release type | the highest any module uploaded with it needs (the pipeline sees to it) |
 
 ## Description
 
-```markdown
-![Sane UI Core](core-banner.png)
+The editor set to *Markdown* when the project is made.
 
+```markdown
 **Sane UI Core** is what every Sane UI addon shares. Sane UI is a set of interface addons for
 **WoW: Forever** (English client), each a download of its own, so you take only the parts you like.
 The CurseForge app installs Core with any of them; you do not need to get it yourself.
