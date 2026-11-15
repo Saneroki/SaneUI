@@ -18,7 +18,7 @@ local Core = SaneUI.Core
 --      Look.Has(name)                     -- whether the game has an atlas by that name
 --      Look.Font(name, size, flags)       -- a font object of Friz Quadrata (the game's GameFontNormal's), made once
 --      Look.Frame(frame)                  -- a window's heavy bronze round frame: :Fit(l, b, w, h), :Rest(), :Hold(on)
---      Look.Plate(frame)                  -- the bronze plate alone, filling frame
+--      Look.Plate(frame)                  -- the bronze plate alone, filling frame: once, cut to it (Look.Cover)
 --      Look.Line(parent, alpha)           -- the thin golden line (the search bar's outline colour)
 --      Look.Square(parent, size)          -- the grey square button (a normal one), :Icon(atlas | texture)
 --      Look.Red(parent, words, width)     -- the red button (an important one: yes, no, sell)
@@ -69,7 +69,7 @@ Look.SLOT = 55         -- the gear slot's picture round a 37 unit item button
 -- or false: nothing.
 Look.STAND_IN = {
     ["heavybronze-frame-basic"] = "ui-frame-chamfered",
-    ["heavybronze-frame-background"] = { file = "Interface\\FrameGeneral\\UI-Background-Rock", tile = true },
+    ["heavybronze-frame-background"] = { file = "Interface\\FrameGeneral\\UI-Background-Rock" },
     ["heavybronze-vert-cornerbracket-tr"] = false,
     ["heavybronze-vert-cornerbracket-br"] = false,
     ["ui-character-info-gearslot"] = "UI-HUD-ActionBar-IconFrame",
@@ -125,14 +125,36 @@ function Look.Font(name, size, flags, base)
     return font
 end
 
--- The bronze plate, the character list's textured background, repeated (its picture tiles) over all of frame.
+-- The bronze plate's picture laid over a rect that large: once, as large as the rect's longer side and cut to the
+-- rect, its middle in the middle. So its grain is as fine as the character list draws it (Blizzard stretches it down
+-- to the list's size) and never repeats (Saneroki, 2026-11-15: tiled at its own size it looked low in resolution).
+local function Cover(plate, width, height)
+    if not (width and height) or width <= 0 or height <= 0 then return end
+    local side = math.max(width, height)
+    local u, v = width / side, height / side
+    plate:SetTexCoord((1 - u) / 2, (1 + u) / 2, (1 - v) / 2, (1 + v) / 2)
+end
+Look.Cover = Cover
+
+-- A plate that follows its owner's size: the picture laid anew whenever the owner is sized (inset: the plate's room
+-- in from the owner's sides).
+local function Follow(plate, owner, inset)
+    local function Laid()
+        local w, h = owner:GetSize()
+        Cover(plate, (w or 0) - 2 * inset, (h or 0) - 2 * inset)
+    end
+    owner:HookScript("OnSizeChanged", Core.Guard("look", Laid))
+    Laid()
+end
+
+-- The bronze plate, the character list's textured background, over all of frame.
 function Look.Plate(frame, layer)
     local plate = frame:CreateTexture(nil, layer or "BACKGROUND", nil, -7)
-    if Look.Atlas(plate, "heavybronze-frame-background") then
-        plate:SetHorizTile(true)
-        plate:SetVertTile(true)
-    end
+    Look.Atlas(plate, "heavybronze-frame-background")
+    plate:SetHorizTile(false)
+    plate:SetVertTile(false)
     plate:SetAllPoints()
+    Follow(plate, frame, 0)
     return plate
 end
 
@@ -177,12 +199,12 @@ function Look.Frame(frame)
     look:SetAllPoints()
     look:SetFrameLevel(math.max(frame:GetFrameLevel() - 1, 0))
     look.plate = look:CreateTexture(nil, "BACKGROUND", nil, -7)
-    if Look.Atlas(look.plate, "heavybronze-frame-background") then
-        look.plate:SetHorizTile(true)
-        look.plate:SetVertTile(true)
-    end
+    Look.Atlas(look.plate, "heavybronze-frame-background")
+    look.plate:SetHorizTile(false)
+    look.plate:SetVertTile(false)
     look.plate:SetPoint("TOPLEFT", 4, -4)
     look.plate:SetPoint("BOTTOMRIGHT", -4, 4)
+    Follow(look.plate, look, 4)
     look.border = look:CreateTexture(nil, "BORDER")
     Look.Atlas(look.border, "heavybronze-frame-basic")
     look.border:SetPoint("TOPLEFT", -Look.EDGE, Look.EDGE)

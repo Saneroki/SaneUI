@@ -158,7 +158,7 @@ local Window = {}
 Core.Window = Window
 
 Window.BAR, Window.BAR_LEVEL = 32, 20 -- the title bar's height; how far above the window (over what it holds)
-Window.FULL_BAR = 44 -- the title bar's height while the window fills the screen: the shop's title bar, the top bar's tabs
+Window.FULL_BAR = 44 -- the title bar's height while the window fills the screen: the top bar's tabs in its middle
 Window.DRAG_ZONES = { CENTER = true } -- where a title bar's drag, outside Edit Mode, may dock a window
 Window.BUTTON, Window.BUTTON_INSET = 24, 4 -- the buttons' size (the game's close button's); from the bar's right
 Window.TEXT_INSET, Window.GLASS = 8, 12 -- the title from the bar's left; the search's magnifier
@@ -681,8 +681,6 @@ end
 -- (an atlas or a texture, about half its size; or a sign in words: art.sign), the game's click sound, a tip to say
 -- what it does. A module's button (options.buttons) is its own art: its text is its tip's words, never a sign.
 -- With template (a secure one), click runs after the template's own (PostClick).
-local ShopBar -- the shop's title bar behind a full window's bar (below)
-
 local function Square(parent, art, text, tip, click, template)
     local button = Core.Look.Square(parent, Window.BUTTON, template)
     local picture
@@ -753,34 +751,6 @@ local function BarHeight(window)
     return window.edge and window.edge.full and Window.FULL_BAR or Window.BAR
 end
 
--- The shop's title bar (CatalogShop's header: shop-header-menu-bg, its golden line along its foot) across a bar,
--- shown while the window fills the screen: three pieces, its ends at their width for the bar's height.
-local SHOP = { "shop-header-menu-bg-left", "shop-header-menu-bg-middle", "shop-header-menu-bg-right" }
-function ShopBar(bar)
-    local back = CreateFrame("Frame", nil, bar)
-    back:SetAllPoints()
-    back:SetFrameLevel(math.max(bar:GetFrameLevel() - 1, 0))
-    back.parts = {}
-    for index, name in ipairs(SHOP) do
-        local part = back:CreateTexture(nil, "BACKGROUND")
-        Core.Look.Atlas(part, name)
-        back.parts[index] = part
-    end
-    local left, middle, right = back.parts[1], back.parts[2], back.parts[3]
-    left:SetPoint("TOPLEFT")
-    left:SetPoint("BOTTOMLEFT")
-    right:SetPoint("TOPRIGHT")
-    right:SetPoint("BOTTOMRIGHT")
-    middle:SetPoint("TOPLEFT", left, "TOPRIGHT")
-    middle:SetPoint("BOTTOMRIGHT", right, "BOTTOMLEFT")
-    back:SetScript("OnSizeChanged", Core.Guard("window", function(self, _, height)
-        local wide = math.floor(212 * (height or self:GetHeight()) / 51 + 0.5) -- the ends' 212 at its 51 high
-        left:SetWidth(wide)
-        right:SetWidth(wide)
-    end))
-    back:Hide()
-    return back
-end
 
 -- The title bar, made when it is first shown: across the window's top, Window.BAR high, above what the
 -- window holds, a thin bronze line under it. At its left the search's magnifier (with search) and the
@@ -800,7 +770,6 @@ local function Bar(window)
     line:SetPoint("BOTTOMRIGHT", -Window.BUTTON_INSET, 0)
     line:SetShown(options.barLine ~= false)
     bar.line = line
-    bar.back = ShopBar(bar)
 
     local find = CreateFrame("Button", nil, bar)
     find:SetPoint("TOPLEFT")
@@ -959,7 +928,6 @@ function methods:Refresh()
     bar:SetHeight(BarHeight(self))
     self.top = nil -- the bar's height and the frame's band may have changed with full screen: laid anew
     Inside(self, shown)
-    bar.back:SetShown(edge and edge.full and true or false)
     bar.line:SetShown(self.options.barLine ~= false and not (edge and edge.full))
     buttons:SetShown(not Core.EditMode.active and not (self.options.bare and Core.Safe("window", self.options.bare)))
     local full = self.full

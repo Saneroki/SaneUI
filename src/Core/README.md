@@ -640,7 +640,7 @@ but for a window to try those with (`/sane window`).
 - 2026-11-15 — The kit (Saneroki: "I want to restyle windows fullscreens now ... closer to Wow Forever styling with
   its native elements"): `Look.lua`, Forever's own parts for every window; a window's skin and the board's panels
   the heavy bronze frame (what they hold inside its band: `Board.BAND`, `HEAD` 40, `EDGE` 12), the board's layout
-  tabs the character screen's top bar, a full window's title bar the shop's (`Window.FULL_BAR` 44), the title
+  tabs the character screen's top bar, a full window's title bar 44 high (`Window.FULL_BAR`, the tabs in its middle; the shop's strip taken off again), the title
   bar's buttons the grey square ones and its search box the character list's; the journal's dress gone from the
   board. Then the rest: Navigation's satchel and audio line, the combat text (the game's font and words, its
   drawings and their setting gone), the bar font's fallback; `Journal.lua` and `Art/Journal` gone (the loot feed keeps

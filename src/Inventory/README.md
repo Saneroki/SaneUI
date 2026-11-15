@@ -33,12 +33,12 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
   - *Character*: Sane UI's own doll in the kit's look (`Doc/guides/interface-style.md`, *The kit*: the game's
-    character window): your model in the middle, framed, from under your level down to the ground if you are
+    character window): your model in the middle, from under your level down to the ground if you are
     full-grown, every race at the same scale (a gnome stands as small as it is; drag it with the left button to
     turn it, the wheel zooms in on its head; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in the game's two columns of Forever's gear slots beside it
     (the head and the necklace at the top; the necklace, rings and trinkets together at the top right, the belt,
     legs and boots under them; the icons with their quality's border; an empty slot the game's own picture of
-    it) with a grey box beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
+    it) with each piece's stats beside it (its DPS, its armor, Strength, Agility,
     Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
     Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
     Using an equipped item with a right click stays on the game's own sheet and the action bars.
@@ -282,7 +282,7 @@ login has no last line, until the game has said your time.
     `Doll.HEIGHT`, its slots and boxes in the pixels of a 1080p layout, `Doll.TOP`, `LEFT`, `RIGHT`, `WEAPONS`,
     `AMMO`, `HERO`: the game's two straight columns, each slot in Forever's gear slot frame, `Doll.Frame`), at the
     window's top middle, scaled to fit and never larger than its 1:1 size (`Sheet.Size`), the board's least
-    `Sheet.LEAST` of it. In the hero's place (framed, `common-insideframe`) the panel's title (`UnitPVPName`, the
+    `Sheet.LEAST` of it. In the hero's place (on the plate itself) the panel's title (`UnitPVPName`, the
     game's gold), the level line under it
     (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one (WoW: Forever: where
     `IsSpecSelectionEnabled` says the class chooses one; Retail, which lacks that call: always), the class in its colour)
@@ -295,18 +295,19 @@ login has no last line, until the game has said your time.
     no `RangedSlot` or `AmmoSlot`, so no button is made there). Drawn as
     `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while
     broken or unusable, grey while locked; empty: the game's own picture of the slot, `GetInventorySlotInfo`'s, at
-    `Slots.DRAWN`; where it gives none, the category's icon, `Slots.DRAWINGS`). Its grey box (`Doll.Strip`, the
-    shop's box, `Core.Look.Box`):
+    `Slots.DRAWN`; where it gives none, the category's icon, `Slots.DRAWINGS`). Its stats beside it, on the plate (`Doll.Strip`):
     the item's stats, centred both ways, one to a line while they fit (`Slots.Stats`: `GetItemStats` by the game's
     words, `Slots.FIRST` first: DPS as `STAT_DPS_SHORT`, armor, the primary stats; the rest by their size);
-    empty, nothing. The icon with the template's quality border, as the game's sheet draws it.
+    empty, nothing. The icon with the template's quality border, as large as the icon (the weapons' are larger than
+    the game's 37 units).
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `ModelSceneMixinTemplate` (its orbit camera: the
     left button's drag turns it, the wheel zooms; once the model has loaded, a target spline moves the camera into
     its head: all the way in, the top of the model at the top of its place; below the foot of the hero's column,
     `Doll.FOOT`, the bronze plate is drawn again over it, `Doll.Cover` on a frame above the model and under the
-    items (the hero's frame over that), so its legs go behind the weapons' row; no clipping frame, which hid the whole model) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
+    items, a frame clipping a plate laid as the window's own so the grain runs on unbroken, so its legs go behind the
+    weapons' row; no clipping frame, which hid the whole model) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
     at `UNIT_MODEL_CHANGED`, `Model.SIZE` (272 x 872 doll pixels: a full-grown character fills its place, from
     under the level line to `Doll.GROUND`). Every race at one scale: each of the scene's actors gets requested scale
     1, no scaling toward a man's size and the floor (scene 595 sizes and lifts each race). Its feet on the place's
@@ -783,7 +784,7 @@ classes' gains can be held against each other; `early` for a character without a
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
 | `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which draw their own frame (`Board.DRESS`), which fill their body to its edges (`Board.FILLED`), their bodies' sizes |
 | `Style.lua` | What the windows draw with, in the kit's look (`Core.Look`): the game's Friz Quadrata in its own colours (white words, gold heads, grey; every word `Style.WORDS` times its first size, the heights laid out for words grown by `Style.Fit`), the thin golden line and box, the game's slot, chevron, checkbox and tick, the dropdown in a thin golden box, the red button's art |
-| `Sheet/Doll.lua` | The character's doll: its bronze frame, its slots in Forever's gear slot frames, the framed hero's place, the items' grey boxes and their words |
+| `Sheet/Doll.lua` | The character's doll: its bronze frame, its slots in Forever's gear slot frames, the hero's place, the items' stat lines |
 | `Sheet/Slots.lua` | The character sheet's equipment slots, in the doll's slots, and their strips |
 | `Sheet/Model.lua` | The character sheet's model, still, in the doll's hero's place |
 | `Sheet/Stats.lua` | The stats, the player's and the pet's: the game's list and rows, put together by our code |
@@ -857,3 +858,5 @@ classes' gains can be held against each other; `early` for a character without a
   window's heads and bands, the bags' cells square with their quality's border on the game's bag slot, the action
   buttons the game's red ones, the category icons the game's own icons (our pencil drawings, `Art/Categories`,
   taken out).
+- **2026-11-15:** (Saneroki, seen in the game) the doll plainer: no frame round the model, no grey boxes round the
+  items' stats; the quality's border as large as a weapon's icon; the bronze plate laid once per window (Core's).

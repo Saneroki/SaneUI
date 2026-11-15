@@ -367,8 +367,8 @@ not by itself. The rules:
 
 - Built from Blizzard's parts, the kit's first (`Core.Look`, `Doc/guides/interface-style.md`, *The kit*, Saneroki,
   2026-11-15): a window's frame the character list's heavy bronze (`Look.Frame`; what it holds and its title bar
-  inside the band), the board's layout tabs the character screen's top bar (`Look.Tab`), a full window's title bar
-  the shop's (`Window.FULL_BAR`), the title bar's buttons the grey square ones (`Look.Square`), its search box the
+  inside the band), the board's layout tabs the character screen's top bar (`Look.Tab`) in the middle of a full
+  window's title bar (`Window.FULL_BAR` high, nothing drawn behind it), the title bar's buttons the grey square ones (`Look.Square`), its search box the
   character list's (`Look.Search` on `SearchBoxTemplate`); the close button (`UIPanelCloseButtonNoScripts`),
   maximize and minimize (`MaximizeMinimizeButtonFrameTemplate`), the dropdown (`WowStyle1DropdownTemplate`), the
   tabs of a window's views (`TabSystemTemplate`, `TabSystemTopButtonTemplate`), Edit Mode's selection art (its

@@ -6,18 +6,17 @@ local _, ns = ...
 --  style.md, The kit: the character window, "a prime example"): the heavy
 --  bronze frame round it, the gear slots in the game's two columns with
 --  Forever's gear slot frames (UI-Character-Info-GearSlot), the weapons in a
---  row under them, and in the middle, framed (common-insideframe), the hero's
---  place: the character's name and level line at the top, the live model
---  under them. Beside seven of each column's slots and under each weapon a
---  grey box (the shop's) holds the item's stats. Code puts the live content in:
+--  row under them, and in the middle the hero's place: the character's name
+--  and level line at the top, the live model under them, on the plate itself.
+--  Beside seven of each column's slots and under each weapon the item's stats. Code puts the live content in:
 --  the game's item buttons in the slots, the items' stats in the boxes, the
 --  model in the hero's place.
 --
 --  Where things stand, in the pixels of a 1080p layout, from its top left:
 --
---      Doll.Build(parent)         -- the frame and the hero's frame in parent (sized Doll.WIDTH x Doll.HEIGHT units)
+--      Doll.Build(parent)         -- the frame in parent (sized Doll.WIDTH x Doll.HEIGHT units)
 --      Doll.Rect(rect)            -- a rect of the doll's in units: left, top, width, height
---      Doll.Strip(parent, rect)   -- a box's lines; strip:Fill(stats) (a list of words) or strip:Empty()
+--      Doll.Strip(parent, rect)   -- an item's stat lines; strip:Fill(stats) (a list of words) or strip:Empty()
 --      Doll.Cover(parent, l, r, top) -- the plate again from top down, over the model below the hero's place
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -63,39 +62,26 @@ function Doll.Rect(r)
     return r[1] * PX, r[2] * PX, (r[3] - r[1]) * PX, (r[4] - r[2]) * PX
 end
 
--- The frame and the hero's place framed, filling parent (which is Doll.WIDTH x Doll.HEIGHT units): the window's own
--- frame, as it scales with the doll.
+-- The frame, filling parent (which is Doll.WIDTH x Doll.HEIGHT units): the window's own frame, as it scales with the
+-- doll. The hero stands on the plate itself, nothing round him (Saneroki, 2026-11-15).
 function Doll.Build(parent)
-    local look = Look.Frame(parent)
-    local hero = CreateFrame("Frame", nil, parent)
-    hero:SetFrameLevel(parent:GetFrameLevel())
-    local x, y, w, h = Doll.Rect({ Doll.HERO[1], Doll.MODEL_TOP - 6, Doll.HERO[3], Doll.FOOT })
-    hero:SetPoint("TOPLEFT", x, -y)
-    hero:SetSize(w, h)
-    hero.back = hero:CreateTexture(nil, "BACKGROUND")
-    hero.back:SetColorTexture(0, 0, 0, 0.35)
-    hero.back:SetPoint("TOPLEFT", 4, -4)
-    hero.back:SetPoint("BOTTOMRIGHT", -4, 4)
-    Doll.hero = hero
-    return look
+    return Look.Frame(parent)
 end
 
 -- The plate again from top (1080p pixels) down to the band and from left to right, in parent (as large as the
--- doll): drawn over what stands there, it hides it (the model's legs below the hero's place); the hero's frame
--- drawn over it again, so its foot stays.
+-- doll): drawn over what stands there, it hides it (the model's legs below the hero's place). A frame that clips a
+-- plate laid as the window's own is (Look.Frame's, 4 in from the doll's sides), so its grain runs on unbroken.
 function Doll.Cover(parent, left, right, top)
-    local plate = Look.Plate(parent, "ARTWORK")
-    plate:ClearAllPoints()
-    plate:SetPoint("TOPLEFT", parent, "TOPLEFT", left * PX, -top * PX)
-    plate:SetPoint("BOTTOMRIGHT", parent, "TOPLEFT", right * PX, -(Doll.PIXELS[2] - 14) * PX)
-    if Doll.hero then
-        local frame = CreateFrame("Frame", nil, parent)
-        frame:SetAllPoints(Doll.hero)
-        frame:SetFrameLevel(parent:GetFrameLevel() + 1)
-        Look.Inset(frame)
-    end
-    Doll.covered = plate
-    return plate
+    local clip = CreateFrame("Frame", nil, parent)
+    clip:SetPoint("TOPLEFT", parent, "TOPLEFT", left * PX, -top * PX)
+    clip:SetPoint("BOTTOMRIGHT", parent, "TOPLEFT", right * PX, -(Doll.PIXELS[2] - 14) * PX)
+    clip:SetClipsChildren(true)
+    local whole = CreateFrame("Frame", nil, clip)
+    whole:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, -4)
+    whole:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, 4)
+    Look.Plate(whole, "ARTWORK")
+    Doll.covered = clip
+    return clip
 end
 
 -- An item's slot frame (the character window's gear slot) round its button: centred on it, Doll.FRAME as large.
@@ -121,7 +107,7 @@ end
 Doll.STAT_SIZE, Doll.STAT_LEAST = 13, 9   -- a stat's words (1080p pixels), and the least they are brought down to
 Doll.LINE = 15                           -- a line's height (1080p pixels)
 
--- A box's line: centred across the box, white.
+-- A stat line: centred across its room, white.
 local function Line(strip)
     local fs = strip:CreateFontString(nil, "OVERLAY")
     Style.SetFont(fs, Doll.STAT_SIZE, false, Style.INK, 0.9)
@@ -130,7 +116,7 @@ local function Line(strip)
     return fs
 end
 
--- The stats in the box, centred both ways: one to a line while they fit, else as many to a line as needed.
+-- The stats in their room, centred both ways: one to a line while they fit, else as many to a line as needed.
 local function FillStrip(strip, stats)
     local lines, n = strip.lines, #strip.lines
     local count = math.min(#stats, n)
@@ -150,18 +136,18 @@ local function FillStrip(strip, stats)
     end
 end
 
--- An empty slot: a blank box (its tooltip names the slot).
+-- An empty slot: no stats (its tooltip names the slot).
 local function EmptyStrip(strip)
     for _, fs in ipairs(strip.lines) do fs:SetText("") end
 end
 
--- A box's lines over the grey box (the shop's: Core.Look.Box): three, a weapon's box (wide and low) two.
+-- An item's stats beside its slot, on the plate itself (Saneroki, 2026-11-15: no box round them): three lines, a
+-- weapon's (wide and low) two.
 function Doll.Strip(parent, rect, wide)
     local strip = CreateFrame("Frame", nil, parent)
     local x, y, w, h = Doll.Rect(rect)
     strip:SetPoint("TOPLEFT", x, -y)
     strip:SetSize(w, h)
-    strip.box = Look.Box(strip)
     strip.lines = {}
     for i = 1, wide and 2 or 3 do strip.lines[i] = Line(strip) end
     strip.wide = wide or false

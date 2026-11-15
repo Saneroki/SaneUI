@@ -100,10 +100,16 @@ the catalogue's cards: nothing said, the same file; *Retail: own look*; *Forever
 How each part is laid out comes from the newest export's templates (named in `dev/tools/game_art_kit.py` at each
 part); a Sane UI part uses the same atlas names, sizes and slices, so each game draws its own picture under the name.
 
+**Saneroki's word on what was built (2026-11-15):** the title bar of a full screen bare: "On the titlebar, remove the
+elements you have for it, like the golden line and the golden gradient. I don't like them there. The tabs should be in
+the center of the screen on all fullscreens." The bronze plate laid once, cut to its window, not tiled: "The
+background on the windows is pretty low rezz." The character window plainer: no frame round the model, no boxes round
+the items' stats.
+
 **Built (2026-11-15):** "Yes build them, and rebuild the inventory fullscreen and all its windows again with the new
 styling. Replace our custom generated art with blizzards art and restyle everything with this new styling." The kit
 is Core's (`src/Core/Look.lua`, `Core.Look`): every window's skin and every board's panel the heavy bronze (2), the
-board's layout tabs the top bar (1), a full window's title bar the shop's (7), the title bar's buttons the grey
+board's layout tabs the top bar (1) in the middle of a full window's title bar, the title bar's buttons the grey
 squares (3), its search box the character list's (2). Inventory is the first module in it whole: its windows on the
 bronze, its words Friz Quadrata in the game's colours, the doll the character window's (9), the stats with its heads
 and bands, the bags' cells on the game's slot, its action buttons the red ones (4), the waste bin the red delete

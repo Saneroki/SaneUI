@@ -937,9 +937,8 @@ local function Tabs(board, on)
     if not strip then
         strip = CreateFrame("Frame", nil, bar)
         strip:SetFrameLevel(bar:GetFrameLevel() + 2)
-        strip:SetPoint("TOPLEFT", bar.find, "TOPRIGHT", Board.TAB_OVER, 0)
-        strip:SetPoint("BOTTOMLEFT", bar.find, "BOTTOMRIGHT", Board.TAB_OVER, 0)
-        strip:SetHeight(bar:GetHeight())
+        strip:SetPoint("TOP", bar, "TOP")
+        strip:SetPoint("BOTTOM", bar, "BOTTOM")
         strip.tabs = Core.Pool(function() return Tab(board, strip) end)
         board.strip = strip
         if bar.box then
@@ -951,7 +950,7 @@ local function Tabs(board, on)
     local talking = Occasion(board) ~= nil
     local high = bar:GetHeight()
     tabs:Begin()
-    local previous, width, placed = nil, 0, {}
+    local previous, width, placed = nil, Board.TAB_OVER, {} -- the first tab's picture reaches TAB_OVER past it
     local function Place(tab, text, index, talk)
         tab.index, tab.talk, tab.plus = index, talk, index == nil and not talk
         tab.Text:SetWidth(0)
@@ -962,7 +961,7 @@ local function Tabs(board, on)
         end
         tab:SetHeight(high)
         tab:ClearAllPoints()
-        if previous then tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT") else tab:SetPoint("BOTTOMLEFT") end
+        if previous then tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT") else tab:SetPoint("BOTTOMLEFT", Board.TAB_OVER, 0) end
         tab:Show()
         width = width + tab:GetWidth()
         previous = tab
@@ -1010,9 +1009,33 @@ local function Tabs(board, on)
     end
     icons:Done()
     Ends(lit)
-    if #lit > 0 then width = width + Board.TAB_OVER end
+    width = width + Board.TAB_OVER -- and the last one's past it
     strip:SetWidth(math.max(width, 1))
     strip:SetShown(not (bar.box and bar.box:IsShown()))
+end
+
+-- The tabs in the middle of the full screen's bar (Saneroki, 2026-11-15: "The tabs should be in the center of the
+-- screen on all fullscreens"), kept clear of the title at its left and of the dropdowns and buttons at its right.
+local function Center(board)
+    local strip, window = board.strip, board.window
+    local bar = window.bar
+    if not (strip and bar) then return end
+    local width, wide = strip:GetWidth() or 0, bar:GetWidth() or 0
+    local left = (wide - width) / 2
+    local start = bar:GetLeft()
+    if start then
+        local low = (bar.find:GetRight() or start) - start + Board.EDGE
+        local classic, buttons = window.edge and window.edge.classic, window.buttons
+        local stop = board.menu and board.menu:IsShown() and board.menu
+            or classic and classic:IsShown() and classic
+            or buttons and buttons:IsShown() and buttons.first
+        local right = stop and stop:GetLeft()
+        if right then left = math.min(left, right - start - Board.EDGE - width) end
+        left = math.max(left, low)
+    end
+    strip:ClearAllPoints()
+    strip:SetPoint("TOPLEFT", bar, "TOPLEFT", left, 0)
+    strip:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", left, 0)
 end
 
 -- The dropdown Windows: a tick for each window the module can show, ticked where it is in the layout chosen.
@@ -1187,6 +1210,7 @@ function methods:Show(inside, width, height)
     Tabs(self, true)
     Menu(self, true)
     self.window:Refresh() -- the search box ends left of the dropdown
+    Center(self) -- the tabs in the bar's middle, once all beside them stands
     -- Opened for a window the layout lacks (Board.Open): put in, once this laying out is over.
     local wanted = self.wanted
     if wanted then

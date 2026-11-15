@@ -6,8 +6,8 @@ local _, ns = ...
 --  CharacterFrame and PaperDollFrame), ours, a window of its own on the
 --  module's full screen (Board.lua, the key "character"), in the kit's look
 --  (Core.Look, the game's character window): the doll (Doll.lua) in its heavy
---  bronze frame, the equipment slots in their columns with the items' boxes
---  (Slots.lua), and in the hero's framed place the character's name with its
+--  bronze frame, the equipment slots in their columns with the items' stats
+--  (Slots.lua), and in the hero's place the character's name with its
 --  title, the level line under it and the character's live model (Model.lua).
 --  The doll's top is the head it is dragged by, the X in its corner. The rest
 --  of the game's sheet stands in windows

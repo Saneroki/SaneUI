@@ -12,7 +12,7 @@ local _, ns = ...
 --  quality's border and its count, a red tint while it is broken or cannot be
 --  used, grey while it is locked; empty, the game's own picture of what goes
 --  there (Saneroki, 2026-11-15: Blizzard's art in place of our drawings).
---  Beside each (but the two at the top) its grey box says the item's stats,
+--  Beside each (but the two at the top) the item's stats stand on the plate,
 --  centred (Slots.Stats: its DPS, its armor, its primary stats, then the rest,
 --  by the game's words); empty, nothing.
 --
@@ -112,6 +112,12 @@ local function Make(parent, name, size)
     button.slot, button.picture, button.relic = name, picture, relic
     local normal = button.GetNormalTexture and button:GetNormalTexture()
     if normal then normal:SetAlpha(0) end
+    -- the quality's border as large as the icon (the game's is drawn for its 37 units: the weapons' are larger)
+    local border = button.IconBorder
+    if type(border) == "table" and border.ClearAllPoints then
+        border:ClearAllPoints()
+        border:SetAllPoints(button)
+    end
     button.drawing = button:CreateTexture(nil, "ARTWORK")
     button.drawing:SetAllPoints()
     button.drawing:SetTexture(picture or ns.Categories.Art(Slots.DRAWINGS[name]))
