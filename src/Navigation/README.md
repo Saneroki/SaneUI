@@ -335,6 +335,15 @@ and shows them on the map or puts the map pin there. The plan is in
   get an item, its link, a place's link, whisper and invite); resting on a row shows its tooltip and its places on the
   map without moving it. What you pick is remembered and comes a little higher the next time. A click anywhere else
   gives the keys back to your character.
+- **Your own markers** (Saneroki, 2026-11-15): **Alt and a click** on the map (small or full) puts a marker there and
+  opens its card: write its title and its description, pick its icon (the game's eight raid marks, a chest, a quest's
+  !, a herb, an ore, a skull, an inn), Save (Enter in the title too) or Cancel (a new one cancelled goes again). On the
+  map it stands in its icon at every zoom, its title beside it on the full map; the mouse on it shows its title and
+  description; **a click** opens its card again (its icon, title, description, the zone and the day you put it) with
+  four buttons: Edit, Move (then click on the map where it should stand; a right click: it stays), the map pin on it
+  (the golden line leads there) and Delete (asked first); a double click puts the map pin there at once. The pin
+  filter's *Your markers* shows or hides them all; the map's search finds them by their titles and descriptions
+  (*markers* as the first word lists them all). They are kept for your account, yours alone.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
@@ -863,6 +872,18 @@ and shows them on the map or puts the map pin there. The plan is in
   at it, of an item draws its places and pins only its vendors and quests. A typed word in no find's words (Find's
   vocabulary, made at the first need) is put right by the nearest word of the same first letter within
   `Find.SLIPS` edits (left out, added, changed, two swapped), and the search runs again.
+- **Markers** (`Markers.lua`): kept in the module's saved settings for the account (`ns.store.markers`, a list of `{ id,
+  map, x, y, title, text, icon, made }`, `markerNext` the next id; each game's in its own saved files), personal notes,
+  never shared or shipped. Alt and a left click on the canvas (not on a pin) is `Markers.New(Where(x, y))` (no marker at
+  the world: no zone there); while one waits for its new place (`Markers.Moving`, the card's Move) a left click puts it
+  (`Markers.Put`), a right click leaves it (`Markers.Stay`) instead of stepping out. `Markers.Pins()` makes their pins
+  anew after a change (kind `mark`, `Pins.SIZE.mark`, `ORDER.mark` under the search's, never combined: `Apart`;
+  `pin.label` their title, drawn by `PinView`'s `Name` on the full map), `Pins.For` takes them in at every zoom on both
+  maps while `Showing("mark")`; `PinView.Act` opens the card (`Markers.Open`). The card: Core's kit (`Look.Dress`, its
+  grey squares and red buttons, the thin golden outlines round the boxes; the words in a scroll frame that keeps the
+  cursor in sight), `DIALOG`, beside the mouse, dragged by its head, Esc through `Core.Escape`. The search's finds of
+  kind `marker` (`Find.lua`'s `Marked`; Enter: the map there and its card). Settings' version 6 ticks *Your markers*
+  in an older pin filter.
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
   docked hook, `FindBox.SetShown`), in its middle, as wide as the room between the title and the buttons leaves
   (`FindBox.WIDTH` at most); on Core's skin (round ends, the gold trim); the list under it on the same skin, strata
@@ -922,10 +943,10 @@ and shows them on the map or puts the map pin there. The plan is in
   same addon as a held button (its title or folder, letters and digits alone) is left out.
 - **The satchel** (`Satchel.lua`): its button on the canvas (level `Canvas.LEVELS.satchel`, over the marks), in the
   corner `Satchel.Place` picks from where the window stands, shown only while the window stands small and is the
-  minimap. The page is a frame of its own (strata `DIALOG`) in Core's journal (`Core.Journal.Dress`: paper, leather
-  top, its X; left of the X, at its level, `Satchel.swap`: Core's `Window.Swap`, whose click closes the page and
+  minimap. The page is a frame of its own (strata `DIALOG`) in the kit's bronze (`Core.Look.Dress`: the heavy bronze frame,
+  its title, the game's X; left of the X, at its level, `Satchel.swap`: Core's `Window.Swap`, whose click closes the page and
   sets `nativeMinimap`, as the dropdown *Classic windows* does), beside the window toward the screen's middle, a scroll frame in it no higher than
-  `Satchel.ROOM` of the screen. Its sections, each a title over a pencil rule (the zone's: none, `Title`) and a grid
+  `Satchel.ROOM` of the screen. Its sections, each a title over the thin golden line (the zone's: none, `Title`) and a grid
   of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (first the sound line, `AudioLine.Place`,
   while the client has the game's sound settings, `AudioLine.Offered`; then `Core.Switches`, the modules' quick switches as offered; a
   click its module's `Click` with the mouse button and the cell; filled anew when `Core.OnSwitches` tells a change),
@@ -1299,6 +1320,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
+| `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
 | `Bindings.xml` | The key *Search the map* (Sane UI's section of the game's key bindings): the full map, the cursor in its search |
@@ -1313,6 +1335,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, your own markers:** Saneroki: "Can we have a system where we can place our own custom map markers on
+  maps with our own text and description when you click on them?" `Markers.lua`; Alt and a click on the map, the
+  card, the pins of kind `mark` (`Pins.For`, `Apart`, `PinView.Act`, `Name`'s label), the pin filter's *Your
+  markers* (settings' version 6), the search's finds of kind `marker`. Card #481 (sharing and drawing to come).
 - **2026-11-15, where to farm a thing:** Saneroki: "Could it be possible to write something like "where to farm Silk
   cloth" or "peaceblossom" and it will show dense areas were you could farm them on the map or put custom map pins
   there that are not tied to the routing but just shows where a lot of enemies are dense clustered that drop those

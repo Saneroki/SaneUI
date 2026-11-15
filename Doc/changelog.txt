@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Your own markers on the map: Alt and a click puts one, with a
+  title, a description and an icon of your choice; a click on it
+  shows them again, with Edit, Move, the map pin on it and Delete.
+  The map's search finds them too.
 - A new look, of WoW: Forever's own art: every window in the
   character list's bronze frame, a full screen's tabs as the
   character screen's top bar under the shop's title bar, the

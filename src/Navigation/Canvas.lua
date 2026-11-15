@@ -711,10 +711,18 @@ local function Clicked(button, pin)
     if not x then return end
     if button == "RightButton" then
         last = nil
+        if ns.Markers.Moving() then return ns.Markers.Stay() end -- (a marker waiting for its place stays)
         if camera:StepOut() then Canvas.Layout() end
         return
     end
     if button ~= "LeftButton" then return end
+    -- Your markers (Markers.lua): Alt and a click puts a new one there; one waiting for its new place goes there.
+    if not pin and (IsAltKeyDown() or ns.Markers.Moving()) then
+        last = nil
+        if lost then return end
+        if ns.Markers.Moving() then return ns.Markers.Put(Where(x, y)) end
+        return ns.Markers.New(Where(x, y))
+    end
     if IsControlKeyDown() then
         last = nil
         if not lost then ns.PinView.Drop(pin or Where(x, y)) end

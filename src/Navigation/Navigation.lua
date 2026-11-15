@@ -140,6 +140,8 @@ ns.KINDS = {
     { "foundFish", "Found fishing pools", section = "gathering", on = true, small = true, texture = 133888 },
     { "book", "Books", section = "finds", on = false, icon = "lorewalking-map-icon", data = SPAWNS },
     { "group", "Party and raid", section = "around", on = true, small = true, icon = "partymember" },
+    -- Your own markers (Markers.lua): Alt and a click on the map puts one; the raid's star is their sign.
+    { "mark", "Your markers", section = "around", on = true, small = true, texture = 137001 },
 }
 -- The pin filter's sections, in its order: their key (the kinds' section) and their title.
 ns.PIN_SECTIONS = {
@@ -269,7 +271,7 @@ Core.Edge.Options(OPTIONS, #OPTIONS + 1)
 -- minimap's dots did (both on, but a route switched off); 2, the quests split: those in the log as Quests were,
 -- the low and later ones on; 3, the found herbs and ore came, on; 4, the found fishing pools came, on, and the
 -- finders' turns went from seconds to yards (the seconds let go: the yards at first); 5, the quests' objectives
--- came, on.
+-- came, on; 6, your own markers came, on.
 local function Upgrade(values, from)
     if type(values.pins) == "table" then
         if from < 1 then
@@ -283,6 +285,7 @@ local function Upgrade(values, from)
         if from < 3 then values.pins.foundHerb, values.pins.foundOre = true, true end
         if from < 4 then values.pins.foundFish = true end
         if from < 5 then values.pins.goal = true end
+        if from < 6 then values.pins.mark = true end
     end
     values.route = nil
     values.nodeTurns = nil
@@ -290,7 +293,7 @@ end
 
 local routed -- whether the pin filter let the route through when it last changed
 local found -- the found kinds the pin filter let through when it last changed (Nodes.Wanted: "herb ore fish")
-Core.Options(ns.name, OPTIONS, { version = 5, upgrade = Upgrade, changed = function(key)
+Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = function(key)
     -- The section Expand window: Core's window takes it in by itself (Edge.lua).
     if Core.Edge.KEYS[key] then return end
     if key == "view" then return ns.Guarded(ns.Window.Restyle) end

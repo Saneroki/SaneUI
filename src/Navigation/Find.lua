@@ -84,7 +84,7 @@ Find.TEXT = {
         people = "Guild, group and friends", npc = "NPCs", place = "Places", item = "Items", quest = "Quests",
         zone = "Zones and dungeons", spell = "Taught by trainers", near = "Nearest first", close = "Close to what you typed",
         get = "Where to get %s", sold = "Who sells %s", drop = "What drops %s", learn = "Who teaches %s",
-        farm = "Where to farm %s", farmFirst = "The best places to farm it",
+        farm = "Where to farm %s", farmFirst = "The best places to farm it", marker = "Your markers",
         instead = "None that way. ",
     },
     sells = "Sells it", sellsFor = "Sells it for %s", drops = "Drops it", dropsAt = "Drops it (%s%%)", gives = "Gives it",
@@ -95,6 +95,7 @@ Find.TEXT = {
     foe = "Hostile to you", far = "Far away", inZone = "Somewhere in this zone", level = "Level %d", levelRange = "Level %d-%d",
     unconfirmed = Core.UNCONFIRMED,
     spelled = "Searched for: %s",
+    marker = "Your marker",
 }
 
 local NPCS, SPAWNS, CREATURES = Data.Set("NPCs"), Data.Set("Spawns"), Data.Set("CreatureSpawns")
@@ -168,6 +169,7 @@ local KINDS = {
     items = "item", quests = "quest", zones = "zone", zone = "zone", dungeons = "dungeon", dungeon = "dungeon",
     raids = "raid", raid = "raid", flights = "flight", flight = "flight", mailboxes = "mailbox", mailbox = "mailbox",
     npcs = "npc", guild = "member", members = "member", party = "party", group = "party", friends = "friend",
+    markers = "marker", marks = "marker",
 }
 -- Words that ask nothing of their own: left out (where they are not all there is).
 local FILLERS = { where = true, is = true, are = true, the = true, a = true, an = true, to = true, find = true,
@@ -550,6 +552,19 @@ local function People(list)
                 info.name, info.connected and (info.area or Find.TEXT.friend) or Find.TEXT.offline, "friend")
             list[#list + 1] = entry
         end
+    end
+end
+
+-- Your own markers (Markers.lua), by their titles and words.
+local function Marked(list)
+    local Markers = ns.Markers
+    for _, marker in ipairs(Markers and Markers.List() or NONE) do
+        local icon = Markers.Icon(marker.icon)
+        local title = (marker.title and marker.title ~= "") and marker.title or Markers.TEXT.untitled
+        list[#list + 1] = Words({ kind = "marker", group = "marker", key = "marker:" .. tostring(marker.id),
+                                  marker = marker, atlas = icon.atlas, icon = icon.texture,
+                                  spots = { { map = marker.map, x = marker.x, y = marker.y } } },
+            title, Find.TEXT.marker, (marker.text or "") .. " marker")
     end
 end
 
@@ -991,6 +1006,7 @@ local function OfKind(entry, kind)
     if kind == "dungeon" then return entry.kind == "dungeon" or entry.kind == "place" and entry.what == "dungeon" end
     if kind == "raid" then return entry.kind == "place" and entry.what == "raid" end
     if kind == "mailbox" then return entry.what == "mailbox" end
+    if kind == "marker" then return entry.kind == "marker" end
     return true
 end
 
@@ -1021,6 +1037,7 @@ local function Everything()
     Log(list)
     People(list)
     Corpse(list)
+    Marked(list)
     return list
 end
 
@@ -1125,7 +1142,7 @@ end
 
 -- Groups for the list: by kind, each in its order, the groups by their best find; nearness asked: one list. At most
 -- Find.SHOWN finds, Find.GROUP of a group where several share the list.
-local GROUP_ORDER = { people = 1, npc = 2, place = 3, item = 4, quest = 5, zone = 6, spell = 7 }
+local GROUP_ORDER = { marker = 0, people = 1, npc = 2, place = 3, item = 4, quest = 5, zone = 6, spell = 7 }
 local function Grouped(rows, near, title)
     local answer = { count = #rows }
     if near or title then
@@ -1483,6 +1500,7 @@ local function Look(entry)
     if entry.atlas then return entry.atlas end
     local kind = entry.kind
     if kind == "farm" then return entry.icon or Look(entry.target) end
+    if kind == "marker" then return entry.icon or "Waypoint-MapPin-Untracked" end
     if kind == "npc" then return ns.Pins.LookOf(entry.services, entry.title, entry.goods, entry.rank, entry.foe) end
     if kind == "object" then return ns.Pins.ObjectLook(entry.what) end
     if kind == "place" then return ns.Pins.PlaceLook(entry.what) end
@@ -1602,6 +1620,7 @@ function Find.Show(entry, role)
         return place.map ~= nil and ns.Canvas.LookAt(place.map, place.x, place.y)
     end
     if entry.kind == "log" and ns.QuestLog.Focus then ns.QuestLog.Focus(entry.quest) end
+    if entry.kind == "marker" and ns.Markers then ns.Markers.Open(entry.marker) end -- (its card too)
     -- an item farmed: its places glow, the map at the best of them
     local places = entry.kind == "item" and ns.Farms.Of(entry) or NONE
     local farming = #places > 0 and { places = places, target = entry } or nil

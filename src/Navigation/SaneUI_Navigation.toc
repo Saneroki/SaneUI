@@ -72,6 +72,8 @@ PinView.lua
 RareTracker.lua
 # Over the map at a fixed size: the party, the player's arrow, the map pin
 Marks.lua
+# Your own markers on the map: put with Alt and a click, a title and words of your own on a card, kept for the account
+Markers.lua
 # The game's minimap over ours, for its live dots; taken and given back
 Hybrid.lua
 # The herbs and ore the game's minimap shows, found by asking it and drawn over it in their own pictures

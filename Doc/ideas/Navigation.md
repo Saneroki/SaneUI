@@ -987,6 +987,12 @@ hidden but what the small view needs.
   chance) clustered on a grid, the best places listed and glowing soft gold on the full map, as large as they are, a
   pin in each one's middle, the route untouched; a dungeon where it drops listed after them. A mistyped word put
   right ("peaceblossom": Peacebloom).
+- **Your own markers (Saneroki, 2026-11-15; built):** "Can we have a system where we can place our own custom map
+  markers on maps with our own text and description when you click on them?" Alt and a click on the map puts one; a
+  card in the kit's bronze to write its title and description and pick its icon (the game's raid marks and a few of
+  its map icons); on both maps, its title beside it on the full map; a click opens the card (Edit, Move, the map pin,
+  Delete). Kept for the account, never shared. Still to come (card #481): sharing sets of them with the party or the
+  guild, and drawing on the map.
 
 ## The game's map and minimap: kept out of sight, given back
 

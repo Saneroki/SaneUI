@@ -8639,6 +8639,121 @@ end)()
     ITEMS.Get, Drops.From = nil, from
 end)()
 
+-- Your own markers (Markers.lua; Saneroki, 2026-11-15): Alt and a click puts one, its card to write its title and words
+-- and pick its icon, kept for the account; on both maps with its icon, its title beside it on the full map; a click
+-- opens its card; moved, deleted; found by the search; the pin filter's Your markers.
+;(function()
+    local Markers, Pins = ns.Markers, ns.Pins
+    local wasFull = Window.handle.edge.full
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    local full = Window.full
+    ns.Canvas.Fit(full, 1429, frame._width, frame._height)
+    Canvas.Layout()
+    local box = ns.Coords.Box(1429)
+    local function At(x, y)
+        local u, v = ns.Coords.ToPlane(box, x, y)
+        cursorX, cursorY = frame._width / 2 + (u - full.u) * full.k, frame._height / 2 + (v - full.v) * full.k
+    end
+    local function Press(button)
+        frame._scripts.OnMouseDown(frame, button or "LeftButton")
+        frame._scripts.OnMouseUp(frame, button or "LeftButton")
+    end
+    local function Close(a, b) return math.abs(a - b) < 1e-3 end
+    local alt = rawget(_G, "IsAltKeyDown")
+    local before = #Markers.List()
+    At(0.3, 0.4)
+    IsAltKeyDown = function() return true end
+    Press()
+    IsAltKeyDown = alt
+    local marker = Markers.List()[#Markers.List()]
+    check(#Markers.List() == before + 1 and marker.map == 1429 and Close(marker.x, 0.3) and Close(marker.y, 0.4),
+        "Alt and a click on the map: a new marker there")
+    local card = Markers.card
+    check(card and card:IsShown() and card.editing:IsShown() and not card.reading:IsShown()
+        and card.look.title:GetText() == Markers.TEXT.new, "its card open to write in")
+    card.editing.title:SetText("Hogger's den")
+    card.editing.words:SetText("Bring a friend: he hits hard.")
+    card.editing.icons[8]._scripts.OnClick(card.editing.icons[8])
+    card.editing.save._scripts.OnClick(card.editing.save)
+    check(marker.title == "Hogger's den" and marker.text == "Bring a friend: he hits hard." and marker.icon == "skull",
+        "saved: its title, its words, its icon")
+    check(card.reading:IsShown() and card.look.title:GetText() == "Hogger's den"
+        and card.reading.words:GetText() == "Bring a friend: he hits hard.", "the card reads it")
+    check(ns.store.markers == Markers.List(), "kept in the module's saved settings")
+    -- on the map
+    Canvas.Layout()
+    local pin
+    for _, each in ipairs(Pins.For(Canvas.view, false)) do
+        if each.kind == "mark" and each.marker == marker then pin = each end
+    end
+    check(pin and pin.texture == 137008 and pin.name == "Hogger's den" and pin.lines[1] == marker.text,
+        "on the map: its icon (the raid's skull), its title and words in its tooltip")
+    local label
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "FontString" and widget._text == "Hogger's den" and widget._shown then label = widget end
+    end
+    check(label, "its title beside it on the full map")
+    card:Hide()
+    check(ns.PinView.Act(pin) and card:IsShown() and card.reading:IsShown(), "a click on it: its card")
+    -- moved: Move, then a click on the map puts it there; a right click leaves it
+    card.reading.buttons[2]._scripts.OnClick(card.reading.buttons[2])
+    check(Markers.Moving() == marker and not card:IsShown(), "Move: it waits for its new place")
+    At(0.6, 0.7)
+    Press()
+    check(Close(marker.x, 0.6) and Close(marker.y, 0.7) and not Markers.Moving(), "a click on the map: it stands there")
+    Markers.Open(marker)
+    card.reading.buttons[2]._scripts.OnClick(card.reading.buttons[2])
+    Press("RightButton")
+    check(Close(marker.x, 0.6) and not Markers.Moving() and full.map, "a right click: it stays")
+    -- the map pin
+    Live.ClearWaypoint()
+    Markers.Open(marker)
+    card.reading.buttons[3]._scripts.OnClick(card.reading.buttons[3])
+    local map, x = Live.Waypoint()
+    check(map == 1429 and Close(x, 0.6), "the map pin on it")
+    -- the search finds it
+    local found
+    ns.Find.Ask("hogger's den", function(answer) found = answer end)
+    check(found and found[1].title == ns.Find.TEXT.groups.marker and found[1].rows[1].entry.marker == marker,
+        "the map's search finds it by its title")
+    ns.Find.Ask("hits hard", function(answer) found = answer end)
+    check(found[1].rows[1].entry.marker == marker, "and by its words")
+    -- the pin filter
+    local pins = ns.options.pins
+    local without = {}
+    for key, on in pairs(pins) do without[key] = on end
+    without.mark = nil
+    Core.Set(ns.name, "pins", without)
+    local still = false
+    for _, each in ipairs(Pins.For(Canvas.view, false)) do if each.kind == "mark" then still = true end end
+    check(not still, "the pin filter's Your markers unticked: none on the map")
+    Core.Set(ns.name, "pins", pins)
+    check(Core.Settle(ns.name, { _version = 5, pins = { quest = true } }).pins.mark,
+        "older settings: Your markers on")
+    -- a new one cancelled goes again; deleted
+    At(0.5, 0.5)
+    IsAltKeyDown = function() return true end
+    Press()
+    IsAltKeyDown = alt
+    check(#Markers.List() == before + 2, "another one")
+    card.editing.cancel._scripts.OnClick(card.editing.cancel)
+    check(#Markers.List() == before + 1, "cancelled while new: gone again")
+    Markers.Remove(marker)
+    check(#Markers.List() == before, "deleted")
+    Canvas.Layout()
+    still = false
+    for _, each in ipairs(Pins.For(Canvas.view, false)) do if each.kind == "mark" then still = true end end
+    check(not still, "and off the map")
+    card:Hide()
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+end)()
+
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")
 check(#ns.RareTracker.shown == 0 and not ns.RareTracker.holder._shown, "standing down: the Sane Rare tracker's notices gone")

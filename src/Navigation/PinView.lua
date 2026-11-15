@@ -370,6 +370,10 @@ end
 -- the pin has none: the click is the map's there.
 function PinView.Act(pin)
     if pin.taxi then return ns.Taxi.Fly(pin.taxi) end -- at a flight master: the flight there (Taxi.lua)
+    if pin.kind == "mark" and pin.marker then -- one of your markers: its card (Markers.lua), small or full
+        ns.Markers.Open(pin.marker)
+        return true
+    end
     if IsShiftKeyDown() and pin.to then
         ns.Canvas.Show(pin.to)
         return true
@@ -654,9 +658,11 @@ local function LabelFont(span)
     return Core.Font("SaneUINavigationTaxi" .. size, "GameFontNormal", size, "OUTLINE") or "GameFontNormal", size
 end
 
--- A button's name at its right: a flight point's at a flight master (Taxi.Label), in font of size points, else none.
-local function Name(button, pin, font, size)
+-- A button's name at its right: a flight point's at a flight master (Taxi.Label), your marker's title on the full map
+-- (pin.label, Markers.lua), in font of size points, else none.
+local function Name(button, pin, font, size, small)
     local text = pin.taxi and not pin.gathered and ns.Taxi.Label(pin.taxi, pin.name)
+        or not small and not pin.gathered and pin.label or nil
     local label = button.label
     if not text then
         button.labeled = false
@@ -706,7 +712,8 @@ function PinView.Place(laidView, small)
         button.x, button.y = (pin.pu - view.u) * view.k + (pin.sx or 0), (pin.pv - view.v) * view.k + (pin.sy or 0)
         button:ClearAllPoints()
         button:SetPoint("CENTER", holder, "CENTER", button.x, button.y)
-        if font or button.labeled then Name(button, pin, font, size) end
+        if pin.label and not small and not font then font, size = LabelFont(view.span) end
+        if font or button.labeled then Name(button, pin, font, size, small) end
     end
     for key, button in pairs(used) do
         if not seen[key] then

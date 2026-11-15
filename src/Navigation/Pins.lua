@@ -61,10 +61,10 @@ Pins.CLOSE = { treasure = true, herb = true, ore = true, foundHerb = true, found
 Pins.CLOSER = 1500
 Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, flight = 18, travel = 22, entrance = 22,
               place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18,
-              foundHerb = 14, foundOre = 14, find = 24 } -- (the found ones are drawn by Found.lua; find: the map's search)
+              foundHerb = 14, foundOre = 14, find = 24, mark = 22 } -- (the found ones are drawn by Found.lua; find: the map's search)
 
 -- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker (its icon).
-local ORDER = { find = 12, log = 10, quest = 9, rare = 8, goal = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
+local ORDER = { find = 12, mark = 11, log = 10, quest = 9, rare = 8, goal = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
                 foundHerb = 2, foundOre = 2, later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
@@ -903,6 +903,17 @@ function Pins.For(view, small, pu, pv)
             end
         end
     end
+    -- Your markers (Markers.lua): at every zoom, small and full, while the filter's Your markers is ticked.
+    for _, pin in ipairs(Showing("mark") and ns.Markers.Pins() or NONE) do
+        local link = Coords.Link(pin.home, view.map)
+        if link then
+            local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
+            if u >= left and u <= right and v <= top and v >= bottom then
+                pin.pu, pin.pv, pin.order, pin.with = u, v, ORDER.mark, nil
+                found[#found + 1] = pin
+            end
+        end
+    end
     -- What the map's search shows (Find.lua): at every zoom, whatever the filter says, over every other pin; on the full
     -- map alone.
     for _, pin in ipairs(small and NONE or ns.Find.Pins()) do
@@ -989,7 +1000,8 @@ end
 -- Pins hovered or clicked each for itself are never combined: quests (in the log, to take), flight points and docks
 -- (the ways they show), a flight master's.
 local function Apart(pin)
-    return pin.kind == "log" or pin.kind == "quest" or pin.kind == "flight" or pin.dock ~= nil or pin.taxi ~= nil
+    return pin.kind == "log" or pin.kind == "quest" or pin.kind == "flight" or pin.kind == "mark" or pin.dock ~= nil
+        or pin.taxi ~= nil
 end
 
 -- The icon a pin shows, as one text (PinView's Look: its atlas or picture, its tint, grey or not).
