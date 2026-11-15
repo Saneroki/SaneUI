@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Git: the history's art only in the versions main and the tags hold (Saneroki, 2026-11-15)
+Saneroki: "Can you purge the lfs of the local git history so I can upload a slim version of the repository".
+- **The history since GitHub's main** (786 commits, not yet pushed) rewritten: every message, author, date and every file but the art as it was, main's tree and both tags' (`Navigation/0.3.1-alpha`, `0.3.2-alpha`) the same to the byte. An art file (the kinds in Git LFS) stands in each commit only in a version that main or a tag still holds, else in the next version that does; art none of them holds any longer is gone from the history (1,930 paths: the Atlas's tiles, Navigation's old `Art/` folder, concept art, pieces replaced since), and art moved since stands there only from its move on.
+- Git LFS to upload 153 MB in 3,770 files (was 406 MB in 4,855), the commits 84 MB; the repository's folder 254 MB (was 697).
+- The commit ids from 2026-10-19 on are new; the ids cited in this file and in `Doc/ideas/Navigation.md` are the new ones.
+- Nothing changes in the game.
+
 ### Navigation and Core: less work at each quest update, a pin layout, a question to the game (Saneroki, 2026-11-15)
 Saneroki: "Can yo do some performance tests on the navigation module and its core dependencies? Can we increase the performance". Measured offline under Lua 5.1 on Navigation's test world with Core's real sets (Elwynn, Stormwind and Westfall on the full map): the frames themselves cost 10 to 50 µs (the minimap standing, walking, the full map dragged or zoomed), but each `QUEST_LOG_UPDATE` (every kill of a quest's creature) 5.5 ms and 1.5 MB of garbage: every NPC's pin of every map in view made anew (Elwynn 428, of them 65 quest givers), each quest's standing asked again.
 - **`src/Navigation/Pins.lua`:** the pins of the NPCs that give no quest are kept per map while Core's places of it stay the same list (`steady`), and the quest givers' are made anew only when the quests in the log are others (`Goals.Log`) or the level changed, no longer at a kill that only counts on; `Pins.Spread`'s loop over the clouds asks no function (a cloud keeps its `rings`, the wider step picked by hand, no `^ 2`), the same places to the last bit, 2.2 times as fast.
@@ -73,7 +80,7 @@ Saneroki set up a Discord server for Sane UI's community, for feedback, ideas an
 - A `/reload` takes it in.
 
 ### Classic windows on the full map: the dropdown takes its clicks again (Saneroki, 2026-11-15)
-Saneroki: "The dropdown menue for the classic windows, why doesn't it work anymore?" Since the map's controls moved into its title bar (887e2d5e), the full map's bar stands over the map (`Window.UNDER`, 60 over the window), but the dropdown stayed at 50: under the bar, which takes the mouse over its whole width (its drag), and under the map's controls and their shade (`TopBar.lua`, the bar's level + 5). A click there moved nothing and opened nothing.
+Saneroki: "The dropdown menue for the classic windows, why doesn't it work anymore?" Since the map's controls moved into its title bar (d5ba08e2), the full map's bar stands over the map (`Window.UNDER`, 60 over the window), but the dropdown stayed at 50: under the bar, which takes the mouse over its whole width (its drag), and under the map's controls and their shade (`TopBar.lua`, the bar's level + 5). A click there moved nothing and opened nothing.
 - **`src/Core/Edge.lua`:** `Menu` puts the dropdown over the window's title bar each time it shows (`Edge.MENU_OVER`, 10 over the bar's level), never under its old place over what the window holds (`Edge.MENU_LEVEL`, 50).
 - **Tests:** `dev/tests/window.lua` (564: on a full window whose bar stands over what it holds, the dropdown over the bar and over what a module lays on it).
 - **Docs:** `src/Core/README.md` (*Classic windows*).
@@ -1109,7 +1116,7 @@ Saneroki: "When settings are changed in ESC menues like addon and the game setti
 
 ### The Atlas' tools, art and plans gone; the painted instance maps kept (Saneroki, 2026-11-09)
 Saneroki: "Delete and purge the LFS from the repository. You can also remove all code and change the documentations and boards and local scripts completly that were only for the Atlas module and its features." His picks the same day: the GPU jobs `worldtiles` and `patch-70707` dropped; the painted instance maps (dungeons and raids) kept; the Atlas' renders in the private folder deleted for good.
-- **Art:** `assets/optimized/Atlas/` gone (the lab's test pack committed in aeed81f2, 739 files, and the uncommitted pack of 2026-11-06, 3.4 GB); `assets/optimized/` is about 130 MB now. Its history in Git LFS is purged separately, on Saneroki's go.
+- **Art:** `assets/optimized/Atlas/` gone (the lab's test pack committed in b4d009e5, 739 files, and the uncommitted pack of 2026-11-06, 3.4 GB); `assets/optimized/` is about 130 MB now. Its history in Git LFS is purged separately, on Saneroki's go.
 - **`dev/tools/atlas`** becomes **`dev/tools/map-squares`**, a library of `dev/tools/map-layers` for the instances' close level (the squares, their words, the check against the game's water and lava, the colour pass, the seams); its painter, run, screen, plan, continent join and pack are gone. Its words `dev/imagegen/maps/atlas.toml` are `close.toml`.
 - **`dev/tools/map-layers`:** the instances only (the zones, `stitch`, `tiles`, the walking data's checks and the heights gone; `--kind` gone, so the job `instancemaps` runs `paint --levels far`; old zone subjects in a run's `state.json` are passed over; `inputs` takes the game's folders from its own run). `levels.toml` and `dungeons.toml` without the zones' words. **`dev/tools/map-compare`** (the page *maps compared*): the instances only.
 - **Gone:** `dev/imagegen/workflows/qwen21-edit-2ref-i2i-cn2.json` (a zone's far level), `dev/tools/map-meta` (the painted world's guides), `dev/tools/world-map`, `world-map-index.lua` and `world-map-page/` (the pages /world/ and /instances/), `dev/imagegen/maps/zones.toml`, the sets `maps-atlas`, `maps-pilot` and `maps-styles`, the GPU jobs `worldtiles` and `patch-70707` (`dev/imagegen/jobs.toml`: `instancemaps` alone), the commands `atlas`, `makemapguides`, `makeworldmap`, `showworldmap` and `showinstancemaps` (`dev/saneui`).
@@ -3159,7 +3166,7 @@ Saneroki: the target of target's health bar the yellowish of the nameplates' neu
 
 ### Retail: no item range asked about a friend in a fight either; a blocked action's log entry names its place (Saneroki, 2026-10-29)
 Saneroki: errors in the addon. The error log of both Retail accounts kept "SaneUI: the game blocked UNKNOWN()" thousands
-of times after 261ba6b8 was installed (5,184 on the second account in one evening). Retail's taint log of 2026-10-26
+of times after e0376c57 was installed (5,184 on the second account in one evening). Retail's taint log of 2026-10-26
 had put every block on Nameplates asking the game an item's range (`C_Item.IsItemInRange`) in a fight; the fix spared
 foes only, so a friend's plate (a player of your group, a friendly NPC) was still asked at every look.
 - **Range (`src/Nameplates/Range.lua`):** no item is asked about any unit, foe or friend, while the game restricts
@@ -4336,7 +4343,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   setting `combatFoundCVars` and goes back once (`Restore`, per group) when ours is switched off, the module stands
   down, or at `PLAYER_LOGOUT` (`CombatText.Logout`, from `ns.OnLogout`, before Core's profiles take the game's
   settings); a module off or not loaded leaves the game's and the profiles' values alone (was: the game's defaults
-  set when off). The setting and the logout's call in `Nameplates.lua` came in with 81133cb.
+  set when off). The setting and the logout's call in `Nameplates.lua` came in with e24849d.
 - Tests: `dev/tests/nameplates.lua` 186 checks (the word with the drawings off; the values found go back at the
   logout and are left alone after).
 
@@ -4403,7 +4410,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   and its strokes per drawing.
 
 ### Inventory: Containers a category of its own; Special Bags as before (Saneroki, 2026-10-23)
-- 6fa115e had made Special Bags into Containers (bags and quivers besides what lies in a worn special bag). Saneroki
+- 53f8a38 had made Special Bags into Containers (bags and quivers besides what lies in a worn special bag). Saneroki
   explained the game: a bag or quiver lying in the bags is an item like any other and always empty
   (`ERR_BAG_IN_BAG`), only worn bags hold items. So:
   - **Containers** (`containers`, new, after Professions; the game's `AUCTION_CATEGORY_CONTAINERS`): the classes
@@ -4411,7 +4418,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
     `Categories.Classify` sends it there after Quest Items and Junk (`take = "loot"`); it takes what is put into it.
     Its drawing a lockbox (`dev/imagegen/sets/bags/categories.txt`, containers-1; `category-art containers`).
   - **Special Bags** (`special`, `ns.TEXT.bagsSpecial` back): only what lies in a worn bag for one kind of item, as
-    before 6fa115e (`unassignable`, late, alone; the quiver's drawing).
+    before 53f8a38 (`unassignable`, late, alone; the quiver's drawing).
   - The alts' items: `Contents.OPENS` remembers the items seen in the bags as opened by a right click
     (`Alts/Items.lua` sets `record.loot` from it), as their records have no such word of the game's.
 - Tests: `dev/tests/bags.lua` 322 checks (the order, bags and quivers and what opens in Containers, Special Bags
@@ -4435,7 +4442,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   red).
 
 ### Inventory: the doll's model back; Special Bags become Containers (Saneroki, 2026-10-23)
-- **The model was gone:** 25bd74d put the model scene into a frame that clipped its children, anchored to the scene
+- **The model was gone:** 2688cec put the model scene into a frame that clipped its children, anchored to the scene
   inside it; the game then drew no model at all. The scene stands on its place again (`Model.Build`, no `view`), and
   the legs below the hero's column are hidden by the doll's own picture drawn again over the model: `Doll.Cover`
   (the picture from `Doll.FOOT` down, as wide as `Model.SIZE`, its texture coordinates the doll's) on a frame of
@@ -4868,7 +4875,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 
 ### Navigation: the group's pings no longer heard, so the game blocks nothing at login (Saneroki, 2026-10-23)
 - The game still blocked an action of Navigation's at every login ("UNKNOWN()"; 3x at 14:29) after `SetPassThroughButtons`
-  had gone (71bd2aa): the blocks began with the callback for `MINIMAP_PING` (`RegisterEventCallback`, ece73bf), one of
+  had gone (73de5b9): the blocks began with the callback for `MINIMAP_PING` (`RegisterEventCallback`, aa83bfb), one of
   the game's callback events with restrictions. `Ping.lua` no longer listens: it only sends. Gone with it: the marks
   of received pings (`Marks.Pings`, the ping art), `Ping.List`, `Ping.TIME`, `Hybrid.Covers`, the message LIVE
   "ping". The game's minimap draws the group's pings where it lies over our map.
@@ -5465,7 +5472,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 
 ### Core, Navigation: the map window stands at login again; the tools in Forever's own game folder (2026-10-22)
 - `Window.lua` (`Square`): a title bar button's sign in words is `art.sign` (the full screen's question mark). Since
-  24a647c a module's own button (`options.buttons`) took its tip's words (`text`) for such a sign: the quest log's pin
+  fdf7143 a module's own button (`options.buttons`) took its tip's words (`text`) for such a sign: the quest log's pin
   was words, not a picture, its look failed (`QuestLog.lua`, `PinLook`: `SetAtlas` on a font string), and at every
   login Navigation gave the map and the minimap back to the game, so no map, pins or routes of ours; the demo's
   button showed its tip's words.

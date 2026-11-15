@@ -1527,7 +1527,7 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   - no route inside an instance (the game gives no position there).
   To come: a travel pin's ways under the mouse (*Map pins*).
 - **Built (2026-10-22): walks priced by the coarse layer first.** Saneroki: far pins took a couple of seconds to plan.
-  Measured outside the game (the planner over the whole real data, the code of 2c4a814): 95 % of a plan's time was its
+  Measured outside the game (the planner over the whole real data, the code of 6499313): 95 % of a plan's time was its
   searches, about 500 ms a route, 3.4 s at worst, and 13 of 383 searches stopped at `Search.MOST` (200,000 rectangles,
   about 1.3 s each): every one a walk 5 to 11 times its straight line (a Horde character deep in the Alliance's lands)
   that the journey had guessed at `Planner.DETOUR` (1.3) times it. Trimming the search's inner loop gained nothing: the
