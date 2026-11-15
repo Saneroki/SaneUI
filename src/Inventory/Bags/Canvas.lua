@@ -202,12 +202,11 @@ function Sheet:Label(place)
     label:Show()
 end
 
--- A block's empty slot, drawn as any empty slot (no sign in it, Saneroki, 2026-10-23), its category's drawing (a
--- group's) in its middle, faded to a subtle grey on the paper (Saneroki, 2026-10-23): an item brought to it (picked
--- up and clicked here, or dragged here) goes into its category (Pinned's: pinned; Junk's: marked as junk); clicked
--- with nothing, the next item clicked does (Select.lua).
+-- A block's empty slot: its category's drawing (a group's) alone, a plain grey symbol on the plate, no slot round it
+-- (Saneroki, 2026-11-15: "remove the black background so its just their symbol visible"; Style.Symbol): an item
+-- brought to it (picked up and clicked here, or dragged here) goes into its category (Pinned's: pinned; Junk's:
+-- marked as junk); clicked with nothing, the next item clicked does (Select.lua).
 Canvas.SLOT_ICON = 0.75   -- the drawing against the slot's side (Saneroki, 2026-10-23: bigger)
-Canvas.SLOT_FADE = 0.3    -- and how much of it shows (darker)
 local function PlusClick(plus)
     if GetCursorInfo() == "item" then return Menus.Drop(plus.key, plus.canvas.owner.stow) end
     ns.Select.Start("put", plus.key)
@@ -230,7 +229,6 @@ end
 local function MakePlus(canvas)
     local plus = CreateFrame("Button", nil, canvas.child)
     plus.canvas = canvas
-    ns.Style.Slot(plus, 1, "BACKGROUND"):SetAlpha(Cells.EMPTY_SLOT)
     local shade = ns.Style.SHADE
     plus.lit = plus:CreateTexture(nil, "BORDER")
     plus.lit:SetAllPoints()
@@ -238,7 +236,6 @@ local function MakePlus(canvas)
     plus.lit:Hide()
     plus.icon = plus:CreateTexture(nil, "ARTWORK")
     plus.icon:SetPoint("CENTER")
-    plus.icon:SetAlpha(Canvas.SLOT_FADE)
     plus:SetScript("OnClick", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnEnter", function(self) ns.Safe("bags", PlusEnter, self) end)
@@ -253,22 +250,17 @@ function Sheet:Plus(place)
     plus:SetSize(place.size, place.size)
     plus:SetFrameLevel(self.child:GetFrameLevel() + 3)
     plus.key = place.block.drop or place.block.key
-    -- the category's icon (the game's) grey, cut a little round its edge
+    -- the category's icon (the game's) as a plain grey symbol
     local group = plus.key:match("^group:(.+)$")
-    local file = group and Categories.GroupIcon(group) or Categories.Icon(plus.key)
-    local zoom = Categories.Drawn(file) and 0 or Cells.ZOOM
-    plus.icon:SetTexture(file)
-    plus.icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
-    plus.icon:SetDesaturated(zoom > 0)
+    ns.Style.Symbol(plus.icon, group and Categories.GroupIcon(group) or Categories.Icon(plus.key))
     plus.icon:SetSize(place.size * Canvas.SLOT_ICON, place.size * Canvas.SLOT_ICON)
     plus.lit:Hide()
     plus:Show()
 end
 
--- Junk's first slot, the waste bin: the game's red delete button alone, no slot around it, a little larger than the
--- slot (into the gaps round it; the slot is what takes the clicks); an item let go there (or clicked
--- onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
-Canvas.BIN = 1.1       -- the bin against the slot's size (Saneroki, 2026-10-23: bigger, plain to see)
+-- Junk's first slot, the waste bin: a plain grey symbol as the categories' (the golden bin of the game's red delete
+-- button alone: Style.Bin; Saneroki, 2026-11-15: "make them the same style"), no slot round it; an item let go there
+-- (or clicked onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
 local function BinDrop()
     Menus.Destroy()
 end
@@ -293,7 +285,8 @@ local function MakeBin(canvas)
     bin.lit:SetAllPoints()
     bin.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     bin.lit:Hide()
-    bin.picture = ns.Style.Texture(bin, "trash", "ARTWORK")
+    bin.picture = bin:CreateTexture(nil, "ARTWORK")
+    ns.Style.Bin(bin.picture)
     bin.picture:SetPoint("CENTER")
     bin:SetScript("OnClick", ns.Guard(BinDrop))
     bin:SetScript("OnReceiveDrag", ns.Guard(BinDrop))
@@ -308,7 +301,7 @@ function Sheet:Bin(place)
     bin:SetPoint("TOPLEFT", self.child, "TOPLEFT", place.x + Canvas.INSET, -place.y)
     bin:SetSize(place.size, place.size)
     bin:SetFrameLevel(self.child:GetFrameLevel() + 3)
-    bin.picture:SetSize(place.size * Canvas.BIN, place.size * Canvas.BIN)
+    bin.picture:SetSize(place.size * Canvas.SLOT_ICON, place.size * Canvas.SLOT_ICON)
     bin.lit:Hide()
     bin:Show()
 end

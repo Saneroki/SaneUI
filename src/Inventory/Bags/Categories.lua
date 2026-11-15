@@ -104,7 +104,7 @@ Categories.ART = {
     legs = "INV_Pants_Cloth_05", misc = "INV_Misc_Gear_01", neck = "INV_Jewelry_Necklace_07", offhand = "INV_Shield_06",
     own = "INV_Misc_QuestionMark", pinned = "INV_Misc_Note_02", potions = "INV_Potion_51", prep = "INV_Misc_Food_15",
     professions = "Trade_BlackSmithing", quest = "INV_Misc_Note_01", ranged = "INV_Weapon_Bow_07",
-    reagent = "INV_Misc_Dust_02", recent = "Spell_Holy_BorrowedTime", sets = "INV_Chest_Chain_15",
+    reagent = "INV_Misc_Dust_02", recent = "INV_Misc_PocketWatch_01", sets = "INV_Chest_Chain_15",
     shoulder = "INV_Shoulder_02", special = "INV_Misc_Bag_Satchelofcenarius", tabard = "INV_Shirt_GuildTabard_01",
     trade = "INV_Fabric_Silk_01", trinket = "INV_Jewelry_Talisman_07", waist = "INV_Belt_03", weapons = "INV_Sword_04",
     wrist = "INV_Bracer_07",
@@ -112,13 +112,6 @@ Categories.ART = {
 function Categories.Art(key)
     return ICONS .. (Categories.ART[key] or Categories.ART.own)
 end
--- The icons a category of the player's own may take (the dialog's choice).
-Categories.ICONS = {
-    "INV_Misc_QuestionMark", "INV_Misc_Bag_10", "INV_Misc_Gem_01", "INV_Potion_54", "INV_Misc_Herb_19",
-    "INV_Ore_Copper_01", "INV_Fabric_Linen_01", "INV_Enchant_DustArcane", "INV_Misc_Key_03", "INV_Misc_Toy_10",
-    "INV_Misc_Ticket_Tarot_Stack_01", "INV_Misc_Bone_HumanSkull_01", "INV_Banner_02", "Trade_Engineering",
-}
-for index, name in ipairs(Categories.ICONS) do Categories.ICONS[index] = ICONS .. name end
 
 -- The game's camp items (by item ID).
 Categories.CAMP = {}

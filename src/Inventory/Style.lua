@@ -100,22 +100,51 @@ function Style.Box(frame, weight, layer)
     return Look.Outline(frame, layer)
 end
 
--- An item's slot behind a button: the game's empty bag slot (bags-item-slot-blank) at frame's edge (out: units
--- beyond it), the icon inset by Style.SLOT_ICON of its side.
+-- An item's slot behind a button: the character window's gear slot (UI-Character-Info-GearSlot, the kit's), its
+-- bronze line at frame's edge (out: units beyond it), the icon inset by Style.SLOT_ICON of its side (Saneroki,
+-- 2026-11-15: "Bags from containers don't have an outline for their empty slots. They are invisible until you hover
+-- over them": Forever's own empty bag slot, bags-item-slot64, is a dark square without one, the blank one nothing).
+Style.SLOT_CUT = 0.08 -- the gear slot's soft shadow outside its bronze line, cut away: the line at the slot's edge
 function Style.Slot(frame, out, layer)
     local slot = frame:CreateTexture(nil, layer or "BACKGROUND")
-    if not Look.Atlas(slot, "bags-item-slot-blank") then slot:SetTexture("Interface\\Buttons\\UI-EmptySlot") end
+    local cut = Style.SLOT_CUT
+    if not Look.Part(slot, "ui-character-info-gearslot", cut, 1 - cut, cut, 1 - cut) then
+        slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
+    end
     out = out or 1
     slot:SetPoint("TOPLEFT", -out, out)
     slot:SetPoint("BOTTOMRIGHT", out, -out)
     return slot
 end
 
+-- A category's drawing as a plain symbol (Saneroki, 2026-11-15: "remove the black background so its just their
+-- symbol visible"): the game's icon inside its bevel, grey, added to what lies under it, so its dark ground is gone
+-- and only its light shapes show. The waste bin the same: the golden bin of the game's red delete button alone.
+Style.SYMBOL = 0.6          -- how bright the symbol's light shapes are
+Style.SYMBOL_CUT = 0.1      -- the icon's bevel cut away on each side
+Style.BIN = { 0.27, 0.72, 0.27, 0.72 } -- the bin in 128-RedButton-Delete (left, right, top, bottom)
+local function Symbolic(texture)
+    texture:SetDesaturated(true)
+    texture:SetBlendMode("ADD")
+    texture:SetVertexColor(Style.SYMBOL, Style.SYMBOL, Style.SYMBOL, 1)
+    texture:SetAlpha(1)
+end
+function Style.Symbol(texture, file)
+    texture:SetTexture(file)
+    local cut = Style.SYMBOL_CUT
+    texture:SetTexCoord(cut, 1 - cut, cut, 1 - cut)
+    Symbolic(texture)
+end
+function Style.Bin(texture)
+    local cut = Style.BIN
+    Look.Part(texture, "128-redbutton-delete", cut[1], cut[2], cut[3], cut[4])
+    Symbolic(texture)
+end
+
 -- The game's small pictures Inventory's rows and cells use, by the names the journal's pieces had: the
--- chevron of a group that opens, the red X of the bin, the minimal checkbox.
+-- chevron of a group that opens, the minimal checkbox (the bin: Style.Bin).
 Style.PIECES = {
     arrow = "uitools-icon-chevron-down", -- pointing down, as the journal's was: the sidebar turns it
-    trash = "128-redbutton-delete", -- the waste bin: the game's red delete button (the character list's)
     ["pencil-slot"] = "checkbox-minimal",
     check = "checkmark-minimal",
 }

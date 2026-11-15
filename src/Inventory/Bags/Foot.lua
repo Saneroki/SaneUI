@@ -48,7 +48,6 @@ Foot.BAG = 40          -- a bag's square in the strip, in an item's look (Sanero
 Foot.BAG_GAP = 4
 Foot.STRIP = Foot.BAG + 10
 Foot.DRAWING = 0.8     -- an empty slot's drawing against the slot's side
-Foot.DRAWN = 0.6       -- and how much of it shows: plain to see, still empty
 -- What an empty slot shows: a picture of the bags' (Categories.Art).
 Foot.EMPTY = { bag = "one", reagent = "reagent", keyring = "key" }
 Foot.BAG_ICON = "Interface\\Icons\\INV_Misc_Bag_08" -- a bag worn whose icon the game does not tell
@@ -161,7 +160,6 @@ local function MakeBag(index)
     local drawing = button:CreateTexture(nil, "ARTWORK")
     drawing:SetSize(Foot.BAG * Foot.DRAWING, Foot.BAG * Foot.DRAWING)
     drawing:SetPoint("CENTER")
-    drawing:SetAlpha(Foot.DRAWN)
     emptyOf[button] = drawing
     local font = ns.Cells.Fonts()
     frees[button] = button:CreateFontString(nil, "OVERLAY")
@@ -225,7 +223,7 @@ function Foot.Bags()
         iconOf[button]:SetTexture(picture)
         iconOf[button]:SetShown(picture ~= nil)
         emptyOf[button]:SetShown(picture == nil)
-        if not picture then emptyOf[button]:SetTexture(ns.Categories.Art(Drawing(bag))) end
+        if not picture then ns.Style.Symbol(emptyOf[button], ns.Categories.Art(Drawing(bag))) end -- a plain symbol
         slotOf[button]:SetAlpha(picture and 1 or ns.Cells.EMPTY_SLOT)
         frees[button]:SetText(left and tostring(left) or "")
         button:ClearAllPoints()

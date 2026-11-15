@@ -57,6 +57,7 @@ Sidebar.GHOST = 0.85       -- the dragged row's ghost
 Sidebar.LIFTED = 0.35      -- the dragged row itself meanwhile
 Sidebar.INTO = 0.2         -- the row it would go into, shaded
 Sidebar.MARK = 0.75        -- the marks (the arrows) a little dim; under the mouse whole
+Sidebar.GREY, Sidebar.GREY_ICON = 0.4, 0.5 -- a category hidden in All Items or switched off: greyed, still listed
 Sidebar.BOX = 1            -- a box's square (the game's minimal checkbox)
 Sidebar.TOGGLE = 14        -- a box's side, and the arrow's beside it and in the head
 
@@ -86,10 +87,14 @@ end
 --  A row
 -------------------------------------------------------------------------------
 -- A name cut short by the sidebar's width: whole in the tooltip.
+-- Its name where it is cut short; a greyed row says why and how it comes back (Saneroki, 2026-11-15: "When a
+-- category is hidden, what happens with it? How do I get it back?").
 local function RowTip(row)
-    if not (row.word and row.label:IsTruncated()) then return end
+    local why = row.off and ns.TEXT.bagsOffTip or row.hidden and ns.TEXT.bagsHiddenTip or nil
+    if not (row.word and (why or row.label:IsTruncated())) then return end
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     GameTooltip:SetText(row.word .. (row.number and (" (" .. row.number .. ")") or ""), 1, 1, 1)
+    if why then GameTooltip:AddLine(why, 1, 0.82, 0, true) end
     GameTooltip:Show()
 end
 
@@ -121,6 +126,10 @@ local function RowClick(row, mouse)
     end
     if row.add then
         if rail.add then rail.add(row) end
+        return
+    end
+    if row.off then -- switched off: it has nothing to show, the click switches it on again
+        if rail.on then rail.on(row) end
         return
     end
     if row.view == nil then return end
@@ -237,6 +246,17 @@ function Rail:Begin()
     self.y = 2
 end
 
+-- A row greyed, still listed (how: "hidden" in All Items, or "off": switched off, its items in Miscellaneous): its
+-- icon grey and dim, its words and count dim (as Add Category's); its tooltip says why and how it comes back.
+function Rail:Grey(row, how)
+    row.off, row.hidden = how == "off" or nil, how == "hidden" or nil
+    row.icon:SetDesaturated(true)
+    row.icon:SetAlpha(Sidebar.GREY_ICON)
+    row.label:SetAlpha(Sidebar.GREY)
+    row.count:SetAlpha(Sidebar.GREY)
+    if row.off then row.takes = false end
+end
+
 -- A row: its name, count (nil: none), icon (a texture, or an atlas first), how far set in, whether it is shown.
 function Rail:Row(word, number, file, atlas, depth, shown)
     local row = self.rows:Take()
@@ -246,7 +266,7 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row:SetWidth(width - 1)
     row.word, row.number = word, number
     row.key, row.group, row.view, row.add, row.takes = nil, nil, nil, nil, false
-    row.drag, row.inside, row.last = false, nil, nil
+    row.drag, row.inside, row.last, row.off, row.hidden = false, nil, nil, nil, nil
     row.depth, row.file, row.atlas, row.top = depth, file, atlas, self.y
     row:SetAlpha(1)
     local size = depth > 0 and Sidebar.ICON_SMALL or Sidebar.ICON
@@ -255,6 +275,8 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row.icon:SetPoint("LEFT", 8 + depth * Sidebar.INDENT, 0)
     Icon(row.icon, file, atlas)
     row.icon:SetAlpha(1)
+    row.icon:SetDesaturated(false)
+    row.count:SetAlpha(1)
     row.label:SetText(word)
     row.label:SetAlpha(shown and 1 or Sidebar.DIM)
     row.label:SetPoint("RIGHT", -30, 0)
@@ -500,7 +522,7 @@ end
 -- where) for rows dragged, fold(on) (the arrow's click: the window folds it, Rail:Fold) }.
 function Sidebar.New(body, top, bottom, options)
     local rail = setmetatable({ choose = options.choose, drop = options.drop, menu = options.menu, add = options.add,
-                                tip = options.tip, aim = options.aim, place = options.place }, Rail)
+                                tip = options.tip, aim = options.aim, place = options.place, on = options.on }, Rail)
     local frame = CreateFrame("Frame", nil, body)
     frame:SetWidth(Sidebar.WIDTH)
     frame:SetPoint("TOPLEFT", top, "BOTTOMLEFT")
@@ -559,15 +581,20 @@ end
 -------------------------------------------------------------------------------
 local rail -- the bags' (Bag.Build)
 
--- The categories' rows of a sidebar, in their order, every one switched on: a group's row with its arrow and its box,
--- its members set in under it while it is not folded. counts: [key] and ["group:<group>"] = how many; viewing: the view
--- shown ("cat:<key>", "group:<group>"); takes: items may be let go over the rows (the bags').
+-- The categories' rows of a sidebar, in their order: a group's row with its arrow and its box, its members set in
+-- under it while it is not folded; one hidden in All Items or switched off greyed (Rail:Grey), never left out.
+-- counts: [key] and ["group:<group>"] = how many; viewing: the view shown ("cat:<key>", "group:<group>"); takes: items
+-- may be let go over the rows (the bags').
+local function Greyed(list, row, key)
+    if Categories.Off(key) then return list:Grey(row, "off") end
+    if Categories.Hidden(key) then list:Grey(row, "hidden") end
+end
 function Bag.Categories(list, counts, viewing, takes)
     local done = {}
     for _, key in ipairs(Categories.order) do
         local def = Categories.DEF[key]
         local group = Categories.GroupOf(key)
-        if not (def and def.fixed) and not Categories.Off(key) then
+        if not (def and def.fixed) then
             if group and not done[group] then
                 done[group] = true
                 local view = ns.Views.GroupKey(group)
@@ -577,14 +604,16 @@ function Bag.Categories(list, counts, viewing, takes)
                 row.takes = takes and ns.Menus.Takes(view)
                 local folded = Categories.Folded(group)
                 list:Toggles(row, folded, Categories.Divided(group), Bag.FoldGroup, Bag.DivideGroup)
+                if Categories.Hidden(group) then list:Grey(row, "hidden") end
                 for _, member in ipairs(Categories.Members(group)) do
-                    if not Categories.Off(member) and not folded then
+                    if not folded then
                         local mfile, matlas = Categories.Icon(member)
                         local memberRow = list:Row(Categories.Word(member), counts[member] or 0, mfile, matlas, 1,
                             viewing == "cat:" .. member)
                         memberRow.view, memberRow.key = "cat:" .. member, member
                         memberRow.takes = takes and Categories.Takes(member)
                         memberRow.drag, memberRow.inside = true, group
+                        Greyed(list, memberRow, member)
                         row.last = memberRow
                     end
                 end
@@ -594,6 +623,7 @@ function Bag.Categories(list, counts, viewing, takes)
                 row.view, row.key = "cat:" .. key, key
                 row.takes = takes and Categories.Takes(key)
                 row.drag = Categories.Movable(key)
+                Greyed(list, row, key)
             end
         end
     end
@@ -612,16 +642,14 @@ function Bag.Refresh(counts, viewing, options)
     for _, view in ipairs(fixed) do
         rail:Row(view.word, nil, view.icon, nil, 0, viewing == view.key).view = view.key
     end
-    local shownFixed = false
+    -- Pinned and Recent, hidden in All Items (their items then in their own categories only): greyed, still listed
     for _, key in ipairs({ Categories.PINNED, Categories.RECENT }) do
-        if options[ns.Bags.SHOW[key]] ~= false then
-            local file, atlas = Categories.Icon(key)
-            local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
-            row.view, row.key, row.takes = "cat:" .. key, key, key == Categories.PINNED
-            shownFixed = true
-        end
+        local file, atlas = Categories.Icon(key)
+        local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
+        row.view, row.key, row.takes = "cat:" .. key, key, key == Categories.PINNED
+        if options[ns.Bags.SHOW[key]] == false then rail:Grey(row, "hidden") end
     end
-    if shownFixed then rail:Divider() end
+    rail:Divider()
     Bag.Categories(rail, counts, viewing, true)
     if options.addCategory ~= false then
         local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.Art("add"), nil, 0, false)
@@ -738,6 +766,7 @@ function Bag.Build(body, top, bottom, bags)
         drop = function(row) ns.Menus.Drop(row.key or row.group and ("group:" .. row.group), true) end,
         menu = function(row) if row.key or row.group then ns.Menus.Row(row, row.key, row.group) end end,
         add = function(row) ns.Menus.Add(row) end,
+        on = function(row) ns.Menus.SwitchOn(row.key) end,
         aim = Bag.Aim,
         place = Bag.Place,
         fold = function(on) ns.Bags.Fold(on) end,

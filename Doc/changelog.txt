@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Bags: every free slot has a bronze outline; the categories'
+  empty slots and the waste bin show plain grey symbols. A hidden
+  or switched-off category stays in the list, greyed, with how to
+  bring it back. Your own categories take any of the game's icons,
+  chosen in a window with search.
 - Map: the Maelstrom's whirlpool in the middle of the sea, as on the
   game's world map. At the world the continents no longer light up
   under the mouse (their names still show), and the stray lines in

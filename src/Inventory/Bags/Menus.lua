@@ -55,13 +55,32 @@ end
 -------------------------------------------------------------------------------
 --  New categories
 -------------------------------------------------------------------------------
--- A category of the player's own made, named in the game's dialog; then (item) that item put into it.
+-- A category of the player's own: its icon chosen in Core's icon chooser (Saneroki, 2026-11-15: "When you create a
+-- custom category, can we add a picutre chooser to it?"), the game's icons by group, searched; closed without a
+-- choice, it keeps the one it has.
+local function ChooseIcon(key)
+    if not Categories.Own(key) then return end
+    Core.Icons.Open({
+        label = "bags", title = TEXT.bagsIconTitle:format(Categories.Word(key)), chosen = Categories.Icon(key),
+        chosenWord = TEXT.bagsIconChosen, clickWord = TEXT.bagsIconClick,
+        pick = function(file)
+            if not file or not Categories.Own(key) then return end
+            Categories.SetIcon(key, file)
+            Changed()
+        end,
+    })
+end
+Menus.ChooseIcon = ChooseIcon
+
+-- A category of the player's own made, named in the game's dialog, its icon chosen next; then (item) that item put
+-- into it.
 local function New(item)
     Core.AskText(TEXT.bagsNewAsk, nil, ACCEPT, "", function(text)
         local key = Categories.New(text, Categories.OWN_ICON)
         if not key then return end
         if item then Categories.Assign(item, key) end
         Changed()
+        ChooseIcon(key)
     end, Categories.LETTERS)
 end
 local NewCategory = ns.Guard(function() New() end)
@@ -173,15 +192,14 @@ local function ToggleHidden()
     Categories.Hide(about.group or about.key, not IsHidden())
     Changed()
 end
-local function Off()
-    Categories.SwitchOff(about.key, true)
+local function IsOff() return Categories.Off(about.key) end
+local function ToggleOff()
+    Categories.SwitchOff(about.key, not IsOff())
     Changed()
 end
-local function SetIcon(file)
-    Categories.SetIcon(about.key, file)
-    Changed()
+local function PickIcon()
+    ChooseIcon(about.key)
 end
-local function IsIcon(file) return Categories.Icon(about.key) == file end
 local function DeleteIt()
     local key = about.key
     Core.Confirm(TEXT.bagsDeleteAsk, Categories.Word(key), function()
@@ -189,8 +207,11 @@ local function DeleteIt()
         Changed()
     end, true)
 end
-local function HideFixed()
-    Core.Set(ns.name, ns.Bags.SHOW[about.key], false)
+-- Pinned and Recent hidden in All Items, or shown there again: the window's settings Show Pinned Items, Show Recent
+-- Items (their rows stay in the sidebar, greyed).
+local function IsFixedHidden() return (ns.options or {})[ns.Bags.SHOW[about.key]] == false end
+local function ToggleFixed()
+    Core.Set(ns.name, ns.Bags.SHOW[about.key], IsFixedHidden())
 end
 local function ClearRecent()
     ns.Recent.Clear()
@@ -204,11 +225,12 @@ local Ungroup = ns.Guard(Apart)
 local Undo = ns.Guard(Disband)
 local Hidden = ns.Guard(IsHidden)
 local Hide = ns.Guard(ToggleHidden)
-local SwitchOff = ns.Guard(Off)
-local Iconed = ns.Guard(IsIcon)
-local Iconize = ns.Guard(SetIcon)
+local Offed = ns.Guard(IsOff)
+local SwitchOff = ns.Guard(ToggleOff)
+local Iconize = ns.Guard(PickIcon)
 local Delete = ns.Guard(DeleteIt)
-local HideIt = ns.Guard(HideFixed)
+local FixedHidden = ns.Guard(IsFixedHidden)
+local HideFixed = ns.Guard(ToggleFixed)
 local Clear = ns.Guard(ClearRecent)
 
 local function FillRow(_, root)
@@ -224,7 +246,7 @@ local function FillRow(_, root)
     end
     root:CreateTitle(Categories.Word(key))
     if key == Categories.PINNED or key == Categories.RECENT then
-        root:CreateButton(Core.Word("HIDE", "Hide"), HideIt)
+        root:CreateCheckbox(TEXT.bagsHideAll, FixedHidden, HideFixed)
         if key == Categories.RECENT then root:CreateButton(TEXT.bagsClear, Clear) end
         return
     end
@@ -257,10 +279,9 @@ local function FillRow(_, root)
         end
     end
     root:CreateCheckbox(TEXT.bagsHideAll, Hidden, Hide)
-    if key ~= Categories.CATCH_ALL and key ~= Categories.JUNK then root:CreateButton(TEXT.bagsOff, SwitchOff) end
+    if key ~= Categories.CATCH_ALL and key ~= Categories.JUNK then root:CreateCheckbox(TEXT.bagsOff, Offed, SwitchOff) end
     if Categories.Own(key) then
-        local icons = root:CreateButton(TEXT.bagsIcon)
-        for _, file in ipairs(Categories.ICONS) do icons:CreateRadio(Icon(file, 20), Iconed, Iconize, file) end
+        root:CreateButton(TEXT.bagsIcon, Iconize)
         root:CreateButton(Core.Word("DELETE", "Delete"), Delete)
     end
 end
@@ -271,6 +292,13 @@ function Menus.Row(owner, key, group)
     if not ((key or group) and rawget(_G, "MenuUtil")) then return end
     about.key, about.group = key, group
     MenuUtil.CreateContextMenu(owner, RowMenu)
+end
+
+-- A switched-off category's row clicked (greyed in the sidebar): switched on again.
+function Menus.SwitchOn(key)
+    if not (key and Categories.Off(key)) then return end
+    Categories.SwitchOff(key, false)
+    Changed()
 end
 
 -- Whether items can be let go over a category: Pinned, Junk, the categories items are put into, a group

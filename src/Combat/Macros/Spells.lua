@@ -5,7 +5,7 @@ local Macros = ns.Macros
 --  Sane UI - Combat - Macros - Spells
 --  The spell window (Saneroki, 2026-11-07: "big spell window on the plus"): the
 --  + beside a spell step's name opens it over whatever shows, the full screen
---  too, as the picture window does (Icons.lua). On the left the groups: the
+--  too, as the picture window does (Core's icon chooser, Core.Icons). On the left the groups: the
 --  spells this character knows, each tab of its spellbook (the game's own book's
 --  tabs, BookData.Tabs), each class's spells (its own first; Core's sets
 --  Classes, SkillLines and Spells) and all of them; at the top a search over
@@ -280,7 +280,7 @@ local function Fill()
 end
 
 local function Build()
-    local I, Icons = Macros.Editor.INSET, Macros.Icons
+    local I, Icons = Macros.Editor.INSET, Core.Icons -- the picture window's sizes (Core's icon chooser)
     frame = CreateFrame("Frame", nil, UIParent)
     local width = math.min(Icons.LARGEST[1], (UIParent:GetWidth() or 1200) * Icons.SHARE[1])
     local height = math.min(Icons.LARGEST[2], (UIParent:GetHeight() or 800) * Icons.SHARE[2])

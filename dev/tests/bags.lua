@@ -97,6 +97,7 @@ W.templates.ContainerFrameItemButtonTemplate = function(widget)
     widget.BagIndicator = W.NewWidget("Texture", nil, widget)
     widget.BagIndicator._shown = false
     widget.icon = W.NewWidget("Texture", nil, widget)
+    widget.IconBorder = W.NewWidget("Texture", nil, widget)
     widget.Count = W.NewWidget("FontString", nil, widget)
     widget._template = "ContainerFrameItemButtonTemplate"
     widget._shown = false -- hidden="true", as the game's template is
@@ -921,11 +922,19 @@ potionButton = Cells.Button(0, 3)
 potionButton:GetScript("OnMouseUp")(potionButton, "MiddleButton")
 check(kept.assigned[118] == nil and not kept.pinned[118], "a middle click on an item put into a category takes it out")
 menu = ItemMenu(Cells.Button(0, 3))
+-- Core's icon chooser (Core.Icons, the macros' test runs it whole): what it is opened with, kept here.
+local chooser
+Core.Icons.Open = function(options) chooser = options end
 Choose(Line(menu, "Put Into").sub, "New Category")
 local popup = W.popups[#W.popups]
 check(popup.which == "GENERIC_INPUT_BOX", "a new category named in the game's dialog")
 popup.data.callback("Tonics")
 check(kept.assigned[118] == "own1" and HeadNamed("Tonics"), "made, the item in it")
+check(chooser and chooser.title == "Icon of Tonics" and chooser.chosen == Categories.Icon("own1") and chooser.pick,
+    "then Core's icon chooser opens for its icon (Saneroki, 2026-11-15: a picture chooser when it is made)")
+chooser.pick(nil)
+check(Categories.Icon("own1") == Categories.Art("own"), "closed without a choice: it keeps the question mark")
+chooser = nil
 menu = ItemMenu(Cells.Button(0, 3))
 Choose(menu, "Junk")
 check(kept.assigned[118] == "junk" and HeadNamed("Tonics"), "marked as junk; its own category stays (the player's own, empty)")
@@ -1017,6 +1026,22 @@ do
     local slotButton = Cells.Button(0, 4)
     slotButton:GetScript("OnEnter")(slotButton)
     check(Bags.Viewing() == "one" and not catcher:IsShown(), "One Bag's slots, the bags as they are: the game's own, they swap")
+    -- A free slot framed as the character window's gear slot (Saneroki, 2026-11-15: they were unseen until the mouse
+    -- came), no quality border left from an item drawn there before; an item's slot shows no frame.
+    local function Frame(button)
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == button and widget._atlas == "ui-character-info-gearslot" then return widget end
+        end
+    end
+    local free, held
+    for slot = 1, 16 do
+        local button = Cells.Button(0, slot)
+        local record = button and Cells.Record(button)
+        if record and not record.item then free = free or button elseif record then held = held or button end
+    end
+    check(free and held and Frame(free) and Frame(free):IsShown() and not Frame(held):IsShown()
+        and not free.IconBorder:IsShown() and math.abs(Frame(free)._coords[1] - ns.Style.SLOT_CUT) < 1e-9,
+        "a free slot: the gear slot's bronze frame at its edge, no border of an item before; an item: none")
     Bags.Choose("all")
     holding = nil
     -- A pinned item put into a category of the player's own: unpinned, shown there; a middle click on a pinned item
@@ -1051,10 +1076,17 @@ local function PlusOf(key)
 end
 local plus = PlusOf("trade")
 check(plus and PlusOf("pinned") and not PlusOf("reagent"), "a + after Pinned and Trade Goods, none after the reagent bag's")
-check(plus.icon._texture == Categories.Art("trade") and plus.icon:GetAlpha() == ns.Canvas.SLOT_FADE
-    and plus.icon._coords[1] == ns.Cells.ZOOM and plus.icon:GetWidth() == plus:GetWidth() * ns.Canvas.SLOT_ICON
+check(plus.icon._texture == Categories.Art("trade") and plus.icon._grey and plus.icon._vertex[1] == ns.Style.SYMBOL
+    and plus.icon._coords[1] == ns.Style.SYMBOL_CUT and plus.icon:GetWidth() == plus:GetWidth() * ns.Canvas.SLOT_ICON
     and PlusOf("pinned").icon._texture == Categories.Art("pinned"),
-    "an empty slot shows its category's icon in its middle, cut a little round its edge and faded to a subtle grey")
+    "a block's empty slot: its category's icon in its middle, a plain grey symbol cut inside its bevel")
+do -- (Saneroki, 2026-11-15: no slot behind it, "just their symbol visible")
+    local regions = 0
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == plus and widget._kind == "Texture" and widget ~= plus.icon and widget ~= plus.lit then regions = regions + 1 end
+    end
+    check(regions == 0, "and no slot behind it: only the symbol")
+end
 do
     local PX, words = ns.Style.PX, ns.Style.WORDS
     check(words > 1 and math.abs(SaneUIBagsSideLabel._font[2] - 15 * words * PX) < 1e-9
@@ -1194,7 +1226,7 @@ local function RowMenu(word)
 end
 menu = RowMenu("Tonics")
 check(menu[1].title == "Tonics" and Line(menu, "Rename") and Line(menu, "Move Up") and Line(menu, "Create Group With")
-    and Line(menu, "Hide in All Items") and Line(menu, "Switch Off") and Line(menu, "Icon") and Line(menu, "Delete"),
+    and Line(menu, "Hide in All Items") and Line(menu, "Switch Off") and Line(menu, "Choose Icon") and Line(menu, "Delete"),
     "a right click on the player's own category: its menu")
 Choose(menu, "Rename")
 popup = W.popups[#W.popups]
@@ -1202,13 +1234,14 @@ check(popup.box.text == "Tonics", "renamed in the game's dialog, the name in it"
 popup.data.callback("Flasks")
 check(HeadNamed("Flasks") and RowNamed("Flasks"), "renamed")
 menu = RowMenu("Flasks")
-local third = Line(menu, "Icon").sub[3]
-third.fn(third.data)
-check(kept.own[1].icon == Categories.ICONS[3], "its icon chosen")
-check(RowNamed("Flasks").icon._texture == Categories.ICONS[3] and RowNamed("Flasks").icon._coords[1] > 0,
+Choose(menu, "Choose Icon")
+check(chooser and chooser.title == "Icon of Flasks", "Choose Icon: Core's icon chooser for it")
+chooser.pick(135274) -- a file number, as the chooser gives it
+check(kept.own[1].icon == 135274, "its icon chosen")
+check(RowNamed("Flasks").icon._texture == 135274 and RowNamed("Flasks").icon._coords[1] > 0,
     "the player's own category with the game's icon it chose: that icon, cut a little round its edge")
-check(PlusOf("own1") and PlusOf("own1").icon._texture == Categories.ICONS[3] and PlusOf("own1").icon._grey
-    and PlusOf("trade").icon._grey, "in its empty slot that icon grey, as every category's (the game's icons all)")
+check(PlusOf("own1") and PlusOf("own1").icon._texture == 135274 and PlusOf("own1").icon._grey
+    and PlusOf("trade").icon._grey, "in its empty slot that icon as a grey symbol, as every category's")
 menu = RowMenu("Flasks")
 Choose(Line(menu, "Create Group With").sub, "Trade Goods")
 check(RowNamed("Trade Goods & Flasks") and Categories.GroupOf("own1"), "grouped with another from the menu")
@@ -1223,11 +1256,28 @@ Choose(RowMenu("The Armory"), "Move Up")
 check(RowNamed("The Armory").top < RowNamed("Consumables").top, "and up again")
 menu = RowMenu("Trade Goods")
 Choose(menu, "Hide in All Items")
-check(not HeadNamed("Trade Goods") and kept.hidden.trade, "hidden from All Items")
+-- (Saneroki, 2026-11-15: "When a category is hidden, what happens with it? How do I get it back? ... Like just graying
+-- it out.") Still listed, greyed, its tooltip saying how it comes back.
+local function Tip(row)
+    GameTooltip._lines = nil
+    row:GetScript("OnEnter")(row)
+    local said = GameTooltip._lines and GameTooltip._lines[#GameTooltip._lines]
+    row:GetScript("OnLeave")(row)
+    return said
+end
+local trade = RowNamed("Trade Goods")
+check(not HeadNamed("Trade Goods") and kept.hidden.trade and trade and trade.hidden and trade.icon._grey
+    and trade.label:GetAlpha() < 1 and Tip(trade) == ns.TEXT.bagsHiddenTip,
+    "hidden from All Items: still in the sidebar, greyed, its tooltip saying how it comes back")
+check(Line(RowMenu("Trade Goods"), "Hide in All Items").checked(), "its menu's Hide in All Items ticked")
 Choose(RowMenu("Trade Goods"), "Hide in All Items")
-check(HeadNamed("Trade Goods"), "shown again")
+check(HeadNamed("Trade Goods") and not RowNamed("Trade Goods").hidden and not RowNamed("Trade Goods").icon._grey
+    and RowNamed("Trade Goods").label:GetAlpha() > 0.5, "shown again, no longer grey")
 Choose(RowMenu("Trade Goods"), "Switch Off")
-check(not RowNamed("Trade Goods") and Categories.Off("trade"), "switched off: its items in Miscellaneous")
+trade = RowNamed("Trade Goods")
+check(trade and trade.off and trade.icon._grey and not trade.takes and Categories.Off("trade")
+    and Tip(trade) == ns.TEXT.bagsOffTip and Line(RowMenu("Trade Goods"), "Switch Off").checked(),
+    "switched off: its items in Miscellaneous, its row still there, greyed, taking no item, its tooltip saying so")
 local dropdown
 for _, widget in ipairs(W.frames) do
     if widget._generator and (rawget(widget, "word") or widget._override) == "View" then dropdown = widget end
@@ -1236,14 +1286,18 @@ dropdown:GenerateMenu()
 local off = Line(dropdown._items, "Switched Off")
 check(off and Line(off.sub, "Switch On Trade Goods"), "the dropdown View lists what is switched off")
 Choose(off.sub, "Switch On Trade Goods")
-check(RowNamed("Trade Goods"), "switched on again from there")
+check(RowNamed("Trade Goods") and not Categories.Off("trade") and not RowNamed("Trade Goods").off, "switched on again from there")
+Choose(RowMenu("Trade Goods"), "Switch Off")
+trade = RowNamed("Trade Goods")
+trade:GetScript("OnClick")(trade, "LeftButton")
+check(not Categories.Off("trade") and not RowNamed("Trade Goods").off, "or by a click on its greyed row")
 Choose(RowMenu("Flasks"), "Delete")
 popup = W.popups[#W.popups]
 check(popup.which == "GENERIC_CONFIRMATION" and RowNamed("Flasks"), "deleting asks first")
 popup.data.callback()
 check(not RowNamed("Flasks") and #kept.own == 0 and kept.assigned[118] == nil, "deleted")
 menu = RowMenu("Pinned Items")
-check(Line(menu, "Hide") and not Line(menu, "Rename"), "Pinned's menu: only Hide")
+check(Line(menu, "Hide in All Items") and not Line(menu, "Rename"), "Pinned's menu: only Hide in All Items")
 
 -- A category dragged in the sidebar: its ghost on the cursor, a line where it would go (a row lit: into it); let go
 -- there, it is put there and kept.
@@ -1412,10 +1466,15 @@ Choose(dropdown._items, "Default")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Show Pinned Items")
 check(ns.options.showPinned == false, "Pinned hidden from the dropdown, in the module's settings")
-check(not RowNamed("Pinned Items"), "not in the sidebar then")
+check(RowNamed("Pinned Items") and RowNamed("Pinned Items").hidden and RowNamed("Pinned Items").icon._grey
+    and not HeadNamed("Pinned Items"), "not in All Items then, its row still in the sidebar, greyed")
 dropdown:GenerateMenu()
 Choose(dropdown._items, "Show Pinned Items")
-check(RowNamed("Pinned Items"), "shown again")
+check(RowNamed("Pinned Items") and not RowNamed("Pinned Items").hidden and HeadNamed("Pinned Items"), "shown again")
+Choose(RowMenu("Pinned Items"), "Hide in All Items")
+check(ns.options.showPinned == false and RowNamed("Pinned Items").hidden, "hidden from its own menu too")
+Choose(RowMenu("Pinned Items"), "Hide in All Items")
+check(ns.options.showPinned ~= false and not RowNamed("Pinned Items").hidden, "and shown again from there")
 
 -- The settings (Core's options page): each switch draws the bags anew.
 Core.Set(ns.name, "itemLevel", false)
@@ -1675,8 +1734,10 @@ check(Bags.strip:IsShown() and kept.strip, "and shows it again")
 do
     local bin
     for _, widget in ipairs(W.frames) do
-        if widget.picture and widget.lit and widget:IsShown() and widget.picture._atlas == ns.Style.PIECES.trash then bin = widget end
+        if widget.picture and widget.lit and widget:IsShown() and widget.picture._atlas == "128-redbutton-delete" then bin = widget end
     end
+    check(bin and bin.picture._grey and bin.picture._vertex[1] == ns.Style.SYMBOL and bin.picture._coords[1] == ns.Style.BIN[1],
+        "the waste bin a plain grey symbol as the categories': the golden bin of the game's delete button alone")
     local junkPlus = PlusOf("junk")
     check(bin and junkPlus and -bin._points[1][5] == -junkPlus._points[1][5] and bin._points[1][4] < junkPlus._points[1][4],
         "Junk: the waste bin first, on its line, before its items and its empty slot")
@@ -1733,8 +1794,8 @@ do
     Foot.Bags()
     check(Picture(7):IsShown() and Picture(7)._texture == "Interface\\Icons\\ui-hud-actionbar-keyring" and not Empty(7):IsShown(),
         "a keyring with keys: its icon")
-    check(Empty(4):GetAlpha() == Foot.DRAWN and select(3, Foot.Parts(bagButtons[4])):GetAlpha() == ns.Cells.EMPTY_SLOT,
-        "its icon faded, its slot a little dim")
+    check(Empty(4)._grey and Empty(4)._vertex[1] == ns.Style.SYMBOL and select(3, Foot.Parts(bagButtons[4])):GetAlpha() == ns.Cells.EMPTY_SLOT,
+        "its icon a plain grey symbol, its slot a little dim")
     -- The game tells no icon for the slot: the item worn there's, else any bag's, never an empty look.
     local texture, itemID = GetInventoryItemTexture, GetInventoryItemID
     local icons = C_Item.GetItemIconByID

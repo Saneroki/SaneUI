@@ -59,6 +59,8 @@ Secrecy.lua
 Board.lua
 Expand.lua
 Bar.lua
+# The icon chooser: the game's icons by group, searched, for every module that lets the player pick one
+Icons.lua
 # The other addons Sane UI knows and adapts to when they are installed (the one file that names them)
 Neighbours.lua
 # Quick switches the modules offer, for a view that gathers them (the minimap's satchel)

@@ -118,8 +118,10 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     are half again the game's size at first; the slider *Item Size* in the dropdown *View* makes them smaller or larger
     (55% to 135%), and a window too narrow for six of them in a line makes them smaller by itself, down to 28 units,
     so the window can be small (at its narrowest about 410 units wide; the words of the foot's checkboxes and the
-    currencies go first, and the count on the bar). Junk's first slot is a waste bin
-    (the game's red delete button, a little larger than a slot, no slot around it; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
+    currencies go first, and the count on the bar). A free slot has the character window's gear slot round it (its
+    bronze line at the slot's edge), so One Bag and Each Bag show every free slot; a category's empty slot shows its
+    icon alone as a plain grey symbol, no slot or dark square behind it. Junk's first slot is a waste bin
+    (the golden bin of the game's delete button alone, the same grey symbol, no slot around it; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
     `Menus.Destroy`): an item let go there or clicked onto it is offered to be destroyed in the game's own dialog, as when you
     drop it into the world (a rare item or better is typed out). *Pinned Items* and *Recent Items* (what
     came into your bags lately): a pinned item stands only under Pinned (while Pinned is shown), a recent one in
@@ -138,9 +140,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     it is unpinned and out of the category you put it into. An item from
     your bags stays in its slot; one from elsewhere (the bank, what you wear) goes into a free slot of your bags. A right click on a
     category (its row or its head): *Rename*, *Move Up*, *Move Down*, *Create Group With* another, *Add to Group*,
-    *Take Out of* its group, *Hide in All Items*, *Switch Off*; on a group: *Rename*, *Move Up*, *Move Down*,
-    *Hide in All Items*, *Disband Group*; on one of your own also *Icon* and *Delete*. *Add Category* at the
-    sidebar's foot makes one of your own. Drag a category's row in the sidebar to another place: let go at a
+    *Take Out of* its group, *Hide in All Items*, *Switch Off* (both ticks: tick again to undo); on a group:
+    *Rename*, *Move Up*, *Move Down*, *Hide in All Items*, *Disband Group*; on Pinned Items and Recent Items *Hide in
+    All Items*; on one of your own also *Choose Icon* and *Delete*. A category hidden in All Items or switched off
+    stays in the sidebar, greyed; its tooltip says what happened and how it comes back (a click on a switched-off one
+    switches it on again). Pinned Items and Recent Items hidden leave All Items, their items in their own categories.
+    *Add Category* at the sidebar's foot makes one of your own: name it, then pick its icon among all of the game's
+    icons in Core's icon chooser (groups, a search); *Choose Icon* picks another. Drag a category's row in the sidebar to another place: let go at a
     row's top or foot it goes before or after that row (between a group's members it joins that group), at a
     row's middle it joins that row's group (or makes one with that category); drag a group's row to move the whole
     group. Pinned Items and Recent Items stay at the top, Junk at the end. All of it is kept in your profile, in the

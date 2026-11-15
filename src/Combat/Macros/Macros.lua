@@ -15,7 +15,7 @@ local _, ns = ...
 --    Face.lua        our button lying over a bar button, its picture and swirl
 --    Reach.lua       keys and bar buttons
 --    Place.lua       choosing a bar button with the mouse
---    Icons.lua       the picture window: the game's icons by group, searched
+--    Icons.lua       the picture window: Core's icon chooser (Core.Icons) for the macro, its Steps' picture and tick
 --    Spells.lua      the spell window: your spells and every class's by group, searched
 --    Picker.lua      the list of conditions behind the + button
 --    Steps.lua       a macro's steps in a list
@@ -111,26 +111,12 @@ Macros.TEXT = {
     picture = "The macro's picture. Click: choose another. Drag it onto an action bar to place the macro; there it shows the step that comes next.",
 
     iconTitle = "Choose a picture",
-    iconSearch = "Search the pictures",
-    iconCount = "%s pictures",
-    iconReading = "Reading the game's pictures...",
-    iconNone = "No picture found.",
     iconClear = "Steps' picture",
     iconClearTip = "No picture of its own: the macro shows the picture of its first step.",
-    iconSpells = "Spells: %s",
-    iconItems = "Items: %s",
-    iconMore = "and %d more",
-    iconFile = "File %d",
-    iconNumber = "Picture %d",
     iconChosen = "The macro's picture now",
     iconClick = "Click: the macro's picture.",
     iconShow = "Show the spell's picture (#showtooltip)",
     iconShowTip = "Ticked: on its action bar button the macro shows the picture of the spell or item that comes next, as the game's macros do with #showtooltip. Unticked: the picture chosen here (with Steps' picture, its first step's) stays the whole time.",
-    iconGroups = {
-        all = "All", game = "In the game", weapons = "Weapons", armor = "Armor", consumables = "Consumables",
-        goods = "Trade goods", items = "Other items", spells = "Spells and abilities", mounts = "Mounts and pets",
-        achievements = "Achievements", other = "Other",
-    },
     bars = { "Bar 1", "Bar 2", "Bar 3", "Bar 4", "Bar 5", "Bar 6", "Bar 7", "Bar 8" },
     barNumber = "Bar %d", -- a row a bar's button shows, such as Bar 9 on a druid's Bar 6 in Bear Form
 

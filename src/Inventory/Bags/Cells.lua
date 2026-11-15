@@ -45,7 +45,7 @@ Cells.CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
 Cells.EMPTY = { 0, 0, 0 }               -- an empty slot: a breath of black in the game's slot
 Cells.EMPTY_ALPHA = 0.04
-Cells.EMPTY_SLOT = 0.85                 -- an empty slot's picture (Saneroki, 2026-10-23: less distracting)
+Cells.EMPTY_SLOT = 0.85                 -- an empty slot's frame (Saneroki, 2026-10-23: less distracting)
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
@@ -300,8 +300,11 @@ local function Empty(button, mine)
     Call(button, "SetHasItem", nil)
     local icon = Part(button, "icon")
     if icon then icon:Hide() end
+    local border = Part(button, "IconBorder") -- an item's quality border it held last is no more
+    if border then border:Hide() end
     mine.empty:Show()
     mine.empty:SetAlpha(Cells.EMPTY_ALPHA)
+    mine.slot:Show()
     mine.slot:SetAlpha(Cells.EMPTY_SLOT)
     Plain(mine)
     local cooldown = Part(button, "Cooldown")
@@ -324,7 +327,7 @@ function Pool:Draw(button, record, how)
     Game("ClearItemButtonOverlay", button)
     if not record.item then return Empty(button, mine) end
     mine.empty:Hide()
-    mine.slot:SetAlpha(1)
+    mine.slot:Hide() -- the slot's frame only round an empty one: an item shows its icon and its quality's border
     local icon = Part(button, "icon")
     if icon then icon:Show() end
     Call(button, "SetHasItem", record.icon)
