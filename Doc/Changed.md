@@ -6,6 +6,10 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation's first upload is 0.3.3 (Saneroki, 2026-11-15)
+Saneroki promoted Navigation again (`saneui promote Navigation alpha`: 0.3.3, tag `Navigation/0.3.3-alpha`), so the first upload to CurseForge holds the day's changes the tag 0.3.2 lacked.
+- **`Doc/curseforge/changelogs/Navigation.md`:** 0.3.2 was never uploaded, so the first file's changelog, 0.3.3, is the first alpha's words (what the module does, that it needs SaneUI Core); the list of changes since 0.3.2 left it, kept in `Doc/changelog.txt` (*Navigation 0.3.3*) and here.
+
 ### CurseForge: the projects SaneUI Core and SaneUI Navigation (Saneroki, 2026-11-15)
 Saneroki made the two projects on CurseForge as *SaneUI Core* (`saneui-core`) and *SaneUI Navigation* (`saneui-navigation`), and on "Rename Sane UI Maps to SaneUI Navigation in the descriptions and the changelog?": "Yes, rename".
 - **`Doc/curseforge/`:** `Maps.md` is `Navigation.md`; the names, summaries' pages, descriptions and both projects' changelogs say *SaneUI Core* and *SaneUI Navigation* (the set of addons and the options page stay *Sane UI*, the game's name for them).
