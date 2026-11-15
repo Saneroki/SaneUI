@@ -113,6 +113,7 @@ Edge.DROP = 10
 Edge.CLASSIC = "Classic windows"
 Edge.CORNERS = "Window corners" -- the section of the corners' switches (Edge.Options) -- the dropdown's words
 Edge.MENU_WIDTH, Edge.MENU_INSET = 180, 10 -- its width; from the full window's top right corner, or its buttons
+Edge.MENU_LEVEL, Edge.MENU_OVER = 50, 10 -- its level over the window's (above what it holds), and over its title bar's
 Edge.AWAY = 24   -- the screen's pixels the mouse has to go from the edge or corner it pushed before a push counts again
 Edge.LOOK = 0.1  -- seconds between two looks whether it has gone
 
@@ -309,7 +310,7 @@ local function Classic(edge)
     local frame = edge.frame
     local menu = CreateFrame("DropdownButton", nil, frame, "WowStyle1DropdownTemplate")
     menu:SetWidth(Edge.MENU_WIDTH)
-    menu:SetFrameLevel(frame:GetFrameLevel() + 50) -- above what the window holds
+    menu:SetFrameLevel(frame:GetFrameLevel() + Edge.MENU_LEVEL) -- above what the window holds (and its bar: Menu)
     menu:OverrideText(Edge.CLASSIC)
     menu:SetupMenu(Core.Guard("full screen", function(_, root) Core.Classic.Menu(edge, root) end))
     menu:Hide()
@@ -324,8 +325,14 @@ local function Menu(edge, on)
     if not menu then return end
     if not on and menu.CloseMenu then menu:CloseMenu() end -- its list goes with it
     if on then
+        local window = edge.window
         menu:GenerateMenu() -- the list as the window gives it now
-        local buttons = edge.window.buttons
+        -- Over its title bar (Fill made it), and over what a module lays on it (the full map's controls: its level + 5, TopBar.lua):
+        -- a bar over what its window holds (Window.UNDER) stood over the dropdown and took its clicks.
+        local bar = window.bar
+        menu:SetFrameLevel(math.max(edge.frame:GetFrameLevel() + Edge.MENU_LEVEL,
+            bar and bar:GetFrameLevel() + Edge.MENU_OVER or 0))
+        local buttons = window.buttons
         menu:ClearAllPoints()
         if buttons and buttons:IsShown() and buttons.first then
             menu:SetPoint("RIGHT", buttons.first, "LEFT", -Edge.MENU_INSET, 0)

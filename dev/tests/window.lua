@@ -2787,5 +2787,27 @@ end
     Core.general.animations = animations
 end)()
 
+-- The dropdown Classic windows on a title bar over what its window holds (under: the full map) -------------------
+;(function()
+    -- Frame levels kept, for this check only (the stand-in has every frame at level 1).
+    W.methods.SetFrameLevel = function(self, level) self._level = level end
+    W.methods.GetFrameLevel = function(self) return self._level or 1 end
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local handle = Window.New(frame, { store = {}, key = "under", title = "Map", dock = true, edge = true, under = true,
+        untitled = true, classic = { { text = "World map", show = function() end } },
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
+    handle:Place()
+    at(frame, 300, 300)
+    frame:Show()
+    handle.edge:Fill(true)
+    frame._group:Run(1)
+    local menu, bar = handle.edge.classic, handle.bar
+    check(handle.edge.full and menu and menu:IsShown() and bar and bar:GetFrameLevel() == frame:GetFrameLevel() + Window.UNDER
+        and menu:GetFrameLevel() > bar:GetFrameLevel() + 5 and menu._points[1][2] == handle.buttons.first,
+        "full, the dropdown Classic windows stands over a title bar that stands over what its window holds, and over what a module lays on that bar (the full map's controls): its clicks are its own")
+    handle.edge:Stop()
+    W.methods.SetFrameLevel, W.methods.GetFrameLevel = nil, function() return 1 end
+end)()
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

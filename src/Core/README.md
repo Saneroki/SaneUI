@@ -571,7 +571,9 @@ but for a window to try those with (`/sane window`).
     `{ text, show }`) names the game's own windows it stands for. While it stands full (not on the way) the
     dropdown *Classic windows* (`WowStyle1DropdownTemplate`, its words fixed by `OverrideText`,
     `Edge.MENU_WIDTH` 180) sits in the title bar, `Edge.MENU_INSET` (10) left of its buttons, above what it
-    holds: every window's entries (`Window.All`), each under its window's title (`CreateTitle`), this one's
+    holds (`Edge.MENU_LEVEL`, 50 over the window) and above the title bar (`Edge.MENU_OVER`, 10 over it, as each
+    time it shows: the full map's bar stands over the map, `Window.UNDER`, and carries its controls 5 over it):
+    every window's entries (`Window.All`), each under its window's title (`CreateTitle`), this one's
     first. One chosen: `edge:Fill(false)`, then the entry's `show()`. The other way, an entry with `frame`
     puts the button *Sane UI* onto the game's window (`Window.Beside`, beside its close button or left of its
     sizing button, `MaximizeMinimizeButton`/`MaximizeMinimizeFrame`): pressed, the game's goes, a kept choice
