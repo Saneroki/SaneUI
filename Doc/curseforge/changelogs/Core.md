@@ -8,8 +8,6 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 - Dungeon maps (SaneUI Navigation): floors whose terrain view left bosses standing on nothing (the Deadmines'
   Ironclad Cove, Blackfathom Deeps, Blackrock Depths) show their map in every view; Shadowfang Keep's tower floors
   each show their own rooms.
-- Dungeon maps: the Wailing Caverns show their terrain in every view, so the caves Forever rebuilt east of the old
-  map no longer leave their enemies on blank parchment.
 
 ## 0.3.1 (2026-11-15)
 
