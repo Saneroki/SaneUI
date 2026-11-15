@@ -14,6 +14,14 @@ photo). What was reasoned and not measured says so.
 sharp at 4K costs little memory in total; smaller screens draw it smaller, and the mipmaps keep it clean
 far below its size.
 
+**Logos** (Saneroki, 2026-11-15: "a logo style that can differientiate between the modulse but still instill
+familiarity"): Core's and each module's badge, CurseForge avatar and banner are drawn by `dev/tools/logo-art`
+(`saneui makelogos`) from shapes and Noto Serif Display (SIL Open Font License), never from the game's art or fonts:
+CurseForge takes no copyrighted imagery in an avatar. What they share: the gold ring with its diamond, the dark
+middle, the gold symbol; what tells them apart: the symbol and a thin ring of the module's colour. Drafts go to
+`assets/generated/logos/`; the one chosen comes into `assets/` and through the recipe below like any picture
+([Doc/curseforge/README.md](../curseforge/README.md)).
+
 ## The recipe
 
 1. Put the drawing into `assets/` as a PNG with transparency, large (1-2k pixels is fine). It is the

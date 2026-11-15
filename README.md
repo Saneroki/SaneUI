@@ -75,7 +75,9 @@ installed. `WOW_FOREVER` and `WOW_RETAIL` name the folders on another computer. 
   or dev version left out. `saneui publish beta [Module ...]` uploads what is not on CurseForge yet, Core first,
   as betas, and tags each `published/<Module>/<version>-beta`; the players' words come from `Doc/changelog.txt`
   (a part per addon and version), the projects and the token from `~/.config/saneui/curseforge.json`. A module's
-  TOC names the Core it was tested with, and Core says in chat when it is older. Packages are WoW: Forever's.
+  TOC names the Core it was tested with, and Core says in chat when it is older. `saneui checkcurseforge` tries
+  the token and lists CurseForge's game versions. The projects' texts, logos and CurseForge's rules: `Doc/curseforge/`.
+  Packages are WoW: Forever's.
 - **A new script** gets its command in `dev/saneui`; the tests fail on a script without one.
 
 ## Technical details

@@ -186,6 +186,9 @@ with tempfile.TemporaryDirectory() as temporary:
           "Core's part, a version inside a line no heading")
     check(tool.changelog("Sane UI", "9.9.9", words) is None and tool.changelog("Sane UI", "0.3.0", words) is None,
           "a version not written yet, or one without the addon's name: no words of another's")
+    (Path(temporary) / "bare.txt").write_text("Sane UI 0.4.0 (2026-11-20)\n------------------\n\nSane UI 0.3.9 (x)\n---\n- y\n")
+    check(tool.changelog("Sane UI", "0.4.0", Path(temporary) / "bare.txt") is None,
+          "a heading without a line of changes counts as no changelog (CurseForge wants one with every file)")
     meta = tool.metadata("Sane UI Maps", "0.3.1", "beta", [7], "words", "sane-ui")
     check(meta == {"changelog": "words", "changelogType": "text", "displayName": "Sane UI Maps 0.3.1 (beta)", "gameVersions": [7],
                    "releaseType": "beta", "relations": {"projects": [{"slug": "sane-ui", "type": "requiredDependency"}]}},
@@ -193,7 +196,7 @@ with tempfile.TemporaryDirectory() as temporary:
     check("relations" not in tool.metadata("Sane UI", "0.3.1", "release", [7], "w") and
           tool.metadata("Sane UI", "0.3.1", "release", [7], "w")["displayName"] == "Sane UI 0.3.1", "Core's upload names none")
     check(tool.project_name("Navigation", "Navigation", {"Navigation": {"id": 2, "name": "Sane UI Maps"}}) == "Sane UI Maps"
-          and tool.project_name("Loot", "Loot", {}) == "Sane UI Loot" and tool.project_name("Core", "Sane UI", {}) == "Sane UI",
+          and tool.project_name("Loot", "Loot", {}) == "Sane UI Loot" and tool.project_name("Core", "Sane UI", {}) == "Sane UI Core",
           "a project's name: the config's, else Sane UI and the title")
     check(tool.game_version_ids(["1.60.1", 12], [{"id": 5, "name": "1.60.1"}, {"id": 12, "name": "x"}]) == [5, 12],
           "game versions by name or id")
@@ -257,6 +260,29 @@ with tempfile.TemporaryDirectory() as temporary:
         check(tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings) == [92]
               and [a[0] for a in asked][1:] == ["https://wow.curseforge.com/api/projects/41/upload-file"],
               "Core changed, the modules not: Core alone uploaded")
+        # The same code up a channel: uploaded again, its words saying so first.
+        tool.promote("Navigation", "beta", test=False, root=repo, say=quiet)
+        write("Doc/changelog.txt", "Sane UI: what is new\n\nSane UI 0.3.2 (2026-11-18)\n------------------\n- Fixed.\n\n"
+              "SaneUI_Navigation 0.4.0 (2026-11-17)\n------------------\n- Newer.\n")
+        commit("words 3")
+        asked.clear()
+        check(len(tool.publish("beta", yes=True, root=repo, say=quiet, settings=settings)) == 2
+              and b"Unchanged since 0.3.2 (alpha), now beta." in asked[1][2]
+              and b"Unchanged since 0.4.0 (alpha), now beta." in asked[2][2] and b'"releaseType": "beta"' in asked[2][2],
+              "an alpha made beta comes again as beta, its changelog saying it is unchanged")
+        # The check: the token tried, the game versions listed, what the config lacks said; the token never shown.
+        lines = []
+        tool.ask = lambda url, token, data=None, headers=None: (
+            [{"id": 9, "name": "WoW Forever", "slug": "wow-forever"}] if url.endswith("/version-types") else
+            [{"id": 3, "name": "1.60.1", "gameVersionTypeID": 9}, {"id": 4, "name": "1.60.2", "gameVersionTypeID": 9}])
+        ready = tool.check(settings={"token": "secret", "gameVersions": ["1.60.1"], "projects": {}}, say=lines.append)
+        said = "\n".join(lines)
+        check(not ready and "token works" in said and "WoW Forever (type 9): 1.60.2 (id 4), 1.60.1 (id 3)" in said
+              and "'1.60.1': id 3, WoW Forever" in said and "lacks projects" in said and "secret" not in said,
+              f"check: the token tried, the versions listed, what is missing said:\n{said}")
+        check(tool.check(settings=settings, say=lines.append), "check: a whole config is ready")
+        check("lacks token" in (refused(lambda: tool.check(settings={"projects": {}}, say=quiet)) or ""),
+              "check: no token, nothing asked")
         settings["projects"].pop("Navigation")
         write("src/Navigation/SaneUI_Navigation.lua", "-- navigation 4\n")
         commit("fourth")

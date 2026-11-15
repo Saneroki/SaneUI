@@ -27,8 +27,9 @@ addon and version ("Navigation 0.3.1 (2026-11-16)", "Sane UI 0.3.1 (2026-11-16)"
 stand in ~/.config/saneui/curseforge.json, never in a repository:
   {"token": "...", "gameVersions": ["1.60.1"],
    "projects": {"Core": {"id": 123456, "slug": "sane-ui"}, "Navigation": {"id": 234567, "name": "Sane UI Maps"}}}
-(gameVersions: CurseForge's names or ids of the game versions the files are for; Core's slug is what the modules
-name as their dependency; a project's name names its files, "Sane UI <its title>" when none is given; a module
+(gameVersions: CurseForge's names or ids of the game versions the files are for, listed by check; Core's slug is
+what the modules name as their dependency; a project's name names its files, Sane UI Core and "Sane UI <its title>"
+when none is given; a module
 without a project there is not uploaded; "host" may name another site than https://wow.curseforge.com). Nothing
 is ever pushed: the tags go out with git push origin <tag>.
 
@@ -39,6 +40,8 @@ is ever pushed: the tags go out with git push origin <tag>.
           [--core-version X.Y.Z] [--dry]
   dev/tools/release publish <channel> [Module...]  what is new made, uploaded, tagged    (saneui publish)
           [--core-version X.Y.Z] [--dry] [--yes]
+  dev/tools/release check                          the config and the token tried on CurseForge, its game
+                                                   versions listed                       (saneui checkcurseforge)
 """
 import argparse
 import io
@@ -497,6 +500,14 @@ def shown(zip_path, root=ROOT):
 
 def config(path=CONFIG):
     """The CurseForge projects and the token: Core's project with its id and slug, each module's with its id."""
+    found = read_config(path)
+    problem = config_problem(found, path)
+    if problem:
+        raise Refused(problem)
+    return found
+
+
+def read_config(path=CONFIG):
     if not path.is_file():
         raise Refused(f"no {path}: it holds the CurseForge projects and the token, "
                       '{"token": "...", "gameVersions": ["1.60.1"], "projects": {"Core": {"id": 123456, "slug": '
@@ -506,16 +517,53 @@ def config(path=CONFIG):
         found = json.loads(path.read_text(encoding="utf-8"))
     except ValueError as error:
         raise Refused(f"{path} is not JSON: {error}")
+    if not isinstance(found, dict):
+        raise Refused(f"{path} is no JSON object")
+    return found
+
+
+def config_problem(found, path=CONFIG):
+    """What a config still lacks for an upload, in a line; None when nothing does."""
     for field in ("token", "gameVersions", "projects"):
         if not found.get(field):
-            raise Refused(f"{path} lacks {field}")
+            return f"{path} lacks {field}"
     core = found["projects"].get("Core") or {}
     if not core.get("id") or not core.get("slug"):
-        raise Refused(f"{path}: the project Core needs its id and its slug (the modules name it as their dependency)")
+        return f"{path}: the project Core needs its id and its slug (the modules name it as their dependency)"
     for name, project in found["projects"].items():
         if not isinstance(project, dict) or not project.get("id"):
-            raise Refused(f"{path}: the project of {name} lacks its id")
-    return found
+            return f"{path}: the project of {name} lacks its id"
+    return None
+
+
+def check(path=CONFIG, say=print, settings=None):
+    """The config read and its token tried on CurseForge (nothing uploaded): the game versions named found, and
+    CurseForge's WoW game version types listed with their newest versions, to name gameVersions by. The token is
+    never shown."""
+    settings = settings if settings is not None else read_config(path)
+    if not settings.get("token"):
+        raise Refused(f"{path} lacks token (authors.curseforge.com, Settings, API Tokens)")
+    host = settings.get("host", HOST).rstrip("/")
+    types = ask(f"{host}/api/game/version-types", settings["token"]) or []
+    versions = ask(f"{host}/api/game/versions", settings["token"]) or []
+    say(f"The token works: {host} answered ({len(versions)} game versions in {len(types)} types).")
+    names = {t.get("id"): t.get("name") for t in types}
+    say("Game version types, each with its newest versions (gameVersions takes a version's name or id):")
+    for kind in sorted(types, key=lambda t: str(t.get("name"))):
+        mine = sorted((v for v in versions if v.get("gameVersionTypeID") == kind.get("id")), key=lambda v: v.get("id", 0))
+        say(f"  {kind.get('name')} (type {kind.get('id')}): " + ", ".join(
+            f"{v.get('name')} (id {v.get('id')})" for v in mine[-3:][::-1]))
+    for want in settings.get("gameVersions") or []:
+        hit = [v for v in versions if str(v.get("id")) == str(want) or v.get("name") == str(want)]
+        say(f"  gameVersions {want!r}: " + (f"id {hit[0].get('id')}, {names.get(hit[0].get('gameVersionTypeID'))}"
+                                           if hit else "not known to CurseForge"))
+    for name, project in sorted((settings.get("projects") or {}).items()):
+        project = project if isinstance(project, dict) else {}
+        say(f"  project {name}: id {project.get('id', '?')}" + (f", slug {project['slug']}" if project.get("slug") else "")
+            + (f", files named {project['name']}" if project.get("name") else ""))
+    problem = config_problem(settings, path)
+    say(f"Not ready to upload: {problem}." if problem else "Ready to upload.")
+    return problem is None
 
 
 def changelog(title, version, path=ROOT / "Doc" / "changelog.txt"):
@@ -523,12 +571,14 @@ def changelog(title, version, path=ROOT / "Doc" / "changelog.txt"):
     and what follows, up to the next such line); None while it has none (never another version's words)."""
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
     mine = [p for p in CHANGELOG_PART.split(text)[1:] if p.startswith(f"{title} {version} (")]
-    return mine[0].strip() if mine else None
+    # CurseForge's moderation: every file has a changelog of what changed, so a heading alone counts as none.
+    said = mine and [line for line in mine[0].splitlines()[1:] if line.strip() and set(line.strip()) != {"-"}]
+    return mine[0].strip() if said else None
 
 
 def project_name(folder, title, projects):
     """What a project's files are called on CurseForge: its name in the config, else Sane UI and the addon's title."""
-    return (projects.get(folder) or {}).get("name") or ("Sane UI" if folder == "Core" else f"Sane UI {title}")
+    return (projects.get(folder) or {}).get("name") or ("Sane UI Core" if folder == "Core" else f"Sane UI {title}")
 
 
 def metadata(name, version, channel, game_versions, words, core_slug=None):
@@ -621,6 +671,11 @@ def publish(channel, only=None, core_wanted=None, dry=False, yes=False, root=ROO
         if words[folder] is None:
             missing.append(f"\"{title} {version} (<date>)\"")
             words[folder] = ""
+        # The same code up a channel (an alpha made beta): CurseForge takes no re-upload without changes, so the
+        # file says first why it comes again.
+        before = [t["channel"] for t in uploads if t["project"] == folder and t["version"] == version]
+        if before:
+            words[folder] = f"Unchanged since {version} ({before[-1]}), now {channel}.\n\n" + words[folder]
     if missing:
         why = (f"Doc/changelog.txt has no part for {', '.join(missing)} yet: the players' words go there first (that "
                "line, its line of dashes, the bigger changes), committed")
@@ -681,6 +736,7 @@ def main():
                                      epilog=__doc__.split("\n\n", 1)[1])
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("stages", help="every module's stage and versions")
+    commands.add_parser("check", help="the config and its token tried on CurseForge; its game versions listed")
     raising = commands.add_parser("promote", help="tag main's committed state of a module as reaching a stage")
     raising.add_argument("module")
     raising.add_argument("stage", choices=CHANNELS)
@@ -699,6 +755,8 @@ def main():
     try:
         if args.command == "stages":
             show_stages()
+        elif args.command == "check":
+            check()
         elif args.command == "promote":
             promote(args.module, args.stage, args.version, args.dry)
         elif args.command == "package":

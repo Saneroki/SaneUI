@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+"""Sane UI's logos: one family for Core and every module, drawn here from shapes and a free font (Saneroki,
+2026-11-15: "a logo style that can differientiate between the modulse but still instill familiarity when seeing
+them so just by looking at the icon the user will recognize that they fit together"; "simple ... that doesn't
+screem of ai generated").
+
+What they share: the gold ring with its diamond at the top, the dark middle, the gold of the symbol, the font.
+What tells them apart: the symbol in the middle and a thin ring of the module's own colour inside the gold.
+Core's symbol is the S of Sane UI and its inner ring gold.
+
+Nothing of the game's art or fonts is in them: CurseForge takes no copyrighted imagery in a project's avatar
+(its moderation policies), so they are drawn from circles and polygons here, the words in Noto Serif Display
+(SIL Open Font License, the system's fonts; Caladea stands in where it is missing).
+
+For each addon (dev/tools/logo-art [name ...], all when none is named) it writes into the output folder
+(assets/generated/logos/ unless --out names another):
+  <name>-icon.png      1024 x 1024, the source for the game's icon and logo (dev/tools/art)
+  <name>-avatar.png    400 x 400, CurseForge's project avatar (a PNG: CurseForge advises against WebP)
+  <name>-banner.png    1536 x 512, the 3 : 1 of every banner: the badge, SANE UI over the addon's name
+and family.png, every badge beside the others, large and at the sizes a list shows them.
+"""
+import argparse
+import math
+import sys
+from pathlib import Path
+
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "assets" / "generated" / "logos"
+FONTS = [Path("/usr/share/fonts/noto/NotoSerifDisplay-SemiBold.ttf"),
+         Path("/usr/share/fonts/noto/NotoSerifDisplay-Bold.ttf"),
+         Path("/usr/share/fonts/caladea/Caladea-Bold.ttf")]
+SS = 2                                       # drawn this many times larger, then made smaller: smooth edges
+
+GOLD_LIGHT = (240, 210, 140)
+GOLD = (222, 184, 112)
+GOLD_DARK = (160, 118, 58)
+INK = (24, 18, 12)
+PLATE_MIDDLE = (48, 38, 28)
+PLATE_EDGE = (20, 15, 10)
+
+# The family: (file name, the word on the banner, the inner ring's colour, the symbol). Core first.
+ADDONS = {
+    "core": ("CORE", None, "s"),
+    "maps": ("MAPS", (86, 170, 205), "compass"),
+    "economy": ("ECONOMY", (112, 190, 104), "coins"),
+    "inventory": ("INVENTORY", (214, 140, 62), "bag"),
+    "social": ("SOCIAL", (160, 128, 214), "bubbles"),
+    "combat": ("COMBAT", (204, 78, 66), "swords"),
+}
+
+
+def font(size):
+    for path in FONTS:
+        if path.is_file():
+            return ImageFont.truetype(str(path), size)
+    raise SystemExit("logo-art: none of the fonts is there: " + ", ".join(str(p) for p in FONTS))
+
+
+# --- Pieces ---------------------------------------------------------------------------------------------------
+
+def gradient(size, top, bottom):
+    """A vertical gradient, top colour to bottom colour."""
+    w, h = size
+    column = Image.new("RGB", (1, h))
+    for y in range(h):
+        t = y / max(1, h - 1)
+        column.putpixel((0, y), tuple(round(a + (b - a) * t) for a, b in zip(top, bottom)))
+    return column.resize((w, h))
+
+
+def radial(size, middle, edge):
+    """A round gradient, the middle colour at the centre, the edge colour at the corners' distance."""
+    w, h = size
+    small = Image.new("RGB", (64, 64))
+    for y in range(64):
+        for x in range(64):
+            t = min(1.0, math.hypot(x - 31.5, y - 31.5) / 32)
+            small.putpixel((x, y), tuple(round(a + (b - a) * t ** 1.4) for a, b in zip(middle, edge)))
+    return small.resize((w, h), Image.BICUBIC)
+
+
+def disc(size, box):
+    mask = Image.new("L", size, 0)
+    ImageDraw.Draw(mask).ellipse(box, fill=255)
+    return mask
+
+
+def paint(canvas, colour, mask):
+    """colour (a tuple or an image) laid on the canvas through a mask."""
+    layer = colour if isinstance(colour, Image.Image) else Image.new("RGB", canvas.size, colour)
+    layer = layer.convert("RGBA")
+    layer.putalpha(mask)
+    canvas.alpha_composite(layer)
+
+
+def grow(mask, by):
+    """A mask made wider by about by pixels on every side (a blur cut low: quick at any size)."""
+    return mask.filter(ImageFilter.GaussianBlur(by / 2)).point(lambda v: 255 if v > 12 else 0)
+
+
+def shadow(canvas, mask, offset, blur, strength):
+    soft = mask.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: round(v * strength))
+    moved = Image.new("L", canvas.size, 0)
+    moved.paste(soft, offset)
+    paint(canvas, (0, 0, 0), moved)
+
+
+# --- The symbols, drawn in a box of side n around (cx, cy) ------------------------------------------------------
+
+def symbol_s(draw, mask_size, cx, cy, n):
+    mask = Image.new("L", mask_size, 0)
+    ImageDraw.Draw(mask).text((cx, cy + n * 0.02), "S", font=font(round(n * 0.62)), fill=255, anchor="mm")
+    return [(mask, GOLD)]
+
+
+def symbol_compass(draw, mask_size, cx, cy, n):
+    """A compass rose: four long points, each a light and a dark half, four short ones between."""
+    light, dark = Image.new("L", mask_size, 0), Image.new("L", mask_size, 0)
+    dl, dd = ImageDraw.Draw(light), ImageDraw.Draw(dark)
+    for i in range(8):
+        angle = math.radians(i * 45 - 90)
+        long = i % 2 == 0
+        length, half = (n * 0.33, n * 0.075) if long else (n * 0.19, n * 0.05)
+        tip = (cx + math.cos(angle) * length, cy + math.sin(angle) * length)
+        left = (cx + math.cos(angle - math.pi / 2) * half, cy + math.sin(angle - math.pi / 2) * half)
+        right = (cx + math.cos(angle + math.pi / 2) * half, cy + math.sin(angle + math.pi / 2) * half)
+        order = 0 if long else 1               # the short points sit under the long ones
+        if order:
+            dd.polygon([(cx, cy), tip, left], fill=255)
+            dd.polygon([(cx, cy), tip, right], fill=255)
+    short = Image.new("L", mask_size, 0)
+    short.paste(dark)
+    dark = Image.new("L", mask_size, 0)
+    dd = ImageDraw.Draw(dark)
+    for i in range(0, 8, 2):
+        angle = math.radians(i * 45 - 90)
+        length, half = n * 0.33, n * 0.075
+        tip = (cx + math.cos(angle) * length, cy + math.sin(angle) * length)
+        left = (cx + math.cos(angle - math.pi / 2) * half, cy + math.sin(angle - math.pi / 2) * half)
+        right = (cx + math.cos(angle + math.pi / 2) * half, cy + math.sin(angle + math.pi / 2) * half)
+        dl.polygon([(cx, cy), tip, left], fill=255)
+        dd.polygon([(cx, cy), tip, right], fill=255)
+    hub = Image.new("L", mask_size, 0)
+    r = n * 0.045
+    ImageDraw.Draw(hub).ellipse((cx - r, cy - r, cx + r, cy + r), fill=255)
+    return [(short, GOLD_DARK), (light, GOLD_LIGHT), (dark, GOLD_DARK), (hub, INK)]
+
+
+def symbol_coins(draw, mask_size, cx, cy, n):
+    """Three coins stacked, the top one face up."""
+    parts = []
+    w, h, step = n * 0.42, n * 0.15, n * 0.085
+    for i, y in enumerate((cy + n * 0.17, cy + n * 0.17 - step, cy + n * 0.17 - 2 * step)):
+        side = Image.new("L", mask_size, 0)
+        d = ImageDraw.Draw(side)
+        d.ellipse((cx - w / 2, y - h / 2 + step * 0.6, cx + w / 2, y + h / 2 + step * 0.6), fill=255)
+        d.rectangle((cx - w / 2, y, cx + w / 2, y + step * 0.6), fill=255)
+        face = Image.new("L", mask_size, 0)
+        ImageDraw.Draw(face).ellipse((cx - w / 2, y - h / 2, cx + w / 2, y + h / 2), fill=255)
+        parts += [(side, GOLD_DARK), (face, GOLD_LIGHT if i == 2 else GOLD)]
+    rim = Image.new("L", mask_size, 0)
+    y = cy + n * 0.17 - 2 * step
+    ImageDraw.Draw(rim).ellipse((cx - w * 0.33, y - h * 0.33, cx + w * 0.33, y + h * 0.33), outline=255,
+                                width=max(1, round(n * 0.012)))
+    return parts + [(rim, GOLD_DARK)]
+
+
+def symbol_bag(draw, mask_size, cx, cy, n):
+    """A pouch tied at its neck."""
+    body = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(body)
+    d.ellipse((cx - n * 0.24, cy - n * 0.12, cx + n * 0.24, cy + n * 0.3), fill=255)
+    d.polygon([(cx - n * 0.1, cy - n * 0.16), (cx + n * 0.1, cy - n * 0.16), (cx + n * 0.2, cy + n * 0.02),
+               (cx - n * 0.2, cy + n * 0.02)], fill=255)
+    top = Image.new("L", mask_size, 0)
+    ImageDraw.Draw(top).polygon([(cx - n * 0.15, cy - n * 0.3), (cx, cy - n * 0.2), (cx + n * 0.15, cy - n * 0.3),
+                                 (cx + n * 0.09, cy - n * 0.16), (cx - n * 0.09, cy - n * 0.16)], fill=255)
+    tie = Image.new("L", mask_size, 0)
+    ImageDraw.Draw(tie).rounded_rectangle((cx - n * 0.12, cy - n * 0.19, cx + n * 0.12, cy - n * 0.13),
+                                          radius=n * 0.02, fill=255)
+    return [(top, GOLD_DARK), (body, GOLD), (tie, GOLD_DARK)]
+
+
+def symbol_bubbles(draw, mask_size, cx, cy, n):
+    """Two speech bubbles, the one behind darker."""
+    back = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(back)
+    d.rounded_rectangle((cx - n * 0.05, cy - n * 0.27, cx + n * 0.3, cy - n * 0.02), radius=n * 0.07, fill=255)
+    d.polygon([(cx + n * 0.17, cy - n * 0.04), (cx + n * 0.26, cy + n * 0.07), (cx + n * 0.1, cy - n * 0.04)], fill=255)
+    front = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(front)
+    d.rounded_rectangle((cx - n * 0.3, cy - n * 0.12, cx + n * 0.1, cy + n * 0.16), radius=n * 0.08, fill=255)
+    d.polygon([(cx - n * 0.2, cy + n * 0.14), (cx - n * 0.26, cy + n * 0.29), (cx - n * 0.06, cy + n * 0.14)], fill=255)
+    gap = grow(front, n * 0.014)
+    back = ImageChops.subtract(back, gap)
+    dots = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(dots)
+    for dx in (-0.2, -0.1, 0.0):
+        r = n * 0.025
+        d.ellipse((cx + dx * n - r, cy + n * 0.02 - r, cx + dx * n + r, cy + n * 0.02 + r), fill=255)
+    return [(back, GOLD_DARK), (front, GOLD), (dots, INK)]
+
+
+def symbol_swords(draw, mask_size, cx, cy, n):
+    """Two swords crossed."""
+    parts = []
+    for turn in (45, -45):
+        blade, hilt = Image.new("L", mask_size, 0), Image.new("L", mask_size, 0)
+        db, dh = ImageDraw.Draw(blade), ImageDraw.Draw(hilt)
+        w = n * 0.035
+        db.polygon([(cx - w, cy + n * 0.16), (cx - w, cy - n * 0.27), (cx, cy - n * 0.34), (cx + w, cy - n * 0.27),
+                    (cx + w, cy + n * 0.16)], fill=255)
+        dh.rounded_rectangle((cx - n * 0.11, cy + n * 0.15, cx + n * 0.11, cy + n * 0.19), radius=n * 0.015, fill=255)
+        dh.rectangle((cx - n * 0.02, cy + n * 0.19, cx + n * 0.02, cy + n * 0.29), fill=255)
+        r = n * 0.035
+        dh.ellipse((cx - r, cy + n * 0.3 - r, cx + r, cy + n * 0.3 + r), fill=255)
+        parts += [(blade.rotate(turn, center=(cx, cy), resample=Image.BICUBIC), GOLD_LIGHT),
+                  (hilt.rotate(turn, center=(cx, cy), resample=Image.BICUBIC), GOLD_DARK)]
+    return parts
+
+
+SYMBOLS = {"s": symbol_s, "compass": symbol_compass, "coins": symbol_coins, "bag": symbol_bag,
+           "bubbles": symbol_bubbles, "swords": symbol_swords}
+
+
+# --- The badge and the banner -----------------------------------------------------------------------------------
+
+def badge(size, accent, symbol):
+    """The round badge, size x size, transparent around it."""
+    n = size * SS
+    canvas = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    c = n / 2
+    outer, ring = n * 0.43, n * 0.07
+    whole = disc(canvas.size, (c - outer, c - outer, c + outer, c + outer))
+    shadow(canvas, whole, (0, round(n * 0.012)), n * 0.012, 0.55)
+    paint(canvas, gradient(canvas.size, GOLD_LIGHT, GOLD_DARK), whole)
+    edge = n * 0.006
+    paint(canvas, INK, ImageChops.subtract(whole, disc(canvas.size, (c - outer + edge,) * 2 + (c + outer - edge,) * 2)))
+    inner = outer - ring
+    paint(canvas, INK, disc(canvas.size, (c - inner - edge * 1.5,) * 2 + (c + inner + edge * 1.5,) * 2))
+    paint(canvas, radial(canvas.size, PLATE_MIDDLE, PLATE_EDGE), disc(canvas.size, (c - inner,) * 2 + (c + inner,) * 2))
+    # The module's own colour: a thin ring inside the gold (Core's is gold).
+    band, gap = n * 0.014, n * 0.028
+    r1, r2 = inner - gap, inner - gap - band
+    paint(canvas, accent or GOLD, ImageChops.subtract(disc(canvas.size, (c - r1,) * 2 + (c + r1,) * 2),
+                                                      disc(canvas.size, (c - r2,) * 2 + (c + r2,) * 2)))
+    # The diamond at the top of the ring, the family's mark.
+    top, half, tall = c - outer + ring / 2, n * 0.05, n * 0.075
+    diamond = Image.new("L", canvas.size, 0)
+    ImageDraw.Draw(diamond).polygon([(c, top - tall), (c + half, top), (c, top + tall), (c - half, top)], fill=255)
+    paint(canvas, INK, grow(diamond, edge * 1.6))
+    paint(canvas, gradient(canvas.size, GOLD_LIGHT, GOLD), diamond)
+    for mask, colour in SYMBOLS[symbol](None, canvas.size, c, c + n * 0.01, n * 0.78):
+        shadow(canvas, mask, (round(n * 0.004), round(n * 0.008)), n * 0.004, 0.8)
+        paint(canvas, colour, mask)
+    return canvas.resize((size, size), Image.LANCZOS)
+
+
+def spaced(draw, xy, text, size, fill, spacing):
+    """Capitals with room between them, from the left."""
+    f = font(size)
+    x, y = xy
+    for ch in text:
+        draw.text((x, y), ch, font=f, fill=fill, anchor="ls")
+        x += draw.textlength(ch, font=f) + spacing
+    return x
+
+
+def banner(word, accent, symbol, width=1536, height=512):
+    """The 3 : 1 banner: a dark plate with a thin gold line round it, the badge at the left, SANE UI small over
+    the addon's word."""
+    n = SS
+    w, h = width * n, height * n
+    canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    plate = Image.new("L", (w, h), 0)
+    corner = 34 * n
+    ImageDraw.Draw(plate).rounded_rectangle((4 * n, 4 * n, w - 4 * n, h - 4 * n), radius=corner, fill=255)
+    paint(canvas, gradient((w, h), (38, 30, 22), (18, 14, 10)), plate)
+    line = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(line).rounded_rectangle((18 * n, 18 * n, w - 18 * n, h - 18 * n), radius=corner - 12 * n,
+                                           outline=255, width=3 * n)
+    paint(canvas, GOLD_DARK, line)
+    mark = badge(440, accent, symbol).resize((440 * n, 440 * n), Image.LANCZOS)
+    canvas.alpha_composite(mark, (40 * n, (h - mark.height) // 2))
+    words = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(words)
+    left = 520 * n
+    spaced(draw, (left, 196 * n), "SANE UI", 70 * n, GOLD_DARK + (255,), 16 * n)
+    big = 190 * n if len(word) <= 7 else 150 * n
+    end = spaced(draw, (left - 6 * n, 392 * n), word, big, GOLD + (255,), 10 * n)
+    rule = (accent or GOLD_DARK) + (255,)
+    draw.rectangle((left, 236 * n, min(end, w - 70 * n), 240 * n), fill=rule)
+    shadow_mask = words.getchannel("A")
+    shadow(canvas, shadow_mask, (2 * n, 3 * n), 2 * n, 0.9)
+    canvas.alpha_composite(words)
+    return canvas.resize((width, height), Image.LANCZOS)
+
+
+def family(names, icons):
+    """Every badge beside the others: large, then at 64 and 32 px, on a dark and a light ground."""
+    cell, pad = 300, 30
+    width = len(names) * (cell + pad) + pad
+    sheet = Image.new("RGBA", (width, 2 * (cell + 160)), (0, 0, 0, 0))
+    for row, ground in enumerate(((26, 21, 16), (238, 238, 236))):
+        y0 = row * (cell + 160)
+        sheet.paste(ground + (255,), (0, y0, width, y0 + cell + 160))
+        for i, name in enumerate(names):
+            x = pad + i * (cell + pad)
+            sheet.alpha_composite(icons[name].resize((cell, cell), Image.LANCZOS), (x, y0 + 20))
+            sheet.alpha_composite(icons[name].resize((64, 64), Image.LANCZOS), (x + 60, y0 + cell + 40))
+            sheet.alpha_composite(icons[name].resize((32, 32), Image.LANCZOS), (x + 160, y0 + cell + 56))
+    return sheet
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=__doc__.split("\n\n", 1)[1])
+    parser.add_argument("names", nargs="*", metavar="name", help="the addons to draw: " + ", ".join(ADDONS))
+    parser.add_argument("--out", type=Path, default=OUT, help="the folder written into")
+    args = parser.parse_args()
+    names = args.names or list(ADDONS)
+    unknown = [n for n in names if n not in ADDONS]
+    if unknown:
+        parser.error(f"no addon {', '.join(unknown)} (the names: {', '.join(ADDONS)})")
+    args.out.mkdir(parents=True, exist_ok=True)
+    icons = {}
+    for name in names:
+        word, accent, symbol = ADDONS[name]
+        icons[name] = badge(1024, accent, symbol)
+        icons[name].save(args.out / f"{name}-icon.png")
+        icons[name].resize((400, 400), Image.LANCZOS).save(args.out / f"{name}-avatar.png")
+        banner(word, accent, symbol).save(args.out / f"{name}-banner.png")
+        print(f"{name}: {name}-icon.png, {name}-avatar.png, {name}-banner.png")
+    family(names, icons).save(args.out / "family.png")
+    print(f"family.png; all in {args.out}")
+
+
+if __name__ == "__main__":
+    main()
