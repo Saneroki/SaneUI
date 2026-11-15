@@ -957,6 +957,7 @@
 {"key":2627,"since":70245,"src":["game"],"name":"Terrordale","parent":139,"map":0,"level":55,"mounts":1}
 {"key":2637,"since":70245,"src":["game"],"name":"Kargathia Keep","parent":331,"map":1,"mounts":1}
 {"key":2657,"since":70245,"src":["game"],"name":"Valley of Bones","parent":16651,"map":1,"mounts":1}
+{"key":2657,"since":70938,"day":"2026-11-15","src":["game"],"mounts":13}
 {"key":2677,"since":70245,"src":["game"],"name":"Blackwing Lair","map":469,"mounts":1}
 {"key":2697,"since":70245,"src":["game"],"name":"Deadman's Crossing","parent":41,"map":0,"level":50,"mounts":1}
 {"key":2717,"since":70245,"src":["game"],"name":"Molten Core","map":409,"mounts":1}
@@ -1220,6 +1221,8 @@
 {"key":16524,"since":70245,"src":["game"],"name":"Goldshire","parent":16510,"map":2940,"level":5}
 {"key":16537,"since":70245,"src":["game"],"name":"Northshire Valley - Camelot","parent":16510,"map":2940}
 {"key":16544,"since":70245,"src":["game"],"name":"City of Dalaran","map":2959,"side":"both"}
+{"key":16550,"since":70938,"day":"2026-11-15","src":["game"],"name":"The Drowned City","map":2970,"mounts":1}
+{"key":16554,"since":70938,"day":"2026-11-15","src":["game"],"name":"Blackmaw Hold","map":2974,"mounts":1}
 {"key":16558,"since":70245,"src":["game"],"name":"Dalaran","parent":16544,"map":2959}
 {"key":16559,"since":70245,"src":["game"],"name":"Fel Grove","parent":16544,"map":2959}
 {"key":16560,"since":70245,"src":["game"],"name":"City of Dalaran","map":2959}
@@ -1267,13 +1270,18 @@
 {"key":16660,"since":70245,"src":["game"],"name":"Gilnean Coast","parent":16653,"map":3005,"mounts":13}
 {"key":16661,"since":70245,"src":["game"],"name":"Beneath the Double Rainbow","parent":16653,"map":3005,"mounts":13}
 {"key":16663,"since":70245,"src":["game"],"name":"Windfield Orchard","parent":16593,"map":2991,"level":8,"mounts":1}
+{"key":16667,"since":70938,"day":"2026-11-15","src":["game"],"name":"The Shaper's Terrace","map":3001,"mounts":13}
 {"key":16672,"since":70245,"src":["game"],"name":"Shriekling Den","parent":16593,"map":2991,"level":8}
 {"key":16673,"since":70245,"src":["game"],"name":"Thendal Cave","parent":16593,"map":2991,"level":4}
 {"key":16674,"since":70245,"src":["game"],"name":"Bandit Hideout","parent":16593,"map":2991,"level":6}
 {"key":16675,"since":70245,"src":["game"],"name":"Magram Front","parent":16651,"map":1}
+{"key":16675,"since":70938,"day":"2026-11-15","src":["game"],"mounts":13}
 {"key":16676,"since":70245,"src":["game"],"name":"Outcast Hideaway","parent":16651,"map":1}
+{"key":16676,"since":70938,"day":"2026-11-15","src":["game"],"mounts":13}
 {"key":16677,"since":70245,"src":["game"],"name":"Bristleback Retreat","parent":16651,"map":1}
+{"key":16677,"since":70938,"day":"2026-11-15","src":["game"],"mounts":13}
 {"key":16678,"since":70245,"src":["game"],"name":"Evenshade's Overlook","parent":16651,"map":1}
+{"key":16678,"since":70938,"day":"2026-11-15","src":["game"],"mounts":13}
 {"key":16679,"since":70245,"src":["game"],"name":"Sanctum of Storms","parent":16593,"map":2991,"level":10}
 {"key":16685,"since":70245,"src":["game"],"name":"Twilight's Shroud","parent":16591,"map":0,"level":44,"mounts":1}
 {"key":16720,"since":70245,"src":["game"],"name":"Nightclaw Cavern","parent":16593,"map":2991,"level":10}
@@ -1294,6 +1302,7 @@
 {"key":16740,"since":70245,"src":["game"],"name":"Martsirt","parent":47,"map":0,"level":56}
 {"key":16741,"since":70245,"src":["game"],"name":"Ironforge Submarine Facility","parent":1,"map":0,"level":56}
 {"key":16742,"since":70245,"src":["game"],"name":"Forlorn Gardens","parent":16651,"map":1}
+{"key":16742,"since":70938,"day":"2026-11-15","src":["game"],"mounts":13}
 {"key":16743,"since":70245,"src":["game"],"name":"Rog'mar","parent":16591,"map":0,"level":38,"mounts":1}
 {"key":16744,"since":70245,"src":["game"],"name":"Southern Watch","parent":16591,"map":0,"level":36,"mounts":1}
 {"key":16756,"since":70245,"src":["game"],"name":"Ruins of Gilneas","map":0,"mounts":15}
@@ -1308,6 +1317,7 @@
 {"key":16765,"since":70245,"src":["game"],"name":"Hayward Fishery","parent":16756,"map":0,"mounts":15}
 {"key":16820,"since":70245,"src":["game"],"name":"The Forbidding Sea","parent":16591,"map":0,"mounts":1}
 {"key":16833,"since":70245,"src":["game"],"name":"Ruins of Ban'aethal","parent":16593,"map":2991,"level":12,"mounts":1}
+{"key":16842,"since":70938,"day":"2026-11-15","src":["game"],"name":"Krol'dok Stronghold","map":3039,"mounts":1}
 {"key":16848,"since":70245,"src":["game"],"name":"Elderwild","parent":616,"map":1,"mounts":1}
 {"key":16849,"since":70245,"src":["game"],"name":"Summit of Eternity","parent":616,"map":1,"mounts":1}
 {"key":16853,"since":70245,"src":["game"],"name":"Tainted Foothills","parent":616,"map":1,"mounts":1}
@@ -1326,8 +1336,16 @@
 {"key":16985,"since":70245,"src":["game"],"name":"The Shaper's Terrace","parent":490,"map":1,"mounts":13}
 {"key":16986,"since":70245,"src":["game"],"name":"Pillar of Assimilation","parent":490,"map":1,"mounts":13}
 {"key":16988,"since":70245,"src":["game"],"name":"Rise of Spirits","parent":16593,"map":2991,"mounts":1}
+{"key":17037,"since":70938,"day":"2026-11-15","src":["game"],"name":"Sunken Hollow","parent":16550,"map":2970,"mounts":1}
+{"key":17038,"since":70938,"day":"2026-11-15","src":["game"],"name":"Flooded Shrine","parent":16550,"map":2970,"mounts":1}
+{"key":17039,"since":70938,"day":"2026-11-15","src":["game"],"name":"Deep Archives","parent":16550,"map":2970,"mounts":1}
+{"key":17040,"since":70938,"day":"2026-11-15","src":["game"],"name":"Altar of the Serpent","parent":16550,"map":2970,"mounts":1}
+{"key":17041,"since":70938,"day":"2026-11-15","src":["game"],"name":"Eternal Amphitheater","parent":16550,"map":2970,"mounts":1}
+{"key":17042,"since":70938,"day":"2026-11-15","src":["game"],"name":"Abyssal Dais","parent":16550,"map":2970,"mounts":1}
+{"key":17043,"since":70938,"day":"2026-11-15","src":["game"],"name":"The Unsinkable","parent":16550,"map":2970}
 {"key":17044,"since":70245,"src":["game"],"name":"Gloomrise","parent":215,"map":1,"level":6,"mounts":1}
 {"key":17045,"since":70245,"src":["game"],"name":"Skywatcher Plateau","parent":215,"map":1,"level":10,"mounts":1}
+{"key":17046,"since":70938,"day":"2026-11-15","src":["game"],"name":"Ataal'Byzal","parent":16550,"map":2970,"mounts":1}
 {"key":17050,"since":70245,"src":["game"],"name":"Felblood Scar","parent":616,"map":1,"mounts":1}
 {"key":17052,"since":70245,"src":["game"],"name":"Scalding Ridge","parent":400,"map":1,"level":6,"mounts":1}
 {"key":17065,"since":70245,"src":["game"],"name":"Gilneas","map":0,"mounts":1}

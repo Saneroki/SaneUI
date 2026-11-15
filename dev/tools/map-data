@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "map-game.jsonl"
 PLACES = ROOT / "assets" / "data" / "Places"
-BUILD = 70755
+BUILD = 70938
 GAME = "forever"
 GRID, CHUNKS = 64, 16             # tiles along a continent's side, map chunks along a tile's
 TILE = 1600 / 3                   # a tile's side in yards

@@ -493,6 +493,12 @@ spells = Thing(effects={"7": [{"DifficultyID": "1", "EffectIndex": "0"},
                               {"DifficultyID": "0", "EffectIndex": "1", "Effect": "2", "EffectAura": "0", "EffectBasePointsF": "88.5", "EffectRealPointsPerLevel": "0.6",
                                "EffectAuraPeriod": "0", "EffectChainTargets": "3", "EffectMiscValue[0]": "0", "EffectTriggerSpell": "0"}]})
 check("a spell's numbers, the normal difficulty's", gd.Spells.effect_list(spells, "7"), [{"index": 1, "effect": 2, "points": 88.5, "perLevel": 0.6, "targets": 3}])
+costs = Thing(power={"7": [{"OrderIndex": "1", "PowerType": "3", "ManaCost": "40", "PowerCostPct": "0"},
+                           {"OrderIndex": "0", "PowerType": "0", "ManaCost": "0", "PowerCostPct": "11"}],
+                     "8": [{"OrderIndex": "0", "PowerType": "0", "ManaCost": "0", "PowerCostPct": "0"}]})
+check("a cost: a share of the base mana, an amount, in their order", gd.Spells.cost_list(costs, "7"),
+      [{"power": 0, "percent": 11}, {"power": 3, "amount": 40}])
+check("no cost", gd.Spells.cost_list(costs, "8"), [])
 
 shutil.rmtree(temp, ignore_errors=True)
 print(f"patchday: {checks} checks, {failed} failed")

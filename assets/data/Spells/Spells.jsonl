@@ -52,7 +52,7 @@
 {"key":339,"since":70245,"src":["game"],"name":"Entangling Roots","rank":"Rank 1","icon":136100,"cost":[{"power":0,"amount":50}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":26},{"index":1,"effect":6,"aura":3,"points":5.0,"period":3000}]}
 {"key":348,"since":70245,"src":["game"],"name":"Immolate","rank":"Rank 1","icon":135817,"cost":[{"power":0,"amount":25}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":3.0,"period":3000},{"index":1,"effect":2,"points":8.0,"perLevel":0.7},{"index":2,"effect":77,"points":100.0}]}
 {"key":355,"since":70245,"src":["game"],"name":"Taunt","description":"Taunts the target to attack you, but has no effect if the target is already attacking you.","icon":136080,"cooldown":8000,"maxRange":5.0,"effects":[{"index":0,"effect":114},{"index":1,"effect":6,"aura":11}]}
-{"key":370,"since":70245,"src":["game"],"name":"Purge","rank":"Rank 1","icon":136075,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":1}]}
+{"key":370,"since":70245,"src":["game"],"name":"Purge","rank":"Rank 1","icon":136075,"cost":[{"power":0,"percent":10}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":1}]}
 {"key":403,"since":70245,"src":["game"],"name":"Lightning Bolt","rank":"Rank 1","icon":136048,"cost":[{"power":0,"amount":15}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":14.0,"perLevel":0.4}]}
 {"key":403,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":2,"points":15.0,"perLevel":0.1}]}
 {"key":403,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":16.0,"perLevel":0.1}]}
@@ -71,11 +71,11 @@
 {"key":470,"since":70245,"src":["game"],"name":"Black Stallion","description":"Summons and dismisses a rideable black stallion.","icon":132251,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":308}]}
 {"key":471,"since":70245,"src":["game"],"name":"Palomino Stallion","description":"Summons and dismisses a rideable palomino.","icon":132261,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":306}]}
 {"key":472,"since":70245,"src":["game"],"name":"Pinto Horse","description":"Summons and dismisses a rideable pinto.","icon":132261,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":307}]}
-{"key":475,"since":70245,"src":["game"],"name":"Remove Lesser Curse","icon":136082,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":2}]}
+{"key":475,"since":70245,"src":["game"],"name":"Remove Lesser Curse","icon":136082,"cost":[{"power":0,"percent":10}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":2}]}
 {"key":498,"since":70245,"src":["game"],"name":"Divine Protection","rank":"Rank 1","icon":135954,"cost":[{"power":0,"amount":15}],"cooldown":300000,"effects":[{"index":0,"effect":6,"aura":25},{"index":1,"effect":6,"aura":39,"misc":1},{"index":2,"effect":6,"aura":39,"misc":126}]}
-{"key":526,"since":70245,"src":["game"],"name":"Cure Poison","icon":136067,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":4}]}
-{"key":527,"since":70245,"src":["game"],"name":"Dispel Magic","rank":"Rank 1","icon":135894,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":1}]}
-{"key":528,"since":70245,"src":["game"],"name":"Cure Disease","icon":135935,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":3}]}
+{"key":526,"since":70245,"src":["game"],"name":"Cure Poison","icon":136067,"cost":[{"power":0,"percent":9}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":4}]}
+{"key":527,"since":70245,"src":["game"],"name":"Dispel Magic","rank":"Rank 1","icon":135894,"cost":[{"power":0,"percent":18}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":1}]}
+{"key":528,"since":70245,"src":["game"],"name":"Cure Disease","icon":135935,"cost":[{"power":0,"percent":15}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":3}]}
 {"key":529,"since":70245,"src":["game"],"name":"Lightning Bolt","rank":"Rank 2","icon":136048,"cost":[{"power":0,"amount":30}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":29.0,"perLevel":0.5}]}
 {"key":529,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":2,"points":27.0,"perLevel":0.1}]}
 {"key":529,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":30.0,"perLevel":0.1}]}
@@ -85,7 +85,7 @@
 {"key":548,"since":70245,"src":["game"],"name":"Lightning Bolt","rank":"Rank 3","icon":136048,"cost":[{"power":0,"amount":45}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":45.0,"perLevel":0.6}]}
 {"key":548,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":2,"points":45.0,"perLevel":0.3}]}
 {"key":548,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":52.0,"perLevel":0.3}]}
-{"key":552,"since":70245,"src":["game"],"name":"Abolish Disease","icon":136066,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":23,"period":5000,"trigger":10872},{"index":1,"effect":38,"points":1.0,"misc":3}]}
+{"key":552,"since":70245,"src":["game"],"name":"Abolish Disease","icon":136066,"cost":[{"power":0,"percent":15}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":23,"period":5000,"trigger":10872},{"index":1,"effect":38,"points":1.0,"misc":3}]}
 {"key":556,"since":70245,"src":["game"],"name":"Astral Recall","icon":136010,"cost":[{"power":0,"amount":150}],"castTime":10000,"cooldown":900000,"effects":[{"index":0,"effect":252}]}
 {"key":578,"since":70245,"src":["game"],"name":"Black Wolf","description":"Summons and dismisses a rideable black wolf.","icon":132224,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":356}]}
 {"key":579,"since":70245,"src":["game"],"name":"Red Wolf","description":"Summons and dismisses a rideable red wolf.","icon":132224,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":4270}]}
@@ -133,16 +133,16 @@
 {"key":686,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":2,"points":13.0,"perLevel":0.2}]}
 {"key":687,"since":70245,"src":["game"],"name":"Demon Skin","rank":"Rank 1","icon":136185,"cost":[{"power":0,"amount":50}],"effects":[{"index":0,"effect":6,"aura":22,"points":40.0,"misc":1},{"index":1,"effect":6,"aura":161,"points":3.0}]}
 {"key":687,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":674,"points":40.0,"misc":1},{"index":1,"effect":6,"aura":161,"points":3.0}]}
-{"key":688,"since":70245,"src":["game"],"name":"Summon Imp","rank":"Summon","description":"Summons an Imp under the command of the Warlock.","icon":136218,"castTime":10000,"effects":[{"index":0,"effect":56,"misc":416}]}
+{"key":688,"since":70245,"src":["game"],"name":"Summon Imp","rank":"Summon","description":"Summons an Imp under the command of the Warlock.","icon":136218,"cost":[{"power":0,"percent":80}],"castTime":10000,"effects":[{"index":0,"effect":56,"misc":416}]}
 {"key":689,"since":70245,"src":["game"],"name":"Drain Life","rank":"Rank 1","icon":136169,"cost":[{"power":0,"amount":55}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":53,"points":10.0,"period":1000}]}
-{"key":691,"since":70245,"src":["game"],"name":"Summon Felhunter","rank":"Summon","description":"Summons a Felhunter under the command of the Warlock.","icon":136217,"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":417}]}
-{"key":693,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 1","icon":136210,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
+{"key":691,"since":70245,"src":["game"],"name":"Summon Felhunter","rank":"Summon","description":"Summons a Felhunter under the command of the Warlock.","icon":136217,"cost":[{"power":0,"percent":100}],"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":417}]}
+{"key":693,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 1","icon":136210,"cost":[{"power":0,"percent":85}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":694,"since":70245,"src":["game"],"name":"Mocking Blow","rank":"Rank 1","icon":132350,"cost":[{"power":1,"amount":100}],"cooldown":120000,"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":22.0},{"index":1,"effect":6,"aura":11}]}
 {"key":695,"since":70245,"src":["game"],"name":"Shadow Bolt","rank":"Rank 2","icon":136197,"cost":[{"power":0,"amount":40}],"castTime":2200,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":25.0,"perLevel":0.6}]}
 {"key":695,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":2,"points":23.0,"perLevel":0.3}]}
 {"key":696,"since":70245,"src":["game"],"name":"Demon Skin","rank":"Rank 2","icon":136185,"cost":[{"power":0,"amount":120}],"effects":[{"index":0,"effect":6,"aura":22,"points":120.0,"misc":1},{"index":1,"effect":6,"aura":161,"points":5.0}]}
 {"key":696,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":674,"points":120.0,"misc":1},{"index":1,"effect":6,"aura":161,"points":5.0}]}
-{"key":697,"since":70245,"src":["game"],"name":"Summon Voidwalker","rank":"Summon","description":"Summons a Voidwalker under the command of the Warlock.","icon":136221,"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":1860}]}
+{"key":697,"since":70245,"src":["game"],"name":"Summon Voidwalker","rank":"Summon","description":"Summons a Voidwalker under the command of the Warlock.","icon":136221,"cost":[{"power":0,"percent":100}],"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":1860}]}
 {"key":698,"since":70245,"src":["game"],"name":"Ritual of Summoning","description":"Begins a ritual that summons the targeted group member.  Requires the caster and 2 additional party members to complete the ritual.  In order to participate, all players must be out of combat and right-click the portal and not move until the ritual is complete.","icon":136223,"cost":[{"power":0,"amount":300}],"castTime":5000,"maxRange":30.0,"effects":[{"index":0,"effect":50,"misc":36727}]}
 {"key":699,"since":70245,"src":["game"],"name":"Drain Life","rank":"Rank 2","icon":136169,"cost":[{"power":0,"amount":85}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":53,"points":14.0,"period":1000}]}
 {"key":702,"since":70245,"src":["game"],"name":"Curse of Weakness","rank":"Rank 1","icon":136138,"cost":[{"power":0,"amount":20}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":13,"points":-4.0,"misc":1}]}
@@ -156,14 +156,14 @@
 {"key":707,"since":70245,"src":["game"],"name":"Immolate","rank":"Rank 2","icon":135817,"cost":[{"power":0,"amount":45}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":6.0,"period":3000},{"index":1,"effect":2,"points":17.0,"perLevel":0.8},{"index":2,"effect":77,"points":100.0}]}
 {"key":709,"since":70245,"src":["game"],"name":"Drain Life","rank":"Rank 3","icon":136169,"cost":[{"power":0,"amount":135}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":53,"points":22.0,"period":1000}]}
 {"key":710,"since":70245,"src":["game"],"name":"Banish","rank":"Rank 1","icon":136135,"cost":[{"power":0,"amount":100}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":12},{"index":1,"effect":6,"aura":39,"misc":127}]}
-{"key":712,"since":70245,"src":["game"],"name":"Summon Succubus","rank":"Summon","description":"Summons a Succubus under the command of the Warlock.","icon":136220,"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":1863}]}
-{"key":713,"since":70245,"src":["game"],"name":"Summon Incubus","rank":"Summon","description":"Summons an Incubus under the command of the Warlock.","icon":4352492,"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":185317}]}
+{"key":712,"since":70245,"src":["game"],"name":"Summon Succubus","rank":"Summon","description":"Summons a Succubus under the command of the Warlock.","icon":136220,"cost":[{"power":0,"percent":100}],"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":1863}]}
+{"key":713,"since":70245,"src":["game"],"name":"Summon Incubus","rank":"Summon","description":"Summons an Incubus under the command of the Warlock.","icon":4352492,"cost":[{"power":0,"percent":100}],"castTime":10000,"effects":[{"index":0,"effect":56,"points":1.0,"misc":185317}]}
 {"key":724,"since":70245,"src":["game"],"name":"Lightwell","rank":"Rank 1","icon":135980,"cost":[{"power":0,"amount":225}],"castTime":1500,"cooldown":600000,"effects":[{"index":0,"effect":50,"misc":181102}]}
 {"key":740,"since":70245,"src":["game"],"name":"Tranquility","rank":"Rank 1","icon":136107,"cost":[{"power":0,"amount":375}],"cooldown":300000,"effects":[{"index":0,"effect":35,"aura":8,"points":87.0,"perLevel":0.6,"period":2000}]}
 {"key":750,"since":70245,"src":["game"],"name":"Plate Mail","icon":132736,"effects":[{"index":0,"effect":60}]}
 {"key":755,"since":70245,"src":["game"],"name":"Health Funnel","rank":"Rank 1","icon":136168,"cost":[{"power":-2,"amount":11}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":8,"points":12.0,"period":1000},{"index":1,"effect":6,"aura":88,"points":-100.0},{"index":2,"effect":6,"aura":10,"misc":127},{"index":3,"effect":6,"aura":3,"points":5.45,"period":1000}]}
 {"key":759,"since":70245,"src":["game"],"name":"Conjure Mana Agate","icon":134104,"cost":[{"power":0,"amount":530}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":768,"since":70245,"src":["game"],"name":"Cat Form","rank":"Shapeshift","icon":132115,"effects":[{"index":0,"effect":6,"aura":36,"misc":1},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":23,"period":5000},{"index":3,"effect":6,"aura":4}]}
+{"key":768,"since":70245,"src":["game"],"name":"Cat Form","rank":"Shapeshift","icon":132115,"cost":[{"power":0,"percent":55}],"effects":[{"index":0,"effect":6,"aura":36,"misc":1},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":23,"period":5000},{"index":3,"effect":6,"aura":4}]}
 {"key":769,"since":70245,"src":["game"],"name":"Swipe","rank":"Rank 3","icon":134296,"cost":[{"power":1,"amount":200}],"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":36.0,"targets":3}]}
 {"key":770,"since":70245,"src":["game"],"name":"Faerie Fire","rank":"Rank 1","icon":136033,"cost":[{"power":0,"amount":55}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":22,"points":-175.0,"misc":1},{"index":1,"effect":6,"aura":41,"misc":6},{"index":2,"effect":6,"aura":41,"misc":5}]}
 {"key":770,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":674,"points":-175.0,"misc":1},{"index":1,"effect":6,"aura":41,"misc":6},{"index":2,"effect":6,"aura":41,"misc":5},{"index":3,"effect":63}]}
@@ -176,7 +176,7 @@
 {"key":781,"since":70245,"src":["game"],"name":"Disengage","rank":"Rank 1","description":"Attempts to disengage from the target by reducing threat. Disables auto-attack.","icon":132294,"cost":[{"power":0,"amount":50}],"cooldown":5000,"maxRange":5.0,"effects":[{"index":0,"effect":63,"points":-280.0,"perLevel":-3.0}]}
 {"key":782,"since":70245,"src":["game"],"name":"Thorns","rank":"Rank 2","icon":136104,"cost":[{"power":0,"amount":60}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":15,"points":9.0}]}
 {"key":782,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":15,"points":6.0}]}
-{"key":783,"since":70245,"src":["game"],"name":"Travel Form","rank":"Shapeshift","icon":132144,"effects":[{"index":0,"effect":6,"aura":36,"misc":3},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4}]}
+{"key":783,"since":70245,"src":["game"],"name":"Travel Form","rank":"Shapeshift","icon":132144,"cost":[{"power":0,"percent":20}],"effects":[{"index":0,"effect":6,"aura":36,"misc":3},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4}]}
 {"key":815,"since":70245,"src":["game"],"name":"Demon Tongue","icon":136235,"effects":[{"index":0,"effect":39,"misc":7}]}
 {"key":824,"since":70245,"src":["game"],"name":"Horse Riding","rank":"Passive","icon":136103,"effects":[{"index":0,"effect":3}]}
 {"key":825,"since":70245,"src":["game"],"name":"Wolf Riding","rank":"Passive","icon":136103,"effects":[{"index":0,"effect":3}]}
@@ -209,10 +209,10 @@
 {"key":976,"since":70245,"src":["game"],"name":"Shadow Protection","rank":"Rank 1","icon":136121,"cost":[{"power":0,"amount":250}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":22,"points":30.0,"misc":32}]}
 {"key":980,"since":70245,"src":["game"],"name":"Bane of Agony","rank":"Rank 1","icon":136139,"cost":[{"power":0,"amount":25}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":6.0,"period":2000}]}
 {"key":980,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":3,"points":6.0,"period":2000},{"index":1,"effect":6,"aura":271},{"index":2,"effect":6,"aura":4}]}
-{"key":982,"since":70245,"src":["game"],"name":"Revive Pet","icon":132163,"castTime":10000,"effects":[{"index":0,"effect":109,"points":15.0}]}
+{"key":982,"since":70245,"src":["game"],"name":"Revive Pet","icon":132163,"cost":[{"power":0,"percent":100}],"castTime":10000,"effects":[{"index":0,"effect":109,"points":15.0}]}
 {"key":984,"since":70245,"src":["game"],"name":"Smite","rank":"Rank 4","icon":135924,"cost":[{"power":0,"amount":95}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":59.0,"perLevel":1.0}]}
 {"key":984,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":2,"points":60.0,"perLevel":0.7}]}
-{"key":988,"since":70245,"src":["game"],"name":"Dispel Magic","rank":"Rank 2","icon":135894,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":2.0,"misc":1}]}
+{"key":988,"since":70245,"src":["game"],"name":"Dispel Magic","rank":"Rank 2","icon":135894,"cost":[{"power":0,"percent":18}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":2.0,"misc":1}]}
 {"key":990,"since":70245,"src":["game"],"name":"Conjure Food","rank":"Rank 3","icon":133968,"cost":[{"power":0,"amount":180}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":2.0,"perLevel":2.0}]}
 {"key":992,"since":70245,"src":["game"],"name":"Shadow Word: Pain","rank":"Rank 4","icon":136207,"cost":[{"power":0,"amount":155}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":30.0,"period":3000}]}
 {"key":996,"since":70245,"src":["game"],"name":"Prayer of Healing","rank":"Rank 2","icon":135943,"cost":[{"power":0,"amount":560}],"castTime":3000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":265.0,"perLevel":1.0}]}
@@ -230,11 +230,11 @@
 {"key":1032,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":35,"aura":674,"points":505.0,"misc":1},{"index":1,"effect":35,"aura":118}]}
 {"key":1038,"since":70245,"src":["game"],"name":"Blessing of Salvation","icon":135967,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":10,"points":-30.0,"misc":127}]}
 {"key":1042,"since":70245,"src":["game"],"name":"Holy Light","rank":"Rank 5","icon":135920,"cost":[{"power":0,"amount":275}],"castTime":2500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":452.0,"perLevel":3.1}]}
-{"key":1044,"since":70245,"src":["game"],"name":"Blessing of Freedom","icon":135968,"cooldown":20000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":77,"misc":7},{"index":1,"effect":6,"aura":77,"misc":11}]}
+{"key":1044,"since":70245,"src":["game"],"name":"Blessing of Freedom","icon":135968,"cost":[{"power":0,"percent":10}],"cooldown":20000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":77,"misc":7},{"index":1,"effect":6,"aura":77,"misc":11}]}
 {"key":1058,"since":70245,"src":["game"],"name":"Rejuvenation","rank":"Rank 2","icon":136081,"cost":[{"power":0,"amount":40}],"maxRange":40.0,"effects":[{"index":0,"effect":6,"aura":8,"points":12.0,"period":3000}]}
 {"key":1062,"since":70245,"src":["game"],"name":"Entangling Roots","rank":"Rank 2","icon":136100,"cost":[{"power":0,"amount":65}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":26},{"index":1,"effect":6,"aura":3,"points":9.0,"period":3000}]}
 {"key":1064,"since":70245,"src":["game"],"name":"Chain Heal","rank":"Rank 1","icon":136042,"cost":[{"power":0,"amount":260}],"castTime":2500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":251.0,"perLevel":2.5,"targets":3}]}
-{"key":1066,"since":70245,"src":["game"],"name":"Aquatic Form","rank":"Shapeshift","icon":132112,"effects":[{"index":0,"effect":6,"aura":36,"misc":4},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4}]}
+{"key":1066,"since":70245,"src":["game"],"name":"Aquatic Form","rank":"Shapeshift","icon":132112,"cost":[{"power":0,"percent":20}],"effects":[{"index":0,"effect":6,"aura":36,"misc":4},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4}]}
 {"key":1075,"since":70245,"src":["game"],"name":"Thorns","rank":"Rank 3","icon":136104,"cost":[{"power":0,"amount":105}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":15,"points":11.0}]}
 {"key":1075,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":15,"points":9.0}]}
 {"key":1079,"since":70245,"src":["game"],"name":"Rip","rank":"Rank 1","icon":132152,"cost":[{"power":3,"amount":30},{"power":4,"amount":1}],"maxRange":5.0,"effects":[{"index":0,"effect":6,"aura":3,"points":3.0,"period":2000},{"index":1,"effect":6,"aura":4}]}
@@ -250,11 +250,11 @@
 {"key":1106,"since":70245,"src":["game"],"name":"Shadow Bolt","rank":"Rank 5","icon":136197,"cost":[{"power":0,"amount":160}],"castTime":3000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":78.0,"perLevel":1.2}]}
 {"key":1108,"since":70245,"src":["game"],"name":"Curse of Weakness","rank":"Rank 2","icon":136138,"cost":[{"power":0,"amount":35}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":13,"points":-7.0,"misc":1}]}
 {"key":1120,"since":70245,"src":["game"],"name":"Drain Soul","rank":"Rank 1","icon":136163,"cost":[{"power":0,"amount":55}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":86,"points":1.0},{"index":1,"effect":6,"aura":3,"points":17.0,"period":3000}]}
-{"key":1122,"since":70245,"src":["game"],"name":"Inferno","rank":"Summon","icon":136219,"castTime":2000,"cooldown":3600000,"maxRange":30.0,"effects":[{"index":0,"effect":28,"points":50.0,"perLevel":1.0,"misc":89}]}
+{"key":1122,"since":70245,"src":["game"],"name":"Inferno","rank":"Summon","icon":136219,"cost":[{"power":0,"percent":100}],"castTime":2000,"cooldown":3600000,"maxRange":30.0,"effects":[{"index":0,"effect":28,"points":50.0,"perLevel":1.0,"misc":89}]}
 {"key":1126,"since":70245,"src":["game"],"name":"Mark of the Wild","rank":"Rank 1","icon":136078,"cost":[{"power":0,"amount":20}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":22,"points":34.0,"misc":1}]}
 {"key":1126,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":674,"points":34.0,"misc":1}]}
 {"key":1130,"since":70245,"src":["game"],"name":"Hunter's Mark","rank":"Rank 1","icon":132212,"cost":[{"power":0,"amount":15}],"maxRange":100.0,"effects":[{"index":0,"effect":6,"aura":68},{"index":1,"effect":6,"aura":127,"points":26.0}]}
-{"key":1152,"since":70245,"src":["game"],"name":"Purify","icon":135949,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":3},{"index":1,"effect":38,"points":1.0,"misc":4}]}
+{"key":1152,"since":70245,"src":["game"],"name":"Purify","icon":135949,"cost":[{"power":0,"percent":8}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":3},{"index":1,"effect":38,"points":1.0,"misc":4}]}
 {"key":1160,"since":70245,"src":["game"],"name":"Demoralizing Shout","rank":"Rank 1","icon":132366,"cost":[{"power":1,"amount":100}],"effects":[{"index":0,"effect":6,"aura":99,"points":-49.0,"perLevel":-1.4}]}
 {"key":1160,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":99,"points":-49.0,"perLevel":-1.4},{"index":1,"effect":63,"points":11.0,"perLevel":0.8}]}
 {"key":1161,"since":70245,"src":["game"],"name":"Challenging Shout","icon":132091,"cost":[{"power":1,"amount":50}],"cooldown":600000,"effects":[{"index":0,"effect":6,"aura":11}]}
@@ -280,7 +280,7 @@
 {"key":1499,"since":70245,"src":["game"],"name":"Freezing Trap","rank":"Rank 1","icon":135834,"cost":[{"power":0,"amount":50}],"cooldown":30000,"effects":[{"index":0,"effect":104,"misc":2561}]}
 {"key":1510,"since":70245,"src":["game"],"name":"Volley","rank":"Rank 1","icon":132222,"cost":[{"power":0,"amount":350}],"maxRange":35.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"misc":41245},{"index":2,"effect":6,"aura":226,"period":1000}]}
 {"key":1513,"since":70245,"src":["game"],"name":"Scare Beast","rank":"Rank 1","icon":132118,"cost":[{"power":0,"amount":35}],"castTime":1500,"cooldown":30000,"maxRange":10.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
-{"key":1515,"since":70245,"src":["game"],"name":"Tame Beast","icon":132164,"maxRange":30.0,"effects":[{"index":0,"effect":63,"points":10.0},{"index":1,"effect":6,"aura":23,"points":1.0,"period":20000,"trigger":13535},{"index":2,"effect":6,"aura":101,"points":-100.0,"misc":1}]}
+{"key":1515,"since":70245,"src":["game"],"name":"Tame Beast","icon":132164,"cost":[{"power":0,"percent":60}],"maxRange":30.0,"effects":[{"index":0,"effect":63,"points":10.0},{"index":1,"effect":6,"aura":23,"points":1.0,"period":20000,"trigger":13535},{"index":2,"effect":6,"aura":101,"points":-100.0,"misc":1}]}
 {"key":1543,"since":70245,"src":["game"],"name":"Flare","icon":135815,"cost":[{"power":0,"amount":50}],"cooldown":15000,"maxRange":30.0,"effects":[{"index":0,"effect":3},{"index":1,"effect":179,"misc":41236}]}
 {"key":1608,"since":70245,"src":["game"],"name":"Heroic Strike","rank":"Rank 4","icon":132282,"cost":[{"power":1,"amount":150}],"maxRange":5.0,"effects":[{"index":0,"effect":17,"points":44.0}]}
 {"key":1671,"since":70245,"src":["game"],"name":"Shield Bash","rank":"Rank 2","icon":132357,"cost":[{"power":1,"amount":100}],"cooldown":12000,"maxRange":5.0,"effects":[{"index":0,"effect":68},{"index":1,"effect":2,"points":18.0}]}
@@ -330,13 +330,13 @@
 {"key":1866,"since":70245,"src":["game"],"name":"Holy Strike","rank":"Rank 3","icon":626003,"cost":[{"power":0,"amount":12}],"cooldown":10000,"maxRange":5.0,"effects":[{"index":0,"effect":121,"points":19.0,"perLevel":0.2},{"index":1,"effect":31,"points":32.0},{"index":2,"effect":77}]}
 {"key":1943,"since":70245,"src":["game"],"name":"Rupture","rank":"Rank 1","icon":132302,"cost":[{"power":3,"amount":25},{"power":4,"amount":1}],"maxRange":5.0,"effects":[{"index":0,"effect":6,"aura":3,"points":5.0,"period":2000},{"index":1,"effect":3},{"index":2,"effect":6,"aura":4}]}
 {"key":1949,"since":70245,"src":["game"],"name":"Hellfire","rank":"Rank 1","icon":135818,"cost":[{"power":0,"amount":645}],"effects":[{"index":0,"effect":6,"aura":23,"period":1000,"trigger":5857},{"index":1,"effect":6,"aura":3,"points":82.0,"perLevel":0.4,"period":1000},{"index":2,"effect":6,"aura":77,"points":100.0,"misc":16}]}
-{"key":1953,"since":70245,"src":["game"],"name":"Blink","description":"Teleports the caster 20 yards forward, unless something is in the way. Also frees the caster from Stuns and Immobilizes.","icon":135736,"cooldown":15000,"effects":[{"index":0,"effect":29},{"index":1,"effect":6,"aura":77,"misc":12},{"index":2,"effect":6,"aura":77,"misc":7}]}
+{"key":1953,"since":70245,"src":["game"],"name":"Blink","description":"Teleports the caster 20 yards forward, unless something is in the way. Also frees the caster from Stuns and Immobilizes.","icon":135736,"cost":[{"power":0,"percent":35}],"cooldown":15000,"effects":[{"index":0,"effect":29},{"index":1,"effect":6,"aura":77,"misc":12},{"index":2,"effect":6,"aura":77,"misc":7}]}
 {"key":1966,"since":70245,"src":["game"],"name":"Feint","rank":"Rank 1","description":"Performs a feint, causing no damage but lowering your threat by a small amount, making the enemy less likely to attack you.","icon":132294,"cost":[{"power":3,"amount":20}],"cooldown":10000,"maxRange":5.0,"effects":[{"index":0,"effect":63,"points":-750.0,"perLevel":-5.0}]}
 {"key":1978,"since":70245,"src":["game"],"name":"Serpent Sting","rank":"Rank 1","icon":132204,"cost":[{"power":0,"amount":15}],"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":3,"points":2.0,"period":3000}]}
 {"key":1978,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":6,"aura":3,"points":3.0,"period":3000}]}
-{"key":2006,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 1","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":70.0,"misc":135}]}
-{"key":2008,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 1","icon":136077,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":65.0,"misc":120}]}
-{"key":2010,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 2","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":160.0,"misc":300}]}
+{"key":2006,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 1","icon":135955,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":70.0,"misc":135}]}
+{"key":2008,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 1","icon":136077,"cost":[{"power":0,"percent":90}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":65.0,"misc":120}]}
+{"key":2010,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 2","icon":135955,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":160.0,"misc":300}]}
 {"key":2018,"since":70245,"src":["game"],"name":"Blacksmithing","rank":"Apprentice","description":"Allows a Blacksmith to make basic weapons and armor up to a maximum potential skill of 75.  Requires stone and metal found with the mining skill.","icon":136241,"effects":[{"index":0,"effect":47},{"index":1,"effect":118,"points":1.0,"misc":164}]}
 {"key":2050,"since":70245,"src":["game"],"name":"Lesser Heal","rank":"Rank 1","icon":135929,"cost":[{"power":0,"amount":30}],"castTime":1500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":51.0,"perLevel":0.9}]}
 {"key":2050,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":10,"points":51.0,"perLevel":0.3}]}
@@ -412,7 +412,7 @@
 {"key":2458,"since":70245,"src":["game"],"name":"Berserker Stance","icon":132275,"cooldown":1000,"effects":[{"index":0,"effect":6,"aura":36,"misc":19}]}
 {"key":2480,"since":70245,"src":["game"],"name":"Shoot Bow","icon":132222,"castTime":1000,"minRange":8.0,"maxRange":30.0,"effects":[{"index":0,"effect":58}]}
 {"key":2481,"since":70245,"src":["game"],"name":"Find Treasure","rank":"Racial","icon":135725,"effects":[{"index":0,"effect":6,"aura":45,"misc":6}]}
-{"key":2484,"since":70245,"src":["game"],"name":"Earthbind Totem","icon":136102,"cooldown":15000,"effects":[{"index":0,"effect":28,"points":5.0,"misc":2630}]}
+{"key":2484,"since":70245,"src":["game"],"name":"Earthbind Totem","icon":136102,"cost":[{"power":0,"percent":6}],"cooldown":15000,"effects":[{"index":0,"effect":28,"points":5.0,"misc":2630}]}
 {"key":2495,"since":70245,"src":["game"],"name":"Holy Strike","rank":"Rank 5","icon":626003,"cost":[{"power":0,"amount":16}],"cooldown":10000,"maxRange":5.0,"effects":[{"index":0,"effect":121,"points":31.0,"perLevel":1.0},{"index":1,"effect":31,"points":39.0},{"index":2,"effect":77}]}
 {"key":2538,"since":70245,"src":["game"],"name":"Charred Wolf Meat","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2539,"since":70245,"src":["game"],"name":"Spiced Wolf Meat","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0,"misc":2}]}
@@ -440,9 +440,9 @@
 {"key":2591,"since":70245,"src":["game"],"name":"Backstab","rank":"Rank 4","icon":132090,"cost":[{"power":3,"amount":60}],"maxRange":5.0,"effects":[{"index":0,"effect":121,"points":46.0},{"index":1,"effect":31,"points":150.0},{"index":2,"effect":30,"points":1.0,"misc":4}]}
 {"key":2637,"since":70245,"src":["game"],"name":"Hibernate","rank":"Rank 1","icon":136090,"cost":[{"power":0,"amount":90}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":12}]}
 {"key":2641,"since":70245,"src":["game"],"name":"Dismiss Pet","icon":136095,"castTime":5000,"maxRange":10.0,"effects":[{"index":0,"effect":8,"points":50000.0,"misc":27},{"index":1,"effect":102}]}
-{"key":2643,"since":70245,"src":["game"],"name":"Multi-Shot","icon":132330,"castTime":500,"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":121,"targets":3}]}
+{"key":2643,"since":70245,"src":["game"],"name":"Multi-Shot","icon":132330,"cost":[{"power":0,"percent":13.9}],"castTime":500,"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":121,"targets":3}]}
 {"key":2645,"since":70245,"src":["game"],"name":"Ghost Wolf","icon":136095,"cost":[{"power":0,"amount":100}],"castTime":3000,"effects":[{"index":0,"effect":6,"aura":36,"misc":16},{"index":1,"effect":6,"aura":31,"points":40.0}]}
-{"key":2651,"since":70245,"src":["game"],"name":"Elune's Grace","icon":135900,"cooldown":300000,"effects":[{"index":0,"effect":6,"aura":184,"points":-50.0},{"index":1,"effect":6,"aura":185,"points":-50.0}]}
+{"key":2651,"since":70245,"src":["game"],"name":"Elune's Grace","icon":135900,"cost":[{"power":0,"percent":3}],"cooldown":300000,"effects":[{"index":0,"effect":6,"aura":184,"points":-50.0},{"index":1,"effect":6,"aura":185,"points":-50.0}]}
 {"key":2652,"since":70245,"src":["game"],"name":"Touch of Weakness","rank":"Rank 1","icon":136143,"cost":[{"power":0,"amount":25}],"effects":[{"index":0,"effect":6,"aura":42,"trigger":28598}]}
 {"key":2656,"since":70245,"src":["game"],"name":"Smelting","description":"Allows the miner to turn ore into metal bars.  This skill requires a forge.","icon":135811,"effects":[{"index":0,"effect":47}]}
 {"key":2657,"since":70245,"src":["game"],"name":"Smelt Copper","description":"Allows the miner to smelt a chunk of copper ore into a copper bar.  Smelting copper requires a forge.","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -463,7 +463,7 @@
 {"key":2673,"since":70245,"src":["game"],"name":"Silvered Bronze Breastplate","icon":136192,"castTime":25000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2674,"since":70245,"src":["game"],"name":"Heavy Sharpening Stone","icon":136192,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2675,"since":70245,"src":["game"],"name":"Shining Silver Breastplate","icon":136192,"castTime":45000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":2687,"since":70245,"src":["game"],"name":"Bloodrage","icon":132277,"cooldown":60000,"effects":[{"index":0,"effect":30,"points":100.0,"misc":1},{"index":1,"effect":64,"trigger":29131}]}
+{"key":2687,"since":70245,"src":["game"],"name":"Bloodrage","icon":132277,"cost":[{"power":-2,"percent":20}],"cooldown":60000,"effects":[{"index":0,"effect":30,"points":100.0,"misc":1},{"index":1,"effect":64,"trigger":29131}]}
 {"key":2737,"since":70245,"src":["game"],"name":"Copper Mace","icon":136192,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2738,"since":70245,"src":["game"],"name":"Copper Axe","icon":136192,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2739,"since":70245,"src":["game"],"name":"Copper Shortsword","icon":136192,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -472,7 +472,7 @@
 {"key":2742,"since":70245,"src":["game"],"name":"Bronze Shortsword","icon":136192,"castTime":12500,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2764,"since":70245,"src":["game"],"name":"Throw","description":"Hurl a thrown weapon at the target.","icon":132324,"castTime":500,"minRange":8.0,"maxRange":30.0,"effects":[{"index":0,"effect":58}]}
 {"key":2767,"since":70245,"src":["game"],"name":"Shadow Word: Pain","rank":"Rank 5","icon":136207,"cost":[{"power":0,"amount":230}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":48.0,"period":3000}]}
-{"key":2782,"since":70245,"src":["game"],"name":"Remove Curse","icon":135952,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":2}]}
+{"key":2782,"since":70245,"src":["game"],"name":"Remove Curse","icon":135952,"cost":[{"power":0,"percent":10}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":2}]}
 {"key":2791,"since":70245,"src":["game"],"name":"Power Word: Fortitude","rank":"Rank 4","icon":135987,"cost":[{"power":0,"amount":745}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":29,"points":42.0,"misc":2}]}
 {"key":2795,"since":70245,"src":["game"],"name":"Beer Basted Boar Ribs","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":2800,"since":70245,"src":["game"],"name":"Lay on Hands","rank":"Rank 2","icon":135928,"cooldown":1200000,"maxRange":40.0,"effects":[{"index":0,"effect":67},{"index":1,"effect":30,"points":250.0}]}
@@ -484,10 +484,10 @@
 {"key":2860,"since":70245,"src":["game"],"name":"Chain Lightning","rank":"Rank 3","icon":136015,"cost":[{"power":0,"amount":390}],"castTime":2000,"cooldown":6000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":112.0,"perLevel":0.7,"targets":3}]}
 {"key":2860,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":250}]}
 {"key":2860,"since":70755,"day":"2026-11-03","src":["game"],"cost":[{"power":0,"amount":425}],"castTime":2500,"effects":[{"index":0,"effect":2,"points":428.0,"perLevel":2.7,"targets":3}]}
-{"key":2870,"since":70245,"src":["game"],"name":"Cure Disease","icon":136083,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":3}]}
+{"key":2870,"since":70245,"src":["game"],"name":"Cure Disease","icon":136083,"cost":[{"power":0,"percent":9}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":3}]}
 {"key":2878,"since":70245,"src":["game"],"name":"Turn Undead","rank":"Rank 1","icon":135983,"cost":[{"power":0,"amount":35}],"castTime":1500,"cooldown":30000,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
 {"key":2881,"since":70245,"src":["game"],"name":"Light Leather","icon":136235,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":2893,"since":70245,"src":["game"],"name":"Abolish Poison","icon":136068,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":23,"period":2000,"trigger":3137},{"index":1,"effect":38,"points":1.0,"misc":4}]}
+{"key":2893,"since":70245,"src":["game"],"name":"Abolish Poison","icon":136068,"cost":[{"power":0,"percent":16}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":23,"period":2000,"trigger":3137},{"index":1,"effect":38,"points":1.0,"misc":4}]}
 {"key":2908,"since":70245,"src":["game"],"name":"Soothe Animal","rank":"Rank 1","icon":132163,"cost":[{"power":0,"amount":50}],"castTime":1500,"maxRange":40.0,"effects":[{"index":0,"effect":6,"aura":91,"points":-10.0}]}
 {"key":2912,"since":70245,"src":["game"],"name":"Starfire","rank":"Rank 1","icon":135753,"cost":[{"power":0,"amount":95}],"castTime":3500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":81.0,"perLevel":1.3}]}
 {"key":2912,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":113.0,"perLevel":1.8}]}
@@ -513,15 +513,17 @@
 {"key":3029,"since":70245,"src":["game"],"name":"Claw","rank":"Rank 2","icon":132140,"cost":[{"power":3,"amount":45}],"maxRange":5.0,"effects":[{"index":0,"effect":58,"points":39.0},{"index":1,"effect":31,"points":110.0},{"index":2,"effect":30,"points":1.0,"misc":4}]}
 {"key":3029,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":58,"points":39.0},{"index":1,"effect":31,"points":140.0},{"index":2,"effect":30,"points":1.0,"misc":4}]}
 {"key":3034,"since":70245,"src":["game"],"name":"Viper Sting","rank":"Rank 1","icon":132157,"cost":[{"power":0,"amount":135}],"cooldown":15000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":64,"points":154.0,"period":2000}]}
-{"key":3043,"since":70245,"src":["game"],"name":"Scorpid Sting","icon":132169,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":54,"points":-2.0}]}
+{"key":3043,"since":70245,"src":["game"],"name":"Scorpid Sting","icon":132169,"cost":[{"power":0,"percent":9}],"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":54,"points":-2.0}]}
 {"key":3044,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 1","icon":132218,"cost":[{"power":0,"amount":25}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":20.0}]}
 {"key":3044,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":25.0}]}
+{"key":3044,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":3045,"since":70245,"src":["game"],"name":"Rapid Fire","icon":132208,"cost":[{"power":0,"amount":100}],"cooldown":300000,"effects":[{"index":0,"effect":6,"aura":140,"points":40.0},{"index":1,"effect":6,"aura":110},{"index":2,"effect":6,"aura":134},{"index":3,"effect":6,"aura":319,"points":40.0}]}
 {"key":3100,"since":70245,"src":["game"],"name":"Blacksmithing","rank":"Journeyman","description":"Allows a Blacksmith to make well-crafted weapons and armor up to a maximum potential skill of 150.","icon":136241,"effects":[{"index":0,"effect":47},{"index":1,"effect":118,"points":2.0,"misc":164}]}
 {"key":3101,"since":70245,"src":["game"],"name":"Alchemy","rank":"Journeyman","description":"Allows an alchemist to brew standard potions up to a maximum potential skill of 150.","icon":136240,"effects":[{"index":0,"effect":47},{"index":1,"effect":118,"points":2.0,"misc":171}]}
 {"key":3102,"since":70245,"src":["game"],"name":"Cooking","rank":"Journeyman","description":"Allows a cook to make delicious recipes up to a maximum potential skill of 150.","icon":133971,"effects":[{"index":0,"effect":47},{"index":1,"effect":118,"points":2.0,"misc":185}]}
 {"key":3104,"since":70245,"src":["game"],"name":"Leatherworking","rank":"Journeyman","description":"Allows a leatherworker to make well crafted leather armors, up to a maximum potential skill of 150.","icon":133611,"effects":[{"index":0,"effect":47},{"index":1,"effect":118,"points":2.0,"misc":165}]}
 {"key":3110,"since":70245,"src":["game"],"name":"Firebolt","rank":"Rank 1","icon":135809,"cost":[{"power":0,"amount":10}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":4.0,"perLevel":0.1}]}
+{"key":3110,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":2,"points":6.0,"perLevel":0.3}]}
 {"key":3111,"since":70245,"src":["game"],"name":"Mend Pet","rank":"Rank 2","icon":132179,"cost":[{"power":0,"amount":90}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":8,"points":38.0,"period":1000}]}
 {"key":3115,"since":70245,"src":["game"],"name":"Rough Weightstone","icon":136192,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":3116,"since":70245,"src":["game"],"name":"Coarse Weightstone","icon":136192,"castTime":5125,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -770,13 +772,13 @@
 {"key":4508,"since":70245,"src":["game"],"name":"Minor Discolored Healing Potion","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":4511,"since":70245,"src":["game"],"name":"Phase Shift","description":"Shifts the imp out of phase with the world, making it unattackable unless it attacks.","icon":136164,"cooldown":10000,"effects":[{"index":0,"effect":6,"aura":93}]}
 {"key":4942,"since":70245,"src":["game"],"name":"Lesser Stoneshield Potion","icon":136235,"castTime":5000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":4987,"since":70245,"src":["game"],"name":"Cleanse","icon":135953,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":4},{"index":1,"effect":38,"points":1.0,"misc":3},{"index":2,"effect":38,"points":1.0,"misc":1}]}
+{"key":4987,"since":70245,"src":["game"],"name":"Cleanse","icon":135953,"cost":[{"power":0,"percent":8}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":4},{"index":1,"effect":38,"points":1.0,"misc":3},{"index":2,"effect":38,"points":1.0,"misc":1}]}
 {"key":5009,"since":70245,"src":["game"],"name":"Wands","icon":132317,"effects":[{"index":0,"effect":25},{"index":1,"effect":60}]}
 {"key":5011,"since":70245,"src":["game"],"name":"Crossbows","icon":135530,"effects":[{"index":0,"effect":25},{"index":1,"effect":60}]}
 {"key":5019,"since":70245,"src":["game"],"name":"Shoot","description":"Attack with an equipped wand.","icon":132317,"maxRange":30.0,"effects":[{"index":0,"effect":17}]}
 {"key":5048,"since":70245,"src":["game"],"name":"Great Stamina","rank":"Rank 9","icon":136112,"maxRange":100.0,"effects":[{"index":0,"effect":36,"trigger":5041}]}
 {"key":5049,"since":70245,"src":["game"],"name":"Great Stamina","rank":"Rank 10","icon":136112,"maxRange":100.0,"effects":[{"index":0,"effect":36,"trigger":5042}]}
-{"key":5116,"since":70245,"src":["game"],"name":"Concussive Shot","icon":135860,"cooldown":12000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-50.0}]}
+{"key":5116,"since":70245,"src":["game"],"name":"Concussive Shot","icon":135860,"cost":[{"power":0,"percent":8}],"cooldown":12000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-50.0}]}
 {"key":5118,"since":70245,"src":["game"],"name":"Aspect of the Cheetah","icon":132242,"cost":[{"power":0,"amount":40}],"effects":[{"index":0,"effect":6,"aura":31,"points":30.0},{"index":1,"effect":6,"aura":42,"trigger":15571}]}
 {"key":5138,"since":70245,"src":["game"],"name":"Drain Mana","rank":"Rank 1","icon":136208,"cost":[{"power":0,"amount":95}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":64,"points":42.0,"perLevel":0.4,"period":1000}]}
 {"key":5143,"since":70245,"src":["game"],"name":"Arcane Missiles","rank":"Rank 1","icon":136096,"cost":[{"power":0,"amount":85}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":23,"period":1000,"trigger":7268},{"index":1,"effect":6,"aura":4}]}
@@ -825,7 +827,7 @@
 {"key":5394,"since":70245,"src":["game"],"name":"Healing Stream Totem","rank":"Rank 1","icon":135127,"cost":[{"power":0,"amount":40}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":3527}]}
 {"key":5421,"since":70245,"src":["game"],"name":"Aquatic Form (Passive)","rank":"Passive","icon":132112,"effects":[{"index":0,"effect":6,"aura":58,"points":50.0},{"index":1,"effect":6,"aura":82},{"index":2,"effect":6,"aura":77,"misc":3}]}
 {"key":5484,"since":70245,"src":["game"],"name":"Howl of Terror","rank":"Rank 1","icon":136147,"cost":[{"power":0,"amount":150}],"castTime":2000,"cooldown":40000,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
-{"key":5487,"since":70245,"src":["game"],"name":"Bear Form","rank":"Shapeshift","icon":132276,"effects":[{"index":0,"effect":6,"aura":36,"misc":5},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4},{"index":3,"effect":6,"aura":668}]}
+{"key":5487,"since":70245,"src":["game"],"name":"Bear Form","rank":"Shapeshift","icon":132276,"cost":[{"power":0,"percent":55}],"effects":[{"index":0,"effect":6,"aura":36,"misc":5},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4},{"index":3,"effect":6,"aura":668}]}
 {"key":5487,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":36,"misc":5},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4},{"index":3,"effect":6,"aura":668},{"index":4,"effect":6,"aura":110,"points":-100.0,"misc":3}]}
 {"key":5500,"since":70245,"src":["game"],"name":"Sense Demons","description":"Shows the location of all nearby demons on the minimap until cancelled.  Only one type of tracking can be used at a time.","icon":136172,"effects":[{"index":0,"effect":6,"aura":44,"misc":3}]}
 {"key":5502,"since":70245,"src":["game"],"name":"Sense Undead","description":"Shows the location of all nearby undead on the minimap until cancelled.   Only one type of tracking can be used at a time.","icon":135974,"effects":[{"index":0,"effect":6,"aura":44,"misc":6},{"index":1,"effect":167}]}
@@ -848,7 +850,7 @@
 {"key":5730,"since":70245,"src":["game"],"name":"Stoneclaw Totem","rank":"Rank 1","icon":136097,"cost":[{"power":0,"amount":15}],"cooldown":30000,"effects":[{"index":0,"effect":28,"points":50.0,"perLevel":3.0,"misc":3579}]}
 {"key":5740,"since":70245,"src":["game"],"name":"Rain of Fire","rank":"Rank 1","icon":136186,"cost":[{"power":0,"amount":295}],"maxRange":30.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"misc":41450},{"index":2,"effect":6,"aura":226,"period":2000}]}
 {"key":5763,"since":70245,"src":["game"],"name":"Mind-numbing Poison","rank":"Rank 1","icon":136066,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0},{"index":1,"effect":3,"points":1800.0},{"index":2,"effect":3,"points":75.0}]}
-{"key":5782,"since":70245,"src":["game"],"name":"Fear","rank":"Rank 1","icon":136183,"castTime":1500,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
+{"key":5782,"since":70245,"src":["game"],"name":"Fear","rank":"Rank 1","icon":136183,"cost":[{"power":0,"percent":15}],"castTime":1500,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
 {"key":5784,"since":70245,"src":["game"],"name":"Summon Felsteed","rank":"Summon","description":"Summons a Felsteed, which serves as a mount for the caster.","icon":136103,"cost":[{"power":0,"amount":100}],"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":304},{"index":2,"effect":77}]}
 {"key":5923,"since":70245,"src":["game"],"name":"Holy Power","icon":135938,"effects":[{"index":0,"effect":6,"aura":108,"points":5.0,"misc":7},{"index":1,"effect":6,"aura":108,"points":15.0,"misc":7}]}
 {"key":5923,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":50,"misc":2}]}
@@ -881,8 +883,8 @@
 {"key":6201,"since":70245,"src":["game"],"name":"Create Healthstone","rank":"Rank 1","icon":135230,"cost":[{"power":0,"amount":95}],"castTime":3000,"effects":[{"index":0,"effect":77}]}
 {"key":6202,"since":70245,"src":["game"],"name":"Create Healthstone","rank":"Rank 2","icon":135230,"cost":[{"power":0,"amount":240}],"castTime":3000,"effects":[{"index":0,"effect":77}]}
 {"key":6205,"since":70245,"src":["game"],"name":"Curse of Weakness","rank":"Rank 3","icon":136138,"cost":[{"power":0,"amount":70}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":13,"points":-12.0,"misc":1}]}
-{"key":6213,"since":70245,"src":["game"],"name":"Fear","rank":"Rank 2","icon":136183,"castTime":1500,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
-{"key":6215,"since":70245,"src":["game"],"name":"Fear","rank":"Rank 3","icon":136183,"castTime":1500,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
+{"key":6213,"since":70245,"src":["game"],"name":"Fear","rank":"Rank 2","icon":136183,"cost":[{"power":0,"percent":15}],"castTime":1500,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
+{"key":6215,"since":70245,"src":["game"],"name":"Fear","rank":"Rank 3","icon":136183,"cost":[{"power":0,"percent":15}],"castTime":1500,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
 {"key":6217,"since":70245,"src":["game"],"name":"Bane of Agony","rank":"Rank 3","icon":136139,"cost":[{"power":0,"amount":90}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":14.0,"period":2000}]}
 {"key":6217,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":3,"points":14.0,"period":2000},{"index":1,"effect":6,"aura":271},{"index":2,"effect":6,"aura":4}]}
 {"key":6219,"since":70245,"src":["game"],"name":"Rain of Fire","rank":"Rank 2","icon":136186,"cost":[{"power":0,"amount":605}],"maxRange":30.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"misc":41452},{"index":2,"effect":6,"aura":226,"period":2000}]}
@@ -914,7 +916,7 @@
 {"key":6343,"since":70245,"src":["game"],"name":"Thunder Clap","rank":"Rank 1","icon":136105,"cost":[{"power":1,"amount":200}],"cooldown":6000,"effects":[{"index":0,"effect":2,"points":10.0},{"index":1,"effect":6,"aura":319,"points":-20.0}]}
 {"key":6346,"since":70245,"src":["game"],"name":"Fear Ward","icon":135902,"cost":[{"power":0,"amount":100}],"cooldown":180000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":77,"misc":5}]}
 {"key":6353,"since":70245,"src":["game"],"name":"Soul Fire","rank":"Rank 1","icon":135808,"cost":[{"power":0,"amount":305}],"castTime":6000,"cooldown":60000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":377.0,"perLevel":1.7}]}
-{"key":6358,"since":70245,"src":["game"],"name":"Seduction","icon":136175,"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":12}]}
+{"key":6358,"since":70245,"src":["game"],"name":"Seduction","icon":136175,"cost":[{"power":0,"percent":24}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":12}]}
 {"key":6360,"since":70245,"src":["game"],"name":"Soothing Kiss","rank":"Rank 1","description":"Soothes the target, increasing the chance that it will attack something else.","icon":136209,"cost":[{"power":0,"amount":30}],"cooldown":4000,"maxRange":5.0,"effects":[{"index":0,"effect":63,"points":-45.0,"perLevel":-1.0}]}
 {"key":6363,"since":70245,"src":["game"],"name":"Searing Totem","rank":"Rank 2","icon":135825,"cost":[{"power":0,"amount":45}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":3902}]}
 {"key":6364,"since":70245,"src":["game"],"name":"Searing Totem","rank":"Rank 3","icon":135825,"cost":[{"power":0,"amount":75}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":3903}]}
@@ -1037,7 +1039,7 @@
 {"key":7320,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":674,"points":380.0,"misc":1},{"index":1,"effect":6,"aura":42,"trigger":7321},{"index":2,"effect":6,"aura":22,"points":9.0,"misc":16}]}
 {"key":7322,"since":70245,"src":["game"],"name":"Frostbolt","rank":"Rank 4","icon":135846,"cost":[{"power":0,"amount":65}],"castTime":2600,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-40.0},{"index":1,"effect":2,"points":60.0,"perLevel":1.1}]}
 {"key":7322,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":33,"points":-40.0},{"index":1,"effect":2,"points":70.0,"perLevel":0.8}]}
-{"key":7328,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 1","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":65.0,"misc":120}]}
+{"key":7328,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 1","icon":135955,"cost":[{"power":0,"percent":80}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":65.0,"misc":120}]}
 {"key":7340,"since":70245,"src":["game"],"name":"Gnomish","icon":136235,"effects":[{"index":0,"effect":39,"misc":13}]}
 {"key":7341,"since":70245,"src":["game"],"name":"Troll","icon":136235,"effects":[{"index":0,"effect":39,"misc":14}]}
 {"key":7359,"since":70245,"src":["game"],"name":"Bright Campfire","description":"Builds a campfire that increases the spirits of those nearby by 8 and allows cooking.","icon":135805,"castTime":10000,"cooldown":300000,"effects":[{"index":0,"effect":50,"misc":31511}]}
@@ -1046,6 +1048,7 @@
 {"key":7372,"since":70245,"src":["game"],"name":"Hamstring","rank":"Rank 2","icon":132316,"cost":[{"power":1,"amount":100}],"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":18.0},{"index":1,"effect":6,"aura":33,"points":-45.0}]}
 {"key":7373,"since":70245,"src":["game"],"name":"Hamstring","rank":"Rank 3","icon":132316,"cost":[{"power":1,"amount":100}],"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":45.0},{"index":1,"effect":6,"aura":33,"points":-50.0}]}
 {"key":7376,"since":70245,"src":["game"],"name":"Defensive Stance Passive","icon":132341,"effects":[{"index":0,"effect":6,"aura":87,"points":-10.0,"misc":127},{"index":1,"effect":6,"aura":79,"points":-10.0,"misc":127},{"index":2,"effect":6,"aura":10,"points":30.0,"misc":127}]}
+{"key":7376,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":87,"points":-10.0,"misc":127},{"index":1,"effect":6,"aura":79,"points":-10.0,"misc":127},{"index":2,"effect":6,"aura":10,"points":80.0,"misc":127}]}
 {"key":7379,"since":70245,"src":["game"],"name":"Revenge","rank":"Rank 3","icon":132353,"cost":[{"power":1,"amount":50}],"cooldown":5000,"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":48.0}]}
 {"key":7381,"since":70245,"src":["game"],"name":"Berserker Stance Passive","icon":132275,"effects":[{"index":0,"effect":6,"aura":290,"points":3.0},{"index":1,"effect":6,"aura":87,"points":10.0,"misc":127},{"index":2,"effect":6,"aura":10,"points":-20.0,"misc":127},{"index":3,"effect":6,"aura":166}]}
 {"key":7384,"since":70245,"src":["game"],"name":"Overpower","rank":"Rank 1","icon":132223,"cost":[{"power":1,"amount":50},{"power":4,"amount":1}],"cooldown":5000,"maxRange":5.0,"effects":[{"index":0,"effect":121,"points":5.0}]}
@@ -1107,8 +1110,11 @@
 {"key":7793,"since":70245,"src":["game"],"name":"Enchant 2H Weapon - Lesser Intellect","description":"Permanently enchant a Two-Handed Melee Weapon to add 5 to Intellect.","icon":135913,"castTime":5000,"effects":[{"index":0,"effect":53,"misc":723}]}
 {"key":7795,"since":70245,"src":["game"],"name":"Runed Silver Rod","icon":135138,"castTime":30000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":7799,"since":70245,"src":["game"],"name":"Firebolt","rank":"Rank 2","icon":135809,"cost":[{"power":0,"amount":20}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":7.0,"perLevel":0.2}]}
+{"key":7799,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":2,"points":11.0,"perLevel":0.4}]}
 {"key":7800,"since":70245,"src":["game"],"name":"Firebolt","rank":"Rank 3","icon":135809,"cost":[{"power":0,"amount":35}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":12.0,"perLevel":0.3}]}
+{"key":7800,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":2,"points":15.0,"perLevel":0.4}]}
 {"key":7801,"since":70245,"src":["game"],"name":"Firebolt","rank":"Rank 4","icon":135809,"cost":[{"power":0,"amount":50}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":17.0,"perLevel":0.3}]}
+{"key":7801,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":2,"points":18.0,"perLevel":0.4}]}
 {"key":7802,"since":70245,"src":["game"],"name":"Firebolt","rank":"Rank 5","icon":135809,"cost":[{"power":0,"amount":70}],"castTime":2000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":25.0,"perLevel":0.4}]}
 {"key":7804,"since":70245,"src":["game"],"name":"Blood Pact","rank":"Rank 2","icon":136124,"maxRange":20.0,"effects":[{"index":0,"effect":35,"aura":29,"points":9.0,"perLevel":0.3,"misc":2}]}
 {"key":7805,"since":70245,"src":["game"],"name":"Blood Pact","rank":"Rank 3","icon":136124,"maxRange":20.0,"effects":[{"index":0,"effect":35,"aura":29,"points":21.0,"perLevel":0.4,"misc":2}]}
@@ -1151,7 +1157,7 @@
 {"key":8005,"since":70245,"src":["game"],"name":"Healing Wave","rank":"Rank 7","icon":136052,"cost":[{"power":0,"amount":340}],"castTime":3000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":685.0,"perLevel":3.9}]}
 {"key":8008,"since":70245,"src":["game"],"name":"Lesser Healing Wave","rank":"Rank 2","icon":136043,"cost":[{"power":0,"amount":145}],"castTime":1500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":224.0,"perLevel":2.1}]}
 {"key":8010,"since":70245,"src":["game"],"name":"Lesser Healing Wave","rank":"Rank 3","icon":136043,"cost":[{"power":0,"amount":185}],"castTime":1500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":304.0,"perLevel":2.5}]}
-{"key":8012,"since":70245,"src":["game"],"name":"Purge","rank":"Rank 2","icon":136075,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":2.0,"misc":1}]}
+{"key":8012,"since":70245,"src":["game"],"name":"Purge","rank":"Rank 2","icon":136075,"cost":[{"power":0,"percent":10}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":2.0,"misc":1}]}
 {"key":8017,"since":70245,"src":["game"],"name":"Rockbiter Weapon","rank":"Rank 1","icon":136086,"cost":[{"power":0,"amount":15}],"effects":[{"index":0,"effect":360,"points":1800.0,"misc":29}]}
 {"key":8018,"since":70245,"src":["game"],"name":"Rockbiter Weapon","rank":"Rank 2","icon":136086,"cost":[{"power":0,"amount":25}],"effects":[{"index":0,"effect":360,"points":1800.0,"misc":6}]}
 {"key":8019,"since":70245,"src":["game"],"name":"Rockbiter Weapon","rank":"Rank 3","icon":136086,"cost":[{"power":0,"amount":50}],"effects":[{"index":0,"effect":360,"points":1800.0,"misc":1}]}
@@ -1196,9 +1202,9 @@
 {"key":8155,"since":70245,"src":["game"],"name":"Stoneskin Totem","rank":"Rank 3","icon":136098,"cost":[{"power":0,"amount":90}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5920}]}
 {"key":8160,"since":70245,"src":["game"],"name":"Strength of Earth Totem","rank":"Rank 2","icon":136023,"cost":[{"power":0,"amount":65}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5921}]}
 {"key":8161,"since":70245,"src":["game"],"name":"Strength of Earth Totem","rank":"Rank 3","icon":136023,"cost":[{"power":0,"amount":125}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5922}]}
-{"key":8166,"since":70245,"src":["game"],"name":"Poison Cleansing Totem","icon":136070,"effects":[{"index":0,"effect":28,"points":5.0,"misc":5923}]}
-{"key":8170,"since":70245,"src":["game"],"name":"Disease Cleansing Totem","icon":136019,"effects":[{"index":0,"effect":28,"points":5.0,"misc":5924}]}
-{"key":8177,"since":70245,"src":["game"],"name":"Grounding Totem","icon":136039,"cooldown":15000,"effects":[{"index":0,"effect":28,"points":5.0,"misc":5925}]}
+{"key":8166,"since":70245,"src":["game"],"name":"Poison Cleansing Totem","icon":136070,"cost":[{"power":0,"percent":10}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5923}]}
+{"key":8170,"since":70245,"src":["game"],"name":"Disease Cleansing Totem","icon":136019,"cost":[{"power":0,"percent":10}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5924}]}
+{"key":8177,"since":70245,"src":["game"],"name":"Grounding Totem","icon":136039,"cost":[{"power":0,"percent":6}],"cooldown":15000,"effects":[{"index":0,"effect":28,"points":5.0,"misc":5925}]}
 {"key":8181,"since":70245,"src":["game"],"name":"Frost Resistance Totem","rank":"Rank 1","icon":135866,"cost":[{"power":0,"amount":75}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5926}]}
 {"key":8184,"since":70245,"src":["game"],"name":"Fire Resistance Totem","rank":"Rank 1","icon":135832,"cost":[{"power":0,"amount":75}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5927}]}
 {"key":8190,"since":70245,"src":["game"],"name":"Magma Totem","rank":"Rank 1","icon":135826,"cost":[{"power":0,"amount":230}],"effects":[{"index":0,"effect":28,"points":5.0,"misc":5929}]}
@@ -1347,7 +1353,7 @@
 {"key":8939,"since":70245,"src":["game"],"name":"Regrowth","rank":"Rank 3","icon":136085,"cost":[{"power":0,"amount":170}],"castTime":2000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":235.0,"perLevel":3.1},{"index":1,"effect":6,"aura":8,"points":32.0,"period":3000}]}
 {"key":8940,"since":70245,"src":["game"],"name":"Regrowth","rank":"Rank 4","icon":136085,"cost":[{"power":0,"amount":210}],"castTime":2000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":311.0,"perLevel":3.6},{"index":1,"effect":6,"aura":8,"points":42.0,"period":3000}]}
 {"key":8941,"since":70245,"src":["game"],"name":"Regrowth","rank":"Rank 5","icon":136085,"cost":[{"power":0,"amount":250}],"castTime":2000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":394.0,"perLevel":4.1},{"index":1,"effect":6,"aura":8,"points":52.0,"period":3000}]}
-{"key":8946,"since":70245,"src":["game"],"name":"Cure Poison","icon":136067,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":4}]}
+{"key":8946,"since":70245,"src":["game"],"name":"Cure Poison","icon":136067,"cost":[{"power":0,"percent":16}],"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":4}]}
 {"key":8949,"since":70245,"src":["game"],"name":"Starfire","rank":"Rank 2","icon":135753,"cost":[{"power":0,"amount":135}],"castTime":3500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":110.0,"perLevel":1.5}]}
 {"key":8949,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":154.0,"perLevel":2.1}]}
 {"key":8950,"since":70245,"src":["game"],"name":"Starfire","rank":"Rank 3","icon":135753,"cost":[{"power":0,"amount":180}],"castTime":3500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":144.0,"perLevel":1.6}]}
@@ -1413,7 +1419,7 @@
 {"key":9578,"since":70245,"src":["game"],"name":"Fade","rank":"Rank 2","icon":135994,"cost":[{"power":0,"amount":75}],"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":103,"points":-775.0,"perLevel":-3.0}]}
 {"key":9579,"since":70245,"src":["game"],"name":"Fade","rank":"Rank 3","icon":135994,"cost":[{"power":0,"amount":125}],"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":103,"points":-1425.0,"perLevel":-3.0}]}
 {"key":9592,"since":70245,"src":["game"],"name":"Fade","rank":"Rank 4","icon":135994,"cost":[{"power":0,"amount":175}],"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":103,"points":-2200.0,"perLevel":-3.0}]}
-{"key":9634,"since":70245,"src":["game"],"name":"Dire Bear Form","rank":"Shapeshift","icon":132276,"effects":[{"index":0,"effect":6,"aura":36,"misc":8},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4},{"index":3,"effect":6,"aura":668}]}
+{"key":9634,"since":70245,"src":["game"],"name":"Dire Bear Form","rank":"Shapeshift","icon":132276,"cost":[{"power":0,"percent":55}],"effects":[{"index":0,"effect":6,"aura":36,"misc":8},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4},{"index":3,"effect":6,"aura":668}]}
 {"key":9634,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":36,"misc":8},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":6,"aura":4},{"index":3,"effect":6,"aura":668},{"index":4,"effect":6,"aura":110,"points":-100.0,"misc":3}]}
 {"key":9635,"since":70245,"src":["game"],"name":"Dire Bear Form (Passive)","rank":"Passive","icon":132276,"effects":[{"index":0,"effect":6,"aura":466,"points":360.0},{"index":1,"effect":6,"aura":142,"points":360.0,"misc":1},{"index":2,"effect":6,"aura":230,"points":600.0,"perLevel":32.0},{"index":3,"effect":6,"aura":99,"points":120.0,"perLevel":3.0},{"index":4,"effect":6,"aura":108,"points":-100.0,"misc":14},{"index":5,"effect":6,"aura":107,"points":6000.0,"misc":11},{"index":6,"effect":6,"aura":77,"misc":3}]}
 {"key":9745,"since":70245,"src":["game"],"name":"Maul","rank":"Rank 5","icon":132136,"cost":[{"power":1,"amount":150}],"maxRange":5.0,"effects":[{"index":0,"effect":58,"points":71.0,"targets":1}]}
@@ -1539,7 +1545,7 @@
 {"key":10053,"since":70245,"src":["game"],"name":"Conjure Mana Citrine","icon":134116,"cost":[{"power":0,"amount":1130}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":10054,"since":70245,"src":["game"],"name":"Conjure Mana Ruby","icon":134128,"cost":[{"power":0,"amount":1470}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":10059,"since":70245,"src":["game"],"name":"Portal: Stormwind","description":"Creates a portal, teleporting group members that use it to Stormwind.","icon":135748,"cost":[{"power":0,"amount":850}],"castTime":10000,"cooldown":60000,"maxRange":10.0,"effects":[{"index":0,"effect":50,"misc":176296}]}
-{"key":10060,"since":70245,"src":["game"],"name":"Power Infusion","icon":135939,"cooldown":180000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":136,"points":20.0,"misc":126},{"index":1,"effect":6,"aura":79,"points":20.0,"misc":126}]}
+{"key":10060,"since":70245,"src":["game"],"name":"Power Infusion","icon":135939,"cost":[{"power":0,"percent":20}],"cooldown":180000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":136,"points":20.0,"misc":126},{"index":1,"effect":6,"aura":79,"points":20.0,"misc":126}]}
 {"key":10097,"since":70245,"src":["game"],"name":"Smelt Mithril","description":"Allows the miner to smelt a chunk of mithril ore into a mithril bar.  Smelting mithril requires a forge.","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":10098,"since":70245,"src":["game"],"name":"Smelt Truesilver","description":"Allows the miner to smelt a chunk of truesilver ore into a truesilver bar.  Smelting truesilver requires a forge.","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":10138,"since":70245,"src":["game"],"name":"Conjure Water","rank":"Rank 5","icon":132796,"cost":[{"power":0,"amount":420}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":2.0,"perLevel":2.0}]}
@@ -1591,7 +1597,7 @@
 {"key":10225,"since":70245,"src":["game"],"name":"Fire Ward","rank":"Rank 5","icon":135806,"cost":[{"power":0,"amount":320}],"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":69,"points":913.0,"misc":4},{"index":1,"effect":6,"aura":74,"misc":4}]}
 {"key":10230,"since":70245,"src":["game"],"name":"Frost Nova","rank":"Rank 4","icon":135848,"cost":[{"power":0,"amount":145}],"cooldown":25000,"effects":[{"index":0,"effect":2,"points":73.0,"perLevel":0.5},{"index":1,"effect":6,"aura":26}]}
 {"key":10248,"since":70245,"src":["game"],"name":"Mining","rank":"Artisan","description":"Raising mining to an art form.  Gives a potential mining skill of 300.","icon":136248,"castTime":3200,"maxRange":5.0,"effects":[{"index":0,"effect":33,"points":1.0,"perLevel":5.0,"misc":3},{"index":1,"effect":118,"points":4.0,"misc":186}]}
-{"key":10278,"since":70245,"src":["game"],"name":"Blessing of Protection","rank":"Rank 3","icon":135964,"cooldown":300000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":39,"misc":1},{"index":1,"effect":6,"aura":25}]}
+{"key":10278,"since":70245,"src":["game"],"name":"Blessing of Protection","rank":"Rank 3","icon":135964,"cost":[{"power":0,"percent":7}],"cooldown":300000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":39,"misc":1},{"index":1,"effect":6,"aura":25}]}
 {"key":10290,"since":70245,"src":["game"],"name":"Devotion Aura","rank":"Rank 2","icon":135893,"effects":[{"index":0,"effect":35,"aura":22,"points":160.0,"misc":1},{"index":1,"effect":35,"aura":118}]}
 {"key":10290,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":35,"aura":674,"points":160.0,"misc":1},{"index":1,"effect":35,"aura":118}]}
 {"key":10291,"since":70245,"src":["game"],"name":"Devotion Aura","rank":"Rank 4","icon":135893,"effects":[{"index":0,"effect":35,"aura":22,"points":390.0,"misc":1},{"index":1,"effect":35,"aura":118}]}
@@ -1614,8 +1620,8 @@
 {"key":10313,"since":70245,"src":["game"],"name":"Exorcism","rank":"Rank 5","icon":135903,"cost":[{"power":0,"amount":285}],"cooldown":15000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":384.0,"perLevel":2.8}]}
 {"key":10314,"since":70245,"src":["game"],"name":"Exorcism","rank":"Rank 6","icon":135903,"cost":[{"power":0,"amount":345}],"cooldown":15000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":502.0,"perLevel":3.2}]}
 {"key":10318,"since":70245,"src":["game"],"name":"Holy Wrath","rank":"Rank 2","icon":135902,"cost":[{"power":0,"amount":805}],"castTime":2000,"cooldown":60000,"effects":[{"index":0,"effect":2,"points":533.0,"perLevel":1.9}]}
-{"key":10322,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 2","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":150.0,"misc":260}]}
-{"key":10324,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 3","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":250.0,"misc":420}]}
+{"key":10322,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 2","icon":135955,"cost":[{"power":0,"percent":80}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":150.0,"misc":260}]}
+{"key":10324,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 3","icon":135955,"cost":[{"power":0,"percent":80}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":250.0,"misc":420}]}
 {"key":10326,"since":70245,"src":["game"],"name":"Turn Undead","rank":"Rank 3","icon":135983,"cost":[{"power":0,"amount":75}],"castTime":1500,"cooldown":30000,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
 {"key":10328,"since":70245,"src":["game"],"name":"Holy Light","rank":"Rank 7","icon":135920,"cost":[{"power":0,"amount":465}],"castTime":2500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":899.0,"perLevel":4.6}]}
 {"key":10329,"since":70245,"src":["game"],"name":"Holy Light","rank":"Rank 8","icon":135920,"cost":[{"power":0,"amount":580}],"castTime":2500,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":1217.0,"perLevel":5.2}]}
@@ -1778,8 +1784,8 @@
 {"key":10874,"since":70245,"src":["game"],"name":"Mana Burn","rank":"Rank 3","icon":136170,"cost":[{"power":0,"amount":185}],"castTime":3000,"maxRange":30.0,"effects":[{"index":0,"effect":62,"points":455.0,"perLevel":1.6}]}
 {"key":10875,"since":70245,"src":["game"],"name":"Mana Burn","rank":"Rank 4","icon":136170,"cost":[{"power":0,"amount":225}],"castTime":3000,"maxRange":30.0,"effects":[{"index":0,"effect":62,"points":593.0,"perLevel":1.9}]}
 {"key":10876,"since":70245,"src":["game"],"name":"Mana Burn","rank":"Rank 5","icon":136170,"cost":[{"power":0,"amount":270}],"castTime":3000,"maxRange":30.0,"effects":[{"index":0,"effect":62,"points":759.0,"perLevel":2.1}]}
-{"key":10880,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 3","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":300.0,"misc":520}]}
-{"key":10881,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 4","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":500.0,"misc":750}]}
+{"key":10880,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 3","icon":135955,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":300.0,"misc":520}]}
+{"key":10881,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 4","icon":135955,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":500.0,"misc":750}]}
 {"key":10888,"since":70245,"src":["game"],"name":"Psychic Scream","rank":"Rank 3","icon":136184,"cost":[{"power":0,"amount":180}],"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
 {"key":10890,"since":70245,"src":["game"],"name":"Psychic Scream","rank":"Rank 4","icon":136184,"cost":[{"power":0,"amount":210}],"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":7},{"index":1,"effect":6,"aura":31,"points":25.0}]}
 {"key":10892,"since":70245,"src":["game"],"name":"Shadow Word: Pain","rank":"Rank 6","icon":136207,"cost":[{"power":0,"amount":305}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":71.0,"period":3000}]}
@@ -2396,18 +2402,25 @@
 {"key":14280,"since":70245,"src":["game"],"name":"Viper Sting","rank":"Rank 3","icon":132157,"cost":[{"power":0,"amount":215}],"cooldown":15000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":64,"points":277.0,"period":2000}]}
 {"key":14281,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 2","icon":132218,"cost":[{"power":0,"amount":35}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":26.0}]}
 {"key":14281,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":35.0}]}
+{"key":14281,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14282,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 3","icon":132218,"cost":[{"power":0,"amount":50}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":39.0}]}
 {"key":14282,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":50.0}]}
+{"key":14282,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14283,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 4","icon":132218,"cost":[{"power":0,"amount":80}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":65.0}]}
 {"key":14283,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":85.0}]}
+{"key":14283,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14284,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 5","icon":132218,"cost":[{"power":0,"amount":105}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":94.0}]}
 {"key":14284,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":120.0}]}
+{"key":14284,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14285,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 6","icon":132218,"cost":[{"power":0,"amount":135}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":134.0}]}
 {"key":14285,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":175.0}]}
+{"key":14285,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14286,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 7","icon":132218,"cost":[{"power":0,"amount":160}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":170.0}]}
 {"key":14286,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":220.0}]}
+{"key":14286,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14287,"since":70245,"src":["game"],"name":"Arcane Shot","rank":"Rank 8","icon":132218,"cost":[{"power":0,"amount":190}],"cooldown":6000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":217.0}]}
 {"key":14287,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":280.0}]}
+{"key":14287,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":14293,"since":70245,"src":["game"],"name":"Lesser Magic Wand","description":"Creates a lesser magic wand.","icon":135139,"castTime":10000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":14294,"since":70245,"src":["game"],"name":"Volley","rank":"Rank 2","icon":132222,"cost":[{"power":0,"amount":420}],"maxRange":35.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"misc":41244},{"index":2,"effect":6,"aura":226,"period":1000}]}
 {"key":14295,"since":70245,"src":["game"],"name":"Volley","rank":"Rank 3","icon":132222,"cost":[{"power":0,"amount":490}],"maxRange":35.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"misc":41242},{"index":2,"effect":6,"aura":226,"period":1000}]}
@@ -2538,7 +2551,7 @@
 {"key":15407,"since":70245,"src":["game"],"name":"Mind Flay","rank":"Rank 1","icon":136208,"cost":[{"power":0,"amount":45}],"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":3,"points":21.0,"period":1000},{"index":1,"effect":6,"aura":33,"points":-50.0}]}
 {"key":15430,"since":70245,"src":["game"],"name":"Holy Nova","rank":"Rank 2","icon":135922,"cost":[{"power":0,"amount":290}],"effects":[{"index":0,"effect":2,"points":49.0,"perLevel":0.4}]}
 {"key":15431,"since":70245,"src":["game"],"name":"Holy Nova","rank":"Rank 3","icon":135922,"cost":[{"power":0,"amount":400}],"effects":[{"index":0,"effect":2,"points":75.0,"perLevel":0.6}]}
-{"key":15473,"since":70245,"src":["game"],"name":"Shadowform","icon":136200,"cooldown":1500,"effects":[{"index":0,"effect":6,"aura":36,"misc":28},{"index":1,"effect":6,"aura":79,"points":10.0,"misc":32},{"index":2,"effect":6,"aura":87,"points":-15.0,"misc":1},{"index":3,"effect":6,"aura":72,"points":-50.0,"misc":32},{"index":4,"effect":6,"aura":108,"points":100.0,"misc":15}]}
+{"key":15473,"since":70245,"src":["game"],"name":"Shadowform","icon":136200,"cost":[{"power":0,"percent":40}],"cooldown":1500,"effects":[{"index":0,"effect":6,"aura":36,"misc":28},{"index":1,"effect":6,"aura":79,"points":10.0,"misc":32},{"index":2,"effect":6,"aura":87,"points":-15.0,"misc":1},{"index":3,"effect":6,"aura":72,"points":-50.0,"misc":32},{"index":4,"effect":6,"aura":108,"points":100.0,"misc":15}]}
 {"key":15487,"since":70245,"src":["game"],"name":"Silence","icon":136164,"cost":[{"power":0,"amount":225}],"cooldown":45000,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":27,"points":1.0,"misc":126}]}
 {"key":15590,"since":70245,"src":["game"],"name":"Fist Weapons","icon":132938,"effects":[{"index":0,"effect":60}]}
 {"key":15596,"since":70245,"src":["game"],"name":"Smoking Heart of the Mountain","icon":134084,"castTime":30000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -2802,7 +2815,9 @@
 {"key":17359,"since":70245,"src":["game"],"name":"Mana Tide Totem","rank":"Rank 3","icon":135861,"cost":[{"power":0,"amount":60}],"cooldown":300000,"effects":[{"index":0,"effect":28,"points":5.0,"misc":11101}]}
 {"key":17359,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":30}]}
 {"key":17364,"since":70245,"src":["game"],"name":"Stormstrike","icon":132314,"cost":[{"power":0,"amount":125}],"cooldown":8000,"maxRange":5.0,"effects":[{"index":0,"effect":121},{"index":1,"effect":6,"aura":271,"points":20.0}]}
+{"key":17364,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"percent":8}]}
 {"key":17364,"since":70755,"day":"2026-11-03","src":["game"],"cooldown":6000,"effects":[{"index":0,"effect":121},{"index":1,"effect":6,"aura":271,"points":20.0},{"index":2,"effect":31,"points":150.0}]}
+{"key":17364,"since":70938,"day":"2026-11-15","src":["game"],"cooldown":8000,"effects":[{"index":0,"effect":121},{"index":1,"effect":6,"aura":271,"points":20.0},{"index":2,"effect":31,"points":100.0}]}
 {"key":17401,"since":70245,"src":["game"],"name":"Hurricane","rank":"Rank 2","icon":136018,"cost":[{"power":0,"amount":1180}],"maxRange":30.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"points":-20.0,"misc":41198},{"index":2,"effect":6,"aura":226,"period":1000}]}
 {"key":17402,"since":70245,"src":["game"],"name":"Hurricane","rank":"Rank 3","icon":136018,"cost":[{"power":0,"amount":1495}],"maxRange":30.0,"effects":[{"index":0,"effect":3,"perLevel":0.3},{"index":1,"effect":179,"points":-20.0,"misc":41170},{"index":2,"effect":6,"aura":226,"period":1000}]}
 {"key":17450,"since":70245,"src":["game"],"name":"Ivory Raptor","description":"Summons and dismisses a rideable Raptor.  This is a very fast mount.","icon":132253,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":7706}]}
@@ -2922,7 +2937,7 @@
 {"key":18181,"since":70245,"src":["game"],"name":"Improved Curse of Weakness","rank":"Rank 3","icon":136138,"effects":[{"index":0,"effect":6,"aura":108,"points":20.0,"misc":8}]}
 {"key":18182,"since":70245,"src":["game"],"name":"Improved Life Tap","icon":136126,"effects":[{"index":0,"effect":6,"aura":4}]}
 {"key":18218,"since":70245,"src":["game"],"name":"Grim Reach","icon":136127,"effects":[{"index":0,"effect":6,"aura":108,"points":20.0,"misc":5}]}
-{"key":18223,"since":70245,"src":["game"],"name":"Curse of Exhaustion","icon":136162,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-30.0}]}
+{"key":18223,"since":70245,"src":["game"],"name":"Curse of Exhaustion","icon":136162,"cost":[{"power":0,"percent":8}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-30.0}]}
 {"key":18238,"since":70245,"src":["game"],"name":"Spotted Yellowtail","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":18239,"since":70245,"src":["game"],"name":"Cooked Glossy Mightfish","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":18240,"since":70245,"src":["game"],"name":"Grilled Squid","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -2995,8 +3010,9 @@
 {"key":18459,"since":70245,"src":["game"],"name":"Incineration","icon":135813,"effects":[{"index":0,"effect":6,"aura":107,"points":6.0,"misc":7}]}
 {"key":18462,"since":70245,"src":["game"],"name":"Arcane Meditation","icon":136208,"effects":[{"index":0,"effect":6,"aura":134,"points":50.0}]}
 {"key":18499,"since":70245,"src":["game"],"name":"Berserker Rage","icon":136009,"cooldown":30000,"effects":[{"index":0,"effect":6,"aura":77,"misc":5},{"index":1,"effect":6,"aura":77,"misc":14}]}
+{"key":18499,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":77,"misc":5},{"index":1,"effect":6,"aura":77,"misc":14},{"index":2,"effect":6,"aura":77,"misc":30}]}
 {"key":18530,"since":70245,"src":["game"],"name":"Divine Fury","icon":135971,"effects":[{"index":0,"effect":6,"aura":107,"points":-500.0,"misc":10}]}
-{"key":18540,"since":70245,"src":["game"],"name":"Ritual of Doom","description":"Begins a ritual that sacrifices a random participant to summon a doomguard.  The doomguard must be immediately subjugated or it will attack the ritual participants.  Requires the caster and 4 additional party members to complete the ritual.  In order to participate, all players must right-click the portal and not move until the ritual is complete.","icon":136120,"castTime":10000,"cooldown":3600000,"maxRange":30.0,"effects":[{"index":0,"effect":50,"points":1.0,"misc":177193}]}
+{"key":18540,"since":70245,"src":["game"],"name":"Ritual of Doom","description":"Begins a ritual that sacrifices a random participant to summon a doomguard.  The doomguard must be immediately subjugated or it will attack the ritual participants.  Requires the caster and 4 additional party members to complete the ritual.  In order to participate, all players must right-click the portal and not move until the ritual is complete.","icon":136120,"cost":[{"power":0,"percent":100}],"castTime":10000,"cooldown":3600000,"maxRange":30.0,"effects":[{"index":0,"effect":50,"points":1.0,"misc":177193}]}
 {"key":18544,"since":70245,"src":["game"],"name":"Force of Will","rank":"Rank 1","icon":136092,"effects":[{"index":0,"effect":6,"aura":107,"points":1.0,"misc":7},{"index":1,"effect":6,"aura":108,"points":1.0},{"index":2,"effect":6,"aura":108,"points":1.0,"misc":22}]}
 {"key":18547,"since":70245,"src":["game"],"name":"Force of Will","rank":"Rank 2","icon":136092,"effects":[{"index":0,"effect":6,"aura":107,"points":2.0,"misc":7},{"index":1,"effect":6,"aura":108,"points":2.0},{"index":2,"effect":6,"aura":108,"points":2.0,"misc":22}]}
 {"key":18548,"since":70245,"src":["game"],"name":"Force of Will","rank":"Rank 3","icon":136092,"effects":[{"index":0,"effect":6,"aura":107,"points":3.0,"misc":7},{"index":1,"effect":6,"aura":108,"points":3.0},{"index":2,"effect":6,"aura":108,"points":3.0,"misc":22}]}
@@ -3004,8 +3020,9 @@
 {"key":18550,"since":70245,"src":["game"],"name":"Force of Will","rank":"Rank 5","icon":136092,"effects":[{"index":0,"effect":6,"aura":107,"points":5.0,"misc":7},{"index":1,"effect":6,"aura":108,"points":5.0},{"index":2,"effect":6,"aura":108,"points":5.0,"misc":22}]}
 {"key":18551,"since":70245,"src":["game"],"name":"Mental Strength","icon":136031,"effects":[{"index":0,"effect":6,"aura":137,"points":15.0}]}
 {"key":18560,"since":70245,"src":["game"],"name":"Mooncloth","icon":132149,"castTime":60000,"cooldown":342000000,"effects":[{"index":0,"effect":24,"points":1.0},{"index":1,"effect":3,"points":4.0}]}
-{"key":18562,"since":70245,"src":["game"],"name":"Swiftmend","description":"Instantly heals a target with an active Rejuvenation or Regrowth effect for an amount equal to the full duration of the periodic effect of one of those spells.","icon":134914,"cooldown":15000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":1.0}]}
+{"key":18562,"since":70245,"src":["game"],"name":"Swiftmend","description":"Instantly heals a target with an active Rejuvenation or Regrowth effect for an amount equal to the full duration of the periodic effect of one of those spells.","icon":134914,"cost":[{"power":0,"percent":20}],"cooldown":15000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":1.0}]}
 {"key":18562,"since":70707,"day":"2026-10-31","src":["game"],"description":"Instantly heals a target with your active Rejuvenation or Regrowth effect for an amount equal to the full duration of the periodic effect of the consumed spell."}
+{"key":18562,"since":70938,"day":"2026-11-15","src":["game"],"description":"Instantly heals a target with your active Rejuvenation or Regrowth effect for an amount equal to the full duration of the periodic effect."}
 {"key":18629,"since":70245,"src":["game"],"name":"Runecloth Bandage","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":18630,"since":70245,"src":["game"],"name":"Heavy Runecloth Bandage","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":18647,"since":70245,"src":["game"],"name":"Banish","rank":"Rank 2","icon":136135,"cost":[{"power":0,"amount":200}],"castTime":1500,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":12},{"index":1,"effect":6,"aura":39,"misc":127}]}
@@ -3055,7 +3072,7 @@
 {"key":18991,"since":70245,"src":["game"],"name":"Green Kodo","description":"Summons and dismisses a rideable green kodo.  This is a very fast mount.","icon":132244,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":12151}]}
 {"key":18992,"since":70245,"src":["game"],"name":"Teal Kodo","description":"Summons and dismisses a rideable teal kodo.  This is a very fast mount.","icon":132244,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":12148}]}
 {"key":18995,"since":70245,"src":["game"],"name":"Kodo Riding","rank":"Passive","icon":136103,"effects":[{"index":0,"effect":3}]}
-{"key":19028,"since":70245,"src":["game"],"name":"Soul Link","icon":136160,"maxRange":100.0,"effects":[{"index":0,"effect":3}]}
+{"key":19028,"since":70245,"src":["game"],"name":"Soul Link","icon":136160,"cost":[{"power":0,"percent":20}],"maxRange":100.0,"effects":[{"index":0,"effect":3}]}
 {"key":19047,"since":70245,"src":["game"],"name":"Cured Rugged Hide","icon":136235,"castTime":12500,"effects":[{"index":0,"effect":24,"points":2.0}]}
 {"key":19048,"since":70245,"src":["game"],"name":"Heavy Scorpid Bracers","icon":136235,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":19049,"since":70245,"src":["game"],"name":"Wicked Leather Gauntlets","icon":136235,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -3200,7 +3217,7 @@
 {"key":19480,"since":70245,"src":["game"],"name":"Paranoia","icon":136122,"effects":[{"index":0,"effect":35,"aura":17,"points":30.0}]}
 {"key":19485,"since":70245,"src":["game"],"name":"Mortal Shots","icon":132271,"effects":[{"index":0,"effect":6,"aura":108,"points":30.0,"misc":15}]}
 {"key":19498,"since":70245,"src":["game"],"name":"Hawk Eye","icon":132327,"effects":[{"index":0,"effect":6,"aura":107,"points":6.0,"misc":5}]}
-{"key":19503,"since":70245,"src":["game"],"name":"Scatter Shot","icon":132153,"cooldown":30000,"maxRange":15.0,"effects":[{"index":0,"effect":31,"points":50.0},{"index":1,"effect":6,"aura":5}]}
+{"key":19503,"since":70245,"src":["game"],"name":"Scatter Shot","icon":132153,"cost":[{"power":0,"percent":8}],"cooldown":30000,"maxRange":15.0,"effects":[{"index":0,"effect":31,"points":50.0},{"index":1,"effect":6,"aura":5}]}
 {"key":19505,"since":70245,"src":["game"],"name":"Devour Magic","rank":"Rank 1","icon":136075,"cost":[{"power":0,"amount":100}],"cooldown":8000,"maxRange":30.0,"effects":[{"index":0,"effect":38,"points":1.0,"misc":1}]}
 {"key":19506,"since":70245,"src":["game"],"name":"Trueshot Aura","rank":"Rank 3","icon":132329,"cost":[{"power":0,"amount":325}],"effects":[{"index":0,"effect":35,"aura":124,"points":50.0}]}
 {"key":19506,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":65,"aura":124,"points":30.0}]}
@@ -3213,8 +3230,8 @@
 {"key":19559,"since":70245,"src":["game"],"name":"Pathfinding","icon":132242,"effects":[{"index":0,"effect":6,"aura":107,"points":6.0,"misc":3}]}
 {"key":19567,"since":70245,"src":["game"],"name":"Salt Shaker","icon":136235,"castTime":45000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":19572,"since":70245,"src":["game"],"name":"Improved Mend Pet","icon":132179,"effects":[{"index":0,"effect":6,"aura":4,"points":50.0},{"index":1,"effect":6,"aura":108,"points":-20.0,"misc":14}]}
-{"key":19574,"since":70245,"src":["game"],"name":"Bestial Wrath","icon":132127,"cooldown":120000,"maxRange":100.0,"effects":[{"index":0,"effect":6,"aura":61,"points":50.0},{"index":1,"effect":6,"aura":79,"points":50.0,"misc":127},{"index":2,"effect":6,"aura":77,"misc":12},{"index":3,"effect":6,"aura":77,"misc":1},{"index":4,"effect":6,"aura":77,"misc":5},{"index":5,"effect":6,"aura":77,"misc":17},{"index":6,"effect":6,"aura":77,"misc":14},{"index":7,"effect":6,"aura":77,"misc":13},{"index":8,"effect":6,"aura":77,"misc":24},{"index":9,"effect":6,"aura":77,"misc":7},{"index":10,"effect":6,"aura":77,"misc":10},{"index":11,"effect":6,"aura":77,"misc":11},{"index":12,"effect":6,"aura":77,"misc":2}]}
-{"key":19577,"since":70245,"src":["game"],"name":"Intimidation","icon":132111,"cooldown":60000,"maxRange":100.0,"effects":[{"index":0,"effect":6,"aura":42,"trigger":24394},{"index":1,"effect":6,"aura":290,"points":100.0}]}
+{"key":19574,"since":70245,"src":["game"],"name":"Bestial Wrath","icon":132127,"cost":[{"power":0,"percent":12}],"cooldown":120000,"maxRange":100.0,"effects":[{"index":0,"effect":6,"aura":61,"points":50.0},{"index":1,"effect":6,"aura":79,"points":50.0,"misc":127},{"index":2,"effect":6,"aura":77,"misc":12},{"index":3,"effect":6,"aura":77,"misc":1},{"index":4,"effect":6,"aura":77,"misc":5},{"index":5,"effect":6,"aura":77,"misc":17},{"index":6,"effect":6,"aura":77,"misc":14},{"index":7,"effect":6,"aura":77,"misc":13},{"index":8,"effect":6,"aura":77,"misc":24},{"index":9,"effect":6,"aura":77,"misc":7},{"index":10,"effect":6,"aura":77,"misc":10},{"index":11,"effect":6,"aura":77,"misc":11},{"index":12,"effect":6,"aura":77,"misc":2}]}
+{"key":19577,"since":70245,"src":["game"],"name":"Intimidation","icon":132111,"cost":[{"power":0,"percent":8}],"cooldown":60000,"maxRange":100.0,"effects":[{"index":0,"effect":6,"aura":42,"trigger":24394},{"index":1,"effect":6,"aura":290,"points":100.0}]}
 {"key":19578,"since":70245,"src":["game"],"name":"Spirit Bond","icon":132121,"effects":[{"index":0,"effect":6,"aura":4,"points":1.0},{"index":1,"effect":3,"points":5.0}]}
 {"key":19583,"since":70245,"src":["game"],"name":"Endurance Training","icon":136080,"effects":[{"index":0,"effect":6,"aura":107,"points":15.0,"misc":8}]}
 {"key":19590,"since":70245,"src":["game"],"name":"Bestial Discipline","icon":136006,"effects":[{"index":0,"effect":6,"aura":107,"points":100.0,"misc":8},{"index":1,"effect":6,"aura":134,"points":50.0}]}
@@ -3351,7 +3368,7 @@
 {"key":20154,"since":70245,"src":["game"],"name":"Seal of Righteousness","rank":"Rank 1","icon":132325,"cost":[{"power":0,"amount":20}],"effects":[{"index":0,"effect":6,"aura":4,"points":108.0,"perLevel":18.0}]}
 {"key":20162,"since":70245,"src":["game"],"name":"Seal of the Crusader","rank":"Rank 2","icon":135924,"cost":[{"power":0,"amount":40}],"effects":[{"index":0,"effect":6,"aura":99,"points":51.0,"perLevel":1.1},{"index":1,"effect":6,"aura":9,"points":40.0},{"index":2,"effect":6,"aura":4,"points":20188.0}]}
 {"key":20163,"since":70245,"src":["game"],"name":"Seal of Fury","rank":"Rank 3","icon":135957,"cost":[{"power":0,"amount":90}],"effects":[{"index":0,"effect":6,"aura":4,"points":486.9,"perLevel":27.9,"trigger":20231},{"index":1,"points":50.0},{"index":2,"effect":6,"aura":4,"points":20183.0,"trigger":20231}]}
-{"key":20164,"since":70245,"src":["game"],"name":"Seal of Justice","icon":135971,"effects":[{"index":0,"effect":6,"aura":42,"trigger":20170},{"index":2,"effect":6,"aura":4,"points":20184.0}]}
+{"key":20164,"since":70245,"src":["game"],"name":"Seal of Justice","icon":135971,"cost":[{"power":0,"percent":13}],"effects":[{"index":0,"effect":6,"aura":42,"trigger":20170},{"index":2,"effect":6,"aura":4,"points":20184.0}]}
 {"key":20165,"since":70245,"src":["game"],"name":"Seal of Light","rank":"Rank 1","icon":135917,"cost":[{"power":0,"amount":110}],"effects":[{"index":0,"effect":6,"aura":42,"trigger":20167},{"index":2,"effect":6,"aura":4,"points":20185.0}]}
 {"key":20166,"since":70245,"src":["game"],"name":"Seal of Wisdom","rank":"Rank 1","icon":135960,"cost":[{"power":0,"amount":135}],"effects":[{"index":0,"effect":6,"aura":42,"trigger":20168},{"index":2,"effect":6,"aura":4,"points":20186.0}]}
 {"key":20174,"since":70245,"src":["game"],"name":"Guardian's Favor","icon":135964,"effects":[{"index":0,"effect":6,"aura":107,"points":-60000.0,"misc":11},{"index":1,"effect":6,"aura":107,"points":3000.0,"misc":1}]}
@@ -3363,8 +3380,8 @@
 {"key":20201,"since":70245,"src":["game"],"name":"Arcanite Rod","icon":136192,"castTime":45000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":20205,"since":70245,"src":["game"],"name":"Spiritual Focus","icon":135736,"effects":[{"index":0,"effect":6,"aura":108,"points":14.0,"misc":9}]}
 {"key":20210,"since":70245,"src":["game"],"name":"Illumination","icon":135913,"effects":[{"index":0,"effect":6,"aura":42,"trigger":18350},{"index":1,"effect":6,"aura":4,"points":50.0},{"index":2,"effect":6,"aura":4,"points":50.0},{"index":3,"effect":6,"aura":4,"points":10.0}]}
-{"key":20216,"since":70245,"src":["game"],"name":"Divine Favor","icon":135915,"cooldown":120000,"effects":[{"index":0,"effect":6,"aura":107,"points":100.0,"misc":7}]}
-{"key":20217,"since":70245,"src":["game"],"name":"Blessing of Kings","icon":135995,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":137,"points":10.0,"misc":-1}]}
+{"key":20216,"since":70245,"src":["game"],"name":"Divine Favor","icon":135915,"cost":[{"power":0,"percent":4}],"cooldown":120000,"effects":[{"index":0,"effect":6,"aura":107,"points":100.0,"misc":7}]}
+{"key":20217,"since":70245,"src":["game"],"name":"Blessing of Kings","icon":135995,"cost":[{"power":0,"percent":8}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":137,"points":10.0,"misc":-1}]}
 {"key":20219,"since":70245,"src":["game"],"name":"Gnomish Engineer","description":"Allows an engineer to make fantastic, yet unreliable gnomish devices.","icon":132996,"effects":[{"index":0,"effect":47}]}
 {"key":20222,"since":70245,"src":["game"],"name":"Goblin Engineer","description":"Allows an engineer to make lethal goblin devices.","icon":135826,"effects":[{"index":0,"effect":47}]}
 {"key":20224,"since":70245,"src":["game"],"name":"Improved Seals","icon":132325,"effects":[{"index":0,"effect":6,"aura":108,"points":3.0}]}
@@ -3380,7 +3397,7 @@
 {"key":20254,"since":70245,"src":["game"],"name":"Improved Concentration Aura","icon":135933,"effects":[{"index":0,"effect":6,"aura":107,"points":15.0,"misc":3},{"index":1,"effect":6,"aura":107,"points":30.0,"misc":23},{"index":2,"effect":6,"aura":107,"points":30.0,"misc":32}]}
 {"key":20257,"since":70245,"src":["game"],"name":"Divine Intellect","icon":136090,"effects":[{"index":0,"effect":6,"aura":137,"points":2.0}]}
 {"key":20262,"since":70245,"src":["game"],"name":"Divine Strength","icon":132154,"effects":[{"index":0,"effect":6,"aura":137,"points":2.0}]}
-{"key":20271,"since":70245,"src":["game"],"name":"Judgement","description":"Unleash the energy of a Seal spell upon an enemy. Does not consume the Seal. Refer to individual Seals for Judgement effect.","icon":135959,"cooldown":10000,"maxRange":10.0,"effects":[{"index":0,"effect":77}]}
+{"key":20271,"since":70245,"src":["game"],"name":"Judgement","description":"Unleash the energy of a Seal spell upon an enemy. Does not consume the Seal. Refer to individual Seals for Judgement effect.","icon":135959,"cost":[{"power":0,"percent":6}],"cooldown":10000,"maxRange":10.0,"effects":[{"index":0,"effect":77}]}
 {"key":20287,"since":70245,"src":["game"],"name":"Seal of Righteousness","rank":"Rank 2","icon":132325,"cost":[{"power":0,"amount":40}],"effects":[{"index":0,"effect":6,"aura":4,"points":216.0,"perLevel":17.0},{"index":2,"effect":6,"aura":4,"points":20280.0}]}
 {"key":20288,"since":70245,"src":["game"],"name":"Seal of Righteousness","rank":"Rank 3","icon":132325,"cost":[{"power":0,"amount":60}],"effects":[{"index":0,"effect":6,"aura":4,"points":352.0,"perLevel":23.0},{"index":2,"effect":6,"aura":4,"points":20281.0}]}
 {"key":20289,"since":70245,"src":["game"],"name":"Seal of Righteousness","rank":"Rank 4","icon":132325,"cost":[{"power":0,"amount":90}],"effects":[{"index":0,"effect":6,"aura":4,"points":541.0,"perLevel":31.0},{"index":2,"effect":6,"aura":4,"points":20282.0}]}
@@ -3410,7 +3427,7 @@
 {"key":20423,"since":70245,"src":["game"],"name":"Seal of Fury","rank":"Rank 7","icon":135957,"cost":[{"power":0,"amount":200}],"effects":[{"index":0,"effect":6,"aura":4,"points":1607.0,"perLevel":42.0,"trigger":20418},{"index":1,"points":50.0},{"index":2,"effect":6,"aura":4,"points":20414.0}]}
 {"key":20468,"since":70245,"src":["game"],"name":"Improved Righteous Fury","icon":135962,"effects":[{"index":0,"effect":6,"aura":107,"points":-6.0,"misc":12}]}
 {"key":20473,"since":70245,"src":["game"],"name":"Holy Shock","rank":"Rank 2","icon":135972,"cost":[{"power":0,"amount":225}],"cooldown":10000,"maxRange":20.0,"effects":[{"index":0,"effect":3}]}
-{"key":20484,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 1","icon":136080,"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":400.0,"misc":700}]}
+{"key":20484,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 1","icon":136080,"cost":[{"power":0,"percent":85}],"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":400.0,"misc":700}]}
 {"key":20487,"since":70245,"src":["game"],"name":"Improved Hammer of Justice","icon":135963,"effects":[{"index":0,"effect":6,"aura":107,"points":-5000.0,"misc":11}]}
 {"key":20500,"since":70245,"src":["game"],"name":"Improved Berserker Rage","icon":136009,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0},{"index":1,"effect":6,"aura":4,"points":100.0}]}
 {"key":20502,"since":70245,"src":["game"],"name":"Improved Execute","icon":135358,"effects":[{"index":0,"effect":6,"aura":107,"points":-50.0,"misc":14}]}
@@ -3433,6 +3450,7 @@
 {"key":20574,"since":70245,"src":["game"],"name":"Axe Specialization","rank":"Racial Passive","icon":132393,"effects":[{"index":0,"effect":6,"aura":290,"points":1.0}]}
 {"key":20575,"since":70707,"day":"2026-10-31","src":["game"],"name":"Command","rank":"Racial Passive","effects":[{"index":0,"effect":6,"aura":107,"points":5.0,"misc":8}]}
 {"key":20575,"since":70755,"day":"2026-11-03","src":["game"],"icon":132366,"effects":[{"index":0,"effect":6,"aura":107,"points":5.0,"misc":8},{"index":1,"effect":6,"aura":108,"points":5.0}]}
+{"key":20575,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":107,"points":5.0,"misc":8},{"index":1,"effect":6,"aura":108}]}
 {"key":20576,"since":70707,"day":"2026-10-31","src":["game"],"name":"Command","rank":"Racial Passive","effects":[{"index":0,"effect":6,"aura":107,"points":5.0,"misc":8}]}
 {"key":20576,"since":70755,"day":"2026-11-03","src":["game"],"icon":132366}
 {"key":20577,"since":70245,"src":["game"],"name":"Cannibalize","rank":"Racial","icon":132278,"cooldown":120000,"maxRange":5.0,"effects":[{"index":0,"effect":3}]}
@@ -3450,8 +3468,8 @@
 {"key":20598,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":137,"points":10.0,"misc":4}]}
 {"key":20600,"since":70245,"src":["game"],"name":"Perception","rank":"Racial","icon":136090,"cooldown":180000,"effects":[{"index":0,"effect":6,"aura":17,"points":50.0}]}
 {"key":20608,"since":70245,"src":["game"],"name":"Reincarnation","rank":"Passive","icon":136080,"cooldown":3600000,"effects":[{"index":0,"effect":6,"aura":4}]}
-{"key":20609,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 2","icon":136077,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":150.0,"misc":260}]}
-{"key":20610,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 3","icon":136077,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":250.0,"misc":420}]}
+{"key":20609,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 2","icon":136077,"cost":[{"power":0,"percent":90}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":150.0,"misc":260}]}
+{"key":20610,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 3","icon":136077,"cost":[{"power":0,"percent":90}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":250.0,"misc":420}]}
 {"key":20616,"since":70245,"src":["game"],"name":"Intercept","rank":"Rank 2","icon":132307,"cost":[{"power":1,"amount":100}],"cooldown":30000,"minRange":8.0,"maxRange":25.0,"effects":[{"index":0,"effect":96},{"index":1,"effect":64,"trigger":20614}]}
 {"key":20617,"since":70245,"src":["game"],"name":"Intercept","rank":"Rank 3","icon":132307,"cost":[{"power":1,"amount":100}],"cooldown":30000,"minRange":8.0,"maxRange":25.0,"effects":[{"index":0,"effect":96},{"index":1,"effect":64,"trigger":20615}]}
 {"key":20626,"since":70245,"src":["game"],"name":"Undermine Clam Chowder","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":2.0}]}
@@ -3466,19 +3484,19 @@
 {"key":20719,"since":70245,"src":["game"],"name":"Feline Grace","rank":"Passive","description":"Reduces damage from falling.","icon":132914,"effects":[{"index":0,"effect":6,"aura":144,"points":17.0}]}
 {"key":20729,"since":70245,"src":["game"],"name":"Blessing of Sacrifice","rank":"Rank 2","icon":135966,"cost":[{"power":0,"amount":100}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":562,"points":55.0,"misc":127}]}
 {"key":20736,"since":70245,"src":["game"],"name":"Distracting Shot","rank":"Rank 1","description":"Distract the target, causing threat.","icon":135736,"cost":[{"power":0,"amount":20}],"cooldown":8000,"minRange":8.0,"maxRange":35.0,"effects":[{"index":0,"effect":63,"points":110.0,"perLevel":1.5}]}
-{"key":20739,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 2","icon":136080,"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":750.0,"misc":1200}]}
-{"key":20742,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 3","icon":136080,"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":1100.0,"misc":1700}]}
-{"key":20747,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 4","icon":136080,"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":1600.0,"misc":2200}]}
-{"key":20748,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 5","icon":136080,"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":2200.0,"misc":2800}]}
-{"key":20752,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 2","icon":136210,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":20755,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 3","icon":136210,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":20756,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 4","icon":136210,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":20757,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 5","icon":136210,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":20770,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 5","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":750.0,"misc":1000}]}
-{"key":20772,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 4","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":400.0,"misc":600}]}
-{"key":20773,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 5","icon":135955,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":600.0,"misc":800}]}
-{"key":20776,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 4","icon":136077,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":400.0,"misc":600}]}
-{"key":20777,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 5","icon":136077,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":600.0,"misc":800}]}
+{"key":20739,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 2","icon":136080,"cost":[{"power":0,"percent":85}],"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":750.0,"misc":1200}]}
+{"key":20742,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 3","icon":136080,"cost":[{"power":0,"percent":85}],"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":1100.0,"misc":1700}]}
+{"key":20747,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 4","icon":136080,"cost":[{"power":0,"percent":85}],"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":1600.0,"misc":2200}]}
+{"key":20748,"since":70245,"src":["game"],"name":"Rebirth","rank":"Rank 5","icon":136080,"cost":[{"power":0,"percent":85}],"castTime":2000,"cooldown":1800000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":2200.0,"misc":2800}]}
+{"key":20752,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 2","icon":136210,"cost":[{"power":0,"percent":85}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
+{"key":20755,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 3","icon":136210,"cost":[{"power":0,"percent":85}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
+{"key":20756,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 4","icon":136210,"cost":[{"power":0,"percent":85}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
+{"key":20757,"since":70245,"src":["game"],"name":"Create Soulstone","rank":"Rank 5","icon":136210,"cost":[{"power":0,"percent":85}],"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
+{"key":20770,"since":70245,"src":["game"],"name":"Resurrection","rank":"Rank 5","icon":135955,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":750.0,"misc":1000}]}
+{"key":20772,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 4","icon":135955,"cost":[{"power":0,"percent":80}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":400.0,"misc":600}]}
+{"key":20773,"since":70245,"src":["game"],"name":"Redemption","rank":"Rank 5","icon":135955,"cost":[{"power":0,"percent":80}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":600.0,"misc":800}]}
+{"key":20776,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 4","icon":136077,"cost":[{"power":0,"percent":90}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":400.0,"misc":600}]}
+{"key":20777,"since":70245,"src":["game"],"name":"Ancestral Spirit","rank":"Rank 5","icon":136077,"cost":[{"power":0,"percent":90}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":600.0,"misc":800}]}
 {"key":20848,"since":70245,"src":["game"],"name":"Flarecore Mantle","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":20849,"since":70245,"src":["game"],"name":"Flarecore Gloves","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":20853,"since":70245,"src":["game"],"name":"Corehound Boots","icon":136235,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -3535,6 +3553,7 @@
 {"key":21175,"since":70245,"src":["game"],"name":"Spider Sausage","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":21178,"since":70245,"src":["game"],"name":"Bear Form (Passive2)","rank":"Passive","icon":132276,"effects":[{"index":0,"effect":6,"aura":10,"points":30.0,"misc":127}]}
 {"key":21178,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":10,"points":50.0,"misc":127}]}
+{"key":21178,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":10,"points":115.0,"misc":127}]}
 {"key":21551,"since":70245,"src":["game"],"name":"Mortal Strike","rank":"Rank 2","icon":132355,"cost":[{"power":1,"amount":300}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":6,"aura":118,"points":-50.0,"misc":127},{"index":1,"effect":121,"points":110.0}]}
 {"key":21552,"since":70245,"src":["game"],"name":"Mortal Strike","rank":"Rank 3","icon":132355,"cost":[{"power":1,"amount":300}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":6,"aura":118,"points":-50.0,"misc":127},{"index":1,"effect":121,"points":135.0}]}
 {"key":21553,"since":70245,"src":["game"],"name":"Mortal Strike","rank":"Rank 4","icon":132355,"cost":[{"power":1,"amount":300}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":6,"aura":118,"points":-50.0,"misc":127},{"index":1,"effect":121,"points":160.0}]}
@@ -3816,7 +3835,7 @@
 {"key":24849,"since":70245,"src":["game"],"name":"Sandstalker Bracers","icon":136235,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":24850,"since":70245,"src":["game"],"name":"Sandstalker Gauntlets","icon":136235,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":24851,"since":70245,"src":["game"],"name":"Sandstalker Breastplate","icon":136235,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":24858,"since":70245,"src":["game"],"name":"Moonkin Form","rank":"Shapeshift","icon":136036,"effects":[{"index":0,"effect":6,"aura":36,"misc":31},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":64,"trigger":24907},{"index":3,"effect":6,"aura":4},{"index":4,"effect":6,"aura":108,"points":100.0,"misc":18},{"index":5,"effect":6,"aura":108,"points":-50.0,"misc":38}]}
+{"key":24858,"since":70245,"src":["game"],"name":"Moonkin Form","rank":"Shapeshift","icon":136036,"cost":[{"power":0,"percent":35}],"effects":[{"index":0,"effect":6,"aura":36,"misc":31},{"index":1,"effect":6,"aura":77,"misc":17},{"index":2,"effect":64,"trigger":24907},{"index":3,"effect":6,"aura":4},{"index":4,"effect":6,"aura":108,"points":100.0,"misc":18},{"index":5,"effect":6,"aura":108,"points":-50.0,"misc":38}]}
 {"key":24901,"since":70245,"src":["game"],"name":"Runed Stygian Leggings","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":24902,"since":70245,"src":["game"],"name":"Runed Stygian Belt","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":24903,"since":70245,"src":["game"],"name":"Runed Stygian Boots","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -3889,7 +3908,7 @@
 {"key":25659,"since":70245,"src":["game"],"name":"Dirge's Kickin' Chimaerok Chops","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":5.0}]}
 {"key":25675,"since":70245,"src":["game"],"name":"Reindeer","description":"Summons and dismisses a reindeer mount.","icon":134400,"effects":[{"index":0,"effect":6,"aura":78,"misc":15524}]}
 {"key":25704,"since":70245,"src":["game"],"name":"Smoked Sagefish","icon":136192,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
-{"key":25780,"since":70245,"src":["game"],"name":"Righteous Fury","icon":135962,"effects":[{"index":0,"effect":6,"aura":10,"points":60.0,"misc":2},{"index":1,"effect":6,"aura":87,"misc":127},{"index":2,"effect":6,"aura":108,"points":-100.0,"misc":12},{"index":3,"effect":6,"aura":668}]}
+{"key":25780,"since":70245,"src":["game"],"name":"Righteous Fury","icon":135962,"cost":[{"power":0,"percent":30}],"effects":[{"index":0,"effect":6,"aura":10,"points":60.0,"misc":2},{"index":1,"effect":6,"aura":87,"misc":127},{"index":2,"effect":6,"aura":108,"points":-100.0,"misc":12},{"index":3,"effect":6,"aura":668}]}
 {"key":25780,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":10,"points":90.0,"misc":2},{"index":1,"effect":6,"aura":87,"misc":127},{"index":2,"effect":6,"aura":108,"points":-100.0,"misc":23},{"index":3,"effect":6,"aura":668},{"index":4,"effect":6,"aura":10,"points":33.0,"misc":127}]}
 {"key":25782,"since":70245,"src":["game"],"name":"Greater Blessing of Might","rank":"Rank 1","icon":135908,"cost":[{"power":0,"amount":220}],"maxRange":40.0,"effects":[{"index":0,"effect":6,"aura":99,"points":112.0}]}
 {"key":25858,"since":70245,"src":["game"],"name":"Reindeer","description":"Summons and dismisses a rideable reindeer.","icon":133749,"effects":[{"index":0,"effect":6,"aura":78,"misc":15665}]}
@@ -4046,7 +4065,7 @@
 {"key":29086,"since":70245,"src":["game"],"name":"Weapon Mastery","rank":"Rank 3","icon":132215,"effects":[{"index":0,"effect":6,"aura":79,"points":6.0,"misc":1}]}
 {"key":29087,"since":70245,"src":["game"],"name":"Weapon Mastery","rank":"Rank 4","icon":132215,"effects":[{"index":0,"effect":6,"aura":79,"points":8.0,"misc":1}]}
 {"key":29088,"since":70245,"src":["game"],"name":"Weapon Mastery","rank":"Rank 5","icon":132215,"effects":[{"index":0,"effect":6,"aura":79,"points":10.0,"misc":1}]}
-{"key":29166,"since":70245,"src":["game"],"name":"Innervate","icon":136048,"cooldown":360000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":134,"points":100.0},{"index":1,"effect":6,"aura":110,"points":400.0}]}
+{"key":29166,"since":70245,"src":["game"],"name":"Innervate","icon":136048,"cost":[{"power":0,"percent":5}],"cooldown":360000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":134,"points":100.0},{"index":1,"effect":6,"aura":110,"points":400.0}]}
 {"key":29187,"since":70245,"src":["game"],"name":"Natural Grace","icon":136041,"effects":[{"index":0,"effect":6,"aura":10,"points":-30.0,"misc":126}]}
 {"key":29189,"since":70245,"src":["game"],"name":"Healing Grace","rank":"Rank 2","icon":136041,"effects":[{"index":0,"effect":6,"aura":108,"points":-10.0,"misc":2}]}
 {"key":29191,"since":70245,"src":["game"],"name":"Healing Grace","rank":"Rank 3","icon":136041,"effects":[{"index":0,"effect":6,"aura":108,"points":-15.0,"misc":2}]}
@@ -4108,7 +4127,7 @@
 {"key":400102,"since":70245,"src":["game"],"name":"Engrave Pants - Envenom","icon":134596,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6787}]}
 {"key":400104,"since":70245,"src":["game"],"name":"Engrave Pants - Shadowstep","icon":134596,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6785}]}
 {"key":400105,"since":70245,"src":["game"],"name":"Engrave Gloves - Shadowstrike","icon":133816,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6720}]}
-{"key":400574,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 1","icon":135735,"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":54.0,"perLevel":0.9}]}
+{"key":400574,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 1","icon":135735,"cost":[{"power":0,"percent":15}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":54.0,"perLevel":0.9}]}
 {"key":400574,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500,"effects":[{"index":0,"effect":2,"points":32.0,"perLevel":0.5}]}
 {"key":400588,"since":70245,"src":["game"],"name":"Missile Barrage","icon":236221,"effects":[{"index":0,"effect":6,"aura":42,"points":40.0,"trigger":400589},{"index":1,"effect":6,"aura":4,"points":5.0,"trigger":400589}]}
 {"key":400624,"since":70245,"src":["game"],"name":"Heating Up","icon":135809,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0}]}
@@ -4169,7 +4188,7 @@
 {"key":403937,"since":70245,"src":["game"],"name":"Engrave Chest - Lake of Fire","icon":133815,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6815}]}
 {"key":403938,"since":70245,"src":["game"],"name":"Engrave Gloves - Metamorphosis","icon":133816,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6816}]}
 {"key":406634,"since":70245,"src":["game"],"name":"Animated Lobster Molt","description":"Summons and dismisses a rideable Animated Lobster Molt.","icon":133900,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78,"misc":203694}]}
-{"key":407632,"since":70245,"src":["game"],"name":"Hammer of the Righteous","icon":236253,"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":1.0,"targets":4},{"index":1,"effect":3,"points":120.0,"targets":3},{"index":2,"effect":3,"points":3.0,"targets":4}]}
+{"key":407632,"since":70245,"src":["game"],"name":"Hammer of the Righteous","icon":236253,"cost":[{"power":0,"percent":6}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":2,"points":1.0,"targets":4},{"index":1,"effect":3,"points":120.0,"targets":3},{"index":2,"effect":3,"points":3.0,"targets":4}]}
 {"key":407995,"since":70245,"src":["game"],"name":"Primal Bite","rank":"Rank 1","icon":132278,"cost":[{"power":1,"amount":200}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":58,"points":26.0},{"index":1,"effect":31,"points":100.0}]}
 {"key":407995,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":58,"points":42.0},{"index":1,"effect":31,"points":100.0}]}
 {"key":408120,"since":70245,"src":["game"],"name":"Wild Growth","rank":"Rank 1","icon":236153,"cost":[{"power":0,"amount":550}],"cooldown":6000,"maxRange":40.0,"effects":[{"index":0,"effect":6,"aura":8,"points":40.0,"perLevel":1.0,"period":1000},{"index":1,"effect":6,"aura":4,"points":5.0}]}
@@ -4189,12 +4208,13 @@
 {"key":408490,"since":70245,"src":["game"],"name":"Lava Burst","rank":"Rank 1","icon":237582,"cost":[{"power":0,"amount":165}],"castTime":2500,"cooldown":10000,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":164.0,"perLevel":0.9},{"index":1,"effect":3,"points":20.0}]}
 {"key":408490,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":135}],"effects":[{"index":0,"effect":2,"points":123.0,"perLevel":0.8},{"index":1,"effect":3,"points":20.0}]}
 {"key":408498,"since":70245,"src":["game"],"name":"Maelstrom Weapon","icon":237584,"effects":[{"index":0,"effect":6,"aura":4,"points":20.0},{"index":1,"effect":6,"aura":4,"points":50.0},{"index":2,"effect":6,"aura":4,"points":5.0}]}
+{"key":408498,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":4,"points":20.0},{"index":1,"effect":6,"aura":4,"points":2.0},{"index":2,"effect":6,"aura":4,"points":5.0}]}
 {"key":408510,"since":70245,"src":["game"],"name":"Water Shield","icon":132315,"cooldown":15000,"effects":[{"index":0,"effect":6,"aura":42,"points":100.0,"trigger":408511}]}
 {"key":408510,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":6,"aura":42,"points":100.0,"trigger":408511},{"index":1,"effect":6,"aura":4,"points":1.0}]}
 {"key":408521,"since":70245,"src":["game"],"name":"Riptide","rank":"Rank 1","icon":252995,"cost":[{"power":0,"amount":245}],"cooldown":6000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":480.0,"perLevel":3.7},{"index":1,"effect":6,"aura":8,"points":89.0,"period":3000},{"index":2,"effect":6,"aura":4,"points":25.0}]}
 {"key":408521,"since":70755,"day":"2026-11-03","src":["game"],"cost":[{"power":0,"amount":150}],"cooldown":12000,"effects":[{"index":0,"effect":3,"perLevel":3.7},{"index":1,"effect":6,"aura":8,"points":89.0,"period":3000},{"index":2,"effect":6,"aura":4,"points":25.0}]}
 {"key":409163,"since":70245,"src":["game"],"name":"Engrave Belt - Focused Rage","icon":133812,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6834}]}
-{"key":409580,"since":70245,"src":["game"],"name":"Heart of the Lion","icon":132185,"effects":[{"index":0,"effect":6,"aura":137,"points":10.0,"misc":-1},{"index":1,"effect":6,"aura":226,"points":10.0,"period":14000}]}
+{"key":409580,"since":70245,"src":["game"],"name":"Heart of the Lion","icon":132185,"cost":[{"power":0,"percent":8}],"effects":[{"index":0,"effect":6,"aura":137,"points":10.0,"misc":-1},{"index":1,"effect":6,"aura":226,"points":10.0,"period":14000}]}
 {"key":409999,"since":70245,"src":["game"],"name":"Engrave Gloves - Beacon of Light","icon":133816,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6843}]}
 {"key":410001,"since":70245,"src":["game"],"name":"Engrave Gloves - Hand of Reckoning","icon":133816,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6844}]}
 {"key":410002,"since":70245,"src":["game"],"name":"Engrave Gloves - Crusader Strike","icon":133816,"castTime":3000,"effects":[{"index":0,"effect":54,"misc":6845}]}
@@ -4445,12 +4465,12 @@
 {"key":436949,"since":70245,"src":["game"],"name":"Expanded Intellect","icon":236513,"effects":[{"index":0,"effect":6,"aura":108,"points":-50.0,"misc":14},{"index":1,"effect":6,"aura":108,"points":50.0,"misc":1}]}
 {"key":436951,"since":70245,"src":["game"],"name":"Increased Fortitude","icon":237543,"effects":[{"index":0,"effect":6,"aura":108,"points":-50.0,"misc":14},{"index":1,"effect":6,"aura":108,"points":50.0,"misc":1}]}
 {"key":436956,"since":70245,"src":["game"],"name":"Deeper Wilds","icon":132124,"effects":[{"index":0,"effect":6,"aura":108,"points":-50.0,"misc":14},{"index":1,"effect":6,"aura":108,"points":50.0,"misc":1}]}
-{"key":437009,"since":70245,"src":["game"],"name":"Totemic Projection","description":"Relocates your active totems to the specified location.","icon":538574,"cooldown":60000,"maxRange":30.0,"effects":[{"index":0,"effect":28,"misc":15214}]}
+{"key":437009,"since":70245,"src":["game"],"name":"Totemic Projection","description":"Relocates your active totems to the specified location.","icon":538574,"cost":[{"power":0,"percent":25}],"cooldown":60000,"maxRange":30.0,"effects":[{"index":0,"effect":28,"misc":15214}]}
 {"key":437009,"since":70755,"day":"2026-11-03","src":["game"],"name":"Totemic Call","description":"Relocates your active totems to your location.","cooldown":30000}
 {"key":437032,"since":70245,"src":["game"],"name":"Soul Harvest","icon":132851,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0},{"index":1,"effect":6,"aura":4,"points":100.0}]}
-{"key":437138,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 1","icon":132132,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":70.0,"misc":135}]}
-{"key":437169,"since":70245,"src":["game"],"name":"Portal of Summoning","description":"Begins a ritual that creates a summoning portal.  The summoning portal can be used by 2 party or raid members to summon a targeted party or raid member.  The ritual portal requires the caster and 2 additional party or raid members to complete.  In order to participate, all players must be out of combat and right-click the portal and not move until the ritual is complete.","icon":134423,"cooldown":120000,"maxRange":30.0,"effects":[{"index":0,"effect":50,"misc":425889}]}
-{"key":437169,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":3600000}
+{"key":437138,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 1","icon":132132,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":70.0,"misc":135}]}
+{"key":437169,"since":70245,"src":["game"],"name":"Portal of Summoning","description":"Begins a ritual that creates a summoning portal.  The summoning portal can be used by 2 party or raid members to summon a targeted party or raid member.  The ritual portal requires the caster and 2 additional party or raid members to complete.  In order to participate, all players must be out of combat and right-click the portal and not move until the ritual is complete.","icon":134423,"cost":[{"power":0,"percent":12}],"cooldown":120000,"maxRange":30.0,"effects":[{"index":0,"effect":50,"misc":425889}]}
+{"key":437169,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"percent":100}],"cooldown":3600000}
 {"key":438040,"since":70245,"src":["game"],"name":"Redirect","icon":135425,"cooldown":10000,"maxRange":5.0,"effects":[{"index":0,"effect":3},{"index":1,"effect":6,"aura":4}]}
 {"key":439085,"since":70245,"src":["game"],"name":"Crimson Silk Robe","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":439086,"since":70245,"src":["game"],"name":"Black Mageweave Vest","icon":132149,"castTime":60000,"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -4816,7 +4836,7 @@
 {"key":1225214,"since":70245,"src":["game"],"name":"Demonic Energies","icon":237564,"effects":[{"index":0,"effect":6,"aura":4,"points":15.0},{"index":1,"effect":6,"aura":4,"points":100.0}]}
 {"key":1225217,"since":70245,"src":["game"],"name":"Improved Felhunter","icon":136217,"effects":[{"index":0,"effect":6,"aura":108,"points":30.0,"misc":8},{"index":1,"effect":6,"aura":107,"points":-6000.0,"misc":11}]}
 {"key":1225220,"since":70245,"src":["game"],"name":"Molten Skin","icon":132221,"effects":[{"index":0,"effect":6,"aura":87,"points":-10.0,"misc":127}]}
-{"key":1225228,"since":70245,"src":["game"],"name":"Bane of Havoc","icon":460695,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":4,"points":15.0}]}
+{"key":1225228,"since":70245,"src":["game"],"name":"Bane of Havoc","icon":460695,"cost":[{"power":0,"percent":5}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":4,"points":15.0}]}
 {"key":1225295,"since":70245,"src":["game"],"name":"Precision","icon":132222,"effects":[{"index":0,"effect":6,"aura":54,"points":3.0},{"index":1,"effect":6,"aura":55,"points":3.0}]}
 {"key":1225435,"since":70245,"src":["game"],"name":"Bountiful Harvest","icon":133651,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0},{"index":1,"effect":6,"aura":4,"points":-10.0}]}
 {"key":1225451,"since":70245,"src":["game"],"name":"Working Overtime","icon":134378,"effects":[{"index":0,"effect":6,"aura":657,"points":10.0}]}
@@ -4889,10 +4909,10 @@
 {"key":1237312,"since":70245,"src":["game"],"name":"Frostfire Bolt","rank":"Rank 2","icon":236217,"cost":[{"power":0,"amount":285}],"castTime":3000,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-40.0},{"index":1,"effect":2,"points":182.0,"perLevel":1.7},{"index":2,"effect":6,"aura":3,"points":13.0,"period":3000}]}
 {"key":1237313,"since":70245,"src":["game"],"name":"Frostfire Bolt","rank":"Rank 3","icon":236217,"cost":[{"power":0,"amount":370}],"castTime":3000,"maxRange":35.0,"effects":[{"index":0,"effect":6,"aura":33,"points":-40.0},{"index":1,"effect":2,"points":292.0,"perLevel":2.1},{"index":2,"effect":6,"aura":3,"points":19.0,"period":3000}]}
 {"key":1237632,"since":70245,"src":["game"],"name":"Divine Steed","rank":"Summon","icon":135890,"cooldown":45000,"effects":[{"index":0,"effect":6,"aura":78,"misc":242158},{"index":2,"effect":77}]}
-{"key":1237948,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 2","icon":132132,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":160.0,"misc":300}]}
-{"key":1237949,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 3","icon":132132,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":300.0,"misc":520}]}
-{"key":1237950,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 4","icon":132132,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":500.0,"misc":750}]}
-{"key":1237951,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 5","icon":132132,"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":750.0,"misc":1000}]}
+{"key":1237948,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 2","icon":132132,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":160.0,"misc":300}]}
+{"key":1237949,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 3","icon":132132,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":300.0,"misc":520}]}
+{"key":1237950,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 4","icon":132132,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":500.0,"misc":750}]}
+{"key":1237951,"since":70245,"src":["game"],"name":"Revive","rank":"Rank 5","icon":132132,"cost":[{"power":0,"percent":75}],"castTime":10000,"maxRange":30.0,"effects":[{"index":0,"effect":329,"points":750.0,"misc":1000}]}
 {"key":1238069,"since":70245,"src":["game"],"name":"Primal Bite","rank":"Rank 2","icon":132278,"cost":[{"power":1,"amount":200}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":58,"points":38.0},{"index":1,"effect":31,"points":100.0}]}
 {"key":1238069,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":58,"points":62.0},{"index":1,"effect":31,"points":100.0}]}
 {"key":1238070,"since":70245,"src":["game"],"name":"Primal Bite","rank":"Rank 3","icon":132278,"cost":[{"power":1,"amount":200}],"cooldown":6000,"maxRange":5.0,"effects":[{"index":0,"effect":58,"points":59.0},{"index":1,"effect":31,"points":100.0}]}
@@ -4913,13 +4933,13 @@
 {"key":1239243,"since":70755,"day":"2026-11-03","src":["game"],"cost":[{"power":0,"amount":230}],"cooldown":12000,"effects":[{"index":0,"effect":3,"perLevel":4.9},{"index":1,"effect":6,"aura":8,"points":161.0,"perLevel":3.7,"period":3000},{"index":2,"effect":6,"aura":4,"points":25.0}]}
 {"key":1239570,"since":70707,"day":"2026-10-31","src":["game"],"name":"Holy Shield","rank":"Rank 4","icon":135880,"effects":[{"index":0,"effect":6,"aura":51,"points":30.0},{"index":1,"effect":6,"aura":43,"points":221.0}]}
 {"key":1239570,"since":70755,"day":"2026-11-03","src":["game"],"cost":[{"power":0,"amount":240}],"cooldown":10000,"effects":[{"index":0,"effect":6,"aura":51,"points":30.0},{"index":1,"effect":6,"aura":43,"points":221.0},{"index":2,"effect":6,"aura":4,"points":1.0}]}
-{"key":1239696,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 2","icon":135735,"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":130.0,"perLevel":1.4}]}
+{"key":1239696,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 2","icon":135735,"cost":[{"power":0,"percent":15}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":130.0,"perLevel":1.4}]}
 {"key":1239696,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500,"effects":[{"index":0,"effect":2,"points":78.0,"perLevel":0.8}]}
-{"key":1239697,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 3","icon":135735,"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":169.0,"perLevel":1.6}]}
+{"key":1239697,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 3","icon":135735,"cost":[{"power":0,"percent":15}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":169.0,"perLevel":1.6}]}
 {"key":1239697,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500,"effects":[{"index":0,"effect":2,"points":101.0,"perLevel":1.0}]}
-{"key":1239699,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 4","icon":135735,"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":274.0,"perLevel":2.1}]}
+{"key":1239699,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 4","icon":135735,"cost":[{"power":0,"percent":15}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":274.0,"perLevel":2.1}]}
 {"key":1239699,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500,"effects":[{"index":0,"effect":2,"points":168.0,"perLevel":1.3}]}
-{"key":1239700,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 5","icon":135735,"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":394.0,"perLevel":2.6}]}
+{"key":1239700,"since":70245,"src":["game"],"name":"Arcane Blast","rank":"Rank 5","icon":135735,"cost":[{"power":0,"percent":15}],"castTime":2500,"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":394.0,"perLevel":2.6}]}
 {"key":1239700,"since":70707,"day":"2026-10-31","src":["game"],"castTime":1500,"effects":[{"index":0,"effect":2,"points":236.0,"perLevel":1.6}]}
 {"key":1240044,"since":70245,"src":["game"],"name":"Ice Lance","rank":"Rank 3","icon":135844,"cost":[{"power":0,"amount":70}],"maxRange":30.0,"effects":[{"index":0,"effect":2,"points":45.0,"perLevel":0.5},{"index":1,"effect":3,"points":300.0},{"index":2,"effect":3,"points":20.0},{"index":3,"effect":3,"points":5.0}]}
 {"key":1240044,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
@@ -5803,7 +5823,7 @@
 {"key":1277376,"since":70245,"src":["game"],"name":"Divine Grace","rank":"Rank 5","icon":1022949,"cooldown":600000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":856.0,"perLevel":6.4},{"index":1,"effect":77,"points":50.0}]}
 {"key":1277377,"since":70245,"src":["game"],"name":"Divine Grace","rank":"Rank 6","icon":1022949,"cooldown":600000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":1143.0,"perLevel":7.4},{"index":1,"effect":77,"points":50.0}]}
 {"key":1277378,"since":70245,"src":["game"],"name":"Divine Grace","rank":"Rank 7","icon":1022949,"cooldown":600000,"maxRange":40.0,"effects":[{"index":0,"effect":10,"points":1383.0,"perLevel":8.2},{"index":1,"effect":77,"points":50.0}]}
-{"key":1277455,"since":70245,"src":["game"],"name":"Confounding Flash","icon":571554,"castTime":500,"cooldown":120000,"effects":[{"index":0,"effect":6,"aura":5}]}
+{"key":1277455,"since":70245,"src":["game"],"name":"Confounding Flash","icon":571554,"cost":[{"power":0,"percent":3}],"castTime":500,"cooldown":120000,"effects":[{"index":0,"effect":6,"aura":5}]}
 {"key":1277462,"since":70245,"src":["game"],"name":"Contingency Plan","rank":"Rank 1","icon":458722,"cooldown":600000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":4,"points":35.0},{"index":1,"effect":6,"aura":4,"points":35.0}]}
 {"key":1277634,"since":70245,"src":["game"],"name":"Contingency Plan","rank":"Rank 2","icon":458722,"cooldown":600000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":4,"points":35.0},{"index":1,"effect":6,"aura":4,"points":35.0}]}
 {"key":1277638,"since":70245,"src":["game"],"name":"Contingency Plan","rank":"Rank 3","icon":458722,"cooldown":600000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":4,"points":35.0},{"index":1,"effect":6,"aura":4,"points":35.0}]}
@@ -5901,9 +5921,13 @@
 {"key":1292988,"since":70245,"src":["game"],"name":"Sabatons of Glory","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0}]}
 {"key":1293088,"since":70245,"src":["game"],"name":"9-60 Battery Pack","icon":136235,"castTime":25000,"effects":[{"index":0,"effect":24}]}
 {"key":1293241,"since":70245,"src":["game"],"name":"Summon Hawk","rank":"Rank 1","icon":132158,"cost":[{"power":0,"amount":80}],"cooldown":6000,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":32.0},{"index":1,"effect":32,"trigger":1312639},{"index":2,"effect":3,"points":2.0},{"index":3,"effect":3,"points":5.0}]}
+{"key":1293241,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":1293525,"since":70245,"src":["game"],"name":"Summon Hawk","rank":"Rank 2","icon":132158,"cost":[{"power":0,"amount":105}],"cooldown":6000,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":47.0},{"index":1,"effect":32,"trigger":1312639},{"index":2,"effect":3,"points":2.0},{"index":3,"effect":3,"points":5.0}]}
+{"key":1293525,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":1293526,"since":70245,"src":["game"],"name":"Summon Hawk","rank":"Rank 3","icon":132158,"cost":[{"power":0,"amount":135}],"cooldown":6000,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":85.0},{"index":1,"effect":32,"trigger":1312639},{"index":2,"effect":3,"points":2.0},{"index":3,"effect":3,"points":5.0}]}
+{"key":1293526,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":1293527,"since":70245,"src":["game"],"name":"Summon Hawk","rank":"Rank 4","icon":132158,"cost":[{"power":0,"amount":190}],"cooldown":6000,"maxRange":35.0,"effects":[{"index":0,"effect":2,"points":108.0},{"index":1,"effect":32,"trigger":1312639},{"index":2,"effect":3,"points":2.0},{"index":3,"effect":3,"points":5.0}]}
+{"key":1293527,"since":70938,"day":"2026-11-15","src":["game"],"cost":[{"power":0,"percent":11}]}
 {"key":1293559,"since":70245,"src":["game"],"name":"Flask of Natural Accuracy","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0,"misc":274273}]}
 {"key":1293560,"since":70245,"src":["game"],"name":"Flask of Natural Aggression","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0,"misc":274274}]}
 {"key":1293561,"since":70245,"src":["game"],"name":"Flask of Natural Precision","icon":136235,"castTime":3000,"effects":[{"index":0,"effect":24,"points":1.0,"misc":274275}]}
@@ -6215,13 +6239,14 @@
 {"key":1315451,"since":70245,"src":["game"],"name":"Summon Minfernal","description":"Right Click to summon and dismiss your Minfernal.","icon":136219,"cooldown":1500,"effects":[{"index":0,"effect":28,"points":1.0,"misc":274412}]}
 {"key":1316697,"since":70245,"src":["game"],"name":"Wrack","rank":"Rank 1","icon":460687,"cost":[{"power":0,"amount":200}],"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":3,"points":36.0,"period":1000},{"index":1,"effect":6,"aura":271,"points":10.0}]}
 {"key":1316697,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":6,"aura":3,"points":36.0,"perLevel":2.5,"period":1000},{"index":1,"effect":6,"aura":271,"points":10.0}]}
+{"key":1316697,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":3,"points":25.2,"perLevel":1.75,"period":1000},{"index":1,"effect":6,"aura":4,"points":100.0}]}
 {"key":1316709,"since":70755,"day":"2026-11-03","src":["game"],"name":"Death Mark","rank":"Rank 1","icon":132094,"cost":[{"power":3,"amount":25},{"power":4,"amount":1}],"cooldown":10000,"maxRange":20.0,"effects":[{"index":0,"effect":6,"aura":3,"period":6000},{"index":1,"effect":6,"aura":4}]}
 {"key":1316778,"since":70245,"src":["game"],"name":"Summon Minimule","description":"Right Click to summon and dismiss your Minimule.","icon":134010,"cooldown":1500,"effects":[{"index":0,"effect":28,"points":1.0,"misc":274947}]}
 {"key":1316995,"since":70245,"src":["game"],"name":"Penance","rank":"Rank 4","icon":237545,"cost":[{"power":0,"amount":355}],"cooldown":12000,"maxRange":36.0,"effects":[{"index":0,"effect":3}]}
 {"key":1316995,"since":70707,"day":"2026-10-31","src":["game"],"cost":[{"power":0,"amount":385}]}
 {"key":1317006,"since":70245,"src":["game"],"name":"Litany of Light","icon":134943,"effects":[{"index":0,"effect":6,"aura":42,"points":20.0}]}
 {"key":1317256,"since":70245,"src":["game"],"name":"Unknown","description":"To be added in a future update.","icon":134400,"effects":[{"index":0,"effect":3}]}
-{"key":1317257,"since":70245,"src":["game"],"name":"Strider Kick","rank":"Rank 1","icon":132198,"cooldown":8000,"maxRange":5.0,"effects":[{"index":0,"effect":121},{"index":1,"effect":31,"points":100.0},{"index":2,"effect":6,"aura":31,"points":30.0}]}
+{"key":1317257,"since":70245,"src":["game"],"name":"Strider Kick","rank":"Rank 1","icon":132198,"cost":[{"power":0,"percent":5.81}],"cooldown":8000,"maxRange":5.0,"effects":[{"index":0,"effect":121},{"index":1,"effect":31,"points":100.0},{"index":2,"effect":6,"aura":31,"points":30.0}]}
 {"key":1317270,"since":70245,"src":["game"],"name":"Unsanctified Grenade","icon":136235,"castTime":8000,"effects":[{"index":0,"effect":24,"points":3.0}]}
 {"key":1317279,"since":70245,"src":["game"],"name":"Transmute: Legionite","description":"Transmutes a bar of Heavy Thorium and a Fel Crystal into a Legionite Bar.","icon":1416159,"castTime":25000,"cooldown":169200000,"effects":[{"index":0,"effect":24}]}
 {"key":1317279,"since":70707,"day":"2026-10-31","src":["game"],"effects":[{"index":0,"effect":24,"points":1.0}]}
@@ -6252,7 +6277,7 @@
 {"key":1321221,"since":70245,"src":["game"],"name":"Crimson Rooster","description":"Summons and dismisses a rideable rooster.","icon":8426877,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78}]}
 {"key":1321233,"since":70245,"src":["game"],"name":"Spectral Wolf Pack","description":"Summons and dismisses a rideable [PH] spectral wolf pack.","icon":8408196,"castTime":3000,"effects":[{"index":0,"effect":6,"aura":78}]}
 {"key":1321233,"since":70707,"day":"2026-10-31","src":["game"],"description":"Summons and dismisses a rideable spectral wolf pack. Up to two nearby party members may join in the pack when mounting.","effects":[{"index":0,"effect":6,"aura":78},{"index":1,"effect":160,"trigger":1323493},{"index":2,"effect":160,"trigger":1323902},{"index":3,"effect":160,"trigger":1323903}]}
-{"key":1322605,"since":70245,"src":["game"],"name":"Shifting Power","icon":538514,"cooldown":16000,"effects":[{"index":0,"effect":30,"points":40.0,"misc":3}]}
+{"key":1322605,"since":70245,"src":["game"],"name":"Shifting Power","icon":538514,"cost":[{"power":0,"percent":55}],"cooldown":16000,"effects":[{"index":0,"effect":30,"points":40.0,"misc":3}]}
 {"key":1322605,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":8000}
 {"key":1322670,"since":70245,"src":["game"],"name":"Improved Shifting Power","icon":236172,"effects":[{"index":0,"effect":6,"aura":107,"misc":11}]}
 {"key":1323963,"since":0,"src":[7,"game"],"name":"Furious Precision","icon":236309}
@@ -6285,7 +6310,7 @@
 {"key":1328370,"since":70707,"day":"2026-10-31","src":["game"],"name":"Turn Evil","icon":135983,"effects":[{"index":0,"effect":6,"aura":107,"points":-1500.0,"misc":10},{"index":1,"effect":6,"aura":107,"points":-1500.0,"misc":11},{"index":2,"effect":6,"aura":332,"points":1328374.0,"misc":2878},{"index":3,"effect":6,"aura":332,"points":1328373.0,"misc":5627},{"index":4,"effect":6,"aura":332,"points":1328372.0,"misc":10326}]}
 {"key":1328544,"since":70707,"day":"2026-10-31","src":["game"],"name":"Shieldsworn","icon":135911,"effects":[{"index":0,"effect":6,"aura":107,"points":-4000.0,"misc":11}]}
 {"key":1328546,"since":70707,"day":"2026-10-31","src":["game"],"name":"Stoicism","icon":135978,"effects":[{"index":0,"effect":6,"aura":232,"points":-20.0,"misc":12},{"index":1,"effect":6,"aura":232,"points":-20.0,"misc":1}]}
-{"key":1328548,"since":70707,"day":"2026-10-31","src":["game"],"name":"Oath of Light","icon":135909,"maxRange":40.0,"effects":[{"index":0,"effect":6,"aura":226,"perLevel":6.667,"period":1500},{"index":1,"effect":6,"aura":4,"perLevel":1.917},{"index":2,"effect":6,"aura":4,"perLevel":3.833}]}
+{"key":1328548,"since":70707,"day":"2026-10-31","src":["game"],"name":"Oath of Light","icon":135909,"cost":[{"power":0,"percent":8}],"maxRange":40.0,"effects":[{"index":0,"effect":6,"aura":226,"perLevel":6.667,"period":1500},{"index":1,"effect":6,"aura":4,"perLevel":1.917},{"index":2,"effect":6,"aura":4,"perLevel":3.833}]}
 {"key":1328550,"since":70707,"day":"2026-10-31","src":["game"],"name":"Boundless Light","icon":236261,"effects":[{"index":0,"effect":6,"aura":4}]}
 {"key":1328569,"since":70707,"day":"2026-10-31","src":["game"],"name":"Holy Binding","icon":135883,"effects":[{"index":0,"effect":6,"aura":4,"points":50.0}]}
 {"key":1328613,"since":70707,"day":"2026-10-31","src":["game"],"name":"Predatory Discipline","description":"Your Ferocious Bite ability no longer converts extra Energy into damage, but still deals extra damage based on your excess Energy.","icon":1033484,"effects":[{"index":0,"effect":6,"aura":4,"points":20.0}]}
@@ -6295,13 +6320,17 @@
 {"key":1328618,"since":70755,"day":"2026-11-03","src":["game"],"effects":[{"index":0,"effect":2,"points":17.0},{"index":1,"effect":3,"points":70.0}]}
 {"key":1328621,"since":70707,"day":"2026-10-31","src":["game"],"name":"Bloom","icon":134206,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0},{"index":1,"effect":6,"aura":4,"points":50.0}]}
 {"key":1328825,"since":70755,"day":"2026-11-03","src":["game"],"name":"Poised","rank":"Passive","icon":132296,"effects":[{"index":0,"effect":6,"aura":4,"points":10.0}]}
+{"key":1328825,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":42,"points":10.0,"trigger":1330741}]}
 {"key":1328829,"since":70755,"day":"2026-11-03","src":["game"],"name":"Poised","rank":"Passive","icon":366937,"effects":[{"index":0,"effect":6,"aura":4,"points":10.0}]}
+{"key":1328829,"since":70938,"day":"2026-11-15","src":["game"],"effects":[{"index":0,"effect":6,"aura":42,"points":10.0,"trigger":1330763}]}
 {"key":1328948,"since":70707,"day":"2026-10-31","src":["game"],"name":"Enchant Boots - Speed","icon":135913,"castTime":5000,"effects":[{"index":0,"effect":53,"misc":8737}]}
 {"key":1329256,"since":70755,"day":"2026-11-03","src":["game"],"name":"Blood Splatter","icon":132302,"effects":[{"index":0,"effect":6,"aura":107,"points":4000.0,"misc":1},{"index":1,"effect":6,"aura":107,"points":6000.0,"misc":1}]}
 {"key":1329265,"since":70755,"day":"2026-11-03","src":["game"],"name":"Composure","icon":132296,"effects":[{"index":0,"effect":6,"aura":107,"misc":3}]}
 {"key":1329283,"since":70755,"day":"2026-11-03","src":["game"],"name":"Shank","icon":132323,"cost":[{"power":3,"amount":5}],"cooldown":10000,"maxRange":5.0,"effects":[{"index":0,"effect":31,"points":50.0},{"index":1,"effect":30,"points":15.0,"misc":3},{"index":2,"effect":30,"misc":4}]}
+{"key":1329283,"since":70938,"day":"2026-11-15","src":["game"],"rank":"Rank 1"}
 {"key":1329284,"since":70755,"day":"2026-11-03","src":["game"],"name":"Flash of Steel","icon":458731,"effects":[{"index":0,"effect":6,"aura":107,"points":15.0,"misc":12},{"index":1,"effect":6,"aura":107,"points":-2500.0,"misc":11}]}
 {"key":1329286,"since":70755,"day":"2026-11-03","src":["game"],"name":"Boot Knife","icon":135342,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0,"trigger":1329285},{"index":1,"effect":6,"aura":4,"points":2.0,"trigger":1329285}]}
 {"key":1329328,"since":70755,"day":"2026-11-03","src":["game"],"name":"Venom","icon":135341,"effects":[{"index":0,"effect":6,"aura":4,"points":100.0,"trigger":1310703}]}
 {"key":1329549,"since":70755,"day":"2026-11-03","src":["game"],"name":"Shank","icon":132323,"cost":[{"power":3,"amount":5}],"cooldown":10000,"maxRange":5.0,"effects":[{"index":0,"effect":31,"points":50.0},{"index":1,"effect":30,"points":25.0,"misc":3},{"index":2,"effect":30,"misc":4}]}
-{"key":1329555,"since":70755,"day":"2026-11-03","src":["game"],"name":"Reckless Swings","icon":132334,"cooldown":15000,"effects":[{"index":0,"effect":6,"aura":42,"trigger":1329554}]}
+{"key":1329549,"since":70938,"day":"2026-11-15","src":["game"],"rank":"Rank 2"}
+{"key":1329555,"since":70755,"day":"2026-11-03","src":["game"],"name":"Reckless Swings","icon":132334,"cost":[{"power":-2,"percent":25}],"cooldown":15000,"effects":[{"index":0,"effect":6,"aura":42,"trigger":1329554}]}

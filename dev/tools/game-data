@@ -16,8 +16,8 @@ Sets, and what each takes:
 - ItemSets: name, items (those Items keeps), bonuses (how many items, the spell).
 - Spells: the players' spells: every spell of a skill line Sane UI keeps (classes, their pets, professions,
   secondary skills, weapons, armour, languages, riding, mounts, companions, runes, racials) and every spell of
-  a talent or Legacy node. Name, rank, icon, cost (a fixed amount of a power only), cast time, cooldown, range, and
-  its effects with their numbers, which is where a patch changes what a spell does.
+  a talent or Legacy node. Name, rank, icon, cost (an amount of a power, or a share of the base mana), cast time,
+  cooldown, range, and its effects with their numbers, which is where a patch changes what a spell does.
   Not a line's spells of the kind a player never learns (AcquireMethod 3: another form of a spell players have
   under their own ID), nor a spell another one sets off (a part of it, as taming's helpers).
 - Auras: the buffs items give that are no player spell: what an item's use casts, and what that spell sets
@@ -228,8 +228,7 @@ class Spells:
     def facts(self, spell):
         key, misc = str(spell), self.misc.get(str(spell))
         row = self.text.get(key)
-        cost = [{"power": num(p["PowerType"]), "amount": num(p["ManaCost"])}
-                for p in sorted(self.power.get(key, []), key=lambda p: num(p["OrderIndex"])) if num(p["ManaCost"]) > 0]
+        cost = self.cost_list(key)
         cooldown = self.cooldowns.get(key)
         cooldown = max(num(cooldown["RecoveryTime"]), num(cooldown["CategoryRecoveryTime"])) if cooldown else 0
         span = self.ranges.get(misc["RangeIndex"]) if misc else None
@@ -246,6 +245,21 @@ class Spells:
             "maxRange": round(high, 2) or None,
             "effects": self.effect_list(key),
         }
+
+    def cost_list(self, key):
+        """What the spell costs, power by power: an amount, or a share of the caster's base mana (PowerCostPct: Forever's
+        Arcane Shot, 11%), or both."""
+        found = []
+        for row in sorted(self.power.get(key, []), key=lambda p: num(p["OrderIndex"])):
+            amount, percent = num(row["ManaCost"]), round(float(row["PowerCostPct"] or 0), 3)
+            if amount > 0 or percent > 0:
+                part = {"power": num(row["PowerType"])}
+                if amount > 0:
+                    part["amount"] = amount
+                if percent > 0:
+                    part["percent"] = int(percent) if percent == int(percent) else percent
+                found.append(part)
+        return found
 
     def effect_list(self, key):
         """What the spell does, effect by effect: the numbers a patch changes. Only what an effect holds: 0 is no value."""
