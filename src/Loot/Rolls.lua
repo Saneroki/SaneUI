@@ -503,8 +503,7 @@ function Rolls.Start()
     holder:Hide()
     holder:SetScript("OnUpdate", ns.Guard(Tick))
     placed = Core.Window.New(holder, { store = Core.Store(ns.name), key = "rollsPlace", title = ns.TEXT.rollsView,
-                                        first = { point = "BOTTOM", x = 0, y = 330 },
-                                        element = true }) -- its Unlock and ticks on its box in Edit Mode (Core.Element)
+                                        first = { point = "BOTTOM", x = 0, y = 330 } })
     placed:Place()
     ns.On("START_LOOT_ROLL", ns.Guard(Rolls.Add))
     ns.On("CANCEL_LOOT_ROLL", ns.Guard(Over))

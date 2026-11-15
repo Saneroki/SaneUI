@@ -69,16 +69,9 @@ end
 -- Out of sight and letting the mouse through to the game's minimap (on), or in sight and taking it.
 local function Rest(on)
     resting = on
-    -- Out of sight whatever its right click's ticks say (Core.Element.Sleep), its clicks its own: the canvas lets them
-    -- through itself; awake, the ticks again once the canvas takes the mouse.
-    if on then
-        Core.Element.Sleep(handle, true)
-        ns.Canvas.Mouse(false)
-        ns.Canvas.Close()
-    else
-        ns.Canvas.Mouse(true)
-        Core.Element.Sleep(handle, false)
-    end
+    frame:SetAlpha(on and 0 or 1)
+    ns.Canvas.Mouse(not on)
+    if on then ns.Canvas.Close() end
     handle:Hover(false) -- resting, its grip goes too
 end
 
@@ -187,7 +180,6 @@ function Window.Build()
         filled = function(on, width, height) ns.Guarded(Filled, on, width, height) end,
         moving = function(share) ns.Guarded(Moving, share) end,
         close = function() ns.Guarded(Back) end, -- back to its corner: closed, the corner could not bring it again
-        element = true, -- Unlock to move and the ticks: Shift and a right click (Canvas.lua), its box (Core.Element)
     })
     Window.handle = handle
     inside:SetAllPoints(handle.inside)

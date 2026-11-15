@@ -15,8 +15,6 @@ local _, ns = ...
 --  without a change of form, and between them a checkbox, whether it swaps with
 --  the form (ticked at first). The checkbox is the character's own, kept with
 --  its reservations, not one of the profile, which another character may share.
---  A right click on the arrows or the checkbox opens the bars' own lines (Hide
---  in combat, Show on mouseover, Click-through: Core.Element) and turns nothing.
 --
 --  A button asks for its own "actionpage" before its bar's, so each of the
 --  twelve holds the row's page, and none on the bar's own. The buttons and
@@ -55,7 +53,6 @@ FormBar.ON_ROW = [[
 
 -- An arrow's click: the next row up (step 1) or down (step -1), round again past the last.
 FormBar.ARROW = [[
-    if button == "RightButton" then return end -- the bars' menu (Core.Element), not a step
     local header = self:GetFrameRef("header")
     local count = header:GetAttribute("rows")
     local now = tostring(header:GetAttribute("state-row") or "own")
@@ -100,9 +97,7 @@ local function Ticked(box)
     FormBar.Set(box:GetChecked())
 end
 
-local Turned = ns.Guard(function(_, button)
-    if button ~= "RightButton" then Core.Sound("U_CHAT_SCROLL_BUTTON") end
-end)
+local Turned = ns.Guard(function() Core.Sound("U_CHAT_SCROLL_BUTTON") end)
 
 local function Arrow(step, atlas, title)
     local arrow = CreateFrame("Button", nil, pager, "SecureHandlerClickTemplate")
@@ -116,7 +111,6 @@ local function Arrow(step, atlas, title)
     arrow:SetAttribute("step", step)
     arrow:SetAttribute("_onclick", FormBar.ARROW)
     arrow:HookScript("OnClick", Turned)
-    Core.Element.RightClick(arrow) -- the bars' Hide in combat, Show on mouseover, Click-through (Core.Element)
     Core.Tip(arrow, title, ns.TEXT.formBarArrowTip)
     return arrow
 end
@@ -134,7 +128,6 @@ local function Pager()
     box:SetSize(FormBar.BOX, FormBar.BOX)
     box:SetPoint("RIGHT")
     box:SetScript("OnClick", ns.Guard(Ticked))
-    Core.Element.RightClick(box) -- as its arrows
     Core.Tip(box, ns.TEXT.formBarText, ns.TEXT.formBarTip)
     frame.box = box
     frame.up = Arrow(1, "ui-hud-actionbar-pageuparrow", ns.TEXT.formBarUp)

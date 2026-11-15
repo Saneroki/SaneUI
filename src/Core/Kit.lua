@@ -475,22 +475,6 @@ function lends:SetMotion(on)
     return true
 end
 
--- Its clicks alone, the mouse's coming left as it is (an element's click-through, Element.lua).
-function lends:SetClicks(on)
-    if not Free(self) then return false end
-    Note(self, "clicks", self.frame:IsMouseClickEnabled())
-    self.frame:SetMouseClickEnabled(on)
-    return true
-end
-
--- The mouse's wheel (a frame that takes it holds the camera's zoom off the world).
-function lends:SetWheel(on)
-    if not Free(self) then return false end
-    Note(self, "wheel", self.frame:IsMouseWheelEnabled())
-    self.frame:EnableMouseWheel(on)
-    return true
-end
-
 function lends:SetShown(on)
     if not Free(self) then return false end
     Note(self, "shown", self.frame:IsShown())
@@ -531,8 +515,6 @@ local PUT = {
     scale = function(self, scale) self.frame:SetScale(scale) end,
     mouse = function(self, on) self.frame:EnableMouse(on) end,
     motion = function(self, on) self.frame:SetMouseMotionEnabled(on) end,
-    clicks = function(self, on) self.frame:SetMouseClickEnabled(on) end,
-    wheel = function(self, on) self.frame:EnableMouseWheel(on) end,
     shown = function(self, on) self.frame:SetShown(on) end,
     heard = function(self, heard)
         for _, note in ipairs(heard) do

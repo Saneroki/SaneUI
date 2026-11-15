@@ -789,10 +789,6 @@ check(line and line.map == 1411 and idx == 3, "the arrow points to the step's pl
     Core.Set(ns.name, "showArrow", true)
     local frame = rawget(_G, "SaneUISpeedLevelingArrow")
     check(frame and frame._shown and aimed == nil, "the arrow shows and asks no way of Navigation")
-    W.menus = {}
-    frame._scripts.OnMouseUp(frame, "RightButton")
-    check(W.menus[1] and W.menus[1][1].title == ns.TEXT.arrowView and W.menus[1][2].text == Core.Element.TEXT.unlock,
-        "a right click on it: its Unlock to move and ticks (Core.Element)")
     local point, _, relative, _, y = frame:GetPoint(1)
     check(point == "TOP" and relative == "TOP" and y == -Core.TOAST_TOP,
         "at first where the travel overlay stands, the toast of a new level beside it")

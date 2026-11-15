@@ -105,8 +105,6 @@ local Core = SaneUI.Core
 --          moving = function(share) end, -- with edge: what it holds goes with the motion, in sight, placed at
 --                                       -- every step by the share of the way (Edge.lua), not faded out and in
 --          close = function() end,      -- what its close button does; without: it hides the window
---          element = true,              -- one of Sane UI's elements on the screen (Element.lua): on its right
---                                       -- click Unlock to move, Hide in combat, Show on mouseover, Click-through
 --          native = {                   -- the game's own window it stands for (a vendor's, the auction house)
 --              frame = function() end,  -- that window (or a function giving it, nil while not loaded)
 --              hold = true,             -- Core keeps it out of sight while ours is chosen and follows the
@@ -126,7 +124,7 @@ local Core = SaneUI.Core
 --      window:Open()                    -- the game asks for it: the game's own window or ours, as last chosen;
 --                                       -- ours filling the screen if it was left so ("native" / "ours")
 --      window:Native(on)                -- the game's own window instead (on), or ours again; kept for Open
---      window:Remember(what, value)     -- kept with its place (Window.LEFT: full, native, tab, an element's ticks)
+--      window:Remember(what, value)     -- kept with its place (full, native)
 --      window:Refresh()                 -- its title bar and buttons as the window is now
 --      window:SetTitle(text)            -- its name anew, on its title bar and its box in Edit Mode
 --      window:TitleAt(side, inset)      -- its title at the bar's "LEFT" or "RIGHT" (a window that mirrors itself)
@@ -135,8 +133,7 @@ local Core = SaneUI.Core
 --      window:DragBy(handle)            -- that part of a window without a title bar moves it as a title bar would
 --      window:Hover(on)                 -- the mouse is on the window, or left it (grip = "hover")
 --      window:Unlock(on)                -- on: its box over it and dragged by it outside Edit Mode too, until
---                                       -- off (window.unlocked); a right click on the box: an element's menu
---                                       -- (Element.lua, in Edit Mode too), else options.unlockedMenu(box)
+--                                       -- off (window.unlocked); a right click on the box: options.unlockedMenu(box)
 --      window.inside                    -- a frame for what it holds: below the title bar while there is one,
 --                                       -- the whole window while not; window.top: how far below its top that is
 --      window:Locked()                  -- it holds the game's protected frames and a fight is on: nothing of
@@ -147,9 +144,8 @@ local Core = SaneUI.Core
 --      window.edge                      -- with edge: edge.full, it fills the screen (Edge.lua)
 --  window.bar, window.buttons       -- the title bar and its buttons, once shown
 --
---  The kept place is plain numbers: { x, y, width, height, dock, full, native, tab, fight,
---  mouse, through }, x and y of the top left corner from the screen's lower left one, the rest
---  what it was left as (Window.LEFT, kept through a drag and a reset). A docked window grows
+--  The kept place is plain numbers: { x, y, width, height, dock, full, native }, x and y of
+--  the top left corner from the screen's lower left one. A docked window grows
 --  away from its edges, so its grip moves to a corner that is not at one.
 --
 --  A window made by New is a child of UIParent at its scale.
@@ -175,9 +171,6 @@ Window.TEXT = {
     help = Core.Word("HELP_LABEL", "Help"), helpTip = "A tour of this full screen: what it shows and how it works. Not ready yet.",
 }
 Window.SETTINGS = "questlog-icon-setting" -- the game's cog (its quest log's settings)
--- What a window was left as, kept with its place (Remember) through a drag and a reset: full screen, the game's own
--- window, its tab, an element's ticks (Element.lua).
-Window.LEFT = { "full", "native", "tab", "fight", "peace", "mouse", "through" }
 -- The kinds of window (Saneroki, 2026-10-16; Doc/guides/windows.md, section 2): the options each kind has
 -- unless the module gives them itself. What the Combat module shows (unit frames, nameplates, buffs, action
 -- bars) is no window.
@@ -351,9 +344,7 @@ local function Keep(window, zone, x, y)
     if window.options.sizable then place.width, place.height = frame:GetWidth(), frame:GetHeight() end
     local held, key = Held(window)
     local was = held[key] -- what it was left as stays (Remember)
-    if type(was) == "table" then
-        for _, what in ipairs(Window.LEFT) do place[what] = was[what] end
-    end
+    if type(was) == "table" then place.full, place.native, place.tab = was.full, was.native, was.tab end
     held[key] = place
     window:Place()
 end
@@ -494,19 +485,12 @@ function methods:Hover(on)
     Grip(self)
 end
 
--- Its first place and size again; what it was left as (Window.LEFT: full, native, its tab, an element's ticks) stays.
+-- Its first place and size again; what it was left as (full, native, its tab) stays.
 function methods:Reset()
     local held, key = Held(self)
     local was = held[key]
-    local left
-    if type(was) == "table" then
-        for _, what in ipairs(Window.LEFT) do
-            if was[what] ~= nil then
-                left = left or {}
-                left[what] = was[what]
-            end
-        end
-    end
+    local left = type(was) == "table" and (was.full or was.native or was.tab)
+        and { full = was.full, native = was.native, tab = was.tab } or nil
     -- In a profile an empty place, so that what a store holds from before does not come back.
     held[key] = left or (held ~= self.options.store and {}) or nil
     self:Place()
@@ -671,11 +655,10 @@ local function Box(window)
         hover:Hide()
         title:Hide()
     end))
-    -- A right click: an element's menu (Element.lua), unlocked or in Edit Mode; else the module's, unlocked.
     box:HookScript("OnMouseUp", Core.Guard("window", function(_, button)
-        if button ~= "RightButton" then return end
-        if Core.Element.Is(window) then return Core.Element.Menu(box, window) end
-        if window.unlocked and window.options.unlockedMenu then Core.Safe("window", window.options.unlockedMenu, box) end
+        if button == "RightButton" and window.unlocked and window.options.unlockedMenu then
+            Core.Safe("window", window.options.unlockedMenu, box)
+        end
     end))
     -- A click on it chooses the window, as Edit Mode's own frames are chosen (Selection.lua).
     box:HookScript("OnMouseDown", Core.Guard("window", function()
@@ -836,7 +819,6 @@ local function Bar(window)
         bar:GetScript("OnDragStart")(bar)
     end))
     find:SetScript("OnDragStop", Core.Guard("window", function() bar:GetScript("OnDragStop")(bar) end))
-    if Core.Element.Is(window) then Core.Element.TitleBar(window) end -- made later than the element: its menu there
     return bar
 end
 
@@ -986,7 +968,6 @@ function methods:Use(key, first)
     if (self.options.key or "place") == key then return end
     self.options.key, self.options.first = key, first or self.options.first
     self:Place()
-    Core.Safe("window", Core.Element.Look, self) -- an element as ticked there (each place keeps its own)
 end
 
 -- Its search closed, as Esc closes it, for a module that leaves the search itself (a tab of Combat's book chosen):
@@ -1146,7 +1127,6 @@ function methods:Unlock(on)
     if (self.unlocked or false) == on then return end
     self.unlocked = on
     if not Core.EditMode.active then Edit(self, on) end
-    Core.Safe("window", Core.Element.Look, self) -- an element in sight and taking the mouse while unlocked
 end
 
 -- Every window made by New, in the order they were made (a list of its own: changing it changes nothing).
@@ -1180,10 +1160,9 @@ end)
 Core.On("DISPLAY_SIZE_CHANGED", Rescreen)
 Core.On("UI_SCALE_CHANGED", Rescreen)
 
--- Another profile came into use: each window where that one has it, hidden ones too; each element as it has it ticked.
+-- Another profile came into use: each window where that one has it, hidden ones too.
 function Window.PlaceAll()
     for _, window in ipairs(windows) do Core.Safe("window", Rescreened, window) end
-    Core.Safe("window", Core.Element.LookAll)
 end
 
 function Window.New(frame, options)
@@ -1272,6 +1251,5 @@ function Window.New(frame, options)
         frame:HookScript("OnHide", Core.Guard("window", function() Core.Escape(window, nil) end))
         if frame:IsShown() then Core.Escape(window, Close) end
     end
-    if options.element then Core.Safe("window", Core.Element.Take, window) end -- its right click's lines (Element.lua)
     return window
 end

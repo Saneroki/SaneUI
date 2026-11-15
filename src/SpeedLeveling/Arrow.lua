@@ -201,12 +201,12 @@ local function Build()
         end
     end))
     frame:EnableMouse(true)
-    -- Its right click: Unlock to move, Hide in combat, Show on mouseover, Click-through (Core.Element).
     frame:SetScript("OnMouseUp", ns.Guard(function(self, button)
-        if button == "RightButton" then Core.Element.Menu(self, window) end
+        if button == "RightButton" then ns.Steps.LockMenu(self, window) end
     end))
     window = Core.Window.New(frame, { store = Core.Store(ns.name), key = "arrowPlace", title = ns.TEXT.arrowView,
-                                      first = { point = "TOP", x = 0, y = -Core.TOAST_TOP }, element = true })
+                                      first = { point = "TOP", x = 0, y = -Core.TOAST_TOP },
+                                      unlockedMenu = function(owner) ns.Steps.LockMenu(owner, window) end })
     window:Place()
 end
 

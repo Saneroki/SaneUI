@@ -34,17 +34,6 @@ local _, ns = ...
 --  rest in a group as well (Saneroki, 2026-11-07).
 --  This goes for how they look or as the game has them alike.
 --
---  The bars are one element of Core's (Core.Element.New; Saneroki, 2026-11-14:
---  "on the actionbars only on the pager arrows and checkboxes"): a right click
---  on the main bar's page arrows, or on what a module puts beside a bar (the
---  paged bars' checkboxes, a druid's Bar 6 pager: Abilities), opens Hide in
---  combat, Hide outside of combat, Show on mouseover and Click-through for all
---  bars at once; their buttons' right click stays the game's. The game's Edit
---  Mode moves them. Click-through lets clicks through the bars' empty room
---  alone: their buttons, arrows and checkboxes are what you click, so the menu
---  stays at hand. It all stands aside on the full screen, while something is
---  dragged and while your keys are set.
---
 --  On the full screen every icon shows at full brightness (Saneroki,
 --  2026-11-09: "It should always show the icons in full brightness"): what the
 --  game greys (cannot be used now) or tints blue (too little mana) is set white
@@ -67,7 +56,6 @@ Bars.BARS = { "MainActionBar", "MultiBarBottomLeft", "MultiBarBottomRight", "Mul
 Bars.SEATS = { "MainActionBar", "MultiBarBottomLeft", "MultiBarBottomRight", "MultiBarRight", "MultiBarLeft",
                "MultiBar5", "MultiBar6", "MultiBar7" } -- those that stand on the full screen (BarsWindow.lua)
 Bars.ART = { "BorderArt", "EndCaps" } -- a bar's own art (the main bar's page number and arrows stay)
-Bars.PAGER = { "UpButton", "DownButton" } -- the main bar's page arrows (its ActionBarPageNumber): the bars' menu
 Bars.BUTTON_ART = { "NormalTexture", "SlotArt", "SlotBackground", "Border" } -- a button's own art
 Bars.COOLDOWNS = { "cooldown", "lossOfControlCooldown", "chargeCooldown" }    -- over the whole icon
 Bars.DIVIDERS = { "HorizontalDividersPool", "VerticalDividersPool" }
@@ -87,7 +75,6 @@ local dragging = false -- the game shows its grid: something is dragged onto the
 local binding = false  -- the game's Quick Keybind mode: every button shows, to take a key
 local seated = false   -- the bars stand on the full screen: every button shows, to drop something on
 local rest            -- the bars as one set, out of sight at rest (Core.Rest)
-local element         -- the bars as one element (Core.Element): its menu on the arrows and checkboxes beside them
 local bars = {}       -- the game's bars found, each once
 local dressed = {}    -- [the game's button] = what we changed on it: its lends, the looks it had
 local slots = setmetatable({}, { __mode = "k" })  -- [the game's button] = our dark square on it, once made
@@ -328,13 +315,11 @@ function Bars.Apply()
     Core.AfterCombat("action bars", Apply)
 end
 
--- Something is dragged onto the bars, or no longer; Edit Mode opened or closed: every empty button anew. Dragged onto,
--- seated on the full screen or taking keys, the bars take the mouse whatever their element's ticks say.
+-- Something is dragged onto the bars, or no longer; Edit Mode opened or closed: every empty button anew.
 local function Grid(shown)
     dragging = shown
     for button in pairs(dressed) do Empty(button) end
     rest:Look()
-    if element then Core.Element.Away(element, dragging or binding or seated) end
 end
 
 -- A vehicle's actions stand on the bars, and without one of its own (no art of its bar) on them alone.
@@ -363,22 +348,9 @@ local function Beside(bar)
     return area
 end
 
--- The bars as one element: the main bar's page arrows open its menu (what a module puts beside a bar opens its own).
-local function Element()
-    element = Core.Element.New({ name = ns.name, key = "actionBars", title = ns.TEXT.actionBars,
-                                 frames = { unpack(Find()) } })
-    local main = rawget(_G, "MainActionBar")
-    local number = type(main) == "table" and rawget(main, "ActionBarPageNumber")
-    for _, key in ipairs(Bars.PAGER) do
-        local arrow = type(number) == "table" and rawget(number, key)
-        if type(arrow) == "table" and arrow.HookScript then Core.Element.RightClick(arrow, element) end
-    end
-end
-
--- The bars as one set: any of them, or a button on one, under the mouse shows them all; the element's ticks too.
+-- The bars as one set: any of them, or a button on one, under the mouse shows them all.
 local function Rests()
-    Element()
-    rest = Core.Rest.New({ label = "action bars", frames = { unpack(Find()) }, hold = Held, window = element })
+    rest = Core.Rest.New({ label = "action bars", frames = { unpack(Find()) }, hold = Held })
     for _, bar in ipairs(rest.frames) do
         rest:Hot(bar)
         rest:Area(Beside(bar))
@@ -441,8 +413,4 @@ end
 
 function Bars.Rest()
     return rest
-end
-
-function Bars.Element()
-    return element
 end

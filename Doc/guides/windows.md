@@ -94,8 +94,6 @@ A window's state is held in a few flags; Core keeps them, the module reads them.
 | holding its zone | `Dock.Holder(zone)` is it | placed docked, shown | hidden, or docked elsewhere | no other window docks there (no shape on a drag; one opening with that zone kept stands clear of it) |
 | selected | `Core.Selection.window` is it | a click on its box in Edit Mode | another chosen (ours or the game's), Edit Mode closing | its box in Edit Mode's selected look, Core's dialog names it |
 | the game's held | `window.holder.held` | ours chosen and the game's closed (`native.hold`) | the game's chosen (`Native(true)`), a failure, `GiveBack` | the game's window is under our hidden frame: opened by the game, it opens ours |
-| unlocked | `window.unlocked` | `Unlock(true)` (an element's *Unlock to move*) | `Unlock(false)` (*Lock*), a `/reload` | its box over it outside Edit Mode, dragged by it; an element in sight and taking the mouse whatever is ticked |
-| an element's ticks | `store.place.fight`, `.mouse`, `.through` (`Core.Element.Get`) | its right click's lines (`Element.Set`) | the same lines; another profile without them | out of sight in a fight (and clicks going through then), out of sight but on mouseover, nothing of it taking the mouse; not while unlocked, in Edit Mode or away |
 
 A window with `grip = "hover"` (the minimap's) has its grip at rest outside Edit Mode too: unseen until the mouse
 is on the window (`window:Hover(on)`, which its module calls) or on the grip, hidden while its `usable()` says no
@@ -117,9 +115,7 @@ and while it is away (Edge).
 5. **Nothing runs at rest.** No `OnUpdate` while nothing changes: the dock shape only during a drag, the
    motion clock only during a motion, Expand's watch only from the mouse's coming until the window is closed
    (none while it is kept open). A module that must look at something does so by `Core.Watch` or
-   `Core.Hover` (the chat's mouse), which run only while out and shown. The one look that runs while an element
-   rests: *Show on mouseover* where no door of its own hears the mouse (a set Core made, or *Click-through*),
-   one `IsMouseOver` every `Rest.LOOK` seconds while it is out of sight.
+   `Core.Hover` (the chat's mouse), which run only while out and shown.
 6. **A protected window is never touched in a fight** (section 7).
 7. **One window to a zone at a time** (Saneroki, 2026-10-16): the first one shown there holds it; a zone's
    kept name is never dropped because it was taken (the window docks there again once it is free). One
@@ -133,15 +129,13 @@ and while it is away (Edge).
 
 - **Where:** `store[key]`, `store` the module's (`Core.Store(module)`: `SaneUIDB.modules.<Module>`, for the
   account, not in profiles), `key` the window's (`"place"` at first, another name for a second window).
-- **What:** `{ x, y, width, height, dock, full, native, tab, fight, peace, mouse, through }`: `x`, `y` the top left corner
-  from the screen's lower left one; `width`, `height` only for a sizable window; `dock` a zone's name (a zone that no
-  longer exists: the kept coordinates count); `full` it was left in full screen; `native` the game's own window was
-  chosen; `tab` the tab last chosen (none: the first); `fight`, `peace`, `mouse`, `through` an element's ticks
-  (*Hide in combat*, *Hide outside of combat*, *Show on mouseover*, *Click-through*: `Element.lua`). The last seven
-  are `Window.LEFT`, kept through a drag and a reset.
+- **What:** `{ x, y, width, height, dock, full, native, tab }`: `x`, `y` the top left corner from the screen's
+  lower left one; `width`, `height` only for a sizable window; `dock` a zone's name (a zone that no longer
+  exists: the kept coordinates count); `full` it was left in full screen; `native` the game's own window was
+  chosen; `tab` the tab last chosen (none: the first).
 - **Read with care:** a kept size larger than the screen is cut to it; a place that cannot be read gives the
   first place; `Reset` (Edit Mode's dialog, `/sane window reset all` for all: `Window.ResetAll`) puts the
-  first place and size back and keeps what it was left as (`Window.LEFT`: `full`, `native`, `tab`, an element's ticks).
+  first place and size back and keeps `full`, `native` and `tab`.
 - **To come:** one place per Edit Mode layout, following Save, Revert and switching layouts (section 8,
   item 2, has the keys and the new shape of the store).
 

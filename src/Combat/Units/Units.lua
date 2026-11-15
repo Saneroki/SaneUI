@@ -49,11 +49,6 @@ local _, ns = ...
 --  the world. The game's cast bars and timers hear nothing while ours stand in
 --  for them (Core.Lend's SetDeaf): the game shows and lays those out itself.
 --
---  Each is an element of Core's (Core.Element): the game's menu of its unit, its
---  right click, ends with Unlock to move, Hide in combat, Show on mouseover and
---  Click-through for that frame (its row with it), kept with its place; its set
---  at rest below serves those too.
---
 --  Out of sight at rest (Core.Rest, the setting Hide the unit frames at rest;
 --  Saneroki, 2026-11-01): each frame goes by its alpha, its button still taking
 --  the mouse, so the mouse on a frame, its row or its auras shows that frame
@@ -273,7 +268,7 @@ end
 -- A frame at rest out of sight (Core.Rest): the mouse on it, its row or its auras shows it. Bar.Fit looks again as a
 -- cast or a timer comes or goes.
 local function Rests(kind, face)
-    local rest = Core.Rest.New({ label = "unit frames", frames = { kind.button }, window = kind.window,
+    local rest = Core.Rest.New({ label = "unit frames", frames = { kind.button },
                                  hold = function() return Running(face) end })
     rest:Hot(kind.button)
     rest:Hot(kind.row.button)
@@ -333,7 +328,7 @@ local function Make(kind)
         Row(face)
     end))
     kind.window = Core.Window.New(button, { store = ns.store, key = kind.place, title = ns.TEXT[kind.option],
-                                            first = kind.first, element = true })
+                                            first = kind.first })
     kind.window:Place()
     Rests(kind, face)
 end

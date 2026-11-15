@@ -244,18 +244,13 @@ function Lists.Entries(root, spell)
 end
 
 -- The menu of an aura or a spell ({ id, name, icon, harmful, unit }): the marks, the window, last Add tracking where it is
--- not tracked yet; opened on an element (a reminder bar's icon), that element's own lines under them (Core.Element).
--- Without one (the game hides which aura it is, in a fight) it says so, and offers the window.
-function Lists.Menu(owner, spell, element)
+-- not tracked yet. Without one (the game hides which aura it is, in a fight) it says so, and offers the window.
+function Lists.Menu(owner, spell)
     MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
         if spell then
             root:CreateTitle(spell.name)
             Lists.Entries(root, spell)
             ns.Reminders.Entry(root, spell)
-            if element then -- opened on an element (a reminder bar): its Unlock and ticks under the aura's
-                root:CreateDivider()
-                Core.Element.Lines(root, element)
-            end
         else
             root:CreateTitle(ns.TEXT.auraFight)
             root:CreateDivider()

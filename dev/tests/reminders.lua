@@ -608,17 +608,12 @@ do
     W.menus = {}
     icon._scripts.OnMouseUp(icon, "RightButton")
     local menu = W.menus[1]
-    local edited -- where Edit tracked... stands: the bar's own lines come after it (Core.Element)
-    for index, item in ipairs(menu or {}) do
-        if item.text == TEXT.auraLists then edited = index end
-    end
-    check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.auraImportant and edited
-        and menu[edited + 1].title == ns.TEXT.reminderBar:format(1) and menu[#menu].text == Core.Element.TEXT.through,
-        "a click: the aura's menu as a buff's, its marks, Edit tracked... (it is tracked), then the bar's own lines")
+    check(menu and menu[1].title == "Thorns" and menu[2].text == TEXT.auraImportant and menu[#menu].text == TEXT.auraLists,
+        "a click: the aura's menu as a buff's, its marks, last Edit tracked... (it is tracked)")
     menu[2].fn()
     check(ns.options.auraWhite[782] == "Thorns", "a mark put from it")
     menu[2].fn()
-    menu[edited].fn()
+    menu[#menu].fn()
     check(ns.ReminderEditor.panel:IsVisible(), "Edit tracked... opens the window on it")
     ns.AuraLists.Hide()
     W.Combat(true)

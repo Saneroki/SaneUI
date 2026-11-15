@@ -47,9 +47,6 @@ Window.lua
 Classic.lua
 Views.lua
 Selection.lua
-# Every element on the screen (a unit frame, the chat, the minimap): on its right click unlocked to be moved, hidden in
-# a fight, shown only on mouseover, clicks going through it
-Element.lua
 Holder.lua
 Seat.lua
 # What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled

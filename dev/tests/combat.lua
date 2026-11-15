@@ -1413,16 +1413,6 @@ do
         and player:GetAttribute("*type1") == "target" and player:GetAttribute("*type2") == "togglemenu",
         "three secure unit buttons: a click targets, a right click opens the game's menu")
     check(watched[player] and watched[target] and watched[focus], "the game's unit watch shows each while its unit is there")
-    -- Each an element of Core's: the game's menu of its unit, opened from it or its row, ends with its own lines, and
-    -- its set at rest serves its ticks.
-    local Element = Core.Element
-    local you = Units.KINDS[1]
-    check(Element.Is(you.window) and Element.Of(you.row.button) == you.window and you.window.rest == you.rest,
-        "your frame an element, its row part of it, its set at rest serving it")
-    local lines = {}
-    W.menuModifiers.MENU_UNIT_SELF(you.row.button, W.Description(lines), { unit = "pet" })
-    check(lines[1] and lines[1].title == you.window.options.title and lines[2].text == Element.TEXT.unlock,
-        "the game's menu opened from it: its Unlock to move and ticks at the end")
     local face = player.face
     check(face.name._text == "" and face.level._text == "20" and face.value._text == "850 | 85%",
         "your frame: your level, no name, your health and how much is left")
@@ -2627,60 +2617,6 @@ do
     C_ActionBar.HasVehicleActionBar = vehicle
     W.Fire("UPDATE_VEHICLE_ACTIONBAR")
     check(MainActionBar._alpha == 0, "out of it they rest")
-
-    -- The bars as one element (Core.Element): its menu on the main bar's page arrows, never on a button; its ticks for
-    -- every bar at once; click-through lets the mouse through their empty room alone, what you click keeps it (the
-    -- buttons, the arrows, a checkbox beside a bar), but in a fight it hides in, or out of one.
-    local Element, strip = Core.Element, ns.ActionBars.Element()
-    local arrow = MainActionBar.ActionBarPageNumber.UpButton
-    local parent, mouse = key._parent, key._mouse
-    key._parent, key._mouse = MainActionBar, true -- as in the game: a button of the bar, taking clicks
-    MainActionBar._mouse = true                   -- as in the game: the bar takes the mouse in its empty room
-    local box = W.NewWidget("CheckButton", nil, beside) -- a checkbox beside a bar (Abilities' paged bars)
-    box._mouse = true
-    beside:Show()
-    W.menus = {}
-    arrow._mouseOver = true
-    arrow._scripts.OnMouseUp(arrow, "RightButton")
-    arrow._mouseOver = false
-    local menu = W.menus[1]
-    check(Element.Is(strip) and Element.Of(box) == strip and menu and menu[1].title == ns.TEXT.actionBars
-        and menu[2].text == Element.TEXT.gameMoves and menu[2].disabled and menu[3].text == Element.TEXT.fight
-        and menu[4].text == Element.TEXT.peace and menu[6].text == Element.TEXT.through,
-        "a right click on the main bar's page arrow: the bars' menu, moved in the game's Edit Mode")
-    check(not rawget(key._scripts, "OnMouseUp"), "a button's right click stays the game's")
-    menu[3].fn()
-    W.Combat(true)
-    check(MainActionBar._alpha == 0 and StanceBar._alpha == 0 and not key._mouse and not box._mouse,
-        "Hide in combat: every bar out of sight in a fight, nothing of them taking the mouse, the checkbox neither")
-    W.Combat(false)
-    check(key._mouse and box._mouse and MainActionBar._mouse, "after it each takes the mouse again")
-    Element.Set(strip, "through", true)
-    check(not MainActionBar._mouse and key._mouse and box._mouse and arrow._mouse,
-        "Click-through: the bars' empty room lets clicks through, the buttons, arrows and checkboxes keep them")
-    W.Combat(true)
-    check(not key._mouse and not box._mouse and not MainActionBar._mouse, "in a fight it hides in, nothing of them")
-    W.Combat(false)
-    check(key._mouse and box._mouse and not MainActionBar._mouse, "after it click-through again")
-    Element.Set(strip, "peace", true)
-    check(not Element.Get(strip, "fight") and MainActionBar._alpha == 0 and not key._mouse and not box._mouse,
-        "Hide outside of combat: Hide in combat unticked, the bars out of sight and the mouse going through them")
-    W.Fire("ACTIONBAR_SHOWGRID")
-    check(key._mouse and MainActionBar._alpha == 1, "something dragged: in sight, the buttons take it to drop on")
-    W.Fire("ACTIONBAR_HIDEGRID")
-    check(not key._mouse, "let go: through again")
-    W.Combat(true)
-    check(MainActionBar._alpha == 1 and key._mouse and box._mouse and not MainActionBar._mouse,
-        "in a fight in sight, the buttons theirs, click-through as ticked")
-    W.Combat(false)
-    Element.Set(strip, "through", false)
-    Element.Set(strip, "peace", false)
-    check(key._mouse and box._mouse and MainActionBar._mouse and Core.general.places[ns.name .. ":actionBars"].fight == nil
-        and Core.general.places[ns.name .. ":actionBars"].peace == nil, "unticked: as they were, nothing kept")
-    MainActionBar._mouse = nil
-    key._parent, key._mouse = parent, mouse
-    box:Hide()
-    beside:Hide()
     Core.Set(ns.name, "unitPlayer", false)
     check(not you.rest:Resting(), "your frame off: nothing of it rests")
     Core.Set(ns.name, "unitPlayer", true)

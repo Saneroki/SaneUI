@@ -29,16 +29,6 @@ barriers, maximum health lost for a while, and what can be dispelled (Core's hea
 Around the mouse, only while they run, two see-through rings: the global cooldown and your cast, a bright line with a soft glow leading
 the cast's. They go around the whole picture of the cursor, so it stands in their middle, and start and end at its tip.
 
-Each of your frames, the party and raid frame, the meter and each aura bar is an element of Core's: its right click
-has *Unlock to move*, *Hide in combat*, *Hide outside of combat*, *Show on mouseover* and *Click-through* for it (on your frames and the group's at the end of the game's menu of the unit; on the meter under a
-name's bars or on its first line, its *Show on mouseover* the meter's own; on an aura bar's icon under the aura's
-lines). The ticks are kept with its place. The action bars are one element too, all bars at once: right click the main
-bar's page arrows, or a checkbox or arrow Abilities puts beside a bar, for *Hide in combat*, *Hide outside of combat*,
-*Show on mouseover* and *Click-through* (a button's right click stays its spell's; the game's Edit Mode moves the bars).
-Click-through lets clicks through the bars' empty room; their buttons, arrows and checkboxes keep them, so the menu
-stays at hand. While you drag something onto the bars, set your keys or have them on the full screen, they are in
-sight and take the mouse whatever is ticked.
-
 The threat and damage meter: your party or raid, you on top, each with their class, level, item level and name and
 a thin bar each for threat, damage, healing and interrupts. No title bar and no background, and clicks go through
 it; the mouse on it brings its buttons.
@@ -1110,20 +1100,6 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
-- **2026-11-14:** *Hide outside of combat* on every element, the bars' too (Saneroki: "can you add a hide outside of
-  combat"); click-through leaves what you click (Core's `Element.Used`), so the bars' sparing (`ignoreInLayout`) is
-  gone: their buttons, arrows and checkboxes keep the mouse, their empty room lets it through.
-- **2026-11-14:** the action bars as one element (Saneroki: "on the actionbars only on the pager arrows and
-  checkboxes"): `Core.Element.New` over the game's bars (`ActionBars.lua`, `Bars.Element`), its menu on the main bar's
-  page arrows (`Bars.PAGER`) and on Abilities' checkboxes and arrows beside the bars; its set at rest serves it
-  (`Rest.New`'s `window`); click-through spares what stands beside a bar (`ignoreInLayout`); lifted
-  (`Core.Element.Away`) while something is dragged, keys are set or the bars are seated on the full screen.
-- **2026-11-14:** every element's right click (Saneroki: "All elements should have elements on the rightclick where you
-  can unlock them to move around and adjust if they should be hidden in combat / show on mouseover", and "a option to
-  make it clickthrough"): your frames, the group frame, the meter and the aura bars are elements of Core's
-  (`Core.Element`, `element = true`); the unit frames' sets at rest serve it (`Rest.New`'s `window`); the meter's
-  *Show on mouseover* is its own `meterHover`, *Unlock to move* lets it move with *Lock window* on; an aura bar's icon
-  menu ends with the bar's lines (`Lists.Menu`'s third argument).
 - **2026-11-13:** another druid's mana: one power again (Saneroki: "It doesn't show on the party members [...] revert
   back to how it was with only one class bar"): the game tells a druid's mana in a form to that druid alone, and
   sending it between Sane UIs never came through, so another druid's frames show the power it shows now. Your own keep

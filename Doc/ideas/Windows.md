@@ -314,7 +314,12 @@ Notes for building it (from `references/`):
 - **Windows that are not open while Edit Mode is** (a talk window exists only at an NPC): to be arranged
   and sized there too, Core shows a preview of each in Edit Mode (plan; the guide, *Not built yet*).
 
-## Every element's right click (Saneroki, 2026-11-14; in Core)
+## Every element's options (Saneroki, 2026-11-14; taken out 2026-11-15)
+
+**Taken out again (Saneroki, 2026-11-15):** "Remove all those options again for now and add a card that will add
+them back in but only within the edit mode. We need to redo the edit mode anyway." None of what follows is built
+now: every element's right click is as it was before it. The options come back with the Edit Mode redo, offered
+only while Edit Mode is open (board #488). What was built, as it was:
 
 "All elements should have elements on the rightclick where you can unlock them to move around and adjust if they
 should be hidden in combat / show on mouseover", and "a option to make it clickthrough". Every piece of Sane UI that

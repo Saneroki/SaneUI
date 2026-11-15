@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core and its elements: the right click's options taken out again, to come back within Edit Mode (Saneroki, 2026-11-15)
+Saneroki: "Remove all those options again for now and add a card that will add them back in but only within the edit mode. We need to redo the edit mode anyway." The three changes of 2026-11-14 below (every element's right click; the action bars as one element; Hide outside of combat and click-through for the empty parts alone) are taken back whole: code, tests and docs as before them. Board #488 brings the options back with the Edit Mode redo, offered only while Edit Mode is open.
+- **`src/Core/Element.lua`** gone, with its line in Core's TOC.
+- **`src/Core/Rest.lua`:** no `rest:Element`, `Keep`, `Away`, `Watch`, nor `Rest.New`'s `window`: a set rests as before.
+- **`src/Core/Window.lua`, `Edge.lua`, `Kit.lua`:** no `element` option; `Window.LEFT` and the box's right click as before; no `lent:SetClicks`, `lent:SetWheel`.
+- **The modules:** their right clicks as before: Combat's unit frames, group frame, meter (its own *Show on mouseover*), aura bars and action bars (no element; the page arrows and Abilities' checkboxes and Bar 6 arrows as before); Navigation's minimap and quest log; Social's chat; Speed Leveling's guide and arrow (*Unlock to drag*, *Lock in place* again); Loot's feed and rolls.
+- **Docs:** as before: Core's README (a history line), `Doc/agent/core.md`, `Doc/guides/windows.md`, the READMEs of Combat, Abilities, Navigation, Social, Loot and Speed Leveling; `Doc/ideas/Windows.md` keeps the decision, marked taken out (*Every element's options*); `Doc/changelog.txt` without the entry.
+- **Tests:** as before: `dev/tests/window.lua` (541), `combat.lua` (595), `meter.lua` (115), `reminders.lua` (1616), `abilities.lua` (714), `speedguide.lua` (379), `wowstub.lua` (no `IsObjectType`, `HasScript`).
+- A game restart takes it in (a file gone from Core's TOC).
+
 ### Onboarding plan: Setup, What's new and Tutorials (Saneroki, 2026-11-15)
 Saneroki: a new module called Onboarding, load on demand, with a Setup (a guided tour to set up and configure the addon), What's new, and Tutorials on the different parts of the addon (the map, the bags). Board #483.
 - **`Doc/ideas/Onboarding.md`:** a section *Its three parts*; the name *Onboarding* (was open question 1). Nothing built.

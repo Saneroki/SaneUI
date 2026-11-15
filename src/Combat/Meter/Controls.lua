@@ -9,8 +9,7 @@ local _, ns = ...
 --               saved fight to load or delete
 --      cog      the flyout with the ticks, and Order by, a flyout of its own; under them when it shows,
 --               and last Lock window (the page Combat has it too)
---  A right click on a name opens that character's own flyout: which bars they have, whatever the window's ticks say;
---  under them the meter's Unlock to move, Hide in combat, Show on mouseover and Click-through (Core.Element).
+--  A right click on a name opens that character's own flyout: which bars they have, whatever the window's ticks say.
 --  The flyouts are the game's menus (Blizzard_Menu).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -89,9 +88,6 @@ local Character = ns.Guard(function(_, root)
         root:CreateCheckbox(ns.TEXT.meterTicks[each.tick], Has, Toggle, each.kind)
     end
     if ns.MeterShows.Own(chosen) then root:CreateButton(ns.TEXT.meterAsWindow, AsWindow) end
-    -- Under them the meter's own: Unlock to move, Hide in combat, Show on mouseover, Click-through (Core.Element).
-    root:CreateDivider()
-    Core.Element.Lines(root, ns.Meter.handle)
 end)
 
 -- That character's own flyout, from a right click on their name.
