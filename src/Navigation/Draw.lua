@@ -357,6 +357,7 @@ end
 --  On a dungeon's floor
 -------------------------------------------------------------------------------
 local pins = {}   -- your markers' buttons on the floor
+local Hold        -- (below, The tools at work: a press takes a marker to drag it; the floor's pins press it too)
 local pinFrame    -- their frame, over the lines
 
 local function PinTip(button)
@@ -592,7 +593,7 @@ end
 local dragged = ns.Guard(Drag) -- made once
 
 -- A press takes a marker or a drawing (or a route's stop) on a surface; held until the button is let go (Draw.Release).
-local function Hold(surface, marker, drawing, stop)
+function Hold(surface, marker, drawing, stop)
     if not (marker or drawing) then return end
     held = { surface = surface, thing = marker or drawing, marker = marker ~= nil, stop = stop }
     if marker then

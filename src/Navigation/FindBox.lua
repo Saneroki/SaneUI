@@ -820,7 +820,8 @@ local function Unfocused()
     if list and Plain(list:IsMouseOver()) ~= true then Open(false) end
 end
 
--- How far the finds are, a few times a second while the list shows.
+-- How far the finds are, a few times a second while the list shows; the scroll bar's thumb follows a drag meanwhile.
+local Drag -- (below)
 local elapsed = 0
 local function Tick(_, step)
     if scroller and scroller.drag then
@@ -841,7 +842,7 @@ end
 
 -- The scroll bar's thumb dragged: the lines follow the cursor (the thumb's travel is all of them); a click on the
 -- track above or below it, a page.
-local function Drag()
+function Drag()
     local drag = scroller and scroller.drag
     if not drag then return end
     local _, y = GetCursorPosition()

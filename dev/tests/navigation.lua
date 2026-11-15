@@ -9243,6 +9243,18 @@ end)()
         local first = bar.thumb._points[1][5]
         list._scripts.OnMouseWheel(list, -1)
         check(bar.thumb._points[1][5] < first, "the wheel: the lines on, the thumb lower")
+        -- the thumb dragged: the lines follow the cursor (Drag, from the list's OnUpdate)
+        local lower = bar.thumb._points[1][5]
+        local wasY = cursorY
+        local buttonDown = rawget(_G, "IsMouseButtonDown")
+        IsMouseButtonDown = function() return true end -- (the button held while the thumb is dragged)
+        bar.thumb._scripts.OnMouseDown(bar.thumb, "LeftButton")
+        cursorY = cursorY - 60
+        list._scripts.OnUpdate(list, 0.016)
+        bar.thumb._scripts.OnMouseUp(bar.thumb, "LeftButton")
+        IsMouseButtonDown = buttonDown
+        cursorY = wasY
+        check(bar.thumb._points[1][5] < lower, "the thumb dragged down: the lines on, the thumb with the cursor")
         field.GetBottom = function() return 2000 end
         FindBox.Clear()
         box:SetText("elwynn")
@@ -9845,6 +9857,16 @@ end)()
         if widget._kind == "Button" and widget.marker == floorMarker and widget._shown then pin = widget end
     end
     check(pin and pin.label:GetText() == "Boss pull", "on the floor in its icon, its title beside it")
+    -- pressed with a tool on: taken, to be dragged; let go where it was: its card (in the game the press called nil
+    -- and stood the module down: Saneroki, 2026-11-15, "i got a error")
+    palette.tools[2]._scripts.OnClick(palette.tools[2])
+    pin._scripts.OnMouseDown(pin, "LeftButton")
+    check(Draw.Busy() and not ns.off, "a floor's marker pressed with a tool on: held, no error")
+    pin._scripts.OnMouseUp(pin, "LeftButton")
+    check(not Draw.Busy() and Markers.card:IsShown() and Close(floorMarker.x, floorMarker.x),
+        "let go where it was: its card")
+    Markers.Close()
+    Draw.SetTool(nil)
     check(ns.Dungeons.Named("90:1") and Markers.Where("90:1") == ns.Dungeons.Named("90:1"), "named by its dungeon")
     ns.Dungeons.Close()
     -- the palette goes with the bar, every tool with it
