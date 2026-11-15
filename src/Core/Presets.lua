@@ -2,18 +2,23 @@ local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Presets
---  What the standard profiles set over the defaults (Saneroki, 2026-10-30): our
---  recommended CVars, kept as single CVars of Sync's (Sync.Keep, the tick in the
---  tab CVars), so they are written into the game at the login and what the
+--  What the profile Speedleveling sets over the defaults (Saneroki, 2026-10-30):
+--  our recommended CVars, kept as single CVars of Sync's (Sync.Keep, the tick in
+--  the tab CVars), so they are written into the game at the login and what the
 --  player changes afterwards goes into the profile as anything else. A CVar one
 --  of the two games lacks is passed over. And all of Speed Leveling's switches,
 --  off by default, on in Speedleveling alone, with what other modules do by
 --  themselves for it (Economy's Send by itself). And in Retail the Newcomer Chat,
---  which the game puts a character in by itself: left every time, in both
---  profiles. Character specific has none of this: it stays as the game has it.
+--  which the game puts a character in by itself: left every time.
+--  Accountwide is given none of this (Saneroki, 2026-11-15: "Accountwide profile
+--  should be generated from the users current settings instead of my generic
+--  defaults"): it is made from the settings of the character that turned the
+--  profiles on (Profiles.lua). Character specific has none of it either: it
+--  stays as the game has it. While the profiles are off nothing is given.
 --
 --  Given to a profile once for each Presets.VERSION, and then only what it does
---  not have yet (Profiles.lua: Standard): raise the number when something is
+--  not have yet (Profiles.lua: Standard), but all of it over a Speedleveling
+--  made just then as a copy of Accountwide: raise the number when something is
 --  added here, and every account gets what is new, while what a player changed
 --  stays.
 --
@@ -23,7 +28,7 @@ local Core = SaneUI.Core
 local Presets = { VERSION = 6, profiles = {} }
 Core.Presets = Presets
 
--- What both Accountwide and Speedleveling hold. No water detail: its 3 crashed Forever's client in the Ruins of
+-- Our recommended CVars, in Speedleveling. No water detail: its 3 crashed Forever's client in the Ruins of
 -- Lordaeron, and Sane UI never sets it (Sync.Barred; Saneroki, 2026-11-06).
 local RECOMMENDED = {
     -- How far and how much the world shows.
@@ -47,12 +52,6 @@ local RECOMMENDED = {
     -- A little more room.
     cameraDistanceMaxZoomFactor = "2.6", -- the camera out as far as the game lets it
     screenshotQuality = "10",
-}
-
--- Where the two differ Accountwide names the game's own value: several of these are kept by the computer, not the
--- character, and a character on it must not be left with what one on Speedleveling set.
-local ACCOUNTWIDE = {
-    ffxDeath = "1", showTutorials = "1", instantQuestText = "0", Sound_EnableErrorSpeech = "1", autoDismountFlying = "0",
 }
 
 -- Speedleveling: nothing that stops or slows you.
@@ -81,13 +80,12 @@ local ECONOMY = { bankerAuto = true }
 -- switched off.
 local SOCIAL = Core.ForGame({ retail = { presence = { ["Newcomer Chat"] = false } } })
 
-local function Both(extra)
+local function With(extra)
     local named = {}
     for name, value in pairs(RECOMMENDED) do named[name] = value end
     for name, value in pairs(extra) do named[name] = value end
     return named
 end
 
-Presets.profiles.Accountwide = { Sync = { named = Both(ACCOUNTWIDE) }, Social = SOCIAL }
-Presets.profiles.Speedleveling = { Sync = { named = Both(SPEEDLEVELING) }, SpeedLeveling = LEVELING, Economy = ECONOMY,
+Presets.profiles.Speedleveling = { Sync = { named = With(SPEEDLEVELING) }, SpeedLeveling = LEVELING, Economy = ECONOMY,
                                   Social = SOCIAL }

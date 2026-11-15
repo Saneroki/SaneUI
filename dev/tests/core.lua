@@ -38,8 +38,10 @@ check(SaneUIDB.errors.early and SaneUIDB.errors.early.text:find("too soon") and 
 check(type(SaneUIDB.log) == "table" and type(Core.Store("Spoiled")) == "table", "what is spoiled is made new, not trusted")
 check(Core.Settings("Core").errors == true and Core.general == Core.Settings("Core") and SaneUIDB.profiles.Accountwide.Core == Core.general,
     "the general switches are kept with every module's, in the profile Accountwide at first, with their defaults")
-check(SaneUIDB.version == 2 and SaneUIDB.profiles.Accountwide.Demo.shy == true and rawget(SaneUIDB.modules.Demo, "options") == nil,
+check(SaneUIDB.version == 3 and SaneUIDB.profiles.Accountwide.Demo.shy == true and rawget(SaneUIDB.modules.Demo, "options") == nil,
     "settings of the first shape (the account's, beside each module's store) are in the profile Accountwide now")
+check(SaneUIDB.profilesOn == true and Core.Profiles.Enabled() and Core.Profiles.InUse() == "Accountwide",
+    "saved settings with a character seen: the profiles are on, as before, this character on Accountwide")
 
 -- Modules: each an addon of its own, read after Core ----------------------------------------
 local steps, flipped, toldDemo, captured = {}, nil, {}, 0
@@ -1728,13 +1730,15 @@ do
         "a character seen before stays where it was")
     Profiles.Use("Speedleveling")
     local wide, fast = SaneUIDB.profiles.Accountwide.Sync, SaneUIDB.profiles.Speedleveling.Sync
-    check(wide.named.targetFPS == "115" and wide.named.screenshotQuality == "10"
-        and wide.from == Core.GAME and fast.from == Core.GAME, "both hold our recommended CVars, as this game's")
-    check(wide.named.farclip == "10000" and fast.named.worldPreloadNonCritical == "0" and wide.named.shadowMode == "4"
+    check(fast.named.targetFPS == "115" and fast.named.screenshotQuality == "10" and fast.from == Core.GAME,
+        "Speedleveling holds our recommended CVars, as this game's")
+    check(type(wide) ~= "table" or type(wide.named) ~= "table" or next(wide.named) == nil,
+        "Accountwide none of them: it is made from a player's own settings (Saneroki, 2026-11-15)")
+    check(fast.named.farclip == "10000" and fast.named.worldPreloadNonCritical == "0" and fast.named.shadowMode == "4"
         and fast.named.groundEffectDensity == "256", "how far and how much the world shows, and loading screens that do not wait")
-    check(wide.named.waterDetail == nil and fast.named.waterDetail == nil, "no water detail: Sane UI never sets it")
-    check(wide.named.ffxDeath == "1" and fast.named.ffxDeath == "0" and fast.named.maxFPS == "115" and fast.solo == nil,
-        "where they differ Accountwide names the game's own value: a character on it is not left with Speedleveling's")
+    check(fast.named.waterDetail == nil, "no water detail: Sane UI never sets it")
+    check(fast.named.ffxDeath == "0" and fast.named.maxFPS == "115" and fast.solo == nil,
+        "and nothing that stops or slows you")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,
         "Character specific can be what new characters start with")
     check(Profiles.Reset() and SaneUIDB.profiles.Speedleveling.SpeedLeveling.take == true, "Defaults: what the profile sets stays")
@@ -1758,28 +1762,31 @@ do
     NextSession({ version = 2, profiles = { Accountwide = { Demo = { shy = true } } }, accountwide = false, ownSince = 5 }, {})
     check(SaneUIDB.profiles.Speedleveling.Demo.shy == true and SaneUIDB.accountwide == nil and SaneUIDB.ownSince == nil,
         "an account with settings: Speedleveling starts as a copy of them, the old switch is gone")
-    NextSession({ version = 2, profiles = { Accountwide = { Sync = { named = { farclip = "5000" }, from = "other" } } } }, {})
-    local kept = SaneUIDB.profiles.Accountwide.Sync
+    NextSession({ version = 2, profiles = { Accountwide = { Demo = { shy = true } },
+        Speedleveling = { Sync = { named = { farclip = "5000" }, from = "other" } } } }, {})
+    local kept = SaneUIDB.profiles.Speedleveling.Sync
     check(kept.named.farclip == "5000" and kept.named.screenshotQuality == "10" and kept.from == "other",
         "given to a profile with settings, the presets add only what it lacks: the player's word stays")
+    local wideSync = SaneUIDB.profiles.Accountwide.Sync
+    check((wideSync == nil or next(wideSync.named or {}) == nil) and SaneUIDB.presets.Accountwide == nil, "Accountwide is given no preset")
     kept.named.screenshotQuality = nil
     NextSession(SaneUIDB, {})
     local presets, game = Core.Presets, Core.GAME
-    check(presets.profiles.Accountwide.Social == nil, "Forever has no Newcomer Chat to leave")
+    check(presets.profiles.Speedleveling.Social == nil and presets.profiles.Accountwide == nil, "Forever has no Newcomer Chat to leave")
     Core.GAME = "retail"
     W.Load(root, "SaneUI", "Core/Presets", {})
-    check(Core.Presets.profiles.Accountwide.Social.presence["Newcomer Chat"] == false
-        and Core.Presets.profiles.Speedleveling.Social.presence["Newcomer Chat"] == false, "in Retail both profiles leave it")
+    check(Core.Presets.profiles.Speedleveling.Social.presence["Newcomer Chat"] == false and Core.Presets.profiles.Accountwide == nil,
+        "in Retail Speedleveling leaves it; Accountwide wishes nothing")
     Core.GAME, Core.Presets = game, presets
-    check(SaneUIDB.profiles.Accountwide.Sync.named.screenshotQuality == nil and SaneUIDB.presets.Accountwide == Core.Presets.VERSION,
+    check(SaneUIDB.profiles.Speedleveling.Sync.named.screenshotQuality == nil and SaneUIDB.presets.Speedleveling == Core.Presets.VERSION,
         "and only once: one the player unticked stays out, until a new version brings what is new")
     -- A new version: what is new comes, one the player unticked (Sync's dropped) does not (card #439).
-    local version, sync = Core.Presets.VERSION, SaneUIDB.profiles.Accountwide.Sync
+    local version, sync = Core.Presets.VERSION, SaneUIDB.profiles.Speedleveling.Sync
     sync.named.maxFPS, sync.dropped = nil, { ScreenshotQuality = true }
     Core.Presets.VERSION = version + 1
     NextSession(SaneUIDB, {})
-    sync = SaneUIDB.profiles.Accountwide.Sync
-    check(sync.named.maxFPS == "115" and sync.named.screenshotQuality == nil and SaneUIDB.presets.Accountwide == version + 1,
+    sync = SaneUIDB.profiles.Speedleveling.Sync
+    check(sync.named.maxFPS == "115" and sync.named.screenshotQuality == nil and SaneUIDB.presets.Speedleveling == version + 1,
         "a new version of the presets brings what the profile lacks, but not a CVar the player unticked (whatever its spelling)")
     Core.Presets.VERSION, sync.dropped = version, nil
     NextSession(SaneUIDB, {})
@@ -1824,7 +1831,7 @@ NextSession({
     newCharacters = { profile = "Raid", autoLoad = true },
     perCharacter = { Demo = true },
 }, { settings = { Demo = { loud = true } }, profile = "Raid" })
-check(SaneUIDB.version == 2 and SaneUIDB.profiles.Accountwide.Demo.loud == true and SaneUIDB.profiles.Accountwide.Demo.shy == true
+check(SaneUIDB.version == 3 and SaneUIDB.profilesOn == true and SaneUIDB.profiles.Accountwide.Demo.loud == true and SaneUIDB.profiles.Accountwide.Demo.shy == true
     and SaneUIDB.profiles["Accountwide (old)"].Demo.shy == false, "the account's settings (also those kept aside) are the profile Accountwide; one called so before keeps its under another name")
 check(SaneUIDB.profiles.Accountwide.Social.window == false and SaneUIDB.modules.Chat == nil, "a module renamed since is found under its new name")
 check(SaneUIDB.characters["Player-70-0000ABCD"].profile == "Raid" and SaneUIDB.characters["Player-70-00000002"].profile == nil
@@ -1845,6 +1852,111 @@ SlashCmdList.SANEUI("profile raid")
 check(Profiles.InUse() == "Raid" and printedMatch("uses the profile Raid"), "/sane profile <name> uses one, in any letter case")
 SlashCmdList.SANEUI("profiles nothing")
 check(Profiles.InUse() == "Raid" and printedMatch("there is no profile called nothing"), "a name that is none says so")
+UnitGUID = guid
+
+-- Profiles off on a fresh install, turned on and off (Saneroki, 2026-11-15) ---------------------------------
+do
+    local function As(guid) UnitGUID = function() return guid end end
+    local FIRST, SECOND, THIRD = "Player-70-00000021", "Player-70-00000022", "Player-70-00000023"
+    As(FIRST)
+    NextSession({}, {}) -- nothing saved: a fresh install
+    W.Fire("PLAYER_LOGIN")
+    check(not Profiles.Enabled() and not Profiles.On() and Profiles.InUse() == Profiles.OWN and SaneUIDB.profilesOn == nil
+        and SaneUIDB.characters[FIRST].profile == Profiles.OWN, "a fresh install: the profiles off, this character on its own settings")
+    local wide = SaneUIDB.profiles.Accountwide
+    check(SaneUIDB.profiles.Speedleveling == nil and (wide == nil or next(wide) == nil) and SaneUIDB.presets == nil,
+        "no profile made, no preset given")
+    check(Core.Settings("Demo") == SaneUICharDB.settings.Demo and Profiles.Settings("Accountwide") == nil
+        and table.concat(Profiles.List(), ", ") == Profiles.OWN, "its settings are its own; the save window has no profile to save to")
+    W.printed = {}
+    SlashCmdList.SANEUI("profile")
+    check(printedMatch("profiles are off"), "/sane profile says they are off")
+    Core.Set("Demo", "shy", true)
+    local firstFile = Written(SaneUICharDB)
+    -- A second character on the fresh install keeps its own
+    As(SECOND)
+    NextSession(SaneUIDB, {})
+    W.Fire("PLAYER_LOGIN")
+    check(not Profiles.Enabled() and Profiles.InUse() == Profiles.OWN and Core.Settings("Demo").shy == false
+        and SaneUIDB.characters[SECOND].profile == Profiles.OWN, "a second character starts from the defaults, on its own")
+    Core.Set("Demo", "loud", false)
+    local secondFile = Written(SaneUICharDB)
+    As(FIRST)
+    NextSession(SaneUIDB, firstFile)
+    check(Core.Settings("Demo").shy == true and Core.Settings("Demo").loud == true, "each keeps its own")
+    -- The page: the switch at its top, and while the profiles are off only a line saying so under it
+    local switch, offLine = Control("Share settings between characters"), Control("Profiles are off: every character keeps its own settings. Tick the box above to share this character's settings with your other characters.")
+    offLine:Refresh()
+    switch:Refresh()
+    check(switch and not switch:GetChecked() and offLine.widget:IsShown() and not canvas.tabs[1]:IsShown()
+        and not canvas.parts[1]:GetParent():IsShown(), "the page: the switch unticked, a line saying why, no tabs")
+    -- Turned on: Accountwide is this character's settings as they are, the modules told nothing
+    local held, told = Core.Settings("Demo"), #toldDemo
+    W.printed = {}
+    Tick(switch, true)
+    local line = SaneUIDB.characters[FIRST]
+    wide = SaneUIDB.profiles.Accountwide
+    check(Profiles.Enabled() and SaneUIDB.profilesOn == true and Profiles.InUse() == "Accountwide" and line.profile == "Accountwide"
+        and printedMatch("profiles are on: this character uses the profile Accountwide"), "ticked: the profiles on, this character on Accountwide")
+    check(wide.Demo == held and held.shy == true and held.loud == true and Core.Same(SaneUICharDB.settings.Demo, held)
+        and SaneUICharDB.settings.Demo ~= held and #toldDemo == told, "Accountwide holds its settings as they were: nothing changed for the modules")
+    check(type(wide.Sync) ~= "table" or next(wide.Sync.named or {}) == nil, "and none of our recommended CVars")
+    check(SaneUIDB.profiles.Speedleveling and SaneUIDB.profiles.Speedleveling.Demo.shy == true
+        and SaneUIDB.profiles.Speedleveling.SpeedLeveling.take == true, "Speedleveling is made, a copy of it with its presets")
+    offLine:Refresh()
+    switch:Refresh()
+    check(switch:GetChecked() and not offLine.widget:IsShown() and canvas.tabs[1]:IsShown() and canvas.parts[1]:GetParent():IsShown(),
+        "the page shows the profiles")
+    check(Profiles.Character(Profiles.NEW).profile == "Accountwide" and SaneUIDB.characters[SECOND].profile == Profiles.OWN,
+        "characters not seen yet start on Accountwide; the other one keeps its own")
+    local firstOn = Written(SaneUICharDB)
+    As(THIRD)
+    NextSession(SaneUIDB, {})
+    W.Fire("PLAYER_LOGIN")
+    check(Profiles.InUse() == "Accountwide" and Core.Settings("Demo").shy == true, "a new character: on Accountwide, with its settings")
+    local thirdFile = Written(SaneUICharDB)
+    As(SECOND)
+    NextSession(SaneUIDB, secondFile)
+    check(Profiles.InUse() == Profiles.OWN and Core.Settings("Demo").loud == false and Core.Settings("Demo").shy == false,
+        "the second keeps its own until moved")
+    -- Turned off on the third: it keeps its settings as its own, the profiles are kept
+    As(THIRD)
+    NextSession(SaneUIDB, thirdFile)
+    Core.Set("Demo", "loud", false)
+    held, told = Core.Settings("Demo"), #toldDemo
+    W.printed = {}
+    SlashCmdList.SANEUI("profile off")
+    check(not Profiles.Enabled() and SaneUIDB.profilesOn == false and Profiles.InUse() == Profiles.OWN and printedMatch("profiles are off")
+        and SaneUIDB.characters[THIRD].profile == Profiles.OWN, "/sane profile off: off, this character on its own")
+    check(Core.Settings("Demo") == held and held.loud == false and held.shy == true and SaneUICharDB.settings.Demo == held
+        and #toldDemo == told, "its settings stay as they were, now its own")
+    check(SaneUIDB.profiles.Accountwide.Demo.loud == false and SaneUIDB.profiles.Speedleveling, "the profiles are kept for later")
+    -- The first still named Accountwide: at its next login it takes that profile's settings as its own
+    As(FIRST)
+    NextSession(SaneUIDB, firstOn)
+    check(Profiles.InUse() == Profiles.OWN and SaneUIDB.characters[FIRST].profile == Profiles.OWN
+        and Core.Settings("Demo").loud == false and SaneUICharDB.settings.Demo == Core.Settings("Demo"),
+        "the profiles off, a character on a profile takes its settings as its own at its next login")
+    -- On again: Accountwide is the one kept, not made anew
+    SaneUIDB.profiles.Accountwide.Demo.shy = false
+    W.printed = {}
+    SlashCmdList.SANEUI("profile on")
+    check(Profiles.Enabled() and Profiles.InUse() == "Accountwide" and Core.Settings("Demo").shy == false
+        and printedMatch("profiles are on"), "/sane profile on again: this character uses the Accountwide kept")
+    -- The box Speed Leveling in the bags on a fresh install turns the profiles on first
+    As(SECOND)
+    NextSession({}, {})
+    W.Fire("PLAYER_LOGIN")
+    check(not Profiles.Enabled() and Profiles.SetLeveling(true) and Profiles.Enabled() and Profiles.InUse() == "Speedleveling"
+        and SaneUIDB.characters[SECOND].before == "Accountwide", "Speed Leveling ticked with the profiles off: on, then Speedleveling")
+    check(Profiles.SetLeveling(false) and Profiles.InUse() == "Accountwide", "unticked: Accountwide")
+    -- Saved settings with characters on profiles: on, and as they were
+    NextSession({ version = 2, profiles = { Accountwide = { Demo = { shy = true } }, Raid = { Demo = { loud = false } } },
+        characters = { [SECOND] = { name = "Tester Stub", profile = "Raid" }, [FIRST] = { name = "Alt" } } }, {})
+    check(Profiles.Enabled() and SaneUIDB.version == 3 and Profiles.InUse() == "Raid" and Core.Settings("Demo").loud == false
+        and SaneUIDB.characters[FIRST].profile == nil and SaneUIDB.profiles.Accountwide.Demo.shy == true
+        and SaneUIDB.profiles.Accountwide.Sync == nil, "saved settings with characters on profiles: the profiles on, nothing changed")
+end
 UnitGUID = guid
 
 -- Players' names ----------------------------------------------------------------------

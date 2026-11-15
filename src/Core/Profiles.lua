@@ -4,12 +4,24 @@ local Core = SaneUI.Core
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Profiles
 --  Whose settings are in use, and where they live (Saneroki, 2026-10-17; the
---  three profiles every account has, 2026-10-30). Each character uses a profile:
+--  three profiles every account has, 2026-10-30; off at first, 2026-11-15).
+--
+--  Profiles are off on a fresh install (Profiles.Enabled): every character keeps
+--  its own settings (Character specific), Sync writes nothing into the game and
+--  no preset is given. Turned on (Profiles.SetEnabled, the switch at the top of
+--  the page Profiles, /sane profile on, Onboarding), the first time, this
+--  character's settings as they are become the profile Accountwide: a copy of
+--  Sane UI's, and the game's as Sync reads them this moment (Sync.Take), nothing
+--  written into the game; this character uses it, characters not seen yet start
+--  on the profile for new characters, the others keep their own until moved.
+--  Turned off, the profiles are kept for later and every character keeps its
+--  settings as its own: this one at once, another at its next login (TakeOwn);
+--  the game's settings stay as they are. Once on, each character uses a profile:
 --    Speedleveling        Sane UI's settings, the game's, Speed Leveling's
 --                         automation on and our recommended CVars (Presets.lua)
---    Accountwide          the one new characters start with: Sane UI's recommended
---                         settings and CVars; every change goes to all the
---                         characters that use it
+--    Accountwide          the one new characters start with, made from the
+--                         settings of the character that turned profiles on;
+--                         every change goes to all the characters that use it
 --    Character specific   no profile at all: each character keeps its own, from
 --                         a fresh install's defaults, and the game's settings
 --                         are left to the game, back at its defaults the moment
@@ -31,11 +43,15 @@ local Core = SaneUI.Core
 --  brought it up to date (their capture).
 --
 --      SaneUIDB.version      the shape of these settings (Profiles.VERSION)
+--      SaneUIDB.profilesOn   true: the profiles are on; false: turned off, kept for later; nil: never on (a fresh
+--                            install), so turning them on makes Accountwide from this character's settings
 --      SaneUIDB.profiles     [name] = { [module] = its settings }; Accountwide and Speedleveling are always there
+--                            while the profiles are on (none before they were first turned on)
 --      SaneUIDB.characters   [key] = { name, realm, class, profile, before }: every character seen; profile: a name,
 --                            or Character specific (Profiles.OWN); nil: Accountwide. before: the last one it used
 --                            that was not Speedleveling, for the box Speed Leveling in the bags (Profiles.SetLeveling)
---      SaneUIDB.newProfile   the profile a character not seen yet starts with (nil: Accountwide)
+--      SaneUIDB.newProfile   the profile a character not seen yet starts with (nil: Accountwide); while the profiles
+--                            are off every new character starts on its own
 --      SaneUIDB.presets      [name] = the Presets.VERSION a standard profile was given
 --      SaneUICharDB.settings [module] = this character's own settings (Character specific)
 --      SaneUICharDB.key      this character's key, to find its line before the game names it
@@ -45,7 +61,8 @@ local Core = SaneUI.Core
 local Profiles = {}
 Core.Profiles = Profiles
 
-Profiles.VERSION = 2       -- 1: the account's settings, a character's own, profiles copied in and out
+Profiles.VERSION = 3       -- 1: the account's settings, a character's own, profiles copied in and out; 2: profiles
+                           -- always on
 Profiles.ACCOUNTWIDE = "Accountwide"
 Profiles.SPEEDLEVELING = "Speedleveling"
 Profiles.OWN = "Character specific" -- no profile: the character's own settings, the game's left to the game
@@ -61,8 +78,15 @@ local TEXT = {
     taken = "there is already a profile called %s.",
     missing = "there is no profile called %s.",
     fixed = "the profiles Speedleveling, Accountwide and Character specific are always there: they cannot be renamed or deleted.",
-    about = "the profiles: /sane profile lists them, /sane profile <name> is this character's from now on",
+    about = "the profiles: /sane profile lists them, /sane profile <name> is this character's from now on, /sane profile on or off turns them on or off",
     list = "profiles: %s. This character uses %s.",
+    off = "profiles are off: every character keeps its own settings. /sane profile on shares this character's with the others, as the profile Accountwide.",
+    turnedOn = "profiles are on: this character uses the profile %s.",
+    turnedOff = "profiles are off: every character keeps its own settings from now on.",
+    firstOn = "the changes are not saved yet: the save window asks first, then profiles are turned on.",
+    firstOff = "the changes are not saved yet: the save window asks first, then profiles are turned off.",
+    nextOn = "Then profiles are turned on.",
+    nextOff = "Then profiles are turned off.",
     using = "this character uses the profile %s.",
     current = "that is the character you are playing.",
     unknown = "Sane UI has not seen that character.",
@@ -112,6 +136,12 @@ local function Name(text)
     return text
 end
 
+-- Whether the account uses profiles at all; off (a fresh install), every character keeps its own settings.
+local function Enabled()
+    return db ~= nil and db.profilesOn == true
+end
+Profiles.Enabled = Enabled
+
 -------------------------------------------------------------------------------
 --  Characters
 -------------------------------------------------------------------------------
@@ -146,24 +176,27 @@ local function ForNew()
     return Usable(db.newProfile) and db.newProfile or ACCOUNTWIDE
 end
 
--- A character not seen before gets its line, with the profile for new characters. Returns whether it was new.
+-- A character not seen before gets its line, with the profile for new characters (its own while the profiles are
+-- off). Returns whether it was new.
 local function Register(which)
     if not which or Line(which) then return false end
-    db.characters[which] = { profile = ForNew() }
+    db.characters[which] = { profile = Enabled() and ForNew() or OWN }
     return true
 end
 
 -------------------------------------------------------------------------------
 --  Where the settings live
 -------------------------------------------------------------------------------
--- Where this character's settings should live now: its profile, or (Character specific) its own.
+-- Where this character's settings should live now: its profile, or (Character specific, or the profiles off) its own.
 local function Want()
+    if not Enabled() then return nil end
     local name = Assigned(Line())
     if name == OWN then return nil end
     return name
 end
 
--- Whether this character uses a profile, so that the game's settings are kept in it (not Character specific).
+-- Whether this character uses a profile, so that the game's settings are kept in it (not Character specific, nor the
+-- profiles off).
 function Profiles.On()
     return db == nil or Want() ~= nil
 end
@@ -224,7 +257,9 @@ end
 -- right, the modules told; each module whose settings were put in told it moved (moved) once all have
 -- theirs. A module fill answers false for is left as it is (Reset leaves the game's own, Sync's), so it
 -- is not told it moved: told, Sync would write the game's settings anew, and the game's own in place of
--- a part the profile holds nothing of.
+-- a part the profile holds nothing of. Settings the same as those held (a copy of them: Speedleveling made from
+-- Accountwide) leave the table as it is, its inner tables too, which a module may hold (the bags' store): nothing
+-- differs, so it would not be told to take the new ones.
 local function Fill(fill)
     local before = {}
     for _, name in ipairs(Core.optionOrder) do
@@ -233,9 +268,11 @@ local function Fill(fill)
             local new = fill(name)
             if new ~= false then
                 before[name] = Copy(values)
-                wipe(values)
-                for k, v in pairs(new or {}) do values[k] = Copy(v) end
-                Core.Settle(name, values)
+                if not Same(values, new) then
+                    wipe(values)
+                    for k, v in pairs(new or {}) do values[k] = Copy(v) end
+                    Core.Settle(name, values)
+                end
             end
         end
     end
@@ -313,6 +350,14 @@ local function Give(profile, preset)
     end
 end
 
+-- A preset over a profile made just now as a copy of Accountwide (whose settings hold their defaults, Speed Leveling's
+-- switches off): its own values win there.
+local function Over(profile, preset)
+    for key, value in pairs(preset) do
+        if type(value) == "table" then Over(Table(profile, key), value) else profile[key] = value end
+    end
+end
+
 -- A preset without the CVars the player unticked in the profile (Sync's dropped): a new version of the presets does not
 -- tick them again.
 local function Unticked(profile, preset)
@@ -331,21 +376,23 @@ local function Unticked(profile, preset)
 end
 
 -- A standard profile: made if it is not there, for an account that has settings already as a copy of Accountwide's, so
--- that nothing is lost by using it; then what its preset holds, once for each version of the presets, but for a CVar the
--- player unticked. The game's settings in it are this game's from then on (Sync's from: a game's folder holds that game's).
+-- that nothing is lost by using it, with its preset over the copy; else what its preset holds and the profile lacks, once
+-- for each version of the presets; never a CVar the player unticked. The game's settings in it are this game's from then
+-- on (Sync's from: a game's folder holds that game's).
 local function Standard(name)
-    if not Saved(name) then db.profiles[name] = Copy(Saved(ACCOUNTWIDE)) or {} end
+    local made = not Saved(name)
+    if made then db.profiles[name] = Copy(Saved(ACCOUNTWIDE)) or {} end
     local presets = Table(db, "presets")
-    if presets[name] == Core.Presets.VERSION then return end
+    if presets[name] == Core.Presets.VERSION and not made then return end
     local profile = db.profiles[name]
-    Give(profile, Unticked(profile, Profiles.PRESET[name] or {}))
+    local preset = Unticked(profile, Profiles.PRESET[name] or {})
+    if made then Over(profile, preset) else Give(profile, preset) end
     local sync = profile.Sync
     if type(sync) == "table" and sync.from == nil then sync.from = Core.GAME end
     presets[name] = Core.Presets.VERSION
 end
 
-local function Upgrade()
-    if db.version == Profiles.VERSION then return end
+local function First()
     local profiles = Table(db, "profiles")
     local account = {}
     for name, store in pairs(db.modules) do
@@ -377,6 +424,24 @@ local function Upgrade()
     local new = db.newCharacters
     db.newProfile = type(new) == "table" and new.autoLoad and Saved(new.profile) and new.profile or nil
     db.separate, db.perCharacter, db.account, db.newCharacters = nil, nil, nil, nil
+end
+
+-- Whether the saved settings are a player's already: a character seen, or settings kept in a profile (a fresh
+-- install has neither).
+local function Used()
+    if type(db.characters) == "table" and next(db.characters) ~= nil then return true end
+    for _, profile in pairs(type(db.profiles) == "table" and db.profiles or {}) do
+        if type(profile) == "table" and next(profile) ~= nil then return true end
+    end
+    return false
+end
+
+-- Version 3: the profiles can be off, and are on a fresh install. Settings saved before are on, and stay as they are.
+local function Upgrade()
+    if db.version == Profiles.VERSION then return end
+    local version = tonumber(db.version)
+    if not version or version < 2 then First() end
+    if db.profilesOn == nil and Used() then db.profilesOn = true end
     db.version = Profiles.VERSION
 end
 
@@ -395,13 +460,39 @@ local function Mend()
     for name, profile in pairs(db.profiles) do
         if type(name) ~= "string" or type(profile) ~= "table" then db.profiles[name] = nil end
     end
-    Table(db.profiles, ACCOUNTWIDE)
-    Standard(SPEEDLEVELING) -- first: it copies Accountwide as that was before its own preset
-    Standard(ACCOUNTWIDE)
+    if db.profilesOn ~= true and db.profilesOn ~= false then db.profilesOn = nil end
+    -- The standard profiles while the profiles are on; off, none is made or given its presets.
+    if Enabled() then
+        Table(db.profiles, ACCOUNTWIDE)
+        Standard(SPEEDLEVELING)
+    end
     db.accountwide, db.ownSince, char.since = nil, nil, nil -- the switch Accountwide of before
     if not Usable(db.newProfile) then db.newProfile = nil end
     if type(char.settings) ~= "table" then char.settings = nil end
     if type(char.key) ~= "string" then char.key = nil end
+end
+
+-------------------------------------------------------------------------------
+--  The profiles turned off: each character keeps the settings it had
+-------------------------------------------------------------------------------
+-- A character that still names a profile while the profiles are off (it was not played since they were turned off)
+-- takes a copy of that profile's settings as its own, Sane UI's (the game's stay as the game has them), so that it
+-- looks as it did; from then on it keeps its own (Character specific). The modules that hold theirs already are told.
+local function TakeOwn(line)
+    if Enabled() or not line or line.profile == OWN then return end
+    local profile = Saved(Assigned(line))
+    Assign(line, OWN)
+    if not profile then return end
+    local own = Own()
+    for name, values in pairs(profile) do
+        if type(values) == "table" and not live[name] and not Game(name) then own[name] = Copy(values) end
+    end
+    if source == nil and next(live) ~= nil then
+        Fill(function(name)
+            if Game(name) then return false end
+            return profile[name]
+        end)
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -418,9 +509,11 @@ Core.On("ADDON_LOADED", function(name)
     UpgradeCharacter()
     Mend()
     key = Core.Plain(UnitGUID("player")) or char.key
-    Register(key)
     wipe(live)
     wipe(session)
+    source = nil
+    Register(key)
+    TakeOwn(Line())
     source = Want()
     for _, module in ipairs(Core.optionOrder) do Bind(module) end
     Core.general = live[Core.name]
@@ -433,6 +526,7 @@ Core.On("PLAYER_LOGIN", function()
     if Core.charKey and Core.charKey ~= key then
         key = Core.charKey
         Register(key)
+        TakeOwn(Line())
         Move(Want())
     end
     char.key = key
@@ -462,11 +556,11 @@ function Profiles.InUse()
     return source or OWN
 end
 
--- For the save window (Unsaved.lua): a saved profile's table of every module's settings (nil: none of that name),
--- and the settings in use filled anew as Fill does (the modules told; fill(name) gives a module's new settings, false
--- leaves it as it is).
+-- For the save window (Unsaved.lua): a saved profile's table of every module's settings (nil: none of that name, and
+-- none while the profiles are off: the changes are this character's alone), and the settings in use filled anew as
+-- Fill does (the modules told; fill(name) gives a module's new settings, false leaves it as it is).
 function Profiles.Settings(name)
-    return db and Saved(name) or nil
+    return Enabled() and Saved(name) or nil
 end
 
 function Profiles.Put(fill)
@@ -476,8 +570,10 @@ end
 -------------------------------------------------------------------------------
 --  Profiles
 -------------------------------------------------------------------------------
--- Their names: the three standard ones first, the others in alphabetical order.
+-- Their names: the three standard ones first, the others in alphabetical order. While the profiles are off there is
+-- only Character specific.
 function Profiles.List()
+    if not Enabled() then return { OWN } end
     local names = {}
     for name in pairs(db.profiles) do
         if not Profiles.Fixed(name) and Saved(name) then names[#names + 1] = name end
@@ -510,6 +606,101 @@ local function Snapshot()
     return copy
 end
 
+-------------------------------------------------------------------------------
+--  Profiles on or off (Saneroki, 2026-11-15: "the whole profiles should be disabled by default and can be activated
+--  in the settings or during the onboarding procedure. The first time a "accountwide" profile is created it will take
+--  the current settings and make it part of the accountwide profile.")
+-------------------------------------------------------------------------------
+-- The tables the modules hold stay as they are, and live in another place from now on (a profile's name; nil: this
+-- character's own); the place left keeps a copy. No module is told: nothing changed for it.
+local function Rehome(to)
+    for name, values in pairs(live) do
+        Holder(source, name)[name] = Copy(values)
+        Holder(to, name)[name] = values
+    end
+    source = to
+end
+
+-- After Rehome: the switches' views are told, and the settings in use as they are now are the last save (Unsaved.lua).
+local function Rehomed()
+    if Core.SwitchChanged then Core.SwitchChanged() end
+    if Core.Unsaved then Core.Safe("profiles: unsaved", Core.Unsaved.Moved) end
+end
+
+-- On. The first time (or with Accountwide holding nothing), Accountwide is this character's settings as they are:
+-- Sane UI's (the modules not switched on today too) and the game's as Sync reads them now (Sync.Take: nothing written
+-- into the game, no /reload, no defaults, none of our recommended CVars). Otherwise this character uses the
+-- Accountwide kept from before, as when it is chosen. Speedleveling is made (a copy of Accountwide, with its presets).
+local function TurnOn()
+    local line, wide = Line(), Saved(ACCOUNTWIDE)
+    local first = db.profilesOn == nil or not wide or next(wide) == nil
+    db.profilesOn = true
+    if not first then
+        Standard(SPEEDLEVELING)
+        Assign(line, ACCOUNTWIDE)
+        Move(Want())
+        return
+    end
+    db.profiles[ACCOUNTWIDE] = Snapshot()
+    Assign(line, ACCOUNTWIDE)
+    local sync = Core.Sync
+    local held = sync and live[sync.name]
+    if held then -- this session's table of the game's settings (kept nowhere): at its defaults, then read from the game
+        wipe(held)
+        Core.Settle(sync.name, held)
+    end
+    Rehome(ACCOUNTWIDE)
+    if held and sync.Take then Core.Safe("profiles: the game's settings", sync.Take) end
+    Standard(SPEEDLEVELING)
+    Rehomed()
+end
+
+-- Off. The profiles stay for later; this character's settings in use are its own from now on, as they are (the
+-- profile's of the modules not switched on today too); the game's are read into the profile left and stay as they
+-- are in the game. The other characters take theirs at their next login (TakeOwn).
+local function TurnOff()
+    local line = Line()
+    Capture() -- the game's settings into the profile left, while Sync still reads them
+    local from = source and Saved(source)
+    db.profilesOn = false
+    Assign(line, OWN)
+    if from then
+        local own = Own()
+        for name, values in pairs(from) do
+            if type(values) == "table" and not live[name] and not Game(name) then own[name] = Copy(values) end
+        end
+    end
+    Rehome(nil)
+    Rehomed()
+end
+
+-- Turns the profiles on or off; then (after) that profile used. With changes not saved yet, the save window asks
+-- first (Unsaved.lua), as for another profile.
+local function Turn(on, after)
+    if on ~= Enabled() then
+        if not Line() then return false, TEXT.unknown end
+        local unsaved = Core.Unsaved
+        if unsaved and unsaved.Pending() and unsaved.Wait(on and TEXT.nextOn or TEXT.nextOff,
+            function() Turn(on, after) end,
+            function()
+                if on then TurnOn() else TurnOff() end
+                if after then Assign(Line(), after) end
+            end) then
+            return false, on and TEXT.firstOn or TEXT.firstOff
+        end
+        if on then TurnOn() else TurnOff() end
+        Shown()
+    end
+    if after and after ~= Profiles.InUse() then return Profiles.Use(after) end
+    return true
+end
+
+-- The switch at the top of the page Profiles, /sane profile on and off, Onboarding: true, or false and why not.
+function Profiles.SetEnabled(on)
+    if not db then return false, TEXT.unknown end
+    return Turn(on and true or false)
+end
+
 -- The profile that has that name, in any letter case (Quiet and quiet would be two names for one).
 local function Taken(name, except)
     local low = name:lower()
@@ -538,8 +729,13 @@ function Profiles.Create(name, from)
     return true, fresh
 end
 
--- This character uses that profile from now on.
+-- This character uses that profile from now on. While the profiles are off, they are turned on first (Turn), Speedleveling
+-- (the box Speed Leveling in the bags) too.
 function Profiles.Use(name)
+    if db and name ~= OWN and not Enabled() then
+        if not (Usable(name) or Profiles.Fixed(name)) then return false, TEXT.missing:format(tostring(name)) end
+        return Turn(true, name)
+    end
     if not Usable(name) then return false, TEXT.missing:format(tostring(name)) end
     local line = Line()
     if not line then return false, TEXT.unknown end
@@ -724,8 +920,11 @@ function Profiles.Characters()
     return list
 end
 
--- Gives a character a profile (NEW: every character not seen yet); this one uses it at once.
+-- Gives a character a profile (NEW: every character not seen yet); this one uses it at once (Use). While the profiles
+-- are off only this character can be given one (they are turned on then).
 function Profiles.SetCharacter(which, name)
+    if which == key then return Profiles.Use(name) end
+    if not Enabled() then return false, TEXT.off end
     if not Usable(name) then return false, TEXT.missing:format(tostring(name)) end
     if which == NEW then
         db.newProfile = name
@@ -733,12 +932,7 @@ function Profiles.SetCharacter(which, name)
     end
     local line = Line(which)
     if not line then return false, TEXT.unknown end
-    if which == key and Answer(name, function() Profiles.SetCharacter(which, name) end, function() Assign(line, name) end) then
-        return false, TEXT.first:format(name)
-    end
-    if which == key then Capture() end
     Assign(line, name)
-    if which == key then Move(Want()) end
     return true
 end
 
@@ -759,10 +953,18 @@ function Profiles.Forget(which)
     return true
 end
 
--- /sane profile: the profiles, and one used by name (in any letter case), without the options window.
+-- /sane profile: the profiles, and one used by name (in any letter case), without the options window; on and off
+-- turn them on or off.
 Core.Command("profile", TEXT.about, function(rest)
     local wanted = Name(rest)
+    local word = wanted and wanted:lower()
+    if word == "on" or word == "off" then
+        local ok, why = Profiles.SetEnabled(word == "on")
+        Core.Print(ok and (word == "on" and TEXT.turnedOn:format(Profiles.InUse()) or TEXT.turnedOff) or why)
+        return
+    end
     if not wanted then
+        if not Enabled() then return Core.Print(TEXT.off) end
         Core.Print(TEXT.list:format(table.concat(Profiles.List(), ", "), Profiles.InUse()))
         return
     end

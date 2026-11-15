@@ -18,9 +18,14 @@
   `Sync.GROUPS` entry (`SETTING_GROUP_GAMEPLAY`, `_ACCESSIBILITY`, `_SYSTEM`, `elsewhere`) with a
   checkbox per part of that group (`Sync.PartKept` / `Sync.KeepPart`). Group and page titles are the game's
   strings (`Sync.Word`, = `Core.Word`).
-- Only while the character uses a profile (`Core.Profiles.On()`; not on *Character specific*): there `Give` and
-  `Capture` do nothing, Sync's settings are a table of the session (Core.Options hook `game = true`), and turning to
-  it puts the CVars a profile held back to the game's defaults (`Sync.Moved` → `ToDefaults`).
+- Only while the character uses a profile (`Core.Profiles.On()`; not on *Character specific*, nor with the profiles
+  off, a fresh install's state): there `Give` and `Capture` do nothing, Sync's settings are a table of the session
+  (Core.Options hook `game = true`), and turning a character to *Character specific* puts the CVars a profile held back
+  to the game's defaults (`Sync.Moved` → `ToDefaults`); with the profiles off `Sync.Moved` does nothing (turning them
+  off leaves the game as it is).
+- The profiles turned on the first time (Core's `Profiles.lua`, 2026-11-15): `Sync.Take()` reads every kept part into
+  the settings in use (Accountwide, just made) as `Capture` does, `given` set first, the CVar parts' names found at
+  once (`Sync.FindNow`, Game.lua: `Find` run outside a job); nothing written, no `/reload` offered, no `Default`.
 - `Sync.PERSONAL` (`addons`, `keyBindings`): the parts `Profiles.Import` drops from another player's profile text, as it filters `named` CVars; `Sync.Moved` sets `arrived` only when `taken`/`named` really changed (`Core.Same`), so *Defaults* and *Copy from* never reset the game's own settings.
 - Saved (`Core.Settings("Sync")`, in the profile in use only, never a character's own): `off[id] = true`
   (part left to the game; every part kept by default), `taken[id] = data`, `named[cvar] = value`

@@ -12,8 +12,10 @@
 --                      tutorials seen, ...
 --  The last two the game lists (ConsoleGetAllCommands): once a session, at the
 --  first writing, in one pass that is a job of Core's scheduler (Steps.lua), of
---  which only the names stay. A part reads only what this client has, and
---  writes only what differs and what the game lets us set (Sync.SetCVar).
+--  which only the names stay; at once when the profiles are turned on and the
+--  game's settings are read before any writing (Sync.FindNow). A part reads
+--  only what this client has, and writes only what differs and what the game
+--  lets us set (Sync.SetCVar).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Sync = Core.Sync -- Sync.lua
@@ -369,6 +371,15 @@ local function Find()
             if not Sync.PartKept(part.id) then Sync.Unname(part.id) end
         end
     end
+end
+
+-- At once rather than as a job (Sync.Take: the profiles just turned on read the game's settings this moment), one
+-- frame's work once a session: the names of these parts' CVars, if they are not known yet. A job finding them already
+-- is stopped (it keeps nothing until its end): this does its work.
+function Sync.FindNow()
+    if not found[1] or found[1].names then return end
+    Steps.Stop(FINDING)
+    Find()
 end
 
 -- The names of such a part's CVars on this client once found (empty when the game has none of its

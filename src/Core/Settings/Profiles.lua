@@ -3,8 +3,9 @@ local Config = SaneUI.Core.Config -- Settings.lua
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Settings - Profiles
 --  The page Profiles, a page of our own in the game's options (a canvas: Core
---  puts it up, Core.frames.Profiles): its title, a line on what profiles are,
---  and tabs:
+--  puts it up, Core.frames.Profiles): its title, the switch that turns the
+--  profiles on or off (Profiles.SetEnabled; off on a fresh install, and then
+--  only a line saying so under it), a line on what profiles are, and tabs:
 --      Profiles        This character: the profile it uses, and what can be done
 --                      with profiles (new, rename, delete, defaults, copy from
 --                      another, export and import as text)
@@ -25,7 +26,12 @@ local Profiles = Core.Profiles
 
 local TEXT = {
     title = "Profiles",
-    intro = "Speedleveling: all the automation on. Accountwide: our recommended settings, every change shared by all the characters on it, and where new characters start. Character specific: the game's defaults, as a fresh install, each character keeping its own.",
+    enable = "Share settings between characters",
+    enableTip = "Profiles: one setup, Sane UI's settings and the game's own (key bindings, Edit Mode layout, chat windows, graphics and more), shared by every character that uses it: a change on one is there for all of them. Turned on, this character's current settings become the profile Accountwide, and nothing changes in the game; characters you have not played yet start on it, the others keep their own until you choose a profile for them here. Turned off, every character keeps its own settings again, and the game's stay as they are.",
+    off = "Profiles are off: every character keeps its own settings. Tick the box above to share this character's settings with your other characters.",
+    turnedOn = "profiles are on: this character uses the profile %s.",
+    turnedOff = "profiles are off: every character keeps its own settings from now on.",
+    intro = "Speedleveling: all the automation on. Accountwide: the settings of the character that turned profiles on, every change shared by all the characters on it, and where new characters start. Character specific: the game's defaults, as a fresh install, each character keeping its own.",
     tab = "Profiles",
     yours = "This character",
     profile = "Profile",
@@ -370,10 +376,31 @@ local function ProfilesTab(child)
     return 166 + 18 + box:GetHeight() + 8
 end
 
--- Builds the page into the frame Core put up for it (the first time it is shown): its title, a line,
--- and the tabs over their box (Panel.TabbedFrame), each tab's part in a scroll area but the CVars'.
+-- The switch at the top: the profiles on or off (Profiles.SetEnabled), said in chat.
+local function Switch(on)
+    local ok, why = Profiles.SetEnabled(on)
+    if not ok then return Tell(ok, why) end
+    Tell(true, nil, on and TEXT.turnedOn or TEXT.turnedOff, InUse())
+end
+
+-- Builds the page into the frame Core put up for it (the first time it is shown): its title, the switch, a line,
+-- and the tabs over their box (Panel.TabbedFrame), each tab's part in a scroll area but the CVars'. While the profiles
+-- are off only a line saying so stands under the switch.
 function Config.BuildProfiles(page)
+    Panel.Page(page) -- first: the switch is one of the page's controls
     Panel.Header(page, TEXT.title)
-    Panel.Text(page, TEXT.intro, "GameFontHighlight", 7, -62)
-    Panel.TabbedFrame(page, { { name = TEXT.tab, build = ProfilesTab }, Config.AccountTab(), Config.CVarsTab() }, -118)
+    local switch = Panel.Check(page, TEXT.enable, TEXT.enableTip, Profiles.Enabled, Switch)
+    switch:SetPoint("TOPLEFT", 4, -56)
+    local intro = Panel.Text(page, TEXT.intro, "GameFontHighlight", 7, -88)
+    local off = Panel.Text(page, TEXT.off, "GameFontHighlight", 7, -88)
+    local tabs, parts = Panel.TabbedFrame(page, { { name = TEXT.tab, build = ProfilesTab }, Config.AccountTab(), Config.CVarsTab() }, -146)
+    local box = parts[1] and parts[1]:GetParent()
+    Panel.Watch({ label = TEXT.off, widget = off, Refresh = function()
+        local on = Profiles.Enabled()
+        intro:SetShown(on)
+        off:SetShown(not on)
+        if box then box:SetShown(on) end
+        for _, tab in ipairs(tabs) do tab:SetShown(on) end
+    end })
+    Panel.Refresh(page)
 end

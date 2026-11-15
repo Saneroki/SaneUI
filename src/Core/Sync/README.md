@@ -6,8 +6,11 @@
 The game keeps much of what you set for each character alone: the options you chose on its pages, the Edit
 Mode layout in use, the chat windows, the channels you joined, the map filters, the tutorials you have seen.
 A new character starts without them. Sync keeps them with Sane UI's settings instead, laid out as the game's
-own options are, in the profile in use: they are the same on all your characters that use one profile. On
-*Character specific* Sync does nothing, and a character turning to it gets the game's default CVars back. (Joining or leaving
+own options are, in the profile in use: they are the same on all your characters that use one profile. While the
+profiles are off (a fresh install) Sync does nothing at all: it writes nothing and gives no defaults; turning them
+on, the profile *Accountwide* takes the game's settings as they are that moment, nothing written into the game; turning
+them off leaves the game as it is. On *Character specific* Sync does nothing, and a character turning to it gets the
+game's default CVars back. (Joining or leaving
 the game's own chat channels on every character is the Social module's.)
 
 ## How to use
@@ -26,7 +29,7 @@ the game's own chat channels on every character is the Social module's.)
 
   All are ticked at first. The mouse over a checkbox says what it holds. An unticked part is left to the
   game, which keeps it for each character; unticking it also unticks, once, its CVars kept by name in the tab
-  *CVars* (our recommended ones among them: Graphics takes the view distance, shadows and frame rate with it). A
+  *CVars* (in Speedleveling our recommended ones among them: Graphics takes the view distance, shadows and frame rate with it). A
   CVar ticked there afterwards is kept all the same; ticked again, the part keeps its CVars itself. A ticked part is read into the profile in use when you log out
   (and when you make a new profile or use another), and set when a character comes into the game (and when
   another profile comes into use). Each profile keeps its own ticks.
@@ -34,8 +37,13 @@ the game's own chat channels on every character is the Social module's.)
   layout or chat colour a reload gives its frames back untainted. When a character got such changes, a
   dialog offers the reload (*Reload* / *Later*), once each time.
 - **Whose settings:** the profile's in use (tab *Profiles*). The first character to log out after a part was
-  ticked gives its settings to the others of that profile. On *Character specific* nothing is kept: each
-  character has the game's own, per character.
+  ticked gives its settings to the others of that profile. On *Character specific*, and while the profiles are off,
+  nothing is kept: each character has the game's own, per character.
+- **The profiles turned on** (the switch at the top of the page Profiles, Saneroki, 2026-11-15): the first time,
+  *Accountwide* takes every ticked part as the game holds it that moment (`Sync.Take`: the parts that find their
+  CVars in the game find them at once, `Sync.FindNow`), as a capture reads them; nothing is written, no `/reload`
+  offered, no part given its defaults, no CVar of ours kept by name. **Turned off**, the parts are read into the
+  profile left once more and the game's settings stay as they are (no `ToDefaults`).
 - **Addons** (`Addons.lua`): which addons are switched on, in the box *Elsewhere in the game*. Written where the
   profile differs, for this character (`C_AddOns`), with the reload offered; never Sane UI itself, nor one this
   client lacks. One switched on the character screen since this character's last logout is the player's word: the
@@ -56,7 +64,7 @@ the game's own chat channels on every character is the Social module's.)
 - **Part of Core,** not a module: its files are in Core's TOC and share `Core.Sync` (no `SaneUI.Sync`). Its
   settings are described to Core as a module's are, under the name `Sync` (`Core.Settings("Sync")`), with the
   hook `game = true`: they live in the profile in use only, never in a character's own (on *Character
-  specific* they are a table of the session, and `Give` and `Capture` do nothing). Being no module, it
+  specific* and with the profiles off they are a table of the session, and `Give` and `Capture` do nothing). Being no module, it
   gets no page of its own: the tab *Game settings* of the page Profiles (`Settings/Synced.lua`) shows a checkbox per part, a box per
   `Sync.GROUPS` entry. Its work starts from Core's events: its settings at Core's `ADDON_LOADED` (after
   `Saved.lua` and `Profiles.lua`, which come first in the TOC), the writing at `PLAYER_ENTERING_WORLD`.
@@ -67,7 +75,7 @@ the game's own chat channels on every character is the Social module's.)
   |---|---|
   | `off` | `[part id] = true` for each part left to the game; every part is kept at first, a new one too |
   | `taken` | `[part id] = data`: what each kept part read last |
-  | `named` | `[CVar] = value`: single CVars kept by name (the tab *CVars*, `Sync.Keep`/`Sync.Kept`), our recommended ones among them (`Presets.lua`) |
+  | `named` | `[CVar] = value`: single CVars kept by name (the tab *CVars*, `Sync.Keep`/`Sync.Kept`), in Speedleveling our recommended ones among them (`Presets.lua`) |
   | `dropped` | `[CVar] = true`: one the player unticked (`Sync.Keep`, or its part unticked: `Sync.Unname`); a new version of the presets passes it over (`Profiles.lua`, `Standard`) |
 
   A character that comes over from another profile to one that holds nothing yet of a part with a `Default` (the key
@@ -100,11 +108,15 @@ the game's own chat channels on every character is the Social module's.)
 - **Read** (`Sync.Capture`, given to `Core.Options` as its capture): Core calls it before Sane UI's settings
   are copied or saved anywhere: a new profile made, another one used, the logout. Kept parts are read from
   the game; the others are dropped. Nothing is read before this session wrote the settings into the game,
-  so a character that leaves before then does not spread its own.
+  so a character that leaves before then does not spread its own; but for **the profiles turned on**
+  (`Sync.Take`, called by Core's `Profiles.lua`): the settings in use, *Accountwide* just made, take the game's as
+  they are, and from then on are read as any profile's (the game holds what they hold, nothing to write first).
+  Graphics, Audio and the other per-character CVars, whose names a job of the scheduler finds at the first writing,
+  are found at once for it (`Sync.FindNow`).
 - **Written** (`Sync.Give`): 2 seconds after the first `PLAYER_ENTERING_WORLD` of a session once the game
   has its stored settings (`C_CVar.AreCVarsLoaded`, else 2 seconds after `VARIABLES_LOADED`), and when
-  another profile came into use or *Accountwide settings* was switched on (Core's hook `moved`), once the
-  first writing came due.
+  another profile came into use (Core's hook `moved`), once the first writing came due. Never while the profiles are
+  off; `moved` then gives no defaults either (turning them off tells Sync nothing, and the game keeps its settings).
   **Changes made before the login** (`Sync.Outside`, at a session's first writing, before `Sync.Give`): a part with
   `Outside(data, before, now)` (the addons) is read at each logout into `chars[key].logout` (none on *Character
   specific*); at the next login what differs between that and the game now was changed on the game's screens
@@ -210,6 +222,7 @@ the game's own chat channels on every character is the Social module's.)
 
 ## History
 
+- 2026-11-15 — The profiles off on a fresh install (Saneroki: "the whole profiles should be disabled by default"): Sync writes nothing and gives no defaults then. Turned on, *Accountwide* takes the game's settings as they are (`Sync.Take`, `Sync.FindNow`), nothing written; turned off, the game's settings stay. Accountwide is given none of our recommended CVars any more.
 - 2026-11-10 — A part unticked takes its CVars kept by name with it, once (Saneroki chose it): Graphics unticked no longer wrote our recommended view distance, shadows and frame rate at every login all the same (`Sync.Unname`, a part's `Has`). A CVar unticked is remembered (`dropped`), so a new version of the presets no longer ticks it again.
 - 2026-11-10 — Channels no longer come back from another character's logout: one taken off every window stays off on every character (`joined`), and an own channel left is left on them all (`left`).
 - 2026-11-10 — The addons' record of the logout only from a session that wrote; the profile's values stamped with the time they changed, its newer word kept over a character's older change (`stamps`).

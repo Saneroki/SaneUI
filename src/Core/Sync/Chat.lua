@@ -93,6 +93,8 @@ Sync.Part("ownChannels", "elsewhere", {
     -- The names of those this character is in; left: those left on a character of the profile (Left). When the
     -- game cannot tell its own from the player's, what was kept stays (else the game's would be joined everywhere).
     Read = function()
+        -- A client without the game's list of channels (renamed in an update): what was kept stays.
+        if type(rawget(_G, "GetChannelList")) ~= "function" then return Sync.Taken("ownChannels") end
         local offered, names = Offered(), {}
         local list = { GetChannelList() } -- number, name, disabled; and so on
         for index = 1, #list, 3 do
@@ -393,6 +395,10 @@ Sync.Part("chatFrames", "elsewhere", {
     reload = RELOAD,
     -- joined: the channels this character is in ([lower-case name] = true), for Arranged.
     Read = function()
+        -- A client without the game's chat window settings (renamed in an update): what was kept stays.
+        if type(rawget(_G, "GetChatWindowInfo")) ~= "function" or type(rawget(_G, "GetChannelList")) ~= "function" then
+            return Sync.Taken("chatFrames")
+        end
         local tabs = {}
         for id = 1, WINDOWS do tabs[id] = Tab(id) end
         return { tabs = tabs, colours = Colours(), channels = Channels(), joined = Here() }

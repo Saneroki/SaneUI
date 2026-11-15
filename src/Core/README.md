@@ -4,8 +4,8 @@
 
 ## TL;DR
 The main addon, the one every module needs: chat lines, game events, error catching, the list of modules,
-the `/sane` command, the saved settings of all modules (in profiles: *Speedleveling*, *Accountwide*, *Character
-specific*, your own), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
+the `/sane` command, the saved settings of all modules (each character's own at first; with the profiles turned on,
+in profiles: *Speedleveling*, *Accountwide*, *Character specific*, your own), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
 Sane UI's (`Sync/`), and what every window can use: moving, sizing,
 docking to a screen edge, round corners, opening while the mouse rests on it, filling the screen, tabs
 in the game's style, Esc, Edit Mode's dialog, and a progress bar. It does nothing you can see by itself,
@@ -96,26 +96,38 @@ but for a window to try those with (`/sane window`).
   settling softly), *Swing* (a little past, then back), *Even* (a gentle start and end), *Instant* (no motion). A window can have its own type,
   in its section *Expand window* (Social, tab *Appearance*), which can be *Use global type*: this one.
 - **Profiles,** on the page *Profiles* (the options show them; `Profiles.lua` keeps them), Saneroki, 2026-10-17:
-  - Every character uses one of three standard profiles, or one you made. None is made for a character by itself.
+  - **Off on a fresh install** (Saneroki, 2026-11-15: "the whole profiles should be disabled by default and can be
+    activated in the settings or during the onboarding procedure"): every character keeps its own settings (*Character
+    specific*), Sync writes nothing into the game and gives no defaults, no preset is given. The page shows only the
+    switch *Share settings between characters* at its top and a line saying why the rest is not there.
+    Turned on (that switch, `/sane profile on`, Onboarding through `Core.Profiles.SetEnabled(true)`, or a profile chosen
+    by name, the box *Speed Leveling* in the bags too), the first time, this character's settings as they are become
+    *Accountwide*: a copy of Sane UI's and the game's as Sync reads them that moment (`Sync.Take`), nothing written into
+    the game, no `/reload` offered. This character uses it, characters not seen yet start on the profile for new
+    characters (*Accountwide* unless chosen otherwise), the others keep their own until moved on the page. Turned off
+    (the switch, `/sane profile off`), the profiles are kept for later, every character keeps the settings it had as its
+    own (this one at once, another at its next login) and the game's stay as they are. Saved settings from before
+    (a character seen, or settings in a profile) count as on and stay as they were.
+  - Once on, every character uses one of three standard profiles, or one you made. None is made for a character by itself.
     - *Speedleveling*: all of Speed Leveling's switches on but *Professions along the way* (Saneroki, 2026-11-05), our
       recommended CVars and some more that keep you moving (`Presets.lua`), the key E, and Economy's *Send by itself*: with
       *Send to banker* ticked, the mail to the banker is sent as the mailbox opens (Saneroki, 2026-11-09). The box *Speed Leveling* at the foot of
       the bags is this profile (`Profiles.SetLeveling`): ticked, the character uses it; unticked, the one it used before
       (`line.before`), *Accountwide* if it had no other.
-    - *Accountwide*: Sane UI's recommended settings and CVars (`Presets.lua`), every change shared by all the
-      characters on it. Where every new character starts.
+    - *Accountwide*: made from the settings of the character that turned the profiles on (Saneroki, 2026-11-15:
+      "Accountwide profile should be generated from the users current settings instead of my generic defaults"), none
+      of our presets; every change shared by all the characters on it. Where every new character starts.
     - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's
       settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
       (they stay in the profile it left).
-  - **What the two shared standard profiles set** (`Presets.lua`, Saneroki, 2026-10-30): the game's CVars as single
+  - **What Speedleveling sets** (`Presets.lua`, Saneroki, 2026-10-30; Accountwide no longer, 2026-11-15): the game's CVars as single
     CVars of Sync's (`named`, ticked in the tab *CVars*), written last at the login. 115 frames a second in front,
     behind and as a target, the camera out as far as it goes, the finest screenshots, how far the world shows, its
     grass, weather, shadows and ambient occlusion at their finest, loading screens that do not wait for what is not
     needed at once. Never water detail: water 3 crashed Forever's client in the Ruins of Lordaeron, and Sync never
     sets, reads or keeps it (`Sync.Barred`, Saneroki, 2026-11-06). Speedleveling also
     takes off the grey blur at death, the tutorials, the quest text word by word and the voice on errors, and takes
-    you down when you cast in the air; Accountwide names the game's own values for those, so that a character on it
-    is not left with what one on Speedleveling set. A CVar one of the two games lacks is passed over. Given once for
+    you down when you cast in the air. A CVar one of the two games lacks is passed over. Given once for
     each `Presets.VERSION`, and only what the profile does not have: a player's change stays, and what they unticked
     stays out until the version is raised. The game's own combat text is no CVar of the profiles: Nameplates switches
     it off while its own shows and gives it back when it stops.
@@ -131,7 +143,7 @@ but for a window to try those with (`/sane window`).
     back to their defaults (the game's stay); *Copy from* takes another profile's settings; *Export* shows the
     profile as a line of text to copy, *Import* makes a profile from one (of the single CVars it keeps, only
     those the game's options set). The three standard ones cannot be renamed or deleted. `/sane profile` lists the
-    profiles, `/sane profile <name>` uses one.
+    profiles, `/sane profile <name>` uses one, `/sane profile on` and `off` turn them on or off.
   - *Characters:* every character seen on the account, each with its profile (for another character it counts
     at its next login) and *Forget* (its line and what Sane UI keeps for it: for a character deleted or moved).
     The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with: *Accountwide*
@@ -168,10 +180,11 @@ but for a window to try those with (`/sane window`).
   |---|---|
   | `SaneUIDB.modules.<Module>` | What that module keeps besides its settings: `Core.Store(name)`, from `OnLoad` on (`Core.StoreName(store)`: whose it is) |
   | `SaneUIDB.modules.<Module>.chars[GUID]` | Its notes per character: `Core.Character(name)`, from `OnLogin` on |
-  | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` and `Speedleveling` are always there |
+  | `SaneUIDB.profilesOn` | The profiles on (`true`), turned off and kept for later (`false`), or never on (nil: a fresh install) |
+  | `SaneUIDB.profiles.<Profile>.<Module>` | A module's settings in a profile; `Accountwide` and `Speedleveling` are always there while the profiles are on |
   | `SaneUIDB.characters[key]` | Every character seen: `name`, `realm`, `class`, its `profile` (a name, *Character specific* for none; nil: Accountwide) |
-  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Accountwide) |
-  | `SaneUIDB.version` | The shape of these settings (`Profiles.VERSION`, 2) |
+  | `SaneUIDB.newProfile` | *New Characters*: the profile a character not seen yet starts with (nil: Accountwide; with the profiles off every new character starts on its own) |
+  | `SaneUIDB.version` | The shape of these settings (`Profiles.VERSION`, 3) |
   | `SaneUIDB.saveTo` | `[profile] = true`: the profiles ticked under *Save to* besides the one in use (the save window, `Unsaved.lua`) |
   | `SaneUIDB.errors` | What went wrong (`Core.errors`), for `/sane errors` |
   | `SaneUIDB.log` | The same, every time it happened: the error log (`Core.log`) |
@@ -187,7 +200,9 @@ but for a window to try those with (`/sane window`).
     (`Core.Settle` makes it right) and lives there now; each module is told what differs (`changed`, or
     `replaced` once), then `moved`. The options page shows it a frame later.
   - **At the load** (Core's `ADDON_LOADED`, before any module reads its settings): the place is the
-    character's profile (its line's, if that is there, else *Accountwide*) or its own. The character's
+    character's profile (its line's, if that is there, else *Accountwide*) or its own; with the profiles off always its
+    own, and a line that still names a profile (the character was not played since they were turned off) takes a copy
+    of that profile's settings as its own first (`TakeOwn`), then names *Character specific*. The character's
     key is its GUID, else `SaneUICharDB.key`; at `PLAYER_LOGIN` a character the game names only then (or
     another one) moves to its profile. A module's settings come into use when it describes them
     (`Core.Options`), from the place in use; a place that has none for it gives its defaults.
@@ -195,27 +210,40 @@ but for a window to try those with (`/sane window`).
   - **Own settings** start at the defaults, as a fresh install, and stay the character's whenever it comes back.
   - **Where the windows stand** is kept in the profile too (`Core.general.places`, `Window.lua`'s `Held`, by module and
     key); what a module's store holds from before starts each profile off. `Fill` ends with `Window.PlaceAll`.
-  - **Standard profiles** (`Standard`, in `Mend`): *Speedleveling* is made once if it is not there: a copy of
-    *Accountwide*'s, so that an account with settings loses nothing by using it, with `Profiles.PRESET` over it,
-    which *Defaults* sets again.
-  - **The game's settings** (Sync's, `game = true`) live in profiles only; on *Character specific* they are kept
-    nowhere (a table of the session) and Sync reads and writes nothing. Turning to it, what the last capture read
-    goes back to `C_CVar.GetCVarDefault` (`ToDefaults`).
+  - **Standard profiles** (`Standard`, in `Mend` while the profiles are on, and when they are turned on): *Speedleveling*
+    is made once if it is not there: a copy of *Accountwide*'s, so that an account with settings loses nothing by using
+    it, with `Profiles.PRESET` over it, which *Defaults* sets again. *Accountwide* is given no preset.
+  - **On and off** (`SetEnabled`, `Turn`; Saneroki, 2026-11-15): turned on the first time (`profilesOn` nil, or
+    *Accountwide* empty), *Accountwide* is a copy of the settings this character has now (`Snapshot`), the tables the
+    modules hold live in it from then on (`Rehome`: nobody is told, nothing changed), Sync's session table is read
+    from the game (`Sync.Take`) and *Speedleveling* is made; otherwise the character moves onto the *Accountwide* kept,
+    as `Use` does. Turned off, the game's settings are read into the profile left (`capture`), the tables live in
+    the character's own settings, with copies of the profile's for modules not on today (`Rehome`), and Sync is told
+    nothing (no `ToDefaults`). With changes unsaved, both wait for the save window's answer; unanswered at a /reload
+    or logout they are done then. `Use(name)` of a profile while off turns them on first.
+  - **The game's settings** (Sync's, `game = true`) live in profiles only; on *Character specific* and with the
+    profiles off they are kept nowhere (a table of the session) and Sync reads and writes nothing. Turning a
+    character to *Character specific* while the profiles are on, what the last capture read goes back to
+    `C_CVar.GetCVarDefault` (`ToDefaults`); turning the profiles off leaves the game's settings as they are.
   - **The first shape** (version 1: the account's settings in `modules.<Module>.options` or kept aside in
     `account`, profiles copied in and out with `autoLoad`/`autoSave`, `separate`, `perCharacter`,
     `newCharacters`) is brought over once: the account's settings are *Accountwide* (a profile of the player's
     called so keeps its under *Accountwide (old)*), a character's line keeps its profile where it loaded it at
     login, `separate` is *Accountwide settings* off (each character's own kept), `perCharacter` goes.
-  - `Core.Profiles`: `On()`, `SetOn(on)`, `InUse()` (the profile in use; nil off), `List()` (Accountwide first),
-    `Fixed(name)` (Accountwide), `Create(name, from)` (a copy of the settings in use, or of
+  - **Version 3** (`Upgrade`): `profilesOn` is true for settings saved before that are a player's (a character seen,
+    or settings in a profile), so they work as they did; a fresh install starts with the profiles off.
+  - `Core.Profiles`: `Enabled()` (the profiles on at all), `SetEnabled(on)` (the switch, `/sane profile on`/`off`,
+    Onboarding), `On()` (this character uses a profile), `InUse()` (the profile in use, *Character specific* too),
+    `List()` (Speedleveling, Accountwide, Character specific first; only Character specific while off),
+    `Fixed(name)` (the three standard ones), `Create(name, from)` (a copy of the settings in use, or of
     profile `from`), `Use(name)`, `Rename(name, as)`, `Delete(name)`, `CopyFrom(name)`, `Reset()` (Sane UI's
     settings in use at their defaults), `Export(name)` (a line of text, `Core.Serial`), `Import(text, as)`,
     `Characters()`, `Character(key)` (`Profiles.NEW`: *New Characters*), `SetCharacter(key, name)`,
     `Forget(key)`, `Capture()`. A step returns true, or false and a line for chat saying why not. Names are up
-    to `MAX_NAME` (32) letters, unique in any letter case. `/sane profile [name]`. For the save window:
-    `Settings(name)` (a saved profile's table), `Put(fill)` (the settings in use filled anew, as a profile used:
+    to `MAX_NAME` (32) letters, unique in any letter case. `/sane profile [name | on | off]`. For the save window:
+    `Settings(name)` (a saved profile's table; none while the profiles are off), `Put(fill)` (the settings in use filled anew, as a profile used:
     `fill(module)` its new settings, false leaves it). With changes unsaved, `Use`, `SetCharacter` of this
-    character and `Delete` of the one in use wait for the answer (`Core.Unsaved.Wait`) and return false meanwhile;
+    character, `SetEnabled` and `Delete` of the one in use wait for the answer (`Core.Unsaved.Wait`) and return false meanwhile;
     a /reload or logout unanswered does their lasting part (the character's line names the profile chosen, or the
     profile deleted is gone, for the next login). `Rename` and `Delete` move or drop the profile's tick under *Save
     to* (`Unsaved.Renamed`).
@@ -586,8 +614,8 @@ but for a window to try those with (`/sane window`).
 | `SaneUI.toc` | The addon `SaneUI` |
 | `Core.lua` | Chat, events, errors, modules, `/sane` |
 | `Saved.lua` | The saved settings and the description of the switches |
-| `Presets.lua` | What the standard profiles set over the defaults: our recommended CVars (`Core.Presets`) |
-| `Profiles.lua` | Where every module's settings live: a profile (Accountwide at first) or the character's own; the profiles |
+| `Presets.lua` | What the profile Speedleveling sets over the defaults: our recommended CVars, Speed Leveling's switches (`Core.Presets`) |
+| `Profiles.lua` | Where every module's settings live: the character's own (the profiles off, at first) or a profile; the profiles turned on (Accountwide made from this character's settings) and off |
 | `Unsaved.lua` | Changes made in the menus kept or taken back: the last save, what differs from it, Yes into the profiles ticked, No, a step waiting for the answer (`Core.Unsaved`; its window is `Settings/Save.lua`) |
 | `Serial.lua` | Plain values as a line of text and back (`Core.Serial.Write`, `Read`): a profile exported and imported |
 | `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `FormPower` (your druid's power in a form, shown beside your mana; `Core.MANA`), `Mana` (a unit's mana as the game gives it), `Tip`, `Unconfirmed` (the line *! Unconfirmed Data !*; `UNCONFIRMED_MARK`, the red ! before each such thing's name), `TipLook`/`TipSection`/`LookOf` (a creature on a map, drawn by the Tooltips module like a unit), `Pool`, `Confirm`, `AskText`, `AskPlayer` (a small card of the kit asking for a player: its field searches the players the game knows as the name is typed, the game's own list under it, `C_AutoComplete` through `AutoCompleteEditBoxTemplate`; Share in red, Cancel; `done(name)`; `Core.ASK_PLAYER` its words), `Font`, `Sound`, `Lend` |
@@ -640,6 +668,13 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-11-15 — Profiles off at first (Saneroki: "the whole profiles should be disabled by default and can be activated
+  in the settings or during the onboarding procedure"): a fresh install keeps every character's own settings, Sync
+  writes nothing and no preset is given; the switch *Share settings between characters* on the page Profiles,
+  `/sane profile on`/`off`, `Core.Profiles.Enabled`/`SetEnabled` (Onboarding). Turned on the first time, *Accountwide*
+  is the character's settings as they are, the game's read by `Sync.Take`, nothing written; *Accountwide* is given no
+  preset any more (*Speedleveling* keeps its). Turned off, the profiles are kept, each character keeps its settings
+  as its own, the game's stay. `Profiles.VERSION` 3: settings saved before count as on.
 - 2026-11-15 — The kit (Saneroki: "I want to restyle windows fullscreens now ... closer to Wow Forever styling with
   its native elements"): `Look.lua`, Forever's own parts for every window; a window's skin and the board's panels
   the heavy bronze frame (what they hold inside its band: `Board.BAND`, `HEAD` 40, `EDGE` 12), the board's layout

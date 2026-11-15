@@ -8,6 +8,10 @@ local ADDON = ...
 --  settings of that profile, the same for all of them. On Character specific
 --  Sync does nothing: the game keeps its settings for each character, as it does
 --  without Sane UI; turning to it, they go back to the game's defaults (Sync.Moved).
+--  While the profiles are off (a fresh install) Sync does nothing at all: it
+--  writes nothing, gives no defaults, and turning them off leaves the game's
+--  settings as they are. Turned on, the profile Accountwide takes the game's as
+--  they are that moment (Sync.Take), with nothing written into the game.
 --
 --  What it keeps comes in parts, laid out as the game lays out its own options
 --  (Esc > Options): a part per options page of the game, in the game's groups
@@ -204,7 +208,8 @@ end
 -------------------------------------------------------------------------------
 --  Reading and writing
 -------------------------------------------------------------------------------
--- Whether Sync keeps the game's settings at all: not for a character on Character specific (Profiles.lua).
+-- Whether Sync keeps the game's settings at all: not for a character on Character specific, nor while the profiles are
+-- off (Profiles.lua).
 local function On()
     return Core.Profiles.On()
 end
@@ -249,6 +254,17 @@ function Sync.Capture()
     options.taken, options.from = taken, Core.GAME
     ReadNamed(options.named)
     left, leftNamed = taken, Core.Copy(options.named)
+end
+
+-- The profiles turned on (Profiles.lua): the settings in use, Accountwide made from this character's, take the game's
+-- as they are this moment, read as a capture reads them, and are read and written as any profile's from then on.
+-- Nothing is written into the game, no /reload offered, no part given its defaults: the game holds what the profile
+-- does. The parts that find their CVars in the game find them at once (Game.lua), so that they are read now too.
+function Sync.Take()
+    if Hunt() == true then return end
+    if Sync.FindNow then Sync.Safe("finding the game's CVars", Sync.FindNow) end
+    given = true
+    Sync.Capture()
 end
 
 -- Offers a /reload for what the game shows only after one: once per writing (a layout set later
@@ -449,9 +465,13 @@ end
 -- The settings in use came from elsewhere (another profile, Character specific): what they hold goes into the game at
 -- once, if the character is in the world already (otherwise that happens anyway). A part they hold nothing of goes
 -- to the game's own (Give) only when they differ from what the last capture read: the same settings again (a copy
--- of this profile) leave the game as it is.
+-- of this profile) leave the game as it is. With the profiles off nothing goes to its defaults: the game's settings stay as
+-- the game has them.
 function Sync.Moved()
-    if not On() then return Sync.Safe("defaults", ToDefaults) end
+    if not On() then
+        if not Core.Profiles.Enabled() then return end
+        return Sync.Safe("defaults", ToDefaults)
+    end
     if not settled then return end
     turned = true
     local options = Sync.options

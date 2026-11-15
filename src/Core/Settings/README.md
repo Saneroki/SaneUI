@@ -17,8 +17,12 @@ it back.
   they open by themselves once the fight is over.
 - **Sane UI** itself shows only Sane UI's logo. Under it, in this order (the button in front of *Sane UI* folds
   them in and out):
-  - *Profiles:* a page of its own: its title, a line on the three standard profiles, and tabs, each with titled
-    boxes (Saneroki, 2026-10-17; 2026-10-30):
+  - *Profiles:* a page of its own: its title, at its top the switch *Share settings between characters* (Saneroki,
+    2026-11-15: the profiles off on a fresh install; its tip says what profiles are, one setup shared by the
+    characters that use it, and that turning them on makes *Accountwide* from this character's current settings,
+    nothing changed in the game; turning them off, every character keeps its own and the game's stay as they are).
+    Unticked, only a line under it says the profiles are off and every character keeps its own settings; ticked, a
+    line on the three standard profiles, and tabs, each with titled boxes (Saneroki, 2026-10-17; 2026-10-30):
     - *Profiles:*
       - *This character*: the profile it uses (a dropdown: *Speedleveling*, *Accountwide*, *Character specific*,
         your own; choosing one uses it at once), the buttons *New*
@@ -120,11 +124,13 @@ it back.
   entries of Core's error log); *Back to writing* returns. What was written is kept per kind for the
   session, not saved.
   - *Profiles*: a page of our own (a canvas, `Core.frames.Profiles`), built by `Config.BuildProfiles` the first
-    time it is shown: the title over the game's divider, a line, the tabs (`MinimalTabTemplate`, the options
+    time it is shown: the title over the game's divider, the switch (`Panel.Check` on `Profiles.Enabled` and
+    `Profiles.SetEnabled`), a line, the tabs (`MinimalTabTemplate`, the options
     window's own tabs, in a radio group), and under them a box with one part per tab, each but *CVars* in a
     scroll area (`ScrollFrameTemplate`, the game's thin scroll bar). Tabs: *Profiles* (`Profiles.lua`), *Game
     settings* (`Synced.lua`: Sync's parts by `Sync.GROUPS`, a box each), *CVars* (`CVars.lua`). A character's
-    line in *Characters* has its own dropdown and a button *Forget*.
+    line in *Characters* has its own dropdown and a button *Forget*. While the profiles are off a watch of the page
+    (`Panel.Watch`) hides the line, the tabs and their box, and shows the line saying so.
   - **The parts of such a page** (`Panel.lua`): the tabs over their box (`Panel.TabbedFrame(page, tabs, top)`:
     each tab `{ name, build, scroll, label }`, its part in a scroll area unless `scroll = false`), titled boxes
     (`BackdropTemplate` with the tooltip border, as boxes in the game's options have had; a box's tip is the
@@ -299,6 +305,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 
 ## History
 
+- 2026-11-15 — The page *Profiles*: the switch *Share settings between characters* at its top, off on a fresh install (Saneroki: "the whole profiles should be disabled by default and can be activated in the settings or during the onboarding procedure"); off, the rest of the page gives way to a line saying why. The line on the profiles no longer calls Accountwide our recommended settings: it is made from the settings of the character that turned profiles on.
 - 2026-11-10 — A part unticked in *Game settings* unticks its CVars in the tab *CVars* too (Graphics: our recommended view distance, shadows and frame rate), and an untick there stays when the presets get a new version.
 - 2026-11-10 — A profile chosen while the window waits is the character's from its next login when a `/reload` or logout answers instead; a profile renamed keeps its tick under *Save to* (the one in use renamed lost it, and *Yes* took the changes back), one deleted loses it.
 - 2026-11-10 — The save window keeps what is not answered (Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload"): a `/reload` or logout saves the changes as *Yes* does (was: took them back, and the addon list's *Reload UI*, meant to save first, never did); the *Reload* Sane UI offers no longer waits for the answer. A line in the window says so.

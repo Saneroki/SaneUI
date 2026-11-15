@@ -2335,20 +2335,23 @@ check(Cells.Shown(-1, 1), "back in WoW: Forever: the keyring again")
 -- The box Speed Leveling: the profile in use. Last here: the bags' categories come anew with a profile.
 function W.CheckLeveling()
     Choose(dropdown._items, "Grid")
-    local before = ns.options.bags
+    -- The profiles are off on a fresh install: Speedleveling turns them on first, Accountwide and Speedleveling then
+    -- copies of these settings.
     Core.Profiles.Use("Speedleveling")
     W.Wait(0)
-    check(ns.options.bags ~= before and Bags.canvas.owner.store == ns.options.bags,
+    local wide = SaneUIDB.profiles.Accountwide[ns.name].bags
+    check(Core.Profiles.InUse() == "Speedleveling" and wide ~= ns.options.bags and Bags.canvas.owner.store == ns.options.bags,
         "the profile's own bags store, a table of its own: the canvas draws by it")
     Choose(dropdown._items, "List")
-    check(ns.options.bags.look == "list" and before.look == "grid" and RowOf(0, 1) ~= nil,
+    check(ns.options.bags.look == "list" and wide.look == "grid" and RowOf(0, 1) ~= nil,
         "the list chosen on this profile: drawn as a list; the other profile keeps its grid")
     Choose(dropdown._items, "Grid")
     local leveling = ns.Vendor.boxes[4]
     check(leveling and leveling == Text("Speed Leveling"):GetParent() and leveling:GetChecked(), "Speed Leveling beside them, ticked on its profile")
     leveling:GetScript("OnClick")(leveling)
     W.Wait(0)
-    check(Core.Profiles.InUse() == "Accountwide" and not leveling:GetChecked() and not leveling.tick:IsShown(), "a click: back on Accountwide, its tick follows")
+    check(Core.Profiles.InUse() == "Accountwide" and not leveling:GetChecked() and not leveling.tick:IsShown()
+        and Bags.canvas.owner.store == ns.options.bags, "a click: back on Accountwide, its tick follows")
     leveling:GetScript("OnClick")(leveling)
     W.Wait(0)
     check(Core.Profiles.InUse() == "Speedleveling" and leveling:GetChecked(), "and on the profile Speedleveling again")

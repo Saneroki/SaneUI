@@ -1,0 +1,583 @@
+#!/usr/bin/env python3
+"""Module stages, the package of a channel, and its upload to CurseForge (Saneroki, 2026-11-15; .claude's git rules,
+*Module stages*, *The pipeline to CurseForge*; README.md, *Building*).
+
+Every module goes through the stages dev, alpha, beta and release, by its developer's word alone: dev is for
+development and testing only, alpha, beta and release say how ready a version of it is for the wider public. A
+version reaches a stage as a tag on main's committed state, <Module>/<version>-<stage> (Navigation/0.3.1-alpha).
+Core has no stage (every module needs it), nor have its data holders (Data: Auction House, Data: Auction Scans):
+they go into every package, from main's newest commit.
+
+A package for a channel (alpha, beta, release) holds Core and, of each module, its newest version at that stage or
+higher: a newer version of a lower stage is left out, a module that never reached the stage stays out. It is built
+from git's copies only, never the working tree: main's newest commit tested whole, each older version of a module
+tested with today's Core (its own tests of then). It is Forever's (the one game supported for the public): each TOC
+names Forever's interface number alone. The zip lands in BUILD/packages, one folder per addon at its top.
+
+Publishing uploads the package to CurseForge as that channel's release type, then tags main's commit
+v<version>-<channel>. The project and its token stand in ~/.config/saneui/curseforge.json, never in a repository:
+  {"project": 123456, "token": "...", "gameVersions": ["1.60.1"]}
+(gameVersions: CurseForge's names or ids of the game versions the file is for; "host" may name another site than
+https://wow.curseforge.com). Nothing is ever pushed: the tags go out with git push origin <tag>.
+
+  dev/tools/release stages                         every module's stage and versions     (saneui showstages)
+  dev/tools/release promote <Module> <stage>       tag main's committed state of it      (saneui promote)
+          [--version X.Y.Z] [--dry]
+  dev/tools/release package <channel>              the zip of that channel               (saneui makepackage)
+          [--version X.Y.Z] [--dry]
+  dev/tools/release publish <channel>              the zip made and uploaded, then tagged (saneui publish)
+          [--version X.Y.Z] [--dry] [--yes]
+"""
+import argparse
+import io
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import urllib.error
+import urllib.request
+import uuid
+import zipfile
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+STAGES = ("dev", "alpha", "beta", "release")   # lowest first
+CHANNELS = STAGES[1:]
+CORE = ("Core", "AuctionData", "AuctionScans")  # no stage: in every package, from main's newest commit
+# The tests of each module (dev/tests/<name>.lua), run for an older version of it with today's Core.
+TESTS = {
+    "Abilities": ["abilities"], "Combat": ["combat", "book", "meter", "talents", "reminders", "auralists", "macros"],
+    "Economy": ["economy"], "Guild": ["guild"], "Inventory": ["inventory", "sheet", "bags"], "Loot": ["loot"],
+    "Lore": ["lore"], "Nameplates": ["nameplates"], "Navigation": ["navigation"], "Social": ["social"],
+    "SpeedLeveling": ["speedleveling", "speedguide", "classquests"], "Tooltips": ["tooltips"],
+}
+# What of the tests is Core's, taken from today's tree for an older module: the stand-in game and its helpers.
+TEST_HELPERS = ("dev/tests/wowstub.lua",)
+VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+STAGE_TAG = re.compile(r"^(?P<module>[A-Za-z][A-Za-z0-9]*)/(?P<version>\d+\.\d+\.\d+)-(?P<stage>alpha|beta|release)$")
+PACKAGE_TAG = re.compile(r"^v(?P<version>\d+\.\d+\.\d+)-(?P<channel>alpha|beta|release)$")
+TOC = re.compile(r"^src/(?P<folder>[^/]+)/(?P<name>[^/]+)\.toc$")
+RETAIL_INTERFACE = 100000  # Retail's interface numbers have six digits since 10.0; Forever's (16001) fewer
+LFS = b"version https://git-lfs.github.com/spec/"
+CONFIG = Path.home() / ".config" / "saneui" / "curseforge.json"
+HOST = "https://wow.curseforge.com"
+MEMORY = 2000000  # kB of address space a Lua test may take (a test that loops fails fast)
+
+
+class Refused(Exception):
+    """A step that cannot be done, with the line saying why."""
+
+
+def git(*args, root=ROOT, text=True, check=True, input=None):
+    found = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=text, input=input)
+    if check and found.returncode:
+        raise Refused(f"git {' '.join(args)}: {(found.stderr if text else found.stderr.decode()).strip()}")
+    return found.stdout.strip() if text else found.stdout
+
+
+def key(version):
+    return tuple(int(n) for n in VERSION.match(version).groups())
+
+
+def bump(version):
+    major, minor, patch = key(version)
+    return f"{major}.{minor}.{patch + 1}"
+
+
+def rank(stage):
+    return STAGES.index(stage)
+
+
+# --- What git holds -----------------------------------------------------------------------------------------------
+
+def addons(commit, root=ROOT):
+    """{folder: addon name} of every addon in src at a commit (a folder with its TOC)."""
+    found = {}
+    for path in git("ls-tree", "-r", "--name-only", commit, "--", "src", root=root).splitlines():
+        match = TOC.match(path)
+        if match:
+            found[match["folder"]] = match["name"]
+    return found
+
+
+def staged(commit, root=ROOT):
+    """The folders of the modules that go through the stages: every addon but Core's."""
+    return sorted(folder for folder in addons(commit, root) if folder not in CORE)
+
+
+def stage_tags(root=ROOT):
+    """Every stage a module's version reached: [{module, version, stage, tag, commit}], oldest version first."""
+    found = []
+    for tag in git("tag", "--list", "*/*-*", root=root).splitlines():
+        match = STAGE_TAG.match(tag)
+        if match:
+            found.append({**match.groupdict(), "tag": tag, "commit": git("rev-parse", f"refs/tags/{tag}^{{commit}}", root=root)})
+    return sorted(found, key=lambda t: (t["module"], key(t["version"]), rank(t["stage"])))
+
+
+def package_tags(root=ROOT):
+    return [PACKAGE_TAG.match(tag).groupdict() for tag in git("tag", "--list", "v*-*", root=root).splitlines()
+            if PACKAGE_TAG.match(tag)]
+
+
+def newest(module, channel, tags):
+    """The newest version of a module at the channel's stage or higher; None: it never reached it."""
+    fit = [t for t in tags if t["module"] == module and rank(t["stage"]) >= rank(channel)]
+    return max(fit, key=lambda t: (key(t["version"]), rank(t["stage"])), default=None)
+
+
+def stage_of(module, tags):
+    """The highest stage any version of a module reached; dev while none did."""
+    return max((t["stage"] for t in tags if t["module"] == module), key=rank, default="dev")
+
+
+def toc_version(commit, folder, name, root=ROOT):
+    text = git("show", f"{commit}:src/{folder}/{name}.toc", root=root)
+    found = re.search(r"^## Version:\s*(\S+)", text, re.M)
+    return found.group(1) if found and VERSION.match(found.group(1)) else "0.0.0"
+
+
+def tree(commit, folder, root=ROOT):
+    """What a module is at a commit: the git objects of its code and its art (None where it has none)."""
+    def one(path):
+        found = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{commit}:{path}"],
+                               capture_output=True, text=True)
+        return found.stdout.strip() or None
+    return one(f"src/{folder}"), one(f"assets/optimized/{folder}")
+
+
+def main_commit(root=ROOT):
+    return git("rev-parse", "refs/heads/main", root=root)
+
+
+def plan(channel, root=ROOT):
+    """What a channel's package holds: {"commit": main's, "core": [folders], "modules": {folder: stage tag},
+    "left": [folders that never reached the channel]}."""
+    if channel not in CHANNELS:
+        raise Refused(f"a channel is one of {', '.join(CHANNELS)}")
+    commit = main_commit(root)
+    tags = stage_tags(root)
+    modules, left = {}, []
+    for module in staged(commit, root):
+        pick = newest(module, channel, tags)
+        if pick:
+            modules[module] = pick
+        else:
+            left.append(module)
+    core = [folder for folder in CORE if folder in addons(commit, root)]
+    return {"commit": commit, "core": core, "modules": modules, "left": left}
+
+
+def package_version(commit, wanted=None, root=ROOT):
+    """The package's version: the one asked for, newer than every package before; else one above the newest."""
+    known = [t["version"] for t in package_tags(root)]
+    base = max([toc_version(commit, "Core", "SaneUI", root), *known], key=key)
+    if wanted is None:
+        return bump(base)
+    if not VERSION.match(wanted):
+        raise Refused("a version is X.Y.Z: 0.4.0")
+    if known and key(wanted) <= key(max(known, key=key)):
+        raise Refused(f"{wanted} is not newer than the package v{max(known, key=key)}")
+    return wanted
+
+
+# --- Promoting a module -------------------------------------------------------------------------------------------
+
+def promote(module, stage, wanted=None, dry=False, test=True, root=ROOT, say=print):
+    """Tags main's committed state of a module as having reached a stage. Returns the tag."""
+    commit = main_commit(root)
+    found = addons(commit, root)
+    if module in CORE:
+        raise Refused(f"{module} has no stage: Core and its data holders are in every package")
+    if module not in found:
+        raise Refused(f"no module {module} in src (the folder's name: {', '.join(staged(commit, root))})")
+    if stage not in CHANNELS:
+        raise Refused(f"a stage to reach is one of {', '.join(CHANNELS)} (dev is where every module starts)")
+    tags = [t for t in stage_tags(root) if t["module"] == module]
+    now = tree(commit, module, root)
+    same = [t for t in tags if tree(t["commit"], module, root) == now]
+    if wanted is None:
+        # The same code as a version tagged before keeps its number (an alpha made beta); new code a number above all.
+        version = max((t["version"] for t in same), key=key, default=None) or bump(
+            max([toc_version(commit, module, found[module], root), *(t["version"] for t in tags)], key=key))
+    else:
+        version = wanted
+        if not VERSION.match(version):
+            raise Refused("a version is X.Y.Z: 0.4.0")
+        older = [t for t in tags if key(t["version"]) >= key(version) and t not in same]
+        if older:
+            raise Refused(f"{module} {version} is not newer than its {older[-1]['tag']}")
+    tag = f"{module}/{version}-{stage}"
+    reached = [t for t in same if t["version"] == version and rank(t["stage"]) >= rank(stage)]
+    if reached:
+        raise Refused(f"{module} {version} is {reached[-1]['stage']} already ({reached[-1]['tag']})")
+    if any(t["tag"] == tag for t in tags):
+        raise Refused(f"{tag} is there already")
+    left_out = git("status", "--porcelain", "--", f"src/{module}", f"assets/optimized/{module}", root=root).splitlines()
+    say(f"{module} {version} as {stage}: main's {git('rev-parse', '--short', commit, root=root)}, tag {tag}.")
+    if left_out:
+        say(f"Not in it, not committed: {len(left_out)} files of {module} in the working tree.")
+    if dry:
+        say("Nothing changed (--dry).")
+        return tag
+    if test:
+        with tempfile.TemporaryDirectory(dir=scratch_parent(root)) as scratch:
+            copy = Path(scratch) / "main"
+            extract(commit, copy, root=root)
+            say("Testing it ...")
+            run_tests(copy, [module], say)
+    git("tag", "-a", tag, "-m", f"Sane UI's {module} {version}, {stage}", commit, root=root)
+    say(f"Tagged {tag}. Not pushed: git push origin {tag}")
+    return tag
+
+
+# --- Building a package -------------------------------------------------------------------------------------------
+
+def scratch_parent(root=ROOT):
+    """Where git's copies are made: on the disk beside the build, not in /tmp (held in memory here)."""
+    folder = root / "BUILD" / ".packaging"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def extract(commit, folder, paths=(), root=ROOT):
+    """Git's copy of a commit (or of some of its paths) into a folder, its art from Git LFS."""
+    folder.mkdir(parents=True, exist_ok=True)
+    archive = git("archive", commit, "--", *paths, root=root, text=False)
+    subprocess.run(["tar", "-x", "-C", str(folder)], input=archive, check=True)
+
+
+def lua(tree_root, test):
+    """One Lua test of a tree, under a memory cap."""
+    return subprocess.run(["bash", "-c", f'ulimit -v {MEMORY}; exec lua5.1 "$0"', f"dev/tests/{test}.lua"],
+                          cwd=tree_root, capture_output=True, text=True)
+
+
+def run_tests(tree_root, modules, say):
+    """The lint and the given modules' tests of a tree; Refused on the first failure."""
+    linted = subprocess.run([str(tree_root / "dev/tests/lint")], cwd=tree_root, capture_output=True, text=True)
+    if linted.returncode:
+        raise Refused("the lint failed:\n" + (linted.stdout + linted.stderr).strip()[-2000:])
+    for module in modules:
+        for test in TESTS.get(module, []):
+            if not (tree_root / f"dev/tests/{test}.lua").is_file():
+                say(f"  {module}: no dev/tests/{test}.lua in that version, left out")
+                continue
+            ran = lua(tree_root, test)
+            if ran.returncode:
+                raise Refused(f"{module}: dev/tests/{test}.lua failed:\n" + (ran.stdout + ran.stderr).strip()[-2000:])
+            say(f"  {module}: dev/tests/{test}.lua passed")
+
+
+def assemble(tree_root, folder, name, into):
+    """One addon of a tree, as dev/build makes it: the folder of src without what only development needs (the
+    READMEs), its art from assets/optimized over it, the project's licence. Returns its folder in the package."""
+    out = into / name
+    if out.exists():
+        shutil.rmtree(out)
+    shutil.copytree(tree_root / "src" / folder, out, ignore=shutil.ignore_patterns("*.md"))
+    stray = out / "LICENSE"
+    if stray.is_file():
+        stray.unlink()
+    art = tree_root / "assets" / "optimized" / folder
+    if art.is_dir():
+        shutil.copytree(art, out, dirs_exist_ok=True, ignore=shutil.ignore_patterns("*.md"))
+    shutil.copyfile(tree_root / "LICENSE", out / "LICENSE.txt")
+    return out
+
+
+def dress_toc(path, version, mark, stage=None):
+    """A packaged TOC: Forever's interface number alone, the version, which package it is (and the module's stage).
+    False: the addon is made for another game only (its X-SaneUI-Games), and stays out."""
+    text = path.read_text(encoding="utf-8")
+    games = re.search(r"^## X-SaneUI-Games:\s*(.+)$", text, re.M)
+    if games and "forever" not in games.group(1).lower().replace(",", " ").split():
+        return False
+    def forever(match):
+        numbers = [n.strip() for n in match.group(1).split(",") if n.strip().isdigit() and int(n) < RETAIL_INTERFACE]
+        if not numbers:
+            raise Refused(f"{path.name} names no interface number of Forever's")
+        return "## Interface: " + ", ".join(numbers)
+    text = re.sub(r"^## Interface:\s*(.+)$", forever, text, count=1, flags=re.M)
+    lines = f"## Version: {version}\n## X-SaneUI-Build: {mark}" + (f"\n## X-SaneUI-Stage: {stage}" if stage else "")
+    if re.search(r"^## Version:.*$", text, re.M):
+        text = re.sub(r"^## Version:.*$", lambda _: lines, text, count=1, flags=re.M)
+    else:
+        text = lines + "\n" + text
+    path.write_text(text, encoding="utf-8")
+    return True
+
+
+def checked(into):
+    """What must never be in a package: Git LFS pointers in place of art, READMEs, a folder made on one computer."""
+    problems = []
+    for file in into.rglob("*"):
+        if file.is_file() and file.stat().st_size < 1024 and file.read_bytes().startswith(LFS):
+            problems.append(f"a Git LFS pointer, not the art (git lfs pull): {file.relative_to(into)}")
+        if file.is_file() and file.suffix == ".md":
+            problems.append(f"a README: {file.relative_to(into)}")
+        if file.suffix == ".toc" and re.search(r"^## X-SaneUI-(Guides|Made):", file.read_text(encoding="utf-8"), re.M):
+            problems.append(f"made on one computer, never shipped: {file.parent.name}")
+    if problems:
+        raise Refused("not packaged:\n  " + "\n  ".join(problems))
+
+
+def write_zip(into, zip_path):
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+    temp = zip_path.with_name(zip_path.name + ".tmp")
+    with zipfile.ZipFile(temp, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as out:
+        for file in sorted(into.rglob("*")):
+            if file.is_file():
+                out.write(file, file.relative_to(into).as_posix())
+    os.replace(temp, zip_path)
+
+
+def describe(found, version, channel, root=ROOT):
+    lines = [f"Package {version} ({channel}) of main's {git('rev-parse', '--short', found['commit'], root=root)}:",
+             f"  Core: {', '.join(found['core'])}"]
+    for module, pick in sorted(found["modules"].items()):
+        lines.append(f"  {module} {pick['version']} ({pick['stage']}, {git('rev-parse', '--short', pick['commit'], root=root)})")
+    if found["left"]:
+        lines.append(f"  Left out, not {channel} yet: {', '.join(found['left'])}")
+    return "\n".join(lines)
+
+
+def package(channel, wanted=None, dry=False, root=ROOT, out_dir=None, say=print, test=True):
+    """Makes the zip of a channel. Returns {"zip", "version", "channel", "commit", "modules", "left", "core"}."""
+    found = plan(channel, root)
+    version = package_version(found["commit"], wanted, root)
+    if any(t["version"] == version for t in package_tags(root)):
+        raise Refused(f"there is a package v{version} already")
+    say(describe(found, version, channel, root))
+    zip_path = (out_dir or root / "BUILD" / "packages") / f"SaneUI-{version}-{channel}.zip"
+    result = {"zip": zip_path, "version": version, "channel": channel, **found}
+    if dry:
+        say(f"Would be: {zip_path} (--dry: nothing made).")
+        return result
+    commit, short = found["commit"], git("rev-parse", "--short", found["commit"], root=root)
+    with tempfile.TemporaryDirectory(dir=scratch_parent(root)) as scratch:
+        scratch = Path(scratch)
+        main = scratch / "main"
+        extract(commit, main, root=root)
+        if test:
+            # Core's sets first, where the interface lab's scenes read them (as a build before them makes them).
+            made = subprocess.run([str(main / "dev/tools/data"), "compile", str(main / "BUILD" / "SaneUI")],
+                                  cwd=main, capture_output=True, text=True)
+            if made.returncode:
+                raise Refused("Core's sets could not be compiled:\n" + (made.stdout + made.stderr).strip()[-2000:])
+            say("Testing main's commit whole ...")
+            ran = subprocess.run([str(main / "dev/tests/run")], cwd=main, capture_output=True, text=True)
+            if ran.returncode:
+                raise Refused("main's tests failed: no package.\n" + (ran.stdout + ran.stderr).strip()[-3000:])
+        into = scratch / "package"
+        names = addons(commit, root)
+        for folder in found["core"]:
+            addon = assemble(main, folder, names[folder], into)
+            if not dress_toc(addon / f"{names[folder]}.toc", version, f"{channel} {version} {short}"):
+                shutil.rmtree(addon)
+        made = subprocess.run([str(main / "dev/tools/data"), "compile", str(into / "SaneUI")], cwd=main,
+                              capture_output=True, text=True)
+        if made.returncode:
+            raise Refused("Core's sets could not be compiled:\n" + (made.stdout + made.stderr).strip()[-2000:])
+        copies = {}
+        for module, pick in sorted(found["modules"].items()):
+            source = main
+            if tree(pick["commit"], module, root) != tree(commit, module, root):
+                # An older version than main's: its code of then, tested with today's Core.
+                source = copies.get(pick["commit"])
+                if source is None:
+                    source = copies[pick["commit"]] = scratch / pick["commit"][:12]
+                    extract(pick["commit"], source, root=root)
+                    for part in CORE:
+                        for base in ("src", "assets/optimized"):
+                            shutil.rmtree(source / base / part, ignore_errors=True)
+                            if (main / base / part).is_dir():
+                                shutil.copytree(main / base / part, source / base / part)
+                    for helper in TEST_HELPERS:
+                        if (main / helper).is_file():
+                            (source / helper).parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copyfile(main / helper, source / helper)
+                if test:
+                    say(f"Testing {module} {pick['version']} with today's Core ...")
+                    run_tests(source, [module], say)
+            name = addons(pick["commit"], root).get(module) or names[module]
+            addon = assemble(source, module, name, into)
+            if not dress_toc(addon / f"{name}.toc", pick["version"], f"{channel} {version} {short}", pick["stage"]):
+                shutil.rmtree(addon)
+                say(f"  {module}: made for another game only, left out")
+        checked(into)
+        write_zip(into, zip_path)
+    size = zip_path.stat().st_size
+    say(f"Made: {zip_path.relative_to(root) if zip_path.is_relative_to(root) else zip_path} ({size / 1048576:.1f} MB).")
+    return result
+
+
+# --- CurseForge ---------------------------------------------------------------------------------------------------
+
+def config(path=CONFIG):
+    if not path.is_file():
+        raise Refused(f"no {path}: it holds the CurseForge project and its token, "
+                      '{"project": 123456, "token": "...", "gameVersions": ["1.60.1"]} '
+                      "(the token from authors.curseforge.com, Settings, API Tokens)")
+    try:
+        found = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as error:
+        raise Refused(f"{path} is not JSON: {error}")
+    for field in ("project", "token", "gameVersions"):
+        if not found.get(field):
+            raise Refused(f"{path} lacks {field}")
+    return found
+
+
+def changelog(version, path=ROOT / "Doc" / "changelog.txt"):
+    """The players' words for this version: its part of Doc/changelog.txt ("0.4.0 (2026-12-01)" and what follows);
+    None while it has none (a package is never uploaded with another version's words)."""
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    parts = re.split(r"^(?=\d+\.\d+\.\d+ \()", text, flags=re.M)[1:]
+    mine = [p for p in parts if p.startswith(version + " ")]
+    return mine[0].strip() if mine else None
+
+
+def metadata(result, game_versions, words):
+    channel = result["channel"]
+    return {"changelog": words, "changelogType": "text",
+            "displayName": f"Sane UI {result['version']}" + ("" if channel == "release" else f" ({channel})"),
+            "gameVersions": game_versions, "releaseType": channel}
+
+
+def ask(url, token, data=None, headers=None):
+    request = urllib.request.Request(url, data=data, headers={"X-Api-Token": token, **(headers or {})})
+    try:
+        with urllib.request.urlopen(request, timeout=300) as answer:
+            return json.loads(answer.read().decode("utf-8") or "null")
+    except urllib.error.HTTPError as error:
+        raise Refused(f"CurseForge answered {error.code}: {error.read().decode('utf-8', 'replace')[:500]}")
+    except urllib.error.URLError as error:
+        raise Refused(f"CurseForge could not be reached: {error.reason}")
+
+
+def game_version_ids(wanted, known):
+    """CurseForge's ids of the game versions named (by name or id) in the config; Refused for one it lacks."""
+    ids = []
+    for want in wanted:
+        hit = [v["id"] for v in known if str(v.get("id")) == str(want) or v.get("name") == str(want)]
+        if not hit:
+            raise Refused(f"CurseForge knows no game version {want!r}")
+        ids.append(hit[0])
+    return ids
+
+
+def multipart(fields, file_field, file_path):
+    boundary = uuid.uuid4().hex
+    body = io.BytesIO()
+    for name, value in fields.items():
+        body.write(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n"
+                   f"Content-Type: application/json\r\n\r\n".encode())
+        body.write(value.encode("utf-8") + b"\r\n")
+    body.write(f"--{boundary}\r\nContent-Disposition: form-data; name=\"{file_field}\"; filename=\"{file_path.name}\"\r\n"
+               f"Content-Type: application/zip\r\n\r\n".encode())
+    body.write(file_path.read_bytes() + b"\r\n")
+    body.write(f"--{boundary}--\r\n".encode())
+    return body.getvalue(), f"multipart/form-data; boundary={boundary}"
+
+
+def publish(channel, wanted=None, dry=False, yes=False, root=ROOT, say=print, settings=None):
+    """The channel's package made, uploaded to CurseForge as its release type, and main's commit tagged."""
+    if settings is None:
+        try:
+            settings = config()
+        except Refused as why:
+            if not dry:
+                raise
+            say(f"({why})")
+            settings = {"project": "?", "token": "", "gameVersions": ["?"]}
+    host = settings.get("host", HOST).rstrip("/")
+    result = package(channel, wanted, dry, root, say=say)
+    words = changelog(result["version"], root / "Doc" / "changelog.txt")
+    if words is None:
+        missing = (f"Doc/changelog.txt has no part for {result['version']} yet: the players' words go there first "
+                   f"(\"{result['version']} (<date>)\", its line of dashes, the bigger changes), committed")
+        if not dry:
+            raise Refused(missing)
+        say(f"({missing}.)")
+        words = ""
+    if dry:
+        say(f"Would upload to {host}, project {settings['project']}, as {channel}, for the game versions "
+            f"{settings['gameVersions']}:\n" + json.dumps(metadata(result, settings["gameVersions"], words), indent=1))
+        return None
+    ids = game_version_ids(settings["gameVersions"], ask(f"{host}/api/game/versions", settings["token"]))
+    meta = metadata(result, ids, words)
+    if not yes:
+        answer = input(f"Upload {result['zip'].name} to CurseForge project {settings['project']} as {channel}? "
+                       "Type yes: ")
+        if answer.strip().lower() != "yes":
+            raise Refused("not uploaded")
+    body, kind = multipart({"metadata": json.dumps(meta)}, "file", result["zip"])
+    answer = ask(f"{host}/api/projects/{settings['project']}/upload-file", settings["token"], body,
+                 {"Content-Type": kind})
+    file_id = answer.get("id") if isinstance(answer, dict) else None
+    tag = f"v{result['version']}-{channel}"
+    contents = ", ".join(f"{m} {p['version']} {p['stage']}" for m, p in sorted(result["modules"].items())) or "Core only"
+    git("tag", "-a", tag, "-m", f"Sane UI {result['version']} ({channel}) on CurseForge, file {file_id}: Core, {contents}",
+        result["commit"], root=root)
+    say(f"Uploaded: CurseForge file {file_id}. Tagged {tag}. Not pushed: git push origin {tag}")
+    return file_id
+
+
+# --- The command line ---------------------------------------------------------------------------------------------
+
+def show_stages(root=ROOT, say=print):
+    commit = main_commit(root)
+    tags = stage_tags(root)
+    say("Core, Data: Auction House, Data: Auction Scans: no stage, in every package (main's newest commit).")
+    for module in staged(commit, root):
+        mine = [t for t in tags if t["module"] == module]
+        line = f"  {module:14} {stage_of(module, tags)}"
+        if mine:
+            line += "   " + ", ".join(f"{t['version']} {t['stage']}" for t in mine)
+            if tree(mine[-1]["commit"], module, root) != tree(commit, module, root):
+                line += "   (main has newer code: dev)"
+        say(line)
+    packages = package_tags(root)
+    if packages:
+        say("Packages: " + ", ".join(f"v{t['version']}-{t['channel']}" for t in packages))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=__doc__.split("\n\n", 1)[1])
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("stages", help="every module's stage and versions")
+    raising = commands.add_parser("promote", help="tag main's committed state of a module as reaching a stage")
+    raising.add_argument("module")
+    raising.add_argument("stage", choices=CHANNELS)
+    for name, what in (("package", "the zip of a channel"), ("publish", "the zip made, uploaded to CurseForge, tagged")):
+        one = commands.add_parser(name, help=what)
+        one.add_argument("channel", choices=CHANNELS)
+        if name == "publish":
+            one.add_argument("--yes", action="store_true", help="upload without asking")
+    for one in (raising, commands.choices["package"], commands.choices["publish"]):
+        one.add_argument("--version")
+        one.add_argument("--dry", action="store_true", help="show what it would do; change nothing")
+    args = parser.parse_args()
+    try:
+        if args.command == "stages":
+            show_stages()
+        elif args.command == "promote":
+            promote(args.module, args.stage, args.version, args.dry)
+        elif args.command == "package":
+            package(args.channel, args.version, args.dry)
+        else:
+            publish(args.channel, args.version, args.dry, args.yes)
+    except Refused as why:
+        print(f"release: {why}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

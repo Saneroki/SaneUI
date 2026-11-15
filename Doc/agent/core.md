@@ -17,8 +17,8 @@ end (`dev/build`, from `assets/data/`).
 | `Serial.lua` | Plain values as one line of text and back (a profile exported, imported): `Core.Serial.Write`/`Read`; read letter by letter, never run |
 | `Motion.lua` | Kinds of motion on the game's easing curves: `Core.Motion.KINDS` (glide, swing, even, off), `Kind`/`Ease`/`Share`/`Choices`, `Clock`, `Fade`/`Slide` |
 | `Saved.lua` | `SaneUIDB`, the switches described and the settings in use: `Core.Store`/`StoreName`/`Character`, `Copy`/`Same`, `Settle`, `Options`/`Described`/`Settings`/`Set`/`Reset` |
-| `Presets.lua` | What the standard profiles set over the defaults: `Core.Presets.profiles` (Accountwide, Speedleveling: our CVars as Sync's `named`, Speed Leveling's switches, Economy's `bankerAuto`), `Presets.VERSION` |
-| `Profiles.lua` | Where every module's settings live (*Profiles* below): `Core.Profiles.On`/`Arrive`/`Live`/`InUse`/`List`/`Fixed`/`Create`/`Use`/`Rename`/`Delete`/`CopyFrom`/`Reset`/`Export`/`Import`/`Character`/`Leveling`/`SetLeveling`; `VERSION` 2; `/sane profile` |
+| `Presets.lua` | What the profile Speedleveling sets over the defaults: `Core.Presets.profiles.Speedleveling` (our CVars as Sync's `named`, Speed Leveling's switches, Economy's `bankerAuto`; Accountwide none since 2026-11-15), `Presets.VERSION` |
+| `Profiles.lua` | Where every module's settings live (*Profiles* below): `Core.Profiles.Enabled`/`SetEnabled`/`On`/`Arrive`/`Live`/`InUse`/`List`/`Fixed`/`Create`/`Use`/`Rename`/`Delete`/`CopyFrom`/`Reset`/`Export`/`Import`/`Character`/`Leveling`/`SetLeveling`; `VERSION` 3; `/sane profile [name|on|off]` |
 | `Dock.lua` | Nine snap zones: `Core.Dock.ZONES`, `REACH` 60, pure `Find`/`Rect`/`Of`, `Anchor` (a frame hung on the screen's point of its zone), `Hold`/`Holder` (a zone holds one window), `Watch`/`Drop` (the shape while dragged) |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open: `Core.EditMode.active`, `available`, `Watch(fn)` |
 | `Escape.lua` | `Core.Escape(owner, close)`: one stand-in `SaneUIEscape` in `UISpecialFrames` for all of Sane UI; hidden by Esc, it runs every close and is shown again while any remain |
@@ -158,8 +158,20 @@ error: through `Core.Plain` every time, hidden meaning no.
 
 ## Profiles
 
-Saneroki, 2026-10-17; the standard profiles 2026-10-30. Each character uses a profile: *Accountwide* (new characters'
-unless `newProfile` names another) or *Speedleveling* (both always there, `Standard`: a missing one copied from Accountwide, its
+Saneroki, 2026-10-17; the standard profiles 2026-10-30; off at first 2026-11-15. `SaneUIDB.profilesOn` (`Profiles.Enabled`,
+`SetEnabled(on)`; the page's switch, `/sane profile on|off`, Onboarding): nil on a fresh install (never on), true on,
+false turned off with the profiles kept. Off: `Want()` is nil for everyone (own settings), `Register` gives new lines
+`OWN`, `Mend` makes no standard profile, `List()` is `{ OWN }`, `Settings(name)` nil (the save window saves to no
+profile), Sync writes and reads nothing and `Sync.Moved` gives no defaults; a line still naming a profile copies that
+profile's settings into its own at its load (`TakeOwn`). `TurnOn` the first time (`profilesOn` nil or Accountwide empty):
+Accountwide = `Snapshot()`, the live tables re-homed into it untold (`Rehome`), Sync's session table reset and filled by
+`Sync.Take` (`given` = true, `Sync.FindNow` finds the CVar parts' names at once, then `Capture`; nothing written),
+`Standard(Speedleveling)`, `Unsaved.Moved` last; else `Move` onto the Accountwide kept. `TurnOff`: `Capture`, the
+profile's settings of modules not on today copied into own, `Rehome(nil)`, Sync not told. Both wait for the save window
+(`Turn`); `Use(name)` of a profile while off turns them on first (`Turn(true, name)`); `SetCharacter` of this character
+is `Use`. Version 3 (`Upgrade`; the v1 step `First` only below 2): `profilesOn` = true when the file is a player's
+(`Used`: a character line, or a profile holding something). Once on, each character uses a profile: *Accountwide* (new characters'
+unless `newProfile` names another; given no preset) or *Speedleveling* (both always there while on, `Standard`: a missing one copied from Accountwide, its
 preset given once per `Presets.VERSION`, `SaneUIDB.presets`), or one
 the player made; or *Character specific* (`Profiles.OWN`): no profile, its own settings in `SaneUICharDB.settings`, the
 game's left to the game (Sync's live table is a session table, hook `game = true`; `Profiles.On()` is false, `Give` and
@@ -173,7 +185,7 @@ key by `Core.Same`, or `replaced`), then `moved` (Sync gives the game's settings
 its windows' places), `Core.SwitchChanged`. Load: Core's own `ADDON_LOADED` upgrades and mends the file (`Upgrade`, `UpgradeCharacter`, `Mend`;
 the old switch Accountwide is dropped), registers the key (the GUID, else `SaneUICharDB.key`) and binds every
 described module; later modules bind in `Core.Options` (`Arrive`). `PLAYER_LOGIN`: a different key registers and moves. `PLAYER_LOGOUT`: `Capture()` only, so logout
-listeners see the right settings in any order. The v1 shape, brought over once (local `Upgrade`, `Profiles.VERSION` 2):
+listeners see the right settings in any order. The v1 shape, brought over once (local `First`, run by `Upgrade` below version 2):
 account options (and a parked `account`) → *Accountwide*, `store.version` → each copy's `_version`, a character's
 profile kept only with `autoLoad`, `newCharacters` → `newProfile`, the rest dropped. Profile names unique
 case-insensitively (`MAX_NAME` 32); Export/Import through `Core.Serial` (`{ kind = "Sane UI profile", version, name,

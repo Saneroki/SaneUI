@@ -1351,6 +1351,67 @@ do
     for name, fn in pairs(was) do C_EditMode[name] = fn end
 end
 
+-- Profiles off on a fresh install (Saneroki, 2026-11-15): Sync writes nothing into the game and gives no defaults;
+-- turned on, Accountwide takes the game's settings as Sync reads them, nothing written; turned off, the game stays ------
+do
+    local list = { { "JUMP", "Jump", "SPACE" }, { "SITORSTAND", "Sit", "X" } }
+    local bound, loaded = 0, nil
+    GetNumBindings = function() return #list end
+    GetBinding = function(index) return unpack(list[index]) end
+    SetBinding = function() bound = bound + 1 end
+    GetCurrentBindingSet = function() return 2 end
+    SaveBindings = function() bound = bound + 1 end
+    LoadBindings = function(set) loaded = set end
+    Fresh()
+    W.cvars.nameplateSize, W.cvars.autoLootDefault, W.cvars.cameraSavedDistance = "2", "1", "40" -- this player's own
+    game.active = 3 -- and its own Edit Mode layout
+    W.Wait(0.1)
+    SaneUIDB, SaneUICharDB = {}, {} -- nothing saved: a fresh install
+    W.Fire("ADDON_LOADED", "SaneUI")
+    local Profiles = Core.Profiles
+    local sets, popups = W.cvarSets, #W.popups
+    local function Untouched()
+        return W.cvarSets == sets and #game.calls == 0 and bound == 0 and loaded == nil and #W.popups == popups
+            and W.cvars.nameplateSize == "2" and W.cvars.autoLootDefault == "1" and game.active == 3
+    end
+    check(not Profiles.Enabled() and not Profiles.On() and SaneUIDB.profiles.Speedleveling == nil, "a fresh install: the profiles off")
+    Sync.Give()
+    Sync.Moved()
+    Sync.Capture()
+    W.Fire("PLAYER_LOGOUT")
+    check(Untouched() and next(Sync.options.taken) == nil and next(Sync.options.named) == nil
+        and (SaneUICharDB.settings == nil or SaneUICharDB.settings.Sync == nil),
+        "off: nothing of the game's written, read or kept, no defaults, none of our recommended CVars, not even at the logout")
+    -- Turned on: Accountwide takes the game's settings as they are now
+    check(Profiles.SetEnabled(true) and Profiles.Enabled() and Profiles.InUse() == "Accountwide", "turned on: this character on Accountwide")
+    local wide = SaneUIDB.profiles.Accountwide.Sync
+    check(Untouched(), "nothing written into the game, no /reload offered, no key bindings set or loaded")
+    check(wide == Sync.options and wide.from == Core.GAME and wide.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "2"
+        and wide.taken.CONTROLS_LABEL.cvars.autoLootDefault == "1" and wide.taken.perCharacter.cvars.cameraSavedDistance == "40"
+        and wide.taken.GRAPHICS_LABEL.cvars.graphicsQuality == "5" and wide.taken.hudLayout.name == "Mine"
+        and wide.taken.keyBindings.JUMP[1] == "SPACE", "Accountwide holds the game's settings as they are: the pages, per character, graphics, layout, keys")
+    local same = true
+    for _, part in ipairs(Sync.parts) do
+        if Sync.PartKept(part.id) and not Core.Same(wide.taken[part.id], part.Read()) then same = false end
+    end
+    check(same, "every kept part as Sync reads it from the game")
+    check(next(wide.named) == nil and next(wide.dropped) == nil, "no CVar of our presets: none kept by name")
+    check(SaneUIDB.profiles.Speedleveling.Sync.named.maxFPS == "115" and W.cvars.maxFPS == nil,
+        "Speedleveling keeps its presets, written only when it is used")
+    Sync.Give()
+    check(W.cvarSets == sets and bound == 0 and loaded == nil, "the next writing (a login) finds nothing that differs")
+    -- Turned off: the game's settings stay as they are; the profile keeps what they were
+    W.cvars.nameplateSize = "4"
+    check(Profiles.SetEnabled(false) and not Profiles.Enabled() and Profiles.InUse() == Profiles.OWN, "turned off")
+    Sync.Moved()
+    Sync.Give()
+    check(W.cvars.nameplateSize == "4" and W.cvarSets == sets and loaded == nil and #W.popups == popups,
+        "the game's settings stay as they are, none back at its defaults")
+    check(SaneUIDB.profiles.Accountwide.Sync.taken.NAMEPLATE_OPTIONS_LABEL.cvars.nameplateSize == "4",
+        "and the profile, kept for later, has them as they were when turned off")
+    GetNumBindings, GetBinding, SetBinding, GetCurrentBindingSet, SaveBindings, LoadBindings = nil, nil, nil, nil, nil, nil
+end
+
 local problems = {}
 for label, problem in pairs(Core.errors) do problems[#problems + 1] = label .. ": " .. tostring(problem.text) end
 check(#problems == 0, "nothing went wrong on the way: " .. table.concat(problems, "; "))
