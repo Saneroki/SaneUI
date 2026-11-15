@@ -1604,15 +1604,32 @@ end)()
     local switches, finders = #gather.switches, { gather.tracking[1].active, gather.tracking[2].active }
     gather.tracking[3] = { name = "Track Beasts", spellID = 1494, active = false, type = "spell", texture = 132328 }
     gather.tracking[4] = { name = "Find Fish", spellID = 43308, active = false, type = "spell", texture = 133888 }
+    gather.tracking[5] = { name = "Flight Master", active = true, type = "other", texture = 136456 } -- the townsfolk's
     Satchel.Fill()
     cells = Cells()
     local beasts = cells["Track Beasts"]
     check(beasts and not cells["Find Herbs"] and not cells["Find Minerals"] and not cells["Find Fish"]
-        and cells["Found fishing pools"] and not beasts.tick._shown,
-        "the game's tracking, but the finders Found herbs, Found ore and Found fishing pools switch")
+        and cells["Found fishing pools"] and not beasts.tick._shown and not cells["Flight Master"],
+        "the game's tracking spells, but the finders Found herbs, Found ore and Found fishing pools switch; not the "
+        .. "game's townsfolk (the pins Flight points and Services show them)")
+    ;(function()
+        -- Pins and Tracking (Saneroki, 2026-11-15): the pin filter's kinds under Pins, but its section Tracking (the
+        -- found herbs, ore and pools, the rares, treasures and books), which stands under Tracking with the game's spells.
+        local tracking
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "FontString" and widget._shown and widget._text == Satchel.TEXT.tracking then tracking = widget end
+        end
+        local line = tracking and tracking._points[1][5]
+        local function Under(title) local cell = cells[title] return cell and line and cell._points[1][5] < line end
+        check(line and not Under("Flight points") and not Under("Party and raid") and cells["Flight points"]
+            and Under("Found herbs") and Under("Found fishing pools") and Under("Rares") and Under("Treasures")
+            and Under("Books") and Under("Track Beasts") and not cells["Route to the map pin"] and not cells["Minimap dots"],
+            "the satchel: the pins under Pins; the found herbs, ore and pools, the rares, treasures, books and the "
+            .. "game's tracking spells under Tracking; no route, no minimap dots")
+    end)()
     beasts._scripts.OnClick(beasts, "LeftButton")
     check(gather.tracking[3].active and Cells()["Track Beasts"].tick._shown, "a click switches it as the game's menu does")
-    gather.tracking[3], gather.tracking[4] = nil, nil
+    gather.tracking[3], gather.tracking[4], gather.tracking[5] = nil, nil, nil
     gather.tracking[1].active, gather.tracking[2].active = finders[1], finders[2]
     for index = #gather.switches, switches + 1, -1 do gather.switches[index] = nil end
 
@@ -2340,18 +2357,21 @@ clock:Run(1)
 check(holder:GetScale() == 1, "standing, it is laid out anew for the full view")
 local full = Window.full
 check(Canvas.camera == full and near(full.u, 500) and near(full.k, TALL / Camera.START), "full: its own camera, at the player the first time")
--- Settings of before: the switch Route to the map pin is the pin filter's kind now, as the minimap's dots are.
+-- Settings of before: the switch Route to the map pin went; the route and the minimap's dots always show, no kind of the
+-- pin filter (Saneroki, 2026-11-15).
 do
     local settled = Core.Settle(ns.name, { route = false, pins = { quest = true } })
-    check(settled.pins.quest and not settled.pins.route and settled.pins.minimap and settled.route == nil,
-        "older settings: a route switched off stays off in the pin filter, the minimap's dots on")
+    check(settled.pins.quest and settled.route == nil, "older settings: the switch Route to the map pin let go")
+    local kinds = {}
+    for _, kind in ipairs(ns.KINDS) do kinds[kind[1]] = true end
+    check(not kinds.route and not kinds.minimap and ns.Pins.ALWAYS.route and ns.Pins.ALWAYS.minimap,
+        "the route and the minimap's dots: no kinds of the pin filter, always shown")
     settled = Core.Settle(ns.name, { pins = { quest = true } })
-    check(settled.pins.route and settled.pins.minimap, "a route that was on: on in the pin filter")
     check(settled.pins.log and settled.pins.low and settled.pins.later and not settled.pins.done,
         "the quests split: those in your log as Quests were, the low ones and those for later on")
 end
 -- The game's minimap's dots on the full map too: around the player at the map's own zoom, its widest step whose
--- square takes at most Hybrid.ROOM of the canvas' shorter side, kept on the player; the pin filter's Minimap dots.
+-- square takes at most Hybrid.ROOM of the canvas' shorter side, kept on the player; always, no switch of the pin filter.
 do
     tracker._scripts.OnUpdate(tracker, 0.016)
     local step
@@ -2369,11 +2389,7 @@ do
     local chosen = Core.Copy(ns.options.pins)
     chosen.minimap = nil
     Core.Set(ns.name, "pins", chosen)
-    check(not minimap._shown and not ns.Pins.Shows("minimap"), "the pin filter's Minimap dots off: not there")
-    chosen = Core.Copy(chosen)
-    chosen.minimap = true
-    Core.Set(ns.name, "pins", chosen)
-    check(minimap._shown, "on again: there")
+    check(minimap._shown and ns.Pins.Shows("minimap"), "the minimap's dots: no switch of the pin filter, always there")
     check(not Hybrid.Ping(0, 0), "a click on the full map is no ping: the game's minimap is not in its middle there")
     -- A middle click: on the player and following, where the game's middle step's square takes Hybrid.ROOM of it.
     local was = { u = full.u, v = full.v, k = full.k, follow = full.follow }
@@ -2583,6 +2599,25 @@ local function Drawn(laid)
     end
     return list, count
 end
+-- The pin filter at first (Saneroki, 2026-11-15, for the first release): the quest offers, low, later and done, the
+-- quest areas on the map and the minimap, the rares, treasures, books and possible herbs and ore off, the rest on, each
+-- at its first size. The pins' checks below with the kinds on as they were at first before: all but the done quests,
+-- the quest areas on the minimap and the books.
+;(function()
+    local first = Core.Described(ns.name, "pins").default
+    local off = { quest = true, low = true, later = true, done = true, area = true, minimapArea = true, rare = true,
+                  treasure = true, book = true, herb = true, ore = true }
+    local right = next(Core.Described(ns.name, "pinSizes").default) == nil
+    for _, kind in ipairs(ns.KINDS) do
+        if (first[kind[1]] and true or false) == (off[kind[1]] or false) then right = false end
+    end
+    check(right, "the pin filter at first: offers, low, later, done, quest areas, rares, treasures, books, possible herbs "
+        .. "and ore off, the rest on at 100%")
+    local before = {}
+    for _, kind in ipairs(ns.KINDS) do before[kind[1]] = true end
+    before.done, before.minimapArea, before.book = nil, nil, nil
+    Core.Set(ns.name, "pins", before)
+end)()
 -- Elwynn whole (2000 x 1500 yards round u 0, v -9250), 0.4 units a yard: the zone's level.
 full:Show(1415, 0, -9250, 0.4)
 Canvas.Layout()
@@ -3073,7 +3108,7 @@ do
     for _, item in ipairs(filter and filter._items or {}) do
         for _, kind in ipairs(ns.KINDS) do if item.text == ns.KindLabel(kind, ns.TopBar.ICON) then rows[kind[1]] = item end end
     end
-    local herbs, route, minimapRow, area = rows.herb, rows.route, rows.minimap, rows.area
+    local herbs, fishRow, area = rows.herb, rows.foundFish, rows.area
     check(herbs and herbs.text == "|A:professions_tracking_herb:24:24|a Possible herbs" and rows.foundHerb and rows.foundOre and rows.log and rows.quest and rows.low
         and rows.later and rows.done, "the pin filter: each kind with its icon large before its words; the quests in your log, "
         .. "the quest offers, the low ones and those for later each a row of their own")
@@ -3091,10 +3126,12 @@ do
         end
     end
     check(#titles == #ns.PIN_SECTIONS and titles[1] == "Around you" and titles[2] == "Quests" and count == #ns.KINDS
-        and under.route == "Around you" and under.group == "Around you" and under.log == "Quests"
+        and not rows.route and not rows.minimap and under.group == "Around you" and under.log == "Quests"
         and under.area == "Quests" and under.flight == "Travel" and under.service == "Towns and services"
-        and under.treasure == "Rares and treasures" and under.foundOre == "Gathering",
-        "the pin filter in sections under their titles: around you, quests, travel, towns, rares and treasures, gathering")
+        and under.herb == "Gathering" and under.treasure == "Tracking" and under.rare == "Tracking"
+        and under.book == "Tracking" and under.foundOre == "Tracking" and under.foundFish == "Tracking",
+        "the pin filter in sections under their titles: around you, quests, travel, towns, gathering, tracking; "
+        .. "no route and no minimap dots")
     local slider = { points = {} }
     function slider:SetWidth(width) self.width = width end
     function slider:ClearAllPoints() self.points = {} end
@@ -3111,11 +3148,10 @@ do
         and width > 40 + slider.width and height == ns.TopBar.ROW,
         "the pin filter: a size slider at each kind's right, from its smallest to its largest size")
     local tallWidth, tallHeight
-    if minimapRow and minimapRow.inits[1] then tallWidth, tallHeight = minimapRow.inits[1](row) end
-    check(route and #route.inits == 1 and minimapRow and #minimapRow.inits == 1 and tallHeight == ns.TopBar.ROW
-        and tallWidth < width and #rows.low.inits == 1,
-        "the route's line has a size too, as each quest row has; the game's minimap's dots none (the game draws them), "
-        .. "their row as tall as the others")
+    if fishRow and fishRow.inits[1] then tallWidth, tallHeight = fishRow.inits[1](row) end
+    check(fishRow and #fishRow.inits == 1 and tallHeight == ns.TopBar.ROW and tallWidth < width and #rows.low.inits == 1,
+        "each quest row has a size; the found fishing pools none (the game's minimap draws them), their row as tall as "
+        .. "the others")
     local opacity = { points = {} }
     for name, fn in pairs(slider) do if type(fn) == "function" then opacity[name] = fn end end
     local areaRow = { fontString = row.fontString }
@@ -4502,6 +4538,29 @@ end)()
         for _, each in ipairs(box._points) do if each[1] == "TOPLEFT" then inset = each end end
         check(log.titleInset == ns.QuestLog.EDGE_SMALL and inset[4] == ns.QuestLog.EDGE_SMALL,
             "its list and its title close to the screen's edge")
+        ;(function()
+            -- The scroll bar at the side it stands at here too (Saneroki, 2026-11-15: "When our questlog is docked to
+            -- the left side of the screen the scrollbar should also be on the left side"), the list leaving it the room
+            -- of the window's edge there while it is longer than its room.
+            local bar
+            for _, widget in ipairs(W.frames) do if widget._kind == "EventFrame" and widget._parent == box._parent then bar = widget end end
+            local function Left()
+                for _, each in ipairs(box._points) do if each[1] == "TOPLEFT" then return each[4] end end
+            end
+            box._long = true
+            log.frame._mouseOver = true
+            log.frame._scripts.OnEnter(log.frame)
+            check(bar and bar._shown and bar._points[1][1] == "TOPRIGHT" and bar._points[1][3] == "TOPLEFT"
+                and Left() == ns.QuestLog.EDGE,
+                "on the screen alone at its left: a long list's scroll bar at its left, in the room of the window's edge")
+            box._long = nil
+            log.frame._scripts.OnEnter(log.frame)
+            check(not bar._shown and Left() == ns.QuestLog.EDGE_SMALL,
+                "a list that fits: no scroll bar, the list close to the screen's edge again")
+            log.frame._mouseOver = false
+            log.frame._scripts.OnUpdate(log.frame)
+            watch:GetScript("OnUpdate")(watch, 1)
+        end)()
         ns.store.questLogSort = "zone"
         ns.store.questLogFolds = { ["Elwynn Forest"] = true }
         ns.QuestLog.Refresh()
@@ -4528,6 +4587,10 @@ end)()
     ObjectiveTrackerFrame:SetParent(UIParent)
     check(ObjectiveTrackerFrame._parent == away, "the game's frame manager takes it back (an Edit Mode layout applied): out of sight again at once")
     W.SmallAndBack(function() check(not log.frame._shown, "and off on the screen alone too") end)
+    Core.Set(ns.name, "nativeQuestLog", true)
+    check(ObjectiveTrackerFrame._parent == UIParent, "the game's quest log chosen (Classic windows), ours off: the game's quest tracker back")
+    Core.Set(ns.name, "nativeQuestLog", false)
+    check(ObjectiveTrackerFrame._parent ~= UIParent, "let go: the game's quest tracker gone again")
     Core.Set(ns.name, "nativeMap", true)
     check(ObjectiveTrackerFrame._parent == UIParent, "the game's map and quest log chosen, ours off: the game's quest tracker back")
     ObjectiveTrackerFrame:SetParent(GameTooltip)
@@ -5157,6 +5220,29 @@ W.Wait(0)
 check(worldMap._shown, "and it opens as the game's")
 HideUIPanel(worldMap)
 Core.Set(ns.name, "nativeMap", false)
+-- The game's quest log chosen (the dropdown Classic windows): its key the game's; the game's map that shows its quest log
+-- beside it a frame later stays, the game's; without it, ours opens as before (Saneroki, 2026-11-15).
+;(function()
+    local questLog = W.NewWidget("Frame", nil, worldMap)
+    questLog:Hide()
+    worldMap.QuestLog = questLog
+    Core.Set(ns.name, "nativeQuestLog", true)
+    check(overrides.L == nil and overrides.M == "SaneUINavigationKey:map",
+        "the game's quest log chosen: its key is the game's again, the map's stays ours")
+    ShowUIPanel(worldMap)
+    questLog:Show()
+    W.Wait(0)
+    check(worldMap._shown and worldMap._alpha == 1, "the game's map with its quest log beside it: stays, the game's")
+    HideUIPanel(worldMap)
+    questLog:Hide()
+    ShowUIPanel(worldMap)
+    W.Wait(0)
+    check(not worldMap._shown and worldMap._alpha == 1, "the game's map without its quest log: closed, ours opens")
+    Window.frame._group:Run(1)
+    Core.Set(ns.name, "nativeQuestLog", false)
+    check(overrides.L == "SaneUINavigationKey:quests", "let go: the quest log's key opens ours again")
+    worldMap.QuestLog = nil
+end)()
 
 -- The switch Show the game's minimap: given back, exactly (the map back in its corner first).
 Window.Toggle()
@@ -5239,12 +5325,28 @@ check(W.stray:GetParent() ~= minimap and ns.Satchel.button._shown, "the other ad
         "and that one brings ours back, with the satchel's button")
 end)()
 
--- The dropdown Classic windows: both kept choices, ticked while chosen, chosen again to come back.
+-- The dropdown Classic windows: the three kept choices, ticked while chosen, chosen again to come back.
 Window.Toggle()
 Window.frame._group:Run(1)
 local classicMenu = Window.handle.edge.classic
-check(classicMenu and classicMenu:IsShown() and #classicMenu._items == 3 and classicMenu._items[1].title ~= nil and classicMenu._items[2].checked() == false
-    and classicMenu._items[3].checked() == false, "full, the dropdown Classic windows: the game's minimap and map, neither chosen")
+check(classicMenu and classicMenu:IsShown() and #classicMenu._items == 4 and classicMenu._items[1].title ~= nil and classicMenu._items[2].checked() == false
+    and classicMenu._items[3].checked() == false and classicMenu._items[4].checked() == false
+    and classicMenu._items[4].text == ns.TEXT.classicQuestLog,
+    "full, the dropdown Classic windows: the game's minimap, map and quest log, none chosen")
+;(function()
+    classicMenu._items[4].fn()
+    local said = W.printed[#W.printed] or ""
+    check(ns.options.nativeQuestLog and overrides.L == nil and overrides.M == "SaneUINavigationKey:map"
+        and Window.handle.edge.away and said:find(ns.TEXT.classicQuestLog, 1, true) and said:find(", L.", 1, true),
+        "the game's quest log chosen: kept, its key the game's (the chat says it), the map's ours; ours goes back")
+    Window.frame._group:Run(1)
+    Window.Toggle()
+    Window.frame._group:Run(1)
+    check(classicMenu._items[4].checked() == true, "ticked while chosen")
+    classicMenu._items[4].fn()
+    check(not ns.options.nativeQuestLog and overrides.L == "SaneUINavigationKey:quests" and Window.handle.edge.full,
+        "chosen again: ours is the quest log again, the window stays full")
+end)()
 ;(function()
     local before = panels.shown
     classicMenu._items[3].fn()
@@ -6152,18 +6254,14 @@ player.x, player.y = 0.75, 0.3
     C_SpellBook.IsSpellKnown, C_Item.GetItemCount, C_Item.GetItemCooldown, C_Item.IsUsableItem = isKnown, count, itemCooldown, nil
     Core.Character(ns.name).hearth = hearth
 end)()
--- The setting off, or the pin gone: no line.
+-- No switch for it: the pin filter changed, the line stays; the pin gone: no line.
 do
     local chosen = Core.Copy(ns.options.pins)
     chosen.route = nil
     Core.Set(ns.name, "pins", chosen)
-    check(shownWay == nil, "the pin filter's Route to the map pin off: no line")
-    chosen = Core.Copy(chosen)
-    chosen.route = true
-    Core.Set(ns.name, "pins", chosen)
     W.Wait(0)
     Frames(8)
-    check(shownWay ~= nil, "on again: planned anew, the line again")
+    check(shownWay ~= nil, "the pin filter changed: the line stays (no switch of its own)")
 end
 Live.ClearWaypoint()
 W.Fire("USER_WAYPOINT_UPDATED")
@@ -8543,8 +8641,8 @@ end)()
     end
     check(not ns.Several() and not ViewButton()._shown
         and Hidden("view") and viewOption.default == "sketches"
-        and Core.Settle(ns.name, {}).view == "sketches" and afterLog and afterLog._override,
-        "one view: Parchment, a first load's too; no view buttons, the map selector right of the quest log's; no setting")
+        and Core.Settle(ns.name, {}).view == "sketches" and afterLog and afterLog.key == "dungeons",
+        "one view: Parchment, a first load's too; no view buttons, the button Dungeons right of the quest log's; no setting")
 
     -- The map: Parchment, the game's own art; the game's minimap its own ground in the small view, its dots only full.
     Canvas.Refresh()

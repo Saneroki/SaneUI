@@ -18,22 +18,22 @@ ns.SwitchPin = function(key)
     ns.Satchel.Fill()
 end
 ns.PIN_SECTIONS = { { "around", "Around you" }, { "quests", "Quests" }, { "travel", "Travel" },
-                    { "towns", "Towns and services" }, { "finds", "Rares and treasures" }, { "gathering", "Gathering" } }
+                    { "towns", "Towns and services" }, { "gathering", "Gathering" }, { "tracking", "Tracking" } }
+ns.TRACKING = "tracking"
 ns.KINDS = {
-    { "route", "Route to the map pin", section = "around", icon = "poi-traveldirections-arrow" },
-    { "minimap", "Minimap dots", section = "around", icon = "monsterneutral" },
+    { "group", "Party and raid", section = "around", icon = "partymember" },
     { "log", "Quests in your log", section = "quests", icon = "questturnin" },
     { "area", "Quest areas", section = "quests", icon = "questblob" },
     { "flight", "Flight points", section = "travel", icon = "flightmaster" },
     { "travel", "Boats, zeppelins and portals", section = "travel", icon = "flightmasterferry" },
     { "entrance", "Dungeons and raids", section = "travel", icon = "dungeon" },
     { "place", "Places", section = "towns", icon = "poi-town" },
-    { "rare", "Rares", section = "finds", icon = "dungeonskull" },
-    { "treasure", "Treasures", section = "finds", icon = "vignetteloot" },
-    { "foundHerb", "Found herbs", section = "gathering", texture = 133939 },
-    { "foundOre", "Found ore", section = "gathering", texture = 136025 },
-    { "foundFish", "Found fishing pools", section = "gathering", texture = 133888 },
-    { "group", "Party and raid", section = "around", icon = "partymember" },
+    { "herb", "Possible herbs", section = "gathering", icon = "professions_tracking_herb" },
+    { "foundHerb", "Found herbs", section = "tracking", texture = 133939 },
+    { "foundOre", "Found ore", section = "tracking", texture = 136025 },
+    { "foundFish", "Found fishing pools", section = "tracking", texture = 133888 },
+    { "rare", "Rares", section = "tracking", icon = "dungeonskull" },
+    { "treasure", "Treasures", section = "tracking", icon = "vignetteloot" },
 }
 ns.Nodes = { KIND = { [2383] = "herb", [2580] = "ore", [43308] = "fish" },
              FOUND = { herb = "foundHerb", ore = "foundOre", fish = "foundFish" },
@@ -41,7 +41,8 @@ ns.Nodes = { KIND = { [2383] = "herb", [2580] = "ore", [43308] = "fish" },
 ns.Coords = {}
 ns.Hybrid = { Taken = function() return true end, Release = function() return false end }
 
--- The game's tracking, as its menu lists it (the finders left out by the satchel).
+-- The game's tracking, as its menu lists it (the satchel leaves out the finders, which its found kinds switch, and the
+-- townsfolk, which the pins show).
 lab.tracking = {
     { name = "Find Herbs", spellID = 2383, type = "spell", texture = 133939, active = true },
     { name = "Find Minerals", spellID = 2580, type = "spell", texture = 136025, active = false },
@@ -53,7 +54,7 @@ lab.tracking = {
 C_Minimap = C_Minimap or {}
 C_Minimap.GetNumTrackingTypes = function() return #lab.tracking end
 C_Minimap.GetTrackingInfo = function(index) return lab.tracking[index] end
--- Its filters, as Retail's tracking menu reads them: a spell's, or one of the game's optional ones (Satchel.OPTIONAL).
+-- Its filters, as the game's tracking menu reads them: a spell's, or one of the townsfolk's.
 C_Minimap.GetTrackingFilter = function(index)
     local entry = lab.tracking[index]
     return entry and { filterID = entry.filter and Enum.MinimapTrackingFilter[entry.filter] or 0, spellID = entry.spellID }

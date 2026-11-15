@@ -78,7 +78,7 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
   opens it: the gathered addon buttons and the pins that can be shown on the minimap (in the game a dropdown on its
   minimap, the tracking menu), in a big, easily selectable way. Built: the satchel (`src/Navigation/Satchel.lua`,
   `Strays.lua`): AddOns (other addons' buttons and the game's addon compartment), Pins (our kinds), Tracking (the
-  game's tracking menu's entries).
+  game's tracking menu's spells and our tracked kinds; its townsfolk went, 2026-11-15).
 - **The minimap's other parts in the satchel too** (Saneroki, 2026-10-25): the calendar, the zone's name, the local
   and the server's time, the frame rate, the local and world latency, the time of day, the game's clock with its
   alarm and its stopwatch. Built: the satchel's first section (the zone, its lines, Calendar, Clock, Stopwatch).
@@ -373,6 +373,16 @@ When the window fills the screen:
   there.
 - **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and
   categories, easy to scan, with large icons.
+- **Ready for the first release (Saneroki, 2026-11-15; built):** "Route to the map pin and minimap dots should not
+  be part of the dropdown menu": both always show (`Pins.ALWAYS`). At first off: the quest offers, low-level quests,
+  quests for later, done quests, the quest areas (map and minimap), rares, treasures, books, possible herbs and ore;
+  every other kind on at 100%. The button Dungeons left of the zone dropdown on the full map's bar. The game's quest
+  log a kept choice of *Classic windows* ("so you can still see the native questlog even when you use our addon").
+  The quest log's scroll bar at the side it is docked at, in both looks. **Pins and tracking** ("I don't understand
+  whats the difference between tracking and pins ... trainers and auctioneer and flightmaster etc are not tracking
+  abilities ... Books and Treasures and rares could be under tracking"): the pin filter's section *Tracking* (found
+  herbs, ore and fishing pools, rares, treasures, books) is the satchel's *Tracking* with the game's tracking spells;
+  the game's townsfolk entries left the satchel (the pins *Flight points* and *Services* show them).
 - **A rare's 3D model with Alt (Saneroki, 2026-10-21):** Alt held over a rare enemy's map pin shows its 3D model
   beside the tooltip, as the tooltips show your character beside a piece of gear.
 - **Every pin is clicked for the map pin, the minimap's too (Saneroki, 2026-10-21):** on the small map and on the
@@ -1129,7 +1139,8 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
   (`Search.lua`, a job of Core's scheduler); one found `Planner.WORSE` times its guess or more puts in its true
   length and the journey is chosen once more. Planned again when the pin changes, after a flight landed, when
   the player is `Planner.OFF` yards off the line (at most every `Planner.AGAIN` seconds), and when the walking
-  data or the flights arrive. The setting *Route to the map pin* (on).
+  data or the flights arrive. The setting *Route to the map pin* (on); since 2026-11-15 no switch: always (below,
+  *Ready for the first release*).
 - **Built (2026-10-21): routes from the player, on their floor, over every plane.** Saneroki: a route that goes
   into a building or a cave and out again did not work, routes across the continents by tram, flight and ship not
   well, and the line should always run from the player to the pin.

@@ -54,9 +54,11 @@ local _, ns = ...
 --  right aligned, the items at the left.
 --
 --  No scroll bar at rest: the mouse wheel scrolls the list. While the mouse is on the window and the list is
---  longer than its room, the game's thin scroll bar shows at the side the window stands at (docked at the
---  screen's left edge: at its left), in the room of the window's edge; on the screen alone, where the list stands
---  close to that edge, at the other side.
+--  longer than its room, the game's thin scroll bar shows at the side the window stands at, in both looks
+--  (Saneroki, 2026-11-15: "When our questlog is docked to the left side of the screen the scrollbar should also be
+--  on the left side. When it is docked on the right side the scrollbar should be on the right side"), in the room
+--  of the window's edge; on the screen alone, where the list stands close to that edge, the list leaves it that
+--  room there while it is longer than its room.
 --
 --  The window (one of Core's): moved by its title bar, docked at a screen edge,
 --  sized by its corner's grip while the mouse is on it. No buttons on its low title
@@ -186,6 +188,8 @@ local opened       -- that text's rows while they are listed (Read): the first, 
 local missing      -- that text names an item the game does not know yet (ITEM_DATA_LOAD_RESULT)
 local AddText      -- those rows, under its quest (The chosen quest's text)
 local Hover        -- the mouse came onto the window or one of its rows (The panel)
+local Margin, Room -- the list's room from the window's sides, and the list laid in it (The panel)
+local scrolled = false -- the list is longer than its room: on the screen alone room for the scroll bar (Margin)
 
 local function Plain(value)
     return Core.Plain(value)
@@ -1276,7 +1280,8 @@ end)
 --  The panel
 -------------------------------------------------------------------------------
 -- The game's quest tracker out of sight (Saneroki, 2026-10-31): whether ours shows or was switched off, while the
--- game's map and quest log are not chosen (Show the game's map; chosen, it goes only while ours shows). Lent to a
+-- game's map and quest log are not chosen (Show the game's map, or the game's quest log in the dropdown Classic
+-- windows; chosen, it goes only while ours shows). Lent to a
 -- hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
 -- once the game's are chosen, or the module stands down. The tracker is a frame the game manages: each time a layout
 -- of Edit Mode is applied (the login, Edit Mode closing, a layout changed) its manager takes it back under its own
@@ -1292,7 +1297,7 @@ end
 function QuestLog.Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
     local hide = not ns.off and not Core.EditMode.active
-        and (not (ns.options or {}).nativeMap or (frame and frame:IsShown()))
+        and (not (ns.options and (ns.options.nativeMap or ns.options.nativeQuestLog)) or (frame and frame:IsShown()))
     if hide and tracker and not lent then
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
@@ -1319,14 +1324,22 @@ local function Side()
 end
 
 -- The scroll bar, out of sight at rest: shown while the mouse is on the window and the list is longer than its
--- room, at the window's side (Side), in the room of its edge (QuestLog.EDGE); on the screen alone at the other, the
--- list stands too close to that one (Room). There a list that fits leaves the mouse wheel to the game (its camera).
+-- room, at the window's side (Side), in the room of its edge (QuestLog.EDGE; on the screen alone the list makes that
+-- room while it is long: Margin). There a list that fits leaves the mouse wheel to the game (its camera).
 local function Scroller()
     local long = not QuestLog.Folded() and box.HasScrollableExtent and box:HasScrollableExtent() and true or false
+    if long ~= scrolled then
+        scrolled = long
+        if not full then
+            Room()
+            if box.ForEachFrame then box:ForEachFrame(Reach) end
+            seat()
+        end
+    end
     box:EnableMouseWheel(full or long)
-    local shown = frame:IsMouseOver() and long
+    local shown = Core.Plain(frame:IsMouseOver()) and long
     if shown then
-        local left = (Side() == "LEFT") == full
+        local left = Side() == "LEFT"
         bar:ClearAllPoints()
         bar:SetPoint(left and "TOPRIGHT" or "TOPLEFT", box, left and "TOPLEFT" or "TOPRIGHT", left and -1 or 1, 0)
         bar:SetPoint(left and "BOTTOMRIGHT" or "BOTTOMLEFT", box, left and "BOTTOMLEFT" or "BOTTOMRIGHT", left and -1 or 1, 0)
@@ -1352,14 +1365,14 @@ function Hover()
 end
 
 -- The list's room from a side of the window ("LEFT", "RIGHT"): QuestLog.EDGE; on the screen alone less at the side
--- it stands at, closer to the screen's edge.
-local function Margin(side)
-    return (not full and (side == "RIGHT") == mirrored) and QuestLog.EDGE_SMALL or QuestLog.EDGE
+-- it stands at, closer to the screen's edge, but while it is longer than its room (the scroll bar's there: Scroller).
+function Margin(side)
+    return (not full and not scrolled and (side == "RIGHT") == mirrored) and QuestLog.EDGE_SMALL or QuestLog.EDGE
 end
 
 -- The list and its title at the side it stands at (Margin), its words from there inwards; the quest timers over the
 -- list, which stands under them.
-local function Room()
+function Room()
     local left, right = Margin("LEFT"), Margin("RIGHT")
     box:SetPoint("TOPLEFT", left, -room)
     box:SetPoint("BOTTOMRIGHT", -right, QuestLog.EDGE)

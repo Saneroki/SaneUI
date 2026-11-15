@@ -154,9 +154,13 @@ function Window.Back()
     if handle and handle.edge and handle.edge.full then Back() end
 end
 
--- The dropdown Classic windows: the game's own minimap and map, each kept (its switch), ticked while chosen;
--- chosen again, ours is the one again. The game's map chosen opens by its own key or button (never by our
--- code: Native.lua), and its key is told (Core.Classic.Press), as the other modules' windows of the game's are.
+-- The dropdown Classic windows: the game's own minimap, map and quest log, each kept (its switch), ticked while
+-- chosen; chosen again, ours is the one again. The game's map or quest log chosen opens by its own key or button
+-- (never by our code: Native.lua), and its key is told (Core.Classic.Press), as the other modules' windows of the
+-- game's are. The quest log (Saneroki, 2026-11-15: "Add to the classic windows a toggle for the native questlog, so
+-- you can still see the native questlog even when you use our addon"): the game's map with its quest log beside it,
+-- by the quest log's key, its button and a click on a quest in the game's tracker, ours by everything else; the game's
+-- quest tracker back while ours is off (QuestLog.Tracker).
 local function Keep(key, on)
     ns.Safe("classic window", Core.Set, ns.name, key, on)
 end
@@ -166,6 +170,7 @@ end
 -- or on the game's map caught for the frame before it is hidden, it would only be in the way.
 local function GameMinimap() return not ns.off and ns.options.nativeMinimap end
 local function GameMap() return not ns.off and ns.options.nativeMap end
+local function GameQuestLog() return not ns.off and ns.options.nativeQuestLog end
 local function Border() local map = rawget(_G, "WorldMapFrame") return map and map.BorderFrame end
 local CLASSIC = {
     { text = ns.TEXT.classicMinimap, checked = function() return ns.options.nativeMinimap end,
@@ -178,7 +183,15 @@ local CLASSIC = {
           Core.Classic.Press(ns.TEXT.classicMap, "TOGGLEWORLDMAP") -- its key, now the game's again, opens it
       end,
       back = function() Keep("nativeMap", false) end,
-      frame = Border, full = true, ready = GameMap },
+      -- (its button on the game's map is the quest log's too: Core's Classic.lua, one button a game window; a press
+      -- on it keeps the quest log the game's)
+      frame = Border, full = true, ready = function() return GameMap() or GameQuestLog() end },
+    { text = ns.TEXT.classicQuestLog, checked = function() return ns.options.nativeQuestLog end,
+      show = function()
+          Keep("nativeQuestLog", true)
+          Core.Classic.Press(ns.TEXT.classicQuestLog, "TOGGLEQUESTLOG") -- its key, now the game's again, opens it
+      end,
+      back = function() Keep("nativeQuestLog", false) end },
 }
 
 function Window.Build()

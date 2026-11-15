@@ -14,6 +14,9 @@ local _, ns = ...
 --                   Hide, out of combat) and ours opened at the map it was asked for
 --      in a fight   the game's map stays open as the game's, and ours does not open: hidden by our
 --                   code then, its OnHide would run as ours in the fight
+--      its quest log  the game's quest log chosen in the dropdown Classic windows (nativeQuestLog): the
+--                   quest log's key is the game's again, and the game's map that shows its quest log
+--                   beside it (its key, its button, a quest clicked in the game's tracker) stays
 --
 --  Nothing is written into the game's map: its own methods only (SetAlpha, Hide,
 --  GetMapID), a hook after its OnShow and OnHide. Never the game's panel functions
@@ -43,6 +46,7 @@ local pressed    -- a key's press was acted on: its release is not
 local function Takes(which)
     if ns.off then return false end
     if which == "minimap" then return not ns.options.nativeMinimap end
+    if which == "quests" then return not (ns.options.nativeMap or ns.options.nativeQuestLog) end
     return not ns.options.nativeMap
 end
 
@@ -85,12 +89,22 @@ local function Map()
     return rawget(_G, "WorldMapFrame")
 end
 
--- The frame after the game's map showed: hidden by its own Hide (never the game's HideUIPanel: the header
--- says why), and ours opened at its map. In a fight it stays.
+-- Whether the game's map shows its quest log beside it (QuestLogOwnerMixin's side panel), while the game's quest
+-- log is chosen.
+local function GameQuestLog(map)
+    if not ns.options.nativeQuestLog then return false end
+    local log = map.QuestLog or rawget(_G, "QuestMapFrame")
+    return log and log.IsShown and Core.Plain(log:IsShown()) and true or false
+end
+Native.GameQuestLog = GameQuestLog
+
+-- The frame after the game's map showed (a frame later: its quest log is beside it by then): hidden by its own Hide
+-- (never the game's HideUIPanel: the header says why), and ours opened at its map. In a fight it stays, and while it
+-- shows the game's quest log chosen.
 local function Close()
     local map = Map()
     if not map:IsShown() then return map:SetAlpha(1) end
-    if InCombatLockdown() then return map:SetAlpha(1) end
+    if InCombatLockdown() or GameQuestLog(map) then return map:SetAlpha(1) end
     local asked = map:GetMapID()
     map:Hide()
     map:SetAlpha(1)
@@ -131,7 +145,7 @@ function Native.Start()
     Native.Bind()
 end
 
--- A switch changed (Show the game's map, Show the game's minimap): the keys as it says now.
+-- A switch changed (Show the game's map, Show the game's minimap, the game's quest log): the keys as it says now.
 function Native.Update()
     Native.Bind()
 end

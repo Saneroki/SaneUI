@@ -137,16 +137,19 @@ and shows them on the map or puts the map pin there. The plan is in
   books or treasures, services only near you. The party and raid in their class colours, at every zoom and over
   the game's minimap too, largest far out and smaller as you zoom in, gliding smoothly as they move.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
-  with its icon large before its words, in sections under their titles: *Around you* (the route, the minimap's
-  dots, the party and raid), *Quests*, *Travel*, *Towns and services*, *Rares and treasures*, *Gathering*; it
+  with its icon large before its words, in sections under their titles: *Around you* (the party and raid, your
+  markers), *Quests*, *Travel*, *Towns and services*, *Gathering* (the possible herbs and ore), *Tracking* (the found
+  herbs, ore and fishing pools, the rares, treasures and books); it
   scrolls on a screen lower than it. The quests each a row of their own: *Quests in your log*, *Quest offers*, *Low-level quests* (no
   experience for you any more), *Quests for later* (once you meet what they ask), *Done quests*, *Quest areas*, *Quest
-  areas on the minimap* (off at first) and *Quest objectives*. Its
-  first two are no pins: *Route to the map pin* (the golden line) and *Minimap dots*: what the game's minimap
-  shows around you (players, tracked herbs and ore), on the small map and on the full map too, there
-  around you at the full map's own scale (shown while it fits inside the map). Both are on at first. At each kind's
-  right a slider sets its size on the map, 50 to 200 percent (the route: its line's thickness; the party: its
-  marks; the quest areas: their opacity, 10 to 100 percent), kept with the settings.
+  areas on the minimap* and *Quest objectives*. **At first** (Saneroki, 2026-11-15, for the first release) *Quest
+  offers*, *Low-level quests*, *Quests for later*, *Done quests*, *Quest areas*, *Quest areas on the minimap*,
+  *Rares*, *Treasures*, *Books*, *Possible herbs* and *Possible ore* are off, every other kind on at 100 percent.
+  At each kind's right a slider sets its size on the map, 50 to 200 percent (the party: its marks; the quest areas:
+  their opacity, 10 to 100 percent), kept with the settings. **No switch for them** (Saneroki, 2026-11-15): the golden
+  line to the map pin and what the game's minimap shows around you (players, tracked herbs and ore), on the small map
+  and on the full map too, there around you at the full map's own scale (shown while it fits inside the map), are
+  always there.
 - **The small map's face:** while the mouse is on the small map (or the satchel is open) your local time stands at
   its top, in the middle, the name the game's minimap gives where you are (the area, else the zone) at its bottom in
   that minimap's colours (friendly, hostile, contested, a sanctuary), and the satchel in its corner; off the map, the
@@ -180,10 +183,13 @@ and shows them on the map or puts the map pin there. The plan is in
     (the game's own button for them is out of sight with its minimap's frame), a click on one as in the game's
     menu. An addon with both shows once. With the game's own minimap chosen they are back round it. Only while
     there is one: with none the section is not there;
-  - **Pins:** every kind of pin the map can show, a click shows it or not (as the pin filter; the sizes stay there);
-  - **Tracking:** what the game's own minimap tracks, as its tracking menu lists it (the townsfolk, a hunter's
-    beasts...), a click switches it; Find Herbs, Find Minerals and Find Fish are *Found herbs*, *Found ore* and
-    *Found fishing pools*.
+  - **Pins:** the pin filter's kinds the map can show, but its *Tracking*: a click shows one or not (as the pin
+    filter; the sizes stay there);
+  - **Tracking** (Saneroki, 2026-11-15: "trainers and auctioneer and flightmaster etc are not tracking abilities"):
+    what is tracked, not standing where it stands: *Found herbs*, *Found ore* and *Found fishing pools* (Find Herbs,
+    Find Minerals and Find Fish), *Rares*, *Treasures* and *Books*, then the game's own tracking spells (Track
+    Humanoids, a hunter's beasts...), a click switching one. Not the game's townsfolk (flight masters, trainers,
+    auctioneers, bankers...): the pins *Flight points* and *Services* show them.
 
   Compact: six cells a row, each picture straight on the paper (no pencil slot), the addons' twice as large. A cell that is on shows its
   picture whole with a pencil tick, one that is off faint and grey. It goes the first time the mouse leaves it,
@@ -280,8 +286,8 @@ and shows them on the map or puts the map pin there. The plan is in
   objectives under them, each with how many first, the game's sword (to kill) or sack (to loot or find) and what:
   *- 4/7 (sack): Nightstalker*; over the full map all of them, the done ones grey; on the screen alone only those still
   to do. A quest done keeps the one still to do, in the game's words (*Report back to ...*). No scroll bar: the mouse wheel scrolls it, and while the mouse is on a list longer
-  than its room the game's thin scroll bar shows at the side the window stands at (docked at the left edge: its
-  left). **A click on a quest unfolds its story, its objectives and its rewards under it,** one quest's at a time, each
+  than its room the game's thin scroll bar shows at the side the window stands at, over the full map and on the
+  screen alone (docked at the left edge: its left; at the right edge: its right; Saneroki, 2026-11-15). **A click on a quest unfolds its story, its objectives and its rewards under it,** one quest's at a time, each
   under its heading in gold, on a dark panel with a thin gold line down its side; a click on it or on that text folds
   them away again. **Its rewards stand as big icons:** experience and gold in words, each thing with its name beside
   its icon, two side by side where they fit, those to choose from under them. The mouse on one shows the game's tooltip,
@@ -416,8 +422,8 @@ and shows them on the map or puts the map pin there. The plan is in
   (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
 - **The full map's title bar** (Saneroki, 2026-11-15: "Let the map view go to the very top behind the titleba so it is
   truely fullscreen"): the map fills the whole screen, up behind the title bar, which holds its controls with a soft
-  shade behind them: at the left **Quest Log**, the view's button (right of it: Saneroki, 2026-11-15), **Zone** and
-  the button **Dungeons** (and a dungeon's floors), the search in the middle, at the right **Sketches** and **Pins**, then *Classic windows* and the bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
+  shade behind them: at the left **Quest Log**, the view's button (right of it: Saneroki, 2026-11-15), the button
+  **Dungeons** (and a dungeon's floors) and **Zone** (Dungeons left of it: Saneroki, 2026-11-15), the search in the middle, at the right **Sketches** and **Pins**, then *Classic windows* and the bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
 - **Zone** on the bar: the world, then every continent (a click shows it whole) with its zones under it, A to Z, and
   Zephras Isle, at every zoom, the world's too (Saneroki, 2026-11-15: "make sure that the zone dropdown menu always
   has all zones listed"); it says the zone shown, else the continent or the world. (The dropdown of continents went:
@@ -516,8 +522,8 @@ and shows them on the map or puts the map pin there. The plan is in
   a ship it waits until you have landed, and a pin set aboard is planned from the pier it comes to. The game tells
   no ship's timetable: its sailing comes from its way at the game's
   transports' speed, and once you have ridden a ship on your realm the map knows when it really sails there and
-  counts the wait for the next one (until then half its time once round). *Route to the map pin* in the pin
-  filter switches it off.
+  counts the wait for the next one (until then half its time once round). It has no switch (Saneroki, 2026-11-15):
+  no map pin, no line.
 - **How dangerous the way is:** on foot the line shows it: golden where no enemy near it is far above you, orange
   where enemies that spawn near it are 3 or 4 levels above you, red where they are 5 or more above you (the game's own
   colours of those levels). Only creatures hostile to your side count (Core's data: where each spawns, its levels and
@@ -581,9 +587,12 @@ and shows them on the map or puts the map pin there. The plan is in
   land in between. A view not offered (*Overlay* and *Atlas*, which are gone) falls back to Scrying.
   In Retail, until its data comes, Parchment is the one view: the map simply is that, with no view button on the bar
   and no setting.
-- **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
-  kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
-  the game's map* on the page. With the game's minimap our small window rests out of sight; with the game's map
+- **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap, map and quest
+  log, each kept once chosen (ticked; chosen again, ours comes back), the first two as the switches *Show the game's
+  minimap* and *Show the game's map* on the page. **The game's quest log** (Saneroki, 2026-11-15: "so you can still
+  see the native questlog even when you use our addon"): its key (the chat says which), its button and a click on a
+  quest in the game's quest tracker open the game's map with its quest log beside it, while the map's key and
+  everything else open ours; with ours switched off on the bar, the game's quest tracker is back. With the game's minimap our small window rests out of sight; with the game's map
   its keys and buttons open the game's (chosen there, it is not opened at once: its key opens it, and the chat
   says which key). Either way the
   mouse pushed into the top right corner still fills the screen with
@@ -929,7 +938,8 @@ and shows them on the map or puts the map pin there. The plan is in
   and each row's hit rect only its words (`Reach`), the mouse wheel
   the game's while the list fits, the objectives done left out, no fold marks. One switch for both, `store.questLog`
   (TopBar's button); no buttons on its low title bar (Core's `bare`, `barHeight`). The game's `ObjectiveTrackerFrame`
-  lent to a hidden frame (`Core.Lend`; `QuestLog.Tracker`), the log shown or off, while `nativeMap` is off; it is a
+  lent to a hidden frame (`Core.Lend`; `QuestLog.Tracker`), the log shown or off, while `nativeMap` and
+  `nativeQuestLog` are off (either on: only while ours shows); it is a
   managed frame, which the game's frame manager reparents whenever an Edit Mode layout is applied, so a hook after its
   `SetParent` puts it back at once. An objective's words made anew from the game's
   (`Objective`, `Asked`, `QuestLog.ASKS`). Sorted (`store.questLogSort`, by Core's `titleClick` on its
@@ -941,7 +951,8 @@ and shows them on the map or puts the map pin there. The plan is in
   `GetQuestLogCompletionText`, else `GetNextWaypointText`, else `QUEST_WATCH_QUEST_READY`, as the game's tracker),
   built again on `QUEST_LOG_UPDATE` once a frame and only while it shows; its `MinimalScrollBar` hidden but while the mouse is on the window and the list
   has more than its room (`HasScrollableExtent`), then at the docked side (`Side`: the window's dock zone, else the
-  screen's half its middle is in; on the screen alone the other side, `Margin`); a click: the quest super-tracked,
+  screen's half its middle is in), in both looks; on the screen alone the list's room at that side `QuestLog.EDGE`
+  instead of `EDGE_SMALL` while it is longer than its room (`Margin`, `scrolled`, laid anew by `Scroller`); a click: the quest super-tracked,
   the map at `Where` (the game's quest on a map, `GetQuestsOnMap`; a preview's giver) through `Canvas.LookAt`, its zoom
   kept (`Look`), and its text in or out (`Unfold`, `QuestLog.Text`), once `Canvas.DOUBLE` seconds went by without a
   second click (`Pressed`: told by its own clock as a click on the map is, not by the game's `OnDoubleClick`, as the
@@ -986,11 +997,11 @@ and shows them on the map or puts the map pin there. The plan is in
   top to none `TopBar.SHADE` units under the bar). The map reaches up behind it: Core's window option `under` (the
   content from the frame's top while full; the bar over it at `Core.Window.UNDER`), `untitled` (no title words), and
   `Window.FullSize` the screen's whole height. Left: the quest log's button, the view's button (`Other`: Blended and
-  Scrying in turn, `Core.Set(ns.name, "view", ...)`; shown only while both are offered), the zone dropdown (right of
-  the view's button, else of the quest log's: `Arrange`; radio entries of the world, then each plane, `Coords.Planes`
-  and `Coords.Elsewhere`, with its zones under it, A to Z; never disabled, at the world too; its words the zone shown,
-  else the map), the button Dungeons (`Instances.Toggle`; lit while the banners or a dungeon's map show, its words the
-  dungeon's name while its map shows, cut short to the button; its floors: `Dungeons.Cards`). Right, from Core's *Classic windows* (or its first
+  Scrying in turn, `Core.Set(ns.name, "view", ...)`; shown only while both are offered), the button Dungeons (right of
+  the view's button, else of the quest log's: `Arrange`; `Instances.Toggle`; lit while the banners or a dungeon's map
+  show, its words the dungeon's name while its map shows, cut short to the button; its floors: `Dungeons.Cards`), the
+  zone dropdown right of it (radio entries of the world, then each plane, `Coords.Planes` and `Coords.Elsewhere`, with
+  its zones under it, A to Z; never disabled, at the world too; its words the zone shown, else the map). Right, from Core's *Classic windows* (or its first
   button) leftwards (`Place`, anew each time it shows): the pin filter (checkboxes) and the dropdown Sketches
   (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
   (`FindBox.lua`); `TopBar.Top()` the bar's height, under which the zone's name (`Label.lua`), a dungeon's floor
@@ -1163,11 +1174,11 @@ and shows them on the map or puts the map pin there. The plan is in
   of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (first the sound line, `AudioLine.Place`,
   while the client has the game's sound settings, `AudioLine.Offered`; then `Core.Switches`, the modules' quick switches as offered; a
   click its module's `Click` with the mouse button and the cell; filled anew when `Core.OnSwitches` tells a change),
-  *AddOns* (`Strays.List`, A to Z), *Pins* (`ns.KINDS` offered here, in the
-  pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (`C_Minimap.GetTrackingInfo`, the
-  entries the game's tracking menu lists: a spell's, or one of its optional filters, Forever's
-  `MinimapConstants.OPTIONAL_FILTERS`, else Blizzard's list of them by `Enum.MinimapTrackingFilter` names; not the
-  finders `Nodes.KIND`). A tracking entry is switched as the game's menu switches it
+  *AddOns* (`Strays.List`, A to Z), *Pins* (`ns.KINDS` offered here but the section `ns.TRACKING`, in the
+  pin filter's order; a click `ns.SwitchPin`, the pin filter's own), *Tracking* (the kinds of `ns.TRACKING` as Pins
+  has them, then `C_Minimap.GetTrackingInfo`'s spells: the entries whose `C_Minimap.GetTrackingFilter` has a
+  `spellID`, without one `type == "spell"`; not the finders `Nodes.KIND`, nor the townsfolk the game's menu lists
+  beside them, `MinimapConstants.OPTIONAL_FILTERS`). A tracking entry is switched as the game's menu switches it
   (`MinimapUtil.SetTrackingFilterByFilterIndex`, else `C_Minimap.SetTracking`) and shown so at once until the game
   agrees (a spell's takes its cast); `MINIMAP_UPDATE_TRACKING` and a change of the setting *Pins on the map* fill it
   anew while it is open. Its first section, the zone's (`Zone`, `Lines`, `Tools`): its title the zone and subzone
@@ -1413,14 +1424,16 @@ and shows them on the map or puts the map pin there. The plan is in
   close for its narrowest), shown while wholly inside the canvas (`Hybrid.Keep`); a click there pings as anywhere
   on the map (`Ping.lua`). Our player's arrow stands over it in both views (`Marks.Player`; the game's own arrow on
   its minimap, where it draws one, lies under ours): the arrow shows wherever the game tells your place. Only
-  while the pin filter's *Minimap dots* is on, in both views. In an instance, where the game tells no place of
+  always, in both views (`Pins.ALWAYS`; but at a flight master, `Taxi.Shows`). In an instance, where the game tells no place of
   yours, the small view's game minimap is the map alone: in its middle at the view's step (the game's own while
   the view has none), its ground on (`C_Minimap.SetDrawGroundTextures`), whatever the pin filter says; off again
   once your place is known, and on, as the game has it, when given back.
 - **The game's map** (`Native.lua`): the keys bound to the game's map, quest log and minimap click a button
   of ours (override bindings, out of combat, again when the bindings change). Every other way to the game's
   map shows `WorldMapFrame`: a hook after its `OnShow` makes it unseen at once and hides it on the next frame
-  by its own `Hide`, and ours opens at the map it was asked for. Never the game's `ShowUIPanel` or `HideUIPanel`:
+  by its own `Hide`, and ours opens at the map it was asked for; with the game's quest log chosen (`nativeQuestLog`,
+  *Classic windows*) the quest log's key stays the game's, and a map that shows its quest log beside it on that next
+  frame (`Native.GameQuestLog`: `WorldMapFrame.QuestLog`, the game's `QuestMapFrame`) stays. Never the game's `ShowUIPanel` or `HideUIPanel`:
   their manager keeps the open panels in slots of its own, which our call would leave written by our code until
   a `/reload`, and the game's next panel there (the character sheet) would open as ours and fail on a secret
   value; a panel hidden by its own `Hide` the manager mends by itself before it shows the next one
@@ -1527,13 +1540,13 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Art/mark-soft.blp` | The soft round mask of a herb's or ore's picture where it can be (Found.lua, PinView.lua): white, whole within half its radius and falling smoothly to clear at its edge, drawn by `dev/tools/mark-art --soft` (`assets/FarMarks/soft-mask.png`), made by `dev/tools/art FarMarks-soft` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
-| `Satchel.lua` | The small map's face under the mouse (the time at its top, the zone at its bottom, the satchel's button) and the satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins and the game's tracking, in Core's journal |
+| `Satchel.lua` | The small map's face under the mouse (the time at its top, the zone at its bottom, the satchel's button) and the satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins, and the tracking (the pin filter's section Tracking and the game's tracking spells), in the kit's bronze |
 | `AudioLine.lua` | The satchel's sound line: Core's sound profile in use in a dropdown, a cogwheel with the game's five sounds (checkbox and slider) and the profile's Save, Load, New and Delete |
-| `Native.lua` | The game's map kept closed; its keys |
+| `Native.lua` | The game's map kept closed, but while it shows its quest log and the game's quest log is chosen (Classic windows); its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
-| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the button Dungeons, the sketches, the pin filter |
+| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the button Dungeons, the map selector, the sketches, the pin filter |
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
 | `Plans.lua` | Your plans (*sketches* to players): markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
 | `Draw.lua` | Your drawings drawn on the map (the canvas' layer `sketch`) and on a dungeon's floor, the palette's tools at work (pen, line, arrow, circle, eraser, marker), your markers on a floor |

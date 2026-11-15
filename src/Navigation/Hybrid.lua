@@ -6,8 +6,8 @@ local _, ns = ...
 --  (nearby players, the creatures and the herbs and ore it tracks, quest areas)
 --  and its tooltips over them. Our map is the ground: its own is switched off
 --  (C_Minimap.SetDrawGroundTextures), as Blizzard's hybrid minimap does under its
---  map canvas (Blizzard_HybridMinimap). Only while the pin filter lets its dots
---  through (its kind Minimap dots). The small view (Window.lua):
+--  map canvas (Blizzard_HybridMinimap). Always, no switch of the pin filter
+--  (Pins.ALWAYS), but at a flight master (Taxi.Shows). The small view (Window.lua):
 --
 --      shown        while the view follows the player and its zoom is one of the game's minimap's
 --                   steps (camera.native); square, as large as the view's shorter side, in its middle,

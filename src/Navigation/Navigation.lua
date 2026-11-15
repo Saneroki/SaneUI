@@ -53,14 +53,12 @@ ns.TEXT = {
     questLogRestGroup = "In a group too",
     questLogRestGroupTip = "The quest log on the screen rests out of sight in a party or raid as well: there too only the mouse, your health or your resource, a fight and Edit Mode bring it. Off: always in sight in a group.",
     pins = "Pins on the map",
-    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. On foot it turns orange where enemies a few levels above you spawn near it, red where they are far above you. Drag it on the full map to put a waypoint there: the line goes there first, then on to the pin. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you.",
+    pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map (its Pins and its Tracking). Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you. Always there, with no switch: what the game's minimap shows around you (players, tracked herbs and ore), on the full map too, and the golden line from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; on foot orange where enemies a few levels above you spawn near it, red where they are far above you. Drag it on the full map to put a waypoint there: the line goes there first, then on to the pin.",
     markerShares = "Markers others share",
     markerSharesTip = "When a member of your party, raid or guild shares map markers with you, a small card asks whether to keep them; kept, they stand on your map marked as from them. Off: nobody asks, nothing is kept. Share your own from a marker's card (Share).",
-    route = "Route to the map pin",
     -- A waypoint of the golden line (Planner.Via, Marks.Vias).
     via = "Waypoint",
     viaTip = "The golden line goes here first, then on to the map pin. Drag it to move it; right click: away. Gone once you pass it, or when the map pin moves.",
-    minimap = "Minimap dots",
     log = "Quests in your log",
     offers = "Quest offers",
     low = "Low-level quests",
@@ -79,6 +77,7 @@ ns.TEXT = {
     nodeYardsTip = "How far you move before the next finder comes on. With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish), they take turns, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: they do not switch.",
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
+    classicQuestLog = Core.Word("QUEST_LOG", "Quest Log"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
     about = "the map full screen and back (/sane map reset: the window's first place and size; /sane map find <words>: the map's search)",
     -- The Sane Rare tracker (RareTracker.lua).
@@ -97,27 +96,33 @@ ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are ba
 
 -- The pin filter's kinds, in its dropdown's order (Pins.lua): its words, whether it is on at first, whether the
 -- small view shows it (Doc/ideas/Navigation.md, open question 5: no books or chests on the minimap), and its icon
--- (the game's map icons, ObjectIconsAtlas; shown before its words in the filter). The first two are no pins: the
--- golden line (Planner.lua, Route.lua) and the game's minimap's dots (Hybrid.lua). The quests by where they stand
+-- (the game's map icons, ObjectIconsAtlas; shown before its words in the filter). The quests by where they stand
 -- for this character: in its log (the game's), offered to it now, offered but too low to give it experience,
 -- offered once it meets what they ask (its level, a quest first), done. Each kind in a section of the filter
 -- (ns.PIN_SECTIONS); one without a known section in the last. A kind only Core's data has (data: its sets) is in
 -- the filter only while one of them is there (ns.KindOffered): not in Retail, until its data comes.
+-- On at first (Saneroki, 2026-11-15, for the first release: "Quest Offers, Low level Quests, Quests for Later, Done
+-- Quests Quest Areas, Quest areas on minimap, Rares, Treasures, Books, Possible herbs, possible ore should all be off
+-- by default. The rest should be set to on at 100%"): those off, every other kind on, each at its first size.
+-- No kinds of their own (Saneroki, 2026-11-15: "Route to the map pin and minimap dots should not be part of the
+-- dropdown menu"): the golden line to the map pin (Planner.lua, Route.lua) and the game's minimap's dots (Hybrid.lua)
+-- always show (Pins.ALWAYS).
 local SPAWNS, SERVICES = { "Spawns" }, { "Spawns", "Places" }
 ns.KINDS = {
-    { "route", ns.TEXT.route, section = "around", on = true, small = true, icon = "poi-traveldirections-arrow" },
-    { "minimap", ns.TEXT.minimap, section = "around", on = true, small = true, icon = "monsterneutral" },
+    { "group", "Party and raid", section = "around", on = true, small = true, icon = "partymember" },
+    -- Your own markers (Markers.lua): Alt and a click on the map puts one; the raid's star is their sign.
+    { "mark", "Your markers", section = "around", on = true, small = true, texture = 137001 },
     { "log", ns.TEXT.log, section = "quests", on = true, small = true, icon = "questturnin" },
-    { "quest", ns.TEXT.offers, section = "quests", on = true, small = true, icon = "questnormal", data = SPAWNS },
-    { "low", ns.TEXT.low, section = "quests", on = true, small = true, icon = "trivialquests", grey = true,
+    { "quest", ns.TEXT.offers, section = "quests", on = false, small = true, icon = "questnormal", data = SPAWNS },
+    { "low", ns.TEXT.low, section = "quests", on = false, small = true, icon = "trivialquests", grey = true,
       data = SPAWNS },
-    { "later", ns.TEXT.later, section = "quests", on = true, small = true, icon = "questturnin", tint = { 255, 51, 38 },
+    { "later", ns.TEXT.later, section = "quests", on = false, small = true, icon = "questturnin", tint = { 255, 51, 38 },
       data = SPAWNS },
     { "done", ns.TEXT.done, section = "quests", on = false, small = true, icon = "islands-questbangdisable", grey = true,
       data = SPAWNS },
-    { "area", "Quest areas", section = "quests", on = true, small = true, icon = "questblob" },
-    -- The quest areas on the minimap too, ours and the game's minimap's own with the ring round its edge: off at first
-    -- (Saneroki, 2026-11-09), the opacity Quest areas' slider.
+    { "area", "Quest areas", section = "quests", on = false, small = true, icon = "questblob" },
+    -- The quest areas on the minimap too, ours and the game's minimap's own with the ring round its edge (Saneroki,
+    -- 2026-11-09), the opacity Quest areas' slider.
     { "minimapArea", "Quest areas on the minimap", section = "quests", on = false, small = true, icon = "questblob" },
     { "goal", "Quest objectives", section = "quests", on = true, small = true, texture = "Interface\\CURSOR\\Attack",
       data = SPAWNS },
@@ -126,32 +131,33 @@ ns.KINDS = {
     { "entrance", "Dungeons and raids", section = "travel", on = true, small = true, icon = "dungeon" },
     { "place", "Places", section = "towns", on = true, small = true, icon = "poi-town" },
     { "service", "Services", section = "towns", on = true, small = true, icon = "innkeeper", data = SERVICES },
-    { "rare", "Rares", section = "finds", on = true, small = true, icon = "dungeonskull" },
-    { "treasure", "Treasures", section = "finds", on = true, icon = "vignetteloot" },
-    { "herb", "Possible herbs", section = "gathering", on = true, small = true, icon = "professions_tracking_herb",
+    { "herb", "Possible herbs", section = "gathering", on = false, small = true, icon = "professions_tracking_herb",
       data = SPAWNS },
-    { "ore", "Possible ore", section = "gathering", on = true, small = true, icon = "professions_tracking_ore",
+    { "ore", "Possible ore", section = "gathering", on = false, small = true, icon = "professions_tracking_ore",
       data = SPAWNS },
-    -- What the game's minimap shows now (Found.lua); each switches its finder (Nodes.lua). Their icons: the
-    -- finders' own, Find Herbs, Find Minerals and Find Fish. The fishing pools are drawn by the game's minimap
-    -- alone (Minimap dots): no pin of ours, no size.
-    { "foundHerb", "Found herbs", section = "gathering", on = true, small = true, texture = 133939 },
-    { "foundOre", "Found ore", section = "gathering", on = true, small = true, texture = 136025 },
-    { "foundFish", "Found fishing pools", section = "gathering", on = true, small = true, texture = 133888 },
-    { "book", "Books", section = "finds", on = false, icon = "lorewalking-map-icon", data = SPAWNS },
-    { "group", "Party and raid", section = "around", on = true, small = true, icon = "partymember" },
-    -- Your own markers (Markers.lua): Alt and a click on the map puts one; the raid's star is their sign.
-    { "mark", "Your markers", section = "around", on = true, small = true, texture = 137001 },
+    -- Tracking (Saneroki, 2026-11-15: "found herbs found ores, find humandoids, track beasts etc those are tracking
+    -- things ... Books and Treasures and rares could be under tracking"): what the game's minimap shows now (Found.lua),
+    -- each switching its finder (Nodes.lua), their icons the finders' own, Find Herbs, Find Minerals and Find Fish (the
+    -- fishing pools are drawn by the game's minimap alone: no pin of ours, no size); then the rares, treasures and
+    -- books. The satchel lists the game's tracking spells beside them (Satchel.lua).
+    { "foundHerb", "Found herbs", section = "tracking", on = true, small = true, texture = 133939 },
+    { "foundOre", "Found ore", section = "tracking", on = true, small = true, texture = 136025 },
+    { "foundFish", "Found fishing pools", section = "tracking", on = true, small = true, texture = 133888 },
+    { "rare", "Rares", section = "tracking", on = false, small = true, icon = "dungeonskull" },
+    { "treasure", "Treasures", section = "tracking", on = false, icon = "vignetteloot" },
+    { "book", "Books", section = "tracking", on = false, icon = "lorewalking-map-icon", data = SPAWNS },
 }
--- The pin filter's sections, in its order: their key (the kinds' section) and their title.
+-- The pin filter's sections, in its order: their key (the kinds' section) and their title. The satchel on the small
+-- map has the last under its Tracking, the others under its Pins (Satchel.lua).
 ns.PIN_SECTIONS = {
     { "around", "Around you" },
     { "quests", Core.Word("QUESTS_LABEL", "Quests") },
     { "travel", "Travel" },
     { "towns", "Towns and services" },
-    { "finds", "Rares and treasures" },
     { "gathering", "Gathering" },
+    { "tracking", Core.Word("TRACKING", "Tracking") },
 }
+ns.TRACKING = "tracking" -- the section that is the satchel's Tracking
 
 -- Whether one of Core's sets can be had: ready, or still being read with Core. Not where Core refuses it or holds
 -- none (Retail, until its data comes): what needs it stands down there, with no view, no switch and no word.
@@ -253,6 +259,8 @@ local OPTIONS = {
     { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip, hidden = NoTravel },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
+    -- The game's own quest log, chosen in the dropdown Classic windows (Window.lua): no control on the options page.
+    { key = "nativeQuestLog", default = false },
     { key = "questLogRest", default = true, text = ns.TEXT.questLogRest, tip = ns.TEXT.questLogRestTip },
     { key = "questLogRestGroup", default = false, text = ns.TEXT.questLogRestGroup, tip = ns.TEXT.questLogRestGroupTip,
       parent = "questLogRest" },
@@ -266,17 +274,12 @@ local OPTIONS = {
 -- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
 Core.Edge.Options(OPTIONS, #OPTIONS + 1)
 
--- Settings of an older shape: 1, the switch Route to the map pin became a kind of the pin filter, as the game's
--- minimap's dots did (both on, but a route switched off); 2, the quests split: those in the log as Quests were,
--- the low and later ones on; 3, the found herbs and ore came, on; 4, the found fishing pools came, on, and the
--- finders' turns went from seconds to yards (the seconds let go: the yards at first); 5, the quests' objectives
--- came, on; 6, your own markers came, on.
+-- Settings of an older shape: 1, the switch Route to the map pin went (it always shows now, as the game's minimap's
+-- dots do: Pins.ALWAYS); 2, the quests split: those in the log as Quests were, the low and later ones on; 3, the found
+-- herbs and ore came, on; 4, the found fishing pools came, on, and the finders' turns went from seconds to yards (the
+-- seconds let go: the yards at first); 5, the quests' objectives came, on; 6, your own markers came, on.
 local function Upgrade(values, from)
     if type(values.pins) == "table" then
-        if from < 1 then
-            values.pins.route = values.route ~= false or nil
-            values.pins.minimap = true
-        end
         if from < 2 then
             values.pins.log = values.pins.quest
             values.pins.low, values.pins.later = true, true
@@ -290,7 +293,6 @@ local function Upgrade(values, from)
     values.nodeTurns = nil
 end
 
-local routed -- whether the pin filter let the route through when it last changed
 local found -- the found kinds the pin filter let through when it last changed (Nodes.Wanted: "herb ore fish")
 Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = function(key)
     -- The section Expand window: Core's window takes it in by itself (Edge.lua).
@@ -301,12 +303,6 @@ Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = funct
         return ns.Guarded(ns.Canvas.Refresh)
     end
     if key == "pins" then
-        -- The route planned anew (or let go) only when its own switch changed.
-        local route = ns.Pins.Shows("route")
-        if route ~= routed then
-            routed = route
-            ns.Guarded(ns.Planner.Update)
-        end
         -- The finders switched only when Found herbs, Found ore or Found fishing pools changed.
         local now = ns.Nodes.Wanted()
         if found and now ~= found then ns.Guarded(ns.Nodes.Apply) end
@@ -321,7 +317,7 @@ Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = funct
         ns.Guarded(ns.Window.Update)
         return ns.Guarded(ns.Native.Update)
     end
-    if key == "nativeMap" then
+    if key == "nativeMap" or key == "nativeQuestLog" then
         ns.Guarded(ns.QuestLog.Tracker)
         return ns.Guarded(ns.Native.Update)
     end

@@ -31,14 +31,22 @@ local _, ns = ...
 --                cut inside its own frame, without the ring round it (Saneroki,
 --                2026-10-25); a held button lies unseen over it, its clicks and
 --                tooltip its own
---      Pins      every kind of pin the map can show here, in the pin filter's
---                order (ns.KINDS, ns.PIN_SECTIONS): a click switches it, as the
---                pin filter on the full map's bar does (their sizes stay there)
---      Tracking  what the game's own minimap tracks, as its tracking menu lists
---                it (the townsfolk, a hunter's beasts...): a click switches it as
---                that menu does; not Find Herbs, Find Minerals and Find Fish,
---                which Found herbs, Found ore and Found fishing pools switch
---                (Nodes.lua)
+--      Pins      the pin filter's kinds the map can show here, in its order
+--                (ns.KINDS, ns.PIN_SECTIONS), but its section Tracking: a click
+--                switches one, as the pin filter on the full map's bar does
+--                (their sizes stay there)
+--      Tracking  what is tracked, not standing where it stands (Saneroki,
+--                2026-11-15: "found herbs found ores, find humandoids, track beasts
+--                etc those are tracking things but trainers and auctioneer and
+--                flightmaster etc are not tracking abilities ... Books and
+--                Treasures and rares could be under tracking"): the pin filter's
+--                section Tracking (Found herbs, Found ore and Found fishing pools,
+--                each switching its finder, Nodes.lua; Rares, Treasures, Books),
+--                then the game's own tracking spells (Track Humanoids, a hunter's
+--                beasts...) but those finders, a click switching one as the game's
+--                menu does. Not the game's townsfolk (its flight masters, trainers,
+--                auctioneers, bankers...): the pins Flight points and Services show
+--                them
 --
 --  Beside its X, the button with the circling arrows that the game's minimap has
 --  too (Core's Window.Swap; Saneroki, 2026-11-10: "so we have a toggle so we
@@ -107,10 +115,6 @@ Satchel.CALENDAR = "UI-HUD-Calendar-%d-Up" -- the game's calendar button's atlas
 -- The zone's colour as the game's minimap gives it (Blizzard_Minimap, Minimap_Update), by C_PvP.GetZonePVPInfo.
 Satchel.ZONE = { sanctuary = { 0.41, 0.8, 0.94 }, arena = { 1, 0.1, 0.1 }, friendly = { 0.1, 1, 0.1 },
                  hostile = { 1, 0.1, 0.1 }, contested = { 1, 0.7, 0 } }
--- The game's tracking entries its menu lists besides those of a spell (Blizzard_Minimap, OPTIONAL_FILTERS; Forever
--- has them as MinimapConstants.OPTIONAL_FILTERS, Retail keeps them to itself): Enum.MinimapTrackingFilter's names.
-Satchel.OPTIONAL = { "Banker", "Auctioneer", "Barber", "TrainerProfession", "AccountCompletedQuests", "TrivialQuests",
-                     "Transmogrifier", "Mailbox" }
 Satchel.TEXT = {
     title = Core.Word("MINIMAP_LABEL", "Minimap"),
     tip = "Sound, addons, pins and tracking",
@@ -264,12 +268,13 @@ local function Switches()
     return list
 end
 
--- The kinds of pin the map can show here, in the pin filter's order.
-local function Pins()
+-- The kinds of pin the map can show here, in the pin filter's order: those of its section Tracking (tracking) or the
+-- others.
+local function Kinds(tracking)
     local order, list = {}, {}
     for index, section in ipairs(ns.PIN_SECTIONS) do order[section[1]] = index end
     for index, kind in ipairs(ns.KINDS) do
-        if ns.KindOffered(kind) then
+        if ns.KindOffered(kind) and (kind.section == ns.TRACKING) == tracking then
             list[#list + 1] = { pin = kind, title = kind[2], on = ns.Pins.Shows(kind[1]),
                                 rank = (order[kind.section] or #ns.PIN_SECTIONS + 1) * 1000 + index }
         end
@@ -278,31 +283,26 @@ local function Pins()
     return list
 end
 
--- The game's tracking entries its own menu shows: a spell's, and its optional ones.
-local function Optional()
-    local constants = rawget(_G, "MinimapConstants")
-    if constants and type(constants.OPTIONAL_FILTERS) == "table" then return constants.OPTIONAL_FILTERS end
-    local filters, set = Enum and Enum.MinimapTrackingFilter, {}
-    for _, name in ipairs(Satchel.OPTIONAL) do
-        if filters and filters[name] then set[filters[name]] = true end
-    end
-    return set
+local function Pins()
+    return Kinds(false)
 end
 
-local function Listed(index, optional)
-    if not C_Minimap.GetTrackingFilter then return true end
+-- Whether an entry of the game's tracking is a spell's (Track Humanoids, Find Herbs...), not the townsfolk's (the
+-- game's menu lists both: Blizzard_Minimap, CanDisplayTrackingInfo).
+local function Spell(index, info)
+    if not C_Minimap.GetTrackingFilter then return info.type == "spell" end
     local filter = Core.Ask(C_Minimap.GetTrackingFilter, index)
-    return type(filter) == "table" and (optional[filter.filterID] or filter.spellID) and true or false
+    return type(filter) == "table" and Core.Plain(filter.spellID) and true or false
 end
 
--- What the game's minimap tracks, as its menu lists it, but the finders Found herbs, Found ore and Found fishing
--- pools switch.
+-- What is tracked: the pin filter's section Tracking, then the game's tracking spells but the finders Found herbs,
+-- Found ore and Found fishing pools switch.
 local function Tracking()
-    local list, optional = {}, Optional()
+    local list = Kinds(true)
     local finders = ns.Nodes.KIND
     for index = 1, Core.Plain(Core.Ask(C_Minimap.GetNumTrackingTypes)) or 0 do
         local info = Core.Ask(C_Minimap.GetTrackingInfo, index)
-        if type(info) == "table" and not finders[Core.Plain(info.spellID) or 0] and Listed(index, optional) then
+        if type(info) == "table" and not finders[Core.Plain(info.spellID) or 0] and Spell(index, info) then
             local on = Core.Plain(info.active) and true or false
             if predicted[index] ~= nil then
                 if predicted[index] == on then predicted[index] = nil else on = predicted[index] end

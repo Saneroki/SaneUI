@@ -741,8 +741,13 @@ local function Maps(view)
     return maps
 end
 
--- The filter's switches: on unless switched off (a kind added later is on as it is at first).
+-- No switch of the filter, always shown (Saneroki, 2026-11-15: "Route to the map pin and minimap dots should not be part
+-- of the dropdown menu"): the golden line to the map pin (Planner.lua) and the game's minimap's dots (Hybrid.lua).
+Pins.ALWAYS = { route = true, minimap = true }
+
+-- The filter's switches, as the setting Pins on the map holds them (a kind added later comes in by its Upgrade).
 local function Shows(kind)
+    if Pins.ALWAYS[kind] then return true end
     local chosen = ns.options and ns.options.pins
     if type(chosen) ~= "table" then return true end
     return chosen[kind] and true or false

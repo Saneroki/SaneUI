@@ -2,8 +2,8 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - Planner
---  The way to the game's map pin, drawn as the golden line (Route.lua), while the
---  setting Route to the map pin is on. Knows no frames.
+--  The way to the game's map pin, drawn as the golden line (Route.lua), always
+--  (no switch since 2026-11-15: Pins.ALWAYS). Knows no frames.
 --
 --      the journey   a graph over the player, the pin, the flight points this character knows, the docks of the
 --                    boats and zeppelins, the cities' entrances to the tram and where the teleports this character

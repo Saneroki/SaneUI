@@ -12,19 +12,20 @@ local _, ns = ...
 --                        settings (the setting Map view); none where only one view is offered (ns.Several). Right
 --                        of Quest Log (Saneroki, 2026-11-15: "move the button scrying / blended to the right of
 --                        Questlog")
---      Zone              every continent (the map shows it whole) and under it its zones (A to Z), at every zoom
---                        (Saneroki, 2026-11-15: "make sure that the zone dropdown menu always has all zones
---                        listed"); it says the zone the map shows now, else the continent or the world
 --      Dungeons          a button (Saneroki, 2026-11-15: "I would like to have the drop down change to a button"):
 --                        every dungeon and raid of Forever this year as banners over the map (Instances.lua), a
 --                        click again the map; while a dungeon's map shows, its name, and a click the banners again
 --                        (its floors: big buttons at the screen's right, Dungeons.Cards; the dropdown went:
---                        Saneroki, 2026-11-15)
+--                        Saneroki, 2026-11-15). Left of Zone (Saneroki, 2026-11-15: "The button for dungeons
+--                        should move to the left infront of the dropdown for the world zones")
+--      Zone              every continent (the map shows it whole) and under it its zones (A to Z), at every zoom
+--                        (Saneroki, 2026-11-15: "make sure that the zone dropdown menu always has all zones
+--                        listed"); it says the zone the map shows now, else the continent or the world
 --      ... the map's search in the room between (FindBox.lua) ...
 --      Sketches          a dropdown: every sketch with its checkbox (shown) and its own menu, Draw on the map,
 --                        New sketch (DrawBar.lua; in place of the pencil button: Saneroki, 2026-11-15)
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
---                        travel, towns, rares and treasures, gathering): a checkbox per kind of pin with its
+--                        travel, towns, gathering, tracking): a checkbox per kind of pin with its
 --                        icon large before its words (the setting Pins on the map), and at its right a slider
 --                        for that kind's size (the quest areas': their opacity; the setting pinSizes, kept per
 --                        profile)
@@ -99,9 +100,9 @@ function TopBar.Arrange()
     viewButton:SetText(ns.TEXT.views[drawn] or drawn)
     viewButton.title = ns.TEXT.views[drawn] or drawn
     viewButton.tip = (ns.TEXT.viewTips[drawn] or "") .. "\n\n" .. TopBar.TEXT.viewNext:format(ns.TEXT.views[Other(drawn)] or "")
-    -- the zone right of the view's button, or of Quest Log where there is none
-    zoneMenu:ClearAllPoints()
-    zoneMenu:SetPoint("LEFT", offered and viewButton or logButton, "RIGHT", TopBar.GAP * 2, 0)
+    -- the dungeons right of the view's button, or of Quest Log where there is none; the zone right of them
+    dungeonButton:ClearAllPoints()
+    dungeonButton:SetPoint("LEFT", offered and viewButton or logButton, "RIGHT", TopBar.GAP * 2, 0)
 end
 
 local function Toggle()
@@ -189,10 +190,10 @@ local function Tall(button)
 end
 
 -- The pin filter: its sections, each under its title and a line between them; in each a checkbox per kind with its
--- icon before its words, and the size slider of each kind that has a size (the pins, the party's marks, the route's
--- line); the quest areas' slider is their opacity. A kind of no known section comes last; one that can show nothing
+-- icon before its words, and the size slider of each kind that has a size (the pins, the party's marks); the quest
+-- areas' slider is their opacity. A kind of no known section comes last; one that can show nothing
 -- here (only Core's data has it, and that is not there: ns.KindOffered) is left out, and a section left empty with it.
-local SIZED = { group = true, route = true, area = true }
+local SIZED = { group = true, area = true }
 local function Filter(_, root)
     local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
     -- Scrolled only where the screen is lower than the list (the game's menu scrolls past that height alone).
@@ -278,17 +279,17 @@ local function Build()
     else
         shade:SetAlpha(TopBar.SHADE_ALPHA / 2)
     end
-    -- at the left: the quest log, the view, the zone, the dungeons and a dungeon's floors
+    -- at the left: the quest log, the view, the dungeons (a dungeon's floors) and the zone
     logButton = Button(TopBar.BUTTON_WIDTH, TopBar.TEXT.questLog, TopBar.TEXT.questLog, TopBar.TEXT.questLogTip, Log)
     logButton:SetPoint("LEFT", TopBar.INSET, 0)
     viewButton = Button(TopBar.VIEW_WIDTH, "", "", "", Toggle)
     viewButton.key = "view"
     viewButton:SetPoint("LEFT", logButton, "RIGHT", TopBar.GAP * 2, 0)
-    zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones, TopBar.TEXT.zones) -- (placed by Arrange)
     dungeonButton = Button(TopBar.DUNGEON_WIDTH, ns.Dungeons.TEXT.dungeons, ns.Dungeons.TEXT.dungeons, TopBar.TEXT.dungeonsTip,
         function() ns.Instances.Toggle() end)
-    dungeonButton.key = "dungeons"
-    dungeonButton:SetPoint("LEFT", zoneMenu, "RIGHT", TopBar.GAP, 0)
+    dungeonButton.key = "dungeons" -- (placed by Arrange)
+    zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones, TopBar.TEXT.zones)
+    zoneMenu:SetPoint("LEFT", dungeonButton, "RIGHT", TopBar.GAP, 0)
     local words = dungeonButton:GetFontString()
     if words then -- a long name cut short, never past the button
         words:SetWidth(TopBar.DUNGEON_WIDTH - 2 * TopBar.INSET)
@@ -302,7 +303,7 @@ local function Build()
     gap = CreateFrame("Frame", nil, bar)
     gap:SetPoint("TOP")
     gap:SetPoint("BOTTOM")
-    gap:SetPoint("LEFT", dungeonButton, "RIGHT", TopBar.GAP * 2, 0)
+    gap:SetPoint("LEFT", zoneMenu, "RIGHT", TopBar.GAP * 2, 0)
     gap:SetPoint("RIGHT", draw, "LEFT", -TopBar.GAP * 2, 0)
     TopBar.Arrange()
     bar:Hide()

@@ -3,6 +3,17 @@
 What changed in each version of Sane UI Maps, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.3 (2026-11-15)
+
+- The pin menus no longer list the route and the minimap's dots: the golden line to your map pin and what the
+  game's minimap shows are always there.
+- Fewer pins at first: quest offers, low-level, later and done quests, quest areas, rares, treasures, books and
+  possible herbs and ore start off; turn them on in Pins.
+- The minimap's satchel keeps Pins and Tracking apart: Tracking holds the found herbs, ore and fishing pools, rares,
+  treasures, books and your tracking spells.
+- Classic windows can bring back the game's own quest log: its key opens it, everything else stays ours.
+- The Dungeons button stands left of the zone list; the quest log's scroll bar at the side it is docked to.
+
 ## 0.3.2 (2026-11-15)
 
 - First public alpha of Sane UI Maps: your minimap and world map in one window. Move the mouse into the top right

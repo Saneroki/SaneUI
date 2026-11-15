@@ -7,6 +7,18 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Navigation 0.3.3 (2026-11-15)
+-----------------------------
+- Pins: the route and the minimap's dots are always there; fewer
+  kinds on at first (quest offers, low, later and done quests,
+  quest areas, rares, treasures, books, possible herbs and ore
+  start off).
+- The minimap's satchel keeps Pins and Tracking apart.
+- Classic windows can bring back the game's own quest log.
+- The Dungeons button left of the zone list; the quest log's
+  scroll bar at the side it is docked to.
+
+
 Sane UI 0.3.1 (2026-11-15)
 --------------------------
 - First public alpha of Sane UI Core, the base every Sane UI
