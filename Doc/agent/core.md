@@ -118,8 +118,9 @@ which (Doc/guides/data.md, *Players*).
   catches what slipped past (messageType 1 = warning: noted only). Door errors also reach `CallErrorHandler` only
   when the CVar `scriptErrors` is on (the `showing` flag stops the echo). `module.On` is `Core.On`: listeners keep
   running after `off`.
-- `Core.Safe(label, fn, ...)`: catches/reports failure (`Core.Report`: one chat line per label, "problem in <label>,
-  noted in the error log (/sane errors).", unless *Errors in chat* is off), returns only the first result. Module `Safe`
+- `Core.Safe(label, fn, ...)`: catches/reports failure (`Core.Report`: one chat line per label, "problem in <label>.
+  Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord.", unless
+  *Errors in chat* is off), returns only the first result. Module `Safe`
   prefixes its name. `Listen`/`Fire` are module-local messages, with each listener safe.
 - `module.Guarded(fn, ...)`: on failure, `StandDown` sets `off` once, calls `GiveBack`, reports via
   `GIVEN_BACK`. Later guarded calls do nothing.

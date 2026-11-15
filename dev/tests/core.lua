@@ -23,7 +23,7 @@ local Core = SaneUI.Core
 check(Core and Core.VERSION == "1.2.3", "the addons share one table, SaneUI; the version comes from the TOC")
 
 -- An error before the saved settings are there
-check(Core.Safe("early", function() error("too soon") end) == nil and printedMatch("problem in early, noted"), "a failing step is caught and told")
+check(Core.Safe("early", function() error("too soon") end) == nil and printedMatch("problem in early. Type /sane bug"), "a failing step is caught and told")
 W.printed = {}
 SlashCmdList.SANEUI("")
 check(printedMatch("version 1%.2%.3%. No module is switched on") and printedMatch("/sane options"), "/sane alone says so when no module is switched on")
@@ -89,7 +89,7 @@ check(demo.DB.kept == 7, "what a module kept is still there")
 check(demo.DB.options.loud == true and demo.DB.options.shy == true, "a switch gets its default (also in place of a spoiled one); one you flipped keeps your choice")
 W.caught = {}
 W.Fire("ADDON_LOADED", "SaneUI_Broken")
-check(printedMatch("problem in Broken: it stopped, noted") and #steps == 1 and broken.off, "a module that cannot start stands down and says so, and the others are not started twice")
+check(printedMatch("problem in Broken: it stopped. Type /sane bug") and #steps == 1 and broken.off, "a module that cannot start stands down and says so, and the others are not started twice")
 check(#W.caught == 1 and W.caught[1]:find("this module cannot start"), "the game shows the error too, as it was asked to show Lua errors")
 W.caught = nil
 
@@ -244,6 +244,12 @@ window.Box:SetText("It vanished at once.")
 About.Open(bug)
 check(window.Box:GetText() == "It vanished at once.", "the same kind once more keeps it too")
 window:Hide()
+-- What the chat line after an error names: /sane bug opens the bug report.
+About.Open(idea)
+window:Hide()
+SlashCmdList.SANEUI("bug")
+check(window:IsShown() and window._title == "Report a bug", "/sane bug, as the chat line after an error says, opens the bug report")
+window:Hide()
 table.remove(Core.log)
 check(profilesPage.name == "Profiles" and general.name == "General" and appearance.name == "Appearance"
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
@@ -334,7 +340,7 @@ W.printed = {}
 check(Core.Safe("quiet", function() error("hush") end) == nil and #W.printed == 0 and Core.errors.quiet.text:find("hush"), "switched off, a problem is kept but not told")
 tell:SetValue(true)
 Core.Safe("quiet", function() error("hush") end)
-check(printedMatch("problem in quiet, noted") and Core.errors.quiet.count == 2, "switched on again, it is")
+check(printedMatch("problem in quiet. Type /sane bug") and Core.errors.quiet.count == 2, "switched on again, it is")
 Core.errors.quiet = nil
 
 -- A frame of a template of ours, as the game makes it: the template's mixin, and the parts it names.
@@ -1210,7 +1216,7 @@ check(printedMatch("/sane demo"), "and so does a word nobody knows")
 Core.Command("fail", "a failing command", function() error("no") end)
 W.printed = {}
 SlashCmdList.SANEUI("fail")
-check(printedMatch("problem in /sane fail, noted"), "a failing command is caught")
+check(printedMatch("problem in /sane fail. Type /sane bug"), "a failing command is caught")
 
 -- Errors ------------------------------------------------------------------------------
 W.printed = {}
@@ -1219,7 +1225,7 @@ check(demo.Safe("step", boom) == nil, "a failing step does not stop the addon")
 demo.Safe("step", boom)
 local kept = Core.errors["Demo: step"]
 check(kept and kept.count == 2 and kept.text:find("boom") and kept.when, "the error is kept under the module's name, counted and dated")
-check(#W.printed == 1 and printedMatch("/sane errors"), "and told only once")
+check(#W.printed == 1 and printedMatch("/sane bug"), "and told only once")
 check(demo.Safe("fine", function(a, b) return a + b end, 2, 3) == 5, "a working step passes its result through")
 -- The log: every problem in the order it happened
 local last = Core.log[#Core.log]
@@ -1231,7 +1237,7 @@ local entries = #Core.log
 W.printed = {}
 ScriptErrorsFrame:DisplayMessageInternal("Interface/AddOns/SaneUI/Window.lua:7: attempt to index a nil value", 0, "[Interface/AddOns/SaneUI/Window.lua]:7: in function <OnUpdate>")
 check(#Core.log == entries + 1 and Core.log[#Core.log].label == "Core" and Core.log[#Core.log].text:find("Window.lua:7.*in function") and Core.errors.Core
-    and printedMatch("problem in Core, noted"), "an error of Core's that slipped past every guard is caught from the game's error window, kept with its place and told")
+    and printedMatch("problem in Core. Type /sane bug"), "an error of Core's that slipped past every guard is caught from the game's error window, kept with its place and told")
 ScriptErrorsFrame:DisplayMessageInternal("Interface/AddOns/SaneUI/Window.lua:9: something old", 1)
 check(#Core.log == entries + 2 and Core.log[#Core.log].label == "Lua warning" and not demo.off, "a Lua warning of ours is only noted")
 ScriptErrorsFrame:DisplayMessageInternal("Interface/AddOns/OtherAddon/Other.lua:1: oops", 0, "[Interface/AddOns/OtherAddon/Other.lua]:1")
@@ -1271,7 +1277,7 @@ demo.GIVEN_BACK = "the game's own demo is back"
 W.printed = {}
 check(demo.Guarded(function(a, b) return a * b end, 6, 7) == 42 and not demo.off, "a guarded step passes its result through")
 check(demo.Guarded(function() error("broken") end) == nil and demo.off and given == 1, "an error in one stands the module down and gives the game's own back")
-check(printedMatch("problem in Demo: the game's own demo is back, noted") and Core.errors["Demo: the game's own demo is back"].text:find("broken"),
+check(printedMatch("problem in Demo: the game's own demo is back. Type /sane bug") and Core.errors["Demo: the game's own demo is back"].text:find("broken"),
     "it is kept and told, with what happened")
 check(demo.Guarded(function() given = 99 end) == nil and given == 1, "from then on nothing runs")
 demo.StandDown("again")
@@ -1310,7 +1316,7 @@ spare.StandDown("a part is missing")
 check(spare.off and Core.errors["Spare: giving back"] and Core.errors["Spare: it stopped"].text == "a part is missing",
     "a giving back that fails is kept too; without words of its own it is told as stopped")
 Core.Report("found", "a problem nobody raised")
-check(printedMatch("problem in found, noted") and Core.errors.found.count == 1, "a module can report a problem it found itself")
+check(printedMatch("problem in found. Type /sane bug") and Core.errors.found.count == 1, "a module can report a problem it found itself")
 Core.errors.found, Core.errors["Spare: giving back"], Core.errors["Spare: it stopped"], Core.errors["Demo: the game's own demo is back"] = nil, nil, nil, nil
 
 -- The doors: what the game calls of a module runs behind a guard ----------------------------
@@ -1323,7 +1329,7 @@ check(sum == 7 and product == 10 and not doors.off, "a guarded function hands on
 W.cvars.scriptErrors = "0"
 W.printed = {}
 local failing = doors.Guard(function() error("the button broke") end)
-check(failing() == nil and doors.off and printedMatch("problem in Doors: it stopped, noted") and Core.errors["Doors: it stopped"].text:find("the button broke"),
+check(failing() == nil and doors.off and printedMatch("problem in Doors: it stopped. Type /sane bug") and Core.errors["Doors: it stopped"].text:find("the button broke"),
     "its error stands the module down, told and kept")
 check(door(1, 1) == nil and opened == 1, "and once the module stood down, its guarded functions do nothing")
 -- A listener's error: the place it happened names the module's folder, so it is that module's.
@@ -1343,7 +1349,7 @@ check(namedHeard == 2 and otherHeard == 2 and #W.printed == 1 and Core.errors["N
     "its listeners still hear (what works beside the game's own goes on); another error is kept, not told")
 Core.On("PLAYER_FLAGS_CHANGED", function() error("a listener of Core's broke") end)
 W.Fire("PLAYER_FLAGS_CHANGED")
-check(Core.errors.PLAYER_FLAGS_CHANGED and printedMatch("problem in PLAYER_FLAGS_CHANGED, noted"), "Core's own is told under the event's name, and Core goes on")
+check(Core.errors.PLAYER_FLAGS_CHANGED and printedMatch("problem in PLAYER_FLAGS_CHANGED. Type /sane bug"), "Core's own is told under the event's name, and Core goes on")
 -- An error that slipped past every guard comes back from the game's error window.
 local loose = Core.NewModule("SaneUI_Loose", "Loose")
 local looseGiven = 0
@@ -1351,7 +1357,7 @@ loose.GiveBack = function() looseGiven = looseGiven + 1 end
 W.printed = {}
 ScriptErrorsFrame:DisplayMessageInternal("Interface/AddOns/SaneUI_Loose/Bar.lua:12: attempt to index a nil value", 0,
     "[Interface/AddOns/SaneUI_Loose/Bar.lua]:12: in function <Interface/AddOns/SaneUI_Loose/Bar.lua:10>")
-check(loose.off and looseGiven == 1 and printedMatch("problem in Loose: it stopped, noted"), "a module's script without a guard that fails stands the module down too")
+check(loose.off and looseGiven == 1 and printedMatch("problem in Loose: it stopped. Type /sane bug"), "a module's script without a guard that fails stands the module down too")
 W.printed = {}
 ScriptErrorsFrame:DisplayMessageInternal("Interface/AddOns/SaneUI_Loose/Bar.lua:12: attempt to index a nil value", 0, "")
 check(looseGiven == 1 and #W.printed == 0 and Core.errors["Loose: after it stopped"], "when it fails again, that is kept, not told again")
@@ -1363,11 +1369,11 @@ brittle()
 W.Wait(0.1)
 brittle()
 W.Wait(0.1)
-check(laterRuns == 2 and Core.errors.later and Core.errors.later.count == 2 and printedMatch("problem in later, noted"), "a step done later is caught, and can be asked again")
+check(laterRuns == 2 and Core.errors.later and Core.errors.later.count == 2 and printedMatch("problem in later. Type /sane bug"), "a step done later is caught, and can be asked again")
 local named = Core.Later(function() error("named and broken") end, nil, "a named later")
 named()
 W.Wait(0.1)
-check(Core.errors["a named later"] and Core.errors.later.count == 2 and printedMatch("problem in a named later, noted"),
+check(Core.errors["a named later"] and Core.errors.later.count == 2 and printedMatch("problem in a named later. Type /sane bug"),
     "one given a label is told under it, apart from the others")
 -- The game shows them in its error window as well, only if it was asked to show Lua errors.
 W.cvars.scriptErrors = "1"
@@ -1390,7 +1396,7 @@ local brokenDoor = Core.Guard("a window", function() coreRuns = coreRuns + 1 err
 W.printed = {}
 brokenDoor()
 brokenDoor()
-check(coreRuns == 3 and Core.errors["a window"].count == 2 and #W.printed == 1 and printedMatch("problem in a window, noted"),
+check(coreRuns == 3 and Core.errors["a window"].count == 2 and #W.printed == 1 and printedMatch("problem in a window. Type /sane bug"),
     "its error is Core's: told once under its label, kept each time, and the next call tries again")
 local lent = Core.NewModule("SaneUI_Lent", "Lent")
 Core.Guard("a window", function() error("Interface/AddOns/SaneUI_Lent/Lent.lua:4: a hook of the module broke", 0) end)()
@@ -1408,7 +1414,7 @@ do
     end)
     W.printed = {}
     check(key("bad") == nil and key("bad") == nil and not typed.off and Core.errors["Typed: search"].count == 2
-        and #W.printed == 1 and printedMatch("problem in Typed: search, noted"),
+        and #W.printed == 1 and printedMatch("problem in Typed: search. Type /sane bug"),
         "a search's error: kept each time, told once, its module goes on")
     local word, length = key("hogger")
     check(word == "hogger" and length == 6 and tries == 3, "the next key searches again, its results handed on")
@@ -1496,7 +1502,7 @@ W.combat = false
 W.printed = {}
 W.Fire("PLAYER_REGEN_ENABLED")
 check(#afterRuns == 2 and afterRuns[2] == "last" and not Core.Owed("place"), "the fight over, the same key asked twice runs once, as asked last")
-check(printedMatch("problem in other, noted"), "a failing one is caught and told under its key; the others ran")
+check(printedMatch("problem in other. Type /sane bug"), "a failing one is caught and told under its key; the others ran")
 W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 1, 1)
 check(Core.Restricted(), "the game's restrictions count from their announcement (an encounter)")
 W.Fire("ADDON_RESTRICTION_STATE_CHANGED", 5, 2)
@@ -1632,7 +1638,7 @@ broken.Listen("PING", function() got = "wrong module" end)
 W.printed = {}
 demo.Fire("PING", 2, 3)
 check(got == 5, "a module's files talk through messages of their own")
-check(printedMatch("problem in Demo: ping2, noted"), "a failing listener is caught there too")
+check(printedMatch("problem in Demo: ping2. Type /sane bug"), "a failing listener is caught there too")
 demo.Fire("NOBODY_LISTENS")
 
 -- Secret values -----------------------------------------------------------------------------

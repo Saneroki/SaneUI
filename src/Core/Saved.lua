@@ -270,7 +270,7 @@ Core.Options(Core.name, {
     { key = "places", default = {} }, -- where the windows stand, by module and window (Window.lua: Held)
     { key = "errors", default = true, text = "Errors in chat", header = "Errors",
       headerTip = "What Sane UI says when something of it goes wrong.",
-      tip = "Says in chat when something of Sane UI goes wrong: one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
+      tip = "Says in chat when something of Sane UI goes wrong, and how to report it (/sane bug): one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
     { key = "resetWindows", text = "Reset window positions", header = "Windows",
       headerTip = "Where Sane UI's windows stand.",
       tip = "Puts every window of Sane UI back at its first place and size. Whether a window was left in full screen, or the game's own window chosen instead, stays as it is. Also /sane window reset all.",

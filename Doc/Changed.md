@@ -6,6 +6,14 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Errors in chat: the line says how to report it, /sane bug and Sane UI's Discord (Saneroki, 2026-11-15)
+Saneroki: "When some error occures the addon writes in chat that something bad happend. Can we change the text to tell the user to use the /sane bug command and copy paste it into the saneui discord?"
+- **`src/Core/Core.lua`:** the line told once per kind of problem (`TOLD`, `Core.Report`) reads "problem in <where>. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord." `/sane bug` (an alias of `/sane feedback`) opens the bug report, which carries the latest errors; `/sane errors` still lists the log.
+- **`src/Core/Saved.lua`:** the tooltip of *Errors in chat* says the line tells how to report it.
+- **Tests:** `dev/tests/core.lua` (516: the line names /sane bug; /sane bug opens the bug report).
+- **Docs:** `src/Core/README.md`, `Doc/agent/core.md`.
+- A `/reload` takes it in.
+
 ### Release: a CurseForge changelog per addon, never the whole suite's (Saneroki, 2026-11-15)
 Saneroki: "So this is one huge changelog for the entire SaneUI suite. we need to have the pipeline to generate seperate changelogs for each module. So The changelogs of Navigation doesn't contain all the changelogs from all the other modules that have their own changelog. This is for curseforge specifically."
 - **`Doc/curseforge/changelogs/`:** each CurseForge project's own changelog, `Core.md` (Sane UI Core) and `Navigation.md` (Sane UI Maps): a part `## <version> (<date>)` per version, newest first, only that addon's changes. The first parts, *0.3.1* and *0.3.2*, moved there in players' words (Core's with the Discord line another session wrote under *Sane UI 0.3.1*). `Doc/changelog.txt` stays the whole suite's and is never uploaded.

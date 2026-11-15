@@ -298,8 +298,9 @@ function Core.NoteError(label, text)
     while #log > LOG_MAX do table.remove(log, 1) end
 end
 
--- The line in chat for a problem: where it happened, and where to read it.
-local TOLD = "problem in %s, noted in the error log (/sane errors)."
+-- The line in chat for a problem: where it happened, and how the player reports it: /sane bug makes the report
+-- (with the latest errors, About.lua) to paste on Sane UI's Discord.
+local TOLD = "problem in %s. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord."
 
 -- Keeps a problem and says so in chat, once per label (unless the player switched that off).
 -- For a problem a module found itself, without an error being raised.
