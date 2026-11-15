@@ -28,7 +28,9 @@ local _, ns = ...
 --                   bar's view button): Parchment the art alone, Scrying the ground alone, Blended the art over the
 --                   ground, whole at the whole floor and gone at Dungeons.BLEND[2] times nearer (the world map's
 --                   curve, Canvas.Blend). A floor without ground keeps its art in every view (Retail's, until its
---                   data comes)
+--                   data comes; one whose ground would leave its bosses on nothing: Ironclad Cove). A floor the set
+--                   lists alone shows its ground in every view, Parchment too: its art predates the halls Forever
+--                   rebuilt (the Wailing Caverns; Saneroki, 2026-11-15, "Yes, terrain there")
 --      small map    inside a dungeon the small view is the game's own minimap (Canvas.lua); one notch of
 --                   the wheel out past its widest step shows the dungeon's whole map there instead, its
 --                   bosses and enemies at Dungeons.SMALL of their size; a notch in, a right or a middle
@@ -357,10 +359,11 @@ end
 
 -- How much of the art shows over the floor's ground (0 to 1), as the map's view says (ns.View): Parchment all of it,
 -- Scrying none, Blended by the zoom (whole at Dungeons.BLEND[1] and farther, gone at BLEND[2] and nearer); all of it
--- where the floor has no ground.
+-- where the floor has no ground, none where its ground shows alone.
 function Dungeons.Share()
     if not (kept and kept.ground) then return 1 end
     if kept.art and kept.art.bare then return 0 end -- (no art: its ground in every view)
+    if kept.ground.alone then return 0 end -- (its art draws nothing where much of it stands: its ground in every view)
     local view = ns.View()
     if view == "terrain" then return 0 end
     if view ~= "blend" then return 1 end
@@ -489,10 +492,11 @@ local function Draw()
     local art = kept and kept.art
     if not art then return end
     content:SetSize(art.width, art.height)
+    local alone = kept.ground and kept.ground.alone -- (its ground in every view: the art's files not even loaded)
     local index = 0
     for row = 1, art.down do
         for column = 1, art.across do
-            local file = art.files[(row - 1) * art.across + column]
+            local file = not alone and art.files[(row - 1) * art.across + column]
             if file then
                 index = index + 1
                 local texture = tiles[index]
@@ -959,8 +963,8 @@ function Dungeons.Enemies(map)
 end
 
 -- A floor's ground as Core's set DungeonGround lays it: { rows (the set's, in drawing order), box (the floor's world:
--- north, south, west, east) }; nil where it has none (a floor of the game's own maps, a floor or an instance the set
--- has none for, the set not there).
+-- north, south, west, east), alone (the set lists the floor so: its ground in every view) }; nil where it has none (a
+-- floor of the game's own maps, a floor or an instance the set has none for, the set not there).
 function Dungeons.Ground(map)
     local _, floor = Entry(map)
     local data = floor and floor.data
@@ -973,7 +977,11 @@ function Dungeons.Ground(map)
         end
     end
     if #rows == 0 then return nil end
-    return { rows = rows, box = { data.north, data.south, data.west, data.east } }
+    local alone = false
+    for _, number in ipairs(GROUND:Get(floor.instance, "alone") or NONE) do
+        if number == data.floor then alone = true end
+    end
+    return { rows = rows, box = { data.north, data.south, data.west, data.east }, alone = alone }
 end
 
 -- What a floor is drawn from, gathered once as it is shown (Dungeons.Show; the set come since: Build) and kept until

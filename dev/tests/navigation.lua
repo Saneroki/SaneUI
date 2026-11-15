@@ -8562,6 +8562,21 @@ end)()
     Choose("blend")
     for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, 1) end
     check(Dungeons.Share() == 1 and lower._alpha == 1 and not Texture(99004), "Blended near on it: its art still")
+    -- A floor the set lists alone (its art predates the halls Forever rebuilt: the Wailing Caverns; Saneroki,
+    -- 2026-11-15, "Yes, terrain there"): its ground in every view, Parchment too, its art's files not even loaded.
+    groundSet.Get = function(self, key, field)
+        if key == 90 and field == "alone" then return { 1 } end
+        return groundGet(self, key, field)
+    end
+    Choose("sketches")
+    Dungeons.Close()
+    local alone = Canvas.Show("90:1") and Dungeons.Ground("90:1")
+    check(alone and alone.alone and not Dungeons.Ground("90:2").alone and Dungeons.Share() == 0
+        and Texture(99002) and Texture(99002)._shown and select(2, Art()) == 0,
+        "Parchment on a floor listed alone: its ground, no art")
+    Choose("blend")
+    check(Dungeons.Share() == 0 and Texture(99002)._shown and select(2, Art()) == 0, "Blended at its whole: its ground")
+    check(Canvas.Show("90:2") and Dungeons.Share() == 1, "the other floor of it: its art as before (Blended whole)")
     groundSet.Get = groundGet
     Choose("terrain")
     Dungeons.Close()

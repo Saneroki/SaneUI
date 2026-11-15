@@ -193,8 +193,10 @@ minimap) and the full-screen window (the world map) show the same map with the s
   the parts the game names (Blackwing Lair showed two of Blackrock Mountain's halls far below); and a floor whose ground
   would leave a boss or more than 5 % of its enemies standing on nothing or on the minimap's open water keeps its art
   in every view: Ironclad Cove (the ship and docks are outdoor parts the game draws no minimap of), Blackfathom Deeps'
-  three floors, Blackrock Depths' two. Open: the Wailing Caverns' art predates Forever's rebuilt caverns (89 of its
-  241 enemies lie east of it, on blank parchment in Parchment and Blended; right in Scrying).
+  three floors, Blackrock Depths' two. The Wailing Caverns' art predates Forever's rebuilt caverns (89 of its 241
+  enemies lay east of it, on blank parchment); asked, "Yes, terrain there": a floor where more than a quarter of its
+  bosses and enemies stand on parts its art draws nothing of shows its ground in every view, Parchment too (the set
+  *DungeonGround*'s `alone`; only the Wailing Caverns).
 - **A boss's tooltip on its map (Saneroki, 2026-10-21):** its abilities and the items it drops, with their names
   and icons, from what is known of the dungeons (built: the set *Bosses*' `abilities` and `loot`, batch 11, used at once and shown as not yet confirmed until the
   client or the server confirms them (Saneroki, 2026-10-21); the

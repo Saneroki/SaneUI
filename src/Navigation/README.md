@@ -486,8 +486,9 @@ and shows them on the map or puts the map pin there. The plan is in
   game's minimap pictures would leave a boss or the enemies standing on nothing: the Deadmines' Ironclad Cove (its
   ship and docks have no minimap picture, only open water), the three floors of Blackfathom Deeps (halls Forever
   rebuilt in another shape) and the two of Blackrock Depths (the ramp to the Hall of Crafting, the Shrine of
-  Thaurissan) show their map art in every view. The bosses, the enemies, your drawings and markers stand where they
-  stood.
+  Thaurissan) show their map art in every view. The Wailing Caverns the other way round: its map art is older than
+  the caverns Forever rebuilt east of it, so it shows its ground in every view, *Parchment* too. The bosses, the
+  enemies, your drawings and markers stand where they stood.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
@@ -831,7 +832,10 @@ and shows them on the map or puts the map pin there. The plan is in
   several share one box, else, for a building Forever rebuilt, the floor whose box holds the part and whose map art its
   walls agree with, at the heights of the parts the game names). A floor whose ground would leave a boss or more than
   5 % of its enemies on nothing (no part's texels, or the minimap's open water) has no rows: its art in every view
-  (Ironclad Cove, Blackfathom Deeps, Blackrock Depths). `Gather` keeps the floor's rows and its box
+  (Ironclad Cove, Blackfathom Deeps, Blackrock Depths). A floor the set lists in `alone` (more than a quarter of its
+  bosses and enemies on parts whose walls lie on no edge of its art: the Wailing Caverns) shows its ground in every
+  view (`Dungeons.Ground`'s `alone`, `Dungeons.Share` 0; `Draw` loads none of its art's files). `Gather` keeps the
+  floor's rows and its box
   from the set *Dungeons*; the first time a view shows the ground, `LayGround` lays them into the art's frame
   (`content`, its units the art's size across the box): a terrain tile cut at the floor's edges by its texture
   coordinates (draw layer `Dungeons.TERRAIN`), a building's block centred on its middle and turned as a whole
@@ -1588,7 +1592,10 @@ Tests: `dev/tests/navigation.lua`.
   Those six floors keep their art in every view now (`dev/tools/dungeon-ground` checks that a floor's ground holds its
   things). Shadowfang Keep's Vacant Den and its two observatories (one box, three heights) each showed all three
   floors' rooms: told apart by name now. Blackwing Lair's Halls of Strife showed two of Blackrock Mountain's halls
-  some 190 yards below. A floor drawn after one with ground no longer keeps that ground's files.
+  some 190 yards below. A floor drawn after one with ground no longer keeps that ground's files. The Wailing Caverns'
+  art is older than the caverns Forever rebuilt east of it (89 of its 241 enemies stood on blank parchment); asked
+  whether it should show its terrain in Parchment too: "Yes, terrain there". Its ground shows in every view now (the
+  set's `alone`, chosen by the tool: 45 % of its things on parts its art draws nothing of).
 - **2026-11-15, a floor's marker pressed while drawing:** Saneroki: "i got a error" (`Draw.lua:385`, a call of `Hold`
   before it was made: the map stood down); the search list's scroll thumb had the same kind (`Drag`). Both named
   before their first use.

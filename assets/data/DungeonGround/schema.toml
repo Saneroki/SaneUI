@@ -23,3 +23,7 @@ ground = { type = "list", of = "tuple", parts = [
     { name = "yaw", type = "number", min = 0, max = 360 }, # its turn, degrees
     { name = "terrain", type = "bool" },               # a terrain tile (yaw 90): cut at the floor's edges
 ] }
+alone  = { type = "list", of = "int", min = 1 }        # the floors whose ground shows alone in every view, Parchment
+                                                       # too: their art predates the halls Forever rebuilt, and many of
+                                                       # their bosses and enemies stand where it draws nothing (the
+                                                       # Wailing Caverns' east)

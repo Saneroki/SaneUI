@@ -39,6 +39,11 @@ OFF of its enemies stand on neither: Ironclad Cove (the Deadmines' ship and dock
 minimap of, its terrain open water there) and the floors whose parts Forever rebuilt in another shape than their
 minimap textures (Blackfathom Deeps' halls).
 
+A floor whose art draws nothing where many of its things stand shows its ground alone in every view, Parchment too
+(the set's field alone): more than ALONE of its bosses and enemies on parts whose walls lie on no edge of its art
+(agreement under DRAWN) and on none whose walls do. The Wailing Caverns: its art predates the caverns Forever rebuilt
+east of it.
+
 A dungeon the game gives no map of (Forever's new ones: City of Dalaran, Excavation Site: Wetlands, Ruins of Lordaeron,
 The Hall of Thanes), listed in Core's set Instances and extracted with the others, gets one floor of its own, staged
 for the set Dungeons (no map art, no bosses): its box what its ground shows, as the game's files tell it. A floor
@@ -121,6 +126,11 @@ WATER = 6, 1.5, 40     # terrain art pixels: around a point so many each way, it
                        # Ironclad Cove's 0.0 and 19; the flattest land under a boss or enemy varies by 3.0, Shadowfang
                        # Keep's courtyard, the darkest so flat 3.2 at 45, Stratholme's)
 OFF = 0.05             # of a floor's enemies on no ground at most, for its ground to be kept (its bosses: none)
+DRAWN = 1.0            # a part's agreement with its floor's art (agreement) under which the art draws nothing there:
+                       # its walls on no edge of the art, no better than anywhere on it
+ALONE = 0.25           # of a floor's bosses and enemies on parts its art draws nothing of, more than so many: its ground
+                       # shows alone in every view (the Wailing Caverns: 45 % of 249, its east Forever's; elsewhere at
+                       # most one thing, the Sunken Temple's 1 of 8)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -346,11 +356,12 @@ def edges(picture):
     return IA.blur(strength, EDGE_BLUR[1])
 
 
-def agreement(part, floor, art_edges, textures):
+def agreement(part, floor, art_edges, textures, alpha=None):
     """How well a part's walls lie on a floor's map art: the art's edges along the part's outline there, against
-    the art's edges overall (about 1: no better than anywhere; nil: too little of it on the floor)."""
-    rows = part_rows(part)
-    alpha = np.asarray(drawn(rows, floor, (floor["width"], floor["height"]), textures))[..., 3] > 127
+    the art's edges overall (about 1: no better than anywhere; nil: too little of it on the floor). alpha: the part
+    drawn on the floor already (its texels drawn), else drawn here."""
+    if alpha is None:
+        alpha = np.asarray(drawn(part_rows(part), floor, (floor["width"], floor["height"]), textures))[..., 3] > 127
     if alpha.sum() < LEAST:
         return None
     inner = alpha.copy()
@@ -388,6 +399,30 @@ def standing(entry, floor, rows, textures):
     return found
 
 
+def undrawn(entry, floor, parts, things, mapart, textures):
+    """The share of a floor's things (standing's) that stand on its parts where its art draws nothing: on a part whose
+    walls lie on no edge of the art (agreement under DRAWN), and on none whose walls do."""
+    if not things or not parts or not entry.get("tiles"):
+        return 0.0
+    size = (floor["width"], floor["height"])
+    art_edges = edges(art_of(floor, entry["tiles"], mapart))
+    seen, unseen = np.zeros((size[1], size[0]), bool), np.zeros((size[1], size[0]), bool)
+    for part in parts:
+        alpha = np.asarray(drawn(part_rows(part), floor, size, textures))[..., 3] > 127
+        score = agreement(part, floor, art_edges, textures, alpha)
+        if score is None:
+            continue  # too little of it to tell
+        if score >= DRAWN:
+            seen |= alpha
+        else:
+            unseen |= alpha
+    off = 0
+    for x, y, _, _ in things:
+        px, py = min(size[0] - 1, max(0, int(x * size[0]))), min(size[1] - 1, max(0, int(y * size[1])))
+        off += bool(unseen[py, px] and not seen[py, px])
+    return off / len(things)
+
+
 def holds(things):
     """Whether a floor's ground holds its things (standing's): every boss on it, all but OFF of its enemies."""
     enemies = [on for _, _, kind, on in things if kind == "enemy"]
@@ -402,7 +437,7 @@ def inside(box, x, y):
 
 
 def instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, tally):
-    """One instance's rows, its floors' ground in drawing order."""
+    """One instance's rows, its floors' ground in drawing order; and the parts on each floor ({floor: [part]})."""
     map_id, floors = entry["key"], sorted(entry["floors"], key=lambda f: f["floor"])
     parts = parts_of(folder, table, map_id, left_out)
     named = assigned.get(map_id, {"parts": {}, "terrain": set()})["parts"]
@@ -454,7 +489,7 @@ def instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, 
                 rows.append(terrain_row(number, row, column, file))
         for part in sorted(on[number], key=lambda part: (part["low"], part["unique"] or 0)):
             rows.extend(dict(floor=number, **block) for block in part_rows(part))
-    return rows
+    return rows, on
 
 
 # -------------------------------------------------------------------------------------------------
@@ -598,19 +633,24 @@ def main():
     textures = Textures([folder / "wmo-minimap", folder / "minimap"])
     left_out = {"tilted": 0, "not held": 0, "another shape": 0, "nothing drawn": 0}
     tally = {"named": 0, "not named": 0, "by place": 0, "on no floor": 0, "out of reach": 0}
-    lines, bare, short = [], [], []
+    lines, bare, short, lone = [], [], [], []
     for entry in entries:
         textures.cache.clear()  # one instance's textures at a time
         if entry.get("tiles"):
-            rows = instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, tally)
+            rows, parts_on = instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, tally)
         else:  # no map art of the game's (a dungeon it gives no map of): its ground by the one rule
-            rows = bare_rows(entry, folder, tables, table, tiles, left_out)
-        things, laid = {}, []
+            rows, parts_on = bare_rows(entry, folder, tables, table, tiles, left_out), {}
+        things, laid, alone = {}, [], []
         for f in entry["floors"]:  # a floor whose ground does not hold its bosses and enemies keeps its art alone
             mine = [row for row in rows if row["floor"] == f["floor"]]
             things[f["floor"]] = standing(entry, f, mine, textures) if mine else []
             if holds(things[f["floor"]]):
                 laid += mine
+                # its art drawing nothing where many of them stand (halls Forever rebuilt): its ground alone
+                share = undrawn(entry, f, parts_on.get(f["floor"], []), things[f["floor"]], mapart, textures)
+                if share > ALONE:
+                    alone.append(f["floor"])
+                    lone.append(f"{entry['name']} {f['floor']} ({round(share * 100)} % of its bosses and enemies)")
             else:
                 bosses = [on for *_, kind, on in things[f["floor"]] if kind == "boss"]
                 enemies = [on for *_, kind, on in things[f["floor"]] if kind == "enemy"]
@@ -620,7 +660,7 @@ def main():
         bare += [f"{entry['name']} {f['floor']}" for f in entry["floors"] if f["floor"] not in floors_with]
         if laid:
             lines.append({"set": "DungeonGround", "key": entry["key"], "game": game, "build": build, "src": "game",
-                          "fields": {"ground": laid}})
+                          "fields": {"ground": laid, "alone": alone or None}})
         if checks:
             check(checks, entry, rows, mapart, textures, things)
         rows = laid
@@ -642,7 +682,8 @@ def main():
           f"{left_out['another shape']} made for another shape, {left_out['not held']} with a texture the game does not hold,"
           f" {left_out['nothing drawn']} that draw (almost) nothing, "
           f"{left_out['tilted']} tilted buildings. Floors without ground: {', '.join(bare) or 'none'}; of them their "
-          f"ground left out, their bosses or enemies on none: {', '.join(short) or 'none'}.")
+          f"ground left out, their bosses or enemies on none: {', '.join(short) or 'none'}. Their ground alone in every "
+          f"view, their art drawing nothing where they stand: {', '.join(lone) or 'none'}.")
     groundless = [f"{entry['name']} ({entry['key']})" for entry in entries
                   if not any(line.get("key") == entry["key"] for line in lines if line["set"] == "DungeonGround")]
     if groundless:

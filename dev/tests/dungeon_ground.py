@@ -99,11 +99,12 @@ assigned = {469: {"parts": {(15175, 0): {1}}, "terrain": set()}}
 real = dg.parts_of
 dg.parts_of = lambda *_: parts
 try:
-    rows = dg.instance(lair, None, {}, assigned, {}, None, None, {}, tally)
+    rows, on = dg.instance(lair, None, {}, assigned, {}, None, None, {}, tally)
 finally:
     dg.parts_of = real
 check("heights: the named part and the building at its height laid", sorted(row["file"] for row in rows),
       [15175, 31000])
+check("heights: the floor's parts given back with its rows", sorted(p["unique"] for p in on[1]), [15175, 31000])
 check("heights: the building far below out of reach, the unnamed part on no floor", tally,
       {"named": 1, "not named": 1, "by place": 1, "on no floor": 0, "out of reach": 1})
 
@@ -138,6 +139,32 @@ many = [(0.5, 0.5, "enemy", True)] * 19 + [(0.7, 0.3, "enemy", False)]
 check("holds: one enemy of twenty off (OFF): kept", dg.holds(many), True)
 check("holds: a boss off: never", dg.holds(many[:19] + [(0.7, 0.3, "boss", False)]), False)
 check("holds: a floor with nothing on it", dg.holds([]), True)
+
+# --- Where the art draws nothing: the ground alone ----------------------------------------------
+
+with tempfile.TemporaryDirectory() as folder:
+    mapart = Path(folder)
+    art = Image.new("RGB", (256, 256), (150, 120, 80))  # plain parchment, one hall drawn on it
+    hall = Image.new("RGB", (60, 60), (60, 40, 20))
+    hall.paste((200, 180, 140), (3, 3, 57, 57))
+    art.paste(hall, (40, 40))
+    art.save(mapart / "1.png")
+    (mapart / "1.blp").write_bytes((mapart / "1.png").read_bytes())  # Pillow opens it by its content
+    floor = {"floor": 1, "width": 256, "height": 256, "tile": 256, "north": 256.0, "south": 0.0, "west": 256.0,
+             "east": 0.0}
+    entry = {"key": 43, "floors": [floor], "tiles": [{"floor": 1, "row": 0, "column": 0, "file": 1}]}
+    pictures = Pictures({41: Image.new("RGBA", (120, 120), (90, 90, 90, 255)),
+                         42: Image.new("RGBA", (120, 120), (90, 90, 90, 255))})
+    drawn_hall = part(41, 1, 0.0, x=156.0, y=216.0)    # 60 yards square over the art's hall (40 to 100 each way)
+    new_cave = part(42, 2, 0.0, x=46.0, y=106.0)       # over plain parchment (150 to 210 each way)
+    drawn_hall["sizes"], new_cave["sizes"] = {41: (120, 120)}, {42: (120, 120)}  # 2 texels a yard
+    on_hall, in_cave = (70 / 256, 70 / 256, "boss", True), (180 / 256, 180 / 256, "enemy", True)
+    check("undrawn: three of four on a part the art draws nothing of",
+          dg.undrawn(entry, floor, [drawn_hall, new_cave], [on_hall] + [in_cave] * 3, mapart, pictures), 0.75)
+    check("undrawn: all on the art's hall", dg.undrawn(entry, floor, [drawn_hall, new_cave], [on_hall] * 2, mapart,
+                                                       pictures), 0.0)
+    check("undrawn: a floor without art", dg.undrawn(dict(entry, tiles=[]), floor, [new_cave], [in_cave], mapart,
+                                                     pictures), 0.0)
 
 print(f"Dungeon ground: all {checks} checks passed." if not failed else
       f"Dungeon ground: {failed} of {checks} checks failed.")
