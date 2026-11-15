@@ -1,7 +1,10 @@
 Sane UI: what is new
 ====================
 
-The bigger changes of each version, newest first.
+The bigger changes of each version, newest first. From now on
+each part names the addon and its version: Sane UI is the core
+every module needs, each module (Navigation, ...) a download of
+its own.
 
 
 0.3.0 (2026-10-14)

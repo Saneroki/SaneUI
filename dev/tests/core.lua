@@ -1283,6 +1283,24 @@ check(elsewhere.off and elsewhere.elsewhere and not Core.errors["Elsewhere: it s
 W.addons[#W.addons].metadata["X-SaneUI-Games"] = "forever, retail"
 check(Core.ServesGame("SaneUI_Elsewhere"), "a module that names both games serves this one")
 table.remove(W.addons)
+-- A module published with a newer Core than this one (its TOC's X-SaneUI-Core; this Core is 1.2.3): told once.
+W.addons[#W.addons + 1] = { name = "SaneUI_Ahead", metadata = { Title = "Maps", ["X-SaneUI-Core"] = "1.2.4" } }
+local ahead = W.addons[#W.addons].metadata
+check(Core.NewerCoreWanted("SaneUI_Ahead") == "1.2.4", "a module made with a newer Core asks for it")
+ahead["X-SaneUI-Core"] = "1.10.0"
+check(Core.NewerCoreWanted("SaneUI_Ahead") == "1.10.0", "versions are told by their numbers, not as words")
+for _, same in ipairs({ "1.2.3", "1.1.9", "0.9.9", "dev", "none" }) do
+    ahead["X-SaneUI-Core"] = same ~= "none" and same or nil
+    check(Core.NewerCoreWanted("SaneUI_Ahead") == nil, "this Core or an older one, or none named: nothing asked, " .. same)
+end
+ahead["X-SaneUI-Core"] = "1.3.0"
+W.printed = {}
+W.Fire("ADDON_LOADED", "SaneUI_Ahead")
+W.Fire("ADDON_LOADED", "SaneUI_Ahead")
+check(#W.printed == 1 and printedMatch("Maps was made with Sane UI 1%.3%.0, and this is 1%.2%.3: update Sane UI too"),
+    "a Core older than a module's is told once, in a line")
+table.remove(W.addons)
+W.printed = {}
 local spare = Core.NewModule("SaneUI_Spare", "Spare")
 spare.GiveBack = function() error("cannot give it back") end
 spare.StandDown("a part is missing")

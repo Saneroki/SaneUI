@@ -89,11 +89,11 @@ with tempfile.TemporaryDirectory() as temporary:
     commit("first")
 
     check(tool.staged("main", repo) == ["Navigation", "RetailOnly", "SpeedLeveling"], "the staged modules: all but Core's")
-    first = tool.plan("alpha", repo)
+    first = tool.plan("alpha", root=repo)
     check(first["modules"] == {} and first["left"] == ["Navigation", "RetailOnly", "SpeedLeveling"],
           "nothing promoted: every module left out, all are dev")
     check(first["core"] == ["Core", "AuctionData"], "Core and its data holder are always in")
-    check(refused(lambda: tool.plan("dev", repo)) is not None, "dev is no channel")
+    check(refused(lambda: tool.plan("dev", root=repo)) is not None, "dev is no channel")
 
     # Promoting.
     check(tool.promote("Navigation", "alpha", test=False, root=repo, say=quiet) == "Navigation/0.3.1-alpha",
@@ -119,90 +119,151 @@ with tempfile.TemporaryDirectory() as temporary:
           "newer code: a version above every one before")
     check("not newer" in (refused(lambda: tool.promote("Navigation", "alpha", "0.3.1", test=False, root=repo, say=quiet)) or ""),
           "an older number for new code: refused")
-    beta = tool.plan("beta", repo)
+    beta = tool.plan("beta", root=repo)
     check(beta["modules"]["Navigation"]["tag"] == "Navigation/0.3.1-beta", "beta: the newest at beta or higher, the newer alpha ignored")
-    check(tool.plan("alpha", repo)["modules"]["Navigation"]["tag"] == "Navigation/0.3.2-alpha", "alpha: the newest at alpha or higher")
-    check("Navigation" in tool.plan("release", repo)["left"], "release: a module never released stays out")
+    check(tool.plan("alpha", root=repo)["modules"]["Navigation"]["tag"] == "Navigation/0.3.2-alpha", "alpha: the newest at alpha or higher")
+    check("Navigation" in tool.plan("release", root=repo)["left"], "release: a module never released stays out")
 
-    # The package of a channel.
+    # The packages of a channel: Core's zip, a zip per module.
     out = Path(temporary) / "out"
     made = tool.package("beta", test=False, root=repo, out_dir=out, say=quiet)
-    with zipfile.ZipFile(made["zip"]) as box:
+    core_zip, nav_zip = made["core_release"]["zip"], made["modules"]["Navigation"]["zip"]
+    check(core_zip.name == "SaneUI-0.3.1-beta.zip" and nav_zip.name == "SaneUI_Navigation-0.3.1-beta.zip",
+          f"a zip per addon, named by its folder, version and channel: {core_zip.name}, {nav_zip.name}")
+    check(made["core_release"] == {"version": "0.3.1", "new": True, "zip": core_zip}, "Core's first: one above its TOC")
+    with zipfile.ZipFile(core_zip) as box:
         names = set(box.namelist())
-        tops = {n.split("/")[0] for n in names}
-        check(tops == {"SaneUI", "SaneUI_AuctionData", "SaneUI_Navigation"}, f"beta's package: Core, its data, Navigation: {tops}")
-        check(box.read("SaneUI_Navigation/SaneUI_Navigation.lua").decode() == "-- navigation 1\n",
-              "the older beta version's code, not main's newer alpha")
+        check({n.split("/")[0] for n in names} == {"SaneUI", "SaneUI_AuctionData"}, "Core's zip: Core and its data")
         check(box.read("SaneUI/SaneUI.lua").decode() == "-- core 2\n", "Core from main's newest commit")
-        check("SaneUI_Navigation/Art/map.blp" in names, "a module's art beside its code")
         check("SaneUI/README.md" not in names and "SaneUI/LICENSE.txt" in names, "no READMEs; the licence in each folder")
         check("SaneUI/Sets/Test.lua" in names, "Core's sets compiled into it")
+        core_toc = box.read("SaneUI/SaneUI.toc").decode()
+        check("## Version: 0.3.1\n" in core_toc and "## X-SaneUI-Build: beta 0.3.1" in core_toc
+              and "X-SaneUI-Core" not in core_toc, "Core carries its version and which package it is")
+    with zipfile.ZipFile(nav_zip) as box:
+        names = set(box.namelist())
+        check({n.split("/")[0] for n in names} == {"SaneUI_Navigation"}, "a module's zip: that module alone")
+        check(box.read("SaneUI_Navigation/SaneUI_Navigation.lua").decode() == "-- navigation 1\n",
+              "the older beta version's code, not main's newer alpha")
+        check("SaneUI_Navigation/Art/map.blp" in names, "a module's art beside its code")
         toc = box.read("SaneUI_Navigation/SaneUI_Navigation.toc").decode()
         check("## Interface: 16001\n" in toc, "Forever's interface number alone")
         check("## Version: 0.3.1\n" in toc and "## X-SaneUI-Stage: beta" in toc, "the module's version and stage")
-        core_toc = box.read("SaneUI/SaneUI.toc").decode()
-        check(f"## Version: {made['version']}\n" in core_toc and f"## X-SaneUI-Build: beta {made['version']}" in core_toc,
-              "Core carries the package's version and which package it is")
-    check(made["version"] == "0.3.1", "the first package: one above Core's version")
-    check(tool.package("beta", dry=True, root=repo, out_dir=out, say=quiet)["zip"] == made["zip"], "--dry names the zip, makes nothing new")
+        check("## X-SaneUI-Core: 0.3.1" in toc, "the Core it was tested with, which Core checks in the game")
+    check(made["modules"]["Navigation"]["title"] == "SaneUI_Navigation" and made["modules"]["Navigation"]["addon"]
+          == "SaneUI_Navigation", "a module's title from its TOC")
+    dry = tool.package("beta", dry=True, root=repo, out_dir=out, say=quiet)
+    check(dry["core_release"]["zip"] == core_zip and dry["modules"]["Navigation"]["zip"] == nav_zip,
+          "--dry names the zips, makes nothing new")
+    only = tool.package("alpha", ["Navigation"], dry=True, root=repo, out_dir=out, say=quiet)
+    check(list(only["modules"]) == ["Navigation"] and only["left"] == [], "modules named: those alone")
+    check("never reached" in (refused(lambda: tool.package("alpha", ["SpeedLeveling"], dry=True, root=repo, say=quiet)) or ""),
+          "a module named that never reached the channel: refused")
+    check("Core's" in (refused(lambda: tool.package("alpha", ["Core"], dry=True, root=repo, say=quiet)) or ""),
+          "Core is no module to name")
 
     # Retail-only modules and Git LFS pointers never go in.
     tool.promote("RetailOnly", "alpha", test=False, root=repo, say=quiet)
-    alpha = tool.package("alpha", "0.5.0", test=False, root=repo, out_dir=out, say=quiet)
-    with zipfile.ZipFile(alpha["zip"]) as box:
-        tops = {n.split("/")[0] for n in box.namelist()}
-        check("SaneUI_RetailOnly" not in tops and "SaneUI_Navigation" in tops, "a module made for Retail only stays out")
+    alpha = tool.package("alpha", test=False, root=repo, out_dir=out, say=quiet, core=False)
+    check(alpha["modules"]["RetailOnly"]["zip"] is None and alpha["core_release"]["zip"] is None,
+          "a module made for Retail only gets no zip; core=False: no Core zip")
+    with zipfile.ZipFile(alpha["modules"]["Navigation"]["zip"]) as box:
         check(box.read("SaneUI_Navigation/SaneUI_Navigation.lua").decode() == "-- navigation 2\n", "alpha: the newer version")
     write("assets/optimized/Navigation/Art/map.blp", "version https://git-lfs.github.com/spec/v1\noid sha256:00\nsize 9\n")
     commit("pointer")
     tool.promote("Navigation", "alpha", test=False, root=repo, say=quiet)
-    check("LFS pointer" in (refused(lambda: tool.package("alpha", "0.6.0", test=False, root=repo, out_dir=out, say=quiet)) or ""),
+    check("LFS pointer" in (refused(lambda: tool.package("alpha", ["Navigation"], test=False, root=repo, out_dir=out, say=quiet)) or ""),
           "a Git LFS pointer in place of art: no package")
 
-    # Versions of packages, the changelog, CurseForge's metadata and upload.
-    subprocess.run(["git", "-C", str(repo), "tag", "-a", "v0.5.0-alpha", "-m", "a package", "main"], check=True)
-    check("not newer" in (refused(lambda: tool.package_version("main", "0.4.0", repo)) or ""), "a package never older than one before")
-    check(tool.package_version("main", None, repo) == "0.5.1", "the next package: one above the newest")
-    check(tool.changelog("0.3.1", repo / "Doc/changelog.txt").startswith("0.3.1 (2026-11-15)") and
-          "Old" not in tool.changelog("0.3.1", repo / "Doc/changelog.txt"), "the changelog: this version's part")
-    check(tool.changelog("9.9.9", repo / "Doc/changelog.txt") is None, "a version not written yet: no words of another's")
-    meta = tool.metadata({"version": "0.3.1", "channel": "beta"}, [7], "words")
-    check(meta == {"changelog": "words", "changelogType": "text", "displayName": "Sane UI 0.3.1 (beta)", "gameVersions": [7],
-                   "releaseType": "beta"}, "the upload's metadata: the channel is its release type")
+    # The changelog, CurseForge's config and metadata.
+    words = repo / "Doc/changelog.txt"
+    write("Doc/changelog.txt", "Sane UI: what is new\n\n0.3.0 (2026-10-14)\n------------------\n- Old, of all.\n\n"
+          "SaneUI_Navigation 0.3.1 (2026-11-16)\n------------------\n- The map.\n\n"
+          "Sane UI 0.3.1 (2026-11-16)\n------------------\n- Core.\n- Ends at 1.2.3 (not a heading).\n")
+    check(tool.changelog("SaneUI_Navigation", "0.3.1", words) == "SaneUI_Navigation 0.3.1 (2026-11-16)\n------------------\n- The map.",
+          "the changelog: that addon's part of that version, up to the next")
+    check("Core." in tool.changelog("Sane UI", "0.3.1", words) and "1.2.3" in tool.changelog("Sane UI", "0.3.1", words),
+          "Core's part, a version inside a line no heading")
+    check(tool.changelog("Sane UI", "9.9.9", words) is None and tool.changelog("Sane UI", "0.3.0", words) is None,
+          "a version not written yet, or one without the addon's name: no words of another's")
+    meta = tool.metadata("Sane UI Maps", "0.3.1", "beta", [7], "words", "sane-ui")
+    check(meta == {"changelog": "words", "changelogType": "text", "displayName": "Sane UI Maps 0.3.1 (beta)", "gameVersions": [7],
+                   "releaseType": "beta", "relations": {"projects": [{"slug": "sane-ui", "type": "requiredDependency"}]}},
+          "a module's upload: the channel its release type, Core's project its required dependency")
+    check("relations" not in tool.metadata("Sane UI", "0.3.1", "release", [7], "w") and
+          tool.metadata("Sane UI", "0.3.1", "release", [7], "w")["displayName"] == "Sane UI 0.3.1", "Core's upload names none")
+    check(tool.project_name("Navigation", "Navigation", {"Navigation": {"id": 2, "name": "Sane UI Maps"}}) == "Sane UI Maps"
+          and tool.project_name("Loot", "Loot", {}) == "Sane UI Loot" and tool.project_name("Core", "Sane UI", {}) == "Sane UI",
+          "a project's name: the config's, else Sane UI and the title")
     check(tool.game_version_ids(["1.60.1", 12], [{"id": 5, "name": "1.60.1"}, {"id": 12, "name": "x"}]) == [5, 12],
           "game versions by name or id")
     check("no game version" in (refused(lambda: tool.game_version_ids(["2.0"], [{"id": 5, "name": "1.60.1"}])) or ""),
           "a game version CurseForge lacks: refused")
-    body, kind = tool.multipart({"metadata": json.dumps(meta)}, "file", made["zip"])
+    body, kind = tool.multipart({"metadata": json.dumps(meta)}, "file", nav_zip)
     check(kind.startswith("multipart/form-data; boundary=") and b'name="metadata"' in body and b'name="file"' in body,
           "the upload's body: metadata and file")
-    (Path(temporary) / "cf.json").write_text('{"project": 1, "gameVersions": [1]}')
-    check("lacks token" in (refused(lambda: tool.config(Path(temporary) / "cf.json")) or ""), "a config without its token: refused")
+    cf = Path(temporary) / "cf.json"
+    for text, why in (('{"projects": {"Core": {"id": 1, "slug": "s"}}, "gameVersions": [1]}', "lacks token"),
+                      ('{"token": "t", "gameVersions": [1], "projects": {"Core": {"id": 1}}}', "slug"),
+                      ('{"token": "t", "gameVersions": [1], "projects": {"Core": {"id": 1, "slug": "s"}, "Loot": {}}}', "Loot lacks")):
+        cf.write_text(text)
+        check(why in (refused(lambda: tool.config(cf)) or ""), f"a config that {why}: refused")
 
+    # Publishing: Core first, then each module, each tagged; what is up already never again.
     write("src/Navigation/SaneUI_Navigation.lua", "-- navigation 3\n")
     write("assets/optimized/Navigation/Art/map.blp", "art 3\n")
     commit("third")
-    tool.promote("Navigation", "alpha", test=False, root=repo, say=quiet)
+    tool.promote("Navigation", "alpha", "0.4.0", test=False, root=repo, say=quiet)
     asked = []
     real_ask = tool.ask
     tool.ask = lambda url, token, data=None, headers=None: (
-        asked.append((url, token, data is not None)) or ([{"id": 3, "name": "1.60.1"}] if url.endswith("/versions") else {"id": 99}))
+        asked.append((url, token, data)) or ([{"id": 3, "name": "1.60.1"}] if url.endswith("/versions") else {"id": 90 + len(asked)}))
     real_package = tool.package
-    tool.package = lambda channel, wanted, dry, root, say: real_package(channel, wanted, dry, root, out_dir=out, say=say, test=False)
+    tool.package = lambda channel, only, core_wanted, dry, root, say, core: real_package(
+        channel, only, core_wanted, dry, root, out_dir=out, say=say, test=False, core=core)
     try:
-        settings = {"project": 42, "token": "secret", "gameVersions": ["1.60.1"]}
-        check(tool.publish("alpha", None, dry=True, root=repo, say=quiet, settings=settings) is None and asked == [],
+        settings = {"token": "secret", "gameVersions": ["1.60.1"],
+                    "projects": {"Core": {"id": 41, "slug": "sane-ui"}, "Navigation": {"id": 42, "name": "Sane UI Maps"}}}
+        check(tool.publish("alpha", dry=True, root=repo, say=quiet, settings=settings) == [] and asked == [],
               "--dry: nothing sent, nothing tagged")
-        check("no part for 0.5.1" in (refused(lambda: tool.publish("alpha", None, yes=True, root=repo, say=quiet, settings=settings)) or "")
-              and asked == [], "no players' words for the version: nothing sent")
-        write("Doc/changelog.txt", "Sane UI: what is new\n\n0.5.1 (2026-11-16)\n------------------\n- Newer.\n")
+        check("SaneUI_Navigation 0.4.0" in (refused(lambda: tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings)) or "")
+              and asked == [], "no players' words for a version: nothing sent")
+        write("Doc/changelog.txt", "Sane UI: what is new\n\nSaneUI_Navigation 0.4.0 (2026-11-17)\n------------------\n- Newer.\n\n"
+              "Sane UI 0.3.1 (2026-11-16)\n------------------\n- Core.\n")
         commit("words")
-        check(tool.publish("alpha", None, yes=True, root=repo, say=quiet, settings=settings) == 99, "uploaded: CurseForge's file id")
+        check(tool.publish("alpha", ["Navigation"], yes=True, root=repo, say=quiet, settings=settings) == [92, 93],
+              "uploaded: CurseForge's file ids, Core's and the module's")
         check([a[0] for a in asked] == ["https://wow.curseforge.com/api/game/versions",
-                                        "https://wow.curseforge.com/api/projects/42/upload-file"] and asked[1][2],
-              "the game versions asked, then the file sent to the project")
-        check(any(t["version"] == "0.5.1" and t["channel"] == "alpha" for t in tool.package_tags(repo)),
-              "a published package is tagged v<version>-<channel>")
+                                        "https://wow.curseforge.com/api/projects/41/upload-file",
+                                        "https://wow.curseforge.com/api/projects/42/upload-file"],
+              "the game versions asked, then Core sent to its project, then the module to its")
+        check(b'"requiredDependency"' in asked[2][2] and b'"slug": "sane-ui"' in asked[2][2] and b"requiredDependency" not in asked[1][2]
+              and b'"displayName": "Sane UI Maps 0.4.0 (alpha)"' in asked[2][2] and b"- Newer." in asked[2][2],
+              "the module's upload names Core's project its required dependency, under the project's name, with its words")
+        tags = {t["tag"] for t in tool.published_tags(repo)}
+        check(tags == {"published/Core/0.3.1-alpha", "published/Navigation/0.4.0-alpha"}, f"each upload tagged: {tags}")
+        asked.clear()
+        check(tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings) == [] and asked == [],
+              "again: nothing new, nothing sent")
+        check(tool.core_version("beta", "main", None, repo) == {"version": "0.3.1", "new": True},
+              "the same Core in a higher channel: its number kept, new there")
+        write("src/Core/SaneUI.lua", "-- core 3\n")
+        commit("core 3")
+        check(tool.core_version("alpha", "main", None, repo) == {"version": "0.3.2", "new": True}, "new Core code: one above")
+        check("not newer" in (refused(lambda: tool.core_version("alpha", "main", "0.3.1", repo)) or ""),
+              "an older number for Core's new code: refused")
+        write("Doc/changelog.txt", "Sane UI: what is new\n\nSane UI 0.3.2 (2026-11-18)\n------------------\n- Fixed.\n")
+        commit("words 2")
+        check(tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings) == [92]
+              and [a[0] for a in asked][1:] == ["https://wow.curseforge.com/api/projects/41/upload-file"],
+              "Core changed, the modules not: Core alone uploaded")
+        settings["projects"].pop("Navigation")
+        write("src/Navigation/SaneUI_Navigation.lua", "-- navigation 4\n")
+        commit("fourth")
+        tool.promote("Navigation", "alpha", test=False, root=repo, say=quiet)
+        check("no CurseForge project" in (refused(lambda: tool.publish("alpha", ["Navigation"], yes=True, root=repo, say=quiet,
+                                                                         settings=settings)) or ""),
+              "a module named without a project: refused")
     finally:
         tool.ask, tool.package = real_ask, real_package
 

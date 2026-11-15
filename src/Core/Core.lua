@@ -73,6 +73,35 @@ function Core.ServesGame(addon)
     return false
 end
 
+-- The Sane UI an addon of ours was published with, when this Core is older: each module is a download of its
+-- own and Core one beside them (dev/tools/release), so a player may update a module and not Core. A packaged
+-- module's TOC names its Core ("## X-SaneUI-Core: 0.3.2"); a copy built here names none. nil: Core is new enough.
+local function Numbers(version)
+    local major, minor, patch = tostring(version or ""):match("^(%d+)%.(%d+)%.(%d+)")
+    if major then return tonumber(major), tonumber(minor), tonumber(patch) end
+end
+function Core.NewerCoreWanted(addon)
+    local ok, wanted = pcall(C_AddOns.GetAddOnMetadata, addon, "X-SaneUI-Core")
+    if not ok then return nil end
+    local a1, b1, c1 = Numbers(wanted)
+    local a2, b2, c2 = Numbers(Core.VERSION)
+    if not (a1 and a2) then return nil end
+    if a1 ~= a2 then return a1 > a2 and wanted or nil end
+    if b1 ~= b2 then return b1 > b2 and wanted or nil end
+    return c1 > c2 and wanted or nil
+end
+
+-- Told once per addon, in a line: the module runs on, though it may miss a part of Core it was made with.
+local toldOld = {}
+local function TellOldCore(addon)
+    local wanted = not toldOld[addon] and Core.NewerCoreWanted(addon)
+    if not wanted then return end
+    toldOld[addon] = true
+    local ok, title = pcall(C_AddOns.GetAddOnMetadata, addon, "Title")
+    Core.Print(("%s was made with Sane UI %s, and this is %s: update Sane UI too."):format(
+        ok and type(title) == "string" and title or addon, wanted, Core.VERSION))
+end
+
 -- The 12.x client hides some values from addons during combat ("secret values").
 -- Using one in a comparison is an error, so everything read from the game goes through here.
 function Core.Secret(value)
@@ -779,6 +808,7 @@ Core.On("ADDON_LOADED", function(name)
     -- The modules' files are read after Core's addon: an error in one of them (a template or a
     -- function a client update took away) is noted from here on.
     if name == ADDON then Core.Safe("error log", ListenForGameErrors) end
+    if type(name) == "string" and name:find("^SaneUI_") then Core.Safe("Core's version", TellOldCore, name) end
     Start("OnLoad", name)
     -- A module whose addon is read after the login (one loaded on demand) missed it.
     if Core.charKey then Start("OnLogin", name) end

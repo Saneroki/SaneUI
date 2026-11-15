@@ -1,32 +1,44 @@
 #!/usr/bin/env python3
-"""Module stages, the package of a channel, and its upload to CurseForge (Saneroki, 2026-11-15; .claude's git rules,
-*Module stages*, *The pipeline to CurseForge*; README.md, *Building*).
+"""Module stages, the packages of a channel, and their upload to CurseForge (Saneroki, 2026-11-15; .claude's git
+rules, *Module stages*, *The pipeline to CurseForge*; README.md, *Building*).
 
 Every module goes through the stages dev, alpha, beta and release, by its developer's word alone: dev is for
 development and testing only, alpha, beta and release say how ready a version of it is for the wider public. A
 version reaches a stage as a tag on main's committed state, <Module>/<version>-<stage> (Navigation/0.3.1-alpha).
 Core has no stage (every module needs it), nor have its data holders (Data: Auction House, Data: Auction Scans):
-they go into every package, from main's newest commit.
+they go with every module, from main's newest commit.
 
-A package for a channel (alpha, beta, release) holds Core and, of each module, its newest version at that stage or
-higher: a newer version of a lower stage is left out, a module that never reached the stage stays out. It is built
-from git's copies only, never the working tree: main's newest commit tested whole, each older version of a module
-tested with today's Core (its own tests of then). It is Forever's (the one game supported for the public): each TOC
-names Forever's interface number alone. The zip lands in BUILD/packages, one folder per addon at its top.
+Each module is a CurseForge project of its own, and so is Core (Sane UI, with its data holders): a player takes
+the modules they like, and the CurseForge app brings Core with each, as a module's upload names Core's project
+its required dependency (Saneroki, 2026-11-15: "for now I want to release Maps", alone).
 
-Publishing uploads the package to CurseForge as that channel's release type, then tags main's commit
-v<version>-<channel>. The project and its token stand in ~/.config/saneui/curseforge.json, never in a repository:
-  {"project": 123456, "token": "...", "gameVersions": ["1.60.1"]}
-(gameVersions: CurseForge's names or ids of the game versions the file is for; "host" may name another site than
-https://wow.curseforge.com). Nothing is ever pushed: the tags go out with git push origin <tag>.
+A channel's packages (alpha, beta, release): Core's zip, and of each module its newest version at that stage or
+higher in a zip of its own: a newer version of a lower stage is left out, a module that never reached the stage
+stays out. They are built from git's copies only, never the working tree: main's newest commit tested whole, each
+older version of a module tested with today's Core (its own tests of then). They are Forever's (the one game
+supported for the public): each TOC names Forever's interface number alone, and a module's TOC the Core it was
+tested with (X-SaneUI-Core: Core tells a player whose Sane UI is older). They land in BUILD/packages, the addon's
+folder at the top of each zip (Core's three folders in its).
+
+Publishing uploads what is new in the channel, Core first: Core when its code is not on CurseForge at that channel
+or higher, each module whose version is not. Each upload is tagged published/<Module>/<version>-<channel> (Core's
+at main's commit, a module's at its stage tag's), the players' words taken from Doc/changelog.txt, a part per
+addon and version ("Navigation 0.3.1 (2026-11-16)", "Sane UI 0.3.1 (2026-11-16)"). The projects and the token
+stand in ~/.config/saneui/curseforge.json, never in a repository:
+  {"token": "...", "gameVersions": ["1.60.1"],
+   "projects": {"Core": {"id": 123456, "slug": "sane-ui"}, "Navigation": {"id": 234567, "name": "Sane UI Maps"}}}
+(gameVersions: CurseForge's names or ids of the game versions the files are for; Core's slug is what the modules
+name as their dependency; a project's name names its files, "Sane UI <its title>" when none is given; a module
+without a project there is not uploaded; "host" may name another site than https://wow.curseforge.com). Nothing
+is ever pushed: the tags go out with git push origin <tag>.
 
   dev/tools/release stages                         every module's stage and versions     (saneui showstages)
   dev/tools/release promote <Module> <stage>       tag main's committed state of it      (saneui promote)
           [--version X.Y.Z] [--dry]
-  dev/tools/release package <channel>              the zip of that channel               (saneui makepackage)
-          [--version X.Y.Z] [--dry]
-  dev/tools/release publish <channel>              the zip made and uploaded, then tagged (saneui publish)
-          [--version X.Y.Z] [--dry] [--yes]
+  dev/tools/release package <channel> [Module...]  the zips of that channel              (saneui makepackage)
+          [--core-version X.Y.Z] [--dry]
+  dev/tools/release publish <channel> [Module...]  what is new made, uploaded, tagged    (saneui publish)
+          [--core-version X.Y.Z] [--dry] [--yes]
 """
 import argparse
 import io
@@ -47,7 +59,7 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 STAGES = ("dev", "alpha", "beta", "release")   # lowest first
 CHANNELS = STAGES[1:]
-CORE = ("Core", "AuctionData", "AuctionScans")  # no stage: in every package, from main's newest commit
+CORE = ("Core", "AuctionData", "AuctionScans")  # Core's project: no stage, from main's newest commit
 # The tests of each module (dev/tests/<name>.lua), run for an older version of it with today's Core.
 TESTS = {
     "Abilities": ["abilities"], "Combat": ["combat", "book", "meter", "talents", "reminders", "auralists", "macros"],
@@ -59,7 +71,9 @@ TESTS = {
 TEST_HELPERS = ("dev/tests/wowstub.lua",)
 VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 STAGE_TAG = re.compile(r"^(?P<module>[A-Za-z][A-Za-z0-9]*)/(?P<version>\d+\.\d+\.\d+)-(?P<stage>alpha|beta|release)$")
-PACKAGE_TAG = re.compile(r"^v(?P<version>\d+\.\d+\.\d+)-(?P<channel>alpha|beta|release)$")
+PUBLISHED_TAG = re.compile(
+    r"^published/(?P<project>[A-Za-z][A-Za-z0-9]*)/(?P<version>\d+\.\d+\.\d+)-(?P<channel>alpha|beta|release)$")
+CHANGELOG_PART = re.compile(r"^(?=(?:[A-Za-z][^\n]* )?\d+\.\d+\.\d+ \([^)\n]*\)[ \t]*$)", re.M)
 TOC = re.compile(r"^src/(?P<folder>[^/]+)/(?P<name>[^/]+)\.toc$")
 RETAIL_INTERFACE = 100000  # Retail's interface numbers have six digits since 10.0; Forever's (16001) fewer
 LFS = b"version https://git-lfs.github.com/spec/"
@@ -119,9 +133,20 @@ def stage_tags(root=ROOT):
     return sorted(found, key=lambda t: (t["module"], key(t["version"]), rank(t["stage"])))
 
 
-def package_tags(root=ROOT):
-    return [PACKAGE_TAG.match(tag).groupdict() for tag in git("tag", "--list", "v*-*", root=root).splitlines()
-            if PACKAGE_TAG.match(tag)]
+def published_tags(root=ROOT):
+    """Every upload to CurseForge: [{project, version, channel, tag, commit}], oldest version first."""
+    found = []
+    for tag in git("tag", "--list", "published/*", root=root).splitlines():
+        match = PUBLISHED_TAG.match(tag)
+        if match:
+            found.append({**match.groupdict(), "tag": tag, "commit": git("rev-parse", f"refs/tags/{tag}^{{commit}}", root=root)})
+    return sorted(found, key=lambda t: (t["project"], key(t["version"]), rank(t["channel"])))
+
+
+def on_curseforge(project, version, channel, uploads):
+    """Whether that version of a project is uploaded at the channel or higher (a beta serves the alpha players too)."""
+    return any(t["project"] == project and t["version"] == version and rank(t["channel"]) >= rank(channel)
+               for t in uploads)
 
 
 def newest(module, channel, tags):
@@ -135,10 +160,15 @@ def stage_of(module, tags):
     return max((t["stage"] for t in tags if t["module"] == module), key=rank, default="dev")
 
 
-def toc_version(commit, folder, name, root=ROOT):
+def toc_field(commit, folder, name, field, root=ROOT):
     text = git("show", f"{commit}:src/{folder}/{name}.toc", root=root)
-    found = re.search(r"^## Version:\s*(\S+)", text, re.M)
-    return found.group(1) if found and VERSION.match(found.group(1)) else "0.0.0"
+    found = re.search(rf"^## {field}:[ \t]*(.+?)[ \t]*$", text, re.M)
+    return found.group(1) if found else None
+
+
+def toc_version(commit, folder, name, root=ROOT):
+    found = toc_field(commit, folder, name, "Version", root)
+    return found if found and VERSION.match(found) else "0.0.0"
 
 
 def tree(commit, folder, root=ROOT):
@@ -154,35 +184,57 @@ def main_commit(root=ROOT):
     return git("rev-parse", "refs/heads/main", root=root)
 
 
-def plan(channel, root=ROOT):
-    """What a channel's package holds: {"commit": main's, "core": [folders], "modules": {folder: stage tag},
-    "left": [folders that never reached the channel]}."""
+def plan(channel, only=None, root=ROOT):
+    """What a channel's packages hold: {"commit": main's, "core": [folders], "modules": {folder: stage tag},
+    "left": [folders that never reached the channel]}. only: those modules alone, each one that reached it."""
     if channel not in CHANNELS:
         raise Refused(f"a channel is one of {', '.join(CHANNELS)}")
     commit = main_commit(root)
     tags = stage_tags(root)
+    known = staged(commit, root)
+    for module in only or ():
+        if module in CORE:
+            raise Refused(f"{module} is Core's: it goes with every module")
+        if module not in known:
+            raise Refused(f"no module {module} in src (the folder's name: {', '.join(known)})")
     modules, left = {}, []
-    for module in staged(commit, root):
+    for module in known:
+        if only is not None and module not in only:
+            continue
         pick = newest(module, channel, tags)
         if pick:
             modules[module] = pick
+        elif only:
+            raise Refused(f"{module} never reached {channel}: it is {stage_of(module, tags)} (saneui promote)")
         else:
             left.append(module)
     core = [folder for folder in CORE if folder in addons(commit, root)]
     return {"commit": commit, "core": core, "modules": modules, "left": left}
 
 
-def package_version(commit, wanted=None, root=ROOT):
-    """The package's version: the one asked for, newer than every package before; else one above the newest."""
-    known = [t["version"] for t in package_tags(root)]
-    base = max([toc_version(commit, "Core", "SaneUI", root), *known], key=key)
+def core_tree(commit, root=ROOT):
+    """What Core's project is at a commit: the git objects of its three addons, code and art."""
+    return tuple(tree(commit, folder, root) for folder in CORE)
+
+
+def core_version(channel, commit, wanted=None, root=ROOT):
+    """Core's version in a channel's packages, and whether that is new on CurseForge: {"version", "new"}. The same
+    code as an upload before keeps its number (an alpha's Core uploaded as beta); it is not new where it is up at
+    this channel or higher. New code: the version asked for, or one above Core's TOC and every upload of it."""
+    uploads = [t for t in published_tags(root) if t["project"] == "Core"]
+    now = core_tree(commit, root)
+    same = [t["version"] for t in uploads if core_tree(t["commit"], root) == now]
+    if same:
+        version = max(same, key=key)
+        return {"version": version, "new": not on_curseforge("Core", version, channel, uploads)}
     if wanted is None:
-        return bump(base)
+        return {"version": bump(max([toc_version(commit, "Core", "SaneUI", root), *(t["version"] for t in uploads)],
+                                    key=key)), "new": True}
     if not VERSION.match(wanted):
         raise Refused("a version is X.Y.Z: 0.4.0")
-    if known and key(wanted) <= key(max(known, key=key)):
-        raise Refused(f"{wanted} is not newer than the package v{max(known, key=key)}")
-    return wanted
+    if uploads and key(wanted) <= key(uploads[-1]["version"]):
+        raise Refused(f"Core {wanted} is not newer than its upload {uploads[-1]['tag']}")
+    return {"version": wanted, "new": True}
 
 
 # --- Promoting a module -------------------------------------------------------------------------------------------
@@ -290,9 +342,9 @@ def assemble(tree_root, folder, name, into):
     return out
 
 
-def dress_toc(path, version, mark, stage=None):
-    """A packaged TOC: Forever's interface number alone, the version, which package it is (and the module's stage).
-    False: the addon is made for another game only (its X-SaneUI-Games), and stays out."""
+def dress_toc(path, version, mark, stage=None, core=None):
+    """A packaged TOC: Forever's interface number alone, the version, which package it is (and a module's stage and
+    the Core it was tested with). False: the addon is made for another game only (its X-SaneUI-Games), stays out."""
     text = path.read_text(encoding="utf-8")
     games = re.search(r"^## X-SaneUI-Games:\s*(.+)$", text, re.M)
     if games and "forever" not in games.group(1).lower().replace(",", " ").split():
@@ -303,7 +355,8 @@ def dress_toc(path, version, mark, stage=None):
             raise Refused(f"{path.name} names no interface number of Forever's")
         return "## Interface: " + ", ".join(numbers)
     text = re.sub(r"^## Interface:\s*(.+)$", forever, text, count=1, flags=re.M)
-    lines = f"## Version: {version}\n## X-SaneUI-Build: {mark}" + (f"\n## X-SaneUI-Stage: {stage}" if stage else "")
+    lines = (f"## Version: {version}\n## X-SaneUI-Build: {mark}" + (f"\n## X-SaneUI-Stage: {stage}" if stage else "")
+             + (f"\n## X-SaneUI-Core: {core}" if core else ""))
     if re.search(r"^## Version:.*$", text, re.M):
         text = re.sub(r"^## Version:.*$", lambda _: lines, text, count=1, flags=re.M)
     else:
@@ -336,9 +389,11 @@ def write_zip(into, zip_path):
     os.replace(temp, zip_path)
 
 
-def describe(found, version, channel, root=ROOT):
-    lines = [f"Package {version} ({channel}) of main's {git('rev-parse', '--short', found['commit'], root=root)}:",
-             f"  Core: {', '.join(found['core'])}"]
+def describe(found, channel, root=ROOT):
+    core = found["core_release"]
+    lines = [f"Packages of {channel}, main's {git('rev-parse', '--short', found['commit'], root=root)}:",
+             f"  Core {core['version']} ({', '.join(found['core'])})" + ("" if core["new"] else
+                                                                         f": on CurseForge as {channel} or higher already")]
     for module, pick in sorted(found["modules"].items()):
         lines.append(f"  {module} {pick['version']} ({pick['stage']}, {git('rev-parse', '--short', pick['commit'], root=root)})")
     if found["left"]:
@@ -346,19 +401,31 @@ def describe(found, version, channel, root=ROOT):
     return "\n".join(lines)
 
 
-def package(channel, wanted=None, dry=False, root=ROOT, out_dir=None, say=print, test=True):
-    """Makes the zip of a channel. Returns {"zip", "version", "channel", "commit", "modules", "left", "core"}."""
-    found = plan(channel, root)
-    version = package_version(found["commit"], wanted, root)
-    if any(t["version"] == version for t in package_tags(root)):
-        raise Refused(f"there is a package v{version} already")
-    say(describe(found, version, channel, root))
-    zip_path = (out_dir or root / "BUILD" / "packages") / f"SaneUI-{version}-{channel}.zip"
-    result = {"zip": zip_path, "version": version, "channel": channel, **found}
+def zip_name(addon, version, channel):
+    return f"{addon}-{version}-{channel}.zip"
+
+
+def package(channel, only=None, core_wanted=None, dry=False, root=ROOT, out_dir=None, say=print, test=True, core=True):
+    """Makes the zips of a channel: Core's (core=False: not) and each module's (only: those). Returns {"channel",
+    "commit", "core": [folders], "core_release": {"version", "new", "zip"}, "modules": {folder: stage tag with its
+    "addon", "title" and "zip"}, "left"}; a module made for another game only has no zip."""
+    found = plan(channel, only, root)
+    commit = found["commit"]
+    release = found["core_release"] = core_version(channel, commit, core_wanted, root)
+    out_dir = out_dir or root / "BUILD" / "packages"
+    release["zip"] = out_dir / zip_name("SaneUI", release["version"], channel) if core else None
+    names = addons(commit, root)
+    for module, pick in found["modules"].items():
+        pick["addon"] = addons(pick["commit"], root).get(module) or names[module]
+        pick["title"] = toc_field(pick["commit"], module, pick["addon"], "Title", root) or module
+        pick["zip"] = out_dir / zip_name(pick["addon"], pick["version"], channel)
+    result = {"channel": channel, **found}
+    say(describe(found, channel, root))
     if dry:
-        say(f"Would be: {zip_path} (--dry: nothing made).")
+        made = [z for z in [release["zip"], *(p["zip"] for p in found["modules"].values())] if z]
+        say("Would be: " + ", ".join(z.name for z in made) + f" in {out_dir} (--dry: nothing made).")
         return result
-    commit, short = found["commit"], git("rev-parse", "--short", found["commit"], root=root)
+    short = git("rev-parse", "--short", commit, root=root)
     with tempfile.TemporaryDirectory(dir=scratch_parent(root)) as scratch:
         scratch = Path(scratch)
         main = scratch / "main"
@@ -373,16 +440,20 @@ def package(channel, wanted=None, dry=False, root=ROOT, out_dir=None, say=print,
             ran = subprocess.run([str(main / "dev/tests/run")], cwd=main, capture_output=True, text=True)
             if ran.returncode:
                 raise Refused("main's tests failed: no package.\n" + (ran.stdout + ran.stderr).strip()[-3000:])
-        into = scratch / "package"
-        names = addons(commit, root)
-        for folder in found["core"]:
-            addon = assemble(main, folder, names[folder], into)
-            if not dress_toc(addon / f"{names[folder]}.toc", version, f"{channel} {version} {short}"):
-                shutil.rmtree(addon)
-        made = subprocess.run([str(main / "dev/tools/data"), "compile", str(into / "SaneUI")], cwd=main,
-                              capture_output=True, text=True)
-        if made.returncode:
-            raise Refused("Core's sets could not be compiled:\n" + (made.stdout + made.stderr).strip()[-2000:])
+        if core:
+            into = scratch / "Core"
+            for folder in found["core"]:
+                addon = assemble(main, folder, names[folder], into)
+                if not dress_toc(addon / f"{names[folder]}.toc", release["version"],
+                                 f"{channel} {release['version']} {short}"):
+                    shutil.rmtree(addon)
+            made = subprocess.run([str(main / "dev/tools/data"), "compile", str(into / "SaneUI")], cwd=main,
+                                  capture_output=True, text=True)
+            if made.returncode:
+                raise Refused("Core's sets could not be compiled:\n" + (made.stdout + made.stderr).strip()[-2000:])
+            checked(into)
+            write_zip(into, release["zip"])
+            say(f"Made: {shown(release['zip'], root)}.")
         copies = {}
         for module, pick in sorted(found["modules"].items()):
             source = main
@@ -404,49 +475,71 @@ def package(channel, wanted=None, dry=False, root=ROOT, out_dir=None, say=print,
                 if test:
                     say(f"Testing {module} {pick['version']} with today's Core ...")
                     run_tests(source, [module], say)
-            name = addons(pick["commit"], root).get(module) or names[module]
-            addon = assemble(source, module, name, into)
-            if not dress_toc(addon / f"{name}.toc", pick["version"], f"{channel} {version} {short}", pick["stage"]):
-                shutil.rmtree(addon)
+            into = scratch / module
+            addon = assemble(source, module, pick["addon"], into)
+            mark = f"{channel} {pick['version']} {git('rev-parse', '--short', pick['commit'], root=root)}"
+            if not dress_toc(addon / f"{pick['addon']}.toc", pick["version"], mark, pick["stage"], release["version"]):
+                pick["zip"] = None
                 say(f"  {module}: made for another game only, left out")
-        checked(into)
-        write_zip(into, zip_path)
-    size = zip_path.stat().st_size
-    say(f"Made: {zip_path.relative_to(root) if zip_path.is_relative_to(root) else zip_path} ({size / 1048576:.1f} MB).")
+                continue
+            checked(into)
+            write_zip(into, pick["zip"])
+            say(f"Made: {shown(pick['zip'], root)}.")
     return result
+
+
+def shown(zip_path, root=ROOT):
+    where = zip_path.relative_to(root) if zip_path.is_relative_to(root) else zip_path
+    return f"{where} ({zip_path.stat().st_size / 1048576:.1f} MB)"
 
 
 # --- CurseForge ---------------------------------------------------------------------------------------------------
 
 def config(path=CONFIG):
+    """The CurseForge projects and the token: Core's project with its id and slug, each module's with its id."""
     if not path.is_file():
-        raise Refused(f"no {path}: it holds the CurseForge project and its token, "
-                      '{"project": 123456, "token": "...", "gameVersions": ["1.60.1"]} '
+        raise Refused(f"no {path}: it holds the CurseForge projects and the token, "
+                      '{"token": "...", "gameVersions": ["1.60.1"], "projects": {"Core": {"id": 123456, "slug": '
+                      '"sane-ui"}, "Navigation": {"id": 234567, "name": "Sane UI Maps"}}} '
                       "(the token from authors.curseforge.com, Settings, API Tokens)")
     try:
         found = json.loads(path.read_text(encoding="utf-8"))
     except ValueError as error:
         raise Refused(f"{path} is not JSON: {error}")
-    for field in ("project", "token", "gameVersions"):
+    for field in ("token", "gameVersions", "projects"):
         if not found.get(field):
             raise Refused(f"{path} lacks {field}")
+    core = found["projects"].get("Core") or {}
+    if not core.get("id") or not core.get("slug"):
+        raise Refused(f"{path}: the project Core needs its id and its slug (the modules name it as their dependency)")
+    for name, project in found["projects"].items():
+        if not isinstance(project, dict) or not project.get("id"):
+            raise Refused(f"{path}: the project of {name} lacks its id")
     return found
 
 
-def changelog(version, path=ROOT / "Doc" / "changelog.txt"):
-    """The players' words for this version: its part of Doc/changelog.txt ("0.4.0 (2026-12-01)" and what follows);
-    None while it has none (a package is never uploaded with another version's words)."""
+def changelog(title, version, path=ROOT / "Doc" / "changelog.txt"):
+    """The players' words for a version of an addon: its part of Doc/changelog.txt ("Navigation 0.3.1 (2026-12-01)"
+    and what follows, up to the next such line); None while it has none (never another version's words)."""
     text = path.read_text(encoding="utf-8") if path.is_file() else ""
-    parts = re.split(r"^(?=\d+\.\d+\.\d+ \()", text, flags=re.M)[1:]
-    mine = [p for p in parts if p.startswith(version + " ")]
+    mine = [p for p in CHANGELOG_PART.split(text)[1:] if p.startswith(f"{title} {version} (")]
     return mine[0].strip() if mine else None
 
 
-def metadata(result, game_versions, words):
-    channel = result["channel"]
-    return {"changelog": words, "changelogType": "text",
-            "displayName": f"Sane UI {result['version']}" + ("" if channel == "release" else f" ({channel})"),
+def project_name(folder, title, projects):
+    """What a project's files are called on CurseForge: its name in the config, else Sane UI and the addon's title."""
+    return (projects.get(folder) or {}).get("name") or ("Sane UI" if folder == "Core" else f"Sane UI {title}")
+
+
+def metadata(name, version, channel, game_versions, words, core_slug=None):
+    """An upload's metadata: the channel is its release type; a module's names Core's project its required
+    dependency, so the CurseForge app installs Core with it."""
+    meta = {"changelog": words, "changelogType": "text",
+            "displayName": f"{name} {version}" + ("" if channel == "release" else f" ({channel})"),
             "gameVersions": game_versions, "releaseType": channel}
+    if core_slug:
+        meta["relations"] = {"projects": [{"slug": core_slug, "type": "requiredDependency"}]}
+    return meta
 
 
 def ask(url, token, data=None, headers=None):
@@ -485,8 +578,9 @@ def multipart(fields, file_field, file_path):
     return body.getvalue(), f"multipart/form-data; boundary={boundary}"
 
 
-def publish(channel, wanted=None, dry=False, yes=False, root=ROOT, say=print, settings=None):
-    """The channel's package made, uploaded to CurseForge as its release type, and main's commit tagged."""
+def publish(channel, only=None, core_wanted=None, dry=False, yes=False, root=ROOT, say=print, settings=None):
+    """What is new in a channel made and uploaded to CurseForge, Core first, each upload tagged. Returns the
+    CurseForge file ids, [] when nothing was new."""
     if settings is None:
         try:
             settings = config()
@@ -494,38 +588,73 @@ def publish(channel, wanted=None, dry=False, yes=False, root=ROOT, say=print, se
             if not dry:
                 raise
             say(f"({why})")
-            settings = {"project": "?", "token": "", "gameVersions": ["?"]}
+            settings = {"token": "", "gameVersions": ["?"], "projects": {}}
+    projects = settings.get("projects") or {}
     host = settings.get("host", HOST).rstrip("/")
-    result = package(channel, wanted, dry, root, say=say)
-    words = changelog(result["version"], root / "Doc" / "changelog.txt")
-    if words is None:
-        missing = (f"Doc/changelog.txt has no part for {result['version']} yet: the players' words go there first "
-                   f"(\"{result['version']} (<date>)\", its line of dashes, the bigger changes), committed")
+    found = plan(channel, only, root)
+    uploads = published_tags(root)
+    send = []
+    for module, pick in sorted(found["modules"].items()):
+        if on_curseforge(module, pick["version"], channel, uploads):
+            say(f"  {module} {pick['version']}: on CurseForge as {channel} or higher already")
+        elif module in projects or dry:
+            if module not in projects:
+                say(f"  {module} {pick['version']}: no CurseForge project in {CONFIG.name} yet")
+            send.append(module)
+        elif only:
+            raise Refused(f"{module} has no CurseForge project in {CONFIG}: its id goes under projects first")
+        else:
+            say(f"  {module} {pick['version']}: no CurseForge project in {CONFIG.name}, not uploaded")
+    core_new = core_version(channel, found["commit"], core_wanted, root)["new"]
+    if not send and not core_new:
+        say(f"Nothing new for {channel}: Core and every module there are on CurseForge already.")
+        return []
+    result = package(channel, send, core_wanted, dry, root, say=say, core=core_new)
+    release, words_file = result["core_release"], root / "Doc" / "changelog.txt"
+    # (folder, title, version, zip, the commit its tag goes on)
+    going = ([("Core", "Sane UI", release["version"], release["zip"], result["commit"])] if release["zip"] else []) + [
+        (module, pick["title"], pick["version"], pick["zip"], pick["commit"])
+        for module, pick in sorted(result["modules"].items()) if pick["zip"]]
+    words, missing = {}, []
+    for folder, title, version, _, _ in going:
+        words[folder] = changelog(title, version, words_file)
+        if words[folder] is None:
+            missing.append(f"\"{title} {version} (<date>)\"")
+            words[folder] = ""
+    if missing:
+        why = (f"Doc/changelog.txt has no part for {', '.join(missing)} yet: the players' words go there first (that "
+               "line, its line of dashes, the bigger changes), committed")
         if not dry:
-            raise Refused(missing)
-        say(f"({missing}.)")
-        words = ""
+            raise Refused(why)
+        say(f"({why}.)")
+    core_slug = (projects.get("Core") or {}).get("slug", "?")
+    metas = {folder: metadata(project_name(folder, title, projects), version, channel, settings["gameVersions"],
+                              words[folder], None if folder == "Core" else core_slug)
+             for folder, title, version, _, _ in going}
     if dry:
-        say(f"Would upload to {host}, project {settings['project']}, as {channel}, for the game versions "
-            f"{settings['gameVersions']}:\n" + json.dumps(metadata(result, settings["gameVersions"], words), indent=1))
-        return None
+        for folder, _, _, zip_path, _ in going:
+            say(f"Would upload {zip_path.name} to {host}, project {(projects.get(folder) or {}).get('id', '?')}:\n"
+                + json.dumps(metas[folder], indent=1))
+        return []
     ids = game_version_ids(settings["gameVersions"], ask(f"{host}/api/game/versions", settings["token"]))
-    meta = metadata(result, ids, words)
     if not yes:
-        answer = input(f"Upload {result['zip'].name} to CurseForge project {settings['project']} as {channel}? "
-                       "Type yes: ")
-        if answer.strip().lower() != "yes":
+        listed = ", ".join(f"{metas[folder]['displayName']} ({zip_path.name})" for folder, _, _, zip_path, _ in going)
+        if input(f"Upload to CurseForge: {listed}? Type yes: ").strip().lower() != "yes":
             raise Refused("not uploaded")
-    body, kind = multipart({"metadata": json.dumps(meta)}, "file", result["zip"])
-    answer = ask(f"{host}/api/projects/{settings['project']}/upload-file", settings["token"], body,
-                 {"Content-Type": kind})
-    file_id = answer.get("id") if isinstance(answer, dict) else None
-    tag = f"v{result['version']}-{channel}"
-    contents = ", ".join(f"{m} {p['version']} {p['stage']}" for m, p in sorted(result["modules"].items())) or "Core only"
-    git("tag", "-a", tag, "-m", f"Sane UI {result['version']} ({channel}) on CurseForge, file {file_id}: Core, {contents}",
-        result["commit"], root=root)
-    say(f"Uploaded: CurseForge file {file_id}. Tagged {tag}. Not pushed: git push origin {tag}")
-    return file_id
+    files, tags = [], []
+    for folder, _, version, zip_path, commit in going:
+        meta = {**metas[folder], "gameVersions": ids}
+        body, kind = multipart({"metadata": json.dumps(meta)}, "file", zip_path)
+        answer = ask(f"{host}/api/projects/{projects[folder]['id']}/upload-file", settings["token"], body,
+                     {"Content-Type": kind})
+        file_id = answer.get("id") if isinstance(answer, dict) else None
+        tag = f"published/{folder}/{version}-{channel}"
+        git("tag", "-a", tag, "-m", f"{meta['displayName']} on CurseForge, file {file_id}", commit, root=root)
+        say(f"Uploaded {meta['displayName']}: CurseForge file {file_id}. Tagged {tag}.")
+        files.append(file_id)
+        tags.append(tag)
+    say("Not pushed: git push origin " + " ".join(tags))
+    return files
 
 
 # --- The command line ---------------------------------------------------------------------------------------------
@@ -533,7 +662,7 @@ def publish(channel, wanted=None, dry=False, yes=False, root=ROOT, say=print, se
 def show_stages(root=ROOT, say=print):
     commit = main_commit(root)
     tags = stage_tags(root)
-    say("Core, Data: Auction House, Data: Auction Scans: no stage, in every package (main's newest commit).")
+    say("Core, Data: Auction House, Data: Auction Scans: no stage; Core's project, with every module (main's newest commit).")
     for module in staged(commit, root):
         mine = [t for t in tags if t["module"] == module]
         line = f"  {module:14} {stage_of(module, tags)}"
@@ -542,9 +671,9 @@ def show_stages(root=ROOT, say=print):
             if tree(mine[-1]["commit"], module, root) != tree(commit, module, root):
                 line += "   (main has newer code: dev)"
         say(line)
-    packages = package_tags(root)
-    if packages:
-        say("Packages: " + ", ".join(f"v{t['version']}-{t['channel']}" for t in packages))
+    uploads = published_tags(root)
+    if uploads:
+        say("On CurseForge: " + ", ".join(f"{t['project']} {t['version']} {t['channel']}" for t in uploads))
 
 
 def main():
@@ -555,13 +684,16 @@ def main():
     raising = commands.add_parser("promote", help="tag main's committed state of a module as reaching a stage")
     raising.add_argument("module")
     raising.add_argument("stage", choices=CHANNELS)
-    for name, what in (("package", "the zip of a channel"), ("publish", "the zip made, uploaded to CurseForge, tagged")):
+    raising.add_argument("--version")
+    for name, what in (("package", "the zips of a channel: Core's, each module's"),
+                       ("publish", "what is new in a channel made, uploaded to CurseForge, tagged")):
         one = commands.add_parser(name, help=what)
         one.add_argument("channel", choices=CHANNELS)
+        one.add_argument("modules", nargs="*", metavar="Module", help="only these modules (the folder's name)")
+        one.add_argument("--core-version", help="Core's version where its code is new (else one above the last)")
         if name == "publish":
             one.add_argument("--yes", action="store_true", help="upload without asking")
     for one in (raising, commands.choices["package"], commands.choices["publish"]):
-        one.add_argument("--version")
         one.add_argument("--dry", action="store_true", help="show what it would do; change nothing")
     args = parser.parse_args()
     try:
@@ -570,9 +702,9 @@ def main():
         elif args.command == "promote":
             promote(args.module, args.stage, args.version, args.dry)
         elif args.command == "package":
-            package(args.channel, args.version, args.dry)
+            package(args.channel, args.modules or None, args.core_version, args.dry)
         else:
-            publish(args.channel, args.version, args.dry, args.yes)
+            publish(args.channel, args.modules or None, args.core_version, args.dry, args.yes)
     except Refused as why:
         print(f"release: {why}", file=sys.stderr)
         return 1

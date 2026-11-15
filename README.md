@@ -67,11 +67,15 @@ installed. `WOW_FOREVER` and `WOW_RETAIL` name the folders on another computer. 
   `release/0.4`, and `current` moved to it. Nothing is pushed.
 - **Stages and public packages:** every module goes through the stages dev, alpha, beta and release; dev is for
   development and testing only, and a version goes up a stage only by its developer's word (`saneui promote
-  Navigation alpha`: the tag `Navigation/0.3.1-alpha`; `saneui showstages` lists them). Core has no stage and is
-  in every package. `saneui makepackage beta` makes `BUILD/packages/SaneUI-<version>-beta.zip` from git: Core from
-  main's newest commit, and of each module its newest version at beta or higher, a newer alpha or dev version left
-  out. `saneui publish beta` uploads that package to CurseForge as a beta and tags `v<version>-beta` (the project
-  and its token in `~/.config/saneui/curseforge.json`). Packages are WoW: Forever's.
+  Navigation alpha`: the tag `Navigation/0.3.1-alpha`; `saneui showstages` lists them). Core has no stage.
+  Each module is a CurseForge project of its own, and so is Core: a module's upload names Core's project its
+  required dependency, so the CurseForge app installs Core with it. `saneui makepackage beta [Module ...]` makes
+  from git a zip per addon in `BUILD/packages/`: Core's (`SaneUI-<version>-beta.zip`, from main's newest commit)
+  and of each module its newest version at beta or higher (`SaneUI_<Module>-<version>-beta.zip`), a newer alpha
+  or dev version left out. `saneui publish beta [Module ...]` uploads what is not on CurseForge yet, Core first,
+  as betas, and tags each `published/<Module>/<version>-beta`; the players' words come from `Doc/changelog.txt`
+  (a part per addon and version), the projects and the token from `~/.config/saneui/curseforge.json`. A module's
+  TOC names the Core it was tested with, and Core says in chat when it is older. Packages are WoW: Forever's.
 - **A new script** gets its command in `dev/saneui`; the tests fail on a script without one.
 
 ## Technical details
