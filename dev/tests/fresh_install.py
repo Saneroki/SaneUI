@@ -58,7 +58,14 @@ def game(root, name, product):
     addons = folder / "Interface/AddOns"
     write(addons / "SaneUI/SaneUI.toc", "## Interface: 11506\n## Version: 0.3.1\n")
     write(addons / "SaneUI/Core.lua", "-- core\n")
-    write(addons / "SaneUI_Navigation/SaneUI_Navigation.toc", "## Interface: 11506\n")
+    write(addons / "SaneUI_Navigation/SaneUI_Navigation.toc", "## Interface: 11506\n## Dependencies: SaneUI\n")
+    # Inventory's TOC here names Loot as a dependency too, so that a dependency of a module named comes along.
+    write(addons / "SaneUI_Inventory/SaneUI_Inventory.toc", "## Interface: 11506\n## Dependencies: SaneUI, SaneUI_Loot\n")
+    write(addons / "SaneUI_Loot/SaneUI_Loot.toc", "## Interface: 11506\n## Dependencies: SaneUI\n")
+    write(addons / "SaneUI_Economy/SaneUI_Economy.toc", "## Interface: 11506\n## Dependencies: SaneUI\n")
+    write(addons / "SaneUI_AuctionData/SaneUI_AuctionData.toc", "## Interface: 11506\n## Dependencies: SaneUI\n")
+    if product == "wowf":  # made for Forever alone, as the real one (X-SaneUI-Games: forever)
+        write(addons / "SaneUI_AuctionScans/SaneUI_AuctionScans.toc", "## Interface: 11506\n## Dependencies: SaneUI\n")
     write(addons / "OtherAddon/OtherAddon.toc", "## Interface: 11506\n")
     write(addons / "SaneUI_AuctionDatabase/SaneUI_AuctionDatabase.toc", "## X-SaneUI-Made: 1\n")
     return folder
@@ -85,6 +92,8 @@ with tempfile.TemporaryDirectory() as temporary:
     runs = set()
     tool.running = lambda folder: folder.name in runs
     before = {folder: (tree(folder / "WTF"), tree(folder / "Interface")) for folder in (forever, retail)}
+    ALL = {folder.name: sorted(p.name for p in (folder / "Interface/AddOns").iterdir() if p.name.startswith("SaneUI")
+                               and p.name != "SaneUI_AuctionDatabase") for folder in (forever, retail)}
 
     # A game running: nothing happens in either game.
     runs.add("_retail_")
@@ -118,10 +127,10 @@ with tempfile.TemporaryDirectory() as temporary:
         check((wtf / "Account/1#1/93/Sane-Lunatic/layout-local.txt").is_file()
               and (wtf / "Account/1#1/macros-cache.txt").read_bytes() == (hold / "WTF/Account/1#1/macros-cache.txt").read_bytes(),
               f"{folder.name}: the characters and the game's own files kept")
-        check(sorted(p.name for p in addons.iterdir()) == ["SaneUI", "SaneUI_Navigation"],
-              f"{folder.name}: AddOns holds Sane UI's alone, no tool-made one")
+        check(sorted(p.name for p in addons.iterdir()) == ALL[folder.name], f"{folder.name}: AddOns holds Sane UI's alone, no tool-made one")
         check((addons / "SaneUI/Core.lua").read_text() == "-- core\n", f"{folder.name}: Sane UI as the game had it installed")
-    check("SaneUI, SaneUI_Navigation" in said and "saneui myinstall" in said, "the start says what went in and the way back")
+    check("SaneUI_Inventory, SaneUI_Loot, SaneUI_Navigation" in said and "saneui myinstall" in said,
+          "the start says what went in and the way back")
     check("a fresh-install test since" in quiet(tool.status), "status: a test is on")
 
     why = refused(tool.start, [], False)
@@ -175,13 +184,43 @@ with tempfile.TemporaryDirectory() as temporary:
     quiet(tool.restore, False)
     check(tree(forever / "Interface") == before[forever][1], "  and the restore brings the real Interface back")
 
+    # Modules named: Core, those modules, what their TOCs name as dependencies, what their download carries.
+    def picked(*words, zips=()):
+        said = quiet(tool.start, list(zips), False, words=list(words))
+        got = {folder.name: sorted(p.name for p in (folder / "Interface/AddOns").iterdir()) for folder in (forever, retail)}
+        quiet(tool.restore, False)
+        return got, said
+    got, said = picked("navigation")
+    check(got["_forever_"] == got["_retail_"] == ["SaneUI", "SaneUI_Navigation"], f"navigation: Core and Navigation alone: {got}")
+    got, said = picked("Navigation", "SaneUI_Inventory")
+    check(got["_forever_"] == ["SaneUI", "SaneUI_Inventory", "SaneUI_Loot", "SaneUI_Navigation"],
+          f"navigation inventory: and what Inventory's TOC needs first, any spelling: {got}")
+    got, said = picked("economy")
+    check(got["_forever_"] == ["SaneUI", "SaneUI_AuctionData", "SaneUI_AuctionScans", "SaneUI_Economy"]
+          and got["_retail_"] == ["SaneUI", "SaneUI_AuctionData", "SaneUI_Economy"], f"economy: with the auction data it carries: {got}")
+    check("Retail: " in said and "SaneUI_AuctionScans" in said.split("Retail: ")[-1], "  and Retail's lack of one is said")
+    got, said = picked("core")
+    check(got["_forever_"] == ["SaneUI"], f"core: Core alone: {got}")
+    got, said = picked("navigation", zips=[package])
+    check(got["_forever_"] == ["SaneUI", "SaneUI_Navigation"], f"a module out of the zips: {got}")
+    for words, words_why in ((["maps"], "No module maps"), (["lore"], "SaneUI_Lore is in neither game's AddOns")):
+        why = refused(tool.start, [], False, words=words)
+        check(why and words_why in why and not (forever / tool.HOLD).exists(), f"{words}: refused, nothing done ({why})")
+    check(tree(forever / "Interface") == before[forever][1] and tree(retail / "WTF") == before[retail][0],
+          "after the module tests, all back as it was")
+    import contextlib
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        tool.main(["start", "navigation", str(package), "--dry"])
+    check("its AddOns: SaneUI, SaneUI_Navigation." in out.getvalue(), "the command line: modules and zips in any order")
+
     # A failure half way puts back what was set aside, in both games.
     made = tool.fresh_interface
 
-    def breaks(real, test, zips):
+    def breaks(real, test, zips, want=None):
         if test.parent.name == "_retail_":
             raise OSError("disk full")
-        return made(real, test, zips)
+        return made(real, test, zips, want)
     tool.fresh_interface = breaks
     try:
         quiet(tool.start, [], False)

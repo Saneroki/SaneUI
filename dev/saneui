@@ -41,7 +41,8 @@ GROUPS = {
                           None),
         "installed": (["@installed"], "which build the game has: dev or release, its version", 'which build the game has'),
         "freshinstall": (["dev/tools/fresh-install", "start"], "a new player's first Sane UI in both games: your WTF and "
-                         "Interface set aside, the game's own settings kept, no other addon (--zip a package)",
+                         "Interface set aside, the game's own settings kept, no other addon (freshinstall navigation "
+                         "inventory: those and Core alone; a .zip named: a package)",
                          "a new player's fresh install"),
         "myinstall": (["dev/tools/fresh-install", "restore"], "your own WTF and Interface back, the fresh install's "
                       "deleted", "your own setup back"),

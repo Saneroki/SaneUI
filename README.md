@@ -50,6 +50,7 @@ saneui build               # tests and builds into BUILD only (--release TAG: a 
 saneui test                # every check and test (dev/tests/run)
 saneui installed           # which build each game has
 saneui freshinstall        # a new player's first Sane UI in both games: your WTF and Interface set aside
+saneui freshinstall navigation inventory   # the same with only those modules and Core
 saneui myinstall           # your own WTF and Interface back, the fresh install's deleted
 saneui update              # pull from GitHub (main, fast-forward only), then installdev
 ```
