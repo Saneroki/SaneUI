@@ -880,6 +880,36 @@ check(HeadNamed("Trade Goods") and not HeadNamed("Junk")
     "searching: only what is found")
 ns.Board.Search("")
 check(HeadNamed("Junk"), "the search cleared: all again")
+-- The bags' own search box on the title line (Saneroki, 2026-11-15): what it finds lit, the full screen's search shown in it.
+do
+    local box = Bags.searchBox
+    check(box and box._parent == Bags.bar and box:GetWidth() >= Bags.SEARCH_LEAST, "a search box on the bags' title line")
+    local function Type(text) -- as the game does: the text, then its OnTextChanged
+        box:SetText(text)
+        box:GetScript("OnTextChanged")(box, true)
+    end
+    Type("linen")
+    local lit, dark = 0, 0
+    for index = 1, 40 do
+        local button = Cells.Button(0, index)
+        local record = button and button:IsShown() and Cells.Record(button)
+        if record and record.item then
+            local glow
+            for _, widget in ipairs(W.frames) do
+                if widget._atlas == "bags-glow-white" and widget._points[1] and widget._parent and widget._parent._parent == button then glow = widget end
+            end
+            if glow and glow:IsShown() then lit = lit + 1 else dark = dark + 1 end
+        end
+    end
+    check(HeadNamed("Trade Goods") and not HeadNamed("Junk") and lit > 0 and dark == 0,
+        "typed there: only what is found, each lit with the game's glow")
+    Type("")
+    check(HeadNamed("Junk"), "emptied: all again, nothing lit")
+    ns.Board.Search("cloth")
+    check(box:GetText() == "cloth", "the full screen's search shows in it")
+    ns.Board.Search("")
+    check(box:GetText() == "", "and its end too")
+end
 
 -- The item's menu and the middle click.
 local function Line(menu, text)
@@ -1026,11 +1056,12 @@ do
     local slotButton = Cells.Button(0, 4)
     slotButton:GetScript("OnEnter")(slotButton)
     check(Bags.Viewing() == "one" and not catcher:IsShown(), "One Bag's slots, the bags as they are: the game's own, they swap")
-    -- A free slot framed as the character window's gear slot (Saneroki, 2026-11-15: they were unseen until the mouse
-    -- came), no quality border left from an item drawn there before; an item's slot shows no frame.
+    -- A free slot framed as Forever's bank frames its free slots (Saneroki, 2026-11-15: they were unseen until the
+    -- mouse came, then "clear and beautiful"), no quality border left from an item drawn there before; an item's slot
+    -- shows no frame.
     local function Frame(button)
         for _, widget in ipairs(W.frames) do
-            if widget._parent == button and widget._atlas == "ui-character-info-gearslot" then return widget end
+            if widget._parent == button and widget._atlas == "bank-frame-item-slotframe" then return widget end
         end
     end
     local free, held
@@ -1039,9 +1070,9 @@ do
         local record = button and Cells.Record(button)
         if record and not record.item then free = free or button elseif record then held = held or button end
     end
-    check(free and held and Frame(free) and Frame(free):IsShown() and not Frame(held):IsShown()
-        and not free.IconBorder:IsShown() and math.abs(Frame(free)._coords[1] - ns.Style.SLOT_CUT) < 1e-9,
-        "a free slot: the gear slot's bronze frame at its edge, no border of an item before; an item: none")
+    check(free and held and Frame(free) and Frame(free):IsShown() and Frame(free):GetAlpha() == 1
+        and not Frame(held):IsShown() and not free.IconBorder:IsShown() and Frame(free)._coords == nil,
+        "a free slot: the bank's thin bronze frame, whole, no border of an item before; an item: none")
     Bags.Choose("all")
     holding = nil
     -- A pinned item put into a category of the player's own: unpinned, shown there; a middle click on a pinned item
@@ -1734,26 +1765,68 @@ check(Bags.strip:IsShown() and kept.strip, "and shows it again")
 do
     local bin
     for _, widget in ipairs(W.frames) do
-        if widget.picture and widget.lit and widget:IsShown() and widget.picture._atlas == "128-redbutton-delete" then bin = widget end
+        if widget.picture and widget.lit and widget:IsShown() and widget.picture.art and widget.picture.art._atlas == "128-redbutton-delete" then bin = widget end
     end
-    check(bin and bin.picture._grey and bin.picture._vertex[1] == ns.Style.SYMBOL and bin.picture._coords[1] == ns.Style.BIN[1],
-        "the waste bin a plain grey symbol as the categories': the golden bin of the game's delete button alone")
+    local art = bin and bin.picture.art
+    check(bin and art._grey and art._vertex[1] == ns.Style.SYMBOL and art._coords == nil,
+        "the waste bin a plain grey symbol as the categories': the game's delete button whole, in a frame of its bin's size")
+    bin.picture:GetScript("OnSizeChanged")(bin.picture, 45, 45)
+    check(math.abs(art._width - 100) < 1e-6 and math.abs(art._points[1][4] + 27) < 1e-6 and math.abs(art._points[1][5] - 27) < 1e-6,
+        "the button drawn so large that its bin fills that frame (the frame clips the rest)")
     local junkPlus = PlusOf("junk")
     check(bin and junkPlus and -bin._points[1][5] == -junkPlus._points[1][5] and bin._points[1][4] < junkPlus._points[1][4],
         "Junk: the waste bin first, on its line, before its items and its empty slot")
     local popups = #W.popups
+    local Bin = ns.Bin
     bin:GetScript("OnReceiveDrag")(bin)
-    check(#W.popups == popups, "nothing on the cursor: nothing asked")
+    check(#W.popups == popups and not (Bin.Frame() and Bin.Frame():IsShown()), "nothing on the cursor: nothing asked")
+    -- (Saneroki, 2026-11-15: asked by default, in a window with a third button "Delete the item and don't ask me again")
     holding, cursor = 118, true
     bin:GetScript("OnReceiveDrag")(bin)
-    check(#W.popups == popups + 1 and W.popups[#W.popups].which == "DELETE_ITEM",
-        "an item let go there: the game's own question to destroy it, as when dropped into the world")
+    local ask = Bin.Frame()
+    check(ask and ask:IsShown() and #W.popups == popups and Bin.Words()._text:find("^Delete ") and Bin.buttons.never.Text
+        and (Bin.buttons.never:GetText() or Bin.buttons.never.Text._text) == "Delete the item and don't ask me again",
+        "an item let go there: the bin's own question, its name, Delete, Cancel and the third button")
+    Bin.buttons.cancel:GetScript("OnClick")(Bin.buttons.cancel)
+    check(not ask:IsShown() and holding == nil, "Cancel: the item back where it came from, nothing destroyed")
+    local deleted, refuse = 0, false
+    DeleteCursorItem = function()
+        deleted = deleted + 1
+        if not refuse then holding, cursor = nil, false end
+    end
+    holding, cursor = 118, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    Bin.buttons.delete:GetScript("OnClick")(Bin.buttons.delete)
+    W.Wait(0.5)
+    check(deleted == 1 and not ask:IsShown() and #W.popups == popups, "Delete: destroyed by that click, nothing more asked")
+    -- The game refuses: its own question, as for an item dropped into the world.
+    refuse = true
+    holding, cursor = 118, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    Bin.buttons.delete:GetScript("OnClick")(Bin.buttons.delete)
+    W.Wait(0.5)
+    check(deleted == 2 and #W.popups == popups + 1 and W.popups[#W.popups].which == "DELETE_ITEM",
+        "the game refused: its own question to destroy it")
     holding, cursor = 2001, true
     bin:GetScript("OnReceiveDrag")(bin)
+    Bin.buttons.delete:GetScript("OnClick")(Bin.buttons.delete)
+    W.Wait(0.5)
     check(W.popups[#W.popups].which == "DELETE_GOOD_ITEM", "a rare item: the question that has its name typed out (C_Item.GetItemInfo)")
     holding, cursor = 3002, true
     bin:GetScript("OnReceiveDrag")(bin)
+    Bin.buttons.delete:GetScript("OnClick")(Bin.buttons.delete)
+    W.Wait(0.5)
     check(W.popups[#W.popups].which == "DELETE_QUEST_ITEM", "a quest item: the question that says so")
+    refuse = false
+    holding, cursor = 118, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    Bin.buttons.never:GetScript("OnClick")(Bin.buttons.never)
+    check(deleted == 5 and ns.options.binAsk == false and not ask:IsShown(), "the third button: destroyed, and not asked again")
+    holding, cursor = 118, true
+    bin:GetScript("OnReceiveDrag")(bin)
+    check(deleted == 6 and not ask:IsShown(), "from then on the bin destroys at once")
+    Core.Set(ns.name, "binAsk", true)
+    DeleteCursorItem = nil
     holding, cursor = nil, false
 end
 local sideFrame = ns.BagSidebar.frame
@@ -1846,7 +1919,7 @@ do
     Bags.Size(1000, 600)
 end
 -- The window can be narrow; the first layout keeps it wide; the count on the bar makes room.
-check(Bags.LEAST[1] <= 340 and Bags.Width > ns.Board.Least("bags", Bags.LEAST[1], Bags.LEAST[2])[1], "narrow at least, wider at first")
+check(Bags.LEAST[1] <= 420 and Bags.Width > ns.Board.Least("bags", Bags.LEAST[1], Bags.LEAST[2])[1], "narrow at least, wider at first")
 check(Bags.ItemSize(2000) == Layout.SIZE, "the items as large as chosen in a wide window")
 kept.scale = 75
 check(Bags.ItemSize(2000) == math.floor(Layout.SIZE * 0.75 + 0.5), "the slider's size")

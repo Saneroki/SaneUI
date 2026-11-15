@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Bags: free slots and the waste bin clear and framed, icons with
+  round corners; the bin asks before it deletes (or not, if you
+  say so). A search box on the bags' title line lights what it
+  finds. Your other characters are in the bags' window: choose one
+  in its dropdown, and a search there lists what they have too.
+- Fixed: opening the satchel from the minimap stopped Navigation.
 - Minimap: hover over it to see your local time at the top, where
   you are at the bottom, and the satchel. The map's old, unused
   flight points (zzOLD...) are gone from the map and its search.

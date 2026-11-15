@@ -85,7 +85,6 @@ Board.ICONS = {
     mail = "Interface/ICONS/INV_Letter_15", -- a letter has none: it comes with the mail
     bags = "Interface/ICONS/INV_Misc_Bag_08",
     bank = "Interface/ICONS/INV_Misc_Bag_09",
-    alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
 }
 
 -- The windows that draw their own frame (Core's board, "bare"): the character's doll, its frame scaled with it
@@ -93,12 +92,13 @@ Board.ICONS = {
 Board.DRESS = { character = "bare" }
 -- The windows that fill their body to its edges (they stood on the journal's page before the kit): their body set
 -- inside the frame, Core's board's EDGE from its sides and bottom and under its head (Board.Body's size).
-Board.FILLED = { stats = true, gear = true, titles = true, bags = true, bank = true, alts = true }
+Board.FILLED = { stats = true, gear = true, titles = true, bags = true, bank = true }
 
--- The windows in the dropdown's order; those the first layout holds.
+-- The windows in the dropdown's order; those the first layout holds. The other characters' things are the bags'
+-- window's too (its dropdown of the characters; Saneroki, 2026-11-15: "marge the Alts and Bags window into one").
 Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "vendor", "mail",
-                "letter", "bags", "bank", "alts" }
-Board.FIRST = { character = true, stats = true, bags = true, bank = true, alts = true }
+                "letter", "bags", "bank" }
+Board.FIRST = { character = true, stats = true, bags = true, bank = true }
 
 local layouts  -- Core's board, once the window is there (Board.Take)
 local parts = {} -- [key] = { part, spec }: registered by the parts' files

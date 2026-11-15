@@ -648,9 +648,10 @@ end
 local Alts, Snapshot, Items, Roster = ns.Alts, ns.Snapshot, ns.Items, ns.Roster
 CreateAtlasMarkup = function(atlas) return "[" .. atlas .. "]" end
 MenuResponse = MenuResponse or { Close = 3 }
-local alts = Board.Panel("alts")
-check(alts and alts:IsShown() and alts.title._text == "Alts" and not Alts.body.wait:IsShown(),
-    "the other characters' window is on the full screen at first; Core's data of them is there from the login")
+local alts = Board.Panel("bags")
+check(alts and alts:IsShown() and not Board.Panel("alts") and ns.Bags.Whose() == nil and not Alts.body:IsShown()
+    and ns.Bags.live:IsShown() and not Alts.body.wait:IsShown(),
+    "the other characters' things are the bags' window's (Saneroki, 2026-11-15: one window): the bags at first; Core's data of them is there from the login")
 -- The scheduler's frames (Core's Steps.lua): the characters' data read.
 local function Steps()
     local steps = Core.Steps.frame
@@ -722,9 +723,13 @@ do
     for _, line in ipairs(characters._items) do total = total or line.title end
     check(total == "Total: 1244467c", "under them the gold of them all")
 end
+check(Character("Tester").checked(Character("Tester").data) and characters.word:find("Tester Stub", 1, true)
+    and not Alts.body:IsShown(), "the bags as they are at first: the one logged in the dropdown's word")
+Pick("Ann")
 check(Character("Ann").checked(Character("Ann").data) and not Character("Tester").checked(Character("Tester").data)
-    and characters.word:find("Ann Brook", 1, true) and Alts.foot.gold.text._text == "9900c",
-    "shown at first: the first of the others, its name the dropdown's word, its gold at the foot")
+    and characters.word:find("Ann Brook", 1, true) and Alts.foot.gold.text._text == "9900c" and Alts.body:IsShown()
+    and not ns.Bags.live:IsShown() and not ns.Bags.bar.sort:IsShown() and ns.Bags.searchBox:IsShown(),
+    "another chosen: its things in the bags' place, its name the dropdown's word, its gold at the foot; the bags' own buttons gone, the search stays")
 check(Blocks() == "Bags (1), Miscellaneous=1, Bank  Not seen yet: open the bank with this character, Equipped  Empty",
     "its bags by category; a bank never opened says so; nothing worn: empty: " .. Blocks())
 
@@ -904,11 +909,11 @@ do
     told(nil, 73)
     check(ns.store.alts.scale == 75 and SizeOf() == math.floor(Layout.SIZE * 0.75 + 0.5), "the slider moved: on its steps, kept, drawn at once")
     told(nil, 100)
-    Alts.Size(ns.Alts.LEAST[1] + 30)
+    Alts.Size(ns.Bags.LEAST[1] + 30)
     check(SizeOf() < Layout.SIZE and SizeOf() >= Layout.SMALLEST, "a narrow window: its items smaller by themselves: " .. tostring(SizeOf()))
 end
-Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
-check(Board.Least("alts", Alts.LEAST[1], Alts.LEAST[2])[1] < Board.Least("alts", 600, 300)[1] and Alts.LEAST[1] <= 380, "the window can be narrow")
+Alts.Size(Board.layouts.rects.bags[3]) -- as wide as its panel again
+check(not Board.layouts.rects.alts, "no window of its own on the full screen any more: the bags' window holds it")
 
 -- Hidden, it listens to nothing; shown, it is as Core's data is now.
 Push()
@@ -920,6 +925,8 @@ Stand()
 Push()
 Stand()
 Pick("Tester")
+check(ns.Bags.Whose() == nil and ns.Bags.live:IsShown() and not Alts.body:IsShown(), "you chosen in the dropdown: your bags as they are")
+ns.Bags.Face(Core.charKey, true) -- your things as last seen (a line of what the search finds elsewhere shows them)
 check(Alts.foot.line._text:find("Logged in now", 1, true) and Blocks():find("^Bags  Empty") and Alts.doll:IsShown()
     and Blocks():find("Equipped"), "shown again: drawn as it is now; you too, what you wear as Core last read it: " .. Blocks())
 Character("Droopy").tooltip(GameTooltip)
@@ -950,7 +957,7 @@ end
 function methods:SetMatchesSearch(on) self._matches = on end
 SHIRTSLOT = "Shirt"
 W.items[1002] = { name = "Amulet", quality = 4 }
-Pick("Tester")
+ns.Bags.Face(Core.charKey, true) -- your things as last seen
 local function Worn(doll, name)
     for _, button in ipairs(doll.buttons) do
         if button.slotName == name then return button end
@@ -1012,7 +1019,38 @@ check(characters.word:find("Tester Stub", 1, true) and Blocks():find("^Equipped"
     and Worn(doll, "HeadSlot")._matches == true and Worn(doll, "NeckSlot")._matches == false and Worn(doll, "ShirtSlot")._matches == true,
     "searching: the doll whole, what is found lit, the rest dimmed as the game's bags dim it; an empty slot not")
 Board.Search("")
-Alts.Size(Board.layouts.rects.alts[3]) -- as wide as its panel again
+Alts.Size(Board.layouts.rects.bags[3]) -- as wide as its panel again
+
+-- One search for both (Saneroki, 2026-11-15: "So the search works across alts and banks as well"): with the bags shown,
+-- the bags' box lists under them each other character that has any of it, with how many; a click shows that one's
+-- things, found.
+do
+    local Bags = ns.Bags
+    Pick("Tester")
+    local box = Bags.searchBox
+    box:SetText("linen")
+    box:GetScript("OnTextChanged")(box, true)
+    local lines = {}
+    for _, widget in ipairs(W.frames) do
+        if widget.key and widget.words and widget._parent and widget._parent.head and widget:IsShown() then
+            lines[#lines + 1] = widget
+        end
+    end
+    local droopy
+    for _, line in ipairs(lines) do
+        if line.words._text:find("Droopy Fairwind", 1, true) then droopy = line end
+    end
+    check(Bags.Whose() == nil and droopy and droopy.words._text:find("%(21%)") and characters.word:find("Tester Stub", 1, true),
+        "the bags shown, searching: under them a line for another that has any of it, how many: "
+        .. (droopy and droopy.words._text or table.concat((function() local t = {} for i, l in ipairs(lines) do t[i] = l.words._text end return t end)(), "; ")))
+    droopy:GetScript("OnClick")(droopy)
+    check(Bags.Whose() ~= nil and Alts.body:IsShown() and characters.word:find("Droopy Fairwind", 1, true)
+        and Blocks():find("^Bags %(%d+%)") and box:GetText() == "linen", "a click: that one's things shown, found, the search kept: " .. Blocks())
+    box:SetText("")
+    box:GetScript("OnTextChanged")(box, true)
+    Pick("Tester")
+    check(Bags.Whose() == nil, "(the bags again)")
+end
 
 -------------------------------------------------------------------------------
 --  The board: more parts

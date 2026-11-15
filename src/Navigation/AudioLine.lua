@@ -200,7 +200,7 @@ end
 local function Dropdown(width, generator)
     local menu = CreateFrame("DropdownButton", nil, line)
     menu:SetSize(width, AudioLine.HEIGHT)
-    menu.box = Kit.Outline(menu, 0.5)
+    menu.box = Kit.Outline(menu)
     menu:SetupMenu(ns.Guard(generator))
     menu:HookScript("OnEnter", ns.Guard(Entered))
     menu:HookScript("OnLeave", ns.Guard(Left))

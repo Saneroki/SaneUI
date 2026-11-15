@@ -45,7 +45,7 @@ Cells.CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
 Cells.EMPTY = { 0, 0, 0 }               -- an empty slot: a breath of black in the game's slot
 Cells.EMPTY_ALPHA = 0.04
-Cells.EMPTY_SLOT = 0.85                 -- an empty slot's frame (Saneroki, 2026-10-23: less distracting)
+Cells.EMPTY_SLOT = 1                    -- an empty slot's frame (Saneroki, 2026-11-15: "clear and beautiful")
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
@@ -239,6 +239,12 @@ local function Skin(button, holder)
     mine.coin:SetSize(Cells.COIN, Cells.COIN)
     mine.coin:SetPoint("BOTTOMLEFT", -3, -3)
     Cells.Mask(over, Cells.CIRCLE, mine.coin)
+    -- Found by a search: the game's glow round it, in gold (bags-glow-white; Saneroki, 2026-11-15: "the inventory
+    -- highlights those items it finds").
+    mine.found = over:CreateTexture(nil, "OVERLAY", nil, 4)
+    ns.Style.Glow(mine.found)
+    mine.found:SetAllPoints(face)
+    mine.found:Hide()
     mine.upgrade = over:CreateTexture(nil, "OVERLAY", nil, 6)
     mine.upgrade:SetAtlas("bags-greenarrow")
     mine.upgrade:SetSize(Cells.ARROW, Cells.ARROW)
@@ -284,6 +290,7 @@ local function Faded(button, mine, faded)
 end
 
 local function Plain(mine)
+    mine.found:Hide()
     mine.level:SetText("")
     mine.bind:SetText("")
     mine.set:SetText("")
@@ -315,7 +322,7 @@ end
 
 -- A button as the record says; how: { faded (a search did not find it), count (a merged stack's), coin (the
 -- junk coin shown), grey (junk greyed), bind (BoE shown), set (the set's name shown), level (the item level
--- shown), alt (another character's: no arrow for an upgrade of this one) }.
+-- shown), alt (another character's: no arrow for an upgrade of this one), found (a search found it: lit) }.
 function Pool:Draw(button, record, how)
     local mine = look[button]
     local holder = mine.holder
@@ -365,6 +372,7 @@ function Pool:Draw(button, record, how)
     mine.upgrade:SetShown(not (how and how.alt) and ns.Contents.GEAR[record.class] and Core.Upgrade(record.link, record.item) ~= nil or false)
     local tip = rawget(_G, "GameTooltip")
     if tip and tip.IsOwned and tip:IsOwned(button) then Call(button, "UpdateTooltip") end
+    mine.found:SetShown(how and how.found or false)
     Faded(button, mine, how and how.faded)
 end
 

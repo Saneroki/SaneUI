@@ -121,14 +121,24 @@ pieces, the bags' category drawings and the combat text's drawings are gone. The
 Kalam Bold (`Look.HAND`) by Saneroki's word ("Leave it", 2026-11-02). Nothing is built in the journal look any more:
 the sections on it below are its record.
 
-**Then (2026-11-15):** a free slot of the bags framed by the character window's gear slot (its soft shadow cut, its
-bronze line at the slot's edge): "Bags from containers don't have an outline for their empty slots. They are
-invisible until you hover over them" (Forever's own empty bag slot, `bags-item-slot64`, is a dark square without a
-line; `bags-item-slot-blank` draws nothing). A category's empty slot, the bags' strip's empty bag slot and the waste
-bin plain grey symbols: "The dark icons for the categories and the delete button, can you make them the same style and
-remove the black background so its just their symbol visible": the game's icon inside its bevel, desaturated and
-added to what lies under it, so its dark ground goes; the bin the golden bin of `128-RedButton-Delete` alone, cut to
-it (the game has no plain bin picture). A category hidden or switched off stays listed, greyed. Each window of a full
+**Icons (Saneroki, 2026-11-15), a rule:** "avoid black backgrounds of icons, have round corners of icons or angled /
+cornered borders around them." Every icon Sane UI shows has round corners (the game's own icon mask,
+`Interface\Common\common-iconmask`, as Forever's item buttons round theirs) or stands in a border with angled or
+cornered edges (a quality border, a slot frame); never a square of black behind it. A drawing that stands for
+something (a category's empty slot, an empty bag slot, the waste bin) is the symbol alone, grey, its dark ground gone.
+
+**Then (2026-11-15):** a free slot of the bags framed as Forever's own bank frames its free slots
+(`bank-frame-item-slotframe`: a thin bronze frame with round corners on a see-through dark ground; a slot that holds
+something `bank-frame-bag-slotframe`): "Bags from containers don't have an outline for their empty slots. They are
+invisible until you hover over them", then "We need to make empty slots clear and beautiful" (Forever's empty bag
+slot, `bags-item-slot64`, is a dark square without a line; `bags-item-slot-blank` draws nothing). An atlas is never
+cut by its coordinates: the game draws its own sheet for a name, and coordinates read from `C_Texture.GetAtlasInfo`
+can belong to another (the cut gear slot and bin came out as other parts of their sheets in the game); a part of an
+atlas is shown by a frame that clips it. A category's empty slot, the bags' strip's empty bag slot and the waste bin
+plain grey symbols with round corners: "The dark icons for the categories and the delete button, can you make them
+the same style and remove the black background so its just their symbol visible": the game's icon inside its bevel,
+desaturated and added to what lies under it, so its dark ground goes; the bin the golden bin of `128-RedButton-Delete`
+alone, clipped to it (the game has no plain bin picture). The strip's bags with round corners. A category hidden or switched off stays listed, greyed. Each window of a full
 screen can be a window of its own (the game's minimize and maximize beside its X), the bronze brackets its corners
 that size it. Core's icon chooser (`Core.Icons`) picks an own category's icon among all the game's icons.
 

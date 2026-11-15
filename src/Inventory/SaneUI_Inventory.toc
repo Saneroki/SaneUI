@@ -57,6 +57,7 @@ Bags\Foot.lua
 Bags\Vendor.lua
 Bags\Room.lua
 Bags\Menus.lua
+Bags\Bin.lua
 Bags\Select.lua
 Bags\Split.lua
 Bags\Sort.lua

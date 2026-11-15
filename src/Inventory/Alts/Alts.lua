@@ -2,16 +2,21 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Alts
---  The window of the other characters on the module's full screen (Board.lua,
---  the key "alts"): what the account's characters have, as last seen, from
---  Core's data framework (Core.Data.Characters; read only), in the bags' look
---  and by the bags' parts (Saneroki, 2026-10-30), so what is learned in the one
---  holds in the other:
---      the bar      on the window's title line, after its title: the dropdown
---                   of the characters, whose things are shown (Roster.lua), how
---                   many items are shown, at the line's end the dropdown View:
---                   the display (Grid, List, Compact, the bags' Layout.LOOKS),
---                   Sort By (Contents.ORDERS), the slider Item Size
+--  The other characters' things, in the bags' window (Saneroki, 2026-11-15: "I
+--  think we can marge the Alts and Bags window into one but where you can view
+--  other characters in your bags window as well. So the search works across
+--  alts and banks as well"; a window of its own on the full screen before):
+--  what the account's characters have, as last seen, from Core's data
+--  framework (Core.Data.Characters; read only), in the bags' look and by the
+--  bags' parts (Saneroki, 2026-10-30), so what is learned in the one holds in
+--  the other. The dropdown of the characters on the bags' title line chooses
+--  (Bags.Face): the one logged in, the bags as they are; another, this body in
+--  the bags' place:
+--      the bar      the bags' title line: the dropdown of the characters
+--                   (Roster.lua), how many items are shown, at the line's end
+--                   the dropdown View, this body's: the display (Grid, List,
+--                   Compact, the bags' Layout.LOOKS), Sort By (Contents.ORDERS),
+--                   the slider Item Size
 --      the sidebar  Storage, at the left, the bags' own (Sidebar.lua): the
 --                   places (All Places, Bags, Bank, Equipped), then All
 --                   Categories and the bags' categories and groups as the
@@ -37,16 +42,16 @@ local _, ns = ...
 --  (the sidebar).
 --
 --  Every character of the account is in the dropdown, the one logged in first
---  (its bank as last seen is worth a look away from the bank too). Shown at
---  first: the first of the others by name; the one logged in when there is no
---  other. The choice holds until the next /reload.
+--  (its bank as last seen is shown here when the bags' search finds something
+--  in it and that line is clicked: Bags.lua's Elsewhere). The choice holds
+--  until the next /reload.
 --
---  The full window's search box finds an item across them all (Snapshot.lua):
---  the dropdown says how many each has, the window lists only what is found,
---  and if the chosen character has none of it, the first that has is shown
---  until the search is cleared. It listens while its panel is shown only: to
---  Core's data (Data.OnCharacters) and to the game telling an item's name it
---  did not know; a change while hidden is drawn when it is shown again.
+--  The bags' search box finds an item across them all (Snapshot.lua): the
+--  dropdown says how many each has, this body lists only what is found, and if
+--  the chosen character has none of it, the first that has is shown until the
+--  search is cleared. It listens while it is shown only: to Core's data
+--  (Data.OnCharacters) and to the game telling an item's name it did not know;
+--  a change while hidden is drawn when it is shown again.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Alts = {}
@@ -80,7 +85,6 @@ Alts.ICONS = {
     bank = ns.Categories.Art("containers"), worn = ns.Categories.Art("chest"),
 }
 
-Alts.LEAST = { 372, 240 } -- the window at its narrowest: the title line's word and dropdowns
 Alts.NAMES = 0.2     -- names the game tells (by the hundred at a search's first look): drawn together, this much later
 -- What the bags' views show of a character's things: no Pinned or Recent, no slots to put items into, every item once.
 Alts.PLAIN = { showPinned = false, showRecent = false, plus = false, merge = false }
@@ -334,10 +338,16 @@ local function Learned(item)
     if ns.Snapshot.Learned(Core.Plain(item)) and shown then Named() end
 end
 
--- The player chose whose things to show (the dropdown).
+-- The player chose whose things to show (the dropdown): the bags' window shows them (Bags.Face), the bags as they
+-- are for the one logged in.
 function Alts.Choose(key)
+    Bags.Face(key)
+end
+
+-- Whose things this body shows from now on (Bags.Face); drawn while it is shown.
+function Alts.Pick(key)
     chosen = key
-    ns.Safe("alts", Refresh, false)
+    if shown then ns.Safe("alts", Refresh, false) end
 end
 
 -- The mouse on an item button's line (the list); a click after its own: Alt and the right button open the item's
@@ -390,6 +400,7 @@ local Ordered = ns.Guard(IsOrder)
 local function Look(key) ns.Safe("alts", SetLook, key) end
 local function Order(key) ns.Safe("alts", SetOrder, key) end
 
+-- The bags' dropdown View while this body is shown (Bags.lua).
 local Menu = ns.Guard(function(_, root)
     root:CreateTitle(ns.TEXT.bagsLook)
     for _, look in ipairs(Layout.LOOKS) do root:CreateRadio(look.word, Looked, Look, look.key) end
@@ -450,31 +461,6 @@ local function MakeFoot()
     foot.line:SetWordWrap(false)
 end
 
--- The title line as wide as the window: the dropdown of the characters narrower on a narrow one, the count only where
--- there is room for it.
-local function BarFit()
-    local room = (bar:GetWidth() or 0) - bar.words - Bags.TITLE_MENU - Bags.BAR_GAP
-    ns.Roster.menu:SetWidth(math.max(ns.Roster.LEAST, math.min(ns.Roster.WIDTH, room)))
-    bar.count:SetShown(room - ns.Roster.WIDTH - Bags.BAR_GAP >= Bags.COUNT_LEAST)
-end
-
--- The bar on the title line: the characters' dropdown after the title's word, how many items, the dropdown View.
-local function MakeBar()
-    bar = Bags.TitleBar(panel, body)
-    local roster = ns.Roster.Build(bar)
-    roster:SetPoint("LEFT", bar.words, 0)
-    bar:SetScript("OnSizeChanged", ns.Guard(BarFit))
-    local menu = ns.Style.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
-    menu:SetPoint("RIGHT")
-    menu:OverrideText(ns.TEXT.bagsView)
-    menu:SetupMenu(Menu)
-    Alts.menu = menu
-    bar.count:ClearAllPoints()
-    bar.count:SetPoint("LEFT", roster, "RIGHT", Bags.BAR_GAP, 0)
-    bar.count:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
-    Alts.bar = bar
-end
-
 -- A word in the items' place: what is waited for, what was not found.
 local function Said(word)
     local text = body:CreateFontString(nil, "ARTWORK")
@@ -486,15 +472,19 @@ local function Said(word)
     return text
 end
 
+-- Built into the bags' panel (Bags.Build), over the bags' own body, hidden while the bags are shown; its count on the
+-- bags' title line, its View that line's dropdown.
 function Alts.Build(made)
     panel = made
     kept = Kept()
     Bags.Store()
+    bar = Bags.bar
+    Alts.bar, Alts.menu = bar, Bags.viewMenu
     body = CreateFrame("Frame", nil, panel.body)
     body:SetPoint("TOPLEFT")
     body:SetPoint("BOTTOMRIGHT")
+    body:Hide()
     MakeFoot()
-    MakeBar()
     local top = CreateFrame("Frame", nil, body) -- the sidebar's top hangs on this mark of no height
     top:SetPoint("BOTTOMLEFT", body, "TOPLEFT")
     top:SetSize(1, 1)
@@ -540,7 +530,7 @@ end
 
 -- The panel's body is that wide (nil: as it was): the items in the room the sidebar leaves.
 function Alts.Size(w, h)
-    if w then width = ns.Board.Body("alts", w, h or 0) end
+    if w then width = ns.Board.Body("bags", w, h or 0) end
     if not child then return end
     child:SetWidth(math.max(1, width - rail:Width() - Bags.EDGE - Bags.RIGHT))
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
@@ -555,6 +545,4 @@ function Alts.Search(text)
     if shown then Refresh(false) end
 end
 
--- The board's least: what the title line must hold, the panel's leather round it; the items make themselves smaller to
--- fit (Layout.Fit).
-ns.Board.Part("alts", Alts.TEXT.title, ns.Board.Least("alts", Alts.LEAST[1], Alts.LEAST[2]), Alts)
+Alts.ViewMenu = Menu

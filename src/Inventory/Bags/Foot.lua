@@ -156,10 +156,11 @@ local function MakeBag(index)
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     local light = button:GetHighlightTexture()
     if light then light:SetAllPoints(face) end
-    ns.Cells.Mask(button, nil, icon, light)
+    ns.Style.Round(button, icon, nil, light) -- the bag's icon with round corners, as the game's item buttons
     local drawing = button:CreateTexture(nil, "ARTWORK")
     drawing:SetSize(Foot.BAG * Foot.DRAWING, Foot.BAG * Foot.DRAWING)
     drawing:SetPoint("CENTER")
+    ns.Style.Round(button, drawing)
     emptyOf[button] = drawing
     local font = ns.Cells.Fonts()
     frees[button] = button:CreateFontString(nil, "OVERLAY")
@@ -224,6 +225,7 @@ function Foot.Bags()
         iconOf[button]:SetShown(picture ~= nil)
         emptyOf[button]:SetShown(picture == nil)
         if not picture then ns.Style.Symbol(emptyOf[button], ns.Categories.Art(Drawing(bag))) end -- a plain symbol
+        ns.Style.Filled(slotOf[button], picture ~= nil) -- the bank's frame for a slot that holds a bag
         slotOf[button]:SetAlpha(picture and 1 or ns.Cells.EMPTY_SLOT)
         frees[button]:SetText(left and tostring(left) or "")
         button:ClearAllPoints()
@@ -287,6 +289,11 @@ local function Deposit()
 end
 
 Foot.Deposits = Deposit
+
+-- What can be done here now ("junk": sell it), or nil.
+function Foot.Doing()
+    return doing
+end
 
 function Foot.Act()
     doing = Junk() and "junk" or nil
@@ -506,6 +513,7 @@ function Foot.Build(body, beside, holder)
         tokens[index] = token
     end
     act = CreateFrame("Button", nil, beside:GetParent())
+    Foot.act = act
     act:SetHeight(ns.Bags.BAR)
     act:SetPoint("RIGHT", beside, "LEFT", -ns.Bags.BAR_GAP, 0)
     act.text = act:CreateFontString(nil, "ARTWORK")

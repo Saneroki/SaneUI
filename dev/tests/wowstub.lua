@@ -310,7 +310,11 @@ W.templates.MinimalTabTemplate = function(widget)
     function widget:SetSelected(selected) self._selected = selected end
 end
 
-function methods:CreateTexture() return NewWidget("Texture", nil, self) end
+-- The game refuses a draw layer that is no word ("Usage: local texture = self:CreateTexture(params)"), as the stand-in does.
+function methods:CreateTexture(_, layer)
+    if layer ~= nil and type(layer) ~= "string" then error("bad argument #3 to 'CreateTexture' (Usage: local texture = self:CreateTexture(params))", 2) end
+    return NewWidget("Texture", nil, self)
+end
 -- A button's own art: a texture for each of its states, to ask for again.
 for _, state in ipairs({ "Normal", "Highlight", "Pushed" }) do
     methods["Set" .. state .. "Texture"] = function(self, texture)

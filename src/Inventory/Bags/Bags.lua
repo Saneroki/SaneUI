@@ -63,9 +63,14 @@ Bags.SOFT = { 0.42, 0.2, 0.08 } -- a round button's soft edge: the ink's alpha o
 Bags.MENU_WIDTH = 110
 Bags.TITLE_MENU = 56   -- the dropdown View on the title line
 Bags.COUNT_LEAST = 70  -- the least room for a title line's count: with less, it goes
+Bags.SEARCH = 170      -- the search box on the title line at most (Saneroki, 2026-11-15), and at least
+Bags.SEARCH_LEAST = 90
+Bags.SEARCH_HEIGHT = 20
 Bags.RULE = { ns.Style.INK[1], ns.Style.INK[2], ns.Style.INK[3], 0.3 } -- the line by the sidebar
 Bags.COUNT_COLOR = ns.Style.SOFT    -- the bar's count
-Bags.LEAST = { 340, 240 } -- the window at its narrowest: the title line's word and buttons, the strip of the bags
+Bags.LEAST = { 420, 240 } -- the window at its narrowest: the title line's word, dropdowns, search and buttons
+Bags.ELSEWHERE_ROW = 22   -- a line of what the search finds elsewhere (another character, the bank as last seen)
+Bags.ELSEWHERE_GAP = 14   -- above those lines
 Bags.FIRST = 560          -- how wide the first layout makes it
 Bags.SIZER = 130          -- the slider Item Size in the dropdown View
 Bags.SIZE_WORD = 80       -- the room for its word, at its left
@@ -78,7 +83,10 @@ local Contents, Layout, Cells, Foot = ns.Contents, ns.Layout, ns.Cells, ns.Foot
 local Categories, Views, Menus, Sidebar, Select = ns.Categories, ns.Views, ns.Menus, ns.BagSidebar, ns.Select
 local Columns, Sort = ns.Columns, ns.Sort
 
-local panel, scroll, child, menu, sort, bar, strip, side, coin, columns
+local panel, scroll, child, menu, sort, bar, strip, side, coin, columns, search, roster
+local face            -- whose things the window shows: nil, the bags as they are; a character's key, as last seen (Alts)
+local open = false    -- the window's panel is shown
+local elsewhere       -- the lines of what the search finds elsewhere (Elsewhere)
 local kept            -- options.bags: the display, the order, what is shown; the categories' choices
 local query           -- what the search found by (Core.Fuzzy.Query), nil: nothing typed
 local shown = false
@@ -235,6 +243,106 @@ function Bags.ItemSize(room)
     return Layout.Fit(type(bags) == "table" and bags.scale or nil, room - ns.Canvas.INSET)
 end
 
+-- The dropdown of the characters as it is for the bags: the one logged in its word; while searching, how many each
+-- has of what is found. Returns the characters (nil while Core's data is not loaded yet) and those counts.
+local function People()
+    local characters = ns.Snapshot.Characters()
+    local counts
+    if characters and query then
+        counts = {}
+        for _, who in ipairs(characters) do counts[who.key] = ns.Snapshot.Found(who.key, query) end
+    end
+    ns.Roster.Show(characters or {}, Core.charKey, counts)
+    return characters, counts
+end
+
+-- How much of what is found this character's bank holds, as last seen.
+local function BankFound()
+    local count = 0
+    for _, section in ipairs(ns.Snapshot.Sections(Core.charKey, query)) do
+        if section.place == "bank" then
+            for _, entry in ipairs(section.items) do count = count + (entry.count or 1) end
+        end
+    end
+    return count
+end
+
+-- One line of Elsewhere: whose, how many; a click shows them, found.
+local function Line(index)
+    local lines = elsewhere.lines
+    local line = lines[index]
+    if line then return line end
+    line = CreateFrame("Button", nil, elsewhere)
+    line:SetHeight(Bags.ELSEWHERE_ROW)
+    local lit = line:CreateTexture(nil, "HIGHLIGHT")
+    lit:SetAllPoints()
+    local shade = ns.Style.SHADE
+    lit:SetColorTexture(shade[1], shade[2], shade[3], shade[4])
+    line.words = line:CreateFontString(nil, "ARTWORK")
+    ns.Style.SetFont(line.words, 13)
+    line.words:SetPoint("LEFT", 6, 0)
+    line.words:SetPoint("RIGHT", -6, 0)
+    line.words:SetJustifyH("LEFT")
+    line.words:SetWordWrap(false)
+    line:SetScript("OnClick", ns.Guard(function(self) Bags.Face(self.key, self.key == Core.charKey) end))
+    lines[index] = line
+    return line
+end
+
+-- While searching, where else it is (Saneroki, 2026-11-15: "So the search works across alts and banks as well"): under
+-- the bags' items a line for each other character that has any of it, and for this one's bank as last seen while no
+-- banker is open, with how many; a click shows those things, found. Returns the height it takes (0: none).
+local function Elsewhere(top, characters, counts)
+    if not elsewhere then
+        elsewhere = CreateFrame("Frame", nil, child)
+        elsewhere.head = elsewhere:CreateFontString(nil, "ARTWORK")
+        local font = Bags.Fonts().head
+        if font then elsewhere.head:SetFontObject(font) end
+        elsewhere.head:SetTextColor(ns.Style.SOFT[1], ns.Style.SOFT[2], ns.Style.SOFT[3])
+        elsewhere.head:SetPoint("TOPLEFT")
+        elsewhere.head:SetText(ns.TEXT.bagsElsewhere)
+        elsewhere.lines = {}
+    end
+    local found = {}
+    if query and characters then
+        local Alts, Roster = ns.Alts, ns.Roster
+        for _, who in ipairs(characters) do
+            local count, word
+            if who.key == Core.charKey then
+                if not Contents.bankOpen then count, word = BankFound(), Alts.TEXT.bank end
+            else
+                count = counts and counts[who.key]
+            end
+            if count and count > 0 then
+                local name = who.key == ns.Snapshot.ACCOUNT and Alts.TEXT.account or who.name or "?"
+                if who.key ~= ns.Snapshot.ACCOUNT then name = "|c" .. ns.Style.InkHex(Roster.Colour(who.class)) .. name .. "|r" end
+                found[#found + 1] = { key = who.key, text = name .. (word and (" - " .. word) or "") .. "  (" .. count .. ")" }
+            end
+        end
+    end
+    for index = #found + 1, #elsewhere.lines do elsewhere.lines[index]:Hide() end
+    if #found == 0 then
+        elsewhere:Hide()
+        return 0
+    end
+    local width = (child:GetWidth() or 0) - ns.Canvas.INSET
+    local head = (elsewhere.head:GetStringHeight() or 16) + 6
+    elsewhere:ClearAllPoints()
+    elsewhere:SetPoint("TOPLEFT", child, "TOPLEFT", ns.Canvas.INSET, -(top + Bags.ELSEWHERE_GAP))
+    elsewhere:SetSize(math.max(1, width), head + #found * Bags.ELSEWHERE_ROW)
+    for index, entry in ipairs(found) do
+        local line = Line(index)
+        line.key = entry.key
+        line.words:SetText(entry.text)
+        line:ClearAllPoints()
+        line:SetPoint("TOPLEFT", 0, -(head + (index - 1) * Bags.ELSEWHERE_ROW))
+        line:SetPoint("RIGHT")
+        line:Show()
+    end
+    elsewhere:Show()
+    return Bags.ELSEWHERE_GAP + head + #found * Bags.ELSEWHERE_ROW
+end
+
 local function Draw()
     if not child then return end
     local room = child:GetWidth()
@@ -244,7 +352,11 @@ local function Draw()
     Bags.blocks = blocks
     how.bind, how.coin, how.grey, how.set = options.bind == true, options.coin == true, options.grey == true, options.setName == true
     how.level = options.itemLevel ~= false
-    child:SetHeight(math.max(1, Bags.canvas:Draw(blocks, room, how, Bags.ItemSize(room))))
+    how.searching = query ~= nil -- what is found lit (Cells: how.found)
+    local height = Bags.canvas:Draw(blocks, room, how, Bags.ItemSize(room))
+    local characters, counts = People()
+    height = height + Elsewhere(height, characters, counts)
+    child:SetHeight(math.max(1, height))
     Bags.Count()
     coin:SetShown(Categories.Marker())
     Sidebar.Refresh(Views.Counts(carried, options), View(), options)
@@ -616,31 +728,69 @@ end
 -- The bar's count ends at the first thing right of it: what can be done here (Foot.Act), else the junk marker. On a
 -- title line too narrow for it, it goes (the sidebar and the strip of the bags say as much); a line's words and
 -- buttons fit even then (Bags.LEAST).
+-- The search box between them: as wide as Bags.SEARCH where the line has room, narrower down to Bags.SEARCH_LEAST
+-- before the count goes.
 local before  -- what the count ends at, nil: the junk marker
 local function CountFit()
-    local room = (bar:GetWidth() or 0) - bar.words - Bags.TITLE_MENU - 3 * (Bags.TITLE_BUTTON + Bags.BAR_GAP)
-        - (before and (before:GetWidth() or 0) + Bags.BAR_GAP or 0) - Bags.BAR_GAP
-    bar.count:SetShown(room >= Bags.COUNT_LEAST)
+    local buttons = face and 0 or 3 * (Bags.TITLE_BUTTON + Bags.BAR_GAP) -- the bags' own buttons: not for another's
+    local room = (bar:GetWidth() or 0) - bar.words - Bags.TITLE_MENU - buttons
+        - (not face and before and (before:GetWidth() or 0) + Bags.BAR_GAP or 0) - Bags.BAR_GAP
+    local Roster = ns.Roster
+    local people = math.max(Roster.LEAST, math.min(Roster.WIDTH, room - Bags.SEARCH_LEAST - 2 * Bags.BAR_GAP))
+    roster:SetWidth(people)
+    room = room - people - Bags.BAR_GAP
+    local box = math.max(Bags.SEARCH_LEAST, math.min(Bags.SEARCH, room - Bags.COUNT_LEAST - Bags.BAR_GAP))
+    search:SetWidth(box)
+    bar.count:SetShown(room - box - Bags.BAR_GAP >= Bags.COUNT_LEAST)
 end
 
 function Bags.CountBefore(frame)
     before = frame
-    bar.count:SetPoint("RIGHT", frame or coin, "LEFT", -Bags.BAR_GAP, 0)
+    search:ClearAllPoints()
+    if face then -- another character's: none of the bags' buttons, the box at the dropdown View
+        search:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
+    else
+        search:SetPoint("RIGHT", frame or coin, "LEFT", -Bags.BAR_GAP, 0)
+    end
+    bar.count:SetPoint("RIGHT", search, "LEFT", -Bags.BAR_GAP - 4, 0) -- (the box's frame reaches past its left)
     if bar:GetWidth() and bar:GetWidth() > 0 then CountFit() end
+end
+
+-- What is typed into the bags' own search box (Saneroki, 2026-11-15: "a search bar in the titlebar of the bags where
+-- you can search your inventory for items and the inventory highlights those items it finds"): the bags, the bank
+-- while it is open; the full screen's box tells the bags the same (Bags.Search), which this box then shows.
+local typed = "" -- the text searched last
+local function Typed(text)
+    text = text or ""
+    if text == typed then return end
+    Bags.Search(text)
+    if ns.Bank and ns.Bank.Search then ns.Safe("bank", ns.Bank.Search, text) end
+end
+
+-- The dropdown View: the bags', or the other characters' while theirs are shown (Alts.ViewMenu).
+local function FaceMenu(owner, root)
+    if face then return ns.Alts.ViewMenu(owner, root) end
+    return ViewMenu(owner, root)
 end
 
 -- The bar on the title line: the count, then at the title line's end the junk marker, the bags' button, the clean-up
 -- and the dropdown View; the strip of the bags at the body's top.
 local function Bar(body)
     bar = Bags.TitleBar(panel, body)
+    -- whose things are shown, after the title's word (Roster.lua: the one logged in, the bags as they are)
+    roster = ns.Roster.Build(bar)
+    roster:SetPoint("LEFT", bar.words, 0)
+    bar.count:ClearAllPoints()
+    bar.count:SetPoint("LEFT", roster, "RIGHT", Bags.BAR_GAP, 0)
     local hover = CreateFrame("Frame", nil, bar)
     hover:SetAllPoints(bar.count)
-    hover:SetScript("OnEnter", function(self) ns.Safe("bags", Foot.FreeTip, self) end)
+    hover:SetScript("OnEnter", ns.Guard(function(self) if not face then Foot.FreeTip(self) end end))
     hover:SetScript("OnLeave", GameTooltip_Hide)
     menu = ns.Style.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
     menu:SetPoint("RIGHT")
     menu:OverrideText(ns.TEXT.bagsView)
-    menu:SetupMenu(ViewMenu)
+    menu:SetupMenu(ns.Guard(FaceMenu))
+    Bags.viewMenu = menu
     sort = CleanButton(bar, Clean, CleanTip, Bags.TITLE_BUTTON)
     sort:SetPoint("RIGHT", menu, "LEFT", -Bags.BAR_GAP, 0)
     bar.sort = sort
@@ -657,6 +807,14 @@ local function Bar(body)
     coin:SetScript("OnEnter", function(self) ns.Safe("bags", CoinTip, self) end)
     coin:SetScript("OnLeave", GameTooltip_Hide)
     bar.coin = coin
+    search = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
+    search:SetSize(Bags.SEARCH, Bags.SEARCH_HEIGHT)
+    search:SetAutoFocus(false)
+    Core.Look.Search(search)
+    local hint = rawget(search, "Instructions") -- the game's grey words in the empty box
+    if type(hint) == "table" and hint.SetText then hint:SetText(ns.TEXT.bagsSearch) end
+    search:HookScript("OnTextChanged", ns.Guard(function(self) Typed(self:GetText()) end))
+    Bags.searchBox = search
     Bags.CountBefore()
     bar:SetScript("OnSizeChanged", ns.Guard(CountFit))
     Bags.bar = bar
@@ -700,7 +858,10 @@ function Bags.Build(made)
     panel = made
     Back()
     kept = Kept()
-    local body = panel.body
+    -- The bags' own body, in a frame of its own: another character's things stand in its place (Alts, Bags.Face).
+    local body = CreateFrame("Frame", nil, panel.body)
+    body:SetAllPoints()
+    Bags.live = body
     Bar(body)
     Foot.Build(body, coin, strip)
     side = Sidebar.Build(body, strip, Foot.frame, kept)
@@ -719,9 +880,12 @@ function Bags.Build(made)
     Bags.scroll = scroll
     Select.Build(scroll, { bar, strip, side, Foot.frame })
     Strip()
+    ns.Safe("alts", ns.Alts.Build, panel)
 end
 
-function Bags.Show(on)
+-- The bags as they are, listened to and drawn (on), or let be (the window hidden, or another character's things in
+-- their place).
+local function Live(on)
     shown = on
     for event, fn in pairs(EVENTS) do
         if on then Core.On(event, fn) else Core.Off(event, fn) end
@@ -739,6 +903,39 @@ function Bags.Show(on)
     end
 end
 
+-- The window's panel shown or hidden (Core's board): whose things it shows, shown.
+function Bags.Show(on)
+    open = on
+    Live(on and not face)
+    if ns.Alts.body then ns.Safe("alts", ns.Alts.Show, on and face ~= nil) end
+end
+
+-- Whose things the window shows (Saneroki, 2026-11-15: "you can view other characters in your bags window"): the one
+-- logged in, the bags as they are (stored: its things as last seen instead, its bank among them); another character,
+-- as last seen (Alts.lua), in the bags' place. The dropdown of the characters (Alts.Choose) and a line of what the
+-- search finds elsewhere choose; the bags' own buttons stand only by the bags.
+function Bags.Face(key, stored)
+    if key == Core.charKey and not stored then key = nil end
+    local was = face
+    face = key
+    local Alts = ns.Alts
+    if key then Alts.Pick(key) end
+    Bags.live:SetShown(key == nil)
+    if Alts.body then Alts.body:SetShown(key ~= nil) end
+    for _, button in ipairs({ bar.bags, sort }) do button:SetShown(key == nil) end
+    coin:SetShown(key == nil and Categories.Marker())
+    if Foot.act then Foot.act:SetShown(key == nil and Foot.Doing() ~= nil) end
+    Bags.CountBefore(before)
+    if not open or (was == nil) == (key == nil) then return end
+    Live(key == nil)
+    ns.Safe("alts", Alts.Show, key ~= nil)
+end
+
+-- Whose things are shown now (nil: the bags as they are).
+function Bags.Whose()
+    return face
+end
+
 -- The panel's new size (its body's: Board.Body): the scroll area's child as wide as the area, laid out anew.
 function Bags.Size(newWidth, newHeight)
     if newWidth then width = ns.Board.Body("bags", newWidth, newHeight or 0) end
@@ -747,10 +944,14 @@ function Bags.Size(newWidth, newHeight)
     if kept.look == "list" then columns:Refresh(math.max(1, child:GetWidth() - Bags.INSET)) end
     ns.Safe("bags", Foot.Room, width)
     Bags.Redraw()
+    if ns.Alts.body then ns.Safe("alts", ns.Alts.Size, newWidth, newHeight) end
 end
 
 function Bags.Search(text)
-    query = Core.Fuzzy.Query(text)
+    typed = text or ""
+    query = Core.Fuzzy.Query(typed)
+    if search and search:GetText() ~= typed then search:SetText(typed) end -- the full screen's box: shown here too
+    if ns.Alts.body then ns.Safe("alts", ns.Alts.Search, typed) end -- the other characters' too
     Bags.Redraw()
 end
 

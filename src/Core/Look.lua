@@ -29,7 +29,6 @@ local Core = SaneUI.Core
 --      Look.Box(frame)                    -- the grey box: a section that is no window
 --      Look.Headline(parent)              -- the loading screen's bar: a frame for a headline, words or buttons in it
 --      Look.Slot(parent)                  -- an item's slot: the character window's gear slot
---      Look.Part(texture, name, l, r, t, b) -- a share of an atlas (0 to 1 of it each way)
 --      Look.Tab(parent, height)           -- a tab of the full screen's top bar: tab:SetSelected, tab:SetEnd
 --      Look.Outline(frame)                -- the thin golden outline round frame (the search bar's): box:SetStrong(on)
 --      Look.Rule(parent)                  -- the thin golden line, unplaced
@@ -74,6 +73,8 @@ Look.STAND_IN = {
     ["heavybronze-vert-cornerbracket-tr"] = false,
     ["heavybronze-vert-cornerbracket-br"] = false,
     ["ui-character-info-gearslot"] = "UI-HUD-ActionBar-IconFrame",
+    ["bank-frame-item-slotframe"] = "bags-item-slot64",         -- Forever's bank's free slot
+    ["bank-frame-bag-slotframe"] = "UI-HUD-ActionBar-IconFrame", -- and its slot that holds something
     ["ui-character-info-stat-bg"] = { file = "Interface\\FrameGeneral\\UI-Background-Rock", tile = true },
 }
 
@@ -189,18 +190,6 @@ end
 -- Another part fits it on every step of its motion (on), or no more.
 local function Hold(look, on)
     look.held = on and true or nil
-end
-
--- A share of an atlas (from left to right and top to bottom, 0 to 1 of it), or of its stand-in where this game lacks
--- it: the atlas set, then its coordinates cut to that share of its own. Returns whether something was set.
-function Look.Part(texture, name, left, right, top, bottom)
-    if not Look.Atlas(texture, name) then return false end
-    local set = texture.GetAtlas and texture:GetAtlas()
-    local info = set and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(set)
-    local l, r, t, b = 0, 1, 0, 1
-    if info then l, r, t, b = info.leftTexCoord, info.rightTexCoord, info.topTexCoord, info.bottomTexCoord end
-    texture:SetTexCoord(l + (r - l) * left, l + (r - l) * right, t + (b - t) * top, t + (b - t) * bottom)
-    return true
 end
 
 -- A bracket lit (on): its corner under the mouse or held sizes the window (Core.Board's corners). The bracket again
@@ -511,6 +500,7 @@ local function Strong(box, on)
 end
 
 function Look.Outline(frame, layer)
+    if type(layer) ~= "string" then layer = nil end -- (the journal's box took a weight there: a number is no layer)
     local box = { lines = {}, parts = {}, SetStrong = Strong }
     box.fill = frame:CreateTexture(nil, layer == "ARTWORK" and "BORDER" or "BACKGROUND")
     box.fill:SetColorTexture(0, 0, 0, 0.35)

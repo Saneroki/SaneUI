@@ -449,7 +449,7 @@ check(table.concat(iconKeys, ",") == table.concat(iconed, ",") and #iconed == #B
     "a tab of its own for each window with an icon (all but a letter, which comes with the mail), in the dropdown's order: "
     .. table.concat(iconKeys, ","))
 local repIcon, dollIcon = IconTab("reputation"), IconTab("character")
-check(dollIcon.selected and IconTab("alts").selected and not repIcon.selected and repIcon.Text._text == ""
+check(dollIcon.selected and IconTab("bags").selected and not IconTab("alts") and not repIcon.selected and repIcon.Text._text == ""
     and repIcon.icon._texture == "Interface/ICONS/INV_SideTab_Reputation2_c60" and dollIcon.icon._portrait == "player",
     "the first layout's windows lit, the others not; no words, the game's icons, the paper doll's your portrait")
 check(IconTab("pvp").icon._texture == "Interface/ICONS/INV_SideTab_Honor_Alliance_c60", "the PvP window's icon of your faction")

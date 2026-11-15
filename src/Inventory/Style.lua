@@ -100,29 +100,55 @@ function Style.Box(frame, weight, layer)
     return Look.Outline(frame, layer)
 end
 
--- An item's slot behind a button: the character window's gear slot (UI-Character-Info-GearSlot, the kit's), its
--- bronze line at frame's edge (out: units beyond it), the icon inset by Style.SLOT_ICON of its side (Saneroki,
--- 2026-11-15: "Bags from containers don't have an outline for their empty slots. They are invisible until you hover
--- over them": Forever's own empty bag slot, bags-item-slot64, is a dark square without one, the blank one nothing).
-Style.SLOT_CUT = 0.08 -- the gear slot's soft shadow outside its bronze line, cut away: the line at the slot's edge
+-- An item's slot: Forever's own bank's free slot (bank-frame-item-slotframe, CamelotBankItemButtonTemplate's), a thin
+-- bronze frame with round corners on a see-through dark ground, drawn whole over frame (out: units beyond its edge;
+-- an atlas is never cut by coordinates: the game draws its own sheet for it); the icon inset by Style.SLOT_ICON of
+-- its side. Filled (Style.Filled), the bank's frame for a slot that holds something (bank-frame-bag-slotframe).
+-- (Saneroki, 2026-11-15: "We need to make empty slots clear and beautiful".)
+Style.SLOT, Style.SLOT_FILLED = "bank-frame-item-slotframe", "bank-frame-bag-slotframe"
 function Style.Slot(frame, out, layer)
     local slot = frame:CreateTexture(nil, layer or "BACKGROUND")
-    local cut = Style.SLOT_CUT
-    if not Look.Part(slot, "ui-character-info-gearslot", cut, 1 - cut, cut, 1 - cut) then
-        slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
-    end
+    if not Look.Atlas(slot, Style.SLOT) then slot:SetTexture("Interface\\Buttons\\UI-EmptySlot") end
     out = out or 1
     slot:SetPoint("TOPLEFT", -out, out)
     slot:SetPoint("BOTTOMRIGHT", out, -out)
     return slot
 end
+function Style.Filled(slot, on)
+    Look.Atlas(slot, on and Style.SLOT_FILLED or Style.SLOT)
+end
+
+-- An icon's corners rounded as the game's item buttons round theirs (common-iconmask; Saneroki, 2026-11-15: icons
+-- have round corners or an angled border, never a black square): a mask over texture (or over region where the
+-- texture reaches past what shows), the others masked by it too.
+Style.ROUND = "Interface\\Common\\common-iconmask"
+function Style.Round(owner, texture, region, ...)
+    if not (owner and owner.CreateMaskTexture and texture and texture.AddMaskTexture) then return nil end
+    local mask = owner:CreateMaskTexture()
+    mask:SetTexture(Style.ROUND, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetAllPoints(region or texture)
+    texture:AddMaskTexture(mask)
+    for index = 1, select("#", ...) do
+        local other = select(index, ...)
+        if other and other.AddMaskTexture then other:AddMaskTexture(mask) end
+    end
+    return mask
+end
+
+-- What a search found: the game's glow round a bag's item (bags-glow-white), in gold, added light.
+Style.FOUND = { 1, 0.82, 0.25 }
+function Style.Glow(texture)
+    Look.Atlas(texture, "bags-glow-white")
+    texture:SetBlendMode("ADD")
+    texture:SetVertexColor(Style.FOUND[1], Style.FOUND[2], Style.FOUND[3], 1)
+end
 
 -- A category's drawing as a plain symbol (Saneroki, 2026-11-15: "remove the black background so its just their
 -- symbol visible"): the game's icon inside its bevel, grey, added to what lies under it, so its dark ground is gone
--- and only its light shapes show. The waste bin the same: the golden bin of the game's red delete button alone.
+-- and only its light shapes show; its corners rounded where it is made (Style.Round).
 Style.SYMBOL = 0.6          -- how bright the symbol's light shapes are
-Style.SYMBOL_CUT = 0.1      -- the icon's bevel cut away on each side
-Style.BIN = { 0.27, 0.72, 0.27, 0.72 } -- the bin in 128-RedButton-Delete (left, right, top, bottom)
+Style.SYMBOL_CUT = 0.1      -- the icon's bevel cut away on each side (an icon is a file: its coordinates are its own)
+Style.BIN = { 0.27, 0.72, 0.27, 0.72 } -- the bin's share of 128-RedButton-Delete (left, right, top, bottom)
 local function Symbolic(texture)
     texture:SetDesaturated(true)
     texture:SetBlendMode("ADD")
@@ -135,10 +161,30 @@ function Style.Symbol(texture, file)
     texture:SetTexCoord(cut, 1 - cut, cut, 1 - cut)
     Symbolic(texture)
 end
-function Style.Bin(texture)
+
+-- The waste bin as such a symbol: the golden bin of the game's red delete button alone (the game has no picture of
+-- the bin by itself). The whole button drawn larger in a frame that clips it to its bin, never cut by coordinates;
+-- its corners rounded. Returns that frame (its art: .art), to place and size with Style.SizeBin.
+local function FitBin(clip, width, height)
     local cut = Style.BIN
-    Look.Part(texture, "128-redbutton-delete", cut[1], cut[2], cut[3], cut[4])
-    Symbolic(texture)
+    local wide, high = width / (cut[2] - cut[1]), height / (cut[4] - cut[3])
+    clip.art:ClearAllPoints()
+    clip.art:SetSize(wide, high)
+    clip.art:SetPoint("TOPLEFT", clip, "TOPLEFT", -cut[1] * wide, cut[3] * high)
+end
+function Style.Bin(parent)
+    local clip = CreateFrame("Frame", nil, parent)
+    clip:SetClipsChildren(true)
+    clip.art = clip:CreateTexture(nil, "ARTWORK")
+    Look.Atlas(clip.art, "128-redbutton-delete")
+    Symbolic(clip.art)
+    Style.Round(clip, clip.art, clip)
+    clip:SetScript("OnSizeChanged", ns.Guard(FitBin))
+    return clip
+end
+function Style.SizeBin(clip, width, height)
+    clip:SetSize(width, height)
+    FitBin(clip, width, height)
 end
 
 -- The game's small pictures Inventory's rows and cells use, by the names the journal's pieces had: the

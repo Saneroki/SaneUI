@@ -236,6 +236,7 @@ local function MakePlus(canvas)
     plus.lit:Hide()
     plus.icon = plus:CreateTexture(nil, "ARTWORK")
     plus.icon:SetPoint("CENTER")
+    ns.Style.Round(plus, plus.icon) -- its corners round (Saneroki, 2026-11-15)
     plus:SetScript("OnClick", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnReceiveDrag", function(self) ns.Safe("bags", PlusClick, self) end)
     plus:SetScript("OnEnter", function(self) ns.Safe("bags", PlusEnter, self) end)
@@ -258,11 +259,11 @@ function Sheet:Plus(place)
     plus:Show()
 end
 
--- Junk's first slot, the waste bin: a plain grey symbol as the categories' (the golden bin of the game's red delete
--- button alone: Style.Bin; Saneroki, 2026-11-15: "make them the same style"), no slot round it; an item let go there
--- (or clicked onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
+-- Junk's first slot, the waste bin: a plain grey symbol as the categories', its corners round (the golden bin of the
+-- game's red delete button alone: Style.Bin; Saneroki, 2026-11-15: "make them the same style"), no slot round it; an
+-- item let go there (or clicked onto it) is asked about and destroyed (Menus.Destroy).
 local function BinDrop()
-    Menus.Destroy()
+    ns.Bin.Drop()
 end
 
 local function BinEnter(bin)
@@ -285,8 +286,7 @@ local function MakeBin(canvas)
     bin.lit:SetAllPoints()
     bin.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     bin.lit:Hide()
-    bin.picture = bin:CreateTexture(nil, "ARTWORK")
-    ns.Style.Bin(bin.picture)
+    bin.picture = ns.Style.Bin(bin)
     bin.picture:SetPoint("CENTER")
     bin:SetScript("OnClick", ns.Guard(BinDrop))
     bin:SetScript("OnReceiveDrag", ns.Guard(BinDrop))
@@ -301,7 +301,7 @@ function Sheet:Bin(place)
     bin:SetPoint("TOPLEFT", self.child, "TOPLEFT", place.x + Canvas.INSET, -place.y)
     bin:SetSize(place.size, place.size)
     bin:SetFrameLevel(self.child:GetFrameLevel() + 3)
-    bin.picture:SetSize(place.size * Canvas.SLOT_ICON, place.size * Canvas.SLOT_ICON)
+    ns.Style.SizeBin(bin.picture, place.size * Canvas.SLOT_ICON, place.size * Canvas.SLOT_ICON)
     bin.lit:Hide()
     bin:Show()
 end
@@ -504,6 +504,7 @@ function Sheet:Draw(blocks, room, how, size)
             local button = cells:Take()
             if button then
                 how.faded, how.count = entry.faded, entry.count
+                how.found = how.searching and entry.record.item ~= nil and not entry.faded or nil
                 cells:Draw(button, entry.record, how)
                 self.into[button] = place.block and place.block.into or nil
                 if place.kind == "row" then

@@ -1,10 +1,10 @@
 # Sane UI: Inventory
 
-**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' window built · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105; in Retail the skills and PvP windows, resistances, pet stats, the ranged and ammo slots and the keyring stand down)
+**Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' things in the bags' window · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105; in Retail the skills and PvP windows, resistances, pet stats, the ranged and ammo slots and the keyring stand down)
 
 ## TL;DR
 The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
-fills with the module's windows: your character sheet, your bags and your other characters' things, Sane UI's
+fills with the module's windows: your character sheet, your bags (and in them your other characters' things), Sane UI's
 own, arranged as you like. Push it there again, or press Esc, and they go. Your bag keys open it too, with
 your bags on it, and the game's bags stay closed. The game's own character sheet stays as it is, and its key
 opens it as before. The plan is in `Doc/ideas/Inventory.md`.
@@ -33,7 +33,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
   behind tabs in the title bar. Right of those tabs, a tab with an icon for each window (your portrait for the
-  character, the game's icons for the others: the sheet's tabs', a bag, a group for your alts), lit while the
+  character, the game's icons for the others: the sheet's tabs', a bag), lit while the
   window is on the screen: a click puts it there or takes it off.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
@@ -174,9 +174,12 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     whole stack into stacks of that many (Alt and Enter). A Shift-click while you write in the chat links the item
     instead; in a fight the game's own splitter opens.
   - Every item is the game's own button: click or drag it, right click to use it (in a fight too), to sell it at
-    a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's. The search box finds
-    items by name, category or item level: One Bag and Each Bag fade what is not found, the others show only what
-    is. At the foot your currencies and your gold (every character's in its tooltip). The game's own bank window
+    a vendor or to put it into the bank, Shift-click to link it; the tooltip is the game's. The search box on the
+    bags' title line (and the full screen's) finds items by name, category or item level, each found item lit with
+    the game's glow in gold: One Bag and Each Bag fade what is not found, the others show only what is. Under them,
+    *Found elsewhere*: each other character that has any of it, and your bank as last seen while no banker is open,
+    with how many; a click shows those things, found. Junk's waste bin asks first (*Delete*, *Cancel*, *Delete the
+    item and don't ask me again*; *Waste Bin Asks First* brings the question back). At the foot your currencies and your gold (every character's in its tooltip). The game's own bank window
     stays as it is.
 - **Your bank** (the window *Bank*): there while you are at a banker, in the bags' look: a sidebar with *All
   Bank Tabs* (each tab under its head, every slot), *One Bank* (the bank's slots together) and each tab by its
@@ -200,11 +203,13 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   corner or Esc closes the full screen as always (Esc closes the vendor's window with it). At a mailbox likewise
   (the tab *Mail*): the game's mail window on the left, with Economy's tab *Banker* on it as always, a letter you open
   beside it, your bags on the right. *Sane UI > Inventory > Full Screen at Vendors, the Bank and Mail* switches it off.
-- **Your alts** (the window *Alts*), in the bags' look and made of the bags' own parts, so what you learned there holds
-  here: on the title line after *Alts* the dropdown of the account's characters (you first, each in its class's
+- **Your alts**, in the bags' window: the dropdown after *Bags* on its title line chooses whose things it shows (you:
+  your bags as they are; anyone else: their things as last seen, in the bags' look and made of the bags' own parts, so
+  what you learned there holds here). The dropdown lists the account's characters (you first, each in its class's
   colour with its class's icon and its gold, the account's bank last where it holds something, the gold of them all
-  under them; its tooltip the level, realm and when it was seen), how many items are shown and the dropdown *View*:
-  *Grid*, *List* or *Compact*, *Sort By* and the slider *Item Size*, as in the bags. At the left the sidebar *Storage*,
+  under them; its tooltip the level, realm and when it was seen); beside it how many items are shown, the search box
+  and the dropdown *View*: *Grid*, *List* or *Compact*, *Sort By* and the slider *Item Size*, theirs apart from the
+  bags'; the bags' own buttons stand only by your bags. At the left the sidebar *Storage*,
   which folds by its arrow: *All Places*, *Bags*, *Bank*, *Equipped*, then *All Categories* and the bags' categories
   and groups as you arranged them, with how many of that character's items each holds. A click shows only that place,
   that category or that group; a place and a category go together (the Potions in the bank). A group's arrow, its box,
@@ -215,7 +220,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   that character's level, class and when it was seen, and its gold (every character's in its tooltip). Tooltips are the
   game's; Shift or Ctrl and a click links an item or tries it on; Alt and a right click opens its menu, as in the bags.
   Nothing moves an item. The search box finds an item across them all, by its name or its number: each character says
-  how many it has in the dropdown, and the window lists only what was found. A character's things are as Core last
+  how many it has in the dropdown, and the window lists only what was found (if the one chosen has none of it, the
+  first that has). A character's things are as Core last
   read them while it was logged in; its bank, while it had it open.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
@@ -263,7 +269,7 @@ login has no last line, until the game has said your time.
   UI* either, the Classic entries' `ready`), Edit Mode while open (`Core.EditMode.Watch`), standing down
   (`Keys.Leave`) give everything back; a key pressed while the full screen cannot come wishes for nothing later.
 - **The board** (`Board.lua`): Core's (`Core.Board`), the module's windows in the order `Board.ORDER`
-  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `vendor`, `mail`, `letter`, `bags`, `bank`, `alts`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
+  (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `vendor`, `mail`, `letter`, `bags`, `bank`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
   that registers itself: `Board.Part(key, title, least, part)`, `part.Build(panel)`, `part.Show(on)`,
   `part.Size(width, height)`, `part.Search(text)`; each step runs `ns.Safe`, so a part that fails is noted and
   the others go on. The first layout puts the parts of `Board.FIRST` (the character, the stats, the bags, the other
@@ -423,7 +429,9 @@ login has no last line, until the game has said your time.
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED`, `UNIT_MODEL_CHANGED` and
     `UNIT_NAME_UPDATE` (the player's), `PLAYER_LEVEL_UP`, `PLAYER_ENTERING_WORLD`. Every value read goes through
     `Core.Plain` or `Core.Ask`; every function of the game's is called only if this client has it.
-- **The other characters** (`Alts/`, the part `alts`): what the account's characters have, read only from Core's
+- **The other characters** (`Alts/`; the bags' window's other face since 2026-11-15, no part of their own: `Bags.Face`
+  shows `Alts.body` in the bags' place and lets the bags be, `Alts.Choose` from the roster goes there, `Alts.Pick`
+  sets whose; their count on the bags' title line, their View the bags' dropdown, `Alts.ViewMenu`): what the account's characters have, read only from Core's
   data framework (`Core.Data.Characters`, `Character`, `Items`, `Worn`, `OnCharacters`; `Doc/guides/data.md`,
   *Characters*): nothing is gathered or kept here.
   - **What is shown** (`Alts/Snapshot.lua`, no frames): the roster (`Snapshot.Characters`: the one logged in
@@ -820,20 +828,21 @@ classes' gains can be held against each other; `early` for a character without a
 | `Bags/Layout.lua` | The bags' displays (grid, list, compact): where each cell, empty slot, line, head and label goes, as plain numbers |
 | `Bags/Cells.lua` | The bags' item buttons: the game's own, a pool, in the flat look, drawn the game's way |
 | `Bags/Foot.lua` | The bags' foot: currencies, gold; the strip of the bags; selling junk or depositing reagents |
-| `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories |
+| `Bags/Menus.lua` | The bags' menus for an item, a category and a group, items let go over a category, new categories and their icon (Core's icon chooser) |
+| `Bags/Bin.lua` | Junk's waste bin's question: Delete, Cancel, Delete the item and don't ask me again; the game's own question where it refuses |
 | `Bags/Split.lua` | The bags' stack splitter: split into the first free slot, or the whole stack by turns |
 | `Bags/Sort.lua` | Our sort of the bags in One Bag: partial stacks joined, the items moved into the categories' order, in passes |
 | `Bags/Columns.lua` | The bags' list columns: their values, sorting, widths, the head over the list and its menu |
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
 | `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, the empty slots, the list's lines, the item buttons, the catcher of an item let go over an item |
-| `Bags/Bags.lua` | The bags' window: the bar, the strip, the scroll area, heads, labels and lines, the dropdown *View*, the events; registers the part `bags` |
+| `Bags/Bags.lua` | The bags' window: the bar (the characters' dropdown, the search box), the strip, the scroll area, heads, labels and lines, the dropdown *View*, *Found elsewhere*, the events; whose things it shows (`Bags.Face`: the other characters' in its place); registers the part `bags` |
 | `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
 | `Talks.lua` | The full screen at a vendor, a banker and a mailbox: a layout of its own for each talk; the game's vendor, mail and letter windows seated on it, the parts `vendor`, `mail`, `letter` |
-| `Alts/Snapshot.lua` | The other characters' window, without frames: the roster, a character's places and items, the search |
-| `Alts/Roster.lua` | The other characters' window: the dropdown of the account's characters, their gold |
-| `Alts/Items.lua` | The other characters' window: the chosen one's things as the bags' records and sections, read-only buttons, the paper doll |
-| `Alts/Alts.lua` | The other characters' window: whose things, the search, the events; registers the part `alts` |
+| `Alts/Snapshot.lua` | The other characters' things, without frames: the roster, a character's places and items, the search |
+| `Alts/Roster.lua` | The dropdown of the account's characters on the bags' title line, their gold |
+| `Alts/Items.lua` | The other characters' things: the chosen one's things as the bags' records and sections, read-only buttons, the paper doll |
+| `Alts/Alts.lua` | The other characters' things in the bags' window: whose, the search, the events, their sidebar Storage, foot and View |
 
 ## History
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and

@@ -39,8 +39,7 @@ Full, it holds the module's windows on **Core's board** (`Core.Board`, `Doc/guid
 | Equipment Manager | `gear` | The gear sets |
 | Titles | `titles` | The titles |
 | Reputation, Skills, PvP, Currency, Statistics | `reputation` … `statistics` | What the game's sheet has behind its tabs, each a window |
-| Bags | `bags` | Our bags (*The bags*) |
-| Characters | `alts` | The other characters' snapshots (*The other characters*) |
+| Bags | `bags` | Our bags (*The bags*), and in them the other characters' snapshots (*The other characters*) |
 
 The first layout: the paper doll, the stats, the bags and the snapshots side by side; the windows of the game's
 tabs come from the dropdown *Windows*. Each part is a file (or folder) of its own that registers its window with the module's board; the
@@ -239,6 +238,12 @@ profile's `bags` (the game's saved settings).
 - Gold over time and every character's currencies, from Core's data.
 
 ## The other characters
+
+**Decided (Saneroki, 2026-11-15):** "I think we can marge the Alts and Bags window into one but where you can view
+other characters in your bags window as well. So the search works across alts and banks as well." Built the same day:
+no window *Alts* of its own; the dropdown of the characters on the bags' title line chooses whose things the bags'
+window shows (`Bags.Face`), one search box there for both, and while the bags are shown a search lists under them
+each other character and your bank as last seen that have any of it (*Found elsewhere*), a click showing them.
 
 A snapshot of each of the account's other characters: its bags, its bank (as last seen), what it wears, its
 gold and level, from Core's data framework (`Core.Data.Characters`, read only; `Doc/guides/data.md`,
