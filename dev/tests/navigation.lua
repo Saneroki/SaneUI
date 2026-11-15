@@ -2059,11 +2059,13 @@ end)()
     Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
 end)()
 
--- A drag: no longer following, the game's minimap goes. With the box Follow me ticked, as at first, it stays while
--- the player stands, and the moment the player walks it is back on the player, no delay, the mouse on it or not.
+-- A drag: no longer following, the game's minimap goes. It stays while the player stands, and while the mouse moved it
+-- less than Canvas.AGAIN ago; then, as the player walks, it is back on the player by itself (Saneroki, 2026-11-15:
+-- "just follow the character automatically always when the character is moving and the map has not been draged
+-- around for 5s"; the box Follow me went), the mouse on it or not.
 ;(function()
-    check(ns.options.followMap and Core.Described(ns.name, "followMap").default == true
-        and not Core.Described(ns.name, "followAgain"), "Follow me ticked at first; no number of seconds beside it")
+    check(not Core.Described(ns.name, "followMap") and not Core.Described(ns.name, "followAgain") and Canvas.AGAIN == 5,
+        "no setting Follow me: the map follows by itself, after 5 seconds without a drag")
     local wasX = player.x
     frame._scripts.OnMouseDown(frame, "LeftButton")
     cursorX = cursorX + 30
@@ -2076,8 +2078,14 @@ end)()
     check(not small.follow, "not with the mouse button held on the map, the player walking")
     frame._scripts.OnMouseUp(frame, "LeftButton")
     check(not frame._scripts.OnUpdate, "the button up: nothing runs any more")
+    player.x = wasX + 0.001
     W.Wait(Canvas.LOOK)
     tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not small.follow, "the player walking, the drag less than Canvas.AGAIN ago: it stays")
+    player.x = wasX + 0.002
+    W.Wait(Canvas.LOOK)
+    tracker._scripts.OnUpdate(tracker, 0.016) -- (seen there: from now on the player stands)
     W.Wait(Canvas.AGAIN + 1)
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
@@ -2089,43 +2097,26 @@ end)()
     tracker._scripts.OnUpdate(tracker, 0.016)
     frame._mouseOver = false
     check(small.follow and near(small.u, 500) and minimap._shown,
-        "the player walks: back on the player at once, the mouse on the map or not, the game's minimap with it")
+        "the player walks: back on the player by itself, the mouse on the map or not, the game's minimap with it")
 
-    -- Not ticked: on the player it stays on the player; moved away it stays there, the player walking, however long.
-    Core.Set(ns.name, "followMap", false)
-    player.x = wasX + 0.002
-    W.Wait(Canvas.LOOK)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    local _, u = ns.Live.Player()
-    check(small.follow and near(small.u, u) and minimap._shown, "not ticked: a minimap on the player keeps following")
+    -- In an instance the game tells no place: the game's minimap comes back at once, a drag or not: it is the map there.
     local wasCursor = cursorX
     frame._scripts.OnMouseDown(frame, "LeftButton")
     cursorX = cursorX + 30
     frame._scripts.OnUpdate(frame, 0.016)
     frame._scripts.OnMouseUp(frame, "LeftButton")
     cursorX = wasCursor
-    local stood = small.u
-    player.x = wasX
-    W.Wait(Canvas.AGAIN + 1)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    player.x = wasX + 0.002
-    W.Wait(Canvas.LOOK)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    check(not small.follow and small.u == stood and not minimap._shown,
-        "not ticked: a minimap moved away stays there, the player walking, however long")
-    -- In an instance the game tells no place: the game's minimap comes back all the same, it is the map there.
+    check(not small.follow, "dragged away again")
     player.map = 500
     W.Wait(Canvas.LOOK)
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
-    check(small.follow and minimap._shown and not Canvas.Laid(), "not ticked, in an instance: the game's minimap, the map there")
+    check(small.follow and minimap._shown and not Canvas.Laid(), "in an instance, at once: the game's minimap, the map there")
     check(not Shown()[Canvas.SEA] and not Shown()[Canvas.SEA_SHADE], "in an instance the sea in its colour alone: no layers")
     player.map, player.x = 1429, wasX
     tracker._scripts.OnUpdate(tracker, 0.016)
-    Core.Set(ns.name, "followMap", true)
     tracker._scripts.OnUpdate(tracker, 0.016)
-    check(small.follow and near(small.u, 500) and Canvas.Laid(), "out of it, ticked again: on the player")
+    check(small.follow and near(small.u, 500) and Canvas.Laid(), "out of it: on the player")
 end)()
 
 -- Core's button Sane UI on the game's minimap only while that is the game's own, not inside our map. In an instance,
@@ -4049,30 +4040,20 @@ end
     Canvas.Layout()
 end)()
 
--- The box Follow me left of the pin filter: on at first. Ticked, the full map on the player and following; dragged
--- away, it follows again as the player walks on once the mouse has left it alone for Canvas.AGAIN (not while the player
--- stands, nor sooner); a map chosen in the bar's selector counts as the mouse; the full map opens on the player. Not
--- ticked: it stays where it is left.
+-- The full map follows the player by itself (Saneroki, 2026-11-15: the box Follow me went): dragged away, it follows
+-- again as the player walks on once the mouse has left it alone for Canvas.AGAIN (not while the player stands, nor
+-- sooner); a map chosen in the bar's selector counts as the mouse; the full map opens on the player.
 ;(function()
     local box, pinMenu
     for _, widget in ipairs(W.frames) do
-        if widget._kind == "CheckButton" and widget.title == ns.TEXT.followMap then box = widget end
+        if widget._kind == "CheckButton" and widget._parent == ns.TopBar.Gap():GetParent() then box = widget end
         if widget._override == ns.TopBar.TEXT.pins then pinMenu = widget end
     end
-    check(box and box._checked and ns.options.followMap and box.Text._text == ns.TEXT.followMap
-        and box._points[1][2] == box.Text and box.Text._points[1][1] == "RIGHT" and box.Text._points[1][2] == pinMenu,
-        "the box Follow me, its words between it and the pin filter: on at first")
-    check(ns.TEXT.followMapTip:find(Canvas.AGAIN .. " seconds", 1, true), "its tip says how long the full map waits")
-    box._checked = false
-    box._scripts.OnClick(box)
-    check(not ns.options.followMap and not full.follow, "not ticked: the full map no longer follows")
-    full:Look(full.u + 400, full.v)
+    check(not box and ns.DrawBar.button._points[1][2] == pinMenu, "no box Follow me on the bar: Sketches beside the pins")
+    Canvas.Center(full)
     Canvas.Layout()
-    box._checked = true
-    box._scripts.OnClick(box)
     local _, u, v = Live.Player()
-    check(ns.options.followMap and full.follow and near(full.u, u) and near(full.v, v) and box._checked,
-        "ticked: the full map on the player, following")
+    check(full.follow and near(full.u, u) and near(full.v, v), "the full map on the player, following")
     cursorX, cursorY = 800, 434
     frame._scripts.OnMouseDown(frame, "LeftButton")
     cursorX = 700
@@ -4115,22 +4096,8 @@ end)()
     frame._scripts.OnMouseUp(frame, "LeftButton")
     cursorX = 800
     W.SmallAndBack()
-    check(full.follow and near(full.u, u) and near(full.v, v), "ticked, the full map opens on the player")
-    box._checked = false
-    box._scripts.OnClick(box)
-    local stood = full.u
+    check(full.follow and near(full.u, u) and near(full.v, v), "the full map opens on the player")
     player.x = wasX
-    frame._mouseOver = true -- the full map fills the screen: the mouse is on it
-    W.Wait(Canvas.AGAIN + 1)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    frame._mouseOver = false
-    check(not ns.options.followMap and not full.follow and full.u == stood and not box._checked,
-        "not ticked: the map stays where it is, the player walking or not")
-    box._checked = true
-    box._scripts.OnClick(box)
-    tracker._scripts.OnUpdate(tracker, 0.016)
-    check(ns.options.followMap and full.follow, "ticked again, as at first")
 end)()
 
 -- The dungeons' maps: chosen in the bar, over the map, by floor; the mouse; back to the map.

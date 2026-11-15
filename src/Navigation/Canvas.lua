@@ -67,10 +67,10 @@ local _, ns = ...
 --  The tracker asks where the player is: every frame while the view follows
 --  (three questions to the game and one SetPoint; the zone in the middle a few
 --  times a second), else a few times a second. A view moved off the player follows
---  again only while the box Follow me is ticked (the setting followMap, TopBar.lua)
---  and no mouse button is held: the small view the moment the player walks; the full
---  map, which is always under the mouse and there to be looked around, as the player
---  walks once the mouse has left it alone for Canvas.AGAIN.
+--  again by itself (Saneroki, 2026-11-15: "just follow the character automatically
+--  always when the character is moving and the map has not been draged around for
+--  5s"; the box Follow me went), no mouse button held: as the player walks, once the
+--  mouse has left the map alone (no drag, no wheel, no map chosen) for Canvas.AGAIN.
 --  Nothing else runs while nothing moves. Where the game tells no place of the
 --  player (an instance) the small view draws nothing of ours but the sea: the
 --  game's minimap, with its own ground, is the map there (Hybrid.lua).
@@ -116,7 +116,7 @@ Canvas.MARGIN = 0.15 -- what is laid out reaches so far past the view, as a part
 Canvas.OVERLAP = 1   -- each texture so many units larger than its square, so no seam shows between two
 Canvas.DRAG = 4      -- the mouse moves so many units with the button held before it is a drag, not a click
 Canvas.LOOK = 0.1    -- seconds between two looks at the player's place while the view does not follow
-Canvas.AGAIN = 10    -- seconds the mouse leaves the full map alone before it follows again (Again; the tip of Follow me)
+Canvas.AGAIN = 5     -- seconds the mouse leaves a map alone (no drag, wheel or map chosen) before it follows again (Again)
 Canvas.DOUBLE = 0.3  -- a second click so many seconds after the first, near where it was, is a double click
 Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a double click
 Canvas.HOME = 400    -- yards across the view's shorter side a middle click comes back at where the game's minimap
@@ -525,15 +525,12 @@ end
 -------------------------------------------------------------------------------
 -- Whether a view that does not follow the player follows again, never with a mouse button held on it (u: the
 -- player's place, nil where the game tells none; walked: it changed since the last look). Where the game tells none
--- the small view does at once, ticked or not: the game's minimap is the map there. Else only with the box Follow me
--- ticked: the small view as soon as the player walks, the full map as the player walks once the mouse has left it
--- alone for Canvas.AGAIN.
+-- the small view does at once: the game's minimap is the map there. Else either view as the player walks, once the
+-- mouse has left it alone (no drag, no wheel, no map chosen) for Canvas.AGAIN.
 local function Again(now, u, walked)
     if pressed then return false end
-    local small = camera == ns.Window.small
-    if small and u == nil then return true end
-    if not (ns.options.followMap and u and walked) then return false end
-    return small or now - lastInput > Canvas.AGAIN
+    if camera == ns.Window.small and u == nil then return true end
+    return u ~= nil and walked and now - lastInput > Canvas.AGAIN
 end
 
 local Entered -- the mouse came onto the canvas (The mouse, below)
@@ -853,7 +850,7 @@ function Canvas.LookAt(map, x, y)
     return true
 end
 
--- A view on the player and following (the full map opened with its box Follow me ticked): at once where the game
+-- A view on the player and following (the full map opened): at once where the game
 -- tells the player's place, else from the tracker's next look.
 function Canvas.Center(viewCamera)
     viewCamera.follow = true
@@ -883,17 +880,6 @@ function Canvas.Home()
     ns.Dungeons.Close()
     nextLook = 0
     Canvas.Layout()
-end
-
--- The full map's box Follow me ticked or not (TopBar.lua, the settings): ticked, on the player at once and following;
--- not, it stays where it is and no longer follows.
-function Canvas.Following()
-    local full = ns.Window.full
-    if ns.options.followMap then Canvas.Center(full) else full.follow = false end
-    if camera == full and laid and not held then
-        nextLook = 0
-        Canvas.Layout()
-    end
 end
 
 -- Shows a map whole (a pin that leads into another map), as a click on a zone does; a dungeon's on the full map

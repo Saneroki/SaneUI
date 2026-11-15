@@ -120,7 +120,7 @@ local function Filled(on, width, height)
     if not on then ns.Safe("paths", ns.Paths.Reset) end -- the ways kept drawn let go
     if resting then Rest(false) end
     ns.Satchel.Place(false)
-    if on and ns.options.followMap and not aimed then ns.Canvas.Center(full) end
+    if on and not aimed then ns.Canvas.Center(full) end
     aimed = false
     going = on
     ns.TopBar.SetShown(false)

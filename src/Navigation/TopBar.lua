@@ -20,8 +20,6 @@ local _, ns = ...
 --      ... the map's search in the room between (FindBox.lua) ...
 --      Sketches          a dropdown: every sketch with its checkbox (shown) and its own menu, Draw on the map,
 --                        New sketch (DrawBar.lua; in place of the pencil button: Saneroki, 2026-11-15)
---      Follow me         a checkbox: the map keeps you in its middle as you move and comes back to you, small and
---                        full (the setting followMap; Canvas.lua), on at first
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
 --                        travel, towns, rares and treasures, gathering): a checkbox per kind of pin with its
 --                        icon large before its words (the setting Pins on the map), and at its right a slider
@@ -53,8 +51,6 @@ TopBar.TEXT = {
     questLog = Core.Word("QUEST_LOG", "Quest Log"),
     questLogTip = "The quest log on or off: over the map, and on the screen while the map is small.",
     pins = "Pins",
-    follow = ns.TEXT.followMap,
-    followTip = ns.TEXT.followMapTip,
     world = Core.Word("WORLD", "World"),
     zones = "Zone",
     viewNext = "Click: %s.",
@@ -62,7 +58,7 @@ TopBar.TEXT = {
 TopBar.DUNGEON_WIDTH, TopBar.FLOOR_WIDTH = 140, 110 -- narrower: the bar fits a screen 1366 units wide
 TopBar.LIST_HEIGHT = 440 -- the dungeons' list scrolls past so high
 
-local bar, viewButton, logButton, zoneMenu, dungeonMenu, floorMenu, pinMenu, followBox, draw, gap
+local bar, viewButton, logButton, zoneMenu, dungeonMenu, floorMenu, pinMenu, draw, gap
 local shownMap, shownZone -- what the selector says now
 local shownFloor          -- the dungeon's floor the bar says is shown
 
@@ -265,32 +261,6 @@ function TopBar.LogShown()
     return ns.store.questLog ~= false
 end
 
--- The box Follow me, kept in the settings (Canvas.Following takes it in).
-local function Follow(box)
-    Core.Set(ns.name, "followMap", box:GetChecked() and true or false)
-end
-
--- The box Follow me left of the pin filter, its words between them (the game's checkbox, as on the options pages).
-local function FollowBox()
-    local box = CreateFrame("CheckButton", nil, bar, "UICheckButtonTemplate")
-    box:SetSize(TopBar.BUTTON_HEIGHT, TopBar.BUTTON_HEIGHT)
-    local words = box.Text or box.text
-    if type(words) == "table" then
-        words:SetFontObject("GameFontHighlight")
-        words:SetText(TopBar.TEXT.follow)
-        words:ClearAllPoints()
-        words:SetPoint("RIGHT", pinMenu, "LEFT", -TopBar.GAP * 3, 0)
-        box:SetPoint("RIGHT", words, "LEFT", -TopBar.GAP, 0)
-    else
-        box:SetPoint("RIGHT", pinMenu, "LEFT", -TopBar.GAP * 3, 0)
-    end
-    box.title, box.tip = TopBar.TEXT.follow, TopBar.TEXT.followTip
-    box:SetScript("OnClick", ns.Guard(Follow))
-    box:SetScript("OnEnter", ns.Guard(Tip))
-    box:SetScript("OnLeave", GameTooltip_Hide)
-    return box
-end
-
 local function Button(width, text, title, tip, click)
     local button = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
     button:SetSize(width, TopBar.BUTTON_HEIGHT)
@@ -333,11 +303,10 @@ local function Build()
     floorMenu = Dropdown(TopBar.FLOOR_WIDTH, FloorList, ns.Dungeons.TEXT.floor)
     floorMenu:SetPoint("LEFT", dungeonMenu, "RIGHT", TopBar.GAP, 0)
     floorMenu:Hide()
-    -- at the right, left of Core's: the sketches, Follow me, the pins
+    -- at the right, left of Core's: the sketches, the pins (the map follows you by itself: Canvas.lua, Again)
     pinMenu = Dropdown(TopBar.PINS_WIDTH, Filter, TopBar.TEXT.pins)
-    followBox = FollowBox()
     draw = ns.DrawBar.Menu(bar, TopBar.BUTTON_HEIGHT)
-    draw:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0)
+    draw:SetPoint("RIGHT", pinMenu, "LEFT", -TopBar.GAP * 2, 0)
     -- the room between, for the search
     gap = CreateFrame("Frame", nil, bar)
     gap:SetPoint("TOP")
@@ -382,7 +351,6 @@ function TopBar.Update()
     local map = camera.level == "world" and (camera.shown or Coords.WorldMap()) or camera.map
     local zone = camera.level == "zone" and ns.Canvas.view.zone or nil
     logButton:SetButtonState(TopBar.LogShown() and "PUSHED" or "NORMAL", TopBar.LogShown())
-    followBox:SetChecked(ns.options.followMap and true or false)
     local floor, floors = ns.Dungeons.Shown()
     if floor ~= shownFloor then
         shownFloor = floor

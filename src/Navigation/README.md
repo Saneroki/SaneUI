@@ -54,13 +54,12 @@ and shows them on the map or puts the map pin there. The plan is in
 - **Pings of your party and raid** (and your own) show where the game's own minimap lies over the map (around you:
   the small map while it follows you at one of the game's zoom steps, the square around you on the full map), drawn
   by the game, with its sound. Farther out the map shows none: the game does not let an addon hear its pings.
-- **Following you:** both views follow you at first. The box **Follow me** on the full map's bar (left of *Pins*, on
-  at first; also the setting *Follow me*) says whether the map comes back to you. Ticked, the minimap you dragged
-  away snaps back the moment you walk; the full map opens on you and keeps you in its middle, and dragged away, moved
-  to a quest or to a map chosen on its bar, it comes back as you walk once you left it alone for 10 seconds (standing
-  still, you can look around). Not ticked, the full map stays where you leave it, and the minimap stays where you
-  moved it until the middle mouse button brings it back; one still on you keeps following. In an instance the small
-  window shows the game's own minimap, ticked or not.
+- **Following you:** both views follow you by themselves (Saneroki, 2026-11-15: "Remove the "follow me" feature from
+  the map and just follow the character automatically always when the character is moving and the map has not been
+  draged around for 5s"; the box and the setting *Follow me* went). The full map opens on you and keeps you in its
+  middle. Dragged away, zoomed, moved to a quest or to a map chosen on its bar, either map comes back to you as you
+  walk once you left it alone for 5 seconds (standing still, you can look around as long as you like); the middle
+  mouse button brings it back at once. In an instance the small window shows the game's own minimap.
 - **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
   shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
   steps. One notch out past its widest step shows a dungeon's or raid's whole map there instead (where we have one),
@@ -363,7 +362,7 @@ and shows them on the map or puts the map pin there. The plan is in
   (the golden line leads there) and Delete (asked first); a double click puts the map pin there at once. The pin
   filter's *Your markers* shows or hides them all; the map's search finds them by their titles and descriptions
   (*markers* as the first word lists them all). They are kept for your account.
-- **Sketches** (Saneroki, 2026-11-15), the dropdown on the full map's bar (left of *Follow me*; in place of the pencil
+- **Sketches** (Saneroki, 2026-11-15), the dropdown on the full map's bar (left of *Pins*; in place of the pencil
   button: "When it is not active it says Sketches and when you click it it shows all the sketches with a checkbox in
   front that toggle if the sketch is shown and the fold out to see more options"): it says *Sketches*, and while you
   draw *Drawing:* and the sketch you draw in. Its menu: every sketch with a checkbox (shown or hidden) and its own
@@ -397,8 +396,7 @@ and shows them on the map or puts the map pin there. The plan is in
 - **The full map's title bar** (Saneroki, 2026-11-15: "Let the map view go to the very top behind the titleba so it is
   truely fullscreen"): the map fills the whole screen, up behind the title bar, which holds its controls with a soft
   shade behind them: at the left **Quest Log**, the view's button (right of it: Saneroki, 2026-11-15), **Zone** and
-  **Dungeons** (and a dungeon's floors), the search in the middle, at the right **Sketches**, **Follow me** and
-  **Pins**, then *Classic windows* and the bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
+  **Dungeons** (and a dungeon's floors), the search in the middle, at the right **Sketches** and **Pins**, then *Classic windows* and the bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
 - **Zone** on the bar: the world, then every continent (a click shows it whole) with its zones under it, A to Z, and
   Zephras Isle, at every zoom, the world's too (Saneroki, 2026-11-15: "make sure that the zone dropdown menu always
   has all zones listed"); it says the zone shown, else the continent or the world. (The dropdown of continents went:
@@ -904,8 +902,8 @@ and shows them on the map or puts the map pin there. The plan is in
   the view's button, else of the quest log's: `Arrange`; radio entries of the world, then each plane, `Coords.Planes`
   and `Coords.Elsewhere`, with its zones under it, A to Z; never disabled, at the world too; its words the zone shown,
   else the map), the dungeons and the floors of the one shown. Right, from Core's *Classic windows* (or its first
-  button) leftwards (`Place`, anew each time it shows): the pin filter (checkboxes), the box *Follow me* (the game's
-  `UICheckButtonTemplate`; the setting `followMap`) and the dropdown Sketches (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
+  button) leftwards (`Place`, anew each time it shows): the pin filter (checkboxes) and the dropdown Sketches
+  (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
   (`FindBox.lua`); `TopBar.Top()` the bar's height, under which the zone's name (`Label.lua`), a dungeon's floor
   (`Dungeons.lua`, `Room`) and the palette (`DrawBar.lua`) stand. It says what the map shows after each layout.
 - **The search** (`Find.lua`, no frames; `FindBox.lua`): what can be found is read once, at the first search (the field
@@ -1447,6 +1445,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the map follows you by itself:** Saneroki: "Remove the "follow me" feature from the map and just follow
+  the character automatically always when the character is moving and the map has not been draged around for 5s"
+  (`Canvas.lua`, `Again`: both views, `Canvas.AGAIN` 5; the box on the bar, the setting `followMap` and
+  `Canvas.Following` went).
 - **2026-11-15, the view's button by Quest Log; the zone dropdown at every zoom:** Saneroki: "Can you move the button
   scrying / blended to the right of Questlog and make sure that the zone dropdown menu always has all zones listed.
   Right now on the highest zoom level it doesn't show the zones to select anymore" (it was disabled at the world:

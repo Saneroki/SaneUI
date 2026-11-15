@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map: it follows you by itself as you move, once you have left it
+  alone for 5 seconds after dragging or zooming it. The Follow me
+  box is gone.
 - Map search: the tooltip of the find under the mouse or picked
   with the arrow keys shows beside the list (an item's, an NPC's
   with its 3D model, what a herb gives). Dungeon maps: the bosses'
@@ -13,7 +16,7 @@ The bigger changes of each version, newest first.
 - Map: the full map fills the whole screen, its controls in the
   title bar: Quest Log, one button for Blended and Scrying, Zone
   (every continent with its zones, at every zoom), Dungeons,
-  Sketches, Follow me and Pins. Full screens have only the arrow
+  Sketches and Pins. Full screens have only the arrow
   down, no X.
 - Map search: pick a find, then what to do with it (show it, the
   map pin, what drops it, where to get it, who sells it...). The

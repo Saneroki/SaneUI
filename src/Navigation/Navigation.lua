@@ -77,8 +77,6 @@ ns.TEXT = {
     nodeGlintsTip = "Each herb and ore the minimap found farther away shows on the screen in its direction: the picture of what it gives in a ring of stitched leather that runs out into a point the way to it (up: ahead, down: behind you), and how far away it is under it; one outside your view at the screen's edge, on the side you would turn to. Placed roughly: the game tells no addon where its camera looks, so they take it to be behind you, and while you turn the camera with the left mouse button they wait until you ride on or turn with the right one.",
     nodeYards = "Switch finders every",
     nodeYardsTip = "How far you move before the next finder comes on. With two or more of Found herbs, Found ore and Found fishing pools on in the pin filter and their spells known (Find Herbs, Find Minerals, Find Fish), they take turns, round and round, without a sound, so the map finds them all; those you do not know are left out. As fast as the global cooldown lets it. 0: they do not switch.",
-    followMap = "Follow me",
-    followMapTip = "The map keeps you in its middle as you move. Dragged away, the minimap snaps back to you the moment you walk; the full map opens on you and comes back as you walk once you left it alone for 10 seconds (also after a quest or a map chosen). Off: the full map stays where you leave it, and so does the minimap once you moved it, until the middle mouse button brings it back to you.",
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
@@ -251,9 +249,6 @@ local OPTIONS = {
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
     { key = "pinSizes", default = {} },
-    -- The views keep the player in their middle and come back to the player (Canvas.lua, Again); also the box beside
-    -- the pin filter on the full map's bar (TopBar.lua).
-    { key = "followMap", default = true, text = ns.TEXT.followMap, tip = ns.TEXT.followMapTip },
     { key = "tripView", default = true, text = ns.TEXT.tripView, tip = ns.TEXT.tripViewTip, hidden = NoTravel },
     { key = "dockTimes", default = true, text = ns.TEXT.dockTimes, tip = ns.TEXT.dockTimesTip, hidden = NoTravel },
     { key = "nativeMinimap", default = false, text = ns.TEXT.nativeMinimap, tip = ns.TEXT.nativeMinimapTip },
@@ -331,10 +326,6 @@ Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = funct
         return ns.Guarded(ns.Native.Update)
     end
     if key:match("^questLogRest") then return ns.Guarded(ns.QuestLog.Rested) end
-    if key == "followMap" then
-        ns.Guarded(ns.Canvas.Following)
-        return ns.Guarded(ns.TopBar.Update)
-    end
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
     if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end
