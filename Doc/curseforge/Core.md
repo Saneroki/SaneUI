@@ -45,5 +45,5 @@ On its own, Core changes nothing you can see on your screen. It gives the Sane U
 ## Feedback and bug reports
 
 - GitHub: https://github.com/Saneroki/SaneUI/issues
-- Discord: Sane UI's server (link)
+- Discord: https://discord.gg/saneui
 ```

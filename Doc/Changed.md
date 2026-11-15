@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Sane UI's Discord at its own address, discord.gg/saneui (Saneroki, 2026-11-15)
+Saneroki: "I have added a custom dicord link. I think our discord is now reachable at discord.gg/saneui" (it leads to the server SaneUI and never expires).
+- **`src/Core/Core.lua`:** `Core.DISCORD` is `https://discord.gg/saneui`: the Discord row of the page Sane UI copies it, and the line told in chat for a problem ends with discord.gg/saneui, short to type.
+- **Docs:** `src/Core/Settings/README.md` (*The feedback window*); the CurseForge descriptions (`Doc/curseforge/Core.md`, `Maps.md`) link it in place of "(link)".
+- A `/reload` takes it in.
+
 ### Errors in chat: the line says how to report it, /sane bug and Sane UI's Discord (Saneroki, 2026-11-15)
 Saneroki: "When some error occures the addon writes in chat that something bad happend. Can we change the text to tell the user to use the /sane bug command and copy paste it into the saneui discord?"
 - **`src/Core/Core.lua`:** the line told once per kind of problem (`TOLD`, `Core.Report`) reads "problem in <where>. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord: discord.gg/dVGfWVPXQ5". Saneroki then: "Add the Discord invite link to the chat line too": the invite is `Core.DISCORD`, kept once, written short in chat (chat cannot be copied, so it is typed) and whole on the page Sane UI (`src/Core/Settings/About.lua`, `About.LINKS`). `/sane bug` (an alias of `/sane feedback`) opens the bug report, which carries the latest errors; `/sane errors` still lists the log.

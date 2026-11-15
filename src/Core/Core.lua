@@ -33,8 +33,9 @@ SaneUI = { Core = Core }
 Core.TITLE = "Sane UI"
 Core.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
 Core.GOLD = { 0.525, 0.439, 0.282 }
--- Sane UI's Discord, an invite that never expires: on the page Sane UI (About.lua) and in the line told for a problem.
-Core.DISCORD = "https://discord.gg/dVGfWVPXQ5"
+-- Sane UI's Discord, by the server's own address (it never expires): on the page Sane UI (About.lua) and in the
+-- line told for a problem.
+Core.DISCORD = "https://discord.gg/saneui"
 local PREFIX = "|cff867048" .. Core.TITLE .. ":|r "
 
 function Core.Print(text)

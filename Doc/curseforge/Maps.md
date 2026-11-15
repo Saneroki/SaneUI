@@ -69,7 +69,7 @@ game keeps working. `/sane errors` lists what went wrong.
 ## Feedback and bug reports
 
 - GitHub: https://github.com/Saneroki/SaneUI/issues
-- Discord: Sane UI's server (link)
+- Discord: https://discord.gg/saneui
 ```
 
 ## Gallery
