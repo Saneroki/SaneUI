@@ -308,6 +308,14 @@ and shows them on the map or puts the map pin there. The plan is in
     creatures and objects that give it, how often), *where to get X* (every way: vendors, creatures, objects, quests
     that reward it); where none sells or drops it, every way there is. A plain item's name, Enter: the same list;
   - **who teaches X** or *where to learn X*: the trainers of that spell or trade, nearest first;
+  - **where to farm X** (also *farm X*, *X farming*, *where to mine*, *gather*, *pick* or *skin X*; Saneroki,
+    2026-11-15): the places where what gives it stands thickest, the best first (with *nearest*: the nearest), each
+    named by its zone and where in it (*Westfall (north west)*), with its main creatures or nodes, how many there are
+    and about how many a round gives, their levels, how far. They glow on the full map at once, soft gold, as large
+    as the place (so the glow grows as you zoom in), the busiest the strongest, a pin with the thing's picture in each
+    one's middle; the route is left alone (Shift-Enter puts the map pin there if you want it). A dungeon where it drops
+    is listed after them (Enter: its map). An item's *where to get* list starts with its best places to farm, and Enter
+    on a herb, an ore or a chest in the list asks where to farm it. *in <zone>* keeps to one zone;
   - **in <zone>:** only what stands there (*vendor in elwynn*, *trainer in ironforge*);
   - **levels:** *level 30*, *lvl 20-30*, *level 40+*; *where should I level* and *zones for level 30*, *dungeons for
     my level*: the zones and dungeons as high as you are, the best fit first;
@@ -315,7 +323,8 @@ and shows them on the map or puts the map pin there. The plan is in
   - **a first word that keeps one kind:** *items*, *quests*, *zones*, *dungeons*, *raids*, *flights*, *mailboxes*,
     *guild*, *party*, *friends* (*dungeons* alone lists them all);
   - **not X** or **-X** without it, **X or Y** either, **"two words"** together;
-  - **two numbers:** a point of the zone shown (*45 60*), or of a zone named (*elwynn 45.2 60.1*): the map pin there.
+  - **two numbers:** a point of the zone shown (*45 60*), or of a zone named (*elwynn 45.2 60.1*): the map pin there;
+  - **a typo** is put right where nothing is found: *peaceblossom* searches for *peacebloom* and says so at the top.
 
   The keys in the field: **Up** and **Down** light a row (round at the ends; in the empty field Up brings back what you
   searched before), **Tab** the next, **Page Up**/**Page Down** a page; **Enter** takes the lit row, else the first:
@@ -839,6 +848,21 @@ and shows them on the map or puts the map pin there. The plan is in
   every zoom, on the full map alone, over every other pin; `PinView` gives them the glow), the map at the nearest
   (`Canvas.LookAt`); the map pin by `PinView.Drop`. A guild member outside your group stands at the middle of the zone
   the roster names (the game tells an addon no other member's place); one in your group where the game tells it.
+- **Farms** (`Farms.lua`, its glow on the canvas' layer `farms`, level 6, between the zone's light and the quest
+  areas): what gives a thing (an item's creatures and objects by Core's drop counts, `Data.Drops():From`, the
+  likeliest `Farms.SOURCES`; each weighed by its chance, an unknown creature's `Farms.UNKNOWN`, a node 1; quests' own
+  drops and fishing left out; a creature or an object asked for itself weighs 1), their spawns in square cells of
+  `Farms.CELL` yards on their plane, each cell's heat its worth and its eight neighbours'. The hottest cell makes a
+  place of the spawns of its three by three cells (the weighed middle, a radius of `Farms.SPREAD` times their weighed
+  spread, between `Farms.SMALL` and `Farms.LARGE`), the cells round it spent; then the next, while a cell holds
+  `Farms.LEAST` of the hottest's heat and `Farms.FEW` spawns, `Farms.MOST` places at most. A dungeon's map (the game's
+  map type) is one place, after those outside. Kept per thing (and zone) until Core's data changes. The glow: Art's
+  `mark-soft` in Sane UI's gold, added, `Canvas.Put` over the place's square in yards, alpha `Farms.ALPHA` by heat; the
+  full map alone. Each place's pin (Find's kind `find`, `Find.MARKER` large, the item's picture in the found ring).
+  `Find.Farms` draws a thing's places (the field does at once when an answer has them), `Find.Show` of a place looks
+  at it, of an item draws its places and pins only its vendors and quests. A typed word in no find's words (Find's
+  vocabulary, made at the first need) is put right by the nearest word of the same first letter within
+  `Find.SLIPS` edits (left out, added, changed, two swapped), and the search runs again.
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
   docked hook, `FindBox.SetShown`), in its middle, as wide as the room between the title and the buttons leaves
   (`FindBox.WIDTH` at most); on Core's skin (round ends, the gold trim); the list under it on the same skin, strata
@@ -1275,6 +1299,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
+| `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
 | `Bindings.xml` | The key *Search the map* (Sane UI's section of the game's key bindings): the full map, the cursor in its search |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
@@ -1288,6 +1313,12 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, where to farm a thing:** Saneroki: "Could it be possible to write something like "where to farm Silk
+  cloth" or "peaceblossom" and it will show dense areas were you could farm them on the map or put custom map pins
+  there that are not tied to the routing but just shows where a lot of enemies are dense clustered that drop those
+  things or zones where these nodes are plenty in". `Farms.lua` (the places, the glow; the canvas' layer `farms`),
+  `Find.lua` (the words, the farm answer, an item's best places first, `Find.Farms`, the typo put right),
+  `FindBox.lua` (the glow at once, Enter on a herb, *Searched for*). Card #487.
 - **2026-11-15, the search in the full map's title bar:** Saneroki: "At the top of the map fullscreen, can you put a big
   searchfield in the title bar up there where you can search for stuff. Like NPC names, Guild member names, Vendors,
   class trainers, items etc and it will show it to you or put a pin on the map. For items for example it could drop a

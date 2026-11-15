@@ -14,6 +14,7 @@ local _, ns = ...
 --      Find.Show(find)         its points drawn on the map (Find.Pins), the map at the nearest
 --      Find.Pin(find)          the game's map pin at the nearest, so the golden line leads there
 --      Find.Preview(find)      its points drawn, the map not moved (the mouse on its row)
+--      Find.Farms(places, find) the places to farm a thing glowing on the map, a pin at each (Farms.lua)
 --      Find.Clear()            no find on the map any more
 --      Find.Pins()             the pins of the find shown, for Pins.For
 --      Find.Look(find)         its icon on the map: an atlas or a texture
@@ -73,6 +74,8 @@ Find.HISTORY = 25     -- searches remembered (Up in the empty field)
 Find.KEPT = 200       -- finds whose picks are remembered
 Find.CLOSE = 8        -- finds offered as close to what was typed when nothing was found
 Find.AROUND = 3       -- levels around yours that count as yours (where should I level)
+Find.FARMS = 4        -- an item's best places to farm listed first among its sources
+Find.MARKER = 30      -- a place to farm's pin on the map, its size
 Find.RANKED = 300     -- finds measured at most (how far): the best by rank
 Find.NEAR = 2000      -- the same where nearness was asked for: many alike (every vendor), the nearest among them
 
@@ -81,6 +84,7 @@ Find.TEXT = {
         people = "Guild, group and friends", npc = "NPCs", place = "Places", item = "Items", quest = "Quests",
         zone = "Zones and dungeons", spell = "Taught by trainers", near = "Nearest first", close = "Close to what you typed",
         get = "Where to get %s", sold = "Who sells %s", drop = "What drops %s", learn = "Who teaches %s",
+        farm = "Where to farm %s", farmFirst = "The best places to farm it",
         instead = "None that way. ",
     },
     sells = "Sells it", sellsFor = "Sells it for %s", drops = "Drops it", dropsAt = "Drops it (%s%%)", gives = "Gives it",
@@ -90,6 +94,7 @@ Find.TEXT = {
     zone = "Zone", continent = "Continent", dungeon = "Dungeon", raid = "Raid", levels = "Levels %d-%d",
     foe = "Hostile to you", far = "Far away", inZone = "Somewhere in this zone", level = "Level %d", levelRange = "Level %d-%d",
     unconfirmed = Core.UNCONFIRMED,
+    spelled = "Searched for: %s",
 }
 
 local NPCS, SPAWNS, CREATURES = Data.Set("NPCs"), Data.Set("Spawns"), Data.Set("CreatureSpawns")
@@ -140,6 +145,10 @@ local WEAPONS = { sword = true, swords = true, axe = true, axes = true, mace = t
 -- What a sentence asks for, by how it begins (the rest: the thing): an item's vendors, what drops it, every way to it;
 -- the trainers of a spell or trade.
 local ASKS = {
+    { "^where to farm (.+)$", "farm" }, { "^where can i farm (.+)$", "farm" }, { "^where should i farm (.+)$", "farm" },
+    { "^best places? to farm (.+)$", "farm" }, { "^farming (.+)$", "farm" }, { "^farm (.+)$", "farm" },
+    { "^where to gather (.+)$", "farm" }, { "^where to mine (.+)$", "farm" }, { "^where to pick (.+)$", "farm" },
+    { "^where to skin (.+)$", "farm" }, { "^(.+) farming$", "farm" }, { "^(.+) farm$", "farm" },
     { "^who sells (.+)$", "sold" }, { "^where can i buy (.+)$", "sold" }, { "^where to buy (.+)$", "sold" },
     { "^where do i buy (.+)$", "sold" }, { "^vendors? for (.+)$", "sold" }, { "^buy (.+)$", "sold" },
     { "^what drops (.+)$", "drop" }, { "^who drops (.+)$", "drop" }, { "^where does (.+) drop$", "drop" },
@@ -569,6 +578,13 @@ local function Points(thing, creature)
         end
     end
     return list
+end
+
+Find.Points = Points
+
+-- The find of a key of Core's data (npc:69, object:1617, item:2589), once read; nil while not (yet) known.
+function Find.Known(key)
+    return byKey[key]
 end
 
 -- A quest's places of Core's data: where its givers stand.
@@ -1012,11 +1028,11 @@ end
 -- give it, the quests it is a reward of; each the likeliest first, Find.SOURCES of a way at most.
 local function Sources(item, want)
     local list, seen = {}, {}
-    local function Source(key, role)
+    local function Source(key, role, way)
         local entry = byKey[key]
         if not entry or seen[key] then return end
         seen[key] = true
-        list[#list + 1] = { entry = entry, role = role }
+        list[#list + 1] = { entry = entry, role = role, way = way }
     end
     if want == "sold" or want == "get" then
         local count = 0
@@ -1028,7 +1044,7 @@ local function Sources(item, want)
             local entry = byKey["npc:" .. vendor]
             if entry and not entry.foe and count < Find.SOURCES then
                 count = count + 1
-                Source("npc:" .. vendor, price and Find.TEXT.sellsFor:format(Core.Coins(price)) or Find.TEXT.sells)
+                Source("npc:" .. vendor, price and Find.TEXT.sellsFor:format(Core.Coins(price)) or Find.TEXT.sells, "sold")
             end
         end
     end
@@ -1041,10 +1057,10 @@ local function Sources(item, want)
                 or Find.TEXT.drops
             if kind == "npc" and creatures < Find.SOURCES then
                 creatures = creatures + 1
-                Source(source.key, role)
+                Source(source.key, role, "drop")
             elseif kind == "object" and objects < Find.SOURCES then
                 objects = objects + 1
-                Source(source.key, rate > 0 and role or Find.TEXT.gives)
+                Source(source.key, rate > 0 and role or Find.TEXT.gives, "drop")
             end
         end
     end
@@ -1053,7 +1069,7 @@ local function Sources(item, want)
         for _, quest in ipairs(rewarded[item] or NONE) do
             if count < Find.SOURCES and byKey["quest:" .. quest] then
                 count = count + 1
-                Source("quest:" .. quest, Find.TEXT.reward:format(byKey["quest:" .. quest].name))
+                Source("quest:" .. quest, Find.TEXT.reward:format(byKey["quest:" .. quest].name), "reward")
             end
         end
     end
@@ -1146,6 +1162,51 @@ local function Grouped(rows, near, title)
     return answer
 end
 
+-- A place to farm as a find of its own (a row of the list): named by its zone and where in it, what it is in a line,
+-- its middle its one point (or its dungeon's map); the thing farmed and all its places kept with it.
+local function FarmFind(target, place, index, places)
+    return Words({ kind = "farm", group = "farm", key = "farm:" .. target.key .. ":" .. index, place = place,
+                   places = places, target = target, icon = target.kind == "item" and target.icon or nil,
+                   low = place.low, high = place.high,
+                   spots = place.map and place.x and { { map = place.map, x = place.x, y = place.y } } or {} },
+        place.name, ns.Farms.About(place), nil)
+end
+
+-- What to farm of the rows found: the best item, else the best herb, ore or chest, else the best creature; the first
+-- of them that has places to farm, with its places.
+local FARMED = {
+    function(entry) return entry.kind == "item" end,
+    function(entry) return entry.kind == "object" and (entry.what == "herb" or entry.what == "ore" or entry.what == "chest") end,
+    function(entry) return entry.kind == "npc" end,
+}
+local function Farmed(rows, zone)
+    for _, wanted in ipairs(FARMED) do
+        local best
+        for _, row in ipairs(rows) do
+            if wanted(row.entry) and (not best or row.rank > best.rank) then best = row end
+        end
+        local places = best and ns.Farms.Of(best.entry, zone)
+        if places and #places > 0 then return best, places end
+    end
+    return nil
+end
+
+-- A group of the best places to farm a thing, its rows measured.
+local function FarmGroup(target, places, title, most, zone)
+    local group = { title = title, rows = {}, all = 0 }
+    for index, place in ipairs(places) do
+        local entry = FarmFind(target, place, index, places)
+        if InZone(entry, zone) then
+            group.all = group.all + 1
+            if #group.rows < most then
+                group.rows[#group.rows + 1] = { entry = entry, rank = place.heat or 0, yards = Find.Measure(entry) }
+            end
+        end
+    end
+    group.more = group.all - #group.rows
+    return group
+end
+
 -- Searched now (the index read): the answer for the list.
 local function Search(asked)
     local picked = Kept().picked
@@ -1188,13 +1249,33 @@ local function Search(asked)
         if not best then return end
         -- An NPC hostile to you only where a word named it (Hogger), never for what it is (a vendor of the other side).
         if entry.foe and not entry.named then return end
-        if not AsHigh(entry, asked.low, asked.high) or not InZone(entry, asked.zone) then return end
+        -- (in a zone: what stands there; an item or a spell asked about stands nowhere, its sources do)
+        local about = asked.want and (entry.kind == "item" or entry.kind == "spell")
+        if not AsHigh(entry, asked.low, asked.high) or not (about or InZone(entry, asked.zone)) then return end
         local picks = tonumber(picked[entry.key])
         if picks then best = best + Find.PICK * picks end
         rows[#rows + 1] = { entry = entry, rank = best }
     end
     for _, entry in ipairs(live) do Look(entry) end
     for _, entry in ipairs(index) do Look(entry) end
+    -- Where to farm it: the places thickest with what gives it, the best first (nearness asked: the nearest); a thing
+    -- nothing gives to farm (only sold, a reward): where to get it.
+    if asked.want == "farm" then
+        local best, places = Farmed(rows, asked.zone)
+        if best then
+            local group = FarmGroup(best.entry, places, Find.TEXT.groups.farm:format(best.entry.name), Find.SHOWN, asked.zone)
+            if asked.near then
+                table.sort(group.rows, function(a, b)
+                    if (a.yards ~= nil) ~= (b.yards ~= nil) then return a.yards ~= nil end
+                    if a.yards and b.yards and a.yards ~= b.yards then return a.yards < b.yards end
+                    return a.rank > b.rank
+                end)
+            end
+            local answer = { group, count = #group.rows, about = best, farms = places }
+            return answer
+        end
+        asked.want = "get"
+    end
     -- An item's sources, or a spell's trainers: the best of the things named, with what it comes from under it.
     if asked.want and asked.want ~= "level" then
         local best
@@ -1222,6 +1303,18 @@ local function Search(asked)
             if want ~= asked.want then title = Find.TEXT.groups.instead .. title end
             local answer = Grouped(Sorted(found, true), false, title:format(best.entry.name))
             answer.about = best -- the item or spell itself, first in the list
+            -- what drops or gives it to gather: its best places to farm first
+            if best.entry.kind == "item" and want ~= "sold" then
+                local places = ns.Farms.Of(best.entry, asked.zone)
+                if #places > 0 then
+                    local group = FarmGroup(best.entry, places, Find.TEXT.groups.farmFirst, Find.FARMS, asked.zone)
+                    if #group.rows > 0 then
+                        table.insert(answer, 1, group)
+                        answer.count = answer.count + #group.rows
+                        answer.farms = places
+                    end
+                end
+            end
             return answer
         end
     end
@@ -1254,6 +1347,96 @@ local function Close(asked, done)
     end)
 end
 
+-- A word mistyped: the words of every find's name, what it is and its further words (lowered, by their first letter),
+-- made once at the first need; a typed word none of them holds is put right by the nearest of them that begins with
+-- the same letter and is within Find.SLIPS(word) edits (a letter left out, one too many, another, two swapped).
+local vocabulary -- [first letter] = { word, ... }; nil until needed
+Find.SLIPS = function(word) return #word <= 5 and 1 or #word <= 9 and 2 or 3 end
+
+local function Vocabulary()
+    if vocabulary then return vocabulary end
+    vocabulary = {}
+    local seen = {}
+    local function Take(text)
+        if not text then return end
+        for word in text:gmatch("[%a']+") do
+            if #word >= 3 and not seen[word] then
+                seen[word] = true
+                local first = word:sub(1, 1)
+                local list = vocabulary[first] or {}
+                vocabulary[first] = list
+                list[#list + 1] = word
+            end
+        end
+    end
+    for _, entry in ipairs(index) do
+        Take(entry.lowName)
+        Take(entry.lowRole)
+        Take(entry.lowMore)
+    end
+    for _, entry in ipairs(Zones()) do Take(entry.lowName) end
+    return vocabulary
+end
+
+-- How many edits two words are apart (letters left out, added, changed, two side by side swapped), or nil past most.
+local function Apart(a, b, most)
+    local n, m = #a, #b
+    if math.abs(n - m) > most then return nil end
+    local before, last, row = {}, {}, {}
+    for j = 0, m do last[j] = j end
+    for i = 1, n do
+        row[0] = i
+        local least = i
+        local ai = a:byte(i)
+        for j = 1, m do
+            local bj = b:byte(j)
+            local cost = ai == bj and 0 or 1
+            local best = math.min(last[j] + 1, row[j - 1] + 1, last[j - 1] + cost)
+            if i > 1 and j > 1 and ai == b:byte(j - 1) and a:byte(i - 1) == bj then
+                best = math.min(best, before[j - 2] + 1)
+            end
+            row[j] = best
+            if best < least then least = best end
+        end
+        if least > most then return nil end
+        before, last, row = last, row, before
+    end
+    return last[m] <= most and last[m] or nil
+end
+
+-- The words typed put right where one is in no find: true where any was (asked.spelled: the words now).
+local function Respell(asked)
+    local words = Vocabulary()
+    local changed = false
+    for _, set in ipairs(asked.sets or NONE) do
+        for position, word in ipairs(set) do
+            local first = word:sub(1, 1)
+            local list = words[first]
+            local known = false
+            for _, each in ipairs(list or NONE) do
+                if find(each, word, 1, true) then known = true break end
+            end
+            if not known and #word >= 4 and list then
+                local most, best, bestApart = Find.SLIPS(word), nil, nil
+                for _, each in ipairs(list) do
+                    local apart = Apart(word, each, bestApart and bestApart - 1 or most)
+                    if apart and (not bestApart or apart < bestApart) then best, bestApart = each, apart end
+                end
+                if best then
+                    set[position] = best
+                    changed = true
+                end
+            end
+        end
+    end
+    if changed then
+        local said = {}
+        for _, word in ipairs(asked.sets[1] or NONE) do said[#said + 1] = word end
+        asked.spelled = table.concat(said, " ")
+    end
+    return changed
+end
+
 -- What was typed, searched: done(answer) with the groups ({ title, rows = { { entry, rank, role, yards } }, more }),
 -- answer.about (the item or spell whose sources are listed), answer.asked (what was read); answer.reading while
 -- Core's sets are still being read (searched again once they are, done told again). nil: nothing typed.
@@ -1261,12 +1444,22 @@ function Find.Ask(text, done)
     local asked = Find.Read(text)
     if not asked then return done(nil) end
     Read()
+    local wanted = asked.want -- (Search may turn a farm with nothing to farm into where to get it)
     local answer = Search(asked)
     answer.asked = asked
     if reading then
         answer.reading = true
         waiting = { text, done }
         return done(answer)
+    end
+    -- Nothing: a mistyped word put right, searched again ("peaceblossom": Peacebloom)
+    if answer.count == 0 and not asked.spot and Respell(asked) then
+        asked.want = wanted
+        local again = Search(asked)
+        if again.count > 0 then
+            again.asked = asked
+            return done(again)
+        end
     end
     if answer.count == 0 and not asked.spot and not asked.want then
         return Close(asked, function(close)
@@ -1282,11 +1475,14 @@ end
 -------------------------------------------------------------------------------
 local shown        -- the find whose points the map shows
 local pins = {}    -- their pins (Pins.For takes them in)
+local farmed       -- the places to farm glowing on the map (Farms.Draw), and the thing farmed: { places, target }
 
--- A find's look on the map: its own icon (an NPC's as its pin's would be, Pins.LookOf), else the map pin's.
+-- A find's look on the map: its own icon (an NPC's as its pin's would be, Pins.LookOf), else the map pin's; a place to
+-- farm the thing's (an item's picture: a number).
 local function Look(entry)
     if entry.atlas then return entry.atlas end
     local kind = entry.kind
+    if kind == "farm" then return entry.icon or Look(entry.target) end
     if kind == "npc" then return ns.Pins.LookOf(entry.services, entry.title, entry.goods, entry.rank, entry.foe) end
     if kind == "object" then return ns.Pins.ObjectLook(entry.what) end
     if kind == "place" then return ns.Pins.PlaceLook(entry.what) end
@@ -1298,19 +1494,42 @@ end
 
 Find.Look = Look
 
--- What a find stands for on the map: itself, or an item's sources and a spell's trainers (each with its words).
-local function Standing(entry, role)
-    if entry.kind == "item" then return Sources(entry.id, "get") end
+-- What a find stands for on the map: itself, or an item's sources and a spell's trainers (each with its words). An
+-- item with places to farm: those glow, so of its sources only the vendors and the quests stand as pins.
+local function Standing(entry, role, farming)
+    if entry.kind == "item" then
+        local list = Sources(entry.id, "get")
+        if farming then
+            local kept = {}
+            for _, source in ipairs(list) do
+                if source.way ~= "drop" then kept[#kept + 1] = source end
+            end
+            return kept
+        end
+        return list
+    end
     if entry.kind == "spell" then return Trainers(entry) end
     return { { entry = entry, role = role } }
 end
 
+-- A place to farm's pin, at its middle: the thing's picture in a ring (an item's) or its icon, its tooltip the place.
+local function Marker(place, target, index)
+    local look = target.kind == "item" and target.icon or Look(target)
+    local home = place.plane
+    local pin = { kind = "find", key = "farm:" .. target.key .. ":" .. index, name = target.name, role = place.name,
+                  home = home, u = place.u, v = place.v, map = place.map, x = place.x, y = place.y, sought = true,
+                  size = Find.MARKER, lines = { ns.Farms.About(place) } }
+    if type(look) == "number" then pin.texture, pin.look = look, "found" else pin.atlas = look end
+    return pin
+end
+
 -- The points of what a find stands for, as pins: the nearest Find.PLACES of them all, at least Find.EACH of each
--- (an item's every source in sight); a member's at the middle of its zone, said so. Gives the nearest point.
+-- (an item's every source in sight); a member's at the middle of its zone, said so; with places to farm (farming:
+-- its places, the thing farmed) a pin at each place's middle too. Gives the nearest point.
 Find.EACH = 3
-local function Made(entry, role)
+local function Made(entry, role, farming)
     wipe(pins)
-    local list = Standing(entry, role)
+    local list = Standing(entry, role, farming)
     local each = math.max(Find.EACH, math.floor(Find.PLACES / math.max(#list, 1)))
     local nearest, best
     for _, wanted in ipairs(list) do
@@ -1333,6 +1552,9 @@ local function Made(entry, role)
             end
         end
     end
+    for index, place in ipairs(farming and farming.places or NONE) do
+        if place.plane then pins[#pins + 1] = Marker(place, farming.target, index) end
+    end
     return nearest
 end
 
@@ -1340,8 +1562,28 @@ local function Redraw()
     if ns.Canvas and ns.Canvas.Refresh then ns.Canvas.Refresh() end
 end
 
+-- Places to farm a thing glowing on the full map, a pin at each one's middle (the answer to "where to farm", an
+-- item's list); the map not moved. nil: none (their glow goes; the pins of the find shown stay).
+function Find.Farms(places, target)
+    if not places or not target or #places == 0 then
+        if farmed then
+            farmed = nil
+            ns.Farms.Draw(nil)
+        end
+        return
+    end
+    farmed = { places = places, target = target }
+    shown = target
+    wipe(pins)
+    for index, place in ipairs(places) do
+        if place.plane then pins[#pins + 1] = Marker(place, target, index) end
+    end
+    ns.Farms.Draw(places)
+end
+
 -- A find on the map: its points (or its sources' and trainers') as pins, the map at the nearest; a zone, a continent
--- or a dungeon's map shown whole. False where it stands nowhere the map can show.
+-- or a dungeon's map shown whole; a place to farm: its glow with the others of the thing farmed, the map there (a
+-- dungeon's: its map). False where it stands nowhere the map can show.
 function Find.Show(entry, role)
     if not entry then return false end
     if entry.kind == "zone" then
@@ -1352,25 +1594,51 @@ function Find.Show(entry, role)
         Find.Clear()
         return ns.Dungeons.Show(entry.map)
     end
+    if entry.kind == "farm" then
+        local place = entry.place
+        if place.inside then return ns.Dungeons.Show(place.inside) end
+        if not (farmed and farmed.places == entry.places) then Find.Farms(entry.places, entry.target) end
+        Redraw()
+        return place.map ~= nil and ns.Canvas.LookAt(place.map, place.x, place.y)
+    end
     if entry.kind == "log" and ns.QuestLog.Focus then ns.QuestLog.Focus(entry.quest) end
+    -- an item farmed: its places glow, the map at the best of them
+    local places = entry.kind == "item" and ns.Farms.Of(entry) or NONE
+    local farming = #places > 0 and { places = places, target = entry } or nil
+    if farming then
+        farmed = farming
+        ns.Farms.Draw(places)
+    elseif farmed then
+        farmed = nil
+        ns.Farms.Draw(nil)
+    end
     shown = entry
-    local nearest = Made(entry, role)
+    local nearest = Made(entry, role, farming)
     Redraw()
+    local first = farming and places[1]
+    if first and first.map then return ns.Canvas.LookAt(first.map, first.x, first.y) end
     if not nearest then return false end
     if nearest.zone then ns.Canvas.Show(nearest.map) end
     ns.Canvas.LookAt(nearest.map, nearest.x, nearest.y)
     return true
 end
 
--- A find's points on the map while the mouse is on its row in the list (FindBox.lua): the map not moved.
+-- A find's points on the map while the mouse is on its row in the list (FindBox.lua): the map not moved. A place to
+-- farm: its thing's places, as they glow already.
 function Find.Preview(entry, role)
     if not entry or entry.kind == "zone" or entry.kind == "dungeon" then return end
-    Made(entry, role)
+    if entry.kind == "farm" then
+        if not (farmed and farmed.places == entry.places) then Find.Farms(entry.places, entry.target) end
+        return
+    end
+    Made(entry, role, farmed) -- (the places glowing keep their pins)
     Redraw()
 end
 
--- The point the map pin goes to for a find: its nearest, or its nearest source's or trainer's.
+-- The point the map pin goes to for a find: its nearest, or its nearest source's or trainer's; a place to farm's
+-- middle.
 function Find.Nearest(entry)
+    if entry.kind == "farm" then return entry.spots[1] end
     local nearest, best
     for _, wanted in ipairs(Standing(entry)) do
         local measured = Find.Spots(wanted.entry)
@@ -1392,6 +1660,10 @@ function Find.Pin(entry)
 end
 
 function Find.Clear()
+    if farmed then
+        farmed = nil
+        ns.Farms.Draw(nil)
+    end
     if not shown and #pins == 0 then return end
     shown = nil
     wipe(pins)
@@ -1414,5 +1686,6 @@ function Find.Forget()
     wipe(sourced)
     wipe(rewarded)
     wipe(taught)
-    zones, reading = nil, nil
+    zones, reading, vocabulary = nil, nil, nil
+    ns.Farms.Forget()
 end

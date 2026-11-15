@@ -13,6 +13,7 @@ local _, ns = ...
 --       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
 --       │    ├─ indoors   the indoor map of the building the player is in (Indoors.lua)
 --       │    ├─ light     the zone under the mouse (Art.lua)
+--       │    ├─ farms     the places to farm a thing the map's search found, glowing (Farms.lua)
 --       │    ├─ areas     the quest's areas (Areas.lua)
 --       │    ├─ route     the golden line (Route.lua)
 --       │    ├─ paths     the ways of the flight point or dock under the mouse (Paths.lua)
@@ -110,8 +111,8 @@ Canvas.NEAR = 8      -- units the mouse may move between the two clicks of a dou
 Canvas.HOME = 400    -- yards across the view's shorter side a middle click comes back at where the game's minimap
                      -- is not ours (Home)
 -- Above the canvas, in drawing order; the game's minimap at Hybrid.LEVEL (10), the full map's bars at 30.
-Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, indoors = 4, light = 5, areas = 7, route = 8, paths = 9,
-                  pins = 12, marks = 20, satchel = 30 }
+Canvas.LEVELS = { holder = 1, terrain = 2, art = 3, indoors = 4, light = 5, farms = 6, areas = 7, route = 8,
+                  paths = 9, pins = 12, marks = 20, satchel = 30 }
 Canvas.MAP = 5 -- the highest level of the map itself: what stands on it is above this
 Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own ground: over that, under the pins (Stack)
 
@@ -339,6 +340,7 @@ local function Empty()
     ns.Safe("map art", ns.Art.Clear)
     ns.Safe("indoors", ns.Indoors.Clear)
     ns.Safe("areas", ns.Areas.Clear)
+    ns.Safe("farms", ns.Farms.Hide)
     ns.Safe("route", ns.Route.Clear)
     ns.Safe("paths", ns.Paths.Clear)
     ns.Safe("pins", ns.PinView.Clear)
@@ -371,6 +373,7 @@ local function Draw()
     ns.Safe("map art", ns.Art.Place, view, art > 0)
     ns.Safe("indoors", ns.Indoors.Place, view)
     ns.Safe("areas", ns.Areas.Place, view, camera == ns.Window.small)
+    ns.Safe("farms", ns.Farms.Place, view, camera == ns.Window.small) -- the places to farm a thing (Farms.lua)
     ns.Safe("route", ns.Route.Place, view)
     ns.Safe("paths", ns.Paths.Place, view)
     ns.Safe("pins", ns.PinView.Place, view, camera == ns.Window.small)
@@ -943,6 +946,7 @@ function Canvas.Build(parent)
     layers.art, layers.light = ns.Art.Build(holder)
     layers.indoors = ns.Indoors.Build(holder)
     layers.areas, layers.route = ns.Areas.Build(holder), ns.Route.Build(holder)
+    layers.farms = ns.Farms.Build(holder)
     layers.paths = ns.Paths.Build(holder)
     ns.PinView.Build(holder)
     ns.Marks.Build(holder)

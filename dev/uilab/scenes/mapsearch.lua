@@ -3,7 +3,9 @@
 -- of the full map (Core's, as a frame of its own here), Elwynn Forest's map art under it, the map's spaces (a few zones'
 -- boxes in the world's yards, the rest far away), you in Stormwind's Mage Quarter facing north. In the console:
 -- LabFind("who sells linen cloth") types and searches, LabFind() empties the field; LabFindKey("DOWN") presses an arrow,
--- LabFindKey("ENTER") Enter; LabFindShown() names the find whose pins the map would show.
+-- LabFindKey("ENTER") Enter; LabFindShown() names the find whose pins the map would show. LabFind("where to farm
+-- linen cloth") or LabFind("peaceblossom") then Enter: the places to farm glow over Elwynn's map (the pins are not drawn
+-- here: PinView stands in).
 Lab.TOC("src/Core/SaneUI.toc")
 local sets = {}
 for _, name in ipairs({ "Classes", "SkillLines", "Spells", "NPCs", "Spawns", "CreatureSpawns", "Objects", "Items", "Drops",
@@ -39,7 +41,22 @@ local function ToPlane(map, x, y)
     local west, north = box[2] - x * (box[2] - box[3]), box[4] - y * (box[4] - box[5])
     return -west, north -- (the plane: east, north)
 end
+local function Box(map)
+    local box = BOXES[map]
+    return box and { u = -box[2], v = box[4], width = box[2] - box[3], height = box[4] - box[5] } or nil
+end
+local function ToMap(box, u, v) return (u - box.u) / box.width, (box.v - v) / box.height end
 ns.Coords = {
+    Box = Box, ToMap = ToMap,
+    ZoneAt = function(_, u, v)
+        for map, box in pairs(BOXES) do
+            local x, y = ToMap(Box(map), u, v)
+            if map ~= 1453 and x >= 0 and x <= 1 and y >= 0 and y <= 1 then return map end
+        end
+        local x, y = ToMap(Box(1453), u, v)
+        if x >= 0 and x <= 1 and y >= 0 and y <= 1 then return 1453 end
+    end,
+    Link = function(from, to) if from == to then return { du = 0, dv = 0, su = 1, sv = 1 } end end,
     Planes = function() return { 1415, 1414 } end,
     Zones = function(plane)
         local list = {}
@@ -51,8 +68,34 @@ ns.Coords = {
 }
 local hereU, hereV = ToPlane(1453, 0.40, 0.80) -- the Mage Quarter
 ns.Live = { Player = function() return 1415, hereU, hereV, 0 end, Flights = function() return {} end }
-ns.Canvas = { Show = function() return true end, LookAt = function() return true end, Refresh = function() end,
-              view = { zone = 1453 } }
+-- The canvas: Elwynn's art drawn below at a fixed place (MapArt), what stands on the plane put over it there.
+local ART = { left = -200, top = 60, width = 2048 * 1002 / 1024, height = 1536 * 668 / 768 }
+local mapFrame
+local view = { map = 1415, zone = 1453, left = -1e9, right = 1e9, top = 1e9, bottom = -1e9 }
+ns.Canvas = { Show = function() return true end, LookAt = function() return true end, view = view,
+              Refresh = function() if ns.Farms then ns.Farms.Place(view, false) end end }
+function ns.Canvas.Pool(frame, drawLayer)
+    local pool = { used = {}, seen = {} }
+    function pool:Begin() wipe(self.seen) end
+    function pool:Get(key, file)
+        local texture = self.used[key] or frame:CreateTexture(nil, drawLayer)
+        texture:SetTexture(file)
+        texture:Show()
+        self.used[key], self.seen[key] = texture, true
+        return texture
+    end
+    function pool:End()
+        for key, texture in pairs(self.used) do if not self.seen[key] then texture:Hide() end end
+    end
+    return pool
+end
+function ns.Canvas.Put(texture, u, v, width, height)
+    local box = Box(1429)
+    local x, y = ToMap(box, u, v)
+    texture:ClearAllPoints()
+    texture:SetPoint("TOPLEFT", mapFrame, "TOPLEFT", ART.left + x * ART.width, ART.top - y * ART.height)
+    texture:SetSize(width / box.width * ART.width, height / box.height * ART.height)
+end
 ns.Dungeons = { List = function() return {} end, Show = function() return true end }
 ns.Label = { Range = function() return nil end }
 ns.QuestLog = { Focus = function() end }
@@ -79,7 +122,7 @@ ns.Pins = {
     PlaceLook = function(kind) return ({ dungeon = "dungeon", raid = "raid" })[kind] or "poi-town" end,
 }
 
-Lab.Addon("SaneUI_Navigation", "src/Navigation/Find.lua", "src/Navigation/FindBox.lua")
+Lab.Addon("SaneUI_Navigation", "src/Navigation/Find.lua", "src/Navigation/Farms.lua", "src/Navigation/FindBox.lua")
 
 -- The full map's title bar, as Core's window draws it while it fills the screen (Window.lua): the title at its left,
 -- a thin gold line under it, the close button at its right; Elwynn's map art under it.
@@ -108,6 +151,8 @@ local map = CreateFrame("Frame", nil, UIParent)
 map:SetPoint("TOPLEFT", bar, "BOTTOMLEFT")
 map:SetPoint("BOTTOMRIGHT")
 map:SetFrameStrata("BACKGROUND")
+map:SetClipsChildren(true)
+mapFrame = map
 for index = 1, 12 do
     local tile = map:CreateTexture(nil, "BACKGROUND")
     tile:SetTexture("Interface\\WorldMap\\Elwynn\\Elwynn" .. index)
@@ -127,6 +172,8 @@ function LabFindShown()
 end
 
 Lab.OnLogin(function()
+    local glow = ns.Farms.Build(map)
+    glow:SetAllPoints(map)
     ns.FindBox.SetShown(true, handle)
     local box
     for _, child in ipairs({ bar:GetChildren() }) do

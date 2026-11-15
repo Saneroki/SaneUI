@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Where to farm: type "where to farm Silk Cloth" or a herb's name
+  in the map's search and the places where its creatures or nodes
+  stand thickest glow on the map, a pin in each, the best listed
+  first with what is there and how much a round gives. A typo is
+  put right ("peaceblossom" searches for Peacebloom).
 - A search in the full map's title bar: type a name or what you
   are looking for (nearest warrior trainer, who sells Linen Cloth,
   what drops a thing, vendor in Elwynn, a guild member, a quest, a

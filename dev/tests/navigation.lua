@@ -8566,6 +8566,71 @@ end)()
     box._scripts.OnArrowPressed(box, "UP")
     check(box:GetText() == "warrior trainer", "Up in the empty field: the words searched before")
     FindBox.Clear()
+
+    -- Where to farm a thing (Farms.lua; Saneroki, 2026-11-15): the places thickest with what gives it, glowing on the
+    -- full map, a pin at each; the words, a typo put right
+    check(Find.Read("where to farm silk cloth").want == "farm" and Find.Read("peacebloom farming").want == "farm"
+        and Find.Read("where to mine copper").want == "farm", "where to farm, farming, where to mine: farming asked")
+    local Farms = ns.Farms
+    local points = Find.Points
+    -- Silverleaf's spawns as Core's data might have them: six close together in Elwynn's middle, two far apart
+    Find.Points = function(thing, creature)
+        if thing == "object:1617" then
+            return { { map = 1429, x = 0.50, y = 0.50 }, { map = 1429, x = 0.505, y = 0.50 }, { map = 1429, x = 0.51, y = 0.505 },
+                     { map = 1429, x = 0.50, y = 0.51 }, { map = 1429, x = 0.495, y = 0.505 }, { map = 1429, x = 0.505, y = 0.495 },
+                     { map = 1429, x = 0.10, y = 0.10 }, { map = 1429, x = 0.90, y = 0.90 } }
+        end
+        return points(thing, creature)
+    end
+    Farms.Forget()
+    answer = Ask("where to farm silverleaf")
+    local place = answer.farms and answer.farms[1]
+    check(answer.about and answer.about.entry.kind == "item" and answer[1].title == Find.TEXT.groups.farm:format("Silverleaf")
+        and #answer.farms == 1 and place.count == 6 and place.nodes and place.map == 1429,
+        "where to farm it: one place, where six of its herbs stand together; the two alone none")
+    check(place.x > 0.49 and place.x < 0.52 and place.y > 0.49 and place.y < 0.52, "its middle among them")
+    check(place.radius >= Farms.SMALL and place.radius <= Farms.LARGE, "a radius in yards, neither too small nor too large")
+    check(place.name == "Elwynn Forest (middle)" and Farms.About(place):find("6 to gather", 1, true),
+        "named by its zone and where in it; what it holds in a line")
+    local farmRow = answer[1].rows[1]
+    check(farmRow.entry.kind == "farm" and farmRow.entry.name == place.name and farmRow.yards,
+        "a row per place, how far")
+    -- glowing on the full map, a pin at its middle
+    Find.Farms(answer.farms, answer.about.entry)
+    Canvas.Layout()
+    local glow
+    for _, widget in ipairs(W.frames) do
+        if widget._kind == "Texture" and widget._texture == Farms.SOFT and widget._shown then glow = widget end
+    end
+    check(Farms.Shown() == answer.farms and glow, "its glow on the full map, the soft round mark")
+    local marker = false
+    for _, pin in ipairs(Pins.For(Canvas.view, false)) do
+        if pin.kind == "find" and pin.key:find("^farm:") then marker = pin end
+    end
+    check(marker and marker.size == Find.MARKER and marker.role == place.name, "and a pin at its middle")
+    check(Find.Show(farmRow.entry) and Farms.Shown() == answer.farms, "a place chosen: the map there, the glow kept")
+    check(Find.Pin(farmRow.entry), "the map pin at its middle")
+    -- a typo put right
+    answer = Ask("where to farm silverlaef")
+    check(answer.asked.spelled == "silverleaf" and answer.farms and #answer.farms == 1,
+        "silverlaef: searched for silverleaf, its place to farm")
+    -- an item's list leads with its best places
+    answer = Ask("where to get silverleaf")
+    check(answer[1].title == Find.TEXT.groups.farmFirst and answer[1].rows[1].entry.kind == "farm",
+        "where to get it: its best places to farm first")
+    -- Enter on a herb in the list: where to farm it
+    box:SetText("silverleaf herb")
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(FindBox.WAIT + 0.01)
+    Frames(4)
+    box._focus = true
+    box._scripts.OnEnterPressed(box)
+    Frames(4)
+    check(box:GetText() == "where to farm Silverleaf" and Farms.Shown(), "Enter on a herb: where to farm it, glowing")
+    FindBox.Clear()
+    check(not Farms.Shown(), "cleared: the glow gone")
+    Find.Points = points
+    Farms.Forget()
     if not wasFull then
         Window.Toggle()
         Window.frame._group:Run(1)

@@ -97,6 +97,8 @@ TripView.lua
 TopBar.lua
 # What the full map's search finds: NPCs, items and where they come from, quests, places, zones, people. Knows no frames
 Find.lua
+# Where to farm a thing: the places thickest with what gives it, glowing on the full map. For the map's search
+Farms.lua
 # The full map's search: a large field in its title bar, the finds listed under it, their places on the map
 FindBox.lua
 # The window: the minimap in the top right corner, the map when it fills the screen

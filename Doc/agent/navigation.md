@@ -15,7 +15,9 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    search (`FindBox.lua` the field and its list, `Find.lua` the finds: Core's NPCs, objects, places, items and where
    they come from, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends;
    "nearest", "who sells X", "in <zone>", levels; its places as pins of kind `find` on the full map, the map pin at the
-   nearest; the key *Search the map*, `Bindings.xml`; 2026-11-15).
+   nearest; the key *Search the map*, `Bindings.xml`; 2026-11-15). *Where to farm X* (`Farms.lua`): the places thickest
+   with what gives it, clustered from Core's spawns weighed by drop chance, glowing on the full map (the canvas' layer
+   `farms`), a pin at each; a mistyped word put right.
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the
    wheel zooms from the minimap's range to the world, follows the player, north-up only. The views (setting `view`,
@@ -59,7 +61,7 @@ The file list with a line each: `src/Navigation/README.md`, section *Files* (lin
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the Sane Rare tracker (`RareTracker`: finds near
-you told by a notice and a horn, `/sane testraretracker`); the map's search (`Find`, `FindBox`; `Search.lua` is the walking data's, not it); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
+you told by a notice and a horn, `/sane testraretracker`); the map's search (`Find`, `FindBox`, `Farms`; `Search.lua` is the walking data's, not it); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
 `Planner`, `Corpse`, `Danger`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,

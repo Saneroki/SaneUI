@@ -136,7 +136,7 @@ local function About(row)
     if role and role ~= entry.name then parts[#parts + 1] = role end
     local point = entry.nearest
     local zone = point and point.map and Find.MapName(point.map)
-    if entry.kind == "member" or entry.kind == "friend" then zone = nil end -- (its role is its zone)
+    if entry.kind == "member" or entry.kind == "friend" or entry.kind == "farm" then zone = nil end -- (said already)
     if zone and zone ~= role then parts[#parts + 1] = zone end
     local low, high = entry.low, entry.high
     if entry.kind == "npc" and low and low > 0 then
@@ -177,7 +177,7 @@ local function Picture(button, entry)
     local icon = button.icon
     icon:SetTexCoord(0, 1, 0, 1)
     icon:SetDesaturated(entry.online == false)
-    if entry.kind == "item" and entry.icon then
+    if (entry.kind == "item" or entry.kind == "farm") and type(entry.icon) == "number" then
         icon:SetTexture(entry.icon)
         icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     elseif entry.kind == "spell" then
@@ -247,6 +247,8 @@ local function Lines(found)
     wipe(lines)
     wipe(finds)
     lit, top, hovered = nil, 0, nil
+    local spelled = found and found.asked and found.asked.spelled
+    if spelled then lines[#lines + 1] = { title = Find.TEXT.spelled:format(spelled), grey = true } end
     if found and found.about then
         lines[#lines + 1] = { row = found.about }
         finds[#finds + 1] = found.about
@@ -263,6 +265,13 @@ local function Lines(found)
     if found and not found.reading and #finds == 0 then lines[#lines + 1] = { title = FindBox.TEXT.nothing, grey = true } end
 end
 
+-- The mouse gone from the rows: the map as it was before, the chosen find's (or the places to farm the answer named).
+local function Restore()
+    if chosen then return Find.Preview(chosen.entry, chosen.role) end
+    if answer and answer.farms and answer.about then return Find.Farms(answer.farms, answer.about.entry) end
+    Find.Clear()
+end
+
 local function Open(on)
     if not list then return end
     if on and #lines > 0 then
@@ -272,7 +281,7 @@ local function Open(on)
         list:Hide()
         if hovered then
             hovered = nil
-            if chosen then Find.Show(chosen.entry, chosen.role) else Find.Clear() end
+            Restore()
         end
     end
 end
@@ -289,6 +298,8 @@ local function Run()
         if box:GetText() ~= text then return end
         answer, typed = found, text
         Lines(found)
+        -- where to farm it: its places glow on the map at once (the map not moved)
+        if found and found.farms and found.about then Find.Farms(found.farms, found.about.entry) end
         Open(found ~= nil and box:HasFocus() or (list and list:IsShown()))
     end)
 end
@@ -317,13 +328,17 @@ local function Take(row, shift, ctrl)
     if not row then return end
     local entry = row.entry
     Find.Picked(entry, box:GetText())
-    if (entry.kind == "item" or entry.kind == "spell") and not shift and not (answer and answer.about == row) then
-        local text = entry.kind == "spell" and "who teaches " .. entry.name or "where to get " .. entry.name
+    local farmable = entry.kind == "object" and (entry.what == "herb" or entry.what == "ore" or entry.what == "chest")
+    if (entry.kind == "item" or entry.kind == "spell" or farmable) and not shift and not (answer and answer.about == row) then
+        local text = entry.kind == "spell" and "who teaches " .. entry.name
+            or farmable and "where to farm " .. entry.name or "where to get " .. entry.name
         box:SetText(text)
         box:SetCursorPosition(#text)
         Run()
-        Find.Show(entry, row.role)
-        chosen = row
+        -- a herb, an ore: the map at its best place to farm (its glow kept); an item: its places and its vendors
+        local best = farmable and answer and answer.farms and answer[1] and answer[1].rows[1]
+        Find.Show(best and best.entry or entry, best and best.role or row.role)
+        chosen = best or row
         return
     end
     chosen = row
@@ -670,7 +685,7 @@ local function Build(handle)
     list:SetScript("OnLeave", ns.Guard(function()
         if hovered and Plain(list:IsMouseOver()) ~= true then
             hovered = nil
-            if chosen then ns.Find.Preview(chosen.entry, chosen.role) else Find.Clear() end
+            Restore()
         end
         if not box:HasFocus() and Plain(list:IsMouseOver()) ~= true then Open(false) end
     end))

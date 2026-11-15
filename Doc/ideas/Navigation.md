@@ -980,6 +980,13 @@ hidden but what the small view needs.
   would need Core's wire, card #38). Not on the map's search (card #56, a search window everywhere): spells,
   mounts, macros, game settings, key bindings, mail, auctions, the calendar, a calculator, sending finds to the
   chat.
+- **Where to farm (Saneroki, 2026-11-15; built):** "Could it be possible to write something like "where to farm Silk
+  cloth" or "peaceblossom" and it will show dense areas were you could farm them on the map or put custom map pins
+  there that are not tied to the routing but just shows where a lot of enemies are dense clustered that drop those
+  things or zones where these nodes are plenty in". `Farms.lua`: the spawns of what gives the thing (weighed by its
+  chance) clustered on a grid, the best places listed and glowing soft gold on the full map, as large as they are, a
+  pin in each one's middle, the route untouched; a dungeon where it drops listed after them. A mistyped word put
+  right ("peaceblossom": Peacebloom).
 
 ## The game's map and minimap: kept out of sight, given back
 
