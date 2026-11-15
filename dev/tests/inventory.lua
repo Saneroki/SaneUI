@@ -688,13 +688,20 @@ local function Pick(part)
     line.fn(line.data)
 end
 -- What stands at a line's right, and how wide it makes the line.
+-- The font string stands in for one of the menu's pool, as another line left it: 300 wide, its words at its left.
 local function Right(line)
-    local right = { ClearAllPoints = function() end, SetPoint = function() end, SetFontObject = function() end,
-                    SetText = function(self, text) self.text = text end, GetUnboundedStringWidth = function() return 40 end }
+    local right = { width = 300, justify = "LEFT", points = {} }
+    function right.ClearAllPoints(self) self.points = {} end
+    function right.SetPoint(self, point, ...) self.points[#self.points + 1] = { point, ... } end
+    function right.SetFontObject() end
+    function right.SetJustifyH(self, justify) self.justify = justify end
+    function right.SetHeight(self, height) self.height = height end
+    function right.SetTextToFit(self, text) self.text, self.width = text, 40 end
+    function right.GetUnboundedStringWidth() return 40 end
     local button = { AttachFontString = function() return right end,
                      fontString = { GetUnboundedStringWidth = function() return 100 end } }
     local wide, high = line.inits[1](button)
-    return right.text, wide, high
+    return right.text, wide, high, right
 end
 local function Blocks()
     local list, blocks = {}, Alts.canvas.blocks
@@ -730,7 +737,10 @@ check(not Alts.note:IsShown() and Names() == "Tester Stub, Ann Brook, Droopy Fai
 check(Roster.WIDTH < 230 and not Alts.roster, "a dropdown on the title line, no column down the window's side")
 do
     local droopy = Character("Droopy")
-    local gold, wide, high = Right(droopy)
+    local gold, wide, high, right = Right(droopy)
+    check(right.width == 40 and right.justify == "RIGHT" and #right.points == 1 and right.points[1][1] == "RIGHT"
+        and right.height == Roster.ROW,
+        "the gold at the line's right end, as wide as its words: a font string of the menu's pool keeps no other line's width")
     check(droopy.text:find("[classicon-warrior]", 1, true) and droopy.text:find("|cffc79c6e", 1, true) and gold == "1230000c"
         and wide == 100 + 40 + Roster.CHECK + Roster.APART and high == Roster.ROW and droopy.response == MenuResponse.Close,
         "each by its class's icon, in its class's colour, its whole gold at the right: " .. droopy.text)

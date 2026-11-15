@@ -72,13 +72,22 @@ local function Line(who)
     return Icon(who) .. "|c" .. colour .. Name(who) .. "|r"
 end
 
--- A line's right, the line made as wide as its words and that.
+-- A line's right, the line made as wide as its words and that. The font string comes from the menu's pool and may keep
+-- the width another line gave it (its words then stood from that box's left, over the name, in the game): it is made
+-- as wide as its own words and set at the line's right end, as the game's own menus set a number there.
 local function Lay(button, words)
     local right = button:AttachFontString()
     right:ClearAllPoints()
     right:SetPoint("RIGHT")
     right:SetFontObject("GameFontHighlightSmall")
-    right:SetText(words)
+    right:SetJustifyH("RIGHT")
+    right:SetHeight(Roster.ROW)
+    if right.SetTextToFit then
+        right:SetTextToFit(words)
+    else
+        right:SetText(words)
+        right:SetWidth(right:GetUnboundedStringWidth())
+    end
     local text = button.fontString
     local width = (text and text:GetUnboundedStringWidth() or 100) + right:GetUnboundedStringWidth()
     return width + Roster.CHECK + Roster.APART, Roster.ROW
