@@ -20,8 +20,10 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    `farms`), a pin at each; a mistyped word put right.
 8. Your own markers (`Markers.lua`, 2026-11-15): Alt and a click on the map puts one; a card (the kit's bronze) to
    write its title and description and pick its icon; pins of kind `mark` on both maps, the title beside them on the
-   full map, a click opens the card (Edit, Move, the map pin, Delete); kept in `ns.store.markers` for the account,
-   never shared (sharing and drawing: card #481); the pin filter's *Your markers*; found by the map's search.
+   full map, a click opens the card (Edit, Move, the map pin, Delete, Share); kept in `ns.store.markers` for the
+   account; shared only by the card's Share (Core's wire, a block of kind `M`, to the raid or party or the guild),
+   asked before kept, a copy changed when its maker shares it again (`origin`); the setting *Markers others share*;
+   the pin filter's *Your markers*; found by the map's search. Drawing on the map: card #481.
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the
    wheel zooms from the minimap's range to the world, follows the player, north-up only. The views (setting `view`,

@@ -991,8 +991,11 @@ hidden but what the small view needs.
   markers on maps with our own text and description when you click on them?" Alt and a click on the map puts one; a
   card in the kit's bronze to write its title and description and pick its icon (the game's raid marks and a few of
   its map icons); on both maps, its title beside it on the full map; a click opens the card (Edit, Move, the map pin,
-  Delete). Kept for the account, never shared. Still to come (card #481): sharing sets of them with the party or the
-  guild, and drawing on the map.
+  Delete). Kept for the account.
+- **Markers shared (Saneroki, 2026-11-15; built):** "Can we share markers with party and guild members?" The card's
+  Share: one marker, or all of yours on its map, to the raid or party or the guild; whoever gets them is asked first
+  (Keep or No), a kept one marked as from its sender, changed in place when its maker shares it again; the setting
+  *Markers others share* (on). Still to come (card #481): drawing on the map.
 
 ## The game's map and minimap: kept out of sight, given back
 

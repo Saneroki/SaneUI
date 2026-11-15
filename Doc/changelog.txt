@@ -6,6 +6,9 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Share your map markers: a marker's card has Share, for that
+  marker or all of yours in its zone, with your party, raid or
+  guild. They are asked whether to keep them.
 - Your own markers on the map: Alt and a click puts one, with a
   title, a description and an icon of your choice; a click on it
   shows them again, with Edit, Move, the map pin on it and Delete.

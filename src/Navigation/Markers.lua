@@ -15,6 +15,11 @@ local _, ns = ...
 --                  right click: it stays), the map pin, Delete (asked first). Esc closes it (Core.Escape). Editing: a line for its title, a box for its words, its
 --                  icon to pick; Save (Enter in the title too) and Cancel (Esc). A new marker cancelled goes again.
 --      the search  the map's search finds them by their titles and words (Find.lua)
+--      sharing     the card's Share (Saneroki, 2026-11-15: "Can we share markers with party and guild members?"):
+--                  this marker, or all of yours in its zone, to your party or raid, or to your guild; who gets them
+--                  is asked first (a small card: who shares what, Keep or No), and only kept on Keep, marked as
+--                  from the one who shared them; one shared again by its maker (edited, moved) changes the copy
+--                  kept, never a second one. The setting Markers others share (on) lets nobody ask while off.
 --
 --      Markers.List()            every marker: { id, map, x, y (0 to 1 on its map), title, text, icon, made (time) }
 --      Markers.New(spot)         a new one at { map, x, y } (Canvas: Alt and a click), its card open to write in
@@ -24,8 +29,14 @@ local _, ns = ...
 --      Markers.Remove(marker), Markers.Close()
 --
 --  Kept for the account in the module's saved settings (ns.store.markers), each game's in its own (their map IDs
---  differ, and so do their saved files): personal notes, never shared or shipped (data.md, *Game facts, not people*).
---  Sharing them with the party or the guild, and drawing on the map, come later (board #481).
+--  differ, and so do their saved files): personal notes, never shipped, shared only when you share them yourself
+--  (data.md, *Game facts, not people*). Drawing on the map comes later (board #481).
+--
+--  On the wire (Core.Wire, kind M, a block): "1", then a row a marker, cut by \030; a row: its origin (the maker's
+--  character and the maker's own number, kept with every copy), its map, x, y (four places), icon, title and words,
+--  cut by \031. A block holds what fits in Markers.BLOCK bytes, more go in further blocks (each asked about apart).
+--  Taken: at most Markers.TAKE a block; a row whose map is no number, whose point is off its map, is left out; an
+--  icon not known is the first; a title and words cut to their most; never from yourself (the wire drops those).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Look = Core.Look
@@ -40,6 +51,10 @@ Markers.PICK = 26            -- an icon to pick, editing
 Markers.PER_ROW = 7          -- icons to pick in a row
 Markers.BUTTON = 30          -- the card's grey square buttons
 Markers.TITLE_MOST, Markers.TEXT_MOST = 60, 1000 -- letters a title and its words hold at most
+Markers.KIND = "M"           -- the wire's kind of markers shared
+Markers.BLOCK = 2800         -- bytes of rows in one block, unpacked (packed it stays well under the wire's 4 KB)
+Markers.TAKE = 50            -- markers taken from one block at most
+Markers.OFFER = 300          -- the offer card's width
 -- The icons to pick from, the first the one a new marker has: the game's raid marks, and a few of its map icons.
 Markers.ICONS = {
     { key = "star", texture = 137001 }, { key = "circle", texture = 137002 }, { key = "diamond", texture = 137003 },
@@ -69,6 +84,18 @@ Markers.TEXT = {
     deleteAsk = "Delete the marker %s?",
     placed = "%s, put %s",
     noPlace = "No marker here: zoom in onto a zone.",
+    share = "Share",
+    shareTip = "This marker, or all of yours in its zone, to your party or raid, or to your guild: they are asked whether to keep them.",
+    shareOne = "This marker with your %s",
+    shareZone = "Your %d markers in %s with your %s",
+    party = "party", raid = "raid", guild = "guild",
+    shared = "%d %s sent to your %s.", one = "marker", many = "markers",
+    offered = "Markers shared",
+    offerOne = "%s shares a marker with you: %s.",
+    offerMany = "%s shares %d markers with you: %s.",
+    keep = "Keep",
+    no = Core.Word("NO", "No"),
+    from = "from %s",
     hint = "Click: its card. Double click: the map pin here.",
 }
 
@@ -124,6 +151,7 @@ function Markers.Pins()
             local icon = Icon(marker.icon)
             local lines = {}
             if marker.text and marker.text ~= "" then lines[1] = marker.text end
+            if marker.from then lines[#lines + 1] = { Markers.TEXT.from:format(marker.from), 0.6, 0.6, 0.6 } end
             lines[#lines + 1] = { Markers.TEXT.hint, 0.5, 0.5, 0.5 }
             pins[#pins + 1] = { kind = "mark", key = "mark:" .. marker.id, marker = marker, name = marker.title,
                                 label = marker.title, home = home, u = u, v = v, map = marker.map, x = marker.x,
@@ -154,7 +182,9 @@ local function Read(marker)
     Paint(reading.icon, marker.icon)
     reading.words:SetText(marker.text or "")
     local zone = ns.Find and ns.Find.MapName(marker.map) or ""
-    reading.placed:SetText(Markers.TEXT.placed:format(zone, Day(marker.made)))
+    local placed = Markers.TEXT.placed:format(zone, Day(marker.made))
+    if marker.from then placed = placed .. ", " .. Markers.TEXT.from:format(marker.from) end
+    reading.placed:SetText(placed)
     local words = (marker.text and marker.text ~= "") and (reading.words:GetStringHeight() or 0) or 0
     reading.height = math.max(Markers.ICON, words) + 8 + 16 + 8 + Markers.BUTTON
     Face(false)
@@ -345,6 +375,8 @@ local function Build()
         { "Interface\\CURSOR\\UI-Cursor-Move", Markers.TEXT.move, Markers.TEXT.moveTip, Move },
         { "Waypoint-MapPin-Untracked", Markers.TEXT.pin, Markers.TEXT.pinTip, Pin },
         { "Interface\\Buttons\\UI-GroupLoot-Pass-Up", Markers.TEXT.delete, Markers.TEXT.deleteTip, Delete },
+        { "Interface\\FriendsFrame\\UI-Toast-BroadcastIcon", Markers.TEXT.share, Markers.TEXT.shareTip,
+          function(button) Markers.Share(button) end },
     }) do
         local button = Square(reading, spec[1], spec[2], spec[3], spec[4])
         reading.buttons[#reading.buttons + 1] = button
@@ -477,3 +509,196 @@ end
 function Markers.Stale()
     stale = true
 end
+
+-------------------------------------------------------------------------------
+--  Sharing
+-------------------------------------------------------------------------------
+local Wire = Core.Wire
+local offers = {} -- the shares waiting for an answer, the oldest first: { sender, rows }
+local offer       -- the card that asks
+Markers.WAITING = 10 -- shares waiting for an answer at most (more are let go)
+
+-- Your raid or else your party, as the wire names it, and its word; nil outside a group.
+local function Group()
+    local home = rawget(_G, "LE_PARTY_CATEGORY_HOME")
+    if Core.Ask(rawget(_G, "IsInRaid"), home) then return "RAID", Markers.TEXT.raid end
+    if Core.Ask(rawget(_G, "IsInGroup"), home) then return "PARTY", Markers.TEXT.party end
+    return nil, Markers.TEXT.party
+end
+
+-- Words on the wire: none of its cutting signs, nor any other sign but the line's end; so many bytes at most.
+local function Clean(text, most)
+    text = tostring(text or ""):gsub("[%z\001-\009\011-\031]", "")
+    if most and #text > most then text = text:sub(1, most) end
+    return text
+end
+
+-- Where a marker came from, kept with every copy: its maker's character and the maker's own number.
+local function Origin(marker)
+    marker.origin = marker.origin or ((Core.charKey or "?") .. ":" .. tostring(marker.id))
+    return marker.origin
+end
+
+local function Row(marker)
+    return table.concat({ Clean(Origin(marker), 80), tostring(marker.map), ("%.4f"):format(marker.x or 0),
+        ("%.4f"):format(marker.y or 0), Clean(marker.icon, 16), Clean(marker.title, Markers.TITLE_MOST),
+        Clean(marker.text, Markers.TEXT_MOST) }, "\031")
+end
+
+-- Markers sent to a channel of the wire, in as many blocks as they need; how many went.
+function Markers.Send(list, channel)
+    if not channel then return 0 end
+    local sent, rows, size = 0, {}, 0
+    local function Flush()
+        if #rows == 0 then return end
+        if Wire.SendBlock(Markers.KIND, "1\030" .. table.concat(rows, "\030"), channel) then sent = sent + #rows end
+        wipe(rows)
+        size = 0
+    end
+    for _, marker in ipairs(list) do
+        local row = Row(marker)
+        if size > 0 and size + #row > Markers.BLOCK then Flush() end
+        rows[#rows + 1] = row
+        size = size + #row + 1
+    end
+    Flush()
+    return sent
+end
+
+local function Told(count, word)
+    ns.Print(Markers.TEXT.shared:format(count, count == 1 and Markers.TEXT.one or Markers.TEXT.many, word))
+end
+
+-- The card's Share: a menu of this marker, or all of yours on its map, to your raid or party, or to your guild (one
+-- you are not in greyed).
+function Markers.Share(button)
+    local marker = opened
+    if not marker or not rawget(_G, "MenuUtil") then return end
+    MenuUtil.CreateContextMenu(button, ns.Guard(function(_, root)
+        root:CreateTitle(Markers.TEXT.share)
+        local zone = ns.Find and ns.Find.MapName(marker.map) or "?"
+        local here = {}
+        for _, each in ipairs(Markers.List()) do
+            if each.map == marker.map then here[#here + 1] = each end
+        end
+        local group, groupWord = Group()
+        local guild = Core.Ask(rawget(_G, "IsInGuild")) and "GUILD" or nil
+        for _, target in ipairs({ { group, groupWord }, { guild, Markers.TEXT.guild } }) do
+            local channel, word = target[1], target[2]
+            local one = root:CreateButton(Markers.TEXT.shareOne:format(word),
+                ns.Guard(function() Told(Markers.Send({ marker }, channel), word) end))
+            if not channel and one.SetEnabled then one:SetEnabled(false) end
+            if #here > 1 then
+                local all = root:CreateButton(Markers.TEXT.shareZone:format(#here, zone, word),
+                    ns.Guard(function() Told(Markers.Send(here, channel), word) end))
+                if not channel and all.SetEnabled then all:SetEnabled(false) end
+            end
+        end
+    end))
+end
+
+-- A block's markers, read (see the file's head): the rows that hold, at most Markers.TAKE.
+function Markers.Read(text)
+    local rows = {}
+    local version, rest = tostring(text or ""):match("^(%d+)\030(.*)$")
+    if version ~= "1" or not rest then return rows end
+    for row in (rest .. "\030"):gmatch("(.-)\030") do
+        if #rows >= Markers.TAKE then break end
+        local origin, map, x, y, icon, title, words = row:match("^(.-)\031(.-)\031(.-)\031(.-)\031(.-)\031(.-)\031(.*)$")
+        map, x, y = tonumber(map), tonumber(x), tonumber(y)
+        if origin and origin ~= "" and map and map > 0 and x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1 then
+            rows[#rows + 1] = { origin = Clean(origin, 80), map = math.floor(map), x = x, y = y, icon = Icon(icon).key,
+                                title = Clean(title, Markers.TITLE_MOST), text = Clean(words, Markers.TEXT_MOST) }
+        end
+    end
+    return rows
+end
+
+-- A share kept: each marker new, or the copy of the same origin changed (its maker shared it again).
+function Markers.Keep(share)
+    local list = Markers.List()
+    local own = (Core.charKey or "?") .. ":"
+    for _, row in ipairs(share.rows) do
+        local kept
+        for _, each in ipairs(list) do
+            if each.origin == row.origin or (not each.origin and own .. tostring(each.id) == row.origin) then kept = each end
+        end
+        if not kept then
+            ns.store.markerNext = (tonumber(ns.store.markerNext) or 0) + 1
+            kept = { id = ns.store.markerNext, made = Core.Ask(GetServerTime), origin = row.origin }
+            list[#list + 1] = kept
+        end
+        kept.map, kept.x, kept.y, kept.icon, kept.title, kept.text = row.map, row.x, row.y, row.icon, row.title, row.text
+        if row.origin:sub(1, #own) ~= own then kept.from = share.sender end
+    end
+    Changed()
+end
+
+local Ask
+local function Answer(keep)
+    local share = table.remove(offers, 1)
+    if share and keep then Markers.Keep(share) end
+    Ask()
+end
+
+-- The card that asks: who shares what (the first few titles, the zone), Keep or No; the next share once answered.
+local function Offer()
+    if offer then return offer end
+    offer = CreateFrame("Frame", nil, UIParent)
+    offer:SetWidth(Markers.OFFER)
+    offer:SetFrameStrata("DIALOG")
+    offer:SetToplevel(true)
+    offer:SetClampedToScreen(true)
+    offer:EnableMouse(true)
+    offer:SetPoint("TOP", UIParent, "TOP", 0, -160)
+    offer.look = Look.Dress(offer, Markers.TEXT.offered)
+    offer.look.close:SetScript("OnClick", ns.Guard(function() Answer(false) end))
+    offer.words = offer.look.content:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    offer.words:SetPoint("TOPLEFT")
+    offer.words:SetWidth(Markers.OFFER - 2 * Look.INSIDE)
+    offer.words:SetJustifyH("LEFT")
+    offer.words:SetWordWrap(true)
+    offer.keep = Look.Red(offer.look.content, Markers.TEXT.keep, 100)
+    offer.keep:SetPoint("BOTTOMLEFT")
+    offer.keep:SetScript("OnClick", ns.Guard(function() Answer(true) end))
+    offer.no = Look.Red(offer.look.content, Markers.TEXT.no, 100)
+    offer.no:SetPoint("LEFT", offer.keep, "RIGHT", 8, 0)
+    offer.no:SetScript("OnClick", ns.Guard(function() Answer(false) end))
+    offer:Hide()
+    Markers.offer = offer -- (for the tests)
+    return offer
+end
+
+function Ask()
+    local share = offers[1]
+    if not share then
+        if offer then offer:Hide() end
+        return
+    end
+    Offer()
+    local names = {}
+    for index = 1, math.min(3, #share.rows) do
+        local title = share.rows[index].title
+        names[index] = title ~= "" and title or Markers.TEXT.untitled
+    end
+    if #share.rows > 3 then names[#names + 1] = "..." end
+    local words = #share.rows == 1 and Markers.TEXT.offerOne:format(share.sender, names[1])
+        or Markers.TEXT.offerMany:format(share.sender, #share.rows, table.concat(names, ", "))
+    local zone = ns.Find and ns.Find.MapName(share.rows[1].map)
+    if zone then words = words .. " (" .. zone .. ")" end
+    offer.words:SetText(words)
+    local height = (offer.words:GetStringHeight() or 14) + 12 + 28
+    offer:SetHeight(height + Look.DRESS_HEAD + 4 + Look.INSIDE + 4)
+    offer:Show()
+end
+
+-- A block of markers heard (the wire, kind M): asked about, unless the setting says no or it holds none.
+function Markers.Heard(sender, text)
+    if ns.off or not (ns.options and ns.options.markerShares) then return end
+    local rows = Markers.Read(text)
+    if #rows == 0 or #offers >= Markers.WAITING then return end
+    offers[#offers + 1] = { sender = tostring(sender or "?"), rows = rows }
+    if #offers == 1 then Ask() end
+end
+
+if Wire and Wire.ListenBlock then Wire.ListenBlock(Markers.KIND, ns.Guard(Markers.Heard)) end

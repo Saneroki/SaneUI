@@ -1273,6 +1273,10 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
 - **Auction scans** *(Saneroki, 2026-10-30)*: kind `A` (`have`, `want`, `ask`, each with house and time) and its blocks: *Scans shared*.
 - **Counts and discoveries** *(Saneroki, 2026-10-30)*: blocks of kind `B`: *Counts and discoveries shared*.
+- **Map markers** *(Saneroki, 2026-11-15)*: blocks of kind `M`, only when the player shares them (a marker's card,
+  Navigation's `Markers.lua`), to the raid or party or the guild: "1", then a row a marker (its origin: the maker's
+  character key and number; map, x, y, icon, title, words). Personal data the player chose to share: the one who gets
+  them is asked first and keeps them in Navigation's saved settings, never in a `SaneUIData_` variable or the database.
 - **Speed Leveling's place in a guide** *(Saneroki, 2026-11-05)*: kind `S` (the guide's key, at most 180 bytes of it;
   the row of the step's first line in the guide's text; letters: `w` waiting there, `c` busy with a class quest on top
   of it, `a` asking for the others' places), to the party or the raid only, as the place changes, nothing when it follows no guide (an empty key: forget me). Not

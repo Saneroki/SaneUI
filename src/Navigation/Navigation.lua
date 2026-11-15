@@ -54,6 +54,8 @@ ns.TEXT = {
     questLogRestGroupTip = "The quest log on the screen rests out of sight in a party or raid as well: there too only the mouse, your health or your resource, a fight and Edit Mode bring it. Off: always in sight in a group.",
     pins = "Pins on the map",
     pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map. Route to the map pin: a golden line leads from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; planned again when you leave it. On foot it turns orange where enemies a few levels above you spawn near it, red where they are far above you. Drag it on the full map to put a waypoint there: the line goes there first, then on to the pin. Minimap dots: what the game's minimap shows around you (players, tracked herbs and ore, quest areas), on the full map too. Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you.",
+    markerShares = "Markers others share",
+    markerSharesTip = "When a member of your party, raid or guild shares map markers with you, a small card asks whether to keep them; kept, they stand on your map marked as from them. Off: nobody asks, nothing is kept. Share your own from a marker's card (Share).",
     route = "Route to the map pin",
     -- A waypoint of the golden line (Planner.Via, Marks.Vias).
     via = "Waypoint",
@@ -244,6 +246,8 @@ local OPTIONS = {
     { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
       choices = { CHOICES[1], CHOICES[2], CHOICES[3] }, hidden = function() return not ns.Several() end },
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
+    -- Markers a member of your party, raid or guild shares (Markers.lua): asked about while on.
+    { key = "markerShares", default = true, text = ns.TEXT.markerShares, tip = ns.TEXT.markerSharesTip },
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
     { key = "pinSizes", default = {} },

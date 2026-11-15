@@ -564,7 +564,7 @@ local function Marked(list)
         list[#list + 1] = Words({ kind = "marker", group = "marker", key = "marker:" .. tostring(marker.id),
                                   marker = marker, atlas = icon.atlas, icon = icon.texture,
                                   spots = { { map = marker.map, x = marker.x, y = marker.y } } },
-            title, Find.TEXT.marker, (marker.text or "") .. " marker")
+            title, Find.TEXT.marker, (marker.text or "") .. " marker " .. (marker.from or ""))
     end
 end
 

@@ -343,7 +343,13 @@ and shows them on the map or puts the map pin there. The plan is in
   four buttons: Edit, Move (then click on the map where it should stand; a right click: it stays), the map pin on it
   (the golden line leads there) and Delete (asked first); a double click puts the map pin there at once. The pin
   filter's *Your markers* shows or hides them all; the map's search finds them by their titles and descriptions
-  (*markers* as the first word lists them all). They are kept for your account, yours alone.
+  (*markers* as the first word lists them all). They are kept for your account.
+- **Sharing markers** (Saneroki, 2026-11-15): the card's fifth button, **Share**: this marker, or all of yours on its
+  map, with your party (your raid in a raid) or your guild; one you are not in is greyed. Whoever gets them sees a
+  small card (who shares what, the first titles, the zone) and keeps them only with **Keep**; kept, they stand on
+  their map like their own, *from* the one who shared them on their card and tooltip. A marker its maker shares again
+  (after an edit or a move) changes the copy you kept, never adds a second one. The setting *Markers others share*
+  (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
@@ -883,7 +889,13 @@ and shows them on the map or puts the map pin there. The plan is in
   grey squares and red buttons, the thin golden outlines round the boxes; the words in a scroll frame that keeps the
   cursor in sight), `DIALOG`, beside the mouse, dragged by its head, Esc through `Core.Escape`. The search's finds of
   kind `marker` (`Find.lua`'s `Marked`; Enter: the map there and its card). Settings' version 6 ticks *Your markers*
-  in an older pin filter.
+  in an older pin filter. Sharing: Core's wire, a block of kind `M` (`Markers.Send`: "1", then a row a marker cut by
+  \030: origin, map, x, y, icon, title, words cut by \031; `Markers.BLOCK` bytes of rows a block, more in further
+  blocks), to `RAID` or `PARTY` (`LE_PARTY_CATEGORY_HOME`) or `GUILD`; heard (`Markers.Heard`, `Wire.ListenBlock`):
+  read (`Markers.Read`: `Markers.TAKE` rows at most, a map that is a number, a point on its map, a known icon or the
+  first, the words cut to their most), queued (`Markers.WAITING`), asked one at a time on a card of the kit
+  (`Look.Dress`, Keep and No the red buttons), kept by origin (`Markers.Keep`: the maker's character key and number,
+  `marker.origin`; `marker.from` the sender) while the setting `markerShares` is on.
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
   docked hook, `FindBox.SetShown`), in its middle, as wide as the room between the title and the buttons leaves
   (`FindBox.WIDTH` at most); on Core's skin (round ends, the gold trim); the list under it on the same skin, strata
@@ -1335,6 +1347,9 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, markers shared:** Saneroki: "Can we share markers with party and guild members?" The card's Share
+  (`Markers.Share`, `Send`), the wire's kind `M`, the card that asks (`Heard`, `Read`, `Keep`), `origin` and `from`,
+  the setting *Markers others share*. Card #481.
 - **2026-11-15, your own markers:** Saneroki: "Can we have a system where we can place our own custom map markers on
   maps with our own text and description when you click on them?" `Markers.lua`; Alt and a click on the map, the
   card, the pins of kind `mark` (`Pins.For`, `Apart`, `PinView.Act`, `Name`'s label), the pin filter's *Your

@@ -8732,6 +8732,43 @@ end)()
     Core.Set(ns.name, "pins", pins)
     check(Core.Settle(ns.name, { _version = 5, pins = { quest = true } }).pins.mark,
         "older settings: Your markers on")
+    -- sharing (Saneroki, 2026-11-15): sent on the wire as a block of kind M; heard, a card asks; kept only on Keep,
+    -- marked as from the one who shared it; shared again by its maker: the copy changed, no second one
+    local Wire = Core.Wire
+    local sendBlock, sent = Wire.SendBlock, {}
+    Wire.SendBlock = function(kind, text, channel) sent[#sent + 1] = { kind = kind, text = text, channel = channel } return true end
+    check(Markers.Send({ marker }, "GUILD") == 1 and sent[1].kind == Markers.KIND and sent[1].channel == "GUILD",
+        "shared with the guild: one block of kind M")
+    check(Markers.Send({ marker }, nil) == 0, "no channel (no group, no guild): nothing sent")
+    local rows = Markers.Read(sent[1].text)
+    check(#rows == 1 and rows[1].title == "Hogger's den" and rows[1].text == marker.text and rows[1].map == 1429
+        and Close(rows[1].x, 0.6) and rows[1].icon == "skull" and rows[1].origin == marker.origin,
+        "read back whole: its title, words, place, icon and origin")
+    check(#Markers.Read("1\030x\031nope\0310.5\0310.5\031star\031a\031b\030y\0311429\0312\0310.5\031star\031a\031b") == 0
+        and #Markers.Read("2\030whatever") == 0, "rows off their shape left out; another version ignored")
+    -- heard from another (as its copy would come: another maker's origin)
+    local theirs = sent[1].text:gsub("^1\030[^\031]*", "1\030Player-1-0000BEEF:7")
+    local count = #Markers.List()
+    Markers.Heard("Brannoc Steelvein", theirs)
+    local offer = Markers.offer
+    check(offer and offer:IsShown() and offer.words:GetText():find("Brannoc Steelvein", 1, true)
+        and #Markers.List() == count, "heard: a card asks, nothing kept yet")
+    offer.keep._scripts.OnClick(offer.keep)
+    local copy = Markers.List()[#Markers.List()]
+    check(#Markers.List() == count + 1 and copy.title == "Hogger's den" and copy.from == "Brannoc Steelvein"
+        and not offer:IsShown(), "Keep: kept, marked as from them")
+    Markers.Heard("Brannoc Steelvein", (theirs:gsub("Hogger's den", "Hogger's new den")))
+    offer.keep._scripts.OnClick(offer.keep)
+    check(#Markers.List() == count + 1 and copy.title == "Hogger's new den", "shared again: the copy changed, no second one")
+    Markers.Heard("Brannoc Steelvein", (theirs:gsub("Player%-1%-0000BEEF:7", "Player-1-0000BEEF:8")))
+    offer.no._scripts.OnClick(offer.no)
+    check(#Markers.List() == count + 1 and not offer:IsShown(), "No: nothing kept")
+    Core.Set(ns.name, "markerShares", false)
+    Markers.Heard("Brannoc Steelvein", (theirs:gsub("Player%-1%-0000BEEF:7", "Player-1-0000BEEF:9")))
+    check(not offer:IsShown() and #Markers.List() == count + 1, "the setting off: nobody asks")
+    Core.Set(ns.name, "markerShares", true)
+    Markers.Remove(copy)
+    Wire.SendBlock = sendBlock
     -- a new one cancelled goes again; deleted
     At(0.5, 0.5)
     IsAltKeyDown = function() return true end
