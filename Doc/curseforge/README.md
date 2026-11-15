@@ -9,6 +9,7 @@ upload names its required dependency, so the CurseForge app installs Core with a
 | --- | --- |
 | [Core.md](Core.md) | Sane UI Core: name, summary, category, description |
 | [Maps.md](Maps.md) | Sane UI Maps (`SaneUI_Navigation`): the same, and its gallery |
+| [changelogs/](changelogs/) | Each project's own CurseForge changelog: `Core.md`, `Navigation.md` (a part per version, only that addon's changes) |
 
 The logos and banners are drawn by `saneui makelogos` (`dev/tools/logo-art`) into `assets/generated/logos/`:
 one family, the gold ring with its diamond and the dark middle shared, the symbol and a thin ring of the
@@ -26,10 +27,12 @@ module's colour its own. `<name>-avatar.png` is the project's avatar, `<name>-ba
    Core"}, "Navigation": {"id": ..., "name": "Sane UI Maps"}}}`.
 4. `saneui checkcurseforge`: the token tried, CurseForge's game versions listed (put Forever's into
    `gameVersions`), what is still missing said. Nothing is uploaded.
-5. The players' words for each upload into `Doc/changelog.txt`: a part per addon and version
-   (`Sane UI 0.3.1 (date)`, `Navigation 0.3.2 (date)`, a line of dashes, the changes), committed.
-   `saneui makechangelog alpha Navigation` drafts the missing parts from the commits since each addon's last
-   upload; rewrite them for players and delete their `DRAFT:` line (publish refuses a draft).
+5. The players' words for each upload into that project's own CurseForge changelog,
+   [changelogs/](changelogs/)`<Module>.md` (`Core.md`, `Navigation.md`): a part `## <version> (<date>)` per
+   version, newest first, only that addon's changes, uploaded as the file's changelog (Markdown), committed.
+   `saneui makechangelog alpha Navigation` drafts the missing parts from the commits that changed each addon
+   since its last upload; rewrite them for players and delete their `DRAFT:` line (publish refuses a draft).
+   `Doc/changelog.txt` stays the whole suite's changelog (GitHub's readers); CurseForge never gets it.
 6. `saneui publish alpha Navigation --dry`, then without `--dry`: Core first, then Maps, each tagged
    `published/<Module>/<version>-alpha`. Push the tags with main.
 
@@ -44,7 +47,7 @@ World of Warcraft, so its general rules apply), and how Sane UI meets them:
 | A summary: a short TL;DR, about one sentence, not copied from the description | the *Summary* of each file here |
 | A clear description of what it adds or changes, English first | the *Description* of each file here: what each part does, how to use it |
 | An avatar of 400 x 400, not one colour, no copyrighted imagery, not WebP | `<name>-avatar.png`, a PNG drawn by `dev/tools/logo-art` from shapes and Noto Serif Display (SIL Open Font License): none of the game's art or fonts |
-| Every file with a changelog of what changed since the one before | `publish` refuses a file without its part in `Doc/changelog.txt`, a part with a heading only, and a draft; `makechangelog` drafts a part from the commits since the addon's last upload, a person rewrites it |
+| Every file with a changelog of what changed since the one before | `publish` refuses a file without its part in its project's own changelog (`changelogs/<Module>.md`), a part with a heading only, and a draft; `makechangelog` drafts a part from the commits since the addon's last upload, a person rewrites it |
 | No re-uploads without changes, nothing uploaded only to be seen | `publish` uploads only what is not on CurseForge at that channel or higher: Core only when its code changed. The same code up a channel (an alpha made beta) goes again only as that, its changelog saying so first ("Unchanged since 0.4.0 (alpha), now beta.") |
 | No external download links | none: the files are on CurseForge, the descriptions link only to GitHub's issues and the Discord server |
 | Several similar projects merged into one (variants) | each module does something else; Core is the library they share |
