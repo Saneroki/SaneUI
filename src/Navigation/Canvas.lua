@@ -8,7 +8,8 @@ local _, ns = ...
 --
 --      canvas (clips what it holds; the ground: one colour)
 --       ├─ holder (at the canvas' middle; moved by a drag and by following)
---       │    ├─ sea       the sea's layers over the ground: the game's own waves twice, a soft shade (Waves)
+--       │    ├─ sea       the sea's layers over the ground: the game's own waves twice, a soft shade (Waves),
+--       │    │            the Maelstrom's whirlpool (Whirlpool)
 --       │    ├─ terrain   the game's minimap textures and the overview (Terrain.lua)
 --       │    ├─ art       Blizzard's map art and its explored parts, the view Parchment (Art.lua)
 --       │    ├─ indoors   the indoor map of the building the player is in (Indoors.lua)
@@ -43,7 +44,7 @@ local _, ns = ...
 --  (zone, continent, world); a double click puts the game's map pin there (on a
 --  pin: where the pin stands), and so does Ctrl and a click, the game's own way.
 --  Over a continent shown whole the zone under the mouse lights up, over the world
---  the continent (Art.Light), and a plain click opens it, as on the game's map;
+--  the continent is named (Art.Light), and a plain click opens it, as on the game's map;
 --  where a click opens nothing, it pings there to the group as a click on the
 --  game's minimap does (Ping.lua), at once (the game takes a ping only in the
 --  click itself). A click on a pin is the pin's first, where
@@ -99,6 +100,15 @@ Canvas.SEA_LAYERS = {
       shift = { 0.37, 0.61 } },
     { file = Canvas.SEA_SHADE, size = 1100, colour = { 8 / 255, 16 / 255, 24 / 255 }, alpha = 0.45 },
 }
+-- The Maelstrom's whirlpool over the waves, where WoW: Forever's world map paints it (Saneroki, 2026-11-15: "add a
+-- whirlpool into the middle of the sea like it is on the original maps"): that map's own spiral, its ink and the
+-- light at its middle in white (Art/Whirlpool.blp, cut from the map's art by dev/tools/terrain-art --whirlpool),
+-- tinted as the waves' foam and shown as much as they are (Whirlpool). x, y: its middle, wide, high: its size, each
+-- 0 to 1 of the world map, as the tool prints them. Forever's alone: Retail's world map is another.
+Canvas.WHIRLPOOL = Core.FOREVER and {
+    file = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Whirlpool", x = 0.5000, y = 0.4955, wide = 0.1996, high = 0.2994,
+    colour = { 150 / 255, 195 / 255, 210 / 255 }, alpha = 0.55,
+} or nil
 -- The view Blended: Blizzard's map art over the terrain whole while the view is BLEND[1] yards high or more, gone at
 -- BLEND[2] or less; between, faded by the zoom's own steps (each a factor), so every step changes it alike.
 Canvas.BLEND = { 9000, 1200 }
@@ -119,6 +129,7 @@ Canvas.OVER_GROUND = 11 -- the route where the game's minimap keeps its own grou
 
 local frame, holder, camera, tracker, layers, hover, ground
 local waves = {} -- the sea's layers (Waves): { texture, spec } each; one whose file is missing left out
+local whirl       -- the whirlpool's texture (Whirlpool), nil where there is none
 local held = false -- on the window's way, or hidden: its size changes lay nothing out
 local morph       -- on the window's way: { a = where it comes from, b = where it goes, now = where it is }
 -- Where the layers were laid out: the origin (u, v), the zoom (k), the view in the plane with its margin
@@ -313,6 +324,26 @@ end
 -- negated; each texture coordinate counted from a copy's corner near the rectangle, so the numbers stay small however
 -- far out the plane reaches.
 local NO_SHIFT = { 0, 0 }
+
+-- The whirlpool (Canvas.WHIRLPOOL) where the world map puts it in the view's plane, shown so much (0 to 1) while it
+-- meets the view; on a plane the world map does not hold, none.
+local function Whirlpool(shown)
+    if not whirl then return end
+    local spec = Canvas.WHIRLPOOL
+    local world = shown > 0 and Coords.WorldBox(view.map)
+    local u, v
+    if world then u, v = Coords.FromWorldMap(view.map, spec.x, spec.y) end
+    if not u then return whirl:Hide() end
+    local width, height = spec.wide * world.width, spec.high * world.height
+    local left, top = u - width / 2, v + height / 2
+    if left > view.right or left + width < view.left or top < view.bottom or top - height > view.top then
+        return whirl:Hide()
+    end
+    Canvas.Put(whirl, left, top, width, height)
+    whirl:SetAlpha(spec.alpha * shown)
+    whirl:Show()
+end
+
 local function Waves(shown)
     local k = view.k
     for _, layer in ipairs(waves) do
@@ -333,11 +364,13 @@ local function Waves(shown)
             texture:Show()
         end
     end
+    Whirlpool(shown)
 end
 
 -- Every layer's textures let go: nothing of ours drawn but the sea (the canvas' ground), in one colour.
 local function Empty()
     for _, layer in ipairs(waves) do layer.texture:Hide() end
+    if whirl then whirl:Hide() end
     ns.Safe("terrain", ns.Terrain.Clear)
     ns.Safe("map art", ns.Art.Clear)
     ns.Safe("indoors", ns.Indoors.Clear)
@@ -969,6 +1002,16 @@ function Canvas.Build(parent)
             texture:SetVertexColor(spec.colour[1], spec.colour[2], spec.colour[3])
             texture.layer = index
             waves[#waves + 1] = { texture = texture, spec = spec }
+        end
+    end
+    local spec = Canvas.WHIRLPOOL -- over the waves and their shade
+    whirl = spec and holder:CreateTexture(nil, "BACKGROUND", nil, #Canvas.SEA_LAYERS - 7) or nil
+    if whirl then
+        whirl:Hide()
+        if whirl:SetTexture(spec.file, "CLAMP", "CLAMP", "TRILINEAR") == false then
+            whirl = nil -- the file missing: no whirlpool
+        else
+            whirl:SetVertexColor(spec.colour[1], spec.colour[2], spec.colour[3])
         end
     end
     layers = { terrain = ns.Terrain.Build(holder) }

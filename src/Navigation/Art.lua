@@ -29,16 +29,18 @@ local _, ns = ...
 --  art's own pixels, cut into the layer's tiles (MapExplorationDataProvider.lua).
 --
 --  Under the mouse, a map the view shows whole lights up what a click opens, as
---  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone,
---  at the world the continent, in the game's own highlight art
---  (C_Map.GetMapHighlightInfoAtPosition), added onto what is under it, in every view;
---  on the full map named at its top, with its levels and fishing skill (Label.lua).
+--  Blizzard's map does (MapHighlightDataProvider.lua): at a continent the zone, in
+--  the game's own highlight art (C_Map.GetMapHighlightInfoAtPosition), added onto
+--  what is under it, in every view; on the full map named at its top, with its
+--  levels and fishing skill (Label.lua). At the world the continent is only named:
+--  its highlight's outline missed the land (Saneroki, 2026-11-15: "The continent
+--  hover over has a outline that i don't like and that is also wrong").
 --
 --  Retail shows one map at a time, as the game's own map does (Camera.Retail.lua,
 --  view.shown): that map's art alone, in the layer the zoom asks for (a map may
 --  have several, each more detailed: C_Map.GetMapArtLayers, as Blizzard's scroll
 --  controller picks them), with its explored parts; what a click opens lights up
---  on it at every level.
+--  on it at every level, but a continent on Azeroth's map is only named.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Art = {}
@@ -283,7 +285,8 @@ function Art.Unlight()
 end
 
 -- The game's highlight of what is under a point of the view's plane (u, v), on a map the view shows whole:
--- at a continent the zone there, at the world the continent; none at a zone, nor where the game has none.
+-- at a continent the zone there; at the world the continent named, unlit (Retail's Cosmic map: a world, lit); none at
+-- a zone, nor where the game has none.
 function Art.Light(view, u, v)
     local map, box
     if view.shown then
@@ -301,25 +304,33 @@ function Art.Light(view, u, v)
     if not ok or type(wide) ~= "number" or type(high) ~= "number" or type(left) ~= "number" or type(top) ~= "number" then
         return Art.Unlight()
     end
+    -- On a world map (Azeroth) what lights up is a continent: only named, no highlight (the header). Retail's Cosmic
+    -- map keeps the game's highlight of a world.
+    local info = Core.Ask(C_Map.GetMapInfo, map)
+    local unlit = type(info) == "table" and info.mapType == Coords.WORLD
     if atlas then
         -- An atlas at its own size, in the map art's pixels, centred where the game puts it (Retail's Cosmic map,
         -- Argus, the Broken Isles). Its piece of the file set last, the game's coordinates reset: a SetTexCoord
         -- after SetAtlas cuts within the piece, not the file.
         local info, art = C_Texture.GetAtlasInfo(atlas), Of(map)
         if not info or not art then return Art.Unlight() end
-        local across, down = info.width * box.width / art.width, info.height * box.height / art.height
-        local u0 = box.u + (left + wide / 2) * box.width - across / 2
-        local v0 = box.v - (top + high / 2) * box.height + down / 2
-        ns.Canvas.Put(light, u0, v0, across, down)
-        light:SetAtlas(atlas, false, "TRILINEAR", true)
+        if not unlit then
+            local across, down = info.width * box.width / art.width, info.height * box.height / art.height
+            local u0 = box.u + (left + wide / 2) * box.width - across / 2
+            local v0 = box.v - (top + high / 2) * box.height + down / 2
+            ns.Canvas.Put(light, u0, v0, across, down)
+            light:SetAtlas(atlas, false, "TRILINEAR", true)
+        end
     elseif type(file) == "number" and file > 0 and wide > 0 and high > 0 and (partX or 0) > 0 and (partY or 0) > 0 then
-        light:SetTexture(file, "CLAMP", "CLAMP", "TRILINEAR")
-        ns.Canvas.Put(light, box.u + left * box.width, box.v - top * box.height, wide * box.width / partX,
-            high * box.height / partY, partX, partY)
+        if not unlit then
+            light:SetTexture(file, "CLAMP", "CLAMP", "TRILINEAR")
+            ns.Canvas.Put(light, box.u + left * box.width, box.v - top * box.height, wide * box.width / partX,
+                high * box.height / partY, partX, partY)
+        end
     else
         return Art.Unlight()
     end
-    light:Show()
+    light:SetShown(not unlit)
     ns.Safe("label", ns.Label.Show, map, x, y) -- what lights up named over the full map
 end
 

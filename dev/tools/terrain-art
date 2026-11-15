@@ -17,7 +17,9 @@ stays too (a dock, a pier, a bridge, a ship at its mooring: the ground under it 
 minimap shows something brighter or warmer than the water around it. So is the open sky around an isle that floats (Zephras Isle), where there is no water: what the
 game's minimap textures leave pure black (it draws nothing there: the terrain's holes, the cliffs under the
 rim), as far as it reaches out to the edge of the map's tiles; a dark place within the land and a building
-over the sky (a dock) stay. The land's colour is taken from land alone, so no dark water rims a coast;
+over the sky (a dock) stay. Nothing is land along a tile's side that faces no tile, the world's rim (RIM map
+chunks deep): the game leaves the sea floor there unsculpted and dry at the water's level, or its minimap a grey
+band, which showed as lines in the open sea. The land's colour is taken from land alone, so no dark water rims a coast;
 transparent texels carry the nearest land's colour, so filtering never draws a dark edge either. Up close the same
 alpha is the mask of the game's own textures (Terrain.lua), so the coast is cut alike at every zoom; a tile on a
 coast has a mask of its own, at four times the overview's detail, so a pier a few yards wide is not lost.
@@ -59,6 +61,15 @@ plane, so it still tiles seamlessly, as in the game. Made by itself, from that o
                                              "it is very tiled"): a tileable noise (white noise softened in the
                                              frequency domain, so it repeats seamlessly by itself), alpha only
 
+The Maelstrom's whirlpool, laid over the sea where the game's world map paints it (src/Navigation/Canvas.lua,
+Canvas.WHIRLPOOL; Saneroki, 2026-11-15: "add a whirlpool into the middle of the sea like it is on the original
+maps"): the spiral of WoW: Forever's world map art, its ink alone (how much darker and redder than the parchment
+under it) and the parchment's light at its middle, faded out round a circle, its alpha in white, so the code tints
+it as the waves' foam. Made by itself, from the client tables and the map art (--whirlpool); it prints the numbers
+Canvas.WHIRLPOOL places it by.
+
+  assets/optimized/Navigation/Art/Whirlpool.blp 256 x 256: the spiral's ink and light
+
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
 
@@ -79,6 +90,7 @@ Needs Python with Pillow and NumPy, and ImageMagick 7 (magick).
 
 Usage:  dev/tools/terrain-art <minimap textures> <terrain files> <client tables> <map art> [--maps <id>[,<id>...]]
         dev/tools/terrain-art --sea <the game's ocean texture, as it stores it>
+        dev/tools/terrain-art --whirlpool <client tables> <map art>
 """
 import csv
 import io
@@ -110,6 +122,18 @@ SHADE_SIDE = 256   # the sea's shade: a soft noise, drawn some 1100 units across
 SHADE_SEED = 7     # its random numbers, fixed: the same file every time
 SHADE_SLOPE = 2.6  # how soft: its frequencies fall off by 1 / f ** (SLOPE / 2)
 SHADE_FROM = 0.35  # the noise under this is no shade, over it shade growing to whole
+WHIRLPOOL = ART / "Whirlpool.blp"
+WORLD_MAP = 947        # WoW: Forever's world map (the game's C_Map.GetFallbackWorldMapID), whose art paints the Maelstrom
+WHIRL_AT = (501, 331)  # the middle of its spiral, in the art's pixels
+WHIRL_REACH = 100      # pixels of the art each way from there the whirlpool's square takes in
+WHIRL_SIDE = 256       # the whirlpool's texture
+WHIRL_GROUND = 13      # pixels across the median that takes the ink out, leaving the parchment under it
+WHIRL_INK = (0.22, 0.6)    # how much darker and redder than its parchment a pixel is (0 to 1): no ink up to the
+                           # first, whole over the first and second together
+WHIRL_FADE = (0.78, 0.98)  # a part of WHIRL_REACH from the middle: whole within the first, gone at the second (the
+                           # world map's hatching and an isle beyond)
+WHIRL_LIGHT = 0.45     # the parchment's light at the middle (lighter than round the spiral), so strong under the ink
+WHIRL_BLUR = 0.6       # pixels of the texture the ink is softened by, so it reads as foam, not a stamp
 COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
@@ -130,6 +154,9 @@ SHALLOW = 1.0      # yards of water over the ground in which the land fades out:
 BUILT = 20         # how much brighter or warmer than its water a sample of the minimap is where something stands on it
 WATERS = 8         # samples (some 17 yards) each way around a sample its water's colour is taken from
 COAST = 128        # a tile's own mask on a coast, texels a side: four times the overview's detail
+RIM = 3            # map chunks along a tile's side that faces no tile in which nothing is land: the world's rim, where
+                   # the game left the sea floor unsculpted and dry, or its minimap a grey band (Saneroki, 2026-11-15:
+                   # "only show like single lines etc that need to be removed"); no real land lies within 4 of one
 
 ZONE, CONTINENT, WORLD = "3", "2", "1"  # the game's kinds of map (UiMap's Type)
 
@@ -370,6 +397,23 @@ def sky(found, textures):
     return open_sky
 
 
+def rim(found, continent, row, column):
+    """A tile's samples along each of its sides that faces no tile, the world's rim (RIM map chunks deep), or None:
+    nothing there is land. The game leaves the sea floor there unsculpted and dry at the water's level (Kalimdor's
+    north-east), or its minimap a grey band (the isle in Kalimdor's corner), which the cut kept as lines in the sea."""
+    per, deep = CHUNKS * CELLS * SAMPLES, RIM * CELLS * SAMPLES
+    cut = np.zeros((per, per), bool)
+    if (continent, row - 1, column) not in found:
+        cut[:deep] = True
+    if (continent, row + 1, column) not in found:
+        cut[-deep:] = True
+    if (continent, row, column - 1) not in found:
+        cut[:, :deep] = True
+    if (continent, row, column + 1) not in found:
+        cut[:, -deep:] = True
+    return cut if cut.any() else None
+
+
 # -------------------------------------------------------------------------------------------------
 #  BLP files
 # -------------------------------------------------------------------------------------------------
@@ -470,6 +514,10 @@ def overview(found, textures, files, liquids, maps):
                 if (continent, row, column) in void:
                     ground = ground & ~void[(continent, row, column)]
                     land = np.where(void[(continent, row, column)], 0, land)
+                edge = rim(found, continent, row, column)
+                if edge is not None:
+                    ground = ground & ~edge
+                    land = np.where(edge, 0, land)
                 step = per // CHUNKS
                 lands[continent][row * CHUNKS:(row + 1) * CHUNKS, column * CHUNKS:(column + 1) * CHUNKS] = \
                     ground.reshape(CHUNKS, step, CHUNKS, step).max(axis=(1, 3))
@@ -807,12 +855,54 @@ def shade():
     return Image.fromarray(np.dstack([white, white, white, alpha]), "RGBA")
 
 
+def whirlpool(folder, art):
+    """The Maelstrom's whirlpool from the world map's art (WORLD_MAP): the square WHIRL_REACH each way round its
+    spiral's middle (WHIRL_AT); its ink, how much darker and redder each pixel is than the parchment under it (a
+    median WHIRL_GROUND across, which the thin lines drop out of), and the parchment's light at the middle, faded out
+    round a circle (WHIRL_FADE); WHIRL_SIDE on a side, softened by WHIRL_BLUR, as alpha in white. Prints the numbers
+    Canvas.WHIRLPOOL places it by: its middle and its size on the world map (0 to 1)."""
+    tables = {name: table(folder, name) for name in ("UiMapXMapArt", "UiMapArt", "UiMapArtStyleLayer", "UiMapArtTile")}
+    tables["WorldMapOverlay"], tables["parts"] = [], {}  # the world map reveals no parts
+    world = full(WORLD_MAP, tables, art)
+    if world is None:
+        sys.exit(f"The client tables in {folder} give the world map {WORLD_MAP} no art")
+    (x, y), reach = WHIRL_AT, WHIRL_REACH
+    square = world.convert("RGB").crop((x - reach, y - reach, x + reach, y + reach))
+    pixels = np.asarray(square, np.float32)
+    ground = np.asarray(square.filter(ImageFilter.MedianFilter(WHIRL_GROUND)), np.float32)
+    luma = lambda p: 0.3 * p[..., 0] + 0.59 * p[..., 1] + 0.11 * p[..., 2]  # noqa: E731
+    red = lambda p: p[..., 0] - (p[..., 1] + p[..., 2]) / 2  # noqa: E731
+    ink = (np.clip((luma(ground) - luma(pixels)) / 30, 0, 1) + np.clip((red(pixels) - red(ground)) / 25, 0, 1)) / 2
+    ink = np.clip((ink - WHIRL_INK[0]) / WHIRL_INK[1], 0, 1)
+    rows, columns = np.mgrid[0:2 * reach, 0:2 * reach] + 0.5
+    far = np.hypot(columns - reach, rows - reach) / reach  # 1 at the square's side
+    fade = np.clip((WHIRL_FADE[1] - far) / (WHIRL_FADE[1] - WHIRL_FADE[0]), 0, 1)
+    fade = fade * fade * (3 - 2 * fade)
+    light = np.asarray(Image.fromarray(luma(ground).round().astype(np.uint8)).filter(ImageFilter.GaussianBlur(8)),
+                       np.float32)
+    ring = light[(far > 0.8) & (far < 0.95)].mean()
+    light = np.clip((light - ring) / 40, 0, 1) * np.clip((0.6 - far) / 0.6, 0, 1) * WHIRL_LIGHT
+    alpha = np.maximum(ink * fade, light)
+    alpha = Image.fromarray((alpha * 255).round().astype(np.uint8)).resize((WHIRL_SIDE, WHIRL_SIDE),
+                                                                          Image.Resampling.LANCZOS)
+    alpha = alpha.filter(ImageFilter.GaussianBlur(WHIRL_BLUR))
+    white = Image.new("L", alpha.size, 255)
+    size = write(WHIRLPOOL, Image.merge("RGBA", (white, white, white, alpha)))
+    print(f"The whirlpool: {WHIRLPOOL.relative_to(ROOT)}, {size / 1e6:.2f} MB. Canvas.WHIRLPOOL: "
+          f"x = {x / world.width:.4f}, y = {y / world.height:.4f}, wide = {2 * reach / world.width:.4f}, "
+          f"high = {2 * reach / world.height:.4f}")
+
+
 def main():
     args, maps = sys.argv[1:], None
     if args[:1] == ["--sea"]:
         if len(args) != 2:
             sys.exit(__doc__)
         return sea(Path(args[1]))
+    if args[:1] == ["--whirlpool"]:
+        if len(args) != 3:
+            sys.exit(__doc__)
+        return whirlpool(Path(args[1]), Path(args[2]))
     if "--maps" in args:
         at = args.index("--maps")
         maps = {int(map_id) for map_id in args[at + 1].split(",")}

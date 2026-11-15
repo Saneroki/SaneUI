@@ -46,7 +46,7 @@ Needs Python with Pillow and NumPy, and ImageMagick 7 (`magick`).
 
 Some sets are no drawn pictures: Navigation's terrain overview (`assets/optimized/Navigation/Art/Terrain/`), the game's own minimap
 textures made smaller, its zones' outlines (`assets/optimized/Navigation/Art/Zones/`), its stitched map of Blizzard's zone maps
-(`assets/optimized/Navigation/Art/Sketches/`), `Art/Edge.blp` and the sea's waves (`Art/Sea.blp`, the game's own ocean texture's alpha in white at a quarter of its size, 256 x 256, softened by a pixel, repeated over the map twice) and its shade (`Art/SeaShade.blp`, a tileable soft noise), all made by `dev/tools/terrain-art` from the game's files. The overview's alpha is the land (the water is cut away) and the outlines are alpha only, so both are
+(`assets/optimized/Navigation/Art/Sketches/`), `Art/Edge.blp` and the sea's waves (`Art/Sea.blp`, the game's own ocean texture's alpha in white at a quarter of its size, 256 x 256, softened by a pixel, repeated over the map twice) and its shade (`Art/SeaShade.blp`, a tileable soft noise) and the Maelstrom's whirlpool (`Art/Whirlpool.blp`, the spiral of Forever's world map art, its ink and middle light alone in white), all made by `dev/tools/terrain-art` from the game's files. The overview's alpha is the land (the water is cut away) and the outlines are alpha only, so both are
 BLP2 with **DXT5** and mipmaps, like the art; ImageMagick's range fit makes them (its cluster fit takes about a minute a
 texture once the alpha is partly see-through).
 

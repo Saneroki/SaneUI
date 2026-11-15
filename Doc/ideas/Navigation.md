@@ -776,7 +776,16 @@ Three spaces, converted only in `Coords.lua`:
   `SEA_BLUR` in the tool). Less tiled ("it is very tiled"; his pick of a 4K mock-up, "two layers and shade"): the
   waves twice, the second 157 units a copy against the first's 91 (no whole factor), shifted and turned half round,
   and over them a soft shade 1100 units a copy (`Art/SeaShade.blp`, a tileable noise from fixed random numbers):
-  `Canvas.SEA_LAYERS`.
+  `Canvas.SEA_LAYERS`. The Maelstrom (built 2026-11-15, Saneroki: "we need to add a whirlpool into the middle of the
+  sea like it is on the original maps"): the game's own art, no picture of ours (his word of 2026-11-11 on painted
+  seas): the spiral of Forever's world map, its ink and the light at its middle cut from the parchment
+  (`dev/tools/terrain-art --whirlpool`, `Art/Whirlpool.blp`), laid where that map paints it and as large
+  (`Canvas.WHIRLPOOL`), tinted as the waves' foam; Forever's alone.
+- **The world's rim (built 2026-11-15):** Saneroki: "there are areas on the map that need to be cleaned off [...]
+  only show like single lines". Along a tile's side that faces no tile the game left the sea floor unsculpted and dry
+  at the water's level (Kalimdor's north-east edge) or its minimap a grey band (the isle in Kalimdor's north-west
+  corner), which the water cut kept as land: lines in the open sea. The tool keeps no land three map chunks deep
+  along such a side (`RIM`); no real land lies within four.
 - **A painted sea under the continents (a concept, 2026-11-11; dropped the same day):** Saneroki: "use Comfyui to generate a ocean that we
   can put underneath the continents. So comfy ui can try to make coastlines and add tiny ships or sea monsters or
   scenarios to it", and an A/B against the waves. Round 1: the full map zoomed all the way out as it is drawn on 4K
@@ -848,7 +857,9 @@ Three spaces, converted only in `Coords.lua`:
   continent maps under it (their frames faded off by `Art/Edge.blp`) and the zones' own maps over it up close;
   every continent's blocks wherever they are in view, at every zoom.
 - **Hover and click (built 2026-10-19):** at a continent shown whole the zone under the mouse lights up in the
-  game's highlight, at the world the continent; a click opens it.
+  game's highlight, at the world the continent; a click opens it. The continent's highlight off (Saneroki,
+  2026-11-15: "The continent hover over has a outline that i don't like and that is also wrong [...] Keep the zone
+  highlighting like it is now"): at the world it is only named.
 - **Fit:** art, terrain and pins are all placed by the same world boxes, so Stormwind's map lies on
   Stormwind. Painted art is not exact to the yard; that is accepted.
 - **Exceptions** with their own handling: a city under the ground (Undercity) has no terrain; a map

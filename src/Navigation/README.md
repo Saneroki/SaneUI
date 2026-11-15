@@ -36,8 +36,8 @@ and shows them on the map or puts the map pin there. The plan is in
   - **middle click:** back onto you, following you again, near enough for the game's minimap's dots: on the
     small map at the game's middle zoom step (of its six), on the full map where that step's square takes half the
     map's height (the game's dots show around you there too); in Retail on the map you are on;
-  - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight, over
-    the world the continent; **a click** opens it, as on the game's map. On the full map its name stands at the
+  - **the mouse over a continent shown whole** lights up the zone under it in the game's own highlight; over
+    the world the continent is only named, unlit; **a click** opens it, as on the game's map. On the full map its name stands at the
     top, under the bar, as the game's map writes it: the zone's levels after it, in the colour of how hard they are
     for you (where the game tells none, as in Forever, the levels of the enemies there, the bulk of them; none for a
     city or a sanctuary, whose creatures span too wide), and under it the fishing skill its waters ask, from the first catch to where no fish gets away
@@ -558,7 +558,8 @@ and shows them on the map or puts the map pin there. The plan is in
   `dev/tools/terrain-art`, fading out in the first yard under it so a beach one wades on stays; what stands on the
   water, a dock, a pier, a bridge, a ship, kept: where the minimap shows something brighter or warmer than the
   water around it; around the isle, which floats, the open sky: what the game's minimap leaves black, out
-  to its grid's edge), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
+  to its grid's edge; no land along a tile's side that faces no tile, the world's rim, three map chunks deep, where
+  the game left dry sea floor or a grey band of its minimap, lines in the open sea), and the same file is the mask of the game's tiles of its block (`Canvas.Masks`), so
   the coast is cut alike at every zoom; a tile on a coast (`Coasts.lua`) is cut by a mask of its own instead, at
   four times the overview's detail (`Art/Coasts/<key>.blp`, 128 x 128), so a pier a few yards wide is not lost up
   close; under it the canvas' sea: its colour, and over that its layers (`Canvas.SEA_LAYERS`), repeated over the
@@ -566,7 +567,8 @@ and shows them on the map or puts the map pin there. The plan is in
   rivers alike: the waves (`Art/Sea.blp`: the game's own ocean texture, its light alone, softened by a pixel) twice,
   small and larger by no whole factor, shifted and turned half round, so the two grids never line up alike and no
   copy shows as a tile; over them a soft shade (`Art/SeaShade.blp`, a tileable noise) in slow patches of darker
-  water.
+  water; over those, in Forever, the Maelstrom's whirlpool where its world map paints it (`Canvas.WHIRLPOOL`,
+  `Art/Whirlpool.blp`: that map's own spiral, its ink and the light at its middle alone, tinted as the waves' foam).
 - **Blended** (`Canvas.lua`): the art of Parchment over the terrain of Scrying, its alpha by the view's height in
   yards (`Canvas.Blend`: whole from `Canvas.BLEND[1]` up, gone at `Canvas.BLEND[2]` and below, by the zoom's
   factor between), the sea's colour between Parchment's and Scrying's alike, the waves fading with it (Parchment's
@@ -580,8 +582,9 @@ and shows them on the map or puts the map pin there. The plan is in
   (`Art/Zones/<uiMapID>.blp`, listed in `Outlines.lua`: the zone's land and a little shore, whole up to its
   border and fading out past it, so the one over its neighbour fades into it). A zone's map is always the full
   one: its art and every part the game reveals once explored (Core's set *Overlays*), placed as Blizzard's
-  exploration provider places them. Under the mouse, at a continent or the world shown whole, the game's own highlight
-  of the zone or continent there.
+  exploration provider places them. Under the mouse, at a continent shown whole, the game's own highlight of the
+  zone there; at the world the continent is only named, unlit (Retail's Cosmic map keeps the game's highlight of a
+  world).
 - **What stands on the map is always over it:** the canvas sets every layer's frame level from its own at each
   layout (`Canvas.LEVELS`): the map's own layers (terrain, art, the highlight) up to `Canvas.MAP`, then the
   quest areas, the route, the game's minimap (`Hybrid.LEVEL`), the pins and the marks on top; the bar over all.
@@ -1379,6 +1382,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world, continent and isle maps |
 | `Art/Sea.blp` | The sea's waves: the game's own ocean texture (its first frame), its light alone in white, made by `dev/tools/terrain-art --sea` |
 | `Art/SeaShade.blp` | The sea's shade: a tileable soft noise, alpha only, made by `dev/tools/terrain-art --sea` |
+| `Art/Whirlpool.blp` | The Maelstrom's whirlpool: the spiral of Forever's world map art, its ink and middle light alone in white, made by `dev/tools/terrain-art --whirlpool` |
 
 Tests: `dev/tests/navigation.lua`.
 

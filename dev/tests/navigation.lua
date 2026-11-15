@@ -2378,7 +2378,8 @@ shown = Shown()
 check(ns.options.view == "sketches" and Button("sketches")._lit and Count(shown, 801, 804) == 0
     and Count(shown, 141501, 141512) > 0 and Overviews(shown, 0, "Sketches") > 0 and Count(shown, 142901, 142912) > 0,
     "Sketches: the continent's map, the stitched map over it, the zone's own map over that")
-check(not shown[Canvas.SEA] and not shown[Canvas.SEA_SHADE], "Sketches: the paper past the map, no sea's layers")
+check(not shown[Canvas.SEA] and not shown[Canvas.SEA_SHADE] and not shown[Canvas.WHIRLPOOL.file],
+    "Sketches: the paper past the map, no sea's layers, no whirlpool")
 local outline = shown[142901] and shown[142901]._mask
 local framed = true
 for file = 141501, 141512 do if shown[file] and (not shown[file]._mask or shown[file]._mask._texture ~= ns.Art.EDGE) then framed = false end end
@@ -2396,6 +2397,37 @@ Button("terrain")._scripts.OnClick(Button("terrain"))
 shown = Shown()
 check(Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0 and Count(shown, 94701, 94712) == 0,
     "Terrain at the world: every continent's overview, no art")
+-- The Maelstrom's whirlpool on the sea (Canvas.WHIRLPOOL; Saneroki, 2026-11-15): its middle and size where Forever's
+-- world map paints it, over the waves, as strong as they are; none in Sketches, where the world map's own shows.
+-- At the world nothing lights up under the mouse: the continent is only named (Saneroki, 2026-11-15: its outline
+-- "i don't like and that is also wrong").
+;(function()
+    local spec, view = Canvas.WHIRLPOOL, Canvas.view
+    local function Whirl()
+        for _, widget in ipairs(W.frames) do if spec and widget._texture == spec.file then return widget end end
+    end
+    local whirl, world = Whirl(), Coords.WorldBox(view.map)
+    local u, v = Coords.FromWorldMap(view.map, spec.x, spec.y)
+    local corner = whirl and whirl._points[1]
+    check(whirl and whirl._shown and near(whirl._alpha, spec.alpha) and corner[1] == "TOPLEFT"
+        and near(corner[4], (u - spec.wide * world.width / 2 - view.u) * view.k)
+        and near(corner[5], (v + spec.high * world.height / 2 - view.v) * view.k)
+        and near(whirl._width, spec.wide * world.width * view.k + Canvas.OVERLAP),
+        "Terrain at the world: the whirlpool on the sea where the world map paints it, as large")
+    local highlight, label, named = C_Map.GetMapHighlightInfoAtPosition, ns.Label.Show, nil
+    C_Map.GetMapHighlightInfoAtPosition = function(map, x, y)
+        if map == 947 then return 4343, nil, 1, 1, 0.48, 0.64, 0.06, 0.18 end -- Kalimdor's, on the world map
+        return highlight(map, x, y)
+    end
+    ns.Label.Show = function(map) named = map end
+    ns.Art.Light(view, world.u + 0.3 * world.width, world.v - 0.5 * world.height)
+    local lit = false
+    for _, widget in ipairs(W.frames) do lit = lit or widget._texture == 4343 end
+    check(view.level == "world" and named == 947 and not lit and not light._shown,
+        "at the world the continent under the mouse is named, nothing lights up")
+    C_Map.GetMapHighlightInfoAtPosition, ns.Label.Show = highlight, label
+    ns.Art.Unlight()
+end)()
 -- Blended: the art over the terrain, faded by the zoom.
 check(Canvas.Blend(Canvas.BLEND[1]) == 1 and Canvas.Blend(Canvas.BLEND[2]) == 0
     and near(Canvas.Blend(math.sqrt(Canvas.BLEND[1] * Canvas.BLEND[2])), 0.5),
