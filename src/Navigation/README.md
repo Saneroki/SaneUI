@@ -144,7 +144,7 @@ and shows them on the map or puts the map pin there. The plan is in
   experience for you any more), *Quests for later* (once you meet what they ask), *Done quests*, *Quest areas*, *Quest
   areas on the minimap* and *Quest objectives*. **At first** (Saneroki, 2026-11-15, for the first release) *Quest
   offers*, *Low-level quests*, *Quests for later*, *Done quests*, *Quest areas*, *Quest areas on the minimap*,
-  *Rares*, *Treasures*, *Books*, *Possible herbs* and *Possible ore* are off, every other kind on at 100 percent.
+  *Rares*, *Treasures*, *Possible herbs* and *Possible ore* are off, every other kind on at 100 percent, *Books* too.
   At each kind's right a slider sets its size on the map, 50 to 200 percent (the party: its marks; the quest areas:
   their opacity, 10 to 100 percent), kept with the settings. **No switch for them** (Saneroki, 2026-11-15): the golden
   line to the map pin and what the game's minimap shows around you (players, tracked herbs and ore), on the small map
@@ -268,7 +268,8 @@ and shows them on the map or puts the map pin there. The plan is in
   a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker, which
   stays out of sight even with the log turned off (*Show the game's map* brings it back), at a place and size of its own (at first the screen's top left corner), without a background, a
   border or a line under its title, only the list over the game, clicked through but its title bar and its words.
-  There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, on at first): it
+  There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, off at first:
+  Saneroki, 2026-11-15): it
   shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
   group (`Core.Rest`, the tray of its items with it); with *In a group too* under it (off at first) it rests in a
   group as well. Over the full map it always shows.

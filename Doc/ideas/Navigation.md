@@ -375,8 +375,9 @@ When the window fills the screen:
   categories, easy to scan, with large icons.
 - **Ready for the first release (Saneroki, 2026-11-15; built):** "Route to the map pin and minimap dots should not
   be part of the dropdown menu": both always show (`Pins.ALWAYS`). At first off: the quest offers, low-level quests,
-  quests for later, done quests, the quest areas (map and minimap), rares, treasures, books, possible herbs and ore;
-  every other kind on at 100%. The button Dungeons left of the zone dropdown on the full map's bar. The game's quest
+  quests for later, done quests, the quest areas (map and minimap), rares, treasures, possible herbs and ore;
+  every other kind on at 100%, the books too ("Books should be ticked on by default"); *Hide the quest log at rest*
+  off. The button Dungeons left of the zone dropdown on the full map's bar. The game's quest
   log a kept choice of *Classic windows* ("so you can still see the native questlog even when you use our addon").
   The quest log's scroll bar at the side it is docked at, in both looks. **Pins and tracking** ("I don't understand
   whats the difference between tracking and pins ... trainers and auctioneer and flightmaster etc are not tracking

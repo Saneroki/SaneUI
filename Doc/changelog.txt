@@ -11,8 +11,8 @@ Navigation 0.3.3 (2026-11-15)
 -----------------------------
 - Pins: the route and the minimap's dots are always there; fewer
   kinds on at first (quest offers, low, later and done quests,
-  quest areas, rares, treasures, books, possible herbs and ore
-  start off).
+  quest areas, rares, treasures, possible herbs and ore start
+  off). The quest log stays in sight at first.
 - The minimap's satchel keeps Pins and Tracking apart.
 - Classic windows can bring back the game's own quest log.
 - The Dungeons button left of the zone list; the quest log's

@@ -12,6 +12,13 @@ Saneroki: "I have added a custom dicord link. I think our discord is now reachab
 - **Docs:** `src/Core/Settings/README.md` (*The feedback window*); the CurseForge descriptions (`Doc/curseforge/Core.md`, `Maps.md`) link it in place of "(link)".
 - A `/reload` takes it in.
 
+### Navigation: the books on at first, the quest log in sight at rest at first (Saneroki, 2026-11-15)
+Saneroki: "So in the dropdown menu the quest offers, low level quests quests for later quest, possible herbs, possible ore rares and treasures and books should be unticked by default. Books should be ticked on by default. Hide the quest log at rest should be ticked off as well."
+- **`src/Navigation/Navigation.lua`:** the kind *Books* on at first; the setting *Hide the quest log at rest* (`questLogRest`) off at first. What a character saved keeps: Core writes every setting with its default into the saved settings, so a fresh-install test first run on an older build keeps that build's (`saneui myinstall`, then `saneui freshinstall`, starts one anew).
+- **Tests:** `dev/tests/navigation.lua` (2104: the books on, the quest log's rest off at first).
+- **Docs:** `src/Navigation/README.md`, `Doc/ideas/Navigation.md`.
+- A `/reload` takes it in.
+
 ### Tools: installdev during a fresh-install test reaches your own install too (Saneroki, 2026-11-15)
 Saneroki: "i did a saneui freshinstall navigation and it did not take the changes". While a test was on, installdev put the build into the test alone; myinstall then brought back the older build set aside, and the next freshinstall copied that one.
 - **`dev/build`:** where `<game>/SaneUI-FreshInstall/test.json` stands (`place`), the build goes into your own Interface set aside, whole, and into the test's AddOns only for the addons it holds (`into ... test`: a `freshinstall navigation` keeps Core and Navigation alone); the auction database's links are made in your own folders then (`own`), never in the test's (a new player has no tool-made addon).

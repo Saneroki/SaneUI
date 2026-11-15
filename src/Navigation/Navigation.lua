@@ -103,7 +103,8 @@ ns.GIVEN_BACK = "the map window is closed, the game's own minimap and map are ba
 -- the filter only while one of them is there (ns.KindOffered): not in Retail, until its data comes.
 -- On at first (Saneroki, 2026-11-15, for the first release: "Quest Offers, Low level Quests, Quests for Later, Done
 -- Quests Quest Areas, Quest areas on minimap, Rares, Treasures, Books, Possible herbs, possible ore should all be off
--- by default. The rest should be set to on at 100%"): those off, every other kind on, each at its first size.
+-- by default. The rest should be set to on at 100%"): those off, every other kind on, each at its first size; then
+-- "Books should be ticked on by default".
 -- No kinds of their own (Saneroki, 2026-11-15: "Route to the map pin and minimap dots should not be part of the
 -- dropdown menu"): the golden line to the map pin (Planner.lua, Route.lua) and the game's minimap's dots (Hybrid.lua)
 -- always show (Pins.ALWAYS).
@@ -145,7 +146,7 @@ ns.KINDS = {
     { "foundFish", "Found fishing pools", section = "tracking", on = true, small = true, texture = 133888 },
     { "rare", "Rares", section = "tracking", on = false, small = true, icon = "dungeonskull" },
     { "treasure", "Treasures", section = "tracking", on = false, icon = "vignetteloot" },
-    { "book", "Books", section = "tracking", on = false, icon = "lorewalking-map-icon", data = SPAWNS },
+    { "book", "Books", section = "tracking", on = true, icon = "lorewalking-map-icon", data = SPAWNS },
 }
 -- The pin filter's sections, in its order: their key (the kinds' section) and their title. The satchel on the small
 -- map has the last under its Tracking, the others under its Pins (Satchel.lua).
@@ -261,7 +262,8 @@ local OPTIONS = {
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
     -- The game's own quest log, chosen in the dropdown Classic windows (Window.lua): no control on the options page.
     { key = "nativeQuestLog", default = false },
-    { key = "questLogRest", default = true, text = ns.TEXT.questLogRest, tip = ns.TEXT.questLogRestTip },
+    -- Off at first (Saneroki, 2026-11-15: "Hide the quest log at rest should be ticked off as well").
+    { key = "questLogRest", default = false, text = ns.TEXT.questLogRest, tip = ns.TEXT.questLogRestTip },
     { key = "questLogRestGroup", default = false, text = ns.TEXT.questLogRestGroup, tip = ns.TEXT.questLogRestGroupTip,
       parent = "questLogRest" },
     SPARKLES, GLINTS, TURNS,

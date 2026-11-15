@@ -7,8 +7,9 @@ What changed in each version of Sane UI Maps, newest first: a version's part is 
 
 - The pin menus no longer list the route and the minimap's dots: the golden line to your map pin and what the
   game's minimap shows are always there.
-- Fewer pins at first: quest offers, low-level, later and done quests, quest areas, rares, treasures, books and
-  possible herbs and ore start off; turn them on in Pins.
+- Fewer pins at first: quest offers, low-level, later and done quests, quest areas, rares, treasures and possible
+  herbs and ore start off; turn them on in Pins.
+- The quest log on the screen stays in sight at first (Hide the quest log at rest is off).
 - The minimap's satchel keeps Pins and Tracking apart: Tracking holds the found herbs, ore and fishing pools, rares,
   treasures, books and your tracking spells.
 - Classic windows can bring back the game's own quest log: its key opens it, everything else stays ours.

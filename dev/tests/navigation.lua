@@ -2600,19 +2600,20 @@ local function Drawn(laid)
     return list, count
 end
 -- The pin filter at first (Saneroki, 2026-11-15, for the first release): the quest offers, low, later and done, the
--- quest areas on the map and the minimap, the rares, treasures, books and possible herbs and ore off, the rest on, each
--- at its first size. The pins' checks below with the kinds on as they were at first before: all but the done quests,
+-- quest areas on the map and the minimap, the rares, treasures and possible herbs and ore off, the rest on (the books
+-- too: "Books should be ticked on by default"), each at its first size; Hide the quest log at rest off. The pins' checks below with the kinds on as they were at first before: all but the done quests,
 -- the quest areas on the minimap and the books.
 ;(function()
     local first = Core.Described(ns.name, "pins").default
     local off = { quest = true, low = true, later = true, done = true, area = true, minimapArea = true, rare = true,
-                  treasure = true, book = true, herb = true, ore = true }
+                  treasure = true, herb = true, ore = true }
     local right = next(Core.Described(ns.name, "pinSizes").default) == nil
     for _, kind in ipairs(ns.KINDS) do
         if (first[kind[1]] and true or false) == (off[kind[1]] or false) then right = false end
     end
-    check(right, "the pin filter at first: offers, low, later, done, quest areas, rares, treasures, books, possible herbs "
-        .. "and ore off, the rest on at 100%")
+    check(right and first.book and Core.Described(ns.name, "questLogRest").default == false,
+        "the pin filter at first: offers, low, later, done, quest areas, rares, treasures, possible herbs and ore off, "
+        .. "the rest on at 100% (books too); Hide the quest log at rest off")
     local before = {}
     for _, kind in ipairs(ns.KINDS) do before[kind[1]] = true end
     before.done, before.minimapArea, before.book = nil, nil, nil
