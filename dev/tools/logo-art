@@ -46,7 +46,7 @@ ADDONS = {
     "core": ("CORE", None, "s"),
     "maps": ("MAPS", (86, 170, 205), "compass"),
     "economy": ("ECONOMY", (112, 190, 104), "coins"),
-    "inventory": ("INVENTORY", (214, 140, 62), "bag"),
+    "inventory": ("INVENTORY", (214, 140, 62), "chest"),
     "social": ("SOCIAL", (160, 128, 214), "bubbles"),
     "combat": ("COMBAT", (204, 78, 66), "swords"),
 }
@@ -168,20 +168,35 @@ def symbol_coins(draw, mask_size, cx, cy, n):
     return parts + [(rim, GOLD_DARK)]
 
 
-def symbol_bag(draw, mask_size, cx, cy, n):
-    """A pouch tied at its neck."""
-    body = Image.new("L", mask_size, 0)
-    d = ImageDraw.Draw(body)
-    d.ellipse((cx - n * 0.24, cy - n * 0.12, cx + n * 0.24, cy + n * 0.3), fill=255)
-    d.polygon([(cx - n * 0.1, cy - n * 0.16), (cx + n * 0.1, cy - n * 0.16), (cx + n * 0.2, cy + n * 0.02),
-               (cx - n * 0.2, cy + n * 0.02)], fill=255)
-    top = Image.new("L", mask_size, 0)
-    ImageDraw.Draw(top).polygon([(cx - n * 0.15, cy - n * 0.3), (cx, cy - n * 0.2), (cx + n * 0.15, cy - n * 0.3),
-                                 (cx + n * 0.09, cy - n * 0.16), (cx - n * 0.09, cy - n * 0.16)], fill=255)
-    tie = Image.new("L", mask_size, 0)
-    ImageDraw.Draw(tie).rounded_rectangle((cx - n * 0.12, cy - n * 0.19, cx + n * 0.12, cy - n * 0.13),
-                                          radius=n * 0.02, fill=255)
-    return [(top, GOLD_DARK), (body, GOLD), (tie, GOLD_DARK)]
+def symbol_chest(draw, mask_size, cx, cy, n):
+    """A chest: its rounded lid lighter than its box, two bands over both, the lock between them."""
+    w, top, seam, bottom = n * 0.29, cy - n * 0.22, cy - n * 0.04, cy + n * 0.19
+    lid = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(lid)
+    d.ellipse((cx - w, top, cx + w, seam + (seam - top)), fill=255)
+    d.rectangle((cx - w, (top + seam) / 2, cx + w, seam), fill=255)
+    lid = ImageChops.multiply(lid, rect_mask(mask_size, (cx - w, top, cx + w, seam)))
+    box = rect_mask(mask_size, (cx - w, seam, cx + w, bottom), radius=n * 0.02)
+    whole = ImageChops.lighter(lid, box)
+    bands = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(bands)
+    for x in (cx - n * 0.19, cx + n * 0.19):
+        d.rectangle((x - n * 0.03, top, x + n * 0.03, bottom), fill=255)
+    bands = ImageChops.multiply(bands, whole)
+    line = rect_mask(mask_size, (cx - w, seam - n * 0.012, cx + w, seam + n * 0.012))
+    lock = rect_mask(mask_size, (cx - n * 0.06, seam - n * 0.05, cx + n * 0.06, seam + n * 0.08), radius=n * 0.015)
+    hole = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(hole)
+    r = n * 0.02
+    d.ellipse((cx - r, seam - r, cx + r, seam + r), fill=255)
+    d.polygon([(cx - r * 0.6, seam), (cx + r * 0.6, seam), (cx + r, seam + n * 0.05), (cx - r, seam + n * 0.05)], fill=255)
+    return [(lid, GOLD_LIGHT), (box, GOLD), (bands, GOLD_DARK), (line, INK), (lock, INK), (hole, GOLD_LIGHT)]
+
+
+def rect_mask(size, box, radius=0):
+    mask = Image.new("L", size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle(box, radius=radius, fill=255)
+    return mask
 
 
 def symbol_bubbles(draw, mask_size, cx, cy, n):
@@ -222,11 +237,31 @@ def symbol_swords(draw, mask_size, cx, cy, n):
     return parts
 
 
-SYMBOLS = {"s": symbol_s, "compass": symbol_compass, "coins": symbol_coins, "bag": symbol_bag,
+SYMBOLS = {"s": symbol_s, "compass": symbol_compass, "coins": symbol_coins, "chest": symbol_chest,
            "bubbles": symbol_bubbles, "swords": symbol_swords}
 
 
 # --- The badge and the banner -----------------------------------------------------------------------------------
+
+def centred(parts, cx, cy):
+    """A symbol's parts moved together so that the box round all of them stands in the badge's middle (a letter's
+    own middle is not its font's, nor a stack of coins' the point it was drawn from)."""
+    box = None
+    for mask, _ in parts:
+        found = mask.getbbox()
+        if found:
+            box = found if box is None else (min(box[0], found[0]), min(box[1], found[1]),
+                                             max(box[2], found[2]), max(box[3], found[3]))
+    if box is None:
+        return parts
+    dx, dy = round(cx - (box[0] + box[2]) / 2), round(cy - (box[1] + box[3]) / 2)
+    moved = []
+    for mask, colour in parts:
+        shifted = Image.new("L", mask.size, 0)
+        shifted.paste(mask, (dx, dy))
+        moved.append((shifted, colour))
+    return moved
+
 
 def badge(size, accent, symbol):
     """The round badge, size x size, transparent around it."""
@@ -253,7 +288,7 @@ def badge(size, accent, symbol):
     ImageDraw.Draw(diamond).polygon([(c, top - tall), (c + half, top), (c, top + tall), (c - half, top)], fill=255)
     paint(canvas, INK, grow(diamond, edge * 1.6))
     paint(canvas, gradient(canvas.size, GOLD_LIGHT, GOLD), diamond)
-    for mask, colour in SYMBOLS[symbol](None, canvas.size, c, c + n * 0.01, n * 0.78):
+    for mask, colour in centred(SYMBOLS[symbol](None, canvas.size, c, c, n * 0.78), c, c):
         shadow(canvas, mask, (round(n * 0.004), round(n * 0.008)), n * 0.004, 0.8)
         paint(canvas, colour, mask)
     return canvas.resize((size, size), Image.LANCZOS)
