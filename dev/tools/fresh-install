@@ -28,8 +28,10 @@ anything else stops it before it deletes or moves anything) and puts the real on
 work on both games at once, Forever's and Retail's (Saneroki, 2026-10-25), or on neither, and refuse while a client
 of either runs: the game writes its WTF at logout, and would write the test's into the real one.
 
-While a test is on, the tools work on it: saneui installdev puts a new build into the fresh install, saneui
-showerrors reads its error log, saneui installed says that a test is on.
+While a test is on, the tools work on it: saneui installdev puts a new build into the fresh install (the addons it
+holds alone) and into your own Interface set aside too (dev/build, place), so saneui myinstall brings back the newest
+build and the next saneui freshinstall takes it; saneui showerrors reads its error log, saneui installed says that a
+test is on.
 
   dev/tools/fresh-install start [Module ...] [FILE.zip ...] [--dry]     (saneui freshinstall)
   dev/tools/fresh-install restore [--dry]                    (saneui myinstall)

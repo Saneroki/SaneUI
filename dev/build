@@ -206,14 +206,17 @@ serves() {
     [ -z "$games" ] || [[ " $games " == *" ${2%%-*} "* ]]
 }
 
-# into <game folder>: the build into its AddOns folder (wow and addons, which to_game and stale read).
+# into <game folder> [AddOns folder] [test]: the build into its AddOns folder (wow and addons, which to_game and
+# stale read), the game folder's own unless named; test: only the addons that folder holds already (a fresh-install
+# test's: the modules it was started with, no other).
 into() {
-    local name toc old game
-    wow="$1" addons="$1/Interface/AddOns"
+    local name toc old game only="${3:-}"
+    wow="$1" addons="${2:-$1/Interface/AddOns}"
     # Core's sets of the game folder's own game version (Doc/guides/data.md, *Game versions*): the build has
     # Forever live's; another game version's copy of Core keeps its own, made anew from the master after the copy.
     game="$("$root/dev/tools/data" game "$wow" || true)"
     for name in $names; do
+        if [ -n "$only" ] && [ ! -d "$addons/$name" ]; then continue; fi
         if [ -n "$game" ] && ! serves "$name" "$game"; then
             if [ -d "$addons/$name" ]; then
                 rm -rf "${addons:?}/$name"
@@ -257,10 +260,24 @@ into() {
 }
 # One game after the other, each in a shell of its own: a failure in one (a copy refused, a folder gone meanwhile)
 # says which game has the new build and which has not, instead of ending with rsync's message alone.
+# A fresh-install test on in a game folder (dev/tools/fresh-install, saneui freshinstall): the Interface there is the
+# test's, the player's own set aside in <game>/SaneUI-FreshInstall. The build goes into both (Saneroki, 2026-11-15:
+# "i did a saneui freshinstall navigation and it did not take the changes"): the player's own whole, so saneui
+# myinstall brings back this build and the next saneui freshinstall takes it; the test's only the addons it holds.
+hold=SaneUI-FreshInstall
+place() {
+    if [ -f "$1/$hold/test.json" ] && [ -d "$1/$hold/Interface/AddOns" ]; then
+        echo "A fresh-install test is on here: the build into your own Interface (set aside) and the test's addons."
+        into "$1" "$1/$hold/Interface/AddOns"
+        into "$1" "$1/Interface/AddOns" test
+    else
+        into "$1"
+    fi
+}
 games=(Forever Retail)
 for i in "${!folders[@]}"; do
     set +e
-    (set -e; into "${folders[$i]}")
+    (set -e; place "${folders[$i]}")
     status=$?
     set -e
     if [ "$status" -ne 0 ]; then
@@ -271,6 +288,8 @@ for i in "${!folders[@]}"; do
     fi
 done
 # The auction database's links (dev/tools/auction-database), made on this computer: an account's first save gets its
-# link here; said only where they changed.
-WOW_FOREVER="${folders[0]}" WOW_RETAIL="${folders[1]}" "$here/dev/tools/auction-database" link --changed || echo "The auction database's links were not made anew (dev/tools/auction-database link)." >&2
+# link here; said only where they changed. While a fresh-install test is on, in the player's own folders set aside
+# (their WTF and Interface): a new player has no such tool-made addon.
+own() { if [ -f "$1/$hold/test.json" ] && [ -d "$1/$hold/Interface/AddOns" ]; then echo "$1/$hold"; else echo "$1"; fi; }
+WOW_FOREVER="$(own "${folders[0]}")" WOW_RETAIL="$(own "${folders[1]}")" "$here/dev/tools/auction-database" link --changed || echo "The auction database's links were not made anew (dev/tools/auction-database link)." >&2
 echo "New addon or new file: restart the game. Changed file only: /reload in the game."
