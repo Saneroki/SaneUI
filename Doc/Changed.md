@@ -6,6 +6,16 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### CurseForge: the projects SaneUI Core and SaneUI Navigation (Saneroki, 2026-11-15)
+Saneroki made the two projects on CurseForge as *SaneUI Core* (`saneui-core`) and *SaneUI Navigation* (`saneui-navigation`), and on "Rename Sane UI Maps to SaneUI Navigation in the descriptions and the changelog?": "Yes, rename".
+- **`Doc/curseforge/`:** `Maps.md` is `Navigation.md`; the names, summaries' pages, descriptions and both projects' changelogs say *SaneUI Core* and *SaneUI Navigation* (the set of addons and the options page stay *Sane UI*, the game's name for them).
+- **`dev/tools/release`:** a project without a name in the config uploads as *SaneUI Core* or *SaneUI <title>*; the config's example names the real slugs.
+- **`dev/tools/logo-art`:** Navigation's banner says *NAVIGATION*, no longer *MAPS*; a word too long for the plate is drawn smaller until it fits (Inventory's ran past the gold line). Both banners made anew (`assets/Logos/`, `assets/optimized/<Module>/Art/banner.blp`).
+- **`Doc/changelog.txt`:** Navigation 0.3.2 names *SaneUI Navigation*.
+- **Tests:** `dev/tests/release.py` (80 checks).
+- **Docs:** `Doc/curseforge/README.md`, `Doc/agent/development.md`, `src/Navigation/README.md` (*Files*).
+- A `/reload` takes in the new banner.
+
 ### Git: the history's art only in the versions main and the tags hold (Saneroki, 2026-11-15)
 Saneroki: "Can you purge the lfs of the local git history so I can upload a slim version of the repository".
 - **The history since GitHub's main** (786 commits, not yet pushed) rewritten: every message, author, date and every file but the art as it was, main's tree and both tags' (`Navigation/0.3.1-alpha`, `0.3.2-alpha`) the same to the byte. An art file (the kinds in Git LFS) stands in each commit only in a version that main or a tag still holds, else in the next version that does; art none of them holds any longer is gone from the history (1,930 paths: the Atlas's tiles, Navigation's old `Art/` folder, concept art, pieces replaced since), and art moved since stands there only from its move on.

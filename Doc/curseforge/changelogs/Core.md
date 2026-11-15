@@ -1,11 +1,11 @@
-# Sane UI Core: changelog
+# SaneUI Core: changelog
 
-What changed in each version of Sane UI Core, newest first: a version's part is its file's changelog on CurseForge.
+What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
 ## 0.3.1 (2026-11-15)
 
-- First public alpha of Sane UI Core, the base every Sane UI addon needs. On its own it changes nothing you can
+- First public alpha of SaneUI Core, the base every Sane UI addon needs. On its own it changes nothing you can
   see.
 - One options page for all Sane UI addons: Esc > Options > AddOns > Sane UI.
 - Profiles, off at first: turn them on to share your settings between your characters.

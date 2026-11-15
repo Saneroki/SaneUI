@@ -47,7 +47,7 @@ PLATE_EDGE = (20, 15, 10)
 # The family: (file name, the word on the banner, the inner ring's colour, the symbol). Core first.
 ADDONS = {
     "core": ("CORE", None, "s"),
-    "maps": ("MAPS", (86, 170, 205), "compass"),
+    "maps": ("NAVIGATION", (86, 170, 205), "compass"),
     "economy": ("ECONOMY", (112, 190, 104), "coins"),
     "inventory": ("INVENTORY", (214, 140, 62), "chest"),
     "social": ("SOCIAL", (160, 128, 214), "bubbles"),
@@ -328,6 +328,9 @@ def banner(word, accent, symbol, width=1536, height=512):
     left = 520 * n
     spaced(draw, (left, 196 * n), "SANE UI", 70 * n, GOLD_DARK + (255,), 16 * n)
     big = 190 * n if len(word) <= 7 else 150 * n
+    room = w - 70 * n - (left - 6 * n)   # a long word (NAVIGATION) made smaller until it fits the plate
+    while big > 60 * n and sum(draw.textlength(ch, font=font(big)) + 10 * n for ch in word) > room:
+        big -= 4 * n
     end = spaced(draw, (left - 6 * n, 392 * n), word, big, GOLD + (255,), 10 * n)
     rule = (accent or GOLD_DARK) + (255,)
     draw.rectangle((left, 236 * n, min(end, w - 70 * n), 240 * n), fill=rule)

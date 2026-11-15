@@ -1,4 +1,4 @@
-# Sane UI Core: the CurseForge project
+# SaneUI Core: the CurseForge project
 
 What goes into the project's fields on CurseForge (authors.curseforge.com). The file uploads come from
 `saneui publish` (`dev/tools/release`); their changelog is this project's own,
@@ -6,12 +6,12 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 
 | Field | Value |
 | --- | --- |
-| Name | Sane UI Core |
+| Name | SaneUI Core |
 | Folder in the game | `SaneUI` (*Sane UI*) alone: the auction data's addons (*Data: Auction House*, *Data: Auction Scans*) come with Sane UI Economy, the module that uses them (Saneroki, 2026-11-15), so Core never scans the auction house for a player without it |
 | Summary | The shared base of every Sane UI addon: one options page, profiles and safe error handling. |
 | Category | Libraries |
 | Avatar | `core-avatar.png` of `saneui makelogos` (400 x 400) |
-| Banner | `core-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![Sane UI Core](<address>)`) |
+| Banner | `core-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Core](<address>)`) |
 | Slug | goes into `~/.config/saneui/curseforge.json` (`projects.Core.slug`): each module names it its dependency |
 | Release type | the highest any module uploaded with it needs (the pipeline sees to it) |
 
@@ -20,7 +20,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 The editor set to *Markdown* when the project is made.
 
 ```markdown
-**Sane UI Core** is what every Sane UI addon shares. Sane UI is a set of interface addons for
+**SaneUI Core** is what every Sane UI addon shares. Sane UI is a set of interface addons for
 **WoW: Forever** (English client), each a download of its own, so you take only the parts you like.
 The CurseForge app installs Core with any of them; you do not need to get it yourself.
 
@@ -40,7 +40,7 @@ On its own, Core changes nothing you can see on your screen. It gives the Sane U
 
 ## Sane UI addons
 
-- **Sane UI Maps:** your minimap and world map in one window.
+- **SaneUI Navigation:** your minimap and world map in one window.
 - More are on the way.
 
 ## Feedback and bug reports

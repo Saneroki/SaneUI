@@ -28,9 +28,9 @@ changelog, Doc/curseforge/changelogs/<folder>.md (Core.md, Navigation.md), its p
 module's file changelog never holds another addon's changes (Saneroki, 2026-11-15). The projects and the token
 stand in ~/.config/saneui/curseforge.json, never in a repository:
   {"token": "...", "gameVersions": ["1.60.1"],
-   "projects": {"Core": {"id": 123456, "slug": "sane-ui"}, "Navigation": {"id": 234567, "name": "Sane UI Maps"}}}
+   "projects": {"Core": {"id": 123456, "slug": "saneui-core"}, "Navigation": {"id": 234567, "name": "SaneUI Navigation"}}}
 (gameVersions: CurseForge's names or ids of the game versions the files are for, listed by check; Core's slug is
-what the modules name as their dependency; a project's name names its files, Sane UI Core and "Sane UI <its title>"
+what the modules name as their dependency; a project's name names its files, SaneUI Core and "SaneUI <its title>"
 when none is given; a module
 without a project there is not uploaded; "host" may name another site than https://wow.curseforge.com). Nothing
 is ever pushed: the tags go out with git push origin <tag>.
@@ -532,7 +532,7 @@ def read_config(path=CONFIG):
     if not path.is_file():
         raise Refused(f"no {path}: it holds the CurseForge projects and the token, "
                       '{"token": "...", "gameVersions": ["1.60.1"], "projects": {"Core": {"id": 123456, "slug": '
-                      '"sane-ui"}, "Navigation": {"id": 234567, "name": "Sane UI Maps"}}} '
+                      '"saneui-core"}, "Navigation": {"id": 234567, "name": "SaneUI Navigation"}}} '
                       "(the token from authors.curseforge.com, Settings, API Tokens)")
     try:
         found = json.loads(path.read_text(encoding="utf-8"))
@@ -680,8 +680,8 @@ def draft_changelog(channel, only=None, core_wanted=None, root=ROOT, say=print, 
 
 
 def project_name(folder, title, projects):
-    """What a project's files are called on CurseForge: its name in the config, else Sane UI and the addon's title."""
-    return (projects.get(folder) or {}).get("name") or ("Sane UI Core" if folder == "Core" else f"Sane UI {title}")
+    """What a project's files are called on CurseForge: its name in the config, else SaneUI and the addon's title."""
+    return (projects.get(folder) or {}).get("name") or ("SaneUI Core" if folder == "Core" else f"SaneUI {title}")
 
 
 def metadata(name, version, channel, game_versions, words, core_slug=None):

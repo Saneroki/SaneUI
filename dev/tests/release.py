@@ -190,8 +190,8 @@ with tempfile.TemporaryDirectory() as temporary:
 
     # The changelogs: each project's own on CurseForge, a part per version; never the suite's Doc/changelog.txt.
     write("Doc/changelog.txt", "Sane UI: what is new\n\nNavigation 0.3.1 (2026-11-16)\n---\n- The suite's words.\n")
-    write("Doc/curseforge/changelogs/Navigation.md", "# Sane UI Maps: changelog\n\nIntro.\n\n## 0.3.1 (2026-11-16)\n\n- The map.\n\n## 0.3.0 (2026-10-14)\n\n- Older.\n")
-    write("Doc/curseforge/changelogs/Core.md", "# Sane UI Core: changelog\n\n## 0.4.0 (2026-11-20)\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n"
+    write("Doc/curseforge/changelogs/Navigation.md", "# SaneUI Navigation: changelog\n\nIntro.\n\n## 0.3.1 (2026-11-16)\n\n- The map.\n\n## 0.3.0 (2026-10-14)\n\n- Older.\n")
+    write("Doc/curseforge/changelogs/Core.md", "# SaneUI Core: changelog\n\n## 0.4.0 (2026-11-20)\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n"
           "- Ends at 1.2.3 (not a heading).\n")
     check(tool.changelog("Navigation", "0.3.1", repo) == "- The map.",
           "a project's words for a version: its part of its own changelog, up to the next; not the suite's")
@@ -201,14 +201,14 @@ with tempfile.TemporaryDirectory() as temporary:
           and tool.changelog("Loot", "0.3.1", repo) is None, "a version not written yet, or another project's: no words")
     check(tool.changelog("Core", "0.4.0", repo) is None,
           "a heading without a line of changes counts as no changelog (CurseForge wants one with every file)")
-    meta = tool.metadata("Sane UI Maps", "0.3.1", "beta", [7], "words", "sane-ui")
-    check(meta == {"changelog": "words", "changelogType": "markdown", "displayName": "Sane UI Maps 0.3.1 (beta)", "gameVersions": [7],
+    meta = tool.metadata("SaneUI Navigation", "0.3.1", "beta", [7], "words", "sane-ui")
+    check(meta == {"changelog": "words", "changelogType": "markdown", "displayName": "SaneUI Navigation 0.3.1 (beta)", "gameVersions": [7],
                    "releaseType": "beta", "relations": {"projects": [{"slug": "sane-ui", "type": "requiredDependency"}]}},
           "a module's upload: the channel its release type, Core's project its required dependency")
     check("relations" not in tool.metadata("Sane UI", "0.3.1", "release", [7], "w") and
           tool.metadata("Sane UI", "0.3.1", "release", [7], "w")["displayName"] == "Sane UI 0.3.1", "Core's upload names none")
-    check(tool.project_name("Navigation", "Navigation", {"Navigation": {"id": 2, "name": "Sane UI Maps"}}) == "Sane UI Maps"
-          and tool.project_name("Loot", "Loot", {}) == "Sane UI Loot" and tool.project_name("Core", "Sane UI", {}) == "Sane UI Core",
+    check(tool.project_name("Navigation", "Navigation", {"Navigation": {"id": 2, "name": "SaneUI Navigation"}}) == "SaneUI Navigation"
+          and tool.project_name("Loot", "Loot", {}) == "SaneUI Loot" and tool.project_name("Core", "Sane UI", {}) == "SaneUI Core",
           "a project's name: the config's, else Sane UI and the title")
     check(tool.game_version_ids(["1.60.1", 12], [{"id": 5, "name": "1.60.1"}, {"id": 12, "name": "x"}]) == [5, 12],
           "game versions by name or id")
@@ -238,13 +238,13 @@ with tempfile.TemporaryDirectory() as temporary:
         channel, only, core_wanted, dry, root, out_dir=out, say=say, test=False, core=core)
     try:
         settings = {"token": "secret", "gameVersions": ["1.60.1"],
-                    "projects": {"Core": {"id": 41, "slug": "sane-ui"}, "Navigation": {"id": 42, "name": "Sane UI Maps"}}}
+                    "projects": {"Core": {"id": 41, "slug": "sane-ui"}, "Navigation": {"id": 42, "name": "SaneUI Navigation"}}}
         check(tool.publish("alpha", dry=True, root=repo, say=quiet, settings=settings) == [] and asked == [],
               "--dry: nothing sent, nothing tagged")
         check("0.4.0 (<date>)\" in Doc/curseforge/changelogs/Navigation.md" in (refused(lambda: tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings)) or "")
               and asked == [], "no players' words for a version in its own changelog: nothing sent")
-        write("Doc/curseforge/changelogs/Navigation.md", "# Sane UI Maps: changelog\n\n## 0.4.0 (2026-11-17)\n\n- Newer.\n")
-        write("Doc/curseforge/changelogs/Core.md", "# Sane UI Core: changelog\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n")
+        write("Doc/curseforge/changelogs/Navigation.md", "# SaneUI Navigation: changelog\n\n## 0.4.0 (2026-11-17)\n\n- Newer.\n")
+        write("Doc/curseforge/changelogs/Core.md", "# SaneUI Core: changelog\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n")
         commit("words")
         check(tool.publish("alpha", ["Navigation"], yes=True, root=repo, say=quiet, settings=settings) == [92, 93],
               "uploaded: CurseForge's file ids, Core's and the module's")
@@ -253,7 +253,7 @@ with tempfile.TemporaryDirectory() as temporary:
                                         "https://wow.curseforge.com/api/projects/42/upload-file"],
               "the game versions asked, then Core sent to its project, then the module to its")
         check(b'"requiredDependency"' in asked[2][2] and b'"slug": "sane-ui"' in asked[2][2] and b"requiredDependency" not in asked[1][2]
-              and b'"displayName": "Sane UI Maps 0.4.0 (alpha)"' in asked[2][2] and b"- Newer." in asked[2][2],
+              and b'"displayName": "SaneUI Navigation 0.4.0 (alpha)"' in asked[2][2] and b"- Newer." in asked[2][2],
               "the module's upload names Core's project its required dependency, under the project's name, with its words")
         tags = {t["tag"] for t in tool.published_tags(repo)}
         check(tags == {"published/Core/0.3.1-alpha", "published/Navigation/0.4.0-alpha"}, f"each upload tagged: {tags}")
@@ -267,7 +267,7 @@ with tempfile.TemporaryDirectory() as temporary:
         check(tool.core_version("alpha", "main", None, repo) == {"version": "0.3.2", "new": True}, "new Core code: one above")
         check("not newer" in (refused(lambda: tool.core_version("alpha", "main", "0.3.1", repo)) or ""),
               "an older number for Core's new code: refused")
-        write("Doc/curseforge/changelogs/Core.md", "# Sane UI Core: changelog\n\n## 0.3.2 (2026-11-18)\n\n- Fixed.\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n")
+        write("Doc/curseforge/changelogs/Core.md", "# SaneUI Core: changelog\n\n## 0.3.2 (2026-11-18)\n\n- Fixed.\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n")
         commit("words 2")
         check(tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings) == [92]
               and [a[0] for a in asked][1:] == ["https://wow.curseforge.com/api/projects/41/upload-file"],
@@ -296,8 +296,8 @@ with tempfile.TemporaryDirectory() as temporary:
         commit("Loot: a module of its own")
         tool.promote("Loot", "alpha", test=False, root=repo, say=quiet)
         check(tool.draft_changelog("alpha", ["Loot"], root=repo, say=quiet, today="2026-11-19", projects={}) ==
-              ["Doc/curseforge/changelogs/Loot.md 0.3.1"] and "# Sane UI Loot: changelog" in (repo / "Doc/curseforge/changelogs/Loot.md").read_text()
-              and "- The first release of Sane UI Loot." in (repo / "Doc/curseforge/changelogs/Loot.md").read_text(),
+              ["Doc/curseforge/changelogs/Loot.md 0.3.1"] and "# SaneUI Loot: changelog" in (repo / "Doc/curseforge/changelogs/Loot.md").read_text()
+              and "- The first release of SaneUI Loot." in (repo / "Doc/curseforge/changelogs/Loot.md").read_text(),
               "a project's first changelog made with its heading, its first part saying so")
         check(tool.draft_changelog("alpha", root=repo, say=quiet, today="2026-11-20") == [], "a part there already: left alone")
         commit("draft")
