@@ -49,6 +49,8 @@ saneui installrelease      # the release into both games: the tag current, or on
 saneui build               # tests and builds into BUILD only (--release TAG: a release, into BUILD/release/TAG)
 saneui test                # every check and test (dev/tests/run)
 saneui installed           # which build each game has
+saneui freshinstall        # a new player's first Sane UI in both games: your WTF and Interface set aside
+saneui myinstall           # your own WTF and Interface back, the fresh install's deleted
 saneui update              # pull from GitHub (main, fast-forward only), then installdev
 ```
 Then `/reload` in the game (a new file or a first install needs a game restart). Every install goes into both

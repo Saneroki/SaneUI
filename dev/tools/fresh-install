@@ -1,0 +1,436 @@
+#!/usr/bin/env python3
+"""A new player's first Sane UI tried in the real game, then the developer's own setup back (Saneroki, 2026-11-15:
+"a workflow where I can quickly test out a fresh install of my addon ... Like if someone has already played wow
+before and now installs saneUI ... and then quickly switch back to my own configured personalised setup").
+
+saneui freshinstall sets each game folder's WTF and Interface aside, whole, into <game>/SaneUI-FreshInstall/ (a
+rename on the same disk: instant, nothing in them copied or changed), and gives the game what a player who has
+played before and installs Sane UI now has:
+
+  - WTF: the game's own files of every account and character as they are (Config.wtf: the window, graphics, the
+    login; the copies of what Blizzard keeps on its servers: settings, key bindings, macros, Edit Mode layouts, chat),
+    but no addon's saved files (Blizzard's own, Blizzard_*.lua, stay), no addon lists (AddOns.txt: the game turns a
+    new addon on) and none of Sane UI's keys among the key bindings;
+  - Interface/AddOns: Sane UI's addons alone, as the game has them installed now (saneui installdev), or the zips
+    named with --zip instead (a channel's packages from saneui makepackage: what a player downloads).
+
+Blizzard keeps the settings, key bindings, macros, Edit Mode layouts and chat on its servers too, and a login takes
+the newer copy. So that nothing the test changes there comes back into the real setup, the test's Config.wtf turns
+the game's synchronising off (synchronizeConfig, synchronizeBindings, synchronizeChatFrames "0", the three the
+client has): the test reads and writes the copies on this computer alone. saneui myinstall names every one of them
+the test changed, of whatever kind, so a change the switches do not cover is seen.
+
+saneui myinstall deletes the test's WTF and Interface (only a folder carrying the test's mark, SaneUI-FreshInstall.txt;
+anything else stops it before it deletes or moves anything) and puts the real ones back as they were. Both commands
+work on both games at once, Forever's and Retail's (Saneroki, 2026-10-25), or on neither, and refuse while a client
+of either runs: the game writes its WTF at logout, and would write the test's into the real one.
+
+While a test is on, the tools work on it: saneui installdev puts a new build into the fresh install, saneui
+showerrors reads its error log, saneui installed says that a test is on.
+
+  dev/tools/fresh-install start [--zip FILE ...] [--dry]     (saneui freshinstall)
+  dev/tools/fresh-install restore [--dry]                    (saneui myinstall)
+  dev/tools/fresh-install status
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import zipfile
+from datetime import datetime
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "dev" / "data"))
+import compile as compiler  # noqa: E402  (the products a game folder's .flavor.info names)
+
+FOREVER = Path(os.environ.get("WOW_FOREVER", Path.home() / ".local/share/Steam/steamapps/compatdata/3133853286/pfx/drive_c"
+                              "/Program Files (x86)/World of Warcraft/_forever_"))
+RETAIL = Path(os.environ.get("WOW_RETAIL", FOREVER.parent / "_retail_"))
+HOLD = "SaneUI-FreshInstall"      # <game>/SaneUI-FreshInstall: the real WTF and Interface while a test is on
+MARK = "SaneUI-FreshInstall.txt"  # in the test's WTF and Interface: no folder without it is ever deleted
+STATE = "test.json"               # in HOLD: when, from what, what was there, the server-kept files at the start
+FOLDERS = ("WTF", "Interface")
+SYNC = ("synchronizeConfig", "synchronizeBindings", "synchronizeChatFrames")
+SYNC_LINE = re.compile(rb"^SET (" + b"|".join(name.encode() for name in SYNC) + rb") ", re.I)
+# Sane UI's keys in the game's key bindings: the actions of its Bindings.xml (SANEUI_...), clicks on its buttons.
+OUR_KEY = re.compile(rb"^bind \S+ (SANEUI_|CLICK SaneUI)")
+# The game's copies of what Blizzard keeps on its servers (the files the client syncs), in plain words.
+KEPT = {"config-cache.wtf": "settings", "bindings-cache.wtf": "key bindings", "click-bindings-cache.txt": "click bindings",
+        "macros-cache.txt": "macros", "edit-mode-cache-account.txt": "Edit Mode layouts",
+        "edit-mode-cache-character.txt": "Edit Mode layout chosen", "chat-cache.txt": "chat windows",
+        "layout-local.txt": "window places", "flagged-cache-account.txt": "flags", "flagged-cache-character.txt": "flags",
+        "tts-cache-account.txt": "text to speech", "tts-cache-character.txt": "text to speech"}
+NOTE = ("This {what} is a fresh-install test's (saneui freshinstall): saneui myinstall deletes it and puts yours back\n"
+        "from ../SaneUI-FreshInstall/.\n")
+README = ("Your own WTF and Interface, set aside by saneui freshinstall while a fresh install of Sane UI is tried.\n"
+          "saneui myinstall puts them back where they stood (quit the game first). Do not delete this folder.\n")
+
+
+class Refused(Exception):
+    """Something stands in the way: nothing was done (or what was done is put back)."""
+
+
+def games():
+    """The game folders, Forever's first: (name, folder, the game version its .flavor.info must name)."""
+    return [("Forever", FOREVER, "forever"), ("Retail", RETAIL, "retail")]
+
+
+def running(folder):
+    """Whether a client of this game folder runs: its Wow.exe in a process's command line (under Wine a Windows path,
+    C:\\...\\_forever_\\Wow.exe)."""
+    pattern = re.compile(re.escape(folder.name) + r"[\\/]+Wow[\w-]*\.exe", re.I)
+    if not Path("/proc").is_dir():
+        listed = subprocess.run(["ps", "-axo", "command"], capture_output=True, text=True, check=True).stdout
+        return any(pattern.search(line) for line in listed.splitlines())
+    for proc in Path("/proc").iterdir():
+        if not proc.name.isdigit():
+            continue
+        try:
+            line = (proc / "cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
+        except OSError:
+            continue
+        if pattern.search(line):
+            return True
+    return False
+
+
+def ours():
+    """Sane UI's addons, one per TOC in src/ (the build's folders); tool-made ones (the auction database's links)
+    are not among them."""
+    return sorted(toc.stem for toc in (ROOT / "src").glob("*/*.toc"))
+
+
+def sha(path):
+    return hashlib.sha1(path.read_bytes()).hexdigest()
+
+
+def kept(test):
+    """The server-kept files of a test's WTF, by path, with their hash."""
+    return {str(path.relative_to(test)): sha(path) for path in sorted(test.rglob("*"))
+            if path.name in KEPT and path.is_file() and not path.is_symlink()}
+
+
+# The test's WTF -----------------------------------------------------------------------------------------------
+
+def taken(rel):
+    """Whether a file of the real WTF goes into the test's: the game's own files, no addon's."""
+    if rel.name == "AddOns.txt":
+        return False
+    if "SavedVariables" in rel.parts[:-1]:
+        return rel.name.startswith("Blizzard_")
+    return True
+
+
+def lines(raw):
+    """A file's lines and its line end (the game writes CRLF)."""
+    end = b"\r\n" if b"\r\n" in raw else b"\n"
+    rows = raw.split(end)
+    if rows and rows[-1] == b"":
+        rows.pop()
+    return rows, end
+
+
+def sync_off(raw):
+    """Config.wtf with the game's synchronising off: its own lines of the three switches replaced."""
+    rows, end = lines(raw)
+    rows = [row for row in rows if not SYNC_LINE.match(row)] + [f'SET {name} "0"'.encode() for name in SYNC]
+    return end.join(rows) + end
+
+
+def without_our_keys(raw):
+    """The key bindings without Sane UI's keys, and how many there were."""
+    rows, end = lines(raw)
+    left = [row for row in rows if not OUR_KEY.match(row)]
+    return (end.join(left) + end if left else b""), len(rows) - len(left)
+
+
+def plan_wtf(real):
+    """What the test's WTF takes of the real one: (files taken, files left out, Sane UI's keys taken out)."""
+    take, left, keys = [], 0, 0
+    for path in sorted(real.rglob("*")):
+        if path.is_dir() or path.is_symlink():
+            continue
+        rel = path.relative_to(real)
+        if not taken(rel):
+            left += 1
+            continue
+        take.append(rel)
+        if rel.name == "bindings-cache.wtf":
+            keys += without_our_keys(path.read_bytes())[1]
+    return take, left, keys
+
+
+def fresh_wtf(real, test):
+    """The test's WTF made from the real one (set aside already); the files keep their times."""
+    take, left, keys = plan_wtf(real)
+    test.mkdir()
+    (test / MARK).write_text(NOTE.format(what="WTF"), encoding="utf-8")
+    for rel in take:
+        source, target = real / rel, test / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if rel == Path("Config.wtf"):
+            target.write_bytes(sync_off(source.read_bytes()))
+        elif rel.name.startswith("bindings-cache"):
+            target.write_bytes(without_our_keys(source.read_bytes())[0])
+        else:
+            shutil.copyfile(source, target)
+        shutil.copystat(source, target)
+    if not (test / "Config.wtf").exists():
+        (test / "Config.wtf").write_bytes(sync_off(b""))
+    return len(take), left, keys
+
+
+# The test's Interface -----------------------------------------------------------------------------------------
+
+def check_zip(path):
+    """The addon folders a zip holds; refused if a name would land outside AddOns."""
+    try:
+        with zipfile.ZipFile(path) as archive:
+            names = archive.namelist()
+    except (OSError, zipfile.BadZipFile) as error:
+        raise Refused(f"Not a zip to install: {path} ({error})")
+    tops = set()
+    for name in names:
+        parts = Path(name).parts
+        if not parts or name.startswith(("/", "\\")) or ".." in parts or ":" in parts[0]:
+            raise Refused(f"{path}: {name} would land outside AddOns")
+        if len(parts) > 1 or name.endswith("/"):
+            tops.add(parts[0])
+    return sorted(tops)
+
+
+def copy_tree(source, target):
+    """A folder copied with its links; on this disk (btrfs) the copy shares the data, so it is instant."""
+    try:
+        subprocess.run(["cp", "-a", "--reflink=auto", str(source), str(target)], check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        if target.exists():
+            shutil.rmtree(target)
+        shutil.copytree(source, target, symlinks=True)
+
+
+def plan_addons(real_interface, zips):
+    """The addons the test's AddOns gets: from the zips, or Sane UI's as the game has them installed now."""
+    if zips:
+        return sorted({name for path in zips for name in check_zip(path)})
+    return [name for name in ours() if (real_interface / "AddOns" / name).is_dir()]
+
+
+def fresh_interface(real, test, zips):
+    """The test's Interface: AddOns with Sane UI alone."""
+    test.mkdir()
+    (test / MARK).write_text(NOTE.format(what="Interface"), encoding="utf-8")
+    addons = test / "AddOns"
+    addons.mkdir()
+    if zips:
+        for path in zips:
+            with zipfile.ZipFile(path) as archive:
+                archive.extractall(addons)
+    else:
+        for name in plan_addons(real, zips):
+            copy_tree(real / "AddOns" / name, addons / name)
+    return sorted(path.name for path in addons.iterdir() if path.is_dir())
+
+
+# Start, restore, status ---------------------------------------------------------------------------------------
+
+def state_of(folder):
+    path = folder / HOLD / STATE
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def write_state(folder, state):
+    path = folder / HOLD / STATE
+    temporary = path.with_suffix(".new")
+    temporary.write_text(json.dumps(state, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def refusals(start, zips=()):
+    """What stands in the way of starting (start) or ending a test, in both games."""
+    found = []
+    for game, folder, want in games():
+        if not start and not (folder / HOLD).is_dir():
+            continue  # no test there: nothing of it to put back, nothing in the way
+        if not folder.is_dir():
+            found.append(f"{game}'s game folder is not there: {folder} (WOW_FOREVER and WOW_RETAIL name them)")
+            continue
+        if (compiler.product_game(folder) or "").split("-")[0] != want:
+            found.append(f"Not {game}'s game folder (its .flavor.info): {folder}")
+            continue
+        if running(folder):
+            found.append(f"{game}'s game runs: quit it first (the game writes its WTF at logout)")
+        hold = folder / HOLD
+        if start and hold.exists():
+            found.append(f"A fresh-install test is on in {game}'s game already: saneui myinstall first ({hold})")
+        if start and not (folder / "WTF").is_dir():
+            found.append(f"{game}'s game has no WTF folder: start it once first ({folder})")
+        if start and not zips and not (folder / "Interface" / "AddOns" / "SaneUI").is_dir():
+            found.append(f"Sane UI is not installed in {game}'s game: saneui installdev first")
+        if not start and hold.is_dir():
+            state = state_of(folder)
+            for name in FOLDERS:
+                mine, here = hold / name, folder / name
+                if here.exists() and not (here / MARK).is_file() and mine.exists():
+                    found.append(f"{here} has no mark of the test: it is not deleted, nothing is moved (yours waits in {mine})")
+                if not mine.exists() and (here / MARK).is_file() and state.get("had", {}).get(name, True):
+                    found.append(f"Your {name} is not in {hold}: nothing is deleted")
+    for path in zips:
+        try:
+            check_zip(path)
+        except Refused as error:
+            found.append(str(error))
+    return found
+
+
+def start_game(game, folder, zips, say):
+    hold = folder / HOLD
+    hold.mkdir()
+    (hold / "README.txt").write_text(README, encoding="utf-8")
+    state = {"started": datetime.now().isoformat(timespec="seconds"), "from": [str(path) for path in zips] or "installed",
+             "had": {name: (folder / name).exists() for name in FOLDERS}}
+    write_state(folder, state)
+    for name in FOLDERS:
+        if state["had"][name]:
+            os.rename(folder / name, hold / name)
+    files, left, keys = fresh_wtf(hold / "WTF", folder / "WTF")
+    addons = fresh_interface(hold / "Interface", folder / "Interface", zips)
+    state["start"] = kept(folder / "WTF")
+    write_state(folder, state)
+    say(f"{game}: yours set aside in {hold.name}/. The test's WTF: {files} of the game's own files ({left} addon "
+        f"files left out{f', {keys} of Sane UI keys taken off' if keys else ''}); its AddOns: {', '.join(addons)}.")
+    if "SaneUI" not in addons:
+        say(f"{game}: no Sane UI (Core) among them: its modules do not load without it.")
+
+
+def start(zips, dry, say=print):
+    zips = [Path(path).resolve() for path in zips]
+    found = refusals(True, zips)
+    if found and not dry:
+        raise Refused("\n".join(["Nothing set aside:"] + found))
+    if dry:
+        if found:
+            say("\n".join(["In the way now:"] + found))
+        for game, folder, _ in games():
+            files, left, keys = plan_wtf(folder / "WTF")
+            addons = plan_addons(folder / "Interface", zips)
+            say(f"{game}: would set WTF and Interface aside in {folder / HOLD}. The test's WTF: {len(files)} of the "
+                f"game's own files ({left} addon files left out, {keys} Sane UI keys taken off); its AddOns: "
+                f"{', '.join(addons)}.")
+        return
+    try:
+        for game, folder, _ in games():
+            start_game(game, folder, zips, say)
+    except BaseException as error:
+        say(f"Stopped ({error!r}); putting back what was set aside.")
+        restore(False, say, rollback=True)
+        raise
+    say("Start the game: your accounts and characters, the game's own settings, Sane UI as a new player gets it, no other "
+        "addon. Afterwards quit the game and run saneui myinstall: yours come back as they were.")
+    if zips:
+        say("The zips' TOCs name Forever's interface number alone: in Retail's game list they stand as out of date.")
+
+
+def changed(folder):
+    """The server-kept files the test changed or made, in plain words."""
+    if not (folder / "WTF" / MARK).is_file():
+        return []
+    before, now = state_of(folder).get("start", {}), kept(folder / "WTF")
+    return [f"{rel} ({KEPT[Path(rel).name]})" for rel, digest in now.items() if before.get(rel) != digest]
+
+
+def restore(dry, say=print, rollback=False):
+    if not rollback:
+        found = refusals(False)
+        if found and not dry:
+            raise Refused("\n".join(["Nothing deleted or moved:"] + found))
+        if found:
+            say("\n".join(["In the way now:"] + found))
+    any_test = False
+    for game, folder, _ in games():
+        hold = folder / HOLD
+        if not hold.is_dir():
+            if not rollback:
+                say(f"{game}: no fresh-install test here; your own setup is in place.")
+            continue
+        any_test = True
+        state = state_of(folder)
+        news = changed(folder)
+        for name in FOLDERS:
+            mine, here = hold / name, folder / name
+            test_here = (here / MARK).is_file()
+            if dry:
+                gone = f"delete the test's {name}, " if test_here else ""
+                back = f"put your {name} back" if mine.exists() else f"leave no {name} (you had none)"
+                say(f"{game}: would {gone}{back}.")
+                continue
+            if test_here and (mine.exists() or not state.get("had", {}).get(name, True)):
+                shutil.rmtree(here)
+            if mine.exists() and not here.exists():
+                os.rename(mine, here)
+        if dry:
+            continue
+        for name in (STATE, "README.txt"):
+            (hold / name).unlink(missing_ok=True)
+        try:
+            hold.rmdir()
+        except OSError:
+            say(f"{game}: {hold} still holds something; left as it is.")
+        if not rollback:
+            say(f"{game}: your own WTF and Interface are back; the test's are deleted.")
+            if news:
+                say(f"{game}: the test changed these of the game's own settings, which stayed on this computer (its "
+                    f"syncing was off) and are gone with it: " + "; ".join(news))
+    if any_test and not dry and not rollback:
+        say("Start the game: your own setup, as you left it.")
+
+
+def status(say=print):
+    for game, folder, _ in games():
+        hold = folder / HOLD
+        if hold.is_dir():
+            state = state_of(folder)
+            source = state.get("from", "installed")
+            source = "Sane UI as installed" if source == "installed" else "the zips " + ", ".join(Path(p).name for p in source)
+            say(f"{game}: a fresh-install test since {state.get('started', '?')} ({source}); yours in {hold} "
+                f"(saneui myinstall puts them back).")
+        else:
+            say(f"{game}: your own setup (no fresh-install test).")
+
+
+def main(argv=None):
+    manual = {"description": __doc__, "formatter_class": argparse.RawDescriptionHelpFormatter}
+    parser = argparse.ArgumentParser(prog="fresh-install", **manual)
+    commands = parser.add_subparsers(dest="command", required=True)
+    begin = commands.add_parser("start", help="a new player's first Sane UI: your WTF and Interface set aside", **manual)
+    begin.add_argument("--zip", nargs="+", default=[], metavar="FILE",
+                       help="install these zips (saneui makepackage's BUILD/packages/*.zip) instead of the installed build")
+    begin.add_argument("--dry", action="store_true", help="say what would be done; change nothing")
+    end = commands.add_parser("restore", help="your own WTF and Interface back, the test's deleted", **manual)
+    end.add_argument("--dry", action="store_true", help="say what would be done; change nothing")
+    commands.add_parser("status", help="whether a fresh-install test is on, in each game")
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "start":
+            start(args.zip, args.dry)
+        elif args.command == "restore":
+            restore(args.dry)
+        else:
+            status()
+    except Refused as error:
+        print(error, file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -38,6 +38,11 @@ GROUPS = {
         "checkcurseforge": (["dev/tools/release", "check"], "the CurseForge token tried, its game versions listed",
                             None),
         "installed": (["@installed"], "which build the game has: dev or release, its version", 'which build the game has'),
+        "freshinstall": (["dev/tools/fresh-install", "start"], "a new player's first Sane UI in both games: your WTF and "
+                         "Interface set aside, the game's own settings kept, no other addon (--zip a package)",
+                         "a new player's fresh install"),
+        "myinstall": (["dev/tools/fresh-install", "restore"], "your own WTF and Interface back, the fresh install's "
+                      "deleted", "your own setup back"),
         "test": (["dev/tests/run"], "every check and test", 'every check and test'),
         "lint": (["dev/tests/lint"], "the checks of the addons' files alone", None),
         "update": (["Scripts/update"], "pull from GitHub, then installdev", None),
@@ -168,6 +173,8 @@ def installed():
                 fields[key.strip()] = value.strip()
         build = fields.get("X-SaneUI-Build", "dev (built before builds were marked)")
         print(f"In {game}'s game ({folder.name}): Sane UI {fields.get('Version', '?')}, {build}.")
+        if (folder / "SaneUI-FreshInstall").is_dir():   # dev/tools/fresh-install's HOLD
+            print(f"  A fresh-install test is on in {game}'s game: saneui myinstall puts your own setup back.")
     return 1 if missing else 0
 
 
