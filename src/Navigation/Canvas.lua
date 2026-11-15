@@ -101,9 +101,9 @@ Canvas.SEA_LAYERS = {
     { file = Canvas.SEA_SHADE, size = 1100, colour = { 8 / 255, 16 / 255, 24 / 255 }, alpha = 0.45 },
 }
 -- The Maelstrom's whirlpool over the waves, where WoW: Forever's world map paints it (Saneroki, 2026-11-15: "add a
--- whirlpool into the middle of the sea like it is on the original maps"): that map's own spiral, its ink and the
--- light at its middle in white (Art/Whirlpool.blp, cut from the map's art by dev/tools/terrain-art --whirlpool),
--- tinted as the waves' foam and shown as much as they are (Whirlpool). x, y: its middle, wide, high: its size, each
+-- whirlpool into the middle of the sea like it is on the original maps"): that map's own spiral, repainted as foam
+-- by an image model at 2048 (his pick, "b1"), its foam alone in white (Art/Whirlpool.blp, made by dev/tools/terrain-art
+-- --whirlpool), tinted as the waves' foam and shown as much as they are (Whirlpool). x, y: its middle, wide, high: its size, each
 -- 0 to 1 of the world map, as the tool prints them. Forever's alone: Retail's world map is another.
 Canvas.WHIRLPOOL = Core.FOREVER and {
     file = "Interface\\AddOns\\SaneUI_Navigation\\Art\\Whirlpool", x = 0.5000, y = 0.4955, wide = 0.1996, high = 0.2994,

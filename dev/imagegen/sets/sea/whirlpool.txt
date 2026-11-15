@@ -1,0 +1,27 @@
+# The Maelstrom's whirlpool on Navigation's sea, larger and more detailed (Saneroki, 2026-11-15: "The whirlwind is okay
+# but can we have a ai upscale it and maybe add some details but use a model that does great alpha maps so the upscale
+# is a more detailed whilwind with a good alpha to blend in nicely with the water").
+# Image 1: the spiral as the map drew it first, its ink alone in white on black at 1024 x 1024 (the alpha of the 256 x
+# 256 Art/Whirlpool.blp that dev/tools/terrain-art --whirlpool cut from Forever's world map art, made larger by
+# Lanczos): assets/Whirlpool/spiral.png. Every prompt keeps its shape: the same arms in the same places.
+# Two kinds of alpha, compared on the sea: foam-alpha asks Qwen-Image 2.1 for a picture with an alpha channel of its own
+# (the guide's sentence first: real alpha); foam-black and strokes are white on pure black, their brightness the alpha
+# (soft at every edge by itself, as the waves' own texture is).
+# Round 1 at 1024 (assets/generated/whirlpool/round-1, with the upscalers 4x-UltraSharpV2 and 4xNomos2 DAT2 on the world
+# map's own square: no new strokes) passed over: "The resolutions are way to tiny [...] big enough that when placed on
+# the world map can look good on a 4k screen and still able to zoom a little into it". Round 2 at 2048, shown at a 4K
+# screen's own pixels at the world's zoom, three and six notches in (assets/generated/whirlpool/round-2, pages/):
+# his pick "b1", foam-black seed 1, is assets/Whirlpool/whirlpool-foam.png, which terrain-art makes the texture from.
+# Made again (its GPU job, whirlpool, finished):
+#   dev/tools/imagegen dev/imagegen/sets/sea/whirlpool.txt
+workflow: qwen21-edit-1ref
+set: width=2048, height=2048
+count: 3
+out: assets/generated/whirlpool/round-2
+ref: assets/Whirlpool/spiral.png
+style: Seen from straight above, no perspective, no tilt. No text, no letters, no frame, no border, no ships, no land, no clouds, no colour but white.
+before: This is an RGBA format image with transparency. It has an alpha channel and a transparent background.
+foam-alpha: Image 1 is a spiral of white strokes on black: the shape of a whirlpool. Repaint it as a whirlpool of white sea foam and spray, keeping exactly its spiral: the same arms, the same curves, the same size and place, turning the same way. Each stroke becomes a streak of churning foam with fine torn edges and soft wisps, thin threads of foam between the arms, the foam denser and brighter towards the middle, where it swirls round a small eye of pale foam. Only the foam is shown: the water between the streaks is fully transparent. The middle is not dark: no black hole, no abyss.
+before:
+foam-black: Image 1 is a spiral of white strokes on black: the shape of a whirlpool. Repaint it as a whirlpool of white sea foam and spray on a pure black background, keeping exactly its spiral: the same arms, the same curves, the same size and place, turning the same way. Each stroke becomes a streak of churning foam with fine torn edges and soft wisps, thin threads of foam between the arms, the foam denser and brighter towards the middle, where it swirls round a small eye of pale foam. Between the streaks only pure black. The middle is not dark: no black hole, no abyss.
+strokes: Image 1 is a spiral of white strokes on black. Redraw it at a higher resolution with finer detail: the same spiral, every stroke in the same place, cleaner and sharper, each one a fine line of white foam with soft feathered ends, and a few more thin strokes between them following the same swirl. Pure white strokes on a pure black background, no shading.

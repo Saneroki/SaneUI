@@ -780,7 +780,11 @@ Three spaces, converted only in `Coords.lua`:
   sea like it is on the original maps"): the game's own art, no picture of ours (his word of 2026-11-11 on painted
   seas): the spiral of Forever's world map, its ink and the light at its middle cut from the parchment
   (`dev/tools/terrain-art --whirlpool`, `Art/Whirlpool.blp`), laid where that map paints it and as large
-  (`Canvas.WHIRLPOOL`), tinted as the waves' foam; Forever's alone.
+  (`Canvas.WHIRLPOOL`), tinted as the waves' foam; Forever's alone. Then larger (Saneroki: "can we have a ai upscale
+  it and maybe add some details but use a model that does great alpha maps"; round 1 at 1024 "way to tiny"): Qwen-Image
+  2.1 repainted the spiral as foam at 2048 (`dev/imagegen/sets/sea/whirlpool.txt`), judged at a 4K screen's own pixels
+  at the world's zoom, three and six notches in; his pick "b1", foam on black whose brightness is the alpha, is the
+  texture (`assets/Whirlpool/whirlpool-foam.png`): sharp some five notches in, about 5.6 MB.
 - **The world's rim (built 2026-11-15):** Saneroki: "there are areas on the map that need to be cleaned off [...]
   only show like single lines". Along a tile's side that faces no tile the game left the sea floor unsculpted and dry
   at the water's level (Kalimdor's north-east edge) or its minimap a grey band (the isle in Kalimdor's north-west

@@ -66,9 +66,12 @@ Canvas.WHIRLPOOL; Saneroki, 2026-11-15: "add a whirlpool into the middle of the 
 maps"): the spiral of WoW: Forever's world map art, its ink alone (how much darker and redder than the parchment
 under it) and the parchment's light at its middle, faded out round a circle, its alpha in white, so the code tints
 it as the waves' foam. Made by itself, from the client tables and the map art (--whirlpool); it prints the numbers
-Canvas.WHIRLPOOL places it by.
+Canvas.WHIRLPOOL places it by. That cut, at 1024 (assets/Whirlpool/spiral.png), was repainted by Qwen-Image 2.1 as
+foam, larger and finer (dev/imagegen/sets/sea/whirlpool.txt); the render picked (assets/Whirlpool/whirlpool-foam.png,
+white foam on black) is the texture now, its brightness the alpha, wherever it is there.
 
-  assets/optimized/Navigation/Art/Whirlpool.blp 256 x 256: the spiral's ink and light
+  assets/optimized/Navigation/Art/Whirlpool.blp 2048 x 2048: the foam of the render picked (256 x 256 from the cut
+                                              alone, without it)
 
 All are BLP2 with DXT5 (the alpha needs its own block) and a full chain of mipmaps; the DXT blocks are made
 by ImageMagick (its range fit).
@@ -134,6 +137,13 @@ WHIRL_FADE = (0.78, 0.98)  # a part of WHIRL_REACH from the middle: whole within
                            # world map's hatching and an isle beyond)
 WHIRL_LIGHT = 0.45     # the parchment's light at the middle (lighter than round the spiral), so strong under the ink
 WHIRL_BLUR = 0.6       # pixels of the texture the ink is softened by, so it reads as foam, not a stamp
+# The texture from the image model's render of that cut (Saneroki, 2026-11-15: "can we have a ai upscale it and maybe
+# add some details [...] a good alpha to blend in nicely with the water"; his pick of round 2 "b1"): Qwen-Image 2.1's
+# foam on black at 2048 x 2048 (dev/imagegen/sets/sea/whirlpool.txt, foam-black, seed 1, from assets/Whirlpool/
+# spiral.png), its brightness the alpha: sharp on a 4K screen some five notches in from the world's zoom.
+WHIRL_PICK = ROOT / "assets" / "Whirlpool" / "whirlpool-foam.png"
+WHIRL_FLOOR = 0.04     # the render's black: brightness under this is no foam (its noise)
+WHIRL_EDGE = (0.94, 1.0)   # a part of the render's half side: whole within the first, gone at its square's edge
 COASTS = ART / "Coasts"
 OUTLINES = NAVIGATION / "Outlines.lua"
 COASTLIST = NAVIGATION / "Coasts.lua"
@@ -855,11 +865,28 @@ def shade():
     return Image.fromarray(np.dstack([white, white, white, alpha]), "RGBA")
 
 
+def picked():
+    """The whirlpool's alpha from the render picked (WHIRL_PICK): white foam on black, its brightness the alpha (the
+    black's noise under WHIRL_FLOOR none), at its own size, a power of two; only its square's very edge faded out
+    (WHIRL_EDGE), the render being black there already."""
+    with Image.open(WHIRL_PICK) as pick:
+        grey = np.asarray(pick.convert("L"), np.float32) / 255
+    side = grey.shape[0]
+    if grey.shape != (side, side) or side & (side - 1):
+        sys.exit(f"{WHIRL_PICK.relative_to(ROOT)} is {grey.shape[1]} x {grey.shape[0]}, not a square of a power of two")
+    rows, columns = np.mgrid[0:side, 0:side] + 0.5
+    far = np.hypot(columns - side / 2, rows - side / 2) / (side / 2)
+    edge = np.clip((WHIRL_EDGE[1] - far) / (WHIRL_EDGE[1] - WHIRL_EDGE[0]), 0, 1)
+    alpha = np.clip((grey - WHIRL_FLOOR) / (1 - WHIRL_FLOOR), 0, 1) * edge * edge * (3 - 2 * edge)
+    return Image.fromarray((alpha * 255).round().astype(np.uint8))
+
+
 def whirlpool(folder, art):
     """The Maelstrom's whirlpool from the world map's art (WORLD_MAP): the square WHIRL_REACH each way round its
     spiral's middle (WHIRL_AT); its ink, how much darker and redder each pixel is than the parchment under it (a
     median WHIRL_GROUND across, which the thin lines drop out of), and the parchment's light at the middle, faded out
-    round a circle (WHIRL_FADE); WHIRL_SIDE on a side, softened by WHIRL_BLUR, as alpha in white. Prints the numbers
+    round a circle (WHIRL_FADE); WHIRL_SIDE on a side, softened by WHIRL_BLUR, as alpha in white. Where the render
+    picked from it is there (WHIRL_PICK), the texture is that render's instead (picked). Prints the numbers
     Canvas.WHIRLPOOL places it by: its middle and its size on the world map (0 to 1)."""
     tables = {name: table(folder, name) for name in ("UiMapXMapArt", "UiMapArt", "UiMapArtStyleLayer", "UiMapArtTile")}
     tables["WorldMapOverlay"], tables["parts"] = [], {}  # the world map reveals no parts
@@ -886,6 +913,8 @@ def whirlpool(folder, art):
     alpha = Image.fromarray((alpha * 255).round().astype(np.uint8)).resize((WHIRL_SIDE, WHIRL_SIDE),
                                                                           Image.Resampling.LANCZOS)
     alpha = alpha.filter(ImageFilter.GaussianBlur(WHIRL_BLUR))
+    if WHIRL_PICK.exists():
+        alpha = picked()  # the image model's render of this cut, larger and finer: the texture is made from it
     white = Image.new("L", alpha.size, 255)
     size = write(WHIRLPOOL, Image.merge("RGBA", (white, white, white, alpha)))
     print(f"The whirlpool: {WHIRLPOOL.relative_to(ROOT)}, {size / 1e6:.2f} MB. Canvas.WHIRLPOOL: "

@@ -603,7 +603,8 @@ and shows them on the map or puts the map pin there. The plan is in
   small and larger by no whole factor, shifted and turned half round, so the two grids never line up alike and no
   copy shows as a tile; over them a soft shade (`Art/SeaShade.blp`, a tileable noise) in slow patches of darker
   water; over those, in Forever, the Maelstrom's whirlpool where its world map paints it (`Canvas.WHIRLPOOL`,
-  `Art/Whirlpool.blp`: that map's own spiral, its ink and the light at its middle alone, tinted as the waves' foam).
+  `Art/Whirlpool.blp`: that map's own spiral repainted as foam by an image model, 2048 x 2048, tinted as the waves'
+  foam).
 - **Blended** (`Canvas.lua`): the art of Parchment over the terrain of Scrying, its alpha by the view's height in
   yards (`Canvas.Blend`: whole from `Canvas.BLEND[1]` up, gone at `Canvas.BLEND[2]` and below, by the zoom's
   factor between), the sea's colour between Parchment's and Scrying's alike, the waves fading with it (Parchment's
@@ -1438,11 +1439,16 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Art/Edge.blp` | A map's box with its paper frame faded off, for Blizzard's world, continent and isle maps |
 | `Art/Sea.blp` | The sea's waves: the game's own ocean texture (its first frame), its light alone in white, made by `dev/tools/terrain-art --sea` |
 | `Art/SeaShade.blp` | The sea's shade: a tileable soft noise, alpha only, made by `dev/tools/terrain-art --sea` |
-| `Art/Whirlpool.blp` | The Maelstrom's whirlpool: the spiral of Forever's world map art, its ink and middle light alone in white, made by `dev/tools/terrain-art --whirlpool` |
+| `Art/Whirlpool.blp` | The Maelstrom's whirlpool, 2048 x 2048: the spiral of Forever's world map art repainted as foam by Qwen-Image 2.1 (Saneroki's pick, `assets/Whirlpool/whirlpool-foam.png`), its foam alone in white, made by `dev/tools/terrain-art --whirlpool` |
 
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the whirlpool in detail:** Saneroki: "can we have a ai upscale it and maybe add some details but use
+  a model that does great alpha maps", then of round 1 at 1024: "big enough that when placed on the world map can look
+  good on a 4k screen and still able to zoom a little into it". Round 2 at 2048, his pick "b1" (foam on black, its
+  brightness the alpha): `Art/Whirlpool.blp` from `assets/Whirlpool/whirlpool-foam.png` (`terrain-art --whirlpool`,
+  `dev/imagegen/sets/sea/whirlpool.txt`). Card #524.
 - **2026-11-15, plans are sketches to players:** Saneroki: "I don't like the word "plan" in front of each drawing. Is
   sketch better or what else could it be instead of Plan?", then "Sketch": every word players read (the palette's
   dropdown, its menus, the default names, the share and delete words, the card of a shared one). The code keeps

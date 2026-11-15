@@ -57,3 +57,13 @@ command = ["dev/tools/sea-art", "round", "dev/imagegen/sets/sea/scenes.toml", "a
 status = ["dev/tools/sea-art", "status", "dev/imagegen/sets/sea/scenes.toml", "assets/generated/sea/round-3",
           "qwen21-inpaint,flux2dev-turbo-inpaint,zimage-turbo-inpaint,klein4b-inpaint"]
 done = '^(\d+) of \1 paintings made'
+# The Maelstrom's whirlpool repainted as foam at 2048 (Saneroki, 2026-11-15: "can we have a ai upscale it and maybe add
+# some details [...] a good alpha to blend in nicely with the water"): three ways, three seeds each, from the world map's
+# spiral (dev/imagegen/sets/sea/whirlpool.txt). Round 2 rendered and picked ("b1": assets/Whirlpool/whirlpool-foam.png),
+# so it stands finished; dev/tools/gpu-runner reset whirlpool renders it again.
+[[job]]
+name = "whirlpool"
+priority = 10
+command = ["dev/tools/imagegen", "dev/imagegen/sets/sea/whirlpool.txt"]
+status = ["sh", "-c", "echo \"$(ls assets/generated/whirlpool/round-2/foam-alpha-?.png assets/generated/whirlpool/round-2/foam-black-?.png assets/generated/whirlpool/round-2/strokes-?.png 2>/dev/null | wc -l) of 9 pictures made\""]
+done = '^9 of 9 pictures made'

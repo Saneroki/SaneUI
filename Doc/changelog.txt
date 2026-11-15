@@ -36,7 +36,7 @@ The bigger changes of each version, newest first.
   bring it back. Your own categories take any of the game's icons,
   chosen in a window with search.
 - Map: the Maelstrom's whirlpool in the middle of the sea, as on the
-  game's world map. At the world the continents no longer light up
+  game's world map, in fine foam that stays sharp as you zoom in. At the world the continents no longer light up
   under the mouse (their names still show), and the stray lines in
   the sea at the world's edges are gone.
 - Draw on the map: the Sketches dropdown on the full map's bar
