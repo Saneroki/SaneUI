@@ -279,6 +279,9 @@ The old `UIDropDownMenu` is still in the client but is a known source of taint
 - [ ] A window that opens and closes does it like Blizzard's: sound, Esc, close button. A part that
       stays (`Core.Window.New`): moved by its bar, clamped to the screen, its place kept.
 - [ ] Created on first use; does nothing while hidden.
+- [ ] Explains itself where it stands (its words, its tooltip, what each mouse button does on it); its
+      choices on itself (a click, a right click, its menu) or in Edit Mode, with a good default, not a
+      new switch on an options page (Saneroki, 2026-11-15: as few settings as possible).
 - [ ] Lists use the scroll box and set every field in the initializer.
 - [ ] Reads without colour, with large text, and with long translated text.
 - [ ] Nothing written into Blizzard frames; protected frames untouched in combat.
