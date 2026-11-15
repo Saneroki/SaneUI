@@ -8,7 +8,11 @@ tools that write map data use (Placer, PlaceKeys).
                                     players), continent (the continent's map) and area (its AreaTable ID).
                                     Places: the entrances of the dungeons and raids, where the game sends a ghost
                                     back to (Map's corpse point), each with its name, kind, instance (the
-                                    instance's map ID) and zone.
+                                    instance's map ID) and zone. An instance the game gives no such point (Forever's
+                                    new dungeons: their portals are the server's): the middle of the world area that
+                                    bears its name, where the game has one on a continent (AreaTable: Excavation
+                                    Site: Wetlands, Ruins of Lordaeron), its terrain's map chunks of that area; only
+                                    for the instances of the game's group finder (Core's set Instances).
 
 Placing: a world position (map, X to the north, Y to the west, Z up, in yards) lies on the zone map of the area
 it is in, as the game tells it: the area of the building part it stands in (a WMO group of WMOAreaTable, for the
@@ -173,6 +177,20 @@ class Placer:
                     break
         return found
 
+    def middle(self, area):
+        """(continent, X, Y): the middle of a world area's map chunks (the terrain's), nil where none is of it."""
+        side = GRID * CHUNKS
+        for continent, grid in sorted(self.grids.items()):
+            xs, ys = [], []
+            for at, value in enumerate(grid):
+                if value == area:
+                    row, column = divmod(at, side)
+                    xs.append(HALF - (row + 0.5) * CHUNK)
+                    ys.append(HALF - (column + 0.5) * CHUNK)
+            if xs:
+                return continent, sum(xs) / len(xs), sum(ys) / len(ys)
+        return None
+
     def top(self, area):
         for _ in range(10):
             if not self.parent.get(area):
@@ -284,14 +302,36 @@ def zones(tables):
     return found
 
 
-def entrances(tables, placer, keys):
-    """The dungeons' and raids' entrances: {key: fields}."""
+def listed_instances(folder=PLACES.parent / "Instances"):
+    """The instances of the game's group finder (Core's set Instances): their maps."""
+    found = set()
+    for path in sorted(Path(folder).glob("Instances*.jsonl")):
+        for text in open(path, encoding="utf-8"):
+            map_id = json.loads(text).get("map")
+            if map_id:
+                found.add(map_id)
+    return found
+
+
+def entrances(tables, placer, keys, listed=None):
+    """The dungeons' and raids' entrances: {key: fields}. listed: the instances an area of their name may place
+    (Core's set Instances' when none are given)."""
     found = {}
+    named = {}  # a world area's name on a continent with terrain: its IDs (an instance the game gives no point for)
+    listed = listed_instances() if listed is None else listed
+    for row in table(tables, "AreaTable"):
+        if row.get("AreaName_lang") and int(row.get("ContinentID") or -1) in placer.grids:
+            named.setdefault(row["AreaName_lang"], []).append(int(row["ID"]))
     for row in table(tables, "Map"):
-        if row["InstanceType"] not in ("1", "2") or row["CorpseMapID"] == "-1" or row["MapName_lang"].startswith("<"):
+        if row["InstanceType"] not in ("1", "2") or row["MapName_lang"].startswith("<"):
             continue  # <unused> ...
         X, Y = float(row["Corpse[0]"]), float(row["Corpse[1]"])
-        point = placer.place(int(row["CorpseMapID"]), X, Y) if (X, Y) != (0, 0) else None
+        point = None
+        if row["CorpseMapID"] != "-1" and (X, Y) != (0, 0):
+            point = placer.place(int(row["CorpseMapID"]), X, Y)
+        elif int(row["ID"]) in listed and len(named.get(row["MapName_lang"], ())) == 1:  # one area of its name: its middle
+            middle = placer.middle(named[row["MapName_lang"]][0])
+            point = middle and placer.place(*middle)
         if not point:
             continue
         kind = "raid" if row["InstanceType"] == RAID else "dungeon"

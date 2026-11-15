@@ -4157,10 +4157,17 @@ end)()
     -- The bar's button Dungeons: the banners over the map (Instances.lua); without Core's set Instances (Retail's data
     -- comes later) the dungeons the game has maps of, A to Z, in one section, each with its maps.
     local Instances = ns.Instances
-    local button, floors
+    local button
     for _, widget in ipairs(W.frames) do
         if widget.key == "dungeons" then button = widget end
-        if widget._generator and widget._override == Dungeons.TEXT.floor then floors = widget end
+    end
+    -- A dungeon's floors: big buttons at the full screen's right (Dungeons.Cards), the shown one picked.
+    local function Cards()
+        local found = {}
+        for _, widget in ipairs(W.frames) do
+            if widget.map and widget.picked and widget.words and widget._shown then found[#found + 1] = widget end
+        end
+        return found
     end
     button.SetButtonState = function(self, state) self._state = state end
     local function Banners()
@@ -4186,18 +4193,22 @@ end)()
             and widget._texture > 50000 and widget._texture <= 50012 then tiles = tiles + 1 end
     end
     check(Dungeons.Shown() == 500 and Dungeons.frame._shown and tiles == 12 and button._text == "Hollow Keep"
-        and not Instances.Shown() and button._state == "PUSHED" and floors._shown and floors._override == "The Upper Hall",
-        "its maps: its lowest floor over the map in the game's art, the banners gone, its name on the button, its floors beside it")
-    floors:GenerateMenu()
-    check(#floors._items == 2 and floors._items[1].checked() and floors._items[2].text == "The Lower Hall", "its floors, lowest first")
-    floors._items[2].fn()
-    check(Dungeons.Shown() == 501 and floors._override == "The Lower Hall", "another floor chosen")
+        and not Instances.Shown() and button._state == "PUSHED",
+        "its maps: its lowest floor over the map in the game's art, the banners gone, its name on the button")
+    local cards = Cards()
+    check(#cards == 2 and cards[1].words._text == "The Upper Hall" and cards[2].words._text == "The Lower Hall"
+        and cards[1].picked._shown and not cards[2].picked._shown and cards[1]._width == cards[2]._width
+        and cards[1]._height == cards[2]._height and cards[1]._points[1][1] == "TOPRIGHT"
+        and cards[2]._points[1][5] < cards[1]._points[1][5],
+        "its floors as big buttons at the right, lowest first, one under the other, all one size, the one shown picked")
+    cards[2]._scripts.OnClick(cards[2], "LeftButton")
+    check(Dungeons.Shown() == 501 and cards[2].picked._shown and not cards[1].picked._shown, "another floor chosen")
     Dungeons.frame._scripts.OnMouseUp(Dungeons.frame, "RightButton")
     check(not Dungeons.Shown() and not Dungeons.frame._shown and full.map == was[1] and full.u == was[2] and full.v == was[3]
         and full.k == was[4] and full.level == was[5] and button._text == Dungeons.TEXT.dungeons and button._state == "NORMAL"
-        and not floors._shown, "a right click: back to the map it was opened from, as it was")
-    check(Canvas.Show(600) and Dungeons.Shown() == 600 and not floors._shown,
-        "a pin into a dungeon opens its map here; with one floor, no floors' dropdown")
+        and #Cards() == 0, "a right click: back to the map it was opened from, as it was")
+    check(Canvas.Show(600) and Dungeons.Shown() == 600 and #Cards() == 0,
+        "a pin into a dungeon opens its map here; with one floor, no floors' buttons")
     button._scripts.OnClick(button, "LeftButton")
     check(Instances.Shown() and not Dungeons.Shown() and button._text == Dungeons.TEXT.dungeons and button._state == "PUSHED",
         "the button while a dungeon's map shows: the banners again")
@@ -7975,9 +7986,11 @@ end)()
         "its upper floor shown, in the game's tiles the set names")
     local marks = Marks()
     local under = 2 * ns.TopBar.INSET + ns.TopBar.BUTTON_HEIGHT -- the bar's row over the map
-    check(#marks == 1 and near(marks[1]._points[1][4], -0.25 * 1002 * (868 - under) / 668)
+    local floorCards = Dungeons.CARD_WIDTH + Dungeons.CARD_OVER + 2 * ns.TopBar.INSET -- its two floors' cards at the right
+    check(#marks == 1 and near(marks[1]._points[1][4], -floorCards / 2 - 0.25 * 1002 * (868 - under) / 668)
         and near(marks[1]._points[1][5], -under / 2),
-        "its boss's mark where it stands: a quarter across, half down; the floor whole under the bar, as tall as the room")
+        "its boss's mark where it stands: a quarter across, half down; the floor whole under the bar, as tall as the room, "
+        .. "left of its floors' cards")
     -- The quest log over the view's left, then its right (screen pixels): the floor whole beside it.
     do
         local box = ns.QuestLog.Box
@@ -7988,6 +8001,7 @@ end)()
             return marks[1]._points[1][4]
         end
         local function Expected(left, right)
+            right = right + floorCards
             local scale = math.min((1600 - left - right) / 1002, (868 - under) / 668)
             return (left - right) / 2 - 0.25 * 1002 * scale
         end
@@ -8226,6 +8240,11 @@ end)()
         local boss = Marks()[1]
         check(floor == "90:1" and onSmall and view._shown and not minimap._shown and not Canvas.Laid(),
             "the small map inside: our map of the dungeon first, at its lowest floor, the game's minimap under it")
+        local backdrop
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._parent == Dungeons.frame and not backdrop then backdrop = widget end -- (its first)
+        end
+        check(backdrop and not backdrop._shown, "its ground see-through round the floor on the small map")
         local face = ns.Satchel.face
         check(face._parent == Canvas.frame._parent and face._parent == view._parent and face:GetFrameLevel() > view:GetFrameLevel(),
             "the face beside the canvas (which cuts what stands in it), above our map of the dungeon")
@@ -8411,6 +8430,47 @@ end)()
     check(not Texture(99004) and not Dungeons.Shown(), "closed: the ground's files let go")
     Dungeons.frame.GetRect, cursorX, cursorY = nil, 100, 100
     Choose(was)
+end)()
+
+-- A dungeon the game gives no map art of (Forever's new ones: Core's floor of it made from its ground), shown before the
+-- dungeons' list was read in (its floor read at once): its ground in every view, Parchment too.
+;(function()
+    local Dungeons = ns.Dungeons
+    local Floors, Ground = Core.Data.Set("Dungeons"), Core.Data.Set("DungeonGround")
+    local floorsGet, groundGet = Floors.Get, Ground.Get
+    local record = { name = "Bare Hold", floors = { { floor = 1, name = "Bare Hold", width = 1002, height = 668, tile = 256,
+                                                      north = 100, south = -100, west = 150, east = -150 } } }
+    Floors.Get = function(self, key, field)
+        if key == 95 then if field then return record[field] end return record end
+        return floorsGet(self, key, field)
+    end
+    Ground.Get = function(self, key, field)
+        if key == 95 and field == "ground" then
+            return { { floor = 1, file = 99101, x = 0, y = 0, width = 64, height = 32, yaw = 90 } }
+        end
+        return groundGet(self, key, field)
+    end
+    local function Texture(file)
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._texture == file then return widget end
+        end
+    end
+    local was = ns.options.view
+    Dungeons.Close()
+    Dungeons.Forget()
+    Choose("sketches")
+    check(Dungeons.Show("95:1") and Dungeons.Shown() == "95:1" and Dungeons.Share() == 0 and Texture(99101)
+        and Texture(99101)._shown, "no map art: its ground in Parchment too; shown before the list was read in")
+    Choose("blend")
+    check(Dungeons.Share() == 0 and Texture(99101)._shown, "and in Blended at every zoom")
+    Choose(was)
+    Dungeons.Close()
+    Floors.Get, Ground.Get = nil, nil -- (the sets' own again)
+    for _ = 1, 20 do -- the list read in again for what follows
+        W.Wait(0.05)
+        Frames(1)
+    end
+    check(floorsGet and groundGet and Dungeons.Named("90:1"), "(the list read in again)")
 end)()
 
 -------------------------------------------------------------------------------

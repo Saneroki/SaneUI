@@ -24,9 +24,9 @@
 {"key":45,"since":70245,"src":["game",25],"name":"Onyxia's Lair","kind":"raid","map":249,"levelMin":60,"levelMax":60,"players":40,"opens":"2026-12-09"}
 {"key":47,"since":70245,"src":["game"],"name":"Molten Core","kind":"raid","map":409,"levelMin":60,"levelMax":60,"players":40}
 {"key":49,"since":70245,"src":["game"],"name":"Blackwing Lair","kind":"raid","map":469,"levelMin":60,"levelMax":60,"players":40}
-{"key":3271,"since":70245,"src":["game"],"name":"City of Dalaran","kind":"dungeon","map":2959,"levelMin":28,"levelMax":35,"players":5}
+{"key":3271,"since":70245,"src":["game",26],"name":"City of Dalaran","kind":"dungeon","map":2959,"levelMin":28,"levelMax":35,"players":5,"zone":1416}
 {"key":3272,"since":70245,"src":["game"],"name":"Ruins of Lordaeron","kind":"dungeon","map":2999,"levelMin":15,"levelMax":22,"players":5}
-{"key":3273,"since":70245,"src":["game"],"name":"Hall of Thanes","kind":"dungeon","map":3065,"levelMin":13,"levelMax":20,"players":5}
+{"key":3273,"since":70245,"src":["game",26],"name":"Hall of Thanes","kind":"dungeon","map":3065,"levelMin":13,"levelMax":20,"players":5,"zone":1455}
 {"key":3274,"since":70245,"src":["game"],"name":"Excavation Site: Wetlands","kind":"dungeon","map":2998,"levelMin":26,"levelMax":33,"players":5}
 {"key":100001,"since":0,"src":[25],"name":"The Barrow Deeps","kind":"raid","levelMin":60,"levelMax":60,"players":10,"bosses":8,"zone":2482,"opens":"2026-12-09"}
 {"key":100002,"since":0,"src":[25],"name":"Hyjal Summit","kind":"raid","levelMin":60,"levelMax":60,"players":20,"bosses":13,"zone":2482,"opens":"2026-12-09"}

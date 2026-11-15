@@ -1010,8 +1010,18 @@ hidden but what the small view needs.
   not in the client yet, the druids' order hall's glade and the Emerald Dreamway's gate, Saneroki's to change). The
   quests counted are yours with an objective inside: Core's data knows the creatures inside seven dungeons and the
   bosses of all, so a count can be low where it knows little. Still to come: the five dungeons once the client lists
-  them, their entrances once known (the four new ones have none in the game's data), next year's raids once
-  announced.
+  them, next year's raids once announced.
+- **Every dungeon's maps and place; the floors as big buttons (Saneroki, 2026-11-15; built):** "Not all dungeons have
+  a map, route or show on map option? Why not? everything of those should be available to you. Also instead of the
+  drop down to see different floors, it should be on the instance maps big buttons on the right side of the full
+  screen where the name of the floor is listed as a button. All buttons have the same width and height." The game
+  ships no map art of Forever's four new dungeons and no place of their entrances (their portals are the server's),
+  so: their maps are Core's floors made from the game's own minimap of them (`dev/tools/dungeon-ground`: outdoors the
+  terrain over the instance's own areas, indoors its buildings' minimaps), shown in every view; Excavation Site:
+  Wetlands' and Ruins of Lordaeron's entrances the middle of the world area of their name (`dev/tools/map-data`); City
+  of Dalaran (Alterac Mountains) and the Hall of Thanes (beneath Ironforge) only their zone, from Blizzard's article,
+  until a sighting in play gives their entrances (a later step: Core learning where a player enters an instance). The
+  floors: the character list's cards in a column at the right (`Dungeons.Cards`); the bar's dropdown went.
 - **Search (Saneroki, 2026-11-15; built):** "At the top of the map fullscreen, can you put a big searchfield in the
   title bar up there where you can search for stuff. Like NPC names, Guild member names, Vendors, class trainers, items
   etc and it will show it to you or put a pin on the map. For items for example it could drop a pin on the map where

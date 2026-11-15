@@ -27,6 +27,17 @@ Which floor a part is on:
      on the one whose map art its walls agree with best (agreement: the art's edges along the part's outline
      against the art's edges overall). On the instances 1 names, 3 picks a floor 1 names for 9 parts in 10.
 
+A dungeon the game gives no map of (Forever's new ones: City of Dalaran, Excavation Site: Wetlands, Ruins of Lordaeron,
+The Hall of Thanes), listed in Core's set Instances and extracted with the others, gets one floor of its own, staged
+for the set Dungeons (no map art, no bosses): its box what its ground shows, as the game's files tell it. A floor
+without the game's map art (such a one) has its ground by one rule: outdoors, where the instance's own areas
+(AreaTable's of its map) lie on part of its terrain's map chunks (it is a copy of a part of the world, those areas
+the dungeon's), the terrain's minimap textures over the chunks of those areas, its box theirs, NEW_MARGIN wider each
+way (the buildings' outsides are drawn in them; their insides are left out: the copy holds whole cities, the
+Undercity under the ruins of Lordaeron); indoors, where its terrain is all of one area or of none of its own, its
+buildings' indoor minimap textures (as rule 3 lays them), its box theirs. These floors carry no art: the dungeon's view
+shows their ground in every view.
+
 A row of the set: floor, file (the texture's file ID), x and y (its middle in the world, yards: x north, y west),
 width (yards along its columns), height (yards along its rows), yaw (degrees: its columns run from its middle
 towards x - cos(yaw), y - sin(yaw), its rows downwards towards x - sin(yaw), y + cos(yaw)), terrain (a terrain tile:
@@ -82,6 +93,8 @@ GRID = 64              # tiles along each side of a map
 TILE = 1600 / 3        # a tile's side in yards
 HALF = GRID / 2 * TILE # yards from a map's middle to its edges
 SAME_BOX = 0.5         # yards: a floor of the set and a map of the assignment with their edges so near are one
+NEW_MARGIN = 0.05      # a new floor's box reaches so much past what it shows, each way
+NEW_WIDTH = 1002       # a new floor's size in its units, as the game's own maps' art (its height in its box's shape)
 LEAST = 20             # art pixels: a part drawing fewer on a floor's art is not compared with it
 EDGE_BLUR = 1.5, 2.0   # the art's grey blurred so before its edges are found, and its edges after (art pixels)
 
@@ -363,6 +376,97 @@ def instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, 
     return rows
 
 
+# -------------------------------------------------------------------------------------------------
+#  The dungeons the game gives no map of
+# -------------------------------------------------------------------------------------------------
+def chunk_areas(folder, map_id):
+    """Each terrain map chunk of a map: (its middle: x north, y west; its area)."""
+    found, chunk = [], TILE / 16
+    for path in sorted((folder / "adt").glob("*.adt")):
+        key = int(path.stem)
+        if key // (GRID * GRID) != map_id:
+            continue
+        row, column = divmod(key % (GRID * GRID), GRID)
+        data = path.read_bytes()
+        for name, at, _ in ART.pieces(data, 0, len(data)):
+            if name == b"MCNK":
+                x, y = struct.unpack_from("<II", data, at + 4)
+                area = struct.unpack_from("<I", data, at + 0x34)[0]
+                found.append((HALF - (row * 16 + y + 0.5) * chunk, HALF - (column * 16 + x + 0.5) * chunk, area))
+    return found
+
+
+def own_areas(tables, map_id):
+    with open(tables / "AreaTable.csv", encoding="utf-8") as file:
+        return {int(row["ID"]) for row in csv.DictReader(file) if int(row["ContinentID"]) == map_id}
+
+
+def outdoors(folder, tables, map_id):
+    """The map chunks of the instance's own areas where they lie on part of its terrain (outdoors), else None."""
+    chunks = chunk_areas(folder, map_id)
+    own = own_areas(tables, map_id)
+    mine = [(x, y) for x, y, area in chunks if area in own]
+    return mine if 0 < len(mine) < len(chunks) else None
+
+
+def widened(north, south, west, east):
+    across, down = (west - east) * NEW_MARGIN, (north - south) * NEW_MARGIN
+    return north + down, south - down, west + across, east - across
+
+
+def bare_rows(entry, folder, tables, table, tiles, left_out):
+    """The rows of an instance's floors without map art (the module's doc): outdoors its terrain over its own areas,
+    indoors its buildings' parts."""
+    map_id, rows = entry["key"], []
+    open_air = outdoors(folder, tables, map_id)
+    parts = [] if open_air else parts_of(folder, table, map_id, left_out)
+    for floor in sorted(entry["floors"], key=lambda f: f["floor"]):
+        number = floor["floor"]
+        north, south, west, east = box_of(floor)
+        if open_air:
+            for row, column, file in tiles.get(map_id, []):
+                top, left = HALF - row * TILE, HALF - column * TILE
+                if top > south and top - TILE < north and left > east and left - TILE < west:
+                    rows.append(terrain_row(number, row, column, file))
+            continue
+        for part in sorted(parts, key=lambda part: (part["low"], part["unique"] or 0)):
+            if inside(box_of(floor), *part["middle"]):
+                rows.extend(dict(floor=number, **block) for block in part_rows(part))
+    return rows
+
+
+def new_entry(map_id, name, folder, tables, table, left_out):
+    """A dungeon the game gives no map of: its one floor, its box what its ground shows; None where nothing does."""
+    open_air = outdoors(folder, tables, map_id)
+    if open_air:
+        half = TILE / 16 / 2
+        xs, ys = [x for x, _ in open_air], [y for _, y in open_air]
+        box = max(xs) + half, min(xs) - half, max(ys) + half, min(ys) - half
+    else:
+        blocks = [block for part in parts_of(folder, table, map_id, left_out) for block in part_rows(part)]
+        if not blocks:
+            return None
+        reach = [max(b["width"], b["height"]) / 2 for b in blocks]
+        box = (max(b["x"] + r for b, r in zip(blocks, reach)), min(b["x"] - r for b, r in zip(blocks, reach)),
+               max(b["y"] + r for b, r in zip(blocks, reach)), min(b["y"] - r for b, r in zip(blocks, reach)))
+    north, south, west, east = (round(edge, 2) for edge in widened(*box))
+    floor = {"floor": 1, "name": name, "width": NEW_WIDTH, "height": round(NEW_WIDTH * (north - south) / (west - east)),
+             "tile": 256, "north": north, "south": south, "west": west, "east": east}
+    return {"key": map_id, "name": name, "floors": [floor]}
+
+
+def missing(folder, tables, known):
+    """{map: name} of the dungeons of Core's set Instances the set Dungeons lacks, whose files were extracted."""
+    listed = set()
+    for path in sorted((ROOT / "assets" / "data" / "Instances").glob("Instances*.jsonl")):
+        for text in open(path, encoding="utf-8"):
+            map_id = json.loads(text).get("map")
+            if map_id and map_id not in known and (folder / "wdt" / f"{map_id}.wdt").is_file():
+                listed.add(map_id)
+    with open(tables / "Map.csv", encoding="utf-8") as file:
+        return {int(row["ID"]): row["MapName_lang"] for row in csv.DictReader(file) if int(row["ID"]) in listed}
+
+
 def check(out, entry, rows, mapart, textures):
     """A picture per floor: its ground beside the map art over it, the bosses and enemies on both."""
     out.mkdir(parents=True, exist_ok=True)
@@ -403,6 +507,11 @@ def main():
     entries = [json.loads(line) for line in SET.open(encoding="utf-8")]
     entries = [e for e in entries if e.get("floors")]  # the master's first lines: each instance's whole facts
     table = IA.textures(tables)
+    new_left = {"tilted": 0, "not held": 0, "another shape": 0, "nothing drawn": 0}
+    new = [new_entry(map_id, name, folder, tables, table, new_left)
+           for map_id, name in sorted(missing(folder, tables, {e["key"] for e in entries}).items())]
+    new = [entry for entry in new if entry]
+    entries += new
     assigned = assignment(retail, {e["key"]: e["floors"] for e in entries})
     tiles = tiles_of(folder)
     textures = Textures([folder / "wmo-minimap", folder / "minimap"])
@@ -411,7 +520,10 @@ def main():
     lines, bare = [], []
     for entry in entries:
         textures.cache.clear()  # one instance's textures at a time
-        rows = instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, tally)
+        if entry.get("tiles"):
+            rows = instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, tally)
+        else:  # no map art of the game's (a dungeon it gives no map of): its ground by the one rule
+            rows = bare_rows(entry, folder, tables, table, tiles, left_out)
         floors_with = {row["floor"] for row in rows}
         bare += [f"{entry['name']} {f['floor']}" for f in entry["floors"] if f["floor"] not in floors_with]
         if rows:
@@ -421,12 +533,16 @@ def main():
             check(checks, entry, rows, mapart, textures)
         print(f"{entry['key']} {entry['name']}: {len(rows)} textures on {len(floors_with)} of {len(entry['floors'])} "
               f"floors", file=sys.stderr, flush=True)
+    lines = [{"set": "Dungeons", "key": entry["key"], "game": game, "build": build, "src": "game",
+              "fields": {"name": entry["name"], "floors": entry["floors"]}} for entry in new] + lines
     STAGING.parent.mkdir(parents=True, exist_ok=True)
     with open(STAGING, "w", encoding="utf-8") as out:
         for line in lines:
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
-    textures_made = sum(len(line["fields"]["ground"]) for line in lines)
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} instances, {textures_made} textures. Parts: "
+    textures_made = sum(len(line["fields"]["ground"]) for line in lines if line["set"] == "DungeonGround")
+    if new:
+        print(f"New floors for the dungeons the game gives no map of: {', '.join(e['name'] for e in new)}.")
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines) - len(new)} instances, {textures_made} textures. Parts: "
           f"{tally['named']} on the floors the game's assignment names, {tally['by place']} by their place and the art,"
           f" {tally['not named']} the assignment leaves off every floor, {tally['on no floor']} on "
           f"no floor's box; left out: {left_out['another shape']} made for another shape, {left_out['not held']} with "

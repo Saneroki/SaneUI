@@ -12,12 +12,14 @@ local _, ns = ...
 --                   lowest floor; and those of Core's set Dungeons the game has no map of (Forever's
 --                   client has none: their floors are the set's, keyed "<instance>:<floor>"), A to Z
 --      a floor      the game's floors of the dungeon (C_Map.GetMapGroupMembersInfo) or the set's,
---                   chosen in the bar's dropdown beside it; the first shown is its lowest
+--                   chosen by their big buttons at the full screen's right (Dungeons.Cards, where it has
+--                   several); the first shown is its lowest
 --      the art      the game's own map art of the floor (Art.Of; the set's: its tiles, the game's
---                   files), fitted into the view whole: on the full map into the room its bar and the
---                   quest log leave free (under the bar, beside the log where it stands over the view's
---                   left or right), so the whole floor is always in sight at the farthest zoom (Saneroki,
---                   2026-11-11)
+--                   files), fitted into the view whole: on the full map into the room its bar, the
+--                   quest log and the floors' buttons leave free (under the bar, beside the log where it
+--                   stands over the view's left or right), so the whole floor is always in sight at the
+--                   farthest zoom (Saneroki, 2026-11-11). Forever's new dungeons have no art of the game's:
+--                   their floors are made from their ground (dev/tools/dungeon-ground), shown in every view
 --      the ground   the instance as it truly lies, under the art (Saneroki, 2026-11-15: "I want the terrain /
 --                   Partchment toggle work for instance maps as well. We should have both."): the game's own minimap
 --                   textures of its terrain and of its buildings' parts on that floor, each drawn by its file ID where
@@ -125,6 +127,7 @@ local ITEMS = Core.Data.Set("Items")
 local GROUND = Core.Data.Set("DungeonGround")
 
 local frame, content, over, canvas
+local backdrop    -- the sea's colour behind the floor: on the full map only (Open)
 local tiles = {}  -- the art's textures, made as many as needed
 local grounds = {} -- the ground's textures, likewise
 local laid        -- the ground of the floor shown is laid (its textures given their files): once a view first shows it
@@ -296,8 +299,12 @@ local function ArtOf(map)
             files[tile.row * across + tile.column + 1] = tile.file
         end
     end
-    floor.art = next(files) and { across = across, down = down, width = data.width, height = data.height,
-                                  tileWidth = data.tile, tileHeight = data.tile, files = files } or false
+    -- A floor the game gives no map art of (Forever's new dungeons: their floors are Core's, made from their ground):
+    -- art of no tiles at the floor's size, its ground alone shown in every view (Dungeons.Share).
+    local bare = not next(files) and Dungeons.Ground(map) ~= nil
+    floor.art = (next(files) or bare) and { across = across, down = down, width = data.width, height = data.height,
+                                            tileWidth = data.tile, tileHeight = data.tile, files = files,
+                                            bare = bare or nil } or false
     return floor.art
 end
 
@@ -353,6 +360,7 @@ end
 -- where the floor has no ground.
 function Dungeons.Share()
     if not (kept and kept.ground) then return 1 end
+    if kept.art and kept.art.bare then return 0 end -- (no art: its ground in every view)
     local view = ns.View()
     if view == "terrain" then return 0 end
     if view ~= "blend" then return 1 end
@@ -1059,10 +1067,10 @@ function Dungeons.Build(canvasFrame)
     Dungeons.frame = frame
     frame:EnableMouse(true)
     frame:EnableMouseWheel(true)
-    local ground = frame:CreateTexture(nil, "BACKGROUND")
-    ground:SetAllPoints()
+    backdrop = frame:CreateTexture(nil, "BACKGROUND")
+    backdrop:SetAllPoints()
     local sea = ns.Canvas.GROUND
-    ground:SetColorTexture(sea[1], sea[2], sea[3])
+    backdrop:SetColorTexture(sea[1], sea[2], sea[3])
     content = CreateFrame("Frame", nil, frame)
     content:SetSize(1, 1)
     over = CreateFrame("Frame", nil, frame) -- over the art
@@ -1105,6 +1113,7 @@ end
 -- room's foot; only where the dungeon has several floors, on the full map. The floor fits into the room left of them.
 Dungeons.CARD_WIDTH, Dungeons.CARD_HEIGHT = 210, 60 -- the card's 310 x 89, smaller
 Dungeons.CARD_GAP = 8
+Dungeons.CARD_LEAST = 30 -- a card at least so high
 Dungeons.CARD_OVER = 21 * 210 / 310 -- the picked card's picture reaches so far past its right (342 x 122 at -13, 14)
 local cards = {} -- made as many as needed
 
@@ -1148,7 +1157,10 @@ function Dungeons.Cards()
         local top, _, right = Dungeons.Margins(frame)
         local gap, inset = Dungeons.CARD_GAP, ns.TopBar.INSET
         local height = (frame:GetHeight() or 0) - top - inset
-        local each = math.min(Dungeons.CARD_HEIGHT, (height - (#floors - 1) * gap) / #floors)
+        local each = Dungeons.CARD_HEIGHT
+        if height > 0 then -- smaller where they would reach past the room's foot, never too small to read
+            each = math.max(Dungeons.CARD_LEAST, math.min(each, (height - (#floors - 1) * gap) / #floors))
+        end
         local width = Dungeons.CARD_WIDTH
         for index, floor in ipairs(floors) do
             count = index
@@ -1183,6 +1195,9 @@ local function Open(map, small)
     zoom, panX, panY, dragX = 1, 0, 0, nil
     frame:SetFrameLevel(canvas:GetFrameLevel() + Dungeons.LEVEL)
     frame:Show()
+    -- the small map's see-through round its floor (Saneroki, 2026-11-15: "Instead of the blue, can you make it fully
+    -- transparent background?"); the full map's the sea's colour
+    backdrop:SetShown(not small)
     Room()
     Draw()
     Dungeons.Cards()

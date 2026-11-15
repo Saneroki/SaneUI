@@ -438,14 +438,23 @@ and shows them on the map or puts the map pin there. The plan is in
   what the client does not hold yet. Its tooltip says more: its kind, levels, players and bosses, where its entrance
   is. Under it three grey buttons with the game's icons: the map pin (*Route*: the map pin at its entrance, the golden
   line leads there), the glass (*Show on the map*: its entrance; a raid whose entrance is not known yet, its zone) and
-  the dungeon mark (*Its maps*); one that cannot act is greyed, its tooltip says why (Forever's four new dungeons have
-  no entrance in the game's data). A click on a banner opens its maps, else shows its entrance. The wheel scrolls, a
+  the dungeon mark (*Its maps*); one that cannot act is greyed, its tooltip says why. Every dungeon has its maps and
+  shows its place: Forever's four new ones have maps made from the game's own minimap of them (the game ships no map
+  of them), Excavation Site: Wetlands and Ruins of Lordaeron their entrances where the game's world area of their name
+  lies, City of Dalaran (Alterac Mountains, through the sewers) and the Hall of Thanes (beneath Ironforge) their zone
+  only, as Blizzard names it, until their entrances' places are known. The Barrow Deeps and Hyjal Summit, not in the
+  game until 9 December, show Mount Hyjal. A click on a banner opens its maps, else shows its entrance. The wheel scrolls, a
   right click goes back to the map, and so does the button again; while a dungeon's map shows, the button says its
   name and takes you back to the banners. Where Core's data is not there (Retail), the banners are the dungeons the
   game has maps of, A to Z, each with its maps.
 - **A dungeon's maps** (its banner's *Its maps*, a click on its entrance with Shift, the full map opened inside it):
-  its map over the map, and beside the button its floors; each floor opens whole, under the bar and beside the quest
-  log, so the farthest zoom always shows all of it. Where the data knows them, each boss as its own 3D model where it stands
+  its map over the map, and where it has several floors, big buttons in a column at the screen's right, one per floor
+  with its name, all one size (Forever's character list's cards; Saneroki, 2026-11-15: "instead of the drop down to
+  see different floors, it should be on the instance maps big buttons on the right side of the full screen where the
+  name of the floor is listed as a button. All buttons have the same width and height"): a click shows that floor, the
+  one shown is lit as the card picked. Each floor opens whole, under the bar, beside the quest log and left of the
+  floors' buttons, so the farthest zoom always shows all of it. A floor the game has no map art of (Forever's four new
+  dungeons) shows its ground in every view. Where the data knows them, each boss as its own 3D model where it stands
   (the game's model of the boss's look; the game's boss mark only where it has no look, or its model would reach
   past the view's edge). Its tooltip is a creature's: its name in a foe's red, under it the dungeon and *Boss*, its
   model in the portrait's place with the boss's dragon and *??* for its level (in Sane UI's tooltips); then the
@@ -740,6 +749,17 @@ and shows them on the map or puts the map pin there. The plan is in
   (`Areas.Place`'s `onSmall`, from the canvas' camera) ours and the game's minimap's own only while the filter's kind
   `minimapArea` is on (off at first: a missing kind counts as off, so no upgrade); the full map's by `area`, whose
   slider sets the opacity of both.
+- **A dungeon's floors' buttons** (`Dungeons.Cards`): on the full map, where the dungeon shown has several floors, a
+  button per floor in a column at the view's right under the bar (and left of the quest log where it stands there:
+  `Dungeons.Margins`), `Dungeons.CARD_WIDTH` by `CARD_HEIGHT` (the character list's card,
+  `glues-characterselect-card-singles`, its hover `-hover`, the floor shown `-card-selected` laid round it as the
+  character list lays it: `CardPicked`), all one size, lower where the column would reach past the room's foot (at
+  least `CARD_LEAST`); over the floor's marks and models, under the bar. The floor's `Room` leaves their width free on
+  the right (`Several`). Laid at each opening, size change and refit, hidden on closing and on the small map.
+- **Floors the game has no art of** (Forever's new dungeons): Core's set *Dungeons* holds a floor each, made by
+  `dev/tools/dungeon-ground` from their ground (no tiles, no bosses); `ArtOf` gives them art of no tiles (`bare`), and
+  `Dungeons.Share` 0: their ground in every view. A floor of the set's is read at once while the set is still being
+  walked (`Entry`), and the banners are listed anew once it is (`Walk`: `Instances.Refresh`).
 - **Dungeons** (`Dungeons.lua`): the maps of kind *Dungeon* under the world map (`C_Map.GetMapChildrenInfo`), one
   entry per map group (`C_Map.GetMapGroupMembersInfo`: its floors, lowest first), drawn in a view of their own over
   the canvas, under the bar: the floor's art (`Art.Of`) fitted whole in a frame that is scaled to zoom (up to
@@ -969,7 +989,7 @@ and shows them on the map or puts the map pin there. The plan is in
   the view's button, else of the quest log's: `Arrange`; radio entries of the world, then each plane, `Coords.Planes`
   and `Coords.Elsewhere`, with its zones under it, A to Z; never disabled, at the world too; its words the zone shown,
   else the map), the button Dungeons (`Instances.Toggle`; lit while the banners or a dungeon's map show, its words the
-  dungeon's name while its map shows, cut short to the button) and the floors of the one shown. Right, from Core's *Classic windows* (or its first
+  dungeon's name while its map shows, cut short to the button; its floors: `Dungeons.Cards`). Right, from Core's *Classic windows* (or its first
   button) leftwards (`Place`, anew each time it shows): the pin filter (checkboxes) and the dropdown Sketches
   (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
   (`FindBox.lua`); `TopBar.Top()` the bar's height, under which the zone's name (`Label.lua`), a dungeon's floor
@@ -1487,7 +1507,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Label.lua` | The zone under the mouse named at the top of the full map: its name, its levels, the fishing skill its waters ask (Core's set *Fishing*) |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
 | `Instances.lua` | The bar's Dungeons: the dungeons and raids of Forever this year (Core's set *Instances*) as banners over the full map, by level in two sections, each with its picture, levels, your quests, a raid's players and day; Route, Show on the map and Its maps; scrolled, beside the quest log |
-| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, whole beside the bar and the quest log, zoomed and dragged; inside one the small map's whole map, a wheel notch out past the game's minimap; each floor's ground under its art in Scrying and Blended (Core's set DungeonGround) |
+| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor (big buttons at the right), whole beside the bar and the quest log, zoomed and dragged; inside one the small map's whole map, a wheel notch out past the game's minimap; each floor's ground under its art in Scrying and Blended (Core's set DungeonGround) |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Danger.lua` | How dangerous a place is for you: a grid per plane of the highest level of the enemies of your side spawning near each cell (Core's *CreatureSpawns*, *NPCs*, *FactionTemplates*), stepped against your level as the game's colours are. No frames |
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold (a walk orange or red where enemies above you spawn near it), flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue; the stage under the mouse and the bend while it is dragged |
@@ -1511,7 +1531,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
-| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the button Dungeons and a dungeon's floors, the sketches, the pin filter |
+| `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the button Dungeons, the sketches, the pin filter |
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
 | `Plans.lua` | Your plans (*sketches* to players): markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
 | `Draw.lua` | Your drawings drawn on the map (the canvas' layer `sketch`) and on a dungeon's floor, the palette's tools at work (pen, line, arrow, circle, eraser, marker), your markers on a floor |
@@ -1536,6 +1556,16 @@ Tests: `dev/tests/navigation.lua`.
   text and both the bag and arrow buttons" (the face stood in the canvas, whose children the game draws as one with it
   since it cuts them at its edges: our map of the dungeon beside it covered them; `Satchel.Build` puts it beside the
   canvas). "Instead of the blue, can you make it fully transparent background?" (the canvas' ground clear under it).
+- **2026-11-15, every dungeon's maps and place; the floors as big buttons:** Saneroki: "I should be able to click on
+  the banners to open its maps. Not all dungeons have a map, route or show on map option? Why not? everything of those
+  should be available to you. Also instead of the drop down to see different floors, it should be on the instance maps
+  big buttons on the right side of the full screen where the name of the floor is listed as a button. All buttons have
+  the same width and height." The classic ones had all three; a banner made before the dungeons' set was walked lost
+  its maps until the next opening (`Entry` reads a floor at once now, `Instances.Refresh` after the walk). Forever's four
+  new dungeons: the game ships no map of them and no entrance's place (their portals are the server's), so their maps
+  are made from their ground (`dev/tools/dungeon-ground`: the instance's own areas on its terrain, or its buildings'
+  indoor minimaps), two entrances from the world areas that bear their names (`dev/tools/map-data`), the other two's
+  zones from Blizzard's article (batch 26). The bar's floors' dropdown went (`TopBar`'s `FloorList`).
 - **2026-11-15, the dungeon you are in, once the list is read:** Saneroki: "Nope. Does not work. The games minimap is
   now always visible, no arrow switch button on the minimap either and zooming out does not show our map either and
   in fullscreen the dungeon map is not shown at all." The list of dungeons is read a part per frame after Core's set

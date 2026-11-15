@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map: every dungeon's banner now has its maps, Forever's four
+  new dungeons too (drawn from the game's own minimap of them),
+  and shows where it is. A dungeon's floors are big buttons at
+  the right of the screen.
 - Minimap in dungeons: our map zooms with the wheel and drags like
   the full map; the time, place, bag and arrow show on mouse over.
   Only the arrow switches to the game's minimap; zooming out of it

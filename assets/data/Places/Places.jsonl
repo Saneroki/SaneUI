@@ -196,3 +196,5 @@
 {"key":196,"since":0,"src":[4],"kind":"mailbox","name":"Mailbox","point":[1456,45.2,59.4],"zone":1456}
 {"key":197,"since":0,"src":[4],"kind":"mailbox","name":"Mailbox","point":[1421,43.4,41.5],"zone":1421}
 {"key":198,"since":0,"src":[4],"kind":"mailbox","name":"Mailbox","point":[1420,61.5,53.1],"zone":1420}
+{"key":199,"since":70938,"src":["game"],"kind":"dungeon","name":"Excavation Site: Wetlands","point":[1437,38.7,60.8],"zone":1437,"instance":2998}
+{"key":200,"since":70938,"src":["game"],"kind":"dungeon","name":"Ruins of Lordaeron","point":[1420,61.9,72.7],"zone":1420,"instance":2999}

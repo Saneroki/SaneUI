@@ -17,8 +17,9 @@ local _, ns = ...
 --                        listed"); it says the zone the map shows now, else the continent or the world
 --      Dungeons          a button (Saneroki, 2026-11-15: "I would like to have the drop down change to a button"):
 --                        every dungeon and raid of Forever this year as banners over the map (Instances.lua), a
---                        click again the map; while a dungeon's map shows, its name, and a click the banners again;
---                        beside it, while one with floors shows, its floors (a dropdown)
+--                        click again the map; while a dungeon's map shows, its name, and a click the banners again
+--                        (its floors: big buttons at the screen's right, Dungeons.Cards; the dropdown went:
+--                        Saneroki, 2026-11-15)
 --      ... the map's search in the room between (FindBox.lua) ...
 --      Sketches          a dropdown: every sketch with its checkbox (shown) and its own menu, Draw on the map,
 --                        New sketch (DrawBar.lua; in place of the pencil button: Saneroki, 2026-11-15)
@@ -59,10 +60,10 @@ TopBar.TEXT = {
     dungeonsTip = "The dungeons and raids as banners over the map: route to one, show its entrance or open its maps. "
         .. "While a dungeon's map shows: back to the banners.",
 }
-TopBar.DUNGEON_WIDTH, TopBar.FLOOR_WIDTH = 140, 110 -- narrower: the bar fits a screen 1366 units wide
+TopBar.DUNGEON_WIDTH = 140 -- narrower: the bar fits a screen 1366 units wide
 TopBar.LIST_HEIGHT = 440 -- a long list (the zones) scrolls past so high
 
-local bar, viewButton, logButton, zoneMenu, dungeonButton, floorMenu, pinMenu, draw, gap
+local bar, viewButton, logButton, zoneMenu, dungeonButton, pinMenu, draw, gap
 local shownMap, shownZone -- what the selector says now
 local shownFloor          -- the dungeon's floor the bar says is shown
 
@@ -124,15 +125,6 @@ end
 local function Radio(root, name, map)
     root:CreateRadio(name, ns.Guard(function() return not shownFloor and (shownMap == map or shownZone == map) end),
         ns.Guard(function() Go(map) end))
-end
-
--- The floors of the dungeon shown, lowest first.
-local function FloorList(_, root)
-    local _, floors = ns.Dungeons.Shown()
-    for index, floor in ipairs(floors or {}) do
-        root:CreateRadio(floor.name or tostring(index), ns.Guard(function() return shownFloor == floor.map end),
-            ns.Guard(function() ns.Dungeons.Show(floor.map) end))
-    end
 end
 
 -- Every continent (and a plane of its own, Zephras Isle; the map of the world in Retail over them; the continents
@@ -302,9 +294,6 @@ local function Build()
         words:SetWidth(TopBar.DUNGEON_WIDTH - 2 * TopBar.INSET)
         words:SetWordWrap(false)
     end
-    floorMenu = Dropdown(TopBar.FLOOR_WIDTH, FloorList, ns.Dungeons.TEXT.floor)
-    floorMenu:SetPoint("LEFT", dungeonButton, "RIGHT", TopBar.GAP, 0)
-    floorMenu:Hide()
     -- at the right, left of Core's: the sketches, the pins (the map follows you by itself: Canvas.lua, Again)
     pinMenu = Dropdown(TopBar.PINS_WIDTH, Filter, TopBar.TEXT.pins)
     draw = ns.DrawBar.Menu(bar, TopBar.BUTTON_HEIGHT)
@@ -313,7 +302,7 @@ local function Build()
     gap = CreateFrame("Frame", nil, bar)
     gap:SetPoint("TOP")
     gap:SetPoint("BOTTOM")
-    gap:SetPoint("LEFT", floorMenu, "RIGHT", TopBar.GAP * 2, 0)
+    gap:SetPoint("LEFT", dungeonButton, "RIGHT", TopBar.GAP * 2, 0)
     gap:SetPoint("RIGHT", draw, "LEFT", -TopBar.GAP * 2, 0)
     TopBar.Arrange()
     bar:Hide()
@@ -359,12 +348,6 @@ function TopBar.Update()
     if floor ~= shownFloor then
         shownFloor = floor
         dungeonButton:SetText(floor and (floors.name or Name(floors[1].map)) or ns.Dungeons.TEXT.dungeons)
-        local named
-        for _, each in ipairs(floors or {}) do if each.map == floor then named = each.name end end
-        floorMenu:OverrideText(named or ns.Dungeons.TEXT.floor)
-        floorMenu:SetShown(floors and #floors > 1 or false)
-        -- the search's room begins after the floors while they show
-        gap:SetPoint("LEFT", floorMenu:IsShown() and floorMenu or dungeonButton, "RIGHT", TopBar.GAP * 2, 0)
     end
     if map == shownMap and zone == shownZone then return end
     shownMap, shownZone = map, zone

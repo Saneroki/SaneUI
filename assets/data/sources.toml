@@ -154,3 +154,9 @@ kind = "batch"
 game = "forever"
 build = 70938
 about = "The raids Blizzard announced for Forever this year, read 2026-11-15: The Barrow Deeps and Hyjal Summit, which the client does not hold yet (their levels, players, bosses and the zone their entrances are in), and the day the three raids open, Onyxia's Lair with them (9 December 2026). Unverified: the client's own group finder replaces them once it holds them."
+
+[26]
+kind = "batch"
+game = "forever"
+build = 70938
+about = "Blizzard's article on Forever's new dungeons, read 2026-11-15: the zones of the entrances the game itself gives no place for, City of Dalaran in Alterac Mountains (entered through the sewers, after an attunement) and The Hall of Thanes beneath Ironforge. Unverified until the game or our own sightings give the entrances' places."

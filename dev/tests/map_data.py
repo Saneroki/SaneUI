@@ -65,15 +65,16 @@ def world(folder):
         assignment(30, 0, 3, -400, -600, -400, -600), assignment(40, 5, 4, 100, -100, 100, -100),
         assignment(50, 5, 5, 50, 0, 50, 0), assignment(60, 5, 0, 10, 0, 10, 0),
     ])
-    write(folder, "AreaTable", [
+    write(folder, "AreaTable", [dict({"ContinentID": 0, "AreaName_lang": ""}, **row) for row in [
         {"ID": 1, "ParentAreaID": 0, "Flags[0]": 0x40, "FactionGroupMask": 2},
         {"ID": 2, "ParentAreaID": 0, "Flags[0]": 0x40, "FactionGroupMask": 0},
         {"ID": 3, "ParentAreaID": 0, "Flags[0]": 0x140, "FactionGroupMask": 4},
         {"ID": 4, "ParentAreaID": 0, "Flags[0]": 0x840, "FactionGroupMask": 0},
         {"ID": 5, "ParentAreaID": 0, "Flags[0]": 0x40, "FactionGroupMask": 6},
         {"ID": 11, "ParentAreaID": 1, "Flags[0]": 0, "FactionGroupMask": 0},
-        {"ID": 31, "ParentAreaID": 3, "Flags[0]": 0, "FactionGroupMask": 0},
-    ])
+        {"ID": 31, "ParentAreaID": 3, "Flags[0]": 0, "FactionGroupMask": 0, "ContinentID": 0, "AreaName_lang": "Ward"},
+        {"ID": 32, "ParentAreaID": 0, "Flags[0]": 0, "FactionGroupMask": 0, "ContinentID": 38, "AreaName_lang": "Ward"},
+    ]])
     write(folder, "WMOAreaTable", [{"WMOID": 900, "NameSetID": 0, "WMOGroupID": 7, "AreaTableID": 31},
                                    {"WMOID": 900, "NameSetID": 0, "WMOGroupID": 8, "AreaTableID": 0}])
     write(folder, "Map", [
@@ -82,6 +83,11 @@ def world(folder):
         {"ID": 35, "MapName_lang": "Hall", "InstanceType": 2, "CorpseMapID": 0, "Corpse[0]": -201, "Corpse[1]": -701},
         {"ID": 36, "MapName_lang": "Nowhere", "InstanceType": 1, "CorpseMapID": 0, "Corpse[0]": 0, "Corpse[1]": 0},
         {"ID": 37, "MapName_lang": "Town", "InstanceType": 0, "CorpseMapID": 0, "Corpse[0]": -200, "Corpse[1]": -700},
+        # no corpse point (as Forever's new dungeons): listed, a world area of its name (the city's chunk): there; one
+        # not listed of the same name, and one listed of no world area's name: none
+        {"ID": 38, "MapName_lang": "Ward", "InstanceType": 1, "CorpseMapID": -1, "Corpse[0]": 0, "Corpse[1]": 0},
+        {"ID": 39, "MapName_lang": "Ward", "InstanceType": 1, "CorpseMapID": -1, "Corpse[0]": 0, "Corpse[1]": 0},
+        {"ID": 40, "MapName_lang": "Lost Halls", "InstanceType": 1, "CorpseMapID": -1, "Corpse[0]": 0, "Corpse[1]": 0},
     ])
     for part in ("adt", "adt-obj0", "wmo"):
         (folder / part).mkdir()
@@ -147,9 +153,15 @@ def main():
         check("a sanctuary, no continent", zones[40], {"name": "Big isle", "side": "sanctuary", "area": 4})
         check("both faction groups: no side", "side" in zones[50], False)
 
-        found = md.entrances(folder, placer, md.PlaceKeys(folder / "none"))
-        check("the entrances", sorted((v["name"], v["kind"], v["instance"], v["zone"]) for v in found.values()),
-              [("Hall", "raid", 35, 10), ("Keep", "dungeon", 33, 10)])
+        found = md.entrances(folder, placer, md.PlaceKeys(folder / "none"), listed={38, 40})
+        check("the entrances; one with no corpse point at the middle of the world area of its name (the city's chunk)",
+              sorted((v["name"], v["kind"], v["instance"], v["zone"]) for v in found.values()),
+              [("Hall", "raid", 35, 10), ("Keep", "dungeon", 33, 10), ("Ward", "dungeon", 38, 30)])
+        ward = [v for v in found.values() if v["instance"] == 38][0]
+        middle = placer.middle(31)
+        check("the area's middle: its one chunk's", (middle[0], round(middle[1], 2), round(middle[2], 2)),
+              (0, round(md.HALF - (32 * md.CHUNKS + 15.5) * md.CHUNK, 2), round(md.HALF - (32 * md.CHUNKS + 15.5) * md.CHUNK, 2)))
+        check("placed as any point", ward["point"], placer.place(*middle))
     print(f"Map data: all {checks} checks passed." if not failed else f"Map data: {failed} of {checks} checks failed.")
     return 1 if failed else 0
 

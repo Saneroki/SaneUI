@@ -586,8 +586,9 @@ function Instances.Layout()
     sheet:SetSize(width, math.max(1, y))
 end
 
--- The words on the banners again (their quests counted, the set come).
+-- The banners again (their quests counted, the set come, the dungeons' maps read: Dungeons.lua's Walk).
 function Instances.Refresh()
+    sections = nil -- (listed anew: a banner's maps, its words)
     if view and view:IsShown() then Instances.Layout() end
 end
 
