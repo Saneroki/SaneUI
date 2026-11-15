@@ -477,10 +477,14 @@ function Dungeons.Refit()
 end
 
 -- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's); its ground
--- laid again once a view shows it (Shade, from Place).
+-- laid again once a view shows it (Shade, from Place). The floor shown before: its ground's files let go (a floor
+-- without ground lays none in their place).
 local function Draw()
     for _, texture in ipairs(tiles) do texture:Hide() end
-    for index = 1, laid or 0 do grounds[index]:Hide() end
+    for index = 1, laid or 0 do
+        grounds[index]:Hide()
+        grounds[index]:SetTexture(nil)
+    end
     laid, share = nil, nil
     local art = kept and kept.art
     if not art then return end

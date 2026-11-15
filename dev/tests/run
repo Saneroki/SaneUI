@@ -42,6 +42,8 @@
 #   uilab.py        the interface lab: every scene runs, anchors, events and scripts as the game's
 #   map_squares.py  the instance maps' close level: its words, its check against the game's water, the colours, the seams
 #   map_layers.py   the instance maps' three levels: frames, the buildings' indoor maps placed, the words, the checks
+#   dungeon_ground.py  the dungeon maps' ground: the terrain from the WDTs, the floors matched, the parts' heights,
+#                   a floor's ground holding its bosses and enemies
 #   gpu_runner.py   the GPU runner: its jobs in order, the claims, what counts as the card wanted elsewhere
 #   auctions.py     dev/tools/auction-database: the addon of links to every account's auction data
 #   fresh_install.py  dev/tools/fresh-install: a new player's first Sane UI, the real WTF and Interface set aside and back
@@ -107,6 +109,7 @@ python3 -I dev/tests/imagegen.py
 python3 -I dev/tests/uilab.py
 python3 -I dev/tests/map_squares.py
 python3 -I dev/tests/map_layers.py
+python3 -I dev/tests/dungeon_ground.py
 python3 -I dev/tests/gpu_runner.py
 python3 -I dev/tests/auctions.py
 python3 -I dev/tests/fresh_install.py

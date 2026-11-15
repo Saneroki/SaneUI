@@ -8541,6 +8541,29 @@ end)()
     Choose("terrain")
     check(Canvas.Show("90:2") and Texture(99004) and Texture(99004)._shown and not Texture(99002) and not Texture(99001),
         "another floor: its own ground, the other floor's let go")
+    -- A floor the set gives no ground (dev/tools/dungeon-ground leaves a floor whose ground does not hold its bosses
+    -- and enemies its art alone: the Deadmines' Ironclad Cove, its ship no minimap of the game's): its art in every view.
+    local groundSet = Core.Data.Set("DungeonGround")
+    local groundGet = groundSet.Get
+    groundSet.Get = function(self, key, field)
+        local value = groundGet(self, key, field)
+        if key == 90 and field == "ground" and type(value) == "table" then
+            local upper = {}
+            for _, row in ipairs(value) do
+                if row.floor == 1 then upper[#upper + 1] = row end
+            end
+            return upper
+        end
+        return value
+    end
+    local lower = Canvas.Show("90:2") and Texture(9101)
+    check(lower and Dungeons.Ground("90:2") == nil and Dungeons.Share() == 1 and lower._shown and lower._alpha == 1
+        and not Texture(99004), "Scrying on a floor without ground: its art, nothing laid")
+    Choose("blend")
+    for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, 1) end
+    check(Dungeons.Share() == 1 and lower._alpha == 1 and not Texture(99004), "Blended near on it: its art still")
+    groundSet.Get = groundGet
+    Choose("terrain")
     Dungeons.Close()
     check(not Texture(99004) and not Dungeons.Shown(), "closed: the ground's files let go")
     Dungeons.frame.GetRect, cursorX, cursorY = nil, 100, 100

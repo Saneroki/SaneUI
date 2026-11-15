@@ -186,8 +186,15 @@ minimap) and the full-screen window (the world map) show the same map with the s
   (the Wailing Caverns, the Sunken Temple, the Scarlet Monastery, Blackrock Spire and Depths, Stratholme) the floor
   whose box holds the part and whose art its walls agree with best (it picks the game's floor for 9 parts in 10 where
   the game names one). Checked against the bosses' and enemies' places on every floor (the tool's `--check`
-  pictures). Where floors share parts and the game tells them apart only by height (Shadowfang Keep's tower), their
-  ground looks alike: a part's minimap is one picture.
+  pictures). **Gone through again (Saneroki, 2026-11-15: "make sure they work correctly [...] For example deadmines,
+  one of the layers shows enemies and bosses in the open where normally the map for the ship is drawn"):** floors
+  that share one box and differ only in height (Shadowfang Keep's tower, Blackrock Spire's six) are told apart by
+  their names in the game's map group (each had shown all of them); a part laid by its place stays at the heights of
+  the parts the game names (Blackwing Lair showed two of Blackrock Mountain's halls far below); and a floor whose ground
+  would leave a boss or more than 5 % of its enemies standing on nothing or on the minimap's open water keeps its art
+  in every view: Ironclad Cove (the ship and docks are outdoor parts the game draws no minimap of), Blackfathom Deeps'
+  three floors, Blackrock Depths' two. Open: the Wailing Caverns' art predates Forever's rebuilt caverns (89 of its
+  241 enemies lie east of it, on blank parchment in Parchment and Blended; right in Scrying).
 - **A boss's tooltip on its map (Saneroki, 2026-10-21):** its abilities and the items it drops, with their names
   and icons, from what is known of the dungeons (built: the set *Bosses*' `abilities` and `loot`, batch 11, used at once and shown as not yet confirmed until the
   client or the server confirms them (Saneroki, 2026-10-21); the

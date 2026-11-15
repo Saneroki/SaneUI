@@ -482,8 +482,12 @@ and shows them on the map or puts the map pin there. The plan is in
   instance maps as well. We should have both."): the view's button on the bar works on a dungeon's floor as on the
   map. *Scrying* shows the instance as it truly lies, the game's own minimap pictures of its ground and of its halls on
   that floor; *Blended* the floor's map art over it while the whole floor is in view, fading to the ground as you zoom
-  in; *Parchment* (in the settings) the map art alone. Every floor of the 26 dungeons and raids has it; the bosses,
-  the enemies, your drawings and markers stand where they stood.
+  in; *Parchment* (in the settings) the map art alone. The floors of the 26 dungeons and raids have it, but where the
+  game's minimap pictures would leave a boss or the enemies standing on nothing: the Deadmines' Ironclad Cove (its
+  ship and docks have no minimap picture, only open water), the three floors of Blackfathom Deeps (halls Forever
+  rebuilt in another shape) and the two of Blackrock Depths (the ramp to the Hall of Crafting, the Shrine of
+  Thaurissan) show their map art in every view. The bosses, the enemies, your drawings and markers stand where they
+  stood.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
@@ -823,8 +827,11 @@ and shows them on the map or puts the map pin there. The plan is in
   2026-11-15): Core's set *DungeonGround* (made by `dev/tools/dungeon-ground` from the game's files; no art shipped)
   lists per floor the game's minimap textures of the instance by file ID, each with its middle in the world, its size
   and its turn: the terrain tiles that meet the floor's box (marked `terrain`) and the indoor minimap blocks of the
-  building parts on that floor (which parts: the game's own map assignment, else, for a building Forever rebuilt, the
-  floor whose box holds the part and whose map art its walls agree with). `Gather` keeps the floor's rows and its box
+  building parts on that floor (which parts: the game's own map assignment, its floors told apart by their names where
+  several share one box, else, for a building Forever rebuilt, the floor whose box holds the part and whose map art its
+  walls agree with, at the heights of the parts the game names). A floor whose ground would leave a boss or more than
+  5 % of its enemies on nothing (no part's texels, or the minimap's open water) has no rows: its art in every view
+  (Ironclad Cove, Blackfathom Deeps, Blackrock Depths). `Gather` keeps the floor's rows and its box
   from the set *Dungeons*; the first time a view shows the ground, `LayGround` lays them into the art's frame
   (`content`, its units the art's size across the box): a terrain tile cut at the floor's edges by its texture
   coordinates (draw layer `Dungeons.TERRAIN`), a building's block centred on its middle and turned as a whole
@@ -832,7 +839,8 @@ and shows them on the map or puts the map pin there. The plan is in
   over it has the alpha `Dungeons.Share`: 1 in Parchment and on a floor without ground, 0 in Scrying, in Blended
   `Canvas.Blend` of the zoom between `Dungeons.BLEND` (whole at the whole floor, gone 2.5 times nearer); `Shade` sets
   it at each placement only when it changed, the ground shown while any of it shows through. A view change
-  (`Window.Restyle`) calls `Dungeons.Restyle`; closing lets every ground texture's file go.
+  (`Window.Restyle`) calls `Dungeons.Restyle`; another floor drawn (`Draw`) and closing let the ground textures' files
+  go.
 - **Label** (`Label.lua`): where the highlight lights a zone up (`Art.Light`), on the full map only, its name at the
   canvas' top under the bar, as Blizzard's map writes it (`AreaLabelDataProvider.lua`: `WorldMapTextFont`,
   `SubZoneTextFont`, scale `Label.SCALE`): the zone (`C_Map.GetMapInfoAtPosition`) with its levels
@@ -1570,6 +1578,17 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, every dungeon's floors gone through, their ground mended:** Saneroki: "Can you go through all the
+  instance dungeons and raid maps and make sure they work correctly. I think the instances that have different layers
+  are not all working correctly. For example deadmines, one of the layers shows enemies and bosses in the open where
+  normally the map for the ship is drawn". Every floor's ground was drawn beside its art with its bosses and enemies.
+  Ironclad Cove's ship and docks are outdoor parts of the Deadmines the game draws no minimap of (its terrain there
+  open water), so in Scrying they stood on the water; Blackfathom Deeps' halls Forever rebuilt keep minimap pictures of
+  another shape (left out); Blackrock Depths lacks the ramp to the Hall of Crafting and the Shrine of Thaurissan.
+  Those six floors keep their art in every view now (`dev/tools/dungeon-ground` checks that a floor's ground holds its
+  things). Shadowfang Keep's Vacant Den and its two observatories (one box, three heights) each showed all three
+  floors' rooms: told apart by name now. Blackwing Lair's Halls of Strife showed two of Blackrock Mountain's halls
+  some 190 yards below. A floor drawn after one with ground no longer keeps that ground's files.
 - **2026-11-15, a floor's marker pressed while drawing:** Saneroki: "i got a error" (`Draw.lua:385`, a call of `Hold`
   before it was made: the map stood down); the search list's scroll thumb had the same kind (`Drag`). Both named
   before their first use.

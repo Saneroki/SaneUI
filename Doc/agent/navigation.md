@@ -76,7 +76,9 @@ you told by a notice and a horn, `/sane testraretracker`); your markers, drawing
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,
 `indoor-art` and `mark-art`, never by hand. A dungeon floor's ground (Scrying, Blended) ships no art: the game's own
-textures by file ID, laid by Core's set *DungeonGround* (`dev/tools/dungeon-ground`, `saneui makedungeonground`).
+textures by file ID, laid by Core's set *DungeonGround* (`dev/tools/dungeon-ground`, `saneui makedungeonground`); a
+floor whose ground would leave its bosses or enemies on nothing gets none from the tool and keeps its art in every view
+(its `--check` pictures mark those things in cyan; test `dev/tests/dungeon_ground.py`).
 
 ## Routing
 

@@ -4,8 +4,9 @@
 Core's set Dungeons, the game's own minimap textures of what lies on it, each placed in the world, as staging for
 the set DungeonGround. No picture is made: the game draws each texture by its file ID.
 
-  terrain   the instance's terrain tiles (its WDT's minimap textures: tiles.jsonl), each TILE yards square, north
-            up, under every floor they meet; the dungeon's view cuts them at the floor's edges
+  terrain   the instance's terrain tiles (its WDT's minimap textures, read from the WDT itself: a later extraction
+            of a few instances writes a tiles.jsonl of theirs alone), each TILE yards square, north up, under every
+            floor they meet; the dungeon's view cuts them at the floor's edges
   parts     the indoor minimap of each part of the buildings the instance places (its object files' and its WDT's
             MODF), as the game keeps it (its client table WMOMinimapTexture, read as dev/tools/indoor-art reads it:
             blocks of 128 yards of the part's own plan, 2 texels a yard, the plan's x along a texture's columns and
@@ -18,7 +19,8 @@ Which floor a part is on:
   1. the game's own map assignment names it (the client table UiMapAssignment by the part's unique ID, as its
      part file and WMOAreaTable name it): on each floor it is named for. Forever's client holds no maps of its
      instances; the newest Retail export's does, and the set Dungeons' floors are those maps (batch 9), matched
-     here by their world box
+     here by their world box, and where several floors share one box (Shadowfang Keep's three in its tower,
+     Blackrock Spire's six: they differ only in height) by the floor's name, the game's map group's name of it
   2. a part of a building the assignment names other parts of, but not this one: on no floor (the game shows it
      on none)
   3. a building the assignment names no part of (Forever rebuilt the Wailing Caverns, the Sunken Temple, the
@@ -26,6 +28,16 @@ Which floor a part is on:
      Deeps with buildings of their own): the part is on the floor whose box holds its middle; where several do,
      on the one whose map art its walls agree with best (agreement: the art's edges along the part's outline
      against the art's edges overall). On the instances 1 names, 3 picks a floor 1 names for 9 parts in 10.
+     Where 1 names parts of the instance, only at their heights (at most REACH yards above or below them): the
+     instance's copy of the land around it places other buildings far below or above (Blackrock Mountain's under
+     Blackwing Lair), which its floors do not show
+
+A floor whose ground does not hold its own things is left without ground: the dungeon's view shows its art in every
+view. Its bosses and enemies (the set Dungeons') must stand on its ground: on a part's drawn texels, or on terrain
+that is not open water (the minimap draws water flat and dark: WATER). Left without ground where a boss or more than
+OFF of its enemies stand on neither: Ironclad Cove (the Deadmines' ship and docks are outdoor parts the game draws no
+minimap of, its terrain open water there) and the floors whose parts Forever rebuilt in another shape than their
+minimap textures (Blackfathom Deeps' halls).
 
 A dungeon the game gives no map of (Forever's new ones: City of Dalaran, Excavation Site: Wetlands, Ruins of Lordaeron,
 The Hall of Thanes), listed in Core's set Instances and extracted with the others, gets one floor of its own, staged
@@ -46,17 +58,21 @@ middle. The rows are in drawing order: the terrain, then the parts by their lowe
 drawn over it.
 
   dev/data/staging/dungeon-ground.jsonl   one line per instance of the set Dungeons that has ground; then
-                                          dev/tools/data import it
+                                          dev/tools/data import it (--take: the same build's ground made anew).
+                                          An instance left with no ground at all has no line: its entry in the
+                                          master, if it has one, is taken out by hand (the import cannot say an
+                                          entry is gone at the build of its own version); the summary names them
 
 The input:
   instance files        the instances' files extracted from the game into a folder of their own (wdt/, adt-obj0/,
-                        wmo/ with every part, wmo-minimap/, minimap/, tiles.jsonl, build.txt naming the product and
-                        version), as dev/tools/map-layers reads them
+                        wmo/ with every part, wmo-minimap/, minimap/, build.txt naming the product and version), as
+                        dev/tools/map-layers reads them
   client tables         Forever's client tables as CSV (WMOMinimapTexture)
-  retail client tables  the newest Retail export's client tables as CSV (UiMapAssignment)
+  retail client tables  the newest Retail export's client tables as CSV (UiMapAssignment, UiMapGroupMember)
   map art               the floors' map art as the game's files, <file ID>.blp (the set Dungeons' tiles)
 Options: --check <folder>: a picture per floor, not shipped: its ground as the rows place it, beside it the game's
-map art over that ground, half seen, with the set's bosses (squares) and enemies (dots).
+map art over that ground, half seen, with the set's bosses (squares) and enemies (dots), those on no ground in cyan;
+a floor left without ground shows the rows it would have had.
 
 Needs Python with Pillow and NumPy.
 
@@ -97,6 +113,14 @@ NEW_MARGIN = 0.05      # a new floor's box reaches so much past what it shows, e
 NEW_WIDTH = 1002       # a new floor's size in its units, as the game's own maps' art (its height in its box's shape)
 LEAST = 20             # art pixels: a part drawing fewer on a floor's art is not compared with it
 EDGE_BLUR = 1.5, 2.0   # the art's grey blurred so before its edges are found, and its edges after (art pixels)
+REACH = 30             # yards: a part laid by its place (rule 3) in an instance 1 names parts of lies at most so far
+                       # above or below them (Blackwing Lair's halls stand some 190 yards over Blackrock Mountain's
+                       # buildings below; Naxxramas' named parts reach down to the land under it)
+WATER = 6, 1.5, 40     # terrain art pixels: around a point so many each way, its grey varying less (its standard
+                       # deviation) and darker than these is open water (the minimap draws water flat and dark:
+                       # Ironclad Cove's 0.0 and 19; the flattest land under a boss or enemy varies by 3.0, Shadowfang
+                       # Keep's courtyard, the darkest so flat 3.2 at 45, Stratholme's)
+OFF = 0.05             # of a floor's enemies on no ground at most, for its ground to be kept (its bosses: none)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -116,13 +140,19 @@ def build_of(folder):
 
 
 def tiles_of(folder):
-    """{map: [(row, column, minimap file ID)]} of the instance files' tiles.jsonl."""
+    """{map: [(row, column, minimap file ID)]} of the instance files' WDTs: their MAID, eight file IDs a tile (root,
+    obj0, obj1, tex0, lod, map, mapN, minimap), row by row. A map of a building alone has none."""
     found = {}
-    for line in open(folder / "tiles.jsonl", encoding="utf-8"):
-        row = json.loads(line)
-        if row.get("minimap"):
-            key = row["key"]
-            found.setdefault(key // (GRID * GRID), []).append(((key // GRID) % GRID, key % GRID, row["minimap"]))
+    for path in sorted((folder / "wdt").glob("*.wdt")):
+        data = path.read_bytes()
+        for name, at, size in ART.pieces(data, 0, len(data)):
+            if name != b"MAID":
+                continue
+            ids = struct.unpack_from(f"<{size // 4}I", data, at)
+            for index in range(min(GRID * GRID, len(ids) // 8)):
+                minimap = ids[index * 8 + 7]
+                if minimap:
+                    found.setdefault(int(path.stem), []).append((index // GRID, index % GRID, minimap))
     return found
 
 
@@ -150,7 +180,12 @@ def placements(folder, map_id):
 
 def assignment(tables, floors_by_map):
     """The game's map assignment of the set's floors: {map: {"parts": {(part's unique ID, placement or 0):
-    {floors}}, "terrain": {floors with a row of no part}}}. A floor is the map of the assignment with its box."""
+    {floors}}, "terrain": {floors with a row of no part}}}. A floor is the map of the assignment with its box; of
+    several floors with that box, the one of the map's name in its map group (they differ only in height)."""
+    names = {}
+    with open(tables / "UiMapGroupMember.csv", encoding="utf-8") as table:
+        for row in csv.DictReader(table):
+            names[int(row["UiMapID"])] = row["Name_lang"]
     found = {}
     with open(tables / "UiMapAssignment.csv", encoding="utf-8") as table:
         for row in csv.DictReader(table):
@@ -159,7 +194,10 @@ def assignment(tables, floors_by_map):
             if not floors:
                 continue
             box = (float(row["Region[3]"]), float(row["Region[0]"]), float(row["Region[4]"]), float(row["Region[1]"]))
-            numbers = [f["floor"] for f in floors if all(abs(a - b) < SAME_BOX for a, b in zip(box_of(f), box))]
+            same = [f for f in floors if all(abs(a - b) < SAME_BOX for a, b in zip(box_of(f), box))]
+            if len(same) > 1:
+                same = [f for f in same if f.get("name") and f["name"] == names.get(int(row["UiMapID"]))] or same
+            numbers = [f["floor"] for f in same]
             mine = found.setdefault(map_id, {"parts": {}, "terrain": set()})
             group, placed = int(row["WMOGroupID"] or 0), int(row["WMODoodadPlacementID"] or 0)
             for number in numbers:
@@ -206,7 +244,7 @@ def part_rows(part):
 
 def parts_of(folder, tables_textures, map_id, left_out):
     """Every part of the map's buildings that draws an indoor minimap the game holds and that passes indoor-art's
-    checks: {unique, placement, place, box, blocks, sizes, low, middle, building}."""
+    checks: {unique, placement, place, box, blocks, sizes, low, high, middle, building}."""
     minimaps, found = folder / "wmo-minimap", []
     for unique, (file, where) in sorted(placements(folder, map_id).items()):
         root = folder / "wmo" / f"{file}.wmo"
@@ -238,6 +276,7 @@ def parts_of(folder, tables_textures, map_id, left_out):
                 continue
             found.append({"unique": IA.part_id(shape), "placement": unique, "place": place, "box": box,
                           "blocks": blocks, "sizes": sizes, "low": place["z"] + place["scale"] * box[2],
+                          "high": place["z"] + place["scale"] * box[5],
                           "middle": world(place, (box[0] + box[3]) / 2, (box[1] + box[4]) / 2), "building": file})
     return found
 
@@ -323,6 +362,39 @@ def agreement(part, floor, art_edges, textures):
     return float(art_edges[outline].mean() / max(art_edges.mean(), 1e-6))
 
 
+def standing(entry, floor, rows, textures):
+    """The floor's bosses and enemies (the set Dungeons'), each with whether it stands on the rows' ground: on a
+    part's drawn texels, or on terrain that is not open water (WATER). [(x, y, "boss" or "enemy", on)]"""
+    size = (floor["width"], floor["height"])
+    parts = np.asarray(drawn([r for r in rows if not r.get("terrain")], floor, size, textures))[..., 3] > 127
+    terrain = np.asarray(drawn([r for r in rows if r.get("terrain")], floor, size, textures)).astype(np.float32)
+    grey = terrain[..., :3].mean(axis=2)
+    span, spread, dark = WATER
+    found = []
+    for kind, things in (("boss", entry.get("bosses", [])), ("enemy", entry.get("enemies", []))):
+        for thing in things:
+            if thing["floor"] != floor["floor"]:
+                continue
+            px = min(size[0] - 1, max(0, int(thing["x"] * size[0])))
+            py = min(size[1] - 1, max(0, int(thing["y"] * size[1])))
+            if parts[py, px]:
+                on = True
+            elif terrain[py, px, 3] > 127:
+                around = grey[max(0, py - span):py + span + 1, max(0, px - span):px + span + 1]
+                on = not (around.std() < spread and around.mean() < dark)
+            else:
+                on = False
+            found.append((thing["x"], thing["y"], kind, on))
+    return found
+
+
+def holds(things):
+    """Whether a floor's ground holds its things (standing's): every boss on it, all but OFF of its enemies."""
+    enemies = [on for _, _, kind, on in things if kind == "enemy"]
+    return (all(on for _, _, kind, on in things if kind == "boss")
+            and enemies.count(False) <= OFF * len(enemies))
+
+
 # -------------------------------------------------------------------------------------------------
 def inside(box, x, y):
     north, south, west, east = box
@@ -339,30 +411,39 @@ def instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, 
         by_unique.setdefault(group, []).append((placed, numbers))
     known = {part["building"] for part in parts if part["unique"] in by_unique}  # buildings the assignment names
     edges_of, on = {}, {f["floor"]: [] for f in floors}
+    placed_later = []
     for part in parts:
         if part["unique"] in by_unique:  # 1. named: the floors named for it (for this placement, where it says)
             named_for = by_unique[part["unique"]]
             mine = [each for placed, each in named_for if placed == part["placement"]]
-            numbers = set().union(*(mine or [each for _, each in named_for]))
+            for number in set().union(*(mine or [each for _, each in named_for])):
+                on[number].append(part)
             tally["named"] += 1
         elif part["building"] in known:  # 2. the game shows it on no floor
             tally["not named"] += 1
+        else:
+            placed_later.append(part)
+    # The heights 1 names parts at, in the whole instance: a part laid by its place lies within REACH of them.
+    named_parts = [part for mine in on.values() for part in mine]
+    low = min((part["low"] for part in named_parts), default=-math.inf) - REACH
+    high = max((part["high"] for part in named_parts), default=math.inf) + REACH
+    for part in placed_later:  # 3. the floor whose box holds its middle; of several, the one whose art agrees best
+        holding = [f for f in floors if inside(box_of(f), *part["middle"])]
+        if holding and (part["high"] < low or part["low"] > high):
+            tally["out of reach"] += 1
             continue
-        else:  # 3. the floor whose box holds its middle; of several, the one whose art it agrees with best
-            holding = [f for f in floors if inside(box_of(f), *part["middle"])]
-            if len(holding) > 1:
-                scores = {}
-                for f in holding:
-                    if f["floor"] not in edges_of:
-                        edges_of[f["floor"]] = edges(art_of(f, entry.get("tiles", []), mapart))
-                    score = agreement(part, f, edges_of[f["floor"]], textures)
-                    if score is not None:
-                        scores[f["floor"]] = score
-                holding = [f for f in holding if f["floor"] == max(scores, key=scores.get)] if scores else holding[:1]
-            numbers = {f["floor"] for f in holding}
-            tally["by place" if numbers else "on no floor"] += 1
-        for number in numbers:
-            on[number].append(part)
+        if len(holding) > 1:
+            scores = {}
+            for f in holding:
+                if f["floor"] not in edges_of:
+                    edges_of[f["floor"]] = edges(art_of(f, entry.get("tiles", []), mapart))
+                score = agreement(part, f, edges_of[f["floor"]], textures)
+                if score is not None:
+                    scores[f["floor"]] = score
+            holding = [f for f in holding if f["floor"] == max(scores, key=scores.get)] if scores else holding[:1]
+        for f in holding:
+            on[f["floor"]].append(part)
+        tally["by place" if holding else "on no floor"] += 1
     rows = []
     for f in floors:
         number = f["floor"]
@@ -467,8 +548,9 @@ def missing(folder, tables, known):
         return {int(row["ID"]): row["MapName_lang"] for row in csv.DictReader(file) if int(row["ID"]) in listed}
 
 
-def check(out, entry, rows, mapart, textures):
-    """A picture per floor: its ground beside the map art over it, the bosses and enemies on both."""
+def check(out, entry, rows, mapart, textures, things):
+    """A picture per floor: its ground beside the map art over it, the bosses and enemies on both (those on no
+    ground in cyan; things: standing's per floor)."""
     out.mkdir(parents=True, exist_ok=True)
     for f in entry["floors"]:
         size = (f["width"], f["height"])
@@ -481,14 +563,13 @@ def check(out, entry, rows, mapart, textures):
         sheet.paste(mixed.convert("RGB"), (size[0], 0))
         draw = ImageDraw.Draw(sheet)
         for side in (0, size[0]):
-            for enemy in entry.get("enemies", []):
-                if enemy["floor"] == f["floor"]:
-                    x, y = side + enemy["x"] * size[0], enemy["y"] * size[1]
-                    draw.ellipse([x - 3, y - 3, x + 3, y + 3], fill=(255, 40, 40))
-            for boss in entry.get("bosses", []):
-                if boss["floor"] == f["floor"]:
-                    x, y = side + boss["x"] * size[0], boss["y"] * size[1]
-                    draw.rectangle([x - 6, y - 6, x + 6, y + 6], outline=(255, 0, 255), width=2)
+            for x, y, kind, on in sorted(things.get(f["floor"], []), key=lambda thing: thing[2] == "boss"):
+                x, y = side + x * size[0], y * size[1]
+                if kind == "enemy":
+                    draw.ellipse([x - 3, y - 3, x + 3, y + 3], fill=(255, 40, 40) if on else (0, 255, 255))
+                else:
+                    draw.rectangle([x - 6, y - 6, x + 6, y + 6], outline=(255, 0, 255) if on else (0, 255, 255),
+                                   width=2)
         sheet.save(out / f"{entry['key']}-{f['floor']}.png")
 
 
@@ -516,21 +597,33 @@ def main():
     tiles = tiles_of(folder)
     textures = Textures([folder / "wmo-minimap", folder / "minimap"])
     left_out = {"tilted": 0, "not held": 0, "another shape": 0, "nothing drawn": 0}
-    tally = {"named": 0, "not named": 0, "by place": 0, "on no floor": 0}
-    lines, bare = [], []
+    tally = {"named": 0, "not named": 0, "by place": 0, "on no floor": 0, "out of reach": 0}
+    lines, bare, short = [], [], []
     for entry in entries:
         textures.cache.clear()  # one instance's textures at a time
         if entry.get("tiles"):
             rows = instance(entry, folder, table, assigned, tiles, mapart, textures, left_out, tally)
         else:  # no map art of the game's (a dungeon it gives no map of): its ground by the one rule
             rows = bare_rows(entry, folder, tables, table, tiles, left_out)
-        floors_with = {row["floor"] for row in rows}
+        things, laid = {}, []
+        for f in entry["floors"]:  # a floor whose ground does not hold its bosses and enemies keeps its art alone
+            mine = [row for row in rows if row["floor"] == f["floor"]]
+            things[f["floor"]] = standing(entry, f, mine, textures) if mine else []
+            if holds(things[f["floor"]]):
+                laid += mine
+            else:
+                bosses = [on for *_, kind, on in things[f["floor"]] if kind == "boss"]
+                enemies = [on for *_, kind, on in things[f["floor"]] if kind == "enemy"]
+                short.append(f"{entry['name']} {f['floor']} ({bosses.count(False)} of {len(bosses)} bosses, "
+                             f"{enemies.count(False)} of {len(enemies)} enemies on none)")
+        floors_with = {row["floor"] for row in laid}
         bare += [f"{entry['name']} {f['floor']}" for f in entry["floors"] if f["floor"] not in floors_with]
-        if rows:
+        if laid:
             lines.append({"set": "DungeonGround", "key": entry["key"], "game": game, "build": build, "src": "game",
-                          "fields": {"ground": rows}})
+                          "fields": {"ground": laid}})
         if checks:
-            check(checks, entry, rows, mapart, textures)
+            check(checks, entry, rows, mapart, textures, things)
+        rows = laid
         print(f"{entry['key']} {entry['name']}: {len(rows)} textures on {len(floors_with)} of {len(entry['floors'])} "
               f"floors", file=sys.stderr, flush=True)
     lines = [{"set": "Dungeons", "key": entry["key"], "game": game, "build": build, "src": "game",
@@ -545,9 +638,16 @@ def main():
     print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines) - len(new)} instances, {textures_made} textures. Parts: "
           f"{tally['named']} on the floors the game's assignment names, {tally['by place']} by their place and the art,"
           f" {tally['not named']} the assignment leaves off every floor, {tally['on no floor']} on "
-          f"no floor's box; left out: {left_out['another shape']} made for another shape, {left_out['not held']} with "
-          f"a texture the game does not hold, {left_out['nothing drawn']} that draw (almost) nothing, "
-          f"{left_out['tilted']} tilted buildings. Floors without ground: {', '.join(bare) or 'none'}.")
+          f"no floor's box, {tally['out of reach']} far above or below the named ones; left out: "
+          f"{left_out['another shape']} made for another shape, {left_out['not held']} with a texture the game does not hold,"
+          f" {left_out['nothing drawn']} that draw (almost) nothing, "
+          f"{left_out['tilted']} tilted buildings. Floors without ground: {', '.join(bare) or 'none'}; of them their "
+          f"ground left out, their bosses or enemies on none: {', '.join(short) or 'none'}.")
+    groundless = [f"{entry['name']} ({entry['key']})" for entry in entries
+                  if not any(line.get("key") == entry["key"] for line in lines if line["set"] == "DungeonGround")]
+    if groundless:
+        print(f"No ground at all, no line staged (an entry of the master's for them goes by hand): "
+              f"{', '.join(groundless)}.")
     if checks:
         print(f"Check pictures in {checks}.")
     return 0
