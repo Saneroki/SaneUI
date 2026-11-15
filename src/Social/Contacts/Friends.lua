@@ -296,8 +296,8 @@ end
 --  Rows
 -------------------------------------------------------------------------------
 
--- The icon of the game a Battle.net friend plays, as the game's list shows it. Forever's game account names
--- a sub icon too (which of its projects); Retail's has none, and nil asks for the plain icon.
+-- The icon of the game a Battle.net friend plays, as the game's list shows it. A game account names a sub icon
+-- too (which of its projects; Forever's, and Retail's since build 70783); nil asks for the plain icon.
 local function Game(texture, client, subIcon)
     local textures = rawget(_G, "C_Texture")
     local set = textures and textures.SetTitleIconTexture
