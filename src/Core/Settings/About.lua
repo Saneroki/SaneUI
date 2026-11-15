@@ -20,7 +20,7 @@ Config.About = About
 
 -- Where Sane UI can be found. An address left empty has its row, with the button off.
 About.LINKS = {
-    { key = "discord", name = "Discord", url = "https://discord.gg/dVGfWVPXQ5", tip = "Talk with other players and the maker of Sane UI." },
+    { key = "discord", name = "Discord", url = Core.DISCORD, tip = "Talk with other players and the maker of Sane UI." },
     { key = "website", name = "Website", url = "", tip = "News, guides and downloads." },
     { key = "github", name = "GitHub", url = "", tip = "The code, and the place for bug reports and ideas (Issues)." },
 }

@@ -24,6 +24,7 @@ check(Core and Core.VERSION == "1.2.3", "the addons share one table, SaneUI; the
 
 -- An error before the saved settings are there
 check(Core.Safe("early", function() error("too soon") end) == nil and printedMatch("problem in early. Type /sane bug"), "a failing step is caught and told")
+check(printedMatch("Sane UI's Discord: discord%.gg/" .. Core.DISCORD:match("[^/]+$") .. "$"), "and the line ends with the Discord's invite, short, to type")
 W.printed = {}
 SlashCmdList.SANEUI("")
 check(printedMatch("version 1%.2%.3%. No module is switched on") and printedMatch("/sane options"), "/sane alone says so when no module is switched on")

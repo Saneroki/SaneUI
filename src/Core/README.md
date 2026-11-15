@@ -29,7 +29,8 @@ but for a window to try those with (`/sane window`).
   for the whole installation, written by the client that closes last). The login screen sounds as that file says.
 - `/sane errors` lists the error log, one line per problem; `/sane errors clear` empties it. When something
   fails, one line in chat says where and how to report it (*problem in Navigation. Type /sane bug to make a bug
-  report, then copy and paste it into #bug-reports on Sane UI's Discord.*), once per kind of problem.
+  report, then copy and paste it into #bug-reports on Sane UI's Discord: discord.gg/...*, the invite
+  `Core.DISCORD` written short, to type), once per kind of problem.
   A module that fails steps aside: what it stands in for is the game's own again until the next `/reload`
   (`/sane` lists it as *stopped*). The game's own error window shows Sane UI's errors only when it shows Lua
   errors at all (`/console scriptErrors 1`).

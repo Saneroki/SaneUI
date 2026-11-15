@@ -33,6 +33,8 @@ SaneUI = { Core = Core }
 Core.TITLE = "Sane UI"
 Core.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
 Core.GOLD = { 0.525, 0.439, 0.282 }
+-- Sane UI's Discord, an invite that never expires: on the page Sane UI (About.lua) and in the line told for a problem.
+Core.DISCORD = "https://discord.gg/dVGfWVPXQ5"
 local PREFIX = "|cff867048" .. Core.TITLE .. ":|r "
 
 function Core.Print(text)
@@ -299,8 +301,10 @@ function Core.NoteError(label, text)
 end
 
 -- The line in chat for a problem: where it happened, and how the player reports it: /sane bug makes the report
--- (with the latest errors, About.lua) to paste on Sane UI's Discord.
-local TOLD = "problem in %s. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord."
+-- (with the latest errors, About.lua) to paste on Sane UI's Discord. Chat cannot be copied, so the invite is
+-- written short, to type (the page Sane UI copies it whole).
+local TOLD = "problem in %s. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord: "
+    .. (Core.DISCORD:gsub("^https?://", ""))
 
 -- Keeps a problem and says so in chat, once per label (unless the player switched that off).
 -- For a problem a module found itself, without an error being raised.

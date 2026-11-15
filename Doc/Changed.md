@@ -8,10 +8,10 @@ A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates
 
 ### Errors in chat: the line says how to report it, /sane bug and Sane UI's Discord (Saneroki, 2026-11-15)
 Saneroki: "When some error occures the addon writes in chat that something bad happend. Can we change the text to tell the user to use the /sane bug command and copy paste it into the saneui discord?"
-- **`src/Core/Core.lua`:** the line told once per kind of problem (`TOLD`, `Core.Report`) reads "problem in <where>. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord." `/sane bug` (an alias of `/sane feedback`) opens the bug report, which carries the latest errors; `/sane errors` still lists the log.
+- **`src/Core/Core.lua`:** the line told once per kind of problem (`TOLD`, `Core.Report`) reads "problem in <where>. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord: discord.gg/dVGfWVPXQ5". Saneroki then: "Add the Discord invite link to the chat line too": the invite is `Core.DISCORD`, kept once, written short in chat (chat cannot be copied, so it is typed) and whole on the page Sane UI (`src/Core/Settings/About.lua`, `About.LINKS`). `/sane bug` (an alias of `/sane feedback`) opens the bug report, which carries the latest errors; `/sane errors` still lists the log.
 - **`src/Core/Saved.lua`:** the tooltip of *Errors in chat* says the line tells how to report it.
-- **Tests:** `dev/tests/core.lua` (516: the line names /sane bug; /sane bug opens the bug report).
-- **Docs:** `src/Core/README.md`, `Doc/agent/core.md`.
+- **Tests:** `dev/tests/core.lua` (517: the line names /sane bug and ends with the Discord's invite; /sane bug opens the bug report).
+- **Docs:** `src/Core/README.md`, `src/Core/Settings/README.md`, `Doc/agent/core.md`.
 - A `/reload` takes it in.
 
 ### Release: a CurseForge changelog per addon, never the whole suite's (Saneroki, 2026-11-15)
