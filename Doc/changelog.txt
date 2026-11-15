@@ -6,6 +6,11 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map: the Dungeons button shows every dungeon and raid of
+  WoW: Forever this year as banners, dungeons and raids apart,
+  by level: their levels, how many of your quests lead inside, a
+  raid's size and the day it opens. From a banner: route there,
+  show its entrance on the map, or open its maps.
 - Map drawing: drag anything you drew (markers, lines, words,
   route stops) while the palette is open. New tools: Route (click
   stops, numbered, with lines between) and Text. Marker icons come

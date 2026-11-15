@@ -995,6 +995,23 @@ hidden but what the small view needs.
   `ns.PIN_SECTIONS`, each kind's `section`; around you, quests, travel, towns and services, rares and treasures,
   gathering), each kind's icon at 24 before its words and a slider for its size.
 - **Three views:** three buttons; the choice is a switch (profiles keep it).
+- **Dungeons: a button and its banners (Saneroki, 2026-11-15; built, `Instances.lua`):** "I would like to have the drop
+  down change to a button and when the button is pressed you can see all the dungeons and raids that are currently
+  available in Forever. Filter out those that are not currently in Forever or are not part of the planed for the soon
+  to be released raids. So only show the dungeons and raids that will be available in forever this year and sort them
+  into dungeons and raids. When the button is pressed the map changes into a new content where you can press on the
+  banners with name, level, amount of quests information on it. You have options to route to there, show it on the
+  map and see its instance maps." Decided with him: the dungeons are those of Forever's own group finder (the
+  client's `LFGDungeons`, TypeID 0); the five new ones the client does not list yet (The Drowned City, Krol'dok
+  Stronghold, Alcaz Prison, Blackmaw Hold, Shaper's Terrace) are left out for now; the raids only those Blizzard
+  announced for this year (The Barrow Deeps, Hyjal Summit, Onyxia's Lair, 9 December), not Molten Core, Blackwing Lair
+  or Zul'Gurub. The list, levels, players and days are Core's set *Instances* (`Doc/guides/data.md`); the banners'
+  pictures the game's own (the Encounter Journal's; Forever's loading screens of its new dungeons; for the two raids
+  not in the client yet, the druids' order hall's glade and the Emerald Dreamway's gate, Saneroki's to change). The
+  quests counted are yours with an objective inside: Core's data knows the creatures inside seven dungeons and the
+  bosses of all, so a count can be low where it knows little. Still to come: the five dungeons once the client lists
+  them, their entrances once known (the four new ones have none in the game's data), next year's raids once
+  announced.
 - **Search (Saneroki, 2026-11-15; built):** "At the top of the map fullscreen, can you put a big searchfield in the
   title bar up there where you can search for stuff. Like NPC names, Guild member names, Vendors, class trainers, items
   etc and it will show it to you or put a pin on the map. For items for example it could drop a pin on the map where
@@ -2145,7 +2162,8 @@ What a dungeon map shows:
   and Raids, PvP.
 - **Zones** A–Z; the **dungeon list** with a search box.
 - **Dungeon maps chosen here (Saneroki, 2026-10-21):** the selector picks every dungeon, instance and raid
-  (built: the bar's Dungeons menu, A to Z, and its floors), and the chosen one opens in its three zooms
+  (built: the bar's Dungeons menu, A to Z, and its floors; since 2026-11-15 the button Dungeons and its banners, *Top
+  bar, map selector and search*), and the chosen one opens in its three zooms
   (*Dungeon, instance and raid maps in three zooms*): the wheel goes from its accurate close-up through the pencil
   drawing of its rooms out to its reimagined picture, the floor menu choosing the floor of the first two.
 - A **back button** that remembers the last 30 maps.

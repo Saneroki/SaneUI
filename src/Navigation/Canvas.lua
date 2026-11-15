@@ -889,10 +889,11 @@ function Canvas.Home()
 end
 
 -- Shows a map whole (a pin that leads into another map), as a click on a zone does; a dungeon's on the full map
--- in its own view (Dungeons.lua).
+-- in its own view (Dungeons.lua). The banners of the dungeons and raids give way to it (Instances.lua).
 function Canvas.Show(map)
     if ns.Dungeons.Show(map) then return true end
     if not laid or not camera:Fit(map) then return false end
+    ns.Safe("dungeons", ns.Instances.Close)
     lastInput = GetTime()
     Canvas.Layout()
     return true

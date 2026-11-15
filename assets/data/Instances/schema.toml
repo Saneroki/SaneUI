@@ -1,0 +1,24 @@
+set = "Instances"
+key = "int"              # the game's group-finder row (LFGDungeons); an instance Blizzard announced that the client does not hold yet: a number of our own from 100001 up, until the client holds it (then the game's row names ours in replaces, and ours is gone)
+learn = false
+about = "The dungeons and raids of the game's group finder, and those Blizzard announced: what each is, the levels and players it is for, its instance's map, and the day a raid opens."
+
+# What the client holds comes from dev/tools/game-data: the group finder's rows of dungeons and raids (LFGDungeons,
+# TypeID 0), each with its activities in the group finder of the same name (GroupFinderActivity of the categories
+# Dungeons and Raids): their levels, players and map. What Blizzard announced and the client does not hold yet is a
+# batch of its own (sources.toml), unverified until the client holds it.
+
+[fields]
+name     = { type = "text" }                   # the group finder's: its activity's, the instance's map's where it has several (Scarlet Monastery's wings)
+kind     = { type = "enum", values = ["dungeon", "raid"] }
+map      = { type = "int", min = 0 }           # the instance's map ID (Maps; the set Dungeons' key, Places' instance)
+levelMin = { type = "int", min = 0 }           # the levels the group finder suggests it for
+levelMax = { type = "int", min = 0 }
+players  = { type = "int", min = 1 }           # how many players it is for
+bosses   = { type = "int", min = 1 }           # how many bosses, where Blizzard said so
+zone     = { type = "int", min = 0 }           # the zone map its entrance is in, where no entrance is known yet
+opens    = { type = "text" }                   # the day it opens (YYYY-MM-DD), where Blizzard named one
+
+[index]
+byKind = "kind"
+byMap  = "map"

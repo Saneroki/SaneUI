@@ -1,0 +1,32 @@
+{"key":1,"since":70245,"src":["game"],"name":"Wailing Caverns","kind":"dungeon","map":43,"levelMin":15,"levelMax":24,"players":5}
+{"key":2,"since":70245,"src":["game"],"name":"Scholomance","kind":"dungeon","map":289,"levelMin":58,"levelMax":60,"players":5}
+{"key":3,"since":70245,"src":["game"],"name":"Ragefire Chasm","kind":"dungeon","map":389,"levelMin":13,"levelMax":18,"players":5}
+{"key":5,"since":70245,"src":["game"],"name":"Deadmines","kind":"dungeon","map":36,"levelMin":17,"levelMax":26,"players":5}
+{"key":7,"since":70245,"src":["game"],"name":"Shadowfang Keep","kind":"dungeon","map":33,"levelMin":20,"levelMax":30,"players":5}
+{"key":9,"since":70245,"src":["game"],"name":"Blackfathom Deeps","kind":"dungeon","map":48,"levelMin":24,"levelMax":32,"players":5}
+{"key":11,"since":70245,"src":["game"],"name":"Stormwind Stockades","kind":"dungeon","map":34,"levelMin":24,"levelMax":32,"players":5}
+{"key":13,"since":70245,"src":["game"],"name":"Gnomeregan","kind":"dungeon","map":90,"levelMin":29,"levelMax":38,"players":5}
+{"key":15,"since":70245,"src":["game"],"name":"Razorfen Kraul","kind":"dungeon","map":47,"levelMin":29,"levelMax":38,"players":5}
+{"key":17,"since":70245,"src":["game"],"name":"Scarlet Monastery","kind":"dungeon","map":189,"levelMin":30,"levelMax":46,"players":5}
+{"key":19,"since":70245,"src":["game"],"name":"Razorfen Downs","kind":"dungeon","map":129,"levelMin":37,"levelMax":46,"players":5}
+{"key":21,"since":70245,"src":["game"],"name":"Uldaman","kind":"dungeon","map":70,"levelMin":41,"levelMax":51,"players":5}
+{"key":23,"since":70245,"src":["game"],"name":"Zul'Farrak","kind":"dungeon","map":209,"levelMin":44,"levelMax":54,"players":5}
+{"key":25,"since":70245,"src":["game"],"name":"Maraudon","kind":"dungeon","map":349,"levelMin":46,"levelMax":55,"players":5}
+{"key":27,"since":70245,"src":["game"],"name":"Sunken Temple","kind":"dungeon","map":109,"levelMin":50,"levelMax":60,"players":5}
+{"key":29,"since":70245,"src":["game"],"name":"Blackrock Depths","kind":"dungeon","map":230,"levelMin":52,"levelMax":60,"players":5}
+{"key":31,"since":70245,"src":["game"],"name":"Lower Blackrock Spire","kind":"dungeon","map":229,"levelMin":55,"levelMax":60,"players":5}
+{"key":33,"since":70245,"src":["game"],"name":"Dire Maul (East)","kind":"dungeon","map":429,"levelMin":54,"levelMax":60,"players":5}
+{"key":35,"since":70245,"src":["game"],"name":"Dire Maul (West)","kind":"dungeon","map":429,"levelMin":56,"levelMax":60,"players":5}
+{"key":37,"since":70245,"src":["game"],"name":"Dire Maul (North)","kind":"dungeon","map":429,"levelMin":56,"levelMax":60,"players":5}
+{"key":39,"since":70245,"src":["game"],"name":"Stratholme","kind":"dungeon","map":329,"levelMin":58,"levelMax":60,"players":5}
+{"key":41,"since":70245,"src":["game"],"name":"Zul'Gurub","kind":"raid","map":309,"levelMin":60,"levelMax":60,"players":20}
+{"key":43,"since":70245,"src":["game"],"name":"Upper Blackrock Spire","kind":"dungeon","map":229,"levelMin":59,"levelMax":60,"players":10}
+{"key":45,"since":70245,"src":["game",25],"name":"Onyxia's Lair","kind":"raid","map":249,"levelMin":60,"levelMax":60,"players":40,"opens":"2026-12-09"}
+{"key":47,"since":70245,"src":["game"],"name":"Molten Core","kind":"raid","map":409,"levelMin":60,"levelMax":60,"players":40}
+{"key":49,"since":70245,"src":["game"],"name":"Blackwing Lair","kind":"raid","map":469,"levelMin":60,"levelMax":60,"players":40}
+{"key":3271,"since":70245,"src":["game"],"name":"City of Dalaran","kind":"dungeon","map":2959,"levelMin":28,"levelMax":35,"players":5}
+{"key":3272,"since":70245,"src":["game"],"name":"Ruins of Lordaeron","kind":"dungeon","map":2999,"levelMin":15,"levelMax":22,"players":5}
+{"key":3273,"since":70245,"src":["game"],"name":"Hall of Thanes","kind":"dungeon","map":3065,"levelMin":13,"levelMax":20,"players":5}
+{"key":3274,"since":70245,"src":["game"],"name":"Excavation Site: Wetlands","kind":"dungeon","map":2998,"levelMin":26,"levelMax":33,"players":5}
+{"key":100001,"since":0,"src":[25],"name":"The Barrow Deeps","kind":"raid","levelMin":60,"levelMax":60,"players":10,"bosses":8,"zone":2482,"opens":"2026-12-09"}
+{"key":100002,"since":0,"src":[25],"name":"Hyjal Summit","kind":"raid","levelMin":60,"levelMax":60,"players":20,"bosses":13,"zone":2482,"opens":"2026-12-09"}

@@ -109,6 +109,7 @@ function Window.Lay()
     if not frame or going ~= nil or not (handle.edge and handle.edge.full) then return end
     ns.QuestLog.Lay(true)
     ns.Safe("dungeons", ns.Dungeons.Refit)
+    ns.Safe("dungeons", ns.Instances.Refit) -- (the banners beside it too)
     ns.TopBar.Update()
 end
 
@@ -201,6 +202,7 @@ function Window.Build()
     canvas = ns.Canvas.Build(inside)
     ns.Satchel.Build(canvas)
     ns.Dungeons.Build(canvas)
+    ns.Instances.Build(canvas)
     ns.TopBar.Build(canvas)
     ns.QuestLog.Build()
     ns.QuestLog.Lay(false)

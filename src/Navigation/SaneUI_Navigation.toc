@@ -61,6 +61,8 @@ Indoors.lua
 Areas.lua
 # The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor
 Dungeons.lua
+# The bar's Dungeons: every dungeon and raid of Forever this year as banners over the map, by level; route, show, maps
+Instances.lua
 # The golden line of the way to the map pin: its pulse (the game makes that animation only from XML), its lines
 Route.xml
 Route.lua

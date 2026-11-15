@@ -4153,36 +4153,60 @@ end)()
     for _, entry in ipairs(Dungeons.List()) do if not entry.instance then list[#list + 1] = entry end end
     check(#list == 2 and list[1].name == "Ashen Vault" and list[2].name == "Hollow Keep" and list[2].map == 500
         and #list[2].floors == 2 and list[2].floors[2].map == 501, "the dungeons: one entry each, its floors lowest first, A to Z")
-    local menu, floors
+    -- The bar's button Dungeons: the banners over the map (Instances.lua); without Core's set Instances (Retail's data
+    -- comes later) the dungeons the game has maps of, A to Z, in one section, each with its maps.
+    local Instances = ns.Instances
+    local button, floors
     for _, widget in ipairs(W.frames) do
-        if widget._generator and widget._override == Dungeons.TEXT.dungeons then menu = widget end
+        if widget.key == "dungeons" then button = widget end
         if widget._generator and widget._override == Dungeons.TEXT.floor then floors = widget end
     end
-    menu:GenerateMenu()
-    local keep
-    for _, item in ipairs(menu._items) do if item.text == "Hollow Keep" then keep = item end end
-    check(#menu._items >= 2 and menu._items[1].text == "Ashen Vault" and keep and not keep.checked(),
-        "the bar's dropdown Dungeons lists them, A to Z")
+    button.SetButtonState = function(self, state) self._state = state end
+    local function Banners()
+        local found = {}
+        for _, widget in ipairs(W.frames) do
+            if widget.entry and widget.route and widget._shown then found[#found + 1] = widget end
+        end
+        return found
+    end
+    check(button and button._text == Dungeons.TEXT.dungeons and not Instances.Shown(), "the bar's Dungeons is a button")
     local was = { full.map, full.u, full.v, full.k, full.level } -- the map the dungeon is opened from
-    keep.fn()
+    button._scripts.OnClick(button, "LeftButton")
+    local shown, keep = Banners(), nil
+    for _, banner in ipairs(shown) do if banner.entry.name == "Hollow Keep" then keep = banner end end
+    check(Instances.Shown() and Instances.frame._shown and button._state == "PUSHED" and #shown == 3
+        and shown[1].entry.name == "Ashen Vault" and shown[2].entry.name == "Deep Halls" and keep == shown[3]
+        and keep.route._disabled and keep.show._disabled and not keep.open._disabled and keep.open.tip == Instances.TEXT.openTip,
+        "pressed: a banner for each dungeon the game has maps of, A to Z; its maps, no entrance without Core's data")
+    keep.open._scripts.OnClick(keep.open, "LeftButton")
     local tiles = 0
     for _, widget in ipairs(W.frames) do
         if widget._kind == "Texture" and widget._shown and type(widget._texture) == "number"
             and widget._texture > 50000 and widget._texture <= 50012 then tiles = tiles + 1 end
     end
-    check(Dungeons.Shown() == 500 and Dungeons.frame._shown and tiles == 12 and menu._override == "Hollow Keep"
-        and keep.checked() and floors._shown and floors._override == "The Upper Hall",
-        "chosen: its map over the map, its lowest floor in the game's art, its floors beside it")
+    check(Dungeons.Shown() == 500 and Dungeons.frame._shown and tiles == 12 and button._text == "Hollow Keep"
+        and not Instances.Shown() and button._state == "PUSHED" and floors._shown and floors._override == "The Upper Hall",
+        "its maps: its lowest floor over the map in the game's art, the banners gone, its name on the button, its floors beside it")
     floors:GenerateMenu()
     check(#floors._items == 2 and floors._items[1].checked() and floors._items[2].text == "The Lower Hall", "its floors, lowest first")
     floors._items[2].fn()
     check(Dungeons.Shown() == 501 and floors._override == "The Lower Hall", "another floor chosen")
     Dungeons.frame._scripts.OnMouseUp(Dungeons.frame, "RightButton")
     check(not Dungeons.Shown() and not Dungeons.frame._shown and full.map == was[1] and full.u == was[2] and full.v == was[3]
-        and full.k == was[4] and full.level == was[5] and menu._override == Dungeons.TEXT.dungeons and not floors._shown,
-        "a right click: back to the map it was opened from, as it was")
+        and full.k == was[4] and full.level == was[5] and button._text == Dungeons.TEXT.dungeons and button._state == "NORMAL"
+        and not floors._shown, "a right click: back to the map it was opened from, as it was")
     check(Canvas.Show(600) and Dungeons.Shown() == 600 and not floors._shown,
         "a pin into a dungeon opens its map here; with one floor, no floors' dropdown")
+    button._scripts.OnClick(button, "LeftButton")
+    check(Instances.Shown() and not Dungeons.Shown() and button._text == Dungeons.TEXT.dungeons and button._state == "PUSHED",
+        "the button while a dungeon's map shows: the banners again")
+    button._scripts.OnClick(button, "LeftButton")
+    check(not Instances.Shown() and not Dungeons.Shown() and button._state == "NORMAL", "and again: the map")
+    Instances.frame._scripts.OnMouseUp(Instances.frame, "RightButton")
+    button._scripts.OnClick(button, "LeftButton")
+    Instances.frame._scripts.OnMouseUp(Instances.frame, "RightButton")
+    check(not Instances.Shown(), "a right click on the banners: the map again")
+    check(Canvas.Show(600) and Dungeons.Shown() == 600, "the dungeon's map again")
     W.SmallAndBack(function()
         check(not Dungeons.Shown() and not Dungeons.Show(600), "the map small: the dungeon's view goes, and opens only on the full map")
         player.map = 500
@@ -4193,6 +4217,197 @@ end)()
     C_Map.GetMapChildrenInfo, C_Map.GetMapInfo, C_Map.GetMapArtLayers = old.children, old.info, old.art
     C_Map.GetMapGroupID, C_Map.GetMapGroupMembersInfo = nil, nil
     Forget()
+end)()
+
+-- The bar's button Dungeons with Core's set Instances (Instances.lua): the dungeons and raids of Forever this year as
+-- banners in two sections by level, their words and pictures, their quests counted, route, show and maps, the room.
+;(function()
+    local Instances, Dungeons, TEXT = ns.Instances, ns.Dungeons, ns.Instances.TEXT
+    local path = io.popen("mktemp -d -t saneui-instances-XXXXXX"):read("*l") .. "/Instances"
+    os.execute(("mkdir -p '%s'"):format(path))
+    -- Two wings of Deep Halls (the set Dungeons' instance 90: its maps, a boss and an enemy), a cave of nothing known
+    -- but its levels; a raid that opens on 9 December, one of no day (not announced: never listed), one announced
+    -- that the client does not hold yet (unconfirmed: its zone, no entrance), one of next year.
+    Set(path .. "/Instances.lua", "Instances", "0000002a", "int",
+        '"name", "kind", "map", "levelMin", "levelMax", "players", "bosses", "zone", "opens"',
+        '"text", "text", "int", "int", "int", "int", "int", "int", "text"',
+        'R[3] = "70245\t\tLow Cave\tdungeon\t77\t13\t18\t5"\n'
+        .. 'R[5] = "70245\t\tDeep Halls\tdungeon\t90\t17\t26\t5"\n'
+        .. 'R[7] = "70245\t\tUpper Wing\tdungeon\t90\t30\t40\t5"\n'
+        .. 'R[45] = "70245\t\tDragon Lair\traid\t249\t60\t60\t40\t\t\t2026-12-09"\n'
+        .. 'R[47] = "70245\t\tFire Core\traid\t409\t60\t60\t40"\n'
+        .. 'R[100001] = "70245\t\tBarrow\traid\t\t60\t60\t10\t8\t1429\t2026-12-09"\n'
+        .. 'R[100002] = "70245\t\tNext Year\traid\t\t60\t60\t20\t\t\t2027-03-01"\n'
+        .. 'I.byKind = {}\nI.byKind.dungeon = "3\0305\0307"\nI.byKind.raid = "45\03047\030100001\030100002"\n'
+        .. 'S.unverified = "100001\\030100002"\n')
+    W.AddSets(path)
+    W.Wait(0)
+    -- Deep Halls' entrance: the place The Mines (Elwynn 30, 30) as its instance's.
+    local Places, Quests = Core.Data.Set("Places"), Core.Data.Set("Quests")
+    local placeKeys, placeGet, each = Places.Keys, Places.Get, Quests.Each
+    Places.Keys = function(self, index, value)
+        if index == "byKind" and value == "dungeon" then return { 1 } end
+        return placeKeys(self, index, value)
+    end
+    Places.Get = function(self, key, field)
+        local record = placeGet(self, key, field)
+        if key == 1 and field == nil and type(record) == "table" then
+            local copy = { instance = 90 }
+            for name, value in pairs(record) do copy[name] = value end
+            return copy
+        end
+        return record
+    end
+    -- Your quests: the boss by its name, an item the boss drops; not counted: one of the Horde, one for mages, one
+    -- whose item comes as often from a creature outside, one outside; one with two objectives inside counted once.
+    local Drops = Core.Data.Drops()
+    local from = Drops.From
+    Drops.From = function(self, item)
+        if item == 9031 then return { { key = "npc:79", item = 9031, how = "loot" } } end
+        if item == 9032 then return { { key = "npc:79", item = 9032, how = "loot" }, { key = "npc:69", item = 9032, how = "loot" } } end
+        return from(self, item)
+    end
+    local quests = {
+        [9001] = { name = "Slay the Boss", objectives = { { index = 1, kind = "kill", what = 79 } } },
+        [9002] = { name = "Horde Only", side = "horde", objectives = { { index = 1, kind = "kill", what = 71 } } },
+        [9003] = { name = "Boss Loot", objectives = { { index = 1, kind = "loot", what = 9031 } } },
+        [9004] = { name = "Half Loot", objectives = { { index = 1, kind = "loot", what = 9032 } } },
+        [9005] = { name = "Mages Only", classes = { 8 }, objectives = { { index = 1, kind = "kill", what = 71 } } },
+        [9006] = { name = "Both Inside", objectives = { { index = 1, kind = "kill", what = 71 }, { index = 2, kind = "loot", what = 9031 } } },
+        [9007] = { name = "Outside", objectives = { { index = 1, kind = "kill", what = 69 } } },
+    }
+    local walked = 0
+    Quests.Each = function(_, fn, done)
+        walked = walked + 1
+        for key, record in pairs(quests) do fn(key, record) end
+        done()
+        return {}
+    end
+    local calendar = rawget(_G, "C_DateAndTime")
+    local today = { year = 2026, month = 11, monthDay = 15 }
+    C_DateAndTime = { GetCurrentCalendarTime = function() return today end }
+    local view = Instances.frame
+    view._width, view._height = 1600, 868
+    local button
+    for _, widget in ipairs(W.frames) do if widget.key == "dungeons" then button = widget end end
+    local function Banners()
+        local found = {}
+        for _, widget in ipairs(W.frames) do
+            if widget.entry and widget.route and widget._shown then found[widget.entry.name] = widget end
+        end
+        return found
+    end
+    local function Heads()
+        local found = {}
+        for _, widget in ipairs(W.frames) do
+            if widget.text and widget.back and widget._shown and widget._parent == view._children[2]._child then
+                found[#found + 1] = widget.text._text
+            end
+        end
+        return table.concat(found, ", ")
+    end
+    button._scripts.OnClick(button, "LeftButton")
+    local banners = Banners()
+    local cave, halls, wing, lair, barrow = banners["Low Cave"], banners["Deep Halls"], banners["Upper Wing"],
+        banners["Dragon Lair"], banners.Barrow
+    local count = 0
+    for _ in pairs(banners) do count = count + 1 end
+    check(Instances.Shown() and count == 5 and cave and halls and wing and lair and barrow and not banners["Fire Core"]
+        and not banners["Next Year"] and Heads() == TEXT.dungeons .. ", " .. TEXT.raids,
+        "the dungeons all; the raids announced for this year, none of no day or of next year; under their heads")
+    local function Y(banner) return banner._points[1][5] end
+    local function X(banner) return banner._points[1][4] end
+    check(Y(cave) == Y(halls) and Y(halls) == Y(wing) and X(cave) < X(halls) and X(halls) < X(wing)
+        and Y(barrow) == Y(lair) and X(barrow) < X(lair) and Y(lair) < Y(cave),
+        "two sections, Dungeons over Raids; in each the lowest level first, then A to Z")
+    check(walked == 1 and halls.info._text == "Level 17-26  ·  3 quests" and wing.info._text == "Level 30-40  ·  3 quests"
+        and cave.info._text == "Level 13-18" and lair.info._text == "Level 60  ·  40 players\nOpens 9 December"
+        and barrow.info._text == "Level 60  ·  10 players\nOpens 9 December"
+        and halls.name._text == "Deep Halls" and barrow.name._text == Core.UNCONFIRMED_MARK .. "Barrow",
+        "on each its levels and how many of your quests lead inside (the wings the instance's), a raid's players and day")
+    check(halls.art._texture == "Interface\\EncounterJournal\\UI-EJ-DUNGEONBUTTON-Deadmines"
+        and barrow.art._texture:find("LoadingScreen_EmeraldDreamway_wide", 1, true)
+        and halls.art._texture ~= cave.art._texture, "the game's own pictures: the Journal's, a loading screen's part")
+    check(not halls.route._disabled and not halls.show._disabled and not halls.open._disabled
+        and cave.route._disabled and cave.show._disabled and cave.open._disabled and cave.route.tip == TEXT.noEntrance
+        and cave.open.tip == TEXT.noMaps and barrow.route._disabled and not barrow.show._disabled
+        and barrow.show.tip == TEXT.zoneTip:format("Elwynn Forest") and lair.open._disabled,
+        "its buttons as they can: route and show where its entrance is known, show its zone where only that is, maps where we have them")
+    GameTooltip._lines = nil
+    halls._scripts.OnEnter(halls)
+    local lines = table.concat(GameTooltip._lines or {}, "\n")
+    check(GameTooltip._text == "Deep Halls" and lines:find(TEXT.shared:format(TEXT.questsTip:format(3), "Deep Halls"), 1, true)
+        and lines:find(TEXT.entrance:format("Elwynn Forest"), 1, true) and lines:find(TEXT.clickMaps, 1, true),
+        "its tooltip: what it is, its quests (a wing's: in all of the instance), where its entrance is, what a click does")
+    halls._scripts.OnLeave(halls)
+    GameTooltip._lines = nil
+    barrow._scripts.OnEnter(barrow)
+    lines = table.concat(GameTooltip._lines or {}, "\n")
+    check(GameTooltip._text == Core.UNCONFIRMED_MARK .. "Barrow" and lines:find("Raid, level 60, 10 players, 8 bosses", 1, true)
+        and lines:find("Opens 9 December", 1, true) and lines:find(Core.UNCONFIRMED, 1, true),
+        "a raid the client does not hold yet: its players and bosses, its day, not yet confirmed")
+    barrow._scripts.OnLeave(barrow)
+    -- Route: the map pin at its entrance, the golden line there; the banners gone.
+    local drop, dropped = ns.PinView.Drop, nil
+    ns.PinView.Drop = function(point) dropped = point end
+    halls.route._scripts.OnClick(halls.route, "LeftButton")
+    ns.PinView.Drop = drop
+    check(dropped and dropped.map == 1429 and near(dropped.x, 0.3) and near(dropped.y, 0.3) and not Instances.Shown()
+        and ns.Find.Shown() and ns.Find.Shown().key == "instance:5", "Route: the map pin at its entrance, its place shown")
+    ns.Find.Clear()
+    button._scripts.OnClick(button, "LeftButton")
+    banners = Banners()
+    banners.Barrow.show._scripts.OnClick(banners.Barrow.show, "LeftButton")
+    check(not Instances.Shown() and not Dungeons.Shown(), "Show of one whose zone alone is known: that zone, the banners gone")
+    button._scripts.OnClick(button, "LeftButton")
+    banners = Banners()
+    banners["Deep Halls"]._scripts.OnClick(banners["Deep Halls"], "LeftButton")
+    check(Dungeons.Shown() == "90:1" and not Instances.Shown() and button._text == "Deep Halls",
+        "a click on the banner: its maps, its name on the bar's button")
+    button._scripts.OnClick(button, "LeftButton")
+    check(Instances.Shown() and not Dungeons.Shown() and walked == 1, "the button: the banners again (their quests counted once)")
+    -- The room: as many a row as fit, each row in the middle, at most half as large again; beside the quest log.
+    local scroll = view._children[2]
+    local function Room()
+        return view._width - 2 * Instances.SIDE - Instances.BAR
+    end
+    banners = Banners()
+    local first, last = banners["Low Cave"], banners["Upper Wing"]
+    check(near(X(first) - 0, Room() - (X(last) + last._width)) and last._width <= Instances.WIDTH * Instances.LARGEST
+        and near(last._height, last._width * Instances.HEIGHT / Instances.WIDTH), "a short row in the middle, the banners in their shape")
+    view._width = 400
+    Instances.Refit()
+    banners = Banners()
+    check(near(banners["Low Cave"]._width, Instances.WIDTH * Instances.LARGEST) and X(banners["Low Cave"]) == X(banners["Deep Halls"])
+        and Y(banners["Deep Halls"]) < Y(banners["Low Cave"]), "narrow: one a row, at most half as large again")
+    view._width = 120
+    Instances.Refit()
+    banners = Banners()
+    check(banners["Low Cave"]._width <= Room() + 1e-6 and X(banners["Low Cave"]) >= 0, "narrower than a banner: it shrinks to fit")
+    view._width = 1600
+    local box = ns.QuestLog.Box
+    ns.QuestLog.Box = function() return 12, 332, 0, 800 end
+    view.GetRect = function() return 0, 0, 1600, 868 end
+    Instances.Refit()
+    check(near(scroll._points[1][4], 332 + ns.TopBar.INSET + Instances.SIDE) and near(scroll._points[1][5], -(ns.TopBar.Top() + ns.TopBar.INSET)),
+        "under the bar, beside the quest log where it stands over the map")
+    ns.QuestLog.Box, view.GetRect = box, nil
+    Instances.Refit()
+    -- The day comes: no longer "Opens"; next year's raid listed in its year.
+    Instances.Close()
+    today = { year = 2027, month = 1, monthDay = 2 }
+    button._scripts.OnClick(button, "LeftButton")
+    banners = Banners()
+    check(banners["Dragon Lair"].info._text == "Level 60  ·  40 players" and banners["Next Year"]
+        and banners["Next Year"].info._text:find("Opens 1 March", 1, true) and not banners["Fire Core"],
+        "a raid's day come: no longer said; next year's raid from its year on")
+    W.SmallAndBack(function()
+        check(not Instances.Shown(), "the map small: the banners go")
+    end)
+    Instances.Close()
+    C_DateAndTime, Drops.From = calendar, from
+    Places.Keys, Places.Get, Quests.Each = nil, nil, nil -- (the sets' own again)
+    check(placeKeys and placeGet and each, "(the sets' own kept)")
 end)()
 
 -- The quest log, a window of its own over the full map: pinned, on the screen while the map is small too.

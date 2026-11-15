@@ -48,6 +48,12 @@ Sets, and what each takes:
 - Races, Racials, Classes: the races the character screen gives racial abilities to, those abilities (name, kind, what they
   do, icon) and the classes: what a patch does to a race is told by these.
 - Maps, Areas: the game's maps and its areas, zones and subzones alike, which zone maps alone do not hold.
+- Instances: the dungeons and raids of the group finder (LFGDungeons of TypeID 0), each with what its activities of
+  the same name in the group finder's categories Dungeons and Raids say (GroupFinderActivity: the levels the game's
+  own group finder shows, the players, the instance's map): a dungeon's activities before a raid's of that name
+  (Blackfathom Deeps is both), several activities of one map as one (Scarlet Monastery's wings: the lowest level to
+  the highest, the map's name). A name is matched whole, then as the activity's beginning, then within one letter
+  (the client's Zul'Farak).
 - Holidays: name, description, and each start the client holds (its packed time taken apart; year 31: every
   year) with how many hours all its stages last. A start for any month or day (a weekly event) is left out: the
   client's rule for those is not ours to guess.
@@ -82,6 +88,7 @@ Usage:  dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <
         dev/tools/game-data base <batch>       after both runs: forever and forever-beta
 """
 import csv
+import difflib
 import json
 import math
 import re
@@ -932,6 +939,53 @@ def places(t, w):
                                     "level": max(num(row["ExplorationLevel"]), 0) or None, "mounts": num(row["MountFlags"]) or None})
 
 
+INSTANCE_KINDS = {2: "dungeon", 114: "raid"}   # GroupFinderCategory: Dungeons, Raids (in the order a name is matched)
+
+
+def squashed(name):
+    """A name to compare: small letters and digits only, without a leading "the"."""
+    text = re.sub(r"[^a-z0-9]", "", name.lower())
+    return text[3:] if text.startswith("the") else text
+
+
+def instances(t, w):
+    """Instances: the group finder's dungeons and raids with their activities' levels, players and map."""
+    activities = defaultdict(list)
+    for row in t("GroupFinderActivity").values():
+        kind = INSTANCE_KINDS.get(num(row["GroupFinderCategoryID"]))
+        if kind and num(row["MapID"]) > 0:
+            activities[kind].append(row)
+    maps = t("Map")
+    for key, row in sorted(t("LFGDungeons").items(), key=lambda item: num(item[0])):
+        name = row["Name_lang"].strip()
+        if num(row["TypeID"]) != 0 or not name or test(name):
+            w.leave("Instances", key, "no dungeon or raid")
+            continue
+        wanted, found, kind = squashed(name), [], None
+        for kind in INSTANCE_KINDS.values():
+            names = {id(each): squashed(each["FullName_lang"]) for each in activities[kind]}
+            for rule in (lambda own: own == wanted, lambda own: own.startswith(wanted),
+                         lambda own: difflib.SequenceMatcher(None, own, wanted).ratio() >= 0.9 and abs(len(own) - len(wanted)) <= 1):
+                found = [each for each in activities[kind] if rule(names[id(each)])]
+                if found:
+                    break
+            if found:
+                break
+        places = {num(each["MapID"]) for each in found}
+        if len(places) != 1:
+            w.leave("Instances", key, "no activity of the group finder by its name" if not found else "activities of several maps")
+            continue
+        place = places.pop()
+        map_row = maps.get(str(place))
+        named = found[0]["FullName_lang"].strip() if len(found) == 1 else (map_row["MapName_lang"].strip() if map_row else name)
+        lows = [num(each["MinLevel"]) for each in found if num(each["MinLevel"]) > 0]
+        highs = [num(each["MaxLevelSuggestion"]) for each in found if num(each["MaxLevelSuggestion"]) > 0]
+        w.stage("Instances", num(key), {
+            "name": named, "kind": kind, "map": place, "levelMin": min(lows) if lows else None,
+            "levelMax": max(highs) if highs else None, "players": max(num(each["MaxPlayers"]) for each in found) or None,
+        })
+
+
 def currencies(t, w):
     for key, row in sorted(t("CurrencyTypes").items(), key=lambda item: num(item[0])):
         name = row["Name_lang"].strip()
@@ -984,6 +1038,7 @@ def main():
     characters(t, w)
     reactions(t, w)
     places(t, w)
+    instances(t, w)
     collections(t, spells, kept_items, w)
     quest_areas(t, folder, w)
     STAGING.mkdir(parents=True, exist_ok=True)

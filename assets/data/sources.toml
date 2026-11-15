@@ -148,3 +148,9 @@ about = "The original game's fishing skill of each area (patch 1.12): the base i
 kind = "batch"
 game = "forever"
 about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-11-12, a newer reading of what batches 5 and 17 read, checked against Forever's client 70755: the same fields on the same terms, and where the newer reading says otherwise than the one before did, it corrects what the master took from that (never a fact of the game, of its servers or of a person). Unverified: the game's word or our own sightings replace it entry by entry."
+
+[25]
+kind = "batch"
+game = "forever"
+build = 70938
+about = "The raids Blizzard announced for Forever this year, read 2026-11-15: The Barrow Deeps and Hyjal Summit, which the client does not hold yet (their levels, players, bosses and the zone their entrances are in), and the day the three raids open, Onyxia's Lair with them (9 December 2026). Unverified: the client's own group finder replaces them once it holds them."

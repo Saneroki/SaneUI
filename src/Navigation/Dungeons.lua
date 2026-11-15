@@ -291,25 +291,30 @@ end
 -- (TopBar.lua) and the quest log's side where the log stands over the view (its left or right, at most
 -- Dungeons.SIDE of its width, with the bar's gap); the small map all of it. Measured as the view opens, when its size
 -- changes and when the log comes or goes (Dungeons.Refit), not at each step of a drag.
+-- The room a view as large as the full map (view) leaves free of the bar and the quest log: how far from its top,
+-- its left and its right (the banners' view too: Instances.lua).
+function Dungeons.Margins(view)
+    local width = view:GetWidth() or 0
+    local bar = ns.TopBar
+    local top, left, right = bar.Top() + bar.INSET, 0, 0 -- (the title bar stands over the map)
+    local logLeft, logRight = ns.QuestLog.Box()
+    local viewLeft, _, viewWidth = view:GetRect()
+    if logLeft and viewLeft and viewWidth then
+        local scale = view:GetEffectiveScale()
+        logLeft, logRight = logLeft / scale - viewLeft, logRight / scale - viewLeft
+        if logRight > 0 and logLeft < viewWidth then -- over the view: the side its middle is on
+            if logLeft + logRight < viewWidth then left = logRight + bar.INSET
+            else right = viewWidth - logLeft + bar.INSET end
+        end
+    end
+    return top, math.min(left, width * Dungeons.SIDE), math.min(right, width * Dungeons.SIDE)
+end
+
 local function Room()
     local width, height = frame:GetSize()
     width, height = width or 0, height or 0
     local top, left, right = 0, 0, 0
-    if not onSmall then
-        local bar = ns.TopBar
-        top = bar.Top() + bar.INSET -- (the title bar stands over the map)
-        local logLeft, logRight = ns.QuestLog.Box()
-        local viewLeft, _, viewWidth = frame:GetRect()
-        if logLeft and viewLeft and viewWidth then
-            local scale = frame:GetEffectiveScale()
-            logLeft, logRight = logLeft / scale - viewLeft, logRight / scale - viewLeft
-            if logRight > 0 and logLeft < viewWidth then -- over the view: the side its middle is on
-                if logLeft + logRight < viewWidth then left = logRight + bar.INSET
-                else right = viewWidth - logLeft + bar.INSET end
-            end
-        end
-        left, right = math.min(left, width * Dungeons.SIDE), math.min(right, width * Dungeons.SIDE)
-    end
+    if not onSmall then top, left, right = Dungeons.Margins(frame) end
     roomWidth, roomHeight = width - left - right, height - top
     roomX, roomY = (left - right) / 2, -top / 2
 end
@@ -1068,6 +1073,7 @@ local function Open(map, small)
     local entry, floor = Entry(map)
     if not entry or not ArtOf(map) then return false end
     map = floor.map
+    if not small and ns.Instances then ns.Safe("dungeons", ns.Instances.Close) end -- (the banners give way to it)
     shown, floors, onSmall = map, entry.floors, small
     kept = Gather(map)
     zoom, panX, panY, dragX = 1, 0, 0, nil
@@ -1119,8 +1125,10 @@ ns.On("PLAYER_ENTERING_WORLD", function()
     ns.Canvas.Refresh()
 end)
 
--- The map again: the dungeon's view goes (the window going small, a map chosen in the bar).
+-- The map again: the dungeon's view goes (the window going small, a map chosen in the bar), and the banners of the
+-- dungeons and raids with it (Instances.lua).
 function Dungeons.Close()
+    if ns.Instances then ns.Safe("dungeons", ns.Instances.Close) end
     if not frame or not shown then return end
     shown, floors, kept, dragX, onSmall = nil, nil, nil, nil, false
     frame:SetScript("OnUpdate", nil)
