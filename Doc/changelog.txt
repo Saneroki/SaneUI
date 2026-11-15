@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map search: the tooltip of the find under the mouse or picked
+  with the arrow keys shows beside the list (an item's, an NPC's
+  with its 3D model, what a herb gives). Dungeon maps: the bosses'
+  models grow as you zoom in.
 - Map: the full map fills the whole screen, its controls in the
   title bar: Quest Log, Zone (every continent with its zones),
   Dungeons, one button for Blended and Scrying, Draw, Follow me and

@@ -58,7 +58,10 @@ Dungeons.LEVEL = 22 -- over the canvas' layers and marks (Canvas.LEVELS: up to 2
 Dungeons.SPREAD = 3 -- the models' levels over their marks, by how far down each stands: all of them under the bar
 Dungeons.BOSS = "vignettekillboss" -- a boss's mark: the game's own
 Dungeons.BOSS_SIZE = 26
-Dungeons.MODEL_WIDTH, Dungeons.MODEL_HEIGHT = 72, 88 -- a boss's model standing on its mark, in screen units
+Dungeons.MODEL_WIDTH, Dungeons.MODEL_HEIGHT = 72, 88 -- a boss's model standing on its mark, in screen units, at
+                                                     -- the whole map's zoom; it grows with the zoom (Saneroki, 2026-11-15:
+                                                     -- "so you can see a bigger model by zooming the map")
+Dungeons.MODEL_MOST = 0.6 -- a model at most so much of the view's height
 Dungeons.FACING = 0.35 -- radians: the models turned a little from facing the view, so they read as figures
 Dungeons.SMALL = 0.5 -- the small map's bosses' marks and models and enemies' dots: so much of their size
 Dungeons.SIDE = 1 / 3 -- the quest log beside a floor on the full map takes at most so much of the view's width
@@ -758,7 +761,9 @@ local function Stand(mark, display, x, y)
     end
     local width, height = frame:GetSize()
     local share = onSmall and Dungeons.SMALL or 1
-    local modelWidth, modelHeight = Dungeons.MODEL_WIDTH * share, Dungeons.MODEL_HEIGHT * share
+    -- as the map grows, the model with it (as large as the zoom makes the art), never taller than MODEL_MOST of the view
+    local grow = math.max(1, math.min(zoom, (height or 0) * Dungeons.MODEL_MOST / (Dungeons.MODEL_HEIGHT * share)))
+    local modelWidth, modelHeight = Dungeons.MODEL_WIDTH * share * grow, Dungeons.MODEL_HEIGHT * share * grow
     local half = modelWidth / 2
     local inside = x - half >= -width / 2 and x + half <= width / 2 and y >= -height / 2
         and y + modelHeight <= height / 2
@@ -849,8 +854,9 @@ function Dungeons.PlaceEnemies(art, scale)
     for index = #enemies + 1, #foes do foes[index]:Hide() end
 end
 
--- Each boss's mark where it stands on the art as the zoom and the drag put it (scale: the art's), its model on
--- it, the same size at every zoom; one lower on the screen in front of one behind it; the marks of no boss hidden.
+-- Each boss's mark where it stands on the art as the zoom and the drag put it (scale: the art's), the same size at
+-- every zoom, its model on it, growing with the zoom (Stand); one lower on the screen in front of one behind it; the
+-- marks of no boss hidden.
 function Dungeons.PlaceBosses(art, scale)
     local bosses = kept and kept.bosses or NONE
     local base = over:GetFrameLevel()

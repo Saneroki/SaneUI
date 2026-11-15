@@ -7976,6 +7976,19 @@ end)()
     view._scripts.OnUpdate(view, 0.01)
     view._scripts.OnMouseUp(view, "LeftButton")
     check(model._shown, "dragged back: shown again")
+    -- the model grows with the zoom, as the art does (Saneroki, 2026-11-15: "so you can see a bigger model by zooming
+    -- the map"), never past Dungeons.MODEL_MOST of the view's height
+    local rect = view.GetRect
+    view.GetRect = function() return 0, 0, view._width, view._height end -- (where the wheel zooms about the mouse)
+    view._scripts.OnMouseWheel(view, 1)
+    local grown = model._width
+    check(grown > Dungeons.MODEL_WIDTH and near(model._height / model._width, Dungeons.MODEL_HEIGHT / Dungeons.MODEL_WIDTH),
+        "zoomed in: the boss's model larger, as the map")
+    for _ = 1, 30 do view._scripts.OnMouseWheel(view, 1) end
+    check(model._height <= view._height * Dungeons.MODEL_MOST + 0.01, "all the way in: never taller than its share of the view")
+    for _ = 1, 31 do view._scripts.OnMouseWheel(view, -1) end
+    check(model._width == Dungeons.MODEL_WIDTH, "out again, the whole map: its own size")
+    view.GetRect = rect
     local before, instance = UnitPosition, rawget(_G, "GetInstanceInfo")
     UnitPosition = function() return 0, 0, 0, 0 end
     GetInstanceInfo = function() return "Deep Halls", "party", 1, "", 5, 0, false, 90 end
@@ -8668,6 +8681,31 @@ end)()
     check(list and answer, "typed: searched")
     box._scripts.OnArrowPressed(box, "DOWN")
     check(list:IsShown(), "Down: the list shows, a row lit")
+    -- the row lit by the keys, or under the mouse: its tooltip at the list's right, level with it (Saneroki,
+    -- 2026-11-15: "When you mouse over an item or select it with the up and down arrows its tooltip should be shown")
+    ;(function()
+        local lit
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == list and widget.row and widget._shown and widget._highlightLocked then lit = widget end
+        end
+        local point = GameTooltip._points and GameTooltip._points[#GameTooltip._points]
+        check(GameTooltip:IsOwned(list) and point and point[1] == "TOPLEFT" and point[2] == list and point[3] == "TOPRIGHT"
+            and (not lit or point[5] == lit.y), "Down: the lit row's tooltip at the list's right, level with it")
+        local npcRow
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == list and widget.row and widget._shown and widget.row.entry and widget.row.entry.kind == "npc" then
+                npcRow = npcRow or widget
+            end
+        end
+        if npcRow then
+            npcRow._scripts.OnEnter(npcRow)
+            local look = Core.LookOf(GameTooltip)
+            check(GameTooltip:IsOwned(list) and look and look.creature == npcRow.row.entry.id
+                and GameTooltip._points[#GameTooltip._points][5] == npcRow.y,
+                "the mouse on an NPC: a creature's tooltip, its model by its creature, level with its row")
+            npcRow._scripts.OnLeave(npcRow)
+        end
+    end)()
     Live.ClearWaypoint()
     IsShiftKeyDown = function() return true end
     box._scripts.OnEnterPressed(box)

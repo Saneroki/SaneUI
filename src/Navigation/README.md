@@ -344,8 +344,12 @@ and shows them on the map or puts the map pin there. The plan is in
   among them and Enter does it. A zone or a dungeon has one thing to do and does it at once (its map whole).
   **Shift-Enter** puts the game's map pin on a find's nearest at once; **Esc** goes back from what to do to the finds,
   then closes the list, then empties the field and takes the pins away. The mouse: a click or a right click is Enter,
-  Shift and a click Shift-Enter (on an item, its link into the chat); resting on a row shows its tooltip and its places
-  on the map without moving it. The list reaches down as far as the screen lets it, and where more finds are than fit,
+  Shift and a click Shift-Enter (on an item, its link into the chat); resting on a row shows its places on the map
+  without moving it. The row under the mouse, or lit by the arrow keys, shows its **tooltip** at the list's right, level
+  with it (Saneroki, 2026-11-15: "When you mouse over an item or select it with the up and down arrows its tooltip
+  should be shown"): an item's and a spell's the game's own, an NPC's as on the map's pins (its 3D model, its rank and
+  kind, its abilities and what it drops), a herb's, an ore's or a chest's what it gives; under them what it is, where
+  and how far. The list reaches down as far as the screen lets it, and where more finds are than fit,
   a **scroll bar** at its right (drag its thumb, click above or below it for a page; the wheel moves three lines).
   What you pick is remembered and comes a little higher the next time. A click anywhere else gives the keys back to
   your character. A search that runs into an error says so in the list and stops nothing: the map goes on, and the
@@ -704,7 +708,9 @@ and shows them on the map or puts the map pin there. The plan is in
   level under the bosses' marks, named by the set *NPCs*), the bosses (`Dungeons.Bosses`) in
   `Dungeons.BOSS` over the art, the same size at every zoom (`Dungeons.PlaceBosses`), named by the set *Encounters*;
   a boss with a look (the set's `display`) gets a `PlayerModel` of it standing on its mark (`SetDisplayInfo`, as the
-  game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT`, turned `Dungeons.FACING`), one lower on
+  game's guild news shows a boss; `Dungeons.MODEL_WIDTH` x `MODEL_HEIGHT` at the whole map's zoom, growing with the
+  zoom as the art does, never taller than `Dungeons.MODEL_MOST` of the view: Saneroki, 2026-11-15, "so you can see a
+  bigger model by zooming the map"; turned `Dungeons.FACING`), one lower on
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
   edge (models are not cut there), let go (`ClearModel`) when the view closes; the mark's icon and mouse only while
   no model stands on it. A boss's tooltip (`BossTip`) is drawn as a creature's by Sane UI's tooltips
@@ -1432,6 +1438,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the search's tooltips; the bosses' models zoom:** Saneroki: "When you mouse over an item or select it
+  with the up and down arrows its tooltip should be shown. For example for items and npcs their tooltip is then shown
+  on the right of the search suggestions" (`FindBox` `Tip`, `Untip`; `PinView.Creature` for any NPC of Core's data).
+  "When you zoom in in dungeon maps the 3d model of bosses should zoom with it" (`Stand`, `Dungeons.MODEL_MOST`).
 - **2026-11-15, the title bar, the search's second step and its scroll bar, searches that stop nothing, sharing with
   someone:** Saneroki: "Let the map view go to the very top behind the titleba so it is truely fullscreen. Remove the
   Parchment button and the "Map" word from the titlebar. We don't need the drop down for "azeroth, Eastern Kingdom,

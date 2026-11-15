@@ -49,8 +49,11 @@ local _, ns = ...
 --      Esc             back from what to do to the finds; the list away; again, the field
 --                      emptied and the pins gone
 --  The mouse: a click or a right click is Enter, Shift and a click Shift-Enter (on an item its
---  link into the chat); on a row its tooltip, and its places on the map while it stays there
---  (the map not moved).
+--  link into the chat); on a row its places on the map while it stays there (the map not moved).
+--  The row under the mouse, or lit by the keys, has its tooltip at the list's right, level with
+--  it (Saneroki, 2026-11-15: "When you mouse over an item or select it with the up and down arrows
+--  its tooltip should be shown"): an item's and a spell's the game's own, an NPC's a creature's as
+--  on the map's pins (PinView.Creature), a herb's or a chest's what it gives.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -129,6 +132,7 @@ local hovered                -- the row the mouse is on: its places on the map m
 local chosen                 -- the row last taken (Enter, a click): its places on the map
 local typed                  -- the words searched for the answer shown
 local picked                 -- the row taken whose things to do the list shows (nil: the finds)
+local Tip, Untip             -- a row's tooltip beside the list, and none (below)
 
 -------------------------------------------------------------------------------
 --  The list
@@ -319,6 +323,7 @@ local function Lay()
             local button = rows[usedRows] or FindBox.Row(usedRows)
             button:ClearAllPoints()
             button:SetPoint("TOPLEFT", list, "TOPLEFT", 6, y)
+            button.y = y -- (its tooltip level with it)
             button:SetPoint("TOPRIGHT", list, "TOPRIGHT", -right, y)
             Fill(button, line.row)
             if lit and finds[lit] == line.row then button:LockHighlight() else button:UnlockHighlight() end
@@ -348,6 +353,7 @@ local function Lines(found)
     wipe(lines)
     wipe(finds)
     lit, top, hovered, picked = nil, 0, nil, nil
+    if Untip then Untip() end
     if footer then footer:SetText(FindBox.TEXT.keys) end
     if found and found.failed then
         lines[1] = { title = Core.SEARCH_FAILED, grey = true }
@@ -385,6 +391,7 @@ local function Open(on)
         list:Show()
     else
         list:Hide()
+        Untip()
         if hovered then
             hovered = nil
             Restore()
@@ -442,6 +449,7 @@ local function Light(place)
         end
     end
     Lay()
+    Tip(row) -- (its tooltip, as under the mouse)
 end
 
 -------------------------------------------------------------------------------
@@ -602,18 +610,38 @@ local function Hints(entry)
     end
 end
 
-local function Tip(button)
-    local row = button.row
-    if not row or row.act then return end
+-- No tooltip of the list's.
+function Untip()
+    if list and GameTooltip:IsOwned(list) then GameTooltip:Hide() end
+end
+
+-- A find's tooltip at the list's right, level with its row: an item's and a spell's the game's own; an NPC's a
+-- creature's as on the map's pins (PinView.Creature: its look, rank, kind, abilities and what it drops); a herb's, an
+-- ore's or a chest's what it gives; any other its name; under them what it is and where, how far, and what the keys
+-- and the mouse do. On a thing to do, the find's whose things they are.
+function Tip(row)
+    if row and row.act then row = picked end
+    if not row or not list or Plain(list:IsShown()) ~= true then return Untip() end
     local entry = row.entry
+    local y = 0
+    for _, button in ipairs(rows) do
+        if button.row == row and Plain(button:IsShown()) == true then y = button.y or 0 end
+    end
     GameTooltip:SetOwner(list, "ANCHOR_NONE")
-    GameTooltip:SetPoint("TOPLEFT", list, "TOPRIGHT", 4, 0)
+    GameTooltip:ClearAllPoints()
+    GameTooltip:SetPoint("TOPLEFT", list, "TOPRIGHT", 4, y)
     if entry.kind == "item" and GameTooltip.SetItemByID then
         GameTooltip:SetItemByID(entry.id)
     elseif entry.kind == "spell" and GameTooltip.SetSpellByID then
         GameTooltip:SetSpellByID(entry.spell)
     else
-        GameTooltip:SetText(entry.name or "?", Colour(entry))
+        local npc = entry.kind == "npc" and tonumber(entry.id)
+        local unsure = entry.doubt
+        if npc and ns.PinView.Creature then
+            unsure = ns.Safe("map search", ns.PinView.Creature, npc, entry.name, entry.doubt) or unsure
+        else
+            GameTooltip:SetText(entry.name or "?", Colour(entry))
+        end
         local about = About(row)
         if about ~= "" then GameTooltip:AddLine(about, 1, 0.82, 0, true) end
         if entry.kind == "log" then
@@ -623,8 +651,13 @@ local function Tip(button)
                 end
             end
         end
+        if entry.kind == "object" and entry.thing and ns.PinView.Drops then
+            -- (Safe answers one result: the step answers whether what it gives is unconfirmed)
+            unsure = ns.Safe("map search", function() return select(2, ns.PinView.Drops(entry.thing, ns.PinView.DROPS)) end)
+                or unsure
+        end
         if entry.yards then GameTooltip:AddLine(Core.Distance(entry.yards), 1, 1, 1) end
-        if entry.doubt then GameTooltip:AddLine(Find.TEXT.unconfirmed, 0.5, 0.5, 0.5) end
+        if unsure then GameTooltip:AddLine(Find.TEXT.unconfirmed, 0.5, 0.5, 0.5) end
     end
     Hints(entry)
     GameTooltip:Show()
@@ -632,15 +665,17 @@ end
 
 -- The mouse on a row: its tooltip, its places on the map meanwhile (the map not moved); off it, the chosen one's again.
 local function Entered(button)
-    Tip(button)
+    Tip(button.row)
     local row = button.row
     if row and not row.act and row ~= hovered and row.entry.kind ~= "zone" and row.entry.kind ~= "dungeon" then
         hovered = row
         ns.Find.Preview(row.entry, row.role)
     end
 end
+-- Off a row: the tooltip of the one lit by the keys again, else none.
 local function Left()
-    GameTooltip_Hide()
+    if lit and finds[lit] then return Tip(finds[lit]) end
+    Untip()
 end
 
 local function Clicked(button, mouse)

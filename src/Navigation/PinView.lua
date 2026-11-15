@@ -256,6 +256,27 @@ local function RareAbilities(npc, alt)
     return shown > 0 and NPC_FACTS:Unverified(npc) == true
 end
 
+-- Any creature of Core's data as a rare's tooltip is (the map's search: FindBox.lua; Saneroki, 2026-11-15: "for items
+-- and npcs their tooltip is then shown"): its look (its model, its level on the plaque; the silver dragon a rare's
+-- alone), its name in its side's colour, under it its rank where it has one (Rare, Rare Elite, Elite) and its kind; its
+-- abilities and what it drops, with Alt each one's details. Whether any of it is not yet confirmed.
+local RANK_WORDS = { rare = PinView.TEXT.rare, rareelite = PinView.TEXT.rare .. " " .. PinView.TEXT.elite,
+                     elite = PinView.TEXT.elite, worldboss = Core.Word("BOSS", "Boss") }
+function PinView.Creature(npc, name, doubt)
+    local alt = IsAltKeyDown()
+    local rank = NPC_FACTS:Get(npc, "rank")
+    local look = RareLook(npc)
+    if rank ~= "rare" and rank ~= "rareelite" then look.dragon = (rank == "elite" and "elite") or (rank == "worldboss" and "boss") or nil end
+    Core.TipLook(GameTooltip, look)
+    GameTooltip:SetText(doubt and Core.UNCONFIRMED_MARK .. (name or "?") or (name or "?"), RareColour(npc))
+    if RANK_WORDS[rank] then GameTooltip:AddLine(RANK_WORDS[rank], 0.8, 0.82, 0.88) end
+    local kind = NPC_FACTS:Get(npc, "kind")
+    if type(kind) == "string" and kind ~= "other" then GameTooltip:AddLine((kind:gsub("^%l", string.upper)), 1, 1, 1) end
+    local unsure = RareAbilities(npc, alt)
+    local _, dropped = PinView.Drops("npc:" .. npc, PinView.DROPS, nil, alt and ns.Dungeons.ItemDetails or nil)
+    return unsure or dropped
+end
+
 -- A dock's tooltip, while it shows: drawn again as its timer's second turns (the game's tooltip asks its owner's
 -- UpdateTooltip every TOOLTIP_UPDATE_TIME, as for an action button's cooldown).
 local Tip
