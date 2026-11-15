@@ -9,7 +9,12 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
      is grouped under it, or the game would read it before Core or list it apart.
   3. Every Lua file parses (the game's Lua is 5.1).
   4. No file writes a global that is not Sane UI's own: all addons share one set of globals,
-     and a stray one (a forgotten "local") can break another addon or the game's own code.
+     and a stray one (a forgotten "local") can break another addon or the game's own code. And no file reads a
+     name as a global where a local of that name is made further down in the same function (or the file): the
+     local does not stand yet, so the game finds nil there (a frame's script calling a local function written
+     below it: Navigation's map stood down in the game, Saneroki, 2026-11-15, "i got a error"). Named above its
+     first use (local Hold -- (below), later function Hold(...) end), it is the local everywhere; local X = X
+     (the global kept) is not one.
   5. Core's data sets (Doc/guides/data.md), compiled from the master for every game version into a scratch
      copy of Core's TOC: every set file listed at its end, their Lua parses and writes no global; and Core's
      TOC declares every saved variable of the data (Data.SAVED in Data/Data.lua) as SaneUIData_<Name>.
@@ -137,13 +142,104 @@ def check_tocs():
 
 def check_lua(paths, base, allowed=OWN):
     for path in paths:
-        result = subprocess.run(["luac5.1", "-l", "-p", str(path)], capture_output=True, text=True)
+        result = subprocess.run(["luac5.1", "-l", "-l", "-p", str(path)], capture_output=True, text=True)
         if result.returncode != 0:
             problems.append(f"does not parse: {result.stderr.strip()}")
             continue
         for line, name in re.findall(r"\[(\d+)\]\s+SETGLOBAL\s+\S+\s+\S+\s*;\s*(\S+)", result.stdout):
             if not allowed.match(name):
                 problems.append(f"{path.relative_to(base)}:{line}: writes the global '{name}' (forgotten 'local'?)")
+        for line, name, made in read_before_local(result.stdout):
+            problems.append(f"{path.relative_to(base)}:{line}: reads '{name}' as a global, but its local is made below "
+                            f"(line {made}): nil in the game; name it above its first use (local {name} -- (below), "
+                            f"then {name} = ... or function {name}(...) without 'local')")
+
+
+# luac5.1 -l -l: a function's head (its lines, its parameters), its instructions ([line] op ...; note) and its locals
+# (name, the first and last instruction they stand for, counted from 1)
+FUNCTION = re.compile(r"^(?:main|function) <[^\n]*:(\d+),(\d+)> [^\n]*\n(\d+)\+? params?,")
+STEP = re.compile(r"^\t\d+\t\[(\d+)\]\t(\w+)\s[^\n]*?(?:; (.*))?$")
+LOCAL = re.compile(r"^\t\d+\t(\S+)\t(\d+)\t(\d+)$", re.M)
+
+
+def functions(listing):
+    """Each function of a listing: its first and last line (the file's main chunk all of them), its steps
+    [(line, op, note)], its locals [(name, first step)] without its parameters."""
+    found = []
+    for block in re.split(r"\n(?=(?:main|function) <)", listing):
+        head = FUNCTION.match(block)
+        if not head:
+            continue
+        first, last, params = (int(v) for v in head.groups())
+        steps, names, part = [], [], "steps"
+        for row in block.split("\n")[2:]:
+            if row.startswith(("constants (", "locals (", "upvalues (")):
+                part = row.split(" ", 1)[0]
+            elif part == "steps" and (step := STEP.match(row)):
+                steps.append((int(step.group(1)), step.group(2), (step.group(3) or "").strip()))
+            elif part == "locals" and (local := LOCAL.match(row)):
+                names.append((local.group(1), int(local.group(2))))
+        found.append({"first": first, "last": last if first else float("inf"), "steps": steps,
+                      "locals": names[params:]})
+    return found
+
+
+def read_before_local(listing):
+    """(line, name, line its local is made) for every name a function, or one written inside it, reads as a global
+    at or above the line where that function makes a local of the name (a local stands only after its own
+    statement: for a local function, after its end). Not when the local's own statement reads the global
+    (local X = X keeps the game's)."""
+    read = set(re.findall(r"\tGETGLOBAL\s[^\n]*; (\S+)$", listing, re.M))
+    if not read & {name for name, _, _ in LOCAL.findall(listing)}:
+        return []  # (most files: no name read as a global is also a local's, nothing to follow)
+    every = functions(listing)
+    found = set()
+    for outer in every:
+        for name, start in outer["locals"]:
+            if name.startswith("("):  # a loop's own counters
+                continue
+            made = outer["steps"][start - 2][0] if start >= 2 else outer["first"]
+            if any(op == "GETGLOBAL" and note == name and line == made for line, op, note in outer["steps"]):
+                continue
+            for inner in every:
+                if inner is not outer and not (inner["first"] and outer["first"] <= inner["first"]
+                                               and inner["last"] <= outer["last"]):
+                    continue
+                for line, op, note in inner["steps"]:
+                    if op == "GETGLOBAL" and note == name and outer["first"] <= line <= made:
+                        found.add((line, name, made))
+    return sorted(found)
+
+
+# The check above checks itself on a file made for it (luac's listing could change its form and the check would then
+# find nothing anywhere): what it must find, and what it must leave.
+SAMPLE = """local function Pin()
+    Hold("floor")
+end
+local function Hold(surface) return surface end
+local Drag -- (below)
+local function Tick() Drag() end
+function Drag() end
+local CreateFrame = CreateFrame
+local function Build()
+    local button = CreateFrame("Button")
+    button.click = function() Click() end
+    local function Click() end
+end
+local Again = function() Again() end
+"""
+SAMPLE_FOUND = [(2, "Hold", 4), (11, "Click", 12), (14, "Again", 14)]
+
+
+def check_the_check():
+    with tempfile.NamedTemporaryFile("w", suffix=".lua", prefix="saneui-lint-") as sample:
+        sample.write(SAMPLE)
+        sample.flush()
+        listing = subprocess.run(["luac5.1", "-l", "-l", "-p", sample.name], capture_output=True, text=True).stdout
+    found = read_before_local(listing)
+    if found != SAMPLE_FOUND:
+        problems.append(f"the check of locals read before they stand found {found} in its sample, not {SAMPLE_FOUND}: "
+                        f"luac5.1's listing changed its form? (read_before_local, dev/tests/lint)")
 
 
 def check_sets(core):
@@ -404,6 +500,7 @@ def flagged(path, lines, line, what, marks):
 
 
 counts = check_tocs()
+check_the_check()
 check_lua(sorted(SRC.rglob("*.lua")), SRC)
 core_fields, _ = read_toc(SRC / "Core" / f"{MAIN}.toc")
 sets = check_sets(core_fields)
@@ -413,4 +510,5 @@ for problem in problems:
 if problems:
     sys.exit(1)
 print(f"Lint: {len(counts)} addons, {sum(counts)} files in their TOCs, all there, all parse, no stray globals, "
+      f"no local read before it stands, "
       f"every door guarded ({doors['bare']} marked bare, {doors['guarded']} marked guarded); {sets} data set files fit.")

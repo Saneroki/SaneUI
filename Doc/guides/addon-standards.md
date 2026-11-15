@@ -83,6 +83,11 @@ compute decisions from it ([principle 12](blizzard-design-principles.md)).
   `BINDING_...`, saved variables, the compartment function, named frames and font objects, a mixin an
   XML template names). Prefix every one with the addon's name. In Sane UI the lint fails on any other
   global write.
+- **A local stands only after its own statement** (a `local function`, after its `end`). Code written above it, a
+  frame's script or a hook too, that names it reads the global of that name: nil in the game, an error when it runs.
+  Write the local first, or name it above its first use (`local Hold -- (below)`, later `function Hold(...) end`
+  without `local`). In Sane UI the lint fails on a name read as a global where the same function, or the file,
+  makes a local of it further down (`local X = X`, the game's kept, passes).
 - **Frame names:** give a frame a global name only when something needs it (Esc-to-close, a Blizzard
   template that looks up `$parentChild`, debugging). Prefix it: `SaneUI...`.
 - Keep a `local` alias of a global function only in code that runs very often. Elsewhere it is noise.
