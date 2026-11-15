@@ -16,7 +16,8 @@ local _, ns = ...
 --  while the map is small too), and a bar over the map's top edge holds the
 --  views, the map selector, the dungeons and the pin filter (TopBar.lua); a
 --  dungeon chosen there, or the one the player is in when the map fills the
---  screen, shows over the map (Dungeons.lua); the dropdown Classic
+--  screen, shows over the map (Dungeons.lua); in the middle of the title bar
+--  the map's search (FindBox.lua, Find.lua); the dropdown Classic
 --  windows in the title bar offers the game's own minimap and map, each a kept
 --  choice (the switches Show the game's minimap, Show the game's map), ticked
 --  while chosen and chosen again to come back.
@@ -88,6 +89,7 @@ local function Placed()
     ns.Canvas.Use(filled and full or small)
     ns.QuestLog.Lay(filled)
     ns.TopBar.SetShown(filled, canvas)
+    ns.Safe("map search", ns.FindBox.SetShown, filled, handle) -- the search in the title bar (FindBox.lua)
     if not filled then
         ns.Dungeons.Close()
     elseif not ns.Dungeons.Shown() then
@@ -121,6 +123,7 @@ local function Filled(on, width, height)
     aimed = false
     going = on
     ns.TopBar.SetShown(false)
+    ns.Safe("map search", ns.FindBox.SetShown, false)
     ns.Dungeons.Close()
     local top = on and Core.Window.BAR or 0 -- full, the title bar is over the map
     ns.Canvas.Morph(on and full or small, width or 0, (height or 0) - top)
@@ -132,6 +135,16 @@ end
 
 local function Back()
     if handle.edge then handle.edge:Fill(false) end
+end
+
+-- The full screen, from the corner (the map's search, FindBox.lua: its key, /sane map find); shown first if hidden.
+function Window.Full()
+    if not handle or not handle.edge then return end
+    if not frame:IsShown() then
+        frame:Show()
+        handle:Place()
+    end
+    if not handle.edge.full then handle.edge:Fill(true) end
 end
 
 -- The full screen back to its corner (Taxi.lua: the flight master left, a flight taken).
@@ -277,5 +290,6 @@ function Window.Hide()
     ns.Canvas.Close()
     ns.Dungeons.Close()
     ns.QuestLog.Hide()
+    ns.Safe("map search", ns.FindBox.Hide)
     frame:Hide()
 end

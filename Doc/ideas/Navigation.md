@@ -964,8 +964,22 @@ hidden but what the small view needs.
   `ns.PIN_SECTIONS`, each kind's `section`; around you, quests, travel, towns and services, rares and treasures,
   gathering), each kind's icon at 24 before its words and a slider for its size.
 - **Three views:** three buttons; the choice is a switch (profiles keep it).
-- **Search:** the full screen's title bar has Core's search; it finds zones, dungeons, towns, services and
-  the quests in the log (fuzzy, Core's `Fuzzy.lua`); a hit moves the camera there (proposal).
+- **Search (Saneroki, 2026-11-15; built):** "At the top of the map fullscreen, can you put a big searchfield in the
+  title bar up there where you can search for stuff. Like NPC names, Guild member names, Vendors, class trainers, items
+  etc and it will show it to you or put a pin on the map. For items for example it could drop a pin on the map where
+  it drops and for guild members you will be able to see them on the map. You can write things like nearest warrior
+  trainer for example and it puts a pin down on the map." A large field in the middle of the full map's title bar
+  (`FindBox.lua`), the finds listed under it in groups, each with how far it is and an arrow; Enter: its places glow
+  on the map and the map goes to the nearest, Shift-Enter (and Enter after *nearest*): the game's map pin there.
+  It finds Core's NPCs by name and by what they are (title, services, goods, a trainer's trade), objects, places,
+  items and where they come from (vendors, drops, objects, quest rewards), quests, what trainers teach, and the
+  game's zones, dungeons, flight points, log, guild, group and friends (`Find.lua`); the words it understands are
+  our own (*nearest*, *who sells X*, *what drops X*, *where to get X*, *who teaches X*, *in <zone>*, levels, *where
+  should I level*, *my trainer*, *my corpse*, *unknown flight points*, a first word that keeps a kind, *not*, *or*,
+  quotes, two numbers for a point). Guild members outside the group: the zone the roster names (their exact place
+  would need Core's wire, card #38). Not on the map's search (card #56, a search window everywhere): spells,
+  mounts, macros, game settings, key bindings, mail, auctions, the calendar, a calculator, sending finds to the
+  chat.
 
 ## The game's map and minimap: kept out of sight, given back
 

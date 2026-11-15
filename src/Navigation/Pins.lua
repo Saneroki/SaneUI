@@ -61,10 +61,10 @@ Pins.CLOSE = { treasure = true, herb = true, ore = true, foundHerb = true, found
 Pins.CLOSER = 1500
 Pins.SIZE = { log = 24, quest = 22, low = 18, later = 18, done = 18, goal = 16, flight = 18, travel = 22, entrance = 22,
               place = 22, service = 20, rare = 20, treasure = 18, herb = 16, ore = 16, book = 18,
-              foundHerb = 14, foundOre = 14 } -- (the found ones are drawn by Found.lua)
+              foundHerb = 14, foundOre = 14, find = 24 } -- (the found ones are drawn by Found.lua; find: the map's search)
 
 -- The order pins are drawn in: a higher one over a lower one, and the first in a gathered marker (its icon).
-local ORDER = { log = 10, quest = 9, rare = 8, goal = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
+local ORDER = { find = 12, log = 10, quest = 9, rare = 8, goal = 8, entrance = 7, flight = 6, travel = 5, place = 4, treasure = 3, service = 2,
                 foundHerb = 2, foundOre = 2, later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
@@ -421,6 +421,33 @@ local function Trainer(title)
         if type(title) == "string" and title:find(name, 1, true) then return CLASS_TRAINER end
     end
     return SERVICES.trainer
+end
+
+-- An NPC's icon as its pin has it, from what it is (the map's search, Find.lua): a rare's skull, its first service's
+-- (a trainer by its title, a merchant by its goods), else the game's mark of a creature, hostile or not.
+function Pins.LookOf(services, title, goods, rank, foe)
+    if rank == "rare" or rank == "rareelite" then return Pins.ICONS.rare end
+    for _, service in ipairs(type(services) == "table" and services or {}) do
+        if service == "trainer" then return Trainer(title) end
+        if service == "vendor" then
+            for _, each in ipairs(type(goods) == "table" and goods or {}) do
+                if GOODS[each] then return GOODS[each] end
+            end
+        end
+        if service == "flightmaster" then return "flightmaster" end
+        if SERVICES[service] then return SERVICES[service] end
+    end
+    return foe and "monsterenemy" or "monsterneutral"
+end
+
+-- An object's and a place's of Core's data, as their pins have them.
+function Pins.ObjectLook(kind)
+    local look = OBJECTS[kind]
+    return look and look[2] or Pins.ICONS.treasure
+end
+function Pins.PlaceLook(kind)
+    local look = PLACES[kind]
+    return look and look[2] or "poi-town"
 end
 
 -- A quest's lines in a pin's tooltip: its name and level, and why it is grey (tables: words and their colour).
@@ -872,6 +899,18 @@ function Pins.For(view, small, pu, pv)
             local u, v = link.du + link.su * entry.u, link.dv + link.sv * entry.v
             if u >= left and u <= right and v <= top and v >= bottom then
                 pin.pu, pin.pv, pin.order, pin.with = u, v, ORDER[kind] or 0, nil
+                found[#found + 1] = pin
+            end
+        end
+    end
+    -- What the map's search shows (Find.lua): at every zoom, whatever the filter says, over every other pin; on the full
+    -- map alone.
+    for _, pin in ipairs(small and NONE or ns.Find.Pins()) do
+        local link = Coords.Link(pin.home, view.map)
+        if link then
+            local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v
+            if u >= left and u <= right and v <= top and v >= bottom then
+                pin.pu, pin.pv, pin.order, pin.with = u, v, ORDER.find, nil
                 found[#found + 1] = pin
             end
         end

@@ -8406,6 +8406,174 @@ end)()
     C_Spell.GetSpellInfo, C_Spell.GetSpellDescription = saved.spellInfo, saved.spellWords
 end)()
 
+-- The full map's search (Find.lua, FindBox.lua; Saneroki, 2026-11-15): what it reads in the words typed, what it finds
+-- in Core's data and the game, nearest first where asked; the field in the title bar, its list, the keys; a find's
+-- places as glowing pins on the full map alone, the map pin at the nearest.
+;(function()
+    local Find, FindBox, Pins = ns.Find, ns.FindBox, ns.Pins
+    -- The herb a Silverleaf gives, as Core's Items would have it (here only: the herbs' pictures above know none).
+    local ITEMS = Core.Data.Set("Items")
+    local itemGet = ITEMS.Get
+    ITEMS.Get = function(self, id, field)
+        if id == 765 then
+            local record = { name = "Silverleaf", quality = 1, icon = 134190 }
+            if field then return record[field] end
+            return record
+        end
+        return itemGet(self, id, field)
+    end
+    -- and what gives it, as Core's drop counts would tell (the test's set has no index by item)
+    local Drops = Core.Data.Drops()
+    local from = Drops.From
+    Drops.From = function(self, item)
+        if item == 765 then return { { key = "object:1617", how = "gather", rate = 0 } } end
+        return from(self, item)
+    end
+    -- What is read
+    local asked = Find.Read("Nearest Warrior Trainer?")
+    check(asked.near and #asked.sets == 1 and asked.sets[1][1] == "warrior" and asked.sets[1][2] == "trainer",
+        "nearest warrior trainer: nearness asked, the words warrior and trainer")
+    check(Find.Read("closest inn").near and Find.Read("nearset inn").near and Find.Read("inn nearby").near,
+        "nearness also as closest, nearby at the end, and a slip of nearest")
+    asked = Find.Read("who sells linen cloth")
+    check(asked.want == "sold" and asked.sets[1][1] == "linen" and asked.sets[1][2] == "cloth", "who sells: an item's vendors")
+    check(Find.Read("where does linen cloth drop").want == "drop" and Find.Read("how do i get linen").want == "get"
+        and Find.Read("who teaches fireball").want == "learn", "what drops it, every way to it, who teaches it")
+    asked = Find.Read("my trainer")
+    check(asked.sets[1][1] == "warrior" and asked.sets[1][2] == "trainer", "my trainer: your class's trainer")
+    asked = Find.Read("dagger trainer")
+    check(asked.sets[1][1] == "weapon" and asked.sets[1][2] == "master", "a weapon's trainer: the weapon masters")
+    asked = Find.Read("vendor in elwynn")
+    check(asked.zone == 1429 and #asked.sets[1] == 1 and asked.sets[1][1] == "vendor", "in elwynn: only in that zone")
+    asked = Find.Read("quests level 20-30")
+    check(asked.kind == "quest" and asked.low == 20 and asked.high == 30 and #asked.sets[1] == 0,
+        "a first word keeps a kind, a level range")
+    asked = Find.Read("lvl 30+")
+    check(asked.low == 30 and asked.high == 999, "level 30 and higher")
+    asked = Find.Read("sword or axe -rusty")
+    check(#asked.sets == 2 and asked.sets[2][1] == "axe" and asked.without[1] == "rusty", "or between words, - before one")
+    check(Find.Read('"old rare" not wolf').sets[1][1] == "old rare" and Find.Read('"old rare" not wolf').without[1] == "wolf",
+        "quoted words together, not before a word")
+    asked = Find.Read("45 60.5")
+    check(asked.spot and near(asked.spot.x, 0.45) and near(asked.spot.y, 0.605), "two numbers: a point")
+    check(Find.Read("elwynn 45,60").spot.map == 1429, "a point in a zone named")
+    check(Find.Read("unknown flight points").unknown and Find.Read("unknown flight points").kind == "flight",
+        "the flight points not found")
+    check(Find.Read("where should i level").want == "level" and Find.Read("zones for level 30").low == 27,
+        "where to level: zones around your level, or the one named")
+    check(Find.Read("   ") == nil, "nothing typed: nothing asked")
+
+    -- What is found: Core's sets are read at the first search, a part per frame
+    local answer
+    local function Ask(text)
+        answer = nil
+        Find.Ask(text, function(found) answer = found end)
+        Frames(30)
+        return answer
+    end
+    local first
+    Find.Ask("warrior trainer", function(found) first = first or found end)
+    check(first and first.reading, "the first search: Core's sets still being read")
+    Frames(40)
+    answer = Ask("warrior trainer")
+    local row = answer and answer[1] and answer[1].rows[1]
+    check(row and row.entry.key == "npc:75" and row.entry.role == "Warrior Trainer" and answer[1].title == Find.TEXT.groups.npc,
+        "warrior trainer: the NPC titled so, among the NPCs")
+    check(Ask("wt")[1].rows[1].entry.key == "npc:75", "wt: the first letters of what it is")
+    answer = Ask("nearest inn")
+    row = answer[1].rows[1]
+    check(answer[1].title == Find.TEXT.groups.near and row.entry.key == "npc:69" and row.yards and row.yards > 0,
+        "nearest inn: the innkeeper, how far")
+    answer = Ask("nearest food")
+    check(answer[1].rows[1].entry.key == "npc:69", "a kind of goods: the vendor of it")
+    answer = Ask("old rare")
+    check(answer[1].rows[1].entry.key == "npc:70", "a name")
+    answer = Ask("silverleaf")
+    local kinds = {}
+    for _, group in ipairs(answer) do for _, each in ipairs(group.rows) do kinds[each.entry.kind] = true end end
+    check(kinds.item and kinds.object, "a name both an item and a herb has: both")
+    answer = Ask("what drops silverleaf")
+    check(answer.about and answer.about.entry.kind == "item" and answer[1].rows[1].entry.key == "object:1617"
+        and answer[1].rows[1].role == Find.TEXT.gives, "what drops it: the item, and what gives it under it")
+    answer = Ask("a quest to take")
+    check(answer[1].rows[1].entry.key == "quest:100", "a quest of Core's data")
+    answer = Ask("the mines")
+    check(answer[1].rows[1].entry.key == "place:1" and answer[1].title == Find.TEXT.groups.zone, "a dungeon's entrance")
+    answer = Ask("elwynn")
+    check(answer[1].rows[1].entry.kind == "zone" and answer[1].rows[1].entry.map == 1429, "a zone")
+    answer = Ask("wolf not wolf")
+    check(answer.close or answer.count == 0, "a word and not it: nothing")
+    answer = Ask("xqzv")
+    check(answer.count == 0 or answer.close, "nothing found: told so, or what is close")
+
+    -- On the map: the find's places as pins on the full map, the map pin at the nearest
+    local wasFull = Window.handle.edge.full
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    local view = Canvas.view
+    local teacher = Ask("warrior trainer")[1].rows[1].entry
+    check(Find.Show(teacher) and #Find.Pins() == 1 and Find.Pins()[1].sought and Find.Pins()[1].atlas == "class",
+        "shown: a pin where it stands, in its own icon (a class trainer's book), glowing")
+    Canvas.Layout()
+    local seen = false
+    for _, pin in ipairs(Pins.For(Canvas.view, false)) do if pin.kind == "find" then seen = true end end
+    local small = false
+    for _, pin in ipairs(Pins.For(Canvas.view, true)) do if pin.kind == "find" then small = true end end
+    check(seen and not small, "on the full map alone, whatever the filter says")
+    Live.ClearWaypoint()
+    check(Find.Pin(teacher), "the map pin at it")
+    local map, x, y = Live.Waypoint()
+    check(map == 1429 and near(x, 0.4) and near(y, 0.6), "where it stands")
+    Find.Clear()
+    check(#Find.Pins() == 0, "cleared: no pins")
+
+    -- The field in the title bar, the list under it, the keys
+    local bar = Window.handle.bar
+    local field
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == bar and widget._kind == "Frame" and widget._height == FindBox.HEIGHT then field = widget end
+    end
+    check(field and field:IsShown() and field._points[1][1] == "CENTER", "full: the field in the middle of the title bar")
+    local box
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == field and widget._kind == "EditBox" then box = widget end
+    end
+    check(box, "its words in an edit box")
+    box:SetText("warrior trainer")
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(FindBox.WAIT + 0.01)
+    Frames(4)
+    local list
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == field and widget._kind == "Frame" and widget ~= field.skin and widget._strata == "DIALOG" then list = widget end
+    end
+    box._focus = true
+    check(list and answer, "typed: searched")
+    box._scripts.OnArrowPressed(box, "DOWN")
+    check(list:IsShown(), "Down: the list shows, a row lit")
+    Live.ClearWaypoint()
+    IsShiftKeyDown = function() return true end
+    box._scripts.OnEnterPressed(box)
+    IsShiftKeyDown = function() return false end
+    map, x, y = Live.Waypoint()
+    check(map == 1429 and near(x, 0.4) and #Find.Pins() == 1 and not list:IsShown(),
+        "Shift-Enter: the map pin there, its pin on the map, the list closed")
+    check(Find.History()[1] == "warrior trainer", "the words remembered")
+    box._scripts.OnEscapePressed(box)
+    check(box:GetText() == "" and #Find.Pins() == 0, "Esc with the list closed: the field emptied, the pins gone")
+    box._scripts.OnArrowPressed(box, "UP")
+    check(box:GetText() == "warrior trainer", "Up in the empty field: the words searched before")
+    FindBox.Clear()
+    if not wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+        check(not field:IsShown(), "small: the field out of sight")
+    end
+    ITEMS.Get, Drops.From = nil, from
+end)()
+
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")
 check(#ns.RareTracker.shown == 0 and not ns.RareTracker.holder._shown, "standing down: the Sane Rare tracker's notices gone")

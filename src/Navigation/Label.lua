@@ -18,6 +18,7 @@ local _, ns = ...
 --
 --      Label.Show(map, x, y)   the zone under the point x, y (0 to 1) of map (the one the view shows whole)
 --      Label.Hide()            out of sight
+--      Label.Range(zone)       its levels: low, high (the map's search), nil while not known
 --
 --  Only on the full map: the small one has no room for it.
 -------------------------------------------------------------------------------
@@ -154,6 +155,18 @@ local function Levels(zone)
     local words = low == high and ("(%d)"):format(high) or ("(%d-%d)"):format(low, high)
     local hex = Hex(colour)
     return " " .. (hex and hex .. words .. "|r" or words)
+end
+
+-- A zone's levels as numbers (the map's search, Find.lua: where to level): the game's own, else its enemies' (being
+-- worked out the first time: nil until then).
+function Label.Range(zone)
+    local low, high = Core.Ask(C_Map.GetMapLevels, zone)
+    low, high = Core.Plain(low), Core.Plain(high)
+    if type(low) == "number" and type(high) == "number" and low > 0 and high > 0 then return low, high end
+    Enemies()
+    local range = ranges and ranges[zone]
+    if not range then return nil end
+    return range[1], range[2]
 end
 
 -- The fishing skill the zone's waters ask (its area's base in Core's set Fishing): from where a cast first catches

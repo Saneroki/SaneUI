@@ -6,7 +6,7 @@
 #   abilities.lua   the Abilities module
 #   tooltips.lua    the Tooltips module
 #   social.lua      the Social module
-#   navigation.lua  the Navigation module: the map's spaces, its camera, the map drawn three ways
+#   navigation.lua  the Navigation module: the map's spaces, its camera, the map drawn three ways, the full map's search
 #   inventory.lua   the Inventory module: its window in the corner, its full screen, the character sheet's paper doll and stats
 #   sheet.lua       the Inventory module's character sheet: its side tabs and the tabs behind them
 #   bags.lua        the Inventory module's bags: what they hold, the views, the game's item buttons, the bank, the foot

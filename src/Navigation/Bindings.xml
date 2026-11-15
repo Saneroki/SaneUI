@@ -1,0 +1,8 @@
+<Bindings>
+	<!-- Navigation's key, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua; its words
+	     in FindBox.lua); the game reads this file from the addon's folder by itself. The full map, the cursor in its
+	     search. -->
+	<Binding name="SANEUI_MAP_FIND" category="BINDING_HEADER_SANEUI">
+		SaneUI.Navigation.Safe("map search", SaneUI.Navigation.FindBox.Key)
+	</Binding>
+</Bindings>

@@ -11,7 +11,11 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    (the corner filled by Core's Edge, Esc back): the map, the quest log beside it (`QuestLog.lua`; pinned on the screen
    while the map is small too, in place of the game's tracker; its quest timers at its top, in sight while it rests or
    is off) and a top bar (`TopBar.lua`: the log's button, the
-   views, the map selector, the dungeons, *Follow me*, the pin filter).
+   views, the map selector, the dungeons, *Follow me*, the pin filter). In the middle of Core's title bar over it the
+   search (`FindBox.lua` the field and its list, `Find.lua` the finds: Core's NPCs, objects, places, items and where
+   they come from, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends;
+   "nearest", "who sells X", "in <zone>", levels; its places as pins of kind `find` on the full map, the map pin at the
+   nearest; the key *Search the map*, `Bindings.xml`; 2026-11-15).
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the
    wheel zooms from the minimap's range to the world, follows the player, north-up only. The views (setting `view`,
@@ -55,7 +59,7 @@ The file list with a line each: `src/Navigation/README.md`, section *Files* (lin
 cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`Terrain`, `Outlines`, `Coasts`, `Art`,
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the Sane Rare tracker (`RareTracker`: finds near
-you told by a notice and a horn, `/sane testraretracker`); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
+you told by a notice and a horn, `/sane testraretracker`); the map's search (`Find`, `FindBox`; `Search.lua` is the walking data's, not it); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
 `Planner`, `Corpse`, `Danger`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,
@@ -83,8 +87,8 @@ character, learnt at a flight master).
 - Core's windows: the holder (`src/Core/Holder.lua`), the board (`Board.lua`) and the Edit Mode box and dialog
   (`Selection.lua`) are built. Navigation needs neither the holder nor the board: it keeps the game's map itself
   (`Native.lua`) and lays out its full screen in `docked`.
-- Not built: a travel pin's ways under the mouse (the plan, *Map pins*); a search over the full map (the plan, *Top
-  bar, map selector and search*; `TopBar.lua` has none); the dungeons' three zooms and our own art where the game
+- Not built: a travel pin's ways under the mouse (the plan, *Map pins*); exact places of guild members outside your
+  group (the search shows the zone the roster names; card #38); the dungeons' three zooms and our own art where the game
   has none (the plan, *Dungeon, instance and raid maps in three zooms*; `dev/tools/map-layers` makes the levels); rares' spawn
   areas and patrol paths on the map (the sets are there, Navigation does not read them).
 

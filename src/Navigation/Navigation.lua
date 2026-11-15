@@ -80,7 +80,7 @@ ns.TEXT = {
     classicMinimap = "Minimap",
     classicMap = Core.Word("WORLD_MAP", "World Map"),
     noPin = Core.Word("MAP_PIN_INVALID_MAP", "A map pin cannot be placed here."),
-    about = "the map full screen and back (/sane map reset: the window's first place and size)",
+    about = "the map full screen and back (/sane map reset: the window's first place and size; /sane map find <words>: the map's search)",
     -- The Sane Rare tracker (RareTracker.lua).
     rareTracker = "Sane Rare tracker",
     rareOn = "Tell of finds near you",
@@ -443,6 +443,8 @@ Core.Command("map", ns.TEXT.about, function(rest)
     elseif rest == "reset" then
         ns.Guarded(ns.Window.Reset)
         ns.Print(ns.TEXT.reset)
+    elseif rest and rest:match("^find%f[%A]") then
+        ns.Guarded(ns.FindBox.Search, (rest:match("^find%s+(.+)$")))
     else
         ns.Guarded(ns.Window.Toggle)
     end

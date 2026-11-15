@@ -459,6 +459,7 @@ local function Place(quest)
     if giver then return giver[1], giver[2], giver[3] end
     return Where(quest)
 end
+QuestLog.Place = Place -- (the map's search: a quest of the log on the map, Find.lua)
 
 -- The map at the quest's objective: the full screen, the zone it is in whole around it.
 function QuestLog.Show(quest)

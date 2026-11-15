@@ -15,7 +15,9 @@ That is WoW: Forever's map; in Retail the map is the game's own map tree, one ma
 shows it: a click into a map, a right click out to the one over it, the wheel within it.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
 party), always over the map; the quest log, a window of its own over the full map and on the screen while the map
-is small, and the maps of the dungeons and raids. The plan is in
+is small, and the maps of the dungeons and raids. A search in the full map's title bar finds NPCs (by name and by what
+they are: *nearest warrior trainer*), items and where they come from, quests, places, zones and your guild and group,
+and shows them on the map or puts the map pin there. The plan is in
 `Doc/ideas/Navigation.md`.
 
 ## How to use
@@ -290,6 +292,40 @@ is small, and the maps of the dungeons and raids. The plan is in
   its level, who gives and takes it, its objectives and rewards, as big icons too. A click on one moves the map to its giver, a double
   click puts the map pin there.
   They stay until the next `/reload`.
+- **The search** (Saneroki, 2026-11-15): the large field in the middle of the full map's title bar. Click into it (or
+  press the key *Search the map*, Sane UI's section of the game's key bindings, or type `/sane map find <words>`) and
+  type; a moment after the last key the finds stand under it, in groups (NPCs, places, items, quests, zones and
+  dungeons, guild, group and friends, what trainers teach), each with its picture, its name (the letters you typed in
+  gold), what it is and where (its zone, its levels) and at the right how far it is and an arrow the way to it from
+  where you face. What it understands:
+  - **names and kinds**, forgivingly: *hogger*, *linen cloth*, *warrior trainer*, *repair*, *inn*, *bank*, *ah*
+    (an auction house's first letters), *mailbox*, *food*, *flight master*, *herbalist*, *miner*, *elwynn*; a short
+    word also as the first letters of the words (*wt*: a Warrior Trainer). Every word must be found. An NPC hostile to
+    your side shows only where you typed its name;
+  - **nearest**, *closest* or *nearby* anywhere: one list, nearest first; Enter puts the map pin on the nearest (the
+    golden line leads there). *nearest warrior trainer*, *nearest mailbox*, *repair nearby*;
+  - **an item's sources:** *who sells X* (its vendors and their price), *what drops X* or *where does X drop* (the
+    creatures and objects that give it, how often), *where to get X* (every way: vendors, creatures, objects, quests
+    that reward it); where none sells or drops it, every way there is. A plain item's name, Enter: the same list;
+  - **who teaches X** or *where to learn X*: the trainers of that spell or trade, nearest first;
+  - **in <zone>:** only what stands there (*vendor in elwynn*, *trainer in ironforge*);
+  - **levels:** *level 30*, *lvl 20-30*, *level 40+*; *where should I level* and *zones for level 30*, *dungeons for
+    my level*: the zones and dungeons as high as you are, the best fit first;
+  - **my trainer** (your class's), **my corpse**, **unknown flight points** (those you have not found);
+  - **a first word that keeps one kind:** *items*, *quests*, *zones*, *dungeons*, *raids*, *flights*, *mailboxes*,
+    *guild*, *party*, *friends* (*dungeons* alone lists them all);
+  - **not X** or **-X** without it, **X or Y** either, **"two words"** together;
+  - **two numbers:** a point of the zone shown (*45 60*), or of a zone named (*elwynn 45.2 60.1*): the map pin there.
+
+  The keys in the field: **Up** and **Down** light a row (round at the ends; in the empty field Up brings back what you
+  searched before), **Tab** the next, **Page Up**/**Page Down** a page; **Enter** takes the lit row, else the first:
+  its places glow on the map as pins and the map goes to the nearest (a zone or a dungeon: its map whole); an item or a
+  spell lists where it comes from; **Shift-Enter** puts the game's map pin on the nearest; **Ctrl-Enter** keeps the list
+  open; **Esc** closes the list, again empties the field and takes the pins away. The mouse: a click is Enter, Shift
+  and a click Shift-Enter (on an item, its link into the chat), a right click its menu (on the map, the map pin, where to
+  get an item, its link, a place's link, whisper and invite); resting on a row shows its tooltip and its places on the
+  map without moving it. What you pick is remembered and comes a little higher the next time. A click anywhere else
+  gives the keys back to your character.
 - **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
@@ -782,6 +818,33 @@ is small, and the maps of the dungeons and raids. The plan is in
   (checkboxes); it says what the map shows after each layout. With one view alone (`ns.Several`) it has no view
   buttons, the map selector right of the quest log's. The view buttons are `TopBar.VIEW_WIDTH` wide and the
   pin filter `TopBar.PINS_WIDTH`, so the whole bar fits a screen 1366 units wide (1080p at the game's scale).
+- **The search** (`Find.lua`, no frames; `FindBox.lua`): what can be found is read once, at the first search (the field
+  taken), a part per frame out of a fight, as Core's jobs over its sets: the NPCs that stand somewhere (their *Spawns*
+  or *CreatureSpawns*), the objects with spawns, *Places*, the items that come from somewhere (sold: *Vendors*; given to
+  loot or gathered: *Drops*; a reward: *Quests*), the quests of your side, what trainers teach (*Trainers*, named by
+  *Spells*, its class by `C_CreatureInfo.GetClassInfo`, its trade by *SkillLines*); what the game tells (the zones and
+  continents of the map tree, the dungeons' maps, the flight points of your side, the log, the guild's roster (Core's
+  where the module Guild reads it, else asked of the game), the group, your friends, your corpse) at each search. Each
+  find keeps its words lowered in three parts (its name, what it is, its further words: services, goods, a trainer's
+  trade, a kind's words) and the first letters of its name's and what-it-is's words. A search is one pass: each word
+  looked for whole in those lowered words (the game's string search), a word of up to `Find.SHORT` letters also in the
+  first letters; only what holds every word is ranked, by Core's `Fuzzy.Rank` (a name whole, what it is at
+  `Find.ROLE`, further words at `Find.MORE`), plus `Find.PICK` for each time it was picked before (kept for the
+  character, `finds.picked`, at most `Find.KEPT`). The best `Find.RANKED` (with nearness `Find.NEAR`) are measured:
+  their points (Core's spawns, a quest's givers, a log quest's place) put into your plane (`Coords.MapToPlane`), the
+  yards to the nearest; between two alike the nearer first. Groups by kind, ordered by their best; with nearness one
+  list, nearest first. Nothing found: a part per frame, the names that hold the words' letters in their order
+  (`Find.CLOSE` of them). Shown (`Find.Show`): the find's points (an item's sources', a spell's trainers'), the nearest
+  `Find.PLACES` of them all and at least `Find.EACH` of each, are pins of the kind `find` (`Pins.For` takes them in at
+  every zoom, on the full map alone, over every other pin; `PinView` gives them the glow), the map at the nearest
+  (`Canvas.LookAt`); the map pin by `PinView.Drop`. A guild member outside your group stands at the middle of the zone
+  the roster names (the game tells an addon no other member's place); one in your group where the game tells it.
+- **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
+  docked hook, `FindBox.SetShown`), in its middle, as wide as the room between the title and the buttons leaves
+  (`FindBox.WIDTH` at most); on Core's skin (round ends, the gold trim); the list under it on the same skin, strata
+  `DIALOG`, `FindBox.ROWS` lines at once, the wheel for more; the distances and arrows looked at every `FindBox.TICK`
+  while it shows. A key binding (`Bindings.xml`, `SANEUI_MAP_FIND`) and `/sane map find` fill the screen first and take
+  the field once it stands. `GLOBAL_MOUSE_DOWN` elsewhere clears the field's focus.
 - **Clicks and pings** (`Canvas.lua`, `Ping.lua`, no frames of its own): every click on the map and on a pin comes to
   `Canvas` (a pin's press and release are the map's, `Canvas.Release(button, pin)`): Ctrl puts the map pin at once;
   two plain left clicks on the same (a pin, or the map) within `Canvas.DOUBLE` seconds and `Canvas.NEAR` units are a
@@ -1211,6 +1274,9 @@ is small, and the maps of the dungeons and raids. The plan is in
 | `DockWatch.lua` | At a dock or the tram's station: the ways waiting there, when each arrives and leaves (no frames) |
 | `TripView.lua` | The travel overlay, high up the screen: the trip you are on (Core's `Data.Trips`), or the wait at a dock; a fine golden line moving smoothly; the way out of a flight or a vehicle, in place of the game's leave button |
 | `TopBar.lua` | The bar over the full map: the quest log's button, the views, the map selector, the dungeons, the box Follow me, the pin filter |
+| `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
+| `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
+| `Bindings.xml` | The key *Search the map* (Sane UI's section of the game's key bindings): the full map, the cursor in its search |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
@@ -1222,6 +1288,13 @@ is small, and the maps of the dungeons and raids. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the search in the full map's title bar:** Saneroki: "At the top of the map fullscreen, can you put a big
+  searchfield in the title bar up there where you can search for stuff. Like NPC names, Guild member names, Vendors,
+  class trainers, items etc and it will show it to you or put a pin on the map. For items for example it could drop a
+  pin on the map where it drops and for guild members you will be able to see them on the map. You can write things
+  like nearest warrior trainer for example and it puts a pin down on the map." `Find.lua`, `FindBox.lua`,
+  `Bindings.xml`; the pins of kind `find` (`Pins.For`, `PinView`'s glow), `Pins.LookOf`, `ObjectLook`, `PlaceLook`,
+  `Label.Range`, `QuestLog.Place`, `Window.Full`, `/sane map find`. The lab's scene `mapsearch`. Card #487.
 - **2026-11-13, the party and the ships at a flight master too:** Saneroki: "keep them but still show party members
   and ships" (the arrow, the map pin and its line). `Taxi.KEEP`, `Taxi.Over`; a pin's `ship` (boats, zeppelins,
   piers): the tram, lifts, portals and the game's ways into another map stay off there.

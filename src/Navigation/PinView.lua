@@ -566,7 +566,9 @@ end
 local function Look(button, pin)
     local first = pin.gathered and pin.gathered[1] or pin
     local size = (first.size or Pins.SIZE[first.kind] or 20) * ns.PinScale(first.kind)
-    local glowing = (first.focused or first.here or ns.Paths.Active(first)) and not pin.gathered and true or false
+    -- (and what the map's search found, Find.lua: each of its pins glows)
+    local glowing = (first.focused or first.here or first.sought or ns.Paths.Active(first)) and not pin.gathered and true
+        or false
     local plus = pin.gathered and not Alike(pin.gathered) or false
     local shining = lit ~= nil and Tied(pin, lit)
     if button.first == first and button.size == size and button.glowing == glowing and button.plus == plus
