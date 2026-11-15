@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Patch notes for Forever 70938 and Retail 70783 (Saneroki, 2026-11-15)
+Saneroki: "Run /patchday" for both games.
+- **`assets/data/PatchNotes/`** (a game restart takes it in): Forever's 70938 under its build number, 197 points (61 Blizzard's and the client's, 29 the client's alone, 107 Blizzard's alone), 83 of the build's changes tied to them; compared with Blizzard's WoW: Forever hotfix log of November 5 to 13 (Blizzard published no patch notes for the build). Retail's 70783, 27 points, compared with Blizzard's hotfixes of November 5 and 6. **`Patchnotes/Forever-1.60.1.70938.html`**, **`Patchnotes/Retail-12.1.5.70783.html`**.
+- **`dev/tools/patchday`:** a recipe's facts take its spell's name (`NAMED_BY`: the set Professions is keyed by the recipe's spell), and **`dev/blizzard/patchnotes.py`:** the section Professions looks in the set Professions too, so a recipe's change ties to its point (all 32 at this build). **`dev/tests/patchday.py`:** the check.
+- `Doc/ideas/Combat.md`: Retail hides the combat amount too.
+
 ### Retail 70783: the interface on the new build (Saneroki, 2026-11-15)
 Saneroki: "Run /patchday": Retail's build 70783 is the newest export, against 70688. Board #492.
 - **Checked, nothing to change:** Retail hides `UNIT_COMBAT`'s amount now too, as Forever since 70755: Nameplates' combat text writes a hidden amount as it is in both games (`src/Nameplates/CombatText.lua`, its comment). A Battle.net friend's game account names its `subIcon` in Retail too: Social's friend list already hands it to the game's title icon (`src/Social/Contacts/Friends.lua`, its comment).

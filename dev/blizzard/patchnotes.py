@@ -38,7 +38,7 @@ RACE_IDS = {"Human": 1, "Orc": 2, "Dwarf": 3, "Night Elf": 4, "Undead": 5, "Taur
 # Where a section's points find the entries they tell of.
 SEARCHED = {"Characters": ("Racials", "Races", "Spells"), "Classes": ("Spells", "Talents"), "Dungeons and Raids": ("Encounters",),
             "Items and Rewards": ("Items", "Auras", "Enchantments"), "Items": ("Items", "Auras", "Enchantments"),
-            "Legacy System": ("Legacy",), "Professions": ("Spells", "Items"), "Reputation": ("Factions",),
+            "Legacy System": ("Legacy",), "Professions": ("Spells", "Items", "Professions"), "Reputation": ("Factions",),
             "World": ("Areas", "Maps", "Zones")}
 
 

@@ -59,6 +59,7 @@ DATA = str(ROOT / "dev" / "tools" / "data")
 BUILD_TOOLS = ("map-data", "travel-data", "walk-data", "walk-gates")   # the data tools' BUILD, Forever's
 COUNT_ONLY = {"Walking", "Tiles"}   # sets listed by their counts: an entry says nothing to a reader
 ITEM_CLASS = {"Items", "Disenchants"}  # sets whose field class is an item's class (Enum.ItemClass), no player's class
+NAMED_BY = {"Professions": "Spells"}  # sets whose entries take the name of another set's entry of their key: a recipe its spell's
 SHOWN = 80                          # characters of a value in facts
 PRIORITY = 11                       # above the other jobs (the instance maps are 2): a map tells what the game shows
 
@@ -283,6 +284,17 @@ def spell_classes(master, game):
 def facts_of(master, game, build):
     """Everything the master took from the game at this build, set by set."""
     classes = spell_classes(master, game)
+    borrowed = {}
+
+    def names_of(name):
+        """{key: the name its entry of NAMED_BY's set has now}, for a set whose entries hold no name of their own."""
+        if name not in NAMED_BY:
+            return {}
+        if name not in borrowed:
+            borrowed[name] = {key: next((v.fields["name"] for v in reversed(versions) if v.fields.get("name")), None)
+                              for key, versions in master.view(NAMED_BY[name], game).items()}
+        return borrowed[name]
+
     sets = {}
     for name in sorted(master.schemas):
         if name == "PatchNotes":
@@ -297,7 +309,7 @@ def facts_of(master, game, build):
                     continue
                 before = versions[index - 1] if index else None
                 row = {"key": key}
-                named = version.fields.get("name") or (before.fields.get("name") if before else None)
+                named = version.fields.get("name") or (before.fields.get("name") if before else None) or names_of(name).get(key)
                 if named:
                     row["name"] = named
                 fields = version.fields or (before.fields if before else {})
