@@ -354,11 +354,15 @@ and shows them on the map or puts the map pin there. The plan is in
   your character. A search that runs into an error says so in the list and stops nothing: the map goes on, and the
   next key searches again (the error is in `/sane errors`).
 - **Your own markers** (Saneroki, 2026-11-15): **Alt and a click** on the map (small or full) puts a marker there and
-  opens its card: write its title and its description, pick its icon (the game's eight raid marks, a chest, a quest's
-  !, a herb, an ore, a skull, an inn), Save (Enter in the title too) or Cancel (a new one cancelled goes again). On the
+  opens its card: write its title and its description, pick its icon (the game's eight raid marks; for a dungeon's
+  way a boss, an elite, a skull, a door, stairs up and down, a jump, a portal, a trap, a chest, a locked chest, a key;
+  for the group a tank, a healer, damage, a summoning stone, a rallying banner, a lookout; fire, water, sneak, run, a
+  bomb, a question; a quest's !, a herb, an ore, an inn: Saneroki, 2026-11-15, "more custom map marker pin icon
+  options? like Doors, stairs, bosses, chests, jumps etc"), Save (Enter in the title too) or Cancel (a new one cancelled goes again). On the
   map it stands in its icon at every zoom, its title beside it on the full map; the mouse on it shows its title and
   description; **a click** opens its card again (its icon, title, description, the zone and the day you put it) with
-  four buttons: Edit, Move (then click on the map where it should stand; a right click: it stays), the map pin on it
+  four buttons: Edit, Move (then click on the map where it should stand, a drawing tool on or not; a right click: it
+  stays), the map pin on it
   (the golden line leads there) and Delete (asked first); a double click puts the map pin there at once. The pin
   filter's *Your markers* shows or hides them all; the map's search finds them by their titles and descriptions
   (*markers* as the first word lists them all). They are kept for your account.
@@ -369,8 +373,10 @@ and shows them on the map or puts the map pin there. The plan is in
   menu folding out (**Draw in it**, **Rename**, **Share**, **Delete**), then **Draw on the map** and **New sketch**.
   Draw on the map opens a small palette at the top right, under the bar (drag it by its head). Its tools: **Marker** (a click: a marker
   there, its card to write in), **Pen** (drag: a line as the mouse goes), **Line**, **Arrow** (drag: from where you
-  begin to where you let go), **Circle** (drag: round where you begin, as wide as you drag) and **Eraser** (a click on a
-  drawing: away); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
+  begin to where you let go), **Circle** (drag: round where you begin, as wide as you drag), **Move** (drag a marker or a
+  drawing to its new place, on the map and on a dungeon's floor: Saneroki, 2026-11-15, "if the drawings and map
+  markers are dragable to reposition them, during the mode where you can draw on the map then that is perfect") and
+  **Eraser** (a click on a drawing: away); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
   thick width. While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
   steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
@@ -1465,6 +1471,11 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the Move tool; more marker icons:** Saneroki: "can you make it possible that map markers are draggable
+  so you can move them to a different position? the current move button on the map markers does not work" (with a
+  tool on, the press was the tool's: the card's Move now takes the click first; `Draw` `Hold`, `Drag`, `MarkerAt`,
+  `Nearest`). "Can you add more custom map marker pin icon options? like Doors, stairs, bosses, chests, jumps etc"
+  (`Markers.ICONS`, 36, the game's atlases and spell icons, `cut`).
 - **2026-11-15, Scrying and Blended on the dungeon maps:** Saneroki: "I want the terrain / Partchment toggle work for
   instance maps as well. We should have both." Each floor's ground is the game's own minimap textures of the
   instance, drawn by file ID from Core's new set *DungeonGround* (`dev/tools/dungeon-ground`): 1,945 textures on the

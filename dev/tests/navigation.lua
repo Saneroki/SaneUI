@@ -9218,7 +9218,8 @@ end)()
     frame._scripts.OnMouseUp(frame, "LeftButton")
     check(#Plans.Drawings() == count, "a line too short to see: not kept")
     -- the eraser takes the line under the mouse
-    palette.tools[6]._scripts.OnClick(palette.tools[6])
+    check(Draw.TOOLS[6] == "move" and Draw.TOOLS[7] == "erase", "the tools: Move before the eraser")
+    palette.tools[7]._scripts.OnClick(palette.tools[7])
     At(0.4, 0.35)
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
@@ -9242,6 +9243,69 @@ end)()
     Plans.Show(first, true)
     Canvas.Layout()
     check(Lines() > 0, "shown again")
+    -- the Move tool (Saneroki, 2026-11-15: "map markers are draggable so you can move them to a different position";
+    -- "if the drawings and map markers are dragable to reposition them, during the mode where you can draw"): a
+    -- drawing dragged along, every point by as much; a marker dragged to where the mouse lets go
+    ;(function()
+        palette.tools[3]._scripts.OnClick(palette.tools[3])
+        At(0.5, 0.5)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        At(0.6, 0.5)
+        Step()
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        local moving = Plans.Drawings()[#Plans.Drawings()]
+        local x1, y1, x2, y2 = moving.points[1], moving.points[2], moving.points[3], moving.points[4]
+        palette.tools[6]._scripts.OnClick(palette.tools[6])
+        check(Draw.Tool() == "move", "the Move tool on")
+        At(0.55, 0.5)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        check(Draw.Busy(), "pressed on a drawing: held")
+        At(0.55, 0.6)
+        Step()
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        check(not Draw.Busy() and Close(moving.points[1], x1) and Close(moving.points[2], y1 + 0.1)
+            and Close(moving.points[3], x2) and Close(moving.points[4], y2 + 0.1),
+            "dragged: the drawing moved along with the mouse, every point by as much")
+        check(Plans.Undo(), "(the line taken away again)")
+        -- a marker: made with the marker tool, then dragged
+        palette.tools[1]._scripts.OnClick(palette.tools[1])
+        At(0.7, 0.7)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        local marker = Markers.List()[#Markers.List()]
+        Markers.card.editing.save._scripts.OnClick(Markers.card.editing.save)
+        Markers.Close()
+        palette.tools[6]._scripts.OnClick(palette.tools[6])
+        At(0.7, 0.7)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        At(0.72, 0.76)
+        Step()
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        check(marker.map == 1429 and Close(marker.x, 0.72) and Close(marker.y, 0.76) and not Draw.Busy(),
+            "a marker dragged with the Move tool: it stands where the mouse let go")
+        -- its card's Move with a tool on: the click on the map puts it there, no new marker
+        palette.tools[1]._scripts.OnClick(palette.tools[1])
+        local markers = #Markers.List()
+        Markers.Open(marker)
+        Markers.card.reading.buttons[2]._scripts.OnClick(Markers.card.reading.buttons[2])
+        At(0.65, 0.6)
+        frame._scripts.OnMouseDown(frame, "LeftButton")
+        frame._scripts.OnMouseUp(frame, "LeftButton")
+        check(Close(marker.x, 0.65) and Close(marker.y, 0.6) and #Markers.List() == markers and not Markers.Moving(),
+            "its card's Move with the marker tool on: the click puts it there, no new marker")
+        Markers.Remove(marker)
+        -- more icons: doors, stairs, bosses, chests, a jump, the group's roles; a spell icon's frame cut off
+        local keys = {}
+        for _, icon in ipairs(Markers.ICONS) do keys[icon.key] = icon end
+        check(keys.door and keys.up and keys.down and keys.boss and keys.chest and keys.locked and keys.jump
+            and keys.tank and keys.healer and keys.damage and keys.trap and keys.portal and #Markers.ICONS >= 30
+            and keys.jump.cut and Markers.Icon("nothing known") == Markers.ICONS[1],
+            "the marker icons: doors, stairs, bosses, chests, a jump, the roles and more; an unknown key the first")
+        local texture = W.NewWidget("Texture")
+        Markers.Paint(texture, "jump")
+        check(texture._coords and Close(texture._coords[1], keys.jump.cut), "a spell icon painted with its frame cut off")
+        palette.tools[2]._scripts.OnClick(palette.tools[2])
+    end)()
     -- a second plan, active: what is drawn goes there
     local raid = Plans.New("Raid night")
     check(Plans.Active() == raid and #Plans.List() == 2, "a new plan, active")

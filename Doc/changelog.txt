@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Map drawing: a Move tool drags your markers and drawings to a
+  new place, on the map and on dungeon maps; a marker card's Move
+  works again. Markers have many more icons: doors, stairs, bosses,
+  chests, jumps, portals, traps, the group's roles and more.
 - Bags: the bags window is back as it was, with all its
   categories, views and buttons. The dropdown of your characters
   and the search box stay on its title line: another character's

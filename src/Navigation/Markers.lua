@@ -48,21 +48,46 @@ Markers.WIDTH = 320          -- the card's width
 Markers.WORDS = 96           -- the words' box, editing: its height
 Markers.ICON = 32            -- the marker's icon on its card
 Markers.PICK = 26            -- an icon to pick, editing
-Markers.PER_ROW = 7          -- icons to pick in a row
+Markers.PER_ROW = 9          -- icons to pick in a row
 Markers.BUTTON = 30          -- the card's grey square buttons
 Markers.TITLE_MOST, Markers.TEXT_MOST = 60, 1000 -- letters a title and its words hold at most
 Markers.KIND = "M"           -- the wire's kind of markers shared
 Markers.BLOCK = 2800         -- bytes of rows in one block, unpacked (packed it stays well under the wire's 4 KB)
 Markers.TAKE = 50            -- markers taken from one block at most
 Markers.OFFER = 300          -- the offer card's width
--- The icons to pick from, the first the one a new marker has: the game's raid marks, and a few of its map icons.
+-- The icons to pick from, the first the one a new marker has: the game's raid marks, its map icons and a few of its
+-- spell icons for what happens where (Saneroki, 2026-11-15: "more custom map marker pin icon options? like Doors,
+-- stairs, bosses, chests, jumps etc"), all in Forever's client. cut: a spell icon's frame cut off. A key is kept with
+-- a marker and shared: never renamed; a key not known here (an older or newer copy) shows the first.
+local ICON_CUT = 0.08
 Markers.ICONS = {
     { key = "star", texture = 137001 }, { key = "circle", texture = 137002 }, { key = "diamond", texture = 137003 },
     { key = "triangle", texture = 137004 }, { key = "moon", texture = 137005 }, { key = "square", texture = 137006 },
     { key = "cross", texture = 137007 }, { key = "skull", texture = 137008 },
-    { key = "chest", atlas = "vignetteloot" }, { key = "quest", atlas = "questnormal" },
-    { key = "herb", atlas = "professions_tracking_herb" }, { key = "ore", atlas = "professions_tracking_ore" },
-    { key = "danger", atlas = "dungeonskull" }, { key = "inn", atlas = "innkeeper" },
+    -- the dungeon's way
+    { key = "boss", atlas = "vignettekillboss" }, { key = "elite", atlas = "vignettekillelite" },
+    { key = "danger", atlas = "dungeonskull" }, { key = "door", atlas = "poi-door" },
+    { key = "up", atlas = "poi-door-arrow-up" }, { key = "down", atlas = "poi-door-arrow-down" },
+    { key = "jump", texture = "Interface\\Icons\\Ability_HeroicLeap", cut = ICON_CUT },
+    { key = "portal", texture = "Interface\\Icons\\Spell_Arcane_TeleportStormWind", cut = ICON_CUT },
+    { key = "trap", atlas = "vehicle-trap-red" },
+    { key = "chest", atlas = "vignetteloot" }, { key = "locked", atlas = "vignetteloot-locked" },
+    { key = "key", texture = "Interface\\Icons\\INV_Misc_Key_03", cut = ICON_CUT },
+    -- the group
+    { key = "tank", atlas = "groupfinder-icon-role-large-tank" }, { key = "healer", atlas = "groupfinder-icon-role-large-heal" },
+    { key = "damage", atlas = "groupfinder-icon-role-large-dps" }, { key = "summon", atlas = "Raid-Icon-SummonPending" },
+    { key = "rally", texture = "Interface\\Icons\\INV_BannerPVP_02", cut = ICON_CUT },
+    { key = "lookout", texture = "Interface\\Icons\\INV_Misc_Spyglass_03", cut = ICON_CUT },
+    -- what to mind
+    { key = "fire", texture = "Interface\\Icons\\Spell_Fire_Fire", cut = ICON_CUT },
+    { key = "water", texture = "Interface\\Icons\\Ability_Druid_AquaticForm", cut = ICON_CUT },
+    { key = "sneak", texture = "Interface\\Icons\\Ability_Stealth", cut = ICON_CUT },
+    { key = "run", texture = "Interface\\Icons\\Ability_Rogue_Sprint", cut = ICON_CUT },
+    { key = "bomb", texture = "Interface\\Icons\\INV_Misc_Bomb_04", cut = ICON_CUT },
+    { key = "unknown", texture = "Interface\\Icons\\INV_Misc_QuestionMark", cut = ICON_CUT },
+    -- the world
+    { key = "quest", atlas = "questnormal" }, { key = "herb", atlas = "professions_tracking_herb" },
+    { key = "ore", atlas = "professions_tracking_ore" }, { key = "inn", atlas = "innkeeper" },
 }
 Markers.TEXT = {
     new = "New marker",
@@ -75,7 +100,7 @@ Markers.TEXT = {
     edit = "Edit",
     editTip = "Change its title, its description and its icon.",
     move = "Move",
-    moveTip = "Click on the map where it should stand; a right click: it stays.",
+    moveTip = "Click on the map where it should stand; a right click: it stays. With the palette's Move tool you can also drag it.",
     moving = "Click on the map where %s should stand; a right click: it stays.",
     pin = "The map pin here",
     pinTip = "The game's map pin on this marker: the golden line leads there.",
@@ -132,11 +157,19 @@ local function Icon(key)
 end
 Markers.Icon = Icon
 
--- An icon on a texture: the raid mark's file, else the map icon's atlas.
+-- An icon on a texture: the raid mark's or spell icon's file (a spell icon's frame cut off), else the map icon's atlas.
 local function Paint(texture, key)
     local icon = Icon(key)
-    if icon.texture then texture:SetTexture(icon.texture) else texture:SetAtlas(icon.atlas) end
+    if icon.texture then
+        texture:SetTexture(icon.texture)
+        local cut = icon.cut or 0
+        texture:SetTexCoord(cut, 1 - cut, cut, 1 - cut)
+    else
+        texture:SetTexCoord(0, 1, 0, 1)
+        texture:SetAtlas(icon.atlas)
+    end
 end
+Markers.Paint = Paint
 
 -- The map drawn anew with the markers as they are now.
 local function Changed()
@@ -144,6 +177,7 @@ local function Changed()
     if ns.Canvas and ns.Canvas.Refresh then ns.Canvas.Refresh() end
     if ns.Draw and ns.Draw.Changed then ns.Draw.Changed() end -- (a dungeon's floor shown)
 end
+Markers.Changed = Changed -- (a marker dragged: Draw.lua)
 
 -- The markers as pins: in their plane (Coords), their icon, their title as the heading and their words in the tooltip,
 -- their title beside them on the full map.
@@ -163,7 +197,8 @@ function Markers.Pins()
             lines[#lines + 1] = { Markers.TEXT.hint, 0.5, 0.5, 0.5 }
             pins[#pins + 1] = { kind = "mark", key = "mark:" .. marker.id, marker = marker, name = marker.title,
                                 label = marker.title, home = home, u = u, v = v, map = marker.map, x = marker.x,
-                                y = marker.y, texture = icon.texture, atlas = icon.atlas, lines = lines }
+                                y = marker.y, texture = icon.texture, atlas = icon.atlas, cut = icon.cut,
+                                lines = lines }
         end
     end
     return pins

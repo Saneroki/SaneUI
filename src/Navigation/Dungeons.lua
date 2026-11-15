@@ -531,7 +531,7 @@ local pressX, pressY, panning
 local function Down(_, button)
     if onSmall then return end -- the small map's whole map is not dragged
     local tool = ns.Draw.Tool()
-    if tool and button == "LeftButton" then return ns.Draw.PressFloor() end
+    if tool and button == "LeftButton" and not ns.Markers.Moving() then return ns.Draw.PressFloor() end
     if button ~= (tool and "RightButton" or "LeftButton") then return end
     dragX, dragY = Cursor()
     pressX, pressY, panning = dragX, dragY, button

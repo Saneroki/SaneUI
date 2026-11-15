@@ -664,11 +664,14 @@ local function Down(own, button)
     if held then return end -- on the window's way: its camera is not the one shown (Morph), no drag nor click
     lastInput = GetTime()
     if grab then Unbend() end -- another button during a drag of the line: that drag ends, nothing put
-    local tool = own and not lost and ns.Draw.Tool()
-    if tool and button == "LeftButton" then
+    local tool = not lost and ns.Draw.Tool()
+    -- the left button the tool's: on the map, and on a marker's pin too with the Move tool (it drags it); never while
+    -- a marker waits for its new place (its card's Move: the click puts it there)
+    if tool and button == "LeftButton" and (own or tool == "move") and not ns.Markers.Moving() then
         pressed = nil
         return ns.Draw.Press()
     end
+    if not own then tool = nil end
     pressed, moved = button, false
     pressX, pressY = Cursor()
     grab = own and button == "LeftButton" and Grab() or nil
@@ -762,7 +765,7 @@ local function Clicked(button, pin)
     end
     if button ~= "LeftButton" then return end
     -- Your markers (Markers.lua): Alt and a click puts a new one there; one waiting for its new place goes there.
-    if not pin and (IsAltKeyDown() or ns.Markers.Moving()) then
+    if ns.Markers.Moving() or (not pin and IsAltKeyDown()) then
         last = nil
         if lost then return end
         if ns.Markers.Moving() then return ns.Markers.Put(Where(x, y)) end
@@ -821,6 +824,7 @@ function Canvas.Press(button, via)
 end
 
 function Canvas.Release(button, pin)
+    if button == "LeftButton" and ns.Draw.Busy() then return ns.Draw.Release() end -- (a marker the Move tool held)
     if Finish(button) then Clicked(button, pin) end
 end
 

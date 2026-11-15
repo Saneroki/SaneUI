@@ -28,7 +28,7 @@ local Coords = ns.Coords
 local Draw = {}
 ns.Draw = Draw
 
-Draw.TOOLS = { "marker", "pen", "line", "arrow", "circle", "erase" }
+Draw.TOOLS = { "marker", "pen", "line", "arrow", "circle", "move", "erase" }
 Draw.THICK = { 3, 6 }   -- a drawing's thickness in units, thin and thick
 Draw.EDGE = 2           -- units of dark edge round it
 Draw.STEP = 4           -- units the mouse goes before a pen's next point
@@ -38,6 +38,7 @@ Draw.HEAD = 12          -- units an arrow's head is long (and its width's share 
 Draw.SPREAD = 0.45      -- radians an arrow's head opens to each side
 Draw.SIDES = 40         -- a circle's sides
 Draw.PIN = 24           -- a marker on a dungeon's floor
+Draw.GRAB = 14          -- units from a marker's middle the Move tool takes it
 Draw.WHITE = "Interface\\Buttons\\WHITE8X8"
 Draw.TEXT = {
     noPlace = "Nothing to draw on here: zoom in onto a zone.",
@@ -47,7 +48,11 @@ Draw.TEXT = {
 local tool        -- the tool on (nil: none, the map's own mouse)
 local current     -- the drawing under way: { surface, map, kind, colour, width, points, sx, sy (its last point on
                   -- the screen) }
-local stroker     -- the frame whose OnUpdate follows the mouse while a drawing is under way
+local stroker     -- the frame whose OnUpdate follows the mouse while a drawing is under way, or one is dragged
+local held        -- what the Move tool drags (Saneroki, 2026-11-15: "make it possible that map markers are draggable
+                  -- so you can move them to a different position"): { surface, thing (a marker or a drawing), marker
+                  -- (true for a marker), x, y (a drawing's: the mouse's last point on its map), sx, sy (a marker's last
+                  -- place on the screen) }
 
 -------------------------------------------------------------------------------
 --  The palette's choices
@@ -59,7 +64,7 @@ end
 -- A tool on (one of Draw.TOOLS), or none (nil): the map's mouse its own again.
 function Draw.SetTool(key)
     tool = key
-    if not key then current = nil end
+    if not key then current, held = nil, nil end
     if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end
 end
 
@@ -287,7 +292,17 @@ local function Pin(index)
     button.icon:SetAllPoints()
     button.label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalOutline")
     button.label:SetPoint("LEFT", button, "RIGHT", 4, 0)
-    button:SetScript("OnClick", ns.Guard(function(self) if self.marker then ns.Markers.Open(self.marker) end end))
+    -- with the Move tool on, pressed: dragged (Hold); let go: put down; else a click opens its card
+    button:SetScript("OnMouseDown", ns.Guard(function(self, mouse)
+        if mouse == "LeftButton" and tool == "move" and self.marker then Hold("floor", self.marker) end
+    end))
+    button:SetScript("OnMouseUp", ns.Guard(function(_, mouse)
+        if mouse == "LeftButton" and held then Draw.Release() end
+    end))
+    button:SetScript("OnClick", ns.Guard(function(self)
+        if tool == "move" then return end
+        if self.marker then ns.Markers.Open(self.marker) end
+    end))
     button:SetScript("OnEnter", ns.Guard(PinTip))
     button:SetScript("OnLeave", GameTooltip_Hide)
     pins[index] = button
@@ -326,8 +341,7 @@ function Draw.Floor(dungeon, map, art, scale, midX, midY, onSmall)
                 count = count + 1
                 local button = Pin(count)
                 button.marker = marker
-                local icon = ns.Markers.Icon(marker.icon)
-                if icon.texture then button.icon:SetTexture(icon.texture) else button.icon:SetAtlas(icon.atlas) end
+                ns.Markers.Paint(button.icon, marker.icon)
                 button.label:SetText(not onSmall and marker.title or "")
                 button:ClearAllPoints()
                 button:SetPoint("CENTER", dungeon, "CENTER", x, y)
@@ -389,8 +403,8 @@ local function Redraw(surface)
     if view then Draw.Place(view, small) end
 end
 
--- The eraser: the drawing nearest the mouse within Draw.REACH units, away.
-local function Erase(surface, sx, sy)
+-- The drawing nearest a point of the screen within Draw.REACH units (the eraser's, the Move tool's), nil where none.
+local function Nearest(surface, sx, sy)
     local placed = surface == "floor" and floor and floor.placed or canvas.placed
     local best, bestReach
     for _, seg in ipairs(placed) do
@@ -402,7 +416,86 @@ local function Erase(surface, sx, sy)
             best, bestReach = seg.drawing, reach
         end
     end
+    return best
+end
+
+-- The eraser: the drawing nearest the mouse within Draw.REACH units, away.
+local function Erase(surface, sx, sy)
+    local best = Nearest(surface, sx, sy)
     if best then ns.Plans.Erase(best) end
+end
+
+-- The marker nearest a point of the screen within Draw.GRAB units of its middle (shown: its sketch shown; on the
+-- floor: on the floor's map), nil where none.
+local function MarkerAt(surface, sx, sy)
+    local best, bestReach
+    for _, marker in ipairs(ns.Markers.List()) do
+        local here = surface ~= "floor" or (floor and marker.map == floor.shown)
+        if here and ns.Plans.Visible(marker.plan) then
+            local mx, my = Screen(surface, marker.map, marker.x or 0, marker.y or 0)
+            local reach = mx and math.sqrt((mx - sx) ^ 2 + (my - sy) ^ 2)
+            if reach and reach <= Draw.GRAB and (not bestReach or reach < bestReach) then best, bestReach = marker, reach end
+        end
+    end
+    return best
+end
+
+-- The mouse on a map now: its point there (x, y; on the floor only on the floor's own map), nil off it.
+local function MouseOn(surface, map)
+    if surface == "floor" then
+        local at, x, y = Mouse("floor")
+        if at == map then return x, y end
+        return nil
+    end
+    local _, u, v = Mouse("canvas")
+    if not u then return nil end
+    return Onto(map, u, v)
+end
+
+-- Each frame while the Move tool holds something: a marker goes where the mouse is (onto the zone under it, on the
+-- map; on its floor, on a dungeon's), a drawing goes along with the mouse, every point by as much.
+local function Drag()
+    if not held then return end
+    local thing = held.thing
+    if held.marker then
+        local spot
+        if held.surface == "floor" then
+            local map, x, y = Mouse("floor")
+            if map ~= thing.map or not x then return end
+            spot = { map = map, x = x, y = y }
+        else
+            spot = Mouse("canvas")
+            if type(spot) ~= "table" or not spot.map or not spot.x then return end
+        end
+        local sx, sy = Screen(held.surface, spot.map, spot.x, spot.y)
+        if sx and held.sx and math.abs(sx - held.sx) + math.abs(sy - held.sy) < 1 then return end
+        held.sx, held.sy = sx, sy
+        thing.map, thing.x, thing.y = spot.map, spot.x, spot.y
+        return ns.Markers.Changed()
+    end
+    local x, y = MouseOn(held.surface, thing.map)
+    if not x or (x == held.x and y == held.y) then return end
+    local dx, dy, points = x - held.x, y - held.y, thing.points
+    for index = 1, #points - 1, 2 do points[index], points[index + 1] = points[index] + dx, points[index + 1] + dy end
+    held.x, held.y = x, y
+    Redraw(held.surface)
+end
+local dragged = ns.Guard(Drag) -- made once
+
+-- The Move tool takes a marker or a drawing on a surface; held until the button is let go (Draw.Release).
+local function Hold(surface, marker, drawing)
+    if not (marker or drawing) then return end
+    held = { surface = surface, thing = marker or drawing, marker = marker ~= nil }
+    if drawing then
+        held.x, held.y = MouseOn(surface, drawing.map)
+        if not held.x then
+            held = nil
+            return
+        end
+    end
+    stroker = stroker or CreateFrame("Frame")
+    stroker:SetScript("OnUpdate", dragged)
+    Draw.stroker = stroker -- (for the tests)
 end
 
 -- Each frame while the button is held: the drawing under way follows the mouse.
@@ -454,10 +547,14 @@ local function Press(surface)
         if map and x then return ns.Markers.New({ map = map, x = x, y = y }) end
         return UIErrorsFrame:AddMessage(Draw.TEXT.noPlace, 1, 0.1, 0.1)
     end
-    if tool == "erase" then
+    if tool == "erase" or tool == "move" then
         local sx, sy
         if map and x then sx, sy = Screen(surface, map, x, y) end
-        if sx then Erase(surface, sx, sy) end
+        if not sx then return end
+        if tool == "erase" then return Erase(surface, sx, sy) end
+        -- the Move tool: the marker under the mouse first (they stand over the drawings), else the drawing
+        local marker = MarkerAt(surface, sx, sy)
+        Hold(surface, marker, not marker and Nearest(surface, sx, sy) or nil)
         return
     end
     if not (map and x) then return UIErrorsFrame:AddMessage(Draw.TEXT.noPlace, 1, 0.1, 0.1) end
@@ -474,12 +571,21 @@ function Draw.PressFloor()
 end
 
 function Draw.Busy()
-    return current ~= nil
+    return current ~= nil or held ~= nil
 end
 
 -- Let go: the drawing kept in the active plan where it is long enough (a pen's two points, the others Draw.LEAST
 -- units on the screen), else let go of.
 function Draw.Release()
+    if held then
+        -- what the Move tool held: put down where the mouse let go of it (kept as it is: the saved settings hold it)
+        Drag()
+        local was = held
+        held = nil
+        if stroker then stroker:SetScript("OnUpdate", nil) end
+        if was.marker then return ns.Markers.Changed() end
+        return Redraw(was.surface)
+    end
     local drawing = current
     current = nil
     if stroker then stroker:SetScript("OnUpdate", nil) end

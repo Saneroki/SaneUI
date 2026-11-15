@@ -562,6 +562,7 @@ local function Marked(list)
         local title = (marker.title and marker.title ~= "") and marker.title or Markers.TEXT.untitled
         list[#list + 1] = Words({ kind = "marker", group = "marker", key = "marker:" .. tostring(marker.id),
                                   marker = marker, atlas = icon.atlas, icon = icon.texture,
+                                  coords = icon.cut and { icon.cut, 1 - icon.cut, icon.cut, 1 - icon.cut },
                                   spots = { { map = marker.map, x = marker.x, y = marker.y } } },
             title, Find.TEXT.marker, (marker.text or "") .. " marker " .. (marker.from or ""))
     end

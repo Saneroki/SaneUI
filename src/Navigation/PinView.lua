@@ -619,7 +619,7 @@ local function Look(button, pin)
     else
         -- A picture of its own: the whole of it, whatever atlas the button showed before; an item's cut inside its
         -- own frame (Found.TRIM)
-        local cut = look and ns.Found.TRIM or 0
+        local cut = first.cut or look and ns.Found.TRIM or 0 -- (a marker's spell icon: its frame cut off)
         icon:SetTexture(first.texture)
         icon:SetTexCoord(cut, 1 - cut, cut, 1 - cut)
         button.light:SetTexture(first.texture)

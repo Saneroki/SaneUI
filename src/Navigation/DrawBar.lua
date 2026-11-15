@@ -31,7 +31,7 @@ DrawBar.WIDTH_MENU = 130 -- the bar's dropdown Sketches
 DrawBar.TOOL = 32        -- a tool's square
 DrawBar.SWATCH = 22      -- a colour's
 DrawBar.GAP = 4
-DrawBar.WIDTH = 6 * (32 + 4) - 4 + 2 * Look.INSIDE -- the palette: six tools in a row
+DrawBar.WIDTH = 7 * (32 + 4) - 4 + 2 * Look.INSIDE -- the palette: seven tools in a row
 -- What players read calls a plan a sketch (Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing";
 -- he chose Sketch); the code keeps plan (Plans.lua).
 DrawBar.TEXT = {
@@ -48,6 +48,7 @@ DrawBar.TEXT = {
         line = { "Line", "Drag: a straight line from where you begin to where you let go." },
         arrow = { "Arrow", "Drag: an arrow pointing where you let go." },
         circle = { "Circle", "Drag: a circle round where you begin, as wide as you drag." },
+        move = { "Move", "Drag a marker or a drawing to its new place." },
         erase = { "Eraser", "A click on a drawing: away." },
     },
     thin = "Thin", thick = "Thick",
@@ -87,6 +88,13 @@ local GLYPHS = {
     erase = { { -7, -7, 7, 7 }, { -7, 7, 7, -7 } },
 }
 local function Glyph(square, key)
+    if key == "move" then
+        local hand = square:CreateTexture(nil, "ARTWORK")
+        hand:SetSize(DrawBar.TOOL - 10, DrawBar.TOOL - 10)
+        hand:SetPoint("CENTER")
+        hand:SetTexture("Interface\\CURSOR\\UI-Cursor-Move")
+        return
+    end
     if key == "marker" then
         local star = square:CreateTexture(nil, "ARTWORK")
         star:SetSize(DrawBar.TOOL - 12, DrawBar.TOOL - 12)
