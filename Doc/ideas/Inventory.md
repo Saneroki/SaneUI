@@ -244,6 +244,13 @@ other characters in your bags window as well. So the search works across alts an
 no window *Alts* of its own; the dropdown of the characters on the bags' title line chooses whose things the bags'
 window shows (`Bags.Face`), one search box there for both, and while the bags are shown a search lists under them
 each other character and your bank as last seen that have any of it (*Found elsewhere*), a click showing them.
+Then (Saneroki, the same day): "Merging the alt bags feature into our bags window did remove most costumizations we had.
+Can you restore the bags window we had before moving the alts features into it and then keep our bags window but add
+the search and dropdown menu to select other characters to the proper bags window that we had before." So the bags'
+window is the one from before, and another character's things are drawn by its own parts: its sidebar (All Items and
+the categories and groups with that character's counts), its views, its *View* (display, order, item size), its heads;
+what only your own bags can do (the strip, the clean-up, the junk marker, selling, One Bag, Each Bag, Pinned, Recent,
+the "+" slots) stands aside while another is shown. *Found elsewhere* lists who else has what is searched from either.
 
 A snapshot of each of the account's other characters: its bags, its bank (as last seen), what it wears, its
 gold and level, from Core's data framework (`Core.Data.Characters`, read only; `Doc/guides/data.md`,

@@ -178,7 +178,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     bags' title line (and the full screen's) finds items by name, category or item level, each found item lit with
     the game's glow in gold: One Bag and Each Bag fade what is not found, the others show only what is. Under them,
     *Found elsewhere*: each other character that has any of it, and your bank as last seen while no banker is open,
-    with how many; a click shows those things, found. Junk's waste bin asks first (*Delete*, *Cancel*, *Delete the
+    with how many; a click shows those things, found (while another character is shown, a line for you takes you back
+    to your bags). Junk's waste bin asks first (*Delete*, *Cancel*, *Delete the
     item and don't ask me again*; *Waste Bin Asks First* brings the question back). At the foot your currencies and your gold (every character's in its tooltip). The game's own bank window
     stays as it is.
 - **Your bank** (the window *Bank*): there while you are at a banker, in the bags' look: a sidebar with *All
@@ -203,26 +204,23 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   corner or Esc closes the full screen as always (Esc closes the vendor's window with it). At a mailbox likewise
   (the tab *Mail*): the game's mail window on the left, with Economy's tab *Banker* on it as always, a letter you open
   beside it, your bags on the right. *Sane UI > Inventory > Full Screen at Vendors, the Bank and Mail* switches it off.
-- **Your alts**, in the bags' window: the dropdown after *Bags* on its title line chooses whose things it shows (you:
-  your bags as they are; anyone else: their things as last seen, in the bags' look and made of the bags' own parts, so
-  what you learned there holds here). The dropdown lists the account's characters (you first, each in its class's
-  colour with its class's icon and its gold, the account's bank last where it holds something, the gold of them all
-  under them; its tooltip the level, realm and when it was seen); beside it how many items are shown, the search box
-  and the dropdown *View*: *Grid*, *List* or *Compact*, *Sort By* and the slider *Item Size*, theirs apart from the
-  bags'; the bags' own buttons stand only by your bags. At the left the sidebar *Storage*,
-  which folds by its arrow: *All Places*, *Bags*, *Bank*, *Equipped*, then *All Categories* and the bags' categories
-  and groups as you arranged them, with how many of that character's items each holds. A click shows only that place,
-  that category or that group; a place and a category go together (the Potions in the bank). A group's arrow, its box,
-  a right click on a row and a row dragged do what they do in the bags, and count for the bags too. The items stand
-  under a head per place, by category, each with its item level and count (the settings *Show Item Level*, *Coin on
-  Junk* and *Grey Junk* hold here too; the green upgrade arrow does not: it is for the character you play); the wheel
-  scrolls them. What is worn is the paper doll under them, slot by slot, the bags worn as items above it. At the foot
-  that character's level, class and when it was seen, and its gold (every character's in its tooltip). Tooltips are the
-  game's; Shift or Ctrl and a click links an item or tries it on; Alt and a right click opens its menu, as in the bags.
-  Nothing moves an item. The search box finds an item across them all, by its name or its number: each character says
-  how many it has in the dropdown, and the window lists only what was found (if the one chosen has none of it, the
-  first that has). A character's things are as Core last
-  read them while it was logged in; its bank, while it had it open.
+- **Your alts**, in your bags' own window (Saneroki, 2026-11-15: the window as it was before the alts came into it,
+  with the dropdown and the search added): the dropdown after *Bags* on its title line chooses whose things it shows
+  (you: your bags as they are; anyone else: their things as last seen). It lists the account's characters (you first,
+  each in its class's colour with its class's icon and its gold, the account's bank last where it holds something, the
+  gold of them all under them; its tooltip the level, realm and when it was seen). Another character's things are drawn
+  by the bags themselves: the same sidebar (*All Items*, then your categories and groups as you arranged them, with how
+  many of that character's items each holds; a click shows one alone; a group's arrow, its box, a right click and a
+  row dragged do what they always do), the same *View* (*Grid*, *List* or *Compact*, *Sort By*, *Item Size*), the same
+  heads, item levels, coins and grey junk. Its bags, its bank as last seen and what it wears stand each under a head,
+  the paper doll under them; the count on the title line says how many items are shown. What only your own bags can do
+  stands aside meanwhile: the strip of the bags, the clean-up, the junk marker, selling, *One Bag* and *Each Bag*
+  (Core keeps a bag's items, not the slots they lie in), *Pinned* and *Recent*, the "+" slots. At the foot that
+  character's level, class and when it was seen, and its gold (every character's in its tooltip). Tooltips are the
+  game's; Shift or Ctrl and a click links an item or tries it on; Alt and a right click opens its menu. Nothing moves an
+  item. The search box finds an item across them all, by its name or its number: each character says how many it has
+  in the dropdown, the window lists only what was found, *Found elsewhere* who else has it. The window opens with your
+  bags. A character's things are as Core last read them while it was logged in; its bank, while it had it open.
 - **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
   *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
@@ -429,11 +427,10 @@ login has no last line, until the game has said your time.
     `UPDATE_INVENTORY_DURABILITY`, `UPDATE_INVENTORY_ALERTS`, `UNIT_INVENTORY_CHANGED`, `UNIT_MODEL_CHANGED` and
     `UNIT_NAME_UPDATE` (the player's), `PLAYER_LEVEL_UP`, `PLAYER_ENTERING_WORLD`. Every value read goes through
     `Core.Plain` or `Core.Ask`; every function of the game's is called only if this client has it.
-- **The other characters** (`Alts/`; the bags' window's other face since 2026-11-15, no part of their own: `Bags.Face`
-  shows `Alts.body` in the bags' place and lets the bags be, `Alts.Choose` from the roster goes there, `Alts.Pick`
-  sets whose; their count on the bags' title line, their View the bags' dropdown, `Alts.ViewMenu`): what the account's characters have, read only from Core's
-  data framework (`Core.Data.Characters`, `Character`, `Items`, `Worn`, `OnCharacters`; `Doc/guides/data.md`,
-  *Characters*): nothing is gathered or kept here.
+- **The other characters** (`Alts/`; in the bags' own window since 2026-11-15, no part of their own: `Bags.Face(key,
+  stored)` chooses whose things it shows, `Alts.Choose` from the roster and the lines of *Found elsewhere* go there):
+  what the account's characters have, read only from Core's data framework (`Core.Data.Characters`, `Character`,
+  `Items`, `Worn`, `OnCharacters`; `Doc/guides/data.md`, *Characters*): nothing is gathered or kept here.
   - **What is shown** (`Alts/Snapshot.lua`, no frames): the roster (`Snapshot.Characters`: the one logged in
     first, the others by name, the account's bank last where it holds something), a character's places in the
     order `bags`, `bank`, `worn` with their items in the order Core keeps them (by item ID; Core keeps no bag's
@@ -455,7 +452,7 @@ login has no last line, until the game has said your time.
     `__index`, the count its own), `word` the head with what is said beside it in faint grey (the day the bank was
     seen, *Not seen yet*, *Empty*), `doll` and `total` for a place the doll stands under. `Items.Button` is a read-only
     item button: the tooltip `GameTooltip:SetItemByID`, a modified click `HandleModifiedItemClick`; nothing picks an item
-    up. `Items.Counts`: each place's, category's and group's count for Storage.
+    up. `Items.Counts`: each place's, category's and group's count for the bags' sidebar.
   - **The paper doll** (`Items.MakeDoll`, `Items.DrawDoll`; a frame in the scroll area's child, under what the canvas
     drew): the slots as the sheet has them (`Slots.COLUMNS`, `Slots.SIZE`, `GAP`, `AMMO`, `AMMO_GAP`; IDs from
     `GetInventorySlotInfo`), eight down each side as far apart as the room is wide, at most as on the sheet (`Items.DOLL`),
@@ -465,22 +462,27 @@ login has no last line, until the game has said your time.
     worn in their slots stand as items under Equipped's head, in their slots' order. While searching the doll is shown
     only if something in it is found, whole, what is not found dimmed (`SetMatchesSearch`, as the game's bags dim it).
     A character Core has not read slot by slot yet (it has not logged in since) has what it wears by category.
-  - **The window** (`Alts/Alts.lua`): built as the bags' (`Bags.TitleBar`, `ns.Sidebars.New`, `Canvas.New` with a pool of
-    `Cells.New(child, Alts, Items.Button)`, `Columns.Build`, a scroll area the wheel moves by `Bags.Wheel`, the foot a
-    band with the thin golden line). `Views.Build` with `Alts.PLAIN` and, while searching, `Contents.FOUND` (what `Snapshot` found
-    stands; the bags' search also finds by category and item level, the dropdown's counts would not fit it); `Tidy` takes
-    out what the views left that is not shown here (a category without items; a place's head with nothing under it while
-    only some is shown) and gives a place's head its count. The sidebar's choice is two things: a place and a view
-    (`cat:<key>`, `group:<group>`), the latter dropped when its category is switched off or its group is no more. The rows
-    of the categories are the bags' (`BagSidebar.Categories`), and so is what a group's arrow and box, a row's menu and a
-    row's drag do (`BagSidebar.Aim`, `Place`). What the bags' windows change draws this one anew (`Alts.Changed`: `Menus`'
-    `Changed`, the sidebar's `Arranged`, a setting). Kept in `store.alts`: `look`, `sort`, `scale`, `folded` (a list's
-    folded blocks), `side` (the sidebar); the bags' store read for the categories and columns (`Bags.Store`). Shown at
-    first: the first of the others; the choice holds until a `/reload`. While searching, if the chosen one has none of
-    it, the first that has is shown until the search is cleared. Listens only while shown: `Core.Data.OnCharacters`,
-    `GET_ITEM_INFO_RECEIVED`, `ITEM_DATA_LOAD_RESULT`, drawn a frame later (`Core.Later`; the names the game tells
-    together, `Alts.NAMES` later); drawn anew when shown. A character's class, level and realm of a wrong kind (Core
-    checks only its name and places) are left out.
+  - **In the bags' window** (`Alts/Alts.lua`, built by `Bags.Build`): a canvas of its own in the bags' scroll area's
+    child (`Canvas.New` with the bags' store, `store.bags`: their display, order and folded blocks) and a pool of
+    read-only buttons (`Cells.New(child, Alts, Items.Button)`), the doll in the same child, a foot over the bags' own
+    (`Foot.frame`, hidden meanwhile), the word in the items' place (*Loading...*, *No items found*). `Bags.lua`'s `Draw`
+    draws by whose things are shown (`face`): the bags' canvas, or `Alts.Draw(key, view, query, room, how, size)`, the
+    other canvas emptied (`Alts.Clear`; the bags' drawn with no blocks). `Alts.Draw`: `Views.Build` with the view the
+    bags' sidebar chose (One Bag, Each Bag, Pinned and Recent give way to All Items: `Bags.lua`'s `LIVE`), `Alts.PLAIN`
+    and, while searching, `Contents.FOUND` (what `Snapshot` found stands; the bags' search also finds by category and
+    item level, the dropdown's counts would not fit it); `Tidy` takes out what the views left that is not shown here (a
+    category without items; a place's head with nothing under it while only some is shown) and gives a place's head
+    its count. It returns the height, how many items are shown (the title line's count) and `Items.Counts` for the bags'
+    sidebar (`BagSidebar.Refresh(counts, view, options, true)`: *All Items* with the total, the categories and groups
+    taking no item, no One Bag, Each Bag, Pinned, Recent or Add Category). `Bags.Face` sets the bags' own buttons
+    (clean-up, strip, junk marker, `Foot.act`), the strip and the foot aside for another and back for you, ends the junk
+    marker's mode, and draws; `Bags.Show(true)` opens with the bags as they are. *Found elsewhere* lists every character
+    not shown that has any of what is searched (you: your bags as they are while another is shown; your bank as last
+    seen while yours are). Listens only while another is shown (`Alts.Show`): `GET_ITEM_INFO_RECEIVED`,
+    `ITEM_DATA_LOAD_RESULT`, `Core.Data.OnCharacters`, drawn a frame later (`Core.Later`; the names the game tells
+    together, `Alts.NAMES` later). A character's class, level and realm of a wrong kind (Core checks only its name and
+    places) are left out. Before (2026-11-15, the same day) a body of its own with a sidebar *Storage*, a foot and a
+    *View* stood in the bags' place: it replaced the bags' own parts, and went.
 - **The bags** (`Bags/`, the parts `bags` and `bank`): the backpack, the bags, the reagent bag and the keyring
   (`Contents.Carried`: those with slots) in the window *Bags*; while the bank is open (`BANKFRAME_OPENED`, at the
   login `C_PlayerInteractionManager.IsInteractingWithNpcOfType` for each of `Bank.BANKERS`: `Bank.Start`,
@@ -744,7 +746,7 @@ login has no last line, until the game has said your time.
   windows.
 - **Standing down** (`ns.GiveBack`): the bag keys and the game's bag windows are the game's again first, then the
   board's windows go and the window with them, each step by itself (`ns.Safe`). A `/reload` starts the module afresh.
-- Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters' window
+- Tests: `dev/tests/inventory.lua` (the window, the board, the paper doll, the stats, the other characters in the bags' window
   and an alt's paper doll), `dev/tests/sheet.lua` (the sheet's windows on the board, the sidebar with its gear sets and titles, the game's tabs as windows), `dev/tests/bags.lua` (the bags); each also as Retail (`W.Play("retail")`: the level line, the stats, the windows that stand down, the icons, our bar, the bags without a keyring).
 
 `LevelUp.lua` (Saneroki, 2026-10-30) tells a new level in the middle of the screen. What it brought comes with
@@ -836,13 +838,13 @@ classes' gains can be held against each other; `early` for a character without a
 | `Bags/Select.lua` | The bags' choosing by clicks: an item into a category after its "+", junk marked by the coin |
 | `Bags/Sidebar.lua` | The bags' sidebar: the views, Pinned, Recent, the categories and groups with their counts |
 | `Bags/Canvas.lua` | A window's drawing of its items: heads, labels, the empty slots, the list's lines, the item buttons, the catcher of an item let go over an item |
-| `Bags/Bags.lua` | The bags' window: the bar (the characters' dropdown, the search box), the strip, the scroll area, heads, labels and lines, the dropdown *View*, *Found elsewhere*, the events; whose things it shows (`Bags.Face`: the other characters' in its place); registers the part `bags` |
+| `Bags/Bags.lua` | The bags' window: the bar (the characters' dropdown, the search box), the strip, the scroll area, heads, labels and lines, the dropdown *View*, *Found elsewhere*, the events; whose things it shows (`Bags.Face`: another character's drawn by `Alts.lua`); registers the part `bags` |
 | `Bags/Bank.lua` | The bank's window while at a banker: its tabs, sidebar, views, bar and foot; registers the part `bank` |
 | `Talks.lua` | The full screen at a vendor, a banker and a mailbox: a layout of its own for each talk; the game's vendor, mail and letter windows seated on it, the parts `vendor`, `mail`, `letter` |
 | `Alts/Snapshot.lua` | The other characters' things, without frames: the roster, a character's places and items, the search |
 | `Alts/Roster.lua` | The dropdown of the account's characters on the bags' title line, their gold |
 | `Alts/Items.lua` | The other characters' things: the chosen one's things as the bags' records and sections, read-only buttons, the paper doll |
-| `Alts/Alts.lua` | The other characters' things in the bags' window: whose, the search, the events, their sidebar Storage, foot and View |
+| `Alts/Alts.lua` | Another character's things in the bags' own window: their canvas and read-only buttons, drawn by the bags' views, the doll, their foot, the events |
 
 ## History
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and
@@ -881,3 +883,9 @@ classes' gains can be held against each other; `early` for a character without a
   taken out).
 - **2026-11-15:** (Saneroki, seen in the game) the doll plainer: no frame round the model, no grey boxes round the
   items' stats; the quality's border as large as a weapon's icon; the bronze plate laid once per window (Core's).
+- **2026-11-15:** (Saneroki) the alts merged into the bags' window, first as a body of their own in its place (a
+  sidebar *Storage*, a foot and a *View* of their own), which stood in for the bags' own parts. Then (Saneroki: "restore
+  the bags window we had before moving the alts features into it and then keep our bags window but add the search and
+  dropdown menu to select other characters to the proper bags window") the bags' window as it was, with the
+  characters' dropdown and the search box on its title line; another character drawn by the bags' own sidebar, views
+  and *View* (`Alts.Draw`).

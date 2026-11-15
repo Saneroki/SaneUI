@@ -648,10 +648,10 @@ end
 local Alts, Snapshot, Items, Roster = ns.Alts, ns.Snapshot, ns.Items, ns.Roster
 CreateAtlasMarkup = function(atlas) return "[" .. atlas .. "]" end
 MenuResponse = MenuResponse or { Close = 3 }
-local alts = Board.Panel("bags")
-check(alts and alts:IsShown() and not Board.Panel("alts") and ns.Bags.Whose() == nil and not Alts.body:IsShown()
-    and ns.Bags.live:IsShown() and not Alts.body.wait:IsShown(),
-    "the other characters' things are the bags' window's (Saneroki, 2026-11-15: one window): the bags at first; Core's data of them is there from the login")
+local bagsPanel = Board.Panel("bags")
+check(bagsPanel and bagsPanel:IsShown() and not Board.Panel("alts") and ns.Bags.Whose() == nil and not Alts.foot:IsShown()
+    and ns.Foot.frame:IsShown() and not Alts.note:IsShown(),
+    "the other characters' things are the bags' own window's (Saneroki, 2026-11-15): the bags as they are at first")
 -- The scheduler's frames (Core's Steps.lua): the characters' data read.
 local function Steps()
     local steps = Core.Steps.frame
@@ -710,7 +710,22 @@ local function Shown()
     for index, button in ipairs(Alts.cells:Each()) do list[index] = ns.Cells.Record(button) end
     return list
 end
-check(not Alts.body.wait:IsShown() and Names() == "Tester Stub, Ann Brook, Droopy Fairwind, Account Bank",
+-- The lines of what the search finds elsewhere (Bags.lua's Elsewhere), shown now.
+local function ElsewhereLines()
+    local lines = {}
+    for _, widget in ipairs(W.frames) do
+        if widget.key and widget.words and widget._parent and widget._parent.head and widget:IsVisible() then
+            lines[#lines + 1] = widget
+        end
+    end
+    return lines
+end
+local function ElsewhereLine(part)
+    for _, line in ipairs(ElsewhereLines()) do
+        if line.words._text:find(part, 1, true) then return line end
+    end
+end
+check(not Alts.note:IsShown() and Names() == "Tester Stub, Ann Brook, Droopy Fairwind, Account Bank",
     "Core's data there: the dropdown, you first, the others by name, the account's own bank last: " .. Names())
 check(Roster.WIDTH < 230 and not Alts.roster, "a dropdown on the title line, no column down the window's side")
 do
@@ -724,12 +739,28 @@ do
     check(total == "Total: 1244467c", "under them the gold of them all")
 end
 check(Character("Tester").checked(Character("Tester").data) and characters.word:find("Tester Stub", 1, true)
-    and not Alts.body:IsShown(), "the bags as they are at first: the one logged in the dropdown's word")
+    and not Alts.foot:IsShown(), "the bags as they are at first: the one logged in the dropdown's word")
+-- The bags' sidebar: its rows by their words.
+local function SideRow(word)
+    for _, row in ipairs(ns.BagSidebar.Rows()) do
+        if row.word == word and row:IsShown() then return row end
+    end
+end
+local function Click(word)
+    local row = SideRow(word)
+    row:GetScript("OnClick")(row, "LeftButton")
+end
+local PINNED, RECENT = ns.Categories.Word(ns.Categories.PINNED), ns.Categories.Word(ns.Categories.RECENT)
+check(SideRow(ns.TEXT.bagsOneBag) and SideRow(PINNED) and SideRow(ns.TEXT.bagsAddCategory), "(the bags' sidebar: its views, Pinned, Add Category)")
 Pick("Ann")
 check(Character("Ann").checked(Character("Ann").data) and not Character("Tester").checked(Character("Tester").data)
-    and characters.word:find("Ann Brook", 1, true) and Alts.foot.gold.text._text == "9900c" and Alts.body:IsShown()
-    and not ns.Bags.live:IsShown() and not ns.Bags.bar.sort:IsShown() and ns.Bags.searchBox:IsShown(),
-    "another chosen: its things in the bags' place, its name the dropdown's word, its gold at the foot; the bags' own buttons gone, the search stays")
+    and characters.word:find("Ann Brook", 1, true) and Alts.foot.gold.text._text == "9900c" and Alts.foot:IsShown()
+    and not ns.Foot.frame:IsShown() and not ns.Bags.strip:IsShown() and not ns.Bags.bar.sort:IsShown()
+    and not ns.Bags.bar.bags:IsShown() and not ns.Bags.bar.coin:IsShown() and ns.Bags.searchBox:IsShown(),
+    "another chosen: its things in the bags' own window, its name the dropdown's word, its gold at the foot; the bags' own buttons, strip and foot aside, the search stays")
+check(SideRow(ns.TEXT.bagsAllItems) and not SideRow(ns.TEXT.bagsOneBag) and not SideRow(ns.TEXT.bagsEachBag)
+    and not SideRow(PINNED) and not SideRow(RECENT) and not SideRow(ns.TEXT.bagsAddCategory) and SideRow("Miscellaneous"),
+    "the bags' own sidebar: All Items and the categories (no slots, Pinned or Recent are kept of another)")
 check(Blocks() == "Bags (1), Miscellaneous=1, Bank  Not seen yet: open the bank with this character, Equipped  Empty",
     "its bags by category; a bank never opened says so; nothing worn: empty: " .. Blocks())
 
@@ -737,9 +768,10 @@ check(Blocks() == "Bags (1), Miscellaneous=1, Bank  Not seen yet: open the bank 
 Pick("Droopy")
 check(characters.word == "|c" .. ns.Style.InkHex(0.78, 0.61, 0.43) .. "Droopy Fairwind|r" and Alts.foot.gold.text._text == "1234567c"
     and Alts.foot.line._text == "Level 30 |c" .. ns.Style.InkHex(0.78, 0.61, 0.43) .. "Warrior|r  |c" .. ns.Style.FAINT_HEX .. "Seen 3 |4day:days; ago|r",
-    "a click in the dropdown: that one's name as ink on the paper, its gold, its level and class, when it was seen")
+    "a click in the dropdown: that one's name in its class's colour, its gold, its level and class, when it was seen")
 check(Blocks() == "Bags (2), Miscellaneous=2, Bank  Seen 5 |4day:days; ago (1), Miscellaneous=1, Equipped (2), Armor=1, Miscellaneous=1"
     or Blocks():find("^Bags %(2%), Miscellaneous=2, Bank  Seen 5 |4day:days; ago %(1%)"), "each place under its head with how many, by category: " .. Blocks())
+check(ns.Bags.bar.count._text == ns.TEXT.bagsCells:format(5), "the title line's count: how many of its items are shown")
 local shown = Shown()
 local first = Alts.cells:Each()[1]
 check(shown[1].item == 2589 and shown[2].item == 4500 and shown[3].count == 8 and drawn[first].count == 20
@@ -766,7 +798,7 @@ W.modifier = nil
 first:GetScript("OnClick")(first, "LeftButton")
 W.modifier = false
 check(linked == "|Hitem:2589|h[Linen Cloth]|h", "a modified click links it")
-check(Alts.cells.make == Items.Button, "read-only buttons of its own, in the bags' pool")
+check(Alts.cells.make == Items.Button and Alts.cells ~= ns.Cells.bags, "read-only buttons of its own, not the bags' pool")
 do
     local menus = #W.menus
     Alts.Clicked(first, "RightButton")
@@ -786,71 +818,57 @@ check((Right(Character("Droopy"))) == "21" and (Right(Character("Ann"))) == "" a
 local total
 for _, line in ipairs(characters._items) do total = total or line.title end
 check(not total, "no total while searching")
+check(characters.word:find("Ann Brook", 1, true) and Alts.canvas.blocks.count == 0 and ElsewhereLine("Droopy Fairwind")
+    and ElsewhereLine("Droopy Fairwind").words._text:find("(21)", 1, true) and not ElsewhereLine("Ann Brook") and not Alts.note:IsShown(),
+    "the chosen one has none: Found elsewhere says who has it")
+ElsewhereLine("Droopy Fairwind"):GetScript("OnClick")(ElsewhereLine("Droopy Fairwind"))
 check(characters.word:find("Droopy", 1, true) and Blocks():find("^Bags %(1%), Miscellaneous=1, Equipped %(1%)") and Shown()[1].item == 2589 and #Shown() == 2,
-    "the chosen one has none: the first that has is shown, only what is found, a place without it left out: " .. Blocks())
+    "a click on it: that one's things, only what is found, a place without it left out: " .. Blocks())
 Board.Search("4502")
+Pick("Account")
 check(characters.word:find("Account Bank", 1, true) and Shown()[1].item == 4502, "an item's ID finds it too: in the account's bank")
+Pick("Ann")
 Board.Search("zzz")
-check(characters.word:find("Ann Brook", 1, true) and Alts.canvas.blocks.count == 0 and Alts.body.none:IsShown(), "nothing found: says so")
+check(characters.word:find("Ann Brook", 1, true) and Alts.canvas.blocks.count == 0 and Alts.note:IsShown()
+    and #ElsewhereLines() == 0, "found nowhere: says so")
 Board.Search("")
-check(characters.word:find("Ann Brook", 1, true) and Blocks():find("^Bags %(1%)") and not Alts.body.none:IsShown()
-    and (Right(Character("Ann"))) == "9900c",
-    "the search cleared: the chosen one again, everything")
+check(characters.word:find("Ann Brook", 1, true) and Blocks():find("^Bags %(1%)") and not Alts.note:IsShown()
+    and (Right(Character("Ann"))) == "9900c" and ns.Bags.searchBox:GetText() == "",
+    "the search cleared: everything again, the bags' box empty too")
 check(requested[4500] == 1 and Snapshot.Name(4500) == nil, "a name the game never tells is asked for once")
 
--- Storage: the bags' sidebar, the places and the bags' categories, a click shows one alone.
+-- The bags' sidebar for another: All Items and the bags' categories with its counts; a click shows one alone.
 Pick("Droopy")
-local function StorageRow(word)
-    for _, storageRow in ipairs(Alts.rail:Rows()) do
-        if storageRow.word == word and storageRow:IsShown() then return storageRow end
-    end
-end
-local function Click(word)
-    local storageRow = StorageRow(word)
-    storageRow:GetScript("OnClick")(storageRow, "LeftButton")
-end
-check(StorageRow("All Places").bar:IsShown() and StorageRow("Bank").count._text == "1" and StorageRow("Equipped").count._text == "2"
-    and StorageRow("All Categories").count._text == "3" and StorageRow("Miscellaneous").count._text == "3",
-    "Storage: the places, every category with how many of the character's items it holds")
-check(StorageRow("The Armory") and StorageRow("Consumables") and not StorageRow("Head") and not StorageRow("Potions")
-    and StorageRow("The Armory").arrow:IsShown() and StorageRow("The Armory").box:IsShown() and StorageRow("All Places").icon._texture == Alts.ICONS.places,
-    "the bags' groups, folded at first, with their arrow and box, the bags' drawings")
+check(SideRow(ns.TEXT.bagsAllItems).bar:IsShown() and SideRow(ns.TEXT.bagsAllItems).count._text == "3"
+    and SideRow("Miscellaneous").count._text == "3",
+    "All Items lit, every category with how many of the character's items it holds")
+check(SideRow("The Armory") and SideRow("Consumables") and not SideRow("Head") and not SideRow("Potions")
+    and SideRow("The Armory").arrow:IsShown() and SideRow("The Armory").box:IsShown(),
+    "the bags' groups, folded at first, with their arrow and box")
 do
-    local armory = StorageRow("The Armory")
+    local armory = SideRow("The Armory")
     armory.arrow:GetScript("OnClick")(armory.arrow)
     W.Wait(0)
-    check(StorageRow("Head") and not ns.Categories.Folded("armory"), "a group's arrow lists its members, here and in the bags")
-    armory = StorageRow("The Armory")
+    check(SideRow("Head") and not ns.Categories.Folded("armory"), "a group's arrow lists its members, the bags' own")
+    armory = SideRow("The Armory")
     armory.arrow:GetScript("OnClick")(armory.arrow)
     W.Wait(0)
-    check(not StorageRow("Head"), "and folds them again")
+    check(not SideRow("Head"), "and folds them again")
 end
-Click("Bank")
-check(Blocks():find("^Bank  Seen 5 |4day:days; ago %(1%), Miscellaneous=1$") ~= nil, "a place alone: " .. Blocks())
-Click("All Places")
 Click("Miscellaneous")
 check(Blocks():find("^Bags %(2%), Miscellaneous=2, Bank[^,]*%(1%), Miscellaneous=1$") ~= nil, "a category alone: its items in each place, no doll or worn: " .. Blocks())
-check(StorageRow("Miscellaneous").bar:IsShown() and StorageRow("All Places").bar:IsShown(), "the place and the category each lit")
-Click("Bank")
-check(Blocks():find("^Bank[^,]*%(1%), Miscellaneous=1$") ~= nil, "a place and a category together")
-Click("All Places")
+check(SideRow("Miscellaneous").bar:IsShown() and not SideRow(ns.TEXT.bagsAllItems).bar:IsShown(), "the category lit")
 Click("Trade Goods")
-check(Blocks() == "" and not Alts.body.none:IsShown(), "a category with nothing of this one: nothing, no heads")
-Click("All Categories")
+check(Blocks() == "" and not Alts.note:IsShown(), "a category with nothing of this one: nothing, no heads")
+Click(ns.TEXT.bagsAllItems)
 Click("Consumables")
 check(Blocks() == "", "a group: its members' items")
-Click("All Categories")
--- The sidebar folds as the bags' does, kept for the window.
-local foldArrow = Alts.rail.arrow
-foldArrow:GetScript("OnClick")(foldArrow)
-check(ns.store.alts.side == false and Alts.rail.folded and Alts.rail.frame:GetWidth() == ns.Sidebars.FOLDED, "folded to its edge, kept")
-foldArrow:GetScript("OnClick")(foldArrow)
-check(ns.store.alts.side == true and Alts.rail.frame:GetWidth() == ns.Sidebars.WIDTH, "and unfolded")
--- The dropdown View: the bags' displays, Sort By, the item size.
-local altsMenu = Alts.menu
-local function AltsPick(text)
-    altsMenu:GenerateMenu()
-    for _, line in ipairs(altsMenu._items) do
+Click(ns.TEXT.bagsAllItems)
+-- The dropdown View: the bags' own, their displays, Sort By, the item size.
+local viewMenu = ns.Bags.viewMenu
+local function ViewPick(text)
+    viewMenu:GenerateMenu()
+    for _, line in ipairs(viewMenu._items) do
         if line.text == text then return line.fn(line.data) end
     end
     error("no line " .. text)
@@ -863,30 +881,32 @@ local function Kinds()
     end
     return kinds
 end
+local look, order = ns.options.bags.look, ns.options.bags.sort
+ViewPick("Grid")
 check(Kinds().cell == 5, "the grid: its items as cells")
-AltsPick("List")
-check(ns.store.alts.look == "list" and Kinds().row == 5 and Alts.columns:IsShown(), "the list: a line per item, the bags' columns over them")
-AltsPick("Compact")
-check(Kinds().cell == 5 and Kinds().label ~= nil and not Alts.columns:IsShown(), "compact: the categories' names over them")
-AltsPick("Grid")
-AltsPick("Name")
-check(ns.store.alts.sort == "name" and Shown()[1].item == 4500, "Sort By, as the bags': a name not known yet first")
-AltsPick("Default")
+ViewPick("List")
+check(ns.options.bags.look == "list" and Kinds().row == 5, "the list, the bags' choice: a line per item")
+ViewPick("Compact")
+check(Kinds().cell == 5 and Kinds().label ~= nil, "compact: the categories' names over them")
+ViewPick("Grid")
+ViewPick("Name")
+check(ns.options.bags.sort == "name" and Shown()[1].item == 4500, "Sort By, the bags': a name not known yet first")
+ViewPick("Default")
 ns.Categories.Assign(2589, "trade") -- the player puts an item into another category in the bags
-Alts.Refresh(false)
+ns.Bags.Redraw()
 check(Items.Record(2589).category == "trade" and Blocks():find("Trade Goods=1", 1, true), "an item put into another category in the bags: shown under that one at once")
 ns.Categories.Assign(2589, nil)
 ns.options.coin, ns.options.itemLevel = true, false
 Core.Set(ns.name, "grey", false)
 W.Wait(0)
 ns.options.coin, ns.options.itemLevel = nil, nil
--- The item size: the slider in the dropdown, kept for the window; a narrow window makes the items smaller by itself.
+-- The item size: the bags' slider; a narrow window makes the items smaller by itself.
 do
     local Layout = ns.Layout
     MinimalSliderWithSteppersMixin = { Event = { OnValueChanged = 1 }, Label = { Right = 1 } }
-    altsMenu:GenerateMenu()
+    viewMenu:GenerateMenu()
     local row
-    for _, line in ipairs(altsMenu._items) do
+    for _, line in ipairs(viewMenu._items) do
         if line.title == ns.TEXT.bagsItemSize then row = line end
     end
     check(row, "the row Item Size in the dropdown")
@@ -894,11 +914,10 @@ do
     local slider = { SetWidth = function() end, ClearAllPoints = function() end, SetPoint = function() end, UnregisterCallback = function() end,
                      Init = function(self, value, low, high, steps, labels) self.value, self.low, self.high, self.steps, self.labels = value, low, high, steps, labels end,
                      RegisterCallback = function(_, _, fn) told = fn end }
-    local wide, high = row.inits[1]({ AttachTemplate = function() return slider end })
-    check(slider.value == 100 and slider.low == Layout.SCALE.low and slider.high == Layout.SCALE.high and slider.labels[1](100) == "100%"
-        and wide == ns.Bags.SIZE_WORD + ns.Bags.SIZER + ns.Bags.SIZE_VALUE and high == ns.Bags.SIZE_ROW,
-        "the game's slider with its percent, at the size kept")
-    Alts.Size(1200)
+    row.inits[1]({ AttachTemplate = function() return slider end })
+    local scale = ns.options.bags.scale
+    told(nil, 100)
+    ns.Bags.Size(1200)
     local function SizeOf()
         for index = 1, 40 do
             local place = Alts.canvas.places[index]
@@ -907,15 +926,17 @@ do
     end
     check(SizeOf() == Layout.SIZE, "wide enough: the items as large as chosen")
     told(nil, 73)
-    check(ns.store.alts.scale == 75 and SizeOf() == math.floor(Layout.SIZE * 0.75 + 0.5), "the slider moved: on its steps, kept, drawn at once")
+    check(ns.options.bags.scale == 75 and SizeOf() == math.floor(Layout.SIZE * 0.75 + 0.5), "the slider moved: the bags' size, drawn at once")
     told(nil, 100)
-    Alts.Size(ns.Bags.LEAST[1] + 30)
+    ns.Bags.Size(ns.Bags.LEAST[1] + 30)
     check(SizeOf() < Layout.SIZE and SizeOf() >= Layout.SMALLEST, "a narrow window: its items smaller by themselves: " .. tostring(SizeOf()))
+    told(nil, scale)
 end
-Alts.Size(Board.layouts.rects.bags[3]) -- as wide as its panel again
-check(not Board.layouts.rects.alts, "no window of its own on the full screen any more: the bags' window holds it")
+ns.options.bags.look, ns.options.bags.sort = look, order
+ns.Bags.Size(Board.layouts.rects.bags[3]) -- as wide as its panel again
+check(not Board.layouts.rects.alts, "no window of its own on the full screen: the bags' window holds it")
 
--- Hidden, it listens to nothing; shown, it is as Core's data is now.
+-- Hidden, it listens to nothing; opened again, the bags as they are.
 Push()
 worn[3] = { texture = "spaulders", count = 1, quality = 2, id = 1003 }
 W.Fire("PLAYER_EQUIPMENT_CHANGED", 3, false)
@@ -924,11 +945,13 @@ check(Core.Data.Items(Core.charKey, "worn")[3].item == 1003, "hidden: Core's dat
 Stand()
 Push()
 Stand()
+check(ns.Bags.Whose() == nil and ns.Foot.frame:IsShown() and not Alts.foot:IsShown() and characters.word:find("Tester Stub", 1, true),
+    "the window opened again: the bags as they are")
 Pick("Tester")
-check(ns.Bags.Whose() == nil and ns.Bags.live:IsShown() and not Alts.body:IsShown(), "you chosen in the dropdown: your bags as they are")
+check(ns.Bags.Whose() == nil, "you chosen in the dropdown: your bags as they are")
 ns.Bags.Face(Core.charKey, true) -- your things as last seen (a line of what the search finds elsewhere shows them)
 check(Alts.foot.line._text:find("Logged in now", 1, true) and Blocks():find("^Bags  Empty") and Alts.doll:IsShown()
-    and Blocks():find("Equipped"), "shown again: drawn as it is now; you too, what you wear as Core last read it: " .. Blocks())
+    and Blocks():find("Equipped"), "you as last seen: what you wear as Core last read it: " .. Blocks())
 Character("Droopy").tooltip(GameTooltip)
 check(GameTooltip._lines and GameTooltip._lines[#GameTooltip._lines] == "1234567c", "a character's tooltip: the rest of what is known of it")
 -- A character's facts of a wrong kind (a hand edit, an older version) are left out; nothing fails.
@@ -938,16 +961,16 @@ do
     local about = Alts.About(odd)
     check(characters.word:find("Odd Entry", 1, true) and #about == 2 and about[2][1] == "Level ? |cff1e1711|r" and not Core.errors["Inventory: alts"],
         "a character's class, level and realm of a wrong kind: left out of its line and its tooltip, nothing fails")
-    Alts.Refresh(true)
+    ns.Bags.Redraw()
 end
 -- Its menu is made anew only while it is open: the game's dropdown makes it afresh when it is opened.
 do
     local generate, made = characters.GenerateMenu, 0
     characters.GenerateMenu = function(self) made = made + 1; return generate(self) end
-    Alts.Refresh(true)
+    ns.Bags.Redraw()
     check(made == 0, "the window drawn anew while its menu is closed: the menu waits for its opening")
     characters._open = true
-    Alts.Refresh(true)
+    ns.Bags.Redraw()
     characters._open, characters.GenerateMenu = nil, nil
     check(made == 1, "its menu open: made anew with the window: " .. made)
 end
@@ -1019,37 +1042,29 @@ check(characters.word:find("Tester Stub", 1, true) and Blocks():find("^Equipped"
     and Worn(doll, "HeadSlot")._matches == true and Worn(doll, "NeckSlot")._matches == false and Worn(doll, "ShirtSlot")._matches == true,
     "searching: the doll whole, what is found lit, the rest dimmed as the game's bags dim it; an empty slot not")
 Board.Search("")
-Alts.Size(Board.layouts.rects.bags[3]) -- as wide as its panel again
+ns.Bags.Size(Board.layouts.rects.bags[3]) -- as wide as its panel again
 
 -- One search for both (Saneroki, 2026-11-15: "So the search works across alts and banks as well"): with the bags shown,
 -- the bags' box lists under them each other character that has any of it, with how many; a click shows that one's
--- things, found.
+-- things, found; from there, a line takes you back to your bags.
 do
     local Bags = ns.Bags
     Pick("Tester")
     local box = Bags.searchBox
     box:SetText("linen")
     box:GetScript("OnTextChanged")(box, true)
-    local lines = {}
-    for _, widget in ipairs(W.frames) do
-        if widget.key and widget.words and widget._parent and widget._parent.head and widget:IsShown() then
-            lines[#lines + 1] = widget
-        end
-    end
-    local droopy
-    for _, line in ipairs(lines) do
-        if line.words._text:find("Droopy Fairwind", 1, true) then droopy = line end
-    end
+    local droopy = ElsewhereLine("Droopy Fairwind")
     check(Bags.Whose() == nil and droopy and droopy.words._text:find("%(21%)") and characters.word:find("Tester Stub", 1, true),
-        "the bags shown, searching: under them a line for another that has any of it, how many: "
-        .. (droopy and droopy.words._text or table.concat((function() local t = {} for i, l in ipairs(lines) do t[i] = l.words._text end return t end)(), "; ")))
+        "the bags shown, searching: under them a line for another that has any of it, how many")
     droopy:GetScript("OnClick")(droopy)
-    check(Bags.Whose() ~= nil and Alts.body:IsShown() and characters.word:find("Droopy Fairwind", 1, true)
-        and Blocks():find("^Bags %(%d+%)") and box:GetText() == "linen", "a click: that one's things shown, found, the search kept: " .. Blocks())
+    check(Bags.Whose() ~= nil and Alts.foot:IsShown() and characters.word:find("Droopy Fairwind", 1, true)
+        and Blocks():find("^Bags %(%d+%)") and box:GetText() == "linen" and not ElsewhereLine("Droopy Fairwind"),
+        "a click: that one's things shown, found, the search kept: " .. Blocks())
     box:SetText("")
     box:GetScript("OnTextChanged")(box, true)
     Pick("Tester")
-    check(Bags.Whose() == nil, "(the bags again)")
+    check(Bags.Whose() == nil and ns.Foot.frame:IsShown() and Bags.bar.sort:IsShown() and #Alts.cells:Each() == 0,
+        "(the bags again: their buttons and foot back, the other's things gone from the scroll area)")
 end
 
 -------------------------------------------------------------------------------

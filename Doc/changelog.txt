@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Bags: the bags window is back as it was, with all its
+  categories, views and buttons. The dropdown of your characters
+  and the search box stay on its title line: another character's
+  things show in the same window, by your categories and groups.
 - Dungeon and raid maps in Scrying and Blended too: the view's
   button shows the instance as it truly lies (the game's own
   minimap of its halls and ground), or the map art fading into it

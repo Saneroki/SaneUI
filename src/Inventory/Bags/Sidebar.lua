@@ -23,7 +23,9 @@ local _, ns = ...
 --  with its own count; on its row an arrow folds its members into it or
 --  lists them again, and a box ticks whether All Items divides it into its
 --  members or shows it whole), Add Category at the foot. Every category switched
---  on is listed, empty ones too. A click shows that view, category or group; an item brought
+--  on is listed, empty ones too. While the bags' window shows another
+--  character's things (Bags.Face): All Items and the categories alone, with
+--  that character's counts, taking no item. A click shows that view, category or group; an item brought
 --  over a row (picked up, or dragged) and let go there goes into that
 --  category (over Pinned: pinned); a right click opens the row's menu
 --  (Menus.lua). A category or a group is dragged to another place (never
@@ -629,29 +631,36 @@ function Bag.Categories(list, counts, viewing, takes)
     end
 end
 
--- The rows as they are now: counts are Views.Counts', viewing the view shown, options the module's settings.
-function Bag.Refresh(counts, viewing, options)
+-- The rows as they are now: counts are Views.Counts', viewing the view shown, options the module's settings; other:
+-- another character's things are shown (All Items and the categories with its counts, taking nothing).
+function Bag.Refresh(counts, viewing, options, other)
     if not rail then return end
     options = options or {}
     rail:Begin()
     local default = options.first or "all"
     local fixed = {}
     for _, view in ipairs(ns.Views.FIXED) do
-        if view.key == default then table.insert(fixed, 1, view) else fixed[#fixed + 1] = view end
+        if other then
+            if view.key == ns.Views.ALL then fixed[1] = view end -- its slots are not kept: no One Bag, Each Bag
+        elseif view.key == default then
+            table.insert(fixed, 1, view)
+        else
+            fixed[#fixed + 1] = view
+        end
     end
     for _, view in ipairs(fixed) do
-        rail:Row(view.word, nil, view.icon, nil, 0, viewing == view.key).view = view.key
+        rail:Row(view.word, other and counts.total or nil, view.icon, nil, 0, viewing == view.key).view = view.key
     end
     -- Pinned and Recent, hidden in All Items (their items then in their own categories only): greyed, still listed
-    for _, key in ipairs({ Categories.PINNED, Categories.RECENT }) do
+    for _, key in ipairs(other and {} or { Categories.PINNED, Categories.RECENT }) do
         local file, atlas = Categories.Icon(key)
         local row = rail:Row(Categories.Word(key), counts[key] or 0, file, atlas, 0, viewing == "cat:" .. key)
         row.view, row.key, row.takes = "cat:" .. key, key, key == Categories.PINNED
         if options[ns.Bags.SHOW[key]] == false then rail:Grey(row, "hidden") end
     end
     rail:Divider()
-    Bag.Categories(rail, counts, viewing, true)
-    if options.addCategory ~= false then
+    Bag.Categories(rail, counts, viewing, not other)
+    if options.addCategory ~= false and not other then
         local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.Art("add"), nil, 0, false)
         row.add = true
         row.icon:SetAlpha(0.5)
