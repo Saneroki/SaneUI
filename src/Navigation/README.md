@@ -1532,6 +1532,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the small map's face over our dungeon map:** Saneroki: "when i mouse over i don't see the time, area
+  text and both the bag and arrow buttons" (the face stood in the canvas, whose children the game draws as one with it
+  since it cuts them at its edges: our map of the dungeon beside it covered them; `Satchel.Build` puts it beside the
+  canvas). "Instead of the blue, can you make it fully transparent background?" (the canvas' ground clear under it).
 - **2026-11-15, the dungeon you are in, once the list is read:** Saneroki: "Nope. Does not work. The games minimap is
   now always visible, no arrow switch button on the minimap either and zooming out does not show our map either and
   in fullscreen the dungeon map is not shown at all." The list of dungeons is read a part per frame after Core's set
