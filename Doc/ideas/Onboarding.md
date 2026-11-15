@@ -25,7 +25,12 @@ from. It is worth building once others play it, and its first real use is the fi
 The module is called **Onboarding** and stays load on demand. It has three parts:
 
 - **Setup:** a guided tour through setting up and configuring Sane UI to the player's liking. It could
-  grow out of the Welcome below (proposal).
+  grow out of the Welcome below (proposal). What it asks (Saneroki, 2026-11-15: "The tooltips, Character
+  setup and other things need to be part of the onboarding"): the choices of taste a new player makes once,
+  in place of a default picked for them: when tooltips show (always, or while a key is held), the character
+  setup (whether characters share one setup or each keeps its own; the bars and keys), and the others the
+  public release leaves to the player (chat channels, what is done for the player at vendors, bags and loot).
+  Customizing itself stays on the parts: a right click on them, Edit Mode.
 - **What's new:** what is new in Sane UI since the version last seen (*What's new: the words* below).
 - **Tutorials:** learn about the different parts of Sane UI, one tutorial per feature: the map, the bags
   and so on.

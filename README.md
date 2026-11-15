@@ -1,7 +1,7 @@
 # Sane UI
 
-**Version:** 0.3.0 · **Since:** 2026-10-14 · **Game:** WoW: Forever and Retail, English clients
-(interface 16001, 120105) · **By:** Saneroki
+**Version:** 0.3.0 · **Since:** 2026-10-14 · **Game:** WoW: Forever, English client (officially supported
+there only, for now; Retail is the developers' testing platform; interface 16001, 120105) · **By:** Saneroki
 
 ## TL;DR
 A user interface for World of Warcraft, built in modules. Core (`SaneUI`) is the main addon; every other
