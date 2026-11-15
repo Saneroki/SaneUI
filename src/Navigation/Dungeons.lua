@@ -502,15 +502,12 @@ local function Update()
 end
 local updating = ns.Guard(Update) -- made once: set at every drag
 
--- The wheel: nearer or farther around the point under the mouse, which stays where it is. On the small map the whole
--- map alone: a notch in is the game's minimap again (Out).
+-- The wheel: nearer or farther around the point under the mouse, which stays where it is; on the small map too
+-- (Saneroki, 2026-11-15: zoomed in, "the games minimap is forced on me and covers my own map": only the satchel's
+-- arrow swaps to it now).
 local function Wheel(_, delta)
     local art = kept and kept.art
     if not art then return end
-    if onSmall then
-        if delta > 0 then Dungeons.Out() end
-        return
-    end
     local was = zoom
     zoom = math.max(1, math.min(Dungeons.NEAR, zoom * ns.Camera.STEP ^ delta))
     if zoom == was then return end
@@ -520,6 +517,7 @@ local function Wheel(_, delta)
     local mouseX, mouseY = x - left - width / 2 - roomX, y - bottom - height / 2 - roomY
     local factor = zoom / was
     panX, panY = mouseX - (mouseX - panX) * factor, mouseY - (mouseY - panY) * factor
+    if zoom == 1 then panX, panY = 0, 0 end -- (all the way out: the whole floor in the middle again)
     Place()
 end
 
@@ -541,7 +539,6 @@ end
 -- tool's and the right one drags. Alt and a click puts a marker there (Markers.lua), as on the map.
 local pressX, pressY, panning
 local function Down(_, button)
-    if onSmall then return end -- the small map's whole map is not dragged
     local tool = ns.Draw.Tool()
     if tool and button == "LeftButton" and not ns.Markers.Moving() then return ns.Draw.PressFloor() end
     if button ~= (tool and "RightButton" or "LeftButton") then return end
@@ -567,6 +564,11 @@ local function Up(_, button)
     end
     if (button == "RightButton" and not moved) or (button == "MiddleButton" and onSmall) then
         if ns.Markers.Moving() then return ns.Markers.Stay() end
+        -- on the small map: the whole floor again (the game's minimap only by the satchel's arrow); else back
+        if onSmall then
+            zoom, panX, panY = 1, 0, 0
+            return Place()
+        end
         Dungeons.Out()
     end
 end
@@ -576,7 +578,8 @@ local function Entered()
     if onSmall then ns.Window.Hovered(true) end
 end
 local function Left()
-    if onSmall then ns.Window.Hovered(false) end
+    -- (onto what stands on it, its dots, its bosses, the face's bag and arrow: still over the map, the face stays)
+    if onSmall and Core.Plain(frame:IsMouseOver()) ~= true then ns.Window.Hovered(false) end
 end
 
 -------------------------------------------------------------------------------
@@ -1173,8 +1176,8 @@ function Dungeons.Close()
 end
 
 -- A right click: back to the map it was opened from. That map stays under the dungeon's view as it was (from the
--- bar, a pin's entrance, or the full map opened inside), so the view only goes. On the small map (a notch in too,
--- or the middle button) the game's minimap again, at its widest step, and no longer wished.
+-- bar, a pin's entrance, or the full map opened inside), so the view only goes. On the small map (the satchel's
+-- arrow: Swap) the game's minimap again, at its widest step, and kept as the choice.
 function Dungeons.Out()
     local small = onSmall
     if small then Want(false) end

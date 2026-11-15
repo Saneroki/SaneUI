@@ -8205,7 +8205,8 @@ end)()
     check(not Marks()[1].model or not Marks()[1].model._shown, "a boss without a look: its mark alone")
     -- The small map inside it: our map of the dungeon first (Saneroki, 2026-11-15: "Yes ours first"); the player's arrow
     -- beside the satchel's bag (on the face, under the mouse, only inside) swaps to the game's minimap and back, kept;
-    -- a notch in the game's minimap, a notch out of it the dungeon's whole map again.
+    -- the wheel and a drag zoom and move our map ("the games minimap is forced on me and covers my own map"), a right
+    -- or a middle click the whole floor again.
     Dungeons.Close()
     W.SmallAndBack(function()
         local function Look()
@@ -8214,12 +8215,49 @@ end)()
         end
         local view = Dungeons.frame
         view._width, view._height = 200, 200 -- as large as the small canvas (it stands on all of it)
+        local rect = view.GetRect
+        view.GetRect = function() return 0, 0, view._width, view._height end -- (where the wheel zooms about the mouse)
         player.map = 500 -- the game tells no place of the player inside
         small.native = 0
         Look()
         Canvas.Layout()
-        check(Dungeons.Shown() == "90:1" and select(3, Dungeons.Shown()) and view._shown and not minimap._shown
-            and not Canvas.Laid(), "the small map inside: our map of the dungeon first, the game's minimap under it")
+        local floor, _, onSmall = Dungeons.Shown()
+        local boss = Marks()[1]
+        check(floor == "90:1" and onSmall and view._shown and not minimap._shown and not Canvas.Laid(),
+            "the small map inside: our map of the dungeon first, at its lowest floor, the game's minimap under it")
+        check(boss and near(boss._points[1][4], -0.25 * 200) and near(boss._points[1][5], 0) and boss.model._shown
+            and boss.model._width == Dungeons.MODEL_WIDTH * Dungeons.SMALL and boss._width == Dungeons.BOSS_SIZE * Dungeons.SMALL,
+            "the whole floor as wide as the small view (no bar there); its boss's model on it, at a smaller size")
+        -- the face over it, under the mouse, kept while the mouse goes onto what stands on it
+        view._mouseOver = true
+        view._scripts.OnEnter(view)
+        check(ns.Satchel.face._shown, "the mouse onto our map: the face (time, place, the bag)")
+        view._scripts.OnLeave(view)
+        check(ns.Satchel.face._shown, "onto a dot, a boss, the bag or the arrow on it: the face stays")
+        view._mouseOver = false
+        view._scripts.OnLeave(view)
+        check(not ns.Satchel.face._shown, "the mouse off the map: the face gone")
+        -- the wheel zooms our map, a drag moves it; a right or a middle click: the whole floor again
+        local wasX = boss._points[1][4]
+        view._scripts.OnMouseWheel(view, 1)
+        check(Dungeons.Shown() == "90:1" and not minimap._shown and boss._points[1][4] < wasX - 1,
+            "a notch in: our map nearer, never the game's minimap")
+        view._scripts.OnMouseWheel(view, -5)
+        check(Dungeons.Shown() == "90:1" and near(boss._points[1][4], wasX), "out again: the whole floor, still ours")
+        view._scripts.OnMouseWheel(view, 2)
+        local zoomedX = boss._points[1][4]
+        view._scripts.OnMouseDown(view, "LeftButton")
+        cursorX = cursorX + 20
+        view._scripts.OnUpdate(view, 0.016)
+        view._scripts.OnMouseUp(view, "LeftButton")
+        cursorX = cursorX - 20
+        check(near(boss._points[1][4], zoomedX + 20) and not view._scripts.OnUpdate, "a drag moves it")
+        view._scripts.OnMouseUp(view, "RightButton")
+        check(Dungeons.Shown() == "90:1" and near(boss._points[1][4], wasX), "a right click: the whole floor again")
+        view._scripts.OnMouseWheel(view, 2)
+        view._scripts.OnMouseUp(view, "MiddleButton")
+        check(Dungeons.Shown() == "90:1" and near(boss._points[1][4], wasX), "the middle button: the whole floor too")
+        -- the arrow beside the bag: the game's minimap and back, kept
         ns.Satchel.Hover(true)
         local swap = ns.Satchel.arrow
         check(swap and swap._shown and swap.arrow._atlas == "UI-WorldMapArrow",
@@ -8227,53 +8265,30 @@ end)()
         swap._scripts.OnClick(swap)
         check(not Dungeons.Shown() and minimap._shown and minimap._zoom == 0 and ns.store.instanceMap == "game",
             "the arrow: the game's minimap (it knows where you stand), at its widest step, kept")
-        swap._scripts.OnClick(swap)
-        check(Dungeons.Shown() == "90:1" and not minimap._shown and ns.store.instanceMap == nil, "again: our map")
-        ns.Satchel.Hover(false)
-        check(not ns.Satchel.face._shown, "the mouse off the map: the arrow out of sight with the face")
-        view._scripts.OnMouseWheel(view, 1)
-        check(not Dungeons.Shown() and minimap._shown and minimap._zoom == 0,
-            "a notch in: the game's minimap, at its widest step")
         frame._scripts.OnMouseWheel(frame, -1)
         W.Wait(0)
-        local floor, _, onSmall = Dungeons.Shown()
-        local boss = Marks()[1]
-        check(floor == "90:1" and onSmall and view._shown and not minimap._shown,
-            "a notch out past it: the dungeon's whole map at its lowest floor, the game's minimap out of sight under it")
-        check(boss and near(boss._points[1][4], -0.25 * 200) and near(boss._points[1][5], 0) and boss.model._shown
-            and boss.model._width == Dungeons.MODEL_WIDTH * Dungeons.SMALL and boss._width == Dungeons.BOSS_SIZE * Dungeons.SMALL,
-            "the whole floor as wide as the small view (no bar there); its boss's model on it, at a smaller size")
-        view._scripts.OnMouseWheel(view, -1)
-        view._scripts.OnMouseDown(view, "LeftButton")
-        check(Dungeons.Shown() == "90:1" and not view._scripts.OnUpdate, "farther out it stays whole; not dragged")
+        check(not Dungeons.Shown() and minimap._shown, "the wheel on the game's minimap: its own steps, never our map")
+        swap._scripts.OnClick(swap)
+        check(Dungeons.Shown() == "90:1" and not minimap._shown and ns.store.instanceMap == nil, "the arrow again: our map")
+        ns.Satchel.Hover(false)
         Canvas.Layout()
         W.Fire("PLAYER_ENTERING_WORLD")
         check(Dungeons.Shown() == "90:1" and select(3, Dungeons.Shown()) and not minimap._shown,
             "kept through a layout and a loading screen")
-        view._scripts.OnMouseWheel(view, 1)
-        check(not Dungeons.Shown() and not view._shown and minimap._shown and minimap._zoom == 0 and small.native == 0,
-            "a notch in: the game's minimap again, at its widest step")
-        frame._scripts.OnMouseWheel(frame, -1)
-        W.Wait(0)
-        view._scripts.OnMouseUp(view, "MiddleButton")
-        check(not Dungeons.Shown() and minimap._shown, "the middle button: the game's minimap again")
-        frame._scripts.OnMouseWheel(frame, -1)
-        W.Wait(0)
         player.map = 1429
         Look()
         check(not Dungeons.Shown() and not view._shown and Canvas.Laid(), "out of the dungeon: our map again")
         ns.Satchel.Hover(true)
         check(not ns.Satchel.arrow._shown, "outside an instance: no arrow")
         ns.Satchel.Hover(false)
+        ns.store.instanceMap = "game"
         player.map = 500
         Look()
-        check(Dungeons.Shown() == "90:1" and not minimap._shown, "into a dungeon again: its whole map, as it was left")
-        view._scripts.OnMouseUp(view, "RightButton")
-        check(not Dungeons.Shown() and minimap._shown and ns.store.instanceMap == "game",
-            "a right click: the game's minimap again, kept")
+        check(not Dungeons.Shown() and minimap._shown, "into a dungeon with the game's minimap chosen: the game's")
+        ns.store.instanceMap = nil
         player.map = 1429
         Look()
-        ns.store.instanceMap = nil
+        view.GetRect = rect
         view._width, view._height = 1600, 868
     end)
     UnitPosition, GetInstanceInfo = before, instance

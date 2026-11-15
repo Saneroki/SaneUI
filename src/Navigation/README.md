@@ -66,9 +66,11 @@ and shows them on the map or puts the map pin there. The plan is in
   bosses, your markers and drawings, without an arrow for you. The **player's arrow** beside the satchel's bag (in
   sight with the face, under the mouse, and only there: "only show it on mouse over and in cases where it is
   neccessary like in instances"; "make the button that toggles it look like the players arrow") swaps to the game's
-  minimap (it shows where you stand, with its own ground and dots; the wheel walks its zoom steps) and back. A notch
-  in, a right or a middle click also brings the game's minimap, a notch out past its widest step our map again. The
-  choice is kept for your account, into the next dungeon. Elsewhere (a battleground, a dungeon we have no map of) the
+  minimap (it shows where you stand, with its own ground and dots; the wheel walks its zoom steps) and back; nothing
+  else switches. On our map the wheel zooms and a drag moves it, as on the full map, and a right or a middle click
+  shows the whole floor again (Saneroki, 2026-11-15: zoomed in, "the games minimap is forced on me and covers my own
+  map"); the face (the time, the place, the bag and the arrow) shows while the mouse is anywhere on it. The choice is
+  kept for your account, into the next dungeon. Elsewhere (a battleground, a dungeon we have no map of) the
   game's minimap alone. Out of it, our map is back.
 - **What a thing gives.** Hover a rare, a chest, a herb or a vein, on the map or a found node: its tooltip lists what it gives, the
   likeliest first, each with how often: `Fang Charm 7.5% (3 of 40)`, `Moon Gem 1 of 40` while too few came, `12%` where only our data
@@ -746,11 +748,13 @@ and shows them on the map or puts the map pin there. The plan is in
   `QuestLog.Box` and the bar's gap, at most `Dungeons.SIDE` of the width), measured as it opens, when its size
   changes and when the log comes or goes (`Dungeons.Refit`, from `Window.Lay`), not at each step of a drag; on
   the small map (`Dungeons.Small` at each layout inside an instance, first unless the game's minimap was chosen:
-  `ns.store.instanceMap` "game"; `Dungeons.Whole`, `Canvas.lua`'s `Wheel` one notch out at the game's step 0;
-  `Dungeons.Swap` from the satchel's arrow, `Satchel.arrow`, shown where `Dungeons.Swappable`) the whole small view, the floor never zoomed or dragged there, its marks, models and dots at `Dungeons.SMALL` of
-  their size; wished (kept through the full screen and back, `Dungeons.Small` at each layout of the small view,
-  looked at anew after a loading screen) until a notch in, a right or a middle click or the arrow (`Dungeons.Out`,
-  the game's minimap kept as the choice), and the
+  `ns.store.instanceMap` "game"; `Dungeons.Swap` from the satchel's arrow, `Satchel.arrow`, shown where
+  `Dungeons.Swappable`, the one way between them) the whole small view, zoomed by the wheel and dragged as on the full
+  map (all the way out: the whole floor in the middle again; a right or a middle click the same), its marks, models
+  and dots at `Dungeons.SMALL` of their size; the face kept while the mouse is anywhere over it (`Left`: off it by
+  `IsMouseOver`, not by its frame's leave, which the dots, the models, the bag and the arrow on it cause); wished
+  (kept through the full screen and back, `Dungeons.Small` at each layout of the small view, looked at anew after a
+  loading screen) until the arrow (`Dungeons.Out`, the game's minimap kept as the choice), and the
   game's minimap out of sight under it meanwhile (`Hybrid.Hide`, `whole` in `Canvas.lua`); no player's arrow and no
   group (Forever tells no place inside an instance). `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
   stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
@@ -1526,6 +1530,11 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, our dungeon map on the small view zoomed and dragged; the face over it:** Saneroki: "When I am zoomed
+  out completly it only shows the map as I expect it but the hover for the minimap time, area text, arrow button and
+  bag is not visible. Only when I zoom in are those elements visible but the games minimap is forced on me and covers
+  my own map" (the face went at the dungeon frame's leave, onto its dots and bosses and onto the bag itself; a notch
+  in was the game's minimap: now only the arrow swaps).
 - **2026-11-15, our dungeon map first; the arrow beside the bag:** Saneroki, of the small map in a dungeon: "does the
   game draw its own minimap over our map in instances? ... Would love to see our own map and its drawings" (the game
   tells addons nobody's place inside; its minimap knows it), then "Yes ours first. Add a toggle button next to the
