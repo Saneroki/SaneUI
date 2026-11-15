@@ -20,8 +20,8 @@ local _, ns = ...
 --      the pins     the flight points as the master tells them (C_TaxiMap.GetAllTaxiNodes of its map), Taxi.SIZE
 --                   large, over every other pin and never gathered (Pins.lua, PinView.lua): the one you stand at
 --                   glowing, those you can fly to taken by a click (TakeTaxiNode, as the game's buttons do), the
---                   rest red, as a flight point not found yet is on the map; at each one's right its name and price
---                   (Taxi.Label, PinView.LABEL: sized by the zoom, under every pin); the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
+--                   rest red, as a flight point not found yet is on the map; at each one's right its place, its zone
+--                   and its price, a line each (Taxi.Label, PinView.LABEL: sized by the zoom, under every pin); the tooltip what the flight costs (TaxiNodeCost, Core.Coins); the mouse on one draws
 --                   its way there hop by hop (GetNumRoutes, TaxiGetNodeSlot; each hop's path from Core's set
 --                   Travel, else straight between the two flight points as their continent's map has them: Paths.lua)
 --      the others   none but the party and the ships (Taxi.Shows, Taxi.KEEP; Saneroki, 2026-11-13): of all the pin
@@ -111,13 +111,19 @@ function Taxi.Lines(node)
     return lines
 end
 
--- A flight point's name and what the flight there costs (where it is flown to from here), for its pin's right
--- (PinView.lua); nil where it is no flight point of the master's.
+-- A flight point's words for its pin's right (PinView.lua), a line each (Saneroki, 2026-11-15: "can you make it a 3
+-- liner? ... Refuge Pointe / Arathi / 8s19c"): its place and its zone, as the game names it ("Refuge Pointe, Arathi",
+-- cut at its last comma; a name without one a line alone), and what the flight there costs (where it is flown to from
+-- here); nil where it is no flight point of the master's.
 function Taxi.Label(node, name)
     local entry = Taxi.Node(node)
     if not entry or type(name) ~= "string" then return nil end
+    local place, zone = name:match("^(.-),%s*([^,]-)%s*$")
+    local lines = { place ~= "" and place or name }
+    if place ~= "" and zone and zone ~= "" then lines[2] = zone end
     local coins = entry.reachable and entry.cost and entry.cost > 0 and Core.Coins(entry.cost)
-    return coins and (name .. "  " .. coins) or name
+    if coins then lines[#lines + 1] = coins end
+    return table.concat(lines, "\n")
 end
 
 -- A click on a flight point: the flight there, where the master flies; true where the click is ours (a flight point

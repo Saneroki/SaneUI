@@ -13,6 +13,7 @@ What changed in each version of Sane UI Maps, newest first: a version's part is 
   treasures, books and your tracking spells.
 - Classic windows can bring back the game's own quest log: its key opens it, everything else stays ours.
 - The Dungeons button stands left of the zone list; the quest log's scroll bar at the side it is docked to.
+- At a flight master each flight point's place, zone and price stand on three lines.
 
 ## 0.3.2 (2026-11-15)
 

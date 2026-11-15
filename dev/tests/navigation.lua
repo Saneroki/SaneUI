@@ -6862,9 +6862,13 @@ end)()
         "one the master does not fly to (not found yet): red, as everywhere on the map, and says so")
     -- At each one's right its name and what the flight costs, sized by the zoom, on a layer under every pin.
     local label = there.label
-    check(label and label._text == "Far  1s50c" and label._shown ~= false and here.label._text == "Near"
+    check(label and label._text == "Far\n1s50c" and label._shown ~= false and here.label._text == "Near"
         and locked.label._text == "Locked" and label._parent._level < there._level and label._parent._level < here._level,
-        "a flight point's name and price at its right (the one you stand at, the one not flown to: the name), under the pins")
+        "a flight point's name and price at its right, a line each (the one you stand at, the one not flown to: the "
+        .. "name), under the pins")
+    check(ns.Taxi.Label(there.pin.taxi, "Refuge Pointe, Arathi") == "Refuge Pointe\nArathi\n1s50c"
+        and ns.Taxi.Label(here.pin.taxi, "Lakeshire, Redridge") == "Lakeshire\nRedridge",
+        "the game's name of it cut at its comma: its place, its zone and its price, three lines (Saneroki, 2026-11-15)")
     local near = label.size
     ns.Canvas.Fit(full, ns.Coords.WorldMap(), frame._width, frame._height)
     Canvas.Layout()

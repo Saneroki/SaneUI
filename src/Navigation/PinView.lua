@@ -696,6 +696,7 @@ local function Name(button, pin, font, size, small)
     end
     label:SetFontObject(font)
     label.size = size
+    label:SetJustifyH("LEFT") -- a flight point's lines under each other from the pin's side
     label:SetText(text)
     label:ClearAllPoints()
     label:SetPoint("LEFT", button, "RIGHT", PinView.LABEL.GAP, 0)

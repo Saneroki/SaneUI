@@ -538,8 +538,8 @@ and shows them on the map or puts the map pin there. The plan is in
   map as it always is (both continents, its view, the quest log), zoomed out to the whole world, with no pin on it
   but its flight points, your party and the ships' docks (no quests, services, places, tram, lifts, portals, quest
   areas or minimap dots, whatever the pin filter says; your arrow, the map pin and its golden line stay): the flight
-  points large, the one you stand at glowing, at each one's right its name and what the
-  flight there costs (the text larger the closer you zoom, under every pin so it never covers one or takes its
+  points large, the one you stand at glowing, at each one's right three lines (Saneroki, 2026-11-15): its place,
+  its zone and what the flight there costs (*Refuge Pointe*, *Arathi*, the coins; the text larger the closer you zoom, under every pin so it never covers one or takes its
   click); the mouse on one draws the way there, hop by hop as the master flies it, and its tooltip says what the
   flight costs; a click on it flies
   there, as the game's flight map does. A flight point you cannot fly to from here is red, as one you have not found
@@ -876,8 +876,8 @@ and shows them on the map or puts the map pin there. The plan is in
   says: the party, and of the ways of travel a pin with `ship` (a boat's, a zeppelin's, a pier's: `Pins.For`)
   (`Taxi.Shows`, `Taxi.Over`, through `Pins.Showing`: `Pins.For`, the found herbs and ore, `Areas.Place`, the party's
   marks, `Hybrid.Place`'s minimap dots; the filter's own switches untouched, so the finders stay as they are), at the
-  pins' top level (`PinView`), at each one's right its name
-  and price (`Taxi.Label`: a font string on `PinView`'s layer of names, at the pins' layer's level so under every
+  pins' top level (`PinView`), at each one's right its place, zone and price a line each
+  (`Taxi.Label`: the game's name cut at its last comma, "Refuge Pointe, Arathi"; a font string, left aligned, on `PinView`'s layer of names, at the pins' layer's level so under every
   button, anchored to the button's right, `PinView.LABEL.GAP` apart; its size `LABEL.MAX` at a view `LABEL.AT` yards
   high, `LABEL.STEP` less for each doubling, `LABEL.MIN` at least, one of `Core.Font`'s per size; shown with its
   button, `PinView.Fit`); a click
