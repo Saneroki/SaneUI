@@ -92,7 +92,8 @@ with tempfile.TemporaryDirectory() as temporary:
     first = tool.plan("alpha", root=repo)
     check(first["modules"] == {} and first["left"] == ["Navigation", "RetailOnly", "SpeedLeveling"],
           "nothing promoted: every module left out, all are dev")
-    check(first["core"] == ["Core", "AuctionData"], "Core and its data holder are always in")
+    check(first["core"] == ["Core"], "Core's project: Sane UI alone, its data holders not in it")
+    check(tool.CARRIED == {"Economy": ("AuctionData", "AuctionScans")}, "the auction data's files go with Economy alone")
     check(refused(lambda: tool.plan("dev", root=repo)) is not None, "dev is no channel")
 
     # Promoting.
@@ -133,7 +134,7 @@ with tempfile.TemporaryDirectory() as temporary:
     check(made["core_release"] == {"version": "0.3.1", "new": True, "zip": core_zip}, "Core's first: one above its TOC")
     with zipfile.ZipFile(core_zip) as box:
         names = set(box.namelist())
-        check({n.split("/")[0] for n in names} == {"SaneUI", "SaneUI_AuctionData"}, "Core's zip: Core and its data")
+        check({n.split("/")[0] for n in names} == {"SaneUI"}, "Core's zip: Sane UI alone (no auction data: no scans)")
         check(box.read("SaneUI/SaneUI.lua").decode() == "-- core 2\n", "Core from main's newest commit")
         check("SaneUI/README.md" not in names and "SaneUI/LICENSE.txt" in names, "no READMEs; the licence in each folder")
         check("SaneUI/Sets/Test.lua" in names, "Core's sets compiled into it")
@@ -152,6 +153,18 @@ with tempfile.TemporaryDirectory() as temporary:
         check("## X-SaneUI-Core: 0.3.1" in toc, "the Core it was tested with, which Core checks in the game")
     check(made["modules"]["Navigation"]["title"] == "SaneUI_Navigation" and made["modules"]["Navigation"]["addon"]
           == "SaneUI_Navigation", "a module's title from its TOC")
+    real_carried, tool.CARRIED = tool.CARRIED, {"Navigation": ("AuctionData",)}
+    try:
+        carrying = tool.package("beta", ["Navigation"], test=False, root=repo, out_dir=Path(temporary) / "carried",
+                                say=quiet, core=False)
+        with zipfile.ZipFile(carrying["modules"]["Navigation"]["zip"]) as box:
+            check({n.split("/")[0] for n in box.namelist()} == {"SaneUI_Navigation", "SaneUI_AuctionData"},
+                  "a module that carries addons: they stand beside it in its zip")
+            data_toc = box.read("SaneUI_AuctionData/SaneUI_AuctionData.toc").decode()
+            check("## Version: 0.3.1\n" in data_toc and "## X-SaneUI-Core: 0.3.1" in data_toc and "## Interface: 16001\n" in data_toc,
+                  "a carried addon: the module's version, the Core it was tested with, Forever's interface alone")
+    finally:
+        tool.CARRIED = real_carried
     dry = tool.package("beta", dry=True, root=repo, out_dir=out, say=quiet)
     check(dry["core_release"]["zip"] == core_zip and dry["modules"]["Navigation"]["zip"] == nav_zip,
           "--dry names the zips, makes nothing new")

@@ -7,7 +7,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Field | Value |
 | --- | --- |
 | Name | Sane UI Core |
-| Folders in the game | `SaneUI` (*Sane UI*), `SaneUI_AuctionData` (*Data: Auction House*), `SaneUI_AuctionScans` (*Data: Auction Scans*) |
+| Folder in the game | `SaneUI` (*Sane UI*) alone: the auction data's addons (*Data: Auction House*, *Data: Auction Scans*) come with Sane UI Economy, the module that uses them (Saneroki, 2026-11-15), so Core never scans the auction house for a player without it |
 | Summary | The shared base of every Sane UI addon: one options page, profiles and safe error handling. |
 | Category | Libraries |
 | Avatar | `core-avatar.png` of `saneui makelogos` (400 x 400) |
@@ -36,9 +36,6 @@ On its own, Core changes nothing you can see on your screen. It gives the Sane U
   computer only.
 - **Game data** the addons share: places, NPCs, items, quests and more, in one place.
 - **The `/sane` command:** which Sane UI addons are on, and their commands.
-
-Two small data addons come with Core: *Data: Auction House* and *Data: Auction Scans* keep auction prices
-for the Sane UI addons that use them, in files of their own. You can switch each off in the addon list.
 
 ## Sane UI addons
 

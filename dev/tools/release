@@ -5,10 +5,11 @@ rules, *Module stages*, *The pipeline to CurseForge*; README.md, *Building*).
 Every module goes through the stages dev, alpha, beta and release, by its developer's word alone: dev is for
 development and testing only, alpha, beta and release say how ready a version of it is for the wider public. A
 version reaches a stage as a tag on main's committed state, <Module>/<version>-<stage> (Navigation/0.3.1-alpha).
-Core has no stage (every module needs it), nor have its data holders (Data: Auction House, Data: Auction Scans):
-they go with every module, from main's newest commit.
+Core has no stage (every module needs it), nor have its data holders (Data: Auction House, Data: Auction Scans),
+both from main's newest commit.
 
-Each module is a CurseForge project of its own, and so is Core (Sane UI, with its data holders): a player takes
+Each module is a CurseForge project of its own, and so is Core (Sane UI alone; the data holders go in Economy's,
+the module that uses them, so a player without it never has Core scan the auction house): a player takes
 the modules they like, and the CurseForge app brings Core with each, as a module's upload names Core's project
 its required dependency (Saneroki, 2026-11-15: "for now I want to release Maps", alone).
 
@@ -18,7 +19,7 @@ stays out. They are built from git's copies only, never the working tree: main's
 older version of a module tested with today's Core (its own tests of then). They are Forever's (the one game
 supported for the public): each TOC names Forever's interface number alone, and a module's TOC the Core it was
 tested with (X-SaneUI-Core: Core tells a player whose Sane UI is older). They land in BUILD/packages, the addon's
-folder at the top of each zip (Core's three folders in its).
+folder at the top of each zip (Economy's with the data holders beside it).
 
 Publishing uploads what is new in the channel, Core first: Core when its code is not on CurseForge at that channel
 or higher, each module whose version is not. Each upload is tagged published/<Module>/<version>-<channel> (Core's
@@ -62,7 +63,12 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 STAGES = ("dev", "alpha", "beta", "release")   # lowest first
 CHANNELS = STAGES[1:]
-CORE = ("Core", "AuctionData", "AuctionScans")  # Core's project: no stage, from main's newest commit
+CORE = ("Core", "AuctionData", "AuctionScans")  # no stage, from main's newest commit
+CORE_PROJECT = ("Core",)                          # Core's project: Sane UI alone
+# Addons a module's project carries beside it, from main's newest commit: the auction data's files (no code; Core
+# fills them) only with Economy, which uses them. In Core's download every player would have Core scan the auction
+# house when it opens (Saneroki, 2026-11-15: "leave them out" of Core's until Economy ships).
+CARRIED = {"Economy": ("AuctionData", "AuctionScans")}
 # The tests of each module (dev/tests/<name>.lua), run for an older version of it with today's Core.
 TESTS = {
     "Abilities": ["abilities"], "Combat": ["combat", "book", "meter", "talents", "reminders", "auralists", "macros"],
@@ -211,13 +217,13 @@ def plan(channel, only=None, root=ROOT):
             raise Refused(f"{module} never reached {channel}: it is {stage_of(module, tags)} (saneui promote)")
         else:
             left.append(module)
-    core = [folder for folder in CORE if folder in addons(commit, root)]
+    core = [folder for folder in CORE_PROJECT if folder in addons(commit, root)]
     return {"commit": commit, "core": core, "modules": modules, "left": left}
 
 
 def core_tree(commit, root=ROOT):
-    """What Core's project is at a commit: the git objects of its three addons, code and art."""
-    return tuple(tree(commit, folder, root) for folder in CORE)
+    """What Core's project is at a commit: the git objects of its addons, code and art."""
+    return tuple(tree(commit, folder, root) for folder in CORE_PROJECT)
 
 
 def core_version(channel, commit, wanted=None, root=ROOT):
@@ -247,7 +253,7 @@ def promote(module, stage, wanted=None, dry=False, test=True, root=ROOT, say=pri
     commit = main_commit(root)
     found = addons(commit, root)
     if module in CORE:
-        raise Refused(f"{module} has no stage: Core and its data holders are in every package")
+        raise Refused(f"{module} has no stage: Core goes with every module, its data holders with Economy")
     if module not in found:
         raise Refused(f"no module {module} in src (the folder's name: {', '.join(staged(commit, root))})")
     if stage not in CHANNELS:
@@ -485,6 +491,10 @@ def package(channel, only=None, core_wanted=None, dry=False, root=ROOT, out_dir=
                 pick["zip"] = None
                 say(f"  {module}: made for another game only, left out")
                 continue
+            for folder in CARRIED.get(module, ()):
+                if folder in names:
+                    carried = assemble(main, folder, names[folder], into)
+                    dress_toc(carried / f"{names[folder]}.toc", pick["version"], mark, core=release["version"])
             checked(into)
             write_zip(into, pick["zip"])
             say(f"Made: {shown(pick['zip'], root)}.")
@@ -717,7 +727,8 @@ def publish(channel, only=None, core_wanted=None, dry=False, yes=False, root=ROO
 def show_stages(root=ROOT, say=print):
     commit = main_commit(root)
     tags = stage_tags(root)
-    say("Core, Data: Auction House, Data: Auction Scans: no stage; Core's project, with every module (main's newest commit).")
+    say("Core: no stage, its own project, with every module; Data: Auction House, Data: Auction Scans: no stage, in "
+        "Economy's (main's newest commit).")
     for module in staged(commit, root):
         mine = [t for t in tags if t["module"] == module]
         line = f"  {module:14} {stage_of(module, tags)}"

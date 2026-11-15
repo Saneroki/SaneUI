@@ -69,7 +69,8 @@ installed. `WOW_FOREVER` and `WOW_RETAIL` name the folders on another computer. 
   development and testing only, and a version goes up a stage only by its developer's word (`saneui promote
   Navigation alpha`: the tag `Navigation/0.3.1-alpha`; `saneui showstages` lists them). Core has no stage.
   Each module is a CurseForge project of its own, and so is Core: a module's upload names Core's project its
-  required dependency, so the CurseForge app installs Core with it. `saneui makepackage beta [Module ...]` makes
+  required dependency, so the CurseForge app installs Core with it. The auction data's addons go in Economy's
+  download, not Core's: without them Core never scans the auction house. `saneui makepackage beta [Module ...]` makes
   from git a zip per addon in `BUILD/packages/`: Core's (`SaneUI-<version>-beta.zip`, from main's newest commit)
   and of each module its newest version at beta or higher (`SaneUI_<Module>-<version>-beta.zip`), a newer alpha
   or dev version left out. `saneui publish beta [Module ...]` uploads what is not on CurseForge yet, Core first,
