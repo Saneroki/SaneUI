@@ -29,7 +29,16 @@ effects     = { type = "list", of = "tuple", parts = [   # what it does, as the 
     { name = "targets", type = "int" },    # how many it chains to
     { name = "misc", type = "int" },       # the effect's own number: a school, a stat, a summoned creature
     { name = "trigger", type = "int" },    # the spell it sets off
+    { name = "coefficient", type = "number" },    # the share of spell power it adds (EffectBonusCoefficient)
+    { name = "apCoefficient", type = "number" },  # the share of attack power it adds (BonusCoefficientFromAP)
 ] }
+attack      = { type = "enum", values = ["magic", "melee", "ranged"] }  # the kind of attack (SpellCategories' DefenseType)
+interrupts  = { type = "flags" }           # what ends its cast (SpellInterrupts' InterruptFlags; 1: moving)
+auraInterrupts    = { type = "list", of = "flags" }  # what takes its aura away (AuraInterruptFlags, both words)
+channelInterrupts = { type = "list", of = "flags" }  # what ends its channel (ChannelInterruptFlags, both words)
+forms       = { type = "list", of = "int", min = 1 }  # the forms it may be cast in (SpellShapeshiftForm's IDs: Charge 17
+                                         # Battle Stance, Moonfire 31 Moonkin Form; a form it needs, as Ravage 1 Cat Form)
+notForms    = { type = "list", of = "int", min = 1 }  # the forms it cannot be cast in (28 Shadowform)
 
 [index]
 byName = "name"                            # every rank of Frostbolt

@@ -18,6 +18,7 @@ grey     = { type = "int", min = 0 }
 tools    = { type = "list", of = "int" }
 cooldown = { type = "int", min = 0 }         # in seconds
 recipe   = { type = "int" }                  # the item that teaches it
+toolKinds = { type = "list", of = "int" }    # the kinds of tool it needs (TotemCategory's IDs: 375 Runed Golden Rod)
 
 [index]
 bySkill   = "skill"

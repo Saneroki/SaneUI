@@ -327,7 +327,9 @@ A tool that reads a source writes staging, never the master: one JSON object per
 - `set`, `key`, `game` and `src` (one source's name) are needed; a line without its game version is
   refused. **`confirmed`** (a day, `YYYY-MM-DD`, from the game alone and with nothing else to say): the game confirmed
   the entry in play that day (the harvest). `build` (0 when not known) and `day` are optional; `fields` holds what the source says, `null`
-  for a field it says is empty; `gone` and `replaces` as in the master.
+  for a field it says is empty; `gone` and `replaces` as in the master. A field left out says nothing (the master
+  keeps its value), so a tool stages `null` where the source alone holds a field and holds nothing: `dev/tools/game-data`
+  for the fields of its `CLEARED` (a spell's forms, a talent's values per rank, an item's stat kinds), the others not yet.
 - Staging files go into `dev/data/staging/` (not committed).
 
 `dev/tools/data import <file>` prints a report and changes the master only with `--apply`. Every rule holds

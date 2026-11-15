@@ -502,6 +502,37 @@ check("a cost: a share of the base mana, an amount, in their order", gd.Spells.c
       [{"power": 0, "percent": 11}, {"power": 3, "amount": 40}])
 check("no cost", gd.Spells.cost_list(costs, "8"), [])
 
+# --- more of what a spell, a talent, a recipe and an item are (board #490) -------------------------------------------
+how = Thing(categories={"7": {"DefenseType": "3"}, "8": {"DefenseType": "0"}},
+            interrupts={"7": {"InterruptFlags": "15", "AuraInterruptFlags[0]": "-2147483648", "AuraInterruptFlags[1]": "0",
+                              "ChannelInterruptFlags[0]": "0", "ChannelInterruptFlags[1]": "4"}},
+            shapes={"7": {"ShapeshiftMask[0]": "17", "ShapeshiftMask[1]": "0", "ShapeshiftExclude[0]": "134217728",
+                          "ShapeshiftExclude[1]": "1"}})
+check("a ranged attack, its masks as the client's words, its forms", gd.Spells.how(how, "7"),
+      {"attack": "ranged", "interrupts": 15, "auraInterrupts": [2147483648], "channelInterrupts": [0, 4], "forms": [1, 5],
+       "notForms": [28, 33]})
+check("a spell of none: nothing", gd.Spells.how(how, "8"),
+      {"attack": None, "interrupts": None, "auraInterrupts": [], "channelInterrupts": [], "forms": [], "notForms": []})
+coefficients = Thing(effects={"7": [{"DifficultyID": "0", "EffectIndex": "0", "Effect": "2", "EffectAura": "0",
+                                     "EffectBasePointsF": "10", "EffectRealPointsPerLevel": "0", "EffectAuraPeriod": "0",
+                                     "EffectChainTargets": "0", "EffectMiscValue[0]": "0", "EffectTriggerSpell": "0",
+                                     "EffectBonusCoefficient": "0.20020002", "BonusCoefficientFromAP": "0"}]})
+check("an effect's share of spell power", gd.Spells.effect_list(coefficients, "7"),
+      [{"index": 0, "effect": 2, "points": 10.0, "coefficient": 0.2002}])
+writer = gd.Writer("forever", 70938, None)
+writer.stage("Spells", 7, {"name": "Bolt", "forms": [], "cost": [], "attack": None})
+check("a field the client alone holds is staged empty, another left out", writer.lines[0]["fields"],
+      {"name": "Bolt", "forms": None, "attack": None})
+entries = {"5": {"TraitDefinitionID": "9"}}
+points = {"9": [{"EffectIndex": "0", "OperationType": "0", "CurveID": "3"}, {"EffectIndex": "1", "OperationType": "1", "CurveID": "4"}]}
+curves = {"3": [{"Pos[0]": "2", "Pos[1]": "66"}, {"Pos[0]": "1", "Pos[1]": "33"}, {"Pos[0]": "3", "Pos[1]": "100.5"},
+                {"Pos[0]": "4", "Pos[1]": "200"}],
+          "4": [{"Pos[0]": "1", "Pos[1]": "2"}]}
+check("a talent's numbers per rank, its ranks only, the operation Set only",
+      gd.rank_values({"entry": 5, "ranks": 3}, entries, points, curves),
+      [{"entry": 5, "index": 0, "rank": 1, "value": 33}, {"entry": 5, "index": 0, "rank": 2, "value": 66},
+       {"entry": 5, "index": 0, "rank": 3, "value": 100.5}])
+
 shutil.rmtree(temp, ignore_errors=True)
 print(f"patchday: {checks} checks, {failed} failed")
 sys.exit(1 if failed else 0)

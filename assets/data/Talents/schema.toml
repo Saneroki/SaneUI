@@ -16,6 +16,12 @@ entries = { type = "list", of = "tuple", parts = [
     { name = "spell", type = "int" },
     { name = "ranks", type = "int", min = 1 },
 ] }                                        # a choice node has more than one
+values  = { type = "list", of = "tuple", parts = [   # its numbers per rank: what each rank sets an effect of its spell to
+    { name = "entry", type = "int" },
+    { name = "index", type = "int", min = 0 },     # the effect of the entry's spell
+    { name = "rank", type = "int", min = 1 },
+    { name = "value", type = "number" },
+] }                                        # (TraitDefinitionEffectPoints with its curve)
 
 [index]
 byClass = "class"

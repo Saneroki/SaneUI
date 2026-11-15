@@ -10,14 +10,16 @@ Sets, and what each takes:
 - Items: every item players can have (ItemSparse with Item): name, quality, item level, the level it needs,
   class and subclass, slot (the game's INVTYPE_ name, as its global strings spell it), stack, bind, icon,
   sell price, a weapon's speed, its effects (trigger and spell), its set, its line in quotes, the classes that
-  can use it and how many one character can have. Not its stats, armour or a
-  weapon's damage: the client works those out from the item's level, and a value worked out again by us
-  would only be close (the crawl reads them in the game).
+  can use it, how many one character can have, and the kinds of stats it gives (the client's numbers). Not the
+  stats' values, armour or a weapon's damage: the client works those out from the item's level, and a value
+  worked out again by us would only be close (the crawl reads them in the game).
 - ItemSets: name, items (those Items keeps), bonuses (how many items, the spell).
 - Spells: the players' spells: every spell of a skill line Sane UI keeps (classes, their pets, professions,
   secondary skills, weapons, armour, languages, riding, mounts, companions, runes, racials) and every spell of
   a talent or Legacy node. Name, rank, icon, cost (an amount of a power, or a share of the base mana), cast time,
-  cooldown, range, and its effects with their numbers, which is where a patch changes what a spell does.
+  cooldown, range, and its effects with their numbers and the shares of spell and attack power they add, which is
+  where a patch changes what a spell does; the kind of attack it is (magic, melee, ranged), what ends its cast, its
+  aura or its channel (moving: the client's masks), and the forms it may or may not be cast in.
   Not a line's spells of the kind a player never learns (AcquireMethod 3: another form of a spell players have
   under their own ID), nor a spell another one sets off (a part of it, as taming's helpers).
 - Auras: the buffs items give that are no player spell: what an item's use casts, and what that spell sets
@@ -27,11 +29,13 @@ Sets, and what each takes:
   has empty twins of the professions under other IDs, and old riding skills without spells.
 - Professions: every recipe of a profession or of First Aid, Cooking and Poisons: what it makes and how many,
   reagents, the skill it is learned at, where it turns yellow and grey (the client's own two values; green is
-  no value of the client's), tools, cooldown, the item that teaches it (where one item alone does).
+  no value of the client's), tools, cooldown, the item that teaches it (where one item alone does), the kinds of
+  tool it needs (TotemCategory: a Runed Golden Rod).
 - Talents: the nodes of each class's talent tree (the trees the client ties to a class's skill line): class,
-  tree, name, place, kind, links, entries (entry, spell, ranks).
+  tree, name, place, kind, links, entries (entry, spell, ranks), and the numbers each rank sets (an effect of the
+  entry's spell, by TraitDefinitionEffectPoints and its curve: Mental Dexterity 33/66/100%).
 - Legacy: the nodes of the three Legacy trees (their numbers from LegacyConstantsDocumentation.lua) with the
-  legacy point a rank costs; the challenges that give legacy points (one of each: the client has most twice,
+  legacy point a rank costs and their numbers per rank, as Talents'; the challenges that give legacy points (one of each: the client has most twice,
   once per set of realms); the rewards of the Legacy rank.
 - Currencies: name, description, icon, quality, caps.
 - Achievements: name, description, points, category, icon, side, the reward's line and item, the one it follows.
@@ -105,6 +109,13 @@ CREATE_ITEM = 24                                         # SpellEffect's Effect:
 AURAS = {6, 35, 65, 119, 128, 129}                       # SpellEffect's Effect: puts an aura on (self, party, raid, pet, ...)
 DISPEL = {1: "magic", 2: "curse", 3: "disease", 4: "poison"}  # SpellCategories' DispelType
 NODE_KINDS = {0: "single", 1: "tiered", 2: "selection"}  # TraitNode's Type, Enum.TraitNodeType
+# SpellCategories' DefenseType, as the client's own spells have it: Frostbolt 1, Heroic Strike 2, Auto Shot 3
+ATTACKS = {1: "magic", 2: "melee", 3: "ranged"}
+TRAIT_SET = 0                                            # TraitDefinitionEffectPoints' OperationType, Enum.TraitPointsOperationType.Set
+# The fields the client alone holds, staged empty (null) where it holds nothing, so that one the game takes away is
+# taken out of the master too; every other empty field is left out of a line (the master keeps what it has).
+CLEARED = {"Spells": ("attack", "interrupts", "auraInterrupts", "channelInterrupts", "forms", "notForms"),
+           "Talents": ("values",), "Legacy": ("values",), "Professions": ("toolKinds",), "Items": ("statTypes",)}
 CONSUMABLE = 0                                           # Item's ClassID
 AURA_SOURCES = {5: "food", 1: "potion", 2: "elixir", 3: "elixir"}  # a consumable's SubclassID
 WEAPON = 2
@@ -159,6 +170,26 @@ def num(value):
         return int(float(value))
 
 
+def flags(value):
+    """A mask of the client's (a signed 32-bit number in its tables) as a whole number from 0."""
+    return num(value) & 0xFFFFFFFF
+
+
+def words(row, column):
+    """A mask of two words (column[0], column[1]): the words as the client holds them, trailing empty ones left out."""
+    found = [flags(row[f"{column}[{i}]"]) for i in (0, 1)] if row else []
+    while found and not found[-1]:
+        found.pop()
+    return found
+
+
+def forms(row, column):
+    """The forms a mask of two words names (bit n-1 of the first word is form n, of the second form n+32)."""
+    if not row:
+        return []
+    return [word * 32 + bit + 1 for word in (0, 1) for bit in range(32) if flags(row[f"{column}[{word}]"]) >> bit & 1]
+
+
 def test(name):
     return name not in NOT_TEST and bool(TEST.search(name))
 
@@ -183,7 +214,10 @@ class Writer:
         self.lines, self.left, self.kept = [], [], defaultdict(int)
 
     def stage(self, set_name, key, fields):
-        fields = {name: value for name, value in fields.items() if value not in (None, [], {})}
+        """A line of staging: empty fields left out, but those of CLEARED, which are staged as null (empty)."""
+        cleared = CLEARED.get(set_name, ())
+        fields = {name: (None if value in (None, [], {}) else value) for name, value in fields.items()
+                  if value not in (None, [], {}) or name in cleared}
         line = {"set": set_name, "key": key, "game": self.game, "build": self.build}
         if self.day:
             line["day"] = self.day
@@ -207,6 +241,8 @@ class Spells:
         self.cooldowns = {row["SpellID"]: row for row in t("SpellCooldowns").values() if row["DifficultyID"] == "0"}
         self.power = t.by("SpellPower", "SpellID")
         self.categories = {row["SpellID"]: row for row in t("SpellCategories").values() if row["DifficultyID"] == "0"}
+        self.interrupts = {row["SpellID"]: row for row in t("SpellInterrupts").values() if row["DifficultyID"] == "0"}
+        self.shapes = {row["SpellID"]: row for row in t("SpellShapeshift").values()}
         self.cast, self.ranges, self.durations = t("SpellCastTimes"), t("SpellRange"), t("SpellDuration")
 
     def name(self, spell):
@@ -244,6 +280,22 @@ class Spells:
             "minRange": round(low, 2) or None,
             "maxRange": round(high, 2) or None,
             "effects": self.effect_list(key),
+            **self.how(key),
+        }
+
+    def how(self, key):
+        """How the spell is cast: an attack of which kind (SpellCategories' DefenseType), what ends its cast, takes its
+        aura away or ends its channel (SpellInterrupts' masks, as the client holds them: InterruptFlags 1 is moving,
+        which every spell with a cast time has), and the forms it may be cast in or cannot be cast in (SpellShapeshift's
+        masks: bit n-1 is form n of SpellShapeshiftForm: Charge's 17 Battle Stance, Fear Ward's 28 Shadowform)."""
+        kind, stop, shape = self.categories.get(key), self.interrupts.get(key), self.shapes.get(key)
+        return {
+            "attack": ATTACKS.get(num(kind["DefenseType"])) if kind else None,
+            "interrupts": flags(stop["InterruptFlags"]) or None if stop else None,
+            "auraInterrupts": words(stop, "AuraInterruptFlags"),
+            "channelInterrupts": words(stop, "ChannelInterruptFlags"),
+            "forms": forms(shape, "ShapeshiftMask"),
+            "notForms": forms(shape, "ShapeshiftExclude"),
         }
 
     def cost_list(self, key):
@@ -270,7 +322,9 @@ class Spells:
             effect = {"index": num(row["EffectIndex"]), "effect": num(row["Effect"]), "aura": num(row["EffectAura"]),
                       "points": round(float(row["EffectBasePointsF"]), 3), "perLevel": round(float(row["EffectRealPointsPerLevel"]), 3),
                       "period": num(row["EffectAuraPeriod"]), "targets": num(row["EffectChainTargets"]),
-                      "misc": num(row["EffectMiscValue[0]"]), "trigger": num(row["EffectTriggerSpell"])}
+                      "misc": num(row["EffectMiscValue[0]"]), "trigger": num(row["EffectTriggerSpell"]),
+                      "coefficient": round(float(row.get("EffectBonusCoefficient") or 0), 4),
+                      "apCoefficient": round(float(row.get("BonusCoefficientFromAP") or 0), 4)}
             found.append({part: value for part, value in effect.items() if value or part == "index"})
         return found
 
@@ -342,6 +396,8 @@ def items(t, spells, w):
             "classes": allowed if len(allowed) < len(playable) else [],
             "unique": num(row["MaxCount"]) if num(row["MaxCount"]) > 0 else None,
             "toy": True if key in toys else None,
+            "statTypes": [num(row[f"StatModifier_bonusStat[{i}]"]) for i in range(10)
+                          if num(row[f"StatModifier_bonusStat[{i}]"]) >= 0 and num(row[f"StatPercentEditor[{i}]"]) != 0],
         }
     sets = {}
     bonuses = t.by("ItemSetSpell", "ItemSetID")
@@ -457,7 +513,28 @@ def professions(t, spells, lines, item_keys, w):
             "tools": [num(tools[f"Totem[{i}]"]) for i in (0, 1) if tools and num(tools[f"Totem[{i}]"]) > 0],
             "cooldown": cooldown or None,
             "recipe": next(iter(teacher)) if len(teacher) == 1 else None,
+            "toolKinds": [num(tools[f"RequiredTotemCategoryID[{i}]"]) for i in (0, 1)
+                          if tools and num(tools[f"RequiredTotemCategoryID[{i}]"]) > 0],
         })
+
+
+def rank_values(entry, entries, points, curves):
+    """A node entry's numbers per rank (TraitDefinitionEffectPoints: the effect of its spell a curve sets, CurvePoint: the
+    rank and its value), one tuple a rank: entry, the effect's index, rank, value. Only the operation Set (all the
+    client has); a rank the curve gives twice is left out."""
+    row = entries.get(str(entry["entry"]))
+    found = []
+    for effect in sorted(points.get(row["TraitDefinitionID"], []) if row else [], key=lambda e: num(e["EffectIndex"])):
+        if num(effect["OperationType"]) != TRAIT_SET:
+            continue
+        ranks = defaultdict(list)
+        for point in curves.get(effect["CurveID"], []):
+            ranks[float(point["Pos[0]"])].append(round(float(point["Pos[1]"]), 3))
+        for rank, value in sorted(ranks.items()):
+            if rank == int(rank) and 1 <= rank <= entry["ranks"] and len(value) == 1:
+                found.append({"entry": entry["entry"], "index": num(effect["EffectIndex"]), "rank": int(rank),
+                              "value": int(value[0]) if value[0] == int(value[0]) else value[0]})
+    return found
 
 
 def trees(t, spells, w):
@@ -474,6 +551,7 @@ def trees(t, spells, w):
             class_of[row["TraitTreeID"]] = next(iter(mine))
     definitions, entries = t("TraitDefinition"), t("TraitNodeEntry")
     of_node = t.by("TraitNodeXTraitNodeEntry", "TraitNodeID")
+    points, curves = t.by("TraitDefinitionEffectPoints", "TraitDefinitionID"), t.by("CurvePoint", "CurveID")
     edges = t.by("TraitEdge", "LeftTraitNodeID")
     cost = {}
     costs = t("TraitCost")
@@ -499,13 +577,14 @@ def trees(t, spells, w):
             name = name or label
             made.append({"entry": num(entry["ID"]), "spell": spell or None, "ranks": max(num(entry["MaxRanks"]), 1)})
         kind = NODE_KINDS.get(num(node["Type"]))
+        values = [value for entry in made for value in rank_values(entry, entries, points, curves)]
         if not made or not kind:
             w.leave("Talents", key, "no entry with a name" if not made else f"node type {node['Type']}")
             continue
         made = [{part: value for part, value in entry.items() if value is not None} for entry in made]
         used |= {entry["spell"] for entry in made if "spell" in entry}
-        staged[key] = (node, kind, name, made)
-    for key, (node, kind, name, made) in sorted(staged.items(), key=lambda item: num(item[0])):
+        staged[key] = (node, kind, name, made, values)
+    for key, (node, kind, name, made, values) in sorted(staged.items(), key=lambda item: num(item[0])):
         tree = node["TraitTreeID"]
         links = sorted({num(e["RightTraitNodeID"]) for e in edges.get(key, []) if e["RightTraitNodeID"] in staged
                         and staged[e["RightTraitNodeID"]][0]["TraitTreeID"] == tree})
@@ -517,12 +596,12 @@ def trees(t, spells, w):
                 "description": plain(definition["OverrideDescription_lang"]) or spells.description(first.get("spell", 0)),
                 "x": num(node["PosX"]), "y": num(node["PosY"]),
                 "links": [f"node:{link}" for link in links], "entries": made,
-                "cost": cost[tree][0] if tree in cost else None,
+                "cost": cost[tree][0] if tree in cost else None, "values": values,
             })
         else:
             w.stage("Talents", num(key), {
                 "class": class_of[tree], "tree": num(tree), "name": name, "x": num(node["PosX"]), "y": num(node["PosY"]),
-                "kind": kind, "links": links, "entries": made,
+                "kind": kind, "links": links, "entries": made, "values": values,
             })
     points = {currency for amount, currency in cost.values()}
     challenges = {}

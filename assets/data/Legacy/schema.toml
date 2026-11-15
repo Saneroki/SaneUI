@@ -23,6 +23,12 @@ rewards     = { type = "list", of = "tuple", parts = [
     { name = "id", type = "int" },
     { name = "count", type = "int", min = 1 },
 ] }
+values      = { type = "list", of = "tuple", parts = [   # a node's numbers per rank, as Talents' values
+    { name = "entry", type = "int" },
+    { name = "index", type = "int", min = 0 },
+    { name = "rank", type = "int", min = 1 },
+    { name = "value", type = "number" },
+] }
 
 [index]
 byKind = "kind"
