@@ -141,7 +141,14 @@ local NONE = {}
 local zoom, panX, panY = 1, 0, 0 -- the zoom (1: whole), the art's middle from the room's, in screen units
 local dragX, dragY -- where the cursor was at the last step of a drag
 local onSmall = false -- the view stands on the small map (Dungeons.Small), not the full one
-local wanted = false  -- the small map was wheeled out to a dungeon's whole map: kept until wheeled in (Dungeons.Out)
+-- Inside an instance the small map shows our map of its dungeon first (Saneroki, 2026-11-15: "Yes ours first"): its
+-- bosses, your markers and drawings; the game's minimap (the one that knows where you stand: the game tells addons
+-- nobody's place inside) once chosen (a notch in, the middle button, a right click, the satchel's arrow), kept for
+-- the account (ns.store.instanceMap "game") until our map is chosen again (a notch out, the arrow).
+local function Wanted() return not (ns.store and ns.store.instanceMap == "game") end
+local function Want(on)
+    if ns.store then ns.store.instanceMap = not on and "game" or nil end
+end
 -- The room a floor is fitted into whole (Room): its size, its middle from the view's; the art's middle (Place).
 local roomWidth, roomHeight, roomX, roomY = 1, 1, 0, 0
 local midX, midY = 0, 0
@@ -1099,7 +1106,7 @@ function Dungeons.Whole()
     if not frame or ns.Canvas.camera ~= ns.Window.small then return false end
     local here = Dungeons.Here()
     if not here or not Open(here, true) then return false end
-    wanted = true
+    Want(true)
     return true
 end
 
@@ -1113,9 +1120,22 @@ function Dungeons.Small(lost)
         return false
     end
     if onSmall then return true end
-    if not wanted or shown then return false end
+    if not Wanted() or shown then return false end
     local here = Dungeons.Here()
     return here and Open(here, true) or false
+end
+
+-- Whether the small map can swap between our map of the dungeon and the game's minimap (the satchel's arrow): inside
+-- an instance (our map of the world not drawn there, or the dungeon's shown on it) whose dungeon we have a map of.
+function Dungeons.Swappable()
+    if not frame or ns.Canvas.camera ~= ns.Window.small then return false end
+    return (onSmall or not ns.Canvas.Laid()) and Dungeons.Here() ~= nil
+end
+
+-- The satchel's arrow: the game's minimap where our map of the dungeon shows, else our map; kept (Want).
+function Dungeons.Swap()
+    if onSmall then return Dungeons.Out() end
+    if Dungeons.Whole() then ns.Canvas.Layout() end
 end
 
 -- A loading screen: another dungeon, or none, so the small map's whole map is looked at anew (Small, at the layout).
@@ -1157,7 +1177,7 @@ end
 -- or the middle button) the game's minimap again, at its widest step, and no longer wished.
 function Dungeons.Out()
     local small = onSmall
-    if small then wanted = false end
+    if small then Want(false) end
     Dungeons.Close()
     if small then ns.Canvas.Refresh() end
 end

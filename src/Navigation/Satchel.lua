@@ -67,6 +67,7 @@ ns.Satchel = Satchel
 
 Satchel.SIZE = 28          -- the button's ring across, in units
 Satchel.INSET = 4          -- the button from the window's corner
+Satchel.SWAP_GAP = 4       -- the arrow beside it (the small map between our map and the game's minimap)
 Satchel.FACE_CLOCK = 15    -- the face's time: its size
 Satchel.FACE_ZONE = 13     -- the face's zone: its size; never as wide as to run under the button
 Satchel.FACE_INSET = 6     -- the time from the map's top, the zone from its bottom
@@ -113,6 +114,10 @@ Satchel.OPTIONAL = { "Banker", "Auctioneer", "Barber", "TrainerProfession", "Acc
 Satchel.TEXT = {
     title = Core.Word("MINIMAP_LABEL", "Minimap"),
     tip = "Sound, addons, pins and tracking",
+    swapGame = "The game's minimap",
+    swapGameTip = "It shows where you stand. Inside dungeons and raids the game tells addons nobody's place, so our map cannot show you there.",
+    swapOurs = "Our map of this dungeon",
+    swapOursTip = "Its bosses, your markers and drawings, its floors. It cannot show where you stand: the game keeps that to itself in here.",
     addons = Core.Word("ADDONS", "AddOns"),
     pins = "Pins",
     tracking = Core.Word("TRACKING", "Tracking"),
@@ -142,6 +147,8 @@ Satchel.TEXT = {
 }
 
 local button          -- the button on the small map
+local swap            -- the arrow beside it: the small map between our map of a dungeon and the game's minimap
+local Swapped         -- (below: the arrow in sight where it is of use)
 local panel, look, scroll, sheet
 local cells, heads = {}, {} -- the cells and the sections' titles made so far, used again at each fill
 local heading         -- the zone's title
@@ -839,12 +846,16 @@ local function Face()
     elseif not on then
         face:Hide()
     end
+    if on then Swapped() end
 end
 
 -- While it shows: the time and the place read again every Satchel.FACE_TICK.
 local function Ticked(_, elapsed)
     read = read + (elapsed or 0)
-    if read >= Satchel.FACE_TICK then Read() end
+    if read >= Satchel.FACE_TICK then
+        Read()
+        Swapped()
+    end
 end
 
 -- The mouse came onto the small map (on) or left it (Window.Hovered).
@@ -852,6 +863,16 @@ function Satchel.Hover(on)
     hovered = on and true or false
     Face()
 end
+
+-- The arrow beside the bag: only where the small map can swap (inside an instance whose dungeon we have a map of:
+-- Saneroki, 2026-11-15, "only show it on mouse over and in cases where it is neccessary like in instances"), with the
+-- face; looked at as the face shows and at each of its looks.
+function Swapped()
+    if not swap then return end
+    local dungeons = ns.Dungeons -- (a scene of the interface lab may load the satchel alone)
+    swap:SetShown(dungeons and dungeons.Swappable and dungeons.Swappable() and true or false)
+end
+Satchel.Swapped = Swapped
 
 function Satchel.Open()
     if not small then return end
@@ -886,6 +907,20 @@ end
 -------------------------------------------------------------------------------
 --  The button
 -------------------------------------------------------------------------------
+-- The arrow's tooltip: what a click shows, and why the game's minimap knows your place and our map does not.
+local function SwapTip(owner)
+    local ours = select(3, ns.Dungeons.Shown())
+    GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
+    GameTooltip:SetText(ours and Satchel.TEXT.swapGame or Satchel.TEXT.swapOurs)
+    GameTooltip:AddLine(ours and Satchel.TEXT.swapGameTip or Satchel.TEXT.swapOursTip, 1, 1, 1, true)
+    GameTooltip:Show()
+end
+
+local function Swap(owner)
+    ns.Dungeons.Swap()
+    if GameTooltip:IsOwned(owner) then SwapTip(owner) end
+end
+
 local function ButtonTip(owner)
     GameTooltip:SetOwner(owner, "ANCHOR_LEFT")
     GameTooltip:SetText(Satchel.TEXT.title)
@@ -922,6 +957,27 @@ function Satchel.Build(canvas)
     button:SetScript("OnLeave", GameTooltip_Hide)
     button:Hide()
     Satchel.button = button
+    -- The arrow beside it (Saneroki, 2026-11-15: "Add a toggle button next to the bag icon where you can toggle the
+    -- minimap between the games and our map"; "make the button that toggles it look like the players arrow"): the
+    -- player's arrow as the map draws it, on a dark round in the same ring
+    swap = CreateFrame("Button", nil, face)
+    swap:SetSize(Satchel.SIZE, Satchel.SIZE)
+    local back = swap:CreateTexture(nil, "BACKGROUND")
+    back:SetColorTexture(0, 0, 0, 0.7)
+    back:SetPoint("CENTER")
+    ns.Found.Round(back, swap:CreateMaskTexture())
+    swap.arrow = swap:CreateTexture(nil, "ARTWORK")
+    swap.arrow:SetAtlas("UI-WorldMapArrow")
+    swap.arrow:SetSize(Satchel.SIZE * 0.62, Satchel.SIZE * 0.62)
+    swap.arrow:SetPoint("CENTER")
+    local swapRing = swap:CreateTexture(nil, "OVERLAY")
+    swapRing:SetTexture(ns.Found.RING)
+    ns.Found.Ring(swapRing, back, Satchel.SIZE * ns.Found.HOLE / ns.Found.OUTER)
+    swap:SetScript("OnClick", ns.Guard(Swap))
+    swap:SetScript("OnEnter", ns.Guard(SwapTip))
+    swap:SetScript("OnLeave", GameTooltip_Hide)
+    swap:Hide()
+    Satchel.arrow = swap -- (for the tests: Satchel.swap is the page's own)
     -- The Calendar's secure button (Cover): it clicks the game's own calendar button (out of sight with the
     -- minimap's cluster, but there), so the game opens its calendar panel as its own code; ours may not.
     local game = rawget(_G, "GameTimeFrame")
@@ -951,6 +1007,7 @@ end
 function Satchel.Stack(level)
     if face then face:SetFrameLevel(level) end
     if button then button:SetFrameLevel(level + 1) end
+    if swap then swap:SetFrameLevel(level + 1) end
 end
 
 -- The window stands small and is the minimap (on), or not (full, on its way, resting, gone): the button in the
@@ -972,6 +1029,13 @@ function Satchel.Place(on)
     button:ClearAllPoints()
     button:SetPoint(corner, button:GetParent(), corner, dx, dy)
     button:Show()
+    -- the arrow beside the bag, toward the map's middle
+    swap:ClearAllPoints()
+    if corner:find("RIGHT") then
+        swap:SetPoint("RIGHT", button, "LEFT", -Satchel.SWAP_GAP, 0)
+    else
+        swap:SetPoint("LEFT", button, "RIGHT", Satchel.SWAP_GAP, 0)
+    end
     Face()
     if panel and panel:IsShown() then Anchor() end
 end

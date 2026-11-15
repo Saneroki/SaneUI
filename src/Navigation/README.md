@@ -59,12 +59,17 @@ and shows them on the map or puts the map pin there. The plan is in
   draged around for 5s"; the box and the setting *Follow me* went). The full map opens on you and keeps you in its
   middle. Dragged away, zoomed, moved to a quest or to a map chosen on its bar, either map comes back to you as you
   walk once you left it alone for 5 seconds (standing still, you can look around as long as you like); the middle
-  mouse button brings it back at once. In an instance the small window shows the game's own minimap.
-- **In a dungeon, a raid or a battleground,** where the game tells no place of yours on our map, the small window
-  shows the game's own minimap alone, with its own ground and dots, as the game's would; the wheel walks its zoom
-  steps. One notch out past its widest step shows a dungeon's or raid's whole map there instead (where we have one),
-  its bosses as on the full map, smaller; a notch in, a right or a middle click brings the game's minimap back at its
-  widest step. Left so, it stays through the full screen and back and into the next dungeon. Out of it, our map is back.
+  mouse button brings it back at once. In an instance the small window shows our map of the dungeon (below).
+- **In a dungeon, a raid or a battleground** the game tells addons nobody's place (Blizzard's rule: our map cannot
+  show you there; the game's own minimap, which the game draws itself, can). So inside a dungeon or raid we have a map
+  of, the small window shows **our map of it first** (Saneroki, 2026-11-15: "Yes ours first"): its whole floor, its
+  bosses, your markers and drawings, without an arrow for you. The **player's arrow** beside the satchel's bag (in
+  sight with the face, under the mouse, and only there: "only show it on mouse over and in cases where it is
+  neccessary like in instances"; "make the button that toggles it look like the players arrow") swaps to the game's
+  minimap (it shows where you stand, with its own ground and dots; the wheel walks its zoom steps) and back. A notch
+  in, a right or a middle click also brings the game's minimap, a notch out past its widest step our map again. The
+  choice is kept for your account, into the next dungeon. Elsewhere (a battleground, a dungeon we have no map of) the
+  game's minimap alone. Out of it, our map is back.
 - **What a thing gives.** Hover a rare, a chest, a herb or a vein, on the map or a found node: its tooltip lists what it gives, the
   likeliest first, each with how often: `Fang Charm 7.5% (3 of 40)`, `Moon Gem 1 of 40` while too few came, `12%` where only our data
   says so. So do the red dots of a dungeon's enemies; a boss's loot has it at each item's right. All of it is Core's `Data.Drops()`
@@ -740,10 +745,12 @@ and shows them on the map or puts the map pin there. The plan is in
   bar's row (`2 * TopBar.INSET + TopBar.BUTTON_HEIGHT`) and the quest log leave (`Room`: the log's side, its box
   `QuestLog.Box` and the bar's gap, at most `Dungeons.SIDE` of the width), measured as it opens, when its size
   changes and when the log comes or goes (`Dungeons.Refit`, from `Window.Lay`), not at each step of a drag; on
-  the small map (`Dungeons.Whole`: in an instance, `Canvas.lua`'s `Wheel` one notch out at the game's step 0) the
-  whole small view, the floor never zoomed or dragged there, its marks, models and dots at `Dungeons.SMALL` of
+  the small map (`Dungeons.Small` at each layout inside an instance, first unless the game's minimap was chosen:
+  `ns.store.instanceMap` "game"; `Dungeons.Whole`, `Canvas.lua`'s `Wheel` one notch out at the game's step 0;
+  `Dungeons.Swap` from the satchel's arrow, `Satchel.arrow`, shown where `Dungeons.Swappable`) the whole small view, the floor never zoomed or dragged there, its marks, models and dots at `Dungeons.SMALL` of
   their size; wished (kept through the full screen and back, `Dungeons.Small` at each layout of the small view,
-  looked at anew after a loading screen) until a notch in, a right or a middle click (`Dungeons.Out`), and the
+  looked at anew after a loading screen) until a notch in, a right or a middle click or the arrow (`Dungeons.Out`,
+  the game's minimap kept as the choice), and the
   game's minimap out of sight under it meanwhile (`Hybrid.Hide`, `whole` in `Canvas.lua`); no player's arrow and no
   group (Forever tells no place inside an instance). `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
   stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
@@ -1519,6 +1526,11 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, our dungeon map first; the arrow beside the bag:** Saneroki, of the small map in a dungeon: "does the
+  game draw its own minimap over our map in instances? ... Would love to see our own map and its drawings" (the game
+  tells addons nobody's place inside; its minimap knows it), then "Yes ours first. Add a toggle button next to the
+  bag icon ... only show it on mouse over and in cases where it is neccessary like in instances" and "make the button
+  that toggles it look like the players arrow" (`Dungeons` `Wanted`, `Want`, `Swap`, `Swappable`; `Satchel.arrow`).
 - **2026-11-15, the button Dungeons and its banners:** Saneroki: "I would like to have the drop down change to a button
   and when the button is pressed you can see all the dungeons and raids that are currently available in Forever.
   Filter out those that are not currently in Forever or are not part of the planed for the soon to be released raids

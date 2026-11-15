@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Minimap in dungeons and raids: our map of the dungeon first, with
+  its bosses and your markers and drawings. The player's arrow
+  beside the bag (under the mouse) switches to the game's minimap,
+  which shows where you stand, and back.
 - Map: the Dungeons button shows every dungeon and raid of
   WoW: Forever this year as banners, dungeons and raids apart,
   by level: their levels, how many of your quests lead inside, a
