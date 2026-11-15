@@ -763,6 +763,10 @@ local function Title(row)
     return ("[%d%s] %s"):format(row.level, row.group and "+" or "", row.text or "")
 end
 
+-- The font of a row's words, by its kind (an objective's: GameFontHighlightSmall).
+local FONTS = { header = "GameFontNormal", section = "GameFontNormal", preview = "GameFontHighlight",
+                quest = "GameFontHighlight", text = "GameFontHighlight", reward = "GameFontHighlight" }
+
 -- A row's frame, made the first time the list draws one (the list's elements are plain buttons).
 local function Draw(element, row)
     if not element.text then
@@ -810,7 +814,15 @@ local function Draw(element, row)
     local near, far, sign = "LEFT", "RIGHT", 1
     if mirrored then near, far, sign = "RIGHT", "LEFT", -1 end
     text:ClearAllPoints()
+    -- How its words are laid out, all of it before the words come: the game lays them out as they are set, and
+    -- words set while the row still did not wrap (a quest's row before) showed one line cut short until the list
+    -- moved. A quest's text wraps at the width it was measured at (AddText), the rest keeps to one line.
+    local wraps = row.kind == "text"
+    text:SetFontObject(FONTS[row.kind] or "GameFontHighlightSmall")
     text:SetJustifyH(near)
+    text:SetWordWrap(wraps)
+    text:SetSpacing(wraps and 2 or 0)
+    text:SetWidth(wraps and row.wrap or 0)
     mark:ClearAllPoints()
     state:ClearAllPoints()
     state:SetText("")
@@ -831,7 +843,6 @@ local function Draw(element, row)
         -- The game's fold mark only for a zone, and only over the full map.
         local folds = full and row.index ~= nil
         element.left = folds and 16 or 0
-        text:SetFontObject("GameFontNormal")
         text:SetPoint(near, sign * element.left, 0)
         if folds then
             mark:SetAtlas(row.collapsed and "campaign_headericon_closed" or "campaign_headericon_open")
@@ -844,7 +855,6 @@ local function Draw(element, row)
         element.icon:ClearAllPoints()
         element.icon:SetPoint(near, 0, 0)
         element.left = QuestLog.MARK + 4
-        text:SetFontObject("GameFontHighlight")
         text:SetPoint(near, sign * element.left, 0)
         text:SetPoint(far, element.remove, near, -sign * 4, 0)
         text:SetText(Title(row))
@@ -852,7 +862,6 @@ local function Draw(element, row)
         element.left = 0
         -- At its far end its item, if it has one (Seat), and before that Failed.
         state:SetPoint(far, -sign * (row.item and QuestLog.ITEM + 4 or 4), 0)
-        text:SetFontObject("GameFontHighlight")
         text:SetPoint(near, 0, 0)
         text:SetPoint(far, state, near, -sign * 4, 0)
         text:SetText(Title(row))
@@ -862,28 +871,22 @@ local function Draw(element, row)
         end
     elseif row.kind == "section" then
         element.left = QuestLog.INSET
-        text:SetFontObject("GameFontNormal")
         text:SetPoint("BOTTOM" .. near, sign * element.left, 4)
         text:SetPoint("BOTTOM" .. far, -sign * element.left, 4)
         text:SetText(row.text)
     elseif row.kind == "text" then
         element.left = QuestLog.INSET
-        text:SetFontObject("GameFontHighlight")
         text:SetPoint("TOP" .. near, sign * element.left, 0)
-        text:SetPoint("TOP" .. far, -sign * element.left, 0)
         text:SetText(row.text)
     elseif row.kind == "reward" then
         element.left = QuestLog.INSET
         text:SetText("")
     else
         element.left = QuestLog.INDENT
-        text:SetFontObject("GameFontHighlightSmall")
         text:SetPoint(near, sign * element.left, 0)
         text:SetPoint(far, -sign * 4, 0)
         text:SetText("- " .. (row.text or ""))
     end
-    text:SetWordWrap(row.kind == "text")
-    text:SetSpacing(row.kind == "text" and 2 or 0)
     text:SetTextColor(Colour(row))
     Reach(element)
     if row.quest and row.quest == chosen and (row.kind == "quest" or row.kind == "preview") then
@@ -1076,6 +1079,7 @@ function AddText(quest)
         if part.kind == "section" then
             Put(part, QuestLog.SECTION)
         elseif part.kind == "text" then
+            part.wrap = width -- drawn as wide (Draw), so its words wrap where they were measured
             measure:SetText(part.text)
             Put(part, measure:GetStringHeight() + QuestLog.ROOM)
         else

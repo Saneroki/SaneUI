@@ -974,7 +974,8 @@ and shows them on the map or puts the map pin there. The plan is in
   `GetQuestLogRewardMoney`, `GetNumQuestLogRewards`, `GetQuestLogRewardInfo`, `GetNumQuestLogChoices`,
   `GetQuestLogChoiceInfo`, `C_QuestInfoSystem`'s currencies and spells: no quest chosen for them), read only while the
   text shows, as rows of the list under the quest, a preview's too (kinds `section`, `text` and `reward`, each `part`;
-  `AddText`: as high as `measure` says its words wrap at the list's width, `Reveal` brings them into sight), for the open
+  `AddText`: as high as `measure` says its words wrap at the list's width, drawn that wide, `row.wrap`, its font,
+  wrap and spacing set before its words, `Draw`; `Reveal` brings them into sight), for the open
   quest alone (`open`: a click, the menu's *Quest Details*, a click on its pin). A reward is a cell of its row
   (`Rewards`, `RewardCell`), a plain button, its tooltip the game's by the quest's ID (`SetQuestLogItem`); an item the
   game does not know yet comes in by `ITEM_DATA_LOAD_RESULT` (`missing`). The lab's scene `questlog` shows it all; abandon
