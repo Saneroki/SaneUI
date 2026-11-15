@@ -7,14 +7,17 @@ local _, ns = ...
 --  the titlebar"), left to right:
 --
 --      Quest Log         the quest log on or off, over the map and on the screen alone (kept; QuestLog.lua)
---      Zone              every continent (the map shows it whole) and under it its zones (A to Z); it says the zone
---                        the map shows now
+--      the view          one button: Blended and Scrying in turn (Saneroki: "Blended and scrying will be one button
+--                        that just toggles the map views"), its words the view drawn; Parchment only in the
+--                        settings (the setting Map view); none where only one view is offered (ns.Several). Right
+--                        of Quest Log (Saneroki, 2026-11-15: "move the button scrying / blended to the right of
+--                        Questlog")
+--      Zone              every continent (the map shows it whole) and under it its zones (A to Z), at every zoom
+--                        (Saneroki, 2026-11-15: "make sure that the zone dropdown menu always has all zones
+--                        listed"); it says the zone the map shows now, else the continent or the world
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
 --      ... the map's search in the room between (FindBox.lua) ...
---      the view          one button: Blended and Scrying in turn (Saneroki: "Blended and scrying will be one button
---                        that just toggles the map views"), its words the view drawn; Parchment only in the
---                        settings (the setting Map view); none where only one view is offered (ns.Several)
 --      Sketches          a dropdown: every sketch with its checkbox (shown) and its own menu, Draw on the map,
 --                        New sketch (DrawBar.lua; in place of the pencil button: Saneroki, 2026-11-15)
 --      Follow me         a checkbox: the map keeps you in its middle as you move and comes back to you, small and
@@ -95,13 +98,9 @@ function TopBar.Arrange()
     viewButton:SetText(ns.TEXT.views[drawn] or drawn)
     viewButton.title = ns.TEXT.views[drawn] or drawn
     viewButton.tip = (ns.TEXT.viewTips[drawn] or "") .. "\n\n" .. TopBar.TEXT.viewNext:format(ns.TEXT.views[Other(drawn)] or "")
-    draw:ClearAllPoints()
-    if offered then draw:SetPoint("RIGHT", viewButton, "LEFT", -TopBar.GAP * 2, 0)
-    else draw:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0) end
-    if offered then
-        viewButton:ClearAllPoints()
-        viewButton:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0)
-    end
+    -- the zone right of the view's button, or of Quest Log where there is none
+    zoneMenu:ClearAllPoints()
+    zoneMenu:SetPoint("LEFT", offered and viewButton or logButton, "RIGHT", TopBar.GAP * 2, 0)
 end
 
 local function Toggle()
@@ -322,22 +321,23 @@ local function Build()
     else
         shade:SetAlpha(TopBar.SHADE_ALPHA / 2)
     end
-    -- at the left: the quest log, the zone, the dungeons and a dungeon's floors
+    -- at the left: the quest log, the view, the zone, the dungeons and a dungeon's floors
     logButton = Button(TopBar.BUTTON_WIDTH, TopBar.TEXT.questLog, TopBar.TEXT.questLog, TopBar.TEXT.questLogTip, Log)
     logButton:SetPoint("LEFT", TopBar.INSET, 0)
-    zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones, TopBar.TEXT.zones)
-    zoneMenu:SetPoint("LEFT", logButton, "RIGHT", TopBar.GAP * 2, 0)
+    viewButton = Button(TopBar.VIEW_WIDTH, "", "", "", Toggle)
+    viewButton.key = "view"
+    viewButton:SetPoint("LEFT", logButton, "RIGHT", TopBar.GAP * 2, 0)
+    zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones, TopBar.TEXT.zones) -- (placed by Arrange)
     dungeonMenu = Dropdown(TopBar.DUNGEON_WIDTH, DungeonList, ns.Dungeons.TEXT.dungeons)
     dungeonMenu:SetPoint("LEFT", zoneMenu, "RIGHT", TopBar.GAP, 0)
     floorMenu = Dropdown(TopBar.FLOOR_WIDTH, FloorList, ns.Dungeons.TEXT.floor)
     floorMenu:SetPoint("LEFT", dungeonMenu, "RIGHT", TopBar.GAP, 0)
     floorMenu:Hide()
-    -- at the right, left of Core's: the view, drawing and planning, Follow me, the pins
+    -- at the right, left of Core's: the sketches, Follow me, the pins
     pinMenu = Dropdown(TopBar.PINS_WIDTH, Filter, TopBar.TEXT.pins)
     followBox = FollowBox()
-    viewButton = Button(TopBar.VIEW_WIDTH, "", "", "", Toggle)
-    viewButton.key = "view"
     draw = ns.DrawBar.Menu(bar, TopBar.BUTTON_HEIGHT)
+    draw:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0)
     -- the room between, for the search
     gap = CreateFrame("Frame", nil, bar)
     gap:SetPoint("TOP")
@@ -396,6 +396,6 @@ function TopBar.Update()
     end
     if map == shownMap and zone == shownZone then return end
     shownMap, shownZone = map, zone
-    zoneMenu:OverrideText(zone and Name(zone) or TopBar.TEXT.zones)
-    zoneMenu:SetEnabled(camera.level ~= "world")
+    -- the zone shown, else the continent or the world; open at every zoom: it lists them all
+    zoneMenu:OverrideText(Name(zone or map))
 end

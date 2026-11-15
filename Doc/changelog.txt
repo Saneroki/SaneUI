@@ -11,9 +11,10 @@ The bigger changes of each version, newest first.
   with its 3D model, what a herb gives). Dungeon maps: the bosses'
   models grow as you zoom in.
 - Map: the full map fills the whole screen, its controls in the
-  title bar: Quest Log, Zone (every continent with its zones),
-  Dungeons, one button for Blended and Scrying, Draw, Follow me and
-  Pins. Full screens have only the arrow down, no X.
+  title bar: Quest Log, one button for Blended and Scrying, Zone
+  (every continent with its zones, at every zoom), Dungeons,
+  Sketches, Follow me and Pins. Full screens have only the arrow
+  down, no X.
 - Map search: pick a find, then what to do with it (show it, the
   map pin, what drops it, where to get it, who sells it...). The
   list reaches down the screen with a scroll bar. Searches that run

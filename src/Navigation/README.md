@@ -396,11 +396,13 @@ and shows them on the map or puts the map pin there. The plan is in
   (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
 - **The full map's title bar** (Saneroki, 2026-11-15: "Let the map view go to the very top behind the titleba so it is
   truely fullscreen"): the map fills the whole screen, up behind the title bar, which holds its controls with a soft
-  shade behind them: at the left **Quest Log**, **Zone** and **Dungeons** (and a dungeon's floors), the search in the
-  middle, at the right the view's button, **Sketches**, **Follow me** and **Pins**, then *Classic windows* and the
-  bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
+  shade behind them: at the left **Quest Log**, the view's button (right of it: Saneroki, 2026-11-15), **Zone** and
+  **Dungeons** (and a dungeon's floors), the search in the middle, at the right **Sketches**, **Follow me** and
+  **Pins**, then *Classic windows* and the bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
 - **Zone** on the bar: the world, then every continent (a click shows it whole) with its zones under it, A to Z, and
-  Zephras Isle; it says the zone shown. (The dropdown of continents went: Saneroki, 2026-11-15.)
+  Zephras Isle, at every zoom, the world's too (Saneroki, 2026-11-15: "make sure that the zone dropdown menu always
+  has all zones listed"); it says the zone shown, else the continent or the world. (The dropdown of continents went:
+  Saneroki, 2026-11-15.)
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
   over the map, and beside it its floors; each floor opens whole, under the bar and beside the quest log, so the
@@ -897,12 +899,13 @@ and shows them on the map or puts the map pin there. The plan is in
   window fills the screen, a frame over the bar's own (its level + 5) with a shade (black, `TopBar.SHADE_ALPHA` at the
   top to none `TopBar.SHADE` units under the bar). The map reaches up behind it: Core's window option `under` (the
   content from the frame's top while full; the bar over it at `Core.Window.UNDER`), `untitled` (no title words), and
-  `Window.FullSize` the screen's whole height. Left: the quest log's button, the zone dropdown (radio entries of the
-  world, then each plane, `Coords.Planes` and `Coords.Elsewhere`, with its zones under it, A to Z), the dungeons and the
-  floors of the one shown. Right, from Core's *Classic windows* (or its first button) leftwards (`Place`, anew each
-  time it shows): the pin filter (checkboxes), the box *Follow me* (the game's `UICheckButtonTemplate`; the setting
-  `followMap`), the view's button (`Other`: Blended and Scrying in turn, `Core.Set(ns.name, "view", ...)`; shown only
-  while both are offered) and the dropdown Sketches (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
+  `Window.FullSize` the screen's whole height. Left: the quest log's button, the view's button (`Other`: Blended and
+  Scrying in turn, `Core.Set(ns.name, "view", ...)`; shown only while both are offered), the zone dropdown (right of
+  the view's button, else of the quest log's: `Arrange`; radio entries of the world, then each plane, `Coords.Planes`
+  and `Coords.Elsewhere`, with its zones under it, A to Z; never disabled, at the world too; its words the zone shown,
+  else the map), the dungeons and the floors of the one shown. Right, from Core's *Classic windows* (or its first
+  button) leftwards (`Place`, anew each time it shows): the pin filter (checkboxes), the box *Follow me* (the game's
+  `UICheckButtonTemplate`; the setting `followMap`) and the dropdown Sketches (`DrawBar.Menu`). `TopBar.Gap()` is the room between, where the search stands
   (`FindBox.lua`); `TopBar.Top()` the bar's height, under which the zone's name (`Label.lua`), a dungeon's floor
   (`Dungeons.lua`, `Room`) and the palette (`DrawBar.lua`) stand. It says what the map shows after each layout.
 - **The search** (`Find.lua`, no frames; `FindBox.lua`): what can be found is read once, at the first search (the field
@@ -1444,6 +1447,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the view's button by Quest Log; the zone dropdown at every zoom:** Saneroki: "Can you move the button
+  scrying / blended to the right of Questlog and make sure that the zone dropdown menu always has all zones listed.
+  Right now on the highest zoom level it doesn't show the zones to select anymore" (it was disabled at the world:
+  `TopBar.Update`).
 - **2026-11-15, the whirlpool in detail:** Saneroki: "can we have a ai upscale it and maybe add some details but use
   a model that does great alpha maps", then of round 1 at 1024: "big enough that when placed on the world map can look
   good on a 4k screen and still able to zoom a little into it". Round 2 at 2048, his pick "b1" (foam on black, its

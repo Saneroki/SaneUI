@@ -2446,7 +2446,10 @@ end
 local function Choose(key) Core.Set(ns.name, "view", key) end
 ;(function()
     local button = ViewButton()
-    check(button and button._shown and button._text == ns.TEXT.views.terrain, "one button for the view, its words the view drawn")
+    local log
+    for _, widget in ipairs(W.frames) do if widget._text == ns.TopBar.TEXT.questLog then log = widget end end
+    check(button and button._shown and button._text == ns.TEXT.views.terrain and button._points[1][2] == log
+        and button._points[1][3] == "RIGHT", "one button for the view, its words the view drawn, right of Quest Log")
     button._scripts.OnClick(button)
     check(ns.options.view == "blend" and button._text == ns.TEXT.views.blend, "a click: Blended")
     button._scripts.OnClick(button)
@@ -2474,6 +2477,21 @@ check(shown[701] and shown[702] and shown[703] and shown[711] and not shown[711]
 full:Fit(947)
 Canvas.Layout()
 shown = Shown()
+-- the zone dropdown at the world too: open, every continent and its zones in it (Saneroki, 2026-11-15: "make sure
+-- that the zone dropdown menu always has all zones listed")
+;(function()
+    local zones
+    for _, widget in ipairs(W.frames) do
+        if widget._generator then
+            widget:GenerateMenu()
+            if widget._items[1] and widget._items[1].text == "#947" then zones = widget end
+        end
+    end
+    local listed = 0
+    for _, item in ipairs(zones and zones._items or {}) do if type(item.text) == "string" then listed = listed + 1 end end
+    check(zones and zones:IsEnabled() and listed > 3 and zones._override == "#947",
+        "at the world the zone dropdown open, its continents and zones all there; it says the world")
+end)()
 check(Count(shown, 94701, 94712) > 0 and Count(shown, 801, 804) == 0 and Overviews(shown, 0, "Sketches") > 0
     and Overviews(shown, 1, "Sketches") > 0, "Sketches at the world: the world map, both continents stitched over it")
 Choose("terrain")

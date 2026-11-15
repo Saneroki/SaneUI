@@ -26,6 +26,12 @@ Saneroki, from the game: "First picture shows empty slots. They look horrible. W
 - **Tests:** `dev/tests/bags.lua`: the bank's frame round a free slot, the clipped bin, the bin's question (Cancel, Delete, the game's question when it refuses, don't ask again, at once from then on), the search box (found lit, the full screen's search shown in it); `dev/tests/inventory.lua`: the alts in the bags' window (the bags first, another chosen, you again, your things as last seen), *Found elsewhere* and its click; `dev/tests/sheet.lua`: no tab *Alts*.
 - A game restart takes it in (a new file in Inventory's TOC).
 
+### Navigation: the view's button right of Quest Log; the zone dropdown at every zoom (Saneroki, 2026-11-15)
+Saneroki: "Can you move the button scrying / blended to the right of Questlog and make sure that the zone dropdown menu always has all zones listed. Right now on the highest zoom level it doesn't show the zones to select anymore." A `/reload` takes it in.
+- **`src/Navigation/TopBar.lua`** (`Build`, `Arrange`, `Update`): the view's button stands right of Quest Log, the zone dropdown right of it (of Quest Log where only one view is offered); Sketches right of the search, left of Follow me. The zone dropdown was disabled while the map showed the world (`SetEnabled(camera.level ~= "world")`); now it is open at every zoom, its words the zone shown, else the continent or the world.
+- **Tests:** `dev/tests/navigation.lua`: the view's button right of Quest Log; at the world the zone dropdown open with every continent and zone, saying the world.
+- **Docs:** `src/Navigation/README.md`, `Doc/changelog.txt`.
+
 ### Navigation: plans are sketches to players, the bar's dropdown Sketches (Saneroki, 2026-11-15)
 Saneroki: "I don't like the word "plan" in front of each drawing. Is sketch better or what else could it be instead of Plan?", then "Sketch". A `/reload` takes it in.
 - **`src/Navigation/DrawBar.lua`**, **`Markers.lua`**, **`Plans.lua`**: every word players read says sketch: the palette's dropdown (*Sketch: My markers*), *New sketch...*, the default names (*Sketch 2*), the rename, share, delete and too-large words, the card of a shared one; the palette's head says *Draw*. The code keeps *plan* (`Plans.lua`, `ns.Plans`, the saved `plans`), so nothing saved changes.
