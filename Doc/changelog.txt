@@ -6,6 +6,12 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- A new look, of WoW: Forever's own art: every window in the
+  character list's bronze frame, a full screen's tabs as the
+  character screen's top bar under the shop's title bar, the
+  game's own font, its buttons (red for what matters). Inventory
+  is wholly in it: the character window as the game's, the stats
+  with its headings, the bags with the game's slots and icons.
 - Where to farm: type "where to farm Silk Cloth" or a herb's name
   in the map's search and the places where its creatures or nodes
   stand thickest glow on the map, a pin in each, the best listed

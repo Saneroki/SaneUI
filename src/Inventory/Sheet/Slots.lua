@@ -2,17 +2,17 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Sheet - Slots
---  The equipment slots of our character sheet, in the slots painted on the
---  doll (Doll.lua): eight down the left, what is worn from the head to the
---  hands, eight down the right in their arcs, the necklace, rings and trinkets
+--  The equipment slots of our character sheet, in the doll's columns
+--  (Doll.lua): eight down the left, what is worn from the head to the
+--  hands, eight down the right, the necklace, rings and trinkets
 --  together at the top, the belt, legs and boots under them (Saneroki,
 --  2026-10-30), the weapons along the bottom, and the ammo beside them for a
 --  character that uses ammo. Each is an item button (the game's ItemButton)
---  without the game's frame: the item's icon (no border, its corners rounded
---  as the bags' icons) and count, a red tint while it is broken or cannot be
---  used, grey while it is locked; empty, our own pencil drawing of what goes
---  there (Saneroki, 2026-10-30: the bags' drawings, Art/Categories, faded).
---  Beside each (but the two at the top) its paper strip says the item's stats,
+--  in Forever's gear slot frame (Doll.Frame): the item's icon with its
+--  quality's border and its count, a red tint while it is broken or cannot be
+--  used, grey while it is locked; empty, the game's own picture of what goes
+--  there (Saneroki, 2026-11-15: Blizzard's art in place of our drawings).
+--  Beside each (but the two at the top) its grey box says the item's stats,
 --  centred (Slots.Stats: its DPS, its armor, its primary stats, then the rest,
 --  by the game's words); empty, nothing.
 --
@@ -34,7 +34,7 @@ Slots.BOTTOM = 30               -- the weapons above the left pane's bottom
 Slots.AMMO = 27                 -- the ammo slot: smaller, right of the ranged slot
 Slots.AMMO_GAP = 19
 Slots.RED = { 0.9, 0, 0 }       -- broken or unusable, as the game tints it
-Slots.DRAWN = 0.5               -- how much of an empty slot's drawing shows
+Slots.DRAWN = 0.8               -- how much of an empty slot's picture shows (the game's own, by the slot)
 
 -- The slots by the game's names, in their columns.
 Slots.COLUMNS = {
@@ -43,7 +43,7 @@ Slots.COLUMNS = {
     bottom = { "MainHandSlot", "SecondaryHandSlot", "RangedSlot" },
 }
 
--- What an empty slot shows, by the slots' names: a drawing's key (Bags/Categories.lua, Categories.ART).
+-- What an empty slot shows where the game gives no picture of its own for it: a category's icon (Categories.Art).
 Slots.DRAWINGS = {
     HeadSlot = "head", NeckSlot = "neck", ShoulderSlot = "shoulder", BackSlot = "back", ChestSlot = "chest",
     ShirtSlot = "armor", TabardSlot = "tabard", WristSlot = "wrist", HandsSlot = "hands", WaistSlot = "waist",
@@ -100,7 +100,8 @@ local function Drag(button)
     Game("PickupInventoryItem", button:GetID())
 end
 
--- One slot's button (size: the button's), without the game's frame round it: the doll's painted box is its frame.
+-- One slot's button (size: the button's), the game's item button with its quality's border, without the game's
+-- square round it: the gear slot's frame (Doll.Frame) is its frame. Empty, the game's own picture of the slot.
 local function Make(parent, name, size)
     local id, picture, relic = Info(name)
     if not id then return nil end
@@ -111,19 +112,9 @@ local function Make(parent, name, size)
     button.slot, button.picture, button.relic = name, picture, relic
     local normal = button.GetNormalTexture and button:GetNormalTexture()
     if normal then normal:SetAlpha(0) end
-    local border = button.IconBorder
-    if type(border) == "table" and border.SetAlpha then border:SetAlpha(0) end
-    -- the icon's corners rounded as the bags' (the template's own mask off), the highlight with it
-    local icon, mask = button.icon, button.IconMask
-    if type(icon) == "table" and type(mask) == "table" and icon.RemoveMaskTexture then
-        icon:RemoveMaskTexture(mask)
-        mask:Hide()
-    end
-    ns.Cells.Mask(button, ns.Cells.ROUNDED, type(icon) == "table" and icon or nil,
-        button.GetHighlightTexture and button:GetHighlightTexture() or nil)
     button.drawing = button:CreateTexture(nil, "ARTWORK")
     button.drawing:SetAllPoints()
-    button.drawing:SetTexture(ns.Categories.ART .. Slots.DRAWINGS[name])
+    button.drawing:SetTexture(picture or ns.Categories.Art(Slots.DRAWINGS[name]))
     button.drawing:SetAlpha(Slots.DRAWN)
     button:RegisterForDrag("LeftButton")
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -144,6 +135,7 @@ local function Put(pane, name, rect, inset, strip, wide)
     local button = Make(pane, name, size)
     if not button then return nil end
     button:SetPoint("CENTER", pane, "TOPLEFT", x + w / 2, -(y + h / 2))
+    button.frame = ns.Doll.Frame(pane, button)
     if strip then button.strip = ns.Doll.Strip(pane, strip, wide) end
     return button
 end
@@ -243,15 +235,13 @@ local function Draw(button)
         Game("SetItemButtonTextureVertexColor", button, r, g, b)
         Game("SetItemButtonNormalTextureVertexColor", button, r, g, b)
     else
-        -- empty: our drawing of what goes there shows
+        -- empty: the game's picture of what goes there shows
         Game("SetItemButtonTexture", button, nil)
         Game("SetItemButtonCount", button, 0)
         Game("SetItemButtonTextureVertexColor", button, 1, 1, 1)
         Game("SetItemButtonNormalTextureVertexColor", button, 1, 1, 1)
     end
     Game("SetItemButtonQuality", button, Core.Ask(GetInventoryItemQuality, "player", id), Core.Ask(GetInventoryItemID, "player", id))
-    local border = button.IconBorder
-    if type(border) == "table" and border.Hide then border:Hide() end -- no border: the icon alone, its corners rounded
     Game("SetItemButtonDesaturated", button, Core.Ask(IsInventoryItemLocked, id) and true or false)
     Words(button, id)
 end

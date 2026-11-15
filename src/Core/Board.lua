@@ -71,8 +71,8 @@ local Core = SaneUI.Core
 --                                              -- UIParent's units; nil: as the layout gives): along its split it
 --                                              -- takes that, its neighbours share the rest and the line between
 --                                              -- them stays; across, the room beside it stays empty
---               dress = "journal",             -- the journal's leather and paper (Core.Journal), not the dark plate;
---                                              -- "bare": none, the module draws its own (its head, title, X there)
+--               dress = "bare",                -- no frame: the module draws its own (its head, title, X there);
+--                                              -- nil: the kit's heavy bronze (Core.Look.Frame)
 --               icon = "Interface/ICONS/...",  -- its tab of its own after the layouts' tabs: a texture or file ID
 --                                              -- (coords: its texture coordinates), or function(texture) that
 --                                              -- draws it (a portrait); none: only the dropdown lists it
@@ -92,19 +92,21 @@ local Board = {}
 Core.Board = Board
 
 Board.PAD = 12          -- between the windows, and from the screen's edges
-Board.HEAD = 30         -- a window's head
-Board.EDGE = 6          -- from a panel's border to what is in it
-Board.RADIUS = 8        -- of a panel's corners
+Board.BAND = 10         -- the kit's bronze band round a panel (Core.Look.BAND): its head and its body inside it
+Board.HEAD = 40         -- a window's head: the band and a row of 30 for its title and its X
+Board.EDGE = 12         -- from a panel's border to what is in it: the band and a little room
+Board.RADIUS = 8        -- of a round plate's corners (Core.Skin; the options' screen)
 Board.LEAST = 160       -- a window's least width and height, unless it says
 Board.SIDE = 0.3        -- dropped within this share of a window's side, it goes there; nearer the middle, they swap
 Board.SCREEN = 36       -- dropped this near a side of the whole screen, it takes a strip along it
 Board.STRIP = 0.3       -- that strip's share of the screen
 Board.LEVEL = 5         -- the panels above what the window holds
 Board.FADE = 0.3        -- seconds a panel takes to come in
-Board.TAB_PAD = 24      -- a tab's room around its words
+Board.TAB_PAD = 32      -- a tab's room around its words
+Board.TAB_OVER = 19     -- how far the top bar's ends reach past its first and last tab (Core.Look.TAB_OVER, at its height)
 Board.MENU_WIDTH = 120  -- the dropdown Windows
-Board.ICON = 18         -- a window's icon in its tab
-Board.ICON_PAD = 14     -- the tab's room around it
+Board.ICON = 20         -- a window's icon in its tab
+Board.ICON_PAD = 22     -- the tab's room around it
 Board.ICON_GAP = 10     -- between the layouts' tabs and the windows' icon tabs
 
 Board.TEXT = {
@@ -627,96 +629,67 @@ Board.Release = Release
 -------------------------------------------------------------------------------
 --  The panels
 -------------------------------------------------------------------------------
--- The dark plate (Core.Skin): a head with its title at the left, the module's buttons and the X at its right, a
--- thin line under it; under that, its body.
-local function Plate(board, panel, spec)
-    panel.skin = Core.Skin.New(panel, { radius = Board.RADIUS })
-    panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
-    panel.close:SetPoint("TOPRIGHT", -2, -(Board.HEAD - 24) / 2)
-    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
-    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
+-- A head along a panel's top to drag it by, inside its band (Board.BAND) and as high as the head's row.
+local function Head(board, panel, right)
+    local row = Board.HEAD - Board.BAND
     panel.head = CreateFrame("Frame", nil, panel)
-    panel.head:SetPoint("TOPLEFT")
-    panel.head:SetPoint("RIGHT", panel.close, "LEFT")
-    panel.head:SetHeight(Board.HEAD)
+    panel.head:SetPoint("TOPLEFT", Board.BAND, -Board.BAND)
+    if right then panel.head:SetPoint("RIGHT", right, "LEFT") else panel.head:SetPoint("RIGHT", -Board.BAND, 0) end
+    panel.head:SetHeight(row)
     panel.head:EnableMouse(true)
     panel.head:RegisterForDrag("LeftButton")
     panel.head:SetScript("OnDragStart", function() Core.Safe(Label(board), board.Lift, board, panel) end)
     panel.head:SetScript("OnDragStop", function() Core.Safe(Label(board), Release, false) end)
+end
+
+-- The kit's panel (Core.Look, the character list's heavy bronze): inside its band a head with its title at the
+-- left (the game's gold words), the X at its right (the game's own close button), the thin golden line under it;
+-- under that, its body. Its body from the panel's top Board.HEAD down, its sides as the panel's: what a module
+-- puts there keeps Board.EDGE from the panel's border, inside the band.
+local function Plate(board, panel, spec)
+    panel.skin = Core.Look.Frame(panel)
+    local row = Board.HEAD - Board.BAND
+    panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
+    panel.close:SetPoint("TOPRIGHT", -Board.BAND + 2, -Board.BAND - (row - 24) / 2)
+    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
+    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
+    Head(board, panel, panel.close)
     panel.title = panel.head:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    panel.title:SetPoint("LEFT", Board.EDGE + 4, 0)
+    panel.title:SetPoint("LEFT", Board.EDGE - Board.BAND + 4, 0)
     panel.title:SetText(spec.title or "")
-    local line = panel:CreateTexture(nil, "ARTWORK")
-    line:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.35)
+    local line = Core.Look.Line(panel, 0.5)
     line:SetPoint("TOPLEFT", Board.EDGE, -Board.HEAD)
     line:SetPoint("TOPRIGHT", -Board.EDGE, -Board.HEAD)
-    line:SetHeight(1)
     panel.body = CreateFrame("Frame", nil, panel)
     panel.body:SetPoint("TOPLEFT", 0, -Board.HEAD)
     panel.body:SetPoint("BOTTOMRIGHT")
+    panel.close:SetFrameLevel(panel.body:GetFrameLevel() + 20) -- over what the module puts in its body, as the doll's
 end
 
--- The journal (Core.Journal, spec.dress = "journal"): the book's leather and paper round the panel, its title on
--- the top's label, the X on the top's corner patch, the strap and the label its head to drag it by; its body the
--- page's room. Its body's size from the panel's: Core.Journal.Inner.
-local function Journal(board, panel, spec)
-    local look = Core.Journal.Dress(panel, spec.title)
-    panel.look = look
-    panel.skin = { Rest = function() end }
-    panel.close = look.close
-    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
-    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
-    panel.head = look.head
-    panel.head:EnableMouse(true)
-    panel.head:RegisterForDrag("LeftButton")
-    panel.head:SetScript("OnDragStart", function() Core.Safe(Label(board), board.Lift, board, panel) end)
-    panel.head:SetScript("OnDragStop", function() Core.Safe(Label(board), Release, false) end)
-    panel.title = look.title
-    panel.body = CreateFrame("Frame", nil, panel)
-    panel.body:SetAllPoints(look.content)
-end
-
--- Bare (spec.dress = "bare"): no plate, the module draws its own window (the character's doll, a piece of its
--- own leather and paper). A head along its top to drag it by, its title in Kalam and the X pressed into leather,
--- which the module may move onto its art; its body the whole panel.
+-- Bare (spec.dress = "bare"): no frame, the module draws its own window. A head along its top to drag it by, its
+-- title in the game's gold and the game's own X at its right, which the module may move onto what it draws; its
+-- body the whole panel.
 local function Bare(board, panel, spec)
-    local J = Core.Journal
     panel.skin = { Rest = function() end }
     panel.body = CreateFrame("Frame", nil, panel)
     panel.body:SetAllPoints()
-    panel.head = CreateFrame("Frame", nil, panel)
-    panel.head:SetPoint("TOPLEFT")
-    panel.head:SetPoint("TOPRIGHT")
-    panel.head:SetHeight(Board.HEAD)
-    panel.head:SetFrameLevel(panel.body:GetFrameLevel() + 20)
-    panel.head:EnableMouse(true)
-    panel.head:RegisterForDrag("LeftButton")
-    panel.head:SetScript("OnDragStart", function() Core.Safe(Label(board), board.Lift, board, panel) end)
-    panel.head:SetScript("OnDragStop", function() Core.Safe(Label(board), Release, false) end)
-    panel.title = panel.head:CreateFontString(nil, "OVERLAY")
-    J.Font(panel.title, 20, true)
-    panel.title:SetPoint("CENTER")
-    panel.title:SetText(spec.title or "")
-    panel.close = CreateFrame("Button", nil, panel)
-    panel.close:SetSize(20, 20)
-    panel.close:SetFrameLevel(panel.head:GetFrameLevel() + 1)
+    panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
     panel.close:SetPoint("TOPRIGHT")
-    local x = panel.close:CreateFontString(nil, "OVERLAY")
-    J.Press(x, 19)
-    x:SetPoint("CENTER", 0, 1)
-    x:SetText("x")
-    panel.close:SetFontString(x)
-    panel.close:SetPushedTextOffset(1, -1)
-    panel.close:SetScript("OnEnter", Core.Guard(Label(board), function() x:SetTextColor(J.LIT[1], J.LIT[2], J.LIT[3], 1) end))
-    panel.close:SetScript("OnLeave", Core.Guard(Label(board), function()
-        x:SetTextColor(J.LEATHER[1], J.LEATHER[2], J.LEATHER[3], 0.85)
-    end))
+    panel.close:SetFrameLevel(panel.body:GetFrameLevel() + 21)
     panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
     Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
+    Head(board, panel, panel.close)
+    panel.head:ClearAllPoints()
+    panel.head:SetPoint("TOPLEFT")
+    panel.head:SetPoint("RIGHT", panel.close, "LEFT")
+    panel.head:SetFrameLevel(panel.body:GetFrameLevel() + 20)
+    panel.title = panel.head:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    panel.title:SetPoint("CENTER")
+    panel.title:SetText(spec.title or "")
 end
 
--- A window's panel in what the window holds: the dark plate, or the journal when its spec asks for it
--- (spec.dress); a head with its title and the X; under that, its body. Built once for a spec (board.made).
+-- A window's panel in what the window holds: the kit's bronze, or none when its spec asks for that (spec.dress
+-- "bare"); a head with its title and the X; under that, its body. Built once for a spec (board.made).
 local function Panel(board, spec)
     local panel = board.panels[spec.key]
     if panel and panel.spec == spec then return panel end
@@ -735,9 +708,7 @@ local function Panel(board, spec)
     panel = CreateFrame("Frame", nil, inside)
     panel:SetFrameLevel(inside:GetFrameLevel() + Board.LEVEL)
     panel.key, panel.spec, panel.board = spec.key, spec, board
-    if spec.dress == "journal" then
-        Journal(board, panel, spec)
-    elseif spec.dress == "bare" then
+    if spec.dress == "bare" then
         Bare(board, panel, spec)
     else
         Plate(board, panel, spec)
@@ -778,7 +749,7 @@ local function Strip(board)
     strip:SetFrameLevel(board.inside:GetFrameLevel() + Board.LEVEL + 20)
     strip:EnableMouse(true)
     strip.line = strip:CreateTexture(nil, "OVERLAY")
-    strip.line:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 1)
+    strip.line:SetColorTexture(Core.Look.LINE[1], Core.Look.LINE[2], Core.Look.LINE[3], 1)
     strip.line:SetAlpha(0)
     strip:SetScript("OnEnter", Core.Guard("board", function(self)
         SetCursor("UI_RESIZE_CURSOR")
@@ -904,9 +875,9 @@ local function Talk(board, owner, button)
     end))
 end
 
+-- A tab of the top bar (Core.Look.Tab: the character screen's), as high as the title bar.
 local function Tab(board, strip)
-    local tab = CreateFrame("Button", nil, strip, "MinimalTabTemplate")
-    tab:SetHeight(Core.Window.BAR)
+    local tab = Core.Look.Tab(strip, strip:GetHeight())
     tab:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     tab:SetScript("OnClick", Core.Guard("board", function(self, button)
         if self.talk then return Talk(board, self, button) end
@@ -924,8 +895,7 @@ end
 
 -- A window's tab of its own: its icon, lit while the window is in the layout; a click puts it in or takes it off.
 local function IconTab(board, strip)
-    local tab = CreateFrame("Button", nil, strip, "MinimalTabTemplate")
-    tab:SetHeight(Core.Window.BAR)
+    local tab = Core.Look.Tab(strip, strip:GetHeight())
     tab:SetWidth(Board.ICON + Board.ICON_PAD)
     tab.Text:SetText("")
     tab.icon = tab:CreateTexture(nil, "ARTWORK")
@@ -963,8 +933,9 @@ local function Tabs(board, on)
     if not strip then
         strip = CreateFrame("Frame", nil, bar)
         strip:SetFrameLevel(bar:GetFrameLevel() + 2)
-        strip:SetHeight(Core.Window.BAR)
-        strip:SetPoint("BOTTOMLEFT", bar.find, "BOTTOMRIGHT", Board.EDGE, 0)
+        strip:SetPoint("TOPLEFT", bar.find, "TOPRIGHT", Board.TAB_OVER, 0)
+        strip:SetPoint("BOTTOMLEFT", bar.find, "BOTTOMRIGHT", Board.TAB_OVER, 0)
+        strip:SetHeight(bar:GetHeight())
         strip.tabs = Core.Pool(function() return Tab(board, strip) end)
         board.strip = strip
         if bar.box then
@@ -974,8 +945,9 @@ local function Tabs(board, on)
     end
     local kept, tabs = Kept(board), strip.tabs
     local talking = Occasion(board) ~= nil
+    local high = bar:GetHeight()
     tabs:Begin()
-    local previous, width = nil, 0
+    local previous, width, placed = nil, 0, {}
     local function Place(tab, text, index, talk)
         tab.index, tab.talk, tab.plus = index, talk, index == nil and not talk
         tab.Text:SetWidth(0)
@@ -984,11 +956,17 @@ local function Tabs(board, on)
         if tab.SetSelected then
             if talk then tab:SetSelected(talking) else tab:SetSelected(not talking and index == kept.chosen) end
         end
+        tab:SetHeight(high)
         tab:ClearAllPoints()
-        if previous then tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT", 2, 0) else tab:SetPoint("BOTTOMLEFT") end
+        if previous then tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT") else tab:SetPoint("BOTTOMLEFT") end
         tab:Show()
-        width = width + tab:GetWidth() + 2
+        width = width + tab:GetWidth()
         previous = tab
+        placed[#placed + 1] = tab
+    end
+    -- One bar of them, as the character screen's: the first's and the last's pictures its ends.
+    local function Ends(list)
+        for index, tab in ipairs(list) do tab:SetEnd(index == 1, index == #list) end
     end
     -- A talk on (set aside or not): its tab first.
     local name = board.occasion
@@ -1002,28 +980,33 @@ local function Tabs(board, on)
         Core.Tip(plus, function() return plus.plus and Board.TEXT.add or nil end, function() return plus.plus and Board.TEXT.addTip or nil end, "ANCHOR_BOTTOM")
     end
     tabs:Done()
+    Ends(placed)
     strip.icons = strip.icons or Core.Pool(function() return IconTab(board, strip) end)
     local icons = strip.icons
     icons:Begin()
-    local gap = Board.ICON_GAP
+    local gap, lit = Board.ICON_GAP + 2 * Board.TAB_OVER, {}
     for _, spec in ipairs((Specs(board))) do
         if spec.icon then
             local tab = icons:Take()
             tab.key, tab.spec = spec.key, spec
             Icon(tab, spec)
             local on = Board.Holds(board.tree, spec.key)
-            if tab.SetSelected then tab:SetSelected(on) end
+            tab:SetHeight(high)
+            tab:SetSelected(on)
             tab.icon:ClearAllPoints()
-            tab.icon:SetPoint("BOTTOM", 0, on and 7 or 5)
+            tab.icon:SetPoint("CENTER", 0, on and 2 or 1)
             tab.icon:SetDesaturation(on and 0 or 0.6)
             tab:ClearAllPoints()
             tab:SetPoint("BOTTOMLEFT", previous, "BOTTOMRIGHT", gap, 0)
             tab:Show()
             width = width + gap + tab:GetWidth()
-            previous, gap = tab, 2
+            previous, gap = tab, 0
+            lit[#lit + 1] = tab
         end
     end
     icons:Done()
+    Ends(lit)
+    if #lit > 0 then width = width + Board.TAB_OVER end
     strip:SetWidth(math.max(width, 1))
     strip:SetShown(not (bar.box and bar.box:IsShown()))
 end

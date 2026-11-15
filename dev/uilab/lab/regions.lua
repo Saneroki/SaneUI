@@ -164,7 +164,7 @@ return function(Lab)
     function TB:SetTexelSnappingBias() end
     function TB:GetTexelSnappingBias() return 0 end
     function TB:SetTextureSliceMargins(l, t, r, b)
-        S[self].slice = { l, t, r, b }
+        S[self].slice, S[self].sliceAuto = { l, t, r, b }, nil
         Lab.Touch()
     end
     function TB:GetTextureSliceMargins()
@@ -192,6 +192,13 @@ return function(Lab)
         s.file, s.atlas, s.color = a.file, name, nil
         s.coords = { a.l, a.r, a.t, a.b }
         s.htile, s.vtile = a.tileH or nil, a.tileV or nil
+        s.atlasW, s.atlasH = a.w, a.h
+        -- an atlas with slice data is sliced by the game itself: its corners kept at their size, the rest stretched
+        if a.slice then
+            s.slice, s.sliceMode, s.sliceAuto = { a.slice[1], a.slice[2], a.slice[3], a.slice[4] }, a.sliceMode or 0, true
+        elseif s.sliceAuto then
+            s.slice, s.sliceMode, s.sliceAuto = nil, nil, nil
+        end
         if useAtlasSize then s.w, s.h = a.w, a.h end
         Lab.Touch()
         return true

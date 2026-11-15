@@ -463,8 +463,8 @@ check(own == "own1" and Categories.Word(own) == "Tonics" and Categories.Own(own)
     and Categories.rank[own] == Categories.rank.misc - 1, "a category of the player's own, made before Miscellaneous")
 do
     local spare = Categories.New("Spare", Categories.OWN_ICON)
-    check(Categories.Icon(own) == Categories.ART .. "own" and Categories.Icon(spare) == Categories.ART .. "own",
-        "a category of the player's own without an icon chosen: the pencil drawing for it")
+    check(Categories.Icon(own) == Categories.Art("own") and Categories.Icon(spare) == Categories.Art("own"),
+        "a category of the player's own without an icon chosen: the game's icon for it")
     Categories.Delete(spare)
 end
 Categories.Assign(118, own)
@@ -845,17 +845,17 @@ check(RowNamed("All Items") and RowNamed("One Bag") and RowNamed("Each Bag") and
     and RowNamed("Add Category") and RowNamed("Quest Items"),
     "the sidebar: the views, Pinned, every category switched on (empty ones too), a group's members, Add Category")
 do
-    local ART = Categories.ART
+    local Art = Categories.Art
     local function Drawn(word, key)
         local icon = RowNamed(word).icon
-        return icon._texture == ART .. key and icon._coords[1] == 0 and icon._coords[2] == 1
+        return icon._texture == Art(key) and icon._coords[1] == ns.Cells.ZOOM and icon._coords[2] == 1 - ns.Cells.ZOOM
     end
-    check(ART == "Interface\\AddOns\\SaneUI_Inventory\\Art\\Categories\\" and Drawn("All Items", "all")
+    check(Art("all") == "Interface\\Icons\\INV_Misc_Bag_08" and Drawn("All Items", "all")
         and Drawn("Each Bag", "each") and Drawn("Pinned Items", "pinned") and Drawn("Head", "head")
         and Drawn("Potions", "potions") and Drawn("Add Category", "add"),
-        "the rows' icons Sane UI's own pencil drawings, by their keys, drawn whole")
-    check(Drawn("The Armory", "armory") and Categories.GroupIcon("prep") == ART .. "prep",
-        "a built-in group its own drawing, not its first member's")
+        "the rows' icons the game's own, by their keys, cut a little round their edge")
+    check(Drawn("The Armory", "armory") and Categories.GroupIcon("prep") == Art("prep"),
+        "a built-in group its own icon, not its first member's")
 end
 check(RowNamed("Professions").count._text == "0" and RowNamed("Professions").label._text == "Professions",
     "an empty category by its name, its count 0")
@@ -1051,18 +1051,18 @@ local function PlusOf(key)
 end
 local plus = PlusOf("trade")
 check(plus and PlusOf("pinned") and not PlusOf("reagent"), "a + after Pinned and Trade Goods, none after the reagent bag's")
-check(plus.icon._texture == Categories.ART .. "trade" and plus.icon:GetAlpha() == ns.Canvas.SLOT_FADE
-    and plus.icon._coords[1] == 0 and plus.icon:GetWidth() == plus:GetWidth() * ns.Canvas.SLOT_ICON
-    and PlusOf("pinned").icon._texture == Categories.ART .. "pinned",
-    "an empty slot shows its category's drawing in its middle, whole and faded to a subtle grey")
+check(plus.icon._texture == Categories.Art("trade") and plus.icon:GetAlpha() == ns.Canvas.SLOT_FADE
+    and plus.icon._coords[1] == ns.Cells.ZOOM and plus.icon:GetWidth() == plus:GetWidth() * ns.Canvas.SLOT_ICON
+    and PlusOf("pinned").icon._texture == Categories.Art("pinned"),
+    "an empty slot shows its category's icon in its middle, cut a little round its edge and faded to a subtle grey")
 do
-    local PX, words = SaneUI.Core.Journal.PX, ns.Paper.WORDS
+    local PX, words = ns.Style.PX, ns.Style.WORDS
     check(words > 1 and math.abs(SaneUIBagsSideLabel._font[2] - 15 * words * PX) < 1e-9
         and math.abs(SaneUIBagsHead._font[2] - 16 * words * PX) < 1e-9
         and math.abs(SaneUIBagsMember._font[2] - 13 * words * PX) < 1e-9
-        and math.abs(SaneUIBagsSideTick._font[2] - ns.Sidebars.TICK * PX) < 1e-9
-        and Layout.HEAD == ns.Paper.Fit(20) and Layout.HEAD > 20,
-        "every word of the bags' view larger by Paper.WORDS, its heads' lines with it; a box's tick as large as its box")
+        and SaneUIBagsSideLabel._font[1] == SaneUI.Core.Look.FONT
+        and Layout.HEAD == ns.Style.Fit(20) and Layout.HEAD > 20,
+        "every word of the bags' view in the game's Friz Quadrata, larger by Style.WORDS, its heads' lines with it")
 end
 holding = 118
 plus:GetScript("OnClick")(plus)
@@ -1123,7 +1123,7 @@ end
 -- there, else into the group's first member.
 do
     local groupPlus = PlusOf("group:armory")
-    check(groupPlus.icon._texture == Categories.ART .. "armory", "a group's one empty slot: the group's drawing")
+    check(groupPlus.icon._texture == Categories.Art("armory"), "a group's one empty slot: the group's drawing")
     check(groupPlus and not PlusOf("finger"), "a group's one + (none on its members)")
     holding, cursor = 4001, true
     groupPlus:GetScript("OnReceiveDrag")(groupPlus)
@@ -1144,12 +1144,12 @@ do
     local Side = ns.Sidebars
     local function near(a, b) return a and math.abs(a - b) < 1e-6 end
     local mark = armoryRow.arrow.mark
-    check(mark:GetTexture():match("Journal\\arrow$") and near(mark._rotation, math.pi) and mark:GetAlpha() == Side.MARK
+    check(mark._atlas == ns.Style.PIECES.arrow and near(mark._rotation, math.pi) and mark:GetAlpha() == Side.MARK
         and mark:GetWidth() == Side.TOGGLE and mark:GetHeight() == Side.TOGGLE and mark._points[1][1] == "CENTER"
         and armoryRow.arrow:GetWidth() == armoryRow.box:GetWidth() and armoryRow.box:GetWidth() == Side.TOGGLE,
-        "its arrow the sidebars' pencil arrow, as large as its box and in its middle, turned up while listed, light")
-    check(armoryRow.box.check:GetText() == "\226\136\154" and armoryRow.box.check:GetAlpha() == Side.MARK,
-        "its tick drawn by hand in pencil, lightly")
+        "its arrow the game's chevron, as large as its box and in its middle, turned up while listed, a little dim")
+    check(armoryRow.box.check._atlas == ns.Style.PIECES.check and armoryRow.box.check:GetAlpha() == Side.MARK,
+        "its tick the game's own, a little dim")
     armoryRow.box:GetScript("OnEnter")(armoryRow.box)
     check(armoryRow.box.check:GetAlpha() == 1, "under the mouse the tick drawn whole")
     armoryRow.box:GetScript("OnLeave")(armoryRow.box)
@@ -1208,7 +1208,7 @@ check(kept.own[1].icon == Categories.ICONS[3], "its icon chosen")
 check(RowNamed("Flasks").icon._texture == Categories.ICONS[3] and RowNamed("Flasks").icon._coords[1] > 0,
     "the player's own category with the game's icon it chose: that icon, cut a little round its edge")
 check(PlusOf("own1") and PlusOf("own1").icon._texture == Categories.ICONS[3] and PlusOf("own1").icon._grey
-    and not PlusOf("trade").icon._grey, "in its empty slot that icon grey; Sane UI's drawings are graphite already")
+    and PlusOf("trade").icon._grey, "in its empty slot that icon grey, as every category's (the game's icons all)")
 menu = RowMenu("Flasks")
 Choose(Line(menu, "Create Group With").sub, "Trade Goods")
 check(RowNamed("Trade Goods & Flasks") and Categories.GroupOf("own1"), "grouped with another from the menu")
@@ -1675,7 +1675,7 @@ check(Bags.strip:IsShown() and kept.strip, "and shows it again")
 do
     local bin
     for _, widget in ipairs(W.frames) do
-        if widget.picture and widget.lit and widget:IsShown() and (widget.picture._texture or ""):find("trash") then bin = widget end
+        if widget.picture and widget.lit and widget:IsShown() and widget.picture._atlas == ns.Style.PIECES.trash then bin = widget end
     end
     local junkPlus = PlusOf("junk")
     check(bin and junkPlus and -bin._points[1][5] == -junkPlus._points[1][5] and bin._points[1][4] < junkPlus._points[1][4],
@@ -1703,8 +1703,8 @@ local headArrow
 for _, widget in ipairs(W.frames) do
     if widget._parent == sideFrame and widget.rail and widget.mark then headArrow = widget.mark end
 end
-check(headArrow:GetTexture():match("Journal\\arrow$") and math.abs(headArrow._rotation - math.pi / 2) < 1e-6
-    and headArrow:GetWidth() == ns.Sidebars.TOGGLE, "folded: the head's pencil arrow, as large as a box, points right")
+check(headArrow._atlas == ns.Style.PIECES.arrow and math.abs(headArrow._rotation - math.pi / 2) < 1e-6
+    and headArrow:GetWidth() == ns.Sidebars.TOGGLE, "folded: the head's arrow, as large as a box, points right")
 toggle:GetScript("OnClick")(toggle)
 check(kept.side and Bags.strip:IsShown() and sideFrame:GetWidth() == ns.Sidebars.WIDTH,
     "the bags' button while folded: the sidebar unfolded, the strip shown")
@@ -1719,22 +1719,22 @@ check(Foot.BAG < Layout.SIZE and bagButtons[1]:GetWidth() == Foot.BAG and Foot.S
 do
     local function Picture(index) return Foot.Parts(bagButtons[index]) end
     local function Empty(index) return select(2, Foot.Parts(bagButtons[index])) end
-    local ART = Categories.ART
+    local Art = Categories.Art
     check(Picture(1)._texture == "Interface\\Icons\\ui-hud-actionbar-bag" and Picture(2)._texture == "bag-icon" and Picture(2):IsShown()
         and not Empty(2):IsShown(), "the backpack's icon, a bag's icon in its slot; no drawing over it")
     local reagent, keys = SIZES[5], bags[-1]
     SIZES[5], bags[-1] = 0, nil
     Foot.Bags()
-    check(not Picture(4):IsShown() and Empty(4):IsShown() and Empty(4)._texture == ART .. Foot.EMPTY.bag
-        and Empty(6):IsShown() and Empty(6)._texture == ART .. Foot.EMPTY.reagent
-        and Empty(7):IsShown() and Empty(7)._texture == ART .. Foot.EMPTY.keyring,
-        "an empty slot says what goes there: a bag's drawing, the reagent bag's, a keyring without keys'")
+    check(not Picture(4):IsShown() and Empty(4):IsShown() and Empty(4)._texture == Art(Foot.EMPTY.bag)
+        and Empty(6):IsShown() and Empty(6)._texture == Art(Foot.EMPTY.reagent)
+        and Empty(7):IsShown() and Empty(7)._texture == Art(Foot.EMPTY.keyring),
+        "an empty slot says what goes there: a bag's icon, the reagent bag's, a keyring without keys'")
     SIZES[5], bags[-1] = reagent, keys
     Foot.Bags()
     check(Picture(7):IsShown() and Picture(7)._texture == "Interface\\Icons\\ui-hud-actionbar-keyring" and not Empty(7):IsShown(),
         "a keyring with keys: its icon")
     check(Empty(4):GetAlpha() == Foot.DRAWN and select(3, Foot.Parts(bagButtons[4])):GetAlpha() == ns.Cells.EMPTY_SLOT,
-        "its drawing faded, its pencil slot at half strength")
+        "its icon faded, its slot a little dim")
     -- The game tells no icon for the slot: the item worn there's, else any bag's, never an empty look.
     local texture, itemID = GetInventoryItemTexture, GetInventoryItemID
     local icons = C_Item.GetItemIconByID
@@ -2366,14 +2366,14 @@ end
     check(Core.Lent(merchantFrame) and merchantFrame:GetParent() == UIParent and merchantFrame:IsShown(),
         "the game's vendor window seated in its panel: lent its place, its parent and its opening the game's")
     local tabs = layouts.strip.tabs
-    check(tabs[1].talk == "vendor" and tabs[1].Text._text == "Vendor" and tabs[1]._selected and not tabs[2]._selected,
+    check(tabs[1].talk == "vendor" and tabs[1].Text._text == "Vendor" and tabs[1].selected and not tabs[2].selected,
         "the talk's tab first in the title bar, chosen")
     layouts:Remove("bags")
     check(type(store.occasions) == "table" and store.occasions.vendor.tree.key == "vendor"
         and store.tabs[store.chosen].tree == chosenTree, "a change is kept as the talk's: the layout chosen stays as it was")
     tabs[2]:GetScript("OnClick")(tabs[2], "LeftButton")
     check(layouts:Talking() == nil and layouts.rects.bags and not layouts.rects.vendor and tabs[1].talk == "vendor"
-        and not tabs[1]._selected and tabs[2]._selected, "another tab chosen sets the talk's layout aside, its tab still there")
+        and not tabs[1].selected and tabs[2].selected, "another tab chosen sets the talk's layout aside, its tab still there")
     tabs[1]:GetScript("OnClick")(tabs[1], "LeftButton")
     check(layouts:Talking() == "vendor" and layouts.rects.vendor and not layouts.rects.bags, "its own tab brings it back")
     store.occasions = nil -- reset: the module's own again

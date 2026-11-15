@@ -53,7 +53,8 @@ function Lab.Atlas(name)
     local a = atlasCache[name]
     if a == nil then
         local r = Lab.Ask({ need = "atlas", name = name })
-        a = r and r.ok and { file = r.file, w = r.w, h = r.h, l = r.l, r = r.r, t = r.t, b = r.b, tileH = r.tileH, tileV = r.tileV } or false
+        a = r and r.ok and { file = r.file, w = r.w, h = r.h, l = r.l, r = r.r, t = r.t, b = r.b, tileH = r.tileH, tileV = r.tileV,
+            slice = type(r.slice) == "table" and r.slice or nil, sliceMode = r.sliceMode } or false
         atlasCache[name] = a
     end
     return a or nil

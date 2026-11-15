@@ -57,6 +57,8 @@ DEFAULT_FONTS = {   # the game's fonts by file name: stand-ins with about their 
     "skurri.ttf": ["/usr/share/fonts/caladea/Caladea-Bold.ttf", "/usr/share/fonts/noto/NotoSerif-Bold.ttf"],
 }
 FALLBACK_FONT = ["/usr/share/fonts/noto/NotoSans-Regular.ttf", "/usr/share/fonts/liberation/LiberationSans-Regular.ttf"]
+GAME_FONTS = ROOT / "assets/generated/game-art/fonts/fonts"   # the game's own fonts, pulled from its install by file ID
+GAME_SHEETS = ROOT / "assets/generated/game-art/sheets"       # atlas sheets the export has no name for, by file ID
 SYSTEM_FONTS = Path("/usr/share/fonts")
 
 
@@ -143,8 +145,65 @@ def atlases():
                         ATLAS[row["name"].lower()] = row
         except OSError:
             pass
+        ATLAS.update(forever_atlases())
         ATLAS.setdefault("", {})
     return ATLAS
+
+
+def forever_atlases():
+    """Forever's own atlases, from the client tables of the newest export's build (beside the config's `client`):
+    an atlas has a member per size and per sheet, and Forever draws its own sheet where it has one (the one Retail's
+    build lacks), so that is the one taken, its largest picture for the texture and its smallest (or the table's
+    override) for the atlas' size, as the game gives it. Rows as the config's atlas table has them; nothing when the
+    tables are not on this computer."""
+    found = {}
+    if not CONF.get("client") or not ART.is_dir():
+        return found
+    tables = Path(CONF["client"]).parent / ART.parents[1].name
+    retail = exports.newest("art", "retail")
+
+    def rows(path, delimiter=","):
+        with open(path, encoding="utf-8", newline="") as f:
+            yield from csv.DictReader(f, delimiter=delimiter)
+    try:
+        paths = {int(r["fdid"]): r["path"] for r in rows(ART / "files.tsv", "\t") if r["status"] == "ok"}
+        theirs = set()
+        if retail:
+            theirs = {int(r["fdid"]) for r in rows(retail / "files.tsv", "\t") if r["status"] in ("ok", "decrypted")}
+        sheets = {int(r["ID"]): (int(r["FileDataID"]), int(r["AtlasWidth"]), int(r["AtlasHeight"]))
+                  for r in rows(tables / "UiTextureAtlas.csv")}
+        names = {int(r["ID"]): r["Name"].lower() for r in rows(tables / "UiTextureAtlasElement.csv")}
+        cuts = {int(r["UiTextureAtlasElementID"]): r for r in rows(tables / "UiTextureAtlasElementSliceData.csv")}
+        members = {}
+        for r in rows(tables / "UiTextureAtlasMember.csv"):
+            sheet = sheets.get(int(r["UiTextureAtlasID"]))
+            if not sheet:
+                continue
+            fdid = sheet[0]
+            file = paths.get(fdid) or (f"fileid:{fdid}" if (GAME_SHEETS / f"{fdid}.blp").is_file() else None)
+            if not file:
+                continue
+            name = names.get(int(r["UiTextureAtlasElementID"])) or r["CommittedName"].lower()
+            members.setdefault(name, []).append((fdid not in theirs, file, sheet, r))
+    except (OSError, KeyError, ValueError):
+        return found
+    for name, group in members.items():
+        own = [m for m in group if m[0]] or group
+        big = max(own, key=lambda m: int(m[3]["Width"]))
+        small = min(own, key=lambda m: int(m[3]["Width"]))
+        _, file, (fdid, aw, ah), r = big
+        w = int(small[3]["OverrideWidth"] or 0) or int(small[3]["Width"])
+        h = int(small[3]["OverrideHeight"] or 0) or int(small[3]["Height"])
+        flags = int(r["CommittedFlags"] or 0)
+        found[name] = {"name": name, "file": file, "fileDataID": str(fdid), "width": str(w), "height": str(h),
+                       "left": str(int(r["CommittedLeft"]) / aw), "right": str(int(r["CommittedRight"]) / aw),
+                       "top": str(int(r["CommittedTop"]) / ah), "bottom": str(int(r["CommittedBottom"]) / ah),
+                       "tileH": "1" if flags & 2 else "0", "tileV": "1" if flags & 4 else "0"}
+        cut = cuts.get(int(r["UiTextureAtlasElementID"]))
+        if cut:     # the game slices such an atlas by itself: its corners kept, the rest stretched (or tiled)
+            found[name]["slice"] = [int(cut[k]) for k in ("Left", "Top", "Right", "Bottom")]
+            found[name]["sliceMode"] = int(cut["SliceMode"] or 0)
+    return found
 
 
 def addon_module(addon):
@@ -158,9 +217,11 @@ def addon_module(addon):
 def texture_file(path):
     """The file a texture path (or file ID) of the game's code stands for, or None."""
     if path.startswith("fileid:") or path.isdigit():
-        p = listfile().get(int(path.split(":")[-1]))
+        fdid = int(path.split(":")[-1])
+        p = listfile().get(fdid)
         if not p:
-            return None
+            sheet = GAME_SHEETS / f"{fdid}.blp"
+            return sheet if sheet.is_file() else None
         path = p
     p = path.replace("\\", "/").lstrip("/")
     low = p.lower()
@@ -193,7 +254,8 @@ def font_file(path):
     name = low.rsplit("/", 1)[-1]
     fonts = {**{k: v for k, v in DEFAULT_FONTS.items()}, **{k.lower(): [v] for k, v in CONF.get("fonts", {}).items()}}
     if low.startswith("fonts/"):
-        for cand in fonts.get(name, []) + FALLBACK_FONT:
+        own = GAME_FONTS / name
+        for cand in ([str(own)] if own.is_file() else []) + fonts.get(name, []) + FALLBACK_FONT:
             if os.path.exists(cand):
                 return Path(cand)
         return None
@@ -412,7 +474,8 @@ def answer(q):
             return {"ok": False}
         return {"ok": True, "file": row["file"], "w": float(row["width"]), "h": float(row["height"]),
                 "l": float(row["left"]), "r": float(row["right"]), "t": float(row["top"]), "b": float(row["bottom"]),
-                "tileH": row.get("tileH") == "1", "tileV": row.get("tileV") == "1"}
+                "tileH": row.get("tileH") == "1", "tileV": row.get("tileV") == "1",
+                "slice": row.get("slice"), "sliceMode": row.get("sliceMode", 0)}
     return {"ok": False}
 
 

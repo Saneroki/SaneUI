@@ -3,7 +3,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Inventory - Bags - Vendor
 --  Auto Sell and Auto Repair (Saneroki, 2026-10-30): two checkboxes in the foot
---  of the bags, left of the gold, pencil boxes with a pencil tick (the settings
+--  of the bags, left of the gold, the game's checkboxes (the settings
 --  autoSell and autoRepair, on at first, also on the page Inventory), and what
 --  they do as a vendor's window opens, whether the bags were ever opened or
 --  not. The junk goes first, so its money goes to the repair: what the bar's
@@ -21,16 +21,12 @@ local _, ns = ...
 --      Vendor.Start()             listens for vendors, from the login on
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local J = Core.Journal
 local Vendor = {}
 ns.Vendor = Vendor
 
-Vendor.BOX = 15                 -- a checkbox's pencil box
-Vendor.BOX_WEIGHT = 0.5         -- its pencil
+Vendor.BOX = 15                 -- a checkbox: the game's minimal one
 Vendor.WORD_GAP = 4             -- from a box to its word
 Vendor.APART = 12               -- between the two, and from the gold
-Vendor.TICK = 2                 -- the tick's pencil
-Vendor.TICK_WAY = { { -4, 0 }, { -1, -3 }, { 5, 4 } } -- the tick's line from the box's middle
 Vendor.BOXES = { { key = "autoRepair", word = "bagsAutoRepair", tip = "bagsAutoRepairTip" },
                  { key = "autoSell", word = "bagsAutoSell", tip = "bagsAutoSellTip" },
                  { key = "full", word = "bagsMakeRoom", tip = "bagsMakeRoomTip", module = "Loot" },
@@ -104,20 +100,19 @@ local function Left(box)
     GameTooltip_Hide()
 end
 
--- The tick, drawn as two pencil strokes: Kalam has no such letter.
+-- The tick: the game's own (checkmark-minimal), over the box.
 local function Tick(parent)
-    local tick = CreateFrame("Frame", nil, parent)
-    tick:SetAllPoints()
-    local ink = ns.Paper.INK
-    for index = 2, #Vendor.TICK_WAY do
-        local from, to = Vendor.TICK_WAY[index - 1], Vendor.TICK_WAY[index]
-        local stroke = tick:CreateLine(nil, "ARTWORK")
-        stroke:SetThickness(Vendor.TICK)
-        stroke:SetColorTexture(ink[1], ink[2], ink[3], ink[4])
-        stroke:SetStartPoint("CENTER", tick, from[1], from[2])
-        stroke:SetEndPoint("CENTER", tick, to[1], to[2])
-    end
+    local tick = ns.Style.Texture(parent, "check", "ARTWORK")
+    tick:SetPoint("CENTER", 1, 1)
+    tick:SetSize(Vendor.BOX + 3, Vendor.BOX + 3)
     return tick
+end
+
+-- The box: the game's minimal checkbox, brighter under the mouse.
+local function Square(parent)
+    local square = ns.Style.Texture(parent, "pencil-slot", "BORDER")
+    square:SetAllPoints()
+    return { SetStrong = function(_, on) square:SetVertexColor(on and 1.25 or 1, on and 1.25 or 1, on and 1.25 or 1) end }
 end
 
 local function Box(foot, spec, font)
@@ -127,7 +122,7 @@ local function Box(foot, spec, font)
     local square = CreateFrame("Frame", nil, box)
     square:SetSize(Vendor.BOX, Vendor.BOX)
     square:SetPoint("LEFT")
-    box.pencil = J.Box(square, Vendor.BOX_WEIGHT)
+    box.pencil = Square(square)
     box.tick = Tick(square)
     box.text = box:CreateFontString(nil, "ARTWORK")
     if font then box.text:SetFontObject(font) end

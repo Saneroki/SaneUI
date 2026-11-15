@@ -33,18 +33,18 @@ local _, ns = ...
 --  changed: a frame later, however many such events come at once.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-local J = Core.Journal
-local Paper = ns.Paper
+local J = ns.Style
+local Style = ns.Style
 local Stats = {}
 ns.Stats = Stats
 
-local Fit = Paper.Fit
+local Fit = Style.Fit
 Stats.PAD = Fit(5)         -- the page's margin round the sections
 Stats.COLUMN = Fit(170)    -- the least width of a column; a window this wide (and its margins) is one list
 Stats.COLUMN_MOST = Fit(320) -- the most: on a wider page the columns stand together in its middle
 Stats.GAP = Fit(12)        -- between two columns
 Stats.SPACE = Fit(6)       -- between two sections in a column
-Stats.HEAD = Fit(21)       -- a section's head with its rule
+Stats.HEAD = Fit(28)       -- a section's head: the character window's (UI-Character-Info-Title)
 Stats.ROW = Fit(18)        -- a stat's line
 Stats.TILE = { Fit(70), Fit(48) } -- a primary attribute's box: its least width, its height
 Stats.TILE_GAP = Fit(6)
@@ -58,11 +58,11 @@ Stats.PRIMARY = { STRENGTH = true, AGILITY = true, STAMINA = true, INTELLECT = t
 Stats.RESISTANCES = { "Arcane", "Fire", "Frost", "Nature", "Shadow" }
 
 local Fonts = {
-    head = Paper.Font("SaneUIStatsHead", 15, true),
-    label = Paper.Font("SaneUIStatsLabel", 14),
-    value = Paper.Font("SaneUIStatsValue", 14, true),
-    tileLabel = Paper.Font("SaneUIStatsTileLabel", 13),
-    tileValue = Paper.Font("SaneUIStatsTileValue", 24, true),
+    head = Style.Font("SaneUIStatsHead", 15, true),
+    label = Style.Font("SaneUIStatsLabel", 14),
+    value = Style.Font("SaneUIStatsValue", 14, true),
+    tileLabel = Style.Font("SaneUIStatsTileLabel", 13),
+    tileValue = Style.Font("SaneUIStatsTileValue", 24, true),
 }
 
 local view         -- the page: its scroll frame, sections, heads, spare lines
@@ -107,7 +107,7 @@ end
 -- The game's colours in a value darkened to read on the paper; the label's colon taken off (the line sets it apart).
 local function Inked(text)
     return (tostring(text or ""):gsub("|c(%x%x)(%x%x)(%x%x)(%x%x)", function(_, r, g, b)
-        return "|c" .. Paper.InkHex(tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255)
+        return "|c" .. Style.InkHex(tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255)
     end))
 end
 
@@ -132,16 +132,15 @@ local function Leave(row)
     GameTooltip:Hide()
 end
 
--- A line of ours with what the game's functions write into (Label, Value, the tooltip's fields): its shading under
--- the mouse, every other line's light stripe, and a pencil box for when it stands as an attribute's box.
+-- A line of ours with what the game's functions write into (Label, Value, the tooltip's fields): its glow under the
+-- mouse, every other line's band, and a box for when it stands as an attribute's box.
 local function Row(view)
     local row = CreateFrame("Button", nil, view.child)
-    row.zebra = row:CreateTexture(nil, "BACKGROUND")
+    row.zebra = Core.Look.Band(row) -- every other line's band, the character window's
     row.zebra:SetAllPoints()
-    row.zebra:SetColorTexture(Paper.ZEBRA[1], Paper.ZEBRA[2], Paper.ZEBRA[3], Paper.ZEBRA[4])
     row.shade = row:CreateTexture(nil, "BACKGROUND", nil, 1)
     row.shade:SetAllPoints()
-    row.shade:SetColorTexture(Paper.SHADE[1], Paper.SHADE[2], Paper.SHADE[3], Paper.SHADE[4])
+    row.shade:SetColorTexture(Style.SHADE[1], Style.SHADE[2], Style.SHADE[3], Style.SHADE[4])
     row.shade:Hide()
     row.Label = row:CreateFontString(nil, "ARTWORK")
     row.Label:SetFontObject(Fonts.label) -- a font from the start: the game's function writes before the layout
@@ -155,10 +154,10 @@ local function Row(view)
     return row
 end
 
--- A line as a line: the name at the left, the value at the right, in graphite.
+-- A line as a line: the name at the left in the game's gold, the value at the right in white.
 local function AsLine(row, striped)
     row.Label:SetFontObject(Fonts.label)
-    row.Label:SetTextColor(Paper.SOFT[1], Paper.SOFT[2], Paper.SOFT[3], 1)
+    row.Label:SetTextColor(Style.SOFT[1], Style.SOFT[2], Style.SOFT[3], 1)
     row.Label:ClearAllPoints()
     row.Label:SetPoint("LEFT", Fit(5), 0)
     row.Label:SetPoint("RIGHT", row.Value, "LEFT", -Fit(6), 0)
@@ -171,10 +170,10 @@ local function AsLine(row, striped)
     for _, part in ipairs(row.box.parts) do part:Hide() end
 end
 
--- A line as an attribute's box: the name small at its top, the value large under it, a pencil box round it.
+-- A line as an attribute's box: the name small at its top, the value large under it, a thin golden box round it.
 local function AsTile(row)
     row.Label:SetFontObject(Fonts.tileLabel)
-    row.Label:SetTextColor(Paper.SOFT[1], Paper.SOFT[2], Paper.SOFT[3], 1)
+    row.Label:SetTextColor(Style.SOFT[1], Style.SOFT[2], Style.SOFT[3], 1)
     row.Label:ClearAllPoints()
     row.Label:SetPoint("TOPLEFT", Fit(4), -Fit(5))
     row.Label:SetPoint("TOPRIGHT", -Fit(4), -Fit(5))
@@ -184,7 +183,7 @@ local function AsTile(row)
     row.Value:SetPoint("BOTTOM", 0, Fit(4))
     row.Value:SetJustifyH("CENTER")
     row.zebra:Hide()
-    for index, part in ipairs(row.box.parts) do part:SetShown(index ~= 5) end
+    for _, part in ipairs(row.box.parts) do part:Show() end
 end
 
 -- A line taken for a stat, its tooltip's fields as the game's rows start them.
@@ -249,15 +248,14 @@ end
 local function Head(view, index)
     local head = view.heads[index]
     if not head then
-        head = CreateFrame("Frame", nil, view.child)
-        head:SetHeight(Stats.HEAD)
-        head.text = head:CreateFontString(nil, "ARTWORK")
+        -- the character window's head: its bronze plate with curled ends, the words white in its middle
+        head = Core.Look.Head(view.child, "", Stats.HEAD)
         head.text:SetFontObject(Fonts.head)
-        head.text:SetPoint("BOTTOMLEFT", Fit(3), Fit(3))
-        head.text:SetPoint("BOTTOMRIGHT", -Fit(3), Fit(3))
-        head.text:SetJustifyH("LEFT")
+        head.text:ClearAllPoints()
+        head.text:SetPoint("LEFT", Fit(14), 1)
+        head.text:SetPoint("RIGHT", -Fit(14), 1)
+        head.text:SetJustifyH("CENTER")
         head.text:SetWordWrap(false)
-        Paper.Rule(head, "BOTTOM")
         view.heads[index] = head
     end
     head:Show()

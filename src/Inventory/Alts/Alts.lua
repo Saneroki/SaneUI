@@ -74,10 +74,10 @@ Alts.TEXT = {
     places = "All Places",
     categories = "All Categories",
 }
--- The drawings of Storage's places (the bags' own, Categories.ART).
+-- The pictures of Storage's places (the bags' own, Categories.Art).
 Alts.ICONS = {
-    places = ns.Categories.ART .. "all", bags = ns.Categories.ART .. "one",
-    bank = ns.Categories.ART .. "containers", worn = ns.Categories.ART .. "chest",
+    places = ns.Categories.Art("all"), bags = ns.Categories.Art("one"),
+    bank = ns.Categories.Art("containers"), worn = ns.Categories.Art("chest"),
 }
 
 Alts.LEAST = { 372, 240 } -- the window at its narrowest: the title line's word and dropdowns
@@ -118,7 +118,7 @@ local function Level(who)
     local colours = rawget(_G, "RAID_CLASS_COLORS")
     local colour = colours and type(who.class) == "string" and colours[who.class]
     local level = type(who.level) == "number" and who.level or "?"
-    local ink = colour and ns.Paper.InkHex(colour.r, colour.g, colour.b) or "ff1e1711"
+    local ink = colour and ns.Style.InkHex(colour.r, colour.g, colour.b) or "ff1e1711"
     return Alts.TEXT.level:format(level, ink, ClassName(who.class))
 end
 
@@ -171,7 +171,7 @@ local function Footing(key)
     local who = Core.Data.Character(key)
     if not who then return end
     local seen = key == Core.charKey and Alts.TEXT.now or Seen(who.seen) or Alts.TEXT.unseen
-    foot.line:SetText(Level(who) .. "  |c" .. ns.Paper.FAINT_HEX .. seen .. "|r")
+    foot.line:SetText(Level(who) .. "  |c" .. ns.Style.FAINT_HEX .. seen .. "|r")
     foot.gold.text:SetText(type(who.money) == "number" and Core.Coins(who.money) or "")
     foot.gold:SetWidth((foot.gold.text:GetStringWidth() or 0) + 4)
 end
@@ -431,7 +431,7 @@ local function MakeFoot()
     foot:SetPoint("BOTTOMRIGHT")
     foot:SetHeight(Foot.HEIGHT)
     Bags.Band(foot, "TOP")
-    local font, ink = Bags.Fonts().count, ns.Paper.INK
+    local font, ink = Bags.Fonts().count, ns.Style.INK
     foot.gold = CreateFrame("Frame", nil, foot)
     foot.gold:SetHeight(Foot.HEIGHT)
     foot.gold:SetPoint("RIGHT", -(Bags.INSET + Bags.EDGE), 0)
@@ -464,7 +464,7 @@ local function MakeBar()
     local roster = ns.Roster.Build(bar)
     roster:SetPoint("LEFT", bar.words, 0)
     bar:SetScript("OnSizeChanged", ns.Guard(BarFit))
-    local menu = ns.Paper.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
+    local menu = ns.Style.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
     menu:SetPoint("RIGHT")
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(Menu)
@@ -478,8 +478,8 @@ end
 -- A word in the items' place: what is waited for, what was not found.
 local function Said(word)
     local text = body:CreateFontString(nil, "ARTWORK")
-    text:SetFontObject(ns.Paper.Font("SaneUIAltsWait", 16))
-    text:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
+    text:SetFontObject(ns.Style.Font("SaneUIAltsWait", 16))
+    text:SetTextColor(ns.Style.FAINT[1], ns.Style.FAINT[2], ns.Style.FAINT[3], ns.Style.FAINT[4])
     text:SetPoint("CENTER")
     text:SetText(word)
     text:Hide()

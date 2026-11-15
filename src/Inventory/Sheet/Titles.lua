@@ -13,7 +13,7 @@ local Titles = {}
 ns.Titles = Titles
 
 -- A row, the tick's room; the list in the pane.
-Titles.ROW, Titles.CHECK = ns.Paper.Fit(22), ns.Paper.Fit(18)
+Titles.ROW, Titles.CHECK = ns.Style.Fit(22), ns.Style.Fit(18)
 Titles.INSET = { 10, 4, 24, 10 }
 Titles.TICK = "\226\136\154" -- the tick drawn by hand: Kalam's root sign (the style's checkbox)
 Titles.NONE = -1
@@ -48,7 +48,7 @@ end
 -- A line on the paper, made once: its stripe, its shading while worn and under the mouse, the tick, the name.
 local function Parts(row)
     if row.text then return end
-    local paper = ns.Paper
+    local paper = ns.Style
     row:RegisterForClicks("LeftButtonUp")
     row.stripe = row:CreateTexture(nil, "BACKGROUND")
     row.stripe:SetAllPoints()

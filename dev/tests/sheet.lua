@@ -384,8 +384,8 @@ for _, column in pairs(Slots.COLUMNS) do
 end
 check(Slots.DRAWINGS.AmmoSlot and Slots.DRAWINGS.SecondaryHandSlot == "offhand", "the ammo has a drawing, the off hand the shield")
 local neck = Slots.Button(2)
-check(neck.drawing:IsShown() and neck.drawing:GetAlpha() == Slots.DRAWN, "an empty slot shows its drawing, faded")
-check(neck.drawing:GetTexture() == ns.Categories.ART .. "neck", "the drawing of what goes there")
+check(neck.drawing:IsShown() and neck.drawing:GetAlpha() == Slots.DRAWN, "an empty slot shows its picture")
+check(neck.drawing:GetTexture() == "empty-NeckSlot", "the game's own picture of what goes there")
 check(not head.drawing:IsShown(), "a slot with an item shows no drawing")
 -- The right side: the jewellery together at its top, the belt, legs and boots under it; the gloves on the left.
 check(table.concat(Slots.COLUMNS.right, " ", 1, 5) == "NeckSlot Finger0Slot Finger1Slot Trinket0Slot Trinket1Slot",
@@ -449,14 +449,14 @@ check(table.concat(iconKeys, ",") == table.concat(iconed, ",") and #iconed == #B
     "a tab of its own for each window with an icon (all but a letter, which comes with the mail), in the dropdown's order: "
     .. table.concat(iconKeys, ","))
 local repIcon, dollIcon = IconTab("reputation"), IconTab("character")
-check(dollIcon._selected and IconTab("alts")._selected and not repIcon._selected and repIcon.Text._text == ""
+check(dollIcon.selected and IconTab("alts").selected and not repIcon.selected and repIcon.Text._text == ""
     and repIcon.icon._texture == "Interface/ICONS/INV_SideTab_Reputation2_c60" and dollIcon.icon._portrait == "player",
     "the first layout's windows lit, the others not; no words, the game's icons, the paper doll's your portrait")
 check(IconTab("pvp").icon._texture == "Interface/ICONS/INV_SideTab_Honor_Alliance_c60", "the PvP window's icon of your faction")
 repIcon:GetScript("OnClick")(repIcon)
-check(Board.layouts:Has("reputation") and IconTab("reputation")._selected, "a click puts the window on the board, its tab lit")
+check(Board.layouts:Has("reputation") and IconTab("reputation").selected, "a click puts the window on the board, its tab lit")
 IconTab("reputation"):GetScript("OnClick")(IconTab("reputation"))
-check(not Board.layouts:Has("reputation") and not IconTab("reputation")._selected, "another takes it off again")
+check(not Board.layouts:Has("reputation") and not IconTab("reputation").selected, "another takes it off again")
 
 -------------------------------------------------------------------------------
 --  The stats, the gear sets and the titles: each a window of its own

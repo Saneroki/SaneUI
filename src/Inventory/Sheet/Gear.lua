@@ -22,13 +22,13 @@ local Gear = {}
 ns.Gear = Gear
 
 -- A set's line, its icon; the list in the pane (room under it for the buttons); a button, the gap between two.
-local Fit = ns.Paper.Fit
+local Fit = ns.Style.Fit
 Gear.ROW = Fit(40)
 Gear.ICON = Fit(30)
 Gear.INSET = { 10, 4, 24, Fit(30) + 20 }
 Gear.BUTTON = Fit(26)
 Gear.BUTTON_GAP = 8
-Gear.TICK = "\226\136\154" -- the tick drawn by hand: Kalam's root sign (the style's checkbox)
+Gear.TICK = 18 -- the tick on the set worn: the game's own (checkmark-minimal), this large
 Gear.QUESTION = 134400 -- the game's question mark (Interface\Icons\INV_Misc_QuestionMark)
 Gear.LEFT_OUT = { 4, 19 } -- the slots a new set leaves out, as the game's sheet has it: the shirt, the tabard
 
@@ -139,11 +139,10 @@ local function Lit(row, on)
     row.lit:SetShown(on)
 end
 
--- A line on the paper, made once: its shading while chosen and under the mouse, the icon in its pencil slot, the
--- name, the tick.
+-- A line, made once: its glow while chosen and under the mouse, the icon in the game's slot, the name, the tick.
 local function Parts(row)
     if row.text then return end
-    local paper = ns.Paper
+    local paper = ns.Style
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     row.chosen = row:CreateTexture(nil, "BACKGROUND")
     row.chosen:SetAllPoints()
@@ -156,11 +155,10 @@ local function Parts(row)
     row.icon:SetPoint("LEFT", 6, 0)
     local slot = CreateFrame("Frame", nil, row)
     slot:SetAllPoints(row.icon)
-    Core.Journal.Slot(slot, Gear.ICON * Core.Journal.SLOT_ICON)
-    row.check = row:CreateFontString(nil, "ARTWORK")
-    row.check:SetFontObject(paper.Font("SaneUIGearTick", 16, true))
+    ns.Style.Slot(slot, Gear.ICON * ns.Style.SLOT_ICON)
+    row.check = ns.Style.Texture(row, "check", "ARTWORK")
+    row.check:SetSize(Gear.TICK, Gear.TICK)
     row.check:SetPoint("RIGHT", -8, 0)
-    row.check:SetText(Gear.TICK)
     row.text = row:CreateFontString(nil, "ARTWORK")
     row.text:SetFontObject(paper.Font("SaneUIGearName", 14))
     row.text:SetJustifyH("LEFT")
@@ -179,9 +177,9 @@ local function Draw(row, data)
     row.text:SetText(data.name or "")
     local red = (data.lost or 0) > 0 and rawget(_G, "RED_FONT_COLOR")
     if red then
-        row.text:SetTextColor(Core.Journal.Ink(red.r, red.g, red.b))
+        row.text:SetTextColor(ns.Style.Ink(red.r, red.g, red.b))
     else
-        row.text:SetTextColor(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3])
+        row.text:SetTextColor(ns.Style.INK[1], ns.Style.INK[2], ns.Style.INK[3])
     end
     row.icon:SetTexture(data.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
     row.check:SetShown(data.worn and true or false)
@@ -211,29 +209,23 @@ function Gear.Refresh()
     save:SetEnabled(can and true or false)
 end
 
--- A button drawn in pencil on the paper (the style's buttons on the paper): a pencil box, its word in Kalam,
--- the box drawn stronger under the mouse, faded while it does nothing.
+-- A button of the game's red (the kit's important button: equip, save, a new set), its words the game's gold, grey
+-- while it does nothing (the game's red button's disabled look).
 local function Faded(button)
     local on = button:IsEnabled()
-    button.box:SetStrong(on and button:IsMouseOver())
-    if not on then
-        for _, part in ipairs(button.box.parts) do part:SetAlpha(0.35) end
-    end
-    button.text:SetAlpha(on and 1 or 0.45)
+    for _, part in ipairs(button.parts) do part:SetDesaturated(not on) end
+    button.text:SetTextColor(on and ns.Style.GOLD[1] or 0.5, on and ns.Style.GOLD[2] or 0.5, on and ns.Style.GOLD[3] or 0.5)
 end
 
 local function Pencil(pane, word, onClick)
     local button = CreateFrame("Button", nil, pane)
     button:SetHeight(Gear.BUTTON)
-    button.box = Core.Journal.Box(button, 0.5)
     button.text = button:CreateFontString(nil, "ARTWORK")
-    button.text:SetFontObject(ns.Paper.Font("SaneUIGearButton", 14))
+    ns.Style.Red(button, button.text, Gear.BUTTON)
     button.text:SetPoint("CENTER")
     button:SetFontString(button.text)
     button:SetText(word)
     button:SetScript("OnClick", function() ns.Safe("character", onClick) end)
-    button:SetScript("OnEnter", function(self) ns.Safe("character", Faded, self) end)
-    button:SetScript("OnLeave", function(self) ns.Safe("character", Faded, self) end)
     button:SetScript("OnEnable", function(self) ns.Safe("character", Faded, self) end)
     button:SetScript("OnDisable", function(self) ns.Safe("character", Faded, self) end)
     Faded(button)

@@ -17,11 +17,10 @@ local _, ns = ...
 --  (GetBagID), so nothing of ours is written into the button. The slot is
 --  the button's own ID.
 --
---  The look, Sane UI's own (Core.Journal): each cell a pencil slot on the
---  paper, the icon in it covering its inner line, cut a little round its
---  edge, without a border, its corners rounded by Core's icon mask
---  (Cells.ROUNDED; the highlight and the press too), the game's highlight,
---  a warm glow while pressed; over it, above the cooldown's swipe, the count
+--  The look, the game's own (the kit, Core.Look): each cell the game's empty
+--  bag slot (bags-item-slot-blank), the icon in it, cut a little round its
+--  edge, with its quality's border as the game draws it, the game's
+--  highlight, a warm glow while pressed; over it, above the cooldown's swipe, the count
 --  at the bottom right, the item level of gear at the top left in its
 --  quality's colour, BoE at the bottom left on gear not yet bound, the
 --  equipment set's name at the bottom, a quest mark on an item that starts a
@@ -29,7 +28,7 @@ local _, ns = ...
 --  would make the character better (Core.Upgrade; Saneroki, 2026-10-30: always,
 --  to see at a glance what is an upgrade). An item the character cannot use is
 --  tinted red.
---  An empty slot is the pencil slot alone. What a search does not find is
+--  An empty slot is the game's slot alone. What a search does not find is
 --  faded. A button is as large as Pool:Place makes it (Layout.Fit, the list's
 --  icon): the icon follows it, the words and marks shrink and grow with it.
 --
@@ -42,12 +41,11 @@ ns.Cells = Cells
 
 Cells.TEMPLATE = "ContainerFrameItemButtonTemplate"
 Cells.ZOOM = 0.08                       -- the icon's edge cut away, on each side
-Cells.ROUNDED = Core.Journal.ART .. "icon-mask"  -- an icon's mask: its corners well rounded (Core's art)
 Cells.CIRCLE = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask"
 Cells.PRESSED = { 0.973, 0.839, 0.604 } -- the glow while pressed
-Cells.EMPTY = { 0.12, 0.09, 0.07 }      -- an empty slot: the paper in its pencil slot, a breath of graphite
+Cells.EMPTY = { 0, 0, 0 }               -- an empty slot: a breath of black in the game's slot
 Cells.EMPTY_ALPHA = 0.04
-Cells.EMPTY_SLOT = 0.5                  -- an empty slot's pencil lines (Saneroki, 2026-10-23: less distracting)
+Cells.EMPTY_SLOT = 0.85                 -- an empty slot's picture (Saneroki, 2026-10-23: less distracting)
 Cells.FADED = 0.2                       -- what a search does not find
 Cells.UNUSABLE = { 1, 0.1, 0.1 }
 Cells.MARK, Cells.COIN = 22, 16         -- the quest mark, the junk coin
@@ -81,7 +79,7 @@ end
 
 local function Fonts()
     if fonts then return fonts end
-    local w = ns.Paper.WORDS
+    local w = ns.Style.WORDS
     fonts = {
         count = Core.Font("SaneUIBagsCount", "NumberFontNormal", 13 * w, "OUTLINE"),
         level = Core.Font("SaneUIBagsLevel", "NumberFontNormal", 13 * w, "OUTLINE"),
@@ -135,12 +133,13 @@ local function Border(frame, layer)
 end
 Cells.Border = Border
 
--- A mask of a texture's own (the rounded icon's, Cells.ROUNDED, or another file) laid over it; the textures given
+-- A mask of a texture's own (a file: the round one, Cells.CIRCLE) laid over it, the textures given with it too; no
+-- file, no mask (the game's square icons).
 -- after it share it. Returns the mask, nil where the client has none.
 function Cells.Mask(owner, file, texture, ...)
-    if not (owner.CreateMaskTexture and texture and texture.AddMaskTexture) then return nil end
+    if not (file and owner.CreateMaskTexture and texture and texture.AddMaskTexture) then return nil end
     local mask = owner:CreateMaskTexture()
-    mask:SetTexture(file or Cells.ROUNDED, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetTexture(file, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     mask:SetAllPoints(texture)
     texture:AddMaskTexture(mask)
     for index = 1, select("#", ...) do
@@ -166,8 +165,8 @@ local function Skin(button, holder)
     end
     local glow = Part(button, "newitemglowAnim")
     if glow and glow.Stop then glow:Stop() end
-    -- the pencil slot at the button's edge; the icon and what lies on it inside, over the slot's inner line
-    local inset = ns.Layout.SIZE * Core.Journal.SLOT_ICON
+    -- the game's slot at the button's edge; the icon and what lies on it inside
+    local inset = ns.Layout.SIZE * ns.Style.SLOT_ICON
     local face = CreateFrame("Frame", nil, button)
     face:SetPoint("TOPLEFT", inset, -inset)
     face:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -194,16 +193,18 @@ local function Skin(button, holder)
     end
     local normal = button:GetNormalTexture()
     if normal then normal:SetAlpha(0) end
-    local border = Part(button, "IconBorder")
-    if border then border:SetAlpha(0) end
+    local border = Part(button, "IconBorder") -- the quality's border, as the game draws it, round the icon
+    if border then
+        border:ClearAllPoints()
+        border:SetAllPoints(face)
+    end
 
     local mine = { holder = holder, face = face, size = ns.Layout.SIZE }
-    mine.slot = Core.Journal.Slot(button, 1, "BACKGROUND")
+    mine.slot = ns.Style.Slot(button, 1, "BACKGROUND")
     mine.empty = button:CreateTexture(nil, "BACKGROUND", nil, 1)
     mine.empty:SetAllPoints(face)
     mine.empty:SetColorTexture(Cells.EMPTY[1], Cells.EMPTY[2], Cells.EMPTY[3], 1)
-    -- the corners rounded: the icon, the empty slot's breath of graphite, the highlight, the press
-    mine.mask = Cells.Mask(button, Cells.ROUNDED, icon, mine.empty, light, pressed)
+    mine.mask = nil -- square, as the game's icons
     -- Above the cooldown's swipe: the words and marks.
     local over = CreateFrame("Frame", nil, button)
     over:SetAllPoints()
@@ -328,9 +329,7 @@ function Pool:Draw(button, record, how)
     if icon then icon:Show() end
     Call(button, "SetHasItem", record.icon)
     Game("SetItemButtonTexture", button, record.icon)
-    Game("SetItemButtonQuality", button, record.quality, record.link, false, record.bound)
-    local border = Part(button, "IconBorder")
-    if border then border:Hide() end
+    Game("SetItemButtonQuality", button, record.quality, record.link, false, record.bound) -- its border, the game's
     Game("SetItemButtonCount", button, how and how.count or record.count or 0)
     Game("SetItemButtonDesaturated", button, record.locked or (how and how.grey and record.junk) or false)
     Call(button, "UpdateExtended")
@@ -370,7 +369,7 @@ end
 local function Sized(mine, size)
     if mine.size == size then return end
     mine.size = size
-    local inset = size * Core.Journal.SLOT_ICON
+    local inset = size * ns.Style.SLOT_ICON
     mine.face:ClearAllPoints()
     mine.face:SetPoint("TOPLEFT", inset, -inset)
     mine.face:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -471,11 +470,18 @@ function Pool:Shown(bag, slot)
     return button ~= nil and button:IsShown()
 end
 
--- A button's icon round (the list's setting), or its corners rounded again.
+-- A button's icon round (the list's setting), or square again (a white mask hides nothing).
+Cells.SQUARE = "Interface\\Buttons\\WHITE8X8"
 function Cells.Round(button, on)
     local mine = look[button]
-    if not (mine and mine.mask) or (mine.round or false) == on then return end
-    mine.mask:SetTexture(on and Cells.CIRCLE or Cells.ROUNDED, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    if not mine or (mine.round or false) == on then return end
+    if not mine.mask then
+        if not on then return end
+        mine.mask = Cells.Mask(button, Cells.CIRCLE, Part(button, "icon"), mine.empty, button:GetHighlightTexture(),
+            button:GetPushedTexture())
+        if not mine.mask then return end
+    end
+    mine.mask:SetTexture(on and Cells.CIRCLE or Cells.SQUARE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
     mine.round = on
 end
 

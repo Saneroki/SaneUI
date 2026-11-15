@@ -32,26 +32,26 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   window is on the screen: a click puts it there or takes it off.
 - **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
-  - *Character*: Sane UI's own doll, a page of paper in a shaped leather frame (`Doc/guides/interface-style.md`):
-    your model in the middle on the page's plain paper, from under your level down to the ground if you are
+  - *Character*: Sane UI's own doll in the kit's look (`Doc/guides/interface-style.md`, *The kit*: the game's
+    character window): your model in the middle, framed, from under your level down to the ground if you are
     full-grown, every race at the same scale (a gnome stands as small as it is; drag it with the left button to
-    turn it, the wheel zooms in on its head; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in two arcs of pencil slots round it (the head
-    and the necklace at the top as large as the others; the necklace, rings and trinkets together at the top right,
-    the belt, legs and boots under them; the icons without a border, their corners rounded) with a
-    paper strip beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
+    turn it, the wheel zooms in on its head; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in the game's two columns of Forever's gear slots beside it
+    (the head and the necklace at the top; the necklace, rings and trinkets together at the top right, the belt,
+    legs and boots under them; the icons with their quality's border; an empty slot the game's own picture of
+    it) with a grey box beside each piece saying its stats in its middle (its DPS, its armor, Strength, Agility,
     Stamina, Intellect and Spirit, then the rest, such as spell power), the weapons and their strips below; as large as its window lets it be. A click on a slot picks the item up or puts the one you hold there (a drag the same), Shift or
     Ctrl and a click links it or tries it on, the tooltip is the game's; an item let go over the model is put on.
     Using an equipped item with a right click stays on the game's own sheet and the action bars.
-  - *Character Stats*: your stats on the journal's page, with the game's values and tooltips (in a fight they show
+  - *Character Stats*: your stats as the game's character window shows them, with the game's values and tooltips (in a fight they show
     what they were before it, and are brought up to date when it is over). Each of the game's categories (General,
-    Primary Attributes, Weapons, Modifiers, Defense, Resistances; in Retail its Attributes and Enhancements) is a section with its name written and ruled in
-    pencil, a line for each stat, its name at the left and its value at the right (a bonus in green, a malus in red,
-    darkened to read on the paper). The page follows the window: narrow, it is one list; wider, the sections stand
+    Primary Attributes, Weapons, Modifiers, Defense, Resistances; in Retail its Attributes and Enhancements) is a section under the character window's own head (its
+    bronze plate with curled ends), a line for each stat, every other one on a band, its name at the left in gold
+    and its value at the right in white (a bonus in green, a malus in red). The page follows the window: narrow, it is one list; wider, the sections stand
     in as many columns as fit, in the game's order, the columns about even in height and kept together in the
-    middle; wide enough, your five attributes stand over the columns in pencil boxes with their value written large.
+    middle; wide enough, your five attributes stand over the columns in thin golden boxes with their value written large.
     The wheel scrolls what does not fit. While you have a pet, its stats follow yours, each section named with it.
-  - *Equipment Manager* (added from the dropdown *Windows*): your gear sets on the paper, each with its icon in a
-    pencil slot, the one you wear ticked by hand, red with an item lost. A click chooses one, a double click or
+  - *Equipment Manager* (added from the dropdown *Windows*): your gear sets, each with its icon in the game's
+    slot, the one you wear ticked, red with an item lost; Equip, Save and New Set the game's red buttons. A click chooses one, a double click or
     Equip puts it on, Save stores what you wear in it after a question (leaving out the slots the set leaves out),
     New Set asks a name and leaves out your shirt and tabard, a right click renames or deletes; a new set's icon is
     changed on the game's own sheet.
@@ -68,16 +68,16 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     watch key puts it on the backpack), with the game's switches Unused and Show on Backpack; the transfer between
     characters stays on the game's own sheet.
   - *Statistics*: the game's statistics by category, each category folding by a click.
-- **Your bags** (the window *Bags*): everything you carry, on a page of the journal (Sane UI's own look: paper
-  bound in stitched leather, everything on it drawn in pencil, the words in a hand-printed font): each item in a
-  pencil slot, its icon without a border, its corners rounded, its item level at the top left in its quality's
+- **Your bags** (the window *Bags*): everything you carry, in the kit's look (WoW: Forever's own parts: the heavy
+  bronze frame, the game's Friz Quadrata, `Doc/guides/interface-style.md`): each item in the game's bag slot, its
+  icon square with its quality's border, its item level at the top left in its quality's
   colour, its count at the bottom right, a quest's mark on an item that starts one, red when you cannot use it.
-  - **The bar** on the window's title line, after *Bags*, inside its pencil lines: how many of your bags' slots
-    are taken (every bag's in its tooltip); at the line's end *Sell All Junk Items* at a vendor (a pencil box),
+  - **The bar** on the window's title line, after *Bags*: how many of your bags' slots
+    are taken (every bag's in its tooltip); at the line's end *Sell All Junk Items* at a vendor (the game's red button),
     then three small round buttons with a soft edge (the junk marker, the bags' button, the clean-up) and the
-    dropdown *View*, a pencil box on the paper. Your bags stand in a strip at the top of
-    the page, at first; the bags' button hides it or shows it again: each bag's icon in a pencil slot a little smaller
-    than an item's, with its corners rounded and its free slots on it; an empty slot shows what goes there, in a faded
+    dropdown *View*, a thin golden box. Your bags stand in a strip at the top of
+    the page, at first; the bags' button hides it or shows it again: each bag's icon in the game's slot a little smaller
+    than an item's, with its free slots on it; an empty slot shows what goes there, in a faded
     drawing (a pouch for a bag, the mortar for the reagent bag, a key for a keyring without keys); point at one to light its items,
     drop a bag on a slot to put it on, click one to pick it up. The clean-up
     in *One Bag* is our own sort: your items move into the order of your categories (pinned ones first, then each
@@ -86,7 +86,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     button is greyed while it runs; it never starts in a fight and stops at one, or when you pick something up. In
     the other views it is the game's *Clean Up Bags*.
   - **The sidebar** at the left (its arrow at the top folds it to a narrow edge and the strip of your bags with
-    it, which leaves the items the room in a narrow window; the arrow or the bags' button unfolds it, kept; every row with a small pencil drawing of its own: a
+    it, which leaves the items the room in a narrow window; the arrow or the bags' button unfolds it, kept; every row with a game icon of its own: a
     backpack for All Items, a helmet for Head, a flask for Potions ...): *All Items* (every item by category, the categories side by side, as many to a
     line as fit; every category that takes items shown with its items and an empty slot after them, its drawing
     faded in it, also while
@@ -105,8 +105,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     you wear) and *Junk* last. A group shows
     in All Items as its name over the whole width, its members that hold something side by side under it, then
     one empty slot for the whole group (an item let go there goes into the member the rules give it there, else
-    the group's first member). In the sidebar its members are set in under it; the pencil arrow on its row (the sidebar's
-    own, turned down or up) folds them into the row (*The Armory* and *Consumables* are folded at first), and its pencil box, ticked, divides the group into its members in All Items; unticked, the group is
+    the group's first member). In the sidebar its members are set in under it; the arrow on its row (the game's chevron,
+    turned down or up) folds them into the row (*The Armory* and *Consumables* are folded at first), and its box (the game's checkbox), ticked, divides the group into its members in All Items; unticked, the group is
     one part with all its items and one empty slot. An item let go anywhere over the window where nothing else
     takes it (the paper, the title line, the foot) goes into your bags, into the category the rules give it
     (what you put it into taken off). The items scroll with the mouse wheel; no scroll bar. Items and empty slots
@@ -114,7 +114,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
     (55% to 135%), and a window too narrow for six of them in a line makes them smaller by itself, down to 28 units,
     so the window can be small (at its narrowest about 410 units wide; the words of the foot's checkboxes and the
     currencies go first, and the count on the bar). Junk's first slot is a waste bin
-    (a strong, dark pencil drawing a little larger than a slot, no slot around it; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
+    (the game's red delete button, a little larger than a slot, no slot around it; `Views`' `block.bin`, `Layout`'s `bin` place, `Canvas`'s `Sheet:Bin`,
     `Menus.Destroy`): an item let go there or clicked onto it is offered to be destroyed in the game's own dialog, as when you
     drop it into the world (a rare item or better is typed out). *Pinned Items* and *Recent Items* (what
     came into your bags lately): a pinned item stands only under Pinned (while Pinned is shown), a recent one in
@@ -278,34 +278,35 @@ login has no last line, until the game has said your time.
   `TokenFrame`, `StatisticsFrame`), its parts windows of their own on the board (Saneroki, 2026-10-20), each moved
   and sized there; what is in a window follows its size.
   - **The character** (`Sheet/Sheet.lua`, the part `character`, dressed `bare` on Core's board): the doll
-    (`Sheet/Doll.lua`: Core's `Art/Journal/doll`, `Doll.WIDTH` by `Doll.HEIGHT`, its slots and strips in the
-    pixels of a 1080p layout, `Doll.TOP`, `LEFT`, `RIGHT`, `WEAPONS`, `AMMO`, `HERO`), at the window's top
-    middle, scaled to fit and never larger than its picture is drawn for 4K (`Sheet.Size`), the board's least
-    `Sheet.LEAST` of it. In the hero's place the panel's title (`UnitPVPName`, Kalam), the level line under it
+    (`Sheet/Doll.lua`: the kit's heavy bronze round it, `Core.Look.Frame`, scaled with it; `Doll.WIDTH` by
+    `Doll.HEIGHT`, its slots and boxes in the pixels of a 1080p layout, `Doll.TOP`, `LEFT`, `RIGHT`, `WEAPONS`,
+    `AMMO`, `HERO`: the game's two straight columns, each slot in Forever's gear slot frame, `Doll.Frame`), at the
+    window's top middle, scaled to fit and never larger than its 1:1 size (`Sheet.Size`), the board's least
+    `Sheet.LEAST` of it. In the hero's place (framed, `common-insideframe`) the panel's title (`UnitPVPName`, the
+    game's gold), the level line under it
     (`PaperDollFrame_SetLevel`: the effective level, the specialization where the game has one (WoW: Forever: where
-    `IsSpecSelectionEnabled` says the class chooses one; Retail, which lacks that call: always), the class as ink,
-    `Core.Journal.Ink`) and the model; the panel's head (to drag it) is the doll's top, its X on the right strap.
+    `IsSpecSelectionEnabled` says the class chooses one; Retail, which lacks that call: always), the class in its colour)
+    and the model; the panel's head (to drag it) is the doll's top, its X (the game's) in the top right corner.
     `Sheet.LEFT` (the game's 398) is still what the other characters' paper doll reads.
-  - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` without its frame, in the doll's painted slots
-    (`Doll.INSET` from their sides): the left from the head to the hands, the right the necklace, rings and trinkets
+  - **Slots** (`Sheet/Slots.lua`): the game's `ItemButton` without its square, in Forever's gear slot frames
+    (`Doll.Frame`, `Doll.INSET` from the slots' sides): the left from the head to the hands, the right the necklace, rings and trinkets
     together at the top, the belt, legs and boots under them (`Slots.COLUMNS`); the ranged slot (and its strip) only where
     `C_PaperDollInfo.IsRangedSlotShown`, the ammo slot while `UnitUsesAmmo` (Retail has neither slot: the game knows
-    no `RangedSlot` or `AmmoSlot`, so no button is made and the doll's painted slots stay empty). Drawn as
+    no `RangedSlot` or `AmmoSlot`, so no button is made there). Drawn as
     `PaperDollItemSlotButton_Update` draws (the game's `SetItemButton…` functions: icon, count, quality, red while
-    broken or unusable, grey while locked; empty: our own pencil drawing of what goes there, `Slots.DRAWINGS`, the
-    bags' `Art/Categories` drawings faded to `Slots.DRAWN`, the doll's painted drawings taken out by
-    `dev/tools/journal-art`). Its strip (`Doll.Strip`):
+    broken or unusable, grey while locked; empty: the game's own picture of the slot, `GetInventorySlotInfo`'s, at
+    `Slots.DRAWN`; where it gives none, the category's icon, `Slots.DRAWINGS`). Its grey box (`Doll.Strip`, the
+    shop's box, `Core.Look.Box`):
     the item's stats, centred both ways, one to a line while they fit (`Slots.Stats`: `GetItemStats` by the game's
     words, `Slots.FIRST` first: DPS as `STAT_DPS_SHORT`, armor, the primary stats; the rest by their size);
-    empty, nothing. The icon without the template's quality border (`IconBorder` hidden), its corners rounded by
-    `Cells.ROUNDED` in place of the template's mask, the highlight too.
+    empty, nothing. The icon with the template's quality border, as the game's sheet draws it.
     Clicks: `PickupInventoryItem` (left click, drag, drop), `HandleModifiedItemClick` (a modified click); a right
     click calls nothing (`UseInventoryItem` is the game's own). Tooltip: `GameTooltip:SetInventoryItem`.
   - **Model** (`Sheet/Model.lua`): a `ModelScene` of the game's `ModelSceneMixinTemplate` (its orbit camera: the
     left button's drag turns it, the wheel zooms; once the model has loaded, a target spline moves the camera into
     its head: all the way in, the top of the model at the top of its place; below the foot of the hero's column,
-    `Doll.FOOT`, the doll's picture is drawn again over it, `Doll.Cover` on a frame above the model and under the
-    items, so its legs go behind the weapons' row; no clipping frame, which hid the whole model) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
+    `Doll.FOOT`, the bronze plate is drawn again over it, `Doll.Cover` on a frame above the model and under the
+    items (the hero's frame over that), so its legs go behind the weapons' row; no clipping frame, which hid the whole model) set up by `ModelSceneUtil.SetUpCharacterSheetScene` when shown and
     at `UNIT_MODEL_CHANGED`, `Model.SIZE` (272 x 872 doll pixels: a full-grown character fills its place, from
     under the level line to `Doll.GROUND`). Every race at one scale: each of the scene's actors gets requested scale
     1, no scaling toward a man's size and the floor (scene 595 sizes and lifts each race). Its feet on the place's
@@ -315,37 +316,38 @@ login has no last line, until the game has said your time.
     `Model.LOWER`. It takes the mouse only over its place (`SetHitRectInsets`); our scripts are hooked on
     after the game's. Left alone `Model.REST` (10) seconds after the last drag or turn of the wheel (never while the
     button is held), the camera glides back to its first distance and its first side, the short way round. The name
-    and level drawn over it; on the doll's plain paper (no race background, no frame behind it); an item
+    and level drawn over it; on the hero's dark place (no race background); an item
     let go over it (a drop, or the left button) where
     `C_PaperDollInfo.CanAutoEquipCursorItem` says it can be: `AutoEquipCursorItem`.
-  - **Stats** (`Sheet/Stats.lua`, the part `stats`, on the journal's page): each stat a line of ours (`Label`,
+  - **Stats** (`Sheet/Stats.lua`, the part `stats`, in the kit's look: the character window's heads,
+    `Core.Look.Head`, and bands, `Core.Look.Band`): each stat a line of ours (`Label`,
     `Value` with their fonts from the start, the tooltip's fields) filled by the game's own function for it
     (`PAPERDOLL_STATINFO[stat].updateFunc`), as the game fills its rows; which stats show as the game decides it
     (`PAPERDOLL_STATCATEGORIES`: `primary`, `roles`, `showFunc`, the unit's categories, a stat at its `hideAt` or one
     the game hides left out: as each game's sheet compares it: WoW: Forever the value the stat's function answers,
     Retail the `numericValue` it left on the line); a category named by its `categoryName` (WoW: Forever) or by the `titleText` of the frame
-    it stands in on the game's sheet (Retail's `categoryFrame` on `CharacterStatsPane`); the label's colon taken off, the game's colour codes darkened (`Paper.InkHex`); the
+    it stands in on the game's sheet (Retail's `categoryFrame` on `CharacterStatsPane`); the label's colon taken off, the game's colour codes as they are (`Style.InkHex`); the
     tooltip the game's (`onEnterFunc`, else `PaperDollStatTooltip`). Then the resistances (`Stats.RESISTANCES`, the
     game's `PaperDollFrame_SetResistance`; only where the game has resistances, none in Retail), then the pet's
     categories while `HasPetUI` and the pet is there, named "<pet>: <category>" (`PET_STATS_UPDATE` listened to only
     where the game's list has a pet's categories: Retail has neither them nor the event). The sections are laid out for the page's width (`Layout`): `Stats.COLUMN` to
     `Stats.COLUMN_MOST` wide columns, the block of them centred, cut in the game's order so the tallest column is as
-    low as it can be (`Cuts`); the primary attributes as five pencil boxes over the block (`AsTile`) where they fit
+    low as it can be (`Cuts`); the primary attributes as five thin golden boxes over the block (`AsTile`) where they fit
     across it, else a section. A `ScrollFrame` and the wheel; laid out again on every size change. Under a
     restriction (`Core.Restricted`) the stats are secret to addon code, so the page is not drawn then: it waits
     (`Stats.Owed`) and is drawn after `PLAYER_REGEN_ENABLED` or `ADDON_RESTRICTION_STATE_CHANGED`. Drawn when shown,
     a frame after the game's stat events and the player's `UNIT_PET` (`Core.Later`).
-  - **Gear sets** (`Sheet/Gear.lua`, the part `gear`, on the journal's page): `C_EquipmentSet`'s sets by name in lines
-    (the icon in a pencil slot, the tick drawn by hand on the set worn, red ink with an item lost; the pencil's
-    shading chosen and under the mouse); Equip, Save and New Set pencil boxes. Equip as `EquipmentManager_EquipSet`
+  - **Gear sets** (`Sheet/Gear.lua`, the part `gear`): `C_EquipmentSet`'s sets by name in lines
+    (the icon in the game's slot, the game's tick on the set worn, red with an item lost; a gold glow chosen and
+    under the mouse); Equip, Save and New Set the game's red buttons (`Style.Red`), grey while they do nothing. Equip as `EquipmentManager_EquipSet`
     (not with locked items or while casting: the game's error), Save after `Core.Confirm` (the set's left-out slots
     set first: `GetIgnoredSlots`, `IgnoreSlotForSave`, `UnignoreSlotForSave`; a new set without the shirt and the
     tabard, `Gear.LEFT_OUT`; the game's note of them cleared after either, `ClearIgnoredSlotsForSave`), New Set's
     name by `Core.AskText` (the icon the game's question mark: the game's icon picker is a frame of its own we do not
     show), a right click's menu to rename or delete. Drawn anew after `EQUIPMENT_SETS_CHANGED`,
     `EQUIPMENT_SWAP_FINISHED`, `PLAYER_EQUIPMENT_CHANGED`.
-  - **Titles** (`Sheet/Titles.lua`, the part `titles`, on the journal's page): None, then the titles you know by name,
-    in lines (a faint stripe, the tick drawn by hand and the pencil's shading on the one worn); a click
+  - **Titles** (`Sheet/Titles.lua`, the part `titles`): None, then the titles you know by name,
+    in lines (a faint stripe, a tick and a gold glow on the one worn); a click
     `SetCurrentTitle`. Drawn anew after `KNOWN_TITLES_UPDATE` and the player's `UNIT_NAME_UPDATE`.
   - **The pages** (`Sheet/Page.lua`): the windows of the game's tabs are each a page: its panel's body cut into a
     left part that takes the room (`Page.New`) and, for those that tell of what is chosen, the game's right pane at
@@ -418,8 +420,8 @@ login has no last line, until the game has said your time.
     all. The search: a number typed is an item's ID; words are found in the item's name whole, as a piece or as
     first letters (`Core.Fuzzy.Rank` from `Fuzzy.INSIDE` up; letters spread through a name are too loose a fit). A name the game does not know yet is asked for once
     (`C_Item.RequestLoadItemDataByID`); its answer draws the window anew (`Snapshot.Learned`).
-  - **The dropdown of the characters** (`Alts/Roster.lua`): `ns.Paper.Dropdown` on the title line, `Roster.WIDTH` wide,
-    `Roster.LEAST` on a narrow one, its word the chosen one's name as ink on the paper (`Paper.InkHex`). Its menu a radio
+  - **The dropdown of the characters** (`Alts/Roster.lua`): `ns.Style.Dropdown` on the title line, `Roster.WIDTH` wide,
+    `Roster.LEAST` on a narrow one, its word the chosen one's name in its class's colour (`Style.InkHex`). Its menu a radio
     per character (`GetClassAtlas` by `CreateAtlasMarkup`, `RAID_CLASS_COLORS`), whole gold by `Core.Coins` at the line's
     right (a font string attached by an initializer, which returns the line's size), its tooltip `Alts.About`, a title with
     the gold of them all. While searching, how many each has of what is found (stacks counted whole), one without any
@@ -429,7 +431,7 @@ login has no last line, until the game has said your time.
     game told kept once it knows the item, the category worked out anew each time, as the player may have moved the item).
     `Items.Sections` makes the character's places into sections for `Views.Build`: `place = "alts"`, so Views gives them
     no Pinned, Recent or empty slots; `slots` a record per item, a place's count on it (`Held`: the item's record by
-    `__index`, the count its own), `word` the head with what is said beside it in faint graphite (the day the bank was
+    `__index`, the count its own), `word` the head with what is said beside it in faint grey (the day the bank was
     seen, *Not seen yet*, *Empty*), `doll` and `total` for a place the doll stands under. `Items.Button` is a read-only
     item button: the tooltip `GameTooltip:SetItemByID`, a modified click `HandleModifiedItemClick`; nothing picks an item
     up. `Items.Counts`: each place's, category's and group's count for Storage.
@@ -438,13 +440,13 @@ login has no last line, until the game has said your time.
     `GetInventorySlotInfo`), eight down each side as far apart as the room is wide, at most as on the sheet (`Items.DOLL`),
     the weapons' row in the middle below them; the ranged slot where the game shows one
     (`C_PaperDollInfo.IsRangedSlotShown`) or something is in it, the ammo beside it where some is worn. The icons as the
-    sheet's: the whole slot, corners rounded, no border. An empty slot is its pencil slot, its tooltip its name. The bags
+    sheet's: square, the game's slot behind. An empty slot is the game's slot alone, its tooltip its name. The bags
     worn in their slots stand as items under Equipped's head, in their slots' order. While searching the doll is shown
     only if something in it is found, whole, what is not found dimmed (`SetMatchesSearch`, as the game's bags dim it).
     A character Core has not read slot by slot yet (it has not logged in since) has what it wears by category.
   - **The window** (`Alts/Alts.lua`): built as the bags' (`Bags.TitleBar`, `ns.Sidebars.New`, `Canvas.New` with a pool of
     `Cells.New(child, Alts, Items.Button)`, `Columns.Build`, a scroll area the wheel moves by `Bags.Wheel`, the foot a
-    pencil-ruled band). `Views.Build` with `Alts.PLAIN` and, while searching, `Contents.FOUND` (what `Snapshot` found
+    band with the thin golden line). `Views.Build` with `Alts.PLAIN` and, while searching, `Contents.FOUND` (what `Snapshot` found
     stands; the bags' search also finds by category and item level, the dropdown's counts would not fit it); `Tidy` takes
     out what the views left that is not shown here (a category without items; a place's head with nothing under it while
     only some is shown) and gives a place's head its count. The sidebar's choice is two things: a place and a view
@@ -486,11 +488,10 @@ login has no last line, until the game has said your time.
     `fixed`, `last`, `alone`, the first groups), the
     player's own (`own1`, `own2`, …), the order (`Categories.Order`: Pinned and Recent first, the movable ones in
     the player's order, a new built-in one before Miscellaneous, a late one at the end, Junk last while the junk
-    marker is on), the icons (`Categories.Icon`, `GroupIcon`: Sane UI's own pencil drawings, `Categories.ART` and
-    the key, made by `dev/tools/category-art` from `assets/interface/categories/`, for every built-in category,
-    view and group, Add Category and a category of the player's own without an icon chosen; one of the game's
-    icons the player chose for one of their own stays; `Drawn` tells them apart, the sidebar draws ours whole and
-    the game's cut a little round their edge), the groups (`GroupOf`, `Members`, `GroupWord`: its own name, its first name, else its members'
+    marker is on), the icons (`Categories.Icon`, `GroupIcon`: the game's own icons, `Categories.ART` by the key and
+    `Categories.Art(key)`, for every built-in category, view and group, Add Category and a category of the player's
+    own without an icon chosen (Saneroki, 2026-11-15: Blizzard's art in place of our pencil drawings); one the player
+    chose for one of their own stays; every one cut a little round its edge), the groups (`GroupOf`, `Members`, `GroupWord`: its own name, its first name, else its members'
     "A & B"; a group of one is none), an item's category (`Categories.Classify`: the reagent bag's, a special
     bag's, the player's, Camp Items by the game's item IDs, Quest Items, Junk for grey, Item Set Gear, then by
     class in order, else Miscellaneous; a category switched off sends its items to Miscellaneous). An item let go
@@ -524,8 +525,8 @@ login has no last line, until the game has said your time.
     kept with the window, smaller while fewer than `Layout.FIT` stand in a line, never under `Layout.SMALLEST`; the gap
     with it, `Layout.Gap`) and `GAP` 5 apart, then where it takes items (`block.plus`) one empty slot; a block
     takes the room of its cells or of its head's words (the canvas measures them), whichever is wider, at most the
-    room, more cells in more lines; a block with nothing to show left out. A group's title over the whole width (no rule
-    under it; a part's head with a pencil rule), its members' blocks side by side under it, a line of their own. An
+    room, more cells in more lines; a block with nothing to show left out. A group's title over the whole width (no line
+    under it; a part's head with the thin golden line), its members' blocks side by side under it, a line of their own. An
     empty slot: an item let go or clicked on it goes into the block's category, `Menus.Drop` with `stow`), *list*
     (a line `Layout.ROW` high per cell, a folded block its head only, a folded group's title its members too),
     *compact* (the blocks side by side in bands, a name over each: which blocks share a band and how many lines it
@@ -572,15 +573,15 @@ login has no last line, until the game has said your time.
     order of the cells drawn (`Cells.Take`), each in a holder of ours that carries the bag's ID (`SetID`): the
     template's `GetBagID` asks its parent, so nothing of ours is written into the button and its click (use,
     drag, split, sell, deposit) is the template's own code, in a fight too. Made out of a fight only
-    (`Cells.short`, `Core.AfterCombat`). Sane UI's look set on the template's own parts once: a pencil slot at the
-    button's edge (`Core.Journal.Slot`), the icon inset by `Core.Journal.SLOT_ICON` of the cell over the slot's
-    inner line and cut `Cells.ZOOM` round its edge, its mask, border, normal texture and new item's glow away, the
-    highlight to the icon's size, a warm glow pressed; no border: the icon, the empty slot's graphite, the
-    highlight and the press share the game's mask of an item button's icon with rounded corners (`Cells.ROUNDED`,
-    `Cells.Mask`; a circle, `Cells.CIRCLE`, for the list's round icons, `Cells.Round`); ours beside them in a table
+    (`Cells.short`, `Core.AfterCombat`). The kit's look set on the template's own parts once: the game's bag slot at the
+    button's edge (`Style.Slot`: `bags-item-slot-blank`), the icon inset by `Style.SLOT_ICON` of the cell and cut
+    `Cells.ZOOM` round its edge, its quality's border round it (the template's `IconBorder`, as the game draws it),
+    its mask, normal texture and new item's glow away, the highlight to the icon's size, a warm glow pressed; the
+    icon square, as the game's (a circle, `Cells.CIRCLE` by `Cells.Mask`, for the list's round icons,
+    `Cells.Round`); ours beside them in a table
     of our own: above the cooldown's swipe the count, the item level, BoE, the set's name, the game's `QuestNormal` on an item
     that starts a quest, the junk coin, the game's green arrow (`bags-greenarrow`) at the top right on gear that would
-    make the character better (`Core.Upgrade`; always, bank too, drawn anew as what you wear changes); an empty slot the pencil slot alone, at half strength (`Cells.EMPTY_SLOT`; so too the end of a block's "+" slot and an empty bag slot in the strip).
+    make the character better (`Core.Upgrade`; always, bank too, drawn anew as what you wear changes); an empty slot the game's slot alone, a little dim (`Cells.EMPTY_SLOT`; so too the end of a block's "+" slot and an empty bag slot in the strip).
     Drawn by the template's own functions (`SetItemButtonTexture`, `Quality`, `Count`, `Desaturated`,
     `UpdateCooldown`, …). In the list the button's hit rect reaches over its line. Hooks after its `OnEnter`,
     `OnClick` and `OnMouseUp` light a list's line, open the item's menu (Alt and the right button, which the
@@ -594,9 +595,9 @@ login has no last line, until the game has said your time.
   - **The empty slots** (`Views.lua`'s `block.plus`, `Layout.lua`'s `plus` places, `Canvas.lua`'s `Sheet:Plus`):
     after Pinned (shown when empty too) and every category that takes items (`Categories.Takes`; not Recent, the
     reagent bag's or a group, which take none), in the grid and the compact display; an item
-    on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`. In its middle its category's drawing
-    (a group's, `Categories.GroupIcon`; a game icon a player chose grey, cut round its edge), `Canvas.SLOT_ICON`
-    (0.75) of the slot's side at `Canvas.SLOT_FADE` (0.3): a grey on the paper.
+    on the cursor clicked or dragged there `Menus.Drop`, else `Select.Start`. In its middle its category's icon
+    (a group's, `Categories.GroupIcon`; grey, cut round its edge), `Canvas.SLOT_ICON`
+    (0.75) of the slot's side at `Canvas.SLOT_FADE` (0.3): a subtle grey.
   - **Letting an item go over an item** (`Views.lua`'s `block.into`, `Canvas.lua`'s `Sheet:Catch`): the bags'
     Pinned, every category of theirs that takes items and a group shown as one give their cells `into` (`Into`:
     the bags' section, `Categories.Takes`; the bank's, the alts', Recent's and the slots of One Bag and Each Bag
@@ -607,14 +608,14 @@ login has no last line, until the game has said your time.
     category and `bagsDropTip`; let go or clicked there `Menus.Drop` with `into`; it goes when the mouse leaves, at
     each drawing and once nothing is held (its `OnUpdate`, only while shown). The game's button is left as it is,
     its scripts and clicks its own.
-  - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows of the
-    journal's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
-    narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow Core's journal piece `arrow`, a pencil chevron
-    drawn pointing down, `Sidebars.TOGGLE` square in its button's middle at `Sidebars.MARK`, whole under the
+  - **The sidebar** (`Bags/Sidebar.lua`): `ns.Sidebars.New(body, top, bottom, options)` a window's (rows in the
+    kit's look, `Sidebars.WIDTH` wide (a window that answers `fold` gets an arrow in the head: `Rail:Fold`, the
+    narrow edge `Sidebars.FOLDED` with the arrow alone; the arrow the game's chevron (`Style.PIECES.arrow`,
+    `uitools-icon-chevron-down`) pointing down, `Sidebars.TOGGLE` square in its button's middle at `Sidebars.MARK`, whole under the
     mouse, turned left (folds) or right (unfolds); a group's row has the same arrow turned down while folded, up
-    while listed, and beside it a box as large, a square drawn in pencil, `pencil-slot`, with Kalam's root sign as
-    a tick drawn by hand, as light), the names in Kalam always shown (one cut short whole in its tooltip), the
-    view shown shaded in pencil with a graphite bar at its left; scrolled by the wheel; `Begin`, `Row`,
+    while listed, and beside it a box as large, the game's minimal checkbox (`checkbox-minimal`) with its tick
+    (`checkmark-minimal`), as dim), the names in Friz Quadrata always shown (one cut short whole in its tooltip), the
+    view shown in a gold glow with a bar at its left; scrolled by the wheel; `Begin`, `Row`,
     `Divider`, `Done`; its `choose`, `drop`, `menu`, `add` answer the clicks); `ns.BagSidebar` the bags' (every
     category switched on, empty ones too; a click `Bags.Choose`, an item on the cursor let go there `Menus.Drop`, a
     right click `Menus.Row`). A row the window marks (`row.drag`: the bags' movable categories and groups) is
@@ -654,7 +655,7 @@ login has no last line, until the game has said your time.
       click is the game's: the game's question `CONFIRM_BUY_BANK_TAB`, then its purchase. Our code never buys and
       never touches that button's click; only its `OnEnter`/`OnLeave` light our row. Without that template there is
       no row.
-  - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`) on the journal's title line (anchored to `panel.title`,
+  - **The window** (`Bags/Bags.lua`): the bar (`Bags.BAR`) on the panel's title line (anchored to `panel.title`,
     above the head that drags the window; its round buttons `Bags.Round`: the icon in a circle, `Bags.SOFT` the
     ink's alpha one, two, three pixels out, the highlight and checked light cut to the circle), the strip of the
     bags at the body's top (kept: `strip`; hidden while the sidebar is folded, `Bags.Fold`, kept: `side`), the panel itself
@@ -662,7 +663,7 @@ login has no last line, until the game has said your time.
     no mouse, so the item buttons keep theirs), the scroll area a plain `ScrollFrame` without a bar (`Bags.STEP`
     the wheel's step, `Bags.RIGHT` its room at the right), the sidebar,
     the scroll area, the foot; the heads (a part's, a block's, a group member's) taking items and opening menus,
-    the compact display's labels, the list's lines; the dropdown *View* (`Paper.Dropdown`: the game's `DropdownButton` in a pencil box) with the
+    the compact display's labels, the list's lines; the dropdown *View* (`Style.Dropdown`: the game's `DropdownButton` in a thin golden box, the game's chevron) with the
     displays, the orders and the switches (`showPinned`, `showRecent`, `merge`, `first`, the
     categories switched off). The view chosen holds while the window is open (`Bags.Choose`); it opens with
     `first`.
@@ -671,7 +672,7 @@ login has no last line, until the game has said your time.
     `Core.Confirm`. Each choice is kept at once and the window read and drawn anew (`Bags.Refresh`).
   - **The foot** (`Bags/Foot.lua`): the currencies watched (`GetBackpackCurrencyInfo`, `SetBackpackToken`), the
     gold (`Core.Coins`; its tooltip every character's from `Core.Data.Characters` and the total); the strip of
-    the bags (the game's `ItemButton` in a pencil slot, its bag icon with the rounded corners of `Cells.ROUNDED` and
+    the bags (the game's `ItemButton` in the game's slot, its bag icon square and
     no border, an empty slot no icon, its free slots on it;
     the game's tooltip for a bag, *Equip Container* for an empty slot; `PickupBagFromSlot`, `PutItemInBag`,
     `PutItemInBackpack`, `PutKeyInKeyRing`, out of a fight); the bar's button for what can be done here (selling
@@ -692,8 +693,8 @@ login has no last line, until the game has said your time.
     game refuses now and then: the item goes back into the bags and it is tried again `Room.AGAIN` seconds later. No junk:
     a warning in `UIErrorsFrame`, once a minute (`Room.WARN`).
   - **Auto Sell and Auto Repair** (`Bags/Vendor.lua`, Saneroki, 2026-10-30): two checkboxes in the foot, left of the
-    gold (the settings `autoSell` and `autoRepair`, on at first, also on the page Inventory): a pencil box
-    (`Journal.Box`), a tick of two pencil strokes (Kalam has no such letter), the word beside it. A frame after
+    gold (the settings `autoSell` and `autoRepair`, on at first, also on the page Inventory): the game's
+    minimal checkbox and its tick, the word beside it. A frame after
     `MERCHANT_SHOW`, heard from the login on, so the bags need never have been opened (`Vendor.Start`; the two events
     a vendor may send make one run, `Core.Later`), the junk goes first, so its money goes to the repair: `Foot.Sell`,
     what the bar's button sells, unasked, `after` run when it is done (`Foot.SOLD` seconds after the game's sell-all,
@@ -776,9 +777,9 @@ classes' gains can be held against each other; `early` for a character without a
 | `Keys.lua` | The bag keys open the full screen with the bags; the game's bag windows and bag bar kept unseen |
 | `Bindings.xml` | Inventory's key in the game's key bindings |
 | `Window.lua` | Its window: docked in the bottom right corner, filling the screen from that corner |
-| `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which wear the journal (`Board.DRESS`), their bodies' sizes |
-| `Paper.lua` | What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam (every word `Paper.WORDS` times its first size, the heights laid out for words grown by `Paper.Fit`), a rule, the dropdown in a pencil box |
-| `Sheet/Doll.lua` | The character's doll: its picture, its slots and strips, a strip's words |
+| `Board.lua` | The full screen's windows on Core's board; the parts register theirs; which draw their own frame (`Board.DRESS`), which fill their body to its edges (`Board.FILLED`), their bodies' sizes |
+| `Style.lua` | What the windows draw with, in the kit's look (`Core.Look`): the game's Friz Quadrata in its own colours (white words, gold heads, grey; every word `Style.WORDS` times its first size, the heights laid out for words grown by `Style.Fit`), the thin golden line and box, the game's slot, chevron, checkbox and tick, the dropdown in a thin golden box, the red button's art |
+| `Sheet/Doll.lua` | The character's doll: its bronze frame, its slots in Forever's gear slot frames, the framed hero's place, the items' grey boxes and their words |
 | `Sheet/Slots.lua` | The character sheet's equipment slots, in the doll's slots, and their strips |
 | `Sheet/Model.lua` | The character sheet's model, still, in the doll's hero's place |
 | `Sheet/Stats.lua` | The stats, the player's and the pet's: the game's list and rows, put together by our code |
@@ -842,3 +843,13 @@ classes' gains can be held against each other; `early` for a character without a
 - **2026-11-09:** (Saneroki) the full screen at a vendor (the game's vendor window on the left, the bags on the right)
   and at a banker (the bags on the left, the bank on the right), each a layout of its own behind its tab; then at a
   mailbox (the mail window on the left, a letter beside it, the bags on the right).
+- **2026-11-15:** the kit's look (Saneroki: "rebuild the inventory fullscreen and all its windows again with the new
+  styling. Replace our custom generated art with blizzards art"): the journal's paper, leather, pencil and Kalam
+  give way to WoW: Forever's own parts (`Core.Look`, `Doc/guides/interface-style.md`, *The kit*). Every window but
+  the character's on the heavy bronze plate (`Board.DRESS` keeps only the doll's own frame; `Board.FILLED`),
+  `Paper.lua` replaced by `Style.lua` (the game's Friz Quadrata in its colours, the thin golden line and box, the
+  game's slot, chevron, checkbox and tick), the doll rebuilt as the game's character window (two straight columns
+  in Forever's gear slot frames, the hero framed, the items' stats in grey boxes), the stats with the character
+  window's heads and bands, the bags' cells square with their quality's border on the game's bag slot, the action
+  buttons the game's red ones, the category icons the game's own icons (our pencil drawings, `Art/Categories`,
+  taken out).

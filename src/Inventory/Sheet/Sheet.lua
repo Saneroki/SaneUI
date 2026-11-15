@@ -4,12 +4,12 @@ local _, ns = ...
 --  Sane UI - Inventory - Sheet
 --  The character: the paper doll of the game's character sheet (Camelot's
 --  CharacterFrame and PaperDollFrame), ours, a window of its own on the
---  module's full screen (Board.lua, the key "character"), in Sane UI's own
---  look: the doll (Doll.lua), its own leather frame and paper, the equipment
---  slots in their arcs with the items' strips (Slots.lua), and in the hero's
---  place the character's name with its title, the level line under it and the
---  character's live model (Model.lua) standing on the page's plain paper. The
---  doll's top is the head it is dragged by, the X on its right strap. The rest
+--  module's full screen (Board.lua, the key "character"), in the kit's look
+--  (Core.Look, the game's character window): the doll (Doll.lua) in its heavy
+--  bronze frame, the equipment slots in their columns with the items' boxes
+--  (Slots.lua), and in the hero's framed place the character's name with its
+--  title, the level line under it and the character's live model (Model.lua).
+--  The doll's top is the head it is dragged by, the X in its corner. The rest
 --  of the game's sheet stands in windows
 --  of its own beside it: the stats (Stats.lua), the gear sets (Gear.lua), the
 --  titles (Titles.lua), and what the
@@ -49,8 +49,8 @@ local function Level()
     local className, class, classID = UnitClass("player")
     local colors = rawget(_G, "RAID_CLASS_COLORS")
     local color = colors and class and colors[class]
-    -- the class's colour as ink on the paper (Paper.InkHex: darkened, so a light one reads)
-    local colour = color and ns.Paper.InkHex(color.r, color.g, color.b) or "ff1e1711"
+    -- the class's colour, as the game writes it
+    local colour = color and ns.Style.InkHex(color.r, color.g, color.b) or "ffffffff"
     -- the specialization, where the class can choose one (WoW: Forever asks IsSpecSelectionEnabled; Retail, which
     -- lacks it, always shows the one there is)
     local spec
@@ -73,10 +73,9 @@ local function Title()
     if panel and panel.title then panel.title:SetText(Game("UnitPVPName", "player") or Core.charName or "") end
 end
 
--- The level line, in Kalam on the paper: the class's colour outlined, so a light one reads on it.
+-- The level line in the game's words: white, the class in its colour (as Level 37 Warrior on the game's sheet).
 local function Ink()
-    level:SetFont(Core.Journal.FONT, 13 * Core.Journal.PX, "")
-    level:SetTextColor(Core.Journal.INK[1], Core.Journal.INK[2], Core.Journal.INK[3], 0.9)
+    ns.Style.SetFont(level, 15)
 end
 
 -- The paper doll as it is now.
@@ -132,23 +131,23 @@ function Sheet.Build(made)
     holder:SetPoint("TOP")
     Doll.Build(holder)
     Sheet.pane = holder
-    local function At(x, y) return x * Core.Journal.PX, -y * Core.Journal.PX end
+    local function At(x, y) return x * ns.Style.PX, -y * ns.Style.PX end
 
     -- the hero's place: the name, the level line, the model under them
     local hero = Doll.HERO
     local x, top = At((hero[1] + hero[3]) / 2, Doll.NAME_Y)
-    local width = (hero[3] - hero[1] - 8) * Core.Journal.PX
+    local width = (hero[3] - hero[1] - 8) * ns.Style.PX
     panel.head:SetParent(holder)
     panel.head:ClearAllPoints()
     panel.head:SetPoint("TOPLEFT", holder, "TOPLEFT")
     panel.head:SetPoint("TOPRIGHT", holder, "TOPRIGHT")
-    panel.head:SetHeight(Doll.HEAD * Core.Journal.PX)
+    panel.head:SetHeight(Doll.HEAD * ns.Style.PX)
     panel.title:SetParent(holder)
     panel.title:ClearAllPoints()
     panel.title:SetPoint("TOP", holder, "TOPLEFT", x, top)
     panel.title:SetWidth(width)
     panel.title:SetWordWrap(false)
-    Core.Journal.Font(panel.title, 16, true)
+    ns.Style.SetFont(panel.title, 18, true, ns.Style.SOFT)
     local _, levelY = At(0, Doll.LEVEL_Y)
     level = holder:CreateFontString(nil, "OVERLAY")
     level:SetPoint("TOP", holder, "TOPLEFT", x, levelY)
@@ -166,13 +165,13 @@ function Sheet.Build(made)
     place:SetPoint("TOPLEFT", holder, "TOPLEFT", left, modelTop)
     place:SetSize(right - left, modelTop - bottom)
     ns.Model.Build(place)
-    -- the doll's picture again below the hero's column, over the model and under the items: zoomed in, its legs go
-    -- behind the weapons' row instead of over it
+    -- the plate again below the hero's place, over the model and under the items: zoomed in, its legs go behind the
+    -- weapons' row instead of over it
     local cover = CreateFrame("Frame", nil, holder)
     cover:SetAllPoints()
     cover:SetFrameLevel(holder:GetFrameLevel() + 6)
     local middle, half = (hero[1] + hero[3]) / 2, ns.Model.SIZE[1] / 2
-    Doll.Cover(cover, middle - half, middle + half, Doll.FOOT)
+    Doll.Cover(cover, math.max(14, middle - half), math.min(Doll.PIXELS[1] - 14, middle + half), Doll.FOOT)
     -- the name and the level over the model, which is drawn larger than its place
     local words = CreateFrame("Frame", nil, holder)
     words:SetAllPoints()

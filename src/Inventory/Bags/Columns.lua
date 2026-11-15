@@ -31,13 +31,13 @@ local Core = SaneUI.Core
 local Columns = {}
 ns.Columns = Columns
 
-Columns.HEAD = ns.Paper.Fit(20) -- the head's height (its words' size: ns.Paper.WORDS)
+Columns.HEAD = ns.Style.Fit(20) -- the head's height (its words' size: ns.Style.WORDS)
 Columns.GAP = 6            -- between two columns
 Columns.LEAST = 20         -- the least a column is made
 Columns.NAME_LEAST = 60    -- the least the name keeps
 Columns.DRAG = 6           -- how far a column is moved before it is dragged
 Columns.GRIP = 6           -- the edge at a column's right that sizes it
-Columns.MUTED = ns.Paper.FAINT
+Columns.MUTED = ns.Style.FAINT
 Columns.VALUE = { 0.85, 0.85, 0.85 }
 
 local BIND = Enum and Enum.ItemBind or {}
@@ -312,7 +312,7 @@ local function MakeCell(head, key)
     cell:SetHeight(Columns.HEAD)
     cell:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     cell.text = cell:CreateFontString(nil, "ARTWORK")
-    cell.text:SetFontObject(ns.Paper.Font("SaneUIBagsColumn", 13, true))
+    cell.text:SetFontObject(ns.Style.Font("SaneUIBagsColumn", 13, true))
     cell.text:SetAllPoints()
     cell.text:SetWordWrap(false)
     cell.text:SetJustifyH(Columns.DEF[key].number and "RIGHT" or "LEFT")

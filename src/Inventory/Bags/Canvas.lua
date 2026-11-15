@@ -26,23 +26,23 @@ local Sheet = {}   -- a canvas's functions
 Sheet.__index = Sheet
 
 Canvas.INSET = 8   -- from the scroll area's left to the items
-Canvas.HEAD_COLOR = ns.Paper.SOFT     -- a category's head: graphite; a group's member as dark, smaller and not bold
-Canvas.MEMBER_COLOR = ns.Paper.SOFT   -- (Saneroki, 2026-10-23: darker, to be read)
+Canvas.HEAD_COLOR = ns.Style.SOFT     -- a category's head: graphite; a group's member as dark, smaller and not bold
+Canvas.MEMBER_COLOR = ns.Style.SOFT   -- (Saneroki, 2026-10-23: darker, to be read)
 
 local Layout, Cells, Columns, Menus, Categories = ns.Layout, ns.Cells, ns.Columns, ns.Menus, ns.Categories
 
--- The fonts of a canvas's words, Kalam (ns.Paper): a category's head, a group member's, a part's; a list's line,
+-- The fonts of a canvas's words, Kalam (ns.Style): a category's head, a group member's, a part's; a list's line,
 -- plain and in a game colour.
 local fonts
 local function Fonts()
     if fonts then return fonts end
-    local Paper = ns.Paper
+    local Style = ns.Style
     fonts = {
-        head = Paper.Font("SaneUIBagsHead", 16, true),
-        member = Paper.Font("SaneUIBagsMember", 13),
-        part = Paper.Font("SaneUIBagsPart", 19, true),
-        row = Paper.Font("SaneUIBagsRow", 14),
-        rowColored = Paper.Outlined("SaneUIBagsRowColored", 14),
+        head = Style.Font("SaneUIBagsHead", 16, true),
+        member = Style.Font("SaneUIBagsMember", 13),
+        part = Style.Font("SaneUIBagsPart", 19, true),
+        row = Style.Font("SaneUIBagsRow", 14),
+        rowColored = Style.Outlined("SaneUIBagsRowColored", 14),
     }
     return fonts
 end
@@ -106,7 +106,7 @@ local function MakeHead(canvas)
     head.canvas = canvas
     head.lit = head:CreateTexture(nil, "BACKGROUND")
     head.lit:SetAllPoints()
-    local shade = ns.Paper.SHADE
+    local shade = ns.Style.SHADE
     head.lit:SetColorTexture(shade[1], shade[2], shade[3], shade[4])
     head.lit:Hide()
     head.arrow = head:CreateTexture(nil, "ARTWORK")
@@ -119,7 +119,7 @@ local function MakeHead(canvas)
     head.number = head:CreateFontString(nil, "ARTWORK")
     head.number:SetPoint("LEFT", head.word, "RIGHT", 4, 0)
     -- the pencil rule under the head's words, across the block
-    head.line = Core.Journal.Rule(head)
+    head.line = ns.Style.Line(head)
     head.line:SetPoint("BOTTOMLEFT", 0, 0)
     head.line:SetPoint("BOTTOMRIGHT", -Layout.GAP, 0)
     head:SetScript("OnMouseUp", function(self, mouse) ns.Safe("bags", HeadUp, self, mouse) end)
@@ -140,14 +140,14 @@ function Sheet:Head(place)
     if object then head.word:SetFontObject(object); head.number:SetFontObject(object) end
     head.word:SetText(block.word or "")
     local color = place.level == 3 and Canvas.MEMBER_COLOR or Canvas.HEAD_COLOR
-    local ink = ns.Paper.INK
+    local ink = ns.Style.INK
     if place.level == 1 then head.word:SetTextColor(ink[1], ink[2], ink[3]) else head.word:SetTextColor(color[1], color[2], color[3], color[4]) end
-    head.number:SetTextColor(ns.Paper.FAINT[1], ns.Paper.FAINT[2], ns.Paper.FAINT[3], ns.Paper.FAINT[4])
+    head.number:SetTextColor(ns.Style.FAINT[1], ns.Style.FAINT[2], ns.Style.FAINT[3], ns.Style.FAINT[4])
     head.number:SetText(block.number and "(" .. tostring(block.number) .. ")" or "")
     -- the pencil rule only under a part's head; a group's title (Saneroki, 2026-10-23) and a category's name stand
     -- right over what they hold
     head.line:SetShown(place.level == 1)
-    head.line:SetAlpha(ns.Paper.RULE_ALPHA)
+    head.line:SetAlpha(ns.Style.RULE_ALPHA)
     head.key, head.group = block.key, block.group
     local list = self.owner.store.look == "list" and place.level ~= 1
     head.fold = list and Fold(block) or nil
@@ -230,8 +230,8 @@ end
 local function MakePlus(canvas)
     local plus = CreateFrame("Button", nil, canvas.child)
     plus.canvas = canvas
-    Core.Journal.Slot(plus, 1, "BACKGROUND"):SetAlpha(Cells.EMPTY_SLOT)
-    local shade = ns.Paper.SHADE
+    ns.Style.Slot(plus, 1, "BACKGROUND"):SetAlpha(Cells.EMPTY_SLOT)
+    local shade = ns.Style.SHADE
     plus.lit = plus:CreateTexture(nil, "BORDER")
     plus.lit:SetAllPoints()
     plus.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
@@ -253,8 +253,7 @@ function Sheet:Plus(place)
     plus:SetSize(place.size, place.size)
     plus:SetFrameLevel(self.child:GetFrameLevel() + 3)
     plus.key = place.block.drop or place.block.key
-    -- ours whole and in graphite; one of the game's icons a player chose for a category of their own grey, cut a
-    -- little round its edge
+    -- the category's icon (the game's) grey, cut a little round its edge
     local group = plus.key:match("^group:(.+)$")
     local file = group and Categories.GroupIcon(group) or Categories.Icon(plus.key)
     local zoom = Categories.Drawn(file) and 0 or Cells.ZOOM
@@ -266,10 +265,10 @@ function Sheet:Plus(place)
     plus:Show()
 end
 
--- Junk's first slot, the waste bin: the bin's drawing alone, no pencil slot around it, at full strength and a little
--- larger than the slot (into the gaps round it; the slot is what takes the clicks); an item let go there (or clicked
+-- Junk's first slot, the waste bin: the game's red delete button alone, no slot around it, a little larger than the
+-- slot (into the gaps round it; the slot is what takes the clicks); an item let go there (or clicked
 -- onto it) is offered to be destroyed in the game's own dialog (Menus.Destroy).
-Canvas.BIN = 1.2       -- the drawing against the slot's size (Saneroki, 2026-10-23: bigger, plain to see)
+Canvas.BIN = 1.1       -- the bin against the slot's size (Saneroki, 2026-10-23: bigger, plain to see)
 local function BinDrop()
     Menus.Destroy()
 end
@@ -289,12 +288,12 @@ end
 
 local function MakeBin(canvas)
     local bin = CreateFrame("Button", nil, canvas.child)
-    local shade = ns.Paper.SHADE
+    local shade = ns.Style.SHADE
     bin.lit = bin:CreateTexture(nil, "BORDER")
     bin.lit:SetAllPoints()
     bin.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     bin.lit:Hide()
-    bin.picture = Core.Journal.Texture(bin, "trash", "ARTWORK")
+    bin.picture = ns.Style.Texture(bin, "trash", "ARTWORK")
     bin.picture:SetPoint("CENTER")
     bin:SetScript("OnClick", ns.Guard(BinDrop))
     bin:SetScript("OnReceiveDrag", ns.Guard(BinDrop))
@@ -320,7 +319,7 @@ end
 -- A line: behind its item button, which reaches over it; a word for each column shown (Columns.lua).
 local function MakeRow(canvas)
     local row = CreateFrame("Frame", nil, canvas.child)
-    local zebra, shade = ns.Paper.ZEBRA, ns.Paper.SHADE
+    local zebra, shade = ns.Style.ZEBRA, ns.Style.SHADE
     row.back = row:CreateTexture(nil, "BACKGROUND")
     row.back:SetAllPoints()
     row.back:SetColorTexture(zebra[1], zebra[2], zebra[3], zebra[4])
@@ -363,7 +362,7 @@ function Sheet:Row(place, button)
             cell:SetWidth(spot.width)
             local text, r, g, b = Columns.Value(key, entry)
             cell:SetText(text)
-            ns.Paper.Color(cell, r, g, b, Fonts().row, Fonts().rowColored)
+            ns.Style.Color(cell, r, g, b, Fonts().row, Fonts().rowColored)
             cell:Show()
         end
     end
@@ -415,7 +414,7 @@ local function MakeCatcher(canvas)
     catcher:RegisterForClicks("LeftButtonUp")
     catcher.lit = catcher:CreateTexture(nil, "OVERLAY")
     catcher.lit:SetAllPoints()
-    local shade = ns.Paper.SHADE
+    local shade = ns.Style.SHADE
     catcher.lit:SetColorTexture(shade[1], shade[2], shade[3], 0.25)
     catcher.lit:Hide()
     catcher:SetScript("OnClick", function(self) ns.Safe("bags", CatchDrop, self) end)

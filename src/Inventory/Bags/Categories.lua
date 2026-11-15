@@ -92,9 +92,26 @@ Categories.PINNED, Categories.RECENT, Categories.JUNK = "pinned", "recent", "jun
 Categories.CATCH_ALL = "misc"
 Categories.LETTERS = 30   -- the most a name may have
 Categories.OWN_ICON = ICONS .. "INV_Misc_QuestionMark"
--- Sane UI's own pencil drawings of the sidebars' rows (dev/tools/category-art): a built-in category, view or group
--- by its key, "add" (Add Category) and "own" (a category of the player's own that has no icon of its own).
-Categories.ART = "Interface\\AddOns\\SaneUI_Inventory\\Art\\Categories\\"
+-- The pictures of the sidebars' rows, the game's own icons (Saneroki, 2026-11-15: Blizzard's art in place of our
+-- drawings): a built-in category, view or group by its key, "add" (Add Category) and "own" (a category of the
+-- player's own that has no icon of its own). Categories.Art(key) gives one's file.
+Categories.ART = {
+    add = "Spell_ChargePositive", all = "INV_Misc_Bag_08", one = "INV_Misc_Bag_10", each = "INV_Misc_Bag_07_Black",
+    armor = "INV_Chest_Chain", armory = "INV_Misc_ArmorKit_17", back = "INV_Misc_Cape_01", camp = "Spell_Fire_Fire",
+    chest = "INV_Chest_Cloth_17", consumables = "INV_Potion_54", containers = "INV_Misc_Bag_10_Blue",
+    enhance = "INV_Enchant_EssenceMagicLarge", feet = "INV_Boots_Cloth_03", finger = "INV_Jewelry_Ring_03",
+    hands = "INV_Gauntlets_04", head = "INV_Helmet_01", junk = "INV_Misc_Coin_02", key = "INV_Misc_Key_03",
+    legs = "INV_Pants_Cloth_05", misc = "INV_Misc_Gear_01", neck = "INV_Jewelry_Necklace_07", offhand = "INV_Shield_06",
+    own = "INV_Misc_QuestionMark", pinned = "INV_Misc_Note_02", potions = "INV_Potion_51", prep = "INV_Misc_Food_15",
+    professions = "Trade_BlackSmithing", quest = "INV_Misc_Note_01", ranged = "INV_Weapon_Bow_07",
+    reagent = "INV_Misc_Dust_02", recent = "Spell_Holy_BorrowedTime", sets = "INV_Chest_Chain_15",
+    shoulder = "INV_Shoulder_02", special = "INV_Misc_Bag_Satchelofcenarius", tabard = "INV_Shirt_GuildTabard_01",
+    trade = "INV_Fabric_Silk_01", trinket = "INV_Jewelry_Talisman_07", waist = "INV_Belt_03", weapons = "INV_Sword_04",
+    wrist = "INV_Bracer_07",
+}
+function Categories.Art(key)
+    return ICONS .. (Categories.ART[key] or Categories.ART.own)
+end
 -- The icons a category of the player's own may take (the dialog's choice).
 Categories.ICONS = {
     "INV_Misc_QuestionMark", "INV_Misc_Bag_10", "INV_Misc_Gem_01", "INV_Potion_54", "INV_Misc_Herb_19",
@@ -413,22 +430,22 @@ function Categories.Word(key)
 end
 
 function Categories.Icon(key)
-    if Categories.DEF[key] then return Categories.ART .. key end
+    if Categories.DEF[key] then return Categories.Art(key) end
     local own = Own(key)
     if own and own.icon and own.icon ~= Categories.OWN_ICON then return own.icon end
-    return Categories.ART .. "own"
+    return Categories.Art("own")
 end
 
--- A group's icon: a built-in group's own drawing, else its first member's.
+-- A group's icon: a built-in group's own, else its first member's.
 function Categories.GroupIcon(group)
-    if Categories.GROUPS[group] then return Categories.ART .. group end
+    if Categories.GROUPS[group] then return Categories.Art(group) end
     local first = Categories.Members(group)[1]
-    return first and Categories.Icon(first) or Categories.ART .. "own"
+    return first and Categories.Icon(first) or Categories.Art("own")
 end
 
--- Whether an icon is one of Sane UI's own drawings (drawn whole), not one of the game's (cut a little round its edge).
+-- Whether an icon is drawn whole (none now: every one is the game's, cut a little round its edge).
 function Categories.Drawn(file)
-    return type(file) == "string" and file:sub(1, #Categories.ART) == Categories.ART
+    return false
 end
 
 -- A group's name: the player's, else its own first name, else its members' ("A & B", "A, B, & C").

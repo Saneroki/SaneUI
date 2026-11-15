@@ -75,7 +75,7 @@ function textureSize(url, id) {
   if (!s) {
     const p = new Promise((done) => {
       const img = new Image();
-      img.onload = () => { sizes.set(url, { w: img.naturalWidth, h: img.naturalHeight }); done(); };
+      img.onload = () => { sizes.set(url, { w: img.naturalWidth, h: img.naturalHeight }); images.set(url, img); done(); };
       img.onerror = () => {
         sizes.set(url, "missing");
         log({ kind: "warn", text: "texture not found: " + decodeURIComponent(url.slice(7)) });
@@ -294,13 +294,37 @@ function drawTurned(el, it, url, size) {
   blendAndTone(el.style, it);
 }
 
-// Nine slices (SetTextureSliceMargins): the corners kept, the edges and the middle stretched or tiled.
+// An atlas' part of its sheet as a picture of its own (a data URL, kept), for what draws a whole picture.
+const images = new Map(), parts = new Map();
+function partOf(url, tc) {
+  const key = url + "|" + tc.join(",");
+  if (parts.has(key)) return parts.get(key);
+  const img = images.get(url);
+  if (!img) return null;
+  const [l, r, t, b] = tc;
+  const x = Math.round(Math.min(l, r) * img.naturalWidth), y = Math.round(Math.min(t, b) * img.naturalHeight);
+  const w = Math.max(1, Math.round(Math.abs(r - l) * img.naturalWidth)), h = Math.max(1, Math.round(Math.abs(b - t) * img.naturalHeight));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  c.getContext("2d").drawImage(img, x, y, w, h, 0, 0, w, h);
+  const part = { url: c.toDataURL(), w, h };
+  parts.set(key, part);
+  return part;
+}
+
+// Nine slices (SetTextureSliceMargins, or an atlas the game slices by its slice data): the corners kept, the edges
+// and the middle stretched or tiled. An atlas' margins are in its own units (its size as the game gives it).
 function drawSliced(el, it, url, size) {
   const [l, t, r, b] = it.sl;
   const st = el.style;
+  let src = url, k = 1;
+  if (it.tc) {
+    const part = partOf(url, it.tc);
+    if (part) { src = part.url; if (it.aw) k = part.w / it.aw; }
+  }
   st.borderStyle = "solid";
-  st.borderImageSource = `url("${url}")`;
-  st.borderImageSlice = `${t} ${r} ${b} ${l} fill`;
+  st.borderImageSource = `url("${src}")`;
+  st.borderImageSlice = `${t * k} ${r * k} ${b * k} ${l * k} fill`;
   st.borderImageWidth = `${t * it.u}px ${r * it.u}px ${b * it.u}px ${l * it.u}px`;
   st.borderImageRepeat = it.slm === 1 ? "round" : "stretch";
   blendAndTone(st, it);

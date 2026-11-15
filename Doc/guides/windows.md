@@ -319,13 +319,13 @@ not by itself. The rules:
   chosen. The game's window of the talk is never opened or closed by our code: only seated while it is open; where a
   second game window belongs to it (the Profession window), it is asked of the server, as the game's own code does it
   (`C_TradeSkillUI.OpenTradeSkill`, `CloseTradeSkill`), whose answer the game's code shows.
-- **What is in a window is the module's**: a panel of Core's (`Core.Skin` plate, a head `Board.HEAD` high with its
-  title and the X, a line, the body) holds the module's part, built the first time it is shown (`build`), told
+- **What is in a window is the module's**: a panel of Core's (the kit's heavy bronze, `Core.Look.Frame`; a head
+  `Board.HEAD` high with its title and the X inside the band, the thin golden line, the body; what the module puts
+  there keeps `Board.EDGE` from the panel's border) holds the module's part, built the first time it is shown (`build`), told
   when it is shown and hidden (`show`), its size once a change stands (`size`), the search (`search`). A window
-  not ours stands in its panel by the module's seat (section *Seated*). A window may ask for Sane UI's own look
-  (`spec.dress = "journal"`: `Core.Journal`'s leather and paper round it, its title on the top's label, the X on
-  the corner patch, its body the page's room, `Core.Journal.Inner`) or for none (`"bare"`: the module draws its
-  own window, as the character's doll; a head, a Kalam title and a pressed X it places on its art).
+  not ours stands in its panel by the module's seat (section *Seated*). A window may ask for no frame (`spec.dress = "bare"`:
+  the module draws its own window, as the character's doll; a head, the game's gold title and the game's X it
+  places on what it draws).
 
 ### Combat
 
@@ -365,12 +365,15 @@ not by itself. The rules:
 
 ### Look
 
-- Built from Blizzard's parts: the close button (`UIPanelCloseButtonNoScripts`), maximize and minimize
-  (`MaximizeMinimizeButtonFrameTemplate`), the search box (`SearchBoxTemplate`), the dropdown
-  (`WowStyle1DropdownTemplate`), the tabs (`TabSystemTemplate`, `TabSystemTopButtonTemplate`), Edit Mode's
-  selection art (its nine-slice atlases, highlighted and selected) and its dialog's look
-  (`DialogBorderTranslucentTemplate`), the title in `GameFontNormal`. Sane UI's own: the plate (round
-  corners only on a small window; square in full screen), the bronze trim.
+- Built from Blizzard's parts, the kit's first (`Core.Look`, `Doc/guides/interface-style.md`, *The kit*, Saneroki,
+  2026-11-15): a window's frame the character list's heavy bronze (`Look.Frame`; what it holds and its title bar
+  inside the band), the board's layout tabs the character screen's top bar (`Look.Tab`), a full window's title bar
+  the shop's (`Window.FULL_BAR`), the title bar's buttons the grey square ones (`Look.Square`), its search box the
+  character list's (`Look.Search` on `SearchBoxTemplate`); the close button (`UIPanelCloseButtonNoScripts`),
+  maximize and minimize (`MaximizeMinimizeButtonFrameTemplate`), the dropdown (`WowStyle1DropdownTemplate`), the
+  tabs of a window's views (`TabSystemTemplate`, `TabSystemTopButtonTemplate`), Edit Mode's selection art (its
+  nine-slice atlases, highlighted and selected) and its dialog's look (`DialogBorderTranslucentTemplate`), the
+  title in `GameFontNormal`. A window may still ask for the round dark plate (`skin = "round"`, `Core.Skin`).
 - The game's own sounds where Blizzard plays them, by `SOUNDKIT` (a window opening and closing: to come,
   section 8).
 

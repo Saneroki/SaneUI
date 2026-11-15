@@ -397,7 +397,7 @@ end
 check(scene, "the character's model scene stands in the left pane")
 local place = scene:GetParent()
 do
-    local Doll, PX, Model = ns.Doll, SaneUI.Core.Journal.PX, ns.Model
+    local Doll, PX, Model = ns.Doll, ns.Style.PX, ns.Model
     check(scene._template == "ModelSceneMixinTemplate" and near(scene:GetWidth(), Model.SIZE[1] * PX)
         and near(scene:GetHeight(), Model.SIZE[2] * PX) and scene:IsMouseEnabled() and scene:IsMouseWheelEnabled(),
         "the model turned by a drag and zoomed by the wheel (the game's scene that takes the mouse), at its one size")
@@ -426,16 +426,10 @@ do
     local target, below = 1.02 + spline.points[2][3], 1.07 * FOCAL / 3.9
     check(near((2 - target) * FOCAL / 2, place:GetHeight() - below),
         "zoomed all the way in, the camera has moved into the head: the model's top at the top of its place")
-    local cover
-    for _, widget in ipairs(W.frames) do
-        if widget._kind == "Texture" and widget._texture and widget._texture:match("doll$") and widget._coords
-            and widget._coords[3] > 0 then cover = widget end
-    end
-    local h = SaneUI.Core.Journal.PIECES.doll[2] / SaneUI.Core.Journal.PIECES.doll[4]
-    check(not place._clips and not scene._clips and cover and near(cover._coords[3], Doll.FOOT / Doll.PIXELS[2] * h)
-        and near(cover._coords[4], h) and near(cover._points[1][5], -Doll.FOOT * PX)
+    local cover = Doll.covered
+    check(not place._clips and not scene._clips and cover and near(cover._points[1][5], -Doll.FOOT * PX)
         and cover:GetParent():GetFrameLevel() > scene:GetFrameLevel(),
-        "no clipping frame: the doll's picture again below the hero's column, over the model, hides its legs there")
+        "no clipping frame: the bronze plate again below the hero's place, over the model, hides its legs there")
     local hit = scene._hit
     check(near(hit[1], (width - place:GetWidth()) / 2) and near(hit[1], hit[2]) and near(hit[4], height / 2 - 1.07 * FOCAL / 3.9)
         and near(height - hit[3] - hit[4], place:GetHeight()), "it takes the mouse only over its place, though drawn larger")
@@ -736,8 +730,8 @@ check(Blocks() == "Bags (1), Miscellaneous=1, Bank  Not seen yet: open the bank 
 
 -- Another one chosen: its things.
 Pick("Droopy")
-check(characters.word == "|c" .. ns.Paper.InkHex(0.78, 0.61, 0.43) .. "Droopy Fairwind|r" and Alts.foot.gold.text._text == "1234567c"
-    and Alts.foot.line._text == "Level 30 |c" .. ns.Paper.InkHex(0.78, 0.61, 0.43) .. "Warrior|r  |c" .. ns.Paper.FAINT_HEX .. "Seen 3 |4day:days; ago|r",
+check(characters.word == "|c" .. ns.Style.InkHex(0.78, 0.61, 0.43) .. "Droopy Fairwind|r" and Alts.foot.gold.text._text == "1234567c"
+    and Alts.foot.line._text == "Level 30 |c" .. ns.Style.InkHex(0.78, 0.61, 0.43) .. "Warrior|r  |c" .. ns.Style.FAINT_HEX .. "Seen 3 |4day:days; ago|r",
     "a click in the dropdown: that one's name as ink on the paper, its gold, its level and class, when it was seen")
 check(Blocks() == "Bags (2), Miscellaneous=2, Bank  Seen 5 |4day:days; ago (1), Miscellaneous=1, Equipped (2), Armor=1, Miscellaneous=1"
     or Blocks():find("^Bags %(2%), Miscellaneous=2, Bank  Seen 5 |4day:days; ago %(1%)"), "each place under its head with how many, by category: " .. Blocks())

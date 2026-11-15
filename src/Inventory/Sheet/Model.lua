@@ -162,7 +162,7 @@ function Model.Build(over)
     local made, frame = pcall(CreateFrame, "ModelScene", nil, over, "ModelSceneMixinTemplate")
     if not made then return ns.Report("character", "this client has no model scene for the character: " .. tostring(frame)) end
     scene, place = frame, over
-    scene:SetSize(Model.SIZE[1] * Core.Journal.PX, Model.SIZE[2] * Core.Journal.PX)
+    scene:SetSize(Model.SIZE[1] * ns.Style.PX, Model.SIZE[2] * ns.Style.PX)
     scene:EnableMouse(true)
     scene:EnableMouseWheel(true)
     Stand()

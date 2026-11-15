@@ -43,14 +43,14 @@ Layout.GAP = 5           -- between two, at that size (Layout.Gap: with the size
 Layout.SMALLEST = 28     -- the least an item is drawn at (Saneroki, 2026-10-30: the windows can be narrow)
 Layout.FIT = 6           -- a narrow window makes its items smaller to keep this many in a line
 Layout.SCALE = { low = 55, high = 135, step = 5, first = 100 } -- the slider's percent of Layout.SIZE
-Layout.ROW = ns.Paper.Fit(24)     -- a list's line (its words' size: ns.Paper.WORDS)
+Layout.ROW = ns.Style.Fit(24)     -- a list's line (its words' size: ns.Style.WORDS)
 Layout.ICON = 20         -- its item button
-Layout.HEAD = ns.Paper.Fit(20)    -- a head line
+Layout.HEAD = ns.Style.Fit(20)    -- a head line
 Layout.HEAD_GAP = 2      -- under it
 Layout.APART = 6         -- room after a block
-Layout.MEMBER = ns.Paper.Fit(16)  -- a group's member's head
+Layout.MEMBER = ns.Style.Fit(16)  -- a group's member's head
 Layout.BAND_GAP = 14     -- between two blocks side by side
-Layout.LABEL = ns.Paper.Fit(15)   -- a block's name over it (compact)
+Layout.LABEL = ns.Style.Fit(15)   -- a block's name over it (compact)
 Layout.LABEL_GAP = 3
 
 Layout.LOOKS = {

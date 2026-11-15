@@ -113,7 +113,7 @@ local Menu = ns.Guard(Fill)
 
 -- The dropdown, in the title line; its place is the window's.
 function Roster.Build(parent)
-    menu = ns.Paper.Dropdown(parent, Roster.WIDTH, ns.Bags.BAR)
+    menu = ns.Style.Dropdown(parent, Roster.WIDTH, ns.Bags.BAR)
     menu:SetupMenu(Menu)
     Roster.menu = menu
     return menu
@@ -127,7 +127,7 @@ function Roster.Show(characters, key, counts)
     for _, who in ipairs(characters) do
         if who.key == key then
             local plain = who.key == ns.Snapshot.ACCOUNT
-            word = plain and Name(who) or "|c" .. ns.Paper.InkHex(Roster.Colour(who.class)) .. Name(who) .. "|r"
+            word = plain and Name(who) or "|c" .. ns.Style.InkHex(Roster.Colour(who.class)) .. Name(who) .. "|r"
         end
     end
     menu:OverrideText(word)

@@ -39,26 +39,25 @@ ns.Sidebars = Sidebar
 local Bag = {}
 ns.BagSidebar = Bag
 
-Sidebar.WIDTH = 180        -- room for the names at their size (ns.Paper.WORDS)
+Sidebar.WIDTH = 180        -- room for the names at their size (ns.Style.WORDS)
 Sidebar.FOLDED = 24        -- a folded sidebar: the arrow alone
 Sidebar.HEAD = 24
 Sidebar.ROW, Sidebar.ROW_GAP = 28, 2
 Sidebar.ICON, Sidebar.ICON_SMALL = 18, 16
 Sidebar.INDENT = 16
 Sidebar.STEP = 28          -- the wheel's step
-Sidebar.MUTED = ns.Paper.FAINT  -- counts, the head's word
-Sidebar.DIVIDER = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.25 }
+Sidebar.MUTED = ns.Style.FAINT  -- counts, the head's word
+Sidebar.DIVIDER = { ns.Style.INK[1], ns.Style.INK[2], ns.Style.INK[3], 0.25 }
 Sidebar.DIM = 0.75         -- a row's words while not shown
-Sidebar.LIT = ns.Paper.CHOSEN[4] -- the row shown: the pencil's shading
-Sidebar.HOVER = ns.Paper.SHADE[4]
+Sidebar.LIT = ns.Style.CHOSEN[4] -- the row shown: the pencil's shading
+Sidebar.HOVER = ns.Style.SHADE[4]
 Sidebar.TAKES = 0.2        -- the shading of a row under the mouse that takes the item held
 Sidebar.EDGE = 0.25        -- a row's top and foot quarter: before or after it; between: into it
 Sidebar.GHOST = 0.85       -- the dragged row's ghost
 Sidebar.LIFTED = 0.35      -- the dragged row itself meanwhile
 Sidebar.INTO = 0.2         -- the row it would go into, shaded
-Sidebar.MARK = 0.6         -- the pencil marks (the arrows, a box's tick) drawn lightly; under the mouse whole
-Sidebar.TICK = 25          -- a box's tick, in 1080p pixels: Kalam's root sign, a tick drawn by hand
-Sidebar.BOX = 0.8          -- a box's pencil square
+Sidebar.MARK = 0.75        -- the marks (the arrows) a little dim; under the mouse whole
+Sidebar.BOX = 1            -- a box's square (the game's minimal checkbox)
 Sidebar.TOGGLE = 14        -- a box's side, and the arrow's beside it and in the head
 
 local Categories = ns.Categories
@@ -67,16 +66,16 @@ Rail.__index = Rail
 
 local function Fonts()
     return {
-        label = ns.Paper.Font("SaneUIBagsSideLabel", 15),
-        count = ns.Paper.Font("SaneUIBagsSideCount", 13),
+        label = ns.Style.Font("SaneUIBagsSideLabel", 15),
+        count = ns.Style.Font("SaneUIBagsSideCount", 13),
     }
 end
 
--- The sidebars' pencil arrow (Core's journal piece "arrow", drawn pointing down) as large as a box, in its
--- button's middle, drawn lightly; turned to point where it must.
+-- The sidebars' arrow (the game's chevron, pointing down: Style.PIECES) as large as a box, in its button's middle,
+-- a little dim; turned to point where it must.
 local DOWN, UP, LEFT, RIGHT = 0, math.pi, -math.pi / 2, math.pi / 2
 local function Arrow(parent)
-    local mark = Core.Journal.Texture(parent, "arrow", "ARTWORK")
+    local mark = ns.Style.Texture(parent, "arrow", "ARTWORK")
     mark:SetSize(Sidebar.TOGGLE, Sidebar.TOGGLE)
     mark:SetPoint("CENTER")
     mark:SetAlpha(Sidebar.MARK)
@@ -99,7 +98,7 @@ local function RowEnter(row)
     if not (row.rail.tip and row.rail.tip(row)) then RowTip(row) end
     -- Brighter by its colour's alpha (a region's own alpha goes no higher than 1).
     local takes = GetCursorInfo() == "item" and row.takes
-    local ink = ns.Paper.INK
+    local ink = ns.Style.INK
     row.hover:SetColorTexture(ink[1], ink[2], ink[3], takes and Sidebar.TAKES or Sidebar.HOVER)
 end
 
@@ -151,7 +150,7 @@ local function MakeRow(rail)
     row.back:SetAllPoints()
     row.hover = row:CreateTexture(nil, "BACKGROUND", nil, 1)
     row.hover:SetAllPoints()
-    row.hover:SetColorTexture(ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], Sidebar.HOVER)
+    row.hover:SetColorTexture(ns.Style.INK[1], ns.Style.INK[2], ns.Style.INK[3], Sidebar.HOVER)
     row.hover:Hide()
     row.bar = row:CreateTexture(nil, "ARTWORK")
     row.bar:SetPoint("TOPLEFT")
@@ -261,7 +260,7 @@ function Rail:Row(word, number, file, atlas, depth, shown)
     row.label:SetPoint("RIGHT", -30, 0)
     if row.arrow then row.arrow:Hide(); row.box:Hide() end
     row.count:SetText(number and tostring(number) or "")
-    local ink = ns.Paper.INK
+    local ink = ns.Style.INK
     row.bar:SetColorTexture(ink[1], ink[2], ink[3], 0.8)
     row.bar:SetWidth(Core.Pixels(row, 2))
     row.bar:SetShown(shown)
@@ -302,20 +301,17 @@ end
 function Rail:Toggles(row, folded, ticked, fold, tick)
     self.folder, self.ticker = fold, tick
     if not row.arrow then
-        local ink = ns.Paper.INK
         row.arrow = Toggle(row, ArrowOf, Sidebar.TOGGLE)
         row.arrow.mark = Arrow(row.arrow)
-        -- a square drawn in pencil, a tick in it drawn by hand (Kalam's root sign), both light
+        -- the game's minimal checkbox, its tick in it
         row.box = Toggle(row, BoxOf, Sidebar.TOGGLE)
-        local square = Core.Journal.Texture(row.box, "pencil-slot", "BORDER")
+        local square = ns.Style.Texture(row.box, "pencil-slot", "BORDER")
         square:SetAllPoints()
         square:SetAlpha(Sidebar.BOX)
-        row.box.check = row.box:CreateFontString(nil, "OVERLAY")
-        row.box.check:SetFontObject(Core.Journal.FontObject("SaneUIBagsSideTick", Sidebar.TICK)) -- as large as its box
-        row.box.check:SetTextColor(ink[1], ink[2], ink[3])
-        row.box.check:SetAlpha(Sidebar.MARK)
+        row.box.check = ns.Style.Texture(row.box, "check", "OVERLAY")
+        row.box.check:SetSize(Sidebar.TOGGLE + 2, Sidebar.TOGGLE + 2)
         row.box.check:SetPoint("CENTER", 1, 1)
-        row.box.check:SetText("\226\136\154") -- U+221A
+        row.box.check:SetAlpha(Sidebar.MARK)
         row.box.mark = row.box.check
         row.box:SetPoint("RIGHT", row.count, "LEFT", -6, 0)
         row.arrow:SetPoint("RIGHT", row.box, "LEFT", -3, 0)
@@ -430,7 +426,7 @@ local function Ghost(rail)
     local back = ghost:CreateTexture(nil, "BACKGROUND")
     back:SetAllPoints()
     back:SetColorTexture(220 / 255, 204 / 255, 178 / 255, 0.95) -- a scrap of the page
-    local gold = ns.Paper.INK
+    local gold = ns.Style.INK
     ns.Cells.Edge(ns.Cells.Border(ghost), gold[1], gold[2], gold[3], 0.8, Core.Pixels(ghost, 1))
     ghost.icon = ghost:CreateTexture(nil, "ARTWORK")
     ghost.icon:SetSize(Sidebar.ICON, Sidebar.ICON)
@@ -521,8 +517,8 @@ function Sidebar.New(body, top, bottom, options)
     head:SetHeight(Sidebar.HEAD)
     rail.head = head
     local label = head:CreateFontString(nil, "ARTWORK")
-    label:SetFontObject(ns.Paper.Font("SaneUIBagsSideHead", 14, true))
-    label:SetTextColor(ns.Paper.SOFT[1], ns.Paper.SOFT[2], ns.Paper.SOFT[3], ns.Paper.SOFT[4])
+    label:SetFontObject(ns.Style.Font("SaneUIBagsSideHead", 14, true))
+    label:SetTextColor(ns.Style.SOFT[1], ns.Style.SOFT[2], ns.Style.SOFT[3], ns.Style.SOFT[4])
     label:SetPoint("LEFT", 8, 0)
     label:SetText(options.word or "")
     rail.label = label
@@ -628,7 +624,7 @@ function Bag.Refresh(counts, viewing, options)
     if shownFixed then rail:Divider() end
     Bag.Categories(rail, counts, viewing, true)
     if options.addCategory ~= false then
-        local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.ART .. "add", nil, 0, false)
+        local row = rail:Row(ns.TEXT.bagsAddCategory, nil, Categories.Art("add"), nil, 0, false)
         row.add = true
         row.icon:SetAlpha(0.5)
         row.label:SetAlpha(0.4)

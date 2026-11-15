@@ -78,10 +78,11 @@ local Core = SaneUI.Core
 --          grip = "hover",              -- with sizable: the grip outside Edit Mode too, while the window
 --                                       -- rests in its zone, seen while the mouse is on it (window:Hover)
 --          dock = true,                 -- it docks to the screen's edges (Dock.lua)
---          skin = true,                 -- background and border (Skin.lua) with round corners (Shape.lua),
---                                       -- one with an edge it is docked to
---          corners = ns.options,        -- the module's settings with the switches Corner radius and Don't
---                                       -- round corners on screen edges (Shape.Options); without: edge's
+--          skin = true,                 -- background and border: the kit's heavy bronze (Core.Look.Frame), what
+--                                       -- it holds and its title bar inside the band; "round": the dark plate
+--                                       -- with round corners (Skin.lua, Shape.lua), one with an edge it is docked to
+--          corners = ns.options,        -- with skin "round": the module's settings with the switches Corner radius
+--                                       -- and Don't round corners on screen edges (Shape.Options); without: edge's
 --          usable = function() end,     -- may it be moved and sized right now? Without: yes
 --          lifted = function() end,     -- a drag begins to carry it (what cannot follow it goes out of sight;
 --                                       -- docked says where it was let go)
@@ -157,6 +158,7 @@ local Window = {}
 Core.Window = Window
 
 Window.BAR, Window.BAR_LEVEL = 32, 20 -- the title bar's height; how far above the window (over what it holds)
+Window.FULL_BAR = 44 -- the title bar's height while the window fills the screen: the shop's title bar, the top bar's tabs
 Window.DRAG_ZONES = { CENTER = true } -- where a title bar's drag, outside Edit Mode, may dock a window
 Window.BUTTON, Window.BUTTON_INSET = 24, 4 -- the buttons' size (the game's close button's); from the bar's right
 Window.TEXT_INSET, Window.GLASS = 8, 12 -- the title from the bar's left; the search's magnifier
@@ -185,8 +187,7 @@ Window.KINDS = {
     talk = { titleBar = true, dock = true, skin = true, edge = true, sizable = true, escape = "close", toplevel = true,
              first = { dock = "CENTER" } },
 }
-local SQUARE = "Interface\\Buttons\\UI-SquareButton-" -- the game's square button, as its group finder's refresh
-local ARROWS = "Interface\\Buttons\\UI-RefreshButton"   -- and its icon, the circling arrows, half the button's size
+local ARROWS = "Interface\\Buttons\\UI-RefreshButton"   -- the circling arrows (the game's group finder's refresh)
 Window.BOX_LEVEL = 100 -- how far above the window its box in Edit Mode lies, over all it holds; the grip over that
 -- Edit Mode's look for a frame that can be moved, as Blizzard_EditMode draws it
 -- (EditModeSystemSelectionLayout, local there): its atlases, in a nine-slice of our own frame.
@@ -676,16 +677,14 @@ local function Box(window)
     return box
 end
 
--- A button of the title bar: the game's square button with a picture on it (an atlas or a texture, half
--- its size; or a sign in words: art.sign), the game's click sound, a tip to say what it does. A module's button
--- (options.buttons) is its own art: its text is its tip's words, never a sign.
+-- A button of the title bar: the kit's grey square button (Core.Look: the character select's) with a picture on it
+-- (an atlas or a texture, about half its size; or a sign in words: art.sign), the game's click sound, a tip to say
+-- what it does. A module's button (options.buttons) is its own art: its text is its tip's words, never a sign.
 -- With template (a secure one), click runs after the template's own (PostClick).
+local ShopBar -- the shop's title bar behind a full window's bar (below)
+
 local function Square(parent, art, text, tip, click, template)
-    local button = CreateFrame("Button", nil, parent, template)
-    button:SetSize(Window.BUTTON, Window.BUTTON)
-    button:SetNormalTexture(SQUARE .. "Up")
-    button:SetPushedTexture(SQUARE .. "Down")
-    button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    local button = Core.Look.Square(parent, Window.BUTTON, template)
     local picture
     if art.sign then -- a sign in the game's gold words (the question mark)
         picture = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -695,7 +694,7 @@ local function Square(parent, art, text, tip, click, template)
         if art.atlas then picture:SetAtlas(art.atlas) else picture:SetTexture(art.texture) end
         picture:SetSize(Window.BUTTON / 2, Window.BUTTON / 2)
     end
-    picture:SetPoint("CENTER", -1, 0)
+    picture:SetPoint("CENTER")
     button.picture = picture
     button:SetScript(template and "PostClick" or "OnClick", Core.Guard("window", function(self)
         Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
@@ -750,7 +749,37 @@ end
 
 -- How high its title bar is.
 local function BarHeight(window)
-    return window.options.barHeight or Window.BAR
+    if window.options.barHeight then return window.options.barHeight end
+    return window.edge and window.edge.full and Window.FULL_BAR or Window.BAR
+end
+
+-- The shop's title bar (CatalogShop's header: shop-header-menu-bg, its golden line along its foot) across a bar,
+-- shown while the window fills the screen: three pieces, its ends at their width for the bar's height.
+local SHOP = { "shop-header-menu-bg-left", "shop-header-menu-bg-middle", "shop-header-menu-bg-right" }
+function ShopBar(bar)
+    local back = CreateFrame("Frame", nil, bar)
+    back:SetAllPoints()
+    back:SetFrameLevel(math.max(bar:GetFrameLevel() - 1, 0))
+    back.parts = {}
+    for index, name in ipairs(SHOP) do
+        local part = back:CreateTexture(nil, "BACKGROUND")
+        Core.Look.Atlas(part, name)
+        back.parts[index] = part
+    end
+    local left, middle, right = back.parts[1], back.parts[2], back.parts[3]
+    left:SetPoint("TOPLEFT")
+    left:SetPoint("BOTTOMLEFT")
+    right:SetPoint("TOPRIGHT")
+    right:SetPoint("BOTTOMRIGHT")
+    middle:SetPoint("TOPLEFT", left, "TOPRIGHT")
+    middle:SetPoint("BOTTOMRIGHT", right, "BOTTOMLEFT")
+    back:SetScript("OnSizeChanged", Core.Guard("window", function(self, _, height)
+        local wide = math.floor(212 * (height or self:GetHeight()) / 51 + 0.5) -- the ends' 212 at its 51 high
+        left:SetWidth(wide)
+        right:SetWidth(wide)
+    end))
+    back:Hide()
+    return back
 end
 
 -- The title bar, made when it is first shown: across the window's top, Window.BAR high, above what the
@@ -766,12 +795,12 @@ local function Bar(window)
     bar:SetPoint("TOPRIGHT")
     bar:SetHeight(BarHeight(window))
     bar:SetFrameLevel(frame:GetFrameLevel() + Window.BAR_LEVEL)
-    local line = bar:CreateTexture(nil, "ARTWORK")
-    line:SetColorTexture(Core.GOLD[1], Core.GOLD[2], Core.GOLD[3], 0.5)
+    local line = Core.Look.Line(bar, 0.5)
     line:SetPoint("BOTTOMLEFT", Window.BUTTON_INSET, 0)
     line:SetPoint("BOTTOMRIGHT", -Window.BUTTON_INSET, 0)
-    line:SetHeight(1)
     line:SetShown(options.barLine ~= false)
+    bar.line = line
+    bar.back = ShopBar(bar)
 
     local find = CreateFrame("Button", nil, bar)
     find:SetPoint("TOPLEFT")
@@ -796,6 +825,7 @@ local function Bar(window)
 
     local box = CreateFrame("EditBox", nil, bar, "SearchBoxTemplate")
     box:SetHeight(Window.BOX)
+    Core.Look.Search(box)
     box:Hide()
     local instructions = rawget(box, "Instructions") -- the template's words in an empty box
     if type(instructions) == "table" and instructions.SetText then instructions:SetText(Window.TEXT.search) end
@@ -870,13 +900,29 @@ local function Buttons(window)
 end
 
 -- How far below the window's top what it holds starts: under the title bar while it is there.
+-- A window in the kit's bronze frame (its skin) holds what it holds inside the band, and its title bar there too,
+-- while it is not full (the frame then fades for the full screen's background).
+local function Pad(window)
+    local skin, edge = window.skin, window.edge
+    if not (skin and skin.border) or (edge and (edge.full or edge.away)) then return 0 end
+    return Core.Look.BAND
+end
+
 local function Inside(window, bar)
-    local top = bar and BarHeight(window) or 0
-    if top == window.top then return end
-    window.top = top
+    local pad = Pad(window)
+    local top = (bar and BarHeight(window) or 0) + pad
+    if top == window.top and pad == window.pad then return end
+    window.top, window.pad = top, pad
     window.inside:ClearAllPoints()
-    window.inside:SetPoint("TOPLEFT", 0, -top)
-    window.inside:SetPoint("BOTTOMRIGHT")
+    window.inside:SetPoint("TOPLEFT", pad, -top)
+    window.inside:SetPoint("BOTTOMRIGHT", -pad, pad)
+    local frame = window.bar
+    if frame then
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", pad, -pad)
+        frame:SetPoint("TOPRIGHT", -pad, -pad)
+        frame:SetHeight(BarHeight(window))
+    end
 end
 
 -- Its title at the side TitleAt asked for: at the bar's left, or at its right, left of the buttons that show.
@@ -910,6 +956,11 @@ function methods:Refresh()
     local bar, buttons = Bar(self), Buttons(self)
     if not shown and bar.box:IsShown() then Search(self, false) end
     bar:SetShown(shown)
+    bar:SetHeight(BarHeight(self))
+    self.top = nil -- the bar's height and the frame's band may have changed with full screen: laid anew
+    Inside(self, shown)
+    bar.back:SetShown(edge and edge.full and true or false)
+    bar.line:SetShown(self.options.barLine ~= false and not (edge and edge.full))
     buttons:SetShown(not Core.EditMode.active and not (self.options.bare and Core.Safe("window", self.options.bare)))
     local full = self.full
     if full then
@@ -1193,8 +1244,10 @@ function Window.New(frame, options)
     end
     window.inside = CreateFrame("Frame", nil, frame)
     Inside(window, options.titleBar)
-    if options.skin then
+    if options.skin == "round" then -- the dark plate with round corners (Skin.lua), as the window's settings say
         window.skin = Core.Skin.New(frame, options.corners or type(options.edge) == "table" and options.edge or nil)
+    elseif options.skin then -- the kit's heavy bronze (Core.Look), the character list's frame
+        window.skin = Core.Look.Frame(frame)
     end
     if options.edge then window.edge = Core.Edge.New(window) end
     -- Only in Edit Mode, and not while it fills the screen or is on its way, nor in a fight (Locked).

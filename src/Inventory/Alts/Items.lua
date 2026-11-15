@@ -177,7 +177,7 @@ local function DollSlot(doll, slot)
     local small = slot.column == "ammo"
     button:SetSize(small and Slots.AMMO or Slots.SIZE, small and Slots.AMMO or Slots.SIZE)
     button.slotName, button.picture = slot.name, slot.picture
-    Core.Journal.Slot(button, 3, "BACKGROUND")
+    ns.Style.Slot(button, 3, "BACKGROUND")
     local normal = button.GetNormalTexture and button:GetNormalTexture()
     if normal then normal:SetAlpha(0) end
     local border = Cells.Part(button, "IconBorder")
@@ -187,7 +187,7 @@ local function DollSlot(doll, slot)
         icon:ClearAllPoints()
         icon:SetAllPoints(button)
         icon:SetTexCoord(Cells.ZOOM, 1 - Cells.ZOOM, Cells.ZOOM, 1 - Cells.ZOOM)
-        Cells.Mask(button, Cells.ROUNDED, icon)
+        Cells.Mask(button, nil, icon)
     end
     return button
 end
@@ -279,7 +279,7 @@ end
 -- A place's head: its words, and what is said beside them (faint) in the same line.
 local function Word(title, note, empty, none)
     local said = none and (note and note .. ": " .. empty or empty) or note
-    return said and title .. "  |c" .. ns.Paper.FAINT_HEX .. said .. "|r" or title
+    return said and title .. "  |c" .. ns.Style.FAINT_HEX .. said .. "|r" or title
 end
 
 -- A character's places (Snapshot.Sections) as sections for Views.Build, and the doll to draw (nil: none). Each section:

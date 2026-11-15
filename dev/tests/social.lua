@@ -1895,7 +1895,7 @@ do
     end
     -- The full screen's parts: the guild window at the top right with the friends list under it (the group finder a
     -- tab of it), the conversations at the left, the chat chosen there beside their list.
-    local tall = 1080 - Core.Window.BAR
+    local tall = 1080 - Core.Window.FULL_BAR
     local board = Layout.Board(1920, tall, { friends = true, talks = true })
     check(board.friends and board.talks and not board.guild and board.friends[1] == 1920 - Layout.PAD - Layout.FRIENDS_WIDTH
         and board.friends[2] == Layout.PAD and board.friends[4] == tall - 2 * Layout.PAD
@@ -1932,7 +1932,7 @@ do
         "never narrower than its least, and the one chosen beside it keeps its least")
     end
     check(coreBar and coreBar:IsShown() and coreBar.title._text == "Social" and coreBar.glass:IsShown()
-        and listTop() == -(Core.Window.BAR + board.chat[2] + Layout.EDGE) and column._width == board.chat[3],
+        and listTop() == -(Core.Window.FULL_BAR + board.chat[2] + Layout.EDGE) and column._width == board.chat[3],
         "full, Core's title bar is at its top, with the search; the chat stands beside the conversations' list")
     local panels, friends, finder = ns.Board.panels, nil, nil
     do

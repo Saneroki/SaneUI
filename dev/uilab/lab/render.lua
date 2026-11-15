@@ -155,6 +155,7 @@ return function(Lab)
             if s.slice then
                 item.sl = s.slice
                 item.slm = s.sliceMode
+                if s.atlas and s.atlasW then item.aw, item.ah = r2(s.atlasW), r2(s.atlasH) end
             end
             item.u = r2(P * sc)
         else

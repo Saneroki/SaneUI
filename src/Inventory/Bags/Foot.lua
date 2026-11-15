@@ -49,15 +49,15 @@ Foot.BAG_GAP = 4
 Foot.STRIP = Foot.BAG + 10
 Foot.DRAWING = 0.8     -- an empty slot's drawing against the slot's side
 Foot.DRAWN = 0.6       -- and how much of it shows: plain to see, still empty
--- What an empty slot shows: a drawing of the bags' (Categories.ART).
+-- What an empty slot shows: a picture of the bags' (Categories.Art).
 Foot.EMPTY = { bag = "one", reagent = "reagent", keyring = "key" }
 Foot.BAG_ICON = "Interface\\Icons\\INV_Misc_Bag_08" -- a bag worn whose icon the game does not tell
 Foot.TOKENS = 3        -- the currencies the game lets the backpack watch (MAX_WATCHED_TOKENS)
 Foot.TOKEN = 17        -- a currency's icon
 Foot.TOKEN_CUT = 5 / 64
 Foot.TOKEN_GAP = 5
-Foot.ACT = 22          -- the bank bar's button for what can be done there: a leather patch
-Foot.ACT_COLOR = { Core.Journal.LEATHER[1], Core.Journal.LEATHER[2], Core.Journal.LEATHER[3] } -- pressed into the patch
+Foot.ACT = 22          -- the bank bar's button for what can be done there: the game's red button
+Foot.ACT_COLOR = { ns.Style.GOLD[1], ns.Style.GOLD[2], ns.Style.GOLD[3] } -- a red button's words, the game's gold
 Foot.STEP = 0.08       -- seconds between two items sold
 Foot.SOLD = 0.5        -- seconds after the game's sell-all until its money is there
 
@@ -145,8 +145,8 @@ local function MakeBag(index)
     local button = CreateFrame("Button", nil, strip)
     button:SetSize(Foot.BAG, Foot.BAG)
     -- a pencil slot on the paper, the bag's icon in it (Core.Journal)
-    local inset = Foot.BAG * Core.Journal.SLOT_ICON
-    slotOf[button] = Core.Journal.Slot(button, 1, "BACKGROUND")
+    local inset = Foot.BAG * ns.Style.SLOT_ICON
+    slotOf[button] = ns.Style.Slot(button, 1, "BACKGROUND")
     local face = CreateFrame("Frame", nil, button)
     face:SetPoint("TOPLEFT", inset, -inset)
     face:SetPoint("BOTTOMRIGHT", -inset, inset)
@@ -157,7 +157,7 @@ local function MakeBag(index)
     button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     local light = button:GetHighlightTexture()
     if light then light:SetAllPoints(face) end
-    ns.Cells.Mask(button, ns.Cells.ROUNDED, icon, light)
+    ns.Cells.Mask(button, nil, icon, light)
     local drawing = button:CreateTexture(nil, "ARTWORK")
     drawing:SetSize(Foot.BAG * Foot.DRAWING, Foot.BAG * Foot.DRAWING)
     drawing:SetPoint("CENTER")
@@ -225,7 +225,7 @@ function Foot.Bags()
         iconOf[button]:SetTexture(picture)
         iconOf[button]:SetShown(picture ~= nil)
         emptyOf[button]:SetShown(picture == nil)
-        if not picture then emptyOf[button]:SetTexture(ns.Categories.ART .. Drawing(bag)) end
+        if not picture then emptyOf[button]:SetTexture(ns.Categories.Art(Drawing(bag))) end
         slotOf[button]:SetAlpha(picture and 1 or ns.Cells.EMPTY_SLOT)
         frees[button]:SetText(left and tostring(left) or "")
         button:ClearAllPoints()
@@ -293,7 +293,7 @@ Foot.Deposits = Deposit
 function Foot.Act()
     doing = Junk() and "junk" or nil
     if doing == "junk" then act.text:SetText(Core.Word("SELL_ALL_JUNK_ITEMS", "Sell All Junk Items")) end
-    act:SetWidth(math.max(40, (act.text:GetStringWidth() or 0) + 14))
+    act:SetWidth(math.max(64, (act.text:GetStringWidth() or 0) + 32)) -- room for the red button's ends
     act:SetShown(doing ~= nil)
     ns.Bags.CountBefore(doing and act or nil)
 end
@@ -473,7 +473,6 @@ end
 
 -- The button on the title line: a pencil box on the paper, its box drawn stronger under the mouse.
 local function ActLit(on)
-    act.box:SetStrong(on)
 end
 
 -- The foot in the window's body; the button for what can be done here left of beside (on the bar); the bags in
@@ -487,7 +486,7 @@ function Foot.Build(body, beside, holder)
     ns.Bags.Band(foot, "TOP")
     Foot.frame = foot
     local font = ns.Bags.Fonts().count
-    local ink = ns.Paper.INK
+    local ink = ns.Style.INK
     gold = Label(foot, font)
     gold.text:SetTextColor(ink[1], ink[2], ink[3])
     gold:SetPoint("RIGHT", -(ns.Bags.INSET + ns.Bags.EDGE), 0)
@@ -512,8 +511,7 @@ function Foot.Build(body, beside, holder)
     act:SetHeight(ns.Bags.BAR)
     act:SetPoint("RIGHT", beside, "LEFT", -ns.Bags.BAR_GAP, 0)
     act.text = act:CreateFontString(nil, "ARTWORK")
-    Core.Journal.Font(act.text, 14 * ns.Paper.WORDS)
-    act.box = Core.Journal.Box(act, 0.5)
+    ns.Style.Red(act, act.text, ns.Bags.BAR) -- the game's red button: what can be done here matters
     act.text:SetPoint("CENTER")
     ActLit(false)
     act:SetScript("OnClick", function() ns.Safe("bags", Act) end)

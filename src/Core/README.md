@@ -591,7 +591,8 @@ but for a window to try those with (`/sane window`).
 | `Kit.lua` | Small helpers for every module: `Core.Word`, `RGB`/`Hex`, `Pixels`, `FormPower` (your druid's power in a form, shown beside your mana; `Core.MANA`), `Mana` (a unit's mana as the game gives it), `Tip`, `Unconfirmed` (the line *! Unconfirmed Data !*; `UNCONFIRMED_MARK`, the red ! before each such thing's name), `TipLook`/`TipSection`/`LookOf` (a creature on a map, drawn by the Tooltips module like a unit), `Pool`, `Confirm`, `AskText`, `Font`, `Sound`, `Lend` |
 | `Dock.lua` | The zones at the screen's edges, and the shape that shows where a dragged window docks |
 | `Shape.lua` | A plate with round corners and a trim, square where it touches the screen's edge |
-| `Skin.lua` | A window's background and border on a Shape, one with an edge it is docked to |
+| `Skin.lua` | A round dark plate on a Shape, one with an edge it is docked to (a window's with `skin = "round"`; the options' screen, small fields) |
+| `Look.lua` | The kit (`Core.Look`, `Doc/guides/interface-style.md`, *The kit*): Sane UI's windows of WoW: Forever's own parts by their atlas names, a stand-in where a game lacks one: the heavy bronze frame (`Look.Frame`, every window's skin and the board's panels), its plate, the thin golden line, the grey square and the red buttons, the character list's search box, the character window's heads, bands and gear slots, the inside frame, the grey box, the loading bar's frame, the top bar's tabs, Friz Quadrata (`Look.Font`) |
 | `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant) on the game's easing curves, and a clock that runs only while something moves |
 | `Window.lua` | Moving and sizing a window (in Edit Mode), keeping its place |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open |
@@ -637,6 +638,12 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-11-15 — The kit (Saneroki: "I want to restyle windows fullscreens now ... closer to Wow Forever styling with
+  its native elements"): `Look.lua`, Forever's own parts for every window; a window's skin and the board's panels
+  the heavy bronze frame (what they hold inside its band: `Board.BAND`, `HEAD` 40, `EDGE` 12), the board's layout
+  tabs the character screen's top bar, a full window's title bar the shop's (`Window.FULL_BAR` 44), the title
+  bar's buttons the grey square ones and its search box the character list's; the journal's dress gone from the
+  board (`Journal.lua` stays for the parts still in it).
 - 2026-11-15 — Every element's options, built 2026-11-14 and taken out again (Saneroki: "Remove all those options again
   for now", to come back "only within the edit mode", which is to be redone: board #488): `Element.lua` is gone, the
   right clicks of the elements and the action bars are as before; `Doc/ideas/Windows.md`, *Every element's options*.

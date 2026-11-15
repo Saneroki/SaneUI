@@ -56,9 +56,9 @@ ns.Views = Views
 
 Views.ALL, Views.ONE, Views.EACH = "all", "one", "each"
 Views.FIXED = {
-    { key = "all", word = ns.TEXT.bagsAllItems, icon = ns.Categories.ART .. "all" },
-    { key = "one", word = ns.TEXT.bagsOneBag, icon = ns.Categories.ART .. "one" },
-    { key = "each", word = ns.TEXT.bagsEachBag, icon = ns.Categories.ART .. "each" },
+    { key = "all", word = ns.TEXT.bagsAllItems, icon = ns.Categories.Art("all") },
+    { key = "one", word = ns.TEXT.bagsOneBag, icon = ns.Categories.Art("one") },
+    { key = "each", word = ns.TEXT.bagsEachBag, icon = ns.Categories.Art("each") },
 }
 
 local Contents, Categories = ns.Contents, ns.Categories

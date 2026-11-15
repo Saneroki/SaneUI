@@ -23,7 +23,7 @@ Keys.lua
 # The full screen's windows on Core's board; the parts after it register theirs
 Board.lua
 # What the windows on the journal's page draw with: graphite, the pencil's shading, Kalam, a rule
-Paper.lua
+Style.lua
 # The character sheet, our own, its parts windows of their own on the board: what they share first (the doll, the
 # slots, the model, a list, the side pane, the rows, the page), then the windows: the character (the paper doll), the
 # stats, the gear sets, the titles, and what the game's sheet has behind its tabs

@@ -182,7 +182,7 @@ if RETAIL then
         and Core.Classic.List(handle) == nil,
         "its windows are the game's own of both, Sane Macros, the aura history and the action bars; no Classic windows of Combat's")
     frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
-    inside._left, inside._bottom, inside._height = 0, 0, 1080 - Core.Window.BAR
+    inside._left, inside._bottom, inside._height = 0, 0, 1080 - Core.Window.FULL_BAR
     inside._strata, inside._level = "HIGH", 501
     GetBindingKey = function(action) return action == "TOGGLETALENTS" and "N" or nil end
     local micro = W.NewWidget("Button", "PlayerSpellsMicroButton", UIParent)
@@ -1090,7 +1090,7 @@ check(strip._width == 960, "another UI scale: still half")
 local inside, layouts = handle.inside, Board.layouts
 -- Where what the full window holds stands, and its layer, as the game gives a child its parent's (the stand-in
 -- knows no anchors).
-local top = 1080 - Core.Window.BAR
+local top = 1080 - Core.Window.FULL_BAR
 inside._left, inside._bottom, inside._height = 0, 0, top
 inside._strata, inside._level = "HIGH", 501
 local pad, edge, head = Core.Board.PAD, Core.Board.EDGE, Core.Board.HEAD

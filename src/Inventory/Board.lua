@@ -88,11 +88,12 @@ Board.ICONS = {
     alts = "Interface/ICONS/INV_Misc_GroupNeedMore",
 }
 
--- The windows in Sane UI's own look (Doc/guides/interface-style.md, Core.Journal): the character on its doll (its
--- own leather and paper, "bare"), the stats, the gear sets, the titles, the bags, the bank and the alts on the
--- journal's page. The others keep Core's dark plate for now.
-Board.DRESS = { character = "bare", stats = "journal", gear = "journal", titles = "journal", bags = "journal",
-                bank = "journal", alts = "journal" }
+-- The windows that draw their own frame (Core's board, "bare"): the character's doll, its frame scaled with it
+-- (Doll.lua). The others stand in the kit's heavy bronze (Core.Look, Doc/guides/interface-style.md, The kit).
+Board.DRESS = { character = "bare" }
+-- The windows that fill their body to its edges (they stood on the journal's page before the kit): their body set
+-- inside the frame, Core's board's EDGE from its sides and bottom and under its head (Board.Body's size).
+Board.FILLED = { stats = true, gear = true, titles = true, bags = true, bank = true, alts = true }
 
 -- The windows in the dropdown's order; those the first layout holds.
 Board.ORDER = { "character", "stats", "gear", "titles", "reputation", "skills", "pvp", "currency", "statistics", "vendor", "mail",
@@ -115,7 +116,15 @@ end
 function Board.Part(key, title, least, part)
     parts[key] = { part = part, spec = {
         key = key, title = title, least = least, width = part.Width, icon = Board.ICONS[key], dress = Board.DRESS[key],
-        build = function(panel) ns.Safe(key, part.Build, panel) end,
+        build = function(panel)
+            if Board.FILLED[key] and panel.body then
+                local edge = Core.Board.EDGE
+                panel.body:ClearAllPoints()
+                panel.body:SetPoint("TOPLEFT", edge, -(Core.Board.HEAD + edge))
+                panel.body:SetPoint("BOTTOMRIGHT", -edge, edge)
+            end
+            ns.Safe(key, part.Build, panel)
+        end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
         present = part.Present and function() return ns.Safe(key, part.Present) == true end or nil,
     } }
@@ -209,22 +218,15 @@ function Board.Search(text)
 end
 
 -- A window's body (what its part fills) in its panel that large, and the panel round a body that large: the
--- journal's page in its leather, the doll's whole panel, or the dark plate's under its head.
+-- doll's whole panel, or the bronze frame's inside under its head (Core's board: Board.HEAD, Board.EDGE).
 function Board.Body(key, width, height)
-    local dress = Board.DRESS[key]
-    if dress == "journal" then return Core.Journal.Inner(width, height) end
-    if dress == "bare" then return width, height end
+    if Board.DRESS[key] == "bare" then return width, height end
     local edge = Core.Board.EDGE
     return width - 2 * edge, height - Core.Board.HEAD - 2 * edge
 end
 
 function Board.Least(key, width, height)
-    local dress = Board.DRESS[key]
-    if dress == "journal" then
-        local w, h = Core.Journal.Outer(width, height)
-        return { math.ceil(w), math.ceil(h) }
-    end
-    if dress == "bare" then return { width, height } end
+    if Board.DRESS[key] == "bare" then return { width, height } end
     local edge = Core.Board.EDGE
     return { width + 2 * edge, height + Core.Board.HEAD + 2 * edge }
 end

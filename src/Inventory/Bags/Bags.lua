@@ -63,8 +63,8 @@ Bags.SOFT = { 0.42, 0.2, 0.08 } -- a round button's soft edge: the ink's alpha o
 Bags.MENU_WIDTH = 110
 Bags.TITLE_MENU = 56   -- the dropdown View on the title line
 Bags.COUNT_LEAST = 70  -- the least room for a title line's count: with less, it goes
-Bags.RULE = { ns.Paper.INK[1], ns.Paper.INK[2], ns.Paper.INK[3], 0.3 } -- the line by the sidebar
-Bags.COUNT_COLOR = ns.Paper.SOFT    -- the bar's count
+Bags.RULE = { ns.Style.INK[1], ns.Style.INK[2], ns.Style.INK[3], 0.3 } -- the line by the sidebar
+Bags.COUNT_COLOR = ns.Style.SOFT    -- the bar's count
 Bags.LEAST = { 340, 240 } -- the window at its narrowest: the title line's word and buttons, the strip of the bags
 Bags.FIRST = 560          -- how wide the first layout makes it
 Bags.SIZER = 130          -- the slider Item Size in the dropdown View
@@ -143,7 +143,7 @@ function Bags.Round(parent, file, checkable, size)
     size = size or Bags.BAR_BUTTON
     local button = CreateFrame(checkable and "CheckButton" or "Button", nil, parent)
     button:SetSize(size, size)
-    local ink = ns.Paper.INK
+    local ink = ns.Style.INK
     for step, alpha in ipairs(Bags.SOFT) do
         local ring = button:CreateTexture(nil, "BACKGROUND", nil, -step)
         ring:SetPoint("TOPLEFT", -step, step)
@@ -183,7 +183,7 @@ Bags.CleanButton = CleanButton
 local fonts
 local function Fonts()
     if fonts then return fonts end
-    fonts = { count = ns.Paper.Font("SaneUIBagsBarCount", 15) }
+    fonts = { count = ns.Style.Font("SaneUIBagsBarCount", 15) }
     return fonts
 end
 Bags.Fonts = Fonts
@@ -497,7 +497,7 @@ end
 
 -- A band on the paper with a pencil rule at one edge (the bar's at its foot, the foot's at its top).
 local function Band(frame, edge)
-    return nil, ns.Paper.Rule(frame, edge, "BORDER")
+    return nil, ns.Style.Rule(frame, edge, "BORDER")
 end
 Bags.Band = Band
 
@@ -637,7 +637,7 @@ local function Bar(body)
     hover:SetAllPoints(bar.count)
     hover:SetScript("OnEnter", function(self) ns.Safe("bags", Foot.FreeTip, self) end)
     hover:SetScript("OnLeave", GameTooltip_Hide)
-    menu = ns.Paper.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
+    menu = ns.Style.Dropdown(bar, Bags.TITLE_MENU, Bags.BAR)
     menu:SetPoint("RIGHT")
     menu:OverrideText(ns.TEXT.bagsView)
     menu:SetupMenu(ViewMenu)

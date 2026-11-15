@@ -200,7 +200,7 @@ local frame = CreateFrame("Frame", nil, UIParent)
 frame:SetFrameLevel(3)
 local usable = true
 local window = Window.New(frame, {
-    store = store, title = "Test window", sizable = true, dock = true, skin = true,
+    store = store, title = "Test window", sizable = true, dock = true, skin = "round",
     first = { point = "LEFT", x = 40, y = 0, width = 380, height = 260 }, minWidth = 180, minHeight = 130,
     usable = function() return usable end,
     docked = function(zone) docked = zone end,
@@ -730,7 +730,7 @@ check(wide._points[1][1] == "TOPLEFT" and wide._points[1][2] == UIParent and wid
 check(placed == before + 1 and come.playing and come.moves[1].y == Edge.DROP and come.moves[2].y == -Edge.DROP,
     "what it holds is laid out for the new size, and comes in from a little above")
 local menu, wideBar = edge.classic, wideWindow.bar
-check(wideBar and wideBar:IsShown() and wideBar._points[1][1] == "TOPLEFT" and wideBar._height == Window.BAR
+check(wideBar and wideBar:IsShown() and wideBar._points[1][1] == "TOPLEFT" and wideBar._height == Window.FULL_BAR
     and wideWindow.buttons:IsShown() and #wideWindow.buttons.list == 4 and wideWindow.full.isMinimized == false,
     "full, a window without a title bar of its own has one at its top: its buttons there, full screen offering the way back")
 check(wideWindow.settings:IsShown() and wideWindow.help:IsShown() and wideWindow.settings.picture._atlas == Window.SETTINGS
@@ -992,7 +992,7 @@ check(not tallEdge.away and tall._mouse == false and tall._motion == true, "back
 -- A window with a skin fills the screen: its skin goes as the background comes
 local skinned = CreateFrame("Frame", nil, UIParent)
 local skinnedWindow = Window.New(skinned, {
-    store = { place = { x = 0, y = 260, width = 380, height = 260, dock = "BOTTOMLEFT" } }, sizable = true, dock = true, skin = true, edge = true,
+    store = { place = { x = 0, y = 260, width = 380, height = 260, dock = "BOTTOMLEFT" } }, sizable = true, dock = true, skin = "round", edge = true,
     first = { point = "CENTER", x = 0, y = 0, width = 380, height = 260 },
 })
 at(skinned, 0, 0)
@@ -1044,8 +1044,9 @@ check(buttons:IsShown() and buttons._parent == titleBar and #buttons.list == 5 a
     "at its right, from the right: close, full screen, the game's own window")
 check(not traderWindow.settings:IsShown() and not traderWindow.help:IsShown(),
     "the options and the question mark are not there while it is small: only on its full screen")
-check(full.isMinimized == true and toggle._Normal._texture:find("SquareButton") and next(traderWindow.edge.strips) == nil,
-    "full screen offers to fill the screen; the game's window is the game's square button")
+check(full.isMinimized == true and toggle._Normal._texture._atlas == "common-button-square-gray-up"
+    and next(traderWindow.edge.strips) == nil,
+    "full screen offers to fill the screen; the game's window is the kit's grey square button")
 
 -- The search
 check(not box:IsShown() and box._points[2][1] == "RIGHT" and box._points[2][2] == toggle, "the search box waits; it would end left of the buttons")
@@ -1134,7 +1135,8 @@ for _, widget in ipairs(W.frames) do
     if widget._parent == merchant and widget._kind == "Button" and widget ~= merchantClose then back = widget end
 end
 check(back and back._points[1][1] == "RIGHT" and back._points[1][2] == merchantClose and back._level == 510
-    and back._Normal._texture == toggle._Normal._texture, "the game's window has the same button, beside its close button")
+    and back._Normal._texture._atlas == toggle._Normal._texture._atlas,
+    "the game's window has the same button, beside its close button")
 back:GetScript("OnClick")(back)
 check(oursShown == 1 and traderStore.place.native == nil and traderWindow:Attach() == back, "it brings ours back, kept so; it is put there once")
 at(trader, 760, 390)
@@ -1841,8 +1843,9 @@ do
     local demoWindow
     for _, known in ipairs(Window.All()) do if known.frame == demo then demoWindow = known end end
     check(demoWindow and demoWindow.options.kind == "panel" and demoWindow.options.escape == "close" and demoWindow.bar:IsShown()
-        and demo._mouse and demoWindow.top == Window.BAR and demoWindow.inside._points[1][5] == -Window.BAR,
-        "a panel: its title bar, Esc closes it, a click on it is its own; what it holds stands under the bar (window.inside)")
+        and demo._mouse and demoWindow.top == Window.BAR + Core.Look.BAND
+        and demoWindow.inside._points[1][5] == -(Window.BAR + Core.Look.BAND),
+        "a panel: its title bar, Esc closes it, a click on it is its own; what it holds stands under the bar (window.inside), inside the bronze band")
     local tabs, views = demoWindow.tabs, demoWindow.views
     check(tabs and #tabs.tabs == 2 and tabs.tabs[1]._text == "Window" and tabs.selected == 1 and views[1] and views[1]:IsShown() and not views[2]
         and views[1]._parent == demoWindow.inside and views[1]._points[1][5] == -Window.TABS,
