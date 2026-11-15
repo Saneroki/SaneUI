@@ -962,7 +962,7 @@ if W.retailRun then (function()
 
     -- The full map, the first time: the map the player is on, whole, as the game's own map opens.
     Window.Toggle()
-    frame._width, frame._height = 1600, 868
+    frame._width, frame._height = 1600, select(2, Window.FullSize()) -- (full: the screen's whole height)
     Window.frame._group:Run(1)
     local full = Window.full
     check(Canvas.camera == full and full.shown == 1429 and full.level == "zone" and near(full.k, full.fit),
@@ -2340,12 +2340,14 @@ check(holder and holder:GetScale() == 1 and frame._parent._groups == nil and not
     "on its way the map stays in sight, first as the small view showed it; the game's minimap out of sight")
 clock:Run(0.5)
 local midway = holder:GetScale()
-check(midway > 1 and midway < (868 / Camera.START) / small.k, "half way the map has zoomed part of the way to the full view")
-frame._width, frame._height = 1600, 868
+-- (full, the map reaches up behind the title bar: the screen's whole height, Saneroki, 2026-11-15)
+local TALL = select(2, Window.FullSize())
+check(midway > 1 and midway < (TALL / Camera.START) / small.k, "half way the map has zoomed part of the way to the full view")
+frame._width, frame._height = 1600, TALL
 clock:Run(1)
 check(holder:GetScale() == 1, "standing, it is laid out anew for the full view")
 local full = Window.full
-check(Canvas.camera == full and near(full.u, 500) and near(full.k, 868 / Camera.START), "full: its own camera, at the player the first time")
+check(Canvas.camera == full and near(full.u, 500) and near(full.k, TALL / Camera.START), "full: its own camera, at the player the first time")
 -- Settings of before: the switch Route to the map pin is the pin filter's kind now, as the minimap's dots are.
 do
     local settled = Core.Settle(ns.name, { route = false, pins = { quest = true } })
@@ -2362,7 +2364,7 @@ do
     tracker._scripts.OnUpdate(tracker, 0.016)
     local step
     for each = 0, 5 do
-        if 2 * radii[each] * full.k <= 868 * Hybrid.ROOM then step = each break end
+        if 2 * radii[each] * full.k <= TALL * Hybrid.ROOM then step = each break end
     end
     local map, u, v = Live.Player()
     check(step and minimap._shown and minimap._zoom == step and near(minimap._width, 2 * radii[step] * full.k)
@@ -2386,7 +2388,7 @@ do
     full.follow, full.k = false, full.k / 3
     frame._scripts.OnMouseDown(frame, "MiddleButton")
     frame._scripts.OnMouseUp(frame, "MiddleButton")
-    check(full.follow and math.abs(full.k - 868 * Hybrid.ROOM / (2 * radii[Hybrid.HOME])) < 1e-4 and near(full.u, u)
+    check(full.follow and math.abs(full.k - TALL * Hybrid.ROOM / (2 * radii[Hybrid.HOME])) < 1e-4 and near(full.u, u)
         and minimap._shown and minimap._zoom == Hybrid.HOME,
         "full, a middle click: on the player, near enough that the game's middle step shows around the player")
     full.u, full.v, full.k, full.follow = was.u, was.v, was.k, was.follow
@@ -2401,8 +2403,8 @@ end
     check(not W.callbacks.MINIMAP_PING and not listened, "MINIMAP_PING: no callback of ours, no frame's event")
 end)()
 local bar
-for _, widget in ipairs(W.frames) do if widget.key == "terrain" then bar = widget._parent end end
-check(bar and bar._shown, "full: the view buttons")
+for _, widget in ipairs(W.frames) do if widget.key == "view" then bar = widget._parent end end
+check(bar and bar._shown and bar._parent == Window.handle.bar, "full: the map's controls, in the title bar")
 shown = Shown()
 check(Count(shown, 801, 804) == 4 and Count(shown, 142901, 142912) == 0 and Count(shown, 141501, 141512) == 0
     and Overviews(shown, 0, "Sketches") == 0, "Scrying up close: the tiles, no map art")
@@ -2436,16 +2438,27 @@ do -- The sea's layers over the view's rectangle, laid by the plane: a corner's 
         "Scrying: the sea's layers (the waves twice, the second larger by no whole factor and turned half round; the "
         .. "shade) over the whole view, on the holder, laid by the plane")
 end
-local function Button(key)
-    for _, widget in ipairs(W.frames) do if widget.key == key and widget._scripts.OnClick then return widget end end
+-- The view's one button in the title bar: Blended and Scrying in turn (Saneroki, 2026-11-15); Parchment from the
+-- settings alone (Choose).
+local function ViewButton()
+    for _, widget in ipairs(W.frames) do if widget.key == "view" and widget._scripts.OnClick then return widget end end
 end
-check(Button("terrain")._lit and not Button("sketches")._lit, "the view chosen is lit")
-check(Button("sketches")._shown and Button("blend")._shown and Button("terrain")._shown and not Button("atlas")
-    and Button("blend")._points[1][2] == Button("sketches") and Button("terrain")._points[1][2] == Button("blend"),
-    "three buttons in a row, no Atlas")
-Button("sketches")._scripts.OnClick(Button("sketches"))
+local function Choose(key) Core.Set(ns.name, "view", key) end
+;(function()
+    local button = ViewButton()
+    check(button and button._shown and button._text == ns.TEXT.views.terrain, "one button for the view, its words the view drawn")
+    button._scripts.OnClick(button)
+    check(ns.options.view == "blend" and button._text == ns.TEXT.views.blend, "a click: Blended")
+    button._scripts.OnClick(button)
+    check(ns.options.view == "terrain" and button._text == ns.TEXT.views.terrain, "again: Scrying")
+    local names = {}
+    for _, widget in ipairs(W.frames) do if widget._text then names[widget._text] = true end end
+    check(not names.Parchment and not names.Kalimdor and not names["Eastern Kingdoms"],
+        "no Parchment button, no dropdown of continents")
+end)()
+Choose("sketches")
 shown = Shown()
-check(ns.options.view == "sketches" and Button("sketches")._lit and Count(shown, 801, 804) == 0
+check(ns.options.view == "sketches" and ns.View() == "sketches" and Count(shown, 801, 804) == 0
     and Count(shown, 141501, 141512) > 0 and Overviews(shown, 0, "Sketches") > 0 and Count(shown, 142901, 142912) > 0,
     "Sketches: the continent's map, the stitched map over it, the zone's own map over that")
 check(not shown[Canvas.SEA] and not shown[Canvas.SEA_SHADE] and not shown[Canvas.WHIRLPOOL.file],
@@ -2463,7 +2476,7 @@ Canvas.Layout()
 shown = Shown()
 check(Count(shown, 94701, 94712) > 0 and Count(shown, 801, 804) == 0 and Overviews(shown, 0, "Sketches") > 0
     and Overviews(shown, 1, "Sketches") > 0, "Sketches at the world: the world map, both continents stitched over it")
-Button("terrain")._scripts.OnClick(Button("terrain"))
+Choose("terrain")
 shown = Shown()
 check(Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0 and Count(shown, 94701, 94712) == 0,
     "Terrain at the world: every continent's overview, no art")
@@ -2503,10 +2516,10 @@ check(Canvas.Blend(Canvas.BLEND[1]) == 1 and Canvas.Blend(Canvas.BLEND[2]) == 0
     and near(Canvas.Blend(math.sqrt(Canvas.BLEND[1] * Canvas.BLEND[2])), 0.5),
     "Blended: the art whole far out, gone close in, half at the zoom's middle step between")
 do
-    Button("blend")._scripts.OnClick(Button("blend"))
+    Choose("blend")
     shown = Shown()
     local artLayer = shown[94701] and shown[94701]._parent
-    check(ns.options.view == "blend" and Button("blend")._lit and artLayer and artLayer._alpha == 1
+    check(ns.options.view == "blend" and ns.View() == "blend" and artLayer and artLayer._alpha == 1
         and Overviews(shown, 0) == 0, "Blended at the world: the art alone, as Parchment")
     local high = Canvas.view.span * full.k
     full:Show(1415, 500, -8950, high / 3000)
@@ -2531,7 +2544,7 @@ do
         "Blended close in: the terrain alone, the art not drawn")
 end
 full:Fit(1415)
-Button("terrain")._scripts.OnClick(Button("terrain"))
+Choose("terrain")
 shown = Shown()
 check(full.level == "continent" and Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0,
     "at a continent the other one too, where it is in view")
@@ -4809,7 +4822,7 @@ do
     check(isleCut and isleCut._texture == ns.Terrain.PATH:format(2991, 4, 4) and Overviews(shown, 2991) > 0,
         "Scrying on the isle: its own tiles, cut by its block's overview, over its overview")
     ns.OUTLINES[2991] = { [2521] = true }
-    Button("sketches")._scripts.OnClick(Button("sketches"))
+    Choose("sketches")
     shown = Shown()
     local framed, cut = 0, 0
     for _, widget in ipairs(W.frames) do
@@ -4823,36 +4836,38 @@ do
         "Parchment on the isle: the world's map, the isle's own with its paper frame faded off, its stitched map, "
         .. "and its map cut to its outline over them")
     ns.OUTLINES[2991] = nil
-    Button("terrain")._scripts.OnClick(Button("terrain"))
-    local selector, zones
+    Choose("terrain")
+    -- The zone dropdown (the dropdown of continents went: Saneroki, 2026-11-15): the world, then each continent with
+    -- its zones under it (A to Z, set in), the isle a plane of its own; it says the zone shown.
+    local zones
     for _, widget in ipairs(W.frames) do
         if widget._generator then
             widget:GenerateMenu()
-            if widget._items[1] and widget._items[1].text == "#947" then selector = widget end
+            if widget._items[1] and widget._items[1].text == "#947" then zones = widget end
         end
     end
-    for _, widget in ipairs(W.frames) do
-        if widget._generator and widget._points[1] and widget._points[1][2] == selector then zones = widget end
+    local planes, under, isle = {}, {}, nil
+    for _, item in ipairs(zones and zones._items or {}) do
+        if type(item.text) == "string" then
+            if item.text:find("^   ") then under[#under + 1] = item.text:sub(4) else planes[#planes + 1] = item.text end
+            if item.text == "Zephras Isle" then isle = item end
+        end
     end
-    local listed = selector and selector._items or {}
-    check(#listed == 4 and listed[2].text == "#1415" and listed[3].text == "Kalimdor" and listed[4].text == "Zephras Isle"
-        and listed[4].checked() and selector._override == "Zephras Isle",
-        "the map selector: the world, the continents, then the isle, which it says the map shows")
-    zones:GenerateMenu()
-    check(#zones._items == 1 and zones._items[1].text == "Zephras Isle" and zones._items[1].checked()
-        and zones._override == "Zephras Isle", "its zones: the isle itself")
+    check(planes[1] == "#947" and planes[2] == "#1415" and planes[3] == "Kalimdor" and planes[4] == "Zephras Isle"
+        and #under > 0 and isle and isle.checked() and zones._override == "Zephras Isle",
+        "the zone dropdown: the world, each continent and its zones under it, the isle, which it says the map shows")
     frame._scripts.OnMouseDown(frame, "RightButton")
     frame._scripts.OnMouseUp(frame, "RightButton")
     check(full.level == "world" and not full.follow, "right click on the isle: the world whole")
     local link = Coords.Link(2521, full.map)
     cursorX = 800 + (link.du + link.su * 0 - full.u) * full.k
-    cursorY = 434 + (link.dv + link.sv * -250 - full.v) * full.k
+    cursorY = TALL / 2 + (link.dv + link.sv * -250 - full.v) * full.k
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
     check(full.map == 2521 and full.level == "zone" and near(full.u, 0) and near(full.v, -250),
         "a click on the isle at the world opens it, as the game's map does")
     ctrl = true
-    cursorX, cursorY = 800 + 100 * full.k, 434
+    cursorX, cursorY = 800 + 100 * full.k, TALL / 2
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
     ctrl = false
@@ -4867,7 +4882,7 @@ do
     ctrl = true
     local can = C_Map.CanSetUserWaypointOnMap
     C_Map.CanSetUserWaypointOnMap = function() return true end -- a continent's map takes one here
-    cursorX, cursorY = 800 + (coastU - full.u) * full.k, 434 + (coastV - full.v) * full.k
+    cursorX, cursorY = 800 + (coastU - full.u) * full.k, TALL / 2 + (coastV - full.v) * full.k
     frame._scripts.OnMouseDown(frame, "LeftButton")
     frame._scripts.OnMouseUp(frame, "LeftButton")
     ctrl, C_Map.CanSetUserWaypointOnMap = false, can
@@ -8101,7 +8116,7 @@ end)()
     for _, widget in ipairs(W.frames) do
         if widget._points and widget._points[1] and widget._points[1][2] == logButton and widget ~= logButton then afterLog = widget end
     end
-    check(not ns.Several() and not Button("sketches")._shown and not Button("blend")._shown and not Button("terrain")._shown
+    check(not ns.Several() and not ViewButton()._shown
         and Hidden("view") and viewOption.default == "sketches"
         and Core.Settle(ns.name, {}).view == "sketches" and afterLog and afterLog._override,
         "one view: Parchment, a first load's too; no view buttons, the map selector right of the quest log's; no setting")
@@ -8209,8 +8224,7 @@ end)()
     Core.Set(ns.name, "view", view)
     ns.Sparkles.Settings()
     ns.Glints.Update()
-    check(Button("sketches")._shown and Button("terrain")._shown and Button("terrain")._points[1][2] == Button("blend"),
-        "Forever again: the view buttons in their row")
+    check(ViewButton()._shown, "Forever again: the view's button")
     check(ns.Offered("terrain") and ns.View() == view and Core.Described(ns.name, "nodeSparkles").header == ns.TEXT.nodes
         and Core.Described(ns.name, "pins").choices[4][1] == "quest" and not Hidden("tripView") and not Hidden("nodeYards")
         and C_CVar.GetCVar("softTargetInteract") == sounds and not ns.off,
@@ -8719,15 +8733,103 @@ end)()
     answer = Ask("where to get silverleaf")
     check(answer[1].title == Find.TEXT.groups.farmFirst and answer[1].rows[1].entry.kind == "farm",
         "where to get it: its best places to farm first")
-    -- Enter on a herb in the list: where to farm it
+    -- Enter on a herb in the list: what to do with it, the herb at the list's top (Saneroki, 2026-11-15: "first select
+    -- the thing and then select what to do with the thing"); Esc back to the finds; Where to farm it
     box:SetText("silverleaf herb")
     box._scripts.OnTextChanged(box, true)
     W.Wait(FindBox.WAIT + 0.01)
     Frames(4)
     box._focus = true
+    local function Listed()
+        local found, acts = {}, {}
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == list and widget.row and widget._shown then
+                if widget.row.act then acts[#acts + 1] = widget.row.text else found[#found + 1] = widget.row end
+            end
+        end
+        return found, acts
+    end
+    box._scripts.OnEnterPressed(box)
+    local found, acts = Listed()
+    check(#found == 1 and found[1].entry.name == "Silverleaf" and list:IsShown()
+        and table.concat(acts, "|") == table.concat({ FindBox.TEXT.show, FindBox.TEXT.pin, FindBox.TEXT.farm,
+            FindBox.TEXT.linkPlace }, "|"),
+        "Enter on a herb: the herb, under it what to do: on the map, the map pin, where to farm it, its link")
+    box._scripts.OnEscapePressed(box)
+    found, acts = Listed()
+    check(#acts == 0 and #found >= 1 and found[1].entry.name == "Silverleaf" and list:IsShown()
+        and box:GetText() == "silverleaf herb", "Esc: back to the finds")
+    box._scripts.OnEnterPressed(box)
+    box._scripts.OnArrowPressed(box, "DOWN")
+    box._scripts.OnArrowPressed(box, "DOWN")
     box._scripts.OnEnterPressed(box)
     Frames(4)
-    check(box:GetText() == "where to farm Silverleaf" and Farms.Shown(), "Enter on a herb: where to farm it, glowing")
+    check(box:GetText() == "where to farm Silverleaf" and Farms.Shown(), "Where to farm it taken: its places, glowing")
+    FindBox.Clear()
+    -- A zone has one thing to do: done at once
+    box:SetText("elwynn")
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(FindBox.WAIT + 0.01)
+    Frames(4)
+    box._focus = true
+    box._scripts.OnEnterPressed(box)
+    check(not list:IsShown() and select(2, Listed()) and #select(2, Listed()) == 0, "Enter on a zone: on the map at once")
+    FindBox.Clear()
+    -- The list as tall as the screen lets it be, a scroll bar at its right where more finds are than fit (Saneroki,
+    -- 2026-11-15: "it should show a scroller on the side and expand down as much as possible")
+    ;(function()
+        local bottom = field.GetBottom
+        field.GetBottom = function() return 400 end
+        box:SetText("e")
+        box._scripts.OnTextChanged(box, true)
+        W.Wait(FindBox.WAIT + 0.01)
+        Frames(4)
+        box._scripts.OnArrowPressed(box, "DOWN")
+        local bar = FindBox.Scroller()
+        local room = 400 - 6 - FindBox.MARGIN - FindBox.FOOT - 6
+        local height = list:GetHeight()
+        check(bar and bar.track._shown and height > room - FindBox.ROW and height <= room + FindBox.FOOT + 6,
+            "many finds: the list down to the screen's bottom, the scroll bar at its right")
+        local first = bar.thumb._points[1][5]
+        list._scripts.OnMouseWheel(list, -1)
+        check(bar.thumb._points[1][5] < first, "the wheel: the lines on, the thumb lower")
+        field.GetBottom = function() return 2000 end
+        FindBox.Clear()
+        box:SetText("elwynn")
+        box._scripts.OnTextChanged(box, true)
+        W.Wait(FindBox.WAIT + 0.01)
+        Frames(4)
+        box._scripts.OnArrowPressed(box, "DOWN")
+        check(not bar.track._shown, "all of them fit: no scroll bar")
+        field.GetBottom = bottom
+        FindBox.Clear()
+    end)()
+    -- A search that runs into an error stops nothing (ns.Gently, ns.Safe; Saneroki, 2026-11-15: "it does crash the
+    -- entire navigation module instead of handeling typing anything in the search bar"): the list says so
+    local ask, prepare = Find.Ask, Find.Prepare
+    Find.Ask = function() error("a broken search") end
+    box:SetText("anything")
+    box._focus = true
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(FindBox.WAIT + 0.01)
+    Frames(2)
+    box._scripts.OnArrowPressed(box, "DOWN") -- (the stub's field has no focus: the list opened as the keys open it)
+    local said = false
+    for _, widget in ipairs(W.frames) do
+        if widget._parent == list and widget.text and widget._shown and widget.text._text == Core.SEARCH_FAILED then said = true end
+    end
+    check(said and list:IsShown() and not ns.off, "a search that fails: the list says so, Navigation goes on")
+    Find.Prepare = function() error("a broken door") end
+    box._scripts.OnEditFocusGained(box)
+    check(not ns.off, "an error at one of the field's doors: Navigation goes on")
+    Find.Ask, Find.Prepare = ask, prepare
+    box:SetText("silverleaf herb")
+    box._scripts.OnTextChanged(box, true)
+    W.Wait(FindBox.WAIT + 0.01)
+    Frames(4)
+    check(#select(1, Listed()) >= 1, "the next words: searched again")
+    check(Coords.PlaneOf("1429") == Coords.PlaneOf(1429) and Coords.ContinentOf("1429") == Coords.ContinentOf(1429),
+        "a map told as words: the same plane and continent")
     FindBox.Clear()
     check(not Farms.Shown(), "cleared: the glow gone")
     Find.Points = points
@@ -9055,6 +9157,37 @@ end)()
     Markers.offer.keep._scripts.OnClick(Markers.offer.keep)
     markers, drawings = Plans.Holds(kept)
     check(#Plans.List() == plans + 1 and #markers == 1 and #drawings == 1, "shared again: the plan filled anew, not doubled")
+    -- Share: Party, Guild, Someone (Saneroki, 2026-11-15): someone is the player asked for (Core.AskPlayer), the plan
+    -- whispered to them alone
+    Wire.SendBlock = function(kind, text, channel, target)
+        sent[#sent + 1] = { kind = kind, text = text, channel = channel, target = target }
+        return true
+    end
+    ;(function()
+        local menu = {}
+        ns.DrawBar.ShareMenu(W.Description(menu), raid)
+        local share = menu[1]
+        local words = {}
+        for _, item in ipairs(share and share.sub or {}) do words[#words + 1] = item.text end
+        check(share and share.text == ns.DrawBar.TEXT.share and table.concat(words, "|") == table.concat({
+            ns.DrawBar.TEXT.shareParty, ns.DrawBar.TEXT.shareGuild, ns.DrawBar.TEXT.shareSomeone }, "|"),
+            "a plan's Share: Party, Guild, Someone")
+        wipe(sent)
+        share.sub[3].fn()
+        local card
+        for _, widget in ipairs(W.frames) do if widget.box and widget.accept and widget.look then card = widget end end
+        check(card and card._shown and card.look.title:GetText():find("Raid night", 1, true), "Someone: the player asked for")
+        card.box:SetText("Brannoc")
+        card.accept._scripts.OnClick(card.accept)
+        check(not card._shown and #sent > 0 and sent[1].channel == "WHISPER" and sent[1].target == "Brannoc",
+            "a name taken: the plan whispered to that player alone")
+        wipe(sent)
+        Markers.ToSomeone({ raidMarker })
+        card.box:SetText("  Brannoc-Firemaw ")
+        card.box._scripts.OnEnterPressed(card.box)
+        check(sent[1] and sent[1].channel == "WHISPER" and sent[1].target == "Brannoc-Firemaw" and not card._shown,
+            "a marker to someone: Enter takes the name, realm and all")
+    end)()
     Wire.SendBlock = sendBlock
     Plans.Remove(kept)
     check(#Plans.List() == plans, "a plan deleted, with its markers and drawings")

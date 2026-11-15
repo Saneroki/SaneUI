@@ -386,6 +386,29 @@ function Core.Guard(label, fn)
     end
 end
 
+-- Softly(label, xpcall(fn, ...)): all of fn's results when it worked; its error only noted and told once.
+local function Softly(label, ok, ...)
+    if ok then return ... end
+    Core.Report(label, (...))
+    return nil
+end
+
+-- fn guarded gently, for the game to call later where what the player does may run into an error that must stop
+-- nothing: a search field's keys, its list and its answers (Saneroki, 2026-11-15: "The search fields everywhere in
+-- our addon needs to have a very greacefull error handeling"). Its error stands no module down, Core's or any other
+-- named in its trace: it is kept in the error log and told once in chat under the label, fn answers nil, and the
+-- next key tries again. A search that lists its answers says so in its list (Core.SEARCH_FAILED). As Core.Guard: it
+-- hands on all of fn's results and makes no table and no closure when called.
+--     box:HookScript("OnTextChanged", Core.Gently("icons", Typed))
+function Core.Gently(label, fn)
+    return function(...)
+        return Softly(label, xpcall(fn, Trace, ...))
+    end
+end
+
+-- What a search's list says where its search ran into an error (Core.Gently): the field goes on working.
+Core.SEARCH_FAILED = "This search ran into a problem (noted in /sane errors). Try other words."
+
 -- Core.Later(fn, delay, label) returns a function that asks for fn to run once, delay seconds later
 -- (0 or none: the next frame). Asking again before then changes nothing. For events that come in
 -- bursts, and for work that must wait until the game has finished its own. An error in fn comes in by
@@ -693,6 +716,17 @@ function Core.NewModule(addon, name, module)
         if ok then return ... end
         Failed(module, name, (...))
         return nil
+    end
+
+    -- As Core.Gently, the label under the module's name: a door whose error stands nothing down (a search field's
+    -- keys, list and answers); it does nothing once the module stood down for another error.
+    --     box:SetScript("OnTextChanged", ns.Gently("map search", Changed))
+    function module.Gently(label, fn)
+        label = name .. ": " .. label
+        return function(...)
+            if module.off then return nil end
+            return Softly(label, xpcall(fn, Trace, ...))
+        end
     end
 
     -- fn guarded, for the game to call later: a frame's script, a hook, a timer, a menu's or a

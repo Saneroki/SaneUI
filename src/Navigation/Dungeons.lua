@@ -277,7 +277,7 @@ local function Room()
     local top, left, right = 0, 0, 0
     if not onSmall then
         local bar = ns.TopBar
-        top = 2 * bar.INSET + bar.BUTTON_HEIGHT
+        top = bar.Top() + bar.INSET -- (the title bar stands over the map)
         local logLeft, logRight = ns.QuestLog.Box()
         local viewLeft, _, viewWidth = frame:GetRect()
         if logLeft and viewLeft and viewWidth then

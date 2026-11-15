@@ -305,7 +305,7 @@ local function Build()
     search:SetAutoFocus(false)
     local hint = rawget(search, "Instructions") -- the game's grey words in the empty box
     if type(hint) == "table" then hint:SetText(Macros.TEXT.spellsSearch) end
-    search:HookScript("OnTextChanged", ns.Guard(function(_, user)
+    search:HookScript("OnTextChanged", ns.Gently("spell search", function(_, user) -- (a search: gentle, its error stands no module down; Core.Gently)
         if not user then return end
         typed = GetTime()
         Spells.later()

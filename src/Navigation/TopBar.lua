@@ -2,41 +2,46 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Navigation - TopBar
---  The bar over the full map's top edge, left to right:
+--  The full map's controls, in its title bar (Core's, standing over the map, which reaches up behind it;
+--  Saneroki, 2026-11-15: "Put the dropdown for the zones, dungeons and pins and the questlog, blended scrying into
+--  the titlebar"), left to right:
 --
 --      Quest Log         the quest log on or off, over the map and on the screen alone (kept; QuestLog.lua)
---      the views         Parchment; Blended and Scrying while Core's terrain is there (not in Retail, until its
---                        data comes): how the map is drawn (the setting Map view; Navigation.lua, Offer); no
---                        buttons where only one is offered (ns.Several)
---      the map selector  the world (in Retail first the Cosmic map over it), a continent or a plane of its own
---                        (Zephras Isle), then a zone of it (A to Z): the map shows it whole; each says what the
---                        map shows now
+--      Zone              every continent (the map shows it whole) and under it its zones (A to Z); it says the zone
+--                        the map shows now
 --      Dungeons          every dungeon and raid the game has a map of (A to Z): its map over the map
 --                        (Dungeons.lua); beside it, while one with floors shows, its floors
---      Draw and plan     a square with a pencil left of Follow me: the palette of drawing and planning (DrawBar.lua)
---      Follow me         a checkbox left of the pin filter: the map keeps you in its middle as you move and
---                        comes back to you, small and full (the setting followMap; Canvas.lua), on at first
+--      ... the map's search in the room between (FindBox.lua) ...
+--      the view          one button: Blended and Scrying in turn (Saneroki: "Blended and scrying will be one button
+--                        that just toggles the map views"), its words the view drawn; Parchment only in the
+--                        settings (the setting Map view); none where only one view is offered (ns.Several)
+--      Draw and plan     a square with a pencil: the palette of drawing and planning (DrawBar.lua)
+--      Follow me         a checkbox: the map keeps you in its middle as you move and comes back to you, small and
+--                        full (the setting followMap; Canvas.lua), on at first
 --      Pins              the pin filter, in sections under their titles (ns.PIN_SECTIONS: around you, quests,
 --                        travel, towns, rares and treasures, gathering): a checkbox per kind of pin with its
 --                        icon large before its words (the setting Pins on the map), and at its right a slider
 --                        for that kind's size (the quest areas': their opacity; the setting pinSizes, kept per
 --                        profile)
+--      ... Core's dropdown Classic windows and its buttons at the bar's right
 --
---  Only while the window fills the screen; the game's own menus (WowStyle1DropdownTemplate,
---  Blizzard's menu system) for the dropdowns.
+--  Only while the window fills the screen; made the first time it does (the title bar is Core's, made then). A
+--  soft shade from the screen's top down past the bar keeps its words readable over any map. The game's own menus
+--  (WowStyle1DropdownTemplate, Blizzard's menu system) for the dropdowns.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
 local TopBar = {}
 ns.TopBar = TopBar
 
-TopBar.HEIGHT = 34
-TopBar.INSET = 12    -- from the map's top left corner
-TopBar.GAP = 4       -- between two buttons
-TopBar.BUTTON_WIDTH, TopBar.BUTTON_HEIGHT = 110, 24
-TopBar.VIEW_WIDTH = 90 -- a view's button: its one word (narrower, so the box Follow me fits a screen 1366 units wide)
-TopBar.MENU_WIDTH = 170
-TopBar.PINS_WIDTH = 110 -- the pin filter's dropdown: Pins
+TopBar.INSET = 8     -- from the title bar's left edge
+TopBar.GAP = 4       -- between two controls
+TopBar.BUTTON_WIDTH, TopBar.BUTTON_HEIGHT = 96, 24
+TopBar.VIEW_WIDTH = 84 -- the view's button: its one word
+TopBar.MENU_WIDTH = 160
+TopBar.PINS_WIDTH = 90 -- the pin filter's dropdown: Pins
+TopBar.SHADE = 18    -- units the shade reaches below the title bar
+TopBar.SHADE_ALPHA = 0.6
 -- The pin filter's rows: a size slider this wide, room right of it for its words (150%), the checkbox's room left
 -- of the kind's name, the row's height, and its icon's size.
 TopBar.SIZER, TopBar.SIZE_LABEL, TopBar.CHECK, TopBar.ROW, TopBar.ICON = 120, 44, 40, 30, 24
@@ -48,11 +53,12 @@ TopBar.TEXT = {
     followTip = ns.TEXT.followMapTip,
     world = Core.Word("WORLD", "World"),
     zones = "Zone",
+    viewNext = "Click: %s.",
 }
-TopBar.DUNGEON_WIDTH, TopBar.FLOOR_WIDTH = 150, 110 -- narrower: the bar fits a screen 1366 units wide
+TopBar.DUNGEON_WIDTH, TopBar.FLOOR_WIDTH = 140, 110 -- narrower: the bar fits a screen 1366 units wide
 TopBar.LIST_HEIGHT = 440 -- the dungeons' list scrolls past so high
 
-local bar, buttons, logButton, continentMenu, zoneMenu, dungeonMenu, floorMenu, pinMenu, followBox
+local bar, viewButton, logButton, zoneMenu, dungeonMenu, floorMenu, pinMenu, followBox, draw, gap
 local shownMap, shownZone -- what the selector says now
 local shownFloor          -- the dungeon's floor the bar says is shown
 
@@ -62,27 +68,44 @@ local function Name(map)
     return type(info) == "table" and info.name or ("#" .. tostring(map))
 end
 
--- The views' buttons, as the settings say: the view drawn lit, those offered in a row, none where only one is.
-function TopBar.Arrange()
-    if not buttons then return end
-    local previous = logButton
-    local drawn, several = ns.View(), ns.Several()
-    for _, key in ipairs(ns.VIEWS) do
-        local button, offered = buttons[key], several and ns.Offered(key)
-        button:SetShown(offered)
-        if offered then
-            button:ClearAllPoints()
-            button:SetPoint("LEFT", previous, "RIGHT", previous == logButton and TopBar.GAP * 3 or TopBar.GAP, 0)
-            previous = button
-        end
-        if key == drawn then button:LockHighlight() else button:UnlockHighlight() end
-    end
-    continentMenu:ClearAllPoints()
-    continentMenu:SetPoint("LEFT", previous, "RIGHT", TopBar.GAP * 3, 0)
+-- The room the title bar takes at the top of the full map (for what stands under it: the zone's name, a dungeon's floor,
+-- the palette): the bar stands over the map.
+function TopBar.Top()
+    return Core.Window.BAR
 end
 
-local function Choose(button)
-    if button.key ~= ns.options.view then Core.Set(ns.name, "view", button.key) end
+-- The room between the controls at the bar's left and those at its right (FindBox.lua: the search there); nil before
+-- the bar is made.
+function TopBar.Gap()
+    return gap
+end
+
+-- The view the button goes to: Blended and Scrying in turn (from Parchment, Scrying).
+local function Other(view)
+    return view == "terrain" and "blend" or "terrain"
+end
+
+-- The view's button as the settings say: the view drawn its words; only while both Blended and Scrying are offered.
+function TopBar.Arrange()
+    if not viewButton then return end
+    local offered = ns.Several() and ns.Offered("blend") and ns.Offered("terrain")
+    viewButton:SetShown(offered and true or false)
+    local drawn = ns.View()
+    viewButton:SetText(ns.TEXT.views[drawn] or drawn)
+    viewButton.title = ns.TEXT.views[drawn] or drawn
+    viewButton.tip = (ns.TEXT.viewTips[drawn] or "") .. "\n\n" .. TopBar.TEXT.viewNext:format(ns.TEXT.views[Other(drawn)] or "")
+    draw:ClearAllPoints()
+    if offered then draw:SetPoint("RIGHT", viewButton, "LEFT", -TopBar.GAP * 2, 0)
+    else draw:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0) end
+    if offered then
+        viewButton:ClearAllPoints()
+        viewButton:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0)
+    end
+end
+
+local function Toggle()
+    Core.Set(ns.name, "view", Other(ns.View()))
+    TopBar.Arrange()
 end
 
 local function Tip(button)
@@ -90,17 +113,6 @@ local function Tip(button)
     GameTooltip:SetText(button.title, 1, 1, 1)
     GameTooltip:AddLine(button.tip, nil, nil, nil, true)
     GameTooltip:Show()
-end
-
-local function ViewButton(key)
-    local button = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
-    button:SetSize(TopBar.VIEW_WIDTH, TopBar.BUTTON_HEIGHT)
-    button:SetText(ns.TEXT.views[key])
-    button.key, button.title, button.tip = key, ns.TEXT.views[key], ns.TEXT.viewTips[key]
-    button:SetScript("OnClick", ns.Guard(Choose))
-    button:SetScript("OnEnter", ns.Guard(Tip))
-    button:SetScript("OnLeave", GameTooltip_Hide)
-    return button
 end
 
 -- A map chosen in the selector: shown whole (a dungeon's view that shows goes).
@@ -132,25 +144,27 @@ local function FloorList(_, root)
     end
 end
 
--- The map of every world where the game has one over the world map and it can be shown (Retail's Cosmic map:
--- Camera.Retail.lua), the world, then each continent and each plane of its own; then the continents beside the world
--- map (Retail's Outland, Draenor, the Shadowlands: Coords.Elsewhere).
-local function Continents(_, root)
+-- Every continent (and a plane of its own, Zephras Isle; the map of the world in Retail over them; the continents
+-- beside the world map, Retail's Outland and the rest) shown whole by a click, each with its zones under it, A to Z
+-- (the dropdown of continents went: Saneroki, 2026-11-15).
+local function Zones(_, root)
+    if root.SetScrollMode then root:SetScrollMode(TopBar.LIST_HEIGHT) end -- a long list: scrolled
     local world, top = Coords.WorldMap(), Coords.Top()
     if top and top ~= world and Coords.Box(top) then Radio(root, Name(top), top) end
     if world then Radio(root, Name(world), world) end
-    for _, plane in ipairs(Coords.Planes()) do Radio(root, Name(plane), plane) end
-    for _, plane in ipairs(Coords.Elsewhere()) do Radio(root, Name(plane), plane) end
-end
-
--- The zones of the plane shown, A to Z (a plane of its own is its own zone).
-local function Zones(_, root)
-    local plane = shownMap ~= Coords.WorldMap() and shownMap
-    if not plane then return end
-    local list = {}
-    for _, zone in ipairs(Coords.Zones(plane)) do list[#list + 1] = { map = zone.map, name = Name(zone.map) } end
-    table.sort(list, function(a, b) return a.name < b.name end)
-    for _, zone in ipairs(list) do Radio(root, zone.name, zone.map) end
+    local planes = {}
+    for _, plane in ipairs(Coords.Planes()) do planes[#planes + 1] = plane end
+    for _, plane in ipairs(Coords.Elsewhere()) do planes[#planes + 1] = plane end
+    for _, plane in ipairs(planes) do
+        root:CreateDivider()
+        Radio(root, Name(plane), plane)
+        local list = {}
+        for _, zone in ipairs(Coords.Zones(plane)) do
+            if zone.map ~= plane then list[#list + 1] = { map = zone.map, name = Name(zone.map) } end
+        end
+        table.sort(list, function(a, b) return a.name < b.name end)
+        for _, zone in ipairs(list) do Radio(root, "   " .. zone.name, zone.map) end
+    end
 end
 
 -- A kind's size kept, in the pin filter's steps (100 %: none kept).
@@ -199,7 +213,7 @@ local SIZED = { group = true, route = true, area = true }
 local function Filter(_, root)
     local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
     -- Scrolled only where the screen is lower than the list (the game's menu scrolls past that height alone).
-    local room = (tonumber(UIParent:GetHeight()) or 0) - TopBar.HEIGHT - 2 * TopBar.INSET
+    local room = (tonumber(UIParent:GetHeight()) or 0) - TopBar.Top() - 2 * TopBar.INSET
     if root.SetScrollMode then root:SetScrollMode(math.max(TopBar.LIST_HEIGHT, room)) end
     local known, sections = {}, {}
     for index, section in ipairs(ns.PIN_SECTIONS) do
@@ -234,6 +248,7 @@ end
 
 local function Dropdown(width, generator, text)
     local menu = CreateFrame("DropdownButton", nil, bar, "WowStyle1DropdownTemplate")
+    menu:SetHeight(TopBar.BUTTON_HEIGHT)
     menu:SetWidth(width)
     if text then menu:OverrideText(text) end
     menu:SetupMenu(ns.Guard(generator)) -- made once: each dropdown is made once
@@ -276,49 +291,85 @@ local function FollowBox()
     return box
 end
 
--- The bar over the canvas' top edge, above the map, its pins and the game's minimap (Canvas.LEVELS).
-function TopBar.Build(canvas)
-    bar = CreateFrame("Frame", nil, canvas:GetParent())
-    bar:SetPoint("TOPLEFT", canvas, "TOPLEFT", TopBar.INSET, -TopBar.INSET)
-    bar:SetPoint("TOPRIGHT", canvas, "TOPRIGHT", -TopBar.INSET, -TopBar.INSET)
-    bar:SetHeight(TopBar.BUTTON_HEIGHT)
-    bar:SetFrameLevel(canvas:GetFrameLevel() + 30)
-    logButton = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
-    logButton:SetSize(TopBar.BUTTON_WIDTH, TopBar.BUTTON_HEIGHT)
-    logButton:SetText(TopBar.TEXT.questLog)
-    logButton:SetPoint("LEFT")
-    logButton.title, logButton.tip = TopBar.TEXT.questLog, TopBar.TEXT.questLogTip
-    logButton:SetScript("OnClick", ns.Guard(Log))
-    logButton:SetScript("OnEnter", ns.Guard(Tip))
-    logButton:SetScript("OnLeave", GameTooltip_Hide)
-    buttons = {}
-    for _, key in ipairs(ns.VIEWS) do buttons[key] = ViewButton(key) end
-    continentMenu = Dropdown(TopBar.MENU_WIDTH, Continents)
-    zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones)
-    zoneMenu:SetPoint("LEFT", continentMenu, "RIGHT", TopBar.GAP, 0)
+local function Button(width, text, title, tip, click)
+    local button = CreateFrame("Button", nil, bar, "UIPanelButtonTemplate")
+    button:SetSize(width, TopBar.BUTTON_HEIGHT)
+    button:SetText(text)
+    button.title, button.tip = title, tip
+    button:SetScript("OnClick", ns.Guard(click))
+    button:SetScript("OnEnter", ns.Guard(Tip))
+    button:SetScript("OnLeave", GameTooltip_Hide)
+    return button
+end
+
+-- The controls in the map's title bar (Core's, made the first time the map filled the screen): over what the bar holds
+-- of Core's own (its title's click), the shade behind them; the right ones left of Core's Classic windows and buttons.
+local function Build()
+    local handle = ns.Window.handle
+    local title = handle and handle.bar
+    if bar or not title then return bar end
+    bar = CreateFrame("Frame", nil, title)
+    bar:SetAllPoints(title)
+    bar:SetFrameLevel(title:GetFrameLevel() + 5)
+    local shade = bar:CreateTexture(nil, "BACKGROUND")
+    shade:SetPoint("TOPLEFT")
+    shade:SetPoint("TOPRIGHT")
+    shade:SetHeight(TopBar.Top() + TopBar.SHADE)
+    shade:SetColorTexture(0, 0, 0, 1)
+    if rawget(_G, "CreateColor") and shade.SetGradient then
+        Core.Safe("bar", shade.SetGradient, shade, "VERTICAL", CreateColor(0, 0, 0, 0), CreateColor(0, 0, 0, TopBar.SHADE_ALPHA))
+    else
+        shade:SetAlpha(TopBar.SHADE_ALPHA / 2)
+    end
+    -- at the left: the quest log, the zone, the dungeons and a dungeon's floors
+    logButton = Button(TopBar.BUTTON_WIDTH, TopBar.TEXT.questLog, TopBar.TEXT.questLog, TopBar.TEXT.questLogTip, Log)
+    logButton:SetPoint("LEFT", TopBar.INSET, 0)
+    zoneMenu = Dropdown(TopBar.MENU_WIDTH, Zones, TopBar.TEXT.zones)
+    zoneMenu:SetPoint("LEFT", logButton, "RIGHT", TopBar.GAP * 2, 0)
     dungeonMenu = Dropdown(TopBar.DUNGEON_WIDTH, DungeonList, ns.Dungeons.TEXT.dungeons)
-    dungeonMenu:SetPoint("LEFT", zoneMenu, "RIGHT", TopBar.GAP * 3, 0)
+    dungeonMenu:SetPoint("LEFT", zoneMenu, "RIGHT", TopBar.GAP, 0)
     floorMenu = Dropdown(TopBar.FLOOR_WIDTH, FloorList, ns.Dungeons.TEXT.floor)
     floorMenu:SetPoint("LEFT", dungeonMenu, "RIGHT", TopBar.GAP, 0)
     floorMenu:Hide()
+    -- at the right, left of Core's: the view, drawing and planning, Follow me, the pins
     pinMenu = Dropdown(TopBar.PINS_WIDTH, Filter, TopBar.TEXT.pins)
-    pinMenu:SetPoint("RIGHT")
     followBox = FollowBox()
-    -- drawing and planning (DrawBar.lua): its button left of Follow me
-    local draw = ns.DrawBar.Button(bar)
-    draw:SetPoint("RIGHT", followBox, "LEFT", -TopBar.GAP * 3, 0)
+    viewButton = Button(TopBar.VIEW_WIDTH, "", "", "", Toggle)
+    viewButton.key = "view"
+    draw = ns.DrawBar.Button(bar)
+    -- the room between, for the search
+    gap = CreateFrame("Frame", nil, bar)
+    gap:SetPoint("TOP")
+    gap:SetPoint("BOTTOM")
+    gap:SetPoint("LEFT", floorMenu, "RIGHT", TopBar.GAP * 2, 0)
+    gap:SetPoint("RIGHT", draw, "LEFT", -TopBar.GAP * 2, 0)
     TopBar.Arrange()
     bar:Hide()
     return bar
 end
+TopBar.Build = function() end -- (made the first time the map fills the screen: Build)
 
--- In sight while the window fills the screen and stands there; its level over the canvas' again.
-function TopBar.SetShown(on, canvas)
+-- The pins' dropdown at the bar's right, left of Core's dropdown Classic windows (or its buttons): placed anew each
+-- time the bar shows (Core lays its own out at every refresh).
+local function Place()
+    local handle = ns.Window.handle
+    local stop = handle.edge and handle.edge.classic
+    if not (stop and stop:IsShown()) then stop = handle.buttons and handle.buttons.first end
+    pinMenu:ClearAllPoints()
+    if stop then pinMenu:SetPoint("RIGHT", stop, "LEFT", -TopBar.GAP * 3, 0) else pinMenu:SetPoint("RIGHT", -TopBar.INSET, 0) end
+end
+
+-- In sight while the window fills the screen and stands there; made the first time.
+function TopBar.SetShown(on)
+    if on then Build() end
     if not bar then return end
     if not on then ns.Safe("drawings", ns.DrawBar.Hide) end -- (the palette and its tool go with the bar)
-    if on and canvas then bar:SetFrameLevel(canvas:GetFrameLevel() + 30) end
-    bar:SetShown(on)
-    if on then TopBar.Update() end
+    bar:SetShown(on and true or false)
+    if on then
+        Place()
+        TopBar.Arrange()
+        TopBar.Update()
+    end
 end
 
 -- The selector says what the map shows now (after every layout of the full view).
@@ -339,10 +390,11 @@ function TopBar.Update()
         for _, each in ipairs(floors or {}) do if each.map == floor then named = each.name end end
         floorMenu:OverrideText(named or ns.Dungeons.TEXT.floor)
         floorMenu:SetShown(floors and #floors > 1 or false)
+        -- the search's room begins after the floors while they show
+        gap:SetPoint("LEFT", floorMenu:IsShown() and floorMenu or dungeonMenu, "RIGHT", TopBar.GAP * 2, 0)
     end
     if map == shownMap and zone == shownZone then return end
     shownMap, shownZone = map, zone
-    continentMenu:OverrideText(Name(map))
     zoneMenu:OverrideText(zone and Name(zone) or TopBar.TEXT.zones)
     zoneMenu:SetEnabled(camera.level ~= "world")
 end

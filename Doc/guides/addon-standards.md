@@ -212,6 +212,7 @@ that the game calls runs behind one:
 | A module's `OnLoad`, `OnLogin`, `OnLogout` | Core's start | stands it down; a module that stood down, in whichever step or at whichever door, gets no further step |
 | A frame's script, a hook (`HookScript`, `hooksecurefunc`), a timer, a menu's or a dialog's function | `ns.Guard(fn)` | stands its module down; nothing once it stood down |
 | The same in Core (its windows, the options, Sync, the data scheduler) | `Core.Guard(label, fn)` | a module's whose code it ran into stands down; Core's own is told once under the label, and the next call tries again |
+| A search field's doors: its keys, its list's rows, its answers (Saneroki, 2026-11-15) | `ns.Gently(label, fn)` (`Core.Gently` in Core) | told once under the label, nothing stands down, the next key tries again; the search itself in `ns.Safe`, its list saying `Core.SEARCH_FAILED` |
 | A message between a module's files (`ns.Fire`) | `ns.Safe`, each listener | told once, the others go on |
 | What slipped past every guard | the game's error window, where Core listens | stands its module down |
 

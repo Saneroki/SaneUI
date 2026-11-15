@@ -21,7 +21,8 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
      calls (a dialog's callback, the colour picker's functions, a canvas page's OnRefresh, OnDefault and
      OnCommit, a slash command). What passes:
        - ns.Guard(fn) (Core.Guard(label, fn) in Core), or a name the file set to one (also one made once and
-         kept: tips[key] = tips[key] or ns.Guard(...));
+         kept: tips[key] = tips[key] or ns.Guard(...)); a search field's doors ns.Gently(label, fn) (Core.Gently
+         in Core): the same, its error stands no module down;
        - a function whose one step is ns.Safe(...), ns.Guarded(...) or Core.Safe(...) (or a local name the
          file gave one of them), given there or by the name of a local function; one that must answer a
          value may give a fallback: function(...) return ns.Safe(...) or <a literal or a constant> end, the
@@ -212,7 +213,7 @@ FIELD = re.compile(r"\b(callback|cancelCallback|swatchFunc|cancelFunc|opacityFun
                    r"|\bSlashCmdList\s*(?:\.\s*\w+|\[[^\]\n]*\])\s*=(?!=)")
 GAMES = {"GameTooltip_Hide"}  # the game's own functions, which run none of our code
 FRAME_OWN = re.compile(r"[\w.]+\.(StartMoving|StopMovingOrSizing)")  # a frame's own methods, the game's too
-GUARD = re.compile(r"(ns|Core)\.Guard\(")
+GUARD = re.compile(r"(ns|Core)\.(?:Guard|Gently)\(")  # Gently: a search's door, its error stands nothing down
 STEPS = r"ns\.(?:Safe|Guarded)|Core\.Safe"  # a step whose error is caught
 # A value written out (a string's insides are blanks here): what a door takes instead of a function, or what
 # a function that runs nothing of ours answers. A guard's fallback may also be a constant by its name (List.ROW).
@@ -344,7 +345,7 @@ def check_guards(folders):
         text = path.read_text(encoding="utf-8")
         code, lines = blanked(text), text.splitlines()
         # Names set to a guard, also one made once and kept (tips[key] = tips[key] or ns.Guard(...)).
-        names = set(re.findall(r"([A-Za-z_][\w.]*(?:\[[\w.]+\])?)\s*=\s*(?:\1\s+or\s+)?(?:ns|Core)\.Guard\(", code))
+        names = set(re.findall(r"([A-Za-z_][\w.]*(?:\[[\w.]+\])?)\s*=\s*(?:\1\s+or\s+)?(?:ns|Core)\.(?:Guard|Gently)\(", code))
         # The file's own names for a step (local Guarded = ns.Guarded) are steps too.
         own = re.findall(r"\blocal\s+(\w+)\s*=\s*(?:" + STEPS + r")\s*(?:$|--|;)", code, re.M)
         steps = "|".join([STEPS] + [re.escape(name) for name in own])

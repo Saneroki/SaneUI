@@ -87,11 +87,15 @@ Markers.TEXT = {
     inPlan = "in %s",
     offerPlan = "%s shares the plan %s with you: %d markers, %d drawings.",
     share = "Share",
-    shareTip = "This marker, or all of yours in its zone, to your party or raid, or to your guild: they are asked whether to keep them.",
+    shareTip = "This marker, or all of yours in its zone, to your party or raid, to your guild, or to someone: they are asked whether to keep them.",
     shareOne = "This marker with your %s",
     shareZone = "Your %d markers in %s with your %s",
+    shareSomeone = "This marker with someone...",
+    shareZoneSomeone = "Your %d markers in %s with someone...",
+    shareWith = "Share with someone",
     party = "party", raid = "raid", guild = "guild",
     shared = "%d %s sent to your %s.", one = "marker", many = "markers",
+    sharedTo = "%d %s sent to %s.",
     offered = "Markers shared",
     offerOne = "%s shares a marker with you: %s.",
     offerMany = "%s shares %d markers with you: %s.",
@@ -558,13 +562,14 @@ function Markers.Row(marker)
         Clean(marker.text, Markers.TEXT_MOST) }, "\031")
 end
 
--- Markers sent to a channel of the wire, in as many blocks as they need; how many went.
-function Markers.Send(list, channel)
+-- Markers sent to a channel of the wire (WHISPER: to the player named target), in as many blocks as they need; how
+-- many went.
+function Markers.Send(list, channel, target)
     if not channel then return 0 end
     local sent, rows, size = 0, {}, 0
     local function Flush()
         if #rows == 0 then return end
-        if Wire.SendBlock(Markers.KIND, "1\030" .. table.concat(rows, "\030"), channel) then sent = sent + #rows end
+        if Wire.SendBlock(Markers.KIND, "1\030" .. table.concat(rows, "\030"), channel, target) then sent = sent + #rows end
         wipe(rows)
         size = 0
     end
@@ -578,12 +583,20 @@ function Markers.Send(list, channel)
     return sent
 end
 
-local function Told(count, word)
-    ns.Print(Markers.TEXT.shared:format(count, count == 1 and Markers.TEXT.one or Markers.TEXT.many, word))
+local function Told(count, word, someone)
+    ns.Print((someone and Markers.TEXT.sharedTo or Markers.TEXT.shared):format(count,
+        count == 1 and Markers.TEXT.one or Markers.TEXT.many, word))
 end
 
--- The card's Share: a menu of this marker, or all of yours on its map, to your raid or party, or to your guild (one
--- you are not in greyed).
+-- Markers to someone: the player asked for (Core.AskPlayer: the game's search of the players it knows), then sent.
+local function ToSomeone(list)
+    Core.AskPlayer(Markers.TEXT.shareWith, ns.Guard(function(name) Told(Markers.Send(list, "WHISPER", name), name, true) end))
+end
+Markers.ToSomeone = ToSomeone
+
+-- The card's Share: a menu of this marker, or all of yours on its map, to your raid or party, to your guild (one you
+-- are not in greyed), or to someone (Saneroki, 2026-11-15: "share the drawing with someone specific instead of the
+-- entire party or guild").
 function Markers.Share(button)
     local marker = opened
     if not marker or not rawget(_G, "MenuUtil") then return end
@@ -606,6 +619,10 @@ function Markers.Share(button)
                     ns.Guard(function() Told(Markers.Send(here, channel), word) end))
                 if not channel and all.SetEnabled then all:SetEnabled(false) end
             end
+        end
+        root:CreateButton(Markers.TEXT.shareSomeone, ns.Guard(function() ToSomeone({ marker }) end))
+        if #here > 1 then
+            root:CreateButton(Markers.TEXT.shareZoneSomeone:format(#here, zone), ns.Guard(function() ToSomeone(here) end))
         end
     end))
 end

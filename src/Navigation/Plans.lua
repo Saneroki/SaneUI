@@ -13,7 +13,8 @@ local _, ns = ...
 --      Plans.Visible(id)         whether a plan's things are drawn (its own switch)
 --      Plans.Drawings()          every drawing: { id, plan, map, kind, colour, width, points = { x, y, x, y, ... } }
 --      Plans.Add(drawing), Plans.Erase(drawing), Plans.Undo(), Plans.Clear(map)
---      Plans.Share(plan, channel)  the whole plan to "RAID", "PARTY" or "GUILD"; how many blocks went
+--      Plans.Share(plan, channel, target)  the whole plan to "RAID", "PARTY", "GUILD" or "WHISPER" (to target, a
+--                                  player's name); how many blocks went
 --      Plans.Read(sender, text)  a block heard: the share once all its parts are there (Markers asks about it)
 --      Plans.Keep(share)         a plan kept: one of the same origin replaced whole, else a new one
 --
@@ -281,8 +282,9 @@ end
 
 local stamp = 0 -- shares sent since the login
 
--- The whole plan to a channel of the wire, in parts of Plans.BLOCK bytes; how many parts went (0: none, no channel).
-function Plans.Share(plan, channel)
+-- The whole plan to a channel of the wire (WHISPER: to the player named target), in parts of Plans.BLOCK bytes; how
+-- many parts went (0: none, no channel).
+function Plans.Share(plan, channel, target)
     if not plan or not channel then return 0 end
     local markers, drawings = Plans.Holds(plan)
     local rows = {}
@@ -307,7 +309,7 @@ function Plans.Share(plan, channel)
         local head = table.concat({ "2", table.concat({ origin, Clean(plan.name, 60), index, #parts, share }, "\031") },
             "\030")
         local text = #each > 0 and head .. "\030" .. table.concat(each, "\030") or head
-        if Core.Wire.SendBlock(ns.Markers.KIND, text, channel) then sent = sent + 1 end
+        if Core.Wire.SendBlock(ns.Markers.KIND, text, channel, target) then sent = sent + 1 end
     end
     return sent
 end

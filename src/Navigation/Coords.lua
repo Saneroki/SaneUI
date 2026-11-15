@@ -123,6 +123,7 @@ end
 
 -- The continent a map lies on: itself, or the first of its parents that is one; nil when none is.
 function Coords.ContinentOf(map)
+    map = tonumber(map) -- (a map told as words: a find, a shared marker; Saneroki, 2026-11-15)
     if not map then return nil end
     local found = continentOf[map]
     if found ~= nil then return found or nil end
@@ -249,6 +250,7 @@ end
 -- The plane a map lies in: its continent's; on none, the map it lies in that sits straight on the world map, if that
 -- has a box and a place there (a zone of the world map's own, Zephras Isle); nil when it lies in none.
 function Coords.PlaneOf(map)
+    map = tonumber(map) -- (a map told as words: a find, a shared marker; Saneroki, 2026-11-15)
     if not map then return nil end
     local found = planeOf[map]
     if found ~= nil then return found or nil end

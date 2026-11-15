@@ -23,6 +23,7 @@ local Core = SaneUI.Core
 --                                           -- pool:Begin() a new round, pool:Done() hides the rest
 --      Core.Confirm(text, arg, yes)         -- the game's yes/no dialog (GENERIC_CONFIRMATION)
 --      Core.AskText(text, arg, accept, typed, done, letters)  -- a name typed (GENERIC_INPUT_BOX)
+--      Core.AskPlayer(title, done, accept)  -- a player searched for and taken: done(name) (below)
 --      Core.Font(name, base, size, flags)   -- a font of ours: base's file (the game's), our size
 --      Core.Sound(kit)                      -- one of the game's sounds (a SOUNDKIT name or number)
 --      Core.Caret(box, on)                  -- a blinking cursor of ours in an edit box (below)
@@ -271,6 +272,92 @@ function Core.AskText(text, arg, accept, typed, done, letters)
         box:HighlightText()
     end
     return dialog
+end
+
+-------------------------------------------------------------------------------
+--  A player asked for
+-------------------------------------------------------------------------------
+-- Asks for a player (Saneroki, 2026-11-15: "Someone opens up a input field where you can input and search for other
+-- players"): a small card of the kit, its title at its head, a field that searches the players the game knows while
+-- the name is typed (the game's own list under it, as in its whisper and mail fields: your group, your guild, your
+-- friends, those you spoke with; Tab and the arrows choose, Enter takes), and its Share (red: it sends) and Cancel.
+-- Any name may be typed (Name or Name-Realm). done(name) once one is taken, in Core.Safe; accept: the red button's
+-- word. One card, made at the first need; asked again while it shows, it asks anew.
+Core.ASK_PLAYER = {
+    accept = "Share",
+    cancel = Core.Word("CANCEL", "Cancel"),
+    hint = "Type a name: your group, guild, friends and those you spoke with show as you type; Tab chooses.",
+}
+local playerCard
+
+local function PlayerTaken(card)
+    local name = (card.box:GetText() or ""):match("^%s*(.-)%s*$")
+    if name == "" then return end
+    local done = card.done
+    card.done = nil
+    card:Hide()
+    if done then Core.Safe("player", done, name) end
+end
+
+local function PlayerCard()
+    if playerCard then return playerCard end
+    local Look = Core.Look
+    local card = CreateFrame("Frame", nil, UIParent)
+    card:SetSize(360, 150)
+    card:SetPoint("CENTER", 0, 140)
+    card:SetFrameStrata("DIALOG")
+    card:SetToplevel(true)
+    card:EnableMouse(true)
+    card.look = Look.Dress(card, "")
+    local inside = card.look.content
+    card.look.close:SetScript("OnClick", Core.Guard("player", function() card:Hide() end))
+    local box = CreateFrame("EditBox", nil, inside, "InputBoxTemplate, AutoCompleteEditBoxTemplate")
+    box:SetSize(300, 22)
+    box:SetPoint("TOP", 0, -10)
+    box:SetAutoFocus(false)
+    box:SetMaxLetters(60)
+    -- the game's own search of the players it knows, under the field
+    local auto = rawget(_G, "C_AutoComplete")
+    local lists = rawget(_G, "AUTOCOMPLETE_LIST")
+    local source = rawget(_G, "AutoCompleteEditBox_SetAutoCompleteSource")
+    if source and auto and auto.GetAutoCompleteResults and lists and lists.ALL then
+        source(box, auto.GetAutoCompleteResults, lists.ALL.include, lists.ALL.exclude)
+    end
+    box:HookScript("OnEnterPressed", Core.Gently("player search", function() PlayerTaken(card) end))
+    box:HookScript("OnEscapePressed", Core.Gently("player search", function() card:Hide() end))
+    card.box = box
+    local hint = inside:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    hint:SetPoint("TOPLEFT", box, "BOTTOMLEFT", -4, -6)
+    hint:SetPoint("TOPRIGHT", box, "BOTTOMRIGHT", 0, -6)
+    hint:SetJustifyH("LEFT")
+    hint:SetText(Core.ASK_PLAYER.hint)
+    card.accept = Look.Red(inside, Core.ASK_PLAYER.accept, 110, 26)
+    card.accept:SetPoint("BOTTOMRIGHT", inside, "BOTTOM", -4, 4)
+    card.accept:SetScript("OnClick", Core.Guard("player", function() PlayerTaken(card) end))
+    local cancel = CreateFrame("Button", nil, inside, "UIPanelButtonTemplate")
+    cancel:SetSize(110, 26)
+    cancel:SetText(Core.ASK_PLAYER.cancel)
+    cancel:SetPoint("BOTTOMLEFT", inside, "BOTTOM", 4, 4)
+    cancel:SetScript("OnClick", Core.Guard("player", function() card:Hide() end))
+    card:SetScript("OnHide", Core.Guard("player", function()
+        local hide = rawget(_G, "AutoComplete_HideIfAttachedTo")
+        if hide then pcall(hide, box) end
+        box:ClearFocus()
+    end))
+    card:Hide()
+    playerCard = card
+    return card
+end
+
+function Core.AskPlayer(title, done, accept)
+    local card = PlayerCard()
+    card.look.title:SetText(title or "")
+    card.accept:SetText(accept or Core.ASK_PLAYER.accept)
+    card.done = done
+    card.box:SetText("")
+    card:Show()
+    card.box:SetFocus()
+    return card
 end
 
 -------------------------------------------------------------------------------

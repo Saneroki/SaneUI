@@ -294,7 +294,7 @@ function Equipment.Build(frame)
     box:SetPoint("TOPRIGHT", -6, -6)
     box:SetAutoFocus(false)
     if box.Instructions then box.Instructions:SetText(TEXT.searchCharacters) end
-    box:HookScript("OnTextChanged", ns.Guard(function(self)
+    box:HookScript("OnTextChanged", ns.Gently("equipment search", function(self) -- (a search: gentle, its error stands no module down; Core.Gently)
         search = self:GetText() or ""
         Fill()
     end))

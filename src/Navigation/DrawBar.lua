@@ -43,9 +43,12 @@ DrawBar.TEXT = {
     shown = "Shown",
     rename = "Rename...",
     renameAsk = "The plan's new name:",
-    shareGroup = "Share with your %s",
-    shareGuild = "Share with your guild",
+    share = "Share",
+    shareParty = "Party", shareRaid = "Raid", shareGuild = "Guild", shareSomeone = "Someone...",
+    shareTip = "To your party or raid, to your guild, or to someone you name: they are asked whether to keep it.",
+    shareWith = "Share the plan %s with someone",
     shared = "The plan %s sent to your %s (%d %s).",
+    sharedTo = "The plan %s sent to %s (%d %s).",
     part = "part", parts = "parts",
     tooLarge = "The plan %s is too large to share: split it into smaller plans.",
     delete = "Delete...",
@@ -107,12 +110,36 @@ local function Group()
     return nil, ns.Markers.TEXT.party
 end
 
-local function Shared(plan, count, word)
+local function Shared(plan, count, word, someone)
     if count == 0 then
         return ns.Print(DrawBar.TEXT.tooLarge:format(plan.name or ""))
     end
-    ns.Print(DrawBar.TEXT.shared:format(plan.name or "", word, count, count == 1 and DrawBar.TEXT.part or DrawBar.TEXT.parts))
+    ns.Print((someone and DrawBar.TEXT.sharedTo or DrawBar.TEXT.shared):format(plan.name or "", word, count,
+        count == 1 and DrawBar.TEXT.part or DrawBar.TEXT.parts))
 end
+
+-- A plan's Share (Saneroki, 2026-11-15: "Share option should have the party, guild and someone options"): Party (or
+-- Raid, in one), Guild (each greyed outside one), Someone: the player asked for (Core.AskPlayer: the game's search of
+-- the players it knows as the name is typed), the plan sent to them alone.
+local function ShareMenu(item, plan)
+    local Plans = ns.Plans
+    local share = item:CreateButton(DrawBar.TEXT.share)
+    local channel, word = Group()
+    local group = share:CreateButton(channel == "RAID" and DrawBar.TEXT.shareRaid or DrawBar.TEXT.shareParty,
+        ns.Guard(function() Shared(plan, Plans.Share(plan, channel), word) end))
+    if not channel and group.SetEnabled then group:SetEnabled(false) end
+    local guild = Core.Ask(rawget(_G, "IsInGuild")) and "GUILD" or nil
+    local toGuild = share:CreateButton(DrawBar.TEXT.shareGuild,
+        ns.Guard(function() Shared(plan, Plans.Share(plan, guild), ns.Markers.TEXT.guild) end))
+    if not guild and toGuild.SetEnabled then toGuild:SetEnabled(false) end
+    share:CreateButton(DrawBar.TEXT.shareSomeone, ns.Guard(function()
+        Core.AskPlayer(DrawBar.TEXT.shareWith:format(plan.name or ""), ns.Guard(function(name)
+            Shared(plan, Plans.Share(plan, "WHISPER", name), name, true)
+        end))
+    end))
+    return share
+end
+DrawBar.ShareMenu = ShareMenu
 
 -- Each plan: a radio (the active one), its own menu under it; then a new one.
 local function PlanMenu(_, root)
@@ -127,14 +154,7 @@ local function PlanMenu(_, root)
         item:CreateButton(DrawBar.TEXT.rename, ns.Guard(function()
             Core.AskText(DrawBar.TEXT.renameAsk, nil, nil, plan.name, ns.Guard(function(text) Plans.Rename(plan, text) end), 60)
         end))
-        local channel, word = Group()
-        local group = item:CreateButton(DrawBar.TEXT.shareGroup:format(word),
-            ns.Guard(function() Shared(plan, Plans.Share(plan, channel), word) end))
-        if not channel and group.SetEnabled then group:SetEnabled(false) end
-        local guild = Core.Ask(rawget(_G, "IsInGuild")) and "GUILD" or nil
-        local toGuild = item:CreateButton(DrawBar.TEXT.shareGuild,
-            ns.Guard(function() Shared(plan, Plans.Share(plan, guild), ns.Markers.TEXT.guild) end))
-        if not guild and toGuild.SetEnabled then toGuild:SetEnabled(false) end
+        ShareMenu(item, plan)
         item:CreateButton(DrawBar.TEXT.delete, ns.Guard(function()
             Core.Confirm(DrawBar.TEXT.deleteAsk, plan.name or "", ns.Guard(function() Plans.Remove(plan) end))
         end))
@@ -190,7 +210,7 @@ local function Build()
     palette:EnableMouse(true)
     palette:SetMovable(true)
     local bar = ns.TopBar
-    palette:SetPoint("TOPRIGHT", canvas or UIParent, "TOPRIGHT", -bar.INSET, -(2 * bar.INSET + bar.BUTTON_HEIGHT))
+    palette:SetPoint("TOPRIGHT", canvas or UIParent, "TOPRIGHT", -bar.INSET, -(bar.Top() + bar.INSET))
     local look = Look.Dress(palette, DrawBar.TEXT.title)
     look.close:SetScript("OnClick", ns.Guard(DrawBar.Close))
     look.head:EnableMouse(true)

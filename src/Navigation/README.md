@@ -334,14 +334,22 @@ and shows them on the map or puts the map pin there. The plan is in
   - **a typo** is put right where nothing is found: *peaceblossom* searches for *peacebloom* and says so at the top.
 
   The keys in the field: **Up** and **Down** light a row (round at the ends; in the empty field Up brings back what you
-  searched before), **Tab** the next, **Page Up**/**Page Down** a page; **Enter** takes the lit row, else the first:
-  its places glow on the map as pins and the map goes to the nearest (a zone or a dungeon: its map whole); an item or a
-  spell lists where it comes from; **Shift-Enter** puts the game's map pin on the nearest; **Ctrl-Enter** keeps the list
-  open; **Esc** closes the list, again empties the field and takes the pins away. The mouse: a click is Enter, Shift
-  and a click Shift-Enter (on an item, its link into the chat), a right click its menu (on the map, the map pin, where to
-  get an item, its link, a place's link, whisper and invite); resting on a row shows its tooltip and its places on the
-  map without moving it. What you pick is remembered and comes a little higher the next time. A click anywhere else
-  gives the keys back to your character.
+  searched before), **Tab** the next, **Page Up**/**Page Down** a page; **Enter** takes the lit row, else the first,
+  and lists **what to do with it** under it (Saneroki, 2026-11-15: "so you can first select the thing and then select
+  what to do with the thing"), its places glowing on the map meanwhile: **Show on the map** (its places as pins, the map
+  at the nearest; with *nearest* asked, the map pin there too), **Put the map pin there**, for an item **Where to get
+  it**, **What drops it**, **Who sells it**, **Where to farm it** and **Link in the chat**, for a spell **Who teaches
+  it**, for a herb, an ore or a chest **Where to farm it**, for a place **The map pin there, its link in the chat**,
+  for a quest of the log **In the quest log**, for a member or a friend **Whisper** and **Invite**; the keys choose
+  among them and Enter does it. A zone or a dungeon has one thing to do and does it at once (its map whole).
+  **Shift-Enter** puts the game's map pin on a find's nearest at once; **Esc** goes back from what to do to the finds,
+  then closes the list, then empties the field and takes the pins away. The mouse: a click or a right click is Enter,
+  Shift and a click Shift-Enter (on an item, its link into the chat); resting on a row shows its tooltip and its places
+  on the map without moving it. The list reaches down as far as the screen lets it, and where more finds are than fit,
+  a **scroll bar** at its right (drag its thumb, click above or below it for a page; the wheel moves three lines).
+  What you pick is remembered and comes a little higher the next time. A click anywhere else gives the keys back to
+  your character. A search that runs into an error says so in the list and stops nothing: the map goes on, and the
+  next key searches again (the error is in `/sane errors`).
 - **Your own markers** (Saneroki, 2026-11-15): **Alt and a click** on the map (small or full) puts a marker there and
   opens its card: write its title and its description, pick its icon (the game's eight raid marks, a chest, a quest's
   !, a herb, an ore, a skull, an inn), Save (Enter in the title too) or Cancel (a new one cancelled goes again). On the
@@ -361,7 +369,9 @@ and shows them on the map or puts the map pin there. The plan is in
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
   - **Plans:** what you draw and mark goes into the **plan** chosen in the palette's dropdown (*My markers* at first;
     your earlier markers are in it). Each plan in the dropdown has its own menu: **Shown** (its markers and drawings
-    shown or hidden as one), **Rename**, **Share** with your party (your raid in a raid) or your guild, **Delete** (with
+    shown or hidden as one), **Rename**, **Share**: **Party** (**Raid** in a raid), **Guild** (each greyed outside one) or
+    **Someone...**, which asks for a player (type a name: your group, guild, friends and those you spoke with show
+    under the field as you type, the game's own search, Tab chooses) and sends the plan to that player alone, **Delete** (with
     all it holds, asked first); **New plan** makes another and chooses it. A plan shared goes whole, its markers and
     drawings, and whoever gets it is asked (who shares which plan, how many markers and drawings) and keeps it as a plan
     of its own, from you; shared again (after changes), it replaces their copy.
@@ -369,12 +379,19 @@ and shows them on the map or puts the map pin there. The plan is in
     floor, or the zone in the map's middle), asked first.
   - Closing the palette (its X, Esc, the map going small) puts the tool away; Alt and a click still puts a marker.
 - **Sharing markers** (Saneroki, 2026-11-15): the card's fifth button, **Share**: this marker, or all of yours on its
-  map, with your party (your raid in a raid) or your guild; one you are not in is greyed. Whoever gets them sees a
+  map, with your party (your raid in a raid), your guild (one you are not in is greyed) or **someone**: a player you
+  name, asked for as a plan's *Someone...* is. Whoever gets them sees a
   small card (who shares what, the first titles, the zone) and keeps them only with **Keep**; kept, they stand on
   their map like their own, *from* the one who shared them on their card and tooltip. A marker its maker shares again
   (after an edit or a move) changes the copy you kept, never adds a second one. The setting *Markers others share*
   (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
-- **The map selector** on the bar: the world, a continent or Zephras Isle, then a zone of it.
+- **The full map's title bar** (Saneroki, 2026-11-15: "Let the map view go to the very top behind the titleba so it is
+  truely fullscreen"): the map fills the whole screen, up behind the title bar, which holds its controls with a soft
+  shade behind them: at the left **Quest Log**, **Zone** and **Dungeons** (and a dungeon's floors), the search in the
+  middle, at the right the view's button, **Draw and plan**, **Follow me** and **Pins**, then *Classic windows* and the
+  bar's own buttons. No title words, and on the full screen no X: the arrow down takes the map back to the corner.
+- **Zone** on the bar: the world, then every continent (a click shows it whole) with its zones under it, A to Z, and
+  Zephras Isle; it says the zone shown. (The dropdown of continents went: Saneroki, 2026-11-15.)
 - **Dungeons** on the bar: every dungeon and raid the game has a map of, and those Core's data has a map of
   (26 of Forever's: the classic dungeons and raids, each floor in the game's own map art), A to Z; chosen, its map
   over the map, and beside it its floors; each floor opens whole, under the bar and beside the quest log, so the
@@ -491,11 +508,13 @@ and shows them on the map or puts the map pin there. The plan is in
   time comes from your own pace on it, before that from your character's last flights; a ship's from its
   timetable; the tram's from the game's own. A `/reload` in the air finds the flight again. *Your trip on screen*
   in the settings switches it off.
-- **Map view** (the buttons on the full map's bar, or the setting on the page *Navigation*): *Parchment*,
+- **Map view** (the one button on the full map's bar, *Blended* and *Scrying* in turn: Saneroki, 2026-11-15, "Blended
+  and scrying will be one button that just toggles the map views"; *Parchment* in the setting on the page
+  *Navigation*): *Parchment*,
   *Blended* and *Scrying*, for both views and at every zoom (in the code `sketches`, `blend`, `terrain`). The map
   starts as *Scrying*. *Blended* is Parchment out to a zone's level and Scrying close in, the maps fading out over the
   land in between. A view not offered (*Overlay* and *Atlas*, which are gone) falls back to Scrying.
-  In Retail, until its data comes, Parchment is the one view: the map simply is that, with no view buttons on the bar
+  In Retail, until its data comes, Parchment is the one view: the map simply is that, with no view button on the bar
   and no setting.
 - **The game's own windows:** the full map's dropdown *Classic windows* offers the game's minimap and map, each
   kept once chosen (ticked; chosen again, ours comes back), as the switches *Show the game's minimap* and *Show
@@ -862,13 +881,18 @@ and shows them on the map or puts the map pin there. The plan is in
   game does not know yet comes in by `ITEM_DATA_LOAD_RESULT` (`missing`). The lab's scene `questlog` shows it all; abandon
   after the game's own question (`GENERIC_CONFIRMATION`); never the quest panels of the game's map (their
   details window is opened by the game's panel manager, which our call would leave tainted).
-- **TopBar** (`TopBar.lua`): over the full map's top: the quest log's button, the views, the map selector (the
-  game's dropdowns, radio entries of the world, its continents and Zephras Isle, the zones of the one shown A to
-  Z, the isle itself on the isle), the dungeons and the floors of the one shown, the box *Follow me* (the game's
-  `UICheckButtonTemplate`, its words between it and the pin filter; the setting `followMap`) and the pin filter
-  (checkboxes); it says what the map shows after each layout. With one view alone (`ns.Several`) it has no view
-  buttons, the map selector right of the quest log's. The view buttons are `TopBar.VIEW_WIDTH` wide and the
-  pin filter `TopBar.PINS_WIDTH`, so the whole bar fits a screen 1366 units wide (1080p at the game's scale).
+- **TopBar** (`TopBar.lua`): the full map's controls in Core's title bar (`handle.bar`), made the first time the
+  window fills the screen, a frame over the bar's own (its level + 5) with a shade (black, `TopBar.SHADE_ALPHA` at the
+  top to none `TopBar.SHADE` units under the bar). The map reaches up behind it: Core's window option `under` (the
+  content from the frame's top while full; the bar over it at `Core.Window.UNDER`), `untitled` (no title words), and
+  `Window.FullSize` the screen's whole height. Left: the quest log's button, the zone dropdown (radio entries of the
+  world, then each plane, `Coords.Planes` and `Coords.Elsewhere`, with its zones under it, A to Z), the dungeons and the
+  floors of the one shown. Right, from Core's *Classic windows* (or its first button) leftwards (`Place`, anew each
+  time it shows): the pin filter (checkboxes), the box *Follow me* (the game's `UICheckButtonTemplate`; the setting
+  `followMap`), the view's button (`Other`: Blended and Scrying in turn, `Core.Set(ns.name, "view", ...)`; shown only
+  while both are offered) and Draw and plan. `TopBar.Gap()` is the room between, where the search stands
+  (`FindBox.lua`); `TopBar.Top()` the bar's height, under which the zone's name (`Label.lua`), a dungeon's floor
+  (`Dungeons.lua`, `Room`) and the palette (`DrawBar.lua`) stand. It says what the map shows after each layout.
 - **The search** (`Find.lua`, no frames; `FindBox.lua`): what can be found is read once, at the first search (the field
   taken), a part per frame out of a fight, as Core's jobs over its sets: the NPCs that stand somewhere (their *Spawns*
   or *CreatureSpawns*), the objects with spawns, *Places*, the items that come from somewhere (sold: *Vendors*; given to
@@ -940,10 +964,19 @@ and shows them on the map or puts the map pin there. The plan is in
   share's own stamp; the points as three letters of base 36 each; heard (`Plans.Read`) the parts are put together by
   sender, origin and stamp (`Plans.GATHERING` at once), then asked about on Markers' card, kept by `Plans.Keep`.
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
-  docked hook, `FindBox.SetShown`), in its middle, as wide as the room between the title and the buttons leaves
-  (`FindBox.WIDTH` at most); on Core's skin (round ends, the gold trim); the list under it on the same skin, strata
-  `DIALOG`, `FindBox.ROWS` lines at once, the wheel for more; the distances and arrows looked at every `FindBox.TICK`
-  while it shows. A key binding (`Bindings.xml`, `SANEUI_MAP_FIND`) and `/sane map find` fill the screen first and take
+  docked hook, `FindBox.SetShown`), in the middle of the room the bar's controls leave (`TopBar.Gap`, laid anew when it
+  changes), as wide as that room less `FindBox.ROOM` at each side (`FindBox.WIDTH` at most, `FindBox.LEAST` at least);
+  on Core's skin (round ends, the gold trim); the list under it on the same skin, strata `DIALOG`, as many lines as fit
+  down to the screen's bottom (`Room`: less `FindBox.MARGIN` and the foot), the wheel for more, and where they do not
+  all fit a scroll bar at its right of the game's thin one's atlases (`minimal-scrollbar-track-*`,
+  `minimal-scrollbar-small-thumb-*`: `Scroller`, `Scroll`; the thumb dragged in the list's `OnUpdate`, a click on the
+  track a page); the distances and arrows looked at every `FindBox.TICK` while it shows. A find taken (`Take`) puts
+  the list in its second state, `picked`: the find at its top, a title, and a row per thing to do (`Acts`: `{ act,
+  text, icon, run }`, the game's icons `FindBox.ACT_ICONS`); `Chosen` runs a thing to do or takes a find, `Back` (Esc)
+  goes back. Every door of the field and its list is `ns.Gently("map search", ...)` (Core's gentle guard: an error noted
+  and told once, Navigation not stood down), the search itself runs in `ns.Safe` (`Ask`, `Answered`): one that fails
+  shows `Core.SEARCH_FAILED` in the list (`Failed`); Core's jobs of the search tell their end also after an error
+  (`Steps.Run`'s `done`), so the reading goes on with the next set and the close search's list says it failed. A key binding (`Bindings.xml`, `SANEUI_MAP_FIND`) and `/sane map find` fill the screen first and take
   the field once it stands. `GLOBAL_MOUSE_DOWN` elsewhere clears the field's focus.
 - **Clicks and pings** (`Canvas.lua`, `Ping.lua`, no frames of its own): every click on the map and on a pin comes to
   `Canvas` (a pin's press and release are the map's, `Canvas.Release(button, pin)`): Ctrl puts the map pin at once;
@@ -1399,6 +1432,18 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the title bar, the search's second step and its scroll bar, searches that stop nothing, sharing with
+  someone:** Saneroki: "Let the map view go to the very top behind the titleba so it is truely fullscreen. Remove the
+  Parchment button and the "Map" word from the titlebar. We don't need the drop down for "azeroth, Eastern Kingdom,
+  Kalimdor" Put the dropdown for the zones, dungeons and pins and the questlog, blended scrying into the titlebar.
+  Blended and scrying will be one button that just toggles the map views" (`TopBar.lua` in Core's title bar, Core's
+  `under`, `untitled`). "The search fields everywhere in our addon needs to have a very greacefull error handeling.
+  Right now I had issues that it does crash the entire navigation module" (a map told as words in `Coords.ContinentOf`
+  made a search stand Navigation down; `ns.Gently`, `Core.SEARCH_FAILED`). "When you hit enter or click on a search
+  item in the map search it should show as new selectables the options like: Show on map, put pin there, what drops
+  it, where to get it etc" (`FindBox.Take`, `Acts`; the row menu went). "Share option should have the party, guild and
+  someone options" (`Core.AskPlayer`, `Plans.Share(plan, "WHISPER", name)`). "The search field needs to show clearly
+  that it is scrollable" (`FindBox.Scroller`, as tall as fits).
 - **2026-11-15, the small map's face; the retired flight points:** Saneroki: "The current time, zone name / area name
   and the minimap bag should only be visible on the minimap on mouse over. Put the time at the top center of the
   minimap and the zone name in the center bottom" (`Satchel.face`, `Satchel.Hover`, the canvas' tracker). "There are

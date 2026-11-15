@@ -380,10 +380,9 @@ function Next()
     end
     if job[1] == "items" then
         if not (Core.Steps and Core.Steps.Run) then Items() return Next() end
-        Core.Steps.Run("map search: items", function()
-            Items()
-            Core.Safe("map search", Next)
-        end)
+        -- (done: told also where the job ran into an error, so the search goes on with the next set)
+        Core.Steps.Run({ name = "map search: items", label = "Navigation: map search",
+                         done = function() Core.Safe("map search", Next) end }, Items)
         return
     end
     local set, fn = job[1], job[2]
@@ -1345,7 +1344,13 @@ local function Close(asked, done)
     if closeJob then closeJob:Stop() end
     local set = asked.sets and asked.sets[1]
     if not set or #set == 0 or not (Core.Steps and Core.Steps.Run) then return done(nil) end
-    closeJob = Core.Steps.Run("map search: close", function()
+    -- (an error in the job: the list says the search failed; ns.FindBox shows it)
+    local function Ended(problem)
+        if problem == nil then return end
+        closeJob = nil
+        Core.Safe("map search", done, { failed = true, count = 0 })
+    end
+    closeJob = Core.Steps.Run({ name = "map search: close", label = "Navigation: map search", done = Ended }, function()
         local rows = {}
         for _, entry in ipairs(index) do
             local total = 0

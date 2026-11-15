@@ -76,9 +76,10 @@ local function Rest(on)
     handle:Hover(false) -- resting, its grip goes too
 end
 
--- The canvas' size once the window fills the screen: the screen but the title bar.
+-- The canvas' size once the window fills the screen: all of it, the title bar over the map (Saneroki, 2026-11-15:
+-- "Let the map view go to the very top behind the titlebar so it is truely fullscreen").
 function Window.FullSize()
-    return UIParent:GetWidth(), UIParent:GetHeight() - Core.Window.BAR
+    return UIParent:GetWidth(), UIParent:GetHeight()
 end
 
 -- The window stands, small or full: that view's camera, and the map at its size; small with the game's own
@@ -125,8 +126,7 @@ local function Filled(on, width, height)
     ns.TopBar.SetShown(false)
     ns.Safe("map search", ns.FindBox.SetShown, false)
     ns.Dungeons.Close()
-    local top = on and Core.Window.BAR or 0 -- full, the title bar is over the map
-    ns.Canvas.Morph(on and full or small, width or 0, (height or 0) - top)
+    ns.Canvas.Morph(on and full or small, width or 0, height or 0) -- (full, the title bar stands over the map)
 end
 
 local function Moving(share)
@@ -186,6 +186,7 @@ function Window.Build()
     inside = CreateFrame("Frame", nil, frame)
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options, content = inside, classic = CLASSIC,
+        under = true, untitled = true, -- full, the map under the title bar, which holds its controls (TopBar.lua)
         first = { dock = "TOPRIGHT", width = Window.WIDTH, height = Window.HEIGHT },
         minWidth = Window.WIDTH / 2, minHeight = Window.HEIGHT / 2,
         grip = "hover", usable = function() return not resting end,

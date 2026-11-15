@@ -536,7 +536,7 @@ function Roster.Build(frame)
     box:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", -2, -6)
     box:SetAutoFocus(false)
     if box.Instructions then box.Instructions:SetText(TEXT.searchRoster) end
-    box:HookScript("OnTextChanged", ns.Guard(function(self)
+    box:HookScript("OnTextChanged", ns.Gently("roster search", function(self) -- (a search: gentle, its error stands no module down; Core.Gently)
         search = self:GetText() or ""
         Fill()
     end))

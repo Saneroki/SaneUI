@@ -414,7 +414,7 @@ local function Build()
     Core.Look.Search(search)
     local hint = rawget(search, "Instructions") -- the game's grey words in the empty box
     if type(hint) == "table" then hint:SetText(TEXT.search) end
-    search:HookScript("OnTextChanged", Core.Guard("icons", function(_, user)
+    search:HookScript("OnTextChanged", Core.Gently("icon search", function(_, user) -- (a search: gentle, its error stands no module down; Core.Gently)
         if not user then return end
         typed = GetTime()
         Icons.later()

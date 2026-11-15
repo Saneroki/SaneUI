@@ -68,6 +68,9 @@ local Core = SaneUI.Core
 --          bare = function() end,       -- its title bar without its buttons right now? (the quest log has none)
 --          barHeight = 22,              -- its title bar's height, for a window that wants its words closer to what
 --                                       -- it holds (Window.BAR)
+--          under = true,                -- full, what it holds reaches up behind its title bar, which stands over it
+--                                       -- (Navigation's map: truly the whole screen; Window.UNDER its level)
+--          untitled = true,             -- no words on its title bar (its name still on its box in Edit Mode)
 --          help = function() end,       -- the question mark on its full screen: a tour of what it shows
 --          dragDocked = true,           -- its title bar moves it docked at a screen edge too (not in Edit Mode)
 --          escape = "close",            -- Esc closes it, small or full, as the game's panels close (close, else
@@ -158,6 +161,7 @@ local Window = {}
 Core.Window = Window
 
 Window.BAR, Window.BAR_LEVEL = 32, 20 -- the title bar's height; how far above the window (over what it holds)
+Window.UNDER = 60 -- the title bar's level over a window whose content reaches up behind it (under: over its layers)
 Window.FULL_BAR = 44 -- the title bar's height while the window fills the screen: the top bar's tabs in its middle
 Window.DRAG_ZONES = { CENTER = true } -- where a title bar's drag, outside Edit Mode, may dock a window
 Window.BUTTON, Window.BUTTON_INSET = 24, 4 -- the buttons' size (the game's close button's); from the bar's right
@@ -741,7 +745,7 @@ end
 -- The window's title: its width on the bar, the click that opens the search, as long as its words.
 local function Title(window)
     local bar, search = window.bar, window.options.search
-    bar.title:SetText(window.options.title or "")
+    bar.title:SetText(not window.options.untitled and window.options.title or "")
     bar.find:SetWidth(Window.TEXT_INSET * 2 + (search and Window.GLASS + 4 or 0) + math.max(bar.title:GetStringWidth() or 0, 40))
 end
 
@@ -764,7 +768,8 @@ local function Bar(window)
     bar:SetPoint("TOPLEFT")
     bar:SetPoint("TOPRIGHT")
     bar:SetHeight(BarHeight(window))
-    bar:SetFrameLevel(frame:GetFrameLevel() + Window.BAR_LEVEL)
+    -- (over what the window holds; one whose content reaches up behind it far over its layers: Window.UNDER)
+    bar:SetFrameLevel(frame:GetFrameLevel() + (options.under and Window.UNDER or Window.BAR_LEVEL))
     local line = Core.Look.Line(bar, 0.5)
     line:SetPoint("BOTTOMLEFT", Window.BUTTON_INSET, 0)
     line:SetPoint("BOTTOMRIGHT", -Window.BUTTON_INSET, 0)
@@ -798,8 +803,9 @@ local function Bar(window)
     box:Hide()
     local instructions = rawget(box, "Instructions") -- the template's words in an empty box
     if type(instructions) == "table" and instructions.SetText then instructions:SetText(Window.TEXT.search) end
-    box:HookScript("OnTextChanged", Core.Guard("window", function(self) Searched(window, self:GetText()) end))
-    box:HookScript("OnEditFocusLost", Core.Guard("window", function(self)
+    -- (a search: gentle, its error stands no module down; Core.Gently)
+    box:HookScript("OnTextChanged", Core.Gently("window search", function(self) Searched(window, self:GetText()) end))
+    box:HookScript("OnEditFocusLost", Core.Gently("window search", function(self)
         if self:GetText() == "" then Core.Safe("window", Search, window, false) end
     end))
     box:HookScript("OnEscapePressed", function() Core.Safe("window", Search, window, false) end)
@@ -837,10 +843,13 @@ local function Buttons(window)
     buttons:SetPoint("RIGHT", window.bar, "RIGHT", -Window.BUTTON_INSET, 0)
     buttons:SetSize(Window.BUTTON, Window.BUTTON)
     local close = CreateFrame("Button", nil, buttons, "UIPanelCloseButtonNoScripts")
+    close:SetSize(Window.BUTTON, Window.BUTTON) -- (the same size as the squares beside it)
     close:SetScript("OnClick", function() Core.Safe("window", Close, window) end)
+    window.close = close
     buttons.list = { close }
     if window.edge then
         local full = CreateFrame("Frame", nil, buttons, "MaximizeMinimizeButtonFrameTemplate")
+        full:SetSize(Window.BUTTON, Window.BUTTON) -- (the template has no size: the squares')
         full:SetOnMaximizedCallback(function() Core.Safe("window", Full, window, true) end)
         full:SetOnMinimizedCallback(function() Core.Safe("window", Full, window, false) end)
         window.full = full
@@ -877,9 +886,14 @@ local function Pad(window)
     return Core.Look.BAND
 end
 
+-- Whether what a window holds reaches up behind its title bar now (under, while it fills the screen).
+local function Under(window)
+    return window.options.under and window.edge and window.edge.full and true or false
+end
+
 local function Inside(window, bar)
     local pad = Pad(window)
-    local top = (bar and BarHeight(window) or 0) + pad
+    local top = (bar and not Under(window) and BarHeight(window) or 0) + pad
     if top == window.top and pad == window.pad then return end
     window.top, window.pad = top, pad
     window.inside:ClearAllPoints()
@@ -935,6 +949,9 @@ function methods:Refresh()
         full:SetShown(edge.settings.expand and not edge.off and true or false)
         if edge.full then full:Maximize(true, true) else full:Minimize(true, true) end
     end
+    -- Full, the arrow down alone brings it back: no close button beside it (Saneroki, 2026-11-15: "We have 2 red
+    -- buttons for "closing" the arrow down and the x. Remove the x on the fullscreens")
+    if self.close then self.close:SetShown(not (edge and edge.full and full and full:IsShown())) end
     if self.settings then
         local whole = edge.full and true or false
         self.settings:SetShown(whole)

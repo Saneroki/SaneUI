@@ -216,7 +216,7 @@ local function MakeList(self)
     search:SetPoint("TOPLEFT", 6, -4)
     -- The game tells of every SetText too, ours in Init and its clear button's (without userInput):
     -- the list is filtered anew only when the words are other than those it was filtered by.
-    search:HookScript("OnTextChanged", Core.Guard("options", function(box)
+    search:HookScript("OnTextChanged", Core.Gently("options search", function(box) -- (a search: gentle, its error stands no module down; Core.Gently)
         local text = box:GetText() or ""
         if text == filters.search then return end
         filters.search = text

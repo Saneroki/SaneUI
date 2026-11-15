@@ -239,8 +239,8 @@ function Box:Line(index)
     line.text:SetPoint("RIGHT", line, "RIGHT", -4, 0)
     line.text:SetJustifyH("LEFT")
     line.text:SetWordWrap(false)
-    line:SetScript("OnClick", ns.Guard(function(button) self:Pick(button.entry) end))
-    line:SetScript("OnEnter", ns.Guard(function(button)
+    line:SetScript("OnClick", ns.Gently("aura search", function(button) self:Pick(button.entry) end))
+    line:SetScript("OnEnter", ns.Gently("aura search", function(button)
         if button.entry then Search.Tip(button, button.entry.id, button.entry.name) end
     end))
     line:SetScript("OnLeave", GameTooltip_Hide)
@@ -342,9 +342,9 @@ function Search.Box(parent, x, y, opts)
                                 most = opts.lines or Search.FIND.lines, own = opts.box == nil }, Box)
     local box, words = opts.box, nil
     -- A box of its own takes the scripts; one handed over keeps its own and gets these after them.
-    local Script = function(frame, name, fn) frame:SetScript(name, fn) end -- guarded: every fn below is ns.Guard's
+    local Script = function(frame, name, fn) frame:SetScript(name, fn) end -- guarded: every fn below is ns.Gently's (a search)
     if box then
-        Script = function(frame, name, fn) frame:HookScript(name, fn) end -- guarded: every fn below is ns.Guard's
+        Script = function(frame, name, fn) frame:HookScript(name, fn) end -- guarded: every fn below is ns.Gently's (a search)
     else
         words = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         words:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
@@ -356,13 +356,13 @@ function Search.Box(parent, x, y, opts)
     end
     self.keys = Core.Fuzzy.Keys(box)
     local later = Core.Later(function() ns.Safe(opts.label, Box.Run, self) end, Search.WAIT, "Combat: " .. opts.label)
-    Script(box, "OnTextChanged", ns.Guard(function(_, typed) if typed then later() end end))
-    Script(box, "OnEnterPressed", ns.Guard(function(edit)
+    Script(box, "OnTextChanged", ns.Gently("aura search", function(_, typed) if typed then later() end end))
+    Script(box, "OnEnterPressed", ns.Gently("aura search", function(edit)
         if self.keys:Take() then return end -- the one lit by the arrows, as a click
         if self.first then return self:Pick(self.first) end
         edit:ClearFocus()
     end))
-    Script(box, "OnEscapePressed", ns.Guard(function()
+    Script(box, "OnEscapePressed", ns.Gently("aura search", function()
         if self.own then self:Clear() else self:Show(nil) end
     end))
     local finder = CreateFrame("Frame", nil, parent)

@@ -186,7 +186,7 @@ function Friends.Build(holder)
     search:SetHeight(20)
     -- The game tells of every SetText too (ours from the full window's box among them): the list is asked
     -- anew only when the words are other than those it was given.
-    search:HookScript("OnTextChanged", ns.Guard(function(box)
+    search:HookScript("OnTextChanged", ns.Gently("friends search", function(box) -- (a search: gentle, its error stands no module down; Core.Gently)
         local text = box:GetText() or ""
         if text == typed then return end
         typed = text

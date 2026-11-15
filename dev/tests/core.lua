@@ -1373,6 +1373,27 @@ local lent = Core.NewModule("SaneUI_Lent", "Lent")
 Core.Guard("a window", function() error("Interface/AddOns/SaneUI_Lent/Lent.lua:4: a hook of the module broke", 0) end)()
 check(lent.off and Core.errors["Lent: it stopped"], "an error that ran into a module's code stands that module down")
 Core.errors["a window"], Core.errors["Lent: it stopped"] = nil, nil
+-- A search field's doors (Core.Gently, module.Gently; Saneroki, 2026-11-15): their error stands nothing down, Core's
+-- or a module's, not even one its trace names; told once, the next key tries again; all results handed on.
+do
+    local typed = Core.NewModule("SaneUI_Typed", "Typed")
+    local tries = 0
+    local key = typed.Gently("search", function(word)
+        tries = tries + 1
+        if word == "bad" then error("Interface/AddOns/SaneUI_Typed/Search.lua:9: attempt to compare number with string", 0) end
+        return word, #word
+    end)
+    W.printed = {}
+    check(key("bad") == nil and key("bad") == nil and not typed.off and Core.errors["Typed: search"].count == 2
+        and #W.printed == 1 and printedMatch("problem in Typed: search, noted"),
+        "a search's error: kept each time, told once, its module goes on")
+    local word, length = key("hogger")
+    check(word == "hogger" and length == 6 and tries == 3, "the next key searches again, its results handed on")
+    local field = Core.Gently("icon search", function() error("Interface/AddOns/SaneUI_Typed/Search.lua:3: broke", 0) end)
+    check(field() == nil and not typed.off and Core.errors["icon search"], "Core's search door: the module its trace names goes on too")
+    check(type(Core.SEARCH_FAILED) == "string" and Core.SEARCH_FAILED ~= "", "the words a failed search's list shows")
+    Core.errors["Typed: search"], Core.errors["icon search"] = nil, nil
+end
 -- A module that stood down while it started (a guarded step of its OnLoad failed) gets no further step: its
 -- OnLogin would take back what it gave back, with every guard of it shut.
 do
