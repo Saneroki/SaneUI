@@ -112,8 +112,9 @@ the rest.
   (`npc:<ID>`, `object:<ID>`). Still open for prompt 2: a mailbox is a kind of both *Objects* and *Places*
   (one of them is to give it up). Navigation's *Tiles* (the terrain's minimap textures, read from the
   game's own continent files), *Overlays* (every explorable part of the map art, from the game's tables),
-  *Indoors* (the buildings' and caves' indoor maps) and *Dungeons* (the dungeons' and raids' maps: floors,
-  tiles, bosses) are in World.
+  *Indoors* (the buildings' and caves' indoor maps), *Dungeons* (the dungeons' and raids' maps: floors,
+  tiles, bosses) and *DungeonGround* (each floor's ground: the game's minimap textures of the instance, for the
+  views Scrying and Blended; Saneroki, 2026-11-15) are in World.
 - Packs are Core's own addons, not modules: no settings page, only their data and the code that reads it
   (Saneroki, decision 24: `Quests.lua` comes with the Quests pack, `Scan.lua` with Market, ...), `## Dependencies:
   SaneUI`, `## Group: SaneUI`, `## LoadOnDemand: 1`. In the addon list they stand under Sane UI, titled

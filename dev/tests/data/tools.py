@@ -836,7 +836,8 @@ with tempfile.TemporaryDirectory(prefix="saneui-staging-") as folder:
     # Every set of the plan (Doc/ideas/Data.md, *Sets by concern*)
     plan = ["Items", "ItemSets", "Disenchants", "Enchantments", "Quests", "ClassQuests", "NPCs", "CreatureSpells", "Objects", "Zones",
             "Fishing", "Travel",
-            "Places", "Drops", "Tiles", "Overlays", "Encounters", "Bosses", "Indoors", "Dungeons", "Spawns", "QuestAreas", "PatrolPaths",
+            "Places", "Drops", "Tiles", "Overlays", "Encounters", "Bosses", "Indoors", "Dungeons", "DungeonGround", "Spawns",
+            "QuestAreas", "PatrolPaths",
             "CreatureSpawns", "Walking", "Guides", "Spells", "Auras", "Trainers", "QuestSpells", "WeaponSkills", "SkillLines",
             "Professions", "Talents", "Legacy", "Vendors", "CVarLabels", "Currencies", "Factions", "FactionTemplates", "Holidays",
             "Achievements",

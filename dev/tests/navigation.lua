@@ -8046,6 +8046,99 @@ end)()
     W.methods.SetDisplayInfo, W.methods.ClearModel = nil, nil
 end)()
 
+-- A floor's ground (Core's set DungeonGround): the game's own minimap textures of the instance under the floor's art,
+-- as the map's view says (Saneroki, 2026-11-15: "I want the terrain / Partchment toggle work for instance maps as
+-- well. We should have both."): Parchment the art alone, Scrying the ground alone, Blended the art over it by the zoom.
+;(function()
+    local Dungeons = ns.Dungeons
+    local path = io.popen("mktemp -d -t saneui-ground-XXXXXX"):read("*l") .. "/DungeonGround"
+    os.execute(("mkdir -p '%s'"):format(path))
+    -- Deep Halls' upper floor (instance 90: 300 by 200 yards from north 100 and west 150; its art 1002 by 668, so
+    -- 3.34 units a yard): a terrain tile reaching past its south east quarter (north and west of it), a building's
+    -- block in its middle (64 by 32 yards, yaw 120: turned 30 degrees), a smaller one listed after it; one on the
+    -- lower floor.
+    local rows = { { 1, 99001, 266.67, 266.67, 533.33, 533.33, 90, 1 }, { 1, 99002, 0, 0, 64, 32, 120, "" },
+                   { 1, 99003, 10, -20, 16, 16, 90, "" }, { 2, 99004, 0, 0, 32, 32, 90, "" } }
+    for index, row in ipairs(rows) do rows[index] = table.concat(row, "\031") end
+    Set(path .. "/DungeonGround.lua", "DungeonGround", "0000001c", "int", '"ground"',
+        '"list tuple(floor:int,file:int,x:number,y:number,width:number,height:number,yaw:number,terrain:bool)"',
+        'R[90] = "70245\t\t' .. table.concat(rows, "\030") .. '"\n')
+    W.AddSets(path)
+    local function Texture(file)
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._texture == file then return widget end
+        end
+    end
+    local function Art() -- the floor's art: its first tile, and how many show
+        local first, count = nil, 0
+        for _, widget in ipairs(W.frames) do
+            if widget._kind == "Texture" and widget._shown and type(widget._texture) == "number"
+                and widget._texture >= 9001 and widget._texture <= 9012 then
+                first, count = first or widget, count + 1
+            end
+        end
+        return first, count
+    end
+    local was = ns.options.view
+    if Canvas.camera ~= Window.full then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    Dungeons.frame._width, Dungeons.frame._height = 1600, 868
+    Dungeons.frame.GetRect = function() return 0, 0, 1600, 868 end
+    local ground = Dungeons.Ground("90:1")
+    check(ground and #ground.rows == 3 and ground.rows[1].terrain and not ground.rows[2].terrain
+        and #Dungeons.Ground("90:2").rows == 1 and Dungeons.Ground(500) == nil,
+        "a floor's ground: its own rows of the set, in their order; none for a floor of the game's own maps")
+    Choose("sketches")
+    local opened = Canvas.Show("90:1")
+    local tile, count = Art()
+    check(opened and count == 12 and tile._alpha == 1 and Dungeons.Share() == 1 and not Texture(99002),
+        "Parchment: the floor's art alone, its ground not even laid")
+    Choose("terrain")
+    local terrain, block, over = Texture(99001), Texture(99002), Texture(99003)
+    tile = Art()
+    check(Dungeons.Share() == 0 and tile._alpha == 0 and terrain and terrain._shown and block and block._shown
+        and over and over._shown and not Texture(99004),
+        "Scrying: the ground alone, the art out of sight; the lower floor's ground not on this one")
+    local k = 1002 / 300
+    local west, north = 266.67 + 533.33 / 2, 266.67 + 533.33 / 2 -- the tile's west and north edges, yards
+    local right, bottom = (150 - (266.67 - 533.33 / 2)) * k, (100 - (266.67 - 533.33 / 2)) * k
+    check(terrain._layer == Dungeons.TERRAIN and terrain._points[1][1] == "TOPLEFT" and near(terrain._points[1][4], 0)
+        and near(terrain._points[1][5], 0) and near(terrain._width, right) and near(terrain._height, bottom)
+        and near(terrain._coords[1], (west - 150) / 533.33) and near(terrain._coords[2], 1)
+        and near(terrain._coords[3], (north - 100) / 533.33) and near(terrain._coords[4], 1) and terrain._rotation == 0,
+        "the terrain cut at the floor's edges: from its top left to about its middle, the tile's south east part")
+    check(block._layer == Dungeons.PARTS and near(block._rotation, math.rad(30)) and block._points[1][1] == "CENTER"
+        and block._points[1][3] == "TOPLEFT" and near(block._points[1][4], 150 * k) and near(block._points[1][5], -100 * k)
+        and near(block._width, 64 * k) and near(block._height, 32 * k) and block._coords[2] == 1
+        and over._layer == Dungeons.PARTS and over._sublevel > block._sublevel and near(over._points[1][4], 170 * k)
+        and near(over._points[1][5], -90 * k) and over._rotation == 0,
+        "a building's block where the set lays it, its middle there, turned as a whole by its yaw less 90 degrees; one "
+        .. "listed later over it")
+    Choose("blend")
+    tile = Art()
+    check(Dungeons.Share() == 1 and tile._alpha == 1 and not block._shown and not terrain._shown,
+        "Blended at the whole floor: the art whole, the ground out of sight")
+    local frame = Dungeons.frame
+    cursorX, cursorY = 800, 434
+    frame._scripts.OnMouseWheel(frame, 1)
+    local share = Dungeons.Share()
+    check(share > 0.5 and share < 1 and near(tile._alpha, share) and block._shown and terrain._shown,
+        "a notch nearer: the art fading over the ground")
+    for _ = 1, 4 do frame._scripts.OnMouseWheel(frame, 1) end
+    check(Dungeons.Share() == 0 and tile._alpha == 0 and block._shown, "nearer still: the ground alone")
+    for _ = 1, 5 do frame._scripts.OnMouseWheel(frame, -1) end
+    check(Dungeons.Share() == 1 and tile._alpha == 1 and not block._shown, "out again to the whole floor: the art whole")
+    Choose("terrain")
+    check(Canvas.Show("90:2") and Texture(99004) and Texture(99004)._shown and not Texture(99002) and not Texture(99001),
+        "another floor: its own ground, the other floor's let go")
+    Dungeons.Close()
+    check(not Texture(99004) and not Dungeons.Shown(), "closed: the ground's files let go")
+    Dungeons.frame.GetRect, cursorX, cursorY = nil, 100, 100
+    Choose(was)
+end)()
+
 -------------------------------------------------------------------------------
 --  Retail: Core holds none of Forever's data there (its sets refused), and the game lacks Forever's own (W.Play)
 -------------------------------------------------------------------------------

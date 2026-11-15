@@ -18,6 +18,15 @@ local _, ns = ...
 --                   quest log leave free (under the bar, beside the log where it stands over the view's
 --                   left or right), so the whole floor is always in sight at the farthest zoom (Saneroki,
 --                   2026-11-11)
+--      the ground   the instance as it truly lies, under the art (Saneroki, 2026-11-15: "I want the terrain /
+--                   Partchment toggle work for instance maps as well. We should have both."): the game's own minimap
+--                   textures of its terrain and of its buildings' parts on that floor, each drawn by its file ID where
+--                   Core's set DungeonGround lays it in the world (its middle, size and turn), inside the floor's box
+--                   of the set Dungeons; the terrain cut at the floor's edges. As the map's view says (ns.View, the
+--                   bar's view button): Parchment the art alone, Scrying the ground alone, Blended the art over the
+--                   ground, whole at the whole floor and gone at Dungeons.BLEND[2] times nearer (the world map's
+--                   curve, Canvas.Blend). A floor without ground keeps its art in every view (Retail's, until its
+--                   data comes)
 --      small map    inside a dungeon the small view is the game's own minimap (Canvas.lua); one notch of
 --                   the wheel out past its widest step shows the dungeon's whole map there instead, its
 --                   bosses and enemies at Dungeons.SMALL of their size; a notch in, a right or a middle
@@ -65,6 +74,10 @@ Dungeons.MODEL_MOST = 0.6 -- a model at most so much of the view's height
 Dungeons.FACING = 0.35 -- radians: the models turned a little from facing the view, so they read as figures
 Dungeons.SMALL = 0.5 -- the small map's bosses' marks and models and enemies' dots: so much of their size
 Dungeons.SIDE = 1 / 3 -- the quest log beside a floor on the full map takes at most so much of the view's width
+Dungeons.BLEND = { 1, 2.5 } -- Blended: the art whole over the ground at this zoom (the whole floor) and farther, gone
+                            -- at this zoom and nearer
+Dungeons.TERRAIN, Dungeons.PARTS = "BACKGROUND", "BORDER" -- the ground's draw layers: its terrain, its buildings over it
+                                                          -- (the art: ARTWORK)
 Dungeons.TEXT = {
     dungeons = Core.Word("DUNGEONS", "Dungeons"),
     floor = "Floor",
@@ -108,9 +121,13 @@ local ENCOUNTERS = Core.Data.Set("Encounters")
 local NPCS = Core.Data.Set("NPCs")
 local BOSSES = Core.Data.Set("Bosses")
 local ITEMS = Core.Data.Set("Items")
+local GROUND = Core.Data.Set("DungeonGround")
 
 local frame, content, over, canvas
 local tiles = {}  -- the art's textures, made as many as needed
+local grounds = {} -- the ground's textures, likewise
+local laid        -- the ground of the floor shown is laid (its textures given their files): once a view first shows it
+local share       -- how much of the art shows over the ground now (Shade)
 local marks = {}  -- the bosses' marks, made as many as needed
 local foes = {}   -- the enemies' marks, likewise
 local fromData    -- the dungeons of the set, once walked (Walk); nil until then
@@ -303,11 +320,106 @@ local function Fit(art)
     return math.min(roomWidth / art.width, roomHeight / art.height)
 end
 
+-- How much of the art shows over the floor's ground (0 to 1), as the map's view says (ns.View): Parchment all of it,
+-- Scrying none, Blended by the zoom (whole at Dungeons.BLEND[1] and farther, gone at BLEND[2] and nearer); all of it
+-- where the floor has no ground.
+function Dungeons.Share()
+    if not (kept and kept.ground) then return 1 end
+    local view = ns.View()
+    if view == "terrain" then return 0 end
+    if view ~= "blend" then return 1 end
+    return ns.Canvas.Blend(1 / zoom, 1 / Dungeons.BLEND[1], 1 / Dungeons.BLEND[2])
+end
+
+-- A texture of the ground, made when first needed; placed to a fraction of a unit, so neighbours meet.
+local function GroundTexture(index)
+    local texture = grounds[index]
+    if not texture then
+        texture = content:CreateTexture(nil, Dungeons.TERRAIN)
+        if texture.SetSnapToPixelGrid then
+            texture:SetSnapToPixelGrid(false)
+            texture:SetTexelSnappingBias(0)
+        end
+        grounds[index] = texture
+    end
+    return texture
+end
+
+-- The floor's ground laid into the art's frame (its units: the art's size across the floor's box), each row of the
+-- set by its file where the set lays it: its middle and size, turned as a whole about its middle (yaw 90: north up).
+-- The terrain under the buildings, cut at the floor's edges (it reaches past them); the buildings' parts in the set's
+-- order (lowest first) over the sublevels of their draw layer. The textures past the ground's let go.
+local function LayGround()
+    local ground, art = kept and kept.ground, kept and kept.art
+    local count = 0
+    if ground and art then
+        local north, south, west, east = ground.box[1], ground.box[2], ground.box[3], ground.box[4]
+        local kx, ky = art.width / (west - east), art.height / (north - south)
+        local k = math.sqrt(math.abs(kx * ky)) -- the same both ways: a floor's box has its art's proportions
+        local parts, part = 0, 0
+        for _, row in ipairs(ground.rows) do
+            if not row.terrain then parts = parts + 1 end
+        end
+        for _, row in ipairs(ground.rows) do
+            local x, y = (west - row.y) * kx, (north - row.x) * ky -- its middle, from the art's top left
+            local width, height = row.width * k, row.height * k
+            if row.terrain then
+                local left, top = x - width / 2, y - height / 2
+                local l, r = math.max(0, left), math.min(art.width, left + width)
+                local t, b = math.max(0, top), math.min(art.height, top + height)
+                if l < r and t < b and width > 0 and height > 0 then
+                    count = count + 1
+                    local texture = GroundTexture(count)
+                    texture:SetDrawLayer(Dungeons.TERRAIN, 0)
+                    texture:SetTexture(row.file, "CLAMP", "CLAMP", "TRILINEAR")
+                    texture:SetTexCoord((l - left) / width, (r - left) / width, (t - top) / height, (b - top) / height)
+                    texture:SetRotation(0)
+                    texture:ClearAllPoints()
+                    texture:SetPoint("TOPLEFT", content, "TOPLEFT", l, -t)
+                    texture:SetSize(r - l, b - t)
+                end
+            else
+                part, count = part + 1, count + 1
+                local texture = GroundTexture(count)
+                texture:SetDrawLayer(Dungeons.PARTS, math.min(7, -8 + math.floor((part - 1) * 16 / parts)))
+                texture:SetTexture(row.file, "CLAMP", "CLAMP", "TRILINEAR")
+                texture:SetTexCoord(0, 1, 0, 1)
+                texture:SetRotation(math.rad((row.yaw or 90) - 90))
+                texture:ClearAllPoints()
+                texture:SetPoint("CENTER", content, "TOPLEFT", x, -y)
+                texture:SetSize(width, height)
+            end
+        end
+    end
+    for index = count + 1, #grounds do
+        grounds[index]:Hide()
+        grounds[index]:SetTexture(nil)
+    end
+    laid = count
+end
+
+-- The art over the ground as much as the view wants it now (Dungeons.Share): the art's tiles so seen, the ground
+-- shown while any of it shows through (laid the first time). Only when that changed, not at every step of a drag.
+local function Shade()
+    local now = Dungeons.Share()
+    if now == share then return end
+    share = now
+    for _, texture in ipairs(tiles) do texture:SetAlpha(now) end
+    if now < 1 and not laid then LayGround() end
+    for index = 1, laid or 0 do grounds[index]:SetShown(now < 1) end
+end
+
+-- The map's view changed (the bar's view button, the settings): the floor shown drawn so.
+function Dungeons.Restyle()
+    if shown then Shade() end
+end
+
 -- The art where the zoom and the drag put it; never so far that it leaves the room's middle. Every frame of a drag:
 -- what it places was gathered once (kept), it only moves it.
 local function Place()
     local art = kept and kept.art
     if not art then return end
+    Shade()
     local scale = Fit(art) * zoom
     local halfX, halfY = art.width * scale / 2, art.height * scale / 2
     panX, panY = math.max(-halfX, math.min(halfX, panX)), math.max(-halfY, math.min(halfY, panY))
@@ -327,9 +439,12 @@ function Dungeons.Refit()
     Place()
 end
 
--- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's).
+-- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's); its ground
+-- laid again once a view shows it (Shade, from Place).
 local function Draw()
     for _, texture in ipairs(tiles) do texture:Hide() end
+    for index = 1, laid or 0 do grounds[index]:Hide() end
+    laid, share = nil, nil
     local art = kept and kept.art
     if not art then return end
     content:SetSize(art.width, art.height)
@@ -799,13 +914,31 @@ function Dungeons.Enemies(map)
     return found
 end
 
+-- A floor's ground as Core's set DungeonGround lays it: { rows (the set's, in drawing order), box (the floor's world:
+-- north, south, west, east) }; nil where it has none (a floor of the game's own maps, a floor or an instance the set
+-- has none for, the set not there).
+function Dungeons.Ground(map)
+    local _, floor = Entry(map)
+    local data = floor and floor.data
+    if not data or not (data.north and data.south and data.west and data.east) then return nil end
+    if data.north == data.south or data.west == data.east then return nil end
+    local rows = {}
+    for _, row in ipairs(GROUND:Get(floor.instance, "ground") or NONE) do
+        if row.floor == data.floor and row.file and row.x and row.y and row.width and row.height then
+            rows[#rows + 1] = row
+        end
+    end
+    if #rows == 0 then return nil end
+    return { rows = rows, box = { data.north, data.south, data.west, data.east } }
+end
+
 -- What a floor is drawn from, gathered once as it is shown (Dungeons.Show; the set come since: Build) and kept until
--- the view goes (Close): its art, its bosses and enemies as the set has them, and its instance (the enemies'
--- tooltips). Each walks every dungeon's floors (Entry): not at every step of a drag (Place).
+-- the view goes (Close): its art, its ground, its bosses and enemies as the set has them, and its instance (the
+-- enemies' tooltips). Each walks every dungeon's floors (Entry): not at every step of a drag (Place).
 local function Gather(map)
     local _, floor = Entry(map)
-    return { art = ArtOf(map), bosses = Dungeons.Bosses(map), enemies = Dungeons.Enemies(map),
-             instance = floor and floor.instance }
+    return { art = ArtOf(map), ground = Dungeons.Ground(map), bosses = Dungeons.Bosses(map),
+             enemies = Dungeons.Enemies(map), instance = floor and floor.instance }
 end
 
 local function FoeTip(foe)
@@ -919,6 +1052,13 @@ function Dungeons.Build(canvasFrame)
             Draw()
         end
     end))
+    -- The ground's set arrived: the floor shown drawn again with its ground.
+    GROUND:OnStamp(ns.Guard(function()
+        if shown then
+            kept = Gather(shown)
+            Draw()
+        end
+    end))
     return frame
 end
 
@@ -986,6 +1126,11 @@ function Dungeons.Close()
     frame:SetScript("OnUpdate", nil)
     frame:Hide()
     for _, texture in ipairs(tiles) do texture:SetTexture(nil) end -- its files let go
+    for _, texture in ipairs(grounds) do
+        texture:Hide()
+        texture:SetTexture(nil)
+    end
+    laid, share = nil, nil
     for _, foe in ipairs(foes) do foe:Hide() end
     ns.Safe("drawings", ns.Draw.FloorClear)
     for _, mark in ipairs(marks) do

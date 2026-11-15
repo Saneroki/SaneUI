@@ -58,6 +58,7 @@ function Window.Restyle()
     if not frame then return end
     ns.TopBar.Arrange()
     ns.Canvas.Refresh()
+    ns.Safe("dungeons", ns.Dungeons.Restyle) -- a dungeon's floor shown over the map: drawn in the view too
 end
 
 -- Whether the small window rests out of sight: the game's own minimap is chosen, the window is in its zone

@@ -310,9 +310,10 @@ local function Zone()
     return Coords.ZoneAt(camera.map, camera.u, camera.v)
 end
 
--- How much of Blizzard's map art the view Blended draws over the terrain when the view is span yards high (0 to 1).
-function Canvas.Blend(span)
-    local whole, gone = Canvas.BLEND[1], Canvas.BLEND[2]
+-- How much of Blizzard's map art the view Blended draws over the terrain when the view is span yards high (0 to 1);
+-- whole and gone: other ends than Canvas.BLEND's (a dungeon's floor gives its own, Dungeons.lua).
+function Canvas.Blend(span, whole, gone)
+    whole, gone = whole or Canvas.BLEND[1], gone or Canvas.BLEND[2]
     if span >= whole then return 1 end
     if span <= gone then return 0 end
     local x = math.log(span / gone) / math.log(whole / gone)

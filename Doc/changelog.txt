@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Dungeon and raid maps in Scrying and Blended too: the view's
+  button shows the instance as it truly lies (the game's own
+  minimap of its halls and ground), or the map art fading into it
+  as you zoom in. Bosses and enemies stay where they stand.
 - Map: it follows you by itself as you move, once you have left it
   alone for 5 seconds after dragging or zooming it. The Follow me
   box is gone.

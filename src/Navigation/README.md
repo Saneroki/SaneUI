@@ -421,6 +421,12 @@ and shows them on the map or puts the map pin there. The plan is in
   dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
   world map's and its indoor maps': Forever tells nobody's place inside an instance, so they show no arrow for you
   and no party or raid; what stands still there, the bosses, stands on them.
+- **A dungeon's floor in Scrying and Blended** (Saneroki, 2026-11-15: "I want the terrain / Partchment toggle work for
+  instance maps as well. We should have both."): the view's button on the bar works on a dungeon's floor as on the
+  map. *Scrying* shows the instance as it truly lies, the game's own minimap pictures of its ground and of its halls on
+  that floor; *Blended* the floor's map art over it while the whole floor is in view, fading to the ground as you zoom
+  in; *Parchment* (in the settings) the map art alone. Every floor of the 26 dungeons and raids has it; the bosses,
+  the enemies, your drawings and markers stand where they stood.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
   map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
@@ -734,6 +740,20 @@ and shows them on the map or puts the map pin there. The plan is in
   player lacks its appearance (`C_TransmogCollection.GetItemInfo`, `GetAppearanceInfoBySource`; else the game's
   line saying so), then the effects, last the stats. The last line, `Core.Unconfirmed`, says that it is not yet
   confirmed by the game (an enemy's too).
+- **A floor's ground** (`Dungeons.lua`: `Dungeons.Ground`, `LayGround`, `Shade`, `Dungeons.Share`; Saneroki,
+  2026-11-15): Core's set *DungeonGround* (made by `dev/tools/dungeon-ground` from the game's files; no art shipped)
+  lists per floor the game's minimap textures of the instance by file ID, each with its middle in the world, its size
+  and its turn: the terrain tiles that meet the floor's box (marked `terrain`) and the indoor minimap blocks of the
+  building parts on that floor (which parts: the game's own map assignment, else, for a building Forever rebuilt, the
+  floor whose box holds the part and whose map art its walls agree with). `Gather` keeps the floor's rows and its box
+  from the set *Dungeons*; the first time a view shows the ground, `LayGround` lays them into the art's frame
+  (`content`, its units the art's size across the box): a terrain tile cut at the floor's edges by its texture
+  coordinates (draw layer `Dungeons.TERRAIN`), a building's block centred on its middle and turned as a whole
+  (`SetRotation` by its yaw less 90 degrees; `Dungeons.PARTS`, its sublevel by its order, the lowest first). The art
+  over it has the alpha `Dungeons.Share`: 1 in Parchment and on a floor without ground, 0 in Scrying, in Blended
+  `Canvas.Blend` of the zoom between `Dungeons.BLEND` (whole at the whole floor, gone 2.5 times nearer); `Shade` sets
+  it at each placement only when it changed, the ground shown while any of it shows through. A view change
+  (`Window.Restyle`) calls `Dungeons.Restyle`; closing lets every ground texture's file go.
 - **Label** (`Label.lua`): where the highlight lights a zone up (`Art.Light`), on the full map only, its name at the
   canvas' top under the bar, as Blizzard's map writes it (`AreaLabelDataProvider.lua`: `WorldMapTextFont`,
   `SubZoneTextFont`, scale `Label.SCALE`): the zone (`C_Map.GetMapInfoAtPosition`) with its levels
@@ -1400,7 +1420,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the teleports it has (the hearthstone told in the chat where it is quicker); where along it the player is. No frames |
 | `Label.lua` | The zone under the mouse named at the top of the full map: its name, its levels, the fishing skill its waters ask (Core's set *Fishing*) |
 | `Areas.lua` | A quest's areas, as the game shades them (`QuestPOIFrame`), over each zone in view |
-| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, whole beside the bar and the quest log, zoomed and dragged; inside one the small map's whole map, a wheel notch out past the game's minimap |
+| `Dungeons.lua` | The maps of the dungeons and raids, chosen in the bar: over the map in its place, by floor, whole beside the bar and the quest log, zoomed and dragged; inside one the small map's whole map, a wheel notch out past the game's minimap; each floor's ground under its art in Scrying and Blended (Core's set DungeonGround) |
 | `Route.xml` | The glint's pulse along the golden line: an animation template (the game makes that kind only from XML) |
 | `Danger.lua` | How dangerous a place is for you: a grid per plane of the highest level of the enemies of your side spawning near each cell (Core's *CreatureSpawns*, *NPCs*, *FactionTemplates*), stepped against your level as the game's colours are. No frames |
 | `Route.lua` | The golden line of a way, from the player on, the parts in view: walks and lifts gold (a walk orange or red where enemies above you spawn near it), flights white, ships and the tram light blue, portals violet, the hearthstone and the teleports pale blue; the stage under the mouse and the bend while it is dragged |
@@ -1445,6 +1465,12 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, Scrying and Blended on the dungeon maps:** Saneroki: "I want the terrain / Partchment toggle work for
+  instance maps as well. We should have both." Each floor's ground is the game's own minimap textures of the
+  instance, drawn by file ID from Core's new set *DungeonGround* (`dev/tools/dungeon-ground`): 1,945 textures on the
+  68 floors of the 26 instances. The painted maps' terrain plan (`map-layers inputs`) had seemed not to line up with
+  the Deadmines' art: its whole-instance plan (both floors' frame) had been set beside the first floor's art; each
+  floor's own frame lines up with its art, bosses and enemies.
 - **2026-11-15, the map follows you by itself:** Saneroki: "Remove the "follow me" feature from the map and just follow
   the character automatically always when the character is moving and the map has not been draged around for 5s"
   (`Canvas.lua`, `Again`: both views, `Canvas.AGAIN` 5; the box on the bar, the setting `followMap` and

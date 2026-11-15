@@ -176,6 +176,18 @@ minimap) and the full-screen window (the world map) show the same map with the s
   floor by floor (Forever's client has none, so Core's set *Dungeons* holds them, from Blizzard's own tables; the
   art files are in Forever's install), each boss's icon where it stands, and the boss's 3D game model standing on
   that spot.
+- **Both views on the instance maps (Saneroki, 2026-11-15):** "I want the terrain / Partchment toggle work for
+  instance maps as well. We should have both." The view's button works on a dungeon's floor: Scrying the instance's
+  own ground (the game's minimap textures of its terrain and of its buildings' parts on that floor, drawn by file ID,
+  no art shipped), Blended the floor's art over it, fading by the zoom, Parchment the art alone; where a floor has no
+  ground, its art in every view. Built the same day: Core's set *DungeonGround* (`dev/tools/dungeon-ground`), all 68
+  floors of the 26 instances. Which parts a floor shows: the game's own map assignment (the newest Retail export's
+  `UiMapAssignment`, as the floors themselves came from Blizzard's tables), else for the buildings Forever rebuilt
+  (the Wailing Caverns, the Sunken Temple, the Scarlet Monastery, Blackrock Spire and Depths, Stratholme) the floor
+  whose box holds the part and whose art its walls agree with best (it picks the game's floor for 9 parts in 10 where
+  the game names one). Checked against the bosses' and enemies' places on every floor (the tool's `--check`
+  pictures). Where floors share parts and the game tells them apart only by height (Shadowfang Keep's tower), their
+  ground looks alike: a part's minimap is one picture.
 - **A boss's tooltip on its map (Saneroki, 2026-10-21):** its abilities and the items it drops, with their names
   and icons, from what is known of the dungeons (built: the set *Bosses*' `abilities` and `loot`, batch 11, used at once and shown as not yet confirmed until the
   client or the server confirms them (Saneroki, 2026-10-21); the

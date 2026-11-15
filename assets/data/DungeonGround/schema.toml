@@ -1,0 +1,25 @@
+set = "DungeonGround"
+key = "int"              # the instance's map ID, as the set Dungeons keys it
+learn = false
+history = false          # the newest ground alone: no view asks what an instance's floor showed in an older build
+about = "The ground of the dungeon and raid maps (the views Scrying and Blended): per floor of the set Dungeons, the game's own minimap textures of the instance's terrain and of its buildings' parts on that floor, where each lies in the world."
+
+# Each row is one texture of the game, drawn by its file ID: its middle at x, y (the world's yards, Coords' world:
+# x north, y west), width yards along its columns and height yards along its rows, turned by yaw: its columns run
+# from the middle towards x - cos(yaw), y - sin(yaw), its rows downwards towards x - sin(yaw), y + cos(yaw). On a
+# map with north up a texture is turned counterclockwise by yaw - 90 degrees about its middle; a terrain tile
+# (terrain) has yaw 90 (north up). The rows are in drawing order, each floor's terrain first, then its buildings'
+# parts from the lowest up. A floor's map shows the world box of its floor in the set Dungeons. Made by
+# dev/tools/dungeon-ground from the game's files.
+
+[fields]
+ground = { type = "list", of = "tuple", parts = [
+    { name = "floor", type = "int", min = 1 },         # the floor of the set Dungeons it is drawn on
+    { name = "file", type = "int", min = 1 },          # the texture's file ID
+    { name = "x", type = "number" },                   # its middle in the world, yards: north
+    { name = "y", type = "number" },                   # and west
+    { name = "width", type = "number", min = 0 },      # yards along its columns
+    { name = "height", type = "number", min = 0 },     # yards along its rows
+    { name = "yaw", type = "number", min = 0, max = 360 }, # its turn, degrees
+    { name = "terrain", type = "bool" },               # a terrain tile (yaw 90): cut at the floor's edges
+] }

@@ -72,6 +72,8 @@ GROUPS = {
         "showsea": (["dev/tools/web-pages", "open", "sea"], "the sea compared in the browser: the waves now against the "
                     "paintings", None),
         "makeindoormaps": (["dev/tools/indoor-art"], "Navigation's indoor maps", None),
+        "makedungeonground": (["dev/tools/dungeon-ground"], "the dungeon maps' ground: each floor's minimap textures "
+                              "(the set DungeonGround)", None),
         "makemaplayers": (["dev/tools/map-layers"], "the instance maps' three levels (close, middle, far): inputs paint status",
                           None),
         "makemapcompare": (["dev/tools/map-compare", "build"], "the finished maps' pictures for their page", None),
