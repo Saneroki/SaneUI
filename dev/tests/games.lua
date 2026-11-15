@@ -1,6 +1,6 @@
 -- What Retail lacks of Forever's interface, for the tests' stand-in (wowstub.lua, W.Play): globals,
 -- Table.Field, Enum.X.Y, Constants.X.Y and events (event:NAME), from the newest exports of the two games
--- (Forever 1.60.1.70755, Retail 12.1.5.70688). Made by dev/tools/blizzard games; do not edit by hand.
+-- (Forever 1.60.1.70938, Retail 12.1.5.70688). Made by dev/tools/blizzard games; do not edit by hand.
 return {
     retail = [[
 ACTION_BARS_RELATIVE_TO_BASE_POSITIONING
@@ -72,6 +72,7 @@ C_Bank.FetchMaxNumBankTabs
 C_Bank.ShouldUsePlayerBagsInBank
 C_BattleNet.AreHighResTexturesInstalled
 C_BattleNet.AreRealIDFriendsEnabled
+C_BattleNet.GetDefaultTitleWhisperTarget
 C_BattleNet.GetFriendLevelFromInviteText
 C_BattleNet.IsFriendTagSupportedForCurrentGameType
 C_BattleNet.SetBlocked
@@ -182,6 +183,7 @@ C_SwingTimer.EnableRangeCheck
 C_SwingTimer.IsTargetWithinSwingRange
 C_ToyBoxInfo.HasAnyToy
 C_TradeSkillUI.CanTradeSkillShowCraftingUI
+C_TradeSkillUI.HasNoReagentCost
 C_Trainer.GetCategorizeTrainerUI
 C_Trainer.GetTrainerType
 C_Trainer.SetCategorizeTrainerUI
@@ -249,6 +251,7 @@ ChatFrameMenuButtonMixin.IsLanguageSelected
 ChatFrameMenuButtonMixin.SetChatTypeAttribute
 ChatFrameMenuButtonMixin.SetLanguageSelected
 ChatFrameMenuButtonMixin.ValidateSelectedLanguage
+ChatFrameUtil.GetCharacterWhisperTargetIfTitleFriend
 CheckHardcoreGuildLeadStatus
 ClassTalentActiveSpecMixin
 ClassTalentTreeHeaderMixin
@@ -1018,6 +1021,7 @@ GetNextAvailableRaidTargetMarkerIndex
 GetNextFriendlyRaidTargetMarkerIndex
 GetNextHostileRaidTargetMarkerIndex
 GetOffhandHitModifier
+GetPartyInviteString
 GetPetCritChance
 GetPetDodgeChance
 GetPetHitChanceModifier
@@ -1817,7 +1821,6 @@ ShardTransferImminentMixin
 ShouldDisplayRaidRolesInSocialFrame
 ShouldDisplayStoryModeTooltipInSocialFrame
 ShouldRestedXpBarDisplayWhenOverflowing
-ShouldShowBattlePetIcon
 ShouldShowStar
 ShouldUseSilverUnitFrame
 ShowHardcoreGuildHandoff
