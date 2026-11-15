@@ -66,8 +66,8 @@ and shows them on the map or puts the map pin there. The plan is in
   bosses, your markers and drawings, without an arrow for you. The **player's arrow** beside the satchel's bag (in
   sight with the face, under the mouse, and only there: "only show it on mouse over and in cases where it is
   neccessary like in instances"; "make the button that toggles it look like the players arrow") swaps to the game's
-  minimap (it shows where you stand, with its own ground and dots; the wheel walks its zoom steps) and back; nothing
-  else switches. On our map the wheel zooms and a drag moves it, as on the full map, and a right or a middle click
+  minimap (it shows where you stand, with its own ground and dots; the wheel walks its zoom steps) and back; a notch
+  out past the game's widest step brings ours back too. On our map the wheel zooms and a drag moves it, as on the full map, and a right or a middle click
   shows the whole floor again (Saneroki, 2026-11-15: zoomed in, "the games minimap is forced on me and covers my own
   map"); the face (the time, the place, the bag and the arrow) shows while the mouse is anywhere on it. The choice is
   kept for your account, into the next dungeon. Elsewhere (a battleground, a dungeon we have no map of) the
@@ -749,7 +749,9 @@ and shows them on the map or puts the map pin there. The plan is in
   changes and when the log comes or goes (`Dungeons.Refit`, from `Window.Lay`), not at each step of a drag; on
   the small map (`Dungeons.Small` at each layout inside an instance, first unless the game's minimap was chosen:
   `ns.store.instanceMap` "game"; `Dungeons.Swap` from the satchel's arrow, `Satchel.arrow`, shown where
-  `Dungeons.Swappable`, the one way between them) the whole small view, zoomed by the wheel and dragged as on the full
+  `Dungeons.Swappable`; a notch out past the game's step 0, `Dungeons.Whole`; looked at again when the list of
+  dungeons is read in after the player was inside, `Dungeons.Arrived`, which shows the full map's floor too) the whole
+  small view, zoomed by the wheel and dragged as on the full
   map (all the way out: the whole floor in the middle again; a right or a middle click the same), its marks, models
   and dots at `Dungeons.SMALL` of their size; the face kept while the mouse is anywhere over it (`Left`: off it by
   `IsMouseOver`, not by its frame's leave, which the dots, the models, the bag and the arrow on it cause); wished
@@ -1530,6 +1532,11 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-15, the dungeon you are in, once the list is read:** Saneroki: "Nope. Does not work. The games minimap is
+  now always visible, no arrow switch button on the minimap either and zooming out does not show our map either and
+  in fullscreen the dungeon map is not shown at all." The list of dungeons is read a part per frame after Core's set
+  arrives; inside one already, nothing looked again (only the bar), and the notch out that did was gone:
+  `Dungeons.Arrived`, the notch out back.
 - **2026-11-15, our dungeon map on the small view zoomed and dragged; the face over it:** Saneroki: "When I am zoomed
   out completly it only shows the map as I expect it but the hover for the minimap time, area text, arrow button and
   bag is not visible. Only when I zoom in are those elements visible but the games minimap is forced on me and covers

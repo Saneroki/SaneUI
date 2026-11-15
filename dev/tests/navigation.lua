@@ -8265,11 +8265,25 @@ end)()
         swap._scripts.OnClick(swap)
         check(not Dungeons.Shown() and minimap._shown and minimap._zoom == 0 and ns.store.instanceMap == "game",
             "the arrow: the game's minimap (it knows where you stand), at its widest step, kept")
-        frame._scripts.OnMouseWheel(frame, -1)
-        W.Wait(0)
-        check(not Dungeons.Shown() and minimap._shown, "the wheel on the game's minimap: its own steps, never our map")
         swap._scripts.OnClick(swap)
         check(Dungeons.Shown() == "90:1" and not minimap._shown and ns.store.instanceMap == nil, "the arrow again: our map")
+        swap._scripts.OnClick(swap)
+        frame._scripts.OnMouseWheel(frame, -1)
+        W.Wait(0)
+        check(Dungeons.Shown() == "90:1" and not minimap._shown and ns.store.instanceMap == nil,
+            "on the game's minimap at its widest step, a notch out: our map again")
+        -- inside before the dungeons' set was read in: the small map looks again once it is (the game's minimap meanwhile)
+        Dungeons.Close()
+        Dungeons.Forget()
+        Canvas.Layout()
+        local waited = 0
+        while not Dungeons.Shown() and waited < 20 do
+            W.Wait(0.05)
+            Frames(1)
+            waited = waited + 1
+        end
+        check(Dungeons.Shown() == "90:1" and select(3, Dungeons.Shown()) and not minimap._shown,
+            "inside before the dungeons were read in: our map of it once they are")
         ns.Satchel.Hover(false)
         Canvas.Layout()
         W.Fire("PLAYER_ENTERING_WORLD")

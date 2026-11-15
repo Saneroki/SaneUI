@@ -926,7 +926,9 @@ local function Wheel(_, delta)
     if held then return end -- on the window's way: its camera is not the one shown (Morph)
     lastInput = GetTime()
     local width, height = frame:GetSize()
-    -- (In a dungeon the satchel's arrow alone swaps between the game's minimap and our map of it: Dungeons.Swap.)
+    -- In a dungeon, out past the game's widest step: our map of it again, where we have one (Dungeons.Whole; the
+    -- satchel's arrow swaps too). A notch in on our map zooms it, never back to the game's (Dungeons.lua).
+    if lost and delta < 0 and camera.native == 0 and ns.Dungeons.Whole() then return Canvas.Layout() end
     if (known or lost) and ns.Hybrid.Wheel(camera, delta, ns.Hybrid.Side(width, height)) then
         camera:Settle()
         return Zoomed()

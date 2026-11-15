@@ -59,6 +59,7 @@ local _, ns = ...
 --  Opening the full map inside a dungeon shows its map at once (Window.lua): the game tells which instance.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
+local Look = Core.Look
 local Dungeons = {}
 ns.Dungeons = Dungeons
 
@@ -80,7 +81,7 @@ Dungeons.TERRAIN, Dungeons.PARTS = "BACKGROUND", "BORDER" -- the ground's draw l
                                                           -- (the art: ARTWORK)
 Dungeons.TEXT = {
     dungeons = Core.Word("DUNGEONS", "Dungeons"),
-    floor = "Floor",
+    floor = "Floor %d", -- a floor the data names not
     unverified = Core.UNCONFIRMED, -- (Core.Unconfirmed)
     enemy = "An enemy",
     boss = Core.Word("BOSS", "Boss"),
@@ -196,6 +197,8 @@ local function Walk()
     end, function()
         walking, fromData, list = nil, found, nil
         ns.Safe("bar", ns.TopBar.Update)
+        if ns.Instances then ns.Safe("dungeons", ns.Instances.Refresh) end -- (the banners: their maps known now)
+        ns.Safe("dungeons", Dungeons.Arrived) -- (inside one already: its map now)
     end)
     if walking == false then walking = nil end -- not there yet: its pack asked for, walked when it arrives
 end
@@ -240,6 +243,13 @@ local function Entry(map)
         for _, floor in ipairs(entry.floors) do
             if floor.map == map then return entry, floor end
         end
+    end
+    -- A floor of the set's while the set is still being walked (a job: Walk): its dungeon read at once.
+    local instance = not fromData and type(map) == "string" and tonumber(map:match("^(%d+):"))
+    local record = instance and SET:Get(instance)
+    local entry = type(record) == "table" and DataEntry(instance, record) or nil
+    for _, floor in ipairs(entry and entry.floors or NONE) do
+        if floor.map == map then return entry, floor end
     end
     return nil
 end
@@ -317,11 +327,17 @@ function Dungeons.Margins(view)
     return top, math.min(left, width * Dungeons.SIDE), math.min(right, width * Dungeons.SIDE)
 end
 
+-- The floors' cards stand at the room's right on the full map where the dungeon has several (Cards).
+local function Several()
+    return not onSmall and floors ~= nil and #floors > 1
+end
+
 local function Room()
     local width, height = frame:GetSize()
     width, height = width or 0, height or 0
     local top, left, right = 0, 0, 0
     if not onSmall then top, left, right = Dungeons.Margins(frame) end
+    if Several() then right = right + Dungeons.CARD_WIDTH + Dungeons.CARD_OVER + 2 * ns.TopBar.INSET end
     roomWidth, roomHeight = width - left - right, height - top
     roomX, roomY = (left - right) / 2, -top / 2
 end
@@ -449,6 +465,7 @@ function Dungeons.Refit()
     if not shown then return end
     Room()
     Place()
+    Dungeons.Cards()
 end
 
 -- The floor's art: its tiles row by row, the last ones cut at the art's edge (as Art.lua lays a map's); its ground
@@ -1077,6 +1094,83 @@ function Dungeons.Build(canvasFrame)
     return frame
 end
 
+-------------------------------------------------------------------------------
+--  The floors' cards
+-------------------------------------------------------------------------------
+-- A dungeon's floors as big buttons in a column at the full screen's right (Saneroki, 2026-11-15: "instead of the drop
+-- down to see different floors, it should be on the instance maps big buttons on the right side of the full screen
+-- where the name of the floor is listed as a button. All buttons have the same width and height"): Forever's own
+-- character list's cards (its characters stand so at the right of its screen), each floor's name in gold on its own;
+-- under the mouse it lights, the floor shown is the card picked. All one size, smaller where many would reach past the
+-- room's foot; only where the dungeon has several floors, on the full map. The floor fits into the room left of them.
+Dungeons.CARD_WIDTH, Dungeons.CARD_HEIGHT = 210, 60 -- the card's 310 x 89, smaller
+Dungeons.CARD_GAP = 8
+Dungeons.CARD_OVER = 21 * 210 / 310 -- the picked card's picture reaches so far past its right (342 x 122 at -13, 14)
+local cards = {} -- made as many as needed
+
+-- The picked card's picture as the character list lays it round its card (310 x 89: 342 x 122 from 13 left and 14 up).
+local function CardPicked(card, width, height)
+    local kx, ky = width / 310, height / 89
+    card.picked:ClearAllPoints()
+    card.picked:SetPoint("TOPLEFT", card, "TOPLEFT", -13 * kx, 14 * ky)
+    card.picked:SetSize(342 * kx, 122 * ky)
+end
+
+local function Card()
+    local card = CreateFrame("Button", nil, frame)
+    card.back = card:CreateTexture(nil, "BACKGROUND")
+    Look.Atlas(card.back, "glues-characterselect-card-singles")
+    card.back:SetAllPoints()
+    card.lit = card:CreateTexture(nil, "BORDER")
+    Look.Atlas(card.lit, "glues-characterselect-card-singles-hover")
+    card.lit:SetAllPoints()
+    card.lit:Hide()
+    card.picked = card:CreateTexture(nil, "ARTWORK")
+    Look.Atlas(card.picked, "glues-characterselect-card-selected")
+    card.words = card:CreateFontString(nil, "OVERLAY")
+    Look.SetFont(card.words, 18, true, Look.GOLD)
+    card.words:SetPoint("LEFT", 18, 0)
+    card.words:SetPoint("RIGHT", -14, 0)
+    card.words:SetJustifyH("LEFT")
+    card.words:SetWordWrap(true)
+    card:RegisterForClicks("LeftButtonUp")
+    card:SetScript("OnClick", ns.Guard(function(self) if self.map and self.map ~= shown then Dungeons.Show(self.map) end end))
+    card:SetScript("OnEnter", ns.Guard(function(self) self.lit:Show() end))
+    card:SetScript("OnLeave", ns.Guard(function(self) self.lit:Hide() end))
+    return card
+end
+
+-- The cards of the floors of the dungeon shown, laid at the room's right (each as large as the others; over the floor,
+-- its marks and models, under the bar); none where it has one floor, on the small map or with no floor shown.
+function Dungeons.Cards()
+    local count = 0
+    if frame and shown and Several() then
+        local top, _, right = Dungeons.Margins(frame)
+        local gap, inset = Dungeons.CARD_GAP, ns.TopBar.INSET
+        local height = (frame:GetHeight() or 0) - top - inset
+        local each = math.min(Dungeons.CARD_HEIGHT, (height - (#floors - 1) * gap) / #floors)
+        local width = Dungeons.CARD_WIDTH
+        for index, floor in ipairs(floors) do
+            count = index
+            local card = cards[index] or Card()
+            cards[index] = card
+            card.map = floor.map
+            card.words:SetText(floor.name or Dungeons.TEXT.floor:format(index))
+            card.picked:SetShown(floor.map == shown)
+            card:SetSize(width, each)
+            CardPicked(card, width, each)
+            card:ClearAllPoints()
+            card:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -(right + inset + Dungeons.CARD_OVER), -(top + (index - 1) * (each + gap)))
+            card:SetFrameLevel(frame:GetFrameLevel() + 2 + Dungeons.SPREAD + 2) -- (over the models: Dungeons.PlaceBosses)
+            card:Show()
+        end
+    end
+    for index = count + 1, #cards do
+        cards[index]:Hide()
+        cards[index].map = nil
+    end
+end
+
 -- A dungeon's floor shown whole (map: any floor of it), on the small map (small) or the full one. False for a map
 -- that is no dungeon's, or one without art.
 local function Open(map, small)
@@ -1091,11 +1185,12 @@ local function Open(map, small)
     frame:Show()
     Room()
     Draw()
+    Dungeons.Cards()
     ns.Safe("bar", ns.TopBar.Update)
     return true
 end
 
--- A dungeon's floor shown (map: any floor of it), whole, on the full map; the floors' dropdown with it. False for
+-- A dungeon's floor shown (map: any floor of it), whole, on the full map; its floors' cards with it. False for
 -- a map that is no dungeon's, or one without art, or while the map is small.
 function Dungeons.Show(map)
     if not frame or ns.Canvas.camera ~= ns.Window.full then return false end
@@ -1141,6 +1236,25 @@ function Dungeons.Swap()
     if Dungeons.Whole() then ns.Canvas.Layout() end
 end
 
+-- The list read in (Walk, a part per frame after the set's pack arrived): where the player is inside a dungeon of it
+-- already, the maps look again, as they would have on the way in (Saneroki, 2026-11-15: inside, "The games minimap is
+-- now always visible, no arrow switch button ... in fullscreen the dungeon map is not shown at all"): the small map
+-- lays out anew (its whole map: Small), the full map shows the dungeon's floor where it shows none yet.
+function Dungeons.Arrived()
+    local here = Dungeons.Here()
+    if not here then return end
+    local camera = ns.Canvas.camera
+    if camera == ns.Window.small then return ns.Canvas.Refresh() end
+    if camera == ns.Window.full and not shown and frame and frame:GetParent() and frame:GetParent():IsShown() then
+        Dungeons.Show(here)
+    end
+end
+
+-- The list forgotten, to be read anew (for the tests: a dungeon entered before the set arrived).
+function Dungeons.Forget()
+    fromData, list, told = nil, nil, false
+end
+
 -- A loading screen: another dungeon, or none, so the small map's whole map is looked at anew (Small, at the layout).
 ns.On("PLAYER_ENTERING_WORLD", function()
     if not onSmall then return end
@@ -1163,6 +1277,7 @@ function Dungeons.Close()
     end
     laid, share = nil, nil
     for _, foe in ipairs(foes) do foe:Hide() end
+    Dungeons.Cards()
     ns.Safe("drawings", ns.Draw.FloorClear)
     for _, mark in ipairs(marks) do
         mark:Hide()

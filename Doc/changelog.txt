@@ -8,7 +8,9 @@ The bigger changes of each version, newest first.
 ------------------
 - Minimap in dungeons: our map zooms with the wheel and drags like
   the full map; the time, place, bag and arrow show on mouse over.
-  Only the arrow switches to the game's minimap.
+  Only the arrow switches to the game's minimap; zooming out of it
+  brings ours back. Fixed: inside a dungeon right after logging in
+  or a reload, our map and the full map's dungeon did not show.
 - Minimap in dungeons and raids: our map of the dungeon first, with
   its bosses and your markers and drawings. The player's arrow
   beside the bag (under the mouse) switches to the game's minimap,
