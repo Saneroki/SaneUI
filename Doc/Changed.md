@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Sane UI's Discord: its invite on the page Sane UI, each report to its own channel (Saneroki, 2026-11-15)
+Saneroki set up a Discord server for Sane UI's community, for feedback, ideas and bug reports. Its channels: *Start here* (#welcome, #announcements, #dev-log), *Community*, *Feedback* (the forums #help, #bug-reports and #suggestions, tagged by module, and #feedback), a private *Staff*; card #538.
+- **`src/Core/Settings/About.lua`:** Discord's row has its address, an invite that never expires (`About.LINKS`), so *Copy link* is on. Each kind of feedback names where its made report goes (`About.KINDS[...].where`): a bug into #bug-reports (or a GitHub issue), an idea into #suggestions, general feedback into #feedback; `TEXT.where` is left for a kind without a place.
+- **Tests:** `dev/tests/core.lua` (515: Discord's invite to copy, Website still *Coming soon*; a made bug report says #bug-reports).
+- **Docs:** `src/Core/Settings/README.md` (*The feedback window*).
+- A `/reload` takes it in.
+
 ### Classic windows on the full map: the dropdown takes its clicks again (Saneroki, 2026-11-15)
 Saneroki: "The dropdown menue for the classic windows, why doesn't it work anymore?" Since the map's controls moved into its title bar (887e2d5e), the full map's bar stands over the map (`Window.UNDER`, 60 over the window), but the dropdown stayed at 50: under the bar, which takes the mouse over its whole width (its drag), and under the map's controls and their shade (`TopBar.lua`, the bar's level + 5). A click there moved nothing and opened nothing.
 - **`src/Core/Edge.lua`:** `Menu` puts the dropdown over the window's title bar each time it shows (`Edge.MENU_OVER`, 10 over the bar's level), never under its old place over what the window holds (`Edge.MENU_LEVEL`, 50).

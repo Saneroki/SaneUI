@@ -19,6 +19,9 @@ Sane UI 0.3.1 (2026-11-15)
   that part goes back to the game's own until your next /reload,
   with one line in your chat. /sane errors lists them.
 - A new logo for Sane UI and each of its addons.
+- Sane UI's Discord: copy its link from the options page. A
+  bug report, an idea or other feedback written there says which
+  Discord channel to paste it into.
 
 
 Navigation 0.3.2 (2026-11-15)

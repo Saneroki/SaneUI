@@ -20,22 +20,26 @@ Config.About = About
 
 -- Where Sane UI can be found. An address left empty has its row, with the button off.
 About.LINKS = {
-    { key = "discord", name = "Discord", url = "", tip = "Talk with other players and the maker of Sane UI." },
+    { key = "discord", name = "Discord", url = "https://discord.gg/dVGfWVPXQ5", tip = "Talk with other players and the maker of Sane UI." },
     { key = "website", name = "Website", url = "", tip = "News, guides and downloads." },
     { key = "github", name = "GitHub", url = "", tip = "The code, and the place for bug reports and ideas (Issues)." },
 }
 
--- The kinds of feedback, in the order of their buttons.
+-- The kinds of feedback, in the order of their buttons. `where`: where the made report is pasted, each
+-- kind in its own channel of Sane UI's Discord (a forum for bugs and for ideas, a channel for the rest).
 About.KINDS = {
     { key = "bug", name = "Report a bug", title = "Bug report", errors = true,
       tip = "Something broke or did not work as it should.",
-      ask = "What happened, and what did you do just before? Sane UI adds its version, the game's version and its latest errors to the report." },
+      ask = "What happened, and what did you do just before? Sane UI adds its version, the game's version and its latest errors to the report.",
+      where = "into a new post in #bug-reports on Sane UI's Discord, or a new issue on GitHub" },
     { key = "idea", name = "Suggest a feature", title = "Feature suggestion",
       tip = "Something Sane UI could do, or do better.",
-      ask = "What would you like Sane UI to do, and when would it help you?" },
+      ask = "What would you like Sane UI to do, and when would it help you?",
+      where = "into a new post in #suggestions on Sane UI's Discord" },
     { key = "note", name = "General feedback", title = "Feedback",
       tip = "Anything else you would like to say.",
-      ask = "What would you like to say?" },
+      ask = "What would you like to say?",
+      where = "into #feedback on Sane UI's Discord" },
 }
 
 local TEXT = {
@@ -50,7 +54,7 @@ local TEXT = {
     edit = "Back to writing",
     empty = "Write something first.",
     ready = "Your report is selected: press Ctrl+C to copy it, then paste it %s.",
-    where = "into a new issue on GitHub or in Discord",
+    where = "on Sane UI's Discord", -- a kind without a place of its own
     errors = "Latest errors",
     noErrors = "none",
 }
@@ -199,7 +203,7 @@ function About.Toggle()
     end
     drafts[window.kind.key] = written
     window.made = true
-    window.Ask:SetText(TEXT.ready:format(TEXT.where))
+    window.Ask:SetText(TEXT.ready:format(window.kind.where or TEXT.where))
     window.Box:SetText(About.Report(window.kind, written))
     window.Make:SetText(TEXT.edit)
     window.Box:SetFocus()

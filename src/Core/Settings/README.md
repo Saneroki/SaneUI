@@ -122,7 +122,10 @@ it back.
   box, selected to copy (`About.Report`: Sane UI's version, the game's version, build and language, the
   modules switched on, the class and level but no name, what was written, and for a bug the 5 newest
   entries of Core's error log); *Back to writing* returns. What was written is kept per kind for the
-  session, not saved.
+  session, not saved. The words over a made report say where to paste it, each kind its own channel of
+  Sane UI's Discord (`About.KINDS[...].where`): a bug into the forum #bug-reports (or a GitHub issue), an
+  idea into the forum #suggestions, the rest into #feedback. Discord's link is a server invite that never
+  expires (2026-11-15).
   - *Profiles*: a page of our own (a canvas, `Core.frames.Profiles`), built by `Config.BuildProfiles` the first
     time it is shown: the title over the game's divider, the switch (`Panel.Check` on `Profiles.Enabled` and
     `Profiles.SetEnabled`), a line, the tabs (`MinimalTabTemplate`, the options

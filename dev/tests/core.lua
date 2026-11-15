@@ -192,9 +192,11 @@ local names = {}
 for index = 2, #top.items do names[#names + 1] = top.items[index].header or top.items[index].name end
 check(table.concat(names, ",") == "Community,Discord,Website,GitHub,Feedback,Report a bug,Suggest a feature,General feedback",
     "then Community with Discord, Website and GitHub, and Feedback with a bug, a feature and general feedback")
-local discord = top.items[3]
-check(discord.button == "Coming soon" and discord.tooltip == About.TEXT.soonTip, "a link without an address is not there yet")
-local link = About.LINKS[1]
+local discord, website = top.items[3], top.items[4]
+check(discord.button == About.TEXT.open and About.LINKS[1].key == "discord" and About.LINKS[1].url ~= "",
+    "Discord has its invite, to copy")
+check(website.button == "Coming soon" and website.tooltip == About.TEXT.soonTip, "a link without an address is not there yet")
+local link = About.LINKS[2]
 link.url = "the address"
 W.popups = {}
 About.ShowLink(link)
@@ -224,6 +226,7 @@ window.Box:SetText("The bar vanished.")
 About.Toggle()
 check(window.made and window.Box:GetText():find("Latest errors", 1, true) and window.Make:GetText() == About.TEXT.edit,
     "written, it makes the report to copy")
+check(window.Ask:GetText():find("#bug-reports on Sane UI's Discord", 1, true), "a bug is pasted into the Discord's forum for bugs")
 About.Toggle()
 check(not window.made and window.Box:GetText() == "The bar vanished.", "and goes back to what was written")
 window:Hide()
