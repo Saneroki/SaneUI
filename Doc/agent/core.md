@@ -35,7 +35,7 @@ end (`dev/build`, from `assets/data/`).
 | `Holder.lua` | The game's window kept out of sight while ours stands for it (`native.hold`): `Core.Holder.Take(window)`, `TINY`; `holder:Native`/`GiveBack` |
 | `Seat.lua` | A window not ours seated in a room of a full window (place, scale, layer lent, never the parent): `Core.Seat.New(frame, { label, sized, gone })`, `seat:Hold`/`Free`/`Size` |
 | `HealthMarks.lua` | What every health bar shows besides the health (barrier, lost maximum, dispellable): `Core.HealthMarks.New(host, health, options)`, `EVENTS`, `ICONS` |
-| `Board.lua` | A module's full screen of windows as a tiling tree, layouts behind tabs: `Core.Board.New`, `Offer`/`Withdraw`/`Offered`/`Open`/`Standing`/`Close`, pure `Lay`/`Least`/`Move`/`Beside`/`Swap`; `board:Show`/`Hide`/`Search`/`Has`/`Lift`/`Remove`/`Toggle`/`Forget` |
+| `Board.lua` | A module's full screen of windows as a tiling tree, layouts behind tabs: `Core.Board.New`, `Offer`/`Withdraw`/`Offered`/`Open`/`Standing`/`Close`/`Key`/`Alone`, pure `Lay`/`Least`/`Move`/`Beside`/`Swap`; `board:Show`/`Hide`/`Search`/`Has`/`Lift`/`Remove`/`Toggle`/`Forget`; a window of its own (`board:Own`/`Stand`/`Alone`), corners that size a panel as the mouse goes |
 | `Expand.lua` | A window that opens while the mouse rests on it: `Core.Expand.New`, `DWELL` 0.2, `LINGER` 0.5, `STEP` 0.1, `MARGIN` 4; `expand:Open`/`Close`/`Stay` |
 | `Bar.lua` | A progress bar in the game's experience bar art: `Core.Bar.New(parent, options)`, `ART`, `CURVE` |
 | `Neighbours.lua` | The known addons, the one file that names them: `Core.Neighbours.KNOWN`, `Window(key)`, `Format`, `Lock` |

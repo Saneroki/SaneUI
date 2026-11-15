@@ -2450,7 +2450,9 @@ do
     do -- the line between the list and the one chosen, dragged: only the line follows; let go, the list is that wide
         local grip, mouseX = nil, W.cursorX
         for _, widget in ipairs(W.frames) do
-            if widget._scripts.OnMouseDown and widget._scripts.OnEnter and within(widget, talks) then grip = widget end
+            local corners = widget._parent and rawget(widget._parent, "corners") -- the board's corners of the panel
+            local corner = type(corners) == "table" and (corners.TOPRIGHT == widget or corners.BOTTOMRIGHT == widget)
+            if widget._scripts.OnMouseDown and widget._scripts.OnEnter and within(widget, talks) and not corner then grip = widget end
         end
         local chatWidth = column._width
         grip._scripts.OnEnter(grip)

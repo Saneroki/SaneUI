@@ -6,6 +6,10 @@ The bigger changes of each version, newest first.
 
 0.3.0 (2026-10-14)
 ------------------
+- Each window on a full screen can be a window of its own: the
+  button beside its X takes it off the full screen, and from then
+  on its key opens only that window (your bag keys only your bags).
+  Size windows by their bronze corners, as the mouse goes.
 - Share your map markers: a marker's card has Share, for that
   marker or all of yours in its zone, with your party, raid or
   guild. They are asked whether to keep them.

@@ -80,6 +80,7 @@ function Board.Part(key, title, least, part, wants)
         build = function(panel) ns.Safe(key, part.Build, panel) end,
         show = Step(key, part, "Show"), size = Step(key, part, "Size"), search = Step(key, part, "Search"),
         fit = part.Fit and function() return ns.Safe(key, part.Fit) end,
+        apart = part.Apart, -- false: never a window of its own (the game's own window seated there)
     } }
 end
 

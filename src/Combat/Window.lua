@@ -131,6 +131,12 @@ end
 -- One of Combat's keys (Keys.lua): as Open, or, pressed again while the screen stands full with that window (the
 -- pet book's: with the book at the pet's tab, no search on), back to its size, as the game's keys toggle its window.
 function Window.Toggle(key, bookTab)
+    -- A window made its own (the button beside its X): by itself, the book at that tab (Core's board: Board.Key).
+    local own, standing = Core.Board.Key(ns.name, key)
+    if own then
+        if standing and bookTab and ns.Book then ns.Book.Choose(bookTab) end
+        return
+    end
     local edge = handle and handle.edge
     if edge and edge.full and not (edge.clock and edge.clock:IsRunning()) and ns.Board.Has(key)
         and (not bookTab or (ns.Book and ns.Book.Chosen() == bookTab)) then

@@ -113,6 +113,7 @@ function Window.Toggle()
         return
     end
     if OnSocial() and Core.Board.Offered(BOARD, KEY) then
+        if Core.Board.Key(BOARD, KEY) then return end -- made its own (the button beside its X): by itself
         if Core.Board.Standing(BOARD) and ns.Page.Shown() then return Core.Board.Close(BOARD) end
         if Core.Board.Open(BOARD, KEY) then return end
     end

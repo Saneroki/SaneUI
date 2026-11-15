@@ -190,6 +190,24 @@ local function Hold(look, on)
     look.held = on and true or nil
 end
 
+-- A bracket lit (on): its corner under the mouse or held sizes the window (Core.Board's corners). The bracket again
+-- over it, added light; made the first time.
+local CORNERS = { TOPRIGHT = "heavybronze-vert-cornerbracket-TR", BOTTOMRIGHT = "heavybronze-vert-cornerbracket-BR" }
+local function Light(look, corner, on)
+    look.lit = look.lit or {}
+    local lit = look.lit[corner]
+    if not lit then
+        if not on or not CORNERS[corner] then return end
+        lit = look:CreateTexture(nil, "ARTWORK", nil, 1)
+        Look.Atlas(lit, CORNERS[corner], true)
+        lit:SetAllPoints(corner == "TOPRIGHT" and look.top or look.bottom)
+        lit:SetBlendMode("ADD")
+        lit:SetAlpha(0.5)
+        look.lit[corner] = lit
+    end
+    lit:SetShown(on and true or false)
+end
+
 -- The character list's frame round a window (CharacterSelectListBGTemplate, Camelot): the bronze plate, the band
 -- round it, the two brackets on its right corners. A frame one level under the window, as Core.Skin's, so all the
 -- window holds stands over it; it answers as a skin does (Edge.lua fits it while the window fills the screen).
@@ -210,12 +228,12 @@ function Look.Frame(frame)
     look.border:SetPoint("TOPLEFT", -Look.EDGE, Look.EDGE)
     look.border:SetPoint("BOTTOMRIGHT", Look.EDGE, -Look.EDGE)
     look.top = look:CreateTexture(nil, "ARTWORK")
-    Look.Atlas(look.top, "heavybronze-vert-cornerbracket-TR", true)
+    Look.Atlas(look.top, CORNERS.TOPRIGHT, true)
     look.top:SetPoint("TOPRIGHT", look.border, "TOPRIGHT")
     look.bottom = look:CreateTexture(nil, "ARTWORK")
-    Look.Atlas(look.bottom, "heavybronze-vert-cornerbracket-BR", true)
+    Look.Atlas(look.bottom, CORNERS.BOTTOMRIGHT, true)
     look.bottom:SetPoint("BOTTOMRIGHT", look.border, "BOTTOMRIGHT")
-    look.Fit, look.Rest, look.Hold = Fit, Rest, Hold
+    look.Fit, look.Rest, look.Hold, look.Light = Fit, Rest, Hold, Light
     return look
 end
 

@@ -119,8 +119,10 @@ function Window.Open(key)
 end
 
 -- A key (Keys.lua): as Open, or, pressed again while the screen stands full with that window, back to its size, as
--- the game's keys toggle its windows.
+-- the game's keys toggle its windows. A window made its own (the button beside its X) opens or closes by itself
+-- instead (Core's board: Board.Key).
 function Window.Toggle(key)
+    if Core.Board.Key(ns.name, key) then return end
     local edge = handle and handle.edge
     if edge and edge.full and not (edge.clock and edge.clock:IsRunning()) and ns.Board.Has(key) then
         return edge:Fill(false)

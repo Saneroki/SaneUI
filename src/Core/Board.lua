@@ -14,7 +14,21 @@ local Core = SaneUI.Core
 --  is dragged onto another window: near a side of that one, the two share its
 --  room, the dropped one at that side; in its middle, the two swap places;
 --  near a side of the whole screen, it takes a strip along that side. The X
---  takes the window off the layout, and the others take its room.
+--  takes the window off the layout, and the others take its room. A corner
+--  at a window's right (the kit's bronze bracket there) is dragged to size it
+--  as the mouse goes: the lines along its two sides move with it, the layout
+--  laid out at every step (Saneroki, 2026-11-15: "make those corners of
+--  windows dragable to resize the windows in realtime").
+--
+--  A window of its own (Saneroki, 2026-11-15: "a button that enables it to
+--  make it it's own window without the fullscreen"): beside its X the game's
+--  own minimize (MaximizeMinimizeButtonFrameTemplate's art) makes it one. The
+--  full screen goes back and the window stays where it stood, by itself, moved
+--  by its head and sized by its corners; from then on its key opens it so
+--  (Board.Key: the bags' key the bags alone), the full screen keeping its
+--  layouts with it. On its own window the button is the game's maximize: back
+--  onto the full screen, and its key opens that again. The full screen that
+--  comes takes every window of its own back onto it.
 --
 --  While a line or a head is held only a line or a tinted shape of where it
 --  would go follows the mouse; let go, the layout is kept and laid out anew
@@ -46,7 +60,9 @@ local Core = SaneUI.Core
 --
 --  Kept in the module's store, account-wide as windows' places are:
 --      store[key] = { chosen = 2, tabs = { { name = "Default", tree = nil }, { name = "Raid", tree = node } },
---                     occasions = { vendor = { tree = node } } }   -- a talk's layout, once changed
+--                     occasions = { vendor = { tree = node } },    -- a talk's layout, once changed
+--                     alone = { bags = { x, y, width, height, on = true } } } -- a window of its own: its top left
+--                                         -- from the screen's bottom left and its size (UIParent's units); on: marked
 --      node = { key = "talks" }                                         a window
 --           | { split = "x" or "y", parts = { node, ... }, shares = { 0.6, 0.4 } }
 --  The first tab without a tree is the module's default; another without one is empty.
@@ -72,7 +88,9 @@ local Core = SaneUI.Core
 --                                              -- takes that, its neighbours share the rest and the line between
 --                                              -- them stays; across, the room beside it stays empty
 --               dress = "bare",                -- no frame: the module draws its own (its head, title, X there);
---                                              -- nil: the kit's heavy bronze (Core.Look.Frame)
+--                                              -- nil: the kit's heavy bronze (Core.Look.Frame), its corners sizing it
+--               apart = false,                 -- never a window of its own (the game's own window seated there);
+--                                              -- nor is one as large as what it holds (fit)
 --               icon = "Interface/ICONS/...",  -- its tab of its own after the layouts' tabs: a texture or file ID
 --                                              -- (coords: its texture coordinates), or function(texture) that
 --                                              -- draws it (a portrait); none: only the dropdown lists it
@@ -84,6 +102,12 @@ local Core = SaneUI.Core
 --      board:Forget(key)                  -- a window that is no more (a chat view removed): out of every layout
 --      board:Occasion(name)               -- a talk began (its name in options.occasions) or ended (nil)
 --      board:Talking()                    -- the talk whose layout stands now, or nil
+--      board:Alone(key)                   -- marked as a window of its own: its key opens it by itself
+--      board:Own(key, on)                 -- the button beside the X: its own from now on, or onto the full screen
+--      board:Stand(key, on)               -- its own window shown (on), closed (false) or toggled (nil): stands now?
+--      Core.Board.Key(label, key)         -- a module's key for a window: true when it was one of its own (opened
+--                                         -- or closed so; then whether it stands now), false: the module opens
+--                                         -- its full screen as always; Core.Board.Alone(label, key): marked so
 --      board.panels[key]                  -- its panel, once made
 --      board.made[spec]                   -- every panel made, by the spec it was built for: one back under its
 --                                         -- key (Board.Offer, Withdraw) is its own again, not built anew
@@ -108,6 +132,7 @@ Board.MENU_WIDTH = 120  -- the dropdown Windows
 Board.ICON = 20         -- a window's icon in its tab
 Board.ICON_PAD = 22     -- the tab's room around it
 Board.ICON_GAP = 10     -- between the layouts' tabs and the windows' icon tabs
+Board.CORNER = 20       -- a corner that sizes a window: the outer part of the kit's bracket there (32), off what it holds
 
 Board.TEXT = {
     default = Core.Word("DEFAULT", "Default"),
@@ -126,6 +151,11 @@ Board.TEXT = {
     tabTip = "Right-click to rename or delete it.",
     talkTip = "The layout while you talk to them: arrange it as you like. Right-click to reset it.",
     accept = Core.Word("ACCEPT", "Accept"),
+    own = "Own window",
+    ownTip = "It opens by itself from now on, without the full screen: its key too.",
+    back = "Onto the full screen",
+    backTip = "Back on the full screen: its key opens the full screen again.",
+    close = Core.Word("CLOSE", "Close"),
 }
 
 -------------------------------------------------------------------------------
@@ -389,6 +419,7 @@ local function Kept(board)
     end
     if type(kept.chosen) ~= "number" or not kept.tabs[kept.chosen] then kept.chosen = 1 end
     if kept.occasions ~= nil and type(kept.occasions) ~= "table" then kept.occasions = nil end
+    if type(kept.alone) ~= "table" then kept.alone = {} end
     return kept
 end
 
@@ -473,13 +504,44 @@ local function Keep(board, tree)
     if board.options.changed then Core.Safe(Label(board), board.options.changed) end
 end
 
+-- Where a window stands as its own, kept (store[key].alone[key]: { x, y, width, height, on }), made when asked to.
+local function Place(board, key, make)
+    local alone = Kept(board).alone
+    local place = alone[key]
+    if type(place) ~= "table" then
+        if not make then return nil end
+        place = {}
+        alone[key] = place
+    end
+    return place
+end
+
+-- Its place and size kept as its panel stands now (moved, sized, or about to be taken off the full screen).
+local function Note(board, panel)
+    local left, top = panel:GetLeft(), panel:GetTop()
+    if not (left and top) then return end
+    local place = Place(board, panel.key, true)
+    local ratio = panel:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    place.x, place.y = math.floor(left * ratio + 0.5), math.floor(top * ratio + 0.5)
+    place.width, place.height = math.floor(panel:GetWidth() * ratio + 0.5), math.floor(panel:GetHeight() * ratio + 0.5)
+end
+
+-- In a fight a panel that holds the game's protected frames is not moved, sized, shown or hidden by addon code
+-- (windows.md, *Combat*).
+local function Locked(panel)
+    return InCombatLockdown() and panel:IsProtected() and true or false
+end
+
 -------------------------------------------------------------------------------
---  Holding a line or a head
+--  Holding a line, a head or a corner
 -------------------------------------------------------------------------------
-local held       -- what is held: { board, line = ..., strip = ... } or { board, panel = ..., onto = ..., side = ... }
+local held       -- what is held: { board, line = ..., strip = ... } or { board, panel = ..., onto = ..., side = ... },
+                 -- a corner: { board, grip, corner, stretch = panel (on the full screen) or sizing = panel (its own) }
 local watcher    -- runs while something is held
 local ghost      -- the tinted shape of where a window would go
 local room = {}  -- the room a held window would take: one table, filled anew at every look (Target)
+local Relay      -- (below, with the panels: the layout laid out anew as it stands)
+local Alone      -- (below: a panel as a window of its own, or back with the board)
 
 -- The mouse in the board's room: from the inside's top left, down.
 local function Pointer(board)
@@ -547,8 +609,30 @@ local function Target(board, key)
     return nil
 end
 
+-- A panel told its size, once it changed (its own window sized by a corner, or just shown).
+local function Told(board, panel)
+    local width, height = math.floor(panel:GetWidth() + 0.5), math.floor(panel:GetHeight() + 0.5)
+    if width == panel.toldWidth and height == panel.toldHeight then return end
+    panel.toldWidth, panel.toldHeight = width, height
+    panel.skin:Rest()
+    if panel.spec.size then Core.Safe(Label(board), panel.spec.size, panel, width, height) end
+end
+
+-- A corner held on the full screen: each line along its sides as far from where it was as the mouse went (each move
+-- from the sizes it had then), the layout laid out anew when that changed.
+local function Stretch(board)
+    local x, y = Pointer(board)
+    local dx, dy = math.floor(x - held.x + 0.5), math.floor(y - held.y + 0.5)
+    if dx == held.dx and dy == held.dy then return end
+    held.dx, held.dy = dx, dy
+    for _, side in ipairs(held.sides) do Board.Move(side.line, side.across and dx or dy, side.before, side.after) end
+    Relay(board)
+end
+
 local function Watch()
     local board = held.board
+    if held.stretch then return Stretch(board) end
+    if held.sizing then return Told(board, held.sizing) end
     if held.line then
         local line, x, y = held.line, Pointer(board)
         local across = line[1].split == "x"
@@ -594,6 +678,22 @@ local function Release(cancel)
     Watching(false)
     Shape(hand.board, nil)
     local board = hand.board
+    if hand.grip then
+        local panel = hand.sizing or hand.stretch
+        if not hand.grip:IsMouseOver() then
+            SetCursor(nil)
+            if panel.skin.Light then panel.skin:Light(hand.corner, false) end
+        end
+        if hand.sizing then -- its own window: at the size it was let go, kept
+            panel:StopMovingOrSizing()
+            panel:SetUserPlaced(false)
+            Told(board, panel)
+            Note(board, panel)
+        elseif not cancel and board.standing and (hand.dx ~= 0 or hand.dy ~= 0) then
+            Keep(board, board.tree) -- as the lines were moved (cancelled: the layout kept stays as it was)
+        end
+        return
+    end
     if hand.line then
         local strip = hand.strip
         strip.lit = false
@@ -629,7 +729,22 @@ Board.Release = Release
 -------------------------------------------------------------------------------
 --  The panels
 -------------------------------------------------------------------------------
--- A head along a panel's top to drag it by, inside its band (Board.BAND) and as high as the head's row.
+-- A window of its own held by its head: it follows the mouse (on), or stays where it was let go, kept.
+local function Moving(board, panel, on)
+    if on then
+        if Locked(panel) then return end
+        panel.moving = true
+        panel:StartMoving()
+    elseif panel.moving then
+        panel.moving = nil
+        panel:StopMovingOrSizing()
+        panel:SetUserPlaced(false)
+        Note(board, panel)
+    end
+end
+
+-- A head along a panel's top to drag it by, inside its band (Board.BAND) and as high as the head's row; on a window
+-- of its own it moves the window.
 local function Head(board, panel, right)
     local row = Board.HEAD - Board.BAND
     panel.head = CreateFrame("Frame", nil, panel)
@@ -638,8 +753,75 @@ local function Head(board, panel, right)
     panel.head:SetHeight(row)
     panel.head:EnableMouse(true)
     panel.head:RegisterForDrag("LeftButton")
-    panel.head:SetScript("OnDragStart", function() Core.Safe(Label(board), board.Lift, board, panel) end)
-    panel.head:SetScript("OnDragStop", function() Core.Safe(Label(board), Release, false) end)
+    panel.head:SetScript("OnDragStart", Core.Guard(Label(board), function()
+        if panel.alone then return Moving(board, panel, true) end
+        board:Lift(panel)
+    end))
+    panel.head:SetScript("OnDragStop", Core.Guard(Label(board), function()
+        if panel.moving then return Moving(board, panel, false) end
+        Release(false)
+    end))
+end
+
+-- The button beside the X: its art as the panel stands, the game's minimize (Condense) on the full screen, its
+-- maximize (Expand) on a window of its own.
+local function Faces(panel)
+    local button = panel.own
+    if not button then return end
+    local name = panel.alone and "RedButton-Expand" or "RedButton-Condense"
+    Core.Look.Atlas(button.normal, name)
+    Core.Look.Atlas(button.pushed, name .. "-Pressed")
+end
+
+-- Beside the X, as the game's maximize and minimize stand beside its X (MaximizeMinimizeButtonFrameTemplate's art):
+-- on the full screen the window its own from now on, on its own back onto the full screen (board:Own). A child of
+-- the X, so it goes where a module moves that (the doll's). None for a window as large as what it holds (Combat's
+-- bars) or one that says so (spec.apart = false).
+local function Own(board, panel)
+    local spec = panel.spec
+    if spec.apart == false or spec.fit then return end
+    local button = CreateFrame("Button", nil, panel.close)
+    button:SetSize(24, 24)
+    button:SetPoint("RIGHT", panel.close, "LEFT", 2, 0)
+    button.normal = button:CreateTexture(nil, "ARTWORK")
+    button.normal:SetAllPoints()
+    button:SetNormalTexture(button.normal)
+    button.pushed = button:CreateTexture(nil, "ARTWORK")
+    button.pushed:SetAllPoints()
+    button:SetPushedTexture(button.pushed)
+    local lit = button:CreateTexture(nil, "HIGHLIGHT")
+    Core.Look.Atlas(lit, "RedButton-Highlight")
+    lit:SetBlendMode("ADD")
+    lit:SetAllPoints()
+    button:SetScript("OnClick", Core.Guard(Label(board), function()
+        Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+        board:Own(panel.key, not panel.alone)
+    end))
+    button:SetScript("OnEnter", Core.Guard("tooltip", function(self)
+        if panel.alone then
+            Core.ShowTip(self, Board.TEXT.back, Board.TEXT.backTip, "ANCHOR_TOP")
+        else
+            Core.ShowTip(self, Board.TEXT.own, Board.TEXT.ownTip, "ANCHOR_TOP")
+        end
+    end))
+    button:SetScript("OnLeave", Core.Guard("tooltip", Core.HideTip))
+    panel.own = button
+    Faces(panel)
+end
+
+-- The game's own X at a panel's top right: off the layout on the full screen; on a window of its own, that closes.
+-- Beside it the button that makes the window its own (Own).
+local function Close(board, panel)
+    panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
+    panel.close:SetScript("OnClick", Core.Guard(Label(board), function()
+        if panel.alone then return board:Stand(panel.key, false) end
+        board:Remove(panel.key)
+    end))
+    panel.close:HookScript("OnEnter", Core.Guard("tooltip", function(self)
+        Core.ShowTip(self, panel.alone and Board.TEXT.close or Board.TEXT.remove, nil, "ANCHOR_TOP")
+    end))
+    panel.close:HookScript("OnLeave", Core.Guard("tooltip", Core.HideTip))
+    Own(board, panel)
 end
 
 -- The kit's panel (Core.Look, the character list's heavy bronze): inside its band a head with its title at the
@@ -649,11 +831,9 @@ end
 local function Plate(board, panel, spec)
     panel.skin = Core.Look.Frame(panel)
     local row = Board.HEAD - Board.BAND
-    panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
+    Close(board, panel)
     panel.close:SetPoint("TOPRIGHT", -Board.BAND + 2, -Board.BAND - (row - 24) / 2)
-    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
-    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
-    Head(board, panel, panel.close)
+    Head(board, panel, panel.own or panel.close)
     -- the title across the head, its words at its left: what a module puts on the title line hangs off its ends
     panel.title = panel.head:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     panel.title:SetPoint("LEFT", Board.EDGE - Board.BAND + 4, 0)
@@ -677,19 +857,107 @@ local function Bare(board, panel, spec)
     panel.skin = { Rest = function() end }
     panel.body = CreateFrame("Frame", nil, panel)
     panel.body:SetAllPoints()
-    panel.close = CreateFrame("Button", nil, panel, "UIPanelCloseButtonNoScripts")
+    Close(board, panel)
     panel.close:SetPoint("TOPRIGHT")
     panel.close:SetFrameLevel(panel.body:GetFrameLevel() + 21)
-    panel.close:SetScript("OnClick", function() Core.Safe(Label(board), board.Remove, board, panel.key) end)
-    Core.Tip(panel.close, Board.TEXT.remove, nil, "ANCHOR_TOP")
-    Head(board, panel, panel.close)
+    Head(board, panel, panel.own or panel.close)
     panel.head:ClearAllPoints()
     panel.head:SetPoint("TOPLEFT")
-    panel.head:SetPoint("RIGHT", panel.close, "LEFT")
+    panel.head:SetPoint("RIGHT", panel.own or panel.close, "LEFT")
     panel.head:SetFrameLevel(panel.body:GetFrameLevel() + 20)
     panel.title = panel.head:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     panel.title:SetPoint("CENTER")
     panel.title:SetText(spec.title or "")
+end
+
+-- The lines of the layout laid out last along a panel's sides at a corner: the one at its right (across: between
+-- two side by side) and the one over it (TOPRIGHT) or under it (BOTTOMRIGHT); either may be none.
+local function Sides(board, key, corner)
+    local rect = board.rects[key]
+    if not rect then return nil, nil end
+    local right, bottom = rect[1] + rect[3], rect[2] + rect[4]
+    local across, along
+    for _, line in ipairs(board.lines) do
+        if line[1].split == "x" then
+            if line[3] == right and line[4] <= rect[2] and line[4] + line[6] >= bottom then across = line end
+        else
+            local at = corner == "TOPRIGHT" and rect[2] - line[6] or bottom
+            if line[4] == at and line[3] <= rect[1] and line[3] + line[5] >= right then along = line end
+        end
+    end
+    return across, along
+end
+
+-- Whether that corner sizes the panel now: its own window's always (not in a fight that holds it), on the full
+-- screen while a line runs along a side of it there.
+local function Sizable(board, panel, corner)
+    if held or Locked(panel) then return false end
+    if panel.alone then return true end
+    if not board.standing then return false end
+    local across, along = Sides(board, panel.key, corner)
+    return across ~= nil or along ~= nil
+end
+
+-- A corner taken: its own window sized as the mouse goes (the game's own sizing), or on the full screen the lines
+-- along its sides held, each with the least its two sides may be.
+local function Take(board, panel, corner, grip)
+    if not Sizable(board, panel, corner) then return end
+    if panel.alone then
+        held = { board = board, grip = grip, corner = corner, sizing = panel }
+        panel:StartSizing(corner)
+    else
+        local function least(key) return Least(board, key) end
+        local sides = {}
+        local function Side(line)
+            if not line then return end
+            local across = line[1].split == "x"
+            sides[#sides + 1] = { line = line, across = across,
+                before = Board.Least(line[1].parts[line[2]], across, least, Board.PAD),
+                after = Board.Least(line[1].parts[line[2] + 1], across, least, Board.PAD) }
+        end
+        local across, along = Sides(board, panel.key, corner)
+        Side(across)
+        Side(along)
+        local x, y = Pointer(board)
+        held = { board = board, grip = grip, corner = corner, stretch = panel, sides = sides, x = x, y = y, dx = 0, dy = 0 }
+    end
+    Watching(true)
+end
+
+-- Its two corners at the right, over the kit's brackets (Core.Look.Frame's): the outer part of each (Board.CORNER),
+-- so what the module puts in its body keeps the mouse. Over the head, under the X. A bare panel draws its own window.
+local function Corners(board, panel)
+    local skin = panel.skin
+    if not (skin.top and skin.bottom) then return end
+    local edge, label = Core.Look.EDGE, Label(board)
+    panel.corners = {}
+    for _, corner in ipairs({ "TOPRIGHT", "BOTTOMRIGHT" }) do
+        local grip = CreateFrame("Frame", nil, panel)
+        panel.corners[corner] = grip
+        grip:SetSize(Board.CORNER, Board.CORNER)
+        grip:SetPoint(corner, panel, corner, edge, corner == "TOPRIGHT" and edge or -edge)
+        grip:SetFrameLevel(math.max(panel.close:GetFrameLevel() - 1, panel.head:GetFrameLevel() + 1))
+        grip:EnableMouse(true)
+        grip:SetScript("OnEnter", Core.Guard(label, function()
+            if not Sizable(board, panel, corner) then return end
+            SetCursor("UI_RESIZE_CURSOR")
+            skin:Light(corner, true)
+        end))
+        grip:SetScript("OnLeave", Core.Guard(label, function(self)
+            if held and held.grip == self then return end
+            SetCursor(nil)
+            skin:Light(corner, false)
+        end))
+        grip:SetScript("OnMouseDown", Core.Guard(label, function(self, button)
+            if button == "LeftButton" then Take(board, panel, corner, self) end
+        end))
+        grip:SetScript("OnMouseUp", Core.Guard(label, function(self)
+            if held and held.grip == self then Release(false) end
+        end))
+        grip:SetScript("OnHide", Core.Guard(label, function(self)
+            if held and held.grip == self then Release(true) end
+        end))
+    end
 end
 
 -- A window's panel in what the window holds: the kit's bronze, or none when its spec asks for that (spec.dress
@@ -699,6 +967,7 @@ local function Panel(board, spec)
     if panel and panel.spec == spec then return panel end
     -- Another window took that key (Board.Offer, Withdraw): the one before is told it is hidden, and what it built
     -- goes out of sight with its panel; the new one has its own panel again if it had one, else one built for it.
+    if panel and panel.alone then Alone(board, panel, false) end
     if panel and panel:IsShown() then
         panel:Hide()
         if panel.spec.show then Core.Safe(Label(board), panel.spec.show, panel, false) end
@@ -721,11 +990,13 @@ local function Panel(board, spec)
     panel:Hide()
     board.panels[spec.key], board.made[spec] = panel, panel
     if spec.build then Core.Safe(Label(board), spec.build, panel) end
+    Corners(board, panel) -- after what the module built: under the X wherever it put that
     return panel
 end
 
 -- One panel at its place (a rect of Board.Lay), shown; or hidden (nil).
 local function Put(board, panel, rect)
+    if panel.alone then return end -- a window of its own: not the full screen's (Alone)
     local spec = panel.spec
     if not rect then
         if panel:IsShown() then
@@ -799,6 +1070,105 @@ local function Lines(board)
         strip:Show()
     end
     strips:Done()
+end
+
+-- The layout shown (board.shown: without the windows that have nothing to show) laid out in the board's room: where
+-- each window stands and the lines between them.
+local function Lay(board)
+    local pad = Board.PAD
+    board.rects, board.lines = Board.Lay(board.shown, pad, pad, board.width - 2 * pad, board.height - 2 * pad, pad,
+                                         nil, nil, function(key) return Fitted(board, key) end)
+end
+
+-- Laid out anew as it stands while a corner is held: each panel at its new place and size, the lines with them.
+Relay = function(board)
+    Lay(board)
+    for key, rect in pairs(board.rects) do
+        local panel = board.panels[key]
+        if panel then Put(board, panel, rect) end
+    end
+    Lines(board)
+end
+
+-------------------------------------------------------------------------------
+--  A window of its own
+-------------------------------------------------------------------------------
+-- The full screen goes back, if it stands.
+local function Unfill(board)
+    local edge = board.window and board.window.edge
+    if board.standing and edge and edge.Fill then Core.Safe(Label(board), edge.Fill, edge, false) end
+end
+
+-- Its panel off the full screen into a window of its own (on): on the screen at its kept place and size (at first
+-- where it stood on the full screen, else in the middle), in the game's panels' layer, clamped to the screen, a
+-- click bringing it to the front, Esc closing it. Off: hidden, back with the board for the full screen to lay out.
+-- Not in a fight that holds it (false).
+Alone = function(board, panel, on)
+    on = on and true or false
+    if (panel.alone == true) == on then return true end
+    if Locked(panel) then return false end
+    local spec, label = panel.spec, Label(board)
+    if on then
+        local place = Place(board, panel.key, true)
+        if panel:IsShown() and not (place.width and place.height) then Note(board, panel) end
+        Put(board, panel, nil)
+        local leastWidth, leastHeight = Least(board, panel.key)
+        local screenWidth, screenHeight = UIParent:GetWidth(), UIParent:GetHeight()
+        local width = math.min(math.max(tonumber(place.width) or tonumber(spec.width) or leastWidth, leastWidth), screenWidth)
+        local height = math.min(math.max(tonumber(place.height) or math.floor(screenHeight * 0.6), leastHeight), screenHeight)
+        panel.alone = true
+        panel:SetParent(UIParent)
+        panel:SetFrameStrata("MEDIUM")
+        panel:SetToplevel(true)
+        panel:SetMovable(true)
+        panel:SetResizable(true)
+        panel:SetClampedToScreen(true)
+        if panel.SetResizeBounds then panel:SetResizeBounds(leastWidth, leastHeight, screenWidth, screenHeight) end
+        panel:ClearAllPoints()
+        if tonumber(place.x) and tonumber(place.y) then
+            panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", place.x, place.y)
+        else
+            panel:SetPoint("CENTER")
+        end
+        panel:SetSize(width, height)
+        Faces(panel)
+        panel:Show()
+        local animations = not (Core.general and Core.general.animations == false)
+        panel.fade:To(1, animations and Board.FADE or 0, 0)
+        if spec.show then Core.Safe(label, spec.show, panel, true) end
+        panel.toldWidth, panel.toldHeight = nil, nil
+        Told(board, panel)
+        if spec.search then Core.Safe(label, spec.search, panel, "") end
+        Note(board, panel)
+        Core.Escape(panel, function() board:Stand(panel.key, false) end)
+    else
+        panel.alone = nil
+        Core.Escape(panel, nil)
+        Moving(board, panel, false)
+        if panel:IsShown() then
+            Note(board, panel)
+            panel:Hide()
+            if spec.show then Core.Safe(label, spec.show, panel, false) end
+        end
+        local inside = board.inside
+        panel:SetParent(inside)
+        panel:SetFrameStrata(inside:GetFrameStrata())
+        panel:SetFrameLevel(inside:GetFrameLevel() + Board.LEVEL)
+        panel:SetToplevel(false)
+        panel:SetClampedToScreen(false)
+        panel.toldWidth, panel.toldHeight = nil, nil
+        Faces(panel)
+    end
+    return true
+end
+
+-- Every window of its own of the board closed (the full screen comes, or the module's window went).
+local function Gather(board)
+    for _, panel in pairs(board.panels) do
+        if panel.alone and not Alone(board, panel, false) then
+            Core.AfterCombat(Label(board) .. ": own windows", Gather, board)
+        end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -1082,9 +1452,17 @@ local boards = {} -- [label] = the board made under that label
 
 function Board.New(window, options)
     local board = setmetatable({ window = window, options = options, panels = {}, rects = {}, lines = {},
-        made = {} }, meta) -- made[spec] = its panel, kept for the session: a spec that returns gets its panel back
+        made = {}, inside = window.inside }, meta) -- made[spec] = its panel, kept for the session: a spec that
+                                                   -- returns gets its panel back
     window.board = board -- the title bar ends its search box left of the dropdown (Window.lua)
     if type(options.label) == "string" then boards[options.label] = board end
+    -- The module's window hidden itself (the module stood down): its windows of their own go with it.
+    local frame = window.frame
+    if frame and frame.HookScript then
+        frame:HookScript("OnHide", Core.Guard(Label(board), function(self)
+            if not self:IsShown() then Gather(board) end
+        end))
+    end
     return board
 end
 
@@ -1164,8 +1542,27 @@ end
 -- That board's full screen goes back.
 function Board.Close(label)
     local board = boards[label]
-    local edge = board and board.window and board.window.edge
-    if board and board.standing and edge and edge.Fill then Core.Safe(Label(board), edge.Fill, edge, false) end
+    if board then Unfill(board) end
+end
+
+-- A module's key for one of its windows (the bags' key): one marked as its own opens or closes by itself; if the full
+-- screen stands it goes back first, and with that window on it, that is all (as the game's keys toggle). Returns true
+-- when it was one of its own (and whether it stands now), false: the module opens its full screen as always.
+function Board.Key(label, key)
+    local board = boards[label]
+    if not (board and board:Alone(key)) then return false end
+    if board.standing then
+        local had = board:Has(key)
+        Unfill(board)
+        if had then return true, false end
+    end
+    return true, board:Stand(key)
+end
+
+-- Whether that board's window is marked as its own (its key opens it by itself).
+function Board.Alone(label, key)
+    local board = boards[label]
+    return board ~= nil and board:Alone(key)
 end
 
 -- The window stands full: what it holds (inside) is that wide and high. Each window of the layout chosen that has
@@ -1174,6 +1571,7 @@ end
 function methods:Show(inside, width, height)
     if held then Release(true) end
     self.inside, self.width, self.height, self.standing = inside, math.floor(width), math.floor(height), true
+    Gather(self) -- its windows of their own come back onto it
     local list, specs = Specs(self)
     self.specs = specs
     local tab, index, occasion = Chosen(self)
@@ -1190,9 +1588,8 @@ function methods:Show(inside, width, height)
         return not spec.present or Core.Safe(Label(self), spec.present) == true
     end
     local shown = self.tree and Present(self.tree, here)
-    local pad = Board.PAD
-    self.rects, self.lines = Board.Lay(shown, pad, pad, self.width - 2 * pad, self.height - 2 * pad, pad, nil, nil,
-                                       function(key) return Fitted(self, key) end)
+    self.shown = shown or nil
+    Lay(self)
     for key, panel in pairs(self.panels) do
         if not self.rects[key] then Put(self, panel, nil) end
     end
@@ -1296,5 +1693,53 @@ function methods:Forget(key)
         if type(tab) == "table" and type(tab.tree) == "table" then tab.tree = Board.Without(Copy(tab.tree), key) or false end
     end
     local panel = self.panels[key]
-    if panel then Put(self, panel, nil) end
+    if panel then
+        Alone(self, panel, false)
+        Put(self, panel, nil)
+    end
+    kept.alone[key] = nil
+end
+
+-- Marked as a window of its own: its key opens it by itself (Board.Key).
+function methods:Alone(key)
+    local place = Place(self, key)
+    return place ~= nil and place.on == true
+end
+
+-- Its own window shown (on), closed (false) or toggled (nil): only one of the module's that has something to show
+-- now; not in a fight that holds it. Returns whether it stands now.
+function methods:Stand(key, on)
+    local panel = self.panels[key]
+    if on == nil then on = not (panel and panel.alone) end
+    if not on then
+        if panel and panel.alone then Alone(self, panel, false) end
+        return panel ~= nil and panel.alone == true
+    end
+    local _, specs = Specs(self)
+    local spec = specs[key]
+    if not spec or (spec.present and Core.Safe(Label(self), spec.present) ~= true) then return false end
+    if not self.standing then self.specs = specs end -- its least size (Least), as the full screen would have it
+    panel = Panel(self, spec)
+    Alone(self, panel, true)
+    return panel.alone == true
+end
+
+-- The button beside the X: the window its own from now on (on): the full screen goes back, the window stays
+-- where it stood there (at first; then where it was left as its own). Off: back onto the full screen, which comes
+-- with it in the layout chosen (put in if that lacks it).
+function methods:Own(key, on)
+    local panel = self.panels[key]
+    if panel and Locked(panel) then return end
+    if on then
+        local place = Place(self, key, true)
+        place.on = true
+        if panel and panel:IsShown() and not panel.alone and not (place.width and place.height) then Note(self, panel) end
+        Unfill(self)
+        self:Stand(key, true)
+        return
+    end
+    local place = Place(self, key)
+    if place then place.on = nil end
+    if panel and panel.alone then Alone(self, panel, false) end
+    Board.Open(Label(self), key)
 end

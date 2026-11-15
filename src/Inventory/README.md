@@ -21,6 +21,11 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   game's key bindings under Sane UI. *Sane UI > Inventory > Bags > Bag Keys Open Our Bags* switches it off; with
   *Can expand to fullscreen* off the full screen never comes, so your bag keys and bags are the game's then too, and
   so they are while Edit Mode is open.
+- **A window of its own:** beside each window's X on the full screen, the game's minimize button makes that window
+  its own: the full screen goes back, and the window stays where it stood, by itself. Move it by its title, size it
+  by its bronze corners, close it with its X or Esc. From then on its key opens only that window: your bag keys
+  open the bags alone. Its maximize button puts it back on the full screen, and its key opens the full screen
+  again. On the full screen the corners size a window too, as the mouse goes.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Character* (the full screen
   goes back and the game's key for its character sheet is said: our code never opens it) and *Bags* (the
   game's bags open). The game's character sheet and bags have the button *Sane UI* beside their close button:
@@ -241,7 +246,8 @@ login has no last line, until the game has said your time.
   `TOGGLEBAG1` to `4` and `TOGGLEREAGENTBAG1` (`GetBindingKey`) bound to our `SANEUI_INVENTORY_BAGS` by the game's
   override bindings (`SetOverrideBinding` on a frame of ours; anew at `UPDATE_BINDINGS` when those keys changed;
   out of a fight, else after it), which runs `Window.Toggle("bags")`: the full screen filled with the bags put on
-  the layout once it stands (`Board.Add`), or back while it stands with them (`Board.Has`). The game's `BagsBar`
+  the layout once it stands (`Board.Add`), or back while it stands with them (`Board.Has`); the bags made a window
+  of their own (Core's board, `Core.Board.Key`) open or close by themselves instead. The game's `BagsBar`
   (the backpack, the bag slots, the keyring) lent to the same hidden frame as the bag windows while ours stand in
   for them (`Keys.lua`'s `Ours`: Edit Mode and Classic windows leave it there). The game's bag
   windows (`ContainerFrameCombinedBags`, `ContainerFrame1` to `NUM_CONTAINER_FRAMES`) lent to a hidden frame of

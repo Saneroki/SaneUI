@@ -2154,6 +2154,108 @@ end
     frame:Hide()
 end)()
 
+-- A window of its own and the corners (Board.lua, Saneroki 2026-11-15): the button beside the X makes the window its
+-- own (the full screen goes back, the window stands by itself on the screen, marked); its key toggles it then, and the
+-- full screen that comes takes it back; a corner held on the full screen moves the line along its side at every step,
+-- kept when let go; its own window's corner sizes it as the game does, told at every step (in a function of its own:
+-- the main chunk is at Lua's 200 locals) ------------------------------------------------------------------------------
+;(function()
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local store, sizes, shown = {}, {}, {}
+    local settings = { expand = true, motion = "off", expandOpacity = 50, expandTexture = "solid", corners = 10, squareEdges = true }
+    local function Spec(key)
+        return { key = key, title = key, least = { 200, 150 }, show = function(_, on) shown[key] = on end,
+                 size = function(_, width, height) sizes[key] = { width, height } end }
+    end
+    local bags, bank, seat = Spec("bags"), Spec("bank"), Spec("seat")
+    seat.apart = false
+    local board, handle
+    local function Lay() if handle.edge.full then board:Show(handle.inside, 1920, 1048) else board:Hide() end end
+    handle = Window.New(frame, { store = store, key = "owned", title = "Owned", dock = true, edge = settings,
+        first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 }, docked = function() if board then Lay() end end })
+    board = Core.Board.New(handle, { store = store, key = "layouts", label = "Owned", changed = Lay,
+        windows = function() return { bags, bank, seat } end,
+        default = function() return { split = "x", parts = { { key = "bags" }, { key = "bank" }, { key = "seat" } }, shares = { 1, 1, 1 } } end })
+    handle:Place()
+    at(frame, 810, 440)
+    frame:Show()
+    -- the watcher that runs while something is held: the board's one, shown by what takes hold
+    local function Watcher(take)
+        local hidden = {}
+        for _, made in ipairs(W.frames) do
+            if made._parent == nil and made._scripts.OnUpdate and not made._shown then hidden[made] = true end
+        end
+        take()
+        for made in pairs(hidden) do if made._shown then return made end end
+    end
+    check(Core.Board.Open("Owned", "bags") and handle.edge.full and not Core.Board.Key("Owned", "bags") and handle.edge.full,
+        "(its full screen stands; a window not made its own leaves its key to the module)")
+    local panel = board.panels.bags
+    check(panel.own and panel.own._parent == panel.close and panel.own.normal._atlas == "RedButton-Condense"
+        and board.panels.seat.own == nil, "beside the X the game's minimize, a child of the X; none where a window may not be its own")
+
+    local grip, rect = panel.corners.BOTTOMRIGHT, board.rects.bags
+    local width, bankWidth = rect[3], board.rects.bank[3]
+    check(panel.corners.TOPRIGHT and grip:GetFrameLevel() < panel.close:GetFrameLevel(), "two corners at its right, under the X")
+    W.cursorX, W.cursorY = rect[1] + rect[3], -(rect[2] + rect[4])
+    local watcher = Watcher(function() grip:GetScript("OnMouseDown")(grip, "LeftButton") end)
+    W.cursorX = rect[1] + rect[3] + 100
+    watcher:GetScript("OnUpdate")(watcher)
+    check(board.rects.bags[3] == width + 100 and board.rects.bank[3] == bankWidth - 100 and sizes.bags[1] == width + 100
+        and sizes.bank[1] == bankWidth - 100, "a corner held on the full screen: the line at its right goes with the mouse, both laid out at once")
+    grip:GetScript("OnMouseUp")(grip)
+    check(store.layouts.tabs[1].tree and board.rects.bags[3] == width + 100, "let go, the layout is kept as it was moved")
+    W.cursorX, W.cursorY = 0, 0
+
+    panel.own:GetScript("OnClick")(panel.own)
+    check(not handle.edge.full and panel.alone and panel._parent == UIParent and panel:IsShown() and shown.bags == true
+        and store.layouts.alone.bags.on == true and panel.own.normal._atlas == "RedButton-Expand" and panel._clamped,
+        "its minimize: the full screen goes back, the window stands by itself on the screen, marked; its button the maximize now")
+    local own, standing = Core.Board.Key("Owned", "bags")
+    check(own and not standing and not panel:IsShown() and shown.bags == false, "its key closes it by itself now")
+    own, standing = Core.Board.Key("Owned", "bags")
+    check(own and standing and panel:IsShown() and not handle.edge.full, "and opens it again, without the full screen")
+
+    local sizing = Watcher(function() grip:GetScript("OnMouseDown")(grip, "LeftButton") end)
+    check(panel._sizing == "BOTTOMRIGHT", "its own window's corner: the game sizes it from there")
+    panel:SetSize(400, 500)
+    sizing:GetScript("OnUpdate")(sizing)
+    check(sizes.bags[1] == 400 and sizes.bags[2] == 500, "told its size at every step")
+    panel._left, panel._bottom = 100, 200 -- where the game left it
+    grip:GetScript("OnMouseUp")(grip)
+    local place = store.layouts.alone.bags
+    check(not panel._sizing and place.width == 400 and place.height == 500 and place.x == 100 and place.y == 700,
+        "let go, its size and place are kept")
+    panel.head:GetScript("OnDragStart")(panel.head)
+    check(panel._moving, "held by its head it moves")
+    panel._left, panel._bottom = 300, 100
+    panel.head:GetScript("OnDragStop")(panel.head)
+    check(not panel._moving and place.x == 300 and place.y == 600, "and stays where it was let go, kept")
+
+    handle.edge:Fill(true)
+    check(handle.edge.full and not panel.alone and panel._parent == handle.inside and panel:IsShown() and board.rects.bags,
+        "the full screen that comes takes it back onto its layout")
+    own, standing = Core.Board.Key("Owned", "bags")
+    check(own and not standing and not handle.edge.full and not panel:IsShown(),
+        "its key while the full screen stands with it: the full screen goes back, as the game's keys toggle")
+    Core.Board.Key("Owned", "bags")
+    local point = panel._points[1]
+    check(panel.alone and point[1] == "TOPLEFT" and point[4] == 300 and point[5] == 600 and panel._width == 400,
+        "again: by itself at its kept place and size")
+    _G.SaneUIEscape:Hide()
+    check(not panel.alone and not panel:IsShown(), "Esc closes it")
+    Core.Board.Key("Owned", "bags")
+    panel.own:GetScript("OnClick")(panel.own)
+    check(not store.layouts.alone.bags.on and not panel.alone and handle.edge.full and board:Has("bags") and panel:IsShown(),
+        "its maximize: back onto the full screen, which comes with it")
+    check(not Core.Board.Key("Owned", "bags"), "and its key is the module's again (its full screen)")
+    handle.edge:Fill(false)
+    board:Own("bags", true)
+    check(panel.alone and panel:IsShown(), "(its own again)")
+    frame:Hide()
+    check(not panel.alone and not panel:IsShown(), "the module's window gone (it stood down): its windows of their own go with it")
+end)()
+
 -- A talk's layout on the board (Board.lua, occasions): an unknown talk counts as none; one on stands instead of the tab
 -- chosen, its changes kept as its own, a kept one a hand spoiled mended; a window forgotten leaves it too; Reset makes
 -- it the module's again (in a function of its own: the main chunk is at Lua's 200 locals) ---------------------------

@@ -130,6 +130,7 @@ local Relay = Core.Later(function() ns.Safe("game window", Lay) end) -- once the
 
 -- The part on the board (Board.lua).
 local Part = {}
+Part.Apart = false -- the game's own window seated on the full screen: never a window of its own (Core's board)
 
 function Part.Build(panel)
     body = panel.body

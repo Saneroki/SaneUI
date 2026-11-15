@@ -292,6 +292,25 @@ not by itself. The rules:
   strip along it); let go, the layout is kept and laid out once. Nothing runs at rest: one watcher, only while
   something is held. The X takes a window off; the dropdown *Windows* (left of *Classic windows*) ticks those in
   the layout, a tick adds one beside the largest.
+- **Sized by its corners, as the mouse goes** (Saneroki, 2026-11-15: "make those corners of windows dragable to
+  resize the windows in realtime"). The kit's two bronze brackets at a panel's right are its corners (the outer
+  `Board.CORNER` of each, under the X, lit under the mouse): held on the full screen, the lines along its sides (the
+  one at its right, the one over or under it) follow the mouse and the layout is laid out at every step, its
+  windows told their sizes as they go; let go, it is kept. A corner without a line along it does nothing there. A
+  bare panel draws its own window and has none.
+- **A window of its own** (Saneroki, 2026-11-15: "a button that enables it to make it it's own window without the
+  fullscreen. So you can for example open bags without the fullscreen if you hit its keybind"). Beside the X the
+  game's own minimize (`MaximizeMinimizeButtonFrameTemplate`'s `RedButton-Condense`): the full screen goes back and
+  the window stays where it stood, by itself on the screen (`MEDIUM`, a click brings it to the front, clamped, Esc
+  closes it), moved by its head, sized by its corners as the game sizes a frame; from then on the module's key for
+  it opens and closes it so (`Core.Board.Key(label, key)` first in the module's key: the bags' key the bags alone,
+  Combat's keys their book, the guild key the guild window), and a key while the full screen stands with it sends
+  the full screen back. The full screen keeps its layouts with that window in them; the full screen that comes takes
+  every window of its own back onto it. On its own window the button is the game's maximize (`RedButton-Expand`):
+  back onto the full screen, which comes with it, and its key opens that again. Kept in `store[key].alone[key] =
+  { x, y, width, height, on }`. None for a window as large as what it holds or one that says so (`apart = false`:
+  the game's own window seated there). In a fight a panel that holds protected frames is neither shown, hidden,
+  moved nor sized; the module's window that goes (it stood down) takes its windows of their own with it.
 - **Layouts behind tabs** after the title in the title bar (the game's `MinimalTabTemplate`): the first is the
   module's (`default(width, height)`, laid out for the screen as it is until it is changed, then kept as changed;
   *Reset* makes it the module's again), `+` makes an empty one, a right click renames, resets the first, deletes
@@ -301,8 +320,8 @@ not by itself. The rules:
   lit (the tab selected, the icon in full colour) while the window is in the layout chosen, greyed while not; a
   click puts it in or takes it off, as its tick in *Windows* does; its tooltip says the window's title. The
   module picks the game's own icon for what the window stands for.
-- **Kept** in `store[key]` (account-wide, as places are): `{ chosen, tabs = { { name, tree } } }`, a tree only once
-  changed (`false`: emptied).
+- **Kept** in `store[key]` (account-wide, as places are): `{ chosen, tabs = { { name, tree } }, alone }`, a tree only
+  once changed (`false`: emptied); `alone` the windows of their own.
 - **A window of another module** (Saneroki, 2026-10-20): a module depends on Core only, so a window it puts on another
   module's board is offered through Core (`Core.Board.Offer(label, spec)`, the board's label): the board lists it after its
   own, or in place of its own of the same key (the module Guild's guild window on Social's full screen, where Social
