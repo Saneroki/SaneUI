@@ -1,7 +1,8 @@
 # Onboarding
 
-Planning notes for the **Onboarding** module (`SaneUI_Onboarding`, working name). This is not a spec yet: it
-holds what Saneroki asked for (2026-10-16) and proposals for him to discuss. Nothing is built.
+Planning notes for the **Onboarding** module (`SaneUI_Onboarding`; the name, Saneroki, 2026-11-15). This is
+not a spec yet: it holds what Saneroki asked for (2026-10-16, 2026-11-15) and proposals for him to discuss.
+Nothing is built.
 
 It is for **later**: Sane UI is not given to other players yet, so nobody has an old version to update
 from. It is worth building once others play it, and its first real use is the first version they get.
@@ -18,6 +19,19 @@ from. It is worth building once others play it, and its first real use is the fi
 - **A ? in the title bar** (Saneroki, 2026-10-16) of Sane UI's windows, next to the button to the game's own
   window, for help with that window. Only on our window (the Sane UI view), never on the game's own
   window (the classic view) (*The ? in the title bar* below).
+
+## Its three parts (Saneroki, 2026-11-15)
+
+The module is called **Onboarding** and stays load on demand. It has three parts:
+
+- **Setup:** a guided tour through setting up and configuring Sane UI to the player's liking. It could
+  grow out of the Welcome below (proposal).
+- **What's new:** what is new in Sane UI since the version last seen (*What's new: the words* below).
+- **Tutorials:** learn about the different parts of Sane UI, one tutorial per feature: the map, the bags
+  and so on.
+
+Loaded on demand still means read only when needed: when a new version is found, and when the player opens
+Setup or a tutorial. How Setup and the Tutorials look, and where they are opened from, is still open.
 
 ## When it shows (proposal)
 
@@ -211,4 +225,4 @@ on our window small and full, not on the game's window, not in Edit Mode; the ne
 
 Answered (Saneroki, 2026-10-16): after an update the window opens by itself unless its switch is off (was
 question 2); help comes from a ? in the title bar, in the Sane UI view only, instead of tips at the first
-meeting (was question 4).
+meeting (was question 4). Answered (Saneroki, 2026-11-15): the module is called *Onboarding* (was question 1).
