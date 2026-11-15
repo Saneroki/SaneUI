@@ -1511,8 +1511,9 @@ end)()
             ticker = child
         end
     end
-    check(face and face._parent == frame and Satchel.button._parent == face and clock and place and not face._shown,
-        "the small map's face, the satchel's button in it: out of sight while the mouse is off the map")
+    check(face and face._parent == frame._parent and face._points[1][2] == frame and Satchel.button._parent == face
+        and clock and place and not face._shown,
+        "the small map's face over the map (beside it, not cut by it), the satchel's button in it: out of sight while the mouse is off the map")
     local was = { GetMinimapZoneText = rawget(_G, "GetMinimapZoneText"), C_PvP = rawget(_G, "C_PvP") }
     GetMinimapZoneText = function() return "Goldshire" end
     C_PvP = { GetZonePVPInfo = function() return "contested" end }
@@ -8225,6 +8226,14 @@ end)()
         local boss = Marks()[1]
         check(floor == "90:1" and onSmall and view._shown and not minimap._shown and not Canvas.Laid(),
             "the small map inside: our map of the dungeon first, at its lowest floor, the game's minimap under it")
+        local face = ns.Satchel.face
+        check(face._parent == Canvas.frame._parent and face._parent == view._parent and face:GetFrameLevel() > view:GetFrameLevel(),
+            "the face beside the canvas (which cuts what stands in it), above our map of the dungeon")
+        local clear
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == Canvas.frame and widget._kind == "Texture" and widget._layer == "BACKGROUND" then clear = widget end
+        end
+        check(not clear or (clear._color and clear._color[4] == 0), "the canvas' ground clear under our map of the dungeon")
         check(boss and near(boss._points[1][4], -0.25 * 200) and near(boss._points[1][5], 0) and boss.model._shown
             and boss.model._width == Dungeons.MODEL_WIDTH * Dungeons.SMALL and boss._width == Dungeons.BOSS_SIZE * Dungeons.SMALL,
             "the whole floor as wide as the small view (no bar there); its boss's model on it, at a smaller size")

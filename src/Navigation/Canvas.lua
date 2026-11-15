@@ -395,7 +395,9 @@ end
 -- the game's minimap is the map there, on the sea's colour alone.
 local function Draw()
     if lost then
-        ground:SetColorTexture(Canvas.GROUND[1], Canvas.GROUND[2], Canvas.GROUND[3])
+        -- (under our map of the dungeon, nothing: Saneroki, 2026-11-15, "Instead of the blue, can you make it fully
+        -- transparent background?")
+        ground:SetColorTexture(Canvas.GROUND[1], Canvas.GROUND[2], Canvas.GROUND[3], whole and 0 or 1)
         Empty()
         return ns.Safe("marks", ns.Marks.Clear)
     end

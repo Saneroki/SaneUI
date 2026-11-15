@@ -930,8 +930,12 @@ end
 
 function Satchel.Build(canvas)
     -- The small map's face: the time at the top, the place at the bottom, the button in a corner (Face).
-    face = CreateFrame("Frame", nil, canvas)
-    face:SetAllPoints()
+    -- beside the canvas over all of it, not in it: the canvas cuts what stands in it at its edges, and the game draws
+    -- such a frame's children as one with it, so our map of a dungeon (Dungeons.lua, beside the canvas, above it) would
+    -- cover the face whatever its level (Saneroki, 2026-11-15: over our map "i don't see the time, area text and both
+    -- the bag and arrow buttons")
+    face = CreateFrame("Frame", nil, canvas:GetParent())
+    face:SetAllPoints(canvas)
     face:Hide()
     clockLine = face:CreateFontString(nil, "OVERLAY")
     Kit.SetFont(clockLine, Satchel.FACE_CLOCK, true, Satchel.CLOCK_INK)
