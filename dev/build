@@ -270,4 +270,7 @@ for i in "${!folders[@]}"; do
         exit 1
     fi
 done
+# The auction database's links (dev/tools/auction-database), made on this computer: an account's first save gets its
+# link here; said only where they changed.
+WOW_FOREVER="${folders[0]}" WOW_RETAIL="${folders[1]}" "$here/dev/tools/auction-database" link --changed || echo "The auction database's links were not made anew (dev/tools/auction-database link)." >&2
 echo "New addon or new file: restart the game. Changed file only: /reload in the game."

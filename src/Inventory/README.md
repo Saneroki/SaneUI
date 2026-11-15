@@ -745,8 +745,12 @@ place at the top (`Core.TellsAtTop`). Its look:
 
 ## Stat weights
 `Asks.lua` (Saneroki, 2026-10-30): *Equip and delete without asking*, on in every profile: the game's questions before gear
-binds or ends a refund and before an item is destroyed answered as their own Yes would; where the game keeps destroying
-for a click, its question stands with the word typed in, and the next item is tried again.
+binds or ends a refund answered as their own Yes would. Destroying waits for a press of the player's (`DeleteCursorItem`,
+`HasRestrictions`; the game blocked it every time inside the question's own frame, which comes with the drop: Forever 70790
+to 70888): the question comes up with the word typed in, and the item goes at the next key, as Make Room's does (a frame
+that hears the keyboard, `SetPropagateKeyboardInput`, shown only while a question waits; out of a fight; Escape is the
+game's No and keeps it); a click on Yes does it at once. Where the game refuses that too, the question stands, and the next
+item is tried again.
 
 `Weights.lua` (Saneroki, 2026-10-30) says what each stat is worth to a character, so that an upgrade is one for the class
 and specialization played. Core's `Core.Upgrade` asks for them (`Core.WeighWith`), so the arrow in the bags, Loot,

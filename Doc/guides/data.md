@@ -981,9 +981,11 @@ save, and each running game writes only what it read itself, over what the other
 writer of its own files, and what the accounts share is the `AddOns` folder:
 
 - **The addon `SaneUI_AuctionDatabase`** is made of links, one to each account's `SaneUI_AuctionData.lua`. A link there follows the
-  file's name, so it stays good through every save. `dev/tools/auction-database link` (`saneui auctiondatabase link`) makes it;
-  again after a new account, with a restart of the game. Nothing runs in the background, and the `WTF` folder is never written.
-  Made on this computer (`## X-SaneUI-Made`), so it is in neither the repository nor a build; `dev/build` leaves it alone.
+  file's name, so it stays good through every save. `dev/tools/auction-database link` (`saneui auctiondatabase link`) makes it,
+  a link only for an account that has saved its file (a link to nothing is a file the game cannot load: a warning at every
+  login). `dev/build --install` makes it anew after each install and says so where it changed, so an account's first save
+  gets its link at the next install, with a restart of the game. Nothing runs in the background, and the `WTF` folder is
+  never written. Made on this computer (`## X-SaneUI-Made`), so it is in neither the repository nor a build.
 - **In the game:** each link runs as a file of that addon and leaves its saved variable in the global; the file after it calls
   `Prices.Account()`, which takes what it holds of this game version and clears the global. So the addon must be read before this
   account's own file (`## OptionalDeps` of `SaneUI_AuctionData`), and an account's own file is read twice, which does no harm.
@@ -1099,8 +1101,9 @@ folders and `SaneUI.lua` files players sent (`--from`, each game version they ho
 - **A set is refused** when its format is not 1, its game version is not the client's, or the client's game
   version cannot be told: reported once (`Core.Report`: one line in chat); the last two once for all sets
   (`data: game`: then every set is so, a copy of Sane UI made for another game folder). A set Core does not hold at all
-  is noted once in the error log, quietly, when it is first asked for (`Core.NoteError`). The modules fall
-  back.
+  is noted once in the error log, quietly, when it is first asked for (`Core.NoteError`); not at all in a game version
+  whose world's data is not made yet, which holds only the sets every game version gets (`Data.EVERY`: Icons and
+  PatchNotes, Retail's two). The modules fall back.
 - **`Data.Prepare(name)`** and **`Data.WhenReady`** stay for readers that ask before Core's files have all
   run (Core's own, as their files are read) and for sets that come late (the tests): `Prepare` does nothing
   but say a set that is not there.

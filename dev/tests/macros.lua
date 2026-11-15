@@ -1304,6 +1304,11 @@ do
     Frames()
     check(Core.Data.Set("Icons"):Get(135274, "name") == "INV_Sword_04", "the set of the game's icons is there: "
           .. table.concat({ Core.Data.Set("Icons"):State() }, " ") .. " " .. table.concat(W.fileErrors or {}, "; "))
+    -- The icons alone (Retail has them and the patch notes, its world's data still to come): no sign that the other
+    -- sets should be there, so one asked for is not noted missing at every load.
+    Core.Data.Prepare("Quests")
+    check(Core.Data.Set("Quests"):State() == "missing" and Core.errors["data: Quests"] == nil,
+          "only the sets every game gets: a set asked for and not there is no error")
 
     local macro = Book.New("Pictured")
     macro.steps[1] = Book.Step("text", "/wave")

@@ -333,6 +333,10 @@ ns.ReminderEditor.Hide()
 C_Spell.IsSpellHarmful = nil
 nova.Button:GetScript("OnDragStart")(nova.Button)
 check(picked and picked[1] == 5 and picked[2] == 0, "a drag still picks the spell up, for an action bar")
+-- A spell still to learn: the game puts none on its cursor, and takes an addon's try for a blocked action.
+picked = nil
+blizzard.Button:GetScript("OnDragStart")(blizzard.Button)
+check(picked == nil and not blizzard.grabbed, "a spell still to learn: not picked up")
 -- The module standing down in the fight (the board's Part.Leave): the secure buttons are the game's to lock, so
 -- their clearing waits for the fight's end (Core.AfterCombat), none touched meanwhile: the stand-in refuses a
 -- touch in a fight, an error Core would keep.

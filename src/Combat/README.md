@@ -500,7 +500,8 @@ Sunder Armor), as you choose, nothing fixed.
     as it is); the glow by `ActionButtonUtil.GetActionBarStatusForSpell`/`ForPetAction`
     (`MissingFromAllBars`, not auto attacks), its tooltip line `TALENT_BUTTON_TOOLTIP_NOT_ON_ACTION_BAR`;
     autocast by `GetSpellBookItemAutoCast`; `C_LevelLink.IsSpellLocked`; tooltip `SetSpellBookItem`; drag and
-    `PICKUPACTION` by `PickupSpellBookItem`, `CHATLINK` by the item's (trade skill) link. Nothing of the game's
+    `PICKUPACTION` by `PickupSpellBookItem` (not for a spell still to learn: the game puts none on its cursor and takes
+    an addon's try for a blocked action), `CHATLINK` by the item's (trade skill) link. Nothing of the game's
     action bars is written (no highlight marks).
   - `Casts.lua`: the cast. `SecureActionButtonTemplate` buttons on UIParent, each over the icon of a castable
     entry (`Item.Castable`: a learned spell, a pet ability), in UIParent's units, `Book.LEVEL` above the panel's

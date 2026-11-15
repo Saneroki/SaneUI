@@ -167,7 +167,7 @@ ns.TEXT = {
     bagsSpeedLeveling = "Speed Leveling",
     bagsSpeedLevelingTip = "On: this character uses the profile Speedleveling, with all of Speed Leveling's automation and its guide. Off: it goes back to the profile it used before, Accountwide if it had no other, and the guide is gone.",
     noAsk = "Equip and delete without asking",
-    noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: the moment you drop it, it is gone. Where the game keeps destroying for a click of your own, its question comes up with the word it wants already typed in.",
+    noAskTip = "The game no longer asks before gear binds to you or loses its refund, or before an item is destroyed, whatever its quality: drop it, and at your next key it is gone (Escape keeps it). The game keeps destroying for a press of your own, so its question still shows meanwhile, with the word it wants already typed in.",
     -- A new level, in the middle of the screen (LevelUp.lua)
     levelTitle = "Level %d!",
     levelStat = "%s |cff6fe06f+%d|r",
@@ -233,6 +233,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Board.Hide)
     ns.Safe("giving back", ns.Window.Hide)
     ns.Safe("giving back", ns.LevelUp.GiveBack)
+    ns.Safe("giving back", ns.Asks.GiveBack)
 end
 
 function ns.OnLoad()

@@ -108,9 +108,11 @@ function Item.Press(item, down)
     if item.info and not item.unlearned then item.Button.IconHighlight:SetAlpha(down and Item.PRESS or Item.HOVER) end
 end
 
--- The spell on the cursor, to drop on an action bar (the game's own pickup).
+-- The spell on the cursor, to drop on an action bar (the game's own pickup). Not a spell still to learn: the game
+-- puts none on its cursor, and from an addon it takes the pickup for a blocked action (UNKNOWN(), Forever 70790 to
+-- 70888, every time from this icon: out of a fight only those have no secure button over them).
 function Item.Drag(item)
-    if not item.info then return end
+    if not item.info or item.unlearned then return end
     Data.Ask("PickupSpellBookItem", item.entry.slot, item.entry.bank)
     item.grabbed = true
     Item.Status(item)

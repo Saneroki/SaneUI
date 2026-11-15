@@ -2250,22 +2250,53 @@ function W.CheckAsks()
     check(answered[1] == "EQUIP_BIND:16" and hidden[1] == "EQUIP_BIND", "equipping: answered, the question gone")
     Ask("OTHER_QUESTION", 1)
     check(#answered == 1 and #hidden == 1, "another question is the game's")
+    -- Destroying waits for the player's next key: the drop that brought the question up is no press the game takes
+    -- from an addon (it blocked DeleteCursorItem there every time, Forever 70790 to 70888).
+    local function Press(key)
+        ns.Asks.catcher:GetScript("OnKeyDown")(ns.Asks.catcher, key or "W")
+        W.Wait(1)
+    end
+    DELETE_ITEM_CONFIRM_STRING = "DELETE"
+    local box = Ask("DELETE_ITEM")
+    check(#answered == 1 and ns.Asks.catcher and ns.Asks.catcher:IsShown(), "destroying: not in the question's own frame, it waits for your next key")
+    Press()
+    check(answered[2] == "deleted" and not ns.Asks.catcher:IsShown(), "a key: answered, the item gone, nothing listens")
+    Press()
+    check(#answered == 2, "the next key does nothing more")
+    onCursor = true
     Ask("DELETE_ITEM")
-    W.Wait(1)
-    check(answered[2] == "deleted", "destroying: answered, the item gone")
+    Press("ESCAPE")
+    check(#answered == 2 and not ns.Asks.catcher:IsShown(), "Escape is the game's No: nothing destroyed")
+    shown.DELETE_ITEM = nil
+    Ask("DELETE_ITEM")
+    shown.DELETE_ITEM = nil
+    Press()
+    check(#answered == 2, "the question gone meanwhile (No): nothing destroyed")
+    W.combat = true
+    Ask("DELETE_ITEM")
+    check(not ns.Asks.catcher:IsShown(), "in a fight: the question stands for your click")
+    W.combat = false
+    Ask("DELETE_ITEM")
+    onCursor = false
+    Press()
+    check(#answered == 2, "the cursor empty by then: nothing destroyed")
     Core.Set(ns.name, "noAsk", false)
     Ask("EQUIP_BIND", 16)
-    check(#answered == 2, "off: the game asks")
-    Core.Set(ns.name, "noAsk", true)
-    -- The game refuses: the item stays on the cursor, the question stands with its word typed in; the next one is tried.
-    DELETE_ITEM_CONFIRM_STRING = "DELETE"
     onCursor = true
-    local box = Ask("DELETE_GOOD_ITEM")
-    W.Wait(1)
-    check(box.text == "DELETE", "refused: the word typed in")
-    local count = #answered
+    Ask("DELETE_ITEM")
+    check(#answered == 2 and not ns.Asks.catcher:IsShown(), "off: the game asks")
+    Core.Set(ns.name, "noAsk", true)
+    -- A good item: the word typed in at once, so a click on Yes does it too.
+    box = Ask("DELETE_GOOD_ITEM")
+    check(box.text == "DELETE" and ns.Asks.catcher:IsShown(), "a good item: its word typed in, and it waits for your key")
+    -- The game refuses: the item stays on the cursor, the question stands with its word typed in; the next one is tried.
+    Press()
+    check(answered[3] == "DELETE_GOOD_ITEM:nil" and not ns.Asks.catcher:IsShown(), "refused at the key: the question stands for your click")
     Ask("DELETE_GOOD_ITEM")
-    check(#answered == count + 1, "the next one is tried again")
+    Press()
+    check(#answered == 4, "the next one is tried again")
+    ns.Asks.GiveBack()
+    check(not ns.Asks.catcher:IsShown(), "given back: nothing listens")
     CursorHasItem, StaticPopup_FindVisible, StaticPopup_Hide = cursorWas, nil, nil
 end
 W.CheckAsks()

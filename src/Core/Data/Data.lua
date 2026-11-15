@@ -94,7 +94,7 @@ local keepers = {}    -- [saved name] = { fn, ... }: handed its part once Core's
 local said = {}       -- [label] = true: a failure is said once
 local handed = {}     -- the records handed out while Data.frozen: { record, copy }
 local arrived = false -- Core's files have run, the sets with them, and its saved variables are read
-local holds = false   -- a set of this game version was taken: without any, its data is not made yet (Retail's)
+local holds = false   -- a set of this game version's world was taken: without any, its data is not made yet (Retail's)
 local game, told      -- the client's game version, once told
 local build           -- the client's build
 local stamps = 0
@@ -229,7 +229,7 @@ local function Fail(name, label, text, loud)
 end
 
 -- For a reader that asks before Core's files have all run: nothing to do then. Afterwards a set that is not
--- there is said once, quietly; not at all where this game version has no data yet (no set of it was taken):
+-- there is said once, quietly; not at all where this game version has no data yet (no set of its world was taken):
 -- the views that need it stand down without a word.
 function Data.Prepare(name)
     if not arrived then return end
@@ -432,6 +432,10 @@ Data.Saved("Learned", function(part)
     end
 end)
 
+-- The sets every game version gets, whether or not its world's data is made yet (Retail has these two alone): taking
+-- them is no sign that the others should be there, so a game version holding only these notes none missing.
+Data.EVERY = { Icons = true, PatchNotes = true }
+
 -- Called by a set's file as it is read (Doc/guides/data.md, *A set's file*): nil for a format, set or game
 -- version this Core does not take (the file stops there); else the table its rows, history and indexes go
 -- into. The set is ready from then on (nobody reads it before its file has run to its end), and its
@@ -476,7 +480,7 @@ function Data.Add(format, name, header)
     set.rows, set.history, set.index, set.laid = {}, {}, {}, {}
     Forget(set)
     set.added, set.ready, set.refused, set.failed, set.why = true, true, nil, nil, nil
-    holds = true
+    if not Data.EVERY[name] then holds = true end
     local handle = Data.Set(name)
     handle.hash, handle.build = header.hash, header.build
     Moved(set)

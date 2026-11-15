@@ -9,8 +9,11 @@ there is made of links, one to each account's SaneUI_AuctionData.lua. A link the
 good. The game reads them as that addon's files at a login or a /reload; Core takes in what each one holds. Nothing
 runs in the background, and the WTF folder is never written.
 
-  dev/tools/auction-database link        the addon made anew for every game folder; run it again after a new account,
-                                         and restart the game
+Only an account that has saved its file gets a link: a link to nothing is a file the game cannot load, a warning at
+every login (an account never played with Sane UI). dev/build --install makes them anew, so an account's first save
+gets its link at the next install; the addon's list of files changed, the game needs a restart.
+
+  dev/tools/auction-database link        the addon made anew for every game folder, said only where it changed
   dev/tools/auction-database status      the accounts of each game folder, and what their files weigh
 """
 import argparse
@@ -55,31 +58,76 @@ def toc_file(folder, count):
     return "\n".join(lines) + "\n"
 
 
-def link(folder):
-    """The addon of a game folder made anew: the number of accounts, None where Sane UI is not there."""
-    names = accounts(folder)
+def saved(folder):
+    """The accounts of a game folder that have saved their auction data: only those get a link."""
+    return [name for name in accounts(folder) if (folder / "WTF" / "Account" / name / "SavedVariables" / SAVED).is_file()]
+
+
+def wanted(folder, names):
+    """What the addon's folder should hold: {file name: ("text", its text) or ("link", where it points)}. None where Sane
+    UI is not there."""
     toc = toc_file(folder, len(names))
     if toc is None:
         return None
+    files = {f"{ADDON}.toc": ("text", toc)}
+    for number, name in enumerate(names, 1):
+        files[f"Take{number}.lua"] = ("text", TAKE)
+        files[f"Account{number}.lua"] = ("link", f"../../../WTF/Account/{name}/SavedVariables/{SAVED}")
+    return files
+
+
+def holds(addon):
+    """What the addon's folder holds now, in the shape of wanted."""
+    files = {}
+    for path in addon.iterdir() if addon.is_dir() else []:
+        if path.is_symlink():
+            files[path.name] = ("link", os.readlink(path))
+        elif path.is_file():
+            files[path.name] = ("text", path.read_text(encoding="utf-8", errors="replace"))
+        else:
+            files[path.name] = ("other", None)
+    return files
+
+
+def link(folder):
+    """The addon of a game folder made anew: (accounts linked, accounts left out, whether it changed); None where Sane
+    UI is not there. Nothing is written where it already holds just that."""
+    names = saved(folder)
+    files = wanted(folder, names)
+    if files is None:
+        return None
+    left = len(accounts(folder)) - len(names)
     addon = folder / "Interface" / "AddOns" / ADDON
+    if holds(addon) == files:
+        return len(names), left, False
     addon.mkdir(exist_ok=True)
     for old in addon.iterdir():
         old.unlink()
-    (addon / f"{ADDON}.toc").write_text(toc, encoding="utf-8")
-    for number, name in enumerate(names, 1):
-        (addon / f"Take{number}.lua").write_text(TAKE, encoding="utf-8")
-        os.symlink(f"../../../WTF/Account/{name}/SavedVariables/{SAVED}", addon / f"Account{number}.lua")
-    return len(names)
+    for name, (kind, value) in files.items():
+        if kind == "link":
+            os.symlink(value, addon / name)
+        else:
+            (addon / name).write_text(value, encoding="utf-8")
+    return len(names), left, True
 
 
 def folders():
     return [folder for folder in (FOREVER, RETAIL) if folder.is_dir()]
 
 
-def link_all():
+def link_all(changed_only=False):
     for folder in folders():
-        count = link(folder)
-        print(f"{folder.name}: Sane UI is not in this game folder." if count is None else f"{folder.name}: links to {count} accounts' files.")
+        made = link(folder)
+        if made is None:
+            if not changed_only:
+                print(f"{folder.name}: Sane UI is not in this game folder.")
+            continue
+        count, left, changed = made
+        if changed_only and not changed:
+            continue
+        line = f"{folder.name}: auction database, links to {count} accounts' files"
+        line += f" ({left} without one yet)" if left else ""
+        print(line + (": made anew, restart the game." if changed else ", as before."))
 
 
 def status():
@@ -96,7 +144,12 @@ def status():
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["link", "status"], nargs="?", default="status")
-    {"link": link_all, "status": status}[parser.parse_args().command]()
+    parser.add_argument("--changed", action="store_true", help="link: say only what changed (the build's install)")
+    given = parser.parse_args()
+    if given.command == "link":
+        link_all(given.changed)
+    else:
+        status()
 
 
 if __name__ == "__main__":
