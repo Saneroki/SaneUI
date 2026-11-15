@@ -37,6 +37,8 @@ GROUPS = {
                     "package to CurseForge"),
         "checkcurseforge": (["dev/tools/release", "check"], "the CurseForge token tried, its game versions listed",
                             None),
+        "makechangelog": (["dev/tools/release", "changelog"], "draft changelog parts for a channel's uploads, to rewrite",
+                          None),
         "installed": (["@installed"], "which build the game has: dev or release, its version", 'which build the game has'),
         "freshinstall": (["dev/tools/fresh-install", "start"], "a new player's first Sane UI in both games: your WTF and "
                          "Interface set aside, the game's own settings kept, no other addon (--zip a package)",

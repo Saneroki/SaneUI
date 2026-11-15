@@ -283,6 +283,27 @@ with tempfile.TemporaryDirectory() as temporary:
               and b"Unchanged since 0.3.2 (alpha), now beta." in asked[1][2]
               and b"Unchanged since 0.4.0 (alpha), now beta." in asked[2][2] and b'"releaseType": "beta"' in asked[2][2],
               "an alpha made beta comes again as beta, its changelog saying it is unchanged")
+        # Drafts: a part for each upload without one, from the commits since its last; publish refuses them.
+        write("src/Navigation/SaneUI_Navigation.lua", "-- navigation 3b\n")
+        commit("Navigation: the map drawn faster")
+        tool.promote("Navigation", "alpha", test=False, root=repo, say=quiet)
+        write("Doc/changelog.txt", "Sane UI: what is new\n====\n\nSaneUI_Navigation 0.4.0 (2026-11-17)\n---\n- Newer.\n")
+        drafted = tool.draft_changelog("alpha", root=repo, say=quiet, today="2026-11-19")
+        text = (repo / "Doc/changelog.txt").read_text()
+        check(drafted == ["SaneUI_Navigation 0.4.1 (2026-11-19)"], f"a draft for the module's new version only (Core is up): {drafted}")
+        check(text.index("SaneUI_Navigation 0.4.1") < text.index("SaneUI_Navigation 0.4.0") and
+              "DRAFT: rewrite" in text and "- Navigation: the map drawn faster" in text and "- words" not in text,
+              "above the newest part: the DRAFT line, then the commits that changed the module since its last upload")
+        check(tool.draft_changelog("alpha", root=repo, say=quiet, today="2026-11-20") == [], "a part there already: left alone")
+        commit("draft")
+        asked.clear()
+        check("still a draft" in (refused(lambda: tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings)) or "")
+              and asked == [], "publish refuses a part while its DRAFT line stands")
+        write("Doc/changelog.txt", text.replace("DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.\n", ""))
+        commit("words for players")
+        check(len(tool.publish("alpha", yes=True, root=repo, say=quiet, settings=settings)) == 1, "rewritten: uploaded")
+        first = tool.due("alpha", root=repo)
+        check(first == [], "nothing due once uploaded")
         # The check: the token tried, the game versions listed, what the config lacks said; the token never shown.
         lines = []
         tool.ask = lambda url, token, data=None, headers=None: (

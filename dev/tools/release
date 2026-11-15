@@ -43,6 +43,13 @@ is ever pushed: the tags go out with git push origin <tag>.
           [--core-version X.Y.Z] [--dry] [--yes]
   dev/tools/release check                          the config and the token tried on CurseForge, its game
                                                    versions listed                       (saneui checkcurseforge)
+  dev/tools/release changelog <channel> [Module...]  a draft part in Doc/changelog.txt for each upload that has
+          [--core-version X.Y.Z]                   none, from the commits since its last (saneui makechangelog)
+
+The players' words are written by a person (or a session), never made by the pipeline: commit messages and
+Doc/Changed.md are a developer's. changelog drafts a part for each upload still without one, its first line
+"DRAFT: ..." over the commits that changed the addon since its last upload ("The first release of ..." for a first);
+publish refuses a part while that line stands. Rewrite it for players, delete the line, commit.
 """
 import argparse
 import io
@@ -82,6 +89,7 @@ VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 STAGE_TAG = re.compile(r"^(?P<module>[A-Za-z][A-Za-z0-9]*)/(?P<version>\d+\.\d+\.\d+)-(?P<stage>alpha|beta|release)$")
 PUBLISHED_TAG = re.compile(
     r"^published/(?P<project>[A-Za-z][A-Za-z0-9]*)/(?P<version>\d+\.\d+\.\d+)-(?P<channel>alpha|beta|release)$")
+DRAFT = "DRAFT:"  # the first line of a drafted changelog part; publish refuses the part while it stands
 CHANGELOG_PART = re.compile(r"^(?=(?:[A-Za-z][^\n]* )?\d+\.\d+\.\d+ \([^)\n]*\)[ \t]*$)", re.M)
 TOC = re.compile(r"^src/(?P<folder>[^/]+)/(?P<name>[^/]+)\.toc$")
 RETAIL_INTERFACE = 100000  # Retail's interface numbers have six digits since 10.0; Forever's (16001) fewer
@@ -586,6 +594,76 @@ def changelog(title, version, path=ROOT / "Doc" / "changelog.txt"):
     return mine[0].strip() if said else None
 
 
+def due(channel, only=None, core_wanted=None, root=ROOT):
+    """What publish would upload in a channel, Core first, whatever the config holds: [{"folder", "title",
+    "version", "commit", "since"}], since the commit of that project's last upload (None: its first)."""
+    found = plan(channel, only, root)
+    uploads = published_tags(root)
+    core = core_version(channel, found["commit"], core_wanted, root)
+    items = []
+    if core["new"]:
+        items.append({"folder": "Core", "title": toc_field(found["commit"], "Core", "SaneUI", "Title", root) or "Sane UI",
+                      "version": core["version"], "commit": found["commit"]})
+    names = addons(found["commit"], root)
+    for module, pick in sorted(found["modules"].items()):
+        if on_curseforge(module, pick["version"], channel, uploads):
+            continue
+        addon = addons(pick["commit"], root).get(module) or names[module]
+        games = toc_field(pick["commit"], module, addon, "X-SaneUI-Games", root)
+        if games and "forever" not in games.lower().replace(",", " ").split():
+            continue  # made for another game only: never packaged (dress_toc)
+        items.append({"folder": module, "title": toc_field(pick["commit"], module, addon, "Title", root) or module,
+                      "version": pick["version"], "commit": pick["commit"]})
+    for item in items:
+        before = [t for t in uploads if t["project"] == item["folder"]]
+        item["since"] = before[-1]["commit"] if before else None
+    return items
+
+
+def draft_changelog(channel, only=None, core_wanted=None, root=ROOT, say=print, today=None):
+    """A draft part in Doc/changelog.txt for each upload of the channel that has none: its heading, its line of
+    dashes, the DRAFT line, and one line per commit that changed the addon since its last upload ("The first
+    release of ..." for a first). Put above the newest part; a part already there (a draft too) is left alone.
+    Returns the headings drafted."""
+    import datetime
+    path = root / "Doc" / "changelog.txt"
+    text = path.read_text(encoding="utf-8") if path.is_file() else "Sane UI: what is new\n====================\n\n"
+    today = today or datetime.date.today().isoformat()
+    drafted, parts = [], []
+    for item in due(channel, only, core_wanted, root):
+        title, version = item["title"], item["version"]
+        if re.search(rf"^{re.escape(title)} {re.escape(version)} \(", text, re.M):
+            say(f"  {title} {version}: its part is there already")
+            continue
+        folders = CORE_PROJECT if item["folder"] == "Core" else (item["folder"], *CARRIED.get(item["folder"], ()))
+        paths = [f"{base}/{folder}" for folder in folders for base in ("src", "assets/optimized")]
+        if item["since"]:
+            subjects = git("log", "--format=%s", f"{item['since']}..{item['commit']}", "--", *paths, root=root).splitlines()
+            lines = [f"- {subject}" for subject in subjects if subject.strip()] or ["- (no commit changed it: say why it comes again)"]
+        else:
+            lines = [f"- The first release of {title}."]
+        heading = f"{title} {version} ({today})"
+        parts.append("\n".join([heading, "-" * len(heading),
+                                 f"{DRAFT} rewrite these lines for players (short, the bigger changes), then delete this line.",
+                                 *lines]) + "\n")
+        drafted.append(heading)
+    if not parts:
+        say(f"Nothing to draft for {channel}: every upload has its part, or nothing is new.")
+        return []
+    first = CHANGELOG_PART.search(text)
+    at = first.start() if first else len(text)
+    block = "\n\n".join(parts) + "\n\n"
+    text = text[:at] + block + text[at:] if first else text.rstrip("\n") + "\n\n\n" + block
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(text, encoding="utf-8")
+    if path.is_file():
+        shutil.copymode(path, temp)
+    os.replace(temp, path)
+    say(f"Drafted in {path.relative_to(root) if path.is_relative_to(root) else path}: " + "; ".join(drafted)
+        + f". Rewrite each for players, delete its {DRAFT} line, commit; then publish.")
+    return drafted
+
+
 def project_name(folder, title, projects):
     """What a project's files are called on CurseForge: its name in the config, else Sane UI and the addon's title."""
     return (projects.get(folder) or {}).get("name") or ("Sane UI Core" if folder == "Core" else f"Sane UI {title}")
@@ -681,14 +759,16 @@ def publish(channel, only=None, core_wanted=None, dry=False, yes=False, root=ROO
         if words[folder] is None:
             missing.append(f"\"{title} {version} (<date>)\"")
             words[folder] = ""
+        elif any(line.strip().startswith(DRAFT) for line in words[folder].splitlines()):
+            missing.append(f"\"{title} {version}\" (still a draft: rewritten for players, its {DRAFT} line deleted)")
         # The same code up a channel (an alpha made beta): CurseForge takes no re-upload without changes, so the
         # file says first why it comes again.
         before = [t["channel"] for t in uploads if t["project"] == folder and t["version"] == version]
         if before:
             words[folder] = f"Unchanged since {version} ({before[-1]}), now {channel}.\n\n" + words[folder]
     if missing:
-        why = (f"Doc/changelog.txt has no part for {', '.join(missing)} yet: the players' words go there first (that "
-               "line, its line of dashes, the bigger changes), committed")
+        why = (f"Doc/changelog.txt has no finished part for {', '.join(missing)} yet: the players' words go there "
+               "first (that line, its line of dashes, the bigger changes; saneui makechangelog drafts them), committed")
         if not dry:
             raise Refused(why)
         say(f"({why}.)")
@@ -748,6 +828,10 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("stages", help="every module's stage and versions")
     commands.add_parser("check", help="the config and its token tried on CurseForge; its game versions listed")
+    drafting = commands.add_parser("changelog", help="a draft changelog part for each upload of a channel without one")
+    drafting.add_argument("channel", choices=CHANNELS)
+    drafting.add_argument("modules", nargs="*", metavar="Module", help="only these modules (the folder's name)")
+    drafting.add_argument("--core-version", help="Core's version where its code is new (else one above the last)")
     raising = commands.add_parser("promote", help="tag main's committed state of a module as reaching a stage")
     raising.add_argument("module")
     raising.add_argument("stage", choices=CHANNELS)
@@ -768,6 +852,8 @@ def main():
             show_stages()
         elif args.command == "check":
             check()
+        elif args.command == "changelog":
+            draft_changelog(args.channel, args.modules or None, args.core_version)
         elif args.command == "promote":
             promote(args.module, args.stage, args.version, args.dry)
         elif args.command == "package":

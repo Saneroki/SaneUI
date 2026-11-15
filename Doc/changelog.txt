@@ -7,6 +7,34 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Sane UI 0.3.1 (2026-11-15)
+--------------------------
+- First public alpha of Sane UI Core, the base every Sane UI
+  addon needs. On its own it changes nothing you can see.
+- One options page for all Sane UI addons: Esc > Options >
+  AddOns > Sane UI.
+- Profiles, off at first: turn them on to share your settings
+  between your characters.
+- Safe error handling: if a Sane UI addon runs into an error,
+  that part goes back to the game's own until your next /reload,
+  with one line in your chat. /sane errors lists them.
+- A new logo for Sane UI and each of its addons.
+
+
+Navigation 0.3.2 (2026-11-15)
+-----------------------------
+- First public alpha of Sane UI Maps: your minimap and world map
+  in one window. Move the mouse into the top right corner and the
+  map fills the screen.
+- Pins in the game's own look for quests, flight points, rares,
+  treasures, dungeon entrances and services, each kind on or off.
+- Routes to your map pin on foot, by flight, boat, zeppelin and
+  tram, orange or red where enemies far above your level roam.
+- The quest log over the map, a search for NPCs, items, quests and
+  places, and the maps of every dungeon and raid.
+- Needs Sane UI Core, which the CurseForge app installs with it.
+
+
 0.3.0 (2026-10-14)
 ------------------
 - Map: every dungeon's banner now has its maps, Forever's four
