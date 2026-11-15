@@ -1484,6 +1484,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | File | What it holds |
 |---|---|
 | `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (a compass rose; *Maps* on its banner): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/maps-banner.png` and `maps-icon.png` |
 | `Navigation.lua` | The module's table (`ns`), its texts and settings, `/sane map`, `GiveBack` |
 | `Camera.Retail.lua` | Retail's camera: one map at a time from the game's map tree (into a map, out to the one over it, the wheel within it, its art's layer), following onto the map the player is on; Retail's two answers of the map tree (`Coords.PlaneOf`, `Coords.Box`). Read in Retail alone |
 | `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them, the top of the tree and the continents beside the world map (Retail's); the terrain's grid; the player's place. No frames |

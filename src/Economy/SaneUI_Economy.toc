@@ -6,7 +6,7 @@
 ## Category: Sane UI
 ## Group: SaneUI
 ## Dependencies: SaneUI
-## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## IconTexture: Interface\AddOns\SaneUI_Economy\Art\icon
 ## X-License: MIT
 
 # The module's own table, its words, sizes and settings. First: the other files will add to that table.

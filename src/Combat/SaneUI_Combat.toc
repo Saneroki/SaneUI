@@ -6,7 +6,7 @@
 ## Category: Sane UI
 ## Group: SaneUI
 ## Dependencies: SaneUI
-## IconTexture: Interface\Icons\Ability_DualWield
+## IconTexture: Interface\AddOns\SaneUI_Combat\Art\icon
 ## X-License: MIT
 
 # The module's own table, its words and settings. First: the other files will add to that table.

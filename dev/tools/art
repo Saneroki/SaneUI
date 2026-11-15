@@ -16,9 +16,9 @@ of the texture; what is left over stays clear and is cut off in the game with Se
 prints the numbers).
 
   banner   drawn 300 x 100 (src/Core/Settings/Banner.xml): 1024 x 256, the box 768 x 256, TexCoords 0.75 x 1.
-  icon     drawn up to 40 x 40 (not drawn yet: up to an action button): 128 x 128.
+  icon     drawn up to 40 x 40 (an addon's icon in the addon list, its TOC's IconTexture): 128 x 128.
   button   drawn 24 x 24 (the smiley beside the line to write in, src/Social/Picker.lua): 64 x 64.
-  logo     drawn up to 96 x 96 (not drawn yet): 256 x 256.
+  logo     drawn up to 96 x 96 (none drawn now): 256 x 256.
   sheet    a flipbook made by dev/tools/flipbook: kept whole, its sides are powers of two already (its
            frame's side came from the drawn size there); TexCoords 0-1.
   mark     drawn up to 70 x 70 (Navigation's far herbs and ore, Glints.lua; Speed Leveling's arrow and icons,
@@ -68,16 +68,18 @@ KINDS = {            # kind: (drawn width, height in UI units; set at the left, 
 # The pictures: (file in assets, a pattern; name in assets/optimized; kind; the module that ships it;
 # its file in that module's Art/, banner.blp if none is given).
 PICTURES = [
-    ("SaneUI-banner.png", "SaneUI-banner", "banner", "Core"),  # the page Sane UI of the options
+    # The logos (dev/tools/logo-art --ship): each addon's banner on its options page, its icon in the addon list.
+    *[(f"Logos/{logo}-{part}.png", f"Logo-{logo}-{part}", part, module, f"{part}.blp")
+      for logo, module in (("core", "Core"), ("maps", "Navigation"), ("economy", "Economy"),
+                           ("inventory", "Inventory"), ("social", "Social"), ("combat", "Combat"))
+      for part in ("banner", "icon")],
     ("SaneSpellbook-banner.png", "SaneSpellbook-banner", "banner", None),  # not shipped: Abilities has no banner
-    ("SaneChat-ban*.png", "SaneChat-banner", "banner", None),  # came as "banenr"; not shipped: Social has no banner
+    ("SaneChat-ban*.png", "SaneChat-banner", "banner", None),  # came as "banenr"; not shipped: Social's is its logo's
     ("SaneTooltip-banner.png", "SaneTooltip-banner", "banner", "Tooltips"),
-    ("SaneUI-Icon.png", "SaneUI-Icon", "icon", None),
     ("SaneSpellbook-Icon.png", "SaneSpellbook-Icon", "icon", None),
     ("SaneChat-Icon.png", "SaneChat-Icon", "icon", None),
     ("SaneTooltip-Icon.png", "SaneTooltip-Icon", "icon", None),
     ("SaneSocial-Smiley.png", "SaneSocial-Smiley", "button", "Social", "smiley.blp"),  # drawn by dev/tools/smiley-art
-    ("SaneUI-BigLogo.png", "SaneUI-BigLogo", "logo", None),
 ] + [  # made by dev/tools/mark-art from the leather ring Saneroki picked
     (f"FarMarks/ring-{name}.png", f"FarMarks-{name}", "mark", "Navigation", f"mark-{name}.blp")
     for name in ("pointed", "round")

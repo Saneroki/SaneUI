@@ -784,6 +784,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | File | What it is |
 |---|---|
 | `SaneUI_Social.toc` | The addon `SaneUI_Social` |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (speech bubbles): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/social-banner.png` and `social-icon.png` |
 | `Social.lua` | The module's table, its texts and switches (also the wishes for the game's channels), the events, `/sane social`, the fall-back |
 | `Log.lua` | What an event says; the list of messages. Knows no frames |
 | `Layout.lua` | Sizes, distances, fills; the arithmetic from the window's width. Knows no frames |

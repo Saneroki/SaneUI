@@ -6,7 +6,7 @@
 ## Category: Sane UI
 ## Group: SaneUI
 ## Dependencies: SaneUI
-## IconTexture: Interface\Icons\INV_Misc_Note_02
+## IconTexture: Interface\AddOns\SaneUI_Social\Art\icon
 ## X-License: MIT
 
 # The module's own table, the game's chat events and the command. First: the other files add to that table.

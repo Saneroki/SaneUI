@@ -6,7 +6,7 @@
 ## Category: Sane UI
 ## Group: SaneUI
 ## Dependencies: SaneUI
-## IconTexture: Interface\Icons\INV_Misc_Map_01
+## IconTexture: Interface\AddOns\SaneUI_Navigation\Art\icon
 ## X-License: MIT
 
 # The module's own table, its settings and the command. First: the other files add to that table.

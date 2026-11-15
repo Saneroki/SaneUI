@@ -17,7 +17,9 @@ For each addon (dev/tools/logo-art [name ...], all when none is named) it writes
   <name>-icon.png      1024 x 1024, the source for the game's icon and logo (dev/tools/art)
   <name>-avatar.png    400 x 400, CurseForge's project avatar (a PNG: CurseForge advises against WebP)
   <name>-banner.png    1536 x 512, the 3 : 1 of every banner: the badge, SANE UI over the addon's name
-and family.png, every badge beside the others, large and at the sizes a list shows them.
+and family.png, every badge beside the others, large and at the sizes a list shows them. With --ship the icon and
+the banner of each also go into assets/Logos/ (the sources the game's textures are made from: dev/tools/art makes
+each addon's Art/icon.blp, its icon in the addon list, and Art/banner.blp, its options page's banner).
 """
 import argparse
 import math
@@ -29,6 +31,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "assets" / "generated" / "logos"
+SHIPPED = ROOT / "assets" / "Logos"
 FONTS = [Path("/usr/share/fonts/noto/NotoSerifDisplay-SemiBold.ttf"),
          Path("/usr/share/fonts/noto/NotoSerifDisplay-Bold.ttf"),
          Path("/usr/share/fonts/caladea/Caladea-Bold.ttf")]
@@ -355,6 +358,7 @@ def main():
                                      epilog=__doc__.split("\n\n", 1)[1])
     parser.add_argument("names", nargs="*", metavar="name", help="the addons to draw: " + ", ".join(ADDONS))
     parser.add_argument("--out", type=Path, default=OUT, help="the folder written into")
+    parser.add_argument("--ship", action="store_true", help="the icons and banners into assets/Logos/ too")
     args = parser.parse_args()
     names = args.names or list(ADDONS)
     unknown = [n for n in names if n not in ADDONS]
@@ -367,8 +371,14 @@ def main():
         icons[name] = badge(1024, accent, symbol)
         icons[name].save(args.out / f"{name}-icon.png")
         icons[name].resize((400, 400), Image.LANCZOS).save(args.out / f"{name}-avatar.png")
-        banner(word, accent, symbol).save(args.out / f"{name}-banner.png")
+        drawn = banner(word, accent, symbol)
+        drawn.save(args.out / f"{name}-banner.png")
         print(f"{name}: {name}-icon.png, {name}-avatar.png, {name}-banner.png")
+        if args.ship:
+            SHIPPED.mkdir(parents=True, exist_ok=True)
+            icons[name].save(SHIPPED / f"{name}-icon.png")
+            drawn.save(SHIPPED / f"{name}-banner.png")
+            print(f"    and into {SHIPPED.relative_to(ROOT)}: {name}-icon.png, {name}-banner.png")
     family(names, icons).save(args.out / "family.png")
     print(f"family.png; all in {args.out}")
 

@@ -46,6 +46,7 @@ The option *Open on Deals* lets the window open on the game's own first tab inst
 
 | File | Holds |
 | --- | --- |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (stacked coins): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/economy-banner.png` and `economy-icon.png` |
 | `Economy.lua` | The module, its words, sizes, option, standing down |
 | `Deals.lua` | What is worth buying and selling right now: plain lists |
 | `Live.lua` | What the server says of the items in sight |

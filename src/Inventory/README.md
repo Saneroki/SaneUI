@@ -800,6 +800,7 @@ classes' gains can be held against each other; `early` for a character without a
 | File | What it holds |
 |---|---|
 | `SaneUI_Inventory.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (a chest): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/inventory-banner.png` and `inventory-icon.png` |
 | `Inventory.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (Core's *Expand window* and *Window corners*), `GiveBack`, the start |
 | `Keys.lua` | The bag keys open the full screen with the bags; the game's bag windows and bag bar kept unseen |
 | `Bindings.xml` | Inventory's key in the game's key bindings |

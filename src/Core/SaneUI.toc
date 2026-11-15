@@ -6,7 +6,7 @@
 ## Category: Sane UI
 ## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned, SaneUIData_Shared
 ## SavedVariablesPerCharacter: SaneUICharDB
-## IconTexture: Interface\Icons\INV_Misc_Gear_01
+## IconTexture: Interface\AddOns\SaneUI\Art\icon
 ## AddonCompartmentFunc: SaneUI_OnAddonCompartmentClick
 ## X-License: MIT
 

@@ -1044,6 +1044,7 @@ Sunder Armor), as you choose, nothing fixed.
 | File | What it holds |
 |---|---|
 | `SaneUI_Combat.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (crossed swords): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/combat-banner.png` and `combat-icon.png` |
 | `Bindings.xml` | Combat's keys in the game's key bindings, under Sane UI (the game reads it by itself) |
 | `Combat.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (the keys, the quest marks, Core's *Expand window* and *Window corners*), `GiveBack`, the start |
 | `Window.lua` | Its window: docked at the bottom middle, filling the screen from the bottom edge's middle half; full, Core's board; the game's windows in *Classic windows* |

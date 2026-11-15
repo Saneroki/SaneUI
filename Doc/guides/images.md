@@ -19,8 +19,10 @@ familiarity"): Core's and each module's badge, CurseForge avatar and banner are 
 (`saneui makelogos`) from shapes and Noto Serif Display (SIL Open Font License), never from the game's art or fonts:
 CurseForge takes no copyrighted imagery in an avatar. What they share: the gold ring with its diamond, the dark
 middle, the gold symbol; what tells them apart: the symbol and a thin ring of the module's colour. Drafts go to
-`assets/generated/logos/`; the one chosen comes into `assets/` and through the recipe below like any picture
-([Doc/curseforge/README.md](../curseforge/README.md)).
+`assets/generated/logos/`; in the game since 2026-11-15 (Saneroki: "put the new logos into the game"): `--ship`
+puts each addon's icon and banner into `assets/Logos/`, and the recipe below makes its `Art/banner.blp` (the top
+of its options page) and `Art/icon.blp` (its icon in the addon list, the TOC's `## IconTexture:
+Interface\AddOns\<addon>\Art\icon`) ([Doc/curseforge/README.md](../curseforge/README.md)).
 
 ## The recipe
 
