@@ -21,10 +21,12 @@ supported for the public): each TOC names Forever's interface number alone, and 
 tested with (X-SaneUI-Core: Core tells a player whose Sane UI is older). They land in BUILD/packages, the addon's
 folder at the top of each zip (Economy's with the data holders beside it).
 
-Publishing uploads what is new in the channel, Core first: Core when its code is not on CurseForge at that channel
-or higher, each module whose version is not. Each upload is tagged published/<Module>/<version>-<channel> (Core's
-at main's commit, a module's at its stage tag's), the players' words taken from that project's own CurseForge
-changelog, Doc/curseforge/changelogs/<folder>.md (Core.md, Navigation.md), its part "## 0.3.2 (2026-11-16)": a
+Publishing uploads what is new in the channel, Core first: Core when its code or its sets (Forever's set files,
+compiled from the data master in assets/data at the build) are not on CurseForge at that channel or higher, each
+module whose version is not: a change to Core's data alone makes a new Core, a change to the master that leaves
+Forever's set files alike makes none (Saneroki, 2026-11-15: "Forever's compiled sets"). Each upload is tagged
+published/<Module>/<version>-<channel> (Core's at main's commit, a module's at its stage tag's), the players' words
+taken from that project's own CurseForge changelog, Doc/curseforge/changelogs/<folder>.md (Core.md, Navigation.md), its part "## 0.3.2 (2026-11-16)": a
 module's file changelog never holds another addon's changes (Saneroki, 2026-11-15). The projects and the token
 stand in ~/.config/saneui/curseforge.json, never in a repository:
   {"token": "...", "gameVersions": ["1.60.1"],
@@ -54,6 +56,7 @@ project's own file for each upload still without one, its first line
 publish refuses a part while that line stands. Rewrite it for players, delete the line, commit.
 """
 import argparse
+import hashlib
 import io
 import json
 import os
@@ -78,6 +81,10 @@ CORE_PROJECT = ("Core",)                          # Core's project: Sane UI alon
 # fills them) only with Economy, which uses them. In Core's download every player would have Core scan the auction
 # house when it opens (Saneroki, 2026-11-15: "leave them out" of Core's until Economy ships).
 CARRIED = {"Economy": ("AuctionData", "AuctionScans")}
+# What Core's set files are made from at the build (dev/build, package): the data master and its compiler. Core is
+# new when the set files they make for Forever differ, not when the master alone changed (sets).
+SET_SOURCES = ("assets/data", "dev/data", "dev/tools/data")
+SETS_MADE = {}  # {the git objects of SET_SOURCES: the fingerprint of the set files they make}, so each compiles once
 # The tests of each module (dev/tests/<name>.lua), run for an older version of it with today's Core.
 TESTS = {
     "Abilities": ["abilities"], "Combat": ["combat", "book", "meter", "talents", "reminders", "auralists", "macros"],
@@ -191,13 +198,41 @@ def toc_version(commit, folder, name, root=ROOT):
     return found if found and VERSION.match(found) else "0.0.0"
 
 
+def object_id(commit, path, root=ROOT):
+    """The git object of a path at a commit; None where it has none."""
+    found = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{commit}:{path}"],
+                           capture_output=True, text=True)
+    return found.stdout.strip() or None
+
+
 def tree(commit, folder, root=ROOT):
     """What a module is at a commit: the git objects of its code and its art (None where it has none)."""
-    def one(path):
-        found = subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{commit}:{path}"],
-                               capture_output=True, text=True)
-        return found.stdout.strip() or None
-    return one(f"src/{folder}"), one(f"assets/optimized/{folder}")
+    return object_id(commit, f"src/{folder}", root), object_id(commit, f"assets/optimized/{folder}", root)
+
+
+def sets(commit, root=ROOT):
+    """What Core's sets are at a commit: a fingerprint of the names and bytes of Forever's set files, compiled from
+    its data master by its own compiler, as Core's zip holds them (the compiler is a pure function of the master:
+    the same master, the same bytes). None: no master there. A change to the master that leaves Forever's set files
+    alike (Retail's rows, staging, a note) leaves this alike (Saneroki, 2026-11-15: "Forever's compiled sets")."""
+    ids = tuple(object_id(commit, path, root) for path in SET_SOURCES)
+    if ids[0] is None:
+        return None
+    if ids not in SETS_MADE:
+        with tempfile.TemporaryDirectory(dir=scratch_parent(root)) as scratch:
+            scratch = Path(scratch)
+            extract(commit, scratch, [path for path, found in zip(SET_SOURCES, ids) if found], root=root)
+            made = subprocess.run([str(scratch / "dev/tools/data"), "compile", str(scratch / "out")], cwd=scratch,
+                                  capture_output=True, text=True)
+            if made.returncode:
+                raise Refused(f"Forever's sets of {git('rev-parse', '--short', commit, root=root)} could not be "
+                              "compiled:\n" + (made.stdout + made.stderr).strip()[-2000:])
+            digest = hashlib.sha256()
+            for file in sorted((scratch / "out" / "Sets").glob("*.lua")):
+                data = file.read_bytes()
+                digest.update(f"{file.name}\0{len(data)}\0".encode() + data)
+            SETS_MADE[ids] = digest.hexdigest()
+    return SETS_MADE[ids]
 
 
 def main_commit(root=ROOT):
@@ -233,8 +268,9 @@ def plan(channel, only=None, root=ROOT):
 
 
 def core_tree(commit, root=ROOT):
-    """What Core's project is at a commit: the git objects of its addons, code and art."""
-    return tuple(tree(commit, folder, root) for folder in CORE_PROJECT)
+    """What Core's project is at a commit: the git objects of its addons, code and art, and Forever's set files
+    compiled into it at the build (sets): a change to Core's data alone makes a new Core."""
+    return (*(tree(commit, folder, root) for folder in CORE_PROJECT), sets(commit, root))
 
 
 def core_version(channel, commit, wanted=None, root=ROOT):
@@ -655,6 +691,8 @@ def draft_changelog(channel, only=None, core_wanted=None, root=ROOT, say=print, 
             continue
         folders = CORE_PROJECT if folder == "Core" else (folder, *CARRIED.get(folder, ()))
         paths = [f"{base}/{part}" for part in folders for base in ("src", "assets/optimized")]
+        if folder == "Core":
+            paths += SET_SOURCES  # its data: what its sets are compiled from
         if item["since"]:
             subjects = git("log", "--format=%s", f"{item['since']}..{item['commit']}", "--", *paths, root=root).splitlines()
             lines = [f"- {subject}" for subject in subjects if subject.strip()] or ["- (no commit changed it: say why it comes again)"]

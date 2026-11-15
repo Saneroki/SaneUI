@@ -64,7 +64,8 @@ with tempfile.TemporaryDirectory() as temporary:
 
     def commit(message):
         subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
-        subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", message], check=True)
+        # --allow-empty: a step that wrote nothing (a draft not made) fails its check, not the whole test
+        subprocess.run(["git", "-C", str(repo), "commit", "-q", "--allow-empty", "-m", message], check=True)
 
     subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
     subprocess.run(["git", "-C", str(repo), "config", "core.hooksPath", "/dev/null"], check=True)
@@ -83,8 +84,10 @@ with tempfile.TemporaryDirectory() as temporary:
     write("src/SpeedLeveling/SaneUI_SpeedLeveling.lua", "-- leveling\n")
     write("src/RetailOnly/SaneUI_RetailOnly.toc", TOC.format(title="SaneUI_RetailOnly", extra="## X-SaneUI-Games: retail"))
     write("src/RetailOnly/SaneUI_RetailOnly.lua", "\n")
-    # A stand-in for the data compiler: one set into the folder named.
-    write("dev/tools/data", '#!/bin/sh\nmkdir -p "$2/Sets" && echo "-- a set" > "$2/Sets/Test.lua"\n')
+    # A stand-in for the data compiler: one set into the folder named, of the master's rows for Forever (Retail's
+    # rows left out, as Forever's set files leave them out).
+    write("dev/tools/data", '#!/bin/sh\nmkdir -p "$2/Sets" && { echo "-- a set"; cat assets/data/*/*.jsonl 2>/dev/null'
+          ' | grep -v retail || true; } > "$2/Sets/Test.lua"\n')
     os.chmod(repo / "dev/tools/data", 0o755)
     commit("first")
 
@@ -309,6 +312,49 @@ with tempfile.TemporaryDirectory() as temporary:
         check(len(tool.publish("alpha", ["Navigation"], yes=True, root=repo, say=quiet, settings=settings)) == 1
               and b'"changelogType": "markdown"' in asked[-1][2], "rewritten: uploaded, as Markdown")
         check(tool.due("alpha", ["Navigation"], root=repo) == [], "nothing due once uploaded")
+        # Core's data (Saneroki, 2026-11-15: "Forever's compiled sets"): Core is new when the set files its zip holds
+        # differ, compiled from that commit's master by that commit's compiler; the master's other changes make none.
+        check(tool.sets("main", repo) is None and tool.core_tree("main", repo)[-1] is None, "no data master: no sets")
+        write("assets/data/Ground/Ground.jsonl", '{"id": 1, "game": "forever", "ground": "stone"}\n'
+              '{"id": 2, "game": "retail", "ground": "sand"}\n')
+        commit("Data: a first set")
+        first_sets = tool.sets("main", repo)
+        check(first_sets and tool.core_version("alpha", "main", None, repo) == {"version": "0.3.3", "new": True},
+              "Core's data came, its code the same: a new Core")
+        write("assets/data/Ground/Ground.jsonl", '{"id": 1, "game": "forever", "ground": "stone"}\n'
+              '{"id": 2, "game": "retail", "ground": "mud"}\n')
+        commit("Data: Retail's ground")
+        check(tool.sets("main", repo) == first_sets and tool.core_tree("main~1", repo) == tool.core_tree("main", repo),
+              "a change to the master that leaves Forever's set files alike (Retail's rows): Core the same")
+        write("assets/data/Ground/Ground.jsonl", '{"id": 1, "game": "forever", "ground": "grass"}\n'
+              '{"id": 2, "game": "retail", "ground": "mud"}\n')
+        commit("Data: the dungeon floors' ground")
+        check(tool.sets("main", repo) not in (None, first_sets), "Forever's rows changed: other set files")
+        check([i["folder"] for i in tool.due("alpha", ["Navigation"], root=repo)] == ["Core"],
+              "a data-only change: Core due, the module not")
+        drafted = tool.draft_changelog("alpha", ["Navigation"], root=repo, say=quiet, today="2026-11-21", projects={})
+        core_text = (repo / "Doc/curseforge/changelogs/Core.md").read_text()
+        check(drafted == ["Doc/curseforge/changelogs/Core.md 0.3.3"] and "- Data: the dungeon floors' ground" in core_text
+              and "- Data: a first set" in core_text and "the map drawn faster" not in core_text and "Loot:" not in core_text,
+              f"Core's draft from the commits that changed its data: {drafted}")
+        write("Doc/curseforge/changelogs/Core.md", core_text.replace(
+            "DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.\n", ""))
+        commit("words 3")
+        asked.clear()
+        check(tool.publish("alpha", ["Navigation"], yes=True, root=repo, say=quiet, settings=settings) == [92]
+              and [a[0] for a in asked][1:] == ["https://wow.curseforge.com/api/projects/41/upload-file"]
+              and b"dungeon floors' ground" in asked[1][2], "Core's data changed alone: Core alone uploaded, with its words")
+        write("assets/data/Ground/Ground.jsonl", '{"id": 1, "game": "forever", "ground": "grass"}\n'
+              '{"id": 2, "game": "retail", "ground": "clay"}\n')
+        commit("Data: Retail's ground again")
+        check(tool.core_version("alpha", "main", None, repo) == {"version": "0.3.3", "new": False},
+              "after its upload a change that leaves Forever's set files alike: no new Core (no re-upload without changes)")
+        write("dev/tools/data", '#!/bin/sh\nmkdir -p "$2/Sets" && { echo "-- a set, made anew"; cat assets/data/*/*.jsonl'
+              ' | grep -v retail || true; } > "$2/Sets/Test.lua"\n')
+        os.chmod(repo / "dev/tools/data", 0o755)
+        commit("Data tools: the sets made anew")
+        check(tool.core_version("alpha", "main", None, repo) == {"version": "0.3.4", "new": True},
+              "a compiler that makes other set files of the same master: a new Core")
         # The check: the token tried, the game versions listed, what the config lacks said; the token never shown.
         lines = []
         tool.ask = lambda url, token, data=None, headers=None: (
