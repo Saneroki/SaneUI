@@ -59,7 +59,9 @@ and shows them on the map or puts the map pin there. The plan is in
   draged around for 5s"; the box and the setting *Follow me* went). The full map opens on you and keeps you in its
   middle. Dragged away, zoomed, moved to a quest or to a map chosen on its bar, either map comes back to you as you
   walk once you left it alone for a moment: the small map after 2 seconds, the full map after 5 (standing still, you
-  can look around as long as you like); the middle mouse button brings it back at once. In an instance the small window shows our map of the dungeon (below).
+  can look around as long as you like); the middle mouse button brings it back at once. Zoomed out farther than the
+  game's own minimap goes, the small map zooms back in as you walk, after the same 2 seconds, to where the middle
+  button brings it. In an instance the small window shows our map of the dungeon (below).
 - **In a dungeon, a raid or a battleground** the game tells addons nobody's place (Blizzard's rule: our map cannot
   show you there; the game's own minimap, which the game draws itself, can). So inside a dungeon or raid we have a map
   of, the small window shows **our map of it first** (Saneroki, 2026-11-15: "Yes ours first"): its whole floor, its
@@ -1240,6 +1242,11 @@ and shows them on the map or puts the map pin there. The plan is in
   seconds ago for the small view, `Canvas.AGAIN` (5) for the full map. Ticked, `Canvas.Center` puts the full camera on the
   player whenever the window fills the screen (but at a map the game was asked for, `Window.OpenTo`) and when the box
   is ticked; unticked, the full map no longer follows, and a small view that follows goes on following.
+- **Zoomed in again** (`Far`, `Near`): the small view following a walking player, zoomed out past the game's widest
+  minimap step (`camera.native` nil, `camera.k` below `Hybrid.Zoom(0)`) and the mouse last on it `Canvas.SOON` ago,
+  comes back in at the middle click's zoom (`Near`, shared with `Canvas.Home`: `Hybrid.Home`, else `Canvas.HOME`
+  yards). At the game's steps, nearer than its narrowest, on the full map, or before the steps are measured, the zoom
+  stays.
 - **The first view:** the option's first default is `ns.FALLBACK` (Scrying), so a first load starts there; `Offer`
   then sets the default to `ns.Fallback()` (Scrying where offered, else Parchment), so a reset, a profile read after
   login and a saved view not offered come to a view that can be drawn. `ns.Several` tells whether there is a choice
@@ -1600,6 +1607,10 @@ Tests: `dev/tests/navigation.lua`.
   names it, its tooltip says Sane UI leaves the game's sounds alone, and the cogwheel greys out Save, Load and Delete
   while it is in use. The top right corner fills the screen at a left click now (Core's *Hotcorner requires leftclick*,
   on at first in every module).
+- **2026-11-16, zoomed out too far, the small map comes back in as you walk:** Saneroki: "If you are zoomed out to
+  much on the minimap, can you make it so it zooms in to a reasonable level when you start moving on the minimap?"
+  Past the game's widest minimap step, a walk brings the small map in to the middle click's zoom once the mouse has
+  left it alone for `Canvas.SOON` (`Far`, `Near` in `Canvas.lua`).
 - **2026-11-16, the small map back on you after 2 seconds:** Saneroki: "make it so that the minimap automatically
   follows the player when the player is moving. I think right now we have a 5 second delay. Make it a 2s delay". The
   small map's own wait, `Canvas.SOON` (2); the full map keeps `Canvas.AGAIN` (5), so it can be looked around while

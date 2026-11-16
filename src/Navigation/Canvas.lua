@@ -72,6 +72,8 @@ local _, ns = ...
 --  5s"; the box Follow me went), no mouse button held: as the player walks, once the
 --  mouse has left the map alone (no drag, no wheel, no map chosen) for Canvas.AGAIN,
 --  the small map sooner, for Canvas.SOON (Saneroki, 2026-11-16: "Make it a 2s delay").
+--  Zoomed out past the game's widest minimap step, the small map comes back in as the
+--  player walks, at the middle click's zoom, after the same Canvas.SOON (Far; 2026-11-16).
 --  Nothing else runs while nothing moves. Where the game tells no place of the
 --  player (an instance) the small view draws nothing of ours but the sea: the
 --  game's minimap, with its own ground, is the map there (Hybrid.lua).
@@ -540,6 +542,28 @@ local function Again(now, u, walked)
     return u ~= nil and walked and now - lastInput > (small and Canvas.SOON or Canvas.AGAIN)
 end
 
+-- The zoom a view comes back to the player at: near enough for the game's minimap's dots (Hybrid.Home), else
+-- Canvas.HOME yards across its shorter side (Canvas.Home, Far).
+local function Near(width, height)
+    if not ns.Hybrid.Home(camera, width, height) then
+        camera.native, camera.k = nil, math.min(width, height) / Canvas.HOME
+    end
+end
+
+-- Whether the small view, following the player as they walk, is zoomed out too far to walk by (Saneroki, 2026-11-16:
+-- "If you are zoomed out to much on the minimap, can you make it so it zooms in to a reasonable level when you start
+-- moving"): out past the game's widest minimap step (its dots gone), the mouse leaving it alone for Canvas.SOON (a
+-- look farther out while walking keeps that long). Then it comes back in at the middle click's zoom (Near). Not
+-- while the game's steps are not measured, nor on the full map.
+local function Far(now, walked)
+    if not walked or held or camera ~= ns.Window.small or camera.native or now - lastInput <= Canvas.SOON then
+        return false
+    end
+    local width, height = frame:GetSize()
+    local widest = ns.Hybrid.Zoom(0, ns.Hybrid.Side(width, height))
+    return widest ~= nil and camera.k < widest * (1 - 1e-6)
+end
+
 local Entered -- the mouse came onto the canvas (The mouse, below)
 local function Track()
     local now = GetTime()
@@ -561,6 +585,16 @@ local function Track()
     known = u ~= nil and map == camera.map
     if Lost(u) ~= lost then return Canvas.Layout() end -- into an instance or out of it: drawn anew (Draw, Hybrid)
     if camera.follow and u then
+        if Far(now, walked) then
+            -- Zoomed out too far to walk by: in again, on the player (Far).
+            Near(frame:GetSize())
+            if map ~= camera.map or camera.shown and camera:Wants() ~= camera.shown then
+                camera:Show(map, u, v, camera.k)
+            else
+                camera:Look(u, v, camera.k)
+            end
+            return Canvas.Layout()
+        end
         -- Into the player's plane; one map at a time, also onto the map the player is on now (another zone).
         if map ~= camera.map or camera.shown and camera:Wants() ~= camera.shown then
             camera:Show(map, u, v)
@@ -880,9 +914,7 @@ function Canvas.Home()
     local width, height = frame:GetSize()
     lastInput = GetTime()
     camera.follow = true
-    if not ns.Hybrid.Home(camera, width, height) then
-        camera.native, camera.k = nil, math.min(width, height) / Canvas.HOME
-    end
+    Near(width, height)
     local map, u, v = Live.Player()
     if u and (map ~= camera.map or camera.shown and camera:Wants() ~= camera.shown) then
         camera:Show(map, u, v, camera.k)
