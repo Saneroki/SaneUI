@@ -2082,8 +2082,9 @@ end)()
 -- "just follow the character automatically always when the character is moving and the map has not been draged
 -- around for 5s"; the box Follow me went), the mouse on it or not.
 ;(function()
-    check(not Core.Described(ns.name, "followMap") and not Core.Described(ns.name, "followAgain") and Canvas.AGAIN == 5,
-        "no setting Follow me: the map follows by itself, after 5 seconds without a drag")
+    check(not Core.Described(ns.name, "followMap") and not Core.Described(ns.name, "followAgain") and Canvas.SOON == 2
+        and Canvas.AGAIN == 5,
+        "no setting Follow me: the map follows by itself, the small one 2 seconds after a drag, the full one 5")
     local wasX = player.x
     frame._scripts.OnMouseDown(frame, "LeftButton")
     cursorX = cursorX + 30
@@ -2100,7 +2101,7 @@ end)()
     W.Wait(Canvas.LOOK)
     tracker._scripts.OnUpdate(tracker, 0.016)
     tracker._scripts.OnUpdate(tracker, 0.016)
-    check(not small.follow, "the player walking, the drag less than Canvas.AGAIN ago: it stays")
+    check(not small.follow, "the player walking, the drag less than Canvas.SOON ago: it stays")
     player.x = wasX + 0.002
     W.Wait(Canvas.LOOK)
     tracker._scripts.OnUpdate(tracker, 0.016) -- (seen there: from now on the player stands)
@@ -2116,6 +2117,26 @@ end)()
     frame._mouseOver = false
     check(small.follow and near(small.u, 500) and minimap._shown,
         "the player walks: back on the player by itself, the mouse on the map or not, the game's minimap with it")
+    -- Canvas.SOON (Saneroki, 2026-11-16: "Make it a 2s delay"): dragged, the small map stays while the player walks
+    -- half a second short of it, and is back on them once it has passed (whole seconds in all: the clocks of the
+    -- checks after this keep their phase).
+    local cursorWas = cursorX
+    frame._scripts.OnMouseDown(frame, "LeftButton")
+    cursorX = cursorX + 30
+    frame._scripts.OnUpdate(frame, 0.016)
+    frame._scripts.OnMouseUp(frame, "LeftButton")
+    cursorX = cursorWas
+    player.x = wasX + 0.001
+    W.Wait(Canvas.SOON - 0.5)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    local early = small.follow
+    player.x = wasX
+    W.Wait(1.5)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    tracker._scripts.OnUpdate(tracker, 0.016)
+    check(not early and small.follow and near(small.u, 500),
+        "the small map dragged: back on the walking player Canvas.SOON (2) seconds after, not sooner")
 
     -- In an instance the game tells no place: the game's minimap comes back at once, a drag or not: it is the map there.
     local wasCursor = cursorX

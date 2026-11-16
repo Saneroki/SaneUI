@@ -58,8 +58,8 @@ and shows them on the map or puts the map pin there. The plan is in
   the map and just follow the character automatically always when the character is moving and the map has not been
   draged around for 5s"; the box and the setting *Follow me* went). The full map opens on you and keeps you in its
   middle. Dragged away, zoomed, moved to a quest or to a map chosen on its bar, either map comes back to you as you
-  walk once you left it alone for 5 seconds (standing still, you can look around as long as you like); the middle
-  mouse button brings it back at once. In an instance the small window shows our map of the dungeon (below).
+  walk once you left it alone for a moment: the small map after 2 seconds, the full map after 5 (standing still, you
+  can look around as long as you like); the middle mouse button brings it back at once. In an instance the small window shows our map of the dungeon (below).
 - **In a dungeon, a raid or a battleground** the game tells addons nobody's place (Blizzard's rule: our map cannot
   show you there; the game's own minimap, which the game draws itself, can). So inside a dungeon or raid we have a map
   of, the small window shows **our map of it first** (Saneroki, 2026-11-15: "Yes ours first"): its whole floor, its
@@ -1231,10 +1231,10 @@ and shows them on the map or puts the map pin there. The plan is in
   profile). The gear is the game's silver atlas `GM-icon-settings` as it draws it, else the icon `INV_Misc_Gear_01`. The
   dropdown's words follow `Audio.Watch`, *(changed)* while `Audio.Changed`.
 - **Following again:** the tracker follows again where `Again` says, never with a mouse button held. Where the game
-  tells no place of the player (an instance) the small view does at once, ticked or not, so the game's minimap is the
-  map there. Else only with *Follow me* ticked: the small view as soon as the player moved since the last look; the
-  full map also only `Canvas.AGAIN` (10) seconds after the mouse last did something to it (a quest moved to, a map
-  chosen on the bar or by the game count as that: `lastInput`). Ticked, `Canvas.Center` puts the full camera on the
+  tells no place of the player (an instance) the small view does at once, so the game's minimap is the map there.
+  Else as the player walks (they moved since the last look), once the mouse last did something to the map (a drag,
+  the wheel; a quest moved to, a map chosen on the bar or by the game count as that: `lastInput`) `Canvas.SOON` (2)
+  seconds ago for the small view, `Canvas.AGAIN` (5) for the full map. Ticked, `Canvas.Center` puts the full camera on the
   player whenever the window fills the screen (but at a map the game was asked for, `Window.OpenTo`) and when the box
   is ticked; unticked, the full map no longer follows, and a small view that follows goes on following.
 - **The first view:** the option's first default is `ns.FALLBACK` (Scrying), so a first load starts there; `Offer`
@@ -1592,6 +1592,10 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, the small map back on you after 2 seconds:** Saneroki: "make it so that the minimap automatically
+  follows the player when the player is moving. I think right now we have a 5 second delay. Make it a 2s delay". The
+  small map's own wait, `Canvas.SOON` (2); the full map keeps `Canvas.AGAIN` (5), so it can be looked around while
+  walking.
 - **2026-11-16, a little off the line, it meets you further on:** Saneroki: "if you are just a little bit to the side
   of the route it shows you a route 90degree to your left / right and then again a 90 degree to the route. ... It
   would be nice if the pathing / routing would think a little ahead and not put the 90 90 degree path but say okay

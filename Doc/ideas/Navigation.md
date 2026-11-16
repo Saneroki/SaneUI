@@ -277,7 +277,8 @@ minimap) and the full-screen window (the world map) show the same map with the s
 - **Following by itself, no box (Saneroki, 2026-11-15; built):** "Remove the "follow me" feature from the map and just
   follow the character automatically always when the character is moving and the map has not been draged around for
   5s." The box *Follow me* and its setting are gone; both views come back to the player as the player walks once the
-  mouse has left them alone for 5 seconds (`Canvas.AGAIN`), the minimap too (it snapped back at once before).
+  mouse has left them alone for 5 seconds (`Canvas.AGAIN`), the minimap too (it snapped back at once before). The
+  minimap sooner (Saneroki, 2026-11-16): "Make it a 2s delay" (`Canvas.SOON`; the full map keeps its 5).
 - **The first view (Saneroki, 2026-10-30; built):** "The default map view should be atlas if available otherwise
   scrying and in retail, since there is only one mode it is the default one and no "mode button" is showin on the
   fullscreen." Atlas where it can be drawn, else Scrying, else Parchment. One view alone: no buttons on the bar and no
