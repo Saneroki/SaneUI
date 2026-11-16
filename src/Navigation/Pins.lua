@@ -79,16 +79,31 @@ Pins.ICONS = {
     done = "islands-questbangdisable", rare = "dungeonskull", treasure = "vignetteloot",
 }
 Pins.RED = { 1, 0.2, 0.15 } -- over the yellow mark: the game's red
+-- No NPC is a gold coin or a yellow dot (Saneroki, 2026-11-16: "The yellow coin is reserved for other stuff. So good
+-- readable pins for npcs and vendors"): the game's coins (its Gear, Auctioneer, Object) and its yellow dot
+-- (MonsterNeutral) stand for what its own minimap finds, so an NPC has a picture of what it does, the game's own, the
+-- same file in both games: the auctioneer the golden hammer of its crafting orders (a gavel), a merchant of trade
+-- goods the vendor's bag of its gossip window, any other NPC the speech bubble of its gossip window. A number is a
+-- texture's file, a word an atlas (Pins.Picture).
+Pins.NPC_LOOKS = { auctioneer = "Professions-Crafting-Orders-Icon", goods = 132060, -- (VendorGossipIcon)
+                   talk = 132053 } -- (GossipGossipIcon)
+Pins.GAME_COINS = { "Gear", "Auctioneer", "Object", "MonsterNeutral", "ChatBallon" } -- the game's, never an NPC's
 -- Core's services: an NPC's first service with an icon gives its pin's (a trainer: Trainer below).
 local SERVICES = {
-    repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "auctioneer",
+    repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = Pins.NPC_LOOKS.auctioneer,
     stablemaster = "stablemaster", battlemaster = "battlemaster", trainer = "profession", weaponmaster = "upgradeitem-32x32",
     vendor = "repair", guildmaster = "crossedflags", tabard = "crossedflags", spirithealer = "poi-soulspiritghost",
 }
 -- A merchant: the game's anvil, as its own minimap shows merchants (Saneroki, 2026-10-20); one of a kind of goods
 -- the game's minimap tracks: by the first of them with an icon.
 local GOODS = { food = "food", reagents = "reagents", poisons = "poisons", ammunition = "ammunition", potions = "greencross",
-                tradegoods = "gear" }
+                tradegoods = Pins.NPC_LOOKS.goods }
+
+-- A look into a pin's record: a number its texture, a word its atlas.
+function Pins.Picture(pin, look)
+    if type(look) == "number" then pin.texture, pin.atlas = look, nil else pin.atlas = look end
+    return pin
+end
 -- A trainer of a class (its title names one of the game's classes) is the class book; of a profession, the scroll.
 local CLASS_TRAINER = "class"
 -- A service's words in the tooltip.
@@ -435,7 +450,8 @@ local function Trainer(title)
 end
 
 -- An NPC's icon as its pin has it, from what it is (the map's search, Find.lua): a rare's skull, its first service's
--- (a trainer by its title, a merchant by its goods), else the game's mark of a creature, hostile or not.
+-- (a trainer by its title, a merchant by its goods), else a hostile one the game's red dot of a foe, any other the
+-- speech bubble (Pins.NPC_LOOKS: no yellow dot).
 function Pins.LookOf(services, title, goods, rank, foe)
     if rank == "rare" or rank == "rareelite" then return Pins.ICONS.rare end
     for _, service in ipairs(type(services) == "table" and services or {}) do
@@ -448,7 +464,7 @@ function Pins.LookOf(services, title, goods, rank, foe)
         if service == "flightmaster" then return "flightmaster" end
         if SERVICES[service] then return SERVICES[service] end
     end
-    return foe and "monsterenemy" or "monsterneutral"
+    return foe and "monsterenemy" or Pins.NPC_LOOKS.talk
 end
 
 -- An object's and a place's of Core's data, as their pins have them.
@@ -536,7 +552,8 @@ local function FromData(place)
                     if GOODS[goods] then atlas = GOODS[goods] break end
                 end
             end
-            pin.kind, pin.atlas, pin.service = "service", atlas, true
+            pin.kind, pin.service = "service", true
+            Pins.Picture(pin, atlas)
             local words = {}
             for _, each in ipairs(services) do
                 -- A trainer's title says what it trains (Warrior Trainer): the word Trainer only without one.

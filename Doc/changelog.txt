@@ -7,6 +7,16 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Navigation 0.3.5 (2026-11-16)
+-----------------------------
+- Share your map pin: right click it for your party, raid,
+  guild or someone; they are asked first, and kept, their
+  map pin goes there with the golden line.
+- The mouse on a party or raid member's dot names who it is.
+- Vendors of trade goods, auctioneers and other NPCs have
+  clear pictures of what they do; no NPC is a gold coin.
+
+
 Navigation 0.3.4 (2026-11-16)
 -----------------------------
 - The first Navigation on CurseForge, as an alpha.

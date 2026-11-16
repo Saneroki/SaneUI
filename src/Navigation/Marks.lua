@@ -10,7 +10,8 @@ local _, ns = ...
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's), at
 --                           a fixed size; a click leads the game's arrow to it or not, Ctrl-click
 --                           takes it away; its tooltip says so, and that a double click on the map
---                           puts it there with the golden line to it (Saneroki, 2026-11-16)
+--                           puts it there with the golden line to it (Saneroki, 2026-11-16); a right
+--                           click shares it (below, *Sharing the map pin*)
 --      the waypoints        where the golden line goes first (Planner.Via, dragged on the full map):
 --                           the game's map pin, smaller and grey (Marks.VIA); dragged, one moves;
 --                           a right click takes it away; while the line or one is dragged, a ghost
@@ -23,7 +24,9 @@ local _, ns = ...
 --                           game's minimap too, there more often (Marks.OVER), so ours lie over
 --                           its own dots of them, which it moves at each frame. Between two looks
 --                           each glides at every frame from where it stands to the new place
---                           (Glide; Saneroki, 2026-11-11: smoother, no jumps)
+--                           (Glide; Saneroki, 2026-11-11: smoother, no jumps). The mouse on one
+--                           names every member under it, in the class colour, Guild beside one
+--                           of your guild (MemberTip; Saneroki, 2026-11-16)
 --
 --  Placed against the canvas' holder like the layers (Canvas.lua), so a drag moves
 --  them with the map; the arrow is moved again on every step of the canvas'
@@ -46,11 +49,25 @@ Marks.OVER = 0.1   -- the same while the game's minimap shows: its own dots of t
 Marks.GLIDE = 1    -- seconds a member's mark takes at most to glide to the member's new place
 Marks.LEAP = 200   -- yards: a member farther than this from its mark stands at its new place at once (a portal)
 Marks.GREEN = { 0.1, 1, 0.1 } -- the map pin's tooltip, what the mouse does: the game's GREEN_FONT_COLOR
+Marks.GUILD = { 0.25, 1, 0.25 } -- a member of your guild in a member's tooltip: the game's guild chat green
+Marks.KIND = "W"   -- the wire's kind of a map pin shared
+Marks.TEXT = {
+    guildMember = SaneUI.Core.Word("GUILD", "Guild"),
+    dead = SaneUI.Core.Word("DEAD", "Dead"),
+    shareTip = "<Right click to share it with your party, raid, guild or someone>",
+    share = "Share the map pin",
+    party = "Party", raid = "Raid", guild = "Guild", someone = "Someone...",
+    shareWith = "Share the map pin with",
+    shared = "Map pin sent to your %s.",
+    sharedTo = "Map pin sent to %s.",
+    notSent = "The map pin could not be sent.",
+    kept = "Your map pin is where %s put it: %s.",
+}
 
 local Coords, Live, Plain = ns.Coords, ns.Live, SaneUI.Core.Plain
 local layer, holder, arrow, pin
 local pair         -- the arrow and the pin together, for Fit (made once with them: it runs every frame the player walks)
-local members = {} -- the members' textures, made as many as needed; each knows where it glides (Aim)
+local members = {} -- the members' marks, made as many as needed; each knows where it glides (Aim) and who (unit)
 local nextGroup = 0
 local glider       -- a frame of the layer's whose OnUpdate glides the members' marks, set only while one is on its way
 local gliding      -- whether it is set
@@ -68,6 +85,7 @@ local function Tip(button)
     if type(more) == "string" then GameTooltip:AddLine(more, nil, nil, nil, true) end
     local green = Marks.GREEN
     GameTooltip:AddLine(Word("MAP_PIN_REMOVE", "<Ctrl click to remove pin>"), green[1], green[2], green[3], true)
+    GameTooltip:AddLine(Marks.TEXT.shareTip, green[1], green[2], green[3], true)
     GameTooltip:AddLine(ns.TEXT.pinDouble, green[1], green[2], green[3], true)
     GameTooltip:Show()
 end
@@ -78,8 +96,8 @@ local function Sound(key)
 end
 
 -- A click on the pin, as on the game's map: Ctrl takes it away, the chat link's modifier writes it into the
--- chat, a left click leads the game's arrow on the screen to it, or no longer.
-local function Clicked(_, button)
+-- chat, a left click leads the game's arrow on the screen to it, or no longer; ours: a right click shares it.
+local function Clicked(self, button)
     if IsControlKeyDown() then
         Live.ClearWaypoint()
         Sound("UI_MAP_WAYPOINT_REMOVE")
@@ -88,6 +106,8 @@ local function Clicked(_, button)
         local chat = rawget(_G, "ChatFrameUtil")
         if link and chat and chat.InsertLink then chat.InsertLink(link) end
         Sound("UI_MAP_WAYPOINT_CHAT_SHARE")
+    elseif button == "RightButton" then
+        Marks.Share(self)
     elseif button == "LeftButton" then
         local track = not Live.Tracked()
         C_SuperTrack.SetSuperTrackedUserWaypoint(track)
@@ -110,6 +130,7 @@ function Marks.Build(canvasHolder)
     pin.icon = pin:CreateTexture(nil, "ARTWORK")
     pin.icon:SetAllPoints()
     pin:SetHighlightAtlas("Waypoint-MapPin-Highlight", "ADD")
+    pin:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     pin:SetScript("OnClick", ns.Guard(Clicked))
     pin:SetScript("OnEnter", ns.Guard(Tip))
     pin:SetScript("OnLeave", GameTooltip_Hide)
@@ -300,6 +321,48 @@ function Marks.Glide(now, all)
     end
 end
 
+-- Who the marks under the mouse are (Saneroki, 2026-11-16: "a tooltip on guild members and party member points on
+-- the map so we can identify who it is"), as the game's map names them (UnitPositionFrameMixin:UpdateUnitTooltips):
+-- every member whose mark lies under the mouse, a line each, the name in its class colour, Dead beside one dead; ours:
+-- Guild beside one of your guild.
+local function MemberTip(self)
+    local Core = SaneUI.Core
+    GameTooltip:SetOwner(self, "ANCHOR_CURSOR_RIGHT")
+    local any = false
+    for _, mark in ipairs(members) do
+        if mark.who and mark.unit and (mark == self or mark:IsShown() and Plain(mark:IsMouseOver()) == true) then
+            local unit = mark.unit
+            local name = Core.FullName(unit) or Plain(Core.Ask(UnitName, unit)) or "?"
+            if Plain(Core.Ask(UnitIsDeadOrGhost, unit)) == true then name = name .. " (" .. Marks.TEXT.dead .. ")" end
+            local _, class = UnitClass(unit)
+            local color = class and rawget(_G, "RAID_CLASS_COLORS") and RAID_CLASS_COLORS[class]
+            local r, g, b = color and color.r or 1, color and color.g or 1, color and color.b or 1
+            if Plain(Core.Ask(rawget(_G, "UnitIsInMyGuild"), unit)) == true then
+                local green = Marks.GUILD
+                GameTooltip:AddDoubleLine(name, Marks.TEXT.guildMember, r, g, b, green[1], green[2], green[3])
+            else
+                GameTooltip:AddLine(name, r, g, b)
+            end
+            any = true
+        end
+    end
+    if any then GameTooltip:Show() else GameTooltip:Hide() end
+end
+
+-- A member's mark: the game's blip in a frame of its own that only the mouse's motion reaches (its clicks and drags go
+-- on to the map under it), so the mouse on it names who it is (MemberTip).
+local function Member()
+    local mark = CreateFrame("Frame", nil, layer)
+    mark.icon = mark:CreateTexture(nil, "ARTWORK")
+    mark.icon:SetAllPoints()
+    mark.icon:SetAtlas(Marks.BLIP)
+    mark:EnableMouseMotion(true)
+    mark:SetScript("OnEnter", ns.Guard(MemberTip))
+    mark:SetScript("OnLeave", GameTooltip_Hide)
+    return mark
+end
+Marks.MemberTip = MemberTip
+
 -- Each member's mark aimed where the game tells at the time now, at the view's zoom (Marks.Group).
 local function Members(view, now, interval)
     seen = view
@@ -310,18 +373,17 @@ local function Members(view, now, interval)
         for _, member in ipairs(Live.Group(view.map)) do
             local u, v = Coords.ToPlane(box, member.x, member.y)
             count = count + 1
-            local texture = members[count]
-            if not texture then
-                texture = layer:CreateTexture(nil, "ARTWORK")
-                texture:SetAtlas(Marks.BLIP)
-                members[count] = texture
+            local mark = members[count]
+            if not mark then
+                mark = Member()
+                members[count] = mark
             end
             local _, class = UnitClass(member.unit)
             local color = class and rawget(_G, "RAID_CLASS_COLORS") and RAID_CLASS_COLORS[class]
-            if color then texture:SetVertexColor(color.r, color.g, color.b) else texture:SetVertexColor(1, 1, 1) end
-            texture:SetSize(size, size)
-            texture.side = size
-            Aim(texture, u, v, Plain(UnitGUID(member.unit)) or member.unit, view.map, now, interval)
+            if color then mark.icon:SetVertexColor(color.r, color.g, color.b) else mark.icon:SetVertexColor(1, 1, 1) end
+            mark:SetSize(size, size)
+            mark.side, mark.unit = size, member.unit
+            Aim(mark, u, v, Plain(UnitGUID(member.unit)) or member.unit, view.map, now, interval)
         end
     end
     for index = count + 1, #members do
@@ -366,10 +428,82 @@ function Marks.Clear()
     Put(pin, nil)
     for _, button in ipairs(vias) do Put(button, nil) end
     if ghost then Put(ghost, nil) end
-    for _, texture in ipairs(members) do
-        texture.who = nil
-        Put(texture, nil)
+    for _, mark in ipairs(members) do
+        mark.who = nil
+        Put(mark, nil)
     end
     Marks.Glide(GetTime())
     nextGroup = 0
 end
+
+-------------------------------------------------------------------------------
+--  Sharing the map pin
+-------------------------------------------------------------------------------
+-- Saneroki, 2026-11-16: "I also want to implement sharing map pins with party and guild members and with someone
+-- specific". A right click on the pin: Party (Raid in one), Guild (each greyed outside one), Someone... (Core.AskPlayer:
+-- the game's search of the players it knows), as a marker's and a sketch's Share. On the wire (Core.Wire, kind W, one
+-- message, urgent): the pin's map, x and y (0 to 1, four places). Who gets it is asked first, on the markers' card
+-- (Markers.Offer: who shares it, the zone, Keep or No); on Keep the map pin is theirs, in place of their own, not yet
+-- followed by the game's arrow, as the game's own link in the chat puts it (Live.SetWaypoint), so the golden line leads
+-- there. The setting for what others share (markerShares) lets nobody ask while off; a pin the game takes on no map,
+-- a place off its map, the same pin from the same player while its card still waits: not asked about.
+local Core, Wire = SaneUI.Core, SaneUI.Core.Wire
+
+-- The map pin to a channel of the wire (WHISPER: to the player named target); whether it went.
+function Marks.SharePin(channel, target)
+    local map, x, y = Live.Waypoint()
+    if not (map and channel and Wire) then return false end
+    return Wire.Send(Marks.KIND, { tostring(map), ("%.4f"):format(x), ("%.4f"):format(y), n = 3 }, channel, target,
+        true) and true or false
+end
+
+local function Told(sent, word, someone)
+    ns.Print(not sent and Marks.TEXT.notSent or (someone and Marks.TEXT.sharedTo or Marks.TEXT.shared):format(word))
+end
+
+-- The menu's entries (Marks.Share; the tests give it a description of their own).
+function Marks.ShareMenu(root)
+    local TEXT, Markers = Marks.TEXT, ns.Markers
+    root:CreateTitle(TEXT.share)
+    local channel, word = Markers.Group()
+    local group = root:CreateButton(word == Markers.TEXT.raid and TEXT.raid or TEXT.party,
+        ns.Guard(function() Told(Marks.SharePin(channel), word) end))
+    if not channel and group.SetEnabled then group:SetEnabled(false) end
+    local guild = Core.Ask(rawget(_G, "IsInGuild")) and "GUILD" or nil
+    local toGuild = root:CreateButton(TEXT.guild,
+        ns.Guard(function() Told(Marks.SharePin(guild), Markers.TEXT.guild) end))
+    if not guild and toGuild.SetEnabled then toGuild:SetEnabled(false) end
+    root:CreateButton(TEXT.someone, ns.Guard(function()
+        Core.AskPlayer(TEXT.shareWith, ns.Guard(function(name) Told(Marks.SharePin("WHISPER", name), name, true) end))
+    end))
+end
+
+function Marks.Share(button)
+    if not (Live.Waypoint() and rawget(_G, "MenuUtil")) then return end
+    MenuUtil.CreateContextMenu(button, ns.Guard(function(_, root) Marks.ShareMenu(root) end))
+end
+
+-- A map pin heard (the wire, kind W): its card waits (Markers.Offer) where it holds.
+function Marks.Heard(sender, fields)
+    if ns.off or type(fields) ~= "table" then return end
+    local map, x, y = tonumber(fields[1]), tonumber(fields[2]), tonumber(fields[3])
+    if not (map and map > 0 and map == math.floor(map)) then return end
+    if not (x and y and x >= 0 and x <= 1 and y >= 0 and y <= 1) then return end
+    if not Core.Ask(C_Map.CanSetUserWaypointOnMap, map) then return end
+    sender = tostring(sender or "?")
+    ns.Markers.Offer({ sender = sender, rows = {}, pin = { map = map, x = x, y = y },
+                       same = ("pin:%s:%d:%.4f:%.4f"):format(sender, map, x, y) })
+end
+
+-- A shared pin kept (the card's Keep): the game's map pin there.
+function Marks.KeepPin(share)
+    local spot = share and share.pin
+    if spot and Live.SetWaypoint(spot.map, spot.x, spot.y) then
+        Sound("UI_MAP_WAYPOINT_CONTROL_CLICK")
+        ns.Print(Marks.TEXT.kept:format(share.sender, ns.Markers.Where(spot.map)))
+    else
+        UIErrorsFrame:AddMessage(ns.TEXT.noPin, 1, 0.1, 0.1)
+    end
+end
+
+if Wire and Wire.Listen then Wire.Listen(Marks.KIND, ns.Guard(Marks.Heard)) end

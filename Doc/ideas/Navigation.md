@@ -391,6 +391,17 @@ When the window fills the screen:
   game's mark of a quest in progress (three yellow dots).
 - **The map pin's tooltip says how (Saneroki, 2026-11-16; built):** "In the tooltip of the mappin show that pressing
   ctrl click will remove it and double clicking on the map will create a pin with a route."
+- **No NPC a gold coin or a yellow dot (Saneroki, 2026-11-16; built):** "We need to give all npcs that use the yellow
+  coin / dot as their pin a different icon. The yellow coin is researved for other stuff. So good readable pins for
+  npcs and vendors and everything that uses gold circles or coins as their map markers." Each NPC a picture of what
+  it does, the game's own, the same file in both games: trade goods the vendor's bag of its gossip window, the
+  auctioneer the golden hammer of its crafting orders, a friendly NPC without a service (the search) its speech
+  bubble; a hostile one keeps the red dot.
+- **Who the party's dots are (Saneroki, 2026-11-16; built):** "Can we have a tooltip on guild members and party
+  member points on the map so we can identify who it is on the map". The mouse on a member's mark names every member
+  under it, as the game's map does, each in the class colour, Guild beside one of your guild; its clicks stay the
+  map's. Only the party and raid have places the game tells; a guild member outside the group stands at its zone's
+  middle only when searched for (the search's pin and tooltip).
 - **Tooltips without the click (Saneroki, 2026-10-20):** a pin's tooltip does not say that a click puts the map pin
   there.
 - **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and
@@ -1095,6 +1106,10 @@ hidden but what the small view needs.
   Share: one marker, or all of yours on its map, to the raid or party or the guild; whoever gets them is asked first
   (Keep or No), a kept one marked as from its sender, changed in place when its maker shares it again; the setting
   *Markers others share* (on).
+- **The map pin shared (Saneroki, 2026-11-16; built):** "I also want to implement sharing map pins with party and
+  guild members and with someone specific." A right click on the map pin: Party (Raid in one), Guild, Someone...;
+  whoever gets it is asked on the markers' card (Keep or No), and kept, their map pin goes there in place of their
+  own, as the game's own pin link in the chat puts it; the setting is now *Markers and map pins others share*.
 - **Drawing and plans (Saneroki, 2026-11-15; built):** "Can we draw on the map too? I want a button somwhere that helps
   me to activate menues and helpers to drop pins and draw on the map and save those drawings and map pins together so
   they can be shared or grouped together. This will be especially helpful in instance maps". A pencil square on the full

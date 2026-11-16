@@ -1543,7 +1543,8 @@ local function Marker(place, target, index)
     local pin = { kind = "find", key = "farm:" .. target.key .. ":" .. index, name = target.name, role = place.name,
                   home = home, u = place.u, v = place.v, map = place.map, x = place.x, y = place.y, sought = true,
                   size = Find.MARKER, lines = { ns.Farms.About(place) } }
-    if type(look) == "number" then pin.texture, pin.look = look, "found" else pin.atlas = look end
+    if type(look) ~= "number" then pin.atlas = look
+    else pin.texture, pin.look = look, target.kind == "item" and "found" or nil end -- (an NPC's picture as it is)
     return pin
 end
 

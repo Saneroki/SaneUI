@@ -2221,7 +2221,9 @@ end)()
     IsInGroup = function() return true end
     tracker._scripts.OnUpdate(tracker, 0.016)
     local blips = 0
-    for _, widget in ipairs(W.frames) do if widget._atlas == ns.Marks.BLIP and widget.x then blips = blips + 1 end end
+    for _, widget in ipairs(W.frames) do
+        if widget.icon and widget.icon._atlas == ns.Marks.BLIP and widget.x then blips = blips + 1 end
+    end
     IsInGroup = function() return false end
     check(blips == 0, "nor the party's marks of ours there: the game's minimap shows the party itself")
     frame._scripts.OnMouseWheel(frame, 1)
@@ -2343,13 +2345,104 @@ do
     local said = table.concat(lines, "\n")
     check(said:find("Ctrl click", 1, true) and lines[#lines] == ns.TEXT.pinDouble,
         "its tooltip: a Ctrl-click takes it away, a double click on the map puts it there with a route")
+    check(said:find(ns.Marks.TEXT.shareTip, 1, true), "its tooltip: a right click shares it")
 end
+-- Sharing the map pin (Saneroki, 2026-11-16: "sharing map pins with party and guild members and with someone
+-- specific"): a right click, Party (Raid in one), Guild, Someone...; on the wire (kind W) its map and place; who gets
+-- it is asked on the markers' card, and on Keep has the game's map pin there, not yet followed.
+;(function()
+    local Marks, Markers, Wire = ns.Marks, ns.Markers, Core.Wire
+    local send, sent = Wire.Send, {}
+    Wire.Send = function(kind, fields, channel, target, hurry)
+        sent[#sent + 1] = { kind = kind, fields = fields, channel = channel, target = target, hurry = hurry }
+        return true
+    end
+    local inGroup, inGuild = IsInGroup, rawget(_G, "IsInGuild")
+    IsInGroup, IsInGuild = function() return true end, function() return false end
+    local menus = #W.menus
+    pin._scripts.OnClick(pin, "RightButton")
+    local menu = W.menus[#W.menus]
+    check(#W.menus == menus + 1 and menu[1].title == Marks.TEXT.share and menu[2].text == Marks.TEXT.party
+        and menu[3].text == Marks.TEXT.guild and menu[3].disabled and menu[4].text == Marks.TEXT.someone,
+        "a right click: Share the map pin, Party, Guild (greyed outside one), Someone...")
+    menu[2].fn()
+    local one = sent[1] or {}
+    local fields = one.fields or {}
+    check(#sent == 1 and one.kind == Marks.KIND and one.channel == "PARTY" and one.hurry and fields[1] == "1429"
+        and fields[2] == "0.7500" and fields[3] == "0.3000", "Party: its map and place sent to the party at once")
+    check((W.printed[#W.printed] or ""):find(Marks.TEXT.shared:format(Markers.TEXT.party), 1, true),
+        "the sender told where it went")
+    wipe(sent)
+    menu[4].fn()
+    local card
+    for _, widget in ipairs(W.frames) do if widget.box and widget.accept and widget.look then card = widget end end
+    card.box:SetText("Brannoc")
+    card.accept._scripts.OnClick(card.accept)
+    check(sent[1] and sent[1].channel == "WHISPER" and sent[1].target == "Brannoc", "Someone: whispered to that player")
+    IsInGroup, IsInGuild, Wire.Send = inGroup, inGuild, send
+    -- heard: asked first on the markers' card; the same pin again while it waits, a map the game takes no pin on, a
+    -- place off the map: not asked about
+    local mine = waypoint
+    Marks.Heard("Brannoc Steelvein", { "1429", "0.2500", "0.6000" })
+    Marks.Heard("Brannoc Steelvein", { "1429", "0.2500", "0.6000" })
+    Marks.Heard("Brannoc Steelvein", { "1415", "0.5", "0.5" })
+    Marks.Heard("Brannoc Steelvein", { "1429", "1.5", "0.5" })
+    Marks.Heard("Brannoc Steelvein", { "Elwynn", "0.5", "0.5" })
+    local offer = Markers.offer
+    local words = offer and offer.words:GetText() or ""
+    check(offer and offer:IsShown() and offer.look.title:GetText() == Markers.TEXT.offeredPin
+        and words:find(Markers.TEXT.offerPin:format("Brannoc Steelvein"), 1, true) and words:find("Elwynn Forest", 1, true)
+        and words:find(Markers.TEXT.keepPin, 1, true), "heard: a card asks, who shares it and where")
+    check(waypoint == mine, "not yet kept: the pin stays where it was")
+    offer.keep._scripts.OnClick(offer.keep)
+    check(waypoint and waypoint.uiMapID == 1429 and near(waypoint.position.x, 0.25) and near(waypoint.position.y, 0.6)
+        and not tracked and not offer:IsShown(), "Keep: the game's map pin there, not yet followed; nothing else asked")
+    check((W.printed[#W.printed] or ""):find(Marks.TEXT.kept:format("Brannoc Steelvein", "Elwynn Forest"), 1, true),
+        "kept: told whose it is and where")
+    Core.Set(ns.name, "markerShares", false)
+    Marks.Heard("Brannoc Steelvein", { "1429", "0.5", "0.5" })
+    check(not offer:IsShown(), "the setting off: nobody asks")
+    Core.Set(ns.name, "markerShares", true)
+    Marks.Heard("Brannoc Steelvein", { "1429", "0.5", "0.5" })
+    offer.no._scripts.OnClick(offer.no)
+    check(not offer:IsShown() and near(waypoint.position.x, 0.25), "No: the pin stays")
+    waypoint = mine
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
 pin._scripts.OnClick(pin, "LeftButton")
 check(tracked, "a click on it: the game's arrow leads there")
 ctrl = true
 pin._scripts.OnClick(pin, "LeftButton")
 ctrl = false
 check(waypoint == nil, "Ctrl-click on it: gone")
+-- No NPC a gold coin or a yellow dot (Saneroki, 2026-11-16: "The yellow coin is reserved for other stuff"): every
+-- service and kind of goods a picture of what it does; one given as a file's number drawn as a texture.
+do
+    local Pins, coins = ns.Pins, {}
+    for _, coin in ipairs(Pins.GAME_COINS) do coins[coin:lower()] = true end
+    local looks = { Pins.LookOf({}, nil, nil, nil, false), Pins.LookOf({}, nil, nil, nil, true) }
+    for service in pairs(Pins.SERVICE_WORDS) do looks[#looks + 1] = Pins.LookOf({ service }) end
+    for _, goods in ipairs({ "food", "reagents", "poisons", "ammunition", "potions", "tradegoods", "bags" }) do
+        looks[#looks + 1] = Pins.LookOf({ "vendor" }, nil, { goods })
+    end
+    local coin
+    for _, look in ipairs(looks) do
+        if type(look) == "string" and coins[look:lower()] then coin = look end
+    end
+    check(not coin, "no NPC's pin a gold coin or a yellow dot: " .. tostring(coin))
+    local served = 0 -- (a service with a look of its own: the auction house's)
+    for service, look in pairs(Pins.NPC_LOOKS) do
+        if Pins.SERVICE_WORDS[service] and Pins.LookOf({ service }) == look then served = served + 1 end
+    end
+    check(#Pins.GAME_COINS == 5 and Pins.LookOf({}, nil, nil, nil, false) == Pins.NPC_LOOKS.talk and served == 1
+        and Pins.LookOf({ "vendor" }, nil, { "tradegoods" }) == Pins.NPC_LOOKS.goods
+        and Pins.LookOf({}, nil, nil, nil, true) == "monsterenemy",
+        "a friendly NPC the speech bubble, the auction house's the hammer, trade goods the vendor's bag, a foe the red dot")
+    local record = Pins.Picture({ atlas = "repair" }, Pins.NPC_LOOKS.goods)
+    check(record.texture == Pins.NPC_LOOKS.goods and record.atlas == nil and Pins.Picture({}, "repair").atlas == "repair",
+        "a number a texture, a word an atlas")
+end
 -- A zone the game names under the mouse but gives no world position for (no box): no place to pin, no error.
 ;(function()
     local at = C_Map.GetMapInfoAtPosition
@@ -5069,8 +5162,31 @@ check(not ns.Window.handle.hovered, "off the map: unseen again")
     IsInGroup = function() return true end
     Marks.Group(view, GetTime() + 10)
     local blip
-    for _, widget in ipairs(W.frames) do if widget._atlas == Marks.BLIP and widget.x then blip = widget end end
-    check(blip and blip._vertex and near(blip._vertex[1], 0.78), "the party member on the map, in the class' colour")
+    for _, widget in ipairs(W.frames) do if widget.icon and widget.icon._atlas == Marks.BLIP and widget.x then blip = widget end end
+    check(blip and blip.icon._vertex and near(blip.icon._vertex[1], 0.78), "the party member on the map, in the class' colour")
+    -- Who it is (Saneroki, 2026-11-16: "a tooltip on guild members and party member points on the map so we can
+    -- identify who it is"): the mouse on its mark, the name in the class colour; Guild beside one of your guild;
+    -- every member under the mouse; the mouse only, its clicks the map's.
+    ;(function()
+        local lines, doubles, inGuild = {}, {}, rawget(_G, "UnitIsInMyGuild")
+        GameTooltip._lines = nil
+        GameTooltip.AddDoubleLine = function(_, left, right) doubles[#doubles + 1] = { left, right } end
+        UnitIsInMyGuild = function() return false end
+        blip._scripts.OnEnter(blip)
+        lines = GameTooltip._lines or {}
+        local name = Core.FullName("party1")
+        check(#lines == 1 and lines[1] == name and #doubles == 0 and GameTooltip:GetOwner() == blip,
+            "the mouse on a member's mark: its name")
+        UnitIsInMyGuild = function(unit) return unit == "party1" end
+        GameTooltip._lines, doubles = nil, {}
+        blip._scripts.OnEnter(blip)
+        check(not GameTooltip._lines and doubles[1] and doubles[1][1] == name and doubles[1][2] == Marks.TEXT.guildMember,
+            "one of your guild: Guild beside its name")
+        UnitIsInMyGuild = inGuild
+        check(blip._scripts.OnLeave and not blip._scripts.OnClick and not blip._scripts.OnMouseDown,
+            "its clicks go on to the map")
+        GameTooltip.AddDoubleLine = nil -- (the stand-in's own again)
+    end)()
     local size = Marks.MemberSize(view.k)
     check(near(blip._width, size) and near(blip._height, size) and near(blip.half, size / 2)
         and blip._shown == Canvas.Inside(blip.x, blip.y, size / 2),
@@ -6970,7 +7086,7 @@ end)()
     ns.Marks.Group(Canvas.view, GetTime() + 10)
     local blips, areas = 0, 0
     for _, widget in ipairs(W.frames) do
-        if widget._atlas == ns.Marks.BLIP and widget.who then blips = blips + 1 end
+        if widget.icon and widget.icon._atlas == ns.Marks.BLIP and widget.who then blips = blips + 1 end
     end
     for _, widget in ipairs(areaFrames) do if widget._shown then areas = areas + 1 end end
     IsInGroup = function() return false end

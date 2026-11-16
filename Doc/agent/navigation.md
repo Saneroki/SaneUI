@@ -22,7 +22,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    write its title and description and pick its icon; pins of kind `mark` on both maps, the title beside them on the
    full map, a click opens the card (Edit, Move, the map pin, Delete, Share); kept in `ns.store.markers` for the
    account; shared only by the card's Share (Core's wire, a block of kind `M`, to the raid or party or the guild),
-   asked before kept, a copy changed when its maker shares it again (`origin`); the setting *Markers others share*;
+   asked before kept, a copy changed when its maker shares it again (`origin`); the setting *Markers and map pins
+   others share* (the map pin shared by its right click too, kind `W`, `Marks.lua`, 2026-11-16);
    the pin filter's *Your markers*; found by the map's search.
 9. Drawing and plans (`Draw.lua`, `DrawBar.lua`, `Plans.lua`, 2026-11-15): the pencil square on the bar opens a palette
    (marker, pen, line, arrow, circle, eraser; colours, widths; the plan's dropdown; undo, clear); drawings on the

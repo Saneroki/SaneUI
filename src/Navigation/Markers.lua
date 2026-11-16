@@ -20,6 +20,7 @@ local _, ns = ...
 --                  is asked first (a small card: who shares what, Keep or No), and only kept on Keep, marked as
 --                  from the one who shared them; one shared again by its maker (edited, moved) changes the copy
 --                  kept, never a second one. The setting Markers others share (on) lets nobody ask while off.
+--                  A map pin shared (Marks.lua, its right click) is asked about on the same card; Keep puts it there.
 --
 --      Markers.List()            every marker: { id, map, x, y (0 to 1 on its map), title, text, icon, made (time) }
 --      Markers.New(spot)         a new one at { map, x, y } (Canvas: Alt and a click), its card open to write in
@@ -165,6 +166,7 @@ Markers.TEXT = {
     shared = "%d %s sent to your %s.", one = "marker", many = "markers",
     sharedTo = "%d %s sent to %s.",
     offered = "Markers shared",
+    offeredPin = "Map pin shared", offerPin = "%s shares a map pin with you.", keepPin = "Keep puts your map pin there.",
     offerOne = "%s shares a marker with you: %s.",
     offerMany = "%s shares %d markers with you: %s.",
     keep = "Keep",
@@ -785,7 +787,7 @@ local Ask
 local function Answer(keep)
     local share = table.remove(offers, 1)
     if share and keep then
-        if share.plan then ns.Plans.Keep(share) else Markers.Keep(share) end
+        if share.plan then ns.Plans.Keep(share) elseif share.pin then ns.Marks.KeepPin(share) else Markers.Keep(share) end
     end
     Ask()
 end
@@ -836,23 +838,30 @@ function Ask()
     if share.plan then
         words = Markers.TEXT.offerPlan:format(share.sender, share.plan.name, #share.rows, #share.drawings)
     end
-    local first = share.rows[1] or share.drawings and share.drawings[1]
+    if share.pin then words = Markers.TEXT.offerPin:format(share.sender) end -- (a map pin: Marks.Heard)
+    local first = share.rows[1] or share.drawings and share.drawings[1] or share.pin
     local zone = first and Where(first.map)
     if zone and zone ~= "" then words = words .. " (" .. zone .. ")" end
     -- one shared by a dungeon map addon Sane UI knows (Exchange.lua): which, and what lay on maps we have no match for
     if share.via then words = words .. " " .. Markers.TEXT.offerVia:format(share.via) end
     if (share.left or 0) > 0 then words = words .. " " .. Markers.TEXT.offerLeft:format(share.left) end
+    if share.pin then words = words .. " " .. Markers.TEXT.keepPin end
+    offer.look.title:SetText(share.pin and Markers.TEXT.offeredPin or Markers.TEXT.offered)
     offer.words:SetText(words)
     local height = (offer.words:GetStringHeight() or 14) + 12 + 28
     offer:SetHeight(height + Look.DRESS_HEAD + 4 + Look.INSIDE + 4)
     offer:Show()
 end
 
--- A share to ask about (Markers.Heard; Exchange.lua, a dungeon map addon's): waiting for its card, unless the setting
--- says no or too many wait; whether it waits.
+-- A share to ask about (Markers.Heard; Exchange.lua, a dungeon map addon's; Marks.Heard, a map pin): waiting for its
+-- card, unless the setting says no, too many wait, or one the same (share.same: a map pin from that player there)
+-- waits already; whether it waits.
 function Markers.Offer(share)
     if ns.off or not (ns.options and ns.options.markerShares) then return false end
     if #offers >= Markers.WAITING then return false end
+    for _, waiting in ipairs(share.same and offers or {}) do
+        if waiting.same == share.same then return false end
+    end
     offers[#offers + 1] = share
     if #offers == 1 then Ask() end
     return true

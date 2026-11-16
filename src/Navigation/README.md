@@ -51,8 +51,13 @@ and shows them on the map or puts the map pin there. The plan is in
     there too, as on the game's map. The pin has two states, as the game's own: *tracked* (gold, the game's
     arrow on the screen leads to it with its distance) and *untracked* (only on the map). A click on the pin
     switches between them, Ctrl and a click takes it away, Shift and a click writes it into the chat. Its tooltip
-    says so, under the game's words: Ctrl and a click takes it away, and a double click on the map puts it there,
-    with a route to it.
+    says so, under the game's words: Ctrl and a click takes it away, a right click shares it, and a double click on
+    the map puts it there, with a route to it.
+  - **a right click on the map pin shares it** (Saneroki, 2026-11-16): *Party* (*Raid* in one), *Guild* (each greyed
+    outside one) or *Someone...* (a player you name, as a marker's *Someone...*). Whoever gets it sees a small card
+    (who shares it, the zone) and has it only with **Keep**: their map pin goes there, in place of their own, not yet
+    followed by the game's arrow, and the golden line leads there. The setting *Markers and map pins others share*
+    (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
 - **Pings of your party and raid** (and your own) show where the game's own minimap lies over the map (around you:
   the small map while it follows you at one of the game's zoom steps, the square around you on the full map), drawn
   by the game, with its sound. Farther out the map shows none: the game does not let an addon hear its pings.
@@ -119,7 +124,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   !) or one you cannot take yet (its level, a quest first: a red ?), or with quests you have done only (grey, off
   at first); services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
-  the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those...), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
+  the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those, of trade goods the
+  vendor's bag of the game's gossip window, the auctioneer the golden hammer of its crafting orders; no NPC a gold
+  coin or a yellow dot: those are the game's for what its own minimap finds, Saneroki, 2026-11-16), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
   herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book: those the librarians ask for, the book's
   name in the tooltip): as far as the data holds them; a place
   the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in Sane UI's tooltips a
@@ -141,7 +148,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   there (a ping). Shift and a click on an entrance, a way or a dock with one destination opens its map. A continent
   whole shows only travel and places; the minimap no
   books or treasures, services only near you. The party and raid in their class colours, at every zoom and over
-  the game's minimap too, largest far out and smaller as you zoom in, gliding smoothly as they move.
+  the game's minimap too, largest far out and smaller as you zoom in, gliding smoothly as they move; the mouse on one
+  names it (every member under the mouse, each in the class colour, *Guild* beside one of your guild, *Dead* beside
+  one dead), and a click there is the map's. The map's search finds an NPC by what it is: a friendly one without a
+  service the game's speech bubble, a hostile one the game's red dot.
 - **The pin filter** (*Pins* on the full map's bar, or the setting *Pins on the map*): a checkmark per kind, each
   with its icon large before its words, in sections under their titles: *Around you* (the party and raid, your
   markers), *Quests*, *Travel*, *Towns and services*, *Gathering* (the possible herbs and ore), *Tracking* (the found
@@ -446,8 +456,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   name, asked for as a sketch's *Someone...* is. Whoever gets them sees a
   small card (who shares what, the first titles, the zone) and keeps them only with **Keep**; kept, they stand on
   their map like their own, *from* the one who shared them on their card and tooltip. A marker its maker shares again
-  (after an edit or a move) changes the copy you kept, never adds a second one. The setting *Markers others share*
-  (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
+  (after an edit or a move) changes the copy you kept, never adds a second one. The setting *Markers and map pins
+  others share* (on) lets nobody ask while off. Nothing goes out in a fight; it waits and goes after.
 - **The full map's title bar** (Saneroki, 2026-11-15: "Let the map view go to the very top behind the titleba so it is
   truely fullscreen"): the map fills the whole screen, up behind the title bar, which holds its controls with a soft
   shade behind them: at the left **Quest Log**, the view's button (right of it: Saneroki, 2026-11-15), the button
@@ -1455,7 +1465,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   `Planner.THERE` yards, and those the plan led to before the leg the line is at; taken off, the plan going on as it
   is. The pin moved or gone: the list is emptied (`Planner.Update`).
 - **Marks** (`Marks.lua`): the player's arrow (Blizzard's world map arrow, turned to your facing), the game's map
-  pin, at a fixed size, and the party and raid (the game's party blip in the class colour, four times a second, at
+  pin, at a fixed size (a right click shares it: `Marks.Share`, `ShareMenu`, `SharePin`; the wire's kind `W`, one
+  urgent message, its map, x and y; heard, `Marks.Heard` asks on the markers' card, `Markers.Offer` with `share.pin`,
+  `share.same` against the same pin twice; Keep, `Marks.KeepPin`, `Live.SetWaypoint`), and the party and raid (each
+  a frame of its own with the game's party blip in the class colour, only the mouse's motion taken: `MemberTip`
+  names every member under the mouse, as the game's map does; four times a second, at
   every zoom: `Marks.MemberSize`, from `Marks.MEMBER`'s 44 out at a continent, `Marks.WIDE`, to 22 at the nearest
   zoom, the same step smaller at each notch in, the pin filter's slider on top; placed and sized anew as the view is
   laid out; over the game's minimap too, there every `Marks.OVER`, 0.1 seconds, so ours lie over its own dots of
@@ -1602,7 +1616,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Paths.lua` | The ways of the flight point or dock under the mouse: each flight of your side from it white, a ship's way round light blue, its leaps along our sea lanes round the Maelstrom |
 | `PinView.lua` | The pins drawn: a pooled button each, in the game's looks, tooltips, clicks; a rare's tooltip as a dungeon boss's, its 3D model beside it with Alt |
 | `RareTracker.lua` | The Sane Rare tracker: rares, treasures, books and events near you (the game's marks on the minimap; a rare's nameplate, target or mouseover; a chest or book the interact key picks; a book still needed within 100 yards) told at once by a notice at the screen's right edge under the minimap, dragged where you like (its model or icon, name, rank and level, how far and which way) and the game's war horn; a double click: the map pin there, a right click: away; `/sane testraretracker` |
-| `Marks.lua` | The player's arrow, the map pin, the waypoints (and the ghost of one dragged), the party, the pings |
+| `Marks.lua` | The player's arrow, the map pin and its sharing, the waypoints (and the ghost of one dragged), the party and who each is, the pings |
 | `Nodes.lua` | Herbs and ore: what one is by its name (Core's *Objects*, *Drops*), its picture, your skill for it; the finders (Find Herbs, Find Minerals, Find Fish) switched by the pin filter and in turn by yards moved, silently, and back on after you revive; one switched on outside the filter switches its kind on there. No frames |
 | `Indoors.lua` | The indoor map of the building you are in: the game's indoor pictures without their black, at your floor |
 | `Art/Indoors/*.blp` | The indoor pictures, one per part of a building, made by `dev/tools/indoor-art` |
@@ -1641,6 +1655,19 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, no NPC a gold coin; the map pin shared; who the party's dots are:** Saneroki: "We need to give all
+  npcs that use the yellow coin / dot as their pin a different icon. The yellow coin is researved for other stuff."
+  The game's coins and its yellow dot (its `Gear`, `Auctioneer`, `Object`, `MonsterNeutral`, `ChatBallon`) are no
+  NPC's pin: trade goods the vendor's bag (`VendorGossipIcon`, file 132060), the auctioneer the crafting orders'
+  golden hammer (`Professions-Crafting-Orders-Icon`), a friendly NPC of the search without a service the speech
+  bubble (`GossipGossipIcon`, 132053), each the same file in both games (`Pins.NPC_LOOKS`, `Pins.Picture`: a number a
+  texture). "I also want to implement sharing map pins with party and guild members and with someone specific": a
+  right click on the map pin (`Marks.Share`), the wire's kind `W`, asked on the markers' card, the setting now
+  *Markers and map pins others share*. "Can we have a tooltip on guild members and party member points on the map
+  so we can identify who it is on the map": each member's mark a frame that takes the mouse's motion only
+  (`Marks.MemberTip`), the names of all under the mouse as the game's map gives them, *Guild* beside one of your
+  guild. Guild members outside your group have no place the game tells, only their zone: the search shows one there,
+  with its tooltip.
 - **2026-11-16, eight colours, three widths, one to one with the dungeon map addon:** Saneroki: "Can we expand to 8
   colours and 3 lines and other stuff so we are as compatible as possible with their map sharing?" The palette has
   eight colours (pink, the game's paladins', and teal added) and three widths (`Draw.THICK`, `Draw.STOPS`,
@@ -1812,7 +1839,7 @@ Tests: `dev/tests/navigation.lua`.
   (`Canvas.WHIRLPOOL`, `Art/Whirlpool.blp`, `terrain-art --whirlpool`).
 - **2026-11-15, markers shared:** Saneroki: "Can we share markers with party and guild members?" The card's Share
   (`Markers.Share`, `Send`), the wire's kind `M`, the card that asks (`Heard`, `Read`, `Keep`), `origin` and `from`,
-  the setting *Markers others share*. Card #481.
+  the setting *Markers others share* (*Markers and map pins others share* since 2026-11-16). Card #481.
 - **2026-11-15, your own markers:** Saneroki: "Can we have a system where we can place our own custom map markers on
   maps with our own text and description when you click on them?" `Markers.lua`; Alt and a click on the map, the
   card, the pins of kind `mark` (`Pins.For`, `Apart`, `PinView.Act`, `Name`'s label), the pin filter's *Your
