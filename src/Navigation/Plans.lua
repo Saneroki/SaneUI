@@ -13,8 +13,9 @@ local _, ns = ...
 --      Plans.Visible(id)         whether a plan's things are drawn (its own switch)
 --      Plans.Drawings()          every drawing: { id, plan, map, kind, colour, width, points = { x, y, x, y, ... } }
 --      Plans.Add(drawing), Plans.Erase(drawing), Plans.Undo(), Plans.Clear(map)
---      Plans.Share(plan, channel, target)  the whole plan to "RAID", "PARTY", "GUILD" or "WHISPER" (to target, a
---                                  player's name); how many blocks went
+--      Plans.Share(plan, channel, target)  the whole plan to "RAID", "PARTY", "INSTANCE_CHAT", "GUILD" or "WHISPER"
+--                                  (to target, a player's name); how many blocks went. In the format of the dungeon
+--                                  map addon Sane UI knows too (Exchange.lua), for its players there
 --      Plans.Read(sender, text)  a block heard: the share once all its parts are there (Markers asks about it)
 --      Plans.Keep(share)         a plan kept: one of the same origin replaced whole, else a new one
 --
@@ -314,6 +315,11 @@ function Plans.Share(plan, channel, target)
         local text = #each > 0 and head .. "\030" .. table.concat(each, "\030") or head
         if Core.Wire.SendBlock(ns.Markers.KIND, text, channel, target) then sent = sent + 1 end
     end
+    -- and in the format of the dungeon map addon Sane UI knows, for its players on that channel (Exchange.lua)
+    local exchange = ns.Exchange
+    if sent > 0 and exchange and exchange.on then
+        ns.Safe("exchange", exchange.Send, plan.name, markers, drawings, channel, target, origin)
+    end
     return sent
 end
 
@@ -416,7 +422,7 @@ function Plans.Keep(share)
     for _, drawing in ipairs(share.drawings) do
         drawings[#drawings + 1] = { id = Number("drawingNext"), plan = plan.id, origin = drawing.origin,
                                     map = drawing.map, kind = drawing.kind, colour = drawing.colour,
-                                    width = drawing.width, points = drawing.points }
+                                    width = drawing.width, points = drawing.points, text = drawing.text }
     end
     Changed()
     if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end

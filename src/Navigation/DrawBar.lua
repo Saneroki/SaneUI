@@ -69,6 +69,10 @@ DrawBar.TEXT = {
     deleteAsk = "Delete the sketch %s with all its markers and drawings?",
     new = "New sketch...",
     newAsk = "The new sketch's name:",
+    paste = "Paste from %s...",
+    pasteAsk = "Paste a drawing copied from %s (its Export, or its Backup for all of them):",
+    pasteAccept = "Keep",
+    pasteTip = "A drawing copied from %s's dungeon maps or world map becomes a sketch of yours, on the same place of our maps. Its players get the sketches you share too, and you get theirs.",
     undo = "Undo",
     clear = "Clear",
     clearAsk = "Clear the drawings of %s on this map?",
@@ -119,11 +123,9 @@ end
 -------------------------------------------------------------------------------
 --  The plan's menu
 -------------------------------------------------------------------------------
+-- Your raid or party (a group the game's group finder made too), as Markers.Group says.
 local function Group()
-    local home = rawget(_G, "LE_PARTY_CATEGORY_HOME")
-    if Core.Ask(rawget(_G, "IsInRaid"), home) then return "RAID", ns.Markers.TEXT.raid end
-    if Core.Ask(rawget(_G, "IsInGroup"), home) then return "PARTY", ns.Markers.TEXT.party end
-    return nil, ns.Markers.TEXT.party
+    return ns.Markers.Group()
 end
 
 local function Shared(plan, count, word, someone)
@@ -141,7 +143,8 @@ local function ShareMenu(item, plan)
     local Plans = ns.Plans
     local share = item:CreateButton(DrawBar.TEXT.share)
     local channel, word = Group()
-    local group = share:CreateButton(channel == "RAID" and DrawBar.TEXT.shareRaid or DrawBar.TEXT.shareParty,
+    local raid = word == ns.Markers.TEXT.raid
+    local group = share:CreateButton(raid and DrawBar.TEXT.shareRaid or DrawBar.TEXT.shareParty,
         ns.Guard(function() Shared(plan, Plans.Share(plan, channel), word) end))
     if not channel and group.SetEnabled then group:SetEnabled(false) end
     local guild = Core.Ask(rawget(_G, "IsInGuild")) and "GUILD" or nil
@@ -176,11 +179,40 @@ local function Options(item, plan)
     end))
 end
 
+-- A drawing pasted from the dungeon map addon Sane UI knows (Exchange.lua: its Export or Backup, copied): each
+-- of its drawings kept as a sketch, what lies on maps we have no match for said.
+local function Pasted(text)
+    local Exchange = ns.Exchange
+    local title = Exchange.words.title
+    local kept, left = Exchange.Paste(text)
+    if not kept then
+        return ns.Print((left == "damaged" and Exchange.TEXT.damaged or Exchange.TEXT.format):format(title))
+    end
+    local names = {}
+    for _, plan in ipairs(kept) do names[#names + 1] = plan.name or "?" end
+    if #names > 0 then ns.Print(Exchange.TEXT.kept:format(title, table.concat(names, ", "))) end
+    if left > 0 then ns.Print(Exchange.TEXT.left:format(left)) end
+    if #names == 0 and left == 0 then ns.Print(Exchange.TEXT.nothing) end
+end
+
 local function NewSketch(root)
     root:CreateButton(DrawBar.TEXT.new, ns.Guard(function()
         Core.AskText(DrawBar.TEXT.newAsk, nil, nil, "", ns.Guard(function(text) ns.Plans.New(text) end), 60)
     end))
+    local Exchange = ns.Exchange
+    if Exchange and Exchange.on then
+        local paste = root:CreateButton(DrawBar.TEXT.paste:format(Exchange.words.title), ns.Guard(function()
+            Core.AskText(DrawBar.TEXT.pasteAsk, Exchange.words.title, DrawBar.TEXT.pasteAccept, "", ns.Guard(Pasted), 0)
+        end))
+        if paste.SetTooltip then
+            paste:SetTooltip(ns.Guard(function(tooltip)
+                tooltip:SetText(DrawBar.TEXT.paste:format(Exchange.words.title))
+                tooltip:AddLine(DrawBar.TEXT.pasteTip:format(Exchange.words.title), 1, 1, 1, true)
+            end))
+        end
+    end
 end
+DrawBar.Pasted = Pasted
 
 -- The palette's dropdown: each sketch a radio (the one drawn in), its own menu under it; then a new one.
 local function PlanMenu(_, root)

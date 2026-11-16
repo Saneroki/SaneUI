@@ -1271,6 +1271,10 @@ lockdown, at most 300 waiting (urgent for 10 minutes, bulk for an hour). Taken i
 sender, more and it is not heard for ten minutes; at most 1,000 waiting in the inbox.*
 
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
+- **Another addon's prefix** *(Saneroki, 2026-11-16)*: `Wire.Hear(prefix, fn)` and `Wire.Say(prefix, text, channel,
+  target)` for an addon Sane UI knows (`Core.Neighbours`), in its own words: its messages through the same inbox (the
+  player's own left out; `Wire.OTHERS_PER_MINUTE` from a sender, counted apart from ours), ours on it through the same
+  queue and budget. Today a dungeon map addon's drawings, Navigation's sketches both ways (`Exchange.lua`).
 - **Auction scans** *(Saneroki, 2026-10-30)*: kind `A` (`have`, `want`, `ask`, each with house and time) and its blocks: *Scans shared*.
 - **Counts and discoveries** *(Saneroki, 2026-10-30)*: blocks of kind `B`: *Counts and discoveries shared*.
 - **Map markers** *(Saneroki, 2026-11-15)*: blocks of kind `M`, only when the player shares them (a marker's card,

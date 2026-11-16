@@ -80,6 +80,8 @@ Markers.lua
 Plans.lua
 # Drawing on the map and on dungeon maps: your drawings shown, the palette's tools at work, markers on a dungeon's floor
 Draw.lua
+# Sketches shared both ways with a dungeon map addon Sane UI knows, in its own way of sharing. Knows no frames
+Exchange.lua
 # The game's minimap over ours, for its live dots; taken and given back
 Hybrid.lua
 # The herbs and ore the game's minimap shows, found by asking it and drawn over it in their own pictures

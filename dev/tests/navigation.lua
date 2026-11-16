@@ -10214,6 +10214,166 @@ end)()
     end
 end)()
 
+-- Sketches both ways with a dungeon map addon Sane UI knows (Exchange.lua; Saneroki, 2026-11-16: "Yes, build it";
+-- "make the map sharing as compatible as possible"): its share strings written and read, ours as its drawings and
+-- back, its maps on our floors, its shares heard and asked about, ours sent in its format on the same channel.
+;(function()
+    local Exchange, Plans, Markers, Wire = ns.Exchange, ns.Plans, ns.Markers, Core.Wire
+    local words = Exchange.words
+    local F = words.fields
+    local function At(order, name) for index, each in ipairs(order) do if each == name then return index end end end
+    local function Item(order, values) -- a stroke's or a mark's list, by its fields' names
+        local list = {}
+        for name, value in pairs(values) do list[At(order, name)] = value end
+        return list
+    end
+    local function Near(a, b) return type(a) == "number" and math.abs(a - b) < 1e-4 end
+    check(Exchange.on and words.prefix and words.charts[226].floor == "90:1" and words.title,
+        "on in Forever, its words from Core (Core.Neighbours.Sketches)")
+
+    -- the string: every kind of value back whole, its letters' short groups, the reasons it is refused
+    local value = { 1, 2.5, "a|b:c(d)", true, false, { x = -3, [7] = "seven" }, name = "Graveyard", [10] = 4 }
+    local text = Exchange.Pack(words.route, value)
+    local back, kind, sum = Exchange.Unpack(text)
+    check(kind == words.route and back[1] == 1 and back[2] == 2.5 and back[3] == "a|b:c(d)" and back[4] == true
+        and back[5] == false and back[6].x == -3 and back[6][7] == "seven" and back.name == "Graveyard" and back[10] == 4
+        and type(sum) == "string" and #sum == 10, "a share string written and read back whole")
+    local short = true
+    for length = 1, 7 do
+        local each = Exchange.Unpack(Exchange.Pack(words.route, { ("q"):rep(length) }))
+        short = short and each and each[1] == ("q"):rep(length)
+    end
+    check(short, "its letters' last group short (no padding), whatever the length")
+    check(select(2, Exchange.Unpack(text:sub(1, -3))) == "damaged" and select(2, Exchange.Unpack("hello")) == "format"
+        and select(2, Exchange.Unpack((text:gsub("%.%x+%.", ".0000000000.", 1)))) == "damaged"
+        and select(2, Exchange.Unpack(nil)) == "format", "cut short, not its, a wrong sum: refused and why, no error")
+    local util = C_EncodingUtil
+    local compress, decompress = util.CompressString, util.DecompressString
+    util.CompressString = function(raw) return (raw:gsub(("x"):rep(40), "\0")) end
+    util.DecompressString = function(raw) return (raw:gsub("%z", ("x"):rep(40))) end
+    local long = Exchange.Pack(words.route, { ("x"):rep(400) })
+    check(long:find("^%w+%.%w+%." .. words.packed .. "%.") and Exchange.Unpack(long)[1] == ("x"):rep(400),
+        "packed by the game where that is shorter, unpacked")
+    util.CompressString, util.DecompressString = compress, decompress
+
+    -- ours as its drawings: one for the dungeon (its key, its chart of the floor), one for the game's maps; a floor it
+    -- has no map of left out
+    local drawings = {
+        { map = "90:1", kind = "pen", colour = "red", width = 2, points = { 0.1, 0.1, 0.2, 0.15, 0.3, 0.1 } },
+        { map = "90:1", kind = "arrow", colour = "blue", width = 1, points = { 0.4, 0.4, 0.6, 0.4 } },
+        { map = "90:1", kind = "circle", colour = "green", width = 1, points = { 0.5, 0.5, 0.55, 0.5 } },
+        { map = "90:1", kind = "route", colour = "gold", width = 1, points = { 0.2, 0.8, 0.3, 0.7 } },
+        { map = "90:1", kind = "text", colour = "white", width = 1, points = { 0.7, 0.2 }, text = "Pull here" },
+        { map = 1429, kind = "line", colour = "gold", width = 1, points = { 0.1, 0.2, 0.3, 0.4 } },
+        { map = "2998:1", kind = "line", colour = "gold", width = 1, points = { 0.1, 0.2, 0.3, 0.4 } },
+    }
+    local marker = { map = 1429, x = 0.5, y = 0.5, icon = "skull", title = "Hogger", text = "" }
+    local routes = Exchange.Routes("Both ways", { marker }, drawings, "me:p1")
+    local dungeon, world = routes[1], routes[2]
+    local KIND, MAP, POINTS = At(words.mark, "kind"), At(words.stroke, "map"), At(words.stroke, "points")
+    check(#routes == 2 and dungeon[F.scope] == words.chart and dungeon[F.key] == words.charts[226].key
+        and world[F.scope] == words.world and world[F.key] == nil and dungeon[F.name] == "Both ways",
+        "ours as its drawings: the dungeon's under its key, the game's maps apart; a floor it has no map of left out")
+    check(#dungeon[F.strokes] == 4 and #dungeon[F.stops] == 6 and #dungeon[F.marks] == 1
+        and dungeon[F.marks][1][KIND] == words.text and #world[F.strokes] == 1 and #world[F.marks] == 1
+        and world[F.marks][1][KIND] == words.icons.skull, "the pen, the arrow (its shaft and head), the circle as its lines; "
+        .. "the route as its stops; words and a marker as its marks")
+    check(dungeon[F.strokes][1][MAP] == 226 and dungeon[F.strokes][1][POINTS][1] == 1000
+        and dungeon[Exchange.MARK] == "me:p1" and world[F.stops][1] == nil,
+        "on its chart of the floor, as whole numbers; our field says a share of ours came too")
+
+    -- and back: pasted, a sketch on the same floor, its colours and widths as near as they go
+    local plansBefore = #Plans.List()
+    local kept, left = Exchange.Paste(Exchange.Pack(words.route, dungeon))
+    local pasted = kept and kept[1]
+    local _, inside = Plans.Holds(pasted)
+    local count, pen, words_ = {}, nil, nil
+    for _, drawing in ipairs(inside) do
+        count[drawing.kind] = (count[drawing.kind] or 0) + 1
+        pen = pen or drawing.kind == "pen" and drawing or nil
+        if drawing.kind == "text" then words_ = drawing end
+    end
+    check(pasted and pasted.name == "Both ways" and left == 0 and count.pen == 4 and count.route == 1 and count.text == 1
+        and pen.map == "90:1" and pen.colour == "red" and pen.width == 2 and Near(pen.points[1], 0.1),
+        "pasted: a sketch of its own on the same floor, the red thick pen red and thick again")
+    check(words_ and words_.text == "Pull here", "the words kept with their text (Plans.Keep)")
+    Exchange.Paste(Exchange.Pack(words.route, dungeon))
+    check(#Plans.List() == plansBefore + 1, "pasted again: the same sketch, not a second")
+    check(select(2, Exchange.Paste("not a drawing")) == "format", "pasted text that is none: refused, said why")
+
+    -- its maps on ours: cut from the terrain, fitted; a picture of its own left out, counted
+    local fitted = Exchange.Share({ scope = words.chart, stops = {}, strokes = {}, marks = {
+        { map = 2999, x = 0.5, y = 0.5, kind = "rt8" }, { map = 910001, x = 0.5, y = 0.5, kind = "rt1" } } }, "Someone",
+        "x:fit")
+    local fit = words.charts[2999].fit
+    check(#fitted.rows == 1 and fitted.rows[1].map == "2999:1" and Near(fitted.rows[1].x, fit[1] * 0.5 + fit[3])
+        and fitted.rows[1].icon == "skull" and fitted.left == 1, "a map cut from the terrain fitted onto our floor; a "
+        .. "picture of its own left out, and counted")
+
+    -- its share heard: its parts in any order, put together, asked about; Keep: a sketch of its own
+    local theirs = { [F.version] = 2, [F.scope] = words.chart, [F.key] = words.charts[226].key, [F.name] = "Their pull",
+                     [F.colour] = 2, [F.author] = "Brannoc", [F.stops] = { 226, 5000, 5000 }, [F.labels] = { "Start" },
+                     [F.strokes] = { Item(words.stroke, { map = 226, width = 7, colour = 3,
+                                                          points = { 1000, 1000, 2000, 2000 } }) },
+                     [F.marks] = { Item(words.mark, { map = 226, x = 3000, y = 3000, kind = "rt8", colour = 0,
+                                                      label = "Kill first", size = 2 }),
+                                   Item(words.mark, { map = 910001, x = 1, y = 1, kind = "rt1", colour = 0, label = "",
+                                                      size = 2 }) } }
+    local string_ = Exchange.Pack(words.route, theirs)
+    local half = math.floor(#string_ / 2)
+    local function Message(part, piece) return table.concat({ words.share, "1f", part, "2", piece }, words.cut) end
+    local offered = Markers.offer and Markers.offer:IsShown()
+    Exchange.Heard("Brannoc Steelvein", Message("2", string_:sub(half + 1)))
+    check(not (Markers.offer and Markers.offer:IsShown()) or offered, "one part heard: nothing asked yet")
+    Exchange.Heard("Brannoc Steelvein", "QR~5~1~1~") -- (its other messages: not ours to read)
+    Exchange.Heard("Brannoc Steelvein", Message("1", string_:sub(1, half)))
+    local said = Markers.offer and Markers.offer.words:GetText() or ""
+    check(Markers.offer:IsShown() and said:find("Their pull", 1, true) and said:find(words.title, 1, true)
+        and said:find(Markers.TEXT.offerLeft:format(1), 1, true), "all parts: asked, which addon it came with, and "
+        .. "what lies on a map we have no match for")
+    Markers.offer.keep._scripts.OnClick(Markers.offer.keep)
+    local heard = Plans.List()[#Plans.List()]
+    local heardMarkers, heardDrawings = Plans.Holds(heard)
+    local heardKinds = {}
+    for _, drawing in ipairs(heardDrawings) do heardKinds[drawing.kind] = drawing end
+    check(heard.name == "Their pull" and heard.from == "Brannoc Steelvein" and #heardMarkers == 1
+        and heardMarkers[1].icon == "skull" and heardMarkers[1].title == "Kill first" and heardMarkers[1].map == "90:1"
+        and heardKinds.pen and heardKinds.pen.width == 2 and heardKinds.route and heardKinds.text
+        and heardKinds.text.text == "Start", "kept: its pen thick, its stop a route with its words, its raid mark a skull")
+    Exchange.Heard("Brannoc Steelvein", Message("1", Exchange.Pack(words.route, dungeon)):gsub("~1~2~", "~1~1~"))
+    check(not Markers.offer:IsShown(), "one of ours in its format heard (a Sane UI share came too): not asked twice")
+
+    -- ours sent in its format too, on the same channel (the guild and a whisper as well), in its parts
+    local say, sendBlock, said_ = Wire.Say, Wire.SendBlock, {}
+    Wire.Say = function(prefix, message, channel, target)
+        said_[#said_ + 1] = { prefix = prefix, text = message, channel = channel, target = target }
+        return true
+    end
+    Wire.SendBlock = function() return true end
+    local sketch = Plans.New("Sent both ways")
+    Plans.Add({ map = "90:1", kind = "line", colour = "gold", width = 1, points = { 0.1, 0.1, 0.9, 0.9 } })
+    Plans.Share(sketch, "PARTY")
+    local pieces = {}
+    for _, each in ipairs(said_) do
+        local part, parts, piece = each.text:match("^%w+" .. words.cut .. "%x+" .. words.cut .. "(%x+)" .. words.cut
+            .. "(%x+)" .. words.cut .. "(.*)$")
+        if part then pieces[tonumber(part, 16)] = piece end
+    end
+    local got = Exchange.Unpack(table.concat(pieces))
+    check(#said_ >= 1 and said_[1].prefix == words.prefix and said_[1].channel == "PARTY" and got
+        and got[F.key] == words.charts[226].key and #got[F.strokes] == 1 and got[Exchange.MARK],
+        "a sketch shared with the party: in its format too, on its prefix, our field in it")
+    wipe(said_)
+    Plans.Share(sketch, "GUILD")
+    Markers.Send({ marker }, "WHISPER", "Brannoc")
+    check(said_[1] and said_[1].channel == "GUILD" and said_[#said_].channel == "WHISPER"
+        and said_[#said_].target == "Brannoc", "to the guild, and markers to someone, as well")
+    Wire.Say, Wire.SendBlock = say, sendBlock
+    Plans.Remove(sketch)
+    Plans.Remove(heard)
+    Plans.Remove(pasted)
+end)()
+
 -- A failure stands the module down: everything given back.
 ns.StandDown("a test")
 check(#ns.RareTracker.shown == 0 and not ns.RareTracker.holder._shown, "standing down: the Sane Rare tracker's notices gone")

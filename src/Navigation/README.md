@@ -421,6 +421,19 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
     (with all it holds, asked first); **New sketch** makes another and chooses it. A sketch shared goes whole, its
     markers and drawings, and whoever gets it is asked (who shares which sketch, how many markers and drawings) and
     keeps it as a sketch of its own, from you; shared again (after changes), it replaces their copy.
+  - **With a dungeon map addon's players** (Forever; Saneroki, 2026-11-16: "Yes, build it"; "make the map sharing as
+    compatible as possible"): Sane UI also speaks the way of sharing map drawings of a dungeon map addon it knows, so
+    its players and ours share both ways, whether that addon is installed or not. Its drawings shared in your group,
+    guild or by whisper come as a sketch of ours does (the card names the addon they came with, and how many lay on
+    maps Sane UI has no match for); a sketch or markers you share go in its format too, on the same channel, so its
+    players get them as its own shares (and Sane UI's take only our copy). **Paste from ...** in the Sketches menu
+    takes a drawing copied from it (its Export, or its Backup for all of them): each kept at once as a sketch, pasted
+    again it replaces that copy. Its dungeon maps are ours where both draw the game's map art; Ruins of Lordaeron is
+    fitted through the game's terrain; its maps of pictures of its own (Excavation Site, City of Dalaran, its Wailing
+    Caverns) and the Hall of Thanes have no match, so what lies on them is left out and said. Its lines come as pens
+    (its widest thick), its stops as a route with their words under them, its words as words, its marks as our markers
+    (raid marks, classes and roles the same, the rest by meaning); ours go as its nearest: a line, an arrow and a
+    circle as its lines, a route as its stops, a marker as its mark with the title (or the words) as its label.
   - **Undo** takes the active sketch's newest drawing away; **Clear** all its drawings on the map shown (the dungeon's
     floor, or the zone in the map's middle), asked first.
   - Closing the palette (its X, Esc, the map going small) puts the tool away; Alt and a click still puts a marker.
@@ -1122,6 +1135,21 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   kind `M`, version 2, in parts of `Plans.BLOCK` bytes (`Plans.PARTS` at most), each with the plan's origin and the
   share's own stamp; the points as three letters of base 36 each; heard (`Plans.Read`) the parts are put together by
   sender, origin and stamp (`Plans.GATHERING` at once), then asked about on Markers' card, kept by `Plans.Keep`.
+- **A dungeon map addon's drawings** (`Exchange.lua`, Forever only: `Exchange.on`): its way of sharing from Core
+  (`Core.Neighbours.Sketches("dungeonMaps")`: its prefix and message, its share string, its fields, its marks and
+  colours, its dungeon maps as our floors). The string written and read by our own code (`Exchange.Pack`, `Unpack`:
+  the table as text, its letters, its two sums; deflate by the game's `C_EncodingUtil` where that is shorter), its
+  drawings read from both forms it has (as they travel; as a player keeps them, its backup) into one plain form, then
+  a share of ours (`Exchange.Share`: points through `words.charts` onto our floors, or kept on the game's maps that
+  have a box; `Thin` to `Plans.POINTS`; colours the nearest by their RGB; `share.left` what found no map), asked about
+  by `Markers.Offer` or kept at once when pasted (`Exchange.Paste`, origin `x:` and its sum, or its id in a backup, so a
+  second paste replaces). Ours out (`Exchange.Routes`: one of its drawings per dungeon key, one for the game's maps;
+  an arrow's head `Exchange.HEAD`, a circle of `Exchange.SIDES`, the floor's art 1002 by 668 or the zone's box for
+  their shape; our field `Exchange.MARK` in each) are sent by `Plans.Share` and `Markers.Send` on the same channel
+  (`Exchange.Send`, its parts on its prefix by `Core.Wire.Say`, at most `Exchange.MOST_PARTS`), and heard
+  (`Core.Wire.Hear`, `Exchange.Heard`: its parts per sender and number, `Exchange.GATHERING` at once, dropped after its
+  own time; one with our field left, a Sane UI share came too). A group the game's group finder made shares on its
+  own channel (`Markers.Group`: `INSTANCE_CHAT`).
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
   docked hook, `FindBox.SetShown`), in the middle of the room the bar's controls leave (`TopBar.Gap`, laid anew when it
   changes), as wide as that room less `FindBox.ROOM` at each side (`FindBox.WIDTH` at most, `FindBox.LEAST` at least);
@@ -1591,6 +1619,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
 | `Plans.lua` | Your plans (*sketches* to players): markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
 | `Draw.lua` | Your drawings drawn on the map (the canvas' layer `sketch`) and on a dungeon's floor, the palette's tools at work (pen, line, arrow, circle, eraser, marker), your markers on a floor |
+| `Exchange.lua` | Sketches shared both ways with a dungeon map addon Sane UI knows, in its own way of sharing (Core's words for it): its share strings written and read, its drawings as ours and ours as its, its shares heard, ours sent in its format too; **Paste from ...** in the Sketches menu (no frames) |
 | `DrawBar.lua` | The dropdown Sketches on the full map's bar (each sketch shown or hidden, its own menu) and the palette: the tools, the colours, the widths, the plan's dropdown and its menus, Undo and Clear |
 | `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
@@ -1608,6 +1637,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, sketches both ways with a dungeon map addon:** asked whether a share of that addon's map drawings could
+  be received and ours reach its players, Saneroki: "Yes, build it", and "it would be nice to make the map sharing as
+  compatible as possible were we can from out side". Its drawings shared in a group, guild or whisper are heard and
+  asked about as a sketch; ours go in its format too, on every channel ours go (`Exchange.lua`); its copied drawings
+  are pasted in the Sketches menu. Its dungeon maps lie on our floors (51 the same art, Ruins of Lordaeron fitted),
+  what has no match left out and said. A group of the game's group finder shares on its own channel now, and a sketch
+  kept from someone keeps the words of its text drawings (they were lost).
 - **2026-11-16, the question mark only where a quest is turned in; the map pin's tooltip:** Saneroki: "Quest
   locations should not show the questionmark, The questionmark on the map are where you turn in quests, the quest
   objectives and quest areas are for questlocations." A quest of your log ready to turn in keeps the yellow ? where

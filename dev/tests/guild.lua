@@ -267,6 +267,27 @@ end
 Frames(3)
 check(#blocks == 0 and Core.errors["data job wire: inbox"] == nil, "parts numbered NaN or 2.5 are dropped, without an error")
 
+-- Another addon's prefix (one Sane UI knows, Core.Neighbours): heard in its own words, sent through the same queue.
+local others = {}
+check(Wire.Hear("OtherMaps", function(sender, text, channel) others[#others + 1] = { sender = sender, text = text, channel = channel } end)
+    and C_ChatInfo.registered == "OtherMaps" and Wire.Hear(Wire.PREFIX, function() end) == false,
+    "another addon's prefix heard, registered with the game; never our own that way")
+W.Fire("CHAT_MSG_ADDON", "OtherMaps", "RT~1~1~1~hello", "PARTY", "Droopy Fairwind")
+W.Fire("CHAT_MSG_ADDON", "NobodysMaps", "RT~1~1~1~hello", "PARTY", "Droopy Fairwind")
+W.Fire("CHAT_MSG_ADDON", "OtherMaps", "mine", "PARTY", "Tester Stub")
+Frames(2)
+check(#others == 1 and others[1].text == "RT~1~1~1~hello" and others[1].sender == "Droopy Fairwind" and others[1].channel == "PARTY",
+    "told as it came; a prefix nobody listens to and the player's own not")
+Frame(10)
+sent = {}
+check(Wire.Say("OtherMaps", "RT~2~1~1~drawn", "INSTANCE_CHAT") and not Wire.Say("OtherMaps", ("x"):rep(300), "PARTY")
+    and not Wire.Say(Wire.PREFIX, "x", "PARTY") and not Wire.Say("OtherMaps", "x", "WHISPER"),
+    "said on its prefix; too long, our own prefix, a whisper to nobody: not")
+Frames(2)
+check(#sent == 1 and sent[1].prefix == "OtherMaps" and sent[1].text == "RT~2~1~1~drawn" and sent[1].channel == "INSTANCE_CHAT",
+    "sent in turn on its prefix, in its own words")
+sent = {}
+
 -- A sender of too many is not heard for a while.
 heard = {}
 for i = 1, 95 do W.Fire("CHAT_MSG_ADDON", "SaneUI", "T1\tf\tspam" .. i, "GUILD", "Sly Rook") end

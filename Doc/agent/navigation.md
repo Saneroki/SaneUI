@@ -28,6 +28,9 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    (marker, pen, line, arrow, circle, eraser; colours, widths; the plan's dropdown; undo, clear); drawings on the
    canvas' layer `sketch` and on a dungeon's floor (Dungeons' `Place` calls `Draw.Floor`), cut at the view's edge by
    hand; markers and drawings grouped in plans, shown, hidden and shared whole (kind `M`, version 2, in parts).
+   With a dungeon map addon's players both ways (`Exchange.lua`, 2026-11-16, Forever): its shares heard on its prefix
+   (`Core.Wire.Hear`), ours sent in its format too (`Core.Wire.Say`), its copied drawings pasted (*Paste from ...*);
+   its words and how its maps lie on our floors from `Core.Neighbours.Sketches`.
 2. One canvas of our own (`Canvas.lua`; never Blizzard's map canvas: its pins taint in a fight), the same in both
    cameras (`Camera.lua`; Retail's `Camera.Retail.lua`: one map at a time from the game's map tree): drag pans, the
    wheel zooms from the minimap's range to the world, follows the player, north-up only. The views (setting `view`,

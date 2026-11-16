@@ -16,6 +16,10 @@ local Core = SaneUI.Core
 --                                      or when its parts do not all fit in the queue
 --      Wire.SendBlock("G", text, "GUILD", nil, tag)   with a tag of the sender's own (a record's kind), so that
 --      Wire.Drop("G", tag)             what still waits of it can be dropped (a switch turned off)
+--      Wire.Hear(prefix, fn)           fn(sender, text, channel, name): every message on the prefix of an addon Sane
+--                                      UI knows (Core.Neighbours), taken in as ours are, in its own words
+--      Wire.Say(prefix, text, "PARTY")  a message on that prefix, queued in bulk with ours (the same budget); false
+--                                      when not sent (too long, no such channel, the queue full)
 --
 --  A message is its kind (letters) with the protocol number, the game version's sign, then its fields, all
 --  cut by tabs: "G1\tf\thello\t...". A kind, protocol or game version not this client's is ignored, and so
@@ -53,6 +57,7 @@ Wire.QUEUE = 300        -- messages waiting at most
 Wire.INBOX = 1000       -- messages received, not taken in yet, at most
 Wire.STALE = 120        -- seconds without a new part before a transfer is dropped
 Wire.PER_MINUTE = 90    -- messages taken from one sender in a minute
+Wire.OTHERS_PER_MINUTE = 240 -- messages taken from one sender in a minute on another addon's prefix (its own pace)
 Wire.MUTE = 600         -- seconds a sender of too many is not heard
 Wire.CHANNELS = { GUILD = true, OFFICER = true, PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
 Wire.refused = 0        -- messages the game refused for good since the login (no guild, no group, the target offline): /sane data
@@ -73,6 +78,7 @@ local TEXT = {
 }
 
 local listeners, blockListeners = {}, {} -- [kind] = { fn, ... }
+local others = {}                        -- [another addon's prefix] = { fn, ... }
 local registered = false
 local urgent, bulk = {}, {}              -- what waits: { text, channel, target, at }
 local tokens, last, slowUntil = Wire.BURST, nil, 0
@@ -139,12 +145,13 @@ end
 -------------------------------------------------------------------------------
 local Pump
 
-local function Queue(text, channel, target, hurry, kind, tag)
+local function Queue(text, channel, target, hurry, kind, tag, prefix)
     local list = hurry and urgent or bulk
     if #urgent + #bulk >= Wire.QUEUE then
         if hurry and #bulk > 0 then table.remove(bulk, 1) else return false end
     end
-    list[#list + 1] = { text = text, channel = channel, target = target, at = Now(), kind = kind, tag = tag }
+    list[#list + 1] = { text = text, channel = channel, target = target, at = Now(), kind = kind, tag = tag,
+                        prefix = prefix }
     Pump()
     return true
 end
@@ -186,6 +193,14 @@ function Wire.SendBlock(kind, text, channel, target, tag)
         if not Queue(Wire.Text(BLOCK_KIND, fields), channel, target, false, kind, tag) then return false end
     end
     return true
+end
+
+-- A message on another addon's prefix (one Sane UI knows), in its own words, in bulk. false: not sent.
+function Wire.Say(prefix, text, channel, target)
+    if type(prefix) ~= "string" or prefix == "" or #prefix > 16 or prefix == Wire.PREFIX then return false end
+    if type(text) ~= "string" or #text > Wire.MAX or not Wire.CHANNELS[channel] then return false end
+    if channel == "WHISPER" and type(target) ~= "string" then return false end
+    return Queue(text, channel, target, false, nil, nil, prefix)
 end
 
 -- What waits of that kind with that tag is not sent after all (Wire.SendBlock's tag): how many were dropped.
@@ -238,7 +253,8 @@ local function Step()
         local list = urgent[1] and urgent or bulk
         local message = list[1]
         if not message then break end
-        local ok, result = pcall(info.SendAddonMessage, Wire.PREFIX, message.text, message.channel, message.target)
+        local ok, result = pcall(info.SendAddonMessage, message.prefix or Wire.PREFIX, message.text, message.channel,
+            message.target)
         result = ok and Core.Plain(result) or nil
         if result == HELD then return end
         if THROTTLED[result] then
@@ -283,8 +299,8 @@ local function Tell(list, ...)
     for _, fn in ipairs(list) do Core.Safe("wire", fn, ...) end
 end
 
--- A sender heard once more: false while it sends too much.
-local function Allowed(sender, now)
+-- A sender heard once more: false while it sends too much (most: in a minute; Wire.PER_MINUTE without).
+local function Allowed(sender, now, most)
     local entry = heard[sender]
     if not entry then
         entry = { count = 0, since = now, mutedUntil = 0 }
@@ -293,7 +309,7 @@ local function Allowed(sender, now)
     if now < entry.mutedUntil then return false end
     if now - entry.since >= 60 then entry.count, entry.since = 0, now end
     entry.count = entry.count + 1
-    if entry.count > Wire.PER_MINUTE then
+    if entry.count > (most or Wire.PER_MINUTE) then
         entry.mutedUntil = now + Wire.MUTE
         return false
     end
@@ -349,13 +365,27 @@ function Wire.Take(text, channel, name)
     Tell(listeners[kind], sender, fields, channel, name)
 end
 
+-- One received message on another addon's prefix taken in: told as it came, but the player's own and a sender of
+-- too many (counted apart from what it sends on ours).
+function Wire.TakeOther(prefix, text, channel, name)
+    if not others[prefix] or type(text) ~= "string" or #text > Wire.MAX then return end
+    local sender = Core.PlayerKeyOf(name)
+    if not sender or sender == Own() then return end
+    if not Allowed(sender .. TAB .. prefix, Now(), Wire.OTHERS_PER_MINUTE) then return end
+    Tell(others[prefix], sender, text, channel, name)
+end
+
 -- The scheduler's job: the inbox taken in, within the frame's budget.
 local function Inbox()
     while head <= tail do
         local message = inbox[head]
         inbox[head] = nil
         head = head + 1
-        Wire.Take(message.text, message.channel, message.name)
+        if message.prefix then
+            Wire.TakeOther(message.prefix, message.text, message.channel, message.name)
+        else
+            Wire.Take(message.text, message.channel, message.name)
+        end
         Core.Steps.Check()
     end
     head, tail = 1, 0
@@ -363,12 +393,14 @@ end
 
 -- The game hands a message over: only the least is done here.
 local function Heard(prefix, text, channel, name)
-    if Core.Plain(prefix) ~= Wire.PREFIX then return end
+    prefix = Core.Plain(prefix)
+    local other = prefix ~= Wire.PREFIX
+    if other and not others[prefix] then return end
     text, channel, name = Core.Plain(text), Core.Plain(channel), Core.Plain(name)
     if type(text) ~= "string" or type(name) ~= "string" then return end
     if tail - head + 1 >= Wire.INBOX then return end
     tail = tail + 1
-    inbox[tail] = { text = text, channel = channel, name = name }
+    inbox[tail] = { text = text, channel = channel, name = name, prefix = other and prefix or nil }
     if not Core.Steps.Running(JOB) then Core.Steps.Run(JOB, Inbox) end
 end
 
@@ -378,6 +410,20 @@ local function Register()
     local info = rawget(_G, "C_ChatInfo")
     if info and info.RegisterAddonMessagePrefix then Core.Ask(info.RegisterAddonMessagePrefix, Wire.PREFIX) end
     Core.On("CHAT_MSG_ADDON", Heard)
+end
+
+-- fn(sender, text, channel, name) for every message on another addon's prefix (one Sane UI knows), registered with
+-- the game for it.
+function Wire.Hear(prefix, fn)
+    if type(prefix) ~= "string" or prefix == "" or #prefix > 16 or prefix == Wire.PREFIX then return false end
+    if not others[prefix] then
+        others[prefix] = {}
+        local info = rawget(_G, "C_ChatInfo")
+        if info and info.RegisterAddonMessagePrefix then Core.Ask(info.RegisterAddonMessagePrefix, prefix) end
+    end
+    table.insert(others[prefix], fn)
+    Register()
+    return true
 end
 
 -- fn(sender, fields, channel, name) for every message of that kind.

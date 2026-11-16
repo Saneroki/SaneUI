@@ -1102,6 +1102,12 @@ hidden but what the small view needs.
   on the left button draws and a right-drag moves the map. Markers and drawings go into the plan chosen; a plan shows
   or hides as one and is shared whole with the party, raid or guild (asked before kept, replaced when shared again).
   The same on a dungeon's floor, its things on the floor's own map.
+- **Sketches with a dungeon map addon's players (Saneroki, 2026-11-16; built):** asked whether a share of that addon's
+  map drawings could be received and ours reach its players: "Yes, build it", then "it would be nice to make the map
+  sharing as compatible as possible were we can from out side". So its way of sharing works both ways
+  (`Exchange.lua`, its words Core's): its shares heard and asked about as a sketch, ours sent in its format too on
+  every channel ours go, its copied drawings pasted in the Sketches menu; its dungeon maps on our floors where both
+  draw the game's art (Ruins of Lordaeron fitted through the terrain), the rest left out and said. Forever only.
 
 ## The game's map and minimap: kept out of sight, given back
 

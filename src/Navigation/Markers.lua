@@ -149,6 +149,8 @@ Markers.TEXT = {
     noPlace = "No marker here: zoom in onto a zone.",
     inPlan = "in %s",
     offerPlan = "%s shares the sketch %s with you: %d markers, %d drawings.",
+    offerVia = "Shared with %s.",
+    offerLeft = "%d of its drawings lie on maps Sane UI has no match for and are left out.",
     share = "Share",
     shareTip = "This marker, or all of yours in its zone, to your party or raid, to your guild, or to someone: they are asked whether to keep them.",
     shareOne = "This marker with your %s",
@@ -632,11 +634,16 @@ Markers.WAITING = 10 -- shares waiting for an answer at most (more are let go)
 
 -- Your raid or else your party, as the wire names it, and its word; nil outside a group.
 local function Group()
-    local home = rawget(_G, "LE_PARTY_CATEGORY_HOME")
+    local home, found = rawget(_G, "LE_PARTY_CATEGORY_HOME"), rawget(_G, "LE_PARTY_CATEGORY_INSTANCE")
     if Core.Ask(rawget(_G, "IsInRaid"), home) then return "RAID", Markers.TEXT.raid end
     if Core.Ask(rawget(_G, "IsInGroup"), home) then return "PARTY", Markers.TEXT.party end
+    -- a group the game's group finder made: its own channel
+    if found and Core.Ask(rawget(_G, "IsInGroup"), found) then
+        return "INSTANCE_CHAT", Core.Ask(rawget(_G, "IsInRaid"), found) and Markers.TEXT.raid or Markers.TEXT.party
+    end
     return nil, Markers.TEXT.party
 end
+Markers.Group = Group
 
 -- Words on the wire: none of its cutting signs, nor any other sign but the line's end; so many bytes at most.
 local function Clean(text, most)
@@ -675,6 +682,13 @@ function Markers.Send(list, channel, target)
         size = size + #row + 1
     end
     Flush()
+    -- and in the format of the dungeon map addon Sane UI knows, for its players on that channel (Exchange.lua)
+    local exchange = ns.Exchange
+    if sent > 0 and exchange and exchange.on then
+        local first = list[1]
+        local name = list[2] and exchange.TEXT.markers or (first.title ~= "" and first.title or exchange.TEXT.markers)
+        ns.Safe("exchange", exchange.Send, name, list, nil, channel, target, nil)
+    end
     return sent
 end
 
@@ -822,10 +836,23 @@ function Ask()
     local first = share.rows[1] or share.drawings and share.drawings[1]
     local zone = first and Where(first.map)
     if zone and zone ~= "" then words = words .. " (" .. zone .. ")" end
+    -- one shared by a dungeon map addon Sane UI knows (Exchange.lua): which, and what lay on maps we have no match for
+    if share.via then words = words .. " " .. Markers.TEXT.offerVia:format(share.via) end
+    if (share.left or 0) > 0 then words = words .. " " .. Markers.TEXT.offerLeft:format(share.left) end
     offer.words:SetText(words)
     local height = (offer.words:GetStringHeight() or 14) + 12 + 28
     offer:SetHeight(height + Look.DRESS_HEAD + 4 + Look.INSIDE + 4)
     offer:Show()
+end
+
+-- A share to ask about (Markers.Heard; Exchange.lua, a dungeon map addon's): waiting for its card, unless the setting
+-- says no or too many wait; whether it waits.
+function Markers.Offer(share)
+    if ns.off or not (ns.options and ns.options.markerShares) then return false end
+    if #offers >= Markers.WAITING then return false end
+    offers[#offers + 1] = share
+    if #offers == 1 then Ask() end
+    return true
 end
 
 -- A block of markers heard (the wire, kind M): asked about, unless the setting says no or it holds none; a part of a
@@ -836,13 +863,12 @@ function Markers.Heard(sender, text)
     if tostring(text or ""):sub(1, 2) == "2\030" then
         local share = ns.Plans.Read(sender, text)
         if not share or (#share.rows == 0 and #share.drawings == 0) then return end
-        offers[#offers + 1] = share
+        Markers.Offer(share)
     else
         local rows = Markers.Read(text)
         if #rows == 0 then return end
-        offers[#offers + 1] = { sender = tostring(sender or "?"), rows = rows }
+        Markers.Offer({ sender = tostring(sender or "?"), rows = rows })
     end
-    if #offers == 1 then Ask() end
 end
 
 if Wire and Wire.ListenBlock then Wire.ListenBlock(Markers.KIND, ns.Guard(Markers.Heard)) end
