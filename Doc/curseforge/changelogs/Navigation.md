@@ -3,10 +3,10 @@
 What changed in each version of SaneUI Navigation, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
-## 0.3.3 (2026-11-15)
+## 0.3.4 (2026-11-16)
 
 - First public alpha of SaneUI Navigation: your minimap and world map in one window. Left-click the top right corner
-  and the map fills the screen.
+  and the map fills the screen. The small map follows you again 2 seconds after you leave it alone.
 - Pins in the game's own look for quests, flight points, rares, treasures, dungeon entrances and services, each
   kind on or off.
 - Routes to your map pin on foot, by flight, boat, zeppelin and tram, orange or red where enemies far above your
