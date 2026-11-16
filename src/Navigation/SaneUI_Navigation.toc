@@ -39,6 +39,8 @@ Lifts.lua
 Planner.lua
 # While you are dead: the map pin at your corpse, the one you had back once you live again. Knows no frames
 Corpse.lua
+# The fall meter, /sane falls: each fall's height, from its time in the air, and the health it took. One frame, only while on
+Falls.lua
 # How dangerous a place is for you: the enemies spawning near it by their levels, for the golden line's colours. Knows no frames
 Danger.lua
 # At a flight master: our full map in place of the game's flight map (Shift: the game's), its flight points to click

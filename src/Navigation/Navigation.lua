@@ -407,6 +407,7 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.Sparkles.GiveBack)
     ns.Safe("giving back", ns.Glints.Hide)
     ns.Safe("giving back", ns.Corpse.GiveBack)
+    ns.Safe("giving back", ns.Falls.Stop)
     ns.Safe("giving back", ns.Taxi.GiveBack)
     ns.Safe("giving back", ns.RareTracker.Hide)
 end

@@ -656,6 +656,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   since login (points asked, lines read, lines the game keeps secret, herbs and ore named, found and drawn) and a
   look over the whole minimap now; kept in Navigation's store (`nodes`) too, so the next `/reload` writes it to
   the saved settings.
+- `/sane falls`: the fall meter on or off. After each fall the chat tells its time in the air, how far down that is
+  and the health the landing took ("Fall: 2.0 s in the air, 35 m down: took 20% of your health"), so how high a
+  fall the routes may take can be found in the game. Walk or jump off: a jump's way up is taken off. Off again after
+  a `/reload`.
 
 ## How it works
 - **Three spaces, converted in one file** (`Coords.lua`): a map's own (0 to 1), the world's yards (X to the
@@ -1607,6 +1611,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
 | `Taxi.lua` | At a flight master: our full map in place of the game's flight map (Shift held: the game's), its flight points large, a click flies there, the way there drawn. No frames of its own |
+| `Falls.lua` | The fall meter (`/sane falls`): each fall's height from its time in the air (`Falls.Height`: the game's gravity up to its fastest fall, a jump's way up taken off) and the health the landing took, told in the chat. One frame, looking each frame only while on |
 | `Corpse.lua` | While dead: the map pin at your corpse (where you fell, then where the game tells it), the one you had back once alive again. No frames |
 | `Planner.lua` | The way to the map pin over every plane: on foot, by the flights this character knows, by boat and zeppelin, by the tram, by lift, through portals, by the teleports it has (the hearthstone told in the chat where it is quicker); where along it the player is. No frames |
 | `Label.lua` | The zone under the mouse named at the top of the full map: its name, its levels, the fishing skill its waters ask (Core's set *Fishing*) |
@@ -1658,6 +1663,12 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, the fall meter:** Saneroki: "The fall damage in this game is pretty low. You can fall quite far
+  before you actually die. I want to make the routing allow for bigger fall downs so the routing can route over
+  mountains". The walking data has no fall yet (two floors one way only within 2.6 yards, both ways), and how high a
+  fall the routes may take is measured in the game first: `/sane falls` (`Falls.lua`) tells each fall's height, from
+  its time in the air (the game tells no height of the player), and the health it took. The drops themselves wait
+  for that number (card #559).
 - **2026-11-16, no NPC a gold coin; the map pin shared; who the party's dots are:** Saneroki: "We need to give all
   npcs that use the yellow coin / dot as their pin a different icon. The yellow coin is researved for other stuff."
   The game's coins and its yellow dot (its `Gear`, `Auctioneer`, `Object`, `MonsterNeutral`, `ChatBallon`) are no

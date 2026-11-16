@@ -1816,7 +1816,9 @@ samples, *The ground as the game draws it*, below).
     by gate (its turns forced through the gates' middles); finer parts in densely built tiles (Dalaran's 15,000
     rectangles: a walk out of it is priced through all of them where its way out winds; quarters of a tile cut
     rectangles that cross them).
-- **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way; an instance's portal or a closed
+- **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way (Saneroki, 2026-11-16: "route over
+  mountains where you can fall down without dying"; card #559: drops kept with their heights, one way within a
+  region, up to the height he measures in the game with the fall meter, `/sane falls`, `Falls.lua`); an instance's portal or a closed
   gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
   door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground; diving (a
   way under water); indoors without a height the lowest of a building's floors is taken, not its upper storeys.

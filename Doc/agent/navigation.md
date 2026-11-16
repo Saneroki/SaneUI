@@ -77,7 +77,7 @@ cameras (`Window`, `Camera`, `Camera.Retail`, `Coords`, `Canvas`); the views (`T
 `Indoors`, `Dungeons`); the game's own parts (`Hybrid`, `Native`, `Strays`, `Satchel`, `AudioLine`); pins and marks
 (`Pins`, `PinView`, `Marks`, `Areas`, `Live`, `Ping`, `Label`, `Paths`); the Sane Rare tracker (`RareTracker`: finds near
 you told by a notice and a horn, `/sane testraretracker`); your markers, drawings and plans (`Markers`, `Draw`, `DrawBar`, `Plans`); the map's search (`Find`, `FindBox`, `Farms`; `Search.lua` is the walking data's, not it); the routes (`Walk`, `Gates`, `Search`, `Lifts`,
-`Planner`, `Corpse`, `Danger`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
+`Planner`, `Corpse`, `Falls` (the fall meter, `/sane falls`), `Danger`, `Taxi`, `Route`, `Route.xml`, `DockWatch`, `TripView`); herbs and ore (`Nodes`, `Found`, `Sparkles`, `Glints`); the quest log
 (`QuestLog`) and the bar (`TopBar`); `Navigation.lua` (texts, settings, `/sane map`, `GiveBack`). The art
 (`Art/Terrain`, `Art/Zones`, `Art/Sketches`, `Art/Indoors`, the marks) is made by `dev/tools/terrain-art`,
 `indoor-art` and `mark-art`, never by hand. A dungeon floor's ground (Scrying, Blended) ships no art: the game's own
