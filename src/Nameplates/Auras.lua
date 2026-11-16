@@ -4,13 +4,15 @@ local _, ns = ...
 --  Sane UI - Nameplates - Auras
 --  Around a plate's bar, without a gap:
 --    above   the debuffs and damage over time you put on the unit, from the
---            bar's left, as many as fit over its width
+--            bar's left, as many as fit over its width (eight at most)
 --    left    up to three of its buffs, on a unit you can attack, as the game
 --            picks buffs for its own plates, past the quest's icon and the
 --            raid marker, growing away from the bar
---    right   the crowd control on it (stuns, fears, roots, by anyone),
---            growing away from the bar
---  Your crowd control shows on the right only, not twice.
+--    right   the crowd control on it (stuns, fears, roots, by anyone), up to
+--            two, growing away from the bar
+--  How many of each at most are the settings Your debuffs, Buffs on foes and
+--  Crowd control (Auras.Most; 0: none). Your crowd control shows on the right
+--  only, not twice.
 --
 --  All are the game's own aura containers (CustomAuraContainerTemplate,
 --  Blizzard_AuraContainer), one per place and plate, made with the plate's
@@ -44,8 +46,10 @@ Auras.OVERLAY = "UI-HUD-CoolDownManager-IconOverlay"
 Auras.REACH = { 6 / 25, 5 / 25 }
 Auras.SWIPE = "Interface\\HUD\\UI-HUD-CoolDownManager-Icon-Swipe"
 
--- One icon, drawn into a frame the container makes (once per frame; the container keeps them).
-local function Dress(frame)
+-- One icon's look on a frame: the icon cut by the mask of the game's nameplate auras, their border, the swipe of the
+-- time gone and the stack count above it. Returns the icon, the swipe and the count. The setup's sample plates draw
+-- theirs with it too (Sample.lua).
+function Auras.Look(frame)
     local size = Auras.SIZE
     frame:SetSize(size, size)
     local icon = frame:CreateTexture(nil, "ARTWORK")
@@ -71,6 +75,12 @@ local function Dress(frame)
     local count = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     count:SetJustifyH("RIGHT")
     count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 2, -1)
+    return icon, cooldown, count
+end
+
+-- One icon, drawn into a frame the container makes (once per frame; the container keeps them).
+local function Dress(frame)
+    local icon, cooldown, count = Auras.Look(frame)
     frame:SetIcon(icon)
     frame:SetDurationCooldown(cooldown)
     frame:SetApplicationCount(count)
@@ -135,14 +145,23 @@ local function Shown(container, unit, on)
     container:SetShown(on)
 end
 
--- The containers set for the dress's unit (or none), each as its switch and the unit say; none while the plates show
--- the health bar only (ns.Style).
+-- How many of a kind show at most, as its setting says ("debuffCount", "buffCount", "controlCount"; ns.AURAS at
+-- first): a whole number, 0 for none.
+function Auras.Most(key)
+    local most = tonumber((ns.options or {})[key]) or ns.AURAS[key] or 0
+    return math.max(math.floor(most), 0)
+end
+
+-- The containers set for the dress's unit (or none), each as its setting and the unit say: your debuffs as many as
+-- fit over the bar up to theirs; none while the plates show the health bar only (ns.Style).
 function Auras.Set(dress, unit)
-    local options = ns.options or {}
     local on = unit ~= nil and ns.Style() ~= "bar"
     local foe = unit and Plain(UnitCanAttack("player", unit)) ~= false
-    Most(dress.own, Auras.Slots(dress:GetWidth()))
-    Shown(dress.own, unit, on and options.debuffs ~= false)
-    Shown(dress.foes, unit, on and foe and options.buffs ~= false)
-    Shown(dress.control, unit, on and options.control ~= false)
+    local own, foes, control = Auras.Most("debuffCount"), Auras.Most("buffCount"), Auras.Most("controlCount")
+    Most(dress.own, math.min(Auras.Slots(dress:GetWidth()), own))
+    Most(dress.foes, foes)
+    Most(dress.control, control)
+    Shown(dress.own, unit, on and own > 0)
+    Shown(dress.foes, unit, on and foe and foes > 0)
+    Shown(dress.control, unit, on and control > 0)
 end

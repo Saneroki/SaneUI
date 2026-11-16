@@ -19,6 +19,10 @@ local _, ns = ...
 --             hides how high it is, red while you have its aggro, else grey
 --    name     its name: a player's first name and surname
 --    health   short ("850", "1.2k", "1.32m") and how much is left ("| 100%")
+--  The settings Quest progress, Level, Item level, Health and Health in
+--  percent leave their piece out. Each piece is shown by a function that
+--  takes its plain values (Text.ShowLevel, ShowName, ...), so the setup's
+--  sample plates (Sample.lua) show them exactly as a plate does.
 --  The bar is as wide as the line and its insets (Text.Layout, Plate.Place),
 --  with no room wasted: the level stands right before the name (Text.NEAR),
 --  the other pieces Text.GAP apart, and the health at the right end of its
@@ -271,9 +275,8 @@ function Text.Layout(dress)
     ns.Plate.Place(dress)
 end
 
-function Text.Name(dress, unit)
-    local text = Plain(UnitIsPlayer(unit)) and Core.FullName(unit)
-    if type(text) ~= "string" then text = ns.Bar.Raw(UnitName, unit) end -- hidden or not: the text takes it
+-- A name, hidden or not: the text takes it as it is; its room measured on a plain one, a hidden one keeps the last.
+function Text.ShowName(dress, text)
     if type(text) == "nil" then text = "" end
     dress.name:SetText(text)
     local plain = Plain(text)
@@ -284,10 +287,16 @@ function Text.Name(dress, unit)
     Room(dress, "name", dress.nameRoom or Text.NAME)
 end
 
+function Text.Name(dress, unit)
+    local text = Plain(UnitIsPlayer(unit)) and Core.FullName(unit)
+    if type(text) ~= "string" then text = ns.Bar.Raw(UnitName, unit) end -- hidden or not: the text takes it
+    Text.ShowName(dress, text)
+end
+
 -- The game's colour for a level as it is to you: by difficulty for a unit you can attack, the game's colour for
 -- one you cannot.
-local function LevelColour(unit, level)
-    if Core.Ask(UnitCanAttack, "player", unit) then
+local function LevelColour(attackable, level)
+    if attackable then
         local mine = Core.Ask(UnitLevel, "player")
         local colour = mine and Core.Ask(rawget(_G, "GetRelativeDifficultyColor"), mine, level)
         if type(colour) == "table" and type(colour.r) == "number" then return colour.r, colour.g, colour.b end
@@ -297,14 +306,15 @@ local function LevelColour(unit, level)
     return 1, 1, 1
 end
 
-function Text.Level(dress, unit)
-    local level = Core.Ask(UnitLevel, unit)
+-- A level (a number; 0 or less: a skull, too high to tell) of a unit you can attack or not; none with the setting
+-- Level off.
+function Text.ShowLevel(dress, level, attackable)
     local text, shown = dress.level, nil
-    if type(level) ~= "number" then
+    if type(level) ~= "number" or (ns.options or {}).level == false then
         text:SetText("")
     elseif level > 0 then
         shown = tostring(level)
-        text:SetTextColor(LevelColour(unit, level))
+        text:SetTextColor(LevelColour(attackable, level))
     else
         shown = Text.SKULL
         text:SetTextColor(1, 1, 1)
@@ -313,17 +323,26 @@ function Text.Level(dress, unit)
     Room(dress, "level", shown and Measure(text, shown) or nil)
 end
 
+function Text.Level(dress, unit)
+    Text.ShowLevel(dress, Core.Ask(UnitLevel, unit), Core.Ask(UnitCanAttack, "player", unit))
+end
+
 -- A player's item level ("i32"), as Core's inspections have it (asked for while it has not come); none for
 -- creatures, or with the setting off.
-function Text.Gear(dress, unit)
+function Text.ShowGear(dress, level)
     local text, shown = dress.gear, nil
-    if (ns.options or {}).gear ~= false and Plain(UnitIsPlayer(unit)) then
-        local level = Core.Inspect.Level(unit, Core.Ask(UnitGUID, unit))
-        if type(level) == "number" and level > 0 then shown = "i" .. level end
-    end
+    if (ns.options or {}).gear ~= false and type(level) == "number" and level > 0 then shown = "i" .. level end
     text:SetText(shown or "")
     Room(dress, "gear", shown and Measure(text, shown) or nil)
     return shown ~= nil
+end
+
+function Text.Gear(dress, unit)
+    local level = nil
+    if (ns.options or {}).gear ~= false and Plain(UnitIsPlayer(unit)) then
+        level = Core.Inspect.Level(unit, Core.Ask(UnitGUID, unit))
+    end
+    return Text.ShowGear(dress, level)
 end
 
 -- What is still to do about the unit for a quest: the icon and the count, or none. Kept as it was while the game
@@ -334,6 +353,11 @@ function Text.Quest(dress, unit)
         kind, count = Core.UnitQuest(unit)
         if kind == false then return end
     end
+    Text.ShowQuest(dress, kind, count)
+end
+
+-- A quest's icon ("kill" or "loot") and its count ("0/7"); none (nil).
+function Text.ShowQuest(dress, kind, count)
     local icon, text = dress.quest, dress.count
     if kind then icon:SetTexture(Text.QUEST[kind]) end
     icon:SetShown(kind ~= nil)
@@ -355,15 +379,27 @@ function Text.Threat(dress, unit)
     Room(dress, "threat", Percent())
     if not pcall(text.SetFormattedText, text, "%d%%", share) then text:SetText("") end
     local plain = Plain(kind)
-    if plain then
-        local colour = Text.THREAT[plain] or Text.THREAT[0]
-        text:SetTextColor(colour[1], colour[2], colour[3])
-        return ns.Bar.Glow(dress, plain >= Text.AGGRO)
-    end
+    if plain then return Text.ShowThreat(dress, plain, nil) end
     -- Its kind hidden (a fight): red while you have its aggro, grey otherwise, by the game's hidden answer whether you
     -- do (the game turns it into a colour, the text takes that as it is); about to take it cannot be told then.
     Text.Aggro(text, tanking)
     ns.Bar.Glow(dress, tanking) -- the glow takes the game's answer as it is
+end
+
+-- Your threat by its plain kind (Text.THREAT) and share (a number; nil: as it is), and the glow while you have its
+-- aggro; none (nil): not on its threat list.
+function Text.ShowThreat(dress, kind, share)
+    local text = dress.threat
+    if type(kind) ~= "number" then
+        text:SetText("")
+        Room(dress, "threat", nil)
+        return ns.Bar.Glow(dress, false)
+    end
+    Room(dress, "threat", Percent())
+    if share then text:SetFormattedText("%d%%", share) end
+    local colour = Text.THREAT[kind] or Text.THREAT[0]
+    text:SetTextColor(colour[1], colour[2], colour[3])
+    ns.Bar.Glow(dress, kind >= Text.AGGRO)
 end
 
 -- The threat's text red while you have the unit's aggro, grey while not: by an answer of the game's, hidden or not.
@@ -425,17 +461,53 @@ function Text.Percent(now, most)
     return math.max(math.floor(now / most * 100), 1)
 end
 
+-- What the health shows (the settings Health and Health in percent): the amount, the share left, both or neither.
+function Text.HealthParts()
+    local options = ns.options or {}
+    return options.health ~= false, options.percent ~= false
+end
+
+-- The health's words for plain numbers, as the settings say ("1.2k | 50%", "1.2k", "50%"); nil for neither.
+function Text.HealthWords(now, most)
+    local value, share = Text.HealthParts()
+    if value and share then return ("%s | %d%%"):format(Text.Short(now), Text.Percent(now, most)) end
+    if value then return Text.Short(now) end
+    if share then return ("%d%%"):format(Text.Percent(now, most)) end
+    return nil
+end
+
+-- The health's room for a most shown short ("1.32m"): as wide as the most it can show; nil for neither.
+function Text.HealthRoom(short)
+    local value, share = Text.HealthParts()
+    if value and share then return Text.Width(short .. " | 100%") end
+    if value then return Text.Width(short) end
+    if share then return Percent() end
+    return nil
+end
+
+-- The health for plain numbers, and its room as wide as its most (the setup's sample plates).
+function Text.ShowHealth(dress, now, most)
+    local words = Text.HealthWords(now, most)
+    dress.value:SetText(words or "")
+    Room(dress, "value", words and Text.HealthRoom(Text.Short(most)) or nil)
+end
+
 local steps
 -- Hidden health as the game formats it: its abbreviation in our steps (the game's own form where it takes none),
--- the percentage by the game's curve to a hundred.
+-- the percentage by the game's curve to a hundred; each as the settings say.
 local function Hidden(text, unit, now)
+    local value, share = Text.HealthParts()
     local curve = rawget(_G, "CurveConstants") and CurveConstants.ScaleTo100
-    local share = curve and ns.Bar.Raw(UnitHealthPercent, unit, true, curve)
+    local left = share and curve and ns.Bar.Raw(UnitHealthPercent, unit, true, curve)
+    if not value then
+        if type(left) == "nil" or not pcall(text.SetFormattedText, text, "%d%%", left) then text:SetText("") end
+        return
+    end
     steps = steps or { breakpointData = Text.STEPS }
     local ok, short = pcall(AbbreviateNumbers, now, steps)
     if not ok then ok, short = pcall(AbbreviateNumbers, now) end
     if not ok then return text:SetText("") end
-    if type(share) == "nil" or not pcall(text.SetFormattedText, text, "%s | %d%%", short, share) then
+    if not share or type(left) == "nil" or not pcall(text.SetFormattedText, text, "%s | %d%%", short, left) then
         text:SetText(short)
     end
 end
@@ -444,9 +516,15 @@ end
 function Text.Health(dress, unit, anew)
     local text = dress.value
     local now, most = ns.Bar.Raw(UnitHealth, unit), ns.Bar.Raw(UnitHealthMax, unit)
-    if type(now) == "nil" or type(most) == "nil" then
+    local value, share = Text.HealthParts()
+    if type(now) == "nil" or type(most) == "nil" or not (value or share) then
         text:SetText("")
         return Room(dress, "value", nil)
+    end
+    -- The settings say other parts than its room was measured for: measured anew.
+    local parts = (value and "v" or "") .. (share and "p" or "")
+    if dress.valueParts ~= parts then
+        dress.valueParts, dress.valueMost, dress.valueRoom, dress.valueGuess = parts, nil, nil, nil
     end
     local plainNow, plainMost = Plain(now), Plain(most)
     -- Its room: as wide as the most it can show, so the bar does not change width as health goes. The game hides the
@@ -456,14 +534,14 @@ function Text.Health(dress, unit, anew)
     if anew then dress.valueGuess = nil end
     if type(plainMost) == "number" then
         if plainMost ~= dress.valueMost then
-            dress.valueMost, dress.valueRoom = plainMost, Text.Width(Text.Short(plainMost) .. " | 100%")
+            dress.valueMost, dress.valueRoom = plainMost, Text.HealthRoom(Text.Short(plainMost))
         end
     elseif not dress.valueRoom and not dress.valueGuess then
-        dress.valueGuess = Text.Width(Text.Guess(unit) .. " | 100%")
+        dress.valueGuess = Text.HealthRoom(Text.Guess(unit))
     end
     Room(dress, "value", dress.valueRoom or dress.valueGuess)
     if type(plainNow) == "number" and type(plainMost) == "number" then
-        return text:SetText(("%s | %d%%"):format(Text.Short(plainNow), Text.Percent(plainNow, plainMost)))
+        return text:SetText(Text.HealthWords(plainNow, plainMost) or "")
     end
     Hidden(text, unit, now)
 end

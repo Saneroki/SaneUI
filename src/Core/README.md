@@ -85,6 +85,9 @@ but for a window to try those with (`/sane window`).
     the small window's corners are: *Corner radius* (0 to 100 % of half the window's shorter side at rest,
     a tenth at first; at 100 % a square window is a circle) and *Don't round corners on screen edges* (on;
     off: every corner is round, also on the screen's edges). Full, it is square either way.
+- `/sane setup <module>` opens that module's setup, step by step (`/sane setup` alone: the only one there, or the
+  list); the first time a module with a setup is on, it opens by itself a few seconds after the login, once per
+  account. The window is the addon *Onboarding*, which comes with Core and is read only when a setup opens.
 - **Keys:** in the game's key bindings (Esc > Options > Keybindings) a section *Sane UI* has a key for
   Sane UI's options (none set at first), and a key for each module that has one (Social: the chat window).
 - **The options** (Esc > Options > AddOns > Sane UI, see [Settings' README](Settings/README.md)): *Sane UI* itself shows only
@@ -457,6 +460,7 @@ but for a window to try those with (`/sane window`).
   | `Core.StatWord(word)`, `Core.StatLine(line)` | The stats as players write them (`Stats.lua`, Saneroki, 2026-10-30): `"Strength"` is `"Str"`, a line of a number and a stat `"+8 Stam"` (a coloured number too); a word that is no stat and a sentence stay as they came. The one place the short words are kept: every view that names a stat goes through these. The game's own windows keep its words |
   | `Core.Upgrade(link, id)`, `Core.WeighWith(fn)` | Whether an item would make the character better (`Upgrade.lua`): gear wearable now, with nothing worn in its place or something worth less there, never lighter armour than worn. Worth: its stats (`GetItemStats`) by the character's weights, a two-handed weapon against both hands, else its item level. On a shield build (`shield` in the weights) never a two-hander, and one held counts as nothing; a one-hander against the main hand alone, only a shield in the off hand. `"empty"` or `"better"`, what it brings and the place it goes (of two the empty or the weaker one); nil: no upgrade. `fn()` gives the weights, `{ [the game's stat key] = worth, ranged = worth of a ranged weapon's damage per second, shield = true on a shield build }`: Inventory's (`src/Inventory/Weights.lua`); with Inventory off item levels decide |
   | `Core.Offer(key, switch)`, `Core.Switches()`, `Core.SwitchChanged()`, `Core.OnSwitches(fn)` | Quick switches the modules offer, for a view that gathers them (Saneroki, 2026-10-26: the minimap's satchel), so neither knows the other (`Switches.lua`). `switch = { title, icon, State, Tip, Click }`: `State()` says `"on"`, `"paused"` or `"off"` (nil: not offered now, its module off), `Tip()` its tooltip's words, `Click(mouseButton, owner)` what a click does. `Core.Switches()` lists those offered, in the order offered, with their state and tip as now; a module calls `Core.SwitchChanged()` when one changed, and the views given to `Core.OnSwitches` are told on the next frame |
+  | `Core.Onboarding.Add(name, guide)`, `Open(name, step)`, `Guide(name)`, `Names()` | A module's setup, step by step (`Onboarding.lua`; Saneroki, 2026-11-16: each module keeps its own words): `guide = { title, steps, Stage }`, a step `{ key, title, text, settings = { key, ... } }` (its switches by their keys: each control has the switch's own words and tip), `Stage(stage, step, index)` the module's sample drawn into the window's frame, again after each change. `Open` reads the addon *Onboarding* (`src/Onboarding`, load on demand, shipped in Core's download) and shows the window, out of a fight (after it in one); the first time a module with a setup is on, it opens by itself `Onboarding.WAIT` seconds after the first loading screen (after the game's own What's new), one a session, kept as shown in `SaneUIDB.modules.Onboarding.shown` (for the account, outside the profiles); `/sane setup` |
 
   - **The title bar** (`Window.lua`, `Bar`, `Refresh`): with `titleBar` (a kind of window that has one; the
     small chat, unit frames have none), and on every window while it fills the screen. Across its top,
@@ -648,6 +652,7 @@ but for a window to try those with (`/sane window`).
 | `Icons.lua` | The icon chooser: the game's icons by group, searched, for every module that lets the player pick one |
 | `Neighbours.lua` | The other addons Sane UI knows and adapts to when they are installed: the one file that names them |
 | `Switches.lua` | The quick switches the modules offer, for a view that gathers them (`Core.Offer`) |
+| `Onboarding.lua` | Each module's setup, step by step, handed in by the module (`Core.Onboarding`); opening it in the addon *Onboarding*, read on demand: by itself the first time, from a module's options page, `/sane setup` |
 | `Ways.lua` | The way to a place, between a module that leads the player and the one that finds ways (`Core.Ways`) |
 | `Sight.lua` | The herbs and ore in sight now, between the module that finds them and one that leads the player (`Core.Sight`) |
 | `Spellbook.lua` | What a spellbook shows beyond the game's spells, between the module that knows it and the one whose book shows it (`Core.Spellbook`) |
@@ -673,6 +678,10 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-11-16 — `Onboarding.lua`: each module's setup, step by step, handed in by the module (Saneroki: each module keeps
+  its own words) and opened in the addon *Onboarding* (`src/Onboarding`), which ships with Core and is read only when a
+  setup opens: by itself the first time a module with one is on, from its options page, `/sane setup`. Nameplates' is
+  the first.
 - 2026-11-15 — Profiles off at first (Saneroki: "the whole profiles should be disabled by default and can be activated
   in the settings or during the onboarding procedure"): a fresh install keeps every character's own settings, Sync
   writes nothing and no preset is given; the switch *Share settings between characters* on the page Profiles,

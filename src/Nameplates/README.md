@@ -17,6 +17,16 @@ setting shows the health bar only (no auras), or the spells only (no bar, no nam
 the game's gold arrow over your target). When it fails, every plate is the game's own again.
 
 ## How to use
+- **Set it up step by step** (Saneroki, 2026-11-16): a window that goes through the plates a part at a time, nine
+  steps, each with its purpose, its words, its switches and sample plates at its left that show each choice at once:
+  what plates show; what the bar says (quest, level, item level, health, health in percent; what item level is); the
+  border (grey your target within reach, red out of reach, orange your focus, blue party, green guild, purple raid,
+  pink a friend); rank and danger (thick gold a boss, gold an elite, silver a rare, the red glow on aggro, the
+  threat's colours); how many of your debuffs, a foe's buffs and the crowd control show; the cast bar and the damage
+  numbers; the power line, combo points, barriers and lost health; which plates show (players you know, critters);
+  size and transparency. It opens by itself the first time the module is on; again by *Set up step by step* at the
+  top of its options page, or `/sane setup nameplates`. The window is the addon *Onboarding*'s, which comes with Sane
+  UI; the words and samples are this module's (`Setup.lua`, `Sample.lua`).
 - **Switch it on or off:** tick or untick *Nameplates* under *Sane UI* in the game's addon list (the game
   needs a restart when it was not in the list before).
 - **Which plates:** every plate the game shows with a health bar: creatures and players, foes and friends.
@@ -55,6 +65,8 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   is then shortened by the game in the same steps, the threat red while you have aggro and grey otherwise (orange
   cannot be told then). The health takes the room of the most it
   can show, so the bar does not change width as health goes down.
+  The settings *Quest progress*, *Level*, *Item level*, *Health* and *Health in percent* each leave their piece out
+  (and its room: the bar narrower); with *Health* off "100%" alone, with *Health in percent* off "1.32m" alone.
 - **The border:** one thin outline: black, a quiet 50% grey on your target, orange on your focus (the game's
   colour for it); on a player you know, by how: green your guild, blue your party (in a raid, your own subgroup),
   purple the rest of your raid, pink a friend (where more than one holds, in that order: a guild member in your raid
@@ -73,9 +85,11 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   character's, whatever you target: they show on your target's plate alone, one segment each up to seven.
 - **Auras:** right above the bar, without a gap, from its left the debuffs and damage over time you put on the
   unit, with the time each has left and its stacks, as many as fit over the bar (eight on the game's medium
-  plates). Left of the bar, growing away from it, up to three of its buffs on units you can attack, as the game
-  picks buffs for its own plates. Right of the bar up to two crowd controls on it, by
-  anyone; your own show there, not twice. Hover one for its tooltip (the game's aura container gives it; Forever's own
+  plates), at most *Your debuffs* (8 at first, up to 12). Left of the bar, growing away from it, at most *Buffs on
+  foes* of its buffs (3 at first, up to 6) on units you can attack, as the game picks buffs for its own plates. Right
+  of the bar at most *Crowd control* (2 at first, up to 4) crowd controls on it, by anyone; your own show there, not
+  twice. Each at 0 shows none (Saneroki, 2026-11-16: "how many buffs, debuffs and CCs they want to see"; they were
+  switches before, and one that was off is 0). Hover one for its tooltip (the game's aura container gives it; Forever's own
   plates dropped theirs in build 70755).
 - **Cast bar:** under the bar, inside the plate's one outline (the border, the rank's line and the glow go around the
   bar and the cast bar together while a cast shows, around the bar alone otherwise), as wide and as high as the bar,
@@ -135,7 +149,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
   client lacks those for its numbers over units, those numbers stay as the game has them.
-- **Settings:** *Sane UI > Nameplates*: *Plates show* (and under it *Dot where a plate is*), *Quest progress*, *Item level*, *Your debuffs*, *Buffs on foes*, *Crowd control*, *Power line*,
+- **Settings:** *Sane UI > Nameplates*: the button *Set up step by step*, *Plates show* (and under it *Dot where a plate is*), *Quest progress*, *Level*, *Item level*, *Health*, *Health in percent*, *Your debuffs*, *Buffs on foes* and *Crowd control* (how many of each), *Power line*,
   *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*, *Nameplate transparency*, *Your target's transparency*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
@@ -460,6 +474,8 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 | `Range.lua` | How far each plate's unit is from your character (range checks of items and your spells), whether your attacks reach it |
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off; how closely the game stacks plates |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character, in the game's font; what did no harm the game's word |
+| `Sample.lua` | A made-up plate for the setup, drawn by the plates' own code (`Bar.Make`, `Text.Make`, `Marks.Make`, `Cast.Make`) and filled from a made-up unit through the same pieces a plate shows (`Text.ShowLevel`, `ShowName`, `ShowHealth` ...; `Bar.Border`, `Bar.Glow`), its auras the game's icons in the plates' look (`Auras.Look`), as many as the settings say, a cast running again and again, the combat text rising over it; its scripts fail softly (`ns.Gently`) |
+| `Setup.lua` | The setup, step by step: the nine steps' words and switches, each step's board of sample plates, handed to Core (`Core.Onboarding.Add`); the window is the addon Onboarding's |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; what clicks a plate (our bar alone); the game's own bar, name, auras and marks out of sight under it; strangers' and critters' plates hidden; `Plate.Foot`, the dress's frame right under its lowest row, for what another module shows right under a plate |
 
 ## Not there yet
@@ -467,6 +483,15 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-16:** the setup, step by step (Saneroki: "a step by step window so the player goes through each step where
+  it can see a fake nameplate in the window and see how it looks with their setting. Each page in the window groups
+  together similar settings or information so each page has its own purpose"): nine steps in the addon Onboarding's
+  window, this module's own words and sample plates (`Setup.lua`, `Sample.lua`); the button *Set up step by step* on
+  the options page; it opens by itself the first time. New settings *Level*, *Health*, *Health in percent*; *Your
+  debuffs*, *Buffs on foes* and *Crowd control* are how many of each now (0: none; `debuffCount`, `buffCount`,
+  `controlCount`, settings version 1 turns an older switch off into 0). The line's pieces are shown by functions of
+  plain values (`Text.ShowLevel`, `ShowGear`, `ShowQuest`, `ShowName`, `ShowThreat`, `ShowHealth`), which the plates
+  and the samples share.
 - **2026-11-13:** a druid's mana along the bar's bottom and its form's rage or energy along its top, then taken back
   (Saneroki: "revert back to how it was with only one class bar"): the game tells another druid's mana in a form to
   nobody else, and sending it between Sane UIs never came through. One power line, as before.

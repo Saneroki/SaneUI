@@ -1,0 +1,18 @@
+## Interface: 16001, 120105
+## Title: Onboarding
+## Notes: Sane UI's setup, step by step: a window that walks you through what a module shows and lets you choose how you want it, with a sample that changes as you choose. Sane UI reads it only when a setup opens: by itself the first time a module is on, from a module's options page, or /sane setup. Comes with Sane UI.
+## Author: Saneroki
+## Version: 0.3.0
+## Category: Sane UI
+## Group: SaneUI
+## Dependencies: SaneUI
+## LoadOnDemand: 1
+## IconTexture: Interface\Icons\INV_Misc_Book_09
+## X-License: MIT
+
+# The module's own table and its words; a module's setup shown (Show)
+Onboarding.lua
+# The controls of a step: the module's own switches, numbers and choices, set through Core as its options page sets them
+Controls.lua
+# The window: the module's sample at its left, the step's head, words and controls at its right, Back and Next under them
+Window.lua

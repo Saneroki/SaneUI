@@ -58,6 +58,7 @@ def game(root, name, product):
     addons = folder / "Interface/AddOns"
     write(addons / "SaneUI/SaneUI.toc", "## Interface: 11506\n## Version: 0.3.1\n")
     write(addons / "SaneUI/Core.lua", "-- core\n")
+    write(addons / "SaneUI_Onboarding/SaneUI_Onboarding.toc", "## Interface: 11506\n## Dependencies: SaneUI\n## LoadOnDemand: 1\n")
     write(addons / "SaneUI_Navigation/SaneUI_Navigation.toc", "## Interface: 11506\n## Dependencies: SaneUI\n")
     # Inventory's TOC here names Loot as a dependency too, so that a dependency of a module named comes along.
     write(addons / "SaneUI_Inventory/SaneUI_Inventory.toc", "## Interface: 11506\n## Dependencies: SaneUI, SaneUI_Loot\n")
@@ -171,6 +172,7 @@ with tempfile.TemporaryDirectory() as temporary:
     package = root / "SaneUI-0.3.1-alpha.zip"
     with zipfile.ZipFile(package, "w") as archive:
         archive.writestr("SaneUI/SaneUI.toc", "## Interface: 11506\n## Version: 0.3.1\n")
+        archive.writestr("SaneUI_Onboarding/SaneUI_Onboarding.toc", "## Interface: 11506\n## LoadOnDemand: 1\n")
         archive.writestr("SaneUI_Navigation/SaneUI_Navigation.toc", "## Interface: 11506\n")
     evil = root / "evil.zip"
     with zipfile.ZipFile(evil, "w") as archive:
@@ -178,7 +180,7 @@ with tempfile.TemporaryDirectory() as temporary:
     why = refused(tool.start, [str(package), str(evil)], False)
     check(why and "would land outside AddOns" in why and not (forever / tool.HOLD).exists(), "a zip reaching outside: refused, nothing done")
     said = quiet(tool.start, [str(package)], False)
-    check(sorted(p.name for p in (forever / "Interface/AddOns").iterdir()) == ["SaneUI", "SaneUI_Navigation"]
+    check(sorted(p.name for p in (forever / "Interface/AddOns").iterdir()) == ["SaneUI", "SaneUI_Navigation", "SaneUI_Onboarding"]
           and not (forever / "Interface/AddOns/SaneUI/Core.lua").exists(), "--zip: the zips' addons, not the installed build")
     check("out of date" in said, "--zip: says Retail sees Forever's interface number")
     quiet(tool.restore, False)
@@ -191,18 +193,20 @@ with tempfile.TemporaryDirectory() as temporary:
         quiet(tool.restore, False)
         return got, said
     got, said = picked("navigation")
-    check(got["_forever_"] == got["_retail_"] == ["SaneUI", "SaneUI_Navigation"], f"navigation: Core and Navigation alone: {got}")
+    check(got["_forever_"] == got["_retail_"] == ["SaneUI", "SaneUI_Navigation", "SaneUI_Onboarding"],
+          f"navigation: Core's download (Sane UI and Onboarding) and Navigation alone: {got}")
     got, said = picked("Navigation", "SaneUI_Inventory")
-    check(got["_forever_"] == ["SaneUI", "SaneUI_Inventory", "SaneUI_Loot", "SaneUI_Navigation"],
+    check(got["_forever_"] == ["SaneUI", "SaneUI_Inventory", "SaneUI_Loot", "SaneUI_Navigation", "SaneUI_Onboarding"],
           f"navigation inventory: and what Inventory's TOC needs first, any spelling: {got}")
     got, said = picked("economy")
-    check(got["_forever_"] == ["SaneUI", "SaneUI_AuctionData", "SaneUI_AuctionScans", "SaneUI_Economy"]
-          and got["_retail_"] == ["SaneUI", "SaneUI_AuctionData", "SaneUI_Economy"], f"economy: with the auction data it carries: {got}")
+    check(got["_forever_"] == ["SaneUI", "SaneUI_AuctionData", "SaneUI_AuctionScans", "SaneUI_Economy", "SaneUI_Onboarding"]
+          and got["_retail_"] == ["SaneUI", "SaneUI_AuctionData", "SaneUI_Economy", "SaneUI_Onboarding"],
+          f"economy: with the auction data it carries: {got}")
     check("Retail: " in said and "SaneUI_AuctionScans" in said.split("Retail: ")[-1], "  and Retail's lack of one is said")
     got, said = picked("core")
-    check(got["_forever_"] == ["SaneUI"], f"core: Core alone: {got}")
+    check(got["_forever_"] == ["SaneUI", "SaneUI_Onboarding"], f"core: Core's download alone (Sane UI and Onboarding): {got}")
     got, said = picked("navigation", zips=[package])
-    check(got["_forever_"] == ["SaneUI", "SaneUI_Navigation"], f"a module out of the zips: {got}")
+    check(got["_forever_"] == ["SaneUI", "SaneUI_Navigation", "SaneUI_Onboarding"], f"a module out of the zips: {got}")
     for words, words_why in ((["maps"], "No module maps"), (["lore"], "SaneUI_Lore is in neither game's AddOns")):
         why = refused(tool.start, [], False, words=words)
         check(why and words_why in why and not (forever / tool.HOLD).exists(), f"{words}: refused, nothing done ({why})")
@@ -212,7 +216,7 @@ with tempfile.TemporaryDirectory() as temporary:
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         tool.main(["start", "navigation", str(package), "--dry"])
-    check("its AddOns: SaneUI, SaneUI_Navigation." in out.getvalue(), "the command line: modules and zips in any order")
+    check("its AddOns: SaneUI, SaneUI_Navigation, SaneUI_Onboarding." in out.getvalue(), "the command line: modules and zips in any order")
 
     # A failure half way puts back what was set aside, in both games.
     made = tool.fresh_interface

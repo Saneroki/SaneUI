@@ -46,7 +46,8 @@ TOC = """## Interface: 16001, 120105
 real = tool.staged(tool.main_commit())
 check(set(real) <= set(tool.TESTS), f"every module's tests are named in TESTS: {sorted(set(real) - set(tool.TESTS))}")
 check(all((ROOT / f"dev/tests/{t}.lua").is_file() for m in real for t in tool.TESTS.get(m, [])), "each named test is there")
-check("Core" not in real and "AuctionData" not in real and "AuctionScans" not in real, "Core's parts have no stage")
+check("Core" not in real and "Onboarding" not in real and "AuctionData" not in real and "AuctionScans" not in real,
+      "Core's parts have no stage")
 
 for name in ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME"):
     os.environ[name] = "Saneroki"
@@ -75,6 +76,8 @@ with tempfile.TemporaryDirectory() as temporary:
     write("src/Core/SaneUI.toc", TOC.format(title="SaneUI", extra=""))
     write("src/Core/SaneUI.lua", "-- core 1\n")
     write("src/Core/README.md", "only for development\n")
+    write("src/Onboarding/SaneUI_Onboarding.toc", TOC.format(title="SaneUI_Onboarding", extra="## LoadOnDemand: 1"))
+    write("src/Onboarding/SaneUI_Onboarding.lua", "-- the setups' window 1\n")
     write("src/AuctionData/SaneUI_AuctionData.toc", TOC.format(title="SaneUI_AuctionData", extra=""))
     write("src/AuctionData/SaneUI_AuctionData.lua", "\n")
     write("src/Navigation/SaneUI_Navigation.toc", TOC.format(title="SaneUI_Navigation", extra=""))
@@ -95,7 +98,7 @@ with tempfile.TemporaryDirectory() as temporary:
     first = tool.plan("alpha", root=repo)
     check(first["modules"] == {} and first["left"] == ["Navigation", "RetailOnly", "SpeedLeveling"],
           "nothing promoted: every module left out, all are dev")
-    check(first["core"] == ["Core"], "Core's project: Sane UI alone, its data holders not in it")
+    check(first["core"] == ["Core", "Onboarding"], "Core's project: Sane UI and its setups' window, its data holders not in it")
     check(tool.CARRIED == {"Economy": ("AuctionData", "AuctionScans")}, "the auction data's files go with Economy alone")
     check(refused(lambda: tool.plan("dev", root=repo)) is not None, "dev is no channel")
 
@@ -137,7 +140,11 @@ with tempfile.TemporaryDirectory() as temporary:
     check(made["core_release"] == {"version": "0.3.1", "new": True, "zip": core_zip}, "Core's first: one above its TOC")
     with zipfile.ZipFile(core_zip) as box:
         names = set(box.namelist())
-        check({n.split("/")[0] for n in names} == {"SaneUI"}, "Core's zip: Sane UI alone (no auction data: no scans)")
+        check({n.split("/")[0] for n in names} == {"SaneUI", "SaneUI_Onboarding"},
+              "Core's zip: Sane UI and Onboarding, always together (no auction data: no scans)")
+        onboarding_toc = box.read("SaneUI_Onboarding/SaneUI_Onboarding.toc").decode()
+        check("## Version: 0.3.1\n" in onboarding_toc and "## LoadOnDemand: 1" in onboarding_toc,
+              "Onboarding with Core's version, still loaded on demand")
         check(box.read("SaneUI/SaneUI.lua").decode() == "-- core 2\n", "Core from main's newest commit")
         check("SaneUI/README.md" not in names and "SaneUI/LICENSE.txt" in names, "no READMEs; the licence in each folder")
         check("SaneUI/Sets/Test.lua" in names, "Core's sets compiled into it")
@@ -375,6 +382,13 @@ with tempfile.TemporaryDirectory() as temporary:
         check("no CurseForge project" in (refused(lambda: tool.publish("alpha", ["Navigation"], yes=True, root=repo, say=quiet,
                                                                          settings=settings)) or ""),
               "a module named without a project: refused")
+        # Onboarding is Core's: a change to it alone is a new Core.
+        before = tool.core_tree("main", repo)
+        write("src/Onboarding/SaneUI_Onboarding.lua", "-- the setups' window 2\n")
+        commit("window 2")
+        check(tool.core_tree("main", repo) != before, "a change to Onboarding alone makes a new Core")
+        check("Core's" in (refused(lambda: tool.plan("alpha", ["Onboarding"], root=repo)) or ""),
+              "Onboarding is no module of its own to package")
     finally:
         tool.ask, tool.package = real_ask, real_package
 

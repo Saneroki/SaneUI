@@ -75,8 +75,11 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 STAGES = ("dev", "alpha", "beta", "release")   # lowest first
 CHANNELS = STAGES[1:]
-CORE = ("Core", "AuctionData", "AuctionScans")  # no stage, from main's newest commit
-CORE_PROJECT = ("Core",)                          # Core's project: Sane UI alone
+CORE = ("Core", "Onboarding", "AuctionData", "AuctionScans")  # no stage, from main's newest commit
+# Core's project: Sane UI and its setups' window, the addon Onboarding (load on demand), always shipped together
+# (Saneroki, 2026-11-16: "both onboarding and core always ships together and lives in the same curseforge project"):
+# a change to either makes a new SaneUI Core.
+CORE_PROJECT = ("Core", "Onboarding")
 # Addons a module's project carries beside it, from main's newest commit: the auction data's files (no code; Core
 # fills them) only with Economy, which uses them. In Core's download every player would have Core scan the auction
 # house when it opens (Saneroki, 2026-11-15: "leave them out" of Core's until Economy ships).

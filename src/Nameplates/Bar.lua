@@ -435,6 +435,7 @@ local function PowerColour(token)
     if type(colour) == "table" and type(colour.r) == "number" then return colour.r, colour.g, colour.b end
     return 0, 0.55, 1
 end
+Bar.PowerColour = PowerColour
 
 -- The unit's power along the bar's bottom, as the game gives it; none where the unit has none (a most of 0, as
 -- far as can be told: a hidden most shows the line) or the setting is off. Tells the combo points when the line

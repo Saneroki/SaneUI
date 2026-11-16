@@ -19,6 +19,7 @@
 #   auralists.lua   the Combat module's aura lists: one list with a tick per mark, the search over every class's, the enemies' and the items' auras
 #   aurahistory.lua Core's aura log and Combat's aura history: the auras seen on enemies, a fight with hidden auras, the window
 #   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
+#   onboarding.lua  Core's setups, step by step, and the addon Onboarding: its window read on demand, steps, controls
 #   loot.lua        the Loot module: its window and rules, the master looter's menu, full bags, roll cards, the feed
 #   economy.lua     the Economy module: what to buy and sell right now, the server asked item by item, a purchase and a post
 #                   from a click only, the tab on the game's window, the gold on sale; the tab Banker on the mail window
@@ -92,6 +93,7 @@ lua dev/tests/reminders.lua
 lua dev/tests/auralists.lua
 lua dev/tests/aurahistory.lua
 lua dev/tests/nameplates.lua
+lua dev/tests/onboarding.lua
 lua dev/tests/loot.lua
 lua dev/tests/economy.lua
 lua dev/tests/speedleveling.lua

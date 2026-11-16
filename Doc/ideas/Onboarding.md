@@ -2,7 +2,7 @@
 
 Planning notes for the **Onboarding** module (`SaneUI_Onboarding`; the name, Saneroki, 2026-11-15). This is
 not a spec yet: it holds what Saneroki asked for (2026-10-16, 2026-11-15, 2026-11-16) and proposals for him to discuss.
-Nothing is built.
+Built so far: the setup, step by step, and Nameplates' (*Built*, below); Welcome, What's new and the ? not yet.
 
 It is for **later**: Sane UI is not given to other players yet, so nobody has an old version to update
 from. It is worth building once others play it, and its first real use is the first version they get.
@@ -25,6 +25,32 @@ from. It is worth building once others play it, and its first real use is the fi
 - **A ? in the title bar** (Saneroki, 2026-10-16) of Sane UI's windows, next to the button to the game's own
   window, for help with that window. Only on our window (the Sane UI view), never on the game's own
   window (the classic view) (*The ? in the title bar* below).
+
+## Built (2026-11-16)
+
+Saneroki, 2026-11-16: "Each module keeps its own words, start building it for the nameplates addon. I want a window
+where it goes step by step through to explain the nameplates and where people can see a live preview of a fake
+nameplate in the window where they can see one and configure it to their desire." And: "Make it a step by step
+window so the player goes through each step where it can see a fake nameplate in the window and see how it looks
+with their setting. Each page in the window groups together similar settings or information so each page has its
+own purpose."
+
+- **Core** (`src/Core/Onboarding.lua`): `Core.Onboarding.Add(name, guide)` (a module hands in its setup: its steps
+  and its `Stage`, the sample drawn into the window), `Open(name, step)` (reads the addon, out of a fight),
+  `/sane setup <module>`; the first time a module with a setup is on, it opens by itself a few seconds after the
+  first loading screen, after the game's own What's new, one a session, kept as shown in
+  `SaneUIDB.modules.Onboarding.shown` (per account, outside the profiles).
+- **The addon** `SaneUI_Onboarding` (`src/Onboarding/`, load on demand, in Core's download: `dev/tools/release`'s
+  `CORE` and `CORE_PROJECT`): the window in the bronze, the module's sample at its left, the step's head, words and
+  controls at its right (the module's own switches, made from their descriptions and set through `Core.Set`),
+  *Back* and *Next* in red with the game's arrows as Forever's character creation has them, *Step 2 of 9*.
+- **Nameplates' setup** (`src/Nameplates/Setup.lua`, `Sample.lua`): nine steps, each with its own purpose (what
+  plates show; what the bar says; the border; rank and danger; spells on it; casts and damage numbers; on the bar;
+  which plates show; size and transparency), sample plates drawn by the plates' own code from made-up units. New
+  settings for it: *Level*, *Health*, *Health in percent*, and how many debuffs, buffs and crowd controls show.
+- **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
+  help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
+  character setup, when tooltips show) and the other modules' setups.
 
 ## Its three parts (Saneroki, 2026-11-15)
 
@@ -91,8 +117,8 @@ Onboarding cannot see that it is needed while it is not loaded, so Core does tha
 - It registers with `Core.NewModule` as every module does; one that arrives after login gets its
   `OnLoad` and `OnLogin` at once (Core already does this).
 - **Stores no game data** (CLAUDE.md, *Backend and views*): `seen` is a setting, kept by Core.
-- **The words live with each addon** (proposal, 2026-11-16; this plan said before that they all live in
-  Onboarding, read only when it loads): Onboarding is the machinery (the window, Setup's steps, What's new's
+- **The words live with each addon** (Saneroki, 2026-11-16: "Each module keeps its own words"; this plan said
+  before that they all live in Onboarding, read only when it loads): Onboarding is the machinery (the window, Setup's steps, What's new's
   pages, the tutorials' callouts, *Show me*, how far the player got); each module carries its own words in a
   small file of its own (`Onboarding.lua` in its folder: its Setup questions, its news per version, its
   tutorial steps), handed to Core at login and only drawn by Onboarding. Core's own words (its Setup
@@ -252,10 +278,9 @@ on our window small and full, not on the game's window, not in Edit Mode; the ne
    when a new player is lost.
 3. **Screenshots:** worth their disk space, and for which features?
 4. **Per account** (proposal) **or per character:** should an alt see Welcome again?
-5. **Where the words live:** with each module (proposal, *The module*) or all in Onboarding (this plan's
-   earlier proposal)?
 
 Answered (Saneroki, 2026-10-16): after an update the window opens by itself unless its switch is off (was
 question 2); help comes from a ? in the title bar, in the Sane UI view only, instead of tips at the first
 meeting (was question 4). Answered (Saneroki, 2026-11-15): the module is called *Onboarding* (was question 1).
-Decided (Saneroki, 2026-11-16): Onboarding ships with Core, in Core's CurseForge project (*What it is*).
+Decided (Saneroki, 2026-11-16): Onboarding ships with Core, in Core's CurseForge project (*What it is*); each module
+keeps its own words (*The module*).

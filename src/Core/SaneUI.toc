@@ -65,6 +65,9 @@ Icons.lua
 Neighbours.lua
 # Quick switches the modules offer, for a view that gathers them (the minimap's satchel)
 Switches.lua
+# Each module's setup, step by step, handed in by the module, and opening it: the window is the addon
+# SaneUI_Onboarding, loaded on demand (the first time a module is on, its options page, /sane setup)
+Onboarding.lua
 # The way to a place, for a module that leads the player, from the one that finds ways
 Ways.lua
 # The herbs and ore in sight now, for a module that leads the player, from the one that finds them

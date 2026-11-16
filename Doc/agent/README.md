@@ -7,7 +7,7 @@ section), `saneui showsections FILE words` (the sections named).
 
 ## The addons
 
-Fifteen addons in `src/`, one folder each with its TOC and its README (a *TL;DR* first, then *How to use*, the technical
+Sixteen addons in `src/`, one folder each with its TOC and its README (a *TL;DR* first, then *How to use*, the technical
 sections, *Files*; most keep a *History*). Version 0.3.0, `## Interface: 16001, 120105` (Forever and Retail).
 Core is the library every module depends on and the only one needed; every module is independent of the others.
 
@@ -22,7 +22,8 @@ Core is the library every module depends on and the only one needed; every modul
 | Inventory (`SaneUI_Inventory`) | The bottom right corner: the character sheet, the bags (categories, bank, vendor, make room), the alts' things; stat weights decide upgrades | `Doc/ideas/Inventory.md`; tests `inventory.lua`, `sheet.lua`, `bags.lua` |
 | Loot (`SaneUI_Loot`) | Stands in for the loot window and the roll frames: a line a thing at the mouse, kinds taken at once, the master looter's menu, room made when the bags are full, roll cards, a feed | tests `loot.lua` |
 | Lore (`SaneUI_Lore`) | NPC talks as a scene over the world, the interface faded out, each reward read for you, an NPC's services as big pictures over the talk; books, voice overs and the library to come | `Doc/ideas/Dialogue.md`, `Doc/ideas/Lore.md`; tests `lore.lua` |
-| Nameplates (`SaneUI_Nameplates`) | The game's plates in our dress: one line in a round-cornered bar, power and combo points, auras in three groups, borders by rank, smaller far away, the combat text; at a setting the health bar only, or the spells only (a faint dot, an arrow over your target) | tests `nameplates.lua` |
+| Nameplates (`SaneUI_Nameplates`) | The game's plates in our dress: one line in a round-cornered bar, power and combo points, auras in three groups, borders by rank, smaller far away, the combat text; at a setting the health bar only, or the spells only (a faint dot, an arrow over your target); its setup step by step with sample plates (`Setup.lua`, `Sample.lua`) | tests `nameplates.lua` |
+| Onboarding (`SaneUI_Onboarding`) | A module's setup, step by step: the window (the sample at its left, the step's words and the module's own switches at its right, Back and Next); load on demand, shipped in Core's download; each module keeps its own words (`Core.Onboarding.Add`, `src/Core/Onboarding.lua`) | `Doc/ideas/Onboarding.md`; tests `onboarding.lua` |
 | Navigation (`SaneUI_Navigation`) | The minimap and the world map in one window, drawn from the game's tiles and art: pins from Core's data and the game, the quest log, routes by walking data with flights and ships, found herbs and ore, the satchel of minimap buttons, dungeon maps, the search in the full map's title bar (NPCs, items and their sources, quests, places, zones, people; nearest first) | `Doc/ideas/Navigation.md`; [navigation.md](navigation.md); tests `navigation.lua` |
 | Social (`SaneUI_Social`) | The messenger-style chat window that stands in for the game's chat, its full screen with conversations, friends and the guild, the game's channels joined or left by its ticks | `Doc/ideas/Social.md`; [social.md](social.md); tests `social.lua` |
 | SpeedLeveling (`SaneUI_SpeedLeveling`) | One key for questing and the leveling guide over the world, run by our own engine on text guides (the guide packs, bought guides opened for the account, pasted guides); class quest chains; professions along the way (off by default); a party on one guide, read together for all its classes, kept on the same step | `Doc/ideas/Leveling.md`; tests `speedleveling.lua`, `speedguide.lua`, `classquests.lua`, `classquests.py` |

@@ -30,6 +30,9 @@ local ADDON, ns = ...
 --    CombatText.lua  what the unit takes (damage, heals; a miss, a parry, a
 --                  block as a drawing) rising over its bar, and over your own
 --                  character, in place of the game's own combat text
+--    Sample.lua    a made-up plate drawn by this same code, for the setup
+--    Setup.lua     the setup, step by step: its words and sample plates,
+--                  handed to Core; the window is the addon Onboarding's
 --  Players who may not attack you nor you them and whom you do not know show
 --  no plate, nor do critters unless the setting shows them (Plate.lua).
 --  The setting Plates show picks what each plate shows (ns.Style,
@@ -50,16 +53,24 @@ ns.TEXT = {
     styleSpells = "Spells only",
     dot = "Dot where a plate is",
     dotTip = "With Spells only: a small faint dot in the middle of each plate, in the colour its bar would have, so you see there is a plate while it shows no spells. On by itself when you choose Spells only.",
+    setup = "Set up step by step",
+    setupTip = "A window that walks you through every part of the nameplates, a step at a time, with a sample plate that shows each choice at once. Also /sane setup nameplates.",
     debuffs = "Your debuffs",
-    debuffsTip = "Right above a nameplate's bar, from its left: the debuffs and damage over time you put on that creature or player, with the time each has left.",
+    debuffsTip = "Right above a nameplate's bar, from its left: at most this many of the debuffs and damage over time you put on that creature or player, with the time each has left; never more than fit over the bar. 0: none.",
     buffs = "Buffs on foes",
-    buffsTip = "Left of the bar of a creature or player you can attack: up to three of its buffs, as the game picks them for nameplates.",
+    buffsTip = "Left of the bar of a creature or player you can attack: at most this many of its buffs, as the game picks them for nameplates. 0: none.",
     quest = "Quest progress",
     questTip = "Inside the bar of a creature you have a quest objective for: a sword to kill it or a sack to loot it, and how many of how many.",
+    level = "Level",
+    levelTip = "Inside the bar, first: the unit's level, in the game's colour for how hard it is for you (a skull where it is too high to tell).",
     gear = "Item level",
-    gearTip = "Inside a player's bar, after the level: their item level (\"i32\"), once the game has let Sane UI inspect them (out of a fight, near enough).",
+    gearTip = "Inside a player's bar, after the level: their item level (\"i32\"), the average level of the gear they wear, once the game has let Sane UI inspect them (out of a fight, near enough).",
+    health = "Health",
+    healthTip = "At the bar's right end: how much health the unit has, short (850, 1.2k, 1.32m).",
+    percent = "Health in percent",
+    percentTip = "At the bar's right end, after the health: how much of it is left (100%).",
     control = "Crowd control",
-    controlTip = "Right of the bar: stuns, fears, roots and the like on that creature or player, by anyone.",
+    controlTip = "Right of the bar: at most this many of the stuns, fears, roots and the like on that creature or player, by anyone. 0: none.",
     power = "Power line",
     powerTip = "Along the bottom of each bar, inside it: the unit's mana, rage or energy.",
     resource = "Combo points under the bar",
@@ -104,14 +115,27 @@ ns.GIVEN_BACK = "the nameplates are the game's own again"
 -- "bar" the health bar only, "spells" the spells only (no bar, no name).
 ns.STYLES = { { "both", ns.TEXT.styleBoth }, { "bar", ns.TEXT.styleBar }, { "spells", ns.TEXT.styleSpells } }
 
+-- How many of each kind of aura show at most (Saneroki, 2026-11-16: "how many buffs, debuffs and CCs they want to
+-- see"), each 0 for none: the switches Your debuffs, Buffs on foes and Crowd control were these before.
+ns.AURAS = { debuffCount = 8, buffCount = 3, controlCount = 2 }
+
 local OPTIONS = {
+    -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
+    { key = "setup", text = ns.TEXT.setup, tip = ns.TEXT.setupTip,
+      button = function() Core.Onboarding.Open(ns.name) end },
     { key = "style", default = "both", choices = ns.STYLES, text = ns.TEXT.style, tip = ns.TEXT.styleTip },
     { key = "dot", default = false, parent = "style", parentValue = "spells", text = ns.TEXT.dot, tip = ns.TEXT.dotTip },
-    { key = "debuffs", default = true, text = ns.TEXT.debuffs, tip = ns.TEXT.debuffsTip },
-    { key = "buffs", default = true, text = ns.TEXT.buffs, tip = ns.TEXT.buffsTip },
     { key = "quest", default = true, text = ns.TEXT.quest, tip = ns.TEXT.questTip },
+    { key = "level", default = true, text = ns.TEXT.level, tip = ns.TEXT.levelTip },
     { key = "gear", default = true, text = ns.TEXT.gear, tip = ns.TEXT.gearTip },
-    { key = "control", default = true, text = ns.TEXT.control, tip = ns.TEXT.controlTip },
+    { key = "health", default = true, text = ns.TEXT.health, tip = ns.TEXT.healthTip },
+    { key = "percent", default = true, text = ns.TEXT.percent, tip = ns.TEXT.percentTip },
+    { key = "debuffCount", default = ns.AURAS.debuffCount, min = 0, max = 12, step = 1, text = ns.TEXT.debuffs,
+      tip = ns.TEXT.debuffsTip },
+    { key = "buffCount", default = ns.AURAS.buffCount, min = 0, max = 6, step = 1, text = ns.TEXT.buffs,
+      tip = ns.TEXT.buffsTip },
+    { key = "controlCount", default = ns.AURAS.controlCount, min = 0, max = 4, step = 1, text = ns.TEXT.control,
+      tip = ns.TEXT.controlTip },
     { key = "power", default = true, text = ns.TEXT.power, tip = ns.TEXT.powerTip },
     { key = "resource", default = true, text = ns.TEXT.resource, tip = ns.TEXT.resourceTip },
     { key = "barrier", default = true, text = ns.TEXT.barrier, tip = ns.TEXT.barrierTip },
@@ -159,6 +183,15 @@ local function Apply(key)
 end
 
 Core.Options(ns.name, OPTIONS, {
+    -- 1: the switches Your debuffs, Buffs on foes and Crowd control became how many of each (none: 0).
+    version = 1,
+    upgrade = function(values, from)
+        if from < 1 then
+            for old, count in pairs({ debuffs = "debuffCount", buffs = "buffCount", control = "controlCount" }) do
+                if values[old] == false then values[count] = 0 end
+            end
+        end
+    end,
     -- Plates show turned to Spells only: the dot where a plate is on with it (Saneroki, 2026-11-09: "automatically on
     -- when the nameplate is changed into only Spells"), and off again by its own switch.
     changed = function(key, value)

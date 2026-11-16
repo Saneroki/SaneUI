@@ -509,6 +509,19 @@ check(Core.Secret(units.nameplate1.level) and dress.level._text == "" and dress.
 units.nameplate1.level = 22
 W.Fire("UNIT_LEVEL", "nameplate1")
 check(dress.level._text == "22" and dress.room.level == L(2) and X(dress.name) == I + L(2) + NEAR, "said again: back in front of the name")
+-- The settings Level, Health and Health in percent (Saneroki, 2026-11-16): each leaves its piece out, and its room.
+Core.Set(ns.name, "level", false)
+check(dress.level._text == "" and dress.room.level == nil and X(dress.name) == I, "Level off: none, the name first")
+Core.Set(ns.name, "level", true)
+check(dress.level._text == "22" and dress.room.level == L(2), "Level on again")
+Core.Set(ns.name, "health", false)
+check(dress.value._text == "100%" and dress.room.value == L(4), "Health off: how much is left alone, in its room")
+Core.Set(ns.name, "percent", false)
+check(dress.value._text == "" and dress.room.value == nil, "both off: no health, no room for it")
+Core.Set(ns.name, "health", true)
+check(dress.value._text == "1.32m" and dress.room.value == L(5), "Health in percent off: the health alone")
+Core.Set(ns.name, "percent", true)
+check(dress.value._text == "1.32m | 100%" and dress.room.value == L(12), "both on again")
 units.nameplate1.tapped = true
 W.Fire("UNIT_FLAGS", "nameplate1")
 check(dress.health._barColor[1] == Bar.TAPPED[1], "tapped by others: grey")
@@ -629,15 +642,24 @@ local icon = own._groups.own.frames[1]
 check(icon._icon and icon._cooldown and icon._count and icon._width == Auras.SIZE, "each frame the container makes gets its icon, time and count once")
 check(Auras.Slots(190) == 8 and own._groups.own.most == Auras.Slots(dress._width) and foes._groups.foes.most == Auras.BUFFS,
     "as many debuffs as fit over the bar (eight over 190), three buffs")
-Core.Set(ns.name, "buffs", false)
-check(not foes:IsShown() and foes._unit == "none", "buffs off")
-Core.Set(ns.name, "buffs", true)
-Core.Set(ns.name, "debuffs", false)
-check(not own:IsShown() and foes:IsShown(), "your debuffs off")
-Core.Set(ns.name, "debuffs", true)
-Core.Set(ns.name, "control", false)
-check(not control:IsShown(), "crowd control off")
-Core.Set(ns.name, "control", true)
+-- How many of each (Saneroki, 2026-11-16): 0 shows none; your debuffs never more than fit over the bar.
+Core.Set(ns.name, "buffCount", 0)
+check(not foes:IsShown() and foes._unit == "none", "no buffs at 0")
+Core.Set(ns.name, "buffCount", 5)
+check(foes:IsShown() and foes._groups.foes.most == 5, "five buffs at most")
+Core.Set(ns.name, "buffCount", ns.AURAS.buffCount)
+Core.Set(ns.name, "debuffCount", 0)
+check(not own:IsShown() and foes:IsShown(), "no debuffs of yours at 0")
+Core.Set(ns.name, "debuffCount", 3)
+check(own:IsShown() and own._groups.own.most == 3, "three of your debuffs at most")
+Core.Set(ns.name, "debuffCount", 12)
+check(own._groups.own.most == Auras.Slots(dress._width), "never more of your debuffs than fit over the bar")
+Core.Set(ns.name, "debuffCount", ns.AURAS.debuffCount)
+Core.Set(ns.name, "controlCount", 0)
+check(not control:IsShown(), "no crowd control at 0")
+Core.Set(ns.name, "controlCount", 4)
+check(control:IsShown() and control._groups.control.most == 4, "four crowd controls at most")
+Core.Set(ns.name, "controlCount", ns.AURAS.controlCount)
 -- The game's own aura icons under ours would take the mouse (their tooltip beside our bar): their mouse off, on the
 -- ones the game sets out anew as well; on again when its parts come back in sight (below, and at the stand-down).
 local gameAuras = plates.nameplate1.UnitFrame.AurasFrame
@@ -1861,6 +1883,123 @@ units.nameplate4 = { name = "Kobold", health = 5, most = 5 }
 plates.nameplate4 = plates.nameplate2 -- the game hands the plate out again, for another unit
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate4")
 check(DressOf(plates.nameplate2) == friend and friend:IsShown() and friend.name._text == "Kobold", "a plate handed out again keeps its dress")
+
+-- The setup, step by step (Setup.lua, Sample.lua): the module's own steps, each switch it names one of its own with
+-- words, and every step's sample plates drawn by the plates' own code, as the settings in use say.
+do
+    local guide = Core.Onboarding.Guide(ns.name)
+    check(guide and #guide.steps == 9 and guide.title == ns.TEXT.title, "the module hands Core its setup: nine steps")
+    local named, words = true, true
+    for _, step in ipairs(guide.steps) do
+        words = words and type(step.title) == "string" and type(step.text) == "string" and #step.text > 40
+        for _, key in ipairs(step.settings) do
+            local option = Core.Described(ns.name, key)
+            named = named and option ~= nil and type(option.text) == "string"
+        end
+    end
+    check(words and named, "each step has its head and words, and names switches the module has, each with its words")
+    local Setup, Sample = ns.Setup, ns.Sample
+    local stage = CreateFrame("Frame", nil, UIParent)
+    local function Draw(key)
+        for index, step in ipairs(guide.steps) do
+            if step.key == key then guide.Stage(stage, step, index) end
+        end
+        return Setup.Board(key)
+    end
+    local errors = 0
+    for _, step in ipairs(guide.steps) do
+        local board = Draw(step.key)
+        check(board and board:IsShown(), "the step " .. step.key .. " draws its board")
+    end
+    for label in pairs(Core.errors) do if tostring(label):find("setup sample", 1, true) then errors = errors + 1 end end
+    check(errors == 0, "every step's samples drawn without an error")
+    check(not Setup.Board("look"):IsShown() and Setup.Board("size"):IsShown(), "only the step's own board shows")
+
+    -- The first step: your target, an elite foe, in the style chosen.
+    local look = Draw("look").samples[1]
+    check(look:IsShown() and look.health:IsShown() and look.rankLine:IsShown() and look.cast:IsShown(),
+        "a sample: the bar, the elite's line, the cast bar")
+    check(look.name._text == "Thornspine Raider" and look.cast.text._text:find("Shadow Bolt", 1, true),
+        "its name in the line, the spell it casts")
+    check(look:GetScale() == ns.Scale.Full(), "as large as the setting Nameplate size")
+    Core.Set(ns.name, "style", "spells")
+    look = Draw("look").samples[1]
+    check(not look.health:IsShown() and not look.top:IsShown() and look.arrow:IsShown(),
+        "Spells only: no bar, no line, the gold arrow over your target")
+    Core.Set(ns.name, "style", "both")
+    Core.Set(ns.name, "dot", false)
+    -- The line: level, item level, health as the settings say.
+    local line = Draw("line")
+    local creature, player = line.samples[1], line.samples[2]
+    check(creature.count._text == "3/8" and creature.quest:IsShown() and player.gear._text == "i32",
+        "a quest's count on the creature, the item level on the player")
+    check(creature.value._text == "812 | 60%", "the health and how much is left")
+    Core.Set(ns.name, "level", false)
+    Core.Set(ns.name, "health", false)
+    line = Draw("line")
+    check(line.samples[1].level._text == "" and line.samples[1].value._text == "60%", "Level and Health off: on the sample too")
+    Core.Set(ns.name, "level", true)
+    Core.Set(ns.name, "health", true)
+    -- The border: grey your target, red out of reach (unless switched off), the kin's colours.
+    local function Edge(sample) return sample.border[1]._vertex end
+    local border = Draw("border")
+    check(Edge(border.samples[1])[1] == Bar.TARGET[1] and Edge(border.samples[2])[1] == Bar.FAR[1]
+        and Edge(border.samples[5])[2] == Bar.KIN.guild[2] and Edge(border.samples[4])[3] == Bar.KIN.party[3],
+        "grey your target, red out of reach, green your guild, blue your party")
+    Core.Set(ns.name, "range", false)
+    check(Edge(Draw("border").samples[2])[1] == Bar.TARGET[1], "Out of reach off: your target grey there too")
+    Core.Set(ns.name, "range", true)
+    -- Rank and danger: the boss's thick line, the glow on aggro.
+    local danger = Draw("danger")
+    check(danger.samples[1].rank == Bar.RANKS.boss and danger.samples[3].rank == Bar.RANKS.rare, "a boss's line, a rare's")
+    check(danger.samples[4].glow:GetAlpha() == 1 and danger.samples[6].glow:GetAlpha() == 0
+        and danger.samples[7].glow:GetAlpha() == 1, "the glow on aggro and on a player who may attack you, none on low threat")
+    -- Spells on it: as many of each as the settings say.
+    local function Shown(list)
+        local count = 0
+        for _, icon in ipairs(list) do if icon:IsShown() then count = count + 1 end end
+        return count
+    end
+    local auras = Draw("auras").samples[1]
+    check(Shown(auras.icons.own) == math.min(ns.Auras.Slots(auras:GetWidth()), ns.AURAS.debuffCount)
+        and Shown(auras.icons.foes) == ns.AURAS.buffCount and Shown(auras.icons.control) == ns.AURAS.controlCount,
+        "the sample's debuffs, buffs and crowd control, as many as at first")
+    Core.Set(ns.name, "buffCount", 6)
+    Core.Set(ns.name, "controlCount", 0)
+    auras = Draw("auras").samples[1]
+    check(Shown(auras.icons.foes) == 6 and Shown(auras.icons.control) == 0, "six buffs, no crowd control: so on the sample")
+    Core.Set(ns.name, "buffCount", ns.AURAS.buffCount)
+    Core.Set(ns.name, "controlCount", ns.AURAS.controlCount)
+    -- Casts and damage numbers.
+    local cast = Draw("cast")
+    check(cast.samples[1].cast:IsShown() and cast.samples[1].numbers and cast.samples[1].numbers:IsShown(),
+        "a cast under the bar, numbers rising over it")
+    check(cast.samples[2].cast.lock._alpha == 1 and cast.samples[1].cast.lock._alpha == 0, "grey where it cannot be interrupted")
+    Core.Set(ns.name, "castBar", false)
+    Core.Set(ns.name, "combatText", false)
+    cast = Draw("cast")
+    check(not cast.samples[1].cast:IsShown() and not cast.samples[1].numbers:IsShown(), "Cast bar and combat text off")
+    Core.Set(ns.name, "castBar", true)
+    Core.Set(ns.name, "combatText", true)
+    -- Which plates show: a stranger and a critter drawn faint while they would have none.
+    local which = Draw("which")
+    check(which.samples[2]:GetAlpha() == Setup.FAINT and which.samples[4]:GetAlpha() == Setup.FAINT
+        and which.samples[1]:GetAlpha() == 1, "a stranger and a critter faint: no plate for them")
+    Core.Set(ns.name, "players", false)
+    check(Draw("which").samples[2]:GetAlpha() == 1, "Only players you know off: the stranger's plate shows")
+    Core.Set(ns.name, "players", true)
+    -- Size and transparency.
+    Core.Set(ns.name, "transparency", 50)
+    local size = Draw("size")
+    check(size.samples[1]:GetAlpha() == 1 and size.samples[2]:GetAlpha() == 0.5, "the others half see-through, your target solid")
+    check(size.samples[2]:GetScale() == ns.Scale.Full() * 0.5 and size.samples[3]:GetScale() == ns.Scale.Full() * 0.25,
+        "half the size at 40 yards, a quarter at 60")
+    Core.Set(ns.name, "transparency", 0)
+    -- The switches that were these counts: an older setting off is 0.
+    local values = { debuffs = false, buffs = true }
+    Core.described[ns.name].upgrade(values, 0)
+    check(values.debuffCount == 0 and values.buffCount == nil, "an older Your debuffs off: none of them")
+end
 
 -- Standing down while a step of ours fails (here the game's aura container, which a client update may change): the
 -- game's parts come back first all the same, on every plate, and on every unit frame of the game's ours lay over.
