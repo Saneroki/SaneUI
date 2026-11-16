@@ -89,10 +89,16 @@ Scale.CVARS = {
     nameplateSelectedAlpha = "1",
     nameplateNotSelectedAlpha = "1",
 }
--- And those ours whenever the module is on: friendly players' plates whole, not by name only; how closely the game
--- stacks plates, worked out at each update (Scale.Stacking).
+-- And those ours whenever the module is on, so the plates work as told (Saneroki, 2026-11-16: "make sure that all the
+-- official native blizzard settings are set up so that they work together with our nameplates"): friendly players'
+-- plates whole, not by name only; no kind of unit on a simplified plate (minions, lesser creatures, friendly players
+-- and NPCs: the game's simplified plate has no health bar, so ours could not dress it); the game's own class resource
+-- not on your target's plate, where our combo points stand; how closely the game stacks plates, worked out at each
+-- update (Scale.Stacking). Only those this client has (Ours).
 Scale.ALWAYS = {
     nameplateShowOnlyNameForFriendlyPlayerUnits = "0",
+    nameplateSimplifiedTypes = "0",
+    nameplateResourceOnTarget = "0",
 }
 Scale.STACK = "nameplateOverlapV" -- how much of its plate's height the game keeps between two stacked plates
 -- The game's CVars its plate's size comes from (NamePlateDriverMixin:GetNamePlateHeight): changed, the stacking is
@@ -118,12 +124,16 @@ local function Put(name, value)
     return Core.Ask(C_CVar.SetCVar, name, value) ~= false
 end
 
--- How much of a plate shows: your target's less by the setting Your target's transparency, any other's by Nameplate
--- transparency.
+-- Which setting says how see-through a plate of each kind is (Plate.Kind; Saneroki, 2026-11-16: "players you don't
+-- know and players you do know and critter plates all have their own transparency slider").
+Scale.SEEN = { known = "knownTransparency", stranger = "strangerTransparency", critter = "critterTransparency" }
+
+-- How much of a plate shows: your target's less by the setting Your target's transparency, a player's you know, a
+-- friendly stranger's or a critter's by its own, any other's by Nameplate transparency.
 function Scale.Seen(dress)
-    local key = "transparency"
+    local key = Scale.SEEN[dress.kind] or "transparency"
     if dress.unit and Plain(UnitIsUnit(dress.unit, "target")) == true then key = "targetTransparency" end
-    return 1 - ((ns.options or {})[key] or 0) / 100
+    return 1 - (tonumber((ns.options or {})[key]) or 0) / 100
 end
 
 -- A dress at what shows of it now: its fade in (dress.showing, from 0 to 1) times that.
@@ -189,13 +199,14 @@ function Scale.Stacking()
     theirs = Plain(theirs)
     if type(theirs) ~= "number" or theirs <= 0 then return nil end
     local high = ns.Text.Height(UIParent)
-    if ns.Style() ~= "bar" then high = high + ns.Auras.SIZE + ns.Auras.GAP end
+    if ns.Style() ~= "bar" then high = high + ns.Auras.Above(high) end
     local ours = high * Scale.Full()
     return ("%.2f"):format(math.ceil(ours / theirs * 100 - 1e-6) / 100)
 end
 
--- The share of the full size a plate has at that distance.
-function Scale.Size(yards)
+-- The share of the full size a plate has at that distance on the curve, as much of it as the setting Size by distance:
+-- how much says (100% all of it, 0% none: full size everywhere; Saneroki, 2026-11-16: "like magnitude").
+local function Curve(yards)
     local curve = Scale.CURVE
     if yards <= curve[1][1] then return curve[1][2] end
     for index = 2, #curve do
@@ -203,6 +214,12 @@ function Scale.Size(yards)
         if yards <= b[1] then return a[2] + (b[2] - a[2]) * (yards - a[1]) / (b[1] - a[1]) end
     end
     return curve[#curve][2]
+end
+
+function Scale.Size(yards)
+    local strength = tonumber((ns.options or {}).distanceStrength) or 100
+    strength = math.max(math.min(strength, 100), 0) / 100
+    return 1 - strength * (1 - Curve(yards))
 end
 
 -- A plate at its size now (a share of the full size): our dress at the full size times it, the game's unit frame at

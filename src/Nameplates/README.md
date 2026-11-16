@@ -17,16 +17,20 @@ setting shows the health bar only (no auras), or the spells only (no bar, no nam
 the game's gold arrow over your target). When it fails, every plate is the game's own again.
 
 ## How to use
-- **Set it up step by step** (Saneroki, 2026-11-16): a window that goes through the plates a part at a time, nine
-  steps, each with its purpose, its words, its switches and sample plates at its left that show each choice at once:
-  what plates show; what the bar says (quest, level, item level, health, health in percent; what item level is); the
-  border (grey your target within reach, red out of reach, orange your focus, blue party, green guild, purple raid,
-  pink a friend); rank and danger (thick gold a boss, gold an elite, silver a rare, the red glow on aggro, the
-  threat's colours); how many of your debuffs, a foe's buffs and the crowd control show; the cast bar and the damage
-  numbers; the power line, combo points, barriers and lost health; which plates show (players you know, critters);
-  size and transparency. It opens by itself the first time the module is on; again by *Set up step by step* at the
-  top of its options page, or `/sane setup nameplates`. The window is the addon *Onboarding*'s, which comes with Sane
-  UI; the words and samples are this module's (`Setup.lua`, `Sample.lua`).
+- **Set it up step by step** (Saneroki, 2026-11-16): a window that goes through the plates a part at a time, twelve
+  pages, each with its purpose, a few short lines that start with gold words, its switches, and sample plates at its
+  left, over the world itself, that show each choice at once. In Saneroki's order: what this is; size (and size by
+  distance, how much); see-through (your target, creatures and foes, players you know, players you don't know,
+  critters); which plates show (players you don't know: friendly players outside your party, raid, guild and friends
+  list; critters) and the keys that switch plates (all, friendly players, enemies, players you don't know); rank and
+  danger (thick gold a boss, gold an elite, silver a rare, the red glow on aggro, the threat's colours); the border
+  (grey your target in reach, red out of reach, blue party, purple raid, green guild, pink a friend, orange focus) and
+  class colours; what the bar says (quest, level, raid marker, item level, health, health in percent, the dispel
+  icon); on the bar (mana, rage, energy, combo points, a barrier, lost health); casts (and the cast bar's height) and
+  damage numbers; spells on it (how many of each, where, how large, with damage numbers rising over them); the
+  seconds left in the icons; what plates show. It opens by itself the first time the module is on; again by *Set up
+  step by step* at the top of its options page, or `/sane setup nameplates`. The window is the addon *Onboarding*'s,
+  which comes with Sane UI; the words and samples are this module's (`Setup.lua`, `Sample.lua`).
 - **Switch it on or off:** tick or untick *Nameplates* under *Sane UI* in the game's addon list (the game
   needs a restart when it was not in the list before).
 - **Which plates:** every plate the game shows with a health bar: creatures and players, foes and friends.
@@ -39,19 +43,22 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   while the player is in your party or raid, your guild, on your friends list (or a friend of your account), or your
   target; every other player's plate is out of sight altogether, and with it the plates of their pets, guardians and
   totems (unless one may attack you or you it, or it is your target). Players who may attack you glow red. Whether
-  friendly players have plates at all is the game's own setting (*Friendly player nameplates*, its key).
+  friendly players have plates at all is the game's own setting (*Friendly player nameplates*, its key). The key
+  *Show or hide players you don't know* (Sane UI's section of the game's key bindings, `Bindings.xml`) turns *Only
+  players you know* on and off and says so as the game says its own plates' keys.
 - **Critters:** critters, wild pets and companion pets (rabbits, rats, deer, someone's pet) have no plate, and so no
   name over them, unless one is your target or a quest of yours wants it (its plate then shows the count). Setting
   *Plates on critters* (off at first) gives them their plates.
-- **The bar:** round at its corners, a quarter of its height. Health: a player's class colour; grey for a
-  creature tapped by another player; light yellow for a creature that does not attack on sight; red for one
-  that does; the game's colour for friends.
+- **The bar:** round at its corners, a quarter of its height. Health: a player's class colour (setting *Class
+  colours*; off, a player is a foe's red or a friend's blue); grey for a creature tapped by another player; light
+  yellow for a creature that does not attack on sight; red for one that does; the game's colour for friends.
 - **Inside the bar:** one line, left to right, each piece taking room only while it shows, and the bar as wide
   as the line and a little inset, no wider. Each text has a little room to spare: the game draws small letters a
   little wider or narrower than large ones, so as a plate grows or shrinks its texts are measured again at the size
   it shows at, and the bar widens only once a text outgrows its spare (a name is never cut short by it):
   - *quest:* while the unit belongs to a quest in your log with an objective still open, the game's sword (to
-    kill it) or sack (to loot it) outside the bar, left of it, and the count ("0/7") first in the line;
+    kill it) or sack (to loot it) first in the line, inside the bar (Saneroki, 2026-11-16), the count ("0/7") right
+    after it;
   - *level* in the game's colour for how hard it is to you (a skull where it is too high to tell), the name right
     after it;
   - *raid marker* right after the level, as on Sane UI's unit frames, a little apart from it and from what follows;
@@ -89,7 +96,14 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   foes* of its buffs (3 at first, up to 6) on units you can attack, as the game picks buffs for its own plates. Right
   of the bar at most *Crowd control* (2 at first, up to 4) crowd controls on it, by anyone; your own show there, not
   twice. Each at 0 shows none (Saneroki, 2026-11-16: "how many buffs, debuffs and CCs they want to see"; they were
-  switches before, and one that was off is 0). Hover one for its tooltip (the game's aura container gives it; Forever's own
+  switches before, and one that was off is 0). Where each stands is its own setting (*Your debuffs: where*, *Buffs
+  on foes: where*, *Crowd control: where*: above, left or right; Saneroki, 2026-11-16: "choose where the spells
+  are"): above the bar they grow right from its left end (your debuffs no more than fit over it), at its left or right
+  away from it; two kinds on one side stand in rows, debuffs nearest the bar, then buffs, then crowd control. The
+  icons are as high as the bar at first (Saneroki, 2026-11-16), a share of it by *Spell icon size* (50 to 200%); the
+  plates stack as close as the bar and the rows above it. In each icon the seconds left, only while a minute or less
+  is left (Saneroki: "everything above 60s we just show the buff / debuff without its number"): setting *Time left in
+  the icons*, its size (*Time left: size*, a share of the icon) and *Time left: transparency*. Hover one for its tooltip (the game's aura container gives it; Forever's own
   plates dropped theirs in build 70755).
 - **Cast bar:** under the bar, inside the plate's one outline (the border, the rank's line and the glow go around the
   bar and the cast bar together while a cast shows, around the bar alone otherwise), as wide and as high as the bar,
@@ -99,9 +113,15 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   the game's golden fill (a channel its channel fill), its grey where it cannot. Interrupted, it is full and red and says *Interrupted*, with who did it
   where the game names them. Done or interrupted, it stays half a second; failed, it goes at once. It shows every
   cast, also those the game hides from addons in a fight: the game then draws its progress, and the seconds come from
-  the spell's cast time (none for a channel). Setting *Cast bar* (off: the game's own).
+  the spell's cast time (none for a channel). Setting *Cast bar* (off: the game's own); *Cast bar height* (100%: as
+  high as the health bar; 50 to 200%).
 - **Raid marker:** in the line right after the level, as on Sane UI's unit frames (none on a player you could
-  fight, as on the game's plates).
+  fight, as on the game's plates). Setting *Raid markers* (on).
+- **The game's own settings** set while the module is on, so the plates work as told, and put back at a logout and
+  when it is off (Saneroki, 2026-11-16: "make sure that all the official native blizzard settings are set up so that
+  they work together with our nameplates"): friendly players not by name only, no simplified plates
+  (`nameplateSimplifiedTypes`: a simplified plate has no health bar to dress), the game's class resource not on your
+  target's plate (`nameplateResourceOnTarget`, where our combo points stand); beside the scaling and fading below.
 - **Size by distance:** your target's plate is always *Nameplate size* (125% at first). Any other's depends on how
   far its unit is from your character and on nothing else (rank, the camera): full within 10 yards, gradually down to
   half at 40 yards, then to a quarter at 60, the farthest the game shows plates of units you have not targeted. It
@@ -114,6 +134,9 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   shows plates, to 55 (the game tells addons no distance that far, so the fade is timed). A plate going out of sight
   at 60 yards is taken by the game at once. The game's
   own scaling (by the camera) and fading are off meanwhile (fading behind walls stays the game's).
+  *Size by distance: how much* (100% at first; Saneroki, 2026-11-16: "like magnitude") takes that share of the
+  shrinking: at 50% a plate is three quarters of its size at 40 yards and five eighths at 60, at 0% full size
+  everywhere.
 - **Stacking:** where the game stacks plates (its options say which), it stacks them as close as ours are high at
   *Nameplate size*: the bar and a row of auras over it (your debuffs; a foe's buffs and the crowd control beside the
   bar fit in it), a little gap to the next plate's bar; with *Health bar only* (no auras) bar to bar. The cast bar
@@ -131,8 +154,10 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   colour its bar would have (a foe's red, a player's class colour), so you see there is a plate while it shows no
   spells; a raid marker there stands in its place. Choosing *Spells only* switches it on; off by its own switch, and
   another profile's keeps its own value.
-- **Transparency:** every plate but your target's as see-through as *Nameplate transparency* says, your target's as
-  *Your target's transparency* says (both 0% at first, up to 90%): ours with all on it (auras, cast bar, combat text)
+- **Transparency:** your target's as see-through as *Your target's transparency* says; the plates of players you
+  know (party, raid, guild, friends) as *Players you know: transparency*, of friendly players you don't know as
+  *Players you don't know: transparency*, of critters as *Critters: transparency* (Saneroki, 2026-11-16: each "their
+  own transparency slider"); every other as *Nameplate transparency* (all 0% at first, up to 90%): ours with all on it (auras, cast bar, combat text)
   and what the game still shows of its own plate there (widgets, its cast bar with *Cast bar* off); a plate appearing
   fades in up to it.
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
@@ -149,8 +174,8 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
   client lacks those for its numbers over units, those numbers stay as the game has them.
-- **Settings:** *Sane UI > Nameplates*: the button *Set up step by step*, *Plates show* (and under it *Dot where a plate is*), *Quest progress*, *Level*, *Item level*, *Health*, *Health in percent*, *Your debuffs*, *Buffs on foes* and *Crowd control* (how many of each), *Power line*,
-  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance*, *Nameplate size*, *Nameplate transparency*, *Your target's transparency*; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
+- **Settings:** *Sane UI > Nameplates*: the button *Set up step by step*, *Plates show* (and under it *Dot where a plate is*), *Class colours*, *Quest progress*, *Level*, *Item level*, *Health*, *Health in percent*, *Raid markers*, *Your debuffs*, *Buffs on foes* and *Crowd control* (how many of each, and where), *Spell icon size*, *Time left in the icons* (its size, its transparency), *Power line*,
+  *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance* (and how much), *Cast bar* (and its height), *Nameplate size*, *Nameplate transparency*, *Your target's transparency*, and one each for players you know, players you don't know and critters; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
 
@@ -464,6 +489,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 | File | What it holds |
 |---|---|
 | `SaneUI_Nameplates.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
+| `Bindings.xml` | The key *Show or hide players you don't know* (`SANEUI_NAMEPLATES_STRANGERS`, `ns.ToggleStrangers`), in Sane UI's section of the game's key bindings; the game reads it from the folder by itself |
 | `Nameplates.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings, `GiveBack`, the start |
 | `Bar.lua` | The health bar: round at both ends, its border lit on your target and focus, the rank's line and the glow behind it, the power line |
 | `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
@@ -483,6 +509,18 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-16 (later):** the setup in Saneroki's order with a first page saying what it is, twelve pages of short
+  lines starting with gold words, the samples over the world (the window's plate stops round them), the loading
+  screen's bar for how far the steps have come. New settings: *Class colours*; *Raid markers*; where each kind of aura
+  stands (*Your debuffs: where* ...: above, left, right; two on one side in rows); *Spell icon size* (the icons as high
+  as the bar at first: the containers' scale); *Time left in the icons*, its size and its transparency (the game's
+  own aura duration text through a colour curve on the time left: none over a minute); *Cast bar height*; *Size by
+  distance: how much*; transparency for players you know, players you don't know and critters (`Plate.Kind`,
+  `Scale.SEEN`). The quest's sword or sack inside the bar. The key *Show or hide players you don't know*
+  (`Bindings.xml`), and in the setup the game's keys for all, friendly and enemy plates. The game's settings that our
+  plates need, set while the module is on: no simplified plates, the game's class resource off your target's plate.
+  The samples show a raid marker, dispel icons, mana, rage, energy, combo points (`Resource.Show`), a barrier and lost
+  health (`HealthMarks`' samples), damage numbers over the spells, an enemy casting with a mana bar.
 - **2026-11-16:** the setup, step by step (Saneroki: "a step by step window so the player goes through each step where
   it can see a fake nameplate in the window and see how it looks with their setting. Each page in the window groups
   together similar settings or information so each page has its own purpose"): nine steps in the addon Onboarding's

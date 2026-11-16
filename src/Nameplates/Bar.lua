@@ -211,8 +211,9 @@ end
 
 -- The bar's pieces on the dress, each layer on a frame of its own one level above the last, so none can cover the
 -- one meant above it: the glow, then the rank's line and the border, then the status bar with its background, fill
--- and power line (and the line of texts above it all, Text.lua).
-function Bar.Make(dress)
+-- and power line (and the line of texts above it all, Text.lua). sample: a made-up plate's (Sample.lua), whose
+-- health marks are made up too (no aura container of the game's).
+function Bar.Make(dress, sample)
     local level = Plain(dress:GetFrameLevel()) or 1
     -- Right under the plate's lowest row (Bar.Outline), for what another module shows right under the plate (Combat's
     -- tracked auras: Plate.Foot), over the rank's line and the glow reaching past the outline.
@@ -263,7 +264,7 @@ function Bar.Make(dress)
     dress.power = power
     dress.rank = Bar.PLAIN
     dress.marks = Core.HealthMarks.New(dress, health, {
-        masks = dress.caps, size = Bar.DISPEL, fit = function() Bar.Outline(dress) end })
+        masks = dress.caps, size = Bar.DISPEL, fit = function() Bar.Outline(dress) end, sample = sample })
     dress.marks:Place("BOTTOMRIGHT", dress, "TOPRIGHT", 0, 2)
     Bar.Border(dress, nil)
 end
@@ -349,9 +350,18 @@ function Bar.Rank(unit)
     return type(classification) == "string" and RANK_OF[classification] or nil
 end
 
--- The bar's colour for a unit: r, g, b.
+-- A friendly player's bar without class colours (the setting Class colours off): the game's blue for friends.
+Bar.FRIENDLY = { 0.2, 0.45, 1 }
+
+-- The bar's colour for a unit: r, g, b. A player's class colour while the setting Class colours is on; off, a player
+-- is coloured as a creature by how it stands to you.
 function Bar.Colour(unit)
-    if Plain(UnitIsPlayer(unit)) then
+    local player = Plain(UnitIsPlayer(unit))
+    if player and (ns.options or {}).classColour == false then
+        if Core.Ask(UnitCanAttack, "player", unit) == true then return Bar.HOSTILE[1], Bar.HOSTILE[2], Bar.HOSTILE[3] end
+        return Bar.FRIENDLY[1], Bar.FRIENDLY[2], Bar.FRIENDLY[3]
+    end
+    if player then
         local _, class = UnitClass(unit)
         class = Plain(class)
         local colours = rawget(_G, "RAID_CLASS_COLORS")

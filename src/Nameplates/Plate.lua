@@ -109,6 +109,7 @@ local function Critter(unit)
     local _, kind = Core.Ask(UnitCreatureType, unit)
     return Plate.CRITTERS[kind or 0] == true
 end
+Plate.Critter = Critter
 
 -- The subgroup of your raid that a member at that index of it is in; nil where the game does not say.
 local function Subgroup(index)
@@ -151,6 +152,16 @@ end
 -- Whether a fight with a unit can start: it may attack you, or you it. Where the game does not say, it can.
 local function Fight(unit)
     return Core.Ask(UnitCanAttack, "player", unit) ~= false or Core.Ask(UnitCanAttack, unit, "player") == true
+end
+
+-- Which transparency a plate has (Scale.Seen): "known" a player you know (kin: Plate.Kin), "stranger" a friendly
+-- player you do not know, "critter"; nil for any other (creatures, players you could fight).
+function Plate.Kind(unit, kin)
+    if Plain(UnitIsPlayer(unit)) == true then
+        if kin then return "known" end
+        return not Fight(unit) and "stranger" or nil
+    end
+    return Critter(unit) and "critter" or nil
 end
 
 -- Whether a unit's plate shows: every plate but that of a player who is a stranger to you (not in your guild, group
@@ -247,6 +258,7 @@ local function Wear(dress)
     local kin = dress.unit and not ns.off and Plate.Kin(dress.unit) or nil
     local relit = kin ~= dress.kin
     dress.kin = kin
+    dress.kind = dress.unit and not ns.off and Plate.Kind(dress.unit, kin) or nil
     if relit then Plate.Light(dress) end
     dress.stray = nil -- found anew by Plate.Wanted
     local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit, dress)
@@ -589,6 +601,7 @@ end
 function Plate.Refresh()
     for _, dress in pairs(dresses) do Style(dress) end
     for _, dress in pairs(shown) do
+        Fit(dress) -- the cast bar's height, the icons' size and places as the settings say now
         Fill(dress)
         Wear(dress)
     end

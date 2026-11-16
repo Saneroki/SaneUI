@@ -23,7 +23,9 @@ local _, ns = ...
 --      "party", "raid", "friend"), out (out of your reach), danger (a player
 --      who may attack you), quest = { "kill", "3/8" }, gear (an item level),
 --      raid (a raid marker's number), debuffs, buffs, control = { icon file,
---      ... }, cast = { icon, spell, target, time, locked }, numbers = true
+--      ... }, cast = { icon, spell, target, time, locked }, numbers = true,
+--      barrier and lost (shares of the bar), dispel ("Magic", "Curse",
+--      "Disease", "Poison"), combo (your combo points on it)
 --  Its scripts fail softly (ns.Gently): a sample that goes wrong never stands
 --  the plates in the world down.
 -------------------------------------------------------------------------------
@@ -49,9 +51,14 @@ local function Level(spec)
     return math.max((type(mine) == "number" and mine or 1) + spec.above, 1)
 end
 
--- The bar's colour for a made-up unit: a player's class colour, the calm yellow, the hostile red, a friend's green.
+-- The bar's colour for a made-up unit, as Bar.Colour has it: a player's class colour (with the setting Class colours
+-- on; off, a foe red, a friend blue), the calm yellow, the hostile red, a friend's green.
 local function Colour(spec)
     local Bar = ns.Bar
+    if spec.player and (ns.options or {}).classColour == false then
+        local colour = spec.hostile and Bar.HOSTILE or Bar.FRIENDLY
+        return colour[1], colour[2], colour[3]
+    end
     if spec.player and spec.class then
         local colours = rawget(_G, "RAID_CLASS_COLORS")
         local colour = colours and colours[spec.class]
@@ -62,33 +69,55 @@ local function Colour(spec)
     return 0, 1, 0
 end
 
+-- The seconds left of the samples' auras, in turn: some over a minute, which show no number (Auras.LONG).
+Sample.TIMES = { 12, 7, 45, 95, 3, 28, 300, 9, 52, 16, 600, 4 }
+
 -- One aura icon of a kind ("own", "foes", "control"), made the first time and kept.
 local function Icon(dress, kind, index)
     local list = dress.icons[kind]
     local icon = list[index]
     if not icon then
         icon = CreateFrame("Frame", nil, dress)
-        icon.texture, icon.swipe, icon.count = ns.Auras.Look(icon)
+        icon.texture, icon.swipe, icon.count, icon.timer = ns.Auras.Look(icon)
+        if icon.swipe.SetHideCountdownNumbers then icon.swipe:SetHideCountdownNumbers(true) end -- ours below
         list[index] = icon
     end
     return icon
 end
 
--- A row of a kind's icons, at most that many, each placed by at(index): its texture and a swipe of time gone.
-local function Row(dress, kind, files, most, at)
+-- The seconds left in a sample's icon as the plates show them: none over a minute, as large and see-through as the
+-- settings say, none with Time left in the icons off.
+local function Seconds(icon, seconds)
+    local options, timer = ns.options or {}, icon.timer
+    local shown = options.duration ~= false and seconds <= ns.Auras.LONG
+    local file = rawget(_G, ns.Auras.NUMBER)
+    file = type(file) == "table" and file.GetFont and file:GetFont()
+    timer:SetFont(type(file) == "string" and file or "Fonts\\ARIALN.TTF",
+        math.max(ns.Auras.SIZE * (tonumber(options.durationSize) or 50) / 100, 4), "OUTLINE")
+    timer:SetText(shown and tostring(seconds) or "")
+    timer:SetTextColor(1, 1, 1)
+    timer:SetAlpha(1 - (tonumber(options.durationTransparency) or 0) / 100)
+    timer:SetShown(shown)
+end
+
+-- A row of a kind's icons, at most that many, at their size (scale over Auras.SIZE), each placed by at(index): its
+-- texture, a swipe of time gone, the seconds left.
+local function Row(dress, kind, files, most, scale, at)
     local list = dress.icons[kind]
     local shown = math.min(most, #(files or {}))
     for index = 1, math.max(shown, #list) do
         local icon = index <= shown and Icon(dress, kind, index) or list[index]
         if index <= shown then
             icon.texture:SetTexture(files[index])
+            icon:SetScale(scale)
             icon:ClearAllPoints()
             at(icon, index)
-            -- Each a little further gone than the last, so the swipes differ.
+            local seconds = Sample.TIMES[(index + #kind) % #Sample.TIMES + 1]
             if icon.swipe and icon.swipe.SetCooldown then
-                local long = 18 + index * 6
-                icon.swipe:SetCooldown(GetTime() - long * (0.2 + 0.1 * index), long)
+                local long = math.max(seconds * 1.6, 10)
+                icon.swipe:SetCooldown(GetTime() - (long - seconds), long)
             end
+            Seconds(icon, seconds)
             icon.count:SetText(kind == "own" and index == 2 and "3" or "")
             icon:Show()
         else
@@ -97,24 +126,38 @@ local function Row(dress, kind, files, most, at)
     end
 end
 
--- The auras around the bar as the containers stand (Auras.Make, Auras.Place) and as many as the settings say; none
--- while the plates show the health bar only.
+-- The auras around the bar as the containers stand (Auras.Place): each kind at its side, a row further out for each
+-- kind before it there, at the setting's size, as many as the settings say (above the bar no more than fit over it);
+-- none while the plates show the health bar only.
 local function Auras(dress)
     local spec, Auras = dress.spec or {}, ns.Auras
     local on = ns.Style() ~= "bar"
-    local step = Auras.SIZE + Auras.GAP
-    local own = on and math.min(Auras.Slots(dress:GetWidth()), Auras.Most("debuffCount")) or 0
-    Row(dress, "own", spec.debuffs, own, function(icon, index)
-        icon:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", (index - 1) * step, 0)
-    end)
-    local foes = on and spec.hostile and Auras.Most("buffCount") or 0
-    Row(dress, "foes", spec.buffs, foes, function(icon, index)
-        icon:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -(Auras.GAP + (dress.outside or 0)) - (index - 1) * step, 0)
-    end)
-    local control = on and Auras.Most("controlCount") or 0
-    Row(dress, "control", spec.control, control, function(icon, index)
-        icon:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", Auras.GAP + (index - 1) * step, 0)
-    end)
+    local size = Auras.Size(dress:GetHeight())
+    local scale, step = size / Auras.SIZE, size + Auras.GAP
+    local rows = { above = 0, left = 0, right = 0 }
+    for _, kind in ipairs(Auras.KINDS) do
+        local place = Auras.Where(kind)
+        local out = rows[place]
+        local most = Auras.Most(kind.count)
+        if on and most > 0 then rows[place] = out + 1 end
+        if place == "above" then most = math.min(most, Auras.Slots(dress:GetWidth(), size)) end
+        if not on or (kind.key == "foes" and not spec.hostile) then most = 0 end
+        local up = out * step
+        Row(dress, kind.key, spec[kind.key == "own" and "debuffs" or kind.key == "foes" and "buffs" or "control"], most,
+            scale, function(icon, index)
+                local along = (index - 1) * step
+                if place == "above" then
+                    icon:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", along / scale, up / scale)
+                elseif place == "left" then
+                    icon:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -(Auras.GAP + along) / scale, up / scale)
+                else
+                    icon:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", (Auras.GAP + along) / scale, up / scale)
+                end
+            end)
+    end
+    dress.auraSize, dress.auraRows = size, rows
+    dress.arrow:ClearAllPoints()
+    dress.arrow:SetPoint("BOTTOM", dress, "TOP", 0, math.max(rows.above, 1) * step)
 end
 
 -- Laid out for its size, as a plate is (Plate.lua's Fit): the bar, the cast bar, the auras.
@@ -207,7 +250,7 @@ function Sample.New(parent)
     local dress = CreateFrame("Frame", nil, parent)
     dress.edge, dress.icons = 0, { own = {}, foes = {}, control = {} }
     dress:SetSize(Sample.WIDE, 16)
-    ns.Bar.Make(dress)
+    ns.Bar.Make(dress, true) -- its health marks made up too
     ns.Text.Make(dress)
     ns.Marks.Make(dress)
     ns.Cast.Make(dress)
@@ -261,8 +304,12 @@ function Sample.Fill(dress, spec, scale, through)
     dress.health:SetValue(spec.health or most)
     dress.health:SetStatusBarColor(r, g, b)
     ns.Marks.Hue(dress, r, g, b)
-    dress.marks:Switch(false, false, false)
-    dress.marks:Set(nil)
+    -- Its barrier, lost health and dispel type made up, as the settings say (none in Spells only; no dispel type in
+    -- Health bar only, as on a plate).
+    local bare = style == "spells"
+    dress.marks:Sample({ barrier = not bare and options.barrier ~= false and spec.barrier or 0,
+                         lost = not bare and options.lost ~= false and spec.lost or 0,
+                         dispel = style ~= "bar" and options.dispel ~= false and spec.dispel or nil })
     dress.rank = Bar.RANKS[spec.rank] or Bar.PLAIN
     local colour = dress.rank.colour
     if colour then dress.rankLine:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
@@ -286,15 +333,22 @@ function Sample.Fill(dress, spec, scale, through)
     Text.ShowName(dress, spec.name or "")
     Text.ShowThreat(dress, spec.threat and spec.threat[1], spec.threat and spec.threat[2])
     Text.ShowHealth(dress, spec.health or most, most)
-    local raid = dress.raid
-    if spec.raid then raid:SetSpriteSheetCell(spec.raid, 4, 4) end
-    raid:SetShown(spec.raid ~= nil)
-    Text.Room(dress, "raid", spec.raid and Text.size or nil)
+    local raid, marker = dress.raid, options.marker ~= false and spec.raid or nil -- the setting Raid markers
+    if marker then raid:SetSpriteSheetCell(marker, 4, 4) end
+    raid:SetShown(marker ~= nil)
+    Text.Room(dress, "raid", marker and Text.size or nil)
     dress.holding = false
     Text.Layout(dress)
-    dress.dot:SetShown(style == "spells" and options.dot == true and spec.raid == nil)
+    dress.dot:SetShown(style == "spells" and options.dot == true and marker == nil)
     dress.arrow:SetShown(style == "spells" and spec.lit == "target")
     dress:SetSize(style ~= "spells" and dress.want or Sample.WIDE, Text.Height(dress))
+    -- Your combo points under it, as a rogue's (the setting Combo points under the bar).
+    if spec.combo and options.resource ~= false then
+        ns.Resource.Show(dress, spec.combo)
+        ns.Resource.Fit(dress)
+    elseif dress.strip then
+        dress.strip:Hide()
+    end
     Cast(dress, spec.cast)
     Fit(dress)
     Numbers(dress, spec.numbers and options.combatText ~= false)

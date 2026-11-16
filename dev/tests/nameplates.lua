@@ -94,8 +94,16 @@ CurveConstants = { ScaleTo100 = {} }
 AbbreviateNumbers = function(value) return { abbreviated = value } end
 UnitHealthPercent = function(unit) return { percent = unit } end
 AnchorUtil = { FlowDirection = { Left = -1, Right = 1, Up = 1, Down = -1 } }
+-- The game's colour curves (a list of points here) and its aura buttons' duration text (Auras.lua's seconds left).
+Enum.DurationTextBindingProperty = { RemainingDuration = 0 }
+CreateColor = function(r, g, b, a) return { r = r, g = g, b = b, a = a, GetRGB = function(self) return self.r, self.g, self.b end } end
+C_CurveUtil = { CreateColorCurve = function()
+    return { points = {}, ClearPoints = function(self) self.points = {} end,
+             AddPoint = function(self, x, colour) self.points[#self.points + 1] = { x, colour } end }
+end }
 Enum.PowerType = { Mana = 0, Energy = 3, ComboPoints = 4 }
 W.cvars.nameplateShowClassColor, W.cvars.nameplateShowFriendlyClassColor = "1", "1"
+W.cvars.nameplateSimplifiedTypes, W.cvars.nameplateResourceOnTarget = "24", "1" -- the game's, as a player left them
 
 -- Units as the game describes them, by token; "target" and "focus" are aliases set by the test.
 local units, plates = {}, {}
@@ -228,6 +236,7 @@ W.templates.CustomAuraContainerTemplate = function(widget)
             function frame:SetIcon(texture) self._icon = texture end
             function frame:SetDurationCooldown(cooldown) self._cooldown = cooldown end
             function frame:SetApplicationCount(text) self._count = text end
+            function frame:SetDurationText(text, options) self._durationText = { text, options } end
             options.initializeFrame(frame)
             group.frames[index] = frame
         end
@@ -320,7 +329,8 @@ for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", n
                              nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6",
                              floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1",
                              enableFloatingCombatText = "1", nameplateShowOnlyNameForFriendlyPlayerUnits = "1",
-                             nameplateOverlapV = "1.1", nameplateOverlapH = "0.8", nameplateSize = "2" }) do
+                             nameplateOverlapV = "1.1", nameplateOverlapH = "0.8", nameplateSize = "2",
+                             nameplateSimplifiedTypes = "0", nameplateResourceOnTarget = "0" }) do
     W.cvarInfo[name] = { default = default }
 end
 W.LoadCore(root)
@@ -547,8 +557,7 @@ local untouched = true
 for _, layer in ipairs(dress.halo) do untouched = untouched and layer[1]._alpha == 1 and layer[2]._alpha == 1 end
 check(untouched, "switched by its frame's alpha: the layers' own strengths never overwritten")
 -- The game's colour from a hidden answer: it alone may look at the answer (here the test's secret says it).
-CreateColor = function(r, g, b, a) return { r = r, g = g, b = b, a = a, GetRGB = function(self) return self.r, self.g, self.b end } end
-C_CurveUtil = { EvaluateColorFromBoolean = function(value, yes, no) if value.truth then return yes end return no end }
+C_CurveUtil.EvaluateColorFromBoolean = function(value, yes, no) if value.truth then return yes end return no end
 local hidden = Secret()
 hidden.truth = true
 units.nameplate1.threat = { hidden, Secret(), Secret() }
@@ -568,15 +577,17 @@ W.Fire("UNIT_THREAT_LIST_UPDATE", "nameplate1")
 check(dress.threat._text == "" and dress.glow._alpha == 0 and dress.room.threat == nil and X(dress.name) == I + L(2) + NEAR,
     "off its list: none, and no room for it")
 
--- A quest: the sword outside the bar, left of it, the count first in the line; done, gone.
+-- A quest: the sword first inside the bar (Saneroki, 2026-11-16: "it should be inside"), the count right after it;
+-- done, gone. The buffs left of the bar whatever is in it, a gap of the icons' own size from it.
+local iconScale = Auras.Size(dress._height) / Auras.SIZE
 units.nameplate1.quest = { { type = 17, leftText = "Wolves Across the Border" }, { type = 8, leftText = "Young Wolf slain: 3/8" } }
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(0)
 check(dress.quest:IsShown() and dress.quest._texture == Text.QUEST.kill and dress.count._text == "3/8"
-    and dress.quest._points[1][1] == "RIGHT" and dress.quest._points[1][3] == "LEFT" and X(dress.quest) == -Text.OUTSIDE
-    and X(dress.count) == I and X(dress.level) == I + L(3) + G
-    and dress.foes._points[1][4] == -(Auras.GAP + Text.OUTSIDE + Text.size),
-    "an objective to kill it: the sword left of the bar, 3/8 first inside it, the buffs past the sword")
+    and dress.quest._points[1][1] == "LEFT" and X(dress.quest) == I
+    and X(dress.count) == I + Text.size + Text.BESIDE and X(dress.level) == I + Text.size + Text.BESIDE + L(3) + G
+    and dress.foes._points[1][4] == -Auras.GAP / iconScale,
+    "an objective to kill it: the sword first inside the bar, 3/8 right after it, the buffs by the bar")
 units.nameplate1.quest[2] = { type = 8, leftText = "Wolf Pelt: 0/7" }
 W.Fire("UNIT_QUEST_LOG_CHANGED", "player")
 W.Wait(0)
@@ -585,7 +596,7 @@ units.nameplate1.quest = nil
 W.Fire("QUEST_LOG_UPDATE")
 W.Wait(0)
 check(not dress.quest:IsShown() and dress.room.quest == nil and dress.room.count == nil and X(dress.level) == I
-    and dress.foes._points[1][4] == -Auras.GAP, "done: gone, no room, the buffs by the bar again")
+    and dress.foes._points[1][4] == -Auras.GAP / iconScale, "done: gone, no room, the level first again")
 
 -- Power that changes, and a unit without any.
 units.nameplate1.powerNow = 70
@@ -640,8 +651,9 @@ check(control._points[1][3] == "BOTTOMRIGHT" and control._points[1][2] == dress 
 check(own._unit == "nameplate1" and foes._unit == "nameplate1" and control._unit == "nameplate1", "set to the plate's unit")
 local icon = own._groups.own.frames[1]
 check(icon._icon and icon._cooldown and icon._count and icon._width == Auras.SIZE, "each frame the container makes gets its icon, time and count once")
-check(Auras.Slots(190) == 8 and own._groups.own.most == Auras.Slots(dress._width) and foes._groups.foes.most == Auras.BUFFS,
-    "as many debuffs as fit over the bar (eight over 190), three buffs")
+local function Fits() return Auras.Slots(dress._width, Auras.Size(dress._height)) end
+check(Auras.Slots(190) == 8 and own._groups.own.most == math.min(Fits(), ns.AURAS.debuffCount)
+    and foes._groups.foes.most == Auras.BUFFS, "as many debuffs as fit over the bar (eight over 190), three buffs")
 -- How many of each (Saneroki, 2026-11-16): 0 shows none; your debuffs never more than fit over the bar.
 Core.Set(ns.name, "buffCount", 0)
 check(not foes:IsShown() and foes._unit == "none", "no buffs at 0")
@@ -653,13 +665,64 @@ check(not own:IsShown() and foes:IsShown(), "no debuffs of yours at 0")
 Core.Set(ns.name, "debuffCount", 3)
 check(own:IsShown() and own._groups.own.most == 3, "three of your debuffs at most")
 Core.Set(ns.name, "debuffCount", 12)
-check(own._groups.own.most == Auras.Slots(dress._width), "never more of your debuffs than fit over the bar")
+check(own._groups.own.most == math.min(Fits(), 12), "never more of your debuffs than fit over the bar")
 Core.Set(ns.name, "debuffCount", ns.AURAS.debuffCount)
 Core.Set(ns.name, "controlCount", 0)
 check(not control:IsShown(), "no crowd control at 0")
 Core.Set(ns.name, "controlCount", 4)
 check(control:IsShown() and control._groups.control.most == 4, "four crowd controls at most")
 Core.Set(ns.name, "controlCount", ns.AURAS.controlCount)
+-- The icons as high as the bar at first (Saneroki, 2026-11-16), a share of it by Spell icon size: the containers'
+-- scale, as the game lets no addon size its icons later.
+check(math.abs(own._scale - dress._height / Auras.SIZE) < 1e-6 and foes._scale == own._scale and control._scale == own._scale,
+    "the icons as high as the bar: each container scaled from the size its icons are made at")
+Core.Set(ns.name, "auraSize", 150)
+check(math.abs(own._scale - dress._height * 1.5 / Auras.SIZE) < 1e-6, "Spell icon size 150%: half again as high")
+check(select(2, Auras.Above(dress._height)) == 1 and math.abs(Auras.Above(dress._height) - (dress._height * 1.5 + Auras.GAP)) < 1e-6,
+    "one row above the bar, as high as its icons and a gap (the plates stack by it)")
+Core.Set(ns.name, "auraSize", 100)
+-- Where each kind stands: two on one side in rows, the first nearest the bar; the arrow over them all.
+local row = Auras.Size(dress._height) + Auras.GAP
+Core.Set(ns.name, "buffPlace", "above")
+check(foes._points[1][1] == "BOTTOMLEFT" and foes._points[1][3] == "TOPLEFT"
+    and math.abs(foes._points[1][5] - row / foes._scale) < 1e-6 and foes._growth[1] == AnchorUtil.FlowDirection.Right
+    and own._points[1][5] == 0, "buffs above too: a row over your debuffs, growing right")
+check(select(2, Auras.Above(dress._height)) == 2, "two rows above the bar")
+Core.Set(ns.name, "controlPlace", "left")
+Core.Set(ns.name, "buffPlace", "left")
+check(foes._points[1][1] == "BOTTOMRIGHT" and foes._points[1][5] == 0 and control._points[1][1] == "BOTTOMRIGHT"
+    and math.abs(control._points[1][5] - row / control._scale) < 1e-6 and control._growth[1] == AnchorUtil.FlowDirection.Left,
+    "crowd control left too: a row over the buffs, growing left")
+Core.Set(ns.name, "debuffPlace", "right")
+check(own._points[1][3] == "BOTTOMRIGHT" and own._groups.own.most == ns.AURAS.debuffCount,
+    "your debuffs at the right: as many as the setting, not cut to the bar's width")
+for _, key in ipairs({ "debuffPlace", "buffPlace", "controlPlace" }) do Core.Set(ns.name, key, nil) end
+check(own._points[1][3] == "TOPLEFT" and foes._points[1][1] == "BOTTOMRIGHT" and control._points[1][1] == "BOTTOMLEFT",
+    "back to their first places")
+-- The seconds left: the game's own text, through a curve on the time left, none over a minute.
+check(icon._durationText ~= nil and icon._durationText[2].textColor.curve ~= nil
+    and icon._durationText[2].textColor.property == Enum.DurationTextBindingProperty.RemainingDuration,
+    "the seconds left are the game's own text, coloured by our curve on the time left")
+local curve = icon._durationText[2].textColor.curve
+local function Alpha(at)
+    local before, after
+    for _, point in ipairs(curve.points) do
+        if point[1] <= at then before = point end
+        if point[1] >= at and not after then after = point end
+    end
+    return before[2].a, after[2].a
+end
+check(Alpha(30) == 1 and Alpha(Auras.LONG) == 1 and select(2, Alpha(Auras.LONG + 1)) == 0,
+    "seen up to a minute left, gone with more")
+Core.Set(ns.name, "durationTransparency", 50)
+check(Alpha(30) == 0.5, "Time left: transparency 50%: half see-through")
+Core.Set(ns.name, "duration", false)
+check(Alpha(30) == 0, "Time left in the icons off: none")
+Core.Set(ns.name, "duration", true)
+Core.Set(ns.name, "durationTransparency", 0)
+Core.Set(ns.name, "durationSize", 70)
+check(icon._durationText[1]._font[2] == Auras.SIZE * 0.7, "Time left: size 70% of the icon")
+Core.Set(ns.name, "durationSize", 50)
 -- The game's own aura icons under ours would take the mouse (their tooltip beside our bar): their mouse off, on the
 -- ones the game sets out anew as well; on again when its parts come back in sight (below, and at the stand-down).
 local gameAuras = plates.nameplate1.UnitFrame.AurasFrame
@@ -1030,11 +1093,15 @@ check(CVar("nameplateMinScale") == "1" and CVar("nameplateMaxScale") == "1" and 
     "the game's own scaling and fading off: nothing but the distance sizes a plate")
 check(CVar("nameplateShowOnlyNameForFriendlyPlayerUnits") == "0" and ns.options.foundCVars.nameplateShowOnlyNameForFriendlyPlayerUnits == "1",
     "friendly players not by name only while the module is on (their plates whole, dressed), yours kept")
+check(CVar("nameplateSimplifiedTypes") == "0" and ns.options.foundCVars.nameplateSimplifiedTypes == "24"
+    and CVar("nameplateResourceOnTarget") == "0" and ns.options.foundCVars.nameplateResourceOnTarget == "1",
+    "no simplified plates (no bar to dress), the game's resource off your target's plate (our combo points there); yours kept")
 local function Near(a, b) return math.abs(a - b) < 1e-6 end
 -- Stacking: the game stacks plates by its own plate's height; ours as high as our bar and a row of auras over it, a
 -- gap to the next bar (the bar alone without auras), the share rounded up so two plates never lie over each other.
 local function Stacked(size, bare)
-    return (Text.Height(UIParent) + (bare and 0 or Auras.SIZE + Auras.GAP)) * size / 100 / plateSize[2]
+    local high = Text.Height(UIParent) -- the icons as high as the bar at first
+    return (high + (bare and 0 or high + Auras.GAP)) * size / 100 / plateSize[2]
 end
 local function Share(size, bare) return ("%.2f"):format(math.ceil(Stacked(size, bare) * 100 - 1e-6) / 100) end
 local stacked = CVar("nameplateOverlapV")
@@ -1751,11 +1818,11 @@ check(foot._points[1][2] == outlined and foot._points[1][3] == "BOTTOMLEFT", "an
         "an elite with your aggro: neither all the same")
     check(dress.marks.barrierOn == false and dress.marks.lostOn == false and dress.marks.dispelOn,
         "nothing of the bar's marks but the dispel type")
-    check(dress.want == nil and dress._width == 120 and dress.outside == 0
-        and dress.foes._points[1][4] == -Auras.GAP and dress.own._points[1][2] == dress and dress.control._points[1][2] == dress,
+    check(dress.want == nil and dress._width == 120 and dress.foes._points[1][4] == -Auras.GAP / dress.foes._scale
+        and dress.own._points[1][2] == dress and dress.control._points[1][2] == dress,
         "as wide as the game's own bar under it, the auras around that")
     check(dress.own:IsShown() and dress.foes:IsShown() and dress.control:IsShown() and dress.own._unit == "nameplate1"
-        and dress.own._groups.own.most == Auras.Slots(120) and dress.foot:IsShown(),
+        and dress.own._groups.own.most == math.min(Auras.Slots(120, dress.auraSize), ns.AURAS.debuffCount) and dress.foot:IsShown(),
         "your debuffs above, a foe's buffs left, crowd control right, the tracked auras under it")
     check(dress.dot:IsShown() and dress.dot._points[1][1] == "CENTER" and dress.dot._points[1][2] == dress
         and dress.dot._width == Marks.DOT and #dress.dot._masks == 1, "a small round dot in the middle")
@@ -1765,7 +1832,8 @@ check(foot._points[1][2] == outlined and foot._points[1][3] == "BOTTOMLEFT", "an
     units.target, plates.target = units.nameplate1, plates.nameplate1
     W.Fire("PLAYER_TARGET_CHANGED")
     check(dress.arrow:IsShown() and (dress.arrow._atlas == Marks.ARROW or dress.arrow._texture == Marks.ARROW_FILE)
-        and dress.arrow._points[1][1] == "BOTTOM" and dress.arrow._points[1][3] == "TOP" and dress.arrow._points[1][5] == Auras.SIZE
+        and dress.arrow._points[1][1] == "BOTTOM" and dress.arrow._points[1][3] == "TOP"
+        and math.abs(dress.arrow._points[1][5] - (dress.auraSize + Auras.GAP)) < 1e-6
         and dress.arrow._width == Marks.ARROW_SIZE, "your target: the game's gold arrow over it, above its debuffs")
     units.target, plates.target = nil, nil
     W.Fire("PLAYER_TARGET_CHANGED")
@@ -1814,7 +1882,7 @@ check(foot._points[1][2] == outlined and foot._points[1][3] == "BOTTOMLEFT", "an
     Core.Set(ns.name, "style", "both")
     check(dress.health:IsShown() and dress.top:IsShown() and dress.border[1]:IsShown() and dress.rankLine[1]:IsShown()
         and dress.border[1]._points[1][2] == dress and dress.want ~= nil and dress._width == dress.want
-        and dress.name._text == "Young Wolf" and dress.foes._points[1][4] == -(Auras.GAP + dress.outside),
+        and dress.name._text == "Young Wolf" and dress.foes._points[1][4] == -Auras.GAP / dress.foes._scale,
         "back to both: the bar, its line, its outline and rank's line, as wide as the line")
     Resource.Shape(dress, true)
     check(castBar.icon._points[1][5] == 0 and castBar.caps[2]._texture == Core.Shape.CORNER.BOTTOMRIGHT
@@ -1884,21 +1952,35 @@ plates.nameplate4 = plates.nameplate2 -- the game hands the plate out again, for
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate4")
 check(DressOf(plates.nameplate2) == friend and friend:IsShown() and friend.name._text == "Kobold", "a plate handed out again keeps its dress")
 
--- The setup, step by step (Setup.lua, Sample.lua): the module's own steps, each switch it names one of its own with
--- words, and every step's sample plates drawn by the plates' own code, as the settings in use say.
+-- The setup, step by step (Setup.lua, Sample.lua): the module's own steps in Saneroki's order, each switch it names
+-- one of its own with words, every step's sample plates drawn by the plates' own code as the settings in use say.
 do
     local guide = Core.Onboarding.Guide(ns.name)
-    check(guide and #guide.steps == 9 and guide.title == ns.TEXT.title, "the module hands Core its setup: nine steps")
-    local named, words = true, true
+    local keys = {}
+    for index, step in ipairs(guide.steps) do keys[index] = step.key end
+    check(table.concat(keys, " ") == "intro size seen which danger border line bar cast auras timers look",
+        "the steps in Saneroki's order (2026-11-16), a first page saying what this is: " .. table.concat(keys, " "))
+    local named, short = true, true
     for _, step in ipairs(guide.steps) do
-        words = words and type(step.title) == "string" and type(step.text) == "string" and #step.text > 40
+        for line in (step.text .. "\n"):gmatch("([^\n]*)\n") do
+            local plain = line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            short = short and line:find("|cff", 1, true) == 1 and #plain <= 110
+        end
         for _, key in ipairs(step.settings) do
-            local option = Core.Described(ns.name, key)
-            named = named and option ~= nil and type(option.text) == "string"
+            if type(key) == "table" then
+                named = named and type(key.binding) == "string" and type(key.text) == "string"
+            else
+                local option = Core.Described(ns.name, key)
+                named = named and option ~= nil and type(option.text) == "string"
+            end
         end
     end
-    check(words and named, "each step has its head and words, and names switches the module has, each with its words")
-    local Setup, Sample = ns.Setup, ns.Sample
+    check(short, "each step a few short lines, each starting with gold words, to be read at a glance")
+    check(named, "each step names switches the module has, each with its words, and keys by their command")
+    local which = guide.steps[4].settings
+    check(which[3].binding == "ALLNAMEPLATES" and which[4].binding == "FRIENDNAMEPLATES" and which[5].binding == "NAMEPLATES"
+        and which[6].binding == "SANEUI_NAMEPLATES_STRANGERS", "Which plates show: the game's three keys for plates and ours")
+    local Setup = ns.Setup
     local stage = CreateFrame("Frame", nil, UIParent)
     local function Draw(key)
         for index, step in ipairs(guide.steps) do
@@ -1906,41 +1988,61 @@ do
         end
         return Setup.Board(key)
     end
-    local errors = 0
     for _, step in ipairs(guide.steps) do
-        local board = Draw(step.key)
-        check(board and board:IsShown(), "the step " .. step.key .. " draws its board")
+        check(Draw(step.key) and Setup.Board(step.key):IsShown(), "the step " .. step.key .. " draws its board")
     end
+    local errors = 0
     for label in pairs(Core.errors) do if tostring(label):find("setup sample", 1, true) then errors = errors + 1 end end
     check(errors == 0, "every step's samples drawn without an error")
-    check(not Setup.Board("look"):IsShown() and Setup.Board("size"):IsShown(), "only the step's own board shows")
+    check(not Setup.Board("intro"):IsShown() and Setup.Board("look"):IsShown(), "only the step's own board shows")
 
-    -- The first step: your target, an elite foe, in the style chosen.
-    local look = Draw("look").samples[1]
-    check(look:IsShown() and look.health:IsShown() and look.rankLine:IsShown() and look.cast:IsShown(),
-        "a sample: the bar, the elite's line, the cast bar")
-    check(look.name._text == "Thornspine Raider" and look.cast.text._text:find("Shadow Bolt", 1, true),
-        "its name in the line, the spell it casts")
-    check(look:GetScale() == ns.Scale.Full(), "as large as the setting Nameplate size")
-    Core.Set(ns.name, "style", "spells")
-    look = Draw("look").samples[1]
-    check(not look.health:IsShown() and not look.top:IsShown() and look.arrow:IsShown(),
-        "Spells only: no bar, no line, the gold arrow over your target")
-    Core.Set(ns.name, "style", "both")
-    Core.Set(ns.name, "dot", false)
-    -- The line: level, item level, health as the settings say.
-    local line = Draw("line")
-    local creature, player = line.samples[1], line.samples[2]
-    check(creature.count._text == "3/8" and creature.quest:IsShown() and player.gear._text == "i32",
-        "a quest's count on the creature, the item level on the player")
-    check(creature.value._text == "812 | 60%", "the health and how much is left")
-    Core.Set(ns.name, "level", false)
-    Core.Set(ns.name, "health", false)
-    line = Draw("line")
-    check(line.samples[1].level._text == "" and line.samples[1].value._text == "60%", "Level and Health off: on the sample too")
-    Core.Set(ns.name, "level", true)
-    Core.Set(ns.name, "health", true)
-    -- The border: grey your target, red out of reach (unless switched off), the kin's colours.
+    -- Size: by distance, as much as the setting says.
+    local Full = ns.Scale.Full
+    local size = Draw("size")
+    check(size.samples[1]:GetScale() == Full() and size.samples[2]:GetScale() == Full() * 0.5
+        and size.samples[3]:GetScale() == Full() * 0.25, "full size, half at 40 yards, a quarter at 60")
+    Core.Set(ns.name, "distanceStrength", 50)
+    check(ns.Scale.Size(40) == 0.75 and ns.Scale.Size(60) == 0.625 and Draw("size").samples[2]:GetScale() == Full() * 0.75,
+        "Size by distance: how much 50%: three quarters at 40 yards, five eighths at 60")
+    Core.Set(ns.name, "distanceStrength", 0)
+    check(ns.Scale.Size(60) == 1, "0%: full size everywhere")
+    Core.Set(ns.name, "distanceStrength", 100)
+    -- See-through: each kind its own.
+    Core.Set(ns.name, "knownTransparency", 40)
+    Core.Set(ns.name, "critterTransparency", 80)
+    local seen = Draw("seen")
+    check(seen.samples[3]:GetAlpha() == 0.6 and math.abs(seen.samples[5]:GetAlpha() - 0.2) < 1e-6
+        and seen.samples[1]:GetAlpha() == 1 and seen.lines[3]:GetText():find("40%", 1, true),
+        "players you know 40% see-through, critters 80%, your target solid; the share beside each")
+    check(ns.Scale.Seen({ kind = "known" }) == 0.6 and math.abs(ns.Scale.Seen({ kind = "critter" }) - 0.2) < 1e-6
+        and ns.Scale.Seen({ kind = "stranger" }) == 1 and ns.Scale.Seen({}) == 1, "the plates in the world by their kind too")
+    Core.Set(ns.name, "knownTransparency", 0)
+    Core.Set(ns.name, "critterTransparency", 0)
+    -- Which plates show.
+    local shown = Draw("which")
+    check(shown.samples[2]:GetAlpha() == Setup.FAINT and shown.samples[4]:GetAlpha() == Setup.FAINT
+        and shown.samples[1]:GetAlpha() == 1, "a stranger and a critter faint: no plate for them")
+    Core.Set(ns.name, "players", false)
+    check(Draw("which").samples[2]:GetAlpha() == 1, "Only players you know off: the stranger's plate shows")
+    Core.Set(ns.name, "players", true)
+    W.errors, W.printed = {}, {}
+    ns.ToggleStrangers()
+    check(ns.options.players == false and ((W.errors[1] or W.printed[1] or ""):find(ns.TEXT.strangersShown, 1, true)),
+        "the key: every player's plate, said as the game says its own keys")
+    ns.ToggleStrangers()
+    check(ns.options.players == true and BINDING_NAME_SANEUI_NAMEPLATES_STRANGERS == ns.TEXT.strangersKey,
+        "again: only those you know; the key's words in the game's key bindings")
+    local file = io.open(root .. "/src/Nameplates/Bindings.xml", "r")
+    local xml = file and file:read("*a") or ""
+    if file then file:close() end
+    check(xml:find('name="SANEUI_NAMEPLATES_STRANGERS"', 1, true) and xml:find("ToggleStrangers", 1, true),
+        "the key in the module's Bindings.xml")
+    -- Rank and danger.
+    local danger = Draw("danger")
+    check(danger.samples[1].rank == Bar.RANKS.boss and danger.samples[3].rank == Bar.RANKS.rare, "a boss's line, a rare's")
+    check(danger.samples[4].glow:GetAlpha() == 1 and danger.samples[6].glow:GetAlpha() == 0
+        and danger.samples[7].glow:GetAlpha() == 1, "the glow on aggro and on a player who may attack you, none on low threat")
+    -- The border; class colours.
     local function Edge(sample) return sample.border[1]._vertex end
     local border = Draw("border")
     check(Edge(border.samples[1])[1] == Bar.TARGET[1] and Edge(border.samples[2])[1] == Bar.FAR[1]
@@ -1949,52 +2051,107 @@ do
     Core.Set(ns.name, "range", false)
     check(Edge(Draw("border").samples[2])[1] == Bar.TARGET[1], "Out of reach off: your target grey there too")
     Core.Set(ns.name, "range", true)
-    -- Rank and danger: the boss's thick line, the glow on aggro.
-    local danger = Draw("danger")
-    check(danger.samples[1].rank == Bar.RANKS.boss and danger.samples[3].rank == Bar.RANKS.rare, "a boss's line, a rare's")
-    check(danger.samples[4].glow:GetAlpha() == 1 and danger.samples[6].glow:GetAlpha() == 0
-        and danger.samples[7].glow:GetAlpha() == 1, "the glow on aggro and on a player who may attack you, none on low threat")
-    -- Spells on it: as many of each as the settings say.
-    local function Shown(list)
-        local count = 0
-        for _, icon in ipairs(list) do if icon:IsShown() then count = count + 1 end end
-        return count
-    end
-    local auras = Draw("auras").samples[1]
-    check(Shown(auras.icons.own) == math.min(ns.Auras.Slots(auras:GetWidth()), ns.AURAS.debuffCount)
-        and Shown(auras.icons.foes) == ns.AURAS.buffCount and Shown(auras.icons.control) == ns.AURAS.controlCount,
-        "the sample's debuffs, buffs and crowd control, as many as at first")
-    Core.Set(ns.name, "buffCount", 6)
-    Core.Set(ns.name, "controlCount", 0)
-    auras = Draw("auras").samples[1]
-    check(Shown(auras.icons.foes) == 6 and Shown(auras.icons.control) == 0, "six buffs, no crowd control: so on the sample")
-    Core.Set(ns.name, "buffCount", ns.AURAS.buffCount)
-    Core.Set(ns.name, "controlCount", ns.AURAS.controlCount)
-    -- Casts and damage numbers.
+    local warrior = RAID_CLASS_COLORS.WARRIOR
+    check(Draw("border").samples[5].health._barColor[1] == warrior.r, "a player's bar in their class colour")
+    Core.Set(ns.name, "classColour", false)
+    check(Draw("border").samples[5].health._barColor[3] == Bar.FRIENDLY[3], "Class colours off: a friend blue")
+    units.nameplate8 = { player = true, class = "WARRIOR", friend = true }
+    units.nameplate9 = { player = true, class = "WARRIOR" }
+    check(select(3, Bar.Colour("nameplate8")) == Bar.FRIENDLY[3] and select(1, Bar.Colour("nameplate9")) == Bar.HOSTILE[1],
+        "and on a plate: a friendly player blue, one you can attack red")
+    Core.Set(ns.name, "classColour", true)
+    check(select(1, Bar.Colour("nameplate8")) == warrior.r, "on again: the class colour")
+    units.nameplate8, units.nameplate9 = nil, nil
+    -- The line: the quest's sword inside, the skull, the dispel icon.
+    local line = Draw("line")
+    local creature, player = line.samples[1], line.samples[2]
+    check(creature.count._text == "3/8" and creature.quest:IsShown() and creature.quest._points[1][1] == "LEFT"
+        and creature.quest._points[1][4] == Text.INSET and player.gear._text == "i32",
+        "the quest's sword first inside the bar, its count; the item level on the player")
+    check(creature.raid:IsShown() and creature.marks.icon:IsShown() and player.marks.icon:IsShown(),
+        "the skull in the line, the dispel icons over the bars")
+    check(creature.value._text == "812 | 60%", "the health and how much is left")
+    Core.Set(ns.name, "marker", false)
+    Core.Set(ns.name, "dispel", false)
+    Core.Set(ns.name, "level", false)
+    line = Draw("line")
+    check(not line.samples[1].raid:IsShown() and not line.samples[1].marks.icon:IsShown() and line.samples[1].level._text == "",
+        "Raid markers, Dispellable auras and Level off: none of them")
+    for _, key in ipairs({ "marker", "dispel", "level" }) do Core.Set(ns.name, key, true) end
+    -- On the bar: mana, rage, energy, a barrier, lost health, combo points.
+    local bar = Draw("bar")
+    check(bar.samples[1].power:IsShown() and bar.samples[1].power._barColor[3] == 1 and bar.samples[1].marks.barrier._value == 0.3
+        and bar.samples[2].power._barColor[1] == 1 and bar.samples[3].strip and bar.samples[3].strip:IsShown()
+        and bar.samples[3].strip.segments[1]._value == 3, "mana and a barrier, rage, energy with three combo points under it")
+    Core.Set(ns.name, "resource", false)
+    Core.Set(ns.name, "barrier", false)
+    bar = Draw("bar")
+    check(not bar.samples[3].strip:IsShown() and bar.samples[1].marks.barrier._value == 0, "combo points and barriers off")
+    Core.Set(ns.name, "resource", true)
+    Core.Set(ns.name, "barrier", true)
+    -- Casts and damage numbers: a caster with mana; the cast bar's height.
     local cast = Draw("cast")
-    check(cast.samples[1].cast:IsShown() and cast.samples[1].numbers and cast.samples[1].numbers:IsShown(),
-        "a cast under the bar, numbers rising over it")
-    check(cast.samples[2].cast.lock._alpha == 1 and cast.samples[1].cast.lock._alpha == 0, "grey where it cannot be interrupted")
+    local caster = cast.samples[1]
+    check(caster.power._barColor[3] == 1 and caster.cast:IsShown() and caster.numbers and caster.numbers:IsShown(),
+        "an enemy with a mana bar casting, numbers rising over it")
+    check(cast.samples[2].cast.lock._alpha == 1 and caster.cast.lock._alpha == 0, "grey where it cannot be interrupted")
+    Core.Set(ns.name, "castHeight", 150)
+    caster = Draw("cast").samples[1]
+    check(math.abs(caster.cast._height - caster._height * 1.5) < 1e-6, "Cast bar height 150%: half again as high as the bar")
+    Core.Set(ns.name, "castHeight", 100)
     Core.Set(ns.name, "castBar", false)
     Core.Set(ns.name, "combatText", false)
     cast = Draw("cast")
     check(not cast.samples[1].cast:IsShown() and not cast.samples[1].numbers:IsShown(), "Cast bar and combat text off")
     Core.Set(ns.name, "castBar", true)
     Core.Set(ns.name, "combatText", true)
-    -- Which plates show: a stranger and a critter drawn faint while they would have none.
-    local which = Draw("which")
-    check(which.samples[2]:GetAlpha() == Setup.FAINT and which.samples[4]:GetAlpha() == Setup.FAINT
-        and which.samples[1]:GetAlpha() == 1, "a stranger and a critter faint: no plate for them")
-    Core.Set(ns.name, "players", false)
-    check(Draw("which").samples[2]:GetAlpha() == 1, "Only players you know off: the stranger's plate shows")
-    Core.Set(ns.name, "players", true)
-    -- Size and transparency.
-    Core.Set(ns.name, "transparency", 50)
-    local size = Draw("size")
-    check(size.samples[1]:GetAlpha() == 1 and size.samples[2]:GetAlpha() == 0.5, "the others half see-through, your target solid")
-    check(size.samples[2]:GetScale() == ns.Scale.Full() * 0.5 and size.samples[3]:GetScale() == ns.Scale.Full() * 0.25,
-        "half the size at 40 yards, a quarter at 60")
-    Core.Set(ns.name, "transparency", 0)
+    -- Spells on it: how many, where, how large, with the numbers rising over them.
+    local function Count(list)
+        local count = 0
+        for _, icon in ipairs(list) do if icon:IsShown() then count = count + 1 end end
+        return count
+    end
+    local auras = Draw("auras").samples[1]
+    check(Count(auras.icons.own) == math.min(ns.Auras.Slots(auras:GetWidth(), auras.auraSize), ns.AURAS.debuffCount)
+        and Count(auras.icons.foes) == ns.AURAS.buffCount and Count(auras.icons.control) == ns.AURAS.controlCount
+        and auras.numbers:IsShown(), "as many of each as at first, and the damage numbers rising over them")
+    check(math.abs(auras.icons.own[1]:GetScale() - auras.auraSize / ns.Auras.SIZE) < 1e-6
+        and math.abs(auras.auraSize - auras._height) < 1e-6, "the icons as high as the bar")
+    Core.Set(ns.name, "debuffPlace", "left")
+    Core.Set(ns.name, "buffCount", 6)
+    Core.Set(ns.name, "auraSize", 150)
+    auras = Draw("auras").samples[1]
+    check(auras.icons.own[1]._points[1][1] == "BOTTOMRIGHT" and Count(auras.icons.foes) == 6
+        and math.abs(auras.auraSize - auras._height * 1.5) < 1e-6
+        and math.abs(auras.icons.foes[1]._points[1][5] - (auras.auraSize + ns.Auras.GAP) / auras.icons.foes[1]:GetScale()) < 1e-6,
+        "your debuffs at the left, six buffs a row over them, the icons half again as high")
+    for _, key in ipairs({ "debuffPlace", "buffCount", "auraSize" }) do Core.Set(ns.name, key, nil) end
+    -- The seconds left: none over a minute, as large and see-through as the settings say.
+    local timers = Draw("timers").samples[1]
+    local over, under, fits = 0, 0, true
+    for _, kind in ipairs({ "own", "foes", "control" }) do
+        for _, icon in ipairs(timers.icons[kind]) do
+            if icon:IsShown() then
+                local text = icon.timer._text
+                if text == "" then over = over + 1 else under = under + 1; fits = fits and tonumber(text) <= 60 end
+            end
+        end
+    end
+    check(under > 0 and over > 0 and fits, "the seconds left in the icons, none over a minute")
+    Core.Set(ns.name, "durationTransparency", 50)
+    check(Draw("timers").samples[1].icons.own[1].timer._alpha == 0.5, "Time left: transparency 50%")
+    Core.Set(ns.name, "duration", false)
+    timers = Draw("timers").samples[1]
+    check(not timers.icons.own[1].timer:IsShown(), "Time left in the icons off: none")
+    Core.Set(ns.name, "duration", true)
+    Core.Set(ns.name, "durationTransparency", 0)
+    -- What plates show.
+    Core.Set(ns.name, "style", "spells")
+    local look = Draw("look").samples[1]
+    check(not look.health:IsShown() and not look.top:IsShown() and look.arrow:IsShown(),
+        "Spells only: no bar, no line, the gold arrow over your target")
+    Core.Set(ns.name, "style", "both")
+    Core.Set(ns.name, "dot", false)
     -- The switches that were these counts: an older setting off is 0.
     local values = { debuffs = false, buffs = true }
     Core.described[ns.name].upgrade(values, 0)

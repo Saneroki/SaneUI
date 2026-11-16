@@ -7,14 +7,18 @@ local _, ns = ...
 --  closed by its X or Esc. It never blocks the game: the world goes on behind
 --  it and the module's plates follow each change at once.
 --
---    left    the stage: a grey box (Look.Box) the module draws its sample
---            into (the guide's Stage), anew whenever the step shows or a
---            setting changes
+--    left    the stage, the module's sample (the guide's Stage, drawn anew
+--            whenever the step shows or a setting changes) over the world
+--            itself: the window's plate stops round it, only a thin golden
+--            line frames it (Saneroki, 2026-11-16: "fully transparent, so
+--            that the player sees it like it would be in the real world")
 --    right   the step: its head in the game's gold, its words, its controls
 --            (Controls.lua), made the first time the step shows and kept
---    under   "Step 2 of 9" and the buttons Back and Next (Done on the last
---            step), red with the game's arrows, as Forever's own steps of the
---            character creation have them
+--    under   the loading screen's bar, filled as far as the steps have
+--            come, "Step 2 of 9" in it (Saneroki, 2026-11-16), and the
+--            buttons Back and Next (Done on the last step), red with the
+--            game's arrows, as Forever's own steps of the character creation
+--            have them
 --
 --  Changes are made as they are clicked (Core.Set), so closing the window at
 --  any step keeps what was chosen; nothing to save or undo here.
@@ -24,7 +28,7 @@ local Look = Core.Look
 local Window = {}
 ns.Window = Window
 
-Window.WIDTH, Window.HEIGHT = 860, 540 -- UI units
+Window.WIDTH, Window.HEIGHT = 860, 600 -- UI units
 Window.STAGE = 420   -- the sample's room at the left
 Window.GAP = 20      -- between the sample and the step
 Window.FOOT = 46     -- the row under them: the count, Back and Next
@@ -32,8 +36,12 @@ Window.BUTTON = { 132, 32 }
 Window.HEAD = 22     -- the step's head (Look.SetFont's size)
 Window.TEXT = 15     -- its words
 Window.ARROWS = { back = "common-icon-backarrow", next = "common-icon-forwardarrow" } -- the character creation's
+Window.BAR = 28      -- the loading screen's bar's height
+Window.FILL = "Interface\\Glues\\LoadingBar\\Loading-BarFill" -- its fill
+Window.FILL_IN = { 0.9, 0.3 } -- the fill this far in from the bar's ends and edges, shares of its height
+Window.PLATE = "heavybronze-frame-background" -- the window's plate (Look.Frame's)
 
-local frame, look, stage, side, title, words, count, back, forward
+local frame, look, stage, side, title, words, count, back, forward, progress
 local current   -- { name, guide, index } while a setup shows
 local made = {} -- [module name] = { [step index] = its controls' frame }, made the first time each shows
 
@@ -93,6 +101,7 @@ function Window.Go(index)
     holder:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 0, -16)
     holder:Show()
     count:SetText(ns.TEXT.step:format(index, #steps))
+    progress:Share(index / #steps)
     back:SetEnabled(index > 1)
     forward:SetText(index == #steps and ns.TEXT.done or Arrowed(ns.TEXT.next, Window.ARROWS.next))
     Window.Changed()
@@ -106,6 +115,57 @@ local function Turn(by)
     Window.Go(index)
 end
 
+-- The window's plate everywhere but over the stage: four pieces round it, each a frame that clips a plate as large as
+-- the window's own (so the picture runs on unbroken), under the bronze frame (Look.Frame's level is the window's less
+-- one); the stage in a thin golden line, nothing inside it.
+local function Hole(content)
+    look.frame.plate:SetAlpha(0)
+    local level = math.max((look.frame:GetFrameLevel() or 1) - 1, 0)
+    local pieces = {}
+    for index = 1, 4 do
+        local clip = CreateFrame("Frame", nil, frame)
+        clip:SetFrameLevel(level)
+        clip:SetClipsChildren(true)
+        local plate = clip:CreateTexture(nil, "BACKGROUND")
+        Look.Atlas(plate, Window.PLATE)
+        plate:SetHorizTile(false)
+        plate:SetVertTile(false)
+        plate:SetPoint("TOPLEFT", frame, "TOPLEFT", 4, -4)
+        plate:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -4, 4)
+        pieces[index] = clip
+    end
+    local top, below = Look.DRESS_HEAD + 4, Look.INSIDE + Window.FOOT -- the stage from the window's top and bottom
+    pieces[1]:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    pieces[1]:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -top)
+    pieces[2]:SetPoint("TOPLEFT", stage, "BOTTOMLEFT", -Look.INSIDE, 0)
+    pieces[2]:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    pieces[3]:SetPoint("TOPLEFT", stage, "TOPLEFT", -Look.INSIDE, 0)
+    pieces[3]:SetPoint("BOTTOMRIGHT", stage, "BOTTOMLEFT", 0, 0)
+    pieces[4]:SetPoint("TOPLEFT", stage, "TOPRIGHT", 0, 0)
+    pieces[4]:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, below)
+    local line = Look.Outline(stage)
+    line.fill:Hide()
+    Window.pieces = pieces
+end
+
+-- The loading screen's bar (Look.Headline) with its fill as far as the steps have come and the count in its middle.
+local function Progress(content)
+    local bar = Look.Headline(content, Window.BAR)
+    local fill = bar:CreateTexture(nil, "BACKGROUND", nil, 2)
+    fill:SetTexture(Window.FILL)
+    local inX, inY = Window.BAR * Window.FILL_IN[1], Window.BAR * Window.FILL_IN[2]
+    fill:SetPoint("TOPLEFT", bar, "TOPLEFT", inX, -inY)
+    fill:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", inX, inY)
+    function bar.Share(_, share)
+        bar.share = share
+        local inner = math.max((bar:GetWidth() or 0) - 2 * inX, 0)
+        fill:SetWidth(math.max(inner * math.min(math.max(share, 0), 1), 0.01))
+        fill:SetTexCoord(0, math.max(share, 0.01), 0, 1)
+    end
+    bar.fill = fill
+    return bar
+end
+
 local function Build()
     frame = CreateFrame("Frame", nil, UIParent)
     frame:SetSize(Window.WIDTH, Window.HEIGHT)
@@ -115,6 +175,7 @@ local function Build()
     frame:EnableMouse(true)
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)
+    frame:SetFrameLevel(10) -- room under it for the plate's pieces round the stage (Hole)
     frame:Hide()
     look = Look.Dress(frame, "")
     look.close:SetScript("OnClick", ns.Guard(Window.Close))
@@ -125,13 +186,13 @@ local function Build()
     head:SetScript("OnDragStart", ns.Guard(function() frame:StartMoving() end))
     head:SetScript("OnDragStop", ns.Guard(function() frame:StopMovingOrSizing() end))
     local content = look.content
-    -- The stage: the module's sample in a grey box; what rises over a plate stays inside it.
+    -- The stage: the module's sample over the world; what rises over a plate stays inside it.
     stage = CreateFrame("Frame", nil, content)
     stage:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
     stage:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, Window.FOOT)
     stage:SetWidth(Window.STAGE)
     stage:SetClipsChildren(true)
-    Look.Box(stage)
+    Hole(content)
     -- The step.
     side = CreateFrame("Frame", nil, content)
     side:SetPoint("TOPLEFT", stage, "TOPRIGHT", Window.GAP, -4)
@@ -153,15 +214,18 @@ local function Build()
     local rule = Look.Rule(content)
     rule:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, Window.FOOT - 6)
     rule:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, Window.FOOT - 6)
-    count = content:CreateFontString(nil, "ARTWORK")
-    Look.SetFont(count, 14, false, Look.FAINT)
-    count:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 4, 12)
     forward = Look.Red(content, ns.TEXT.next, Window.BUTTON[1], Window.BUTTON[2])
     forward:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 2)
     forward:SetScript("OnClick", ns.Guard(function() Turn(1) end))
     back = Look.Red(content, Arrowed(ns.TEXT.back, Window.ARROWS.back, true), Window.BUTTON[1], Window.BUTTON[2])
     back:SetPoint("RIGHT", forward, "LEFT", -10, 0)
     back:SetScript("OnClick", ns.Guard(function() Turn(-1) end))
+    progress = Progress(content)
+    progress:SetPoint("LEFT", content, "BOTTOMLEFT", 0, 2 + Window.BUTTON[2] / 2)
+    progress:SetPoint("RIGHT", back, "LEFT", -16, 0)
+    count = progress:CreateFontString(nil, "OVERLAY")
+    Look.SetFont(count, 14, false, Look.INK)
+    count:SetPoint("CENTER", progress, "CENTER", 0, 1)
     frame:HookScript("OnShow", ns.Guard(function() Core.Escape(frame, Window.Close) end))
     frame:HookScript("OnHide", ns.Guard(function() Core.Escape(frame, nil) end))
 end
@@ -184,5 +248,5 @@ end
 function Window.Frame() return frame end
 function Window.Parts()
     return { stage = stage, title = title, words = words, count = count, back = back, forward = forward, made = made,
-             current = current }
+             current = current, progress = progress }
 end

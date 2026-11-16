@@ -84,7 +84,7 @@ ns.TEXT = {
     range = "Out of reach: red border",
     rangeTip = "A foe's border turns red while none of your attacks reach it, as the game checks your own spells from your character.",
     players = "Only players you know",
-    playersTip = "Players' plates show only for your group, your guild, your friends and your target, and for every player who may attack you or whom you may attack; their pets', guardians' and totems' plates go with theirs. Off: every player's plate shows.",
+    playersTip = "Hides the plate of every friendly player who is not in your party, raid or guild and not on your friends list (and their pets'). Your target and anyone you could fight always have one. Off: every player's plate shows. Its key: Show or hide players you don't know.",
     critters = "Plates on critters",
     crittersTip = "Critters, wild pets and companion pets (rabbits, rats, deer and the like) have a nameplate with their name. Off: none, unless one is your target or a quest of yours wants it.",
     distance = "Size by distance",
@@ -106,6 +106,38 @@ ns.TEXT = {
     combatHealsTip = "Heals in green with a plus.",
     combatGame = "Instead of the game's",
     combatGameTip = "The game's own combat text is switched off while ours shows: its numbers over units, and its scrolling text about you (with it its notes on entering a fight, low health, reputation and honor). Off: both show.",
+    classColour = "Class colours",
+    classColourTip = "A player's bar in their class's colour (a mage light blue, a warrior brown). Off: as a creature's, red for a foe, blue for a friend.",
+    marker = "Raid markers",
+    markerTip = "The raid marker someone of your group put on it (a skull, a star ...), in the bar after its level.",
+    castHeight = "Cast bar height",
+    castHeightTip = "How high the cast bar under a plate is: 100% as high as the health bar.",
+    auraSize = "Spell icon size",
+    auraSizeTip = "How large the icons of your debuffs, a foe's buffs and the crowd control are: 100% as high as the health bar.",
+    debuffPlace = "Your debuffs: where",
+    buffPlace = "Buffs on foes: where",
+    controlPlace = "Crowd control: where",
+    placeTip = "Where these icons stand: above the bar, at its left or at its right. Two kinds on the same side stand in rows, one above the other.",
+    above = "Above",
+    left = "Left",
+    right = "Right",
+    duration = "Time left in the icons",
+    durationTip = "The seconds left of a debuff or buff, in its icon. One with more than a minute left shows none, so the number always fits.",
+    durationSize = "Time left: size",
+    durationSizeTip = "How large the seconds left are: a share of the icon's height.",
+    durationTransparency = "Time left: transparency",
+    durationTransparencyTip = "How much you see through the seconds left: 0% solid, 90% barely there.",
+    knownTransparency = "Players you know: transparency",
+    knownTransparencyTip = "How much you see through the plates of your party, raid, guild and friends: 0% solid, 90% barely there.",
+    strangerTransparency = "Players you don't know: transparency",
+    strangerTransparencyTip = "How much you see through the plates of friendly players who are not in your party, raid or guild and not on your friends list, while they show (Only players you know off, or its key).",
+    critterTransparency = "Critters: transparency",
+    critterTransparencyTip = "How much you see through the plates of critters, wild pets and companion pets, while they show.",
+    distanceStrength = "Size by distance: how much",
+    distanceStrengthTip = "How much smaller plates get far away. 100%: half at " .. Core.Distance(40) .. ", a quarter at " .. Core.Distance(60) .. ". 50%: three quarters at " .. Core.Distance(40) .. ". 0%: all full size.",
+    strangersKey = "Show or hide players you don't know",
+    strangersShown = "Players you don't know: their plates show",
+    strangersHidden = "Players you don't know: their plates are hidden",
 }
 
 -- What is told when the module stands down (Core's StandDown).
@@ -118,6 +150,8 @@ ns.STYLES = { { "both", ns.TEXT.styleBoth }, { "bar", ns.TEXT.styleBar }, { "spe
 -- How many of each kind of aura show at most (Saneroki, 2026-11-16: "how many buffs, debuffs and CCs they want to
 -- see"), each 0 for none: the switches Your debuffs, Buffs on foes and Crowd control were these before.
 ns.AURAS = { debuffCount = 8, buffCount = 3, controlCount = 2 }
+-- Where each kind stands (Saneroki, 2026-11-16: "choose where the spells are"): above the bar, at its left or right.
+ns.PLACES = { { "above", ns.TEXT.above }, { "left", ns.TEXT.left }, { "right", ns.TEXT.right } }
 
 local OPTIONS = {
     -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
@@ -125,17 +159,29 @@ local OPTIONS = {
       button = function() Core.Onboarding.Open(ns.name) end },
     { key = "style", default = "both", choices = ns.STYLES, text = ns.TEXT.style, tip = ns.TEXT.styleTip },
     { key = "dot", default = false, parent = "style", parentValue = "spells", text = ns.TEXT.dot, tip = ns.TEXT.dotTip },
+    { key = "classColour", default = true, text = ns.TEXT.classColour, tip = ns.TEXT.classColourTip },
     { key = "quest", default = true, text = ns.TEXT.quest, tip = ns.TEXT.questTip },
     { key = "level", default = true, text = ns.TEXT.level, tip = ns.TEXT.levelTip },
     { key = "gear", default = true, text = ns.TEXT.gear, tip = ns.TEXT.gearTip },
     { key = "health", default = true, text = ns.TEXT.health, tip = ns.TEXT.healthTip },
     { key = "percent", default = true, text = ns.TEXT.percent, tip = ns.TEXT.percentTip },
+    { key = "marker", default = true, text = ns.TEXT.marker, tip = ns.TEXT.markerTip },
     { key = "debuffCount", default = ns.AURAS.debuffCount, min = 0, max = 12, step = 1, text = ns.TEXT.debuffs,
       tip = ns.TEXT.debuffsTip },
+    { key = "debuffPlace", default = "above", choices = ns.PLACES, text = ns.TEXT.debuffPlace, tip = ns.TEXT.placeTip },
     { key = "buffCount", default = ns.AURAS.buffCount, min = 0, max = 6, step = 1, text = ns.TEXT.buffs,
       tip = ns.TEXT.buffsTip },
+    { key = "buffPlace", default = "left", choices = ns.PLACES, text = ns.TEXT.buffPlace, tip = ns.TEXT.placeTip },
     { key = "controlCount", default = ns.AURAS.controlCount, min = 0, max = 4, step = 1, text = ns.TEXT.control,
       tip = ns.TEXT.controlTip },
+    { key = "controlPlace", default = "right", choices = ns.PLACES, text = ns.TEXT.controlPlace, tip = ns.TEXT.placeTip },
+    { key = "auraSize", default = 100, min = 50, max = 200, step = 10, unit = "%", text = ns.TEXT.auraSize,
+      tip = ns.TEXT.auraSizeTip },
+    { key = "duration", default = true, text = ns.TEXT.duration, tip = ns.TEXT.durationTip },
+    { key = "durationSize", default = 50, min = 30, max = 90, step = 5, unit = "%", parent = "duration",
+      text = ns.TEXT.durationSize, tip = ns.TEXT.durationSizeTip },
+    { key = "durationTransparency", default = 0, min = 0, max = 90, step = 5, unit = "%", parent = "duration",
+      text = ns.TEXT.durationTransparency, tip = ns.TEXT.durationTransparencyTip },
     { key = "power", default = true, text = ns.TEXT.power, tip = ns.TEXT.powerTip },
     { key = "resource", default = true, text = ns.TEXT.resource, tip = ns.TEXT.resourceTip },
     { key = "barrier", default = true, text = ns.TEXT.barrier, tip = ns.TEXT.barrierTip },
@@ -145,12 +191,22 @@ local OPTIONS = {
     { key = "players", default = true, text = ns.TEXT.players, tip = ns.TEXT.playersTip },
     { key = "critters", default = false, text = ns.TEXT.critters, tip = ns.TEXT.crittersTip },
     { key = "distance", default = true, text = ns.TEXT.distance, tip = ns.TEXT.distanceTip },
+    { key = "distanceStrength", default = 100, min = 0, max = 100, step = 10, unit = "%", parent = "distance",
+      text = ns.TEXT.distanceStrength, tip = ns.TEXT.distanceStrengthTip },
     { key = "foundCVars", default = {} }, -- the game's nameplate CVars as they were before ours (Scale.lua)
     { key = "castBar", default = true, text = ns.TEXT.castBar, tip = ns.TEXT.castBarTip },
+    { key = "castHeight", default = 100, min = 50, max = 200, step = 10, unit = "%", parent = "castBar",
+      text = ns.TEXT.castHeight, tip = ns.TEXT.castHeightTip },
     { key = "plateSize", default = 125, min = 50, max = 300, step = 5, unit = "%", text = ns.TEXT.size, tip = ns.TEXT.sizeTip },
     { key = "transparency", default = 0, min = 0, max = 90, step = 5, unit = "%", text = ns.TEXT.transparency, tip = ns.TEXT.transparencyTip },
     { key = "targetTransparency", default = 0, min = 0, max = 90, step = 5, unit = "%", text = ns.TEXT.targetTransparency,
       tip = ns.TEXT.targetTransparencyTip },
+    { key = "knownTransparency", default = 0, min = 0, max = 90, step = 5, unit = "%", text = ns.TEXT.knownTransparency,
+      tip = ns.TEXT.knownTransparencyTip },
+    { key = "strangerTransparency", default = 0, min = 0, max = 90, step = 5, unit = "%",
+      text = ns.TEXT.strangerTransparency, tip = ns.TEXT.strangerTransparencyTip },
+    { key = "critterTransparency", default = 0, min = 0, max = 90, step = 5, unit = "%",
+      text = ns.TEXT.critterTransparency, tip = ns.TEXT.critterTransparencyTip },
     { key = "combatText", default = true, text = ns.TEXT.combatText, tip = ns.TEXT.combatTextTip, header = ns.TEXT.combatHeader },
     { key = "combatSelf", default = true, text = ns.TEXT.combatSelf, tip = ns.TEXT.combatSelfTip },
     { key = "combatHeals", default = true, text = ns.TEXT.combatHeals, tip = ns.TEXT.combatHealsTip },
@@ -168,7 +224,13 @@ local function Apply(key)
         ns.Guarded(ns.Resource.Update)
     elseif key == "range" then
         ns.Guarded(ns.Range.Look)
-    elseif key == "distance" or key == "plateSize" then
+    elseif key == "distance" or key == "plateSize" or key == "distanceStrength" then
+        ns.Guarded(ns.Scale.Update)
+    elseif key == "duration" or key == "durationSize" or key == "durationTransparency" then
+        ns.Guarded(ns.Auras.Restyle)
+    elseif key == "auraSize" or key == "debuffPlace" or key == "buffPlace" or key == "controlPlace" then
+        -- The icons' rows above the bar change how closely the plates stack (Scale.Stacking).
+        ns.Guarded(ns.Plate.Refresh)
         ns.Guarded(ns.Scale.Update)
     elseif key == "combatText" or key == "combatSelf" or key == "combatGame" then
         ns.Guarded(ns.CombatText.Update)
@@ -204,6 +266,20 @@ Core.Options(ns.name, OPTIONS, {
         for _, key in ipairs({ "resource", "range", "distance", "combatText", "style" }) do Apply(key) end
     end,
 })
+
+-- The key Show or hide players you don't know (Bindings.xml): the setting Only players you know turned over, told as
+-- the game tells its own plates' keys (UIErrorsFrame, in yellow).
+function ns.ToggleStrangers()
+    local hidden = Core.Set(ns.name, "players", (ns.options or {}).players == false)
+    local words = hidden and ns.TEXT.strangersHidden or ns.TEXT.strangersShown
+    local errors, colour = rawget(_G, "UIErrorsFrame"), rawget(_G, "YELLOW_FONT_COLOR")
+    if type(errors) == "table" and errors.AddMessage and type(colour) == "table" then
+        errors:AddMessage(words, colour.r, colour.g, colour.b)
+    else
+        Core.Print(words)
+    end
+end
+BINDING_NAME_SANEUI_NAMEPLATES_STRANGERS = ns.TEXT.strangersKey
 
 -- Standing down: every plate the game's own again, ours out of sight, the game's scaling by distance.
 function ns.GiveBack()

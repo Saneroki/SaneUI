@@ -7,7 +7,12 @@ local _, ns = ...
 --    a switch           a tick and its words (the words click it too)
 --    a number           its words, its value at the right, the game's slider
 --                       with its steppers under them (MinimalSliderWithSteppers)
---    one of a few       its words, then a round button and the words of each
+--    one of a few       its words, then a round button and the words of each,
+--                       side by side where three or fewer fit on a line
+--    a key              its words, and a box with the keys it is bound to:
+--                       a click, then the key to bind it to (Esc: none);
+--                       a right click unbinds it (the game's own key
+--                       bindings, saved as its key binding window saves them)
 --  Each shows the value in use (Core.Settings) and sets it through Core.Set,
 --  as a menu or a command does: the module is told and follows it, its options
 --  page shows it, its profile keeps it. One under another (parent) stands a
@@ -29,6 +34,18 @@ Controls.UNDER = 22   -- a control under another (parent): this far in
 Controls.SIZE = 14    -- the words' size (Look.SetFont: a 1080p layout's pixels)
 Controls.RADIO = "Interface\\Buttons\\UI-RadioButton" -- the game's round button (UIRadioButtonTemplate's art)
 Controls.DIM = 0.5    -- the words of a control greyed out
+Controls.ACROSS = 3   -- one of a few with at most this many choices: side by side
+Controls.KEY = { 150, 24 } -- a key's box
+Controls.MODIFIERS = { LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true, LALT = true, RALT = true,
+                       LMETA = true, RMETA = true, UNKNOWN = true }
+Controls.TEXT = {
+    press = "Press a key",
+    pressTip = "Press the key (with Shift, Ctrl or Alt if you like). Esc: keep it as it was.",
+    unbound = Core.Word("NOT_BOUND", "Not bound"),
+    keyTip = "Click, then press the key you want for it. Right click: no key.",
+    fight = "Keys can be changed out of a fight only.",
+    taken = "%s no longer does: %s.",
+}
 
 -- The value of a switch as a number shows it: with its unit ("75%"), a distance as the setting Units says.
 function Controls.Value(option, value)
@@ -165,10 +182,11 @@ local function Round(host)
     return button
 end
 
--- One of a few: its words, then a round button and the words of each choice.
+-- One of a few: its words, then a round button and the words of each choice; side by side where they are few.
 local function Choice(host, name, option, width)
     local row = CreateFrame("Frame", nil, host)
-    row:SetSize(width, Controls.WORDS + #option.choices * Controls.CHOICE)
+    local across = #option.choices <= Controls.ACROSS
+    row:SetSize(width, Controls.WORDS + (across and 1 or #option.choices) * Controls.CHOICE)
     local words = Words(row)
     words:SetPoint("TOPLEFT", row, "TOPLEFT", 2, 0)
     words:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 0)
@@ -176,11 +194,14 @@ local function Choice(host, name, option, width)
     local rounds = {}
     for index, choice in ipairs(option.choices) do
         local round = Round(row)
-        round:SetPoint("TOPLEFT", row, "TOPLEFT", 6, -(Controls.WORDS + (index - 1) * Controls.CHOICE + 2))
-        round:SetHitRectInsets(0, -(width - 30), -3, -3)
+        local column = across and (width - 6) / #option.choices or width - 6
+        local x = 6 + (across and (index - 1) * column or 0)
+        local y = Controls.WORDS + (across and 0 or (index - 1) * Controls.CHOICE) + 2
+        round:SetPoint("TOPLEFT", row, "TOPLEFT", x, -y)
+        round:SetHitRectInsets(0, -(column - 24), -3, -3)
         local label = Words(row)
         label:SetPoint("LEFT", round, "RIGHT", 6, 0)
-        label:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+        label:SetWidth(math.max(column - 28, 10))
         label:SetText(choice[2])
         round:SetScript("OnClick", ns.Guard(function()
             Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
@@ -201,6 +222,110 @@ local function Choice(host, name, option, width)
     return row
 end
 
+-- The game's words for a key ("Shift-F"), and those of the keys a command is bound to ("Not bound" for none).
+local function KeyWords(key)
+    local words = Core.Ask(rawget(_G, "GetBindingText"), key)
+    return type(words) == "string" and words ~= "" and words or key
+end
+local function Keys(command)
+    local keys = { Core.Ask(rawget(_G, "GetBindingKey"), command) }
+    local said = {}
+    for _, key in ipairs(keys) do
+        if type(key) == "string" and key ~= "" then said[#said + 1] = KeyWords(key) end
+    end
+    return #said > 0 and table.concat(said, ", ") or Controls.TEXT.unbound, keys
+end
+
+-- A command bound to that key alone (nil: to none): its keys let go first, the key's other command said, the game's
+-- bindings saved as its own key binding window saves them. Out of a fight only. Whether it was done.
+function Controls.Bind(command, key)
+    if InCombatLockdown() then
+        Core.Print(Controls.TEXT.fight)
+        return false
+    end
+    local set, save = rawget(_G, "SetBinding"), rawget(_G, "SaveBindings")
+    if not set or not save then return false end
+    local _, keys = Keys(command)
+    for _, old in ipairs(keys) do
+        if type(old) == "string" and old ~= "" then Core.Ask(set, old) end
+    end
+    if key then
+        local had = Core.Ask(rawget(_G, "GetBindingAction"), key)
+        if type(had) == "string" and had ~= "" and had ~= command then
+            Core.Print(Controls.TEXT.taken:format(KeyWords(key), rawget(_G, "BINDING_NAME_" .. had) or had))
+        end
+        Core.Ask(set, key, command)
+    end
+    local sets = rawget(_G, "GetCurrentBindingSet")
+    Core.Ask(save, sets and Core.Ask(sets) or 2)
+    return true
+end
+
+-- The key pressed with the modifiers held, in the game's order ("ALT-CTRL-SHIFT-F"); nil for a modifier alone.
+function Controls.Chord(key)
+    if Controls.MODIFIERS[key] then return nil end
+    local chord = ""
+    if IsAltKeyDown() then chord = chord .. "ALT-" end
+    if IsControlKeyDown() then chord = chord .. "CTRL-" end
+    if IsShiftKeyDown() then chord = chord .. "SHIFT-" end
+    return chord .. key
+end
+
+-- A key of the game's or a module's (its command): its words and a box with its keys, in the thin golden outline.
+local function Key(host, entry, width)
+    local row = CreateFrame("Frame", nil, host)
+    row:SetSize(width, Controls.TICK + 4)
+    local words = Words(row)
+    words:SetPoint("LEFT", row, "LEFT", 2, 0)
+    words:SetPoint("RIGHT", row, "RIGHT", -(Controls.KEY[1] + 8), 0)
+    words:SetText(entry.text or rawget(_G, "BINDING_NAME_" .. entry.binding) or entry.binding)
+    local box = CreateFrame("Button", nil, row)
+    box:SetSize(Controls.KEY[1], Controls.KEY[2])
+    box:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+    box:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    local outline = Look.Outline(box)
+    local label = Words(box, Look.GOLD)
+    label:SetPoint("LEFT", box, "LEFT", 6, 0)
+    label:SetPoint("RIGHT", box, "RIGHT", -6, 0)
+    label:SetJustifyH("CENTER")
+    local function Shown()
+        label:SetText(box.listening and Controls.TEXT.press or (Keys(entry.binding)))
+        outline:SetStrong(box.listening == true)
+    end
+    local function Stop()
+        box.listening = false
+        box:EnableKeyboard(false)
+        Shown()
+    end
+    box:SetScript("OnClick", ns.Guard(function(_, mouse)
+        if mouse == "RightButton" then
+            Stop()
+            if Controls.Bind(entry.binding, nil) then Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF") end
+            return Shown()
+        end
+        if InCombatLockdown() then return Core.Print(Controls.TEXT.fight) end
+        box.listening = true
+        box:EnableKeyboard(true)
+        box:SetPropagateKeyboardInput(false)
+        Shown()
+    end))
+    box:SetScript("OnKeyDown", ns.Guard(function(_, key)
+        if not box.listening then return end
+        if key == "ESCAPE" then return Stop() end
+        local chord = Controls.Chord(key)
+        if not chord then return end
+        Stop()
+        if Controls.Bind(entry.binding, chord) then Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON") end
+        Shown()
+    end))
+    box:SetScript("OnHide", ns.Guard(function() if box.listening then Stop() end end))
+    Core.Tip(box, words:GetText(), entry.tip and (entry.tip .. "\n" .. Controls.TEXT.keyTip) or Controls.TEXT.keyTip)
+    function row.Refresh() Shown() end
+    row.box, row.label = box, label
+    Shown()
+    return row
+end
+
 -- The control for a switch of the module's, by its kind; nil for a kind a step does not show.
 local function Make(host, name, option, width)
     if option.button or option.multi or option.color or option.entry then return nil end
@@ -217,10 +342,18 @@ function Controls.Build(parent, name, keys, width)
     local rows, y = {}, 0
     local options = Core.Settings(name) or {}
     for _, key in ipairs(keys or {}) do
-        local option = Core.Described(name, key)
+        -- A key ({ binding = "COMMAND", text, tip }), or one of the module's switches by its key.
+        local binding = type(key) == "table" and type(key.binding) == "string" and key
+        local option = not binding and Core.Described(name, key)
         local hidden = option and type(option.hidden) == "function" and ns.Safe("hidden", option.hidden, options)
         local inset = option and option.parent and Controls.UNDER or 0
-        local row = option and option.text and not hidden and Make(holder, name, option, width - inset)
+        local row
+        if binding then
+            row = Key(holder, binding, width)
+            option = { key = binding.binding }
+        else
+            row = option and option.text and not hidden and Make(holder, name, option, width - inset)
+        end
         if row then
             row:SetPoint("TOPLEFT", holder, "TOPLEFT", inset, -y)
             row.option = option

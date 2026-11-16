@@ -66,7 +66,7 @@ function Marks.Raid(dress, unit)
     local raid = dress.raid
     local index = unit and ns.Bar.Raw(GetRaidTargetIndex, unit)
     local foe = unit and Plain(UnitIsPlayer(unit)) and not Plain(UnitIsFriend("player", unit))
-    local on = type(index) ~= "nil" and not foe
+    local on = type(index) ~= "nil" and not foe and (ns.options or {}).marker ~= false -- the setting Raid markers
     if on then raid:SetSpriteSheetCell(index, ROWS, COLUMNS) end
     raid:SetShown(on)
     ns.Text.Room(dress, "raid", on and ns.Text.size or nil)

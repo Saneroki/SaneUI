@@ -169,6 +169,11 @@ local function One(unit, dress, on)
         if dress.strip then dress.strip:Hide() end
         return
     end
+    Resource.Show(dress, points)
+end
+
+-- The row on a dress with that many points (the game's, hidden or not; a sample's plain), made the first time.
+function Resource.Show(dress, points)
     if not dress.strip then
         Make(dress)
         Resource.Fit(dress)

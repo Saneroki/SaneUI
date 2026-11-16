@@ -11,29 +11,38 @@ local _, ns = ...
 --  it opens: by itself the first time the module is on, from the module's
 --  options page (Set up step by step), or /sane setup nameplates.
 --
---  Each step has its purpose, its words, the module's switches it is about,
---  and a board of sample plates (Sample.lua) drawn anew after each change:
---    look    what plates show (Plates show), a foe that is your target
---    line    what the bar says: quest, level, item level, health
---    border  who it is to you: target, out of reach, focus, party, guild ...
---    danger  how strong it is (boss, elite, rare), aggro, threat
---    auras   how many debuffs, buffs and crowd control
---    cast    the cast bar and the combat text (damage numbers)
---    bar     the power line, combo points, barriers, lost health
---    which   whose plates show (players you know, critters)
---    size    size, size by distance, transparency
+--  The steps, in Saneroki's order (2026-11-16), each a few short lines that
+--  start with a gold word ("A whole paragraph people will not read"), its
+--  switches and a board of sample plates (Sample.lua) drawn anew after each
+--  change, over the world itself:
+--    intro    what this is
+--    size     size, size by distance and how much
+--    seen     how see-through each kind of plate is
+--    which    whose plates show, and the keys that switch plates
+--    danger   how strong it is (boss, elite, rare), aggro, threat
+--    border   who it is to you: target, out of reach, party, guild ...;
+--             class colours
+--    line     what the bar says: quest, level, raid marker, item level,
+--             health; the dispel icon
+--    bar      mana, rage, energy, combo points, barrier, lost health
+--    cast     the cast bar and its height, damage numbers
+--    auras    how many debuffs, buffs, crowd control, where, how large
+--    timers   the seconds left in the icons
+--    look     what plates show (Plates show)
+--  Size and Spells on it each took two pages where one held too many switches.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Look = Core.Look
 local Setup = {}
 ns.Setup = Setup
 
-Setup.ROW = 44        -- a row of a board that lists samples (border, danger, which)
-Setup.TOP = 30        -- the first row's middle, from the board's top
+Setup.ROW = 44        -- a row of a board that lists samples (border, danger, which, seen)
+Setup.TOP = 34        -- the first row's middle, from the board's top
 Setup.LEFT = 24       -- a listed sample's left end
-Setup.WORDS = 200     -- the words beside a listed sample: from the board's left
+Setup.WORDS = 214     -- the words beside a listed sample: from the board's left
 Setup.SIZE = 13       -- the boards' words (Look.SetFont)
 Setup.FAINT = 0.25    -- a plate that would not show, drawn this solid
+Setup.CLOSE = 1.6     -- the samples of the seconds left, this large: the numbers readable
 
 local ICONS = "Interface\\Icons\\"
 local function Icons(...)
@@ -52,10 +61,22 @@ Setup.CONTROL = Icons("Spell_Frost_FrostNova", "Spell_Nature_Polymorph", "Spell_
     "Ability_Rogue_KidneyShot")
 Setup.BOLT = ICONS .. "Spell_Shadow_ShadowBolt"
 Setup.QUAKE = ICONS .. "Spell_Nature_Earthquake"
+Setup.SKULL = 8 -- the raid marker the samples wear
 
--- A colour's words in that colour ({ r, g, b }).
+-- Words in a colour ({ r, g, b }); in the game's gold without one.
 local function Hued(colour, words)
+    if not words then colour, words = Look.GOLD, colour end
     return "|cff" .. Core.Hex(colour[1], colour[2], colour[3]) .. words .. "|r"
+end
+
+-- A step's words: one line each, its first words in gold ({ "Gold", "the rest" }), so the page reads at a glance.
+local function Lines(...)
+    local lines = {}
+    for index = 1, select("#", ...) do
+        local line = select(index, ...)
+        lines[index] = Hued(line[1]) .. "  " .. line[2]
+    end
+    return table.concat(lines, "\n")
 end
 
 local function You()
@@ -63,63 +84,90 @@ local function You()
     return type(Core.Plain(name)) == "string" and name or "You"
 end
 
+local D40, D60 = Core.Distance(40), Core.Distance(60)
+
 -------------------------------------------------------------------------------
 --  The steps: their words and the switches each is about
 -------------------------------------------------------------------------------
 Setup.STEPS = {
-    { key = "look", title = "Your nameplates",
-      text = "Over each creature and player near you the game shows a nameplate. Sane UI dresses it: one bar with "
-          .. "everything on one line inside it, a border that tells who it is to you, and the spells on it around "
-          .. "the bar.\nThis setup goes through it a part at a time. Each choice shows at once on the sample at the "
-          .. "left, and on the plates around you.",
-      settings = { "style", "dot" } },
-    { key = "line", title = "What the bar says",
-      text = "Inside the bar, from the left: how many a quest of yours still wants (a sword: to kill, a sack: to "
-          .. "loot), the level in the colour of how hard it is for you (green easy, yellow even, red hard, a skull "
-          .. "too strong to tell), a player's item level, your threat, the name and the health.\nItem level "
-          .. "(\"i32\"): the average level of the gear a player wears; the higher, the stronger their gear. It "
-          .. "shows once the game has let Sane UI inspect them: out of a fight, near enough.",
-      settings = { "quest", "level", "gear", "health", "percent" } },
-    { key = "border", title = "The border: who it is to you",
-      text = "The thin line around the bar tells how a creature or player stands to you. Grey is your target "
-          .. "while your attacks reach it, red when none of them does. Blue is someone in your party, green in your "
-          .. "guild, purple in your raid, pink a friend, orange your focus. Anyone else has a black line.",
-      settings = { "range" } },
-    { key = "danger", title = "Rank and danger",
-      text = "Behind the border a second line tells how strong it is: thick gold a boss, gold an elite, silver a "
-          .. "rare (a rare elite too).\nA red glow around the bar: you have its aggro, it is after you; or it is "
-          .. "a player who may attack you.\nYour threat inside the bar: grey while it is after someone else, "
-          .. "orange when you are about to take its aggro, red while you have it.",
+    { key = "intro", title = "Set up your nameplates",
+      text = Lines({ "Nameplates", "the bars over creatures and players near you, in Sane UI's dress." },
+          { "This setup", "sets them up to your liking, a page for each part." },
+          { "At the left", "a sample plate shows each choice at once." },
+          { "Every choice", "counts at once, on the plates around you too. Close at any time: it stays." },
+          { "Later", "Esc > Options > AddOns > Sane UI > Nameplates, or /sane setup nameplates." }),
       settings = {} },
-    { key = "auras", title = "Spells on it",
-      text = "Around the bar: right above it the debuffs and damage over time you put on it, with the time each "
-          .. "has left; at its left the buffs of a foe; at its right the crowd control on it (stuns, fears, "
-          .. "roots), by anyone. Choose how many of each show; 0 shows none.",
-      settings = { "debuffCount", "buffCount", "controlCount", "dispel" } },
-    { key = "cast", title = "Casts and damage numbers",
-      text = "Under the bar, what it casts: the spell's icon with the seconds left, the spell and at whom. "
-          .. "Gold: you can interrupt it. Grey: you cannot.\nWhat it takes rises over its plate and fades: white "
-          .. "for auto attacks and physical damage, red for spells, green for heals, larger for a critical hit.",
-      settings = { "castBar", "combatText", "combatHeals", "combatSelf", "combatGame" } },
-    { key = "bar", title = "On the bar",
-      text = "Along the bottom of the bar a thin line: its mana, rage or energy. As a rogue, or a druid in cat "
-          .. "form, your combo points stand in a row under the bar of the one you have them on.\nOn the bar "
-          .. "itself: the game's shield over the health for what absorbs damage, and hatching where maximum "
-          .. "health was taken away for a while.",
-      settings = { "power", "resource", "barrier", "lost" } },
+    { key = "size", title = "Size",
+      text = Lines({ "Nameplate size", "how large plates near you are." },
+          { "Size by distance", "plates get smaller the farther away, so the near ones stand out." },
+          { "How much", "100%: half the size at " .. D40 .. ", a quarter at " .. D60 .. ". 0%: all full size." },
+          { "Your target", "always full size." }),
+      settings = { "plateSize", "distance", "distanceStrength" } },
+    { key = "seen", title = "See-through",
+      text = Lines({ "See-through", "plates hide less of the world behind them." },
+          { "Each kind", "its own slider: your target, foes, players you know or don't, critters." },
+          { "0%", "solid. 90%: barely there." }),
+      settings = { "targetTransparency", "transparency", "knownTransparency", "strangerTransparency",
+                   "critterTransparency" } },
     { key = "which", title = "Which plates show",
-      text = "Players you do not know, who cannot attack you and whom you cannot attack, have no plate, nor do "
-          .. "their pets: towns stay clear. Your party, guild, friends, your target and anyone you could fight "
-          .. "always have one.\nCritters (rabbits, rats, someone's pet) have none either, unless one is your "
-          .. "target or a quest of yours wants it.",
-      settings = { "players", "critters" } },
-    { key = "size", title = "Size and transparency",
-      text = ("Plates are their full size within %s and smaller the farther away: half at %s, a quarter at %s, "
-          .. "so the near ones stand out. Your target's is always full size. See-through plates hide less of the "
-          .. "world; your target's has a slider of its own.\nCome back here at any time: Sane UI's options, "
-          .. "Nameplates, Set up step by step, or /sane setup nameplates."):format(Core.Distance(10),
-          Core.Distance(40), Core.Distance(60)),
-      settings = { "plateSize", "distance", "transparency", "targetTransparency" } },
+      text = Lines({ "Players you don't know", "friendly players outside your party, raid, guild and friends." },
+          { "Only players you know", "hides their plates, and their pets': towns stay clear." },
+          { "Always shown", "your target, and anyone you could fight." },
+          { "Critters", "rabbits, rats, pets: no plate, unless targeted or wanted by a quest." },
+          { "Keys", "switch plates on and off as you play: click a box, press the key." }),
+      settings = { "players", "critters",
+                   { binding = "ALLNAMEPLATES", text = "Show or hide all plates" },
+                   { binding = "FRIENDNAMEPLATES", text = "Show or hide friendly players" },
+                   { binding = "NAMEPLATES", text = "Show or hide enemies" },
+                   { binding = "SANEUI_NAMEPLATES_STRANGERS", text = "Show or hide players you don't know",
+                     tip = "Only players you know, on or off: every player's plate, or only those you know." } } },
+    { key = "danger", title = "Rank and danger",
+      text = Lines({ "Thick gold", "a boss. Gold: an elite. Silver: a rare, or a rare elite." },
+          { "A red glow", "you have its aggro; or a player who may attack you." },
+          { "Threat", "in the bar: grey low, orange almost yours, red yours." }),
+      settings = {} },
+    { key = "border", title = "The border: who it is",
+      text = Lines({ "Grey", "your target, in reach of your attacks." },
+          { "Red", "out of reach of all your attacks." },
+          { "Blue", "your party. Purple: your raid. Green: your guild. Pink: a friend. Orange: your focus." },
+          { "Black", "anyone else." },
+          { "Class colours", "a player's bar in their class's colour." }),
+      settings = { "range", "classColour" } },
+    { key = "line", title = "What the bar says",
+      text = Lines({ "From the left", "quest, level, raid marker, item level, threat, name, health." },
+          { "Quest", "a sword: kill it. A sack: loot it. Then how many are left." },
+          { "Item level", "(i32) the average level of a player's gear. Higher is stronger." },
+          { "Dispel", "the icon above the bar's end: something you can take off it." }),
+      settings = { "quest", "level", "marker", "gear", "health", "percent", "dispel" } },
+    { key = "bar", title = "On the bar",
+      text = Lines({ "Along the bottom", "its mana (blue), rage (red) or energy (yellow)." },
+          { "Combo points", "a row under the bar of the one you have them on (rogue, cat druid)." },
+          { "Barrier", "the game's shield over the health." },
+          { "Lost health", "hatched at the bar's end: maximum health taken away for a while." }),
+      settings = { "power", "resource", "barrier", "lost" } },
+    { key = "cast", title = "Casts and damage numbers",
+      text = Lines({ "Under the bar", "what it casts, the seconds left, at whom." },
+          { "Gold", "you can interrupt it. Grey: you cannot." },
+          { "Damage numbers", "rise over it: white physical, red spells, green heals, larger when critical." }),
+      settings = { "castBar", "castHeight", "combatText", "combatHeals", "combatSelf", "combatGame" } },
+    { key = "auras", title = "Spells on it",
+      text = Lines({ "Your debuffs", "what you put on it. Buffs: a foe's own. Crowd control: stuns, fears, roots." },
+          { "Where", "above the bar, at its left or right; two on one side stand in rows." },
+          { "How many", "0 shows none. Icon size: 100% as high as the bar." },
+          { "Watch", "the damage numbers: icons above the bar can hide them." }),
+      settings = { "debuffCount", "debuffPlace", "buffCount", "buffPlace", "controlCount", "controlPlace",
+                   "auraSize" } },
+    { key = "timers", title = "Time left in the icons",
+      text = Lines({ "The seconds left", "of each debuff and buff, in its icon." },
+          { "Over a minute", "no number: so it always fits." },
+          { "Size and see-through", "for the number alone." }),
+      settings = { "duration", "durationSize", "durationTransparency" } },
+    { key = "look", title = "What plates show",
+      text = Lines({ "Health bar and spells", "all of it: everything of the pages before." },
+          { "Health bar only", "no auras around it." },
+          { "Spells only", "no bar, no name: a faint dot where a plate is, a gold arrow over your target." },
+          { "Done", "your plates are set. Come back at any time: /sane setup nameplates." }),
+      settings = { "style", "dot" } },
 }
 
 -------------------------------------------------------------------------------
@@ -144,6 +192,11 @@ local function SampleOf(board, index)
         board.samples[index] = dress
     end
     return dress
+end
+
+local function Wide(board)
+    local width = board:GetWidth()
+    return type(width) == "number" and width > 0 and width or 420
 end
 
 -- Words on the board, made the first time.
@@ -171,14 +224,13 @@ end
 
 -- A list of samples, a row each, with its words beside it (rows: { spec, words, through }).
 local function List(board, rows)
-    local width = board:GetWidth() > 0 and board:GetWidth() or 420
     for index, row in ipairs(rows) do
         local y = Setup.TOP + (index - 1) * Setup.ROW
         Put(board, index, row[1], "LEFT", Setup.LEFT, y, 1, row[3])
         local line = Line(board, index)
         line:ClearAllPoints()
         line:SetPoint("LEFT", board, "TOPLEFT", Setup.WORDS, -y)
-        line:SetWidth(width - Setup.WORDS - 12)
+        line:SetWidth(Wide(board) - Setup.WORDS - 12)
         line:SetText(row[2])
     end
 end
@@ -188,137 +240,65 @@ local function Under(board, index, dress, words, below)
     local line = Line(board, index)
     line:ClearAllPoints()
     line:SetPoint("TOP", dress, "BOTTOM", 0, -(below or 10))
-    line:SetWidth(math.max((board:GetWidth() or 420) - 40, 100))
+    line:SetWidth(math.max(Wide(board) - 40, 100))
     line:SetJustifyH("CENTER")
     line:SetText(words)
     return line
 end
 
--- The foe of the first step: your target, an elite casting at you, with auras of every kind.
-local function Foe()
-    return { name = "Thornspine Raider", above = 1, hostile = true, rank = "elite", health = 3150, most = 4800,
-             power = { 60, 100, "RAGE" }, threat = { 1, 85 }, lit = "target", debuffs = Setup.DEBUFFS,
-             buffs = Setup.BUFFS, control = { Setup.CONTROL[1] },
-             cast = { icon = Setup.BOLT, spell = "Shadow Bolt", target = You(), time = 2.5 } }
+-- Of a spec, a copy with these changed.
+local function As(spec, changes)
+    local copy = {}
+    for key, value in pairs(spec) do copy[key] = value end
+    for key, value in pairs(changes or {}) do copy[key] = value end
+    return copy
 end
+
+-- The samples' units.
+local FOE = { name = "Thornspine Raider", above = 1, hostile = true, rank = "elite", health = 3150, most = 4800,
+              power = { 60, 100, "RAGE" }, threat = { 1, 85 }, raid = Setup.SKULL }
+local CREATURE = { name = "Mossback Lurker", above = 0, hostile = true, health = 1100, most = 1350 }
+local function Player(name, class, extra) return As({ name = name, player = true, class = class, above = 0 }, extra) end
+
+-- Your target: an elite casting at you, with auras of every kind.
+local function Target()
+    return As(FOE, { lit = "target", debuffs = Setup.DEBUFFS, buffs = Setup.BUFFS, control = { Setup.CONTROL[1] },
+                     cast = { icon = Setup.BOLT, spell = "Shadow Bolt", target = You(), time = 2.5 } })
+end
+
+local function Share(key) return (tonumber((ns.options or {})[key]) or 0) / 100 end
 
 local DRAW = {}
 
-function DRAW.look(board)
-    local middle = (board:GetWidth() > 0 and board:GetWidth() or 420) / 2
-    local dress = Put(board, 1, Foe(), "CENTER", middle, 150, nil)
-    Under(board, 1, dress, "Your target: an elite foe casting at you, with your debuffs above it, its buffs at its "
-        .. "left and the crowd control on it at its right.", 40)
+function DRAW.intro(board)
+    local dress = Put(board, 1, Target(), "CENTER", Wide(board) / 2, 170)
+    Under(board, 1, dress, "A plate of Sane UI: your target, an elite casting at you.", 50)
 end
 
-function DRAW.line(board)
-    local middle = (board:GetWidth() > 0 and board:GetWidth() or 420) / 2
-    local creature = Put(board, 1, { name = "Mossback Lurker", above = 0, hostile = true, quest = { "kill", "3/8" },
-                                     health = 812, most = 1350 }, "CENTER", middle, 90)
-    Under(board, 1, creature, "A creature a quest of yours wants: 3 of 8 still to kill.")
-    local player = Put(board, 2, { name = "Aeryn Moonblade", player = true, class = "HUNTER", above = 1, gear = 32,
-                                   health = 2140, most = 3050, power = { 2400, 3200, "MANA" } }, "CENTER", middle, 230)
-    Under(board, 2, player, "Another player, with their item level.")
+function DRAW.size(board)
+    local options, Scale = ns.options or {}, ns.Scale
+    local full, far = Scale.Full(), options.distance ~= false
+    local middle = Wide(board) / 2
+    local first = Put(board, 1, As(CREATURE, { lit = "target" }), "CENTER", middle, 90, full)
+    Under(board, 1, first, "Your target: full size")
+    local second = Put(board, 2, CREATURE, "CENTER", middle, 220, far and full * Scale.Size(40) or full)
+    Under(board, 2, second, D40 .. " away")
+    local third = Put(board, 3, CREATURE, "CENTER", middle, 330, far and full * Scale.Size(60) or full)
+    Under(board, 3, third, D60 .. " away")
 end
 
-function DRAW.border(board)
-    local Bar, options = ns.Bar, ns.options or {}
-    local creature = { name = "Mossback Lurker", above = 0, hostile = true }
-    local function As(extra)
-        local spec = {}
-        for key, value in pairs(creature) do spec[key] = value end
-        for key, value in pairs(extra) do spec[key] = value end
-        return spec
-    end
-    local function Player(name, class, lit) return { name = name, player = true, class = class, above = 0, lit = lit } end
+function DRAW.seen(board)
+    local function Through(key) return "  " .. Hued(math.floor(Share(key) * 100 + 0.5) .. "%") end
     List(board, {
-        { As({ lit = "target" }), Hued(Bar.TARGET, "Grey") .. ": your target, within reach of your attacks" },
-        { As({ lit = "target", out = true }), Hued(Bar.FAR, "Red") .. ": out of reach of all your attacks"
-            .. (options.range == false and " (switched off)" or "") },
-        { As({ lit = "focus" }), Hued(Bar.FOCUS, "Orange") .. ": your focus" },
-        { Player("Lyra Dawnwhisper", "PRIEST", "party"), Hued(Bar.KIN.party, "Blue") .. ": in your party" },
-        { Player("Bram Ironhold", "WARRIOR", "guild"), Hued(Bar.KIN.guild, "Green") .. ": in your guild" },
-        { Player("Seren Starfall", "MAGE", "raid"), Hued(Bar.KIN.raid, "Purple") .. ": in your raid" },
-        { Player("Tavi Quickstep", "ROGUE", "friend"), Hued(Bar.KIN.friend, "Pink") .. ": on your friends list" },
-        { As({}), Hued({ 0.6, 0.6, 0.6 }, "Black") .. ": anyone else" },
+        { As(CREATURE, { lit = "target" }), "Your target" .. Through("targetTransparency"), Share("targetTransparency") },
+        { CREATURE, "Creatures and foes" .. Through("transparency"), Share("transparency") },
+        { Player("Bram Ironhold", "WARRIOR", { lit = "guild" }), "Players you know" .. Through("knownTransparency"),
+          Share("knownTransparency") },
+        { Player("Corin Ashdale", "PALADIN"), "Players you don't know" .. Through("strangerTransparency"),
+          Share("strangerTransparency") },
+        { { name = "Rabbit", level = 1, calm = true, health = 8, most = 8 }, "Critters" .. Through("critterTransparency"),
+          Share("critterTransparency") },
     })
-end
-
-function DRAW.danger(board)
-    local Bar, Text = ns.Bar, ns.Text
-    local function Foe(extra)
-        local spec = { name = "Thornspine Raider", above = 1, hostile = true }
-        for key, value in pairs(extra) do spec[key] = value end
-        return spec
-    end
-    List(board, {
-        { Foe({ name = "Gnarlroot the Ancient", level = 0, rank = "boss" }), Hued(Bar.RANKS.boss.colour, "Thick gold")
-            .. ": a boss" },
-        { Foe({ rank = "elite", above = 2 }), Hued(Bar.RANKS.elite.colour, "Gold") .. ": an elite" },
-        { Foe({ name = "Duskwing", rank = "rare" }), Hued(Bar.RANKS.rare.colour, "Silver") .. ": a rare, a rare elite too" },
-        { Foe({ threat = { 3, 100 } }), Hued(Bar.GLOW, "A red glow") .. ", red threat: you have its aggro" },
-        { Foe({ threat = { 1, 85 } }), Hued(Text.THREAT[1], "Orange threat") .. ": you are about to take its aggro" },
-        { Foe({ threat = { 0, 40 } }), Hued(Text.THREAT[0], "Grey threat") .. ": it is after someone else" },
-        { { name = "Vex Morrowgrim", player = true, class = "WARLOCK", above = 0, hostile = true, danger = true },
-          Hued(Bar.GLOW, "A glow on a player") .. ": they may attack you" },
-    })
-end
-
-function DRAW.auras(board)
-    local middle = (board:GetWidth() > 0 and board:GetWidth() or 420) / 2
-    local spec = Foe()
-    spec.cast, spec.lit, spec.control = nil, nil, Setup.CONTROL
-    local dress = Put(board, 1, spec, "CENTER", middle, 150)
-    local Auras = ns.Auras
-    local function Count(key) return Auras.Most(key) > 0 and ns.Style() ~= "bar" end
-    local own = Line(board, 1)
-    own:ClearAllPoints()
-    own:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", 0, Auras.SIZE * dress:GetScale() + 6)
-    own:SetWidth(200)
-    own:SetText(Count("debuffCount") and "Your debuffs" or "")
-    local buffs = Line(board, 2)
-    buffs:ClearAllPoints()
-    buffs:SetPoint("TOPRIGHT", dress, "BOTTOMLEFT", -Auras.GAP, -8)
-    buffs:SetWidth(120)
-    buffs:SetJustifyH("RIGHT")
-    buffs:SetText(Count("buffCount") and "Its buffs" or "")
-    local control = Line(board, 3)
-    control:ClearAllPoints()
-    control:SetPoint("TOPLEFT", dress, "BOTTOMRIGHT", Auras.GAP, -8)
-    control:SetWidth(120)
-    control:SetText(Count("controlCount") and "Crowd control" or "")
-    if ns.Style() == "bar" then
-        Under(board, 4, dress, "Plates show the health bar only (the first step): no auras around it.", 40)
-    else
-        Under(board, 4, dress, "", 40)
-    end
-end
-
-function DRAW.cast(board)
-    local middle = (board:GetWidth() > 0 and board:GetWidth() or 420) / 2
-    local spec = Foe()
-    spec.debuffs, spec.buffs, spec.control, spec.numbers = nil, nil, nil, true
-    local first = Put(board, 1, spec, "CENTER", middle, 130)
-    local options = ns.options or {}
-    Under(board, 1, first, options.castBar == false and "The game's own cast bar (Cast bar is off)."
-        or Hued(Look.GOLD, "Gold") .. ": you can interrupt it.", 30)
-    local locked = Foe()
-    locked.debuffs, locked.buffs, locked.control, locked.lit, locked.threat = nil, nil, nil, nil, nil
-    locked.name, locked.rank = "Gnarlroot the Ancient", "boss"
-    locked.level = 0
-    locked.cast = { icon = Setup.QUAKE, spell = "Ground Tremor", time = 3, locked = true }
-    local second = Put(board, 2, locked, "CENTER", middle, 290)
-    Under(board, 2, second, options.castBar == false and "" or Hued({ 0.7, 0.7, 0.7 }, "Grey") .. ": you cannot.", 30)
-end
-
-function DRAW.bar(board)
-    local middle = (board:GetWidth() > 0 and board:GetWidth() or 420) / 2
-    local caster = Put(board, 1, { name = "Ilse Ashveil", player = true, class = "MAGE", above = 0, hostile = true,
-                                   health = 2600, most = 2600, power = { 3900, 6000, "MANA" } }, "CENTER", middle, 100)
-    Under(board, 1, caster, "Mana along the bottom of a mage's bar.")
-    local fighter = Put(board, 2, { name = "Thornspine Raider", above = 1, hostile = true, health = 1900, most = 2400,
-                                    power = { 45, 100, "RAGE" } }, "CENTER", middle, 240)
-    Under(board, 2, fighter, "Rage along the bottom of a warrior's.")
 end
 
 function DRAW.which(board)
@@ -326,34 +306,114 @@ function DRAW.which(board)
     local strangers, critters = options.players ~= false, options.critters ~= true
     local hidden, shown = Hued({ 0.6, 0.6, 0.6 }, "No plate"), Hued({ 0.25, 1, 0.25 }, "A plate")
     List(board, {
-        { { name = "Bram Ironhold", player = true, class = "WARRIOR", above = 0, lit = "guild" },
-          shown .. ": someone of your guild, party or friends" },
-        { { name = "Corin Ashdale", player = true, class = "PALADIN", above = 0 },
-          (strangers and hidden or shown) .. ": a player you do not know", strangers and (1 - Setup.FAINT) or nil },
-        { { name = "Vex Morrowgrim", player = true, class = "WARLOCK", above = 0, hostile = true, danger = true },
-          shown .. ": anyone you could fight" },
-        { { name = "Rabbit", level = 1, calm = true, health = 8, most = 8 },
-          (critters and hidden or shown) .. ": a critter", critters and (1 - Setup.FAINT) or nil },
+        { Player("Bram Ironhold", "WARRIOR", { lit = "guild" }), shown .. ": your party, raid, guild, friends" },
+        { Player("Corin Ashdale", "PALADIN"), (strangers and hidden or shown) .. ": a player you don't know",
+          strangers and (1 - Setup.FAINT) or nil },
+        { Player("Vex Morrowgrim", "WARLOCK", { hostile = true, danger = true }), shown .. ": anyone you could fight" },
+        { { name = "Rabbit", level = 1, calm = true, health = 8, most = 8 }, (critters and hidden or shown) .. ": a critter",
+          critters and (1 - Setup.FAINT) or nil },
     })
 end
 
-function DRAW.size(board)
-    local options, Scale = ns.options or {}, ns.Scale
-    local middle = (board:GetWidth() > 0 and board:GetWidth() or 420) / 2
-    local full = Scale.Full()
-    local far = options.distance ~= false
-    local own = (tonumber(options.transparency) or 0) / 100
-    local target = (tonumber(options.targetTransparency) or 0) / 100
-    local spec = { name = "Mossback Lurker", above = 0, hostile = true, health = 1100, most = 1350 }
-    local lit = {}
-    for key, value in pairs(spec) do lit[key] = value end
-    lit.lit = "target"
-    local first = Put(board, 1, lit, "CENTER", middle, 80, full, target)
-    Under(board, 1, first, "Your target")
-    local second = Put(board, 2, spec, "CENTER", middle, 200, far and full * 0.5 or full, own)
-    Under(board, 2, second, Core.Distance(40) .. " away")
-    local third = Put(board, 3, spec, "CENTER", middle, 300, far and full * 0.25 or full, own)
-    Under(board, 3, third, Core.Distance(60) .. " away")
+function DRAW.danger(board)
+    local Bar, Text = ns.Bar, ns.Text
+    local foe = { name = "Thornspine Raider", above = 1, hostile = true }
+    List(board, {
+        { As(foe, { name = "Gnarlroot the Ancient", level = 0, rank = "boss" }), Hued(Bar.RANKS.boss.colour, "Thick gold")
+            .. ": a boss" },
+        { As(foe, { rank = "elite", above = 2 }), Hued(Bar.RANKS.elite.colour, "Gold") .. ": an elite" },
+        { As(foe, { name = "Duskwing", rank = "rare" }), Hued(Bar.RANKS.rare.colour, "Silver") .. ": a rare, a rare elite too" },
+        { As(foe, { threat = { 3, 100 } }), Hued(Bar.GLOW, "A red glow") .. ", red threat: you have its aggro" },
+        { As(foe, { threat = { 1, 85 } }), Hued(Text.THREAT[1], "Orange threat") .. ": almost yours" },
+        { As(foe, { threat = { 0, 40 } }), Hued(Text.THREAT[0], "Grey threat") .. ": it is after someone else" },
+        { Player("Vex Morrowgrim", "WARLOCK", { hostile = true, danger = true }),
+          Hued(Bar.GLOW, "A glow on a player") .. ": they may attack you" },
+    })
+end
+
+function DRAW.border(board)
+    local Bar, options = ns.Bar, ns.options or {}
+    List(board, {
+        { As(CREATURE, { lit = "target" }), Hued(Bar.TARGET, "Grey") .. ": your target, in reach" },
+        { As(CREATURE, { lit = "target", out = true }), Hued(Bar.FAR, "Red") .. ": out of reach of all your attacks"
+            .. (options.range == false and " (off)" or "") },
+        { As(CREATURE, { lit = "focus" }), Hued(Bar.FOCUS, "Orange") .. ": your focus" },
+        { Player("Lyra Dawnwhisper", "PRIEST", { lit = "party" }), Hued(Bar.KIN.party, "Blue") .. ": your party" },
+        { Player("Bram Ironhold", "WARRIOR", { lit = "guild" }), Hued(Bar.KIN.guild, "Green") .. ": your guild" },
+        { Player("Seren Starfall", "MAGE", { lit = "raid" }), Hued(Bar.KIN.raid, "Purple") .. ": your raid" },
+        { Player("Tavi Quickstep", "ROGUE", { lit = "friend" }), Hued(Bar.KIN.friend, "Pink") .. ": a friend" },
+        { CREATURE, Hued({ 0.6, 0.6, 0.6 }, "Black") .. ": anyone else" },
+    })
+end
+
+function DRAW.line(board)
+    local middle = Wide(board) / 2
+    local creature = Put(board, 1, As(CREATURE, { quest = { "kill", "3/8" }, raid = Setup.SKULL, dispel = "Magic",
+                                                  health = 812 }), "CENTER", middle, 100)
+    Under(board, 1, creature, "A creature your quest wants (3 of 8 to go), a skull on it, a buff you can take off.", 14)
+    local player = Put(board, 2, Player("Aeryn Moonblade", "HUNTER", { above = 1, gear = 32, health = 2140, most = 3050,
+                                                                      power = { 2400, 3200, "MANA" }, dispel = "Poison" }),
+        "CENTER", middle, 260)
+    Under(board, 2, player, "Another player: their item level, a poison you can cure.", 14)
+end
+
+function DRAW.bar(board)
+    local middle = Wide(board) / 2
+    local mage = Put(board, 1, Player("Ilse Ashveil", "MAGE", { hostile = true, health = 2000, most = 2600,
+                                                               power = { 3900, 6000, "MANA" }, barrier = 0.3 }),
+        "CENTER", middle, 70)
+    Under(board, 1, mage, "Mana, and a barrier over its health")
+    local warrior = Put(board, 2, As(CREATURE, { name = "Thornspine Raider", health = 1500, most = 2400,
+                                                 power = { 45, 100, "RAGE" }, lost = 0.25 }), "CENTER", middle, 180)
+    Under(board, 2, warrior, "Rage, and maximum health lost for a while")
+    local rogue = Put(board, 3, Player("Nyx Shadowstep", "ROGUE", { hostile = true, health = 1700, most = 2100,
+                                                                   power = { 70, 100, "ENERGY" }, combo = 3 }),
+        "CENTER", middle, 290)
+    Under(board, 3, rogue, "Energy, and your combo points under it", 18)
+end
+
+function DRAW.cast(board)
+    local middle = Wide(board) / 2
+    local options = ns.options or {}
+    local caster = Put(board, 1, As(CREATURE, { name = "Thornspine Mystic", above = 1, health = 1900, most = 2400,
+                                                power = { 4200, 6000, "MANA" }, threat = { 0, 30 }, numbers = true,
+                                                cast = { icon = Setup.BOLT, spell = "Shadow Bolt", target = You(),
+                                                         time = 2.5 } }), "CENTER", middle, 150)
+    Under(board, 1, caster, options.castBar == false and "The game's own cast bar (Cast bar off)."
+        or Hued("Gold") .. ": you can interrupt it.", 34)
+    local boss = Put(board, 2, { name = "Gnarlroot the Ancient", level = 0, rank = "boss", hostile = true,
+                                 cast = { icon = Setup.QUAKE, spell = "Ground Tremor", time = 3, locked = true } },
+        "CENTER", middle, 320)
+    Under(board, 2, boss, options.castBar == false and "" or Hued({ 0.7, 0.7, 0.7 }, "Grey") .. ": you cannot.", 34)
+end
+
+function DRAW.auras(board)
+    local spec = As(Target(), { control = Setup.CONTROL, numbers = true })
+    spec.cast, spec.lit = nil, nil
+    local dress = Put(board, 1, spec, "CENTER", Wide(board) / 2, 220)
+    local Auras = ns.Auras
+    local words = {}
+    for _, kind in ipairs(Auras.KINDS) do
+        local name = kind.key == "own" and "Your debuffs" or kind.key == "foes" and "Its buffs" or "Crowd control"
+        local most = Auras.Most(kind.count)
+        local where = Auras.Where(kind)
+        local place = where == "above" and "above" or where == "left" and "at the left" or "at the right"
+        words[#words + 1] = Hued(name) .. ": " .. (most > 0 and (most .. ", " .. place) or "none")
+    end
+    if ns.Style() == "bar" then words[#words + 1] = "Plates show the health bar only (the last page): no spells." end
+    Under(board, 1, dress, table.concat(words, "\n"), 46)
+end
+
+function DRAW.timers(board)
+    local spec = As(FOE, { debuffs = Setup.DEBUFFS, buffs = Setup.BUFFS, control = Setup.CONTROL })
+    spec.raid = nil
+    local dress = Put(board, 1, spec, "CENTER", Wide(board) / 2, 180, Setup.CLOSE)
+    Under(board, 1, dress, "The seconds left in each icon. Over a minute: none, as on the ones without a number.", 30)
+end
+
+function DRAW.look(board)
+    local dress = Put(board, 1, Target(), "CENTER", Wide(board) / 2, 170)
+    Under(board, 1, dress, "Your target, an elite casting at you, as your plates show it.", 50)
 end
 
 -- The step's board on the stage, the others out of sight; drawn anew as the settings in use say.

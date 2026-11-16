@@ -3,11 +3,10 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Text
 --  The line inside a plate's bar, left to right, each piece taking room only
---  while it shows; the quest's icon stands outside the bar, at its left end
---  (Text.OUTSIDE):
---    quest    the game's sword (to kill) or sack (to loot), outside, and the
---             count ("0/7") inside, while the unit belongs to a quest in your
---             log with an objective still open (Core.UnitQuest)
+--  while it shows (Saneroki, 2026-11-16: the quest's icon inside the bar too):
+--    quest    the game's sword (to kill) or sack (to loot) and the count
+--             ("0/7"), while the unit belongs to a quest in your log with an
+--             objective still open (Core.UnitQuest)
 --    level    the unit's level in the game's colour for how hard it is to you
 --             (a skull where it is too high to tell)
 --    marker   the raid marker (Marks.lua), right after the level, as on Sane
@@ -58,7 +57,6 @@ Text.PAD = 2     -- over and under the line, inside the bar
 Text.GAP = 4     -- between two pieces of the line
 Text.NEAR = 0    -- between the level and the name right after it: the letters' own spacing, read as one
 Text.BESIDE = 2  -- either side of the raid marker: about as near as the letters' own spacing (an icon has none)
-Text.OUTSIDE = 4 -- from the bar's left end to the quest's icon outside it (past a boss's rank line)
 Text.SMALLER = 0.72 -- the line's font, a share of the height of the game's font for its plates' names
 Text.ICON = 1.2  -- an icon's size, times the font's height
 Text.SLACK = 1   -- room given to the name beyond its measured width, so it is never cut short by rounding
@@ -184,7 +182,7 @@ function Text.Make(dress)
     dress.room = {} -- [piece] = its room on the line now; none while it does not show
 end
 
--- The pieces of the line that are texts (not the icons outside it).
+-- The pieces of the line that are texts (not its icons).
 local TEXTS = { count = true, level = true, gear = true, threat = true, name = true, value = true }
 
 -- A text's room for that width, with that share of it to spare: the room it had while the text fits in it with no
@@ -212,23 +210,18 @@ Text.Room = Room
 local ORDER = { { "quest", "quest" }, { "count", "count" }, { "level", "level" }, { "raid", "raid" }, { "gear", "gear" },
                 { "threat", "threat" }, { "name", "name" }, { "value", "value" } }
 
--- The pieces that stand outside the bar, at its left end, from the bar outward.
-local OUTSIDE = { "quest" }
-local outside = { quest = true }
-
--- The gap before a piece after the last: Text.BESIDE either side of the raid marker, none of ours between the level
--- and the name (Text.NEAR), else Text.GAP.
+-- The gap before a piece after the last: Text.BESIDE either side of the raid marker and after the quest's icon (its
+-- count right beside it), none of ours between the level and the name (Text.NEAR), else Text.GAP.
 local function Gap(last, key)
-    if last == "raid" or key == "raid" then return Text.BESIDE end
+    if last == "raid" or key == "raid" or last == "quest" then return Text.BESIDE end
     if last == "level" and key == "name" then return Text.NEAR end
     return Text.GAP
 end
 
 -- Spells only (ns.Style): no line (Plate.lua hides it); the raid marker alone in the middle of the plate, where the
--- bar was (Marks.lua: in the dot's place), nothing outside it, and the plate as wide as the game's own bar under it
--- (Plate.Place, no width wanted), so the auras stand around that.
+-- bar was (Marks.lua: in the dot's place), and the plate as wide as the game's own bar under it (Plate.Place, no width
+-- wanted), so the auras stand around that.
 function Text.Bare(dress)
-    dress.outside = 0
     ns.Auras.Place(dress)
     dress.raid:ClearAllPoints()
     dress.raid:SetPoint("CENTER", dress, "CENTER")
@@ -236,27 +229,16 @@ function Text.Bare(dress)
     ns.Plate.Place(dress)
 end
 
--- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place);
--- the icons outside, left of the bar, from it outward.
+-- The line laid out from the left, each piece that shows after the last, and the bar as wide as it (Plate.Place).
 function Text.Layout(dress)
     if ns.Style() == "spells" then return Text.Bare(dress) end
     local top, room = dress.top, dress.room
-    local edge = 0
-    for _, key in ipairs(OUTSIDE) do
-        local region = dress[key]
-        if region and room[key] then
-            region:ClearAllPoints()
-            region:SetPoint("RIGHT", top, "LEFT", -(edge + Text.OUTSIDE), 0)
-            edge = edge + Text.OUTSIDE + room[key]
-        end
-    end
-    dress.outside = edge -- the foe's buffs stand left of the icons (Auras.Place)
     ns.Auras.Place(dress)
     local x, last = Text.INSET, nil
     for _, entry in ipairs(ORDER) do
         local key = entry[2]
         local region, width = dress[entry[1]], room[key]
-        if region and width and not outside[key] then
+        if region and width then
             if last then x = x + Gap(last, key) end
             region:ClearAllPoints()
             if key == "value" then

@@ -56,6 +56,8 @@ Onboarding.Add("Garden", {
         { key = "beds", title = "The beds", text = "What grows.", settings = { "flowers", "kept", "reset" } },
         { key = "hedge", title = "The hedge", text = "How tall it is.", settings = { "height" } },
         { key = "path", title = "The path", text = "What you walk on.", settings = { "path", "moss" } },
+        { key = "keys", title = "Keys", text = "Keys for it.",
+          settings = { { binding = "SANEUI_GARDEN_WATER", text = "Water the garden" } } },
     },
     Stage = function(stage, step, index) drawn[#drawn + 1] = { stage = stage, key = step.key, index = index } end,
 })
@@ -63,6 +65,22 @@ check(Onboarding.Guide("Garden") ~= nil and Onboarding.Names()[1] == "Garden", "
 Onboarding.Add("Nothing", { title = "No steps" })
 check(Onboarding.Guide("Nothing") == nil and Core.errors["onboarding"] ~= nil, "a setup without steps is refused, noted")
 
+-- The game's key bindings: a key bound to one command; saved by SaveBindings.
+bound, saved, shift = {}, 0, false
+GetBindingKey = function(command)
+    local keys = {}
+    for key, action in pairs(bound) do if action == command then keys[#keys + 1] = key end end
+    table.sort(keys)
+    return unpack(keys)
+end
+SetBinding = function(key, command) bound[key] = command; return true end
+SaveBindings = function() saved = saved + 1 end
+GetCurrentBindingSet = function() return 2 end
+GetBindingAction = function(key) return bound[key] or "" end
+GetBindingText = function(key) return key end
+IsShiftKeyDown = function() return shift end
+IsAltKeyDown = function() return false end
+IsControlKeyDown = function() return false end
 W.Fire("ADDON_LOADED", "SaneUI_Garden")
 W.Fire("PLAYER_LOGIN")
 local options = Core.Settings("Garden")
@@ -89,7 +107,7 @@ check(type(store.shown.Garden) == "string", "kept as shown, for the account")
 local window = ons.Window
 local parts = window.Parts()
 check(parts.title._text == "The beds" and parts.words._text == "What grows.", "the first step: its head and words")
-check(parts.count._text == "Step 1 of 3", "Step 1 of 3")
+check(parts.count._text == "Step 1 of 4", "Step 1 of 4")
 check(parts.back:IsEnabled() == false, "no Back on the first step")
 check(drawn[#drawn].key == "beds" and drawn[#drawn].index == 1 and drawn[#drawn].stage ~= nil, "the module drew its sample")
 
@@ -107,7 +125,8 @@ check(#drawn == before + 1, "and the sample is drawn anew")
 -- Next: the number.
 parts.forward._scripts.OnClick(parts.forward)
 parts = window.Parts()
-check(parts.title._text == "The hedge" and parts.count._text == "Step 2 of 3" and parts.back:IsEnabled() ~= false,
+check(parts.title._text == "The hedge" and parts.count._text == "Step 2 of 4" and parts.back:IsEnabled() ~= false
+    and parts.progress.share == 0.5,
     "Next: the second step, Back there")
 check(drawn[#drawn].key == "hedge", "its sample")
 check(not parts.made.Garden[1]:IsShown() and parts.made.Garden[2]:IsShown(), "only the step's own controls show")
@@ -122,17 +141,49 @@ parts.forward._scripts.OnClick(parts.forward)
 parts = window.Parts()
 local path, moss = parts.made.Garden[3].rows[1], parts.made.Garden[3].rows[2]
 check(#path.rounds == 2 and path.rounds[1].button:GetChecked() == true, "a round button per choice, the one in use lit")
+check(path.rounds[1].button._points[1][5] == path.rounds[2].button._points[1][5]
+    and path.rounds[2].button._points[1][4] > path.rounds[1].button._points[1][4], "two choices side by side, on one line")
 check(moss.tick:IsEnabled() == false, "the switch under Stone greyed out while the path is gravel")
 path.rounds[2].button._scripts.OnClick(path.rounds[2].button)
 check(options.path == "stone" and moss.tick:IsEnabled() ~= false, "Stone chosen: set, and the switch under it usable")
-check(parts.forward._text == ons.TEXT.done, "the last step's button says Done")
+parts.forward._scripts.OnClick(parts.forward)
+parts = window.Parts()
+
+-- The last: a key, in the game's own key bindings: a click, then the key; Esc keeps it; a right click unbinds it.
+local key = parts.made.Garden[4].rows[1]
+check(key.label._text == ons.Controls.TEXT.unbound and key.box ~= nil, "a key without one: Not bound")
+key.box._scripts.OnClick(key.box, "LeftButton")
+check(key.box.listening and key.label._text == ons.Controls.TEXT.press, "clicked: it waits for a key")
+key.box._scripts.OnKeyDown(key.box, "LSHIFT")
+check(key.box.listening, "a modifier alone is no key")
+shift = true
+key.box._scripts.OnKeyDown(key.box, "F")
+shift = false
+check(not key.box.listening and bound["SHIFT-F"] == "SANEUI_GARDEN_WATER" and saved == 1 and key.label._text == "SHIFT-F",
+    "Shift-F: bound to it, the game's bindings saved")
+bound.G = "MOVEFORWARD"
+key.box._scripts.OnClick(key.box, "LeftButton")
+W.printed = {}
+key.box._scripts.OnKeyDown(key.box, "G")
+check(bound.G == "SANEUI_GARDEN_WATER" and bound["SHIFT-F"] == nil and printed("no longer does: MOVEFORWARD"),
+    "another key: the old one let go, the key's other command said")
+key.box._scripts.OnClick(key.box, "LeftButton")
+key.box._scripts.OnKeyDown(key.box, "ESCAPE")
+check(not key.box.listening and bound.G == "SANEUI_GARDEN_WATER", "Esc: kept as it was")
+key.box._scripts.OnClick(key.box, "RightButton")
+check(bound.G == nil and key.label._text == ons.Controls.TEXT.unbound, "a right click: no key")
+W.combat = true
+key.box._scripts.OnClick(key.box, "LeftButton")
+check(not key.box.listening, "in a fight keys stay as they are")
+W.combat = false
+check(parts.forward._text == ons.TEXT.done and parts.progress.share == 1, "the last step: the bar full, its button Done")
 parts.forward._scripts.OnClick(parts.forward)
 check(not window.Frame():IsShown(), "Done closes the window; what was chosen stays")
 check(options.path == "stone" and options.flowers == false, "the choices are the module's settings now")
 
 -- Asked for again: /sane setup (the only one there: its name not needed), at the first step; in a fight, after it.
 SlashCmdList.SANEUI("setup")
-check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 3", "/sane setup opens it again, at the start")
+check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 4", "/sane setup opens it again, at the start")
 window.Close()
 W.printed = {}
 W.Combat(true)
