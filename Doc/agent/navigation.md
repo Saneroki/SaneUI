@@ -49,7 +49,8 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    `Data.Ships`, `Data.Trips`; a portal of one class, the mages' own, only for that class). A walk orange or red where
    enemies of your side well above your level spawn near it (`Danger.lua`: Core's *CreatureSpawns*, *NPCs*,
    *FactionTemplates*); the line dragged on the full map puts a waypoint it goes to first (`Planner.Via`, `Canvas.lua`,
-   `Marks.Vias`). The trip underway and the
+   `Marks.Vias`). A little off a walk, the line from the player meets it further on, as far as a straight walk gets
+   (the plan's join: `Planner.lua`'s `Join`, `Walk.Straight`). The trip underway and the
    docks' times: `TripView.lua`, `DockWatch.lua`. The mouse on a flight point's or a dock's pin draws its ways
    (`Paths.lua`); on a zone lit up the full map names it with its levels and fishing skill (`Label.lua`, Core's set
    *Fishing*); while dead the map pin stands at the corpse, the one before back once alive (`Corpse.lua`). At a

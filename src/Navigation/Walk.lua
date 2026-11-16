@@ -21,6 +21,7 @@ local _, ns = ...
 --      Walk.Regions(continent, u, v, reach)   the regions of the floors under a point and around it
 --      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
 --      Walk.Follow(continent, u, v, key, index, fromU, fromV)   the floor a walker has come to from the one before
+--      Walk.Straight(tile, index, u1, v1, u2, v2, dry)   whether a walker on a floor gets to a place going straight
 --      Walk.Floor(continent, u, v, indoors, reach, height)   the floor a walker stands on where it is not followed
 --      Walk.Landing(continent, u, v, z, reach)   the floor nearest a point at a height (a lift's or a portal's end, a teleport's landing)
 --
@@ -47,6 +48,7 @@ Walk.KEEP = 48                     -- tiles kept unpacked: the one asked for lon
 Walk.LAND, Walk.WATER, Walk.BUILT = 1, 2, 3 -- a floor's kind: the ground, a water's surface, a building's floor
 Walk.FOLLOW = 64                   -- rectangles looked at, at most, for the floor a walker has come to
 Walk.STRIDE = 30                   -- yards from the walker those may lie
+Walk.RAY = 256                     -- rectangles a straight walk crosses, at most (Walk.Straight)
 Walk.ROOF = 6                      -- yards around a walker indoors whose floors may be theirs (their own may
                                    -- be missing right under them: a storey above, a mountain over a city)
 Walk.RISE = 12                     -- yards a floor the walker cannot be followed onto may lie over or under the
@@ -484,6 +486,51 @@ function Walk.Follow(continent, u, v, key, index, fromU, fromV)
     end
     Clean(size)
     return nil
+end
+
+-- The rectangle a line leaving rectangle index of tile through its side at (u, v) comes into: of that side's
+-- openings, the one holding the point (a little past its ends counts: a line through a corner gets through); nil
+-- where none does (a wall, a cliff, the data's end), or only into water where dry.
+local REACH = 1e-3 -- yards past an opening's ends (and a rectangle's edges) that still count as on it
+local function Through(tile, index, side, u, v, dry)
+    for n = 1, #(tile.opens or Walk.Links(tile))[index] do
+        local at, first, last, next, other = Walk.Opening(tile, index, n)
+        if at == side and not (dry and next.kind[other] == Walk.WATER) then
+            local au, av, bu, bv = Walk.Portal(tile, index, side, first, last)
+            local along, low, high = u, au, bu
+            if side == 1 or side == 3 then along, low, high = v, bv, av end
+            if along >= low - REACH and along <= high + REACH then return next, other end
+        end
+    end
+    return nil
+end
+
+-- Whether a walker on rectangle index of tile at (u1, v1) gets to (u2, v2) going straight: from rectangle to
+-- rectangle through the openings the line crosses their edges at (so on the floor they are on, as Follow: never
+-- onto the one over or under it), to one that holds the end; never into water where dry; at most Walk.RAY
+-- rectangles. False where the line meets an edge with no opening there, or the start does not lie on the rectangle.
+function Walk.Straight(tile, index, u1, v1, u2, v2, dry)
+    local du, dv = u2 - u1, v2 - v1
+    local length = math.sqrt(du * du + dv * dv)
+    local left, right, top, bottom = Walk.Box(tile, index)
+    if u1 < left - REACH or u1 > right + REACH or v1 > top + REACH or v1 < bottom - REACH then return false end
+    local corner = length > 0 and REACH / length or 0
+    for _ = 1, Walk.RAY do
+        if u2 >= left - REACH and u2 <= right + REACH and v2 <= top + REACH and v2 >= bottom - REACH then return true end
+        -- Where the line leaves the rectangle: the side ahead of it it crosses first; through a corner, either.
+        local tu = du > 0 and (right - u1) / du or du < 0 and (left - u1) / du or math.huge
+        local tv = dv > 0 and (top - v1) / dv or dv < 0 and (bottom - v1) / dv or math.huge
+        local t = math.min(tu, tv)
+        if t == math.huge then return false end
+        local eu, ev = u1 + du * t, v1 + dv * t
+        local next, other
+        if tu <= tv + corner then next, other = Through(tile, index, du > 0 and 1 or 3, eu, ev, dry) end
+        if not next and tv <= tu + corner then next, other = Through(tile, index, dv > 0 and 0 or 2, eu, ev, dry) end
+        if not next then return false end
+        tile, index = next, other
+        left, right, top, bottom = Walk.Box(tile, index)
+    end
+    return false
 end
 
 -- The floor a walker stands on at a point when it cannot be followed from the one before. height: the height of the

@@ -469,6 +469,13 @@ the game's own art and the game's own API.
   stretch dragged; the line goes to each in turn, then to the pin; a waypoint is dragged to move it, right clicked
   away, gone once passed, and all go when the pin moves. Built (`Planner.Via`, `Canvas.lua`, `Marks.Vias`). Not
   decided: whether the planner should also go round red stretches by itself.
+- **A little off the line, think ahead (Saneroki, 2026-11-16):** "if you are just a little bit to the side of the
+  route it shows you a route 90degree to your left / right and then again a 90 degree to the route ... think a few
+  stops ahead and say you need to go there to stay on track." So the line from the player no longer runs across to
+  the line's nearest point: more than 2 yards off a walk it meets the line at the farthest place up to 60 yards along
+  it that a straight walk gets to over the walking data (never through a wall, into water only while swimming; where
+  no walking data lies round the player, the farthest), and the line is drawn from there. Built (`Planner.lua`'s
+  `Join`, `Walk.Straight`, `Route.lua`; card #550).
 - **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
   UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 - **A way for the guide's arrow (Saneroki, 2026-10-31; replaced 2026-11-07):** the guide's arrow followed the routing

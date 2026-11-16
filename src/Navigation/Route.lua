@@ -14,7 +14,10 @@ local _, ns = ...
 --  Always from the player: the way's cut (Planner.lua) says where along it the
 --  player is, the leg, the part and the share of it; the parts before it are not
 --  drawn, the one it is on only from there, and a line of its own (the head) runs
---  from the player's arrow to that point. The legs after the next are fainter.
+--  from the player's arrow to that point. A little off a walk the head meets the
+--  line further on, where the planner's join says (Planner.lua, Join: as far on as
+--  a straight walk gets), and the line is drawn from there. The legs after the
+--  next are fainter.
 --
 --  Each leg's points are joined by the game's Line widgets from a pool, only the
 --  parts in view, cut at the canvas' edge (Canvas.edge: the game does not cut a
@@ -84,7 +87,9 @@ local lines, used = {}, 0 -- the pool: { edge, fill, glint, group } each
 -- drawn, as last placed) }
 local parts, count = {}, 0
 local first = 1    -- the first part the player has not passed
-local on           -- the piece the player is on (where along the way they are), as last fitted; nil: none in view
+local met = 0      -- the last part drawn only in part or not at all, as last fitted: where the head met the line
+local on           -- the piece the head meets the line on (where along the way the player is), as last fitted; nil:
+                   -- none in view
 local head = {}    -- the line from the player to where along the way they are: a part of its own (entry nil: none)
 local laid         -- the view the parts were laid out for (the canvas'), and the leg the player was on then
 local laidAt
@@ -196,6 +201,14 @@ local function Share(part, cut)
     return span > 0 and max(0, min(1, (cut.t - part.t0) / span)) or 0
 end
 
+-- Where the head meets the line: the planner's join where the player is a little off a walk (as far on as a straight
+-- walk gets), else the cut; nil without a way.
+local function Meet(of)
+    local join = of and of.join
+    if join and join.index then return join end
+    return of and of.cut
+end
+
 -- A piece placed anew where what of it is drawn changed: cut at the canvas' rectangle (edge, in the holder's units;
 -- the lines' own thickness inside it) and, on the piece the player is on, from where they are; a piece passed, not.
 local function Refit(part, edge, against)
@@ -204,7 +217,7 @@ local function Refit(part, edge, against)
     if against >= 0 then
         from, to = Between(part.x1, part.x2 - part.x1, edge.left + inset, edge.right - inset, 0, 1)
         from, to = Between(part.y1, part.y2 - part.y1, edge.bottom + inset, edge.top - inset, from, to)
-        if against == 0 then from = max(from, Share(part, way.cut)) end
+        if against == 0 then from = max(from, Share(part, Meet(way))) end
         if to <= from then from, to = 0, 0 end
     end
     if from ~= part.from or to ~= part.to then
@@ -220,21 +233,21 @@ local function Spot(map, u, v)
     return (link.du + link.su * u - laid.u) * laid.k, (link.dv + link.sv * v - laid.v) * laid.k
 end
 
--- The head: from where the player is to where along the way that is (the cut), in the colour of the leg they are on:
--- to that place on the piece they are on (on a curve, a little off the way's corner), so it meets the line, its art
--- running on into it.
+-- The head: from where the player is to where it meets the way (the cut, or a little off it the join further on), in
+-- the colour of the leg they are on: to that place on the piece it meets (on a curve, a little off the way's corner),
+-- so it joins the line, its art running on into it.
 local function Head(edge)
     if not head.entry then return end
-    local cut = way and way.cut
+    local cut, meet = way and way.cut, Meet(way)
     local x1, y1, x2, y2, along
-    if cut and cut.u and cut.pu then
+    if cut and meet and meet.u and cut.pu then
         x1, y1 = Spot(cut.map, cut.pu, cut.pv)
         if on then
-            local share = Share(on, cut)
+            local share = Share(on, meet)
             x2, y2 = on.x1 + (on.x2 - on.x1) * share, on.y1 + (on.y2 - on.y1) * share
             along = on.along + share * on.length
         else
-            x2, y2 = Spot(cut.map, cut.u, cut.v)
+            x2, y2 = Spot(cut.map, meet.u, meet.v)
         end
     end
     local length = x1 and x2 and sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2) or 0
@@ -259,12 +272,13 @@ end
 -- Every piece kept inside the canvas' rectangle as it is now (Canvas.edge, in the holder's units): only a piece whose
 -- share inside changed is placed anew, so a step of following moves those at the edge alone.
 function Route.Fit(edge)
-    local cut = way and way.cut
-    on = nil
+    local meet = Meet(way)
+    on, met = nil, 0
     for index = first, count do
         local part = parts[index]
-        local against = Against(part, cut)
+        local against = Against(part, meet)
         if against == 0 then on = part end
+        if against <= 0 then met = index end
         Refit(part, edge, against)
     end
     if head.entry and head.length and head.length >= 1 then
@@ -419,7 +433,7 @@ end
 -- Drawn for the view as the canvas laid it out: only the parts in view from where the player is on, cut at the
 -- canvas' edge; the head from the player to them.
 function Route.Place(view)
-    used, count, first = 0, 0, 1
+    used, count, first, met = 0, 0, 1, 0
     head.entry, head.length, head.from, head.to = nil, 0, nil, nil
     laid, laidAt = view, way and way.at
     local scale = ns.PinScale("route")
@@ -460,20 +474,24 @@ function Route.Show(newWay)
     if ns.Canvas.Laid() then Route.Place(ns.Canvas.view) end
 end
 
--- The player moved along the way (its cut, Planner.Track): the parts passed go, the one they are on is drawn from
--- where they are, the head runs from them to it. Onto another leg: drawn anew (its colours, which legs are fainter).
+-- The player moved along the way (its cut, Planner.Track), or the head meets it elsewhere (its join): the parts
+-- before that go, the one it meets is drawn from there, the head runs from the player to it. Only the parts the cut
+-- passed are gone for good: those between it and the join come back where the join does. Onto another leg: drawn
+-- anew (its colours, which legs are fainter).
 function Route.Cut(newWay)
     if newWay ~= way or not laid or not ns.Canvas.Laid() then return end
     if way.at ~= laidAt then return Route.Place(ns.Canvas.view) end
-    local cut, edge = way.cut, ns.Canvas.edge
-    on = nil
+    local cut, meet, edge = way.cut, Meet(way), ns.Canvas.edge
+    local reach = met
+    on, met = nil, 0
     for index = first, count do
         local part = parts[index]
-        local against = Against(part, cut)
-        if against > 0 then break end
+        local against = Against(part, meet)
+        if against > 0 and index > reach then break end
         if against == 0 then on = part end
+        if against <= 0 then met = index end
         Refit(part, edge, against)
-        if against < 0 then first = index + 1 end
+        if Against(part, cut) < 0 then first = index + 1 end
     end
     Head(edge)
 end

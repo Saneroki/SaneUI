@@ -64,7 +64,10 @@ local _, ns = ...
 --      the line      always from the player: at every step of the canvas' tracker where along it the player is
 --                    (the cut: of the next Planner.AHEAD parts of it, the first within Planner.SLACK yards of the
 --                    nearest), and it is drawn from the player's arrow to that point and on from there (Route.Cut);
---                    what lies behind is gone, the legs after the next are fainter
+--                    what lies behind is gone, the legs after the next are fainter. A little off a walk (Saneroki,
+--                    2026-11-16: "think a few stops ahead and say you need to go there to stay on track"), the line
+--                    from the arrow meets it further on (the join, Join): at the farthest place up to Planner.JOIN
+--                    yards along it a straight walk gets to (Walk.Straight), not across to its nearest point
 --      planned again when the pin moves, when the player is Planner.OFF yards off the line (Planner.ABOARD
 --                    from a ship's way), after a flight or a ship has landed, and when the data arrives; for the
 --                    player's moves never more often than every Planner.AGAIN seconds. Aboard a boat or a
@@ -130,6 +133,9 @@ Planner.HOP = 20         -- yards a second faster than anyone runs or rides (the
                          -- two looks so fast is a hop (a portal's few yards up or down a tower, Arrival)
 Planner.AHEAD = 60       -- parts of the line ahead of where the player was, looked at for where they are now
 Planner.SLACK = 5        -- yards a part further on must be nearer than the first ones to be where the player is
+Planner.JOIN = 60        -- yards along the line from where the player is the line from them may meet it, at most (Join)
+Planner.STEP = 10        -- yards apart the places along it looked at for that, besides its corners
+Planner.BESIDE = 2       -- yards off the line the player may be and the line from them meet it where they are
 Planner.SAME = 1         -- yards apart two places are one: the pin on the place asked for leads there
 Planner.LEAD = 15        -- yards along the line ahead of the player the way asked for turns to (Ahead)
 Planner.THERE = 8        -- yards from a leg's end that count as at it: on with the next leg (Ahead)
@@ -1583,8 +1589,81 @@ local function Follow(plan, map, u, v)
             break
         end
     end
+    -- Where the line from the player met it (Join), once they are past it or on another leg: none, till the next look.
+    local join = plan.join
+    if join and join.index and (join.leg ~= cut.leg or join.index < cut.index
+        or (join.index == cut.index and join.t <= cut.t)) then
+        join.index, moved = nil, true
+    end
     plan.at = cut.leg
     return moved
+end
+
+-- The places along a walk looked at for where the line from the player meets it (Join): from the cut on, every
+-- Planner.STEP yards and at each of its points, up to Planner.JOIN yards on, while on the plane map. Each its part
+-- (from point index to the next), the share of it and the place; their count.
+local spotIndex, spotT, spotU, spotV = {}, {}, {}, {} -- reused: every Planner.FOOT seconds
+local function Spots(points, cut, map)
+    local count, along, index, t, step = 0, 0, cut.index, cut.t, Planner.STEP
+    while points[index + 1] do
+        local a, b = points[index], points[index + 1]
+        if a.map ~= map or b.map ~= map then break end
+        local length = Distance(a.u, a.v, b.u, b.v)
+        local stop = along + length * (1 - t)
+        while step < stop and step <= Planner.JOIN do
+            local share = t + (step - along) / length
+            count = count + 1
+            spotIndex[count], spotT[count] = index, share
+            spotU[count], spotV[count] = a.u + (b.u - a.u) * share, a.v + (b.v - a.v) * share
+            step = step + Planner.STEP
+        end
+        if stop > Planner.JOIN then break end
+        if length > 0 then
+            count = count + 1
+            spotIndex[count], spotT[count], spotU[count], spotV[count] = index, 1, b.u, b.v
+        end
+        along, index, t = stop, index + 1, 0
+    end
+    return count
+end
+
+-- Where the line from the player meets the line of the way (the plan's join: { leg, index, t, u, v } as the cut's;
+-- Saneroki, 2026-11-16: "think a few stops ahead and say you need to go there to stay on track"): a little off a walk,
+-- not across to its nearest point (the cut) and along it from there, but straight on to a place further along it: of
+-- the places Spots looks at, the farthest a straight walk gets to from where they stand (Walk.Straight from their
+-- floor, into water only where they swim); where the walking data has no ground round them, the farthest (a walk
+-- without it is one straight line). None (the cut, then) on the line (within Planner.BESIDE yards), on a ride, where
+-- their floor is not known, or where no straight walk gets to any. True when it changed.
+local function Join(plan, map, u, v)
+    if not plan then return false end
+    local cut, join = plan.cut, plan.join
+    if not join then
+        join = {}
+        plan.join = join
+    end
+    local index, t = join.index, join.t
+    join.index = nil
+    local leg = plan.legs[cut.leg]
+    if leg and leg.kind == "walk" and cut.u and cut.gap and cut.gap > Planner.BESIDE and cut.map == map then
+        local tile, floor, dry, open
+        if footing and footing.map == map then
+            tile, floor = Walk.Tile(footing[1]), footing[2]
+            dry = tile and tile.kind[floor] ~= Walk.WATER
+        else
+            local key = Walk.Ready() and Walk.Key(map, u, v)
+            open = not (key and Walk.Tile(key))
+        end
+        if tile or open then
+            for spot = Spots(leg.points, cut, map), 1, -1 do
+                if open or Walk.Straight(tile, floor, u, v, spotU[spot], spotV[spot], dry) then
+                    join.leg, join.index, join.t = cut.leg, spotIndex[spot], spotT[spot]
+                    join.u, join.v = spotU[spot], spotV[spot]
+                    break
+                end
+            end
+        end
+    end
+    return join.index ~= index or (index ~= nil and join.t ~= t)
 end
 
 -- A waypoint taken off the list; true where it was on it.
@@ -1638,6 +1717,9 @@ local function Stand(map, u, v, now)
             Rode(guide.plan, map, u, v, now)
             Footing(map, u, v, now)
         end
+        -- Where the line from the player meets the way's (on the floor just followed); the pin's drawn anew.
+        if Join(pin.plan, map, u, v) then ns.Route.Cut(pin.plan) end
+        Join(guide.plan, map, u, v)
     end
 end
 
@@ -1813,6 +1895,8 @@ function Planner.Ahead()
     local leg = legs[at]
     local ride = leg.kind ~= "walk" and leg or legs[at + 1]
     local lu, lv = Lead(plan, at)
+    local join = plan.join -- a little off the line: to where the line from them meets it (Join)
+    if join and join.index and join.leg == at then lu, lv = join.u, join.v end
     ahead.way, ahead.yards = math.atan2(u - lu, lv - v), Left(plan, at, u, v)
     ahead.ride, ahead.to = ride and ride.kind or nil, ride and Towards(ride) or nil
     ahead.here = BOARDED[leg.kind]

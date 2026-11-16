@@ -4950,6 +4950,27 @@ end
     check(#glints > 2 and Gap(headLine._end, drawn._start) < 1e-6 and Off(drawn._start) <= ns.Route.STRAY * scale
         and Gap(headLine._start, { -6, -10 }) < 1e-6 and near(headLine._coords[2], drawn._coords[1]),
         "the player on the curve: drawn from where they are on it, the head meeting it there, its art running on")
+    -- A little off the line, 10 units south of it 10 along: the head meets it where the planner's join says (half way
+    -- up the part after the corner), drawn from there on alone; the join gone, from where they are again, the corner too.
+    local from, off, there = At(-50, 0), At(-50, -10), At(0, 30)
+    way.cut = { leg = 1, index = 1, t = 1 / 6, map = view.map, u = from.u, v = from.v, pu = off.u, pv = off.v, gap = 10 }
+    way.join = { leg = 1, index = 2, t = 0.5, u = there.u, v = there.v }
+    ns.Route.Show(way)
+    glints = Glints()
+    headLine, drawn = glints[#glints], glints[1]
+    check(#glints == 2 and Gap(headLine._start, { -50, -10 }) < 1e-6 and Gap(headLine._end, { 0, 30 }) < 1e-6
+        and Gap(drawn._start, { 0, 30 }) < 1e-6 and Gap(drawn._end, { 0, 60 }) < 1e-6,
+        "a little off the line: the head meets it at the join further on, the line drawn from there alone")
+    way.join.index = nil
+    ns.Route.Cut(way)
+    glints = Glints()
+    local whole = #glints > 4 and Gap(glints[#glints]._end, { -50, 0 }) < 1e-6 and Gap(glints[1]._start, { -50, 0 }) < 1e-6
+        and Gap(glints[#glints - 1]._end, { 0, 60 }) < 1e-6
+    for index = 1, #glints - 2 do
+        if Gap(glints[index]._end, glints[index + 1]._start) > 1e-6 then whole = false end
+    end
+    check(whole, "the join gone: the line drawn from where the player is again, round the corner, end to end")
+    way.join = nil
     ns.Route.Show(nil)
 end)()
 frame._mouseOver = true
@@ -5432,6 +5453,22 @@ check(ending and (-8533.33 - ending[#ending - 2]) / s <= 240.01 and near(ending[
     "to a place nobody can walk to: the walk where one can, nearest to it, then straight to the place itself")
 local far = Search.Walk(1415, 200 * s, -8533.33 - 50 * s, (256 + 30) * s, -8533.33 - 50 * s)
 check(far and #far == 4, "into the next tile: a straight walk where nothing is in the way")
+-- A straight walk (Walk.Straight) on tile 3104 from the west hall: within it, east through the door into the east hall
+-- and on into the next tile, slanting through the door; none through the wall or slanting into it beside the door, nor
+-- from a floor the start is not on; through the channel only where water is no bar.
+;(function()
+    local hall = Walk.Tile(3104)
+    local function Straight(c1, r1, c2, r2, dry)
+        return Walk.Straight(hall, 1, c1 * s, -8533.33 - r1 * s, c2 * s, -8533.33 - r2 * s, dry)
+    end
+    check(Straight(100, 110, 120, 50) and Straight(100, 110, 200, 110) and Straight(100, 110, 300, 110)
+        and Straight(124, 95, 133.6, 110),
+        "a straight walk: in the hall, through the door into the east hall and the next tile, slanting through the door")
+    check(not Straight(100, 50, 200, 50) and not Straight(124, 95, 138.4, 110) and not Straight(200, 110, 100, 110),
+        "no straight walk through the wall, nor slanting into it beside the door, nor from a floor the start is not on")
+    check(Straight(100, 205, 200, 205) and not Straight(100, 205, 200, 205, true),
+        "a straight walk through the channel where water is no bar, none where it is (dry)")
+end)()
 -- The coarse layer (Gates.lua) on tiles 2592 to 2595: each gate the same on both its tiles, what the walks between a
 -- part's gates cost (each yard up a little more, a yard swum at its price, of the way on foot and a rider's the
 -- cheaper), the parts and edges of a walking tile; a tile's openings worked out only once needed.
@@ -7386,6 +7423,68 @@ end)()
     Canvas.Use(using)
     Canvas.Layout()
     MAPS[1456] = nil
+    player.map, player.x, player.y = 1429, 0.75, 0.3
+    waypoint = nil
+    W.Fire("USER_WAYPOINT_UPDATED")
+    W.Wait(0)
+end)()
+-- A little off the line (Saneroki, 2026-11-16: "think a few stops ahead and say you need to go there to stay on
+-- track"): the line from the player meets it further on (the plan's join), as far as Planner.JOIN yards along it where a
+-- straight walk gets there, never through a wall; on the line, none; the arrow of the way asked for turns to it too. On
+-- tile 3104 a pin in the east hall along row 110, through the door (rows 100 to 119); the player in the west hall north
+-- of the line, beside the wall. Where no walking data lies round the player, the farthest place (a walk there is one
+-- straight line).
+;(function()
+    local s = Walk.SAMPLE
+    local function At(column, row) return column * s, -8533.33 - row * s end
+    local function Put(u, v) player.map, player.x, player.y = 1415, (u + 4000) / 8000, (4000 - v) / 20000 end
+    local function Pin(u, v)
+        waypoint = { uiMapID = 1415, position = CreateVector2D((u + 4000) / 8000, (4000 - v) / 20000) }
+        W.Fire("USER_WAYPOINT_UPDATED")
+        W.Wait(0)
+        Frames(8)
+        return shownWay
+    end
+    local clock = GetTime() + 1200
+    local plan
+    local function Track(u, v)
+        Put(u, v)
+        clock = clock + Planner.FOOT
+        Planner.Track(1415, u, v, clock)
+        return plan.join and plan.join.index and plan.join or nil, plan.cut
+    end
+    local function Along(join, cut) return join and join.v - cut.v == 0 and join.u - cut.u end
+    Put(At(20, 110))
+    plan = Pin(At(230, 110))
+    local leg = plan and #plan.legs == 1 and plan.legs[1]
+    check(leg and leg.kind == "walk" and #leg.points == 2, "a pin along row 110 through the door: one straight walk")
+    Track(At(40, 110))
+    local join, cut = Track(At(124, 95))
+    local along = Along(join, cut)
+    check(plan == shownWay and cut.gap > 30 and along and math.abs(along - 2 * Planner.STEP) < 0.01,
+        "31 yards off the line beside the wall: the line from the player meets it 20 yards on, through the door, not "
+        .. "farther through the wall")
+    local pu, pv = At(124, 108)
+    join, cut = Track(pu, pv)
+    along = Along(join, cut)
+    check(cut.gap > Planner.BESIDE and along and math.abs(along - Planner.JOIN) < 0.01,
+        "4 yards off it: the line from them meets it Planner.JOIN yards on, slanting through the door")
+    Core.Ways.Aim(1415, (select(1, At(230, 110)) + 4000) / 8000, (4000 - select(2, At(230, 110))) / 20000)
+    local ahead = Core.Ways.Ahead()
+    check(ahead and math.abs(ahead.way - math.atan2(pu - join.u, join.v - pv)) < 1e-6,
+        "the arrow of the way asked for (to the pin's place) turns to where the line from them meets it too")
+    Core.Ways.Aim()
+    join = Track(At(124, 110))
+    check(join == nil, "on the line: none, the line from where they are")
+    -- No walking data round the player (west of tile 3104): the farthest place, Planner.JOIN yards on.
+    local wu, wv = -600, -8533.33 - 110 * s
+    Put(wu, wv)
+    plan = Pin(wu + 400, wv)
+    Track(wu, wv)
+    join, cut = Track(wu + 100, wv + 10)
+    along = Along(join, cut)
+    check(plan and #plan.legs == 1 and along and math.abs(along - Planner.JOIN) < 0.01,
+        "no walking data round them: the line from them meets the straight walk Planner.JOIN yards on")
     player.map, player.x, player.y = 1429, 0.75, 0.3
     waypoint = nil
     W.Fire("USER_WAYPOINT_UPDATED")

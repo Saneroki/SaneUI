@@ -501,7 +501,8 @@ and shows them on the map or puts the map pin there. The plan is in
   until your first, the ones found before; a flight over many flight points is one, taking off once; with the Legacy
   perk *Frequent Flier* the flights count 20 % faster; the line white along them). The
   line always begins at your arrow: as you go, what lies behind you is gone, a short line runs from you to it, and
-  leave it and it is planned again. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
+  leave it and it is planned again. A little beside it, that line does not turn across to it and then along it: it
+  meets the line further on, as far ahead as you can walk straight (up to 60 yards), so you go there and stay on track. A pin on another continent or on Zephras Isle is reached by boat or zeppelin,
   over as many seas as it takes (by way of the other continent where that is quickest), your side's or both
   sides' (not the other side's harbours and zeppelin towers), the line light blue
   from pier to pier; between Stormwind and Ironforge the Deeprun Tram is taken where it is
@@ -923,7 +924,9 @@ and shows them on the map or puts the map pin there. The plan is in
 - **Route** (`Route.lua`): a way the planner gives, drawn with the game's `Line` widgets from a pool, only the parts
   in view, and from where the player is on (the way's cut, `Route.Cut`): the parts behind are not drawn, the one the
   player is on only from there, and a line of its own (the head) runs from the player's arrow to that point; the
-  legs after the next fainter. A dark edge, the game's dependency bar art tinted gold, its glint moved along by a
+  legs after the next fainter. A little off a walk the head meets the line further on (the plan's join, `Planner`'s
+  `Join`), and the line is drawn from there: the parts between the cut and the join hidden, back again where the join
+  goes (only the parts the cut passed are gone for good). A dark edge, the game's dependency bar art tinted gold, its glint moved along by a
   `TextureCoordTranslation` animation (no code of ours each frame); walks and lifts gold, flights white, ships and the
   tram light blue, portals violet, the hearthstone and the teleports pale blue (the art is grey, so each shows its colour as it is). The animation is the template of `Route.xml`: the game makes this kind only from XML (one made in Lua has no
   `SetOffset`); where the game has not read the file yet, the glint stands still. A corner that turns more than
@@ -1337,7 +1340,14 @@ and shows them on the map or puts the map pin there. The plan is in
   all one job of Core's scheduler, which a new pin stops; the line of the pin before goes at once. Where along the
   line the player is (the cut): at every step of the tracker, of the next `Planner.AHEAD` parts of it the first
   within `Planner.SLACK` yards of the nearest, never back on the part they are on; the line drawn from there
-  (`Route.Cut`). A ship (`Planner.Ship`): its docks and trips from Core's timetable of it (`Data.Ships`:
+  (`Route.Cut`). Where the head meets it (the join, `Join`; Saneroki, 2026-11-16: "think a few stops ahead and say you
+  need to go there to stay on track"): more than `Planner.BESIDE` yards off a walk, of the places along it from the cut
+  up to `Planner.JOIN` yards on (every `Planner.STEP` yards and its corners, on the player's plane), the farthest a
+  straight walk gets to from where they stand (`Walk.Straight`, from their floor, every `Planner.FOOT` seconds after
+  it is followed: from rectangle to rectangle through the openings the line crosses, into water only where they swim);
+  where no walking data lies round them, the farthest (a walk without it is one straight line); none (the cut) on the
+  line, on a ride, where their floor is not known or no straight walk gets to any; gone once the cut passes it. The
+  arrow of the way asked for turns to it too (`Ahead`). A ship (`Planner.Ship`): its docks and trips from Core's timetable of it (`Data.Ships`:
   the game's way and stays, its sailing at the game's transports' speed, stretched to its time once round where
   *Travel* has it, `wait`, or a ride taught it); the wait for it the time to its next departure where a ride on this
   realm taught its times, else half its round; then it sails to the dock (the stays between included). One boards
@@ -1527,7 +1537,7 @@ and shows them on the map or puts the map pin there. The plan is in
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, side by side in a cloud where they would cover each other. No frames |
 | `Goals.lua` | What your quests still ask of the world and where exactly it stands: the open objectives' things at every spawn Core's data knows. No frames |
-| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen. No frames |
+| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen; whether a straight walk from it gets to a place (`Walk.Straight`). No frames |
 | `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
 | `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
@@ -1582,6 +1592,14 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, a little off the line, it meets you further on:** Saneroki: "if you are just a little bit to the side
+  of the route it shows you a route 90degree to your left / right and then again a 90 degree to the route. ... It
+  would be nice if the pathing / routing would think a little ahead and not put the 90 90 degree path but say okay
+  lets not go to the imidiate next stop but think a few stops ahead and say you need to go there to stay on track."
+  The head ran to the line's nearest point. It meets the line at the plan's join now: the farthest place up to
+  `Planner.JOIN` (60) yards along the walk a straight walk gets to over the walking data (`Walk.Straight`: never
+  through a wall, into water only while swimming), the line drawn from there; on the line (within 2 yards), on a
+  ride, or where nothing is in reach straight, the nearest point as before. The guide's arrow turns to it too.
 - **2026-11-15, every dungeon's floors gone through, their ground mended:** Saneroki: "Can you go through all the
   instance dungeons and raid maps and make sure they work correctly. I think the instances that have different layers
   are not all working correctly. For example deadmines, one of the layers shows enemies and bosses in the open where
