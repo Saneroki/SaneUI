@@ -169,6 +169,9 @@ check(Core.pages.Profiles.frame == Core.frames.Profiles and Core.pages.Tabbed.fr
     "Profiles and a module whose switches are in tabs get a page of our own: an empty frame, hidden")
 SettingsPanel:GetScript("OnShow")(SettingsPanel)
 local Config = Core.Config
+-- A slider's value as both options views write it: the number and its unit; Off at its offAt (Nameplates' transparency).
+check(Config.Panel.Said({ unit = "%", step = 5 }, 40) == "40 %" and Config.Panel.Said({ unit = "%", offAt = 100 }, 100) == "Off"
+    and Config.Panel.Said({ unit = "%", offAt = 100 }, 95) == "95 %", "a slider says Off at its offAt, its number below it")
 check(#W.options.pages == 7 and #W.options.pages[5].items == 2, "opening the game's options fills the pages")
 check(not Core.frames.Profiles.tabs and not Core.frames.Tabbed.tabs,
     "but not the pages of our own: each is built the first time the game shows it (a player may open only the game's own pages)")

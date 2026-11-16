@@ -135,6 +135,8 @@ check(number.slider ~= nil, "a number has the game's slider")
 Core.Set("Garden", "height", 40)
 window.Changed()
 check(ons.Controls.Value(number.option, 40) == "40%", "its value with its unit")
+check(ons.Controls.Value({ unit = "%", offAt = 100 }, 100) == "Off" and ons.Controls.Value({ unit = "%", offAt = 100 }, 95) == "95%",
+    "a slider with offAt says Off there, its number below it")
 
 -- The last: one of a few, and a switch under one of them, greyed out until it is chosen.
 parts.forward._scripts.OnClick(parts.forward)

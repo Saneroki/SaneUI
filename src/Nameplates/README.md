@@ -157,7 +157,8 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 - **Transparency:** your target's as see-through as *Your target's transparency* says; the plates of players you
   know (party, raid, guild, friends) as *Players you know: transparency*, of friendly players you don't know as
   *Players you don't know: transparency*, of critters as *Critters: transparency* (Saneroki, 2026-11-16: each "their
-  own transparency slider"); every other as *Nameplate transparency* (all 0% at first, up to 90%): ours with all on it (auras, cast bar, combat text)
+  own transparency slider"); every other as *Nameplate transparency* (all 0% at first, up to 100%, which the slider calls *Off*: no plate of
+  that kind at all, nothing unseen that still takes clicks; Saneroki, 2026-11-16): ours with all on it (auras, cast bar, combat text)
   and what the game still shows of its own plate there (widgets, its cast bar with *Cast bar* off); a plate appearing
   fades in up to it.
 - **Combat text:** what a creature or player with a plate takes rises over its bar and fades, in Sane UI's own font
@@ -509,6 +510,8 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-16 (Off):** every transparency slider (the five of the plates, *Time left: transparency*) reaches 100%,
+  which it calls *Off* (Core's `offAt`, `Panel.Said`): no plate of that kind at all (`Wear`: not wanted), no number.
 - **2026-11-16 (later):** the setup in Saneroki's order with a first page saying what it is, twelve pages of short
   lines starting with gold words (the samples over the world were tried and taken back: "make it solid"), the loading
   screen's bar for how far the steps have come. New settings: *Class colours*; *Raid markers*; where each kind of aura

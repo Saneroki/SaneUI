@@ -174,6 +174,8 @@ end
 -- one it is under, is off. A list of keys (in tabs): greyed out while any of them is off. inline = true (in tabs): a number drawn on the line of its parent switch.
 -- parentValue = "solid": under one of a few instead, greyed out while that one is not set to it.
 -- color = true (in tabs): a colour, six hex digits as default ("26262B"), chosen with the game's picker.
+-- offAt = 100 (a number): at that value or past it the slider says Off, not the number (Nameplates' transparency: 100%
+-- shows nothing).
 -- unit = "seconds", "%": written after a number's value. distance = true: a slider's value is yards, shown as the
 -- setting Units says (Core.Distance).
 -- page = "Appearance" (Core's own switches only): on that page of Sane UI's instead of General.

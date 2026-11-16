@@ -1247,6 +1247,19 @@ W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
     Core.Set(ns.name, "distance", false)
     check(Near(dress._alpha, 0.6) and Near(far._alpha, 0.6), "without size by distance too")
     Core.Set(ns.name, "distance", true)
+    -- 100%: Off (Saneroki, 2026-11-16): no plate at all, the game's unit frame unseen too; your target's its own.
+    Core.Set(ns.name, "transparency", 100)
+    check(not dress:IsShown() and plates.nameplate1.UnitFrame._alpha == 0 and not far:IsShown(),
+        "100%: those plates off, none of them seen or clicked")
+    units.target, plates.target = units.nameplate1, plates.nameplate1
+    W.Fire("PLAYER_TARGET_CHANGED")
+    check(dress:IsShown() and dress._alpha == 1, "your target's plate still shows: its own slider")
+    units.target, plates.target = nil, nil
+    W.Fire("PLAYER_TARGET_CHANGED")
+    local described = Core.Described(ns.name, "transparency")
+    check(described.max == 100 and described.offAt == 100, "the slider reaches 100%, which it calls Off")
+    Core.Set(ns.name, "transparency", 40)
+    check(dress:IsShown() and Near(dress._alpha, 0.6), "back under 100%: shown, seen through")
     W.Fire("NAME_PLATE_UNIT_REMOVED", "nameplate7")
     Core.Set(ns.name, "transparency", 0)
     Settle()

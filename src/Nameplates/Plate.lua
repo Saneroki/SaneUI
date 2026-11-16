@@ -262,6 +262,9 @@ local function Wear(dress)
     if relit then Plate.Light(dress) end
     dress.stray = nil -- found anew by Plate.Wanted
     local wanted = ns.off or dress.unit == nil or Plate.Wanted(dress.unit, dress)
+    -- Its kind's transparency at 100% (Off; Saneroki, 2026-11-16: "transparency should go to 100%"): no plate at all,
+    -- as one not wanted, so nothing unseen still takes clicks.
+    if wanted and not ns.off and dress.unit ~= nil and ns.Scale.Seen(dress) <= 0 then wanted = false end
     local on = wanted and not ns.off and dress.unit ~= nil and type(bar) == "table" and Plain(bar:IsShown()) == true
     if frame then
         frame:SetAlpha(wanted and (on and ns.Scale.Seen(dress) or 1) or 0)

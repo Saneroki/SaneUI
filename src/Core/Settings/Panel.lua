@@ -293,8 +293,10 @@ function Panel.Format(value, step, unit)
     return unit and (text .. " " .. unit) or text
 end
 
--- What a slider says of its value: a distance as the setting Units has it (kept in yards), else the number and its unit.
+-- What a slider says of its value: Off at its offAt or past it, a distance as the setting Units has it (kept in yards),
+-- else the number and its unit.
 function Panel.Said(option, value)
+    if option.offAt ~= nil and (tonumber(value) or 0) >= option.offAt then return Core.Word("OFF", "Off") end
     if option.distance then return Core.Distance(value) end
     return Panel.Format(value, option.step, option.unit)
 end

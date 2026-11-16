@@ -50,6 +50,7 @@ Controls.TEXT = {
 -- The value of a switch as a number shows it: with its unit ("75%"), a distance as the setting Units says.
 function Controls.Value(option, value)
     value = tonumber(value) or 0
+    if option.offAt ~= nil and value >= option.offAt then return Core.Word("OFF", "Off") end -- as the options page says
     if option.distance then return Core.Distance(value) end
     local text = tostring(math.floor(value + 0.5))
     if option.unit == "%" then return text .. "%" end

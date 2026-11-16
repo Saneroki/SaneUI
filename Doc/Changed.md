@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Nameplates: transparency to 100%, called Off (Saneroki, 2026-11-16)
+Saneroki: "transparency should go to 100% and switch the number to "Off"". A `/reload` takes it in.
+- **`src/Core/Settings/Panel.lua`:** `Panel.Said` says Off at a slider's `offAt` or past it (the options page and its tabbed pages); **`src/Core/Saved.lua`:** `offAt` described. **`src/Onboarding/Controls.lua`:** `Controls.Value` the same.
+- **`src/Nameplates/Nameplates.lua`:** the five plate transparencies and *Time left: transparency* up to 100, `offAt = 100`, their tips. **`Plate.lua`:** a plate whose transparency is 100% is not wanted (`Wear`): no plate, nothing unseen taking clicks; your target's by its own slider. **`Setup.lua`:** the page *See-through* says Off and draws that plate faint.
+- **Tests:** `dev/tests/core.lua` (`Panel.Said`), `dev/tests/onboarding.lua`, `dev/tests/nameplates.lua` (100%: the plates off, your target's still shown, back under it).
+
 ### Onboarding: the samples on a solid box again (Saneroki, 2026-11-16)
 Saneroki: "make it solid not transparent. it gets to confusing if it is transparent actually". A `/reload` takes it in.
 - **`src/Onboarding/Window.lua`:** the stage a grey box (`Look.Box`) on the window's whole plate again; the plate's four clipping pieces round it (`Hole`, `Window.PLATE`) and the window's raised frame level gone.

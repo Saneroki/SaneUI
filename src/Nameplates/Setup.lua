@@ -106,7 +106,7 @@ Setup.STEPS = {
     { key = "seen", title = "See-through",
       text = Lines({ "See-through", "plates hide less of the world behind them." },
           { "Each kind", "its own slider: your target, foes, players you know or don't, critters." },
-          { "0%", "solid. 90%: barely there." }),
+          { "0%", "solid. 100%: off, no plate." }),
       settings = { "targetTransparency", "transparency", "knownTransparency", "strangerTransparency",
                    "critterTransparency" } },
     { key = "which", title = "Which plates show",
@@ -288,16 +288,21 @@ function DRAW.size(board)
 end
 
 function DRAW.seen(board)
-    local function Through(key) return "  " .. Hued(math.floor(Share(key) * 100 + 0.5) .. "%") end
+    -- Its share beside each, Off at 100% (no plate: drawn faint, as a plate that would not show).
+    local function Through(key)
+        if Share(key) >= 1 then return "  " .. Hued({ 0.6, 0.6, 0.6 }, "Off: no plate") end
+        return "  " .. Hued(math.floor(Share(key) * 100 + 0.5) .. "%")
+    end
+    local function Seen(key) return Share(key) >= 1 and (1 - Setup.FAINT) or Share(key) end
     List(board, {
-        { As(CREATURE, { lit = "target" }), "Your target" .. Through("targetTransparency"), Share("targetTransparency") },
-        { CREATURE, "Creatures and foes" .. Through("transparency"), Share("transparency") },
+        { As(CREATURE, { lit = "target" }), "Your target" .. Through("targetTransparency"), Seen("targetTransparency") },
+        { CREATURE, "Creatures and foes" .. Through("transparency"), Seen("transparency") },
         { Player("Bram Ironhold", "WARRIOR", { lit = "guild" }), "Players you know" .. Through("knownTransparency"),
-          Share("knownTransparency") },
+          Seen("knownTransparency") },
         { Player("Corin Ashdale", "PALADIN"), "Players you don't know" .. Through("strangerTransparency"),
-          Share("strangerTransparency") },
+          Seen("strangerTransparency") },
         { { name = "Rabbit", level = 1, calm = true, health = 8, most = 8 }, "Critters" .. Through("critterTransparency"),
-          Share("critterTransparency") },
+          Seen("critterTransparency") },
     })
 end
 
