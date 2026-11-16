@@ -134,16 +134,21 @@ Neighbours.KNOWN = {
         -- A backup (kind backup): its routes by their id, each as the addon keeps it.
         saved = { routes = "routes", id = "id", name = "name", scope = "scope", key = "key", colour = "color",
                   author = "author", stops = "points", strokes = "strokes", marks = "marks", map = "m", x = "x",
-                  y = "y", label = "label", width = "w", colourOf = "c", points = "p", kind = "k" },
+                  y = "y", label = "label", width = "w", colourOf = "c", points = "p", kind = "k", size = "s" },
         -- Its scopes: on a dungeon's map (its key; the maps its charts) or on the game's maps.
         chart = "chart", world = "world",
         limits = { stops = 300, strokes = 200, points = 400, marks = 150, label = 80, name = 60, author = 48 },
         widths = { 2, 4, 7 },
         colours = { { 0.40, 0.70, 1.00 }, { 1.0, 0.72, 0.30 }, { 0.95, 0.40, 0.55 }, { 0.50, 0.90, 0.40 },
                     { 0.75, 0.55, 1.0 }, { 0.95, 0.95, 0.95 }, { 0.98, 0.30, 0.25 }, { 0.30, 0.90, 0.85 } },
+        -- Its colours as ours, one to one in its order (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other
+        -- stuff so we are as compatible as possible"); its widths are our three (thin, medium, thick) in turn; its words'
+        -- four sizes (2 its usual) as our three widths, its smallest and its usual both thin, and ours as its.
+        colourKeys = { "blue", "gold", "pink", "green", "purple", "white", "red", "teal" },
+        textSizes = { 1, 1, 2, 3 }, ourTextSizes = { 2, 3, 4 }, textSize = 2,
         -- Its marks: words (text), and the rest by the key of our markers' icon nearest in meaning.
         text = "text",
-        marks = { skull = "boss", swords = "attack", shield = "tank", heal = "healer", aoe = "danger", warn = "warning",
+        marks = { skull = "boss", swords = "attack", shield = "shield", heal = "heal", aoe = "danger", warn = "warning",
                   eye = "lookout", patrol = "watch", sleep = "sleep", chest = "chest", stairs = "up", door = "door",
                   flag = "rally", finish = "finish", arrow = "arrow", cross = "no", star = "elite",
                   question = "unknown", rt1 = "star", rt2 = "circle", rt3 = "diamond", rt4 = "triangle", rt5 = "moon",
@@ -152,7 +157,8 @@ Neighbours.KNOWN = {
                   c_warlock = "warlock", c_druid = "druid", r_tank = "tank", r_healer = "healer",
                   r_damage = "damage" },
         -- Ours by its mark (where two of its marks are one icon of ours, the one meant); an icon not here: unknown.
-        icons = { boss = "skull", attack = "swords", tank = "r_tank", healer = "r_healer", damage = "r_damage",
+        icons = { boss = "skull", attack = "swords", shield = "shield", heal = "heal", tank = "r_tank",
+                  healer = "r_healer", damage = "r_damage",
                   danger = "aoe", threat = "aoe", warning = "warn", trap = "warn", lookout = "eye", watch = "patrol",
                   sleep = "sleep", sheep = "sleep", chest = "chest", key = "chest", up = "stairs", down = "stairs",
                   door = "door", locked = "door", portal = "door", rally = "flag", safe = "flag", finish = "finish",

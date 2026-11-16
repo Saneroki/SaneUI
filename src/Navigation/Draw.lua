@@ -27,7 +27,7 @@ local _, ns = ...
 --      a floor     the same over a dungeon's art, its points on the floor's own map (0 to 1), moved and zoomed
 --                  with it; your markers on it in their icons with their titles, a click their card
 --
---      Draw.Tool(), Draw.SetTool(key), Draw.Colour(), Draw.SetColour(key), Draw.Width(), Draw.SetWidth(1 | 2)
+--      Draw.Tool(), Draw.SetTool(key), Draw.Colour(), Draw.SetColour(key), Draw.Width(), Draw.SetWidth(1 | 2 | 3)
 --      Draw.Build(holder), Draw.Place(view, small), Draw.Fit(edge), Draw.Clear()     the canvas' layer sketch
 --      Draw.Floor(frame, map, art, scale, midX, midY, small), Draw.FloorClear()      a dungeon's floor
 --      Draw.Press(), Draw.PressFloor(), Draw.Busy(), Draw.Release()                  the mouse (Canvas, Dungeons)
@@ -38,7 +38,8 @@ local Draw = {}
 ns.Draw = Draw
 
 Draw.TOOLS = { "marker", "pen", "line", "arrow", "circle", "route", "text", "erase" }
-Draw.THICK = { 3, 6 }   -- a drawing's thickness in units, thin and thick
+Draw.THICK = { 3, 6, 10 } -- a drawing's thickness in units, thin, medium and thick (Saneroki, 2026-11-16: "expand to 8
+                        -- colours and 3 lines", as the dungeon map addon Sane UI knows draws them)
 Draw.EDGE = 2           -- units of dark edge round it
 Draw.STEP = 4           -- units the mouse goes before a pen's next point
 Draw.LEAST = 4          -- units a line, an arrow or a circle's radius is long at least
@@ -48,9 +49,12 @@ Draw.SPREAD = 0.45      -- radians an arrow's head opens to each side
 Draw.SIDES = 40         -- a circle's sides
 Draw.PIN = 24           -- a marker on a dungeon's floor
 Draw.GRAB = 14          -- units from a marker's middle a press takes it (to drag it)
-Draw.STOP, Draw.STOP_BIG = 18, 22 -- a route's numbered stop across, thin and thick
+Draw.STOPS = { 18, 22, 26 } -- a route's numbered stop across, thin, medium and thick
+Draw.STOP = Draw.STOPS[1]
 Draw.ROUND = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask" -- (the game's round picture: a stop)
-Draw.WORDS = { "GameFontNormalLargeOutline", "GameFontNormalHugeOutline" } -- words on the map, thin and thick
+Draw.WORDS = { "GameFontNormalLargeOutline", "GameFontNormalHugeOutline", "GameFontNormalHuge2Outline" } -- words on
+                        -- the map, thin, medium and thick (the game's 16, 20 and 24)
+Draw.WORDS_HIGH = { 18, 24, 28 } -- their line's height, should the game not tell
 Draw.WORDS_MOST = 80    -- letters of words on the map at most
 Draw.WHITE = "Interface\\Buttons\\WHITE8X8"
 Draw.TEXT = {
@@ -97,12 +101,17 @@ function Draw.SetColour(key)
     if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end
 end
 
+-- A width as one of the three (1 thin, 2 medium, 3 thick); 1 for one not known.
+function Draw.Widths(width)
+    return (width == 2 or width == 3) and width or 1
+end
+
 function Draw.Width()
-    return ns.store.drawWidth == 2 and 2 or 1
+    return Draw.Widths(ns.store.drawWidth)
 end
 
 function Draw.SetWidth(width)
-    ns.store.drawWidth = width == 2 and 2 or 1
+    ns.store.drawWidth = Draw.Widths(width)
     if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end
 end
 
@@ -194,7 +203,7 @@ local function Lay(surface, left, right, bottom, top)
                     stop.number:SetDrawLayer("OVERLAY", 3)
                     surface.stops[stops] = stop
                 end
-                local size = label.big and Draw.STOP_BIG or Draw.STOP
+                local size = Draw.STOPS[label.size] or Draw.STOP
                 stop.ring:SetSize(size + 2 * Draw.EDGE, size + 2 * Draw.EDGE)
                 stop.fill:SetSize(size, size)
                 stop.fill:SetVertexColor(rgb[1], rgb[2], rgb[3], 1)
@@ -212,15 +221,15 @@ local function Lay(surface, left, right, bottom, top)
                     text = surface.frame:CreateFontString(nil, "OVERLAY", Draw.WORDS[1])
                     surface.words[words] = text
                 end
-                text:SetFontObject(Draw.WORDS[label.big and 2 or 1])
+                text:SetFontObject(Draw.WORDS[label.size] or Draw.WORDS[1])
                 text:SetText(label.text)
                 text:SetTextColor(rgb[1], rgb[2], rgb[3], 1)
                 text:ClearAllPoints()
                 text:SetPoint("CENTER", surface.anchor, "CENTER", label.x, label.y)
                 text:Show()
                 local wide = Core.Plain(text:GetStringWidth())
-                label.w = type(wide) == "number" and wide > 0 and wide or #label.text * (label.big and 11 or 8)
-                label.h = label.big and 24 or 18
+                label.w = type(wide) == "number" and wide > 0 and wide or #label.text * (4 + 3 * (label.size or 1))
+                label.h = Draw.WORDS_HIGH[label.size] or Draw.WORDS_HIGH[1]
             end
         end
     end
@@ -245,7 +254,8 @@ local function Segments(drawing, ToScreen, out, labels)
         screen[#screen + 1] = x
         screen[#screen + 1] = y
     end
-    local thick = Draw.THICK[drawing.width == 2 and 2 or 1]
+    local size = Draw.Widths(drawing.width)
+    local thick = Draw.THICK[size]
     local rgb = ns.Plans.Colour(drawing.colour)
     local function Add(x1, y1, x2, y2)
         out[#out + 1] = { x1 = x1, y1 = y1, x2 = x2, y2 = y2, thick = thick, rgb = rgb, drawing = drawing }
@@ -254,14 +264,14 @@ local function Segments(drawing, ToScreen, out, labels)
     if kind == "text" then
         if labels and #screen >= 2 then
             labels[#labels + 1] = { x = screen[1], y = screen[2], text = drawing.text or "", rgb = rgb,
-                                    big = drawing.width == 2, drawing = drawing }
+                                    size = size, drawing = drawing }
         end
         return
     end
     if kind == "route" and labels then
         for index = 1, #screen - 1, 2 do
             labels[#labels + 1] = { x = screen[index], y = screen[index + 1], stop = (index + 1) / 2, rgb = rgb,
-                                    big = drawing.width == 2, drawing = drawing }
+                                    size = size, drawing = drawing }
         end
     end
     if kind == "circle" and #screen >= 4 then

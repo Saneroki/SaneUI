@@ -27,8 +27,10 @@ local _, ns = ...
 --
 --  Where it lies: its dungeon maps are our floors as Core's words say (the same 0 to 1, or fitted), its drawings on
 --  the game's maps ours as they are (both keep a map's ID and 0 to 1 on it). Its drawings on maps we have no match
---  for are left out, and the card says how many. What it has and we lack (a mark's size, its route's own colour)
---  is dropped; what we have and it lacks (a marker's words, a line, an arrow, a circle) goes as the nearest it has.
+--  for are left out, and the card says how many. Its eight colours and three widths are ours one to one, its words'
+--  sizes our three, its marks our markers' icons (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other
+--  stuff so we are as compatible as possible"); what we have and it lacks (a marker's words, a line, an arrow, a
+--  circle) goes as the nearest it has, what it has and we lack (a stamp's own colour) is dropped.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Exchange = {}
@@ -285,7 +287,8 @@ local function FromWire(data)
         if type(mark) == "table" and Number(mark[MARK.map]) and Number(mark[MARK.x]) and Number(mark[MARK.y])
                 and type(mark[MARK.kind]) == "string" then
             route.marks[#route.marks + 1] = { map = mark[MARK.map], x = Place(mark[MARK.x]), y = Place(mark[MARK.y]),
-                kind = mark[MARK.kind], colour = mark[MARK.colour], label = Label(mark[MARK.label], limits.label) }
+                kind = mark[MARK.kind], colour = mark[MARK.colour], label = Label(mark[MARK.label], limits.label),
+                size = mark[MARK.size] }
         end
     end
     return route
@@ -326,7 +329,8 @@ local function FromSaved(each)
         if type(mark) == "table" and Number(mark[saved.map]) and Number(mark[saved.x]) and Number(mark[saved.y])
                 and type(mark[saved.kind]) == "string" then
             route.marks[#route.marks + 1] = { map = mark[saved.map], x = Clamp(mark[saved.x]), y = Clamp(mark[saved.y]),
-                kind = mark[saved.kind], colour = mark[saved.colourOf], label = Label(mark[saved.label], limits.label) }
+                kind = mark[saved.kind], colour = mark[saved.colourOf], label = Label(mark[saved.label], limits.label),
+                size = mark[saved.size] }
         end
     end
     return route
@@ -346,10 +350,37 @@ local function Nearest(rgb, list, colourOf)
     return best
 end
 
--- Our colour's key nearest its colour of that number (the drawing's own where it has none).
+-- Our colour of its colour of that number (the drawing's own where it has none): the one it is (words.colourKeys),
+-- else the nearest.
 local function ColourIn(route, number)
-    local rgb = words.colours[number] or words.colours[route.colour] or words.colours[1]
-    return ns.Plans.COLOURS[Nearest(rgb, ns.Plans.COLOURS, function(colour) return colour.rgb end)].key
+    local index = words.colours[number] and number or words.colours[route.colour] and route.colour or 1
+    local key = words.colourKeys[index]
+    for _, colour in ipairs(ns.Plans.COLOURS) do
+        if colour.key == key then return key end
+    end
+    return ns.Plans.COLOURS[Nearest(words.colours[index], ns.Plans.COLOURS, function(colour) return colour.rgb end)].key
+end
+
+-- Its colour's number of ours: the one it is, else the nearest.
+local function ColourOut(key)
+    for index, each in ipairs(words.colourKeys) do
+        if each == key then return index end
+    end
+    return Nearest(ns.Plans.Colour(key), words.colours, function(rgb) return rgb end)
+end
+
+-- Our width of its width (the nearest of its three), and its words' size as our width.
+local function WidthIn(width)
+    local best, far = 1, nil
+    for index, each in ipairs(words.widths) do
+        local distance = math.abs(each - width)
+        if not far or distance < far then best, far = index, distance end
+    end
+    return best
+end
+
+local function SizeIn(size)
+    return words.textSizes[size] or words.textSizes[words.textSize] or 1
 end
 
 -- Where a point of its drawing lies on our maps: the map and the point; nil where we have no match for its map.
@@ -387,8 +418,10 @@ function Exchange.Share(route, sender, origin)
             share.left = share.left + 1
             return
         end
-        share.drawings[#share.drawings + 1] = { origin = origin .. ":d" .. (#share.drawings + 1), map = map, kind = kind,
-                                                colour = colour, width = width, points = points, text = text }
+        local drawing = { origin = origin .. ":d" .. (#share.drawings + 1), map = map, kind = kind, colour = colour,
+                          width = width, points = points, text = text }
+        share.drawings[#share.drawings + 1] = drawing
+        return drawing
     end
     for _, stroke in ipairs(route.strokes) do
         local map, points = nil, {}
@@ -399,7 +432,7 @@ function Exchange.Share(route, sender, origin)
             points[#points + 1], points[#points + 2] = x, y
         end
         if map then
-            Drawing("pen", map, ColourIn(route, stroke.colour), stroke.width >= words.widths[2] and 2 or 1, Thin(points))
+            Drawing("pen", map, ColourIn(route, stroke.colour), WidthIn(stroke.width), Thin(points))
         else
             share.left = share.left + 1
         end
@@ -425,7 +458,8 @@ function Exchange.Share(route, sender, origin)
     end
     Done()
     for _, label in ipairs(labels) do
-        Drawing("text", label[1], ColourIn(route, nil), 1, { label[2], Clamp(label[3]) }, label[4])
+        local words_ = Drawing("text", label[1], ColourIn(route, nil), 1, { label[2], Clamp(label[3]) }, label[4])
+        if words_ then words_.stop = true end -- (a stop's words: sent back as that stop's, Exchange.Routes)
     end
     for _, mark in ipairs(route.marks) do
         local map, x, y = MapIn(route, mark.map, mark.x, mark.y)
@@ -433,9 +467,10 @@ function Exchange.Share(route, sender, origin)
             share.left = share.left + 1
         elseif mark.kind == words.text then
             if mark.label then
-                Drawing("text", map, mark.colour and ColourIn(route, mark.colour) or "white", 1, { x, y }, mark.label)
+                Drawing("text", map, words.colours[mark.colour] and ColourIn(route, mark.colour) or "white",
+                    SizeIn(mark.size), { x, y }, mark.label)
             end
-        elseif #share.rows >= Markers.TAKE then
+        elseif #share.rows >= Plans.MARKERS then
             share.left = share.left + 1
         else
             share.rows[#share.rows + 1] = { origin = origin .. ":m" .. (#share.rows + 1), map = map, x = Clamp(x),
@@ -497,7 +532,8 @@ function Exchange.Routes(name, markers, drawings, origin)
         local id = key or words.world
         local group = groups[id]
         if not group then
-            group = { scope = key and words.chart or words.world, key = key or nil, stops = {}, strokes = {}, marks = {} }
+            group = { scope = key and words.chart or words.world, key = key or nil, stops = {}, labels = {}, strokes = {},
+                      marks = {} }
             groups[id] = group
             order[#order + 1] = id
         end
@@ -506,6 +542,18 @@ function Exchange.Routes(name, markers, drawings, origin)
     local function Out(back, x, y)
         if back then x, y = back[1] * x + back[2] * y + back[3], back[4] * x + back[5] * y + back[6] end
         return Whole(x), Whole(y)
+    end
+    -- The stop of the group right over words at x, y (its map's, as whole numbers): its number; nil where none is.
+    local function StopOver(group, onto, x, y)
+        local best, far
+        local under = Exchange.LABEL * words.scale
+        for at = 1, #group.stops - 2, 3 do
+            local dx, dy = math.abs(group.stops[at + 1] - x), y - group.stops[at + 2]
+            if group.stops[at] == onto and dx <= 2 and dy >= -2 and dy <= under + 2 and (not far or dx + dy < far) then
+                best, far = (at + 2) / 3, dx + dy
+            end
+        end
+        return best
     end
     local function Stroke(group, onto, back, width, colour, points)
         if #group.strokes >= limits.strokes or #points < 4 then return end
@@ -517,19 +565,21 @@ function Exchange.Routes(name, markers, drawings, origin)
         stroke[STROKE.map], stroke[STROKE.width], stroke[STROKE.colour], stroke[STROKE.points] = onto, width, colour, list
         group.strokes[#group.strokes + 1] = stroke
     end
-    local function Mark(group, onto, back, x, y, kind, colour, label)
+    local function Mark(group, onto, back, x, y, kind, colour, label, size)
         if #group.marks >= limits.marks then return end
         local mark, mx, my = {}, Out(back, x, y)
         mark[MARK.map], mark[MARK.x], mark[MARK.y], mark[MARK.kind] = onto, mx, my, kind
-        mark[MARK.colour], mark[MARK.label], mark[MARK.size] = colour, Label(label, limits.label) or "", 2
+        mark[MARK.colour], mark[MARK.label] = colour, Label(label, limits.label) or ""
+        mark[MARK.size] = size or words.textSize
         group.marks[#group.marks + 1] = mark
     end
     for _, drawing in ipairs(drawings or {}) do
         local group, onto, back = Into(drawing.map)
         local points = drawing.points or {}
         if group and #points >= 2 then
-            local colour = Nearest(ns.Plans.Colour(drawing.colour), words.colours, function(rgb) return rgb end)
-            local width = words.widths[drawing.width == 2 and 2 or 1]
+            local colour = ColourOut(drawing.colour)
+            local size = ns.Draw and ns.Draw.Widths(drawing.width) or 1
+            local width = words.widths[size] or words.widths[1]
             local kind, x1, y1, x2, y2 = drawing.kind, points[1], points[2], points[3], points[4]
             if kind == "pen" or kind == "line" then
                 Stroke(group, onto, back, width, colour, points)
@@ -553,13 +603,20 @@ function Exchange.Routes(name, markers, drawings, origin)
                 end
                 Stroke(group, onto, back, width, colour, ring)
             elseif kind == "route" then
+                group.colour = group.colour or colour -- (its stops are in its drawing's own colour)
                 for at = 1, #points - 1, 2 do
                     if #group.stops >= limits.stops * 3 then break end
                     local x, y = Out(back, points[at], points[at + 1])
                     group.stops[#group.stops + 1], group.stops[#group.stops + 2], group.stops[#group.stops + 3] = onto, x, y
                 end
             elseif kind == "text" and drawing.text then
-                Mark(group, onto, back, x1, y1, words.text, colour, drawing.text)
+                -- a stop's words (Exchange.Share): that stop's label again, if the stop over them is there
+                local stop = drawing.stop and StopOver(group, onto, Out(back, x1, y1))
+                if stop then
+                    group.labels[stop] = Label(drawing.text, limits.label)
+                else
+                    Mark(group, onto, back, x1, y1, words.text, colour, drawing.text, words.ourTextSizes[size])
+                end
             end
         end
     end
@@ -574,8 +631,9 @@ function Exchange.Routes(name, markers, drawings, origin)
     for _, id in ipairs(order) do
         local group = groups[id]
         local payload = { [fields.version] = words.version, [fields.scope] = group.scope, [fields.key] = group.key,
-                          [fields.name] = Label(name, limits.name) or Exchange.TEXT.unnamed, [fields.colour] = 1,
-                          [fields.author] = author, [fields.stops] = group.stops, [fields.labels] = {},
+                          [fields.name] = Label(name, limits.name) or Exchange.TEXT.unnamed,
+                          [fields.colour] = group.colour or 1,
+                          [fields.author] = author, [fields.stops] = group.stops, [fields.labels] = group.labels,
                           [fields.strokes] = group.strokes, [fields.marks] = group.marks,
                           [Exchange.MARK] = tostring(origin or "") }
         list[#list + 1] = payload

@@ -10338,8 +10338,90 @@ end)()
     for _, drawing in ipairs(heardDrawings) do heardKinds[drawing.kind] = drawing end
     check(heard.name == "Their pull" and heard.from == "Brannoc Steelvein" and #heardMarkers == 1
         and heardMarkers[1].icon == "skull" and heardMarkers[1].title == "Kill first" and heardMarkers[1].map == "90:1"
-        and heardKinds.pen and heardKinds.pen.width == 2 and heardKinds.route and heardKinds.text
+        and heardKinds.pen and heardKinds.pen.width == 3 and heardKinds.route and heardKinds.text
         and heardKinds.text.text == "Start", "kept: its pen thick, its stop a route with its words, its raid mark a skull")
+
+    local heardBack = Exchange.Routes(heard.name, heardMarkers, heardDrawings, "me:p3")[1]
+    check(heardBack[F.labels][1] == "Start" and #heardBack[F.marks] == 1 and #heardBack[F.stops] == 3,
+        "and back: its stop's words that stop's label again, no loose words")
+    local stopWords
+    for _, drawing in ipairs(heardDrawings) do if drawing.stop then stopWords = drawing end end
+    local row
+    local sendBlockNow = Wire.SendBlock
+    Wire.SendBlock = function(_, text) row = row or text return true end
+    Plans.Share(heard, "GUILD")
+    Wire.SendBlock = sendBlockNow
+    local reread = row and Plans.Read("Brannoc Steelvein", (row:gsub("^2\030[^\031]*", "2\030Player-1-0000BEEF:p77")))
+    local rereadStop
+    for _, drawing in ipairs(reread and reread.drawings or {}) do if drawing.stop then rereadStop = drawing end end
+    check(stopWords and rereadStop and rereadStop.text == "Start", "a stop's words stay a stop's on our own wire too")
+
+    -- one to one (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other stuff so we are as compatible as
+    -- possible"): its eight colours, three widths, four word sizes and every mark of its there and back
+    local Draw = ns.Draw
+    check(#Plans.COLOURS == 8 and #ns.DrawBar.palette.swatches == 8 and #ns.DrawBar.palette.widths == 3
+        and #Draw.THICK == 3 and #Draw.WORDS == 3, "eight colours and three widths on the palette")
+    Draw.SetWidth(3)
+    check(Draw.Width() == 3 and Draw.Widths(7) == 1, "the third width chosen; one not known is thin")
+    Draw.SetWidth(1)
+    local every = {}
+    local strokes, marks = {}, {}
+    for colour = 1, 8 do
+        strokes[#strokes + 1] = Item(words.stroke, { map = 226, width = words.widths[(colour - 1) % 3 + 1], colour = colour,
+                                                     points = { 1000, 1000 + colour * 100, 2000, 2000 } })
+    end
+    for size = 1, 4 do
+        marks[#marks + 1] = Item(words.mark, { map = 226, x = 4000, y = 1000 * size, kind = words.text, colour = size,
+                                               label = "Size " .. size, size = size })
+    end
+    local stamps = 0
+    for kind in pairs(words.marks) do
+        stamps = stamps + 1
+        marks[#marks + 1] = Item(words.mark, { map = 226, x = 5000, y = 5000, kind = kind, colour = 0, label = kind,
+                                               size = 2 })
+    end
+    local all = { [F.version] = 2, [F.scope] = words.chart, [F.key] = words.charts[226].key, [F.name] = "Every one",
+                  [F.colour] = 3, [F.author] = "Brannoc", [F.stops] = { 226, 1000, 9000, 226, 2000, 9000 },
+                  [F.strokes] = strokes, [F.marks] = marks }
+    local keptAll = Exchange.Paste(Exchange.Pack(words.route, all))[1]
+    local keptMarkers, keptDrawings = Plans.Holds(keptAll)
+    local colours, widths, sizes, route = {}, {}, {}, nil
+    for _, drawing in ipairs(keptDrawings) do
+        if drawing.kind == "pen" then
+            colours[#colours + 1], widths[#widths + 1] = drawing.colour, drawing.width
+        elseif drawing.kind == "text" then
+            sizes[tonumber(drawing.text:match("%d"))] = drawing.width
+        elseif drawing.kind == "route" then
+            route = drawing
+        end
+    end
+    local distinct = {}
+    for _, key in ipairs(colours) do distinct[key] = true end
+    local count = 0
+    for _ in pairs(distinct) do count = count + 1 end
+    check(#colours == 8 and count == 8 and widths[1] == 1 and widths[2] == 2 and widths[3] == 3
+        and colours[3] == "pink" and colours[8] == "teal" and route and route.colour == "pink",
+        "its eight colours eight of ours, its three widths our three, its route's own colour its stops'")
+    check(sizes[1] == 1 and sizes[2] == 1 and sizes[3] == 2 and sizes[4] == 3, "its four word sizes as our three widths")
+    local again = Exchange.Routes("Every one", keptMarkers, keptDrawings, "me:p2")[1]
+    local COLOUR, WIDTH, SIZE = At(words.stroke, "colour"), At(words.stroke, "width"), At(words.mark, "size")
+    local backColours, backWidths = true, true
+    for index, stroke in ipairs(again[F.strokes]) do
+        backColours = backColours and stroke[COLOUR] == index
+        backWidths = backWidths and stroke[WIDTH] == words.widths[(index - 1) % 3 + 1]
+    end
+    local backKinds, backSizes = {}, {}
+    for _, mark in ipairs(again[F.marks]) do
+        backKinds[mark[KIND]] = true
+        if mark[KIND] == words.text then backSizes[#backSizes + 1] = mark[SIZE] end
+    end
+    local kinds = 0
+    for kind in pairs(words.marks) do if backKinds[kind] then kinds = kinds + 1 end end
+    check(#again[F.strokes] == 8 and backColours and backWidths and again[F.colour] == 3,
+        "and back: the same colour and width each, the route's colour")
+    check(kinds == stamps and #keptMarkers == stamps, "every mark of its one of our icons, and back the same mark")
+    check(table.concat(backSizes, ",") == "2,2,3,4", "words back in its sizes (its smallest as its usual)")
+    Plans.Remove(keptAll)
     Exchange.Heard("Brannoc Steelvein", Message("1", Exchange.Pack(words.route, dungeon)):gsub("~1~2~", "~1~1~"))
     check(not Markers.offer:IsShown(), "one of ours in its format heard (a Sane UI share came too): not asked twice")
 

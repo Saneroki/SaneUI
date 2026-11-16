@@ -52,7 +52,8 @@ DrawBar.TEXT = {
         text = { "Text", "A click: words on the map there." },
         erase = { "Eraser", "A click on a drawing or words: away. With any other tool, drag what is on the map to move it." },
     },
-    thin = "Thin", thick = "Thick",
+    thin = "Thin", medium = "Medium", thick = "Thick",
+    widthTip = "How thick lines, routes and words are drawn.",
     plan = "Sketch: %s",
     shown = "Shown",
     rename = "Rename...",
@@ -336,10 +337,11 @@ local function Build()
         swatches[index] = swatch
     end
     widths = {}
-    for index, width in ipairs({ 1, 2 }) do
-        local square = Square(content, DrawBar.SWATCH, width == 1 and DrawBar.TEXT.thin or DrawBar.TEXT.thick, nil,
+    local names = { DrawBar.TEXT.thin, DrawBar.TEXT.medium, DrawBar.TEXT.thick }
+    for index, width in ipairs({ 1, 2, 3 }) do
+        local square = Square(content, DrawBar.SWATCH, names[width], DrawBar.TEXT.widthTip,
             function() ns.Draw.SetWidth(width) end)
-        square:SetPoint("TOPRIGHT", -(2 - index) * (DrawBar.SWATCH + DrawBar.GAP), y)
+        square:SetPoint("TOPRIGHT", -(3 - index) * (DrawBar.SWATCH + DrawBar.GAP), y)
         local line = square:CreateLine(nil, "ARTWORK")
         line:SetTexture(ns.Draw.WHITE)
         line:SetThickness(ns.Draw.THICK[width] / 1.5)

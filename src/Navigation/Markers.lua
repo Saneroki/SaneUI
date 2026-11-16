@@ -96,6 +96,9 @@ Markers.ICONS = {
     { key = "arrow", group = "calls", atlas = "common-icon-forwardarrow" },
     { key = "yes", group = "calls", atlas = "common-icon-checkmark" },
     { key = "no", group = "calls", atlas = "common-icon-redx" },
+    -- (protect and heal here: each a mark of the dungeon map addon Sane UI knows, one of ours; Saneroki, 2026-11-16)
+    { key = "shield", group = "calls", texture = I .. "INV_Shield_06", cut = ICON_CUT },
+    { key = "heal", group = "calls", texture = I .. "Spell_Holy_Heal", cut = ICON_CUT },
     -- crowd control
     { key = "sleep", group = "control", texture = I .. "Spell_Nature_Sleep", cut = ICON_CUT },
     { key = "sheep", group = "control", texture = I .. "Spell_Nature_Polymorph", cut = ICON_CUT },

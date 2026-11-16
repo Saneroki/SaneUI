@@ -19,15 +19,16 @@ local _, ns = ...
 --      Plans.Read(sender, text)  a block heard: the share once all its parts are there (Markers asks about it)
 --      Plans.Keep(share)         a plan kept: one of the same origin replaced whole, else a new one
 --
---  A drawing: its kind (pen, line, arrow, circle), its colour's key (Plans.COLOURS), its width (1 thin, 2 thick),
+--  A drawing: its kind (pen, line, arrow, circle), its colour's key (Plans.COLOURS), its width (1 thin, 2 medium, 3 thick),
 --  and its points on its map (0 to 1 on a zone's map or a dungeon's floor; a stroke may reach past its map's edge),
 --  four places each. A line and an arrow have two points, a circle its middle and a point on its edge.
 --
 --  On the wire (Core.Wire, kind M as the markers', version 2), a block a part: "2", then the plan's head cut by \031
 --  (its origin, its name, the part, the parts, the share's own stamp), then its rows, each cut by \030: "m" and a marker's row as Markers
 --  sends it, "d" and a drawing's (its origin, map, kind, colour, width, its points as three letters each in base 36:
---  (value + 1) * 10000), their fields cut by \031. The parts are put together by the sender and the plan's origin;
---  the plan is asked about once they are all there. At most Plans.TAKE drawings and Markers.TAKE markers a plan.
+--  (value + 1) * 10000, its words, "1" for a route stop's words), their fields cut by \031. The parts are put
+--  together by the sender and the plan's origin; the plan is asked about once they are all there. At most
+--  Plans.TAKE drawings and Plans.MARKERS markers a plan.
 --
 --  Kept for the account in the module's saved settings (ns.store.plans, drawings): personal, shared only when you
 --  share them (data.md, *Map markers*).
@@ -38,14 +39,18 @@ ns.Plans = Plans
 
 Plans.KINDS = { pen = true, line = true, arrow = true, circle = true, route = true, text = true }
 Plans.ONE = { route = true, text = true } -- the kinds one point makes (a route's first stop, words)
--- The colours to draw in, in the palette's order (the game's own where it has them: its gold, its raid warning's red).
+-- The colours to draw in, in the palette's order (the game's own where it has them: its gold, its raid warning's red,
+-- its paladins' pink). Eight, each of the dungeon map addon Sane UI knows one of ours (Saneroki, 2026-11-16: "expand to
+-- 8 colours and 3 lines and other stuff so we are as compatible as possible with their map sharing").
 Plans.COLOURS = {
     { key = "gold", rgb = { 1, 0.82, 0 } }, { key = "red", rgb = { 1, 0.15, 0.1 } },
     { key = "blue", rgb = { 0.25, 0.6, 1 } }, { key = "green", rgb = { 0.3, 0.95, 0.3 } },
     { key = "white", rgb = { 1, 1, 1 } }, { key = "purple", rgb = { 0.75, 0.45, 1 } },
+    { key = "pink", rgb = { 0.96, 0.55, 0.73 } }, { key = "teal", rgb = { 0.15, 0.85, 0.8 } },
 }
-Plans.POINTS = 160    -- a stroke's points at most
-Plans.TAKE = 200      -- drawings taken from a plan shared at most
+Plans.POINTS = 400    -- a stroke's points at most
+Plans.TAKE = 500      -- drawings taken from a plan shared at most
+Plans.MARKERS = 150   -- markers taken from a plan shared at most
 Plans.PARTS = 20      -- parts of a plan shared at most
 Plans.BLOCK = 2800    -- bytes of rows in a part, unpacked
 Plans.TEXT = {
@@ -280,8 +285,8 @@ local function DrawingRow(drawing)
     local packed = {}
     for index, value in ipairs(drawing.points) do packed[index] = Pack(value) end
     return table.concat({ "d", Clean(Origin(drawing, "d"), 80), tostring(drawing.map), drawing.kind or "line",
-        drawing.colour or "gold", tostring(drawing.width == 2 and 2 or 1), table.concat(packed),
-        Clean(drawing.text, 80) }, "\031")
+        drawing.colour or "gold", tostring(ns.Draw.Widths(drawing.width)), table.concat(packed),
+        Clean(drawing.text, 80), drawing.stop and "1" or "" }, "\031")
 end
 
 local stamp = 0 -- shares sent since the login
@@ -337,7 +342,8 @@ local function ReadDrawing(fields)
         list[#list + 1] = value
     end
     return { origin = Clean(origin, 80), map = map, kind = kind, colour = colours[colour] and colour or "gold",
-             width = width == "2" and 2 or 1, points = list, text = words }
+             width = ns.Draw.Widths(tonumber(width)), points = list, text = words,
+             stop = kind == "text" and fields[9] == "1" or nil }
 end
 
 local gathering, gathered = {}, 0 -- [sender \t origin \t share] = the parts heard of a plan: { name, parts, got }
@@ -377,7 +383,7 @@ function Plans.Read(sender, text)
     for index = 1, parts do
         for row in ((held.got[index] or "") .. "\030"):gmatch("(.-)\030") do
             local kind = row:sub(1, 2)
-            if kind == "m\031" and #share.rows < ns.Markers.TAKE then
+            if kind == "m\031" and #share.rows < Plans.MARKERS then
                 local marker = ns.Markers.ReadRow(row:sub(3))
                 if marker then share.rows[#share.rows + 1] = marker end
             elseif kind == "d\031" and #share.drawings < Plans.TAKE then
@@ -422,7 +428,8 @@ function Plans.Keep(share)
     for _, drawing in ipairs(share.drawings) do
         drawings[#drawings + 1] = { id = Number("drawingNext"), plan = plan.id, origin = drawing.origin,
                                     map = drawing.map, kind = drawing.kind, colour = drawing.colour,
-                                    width = drawing.width, points = drawing.points, text = drawing.text }
+                                    width = drawing.width, points = drawing.points, text = drawing.text,
+                                    stop = drawing.stop }
     end
     Changed()
     if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end

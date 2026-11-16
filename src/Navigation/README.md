@@ -408,8 +408,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   on what stands on the map drags it to a new place, on the map and on a dungeon's floor ("While in edit mode I want
   to be able to drag the markers, texts, lines, etc to new positions ... without activating a specific move
   button"): a marker (pressed and let go without moving: its card), words, a route's stop (that stop alone), any
-  drawing (all of it); the tool on is outlined, a click on it again puts it away. Under them six colours and a thin and a
-  thick width. While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
+  drawing (all of it); the tool on is outlined, a click on it again puts it away. Under them eight colours and three widths
+  (thin, medium, thick; words and a route's stops grow with them: Saneroki, 2026-11-16, "expand to 8 colours and 3
+  lines and other stuff so we are as compatible as possible with their map sharing"). While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
   steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
   - **Sketches** (*plans* in the code; Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing",
@@ -432,8 +433,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
     fitted through the game's terrain; its maps of pictures of its own (Excavation Site, City of Dalaran, its Wailing
     Caverns) and the Hall of Thanes have no match, so what lies on them is left out and said. Its lines come as pens
     (its widest thick), its stops as a route with their words under them, its words as words, its marks as our markers
-    (raid marks, classes and roles the same, the rest by meaning); ours go as its nearest: a line, an arrow and a
-    circle as its lines, a route as its stops, a marker as its mark with the title (or the words) as its label.
+    (raid marks, classes, roles and every stamp of its one of our icons, a shield and a heal among them); its eight
+    colours and three widths are ours one to one, its words' four sizes our three (its smallest as its usual), a stop's
+    words that stop's again when they go back. Ours go as its nearest: a line, an arrow and a circle as its lines, a
+    route as its stops (in the route's colour), a marker as its mark with the title (or the words) as its label. A
+    stroke holds 400 points, a sketch 500 drawings and 150 markers, as many as its drawings hold.
   - **Undo** takes the active sketch's newest drawing away; **Clear** all its drawings on the map shown (the dungeon's
     floor, or the zone in the map's middle), asked first.
   - Closing the palette (its X, Esc, the map going small) puts the tool away; Alt and a click still puts a marker.
@@ -1637,6 +1641,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, eight colours, three widths, one to one with the dungeon map addon:** Saneroki: "Can we expand to 8
+  colours and 3 lines and other stuff so we are as compatible as possible with their map sharing?" The palette has
+  eight colours (pink, the game's paladins', and teal added) and three widths (`Draw.THICK`, `Draw.STOPS`,
+  `Draw.WORDS`: the game's 16, 20 and 24 point outlined fonts); the addon's colours, widths, marks (a shield and a
+  heal added to the markers' icons) and its stops' words map one to one both ways, its four word sizes onto our three;
+  a stroke takes 400 points (`Plans.POINTS`), a sketch shared 500 drawings (`Plans.TAKE`) and 150 markers
+  (`Plans.MARKERS`). Its stamps' own colours stay theirs: our markers keep the game's icons in their own colours.
 - **2026-11-16, sketches both ways with a dungeon map addon:** asked whether a share of that addon's map drawings could
   be received and ours reach its players, Saneroki: "Yes, build it", and "it would be nice to make the map sharing as
   compatible as possible were we can from out side". Its drawings shared in a group, guild or whisper are heard and
