@@ -143,9 +143,10 @@ Neighbours.KNOWN = {
                     { 0.75, 0.55, 1.0 }, { 0.95, 0.95, 0.95 }, { 0.98, 0.30, 0.25 }, { 0.30, 0.90, 0.85 } },
         -- Its colours as ours, one to one in its order (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other
         -- stuff so we are as compatible as possible"); its widths are our three (thin, medium, thick) in turn; its words'
-        -- four sizes (2 its usual) as our three widths, its smallest and its usual both thin, and ours as its.
+        -- four sizes (2 its usual) are our four (0 small to 3 huge: "add a fourth text size so their smallest matches
+        -- too"), and ours its.
         colourKeys = { "blue", "gold", "pink", "green", "purple", "white", "red", "teal" },
-        textSizes = { 1, 1, 2, 3 }, ourTextSizes = { 2, 3, 4 }, textSize = 2,
+        textSizes = { 0, 1, 2, 3 }, ourTextSizes = { [0] = 1, 2, 3, 4 }, textSize = 2,
         -- Its marks: words (text), and the rest by the key of our markers' icon nearest in meaning.
         text = "text",
         marks = { skull = "boss", swords = "attack", shield = "shield", heal = "heal", aoe = "danger", warn = "warning",

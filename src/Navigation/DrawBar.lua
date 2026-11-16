@@ -29,7 +29,9 @@ ns.DrawBar = DrawBar
 
 DrawBar.WIDTH_MENU = 130 -- the bar's dropdown Sketches
 DrawBar.TOOL = 32        -- a tool's square
-DrawBar.SWATCH = 22      -- a colour's
+DrawBar.SWATCH = 20      -- a colour's, and a width's (eight colours and four squares in one row)
+DrawBar.LETTERS = { 8, 10, 13, 16 } -- the A on the words' sizes' squares, small to huge
+DrawBar.LETTER_FONT = rawget(_G, "STANDARD_TEXT_FONT") or "Fonts\\FRIZQT__.TTF"
 DrawBar.GAP = 4
 DrawBar.WIDTH = 8 * (32 + 4) - 4 + 2 * Look.INSIDE -- the palette: eight tools in a row
 -- What players read calls a plan a sketch (Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing";
@@ -53,7 +55,9 @@ DrawBar.TEXT = {
         erase = { "Eraser", "A click on a drawing or words: away. With any other tool, drag what is on the map to move it." },
     },
     thin = "Thin", medium = "Medium", thick = "Thick",
-    widthTip = "How thick lines, routes and words are drawn.",
+    widthTip = "How thick lines and routes are drawn. With the Text tool on: how large words are written.",
+    sizes = { "Small", "Normal", "Large", "Huge" }, letter = "A",
+    sizeTip = "How large words are written.",
     plan = "Sketch: %s",
     shown = "Shown",
     rename = "Rename...",
@@ -270,7 +274,7 @@ end
 local function Square(parent, size, title, tip, click)
     local square = Look.Square(parent, size)
     square:SetScript("OnClick", ns.Guard(click))
-    Core.Tip(square, title, tip, "ANCHOR_BOTTOM")
+    if title then Core.Tip(square, title, tip, "ANCHOR_BOTTOM") end
     square.box = Look.Outline(square, "OVERLAY")
     for _, line in ipairs(square.box.lines) do line:SetAlpha(0) end
     square.box.fill:SetAlpha(0)
@@ -336,18 +340,27 @@ local function Build()
         swatch:SetScript("OnClick", ns.Guard(function() ns.Draw.SetColour(colour.key) end))
         swatches[index] = swatch
     end
+    -- the lines' widths (thin, medium, thick), or with the text tool on the words' sizes, one more (Saneroki,
+    -- 2026-11-16: "add a fourth text size so their smallest matches too"): four squares from the right, the first only
+    -- for words; a line on each, or an A as large as the words
     widths = {}
-    local names = { DrawBar.TEXT.thin, DrawBar.TEXT.medium, DrawBar.TEXT.thick }
-    for index, width in ipairs({ 1, 2, 3 }) do
-        local square = Square(content, DrawBar.SWATCH, names[width], DrawBar.TEXT.widthTip,
-            function() ns.Draw.SetWidth(width) end)
-        square:SetPoint("TOPRIGHT", -(3 - index) * (DrawBar.SWATCH + DrawBar.GAP), y)
+    for index, size in ipairs({ 0, 1, 2, 3 }) do
+        local square = Square(content, DrawBar.SWATCH, false, nil, function()
+            if ns.Draw.Tool() == "text" then ns.Draw.SetTextSize(size) else ns.Draw.SetWidth(size) end
+        end)
+        square:SetPoint("TOPRIGHT", -(4 - index) * (DrawBar.SWATCH + DrawBar.GAP), y)
         local line = square:CreateLine(nil, "ARTWORK")
         line:SetTexture(ns.Draw.WHITE)
-        line:SetThickness(ns.Draw.THICK[width] / 1.5)
+        line:SetThickness((ns.Draw.THICK[size] or ns.Draw.THICK[1]) / 1.5)
         line:SetStartPoint("CENTER", square, -6, 0)
         line:SetEndPoint("CENTER", square, 6, 0)
-        square.width = width
+        local letter = square:CreateFontString(nil, "ARTWORK")
+        letter:SetFont(DrawBar.LETTER_FONT, DrawBar.LETTERS[index], "OUTLINE")
+        letter:SetPoint("CENTER")
+        letter:SetText(DrawBar.TEXT.letter)
+        square.size, square.line, square.letter = size, line, letter
+        square:HookScript("OnEnter", ns.Guard(function(self) Core.ShowTip(self, self.title, self.tip, "ANCHOR_BOTTOM") end))
+        square:HookScript("OnLeave", ns.Guard(Core.HideTip))
         widths[index] = square
     end
     y = y - DrawBar.SWATCH - 10
@@ -379,7 +392,17 @@ function DrawBar.Update()
     local tool, colour, width = ns.Draw.Tool(), ns.Draw.Colour(), ns.Draw.Width()
     for _, square in ipairs(tools) do Lit(square, square.key == tool) end
     for _, swatch in ipairs(swatches) do swatch.box:SetStrong(swatch.key == colour) end
-    for _, square in ipairs(widths) do Lit(square, square.width == width) end
+    local words, textSize = tool == "text", ns.Draw.TextSize()
+    local names = { DrawBar.TEXT.thin, DrawBar.TEXT.medium, DrawBar.TEXT.thick }
+    for _, square in ipairs(widths) do
+        local size = square.size
+        square:SetShown(words or size >= 1)
+        square.line:SetShown(not words)
+        square.letter:SetShown(words)
+        square.title = words and DrawBar.TEXT.sizes[size + 1] or names[size]
+        square.tip = words and DrawBar.TEXT.sizeTip or DrawBar.TEXT.widthTip
+        Lit(square, size == (words and textSize or width))
+    end
     local plan = ns.Plans.Active()
     if planMenu.OverrideText then planMenu:OverrideText(DrawBar.TEXT.plan:format(plan.name or "")) end
     DrawBar.Said()

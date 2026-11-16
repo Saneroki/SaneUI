@@ -1113,8 +1113,8 @@ hidden but what the small view needs.
 - **Drawing and plans (Saneroki, 2026-11-15; built):** "Can we draw on the map too? I want a button somwhere that helps
   me to activate menues and helpers to drop pins and draw on the map and save those drawings and map pins together so
   they can be shared or grouped together. This will be especially helpful in instance maps". A pencil square on the full
-  map's bar opens a palette: marker, pen, line, arrow, circle and eraser in eight colours and three widths
-  (2026-11-16, as the dungeon map addon Sane UI knows has them); while a tool is on the left button draws and a
+  map's bar opens a palette: marker, pen, line, arrow, circle and eraser in eight colours and three widths, words in
+  four sizes (2026-11-16, as the dungeon map addon Sane UI knows has them); while a tool is on the left button draws and a
   right-drag moves the map. Markers and drawings go into the plan chosen; a plan shows
   or hides as one and is shared whole with the party, raid or guild (asked before kept, replaced when shared again).
   The same on a dungeon's floor, its things on the floor's own map.

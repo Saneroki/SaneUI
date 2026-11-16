@@ -10475,11 +10475,24 @@ end)()
     -- one to one (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other stuff so we are as compatible as
     -- possible"): its eight colours, three widths, four word sizes and every mark of its there and back
     local Draw = ns.Draw
-    check(#Plans.COLOURS == 8 and #ns.DrawBar.palette.swatches == 8 and #ns.DrawBar.palette.widths == 3
-        and #Draw.THICK == 3 and #Draw.WORDS == 3, "eight colours and three widths on the palette")
+    local squares = ns.DrawBar.palette.widths
+    check(#Plans.COLOURS == 8 and #ns.DrawBar.palette.swatches == 8 and #squares == 4 and #Draw.THICK == 3
+        and Draw.WORDS[0] and #Draw.WORDS == 3, "eight colours, three widths and four words' sizes")
     Draw.SetWidth(3)
     check(Draw.Width() == 3 and Draw.Widths(7) == 1, "the third width chosen; one not known is thin")
     Draw.SetWidth(1)
+    -- the palette's squares: three lines' widths, and with the text tool four words' sizes ("add a fourth text size")
+    ns.DrawBar.Update()
+    local tool = Draw.Tool()
+    check(not squares[1]:IsShown() and squares[2]:IsShown() and squares[4]:IsShown() and squares[2].line:IsShown()
+        and squares[2].title == ns.DrawBar.TEXT.thin, "no tool on: three widths, each a line")
+    Draw.SetTool("text")
+    check(squares[1]:IsShown() and squares[1].letter:IsShown() and not squares[1].line:IsShown()
+        and squares[1].title == ns.DrawBar.TEXT.sizes[1], "the text tool on: four sizes, each an A, the smallest first")
+    squares[1]._scripts.OnClick(squares[1])
+    check(Draw.TextSize() == 0 and Draw.Width() == 1, "a size chosen for words, the lines' width as it was")
+    Draw.SetTextSize(1)
+    Draw.SetTool(tool)
     local every = {}
     local strokes, marks = {}, {}
     for colour = 1, 8 do
@@ -10518,7 +10531,7 @@ end)()
     check(#colours == 8 and count == 8 and widths[1] == 1 and widths[2] == 2 and widths[3] == 3
         and colours[3] == "pink" and colours[8] == "teal" and route and route.colour == "pink",
         "its eight colours eight of ours, its three widths our three, its route's own colour its stops'")
-    check(sizes[1] == 1 and sizes[2] == 1 and sizes[3] == 2 and sizes[4] == 3, "its four word sizes as our three widths")
+    check(sizes[1] == 0 and sizes[2] == 1 and sizes[3] == 2 and sizes[4] == 3, "its four words' sizes our four")
     local again = Exchange.Routes("Every one", keptMarkers, keptDrawings, "me:p2")[1]
     local COLOUR, WIDTH, SIZE = At(words.stroke, "colour"), At(words.stroke, "width"), At(words.mark, "size")
     local backColours, backWidths = true, true
@@ -10536,7 +10549,22 @@ end)()
     check(#again[F.strokes] == 8 and backColours and backWidths and again[F.colour] == 3,
         "and back: the same colour and width each, the route's colour")
     check(kinds == stamps and #keptMarkers == stamps, "every mark of its one of our icons, and back the same mark")
-    check(table.concat(backSizes, ",") == "2,2,3,4", "words back in its sizes (its smallest as its usual)")
+    check(table.concat(backSizes, ",") == "1,2,3,4", "words back in its four sizes, its smallest too")
+    local small
+    for _, drawing in ipairs(keptDrawings) do if drawing.kind == "text" and drawing.width == 0 then small = drawing end end
+    local smallRow
+    local sendBlockSmall = Wire.SendBlock
+    Wire.SendBlock = function(_, text) smallRow = smallRow or text return true end
+    local say = Wire.Say
+    Wire.Say = function() return true end
+    Plans.Share(keptAll, "GUILD")
+    Wire.SendBlock, Wire.Say = sendBlockSmall, say
+    local smallBack
+    local reread = smallRow and Plans.Read("Brannoc Steelvein", (smallRow:gsub("^2\030[^\031]*", "2\030Player-1-0000BEEF:p78")))
+    for _, drawing in ipairs(reread and reread.drawings or {}) do
+        if drawing.kind == "text" and drawing.text == small.text then smallBack = drawing end
+    end
+    check(small and smallBack and smallBack.width == 0, "the smallest words stay small on our own wire")
     Plans.Remove(keptAll)
     Exchange.Heard("Brannoc Steelvein", Message("1", Exchange.Pack(words.route, dungeon)):gsub("~1~2~", "~1~1~"))
     check(not Markers.offer:IsShown(), "one of ours in its format heard (a Sane UI share came too): not asked twice")

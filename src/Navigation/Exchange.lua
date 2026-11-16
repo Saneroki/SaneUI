@@ -27,8 +27,8 @@ local _, ns = ...
 --
 --  Where it lies: its dungeon maps are our floors as Core's words say (the same 0 to 1, or fitted), its drawings on
 --  the game's maps ours as they are (both keep a map's ID and 0 to 1 on it). Its drawings on maps we have no match
---  for are left out, and the card says how many. Its eight colours and three widths are ours one to one, its words'
---  sizes our three, its marks our markers' icons (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other
+--  for are left out, and the card says how many. Its eight colours, three widths and four words' sizes are ours one
+--  to one, its marks our markers' icons (Saneroki, 2026-11-16: "expand to 8 colours and 3 lines and other
 --  stuff so we are as compatible as possible"); what we have and it lacks (a marker's words, a line, an arrow, a
 --  circle) goes as the nearest it has, what it has and we lack (a stamp's own colour) is dropped.
 -------------------------------------------------------------------------------
@@ -615,7 +615,8 @@ function Exchange.Routes(name, markers, drawings, origin)
                 if stop then
                     group.labels[stop] = Label(drawing.text, limits.label)
                 else
-                    Mark(group, onto, back, x1, y1, words.text, colour, drawing.text, words.ourTextSizes[size])
+                    local textSize = ns.Draw and ns.Draw.TextSizes(drawing.width) or 1
+                Mark(group, onto, back, x1, y1, words.text, colour, drawing.text, words.ourTextSizes[textSize])
                 end
             end
         end

@@ -418,9 +418,12 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   on what stands on the map drags it to a new place, on the map and on a dungeon's floor ("While in edit mode I want
   to be able to drag the markers, texts, lines, etc to new positions ... without activating a specific move
   button"): a marker (pressed and let go without moving: its card), words, a route's stop (that stop alone), any
-  drawing (all of it); the tool on is outlined, a click on it again puts it away. Under them eight colours and three widths
-  (thin, medium, thick; words and a route's stops grow with them: Saneroki, 2026-11-16, "expand to 8 colours and 3
-  lines and other stuff so we are as compatible as possible with their map sharing"). While a tool is on the left button is the tool's and a **right-drag moves the map** (a right click still
+  drawing (all of it); the tool on is outlined, a click on it again puts it away. Under them eight colours and at the right
+  three widths (thin, medium, thick, a line on each; a route's stops grow with them: Saneroki, 2026-11-16, "expand to 8
+  colours and 3 lines and other stuff so we are as compatible as possible with their map sharing"); with the Text tool
+  on, the same squares are four sizes of words (Small, Normal, Large, Huge, an A on each: "add a fourth text size so
+  their smallest matches too"), chosen apart from the lines' width. While a tool is on the left button is the tool's
+  and a **right-drag moves the map** (a right click still
   steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
   - **Sketches** (*plans* in the code; Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing",
@@ -444,7 +447,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
     Caverns) and the Hall of Thanes have no match, so what lies on them is left out and said. Its lines come as pens
     (its widest thick), its stops as a route with their words under them, its words as words, its marks as our markers
     (raid marks, classes, roles and every stamp of its one of our icons, a shield and a heal among them); its eight
-    colours and three widths are ours one to one, its words' four sizes our three (its smallest as its usual), a stop's
+    colours, three widths and four sizes of words are ours one to one, a stop's
     words that stop's again when they go back. Ours go as its nearest: a line, an arrow and a circle as its lines, a
     route as its stops (in the route's colour), a marker as its mark with the title (or the words) as its label. A
     stroke holds 400 points, a sketch 500 drawings and 150 markers, as many as its drawings hold.
@@ -1668,6 +1671,12 @@ Tests: `dev/tests/navigation.lua`.
   (`Marks.MemberTip`), the names of all under the mouse as the game's map gives them, *Guild* beside one of your
   guild. Guild members outside your group have no place the game tells, only their zone: the search shows one there,
   with its tooltip.
+- **2026-11-16, four sizes of words:** Saneroki: "add a fourth text size so their smallest matches too". Words have a
+  size of their own now, apart from the lines' width (`Draw.TextSize`, `Draw.SetTextSize`, `Draw.TextSizes`: 0 small,
+  1 normal, 2 large, 3 huge, kept in a text drawing's `width`; `Draw.WORDS[0]` the game's 12 point outlined font). The
+  palette's width squares are four (`DrawBar.SWATCH` 20, so eight colours and four squares share the row): three lines'
+  widths, and with the Text tool on four sizes, each an A, the smallest only then. The dungeon map addon's four sizes
+  of words are ours one to one, its smallest too.
 - **2026-11-16, eight colours, three widths, one to one with the dungeon map addon:** Saneroki: "Can we expand to 8
   colours and 3 lines and other stuff so we are as compatible as possible with their map sharing?" The palette has
   eight colours (pink, the game's paladins', and teal added) and three widths (`Draw.THICK`, `Draw.STOPS`,

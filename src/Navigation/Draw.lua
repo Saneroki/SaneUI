@@ -28,6 +28,7 @@ local _, ns = ...
 --                  with it; your markers on it in their icons with their titles, a click their card
 --
 --      Draw.Tool(), Draw.SetTool(key), Draw.Colour(), Draw.SetColour(key), Draw.Width(), Draw.SetWidth(1 | 2 | 3)
+--      Draw.TextSize(), Draw.SetTextSize(0 | 1 | 2 | 3)   words' size, apart from the lines' width (0 small, 3 huge)
 --      Draw.Build(holder), Draw.Place(view, small), Draw.Fit(edge), Draw.Clear()     the canvas' layer sketch
 --      Draw.Floor(frame, map, art, scale, midX, midY, small), Draw.FloorClear()      a dungeon's floor
 --      Draw.Press(), Draw.PressFloor(), Draw.Busy(), Draw.Release()                  the mouse (Canvas, Dungeons)
@@ -52,9 +53,11 @@ Draw.GRAB = 14          -- units from a marker's middle a press takes it (to dra
 Draw.STOPS = { 18, 22, 26 } -- a route's numbered stop across, thin, medium and thick
 Draw.STOP = Draw.STOPS[1]
 Draw.ROUND = "Interface\\CHARACTERFRAME\\TempPortraitAlphaMask" -- (the game's round picture: a stop)
-Draw.WORDS = { "GameFontNormalLargeOutline", "GameFontNormalHugeOutline", "GameFontNormalHuge2Outline" } -- words on
-                        -- the map, thin, medium and thick (the game's 16, 20 and 24)
-Draw.WORDS_HIGH = { 18, 24, 28 } -- their line's height, should the game not tell
+-- Words on the map by their size (a text drawing's width): small, normal, large and huge, the game's 12, 16, 20 and 24
+-- point outlined fonts (Saneroki, 2026-11-16: "add a fourth text size so their smallest matches too").
+Draw.WORDS = { [0] = "GameFontNormalOutline", "GameFontNormalLargeOutline", "GameFontNormalHugeOutline",
+               "GameFontNormalHuge2Outline" }
+Draw.WORDS_HIGH = { [0] = 14, 18, 24, 28 } -- their line's height, should the game not tell
 Draw.WORDS_MOST = 80    -- letters of words on the map at most
 Draw.WHITE = "Interface\\Buttons\\WHITE8X8"
 Draw.TEXT = {
@@ -108,6 +111,20 @@ end
 
 function Draw.Width()
     return Draw.Widths(ns.store.drawWidth)
+end
+
+-- A text drawing's size as one of the four (0 small, 1 normal, 2 large, 3 huge); 1 for one not known.
+function Draw.TextSizes(size)
+    return (size == 0 or size == 2 or size == 3) and size or 1
+end
+
+function Draw.TextSize()
+    return Draw.TextSizes(ns.store.textSize)
+end
+
+function Draw.SetTextSize(size)
+    ns.store.textSize = Draw.TextSizes(size)
+    if ns.DrawBar and ns.DrawBar.Update then ns.DrawBar.Update() end
 end
 
 function Draw.SetWidth(width)
@@ -256,6 +273,7 @@ local function Segments(drawing, ToScreen, out, labels)
     end
     local size = Draw.Widths(drawing.width)
     local thick = Draw.THICK[size]
+    local textSize = Draw.TextSizes(drawing.width)
     local rgb = ns.Plans.Colour(drawing.colour)
     local function Add(x1, y1, x2, y2)
         out[#out + 1] = { x1 = x1, y1 = y1, x2 = x2, y2 = y2, thick = thick, rgb = rgb, drawing = drawing }
@@ -264,7 +282,7 @@ local function Segments(drawing, ToScreen, out, labels)
     if kind == "text" then
         if labels and #screen >= 2 then
             labels[#labels + 1] = { x = screen[1], y = screen[2], text = drawing.text or "", rgb = rgb,
-                                    size = size, drawing = drawing }
+                                    size = textSize, drawing = drawing }
         end
         return
     end
@@ -679,9 +697,9 @@ local function AddStop(surface, map, x, y)
     routeOn = surface
 end
 
--- The text tool's click: the words asked for (the game's box), then put there in the palette's colour and width.
+-- The text tool's click: the words asked for (the game's box), then put there in the palette's colour and words' size.
 local function AddWords(map, x, y)
-    local colour, width, plan = Draw.Colour(), Draw.Width(), ns.Plans.Active().id
+    local colour, width, plan = Draw.Colour(), Draw.TextSize(), ns.Plans.Active().id
     Core.AskText(Draw.TEXT.wordsAsk, nil, nil, "", ns.Guard(function(text)
         text = tostring(text or ""):gsub("^%s+", ""):gsub("%s+$", "")
         if text == "" then return end

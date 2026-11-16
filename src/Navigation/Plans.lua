@@ -19,7 +19,8 @@ local _, ns = ...
 --      Plans.Read(sender, text)  a block heard: the share once all its parts are there (Markers asks about it)
 --      Plans.Keep(share)         a plan kept: one of the same origin replaced whole, else a new one
 --
---  A drawing: its kind (pen, line, arrow, circle), its colour's key (Plans.COLOURS), its width (1 thin, 2 medium, 3 thick),
+--  A drawing: its kind (pen, line, arrow, circle), its colour's key (Plans.COLOURS), its width (1 thin, 2 medium, 3 thick;
+--  words: their size, 0 small to 3 huge, Draw.TextSizes),
 --  and its points on its map (0 to 1 on a zone's map or a dungeon's floor; a stroke may reach past its map's edge),
 --  four places each. A line and an arrow have two points, a circle its middle and a point on its edge.
 --
@@ -285,7 +286,8 @@ local function DrawingRow(drawing)
     local packed = {}
     for index, value in ipairs(drawing.points) do packed[index] = Pack(value) end
     return table.concat({ "d", Clean(Origin(drawing, "d"), 80), tostring(drawing.map), drawing.kind or "line",
-        drawing.colour or "gold", tostring(ns.Draw.Widths(drawing.width)), table.concat(packed),
+        drawing.colour or "gold", tostring(drawing.kind == "text" and ns.Draw.TextSizes(drawing.width)
+            or ns.Draw.Widths(drawing.width)), table.concat(packed),
         Clean(drawing.text, 80), drawing.stop and "1" or "" }, "\031")
 end
 
@@ -342,7 +344,8 @@ local function ReadDrawing(fields)
         list[#list + 1] = value
     end
     return { origin = Clean(origin, 80), map = map, kind = kind, colour = colours[colour] and colour or "gold",
-             width = ns.Draw.Widths(tonumber(width)), points = list, text = words,
+             width = kind == "text" and ns.Draw.TextSizes(tonumber(width)) or ns.Draw.Widths(tonumber(width)),
+             points = list, text = words,
              stop = kind == "text" and fields[9] == "1" or nil }
 end
 
