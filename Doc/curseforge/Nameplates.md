@@ -47,8 +47,8 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
   hits, heals, misses and parries.
 - **Simpler looks if you like.** *Plates show* can leave out the auras, or show the spells only: a faint dot
   where each plate is and an arrow over your target.
-- **Set up step by step.** The first time, a window walks you through the plates in nine short steps, with
-  sample plates that show each choice at once.
+- **Set up step by step.** The first time, a window walks you through the plates page by page, with sample
+  plates that show each choice at once.
 
 ## How to use
 
