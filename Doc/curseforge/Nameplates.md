@@ -1,7 +1,7 @@
 # SaneUI Nameplates: the CurseForge project
 
-What goes into the project's fields on CurseForge (authors.curseforge.com). The
-file uploads come from `saneui publish` (`dev/tools/release`); their changelog is this project's own,
+What goes into the project's fields on CurseForge (authors.curseforge.com). The file uploads come from
+`saneui publish` (`dev/tools/release`); their changelog is this project's own,
 [changelogs/Nameplates.md](changelogs/Nameplates.md).
 
 | Field | Value |
