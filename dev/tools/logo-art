@@ -52,6 +52,9 @@ ADDONS = {
     "inventory": ("INVENTORY", (214, 140, 62), "chest"),
     "social": ("SOCIAL", (160, 128, 214), "bubbles"),
     "combat": ("COMBAT", (204, 78, 66), "swords"),
+    "tooltips": ("TOOLTIPS", (72, 186, 168), "panel"),
+    "nameplates": ("NAMEPLATES", (218, 100, 148), "plate"),
+    "onboarding": ("ONBOARDING", (200, 206, 218), "steps"),
 }
 
 
@@ -240,8 +243,62 @@ def symbol_swords(draw, mask_size, cx, cy, n):
     return parts
 
 
+def symbol_panel(draw, mask_size, cx, cy, n):
+    """A tooltip: a panel with its title and three lines, the mouse's arrow pointing at it from below."""
+    left, top, right, bottom = cx - n * 0.3, cy - n * 0.25, cx + n * 0.22, cy + n * 0.13
+    panel = rect_mask(mask_size, (left, top, right, bottom), radius=n * 0.05)
+    lines = Image.new("L", mask_size, 0)
+    d = ImageDraw.Draw(lines)
+    x, h = left + n * 0.07, n * 0.032
+    for y, length in ((top + n * 0.08, 0.3), (top + n * 0.17, 0.36), (top + n * 0.24, 0.24), (top + n * 0.31, 0.3)):
+        thick = h * (1.3 if length == 0.3 and y == top + n * 0.08 else 1)
+        d.rounded_rectangle((x, y - thick / 2, x + n * length, y + thick / 2), radius=thick / 2, fill=255)
+    lines = ImageChops.multiply(lines, panel)
+    arrow = Image.new("L", mask_size, 0)
+    tip, size = (cx + n * 0.1, cy + n * 0.03), n * 0.26
+    ImageDraw.Draw(arrow).polygon([(tip[0] + x * size, tip[1] + y * size) for x, y in
+                                   ((0, 0), (0, 1), (0.27, 0.76), (0.45, 1.12), (0.6, 1.05), (0.42, 0.7),
+                                    (0.74, 0.7))], fill=255)
+    panel = ImageChops.subtract(panel, grow(arrow, n * 0.022))
+    return [(panel, GOLD), (lines, INK), (arrow, GOLD_LIGHT)]
+
+
+def symbol_plate(draw, mask_size, cx, cy, n):
+    """A nameplate: a health bar two thirds full, the name over it, the target's arrow over both."""
+    w, h, y = n * 0.31, n * 0.085, cy + n * 0.1
+    frame = rect_mask(mask_size, (cx - w, y - h, cx + w, y + h), radius=h * 0.55)
+    edge = n * 0.022
+    inside = rect_mask(mask_size, (cx - w + edge, y - h + edge, cx + w - edge, y + h - edge), radius=h * 0.4)
+    health = ImageChops.multiply(inside, rect_mask(mask_size, (cx - w, y - h, cx + w * 0.3, y + h)))
+    frame = ImageChops.subtract(frame, inside)
+    empty = ImageChops.subtract(inside, health)
+    name = rect_mask(mask_size, (cx - n * 0.17, y - h - n * 0.085, cx + n * 0.17, y - h - n * 0.04), radius=n * 0.022)
+    arrow = Image.new("L", mask_size, 0)
+    top, half, deep = cy - n * 0.27, n * 0.1, n * 0.08
+    ImageDraw.Draw(arrow).line([(cx - half, top), (cx, top + deep), (cx + half, top)], fill=255,
+                               width=round(n * 0.05), joint="curve")
+    return [(frame, GOLD), (empty, INK), (health, GOLD_LIGHT), (name, GOLD), (arrow, GOLD_LIGHT)]
+
+
+def symbol_steps(draw, mask_size, cx, cy, n):
+    """A setup step by step: three steps up, each lighter, a flag on the last."""
+    bottom, width, rise = cy + n * 0.2, n * 0.15, n * 0.13
+    parts = []
+    for i, colour in enumerate((GOLD_DARK, GOLD, GOLD_LIGHT)):
+        x = cx - n * 0.24 + i * width
+        parts.append((rect_mask(mask_size, (x + n * 0.008, bottom - rise * (i + 1), x + width - n * 0.008, bottom),
+                                radius=n * 0.012), colour))
+    x, top = cx - n * 0.24 + 2.5 * width, bottom - rise * 3
+    pole = rect_mask(mask_size, (x - n * 0.012, top - n * 0.24, x + n * 0.012, top))
+    flag = Image.new("L", mask_size, 0)
+    ImageDraw.Draw(flag).polygon([(x + n * 0.01, top - n * 0.24), (x + n * 0.16, top - n * 0.19),
+                                  (x + n * 0.01, top - n * 0.13)], fill=255)
+    return parts + [(pole, GOLD), (flag, GOLD_LIGHT)]
+
+
 SYMBOLS = {"s": symbol_s, "compass": symbol_compass, "coins": symbol_coins, "chest": symbol_chest,
-           "bubbles": symbol_bubbles, "swords": symbol_swords}
+           "bubbles": symbol_bubbles, "swords": symbol_swords, "panel": symbol_panel, "plate": symbol_plate,
+           "steps": symbol_steps}
 
 
 # --- The badge and the banner -----------------------------------------------------------------------------------

@@ -9,11 +9,14 @@ upload names its required dependency, so the CurseForge app installs Core with a
 | --- | --- |
 | [Core.md](Core.md) | SaneUI Core: name, summary, category, description |
 | [Navigation.md](Navigation.md) | SaneUI Navigation (`SaneUI_Navigation`): the same, and its gallery |
+| [Tooltips.md](Tooltips.md) | SaneUI Tooltips (`SaneUI_Tooltips`): ready for when it is released |
+| [Nameplates.md](Nameplates.md) | SaneUI Nameplates (`SaneUI_Nameplates`): ready for when it is released |
 | [changelogs/](changelogs/) | Each project's own CurseForge changelog: `Core.md`, `Navigation.md` (a part per version, only that addon's changes) |
 
 The logos and banners are drawn by `saneui makelogos` (`dev/tools/logo-art`) into `assets/generated/logos/`:
 one family, the gold ring with its diamond and the dark middle shared, the symbol and a thin ring of the
 module's colour its own. `<name>-avatar.png` is the project's avatar, `<name>-banner.png` heads its description.
+Onboarding's (`onboarding-*`) belong to Core's project, which ships it (Core.md, *Onboarding, in this project*).
 
 ## Setting it up
 

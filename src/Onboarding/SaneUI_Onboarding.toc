@@ -7,7 +7,7 @@
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## LoadOnDemand: 1
-## IconTexture: Interface\Icons\INV_Misc_Book_09
+## IconTexture: Interface\AddOns\SaneUI_Onboarding\Art\icon
 ## X-License: MIT
 
 # The module's own table and its words; a module's setup shown (Show)

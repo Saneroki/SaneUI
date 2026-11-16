@@ -6,7 +6,7 @@
 ## Category: Sane UI
 ## Group: SaneUI
 ## Dependencies: SaneUI
-## IconTexture: Interface\Icons\Ability_Hunter_SniperShot
+## IconTexture: Interface\AddOns\SaneUI_Nameplates\Art\icon
 ## X-License: MIT
 
 # The module's own table, its words and settings. First: the other files will add to that table.

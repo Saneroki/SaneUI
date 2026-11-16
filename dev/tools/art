@@ -71,11 +71,14 @@ PICTURES = [
     # The logos (dev/tools/logo-art --ship): each addon's banner on its options page, its icon in the addon list.
     *[(f"Logos/{logo}-{part}.png", f"Logo-{logo}-{part}", part, module, f"{part}.blp")
       for logo, module in (("core", "Core"), ("maps", "Navigation"), ("economy", "Economy"),
-                           ("inventory", "Inventory"), ("social", "Social"), ("combat", "Combat"))
+                           ("inventory", "Inventory"), ("social", "Social"), ("combat", "Combat"),
+                           ("tooltips", "Tooltips"), ("nameplates", "Nameplates"))
       for part in ("banner", "icon")],
+    # Onboarding has no options page, so no banner in the game: only its icon (its banner is for CurseForge).
+    ("Logos/onboarding-icon.png", "Logo-onboarding-icon", "icon", "Onboarding", "icon.blp"),
     ("SaneSpellbook-banner.png", "SaneSpellbook-banner", "banner", None),  # not shipped: Abilities has no banner
     ("SaneChat-ban*.png", "SaneChat-banner", "banner", None),  # came as "banenr"; not shipped: Social's is its logo's
-    ("SaneTooltip-banner.png", "SaneTooltip-banner", "banner", "Tooltips"),
+    ("SaneTooltip-banner.png", "SaneTooltip-banner", "banner", None),  # not shipped: Tooltips' is its logo's
     ("SaneSpellbook-Icon.png", "SaneSpellbook-Icon", "icon", None),
     ("SaneChat-Icon.png", "SaneChat-Icon", "icon", None),
     ("SaneTooltip-Icon.png", "SaneTooltip-Icon", "icon", None),

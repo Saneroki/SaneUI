@@ -33,6 +33,9 @@ On its own, Core changes nothing you can see on your screen. It gives the Sane U
 - **Safe error handling.** If a Sane UI addon ever runs into an error, Core catches it: no error pop-up,
   one line in your chat, and that part goes back to the game's own interface until your next `/reload`, so
   nothing stays broken. `/sane errors` lists what happened.
+- **Setup step by step.** The first time a Sane UI addon with a setup is on, a window walks you through it
+  a step at a time, with a sample that shows each choice as you make it. Close it at any step: what you chose
+  is kept. Open it again from the addon's options page, or with `/sane setup`.
 - **Names and notes for players.** Right click a player's name: *Set Alias* and *Set Note*, kept on your
   computer only.
 - **Game data** the addons share: places, NPCs, items, quests and more, in one place.
@@ -48,3 +51,15 @@ On its own, Core changes nothing you can see on your screen. It gives the Sane U
 - GitHub: https://github.com/Saneroki/SaneUI/issues
 - Discord: https://discord.gg/saneui
 ```
+
+## Onboarding, in this project
+
+Onboarding (`SaneUI_Onboarding`, *Onboarding* under *Sane UI* in the addon list) has no project of its own: it
+always ships with Core, in Core's download (Saneroki, 2026-11-16). Its part of the description is the bullet
+*Setup step by step* above. Its words where a single line is asked for (a gallery picture's caption, a post):
+
+> Sane UI's setup, step by step: a window that walks you through a Sane UI addon and shows each choice on a
+> sample as you make it.
+
+Its logo (`onboarding-icon.png`, the steps and the flag in a silver ring) is its icon in the addon list;
+`onboarding-banner.png` can head that part of the description, uploaded under Core's Images like Core's banner.

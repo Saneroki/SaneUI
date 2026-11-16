@@ -22,7 +22,9 @@ middle, the gold symbol; what tells them apart: the symbol and a thin ring of th
 `assets/generated/logos/`; in the game since 2026-11-15 (Saneroki: "put the new logos into the game"): `--ship`
 puts each addon's icon and banner into `assets/Logos/`, and the recipe below makes its `Art/banner.blp` (the top
 of its options page) and `Art/icon.blp` (its icon in the addon list, the TOC's `## IconTexture:
-Interface\AddOns\<addon>\Art\icon`) ([Doc/curseforge/README.md](../curseforge/README.md)).
+Interface\AddOns\<addon>\Art\icon`) ([Doc/curseforge/README.md](../curseforge/README.md)). Tooltips (a panel
+and the mouse's arrow, teal), Nameplates (a health bar under the target's arrow, rose) and Onboarding (steps and a
+flag, silver) joined on 2026-11-16; Onboarding has no options page, so only its icon is in the game.
 
 ## The recipe
 
