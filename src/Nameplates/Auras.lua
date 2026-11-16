@@ -37,12 +37,15 @@ local _, ns = ...
 --  where they would, around the game's own bar's place (Text.Bare).
 --
 --  The seconds left: the game's own text for an aura button's time
---  (SetDurationText), which it fills itself, hidden values and all; shown
---  only while a minute or less is left (Saneroki, 2026-11-16: "everything
---  above 60s we just show the buff / debuff without its number"), by a colour
---  curve on the time left that the game reads itself (Auras.Curve), as large
---  and as see-through as the settings say. The swipe's own numbers are off
---  then. A client without that text keeps the swipe's numbers.
+--  (SetDurationText), which it fills itself, hidden values and all, written by
+--  the game's own number formatter as we set it (Auras.Numbers): whole seconds
+--  rounded up, no "s" or "m", never over 60, so more time left reads 60
+--  (Saneroki, 2026-11-16: "don't show s or m on the nameplates just the
+--  numbers and never more then 60"); as large and as see-through as the
+--  settings say, by a colour curve on the time left that the game reads itself
+--  (Auras.Curve). The swipe's own numbers are off then. A client without that
+--  formatter shows the game's own words for the time, none over a minute; one
+--  without that text keeps the swipe's numbers.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Plain = Core.Plain
@@ -53,7 +56,7 @@ Auras.SIZE = 20 -- an icon as the containers make it, square; drawn at the setti
 Auras.GAP = 2   -- between icons, and from the bar
 Auras.BUFFS = 3 -- a foe's buffs at most, at first
 Auras.CONTROL = 2 -- crowd control at most, at first
-Auras.LONG = 60 -- seconds left above which an icon shows no number
+Auras.LONG = 60 -- the most seconds an icon's number says: more time left reads this
 Auras.NUMBER = "NumberFontNormal" -- the font object whose face the seconds left take
 Auras.OWN = "HARMFUL|PLAYER|!CROWD_CONTROL"       -- the debuffs you put on it, but your crowd control
 Auras.FOES = "HELPFUL|INCLUDE_NAME_PLATE_ONLY"    -- a foe's buffs, as the game's own plates pick them
@@ -113,9 +116,35 @@ local function Font(timer)
     timer:SetFont(type(file) == "string" and file or "Fonts\\ARIALN.TTF", math.max(Auras.SIZE * share, 4), "OUTLINE")
 end
 
+-- The game's number formatter for the seconds left (it runs it itself, hidden values and all): whole seconds rounded
+-- up, no unit, never over Auras.LONG. Made once and tried on two numbers; nil where this client has none, or where it
+-- writes them otherwise.
+local numbers
+function Auras.Numbers()
+    if numbers ~= nil then return numbers or nil end
+    numbers = false
+    local util, enum = rawget(_G, "C_StringUtil"), rawget(_G, "Enum")
+    if type(util) ~= "table" or type(util.CreateNumericRuleFormatter) ~= "function" then return nil end
+    local rounding = type(enum) == "table" and type(enum.NumericRuleFormatRounding) == "table"
+        and enum.NumericRuleFormatRounding.Up or 1
+    for _, format in ipairs({ "%d", "%.0f" }) do
+        local made = Core.Ask(util.CreateNumericRuleFormatter)
+        local rule = { threshold = 0, step = 1, rounding = rounding, max = Auras.LONG, format = format }
+        if made ~= nil and pcall(made.SetBreakpoints, made, { rule }) then
+            if type(made.FormatNumber) ~= "function" or Core.Ask(made.FormatNumber, made, 4.2) == "5"
+                and Core.Ask(made.FormatNumber, made, 600) == tostring(Auras.LONG) then
+                numbers = made
+                return made
+            end
+        end
+    end
+    return nil
+end
+
 -- The curve that colours the seconds left by the time left (the game reads it itself, hidden or not): white as
--- see-through as Time left: transparency says up to Auras.LONG seconds, gone above; gone with Time left in the
--- icons off. One for all icons, its points made anew when a setting changed. nil where this client has none.
+-- see-through as Time left: transparency says; gone with Time left in the icons off. Where this client writes the
+-- time in its own words (no Auras.Numbers), gone above Auras.LONG seconds, so the number always fits. One for all
+-- icons, its points made anew when a setting changed. nil where this client has none.
 local curve
 function Auras.Curve()
     local util, make = rawget(_G, "C_CurveUtil"), rawget(_G, "CreateColor")
@@ -127,28 +156,46 @@ function Auras.Curve()
     local ok = pcall(function()
         curve:ClearPoints()
         curve:AddPoint(0, make(1, 1, 1, alpha))
-        curve:AddPoint(Auras.LONG, make(1, 1, 1, alpha))
-        curve:AddPoint(Auras.LONG + 0.5, make(1, 1, 1, 0))
-        curve:AddPoint(1000000, make(1, 1, 1, 0))
+        if Auras.Numbers() then
+            curve:AddPoint(1000000, make(1, 1, 1, alpha))
+        else
+            curve:AddPoint(Auras.LONG, make(1, 1, 1, alpha))
+            curve:AddPoint(Auras.LONG + 0.5, make(1, 1, 1, 0))
+            curve:AddPoint(1000000, make(1, 1, 1, 0))
+        end
     end)
     return ok and curve or nil
 end
 
--- The seconds left on an icon the game made: its own text through our curve, the swipe's numbers off; where this
--- client has no such text, the swipe's numbers as before (none with the setting off).
-local function Timer(frame, timer, cooldown)
-    Font(timer)
-    local shape = Auras.Curve()
-    local enum = rawget(_G, "Enum")
+-- The game's own text for an icon's seconds left, through our curve, written by our formatter (none: the game's
+-- words). Whether the game took it.
+local function Text(frame, timer, written)
+    local shape, enum = Auras.Curve(), rawget(_G, "Enum")
     local remaining = type(enum) == "table" and enum.DurationTextBindingProperty
         and enum.DurationTextBindingProperty.RemainingDuration
-    if shape and remaining and type(frame.SetDurationText) == "function"
-        and pcall(frame.SetDurationText, frame, timer, { textColor = { curve = shape, property = remaining } }) then
+    return shape ~= nil and remaining ~= nil and type(frame.SetDurationText) == "function" and pcall(frame.SetDurationText,
+        frame, timer, { textFormatter = written, textColor = { curve = shape, property = remaining } })
+end
+
+-- The seconds left on an icon the game made: its own text, the swipe's numbers off. Where the game refuses our
+-- formatter, its own words from then on (the curve then hides them over a minute); where this client has no such
+-- text, the swipe's numbers as before, by our formatter where it takes one (none with the setting off).
+local function Timer(frame, timer, cooldown)
+    Font(timer)
+    local written = Auras.Numbers()
+    local shown = Text(frame, timer, written)
+    if not shown and written and type(frame.SetDurationText) == "function" then
+        numbers = false
+        written = nil
+        shown = Text(frame, timer, nil)
+    end
+    if shown then
         timer:Show()
         pcall(cooldown.SetHideCountdownNumbers, cooldown, true)
         return
     end
     timer:Hide()
+    if written and cooldown.SetCountdownFormatter then pcall(cooldown.SetCountdownFormatter, cooldown, written) end
     pcall(cooldown.SetHideCountdownNumbers, cooldown, (ns.options or {}).duration == false)
 end
 

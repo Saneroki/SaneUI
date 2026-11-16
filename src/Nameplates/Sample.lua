@@ -69,7 +69,7 @@ local function Colour(spec)
     return 0, 1, 0
 end
 
--- The seconds left of the samples' auras, in turn: some over a minute, which show no number (Auras.LONG).
+-- The seconds left of the samples' auras, in turn: some over a minute, whose number reads 60 (Auras.LONG).
 Sample.TIMES = { 12, 7, 45, 95, 3, 28, 300, 9, 52, 16, 600, 4 }
 
 -- One aura icon of a kind ("own", "foes", "control"), made the first time and kept.
@@ -85,16 +85,16 @@ local function Icon(dress, kind, index)
     return icon
 end
 
--- The seconds left in a sample's icon as the plates show them: none over a minute, as large and see-through as the
--- settings say, none with Time left in the icons off.
+-- The seconds left in a sample's icon as the plates show them: the number alone, never over Auras.LONG, as large and
+-- see-through as the settings say, none with Time left in the icons off.
 local function Seconds(icon, seconds)
     local options, timer = ns.options or {}, icon.timer
-    local shown = options.duration ~= false and seconds <= ns.Auras.LONG
+    local shown = options.duration ~= false
     local file = rawget(_G, ns.Auras.NUMBER)
     file = type(file) == "table" and file.GetFont and file:GetFont()
     timer:SetFont(type(file) == "string" and file or "Fonts\\ARIALN.TTF",
         math.max(ns.Auras.SIZE * (tonumber(options.durationSize) or 50) / 100, 4), "OUTLINE")
-    timer:SetText(shown and tostring(seconds) or "")
+    timer:SetText(shown and tostring(math.min(math.ceil(seconds), ns.Auras.LONG)) or "")
     timer:SetTextColor(1, 1, 1)
     timer:SetAlpha(1 - (tonumber(options.durationTransparency) or 0) / 100)
     timer:SetShown(shown)

@@ -101,6 +101,28 @@ C_CurveUtil = { CreateColorCurve = function()
     return { points = {}, ClearPoints = function(self) self.points = {} end,
              AddPoint = function(self, x, colour) self.points[#self.points + 1] = { x, colour } end }
 end }
+-- The game's number formatter by rules: each rule from its threshold up, rounded to its step, clamped, formatted.
+Enum.NumericRuleFormatRounding = { Nearest = 0, Up = 1, Down = 2 }
+C_StringUtil = { CreateNumericRuleFormatter = function()
+    return { rules = {},
+             SetBreakpoints = function(self, rules) self.rules = rules end,
+             FormatNumber = function(self, number)
+                 local rule
+                 for _, each in ipairs(self.rules) do if number >= each.threshold then rule = each end end
+                 if not rule then return tostring(number) end
+                 local value = number
+                 if rule.step then
+                     local whole = value / rule.step
+                     whole = rule.rounding == 1 and math.ceil(whole) or rule.rounding == 2 and math.floor(whole)
+                         or math.floor(whole + 0.5)
+                     value = whole * rule.step
+                 end
+                 if rule.max and value > rule.max then value = rule.max end
+                 if rule.min and value < rule.min then value = rule.min end
+                 return rule.format:format(value)
+             end }
+end }
+refuseFormatter = false -- the game refusing our formatter in an aura's text (a later check)
 Enum.PowerType = { Mana = 0, Energy = 3, ComboPoints = 4 }
 W.cvars.nameplateShowClassColor, W.cvars.nameplateShowFriendlyClassColor = "1", "1"
 W.cvars.nameplateSimplifiedTypes, W.cvars.nameplateResourceOnTarget = "24", "1" -- the game's, as a player left them
@@ -236,7 +258,10 @@ W.templates.CustomAuraContainerTemplate = function(widget)
             function frame:SetIcon(texture) self._icon = texture end
             function frame:SetDurationCooldown(cooldown) self._cooldown = cooldown end
             function frame:SetApplicationCount(text) self._count = text end
-            function frame:SetDurationText(text, options) self._durationText = { text, options } end
+            function frame:SetDurationText(text, options)
+                if refuseFormatter and options.textFormatter then error("refused") end
+                self._durationText = { text, options }
+            end
             options.initializeFrame(frame)
             group.frames[index] = frame
         end
@@ -699,10 +724,15 @@ check(own._points[1][3] == "BOTTOMRIGHT" and own._groups.own.most == ns.AURAS.de
 for _, key in ipairs({ "debuffPlace", "buffPlace", "controlPlace" }) do Core.Set(ns.name, key, nil) end
 check(own._points[1][3] == "TOPLEFT" and foes._points[1][1] == "BOTTOMRIGHT" and control._points[1][1] == "BOTTOMLEFT",
     "back to their first places")
--- The seconds left: the game's own text, through a curve on the time left, none over a minute.
+-- The seconds left: the game's own text, written by our formatter (the number alone, never over a minute), through a
+-- curve on the time left.
 check(icon._durationText ~= nil and icon._durationText[2].textColor.curve ~= nil
     and icon._durationText[2].textColor.property == Enum.DurationTextBindingProperty.RemainingDuration,
     "the seconds left are the game's own text, coloured by our curve on the time left")
+local written = icon._durationText[2].textFormatter
+check(written ~= nil and written:FormatNumber(4.2) == "5" and written:FormatNumber(12) == "12"
+    and written:FormatNumber(59.4) == "60" and written:FormatNumber(95) == "60" and written:FormatNumber(600) == "60",
+    "written by our formatter: whole seconds rounded up, no s or m, more than a minute 60")
 local curve = icon._durationText[2].textColor.curve
 local function Alpha(at)
     local before, after
@@ -712,8 +742,8 @@ local function Alpha(at)
     end
     return before[2].a, after[2].a
 end
-check(Alpha(30) == 1 and Alpha(Auras.LONG) == 1 and select(2, Alpha(Auras.LONG + 1)) == 0,
-    "seen up to a minute left, gone with more")
+check(Alpha(30) == 1 and Alpha(Auras.LONG) == 1 and select(2, Alpha(600)) == 1,
+    "seen with any time left: more than a minute reads 60")
 Core.Set(ns.name, "durationTransparency", 50)
 check(Alpha(30) == 0.5, "Time left: transparency 50%: half see-through")
 Core.Set(ns.name, "duration", false)
@@ -723,6 +753,12 @@ Core.Set(ns.name, "durationTransparency", 0)
 Core.Set(ns.name, "durationSize", 70)
 check(icon._durationText[1]._font[2] == Auras.SIZE * 0.7, "Time left: size 70% of the icon")
 Core.Set(ns.name, "durationSize", 50)
+-- The game refusing our formatter: its own words from then on, hidden over a minute so they fit.
+refuseFormatter = true
+Auras.Restyle()
+check(icon._durationText[2].textFormatter == nil and Alpha(30) == 1 and select(2, Alpha(Auras.LONG + 1)) == 0,
+    "our formatter refused: the game's own words, none over a minute")
+refuseFormatter = false
 -- The game's own aura icons under ours would take the mouse (their tooltip beside our bar): their mouse off, on the
 -- ones the game sets out anew as well; on again when its parts come back in sight (below, and at the stand-down).
 local gameAuras = plates.nameplate1.UnitFrame.AurasFrame
@@ -2139,18 +2175,19 @@ do
         and math.abs(auras.icons.foes[1]._points[1][5] - (auras.auraSize + ns.Auras.GAP) / auras.icons.foes[1]:GetScale()) < 1e-6,
         "your debuffs at the left, six buffs a row over them, the icons half again as high")
     for _, key in ipairs({ "debuffPlace", "buffCount", "auraSize" }) do Core.Set(ns.name, key, nil) end
-    -- The seconds left: none over a minute, as large and see-through as the settings say.
+    -- The seconds left: the number alone, more than a minute 60, as large and see-through as the settings say.
     local timers = Draw("timers").samples[1]
-    local over, under, fits = 0, 0, true
+    local capped, under, fits = 0, 0, true
     for _, kind in ipairs({ "own", "foes", "control" }) do
         for _, icon in ipairs(timers.icons[kind]) do
             if icon:IsShown() then
-                local text = icon.timer._text
-                if text == "" then over = over + 1 else under = under + 1; fits = fits and tonumber(text) <= 60 end
+                local number = tonumber(icon.timer._text)
+                fits = fits and number ~= nil and number <= 60
+                if number == 60 then capped = capped + 1 elseif number then under = under + 1 end
             end
         end
     end
-    check(under > 0 and over > 0 and fits, "the seconds left in the icons, none over a minute")
+    check(under > 0 and capped > 0 and fits, "the seconds left in the icons: numbers alone, more than a minute 60")
     Core.Set(ns.name, "durationTransparency", 50)
     check(Draw("timers").samples[1].icons.own[1].timer._alpha == 0.5, "Time left: transparency 50%")
     Core.Set(ns.name, "duration", false)

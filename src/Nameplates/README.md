@@ -101,9 +101,10 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   are"): above the bar they grow right from its left end (your debuffs no more than fit over it), at its left or right
   away from it; two kinds on one side stand in rows, debuffs nearest the bar, then buffs, then crowd control. The
   icons are as high as the bar at first (Saneroki, 2026-11-16), a share of it by *Spell icon size* (50 to 200%); the
-  plates stack as close as the bar and the rows above it. In each icon the seconds left, only while a minute or less
-  is left (Saneroki: "everything above 60s we just show the buff / debuff without its number"): setting *Time left in
-  the icons*, its size (*Time left: size*, a share of the icon) and *Time left: transparency*. Hover one for its tooltip (the game's aura container gives it; Forever's own
+  plates stack as close as the bar and the rows above it. In each icon the seconds left, the number alone (no s or
+  m), never over 60: more time left reads 60 (Saneroki, 2026-11-16: "don't show s or m on the nameplates just the
+  numbers and never more then 60"; the game's own number formatter, `Auras.Numbers`, whole seconds rounded up):
+  setting *Time left in the icons*, its size (*Time left: size*, a share of the icon) and *Time left: transparency*. Hover one for its tooltip (the game's aura container gives it; Forever's own
   plates dropped theirs in build 70755).
 - **Cast bar:** under the bar, inside the plate's one outline (the border, the rank's line and the glow go around the
   bar and the cast bar together while a cast shows, around the bar alone otherwise), as wide and as high as the bar,
@@ -510,6 +511,11 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-16 (numbers):** the seconds left in the aura icons are the number alone, never over 60 (more time left
+  reads 60), in place of the game's "12 s" and none over a minute: `Auras.Numbers`, the game's number formatter by
+  one rule (`C_StringUtil.CreateNumericRuleFormatter`: step 1 rounded up, at most 60, no unit) handed to its aura
+  text (`textFormatter`) and to the swipe where there is no such text; where the game refuses it, its own words,
+  none over a minute, as before. The setup's samples and words the same.
 - **2026-11-16 (Off):** every transparency slider (the five of the plates, *Time left: transparency*) reaches 100%,
   which it calls *Off* (Core's `offAt`, `Panel.Said`): no plate of that kind at all (`Wear`: not wanted), no number.
 - **2026-11-16 (later):** the setup in Saneroki's order with a first page saying what it is, twelve pages of short

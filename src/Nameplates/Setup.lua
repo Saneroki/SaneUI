@@ -159,7 +159,7 @@ Setup.STEPS = {
                    "auraSize" } },
     { key = "timers", title = "Time left in the icons",
       text = Lines({ "The seconds left", "of each debuff and buff, in its icon." },
-          { "Over a minute", "no number: so it always fits." },
+          { "Just the number", "no s or m. More than a minute left reads 60." },
           { "Size and see-through", "for the number alone." }),
       settings = { "duration", "durationSize", "durationTransparency" } },
     { key = "look", title = "What plates show",
@@ -413,7 +413,7 @@ function DRAW.timers(board)
     local spec = As(FOE, { debuffs = Setup.DEBUFFS, buffs = Setup.BUFFS, control = Setup.CONTROL })
     spec.raid = nil
     local dress = Put(board, 1, spec, "CENTER", Wide(board) / 2, 180, Setup.CLOSE)
-    Under(board, 1, dress, "The seconds left in each icon. Over a minute: none, as on the ones without a number.", 30)
+    Under(board, 1, dress, "The seconds left in each icon, the number alone. Over a minute: 60.", 30)
 end
 
 function DRAW.look(board)
