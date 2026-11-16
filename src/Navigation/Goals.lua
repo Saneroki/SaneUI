@@ -17,7 +17,8 @@ local _, ns = ...
 --
 --  The counts in an objective's words change with every kill, what is wanted only when one is done: so the pins
 --  are made again only then, and a tooltip asks the game for the words (PinView.lua).
---  A quest Core's data does not hold has no goals: the game's own question mark and area stand for it.
+--  A quest Core's data does not hold has no goals: the game's own mark of a quest in progress and its area stand for
+--  it (Pins.lua; the question mark only where a quest is turned in).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Goals = {}

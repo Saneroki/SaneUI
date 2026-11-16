@@ -9,9 +9,10 @@ local _, ns = ...
 --  clicked in both views.
 --
 --      every pin   its own icon from the game's map icons (Pins.ICONS and the kinds' tables): no discs, no
---                  numbers. A quest in your log: the yellow question mark (the one the game's arrow leads to with
---                  a glow); on the full map a click shows it in the quest log and lets the arrow lead to it
---                  (QuestLog.lua). A quest giver of Core's data: the yellow exclamation mark, grey for a quest too
+--                  numbers. A quest in your log: ready to turn in the yellow question mark, still in progress the
+--                  game's three yellow dots, and none where its objectives stand (Pins.QuestLook, Pins.For); the
+--                  one the game's arrow leads to with a glow; on the full map a click shows it in the quest log and
+--                  lets the arrow lead to it (QuestLog.lua). A quest giver of Core's data: the yellow exclamation mark, grey for a quest too
 --                  low, a red question mark for one for later; on the full map a click shows its quests in the
 --                  quest log as previews (QuestLog.Preview)
 --      an objective  where a quest of your log needs you, at each spawn Core's data knows (Goals.lua): the quest log's

@@ -2336,6 +2336,14 @@ W.Wait(0)
 local pin
 for _, widget in ipairs(W.frames) do if widget._kind == "Button" and widget.icon and widget._scripts.OnClick then pin = widget end end
 check(pin and pin._shown and pin.icon._atlas == "Waypoint-MapPin-Untracked", "the pin shows, as the game's")
+GameTooltip._lines = nil
+pin._scripts.OnEnter(pin)
+do
+    local lines = GameTooltip._lines or {}
+    local said = table.concat(lines, "\n")
+    check(said:find("Ctrl click", 1, true) and lines[#lines] == ns.TEXT.pinDouble,
+        "its tooltip: a Ctrl-click takes it away, a double click on the map puts it there with a route")
+end
 pin._scripts.OnClick(pin, "LeftButton")
 check(tracked, "a click on it: the game's arrow leads there")
 ctrl = true
@@ -2834,8 +2842,9 @@ do
     Canvas.Layout()
 end
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
-    and pins["quest:7"].pin.kind == "log" and pins["quest:7"].icon._atlas == Pins.ICONS.log,
-    "a quest in your log on the map where the game says, in progress: the yellow question mark, no disc")
+    and pins["quest:7"].pin.kind == "log" and pins["quest:7"].icon._atlas == Pins.ICONS.inProgress
+    and Pins.ICONS.inProgress ~= Pins.ICONS.log,
+    "a quest in your log on the map where the game says, in progress: the game's in progress mark, no question mark, no disc")
 local questPoint = pins["quest:7"]._points[1]
 check(near(questPoint[4], (-200 - 0) * 0.4) and near(questPoint[5], (-9100 + 9250) * 0.4),
     "placed where the game says, on the canvas' holder (a drag moves it with the map)")
@@ -3063,12 +3072,22 @@ end)()
     PinView.Light(7)
     check(boars[1].glow._shown and spot.glow._shown and boars[1].glow._alpha == PinView.LIT_ALPHA
         and boars[1].glow._width == Pins.SIZE.goal * PinView.LIT, "the mouse on its quest: its pins glow a little")
-    check(pins["quest:7"].glow._shown and not other.glow._shown, "the quest's own mark too, no other pin")
+    check(not other.glow._shown, "no other pin")
     Pins.Changed("quests")
     Canvas.Layout()
     check(Buttons("npc:900")[1].glow._shown, "and through a new layout, while the mouse stays")
     PinView.Light(nil)
     check(not boars[1].glow._shown and not spot.glow._shown, "off it: none")
+    -- The question mark only where a quest is turned in (Saneroki, 2026-11-16): one in progress whose objectives stand on
+    -- the map as pins has no mark of its own there; ready to turn in, the yellow question mark again.
+    check(not Drawn()["quest:7"], "a quest in progress, its objectives pinned on the map: no mark of its own there")
+    complete[7] = true
+    Again()
+    local ready = Drawn()["quest:7"]
+    check(ready and ready.pin.complete and ready.icon._atlas == Pins.ICONS.log,
+        "ready to turn in: the yellow question mark where the game says")
+    complete[7] = nil
+    Again()
     -- A tooltip: what stands there, its quests, the game's words now; unconfirmed
     GameTooltip._lines = nil
     boars[1]._scripts.OnEnter(boars[1])
@@ -3140,6 +3159,7 @@ end)()
     Pins.DataChanged()
     Canvas.Layout()
 end)()
+pins = Drawn() -- (the quest's own mark went while its objectives stood there: its button another's since)
 check(Canvas.LEVELS.pins > Hybrid.LEVEL and Hybrid.LEVEL > Canvas.MAP and Canvas.LEVELS.pins + ns.PinView.LEVELS + 1 < Canvas.LEVELS.marks
     and pins["quest:7"]._level > pins["place:2"]._level and pins["quest:7"]._level < frame:GetFrameLevel() + Canvas.LEVELS.marks
     and pins["place:2"]._level > frame:GetFrameLevel() + Hybrid.LEVEL,

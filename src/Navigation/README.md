@@ -50,7 +50,9 @@ and shows them on the map or puts the map pin there. The plan is in
   - **a double click:** the game's map pin there (on a pin: where the pin stands); **Ctrl and a click** puts it
     there too, as on the game's map. The pin has two states, as the game's own: *tracked* (gold, the game's
     arrow on the screen leads to it with its distance) and *untracked* (only on the map). A click on the pin
-    switches between them, Ctrl and a click takes it away, Shift and a click writes it into the chat.
+    switches between them, Ctrl and a click takes it away, Shift and a click writes it into the chat. Its tooltip
+    says so, under the game's words: Ctrl and a click takes it away, and a double click on the map puts it there,
+    with a route to it.
 - **Pings of your party and raid** (and your own) show where the game's own minimap lies over the map (around you:
   the small map while it follows you at one of the game's zoom steps, the square around you on the full map), drawn
   by the game, with its sound. Farther out the map shows none: the game does not let an addon hear its pings.
@@ -105,7 +107,9 @@ and shows them on the map or puts the map pin there. The plan is in
   would: the nearest rare of Core's data on your map, else a made-up one ahead of you; `chest` a treasure's, `event` an
   event's.
 - **Pins:** every kind of thing in its own icon, the game's map icons: no discs, no numbers. The game's own marks
-  where it tells them (your quests: the yellow ?, the quest the arrow leads to glowing; flight points of your side,
+  where it tells them (your quests: the yellow ? only where one ready to turn in is handed in; one still in progress
+shows by its objectives' pins and its area, and where it has no objective's pin on the map, by the game's own mark of
+a quest in progress, three yellow dots; the quest the arrow leads to glowing; flight points of your side,
   red while your character has not found them (the routes fly only the found ones), never the ones the game keeps
   but no longer uses (named *zz...*, as Forever's three *zzOLD* ones in the Riverglades: not on the map, in the
   search nor in a route);
@@ -260,13 +264,15 @@ and shows them on the map or puts the map pin there. The plan is in
 - **Quest objectives:** where your quests' open objectives really are, not only their area: of each quest in your log
   that Sane UI's data holds, a pin at every spawn it knows of what is asked: the quest log's sword on a creature to
   kill, its sack on what gives an item to loot and on an object to use, the game's speech bubble on someone to speak
-  to. They stand without a glow; **with the mouse on a quest in the quest log its pins glow a little**, its question
-  mark too, so you see which pins are whose. An item many creatures may drop: only those that give it often, twelve
+  to. They stand without a glow; **with the mouse on a quest in the quest log its pins glow a little**, its own mark
+  too where it has one, so you see which pins are whose. Where they stand, the quest has no mark of its own: the ?
+  is where a quest is turned in. An item many creatures may drop: only those that give it often, twelve
   at most. A pin's tooltip says what stands there, the quests it is for and what is left of the objective in the
-  game's words; a click on the full map shows the quest in the log, as on its question mark. An objective done takes
+  game's words; a click on the full map shows the quest in the log, as on its own mark. An objective done takes
   its pins away. What a quest asks for stands as that, not as the rare or the herb it is as well. A creature's spawns
   near each other are one marker in its picture; other things stand beside it in the cloud. A quest the data does not
-  hold has the game's question mark and area alone, and so has every quest in Retail until its data comes.
+  hold has the game's mark of a quest in progress (three yellow dots) and its area alone, and so has every quest in
+  Retail until its data comes.
 - **The quest log**, a window over the full map and on the screen while the map is small (**the button *Quest Log* on
   the full map's bar turns it on or off, in both**; no pin, no close button; drag its title bar to move it, dock it at
   a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker, which
@@ -1602,6 +1608,15 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, the question mark only where a quest is turned in; the map pin's tooltip:** Saneroki: "Quest
+  locations should not show the questionmark, The questionmark on the map are where you turn in quests, the quest
+  objectives and quest areas are for questlocations." A quest of your log ready to turn in keeps the yellow ? where
+  the game says (`Pins.QuestLook`); one still in progress has none: where its objectives' pins stand on the map no
+  mark of its own (`Pins.For`, the goals' `quests`), elsewhere the game's mark of a quest in progress
+  (`Quest-In-Progress-Icon-yellow`, its map legend's), in the search's finds too. And: "In the tooltip of the mappin
+  show that pressing ctrl click will remove it and double clicking on the map will create a pin with a route": the
+  game's *<Ctrl click to remove pin>* in green under its words, as its own map's pin says it, then ours for the
+  double click (`ns.TEXT.pinDouble`).
 - **2026-11-16, Disabled in the sound line:** Saneroki: "a preset called disabled that just don't interfere with the
   audio at all ... that should be the default". Core's sound profiles start on Disabled (`Core.Audio.NONE`); the line
   names it, its tooltip says Sane UI leaves the game's sounds alone, and the cogwheel greys out Save, Load and Delete

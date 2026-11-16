@@ -9,7 +9,8 @@ local _, ns = ...
 --                           game's own arrow, where it draws one, under it)
 --      the map pin          the game's own (Waypoint-MapPin-Tracked / -Untracked, as its map's), at
 --                           a fixed size; a click leads the game's arrow to it or not, Ctrl-click
---                           takes it away
+--                           takes it away; its tooltip says so, and that a double click on the map
+--                           puts it there with the golden line to it (Saneroki, 2026-11-16)
 --      the waypoints        where the golden line goes first (Planner.Via, dragged on the full map):
 --                           the game's map pin, smaller and grey (Marks.VIA); dragged, one moves;
 --                           a right click takes it away; while the line or one is dragged, a ghost
@@ -44,6 +45,7 @@ Marks.GROUP = 0.25 -- seconds between two looks at where the party is
 Marks.OVER = 0.1   -- the same while the game's minimap shows: its own dots of them stay under ours
 Marks.GLIDE = 1    -- seconds a member's mark takes at most to glide to the member's new place
 Marks.LEAP = 200   -- yards: a member farther than this from its mark stands at its new place at once (a portal)
+Marks.GREEN = { 0.1, 1, 0.1 } -- the map pin's tooltip, what the mouse does: the game's GREEN_FONT_COLOR
 
 local Coords, Live, Plain = ns.Coords, ns.Live, SaneUI.Core.Plain
 local layer, holder, arrow, pin
@@ -56,12 +58,17 @@ local seen         -- the view the members' marks were placed in (Canvas.view)
 local vias = {}    -- the waypoints' marks, made as many as needed; each knows its waypoint (button.via)
 local ghost        -- where a waypoint dragged would go (Marks.Ghost)
 
--- The game's own words for its map pin.
+-- The game's own words for its map pin, its Ctrl-click in green as the game's map gives it
+-- (WaypointLocationPinMixin:OnMouseEnter), then ours: a double click on the map puts it there, with its route.
 local function Tip(button)
+    local Word = SaneUI.Core.Word
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT", -16, -4)
-    GameTooltip:SetText(SaneUI.Core.Word("MAP_PIN_SHARING", "Map Pin"), 1, 1, 1)
+    GameTooltip:SetText(Word("MAP_PIN_SHARING", "Map Pin"), 1, 1, 1)
     local more = rawget(_G, "MAP_PIN_SHARING_TOOLTIP")
     if type(more) == "string" then GameTooltip:AddLine(more, nil, nil, nil, true) end
+    local green = Marks.GREEN
+    GameTooltip:AddLine(Word("MAP_PIN_REMOVE", "<Ctrl click to remove pin>"), green[1], green[2], green[3], true)
+    GameTooltip:AddLine(ns.TEXT.pinDouble, green[1], green[2], green[3], true)
     GameTooltip:Show()
 end
 

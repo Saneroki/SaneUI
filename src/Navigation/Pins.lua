@@ -68,10 +68,14 @@ local ORDER = { find = 12, mark = 11, log = 10, quest = 9, rare = 8, goal = 8, e
                 foundHerb = 2, foundOre = 2, later = 1, low = 1, done = 1, herb = 1, ore = 1, book = 0 }
 
 -- Every kind of thing its own icon, from the game's map icons (ObjectIconsAtlas): no discs, no numbers.
--- The quests as the game marks them: in your log the yellow question mark, to take the yellow exclamation mark, too
--- low the grey one, for later the question mark in red (Pins.RED).
+-- The quests as the game marks them: in your log and ready to turn in the yellow question mark, still in progress the
+-- game's three yellow dots (its map's legend: In progress), to take the yellow exclamation mark, too low the grey one,
+-- for later the question mark in red (Pins.RED). The question mark stands where a quest is turned in; where one is
+-- done, its objectives and its area show (Saneroki, 2026-11-16: "The questionmark on the map are where you turn in
+-- quests, the quest objectives and quest areas are for questlocations").
 Pins.ICONS = {
-    log = "questturnin", offer = "questnormal", grey = "trivialquests", later = "questturnin",
+    log = "questturnin", inProgress = "Quest-In-Progress-Icon-yellow", offer = "questnormal", grey = "trivialquests",
+    later = "questturnin",
     done = "islands-questbangdisable", rare = "dungeonskull", treasure = "vignetteloot",
 }
 Pins.RED = { 1, 0.2, 0.15 } -- over the yellow mark: the game's red
@@ -187,7 +191,14 @@ local function Thing(guid)
     return nil
 end
 
--- The quests the game puts on a map: in progress, ready to turn in, and the next way of the quest it leads to.
+-- A quest of your log's mark: the question mark once it is ready to turn in, else the game's in progress (Pins.ICONS).
+function Pins.QuestLook(quest, complete)
+    if complete == nil then complete = Core.Ask(C_QuestLog.IsComplete, quest) end
+    return complete and Pins.ICONS.log or Pins.ICONS.inProgress
+end
+
+-- The quests the game puts on a map: in progress, ready to turn in, and the next way of the quest it leads to. One in
+-- progress where its objectives stand on the map has no mark of its own there (Pins.For: covered).
 local function Quests(list, map)
     local focused = Core.Plain(Core.Ask(C_SuperTrack.GetSuperTrackedQuestID))
     local seen = {}
@@ -197,7 +208,7 @@ local function Quests(list, map)
             seen[quest] = true
             local complete = Core.Ask(C_QuestLog.IsComplete, quest) and true or false
             Add(list, { kind = "log", key = "quest:" .. quest, quest = quest, complete = complete, focused = quest == focused,
-                        atlas = Pins.ICONS.log,
+                        atlas = Pins.QuestLook(quest, complete),
                         name = Core.Ask(C_QuestLog.GetTitleForQuestID, quest), click = "quest" }, map, info.x, info.y)
         end
     end
@@ -206,7 +217,7 @@ local function Quests(list, map)
         if x then
             local complete = Core.Ask(C_QuestLog.IsComplete, focused) and true or false
             Add(list, { kind = "log", key = "quest:" .. focused, quest = focused, focused = true, way = true,
-                        complete = complete, atlas = Pins.ICONS.log,
+                        complete = complete, atlas = Pins.QuestLook(focused, complete),
                         name = Core.Ask(C_QuestLog.GetTitleForQuestID, focused), click = "quest" }, map, x, y)
         end
     end
@@ -626,8 +637,10 @@ end
 
 -- A map's pins of what your quests still ask for (Goals.lua): one at each point a thing stands, in the picture of what
 -- to do there, the quests it is for in its tooltip. A click leads to its first quest, as a click on the quest's own pin.
+-- The list's quests: [quest] = true for each quest with a pin on the map (Pins.For: their own mark not shown there).
 local function GoalsOn(map)
-    local list = {}
+    local list, quests = {}, {}
+    list.quests = quests
     for thing, wanted in pairs(ns.Goals.Wanted()) do
         local points = ns.Goals.Spots(thing)[map]
         if points then
@@ -641,9 +654,13 @@ local function GoalsOn(map)
             end
             local name = (kind == "npc" and NPC_FACTS or OBJECT_FACTS):Get(id, "name")
             for index, point in ipairs(points) do
+                local count = #list
                 Add(list, { kind = "goal", key = "goal:" .. thing .. "@" .. map .. ":" .. index, thing = thing, name = name,
                             texture = wanted.texture, goals = wanted.goals, quest = wanted.goals[1].quest, click = "quest",
                             lines = lines, doubt = doubt, unverified = unverified }, map, point.x / 100, point.y / 100)
+                if #list > count then
+                    for _, goal in ipairs(wanted.goals) do quests[goal.quest] = true end
+                end
             end
         end
     end
@@ -858,6 +875,9 @@ function Pins.For(view, small, pu, pv)
         for _, pin in ipairs(LiveOn(map)) do hidden[pin.key] = true end
     end
     for _, map in ipairs(maps) do
+        -- The quests in progress whose objectives stand on this map as pins: those show where they are, so no mark of
+        -- their own here (the question mark only where a quest is turned in, Pins.ICONS).
+        local covered = goals ~= NONE and DataOn(map, "goal").quests or NONE
         for pass = 0, #parts do
             local list = pass == 0 and LiveOn(map) or DataOn(map, parts[pass])
             -- A map's pins all stand in its plane: one link into the view's for them all.
@@ -876,7 +896,9 @@ function Pins.For(view, small, pu, pv)
                 end
                 -- (a pin of Core's data stands on one map's list alone: only the game's may come twice)
                 if wanted and not (taxi and kind == "travel" and not pin.ship)
-                    and (pass == 0 and not taken[pin.key] or pass > 0 and not hidden[pin.thing]
+                    and (pass == 0 and not taken[pin.key]
+                               and not (kind == "log" and not pin.complete and covered[pin.quest])
+                         or pass > 0 and not hidden[pin.thing]
                                and not standing[pin.key]
                                and (kind == "goal" or kind == "quest" or not goals[pin.thing])) then
                     local u, v = link.du + link.su * pin.u, link.dv + link.sv * pin.v

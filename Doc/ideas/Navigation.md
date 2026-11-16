@@ -384,6 +384,13 @@ When the window fills the screen:
 - **Quest marks as the game's (Saneroki, 2026-10-20):** a quest in the log the yellow question mark; one the
   character can take the standard yellow exclamation mark, opaque (no longer see-through); one too low to give
   experience grey; one whose requirements are not met yet a red question mark.
+- **The question mark only where a quest is turned in (Saneroki, 2026-11-16; built):** "Quest locations should not
+  show the questionmark, The questionmark on the map are where you turn in quests, the quest objectives and quest
+  areas are for questlocations." A quest of the log keeps the yellow question mark once it is ready to turn in; one
+  in progress shows by its objectives' pins and its area, and where none of its objectives stands on the map, by the
+  game's mark of a quest in progress (three yellow dots).
+- **The map pin's tooltip says how (Saneroki, 2026-11-16; built):** "In the tooltip of the mappin show that pressing
+  ctrl click will remove it and double clicking on the map will create a pin with a route."
 - **Tooltips without the click (Saneroki, 2026-10-20):** a pin's tooltip does not say that a click puts the map pin
   there.
 - **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and
@@ -412,7 +419,8 @@ When the window fills the screen:
 - **The exact places of quest objectives (Saneroki, 2026-11-02; built):** the game's question mark and area say only
   roughly where. A pin at every spawn Core's data knows of what a quest's open objectives ask for, for every quest in
   the log. No glow around the pins at rest. "When you mouse over a quest in the questlog it will make the map icons
-  glow a little so you know which pins tie to which quests." The question mark and the area stay (`Goals.lua`).
+  glow a little so you know which pins tie to which quests." The question mark and the area stay (`Goals.lua`); the
+  question mark only where a quest is turned in since 2026-11-16 (above).
 - **One pin per thing (Saneroki, 2026-10-16):** the same quest, NPC or place can be known several ways
   (our shipped data, learned in play, shared by the guild, the game live). One pin is kept for it, not
   several (*One pin per thing*).

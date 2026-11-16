@@ -1511,7 +1511,7 @@ local function Look(entry)
     if kind == "object" then return ns.Pins.ObjectLook(entry.what) end
     if kind == "place" then return ns.Pins.PlaceLook(entry.what) end
     if kind == "quest" then return "questnormal" end
-    if kind == "log" then return "questturnin" end
+    if kind == "log" then return ns.Pins.QuestLook(entry.quest) end -- (the question mark only once ready to turn in)
     if kind == "member" or kind == "party" or kind == "friend" then return "PlayerPartyBlip" end
     return "Waypoint-MapPin-Untracked"
 end

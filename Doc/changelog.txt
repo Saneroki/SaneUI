@@ -29,6 +29,9 @@ Navigation 0.3.3 (2026-11-15)
 - Classic windows can bring back the game's own quest log.
 - The Dungeons button left of the zone list; the quest log's
   scroll bar at the side it is docked to.
+- Quests on the map: the ? only where a quest is turned in;
+  one in progress shows by its objectives and its area. The
+  map pin's tooltip says how to put it and take it away.
 
 
 Sane UI 0.3.1 (2026-11-15)
