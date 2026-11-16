@@ -1,7 +1,7 @@
 # Onboarding
 
 Planning notes for the **Onboarding** module (`SaneUI_Onboarding`; the name, Saneroki, 2026-11-15). This is
-not a spec yet: it holds what Saneroki asked for (2026-10-16, 2026-11-15) and proposals for him to discuss.
+not a spec yet: it holds what Saneroki asked for (2026-10-16, 2026-11-15, 2026-11-16) and proposals for him to discuss.
 Nothing is built.
 
 It is for **later**: Sane UI is not given to other players yet, so nobody has an old version to update
@@ -10,6 +10,12 @@ from. It is worth building once others play it, and its first real use is the fi
 ## What it is (Saneroki, 2026-10-16)
 
 - **A module of its own**, an addon like every other (`SaneUI_Onboarding`), depending on Core only.
+- **Shipped with Core** (Saneroki, 2026-11-16: "I think we should package onboarding together with Core. So
+  both onboarding and core always ships together and lives in the same curseforge project."): its folder goes
+  in Core's download, the CurseForge project *SaneUI Core*, beside Sane UI; never a project, a download or a
+  stage of its own. So every player of any Sane UI addon has it, as Core is every module's required
+  dependency. A change to it is a change to Core: a new SaneUI Core, its words in Core's CurseForge changelog
+  (`Doc/curseforge/changelogs/Core.md`).
 - **Loaded on demand:** its files are read only when a **new version** of Sane UI is found, never at a
   login where nothing is new.
 - **It helps players understand Sane UI's features**: a welcome the first time, and what is new after an
@@ -85,8 +91,22 @@ Onboarding cannot see that it is needed while it is not loaded, so Core does tha
 - It registers with `Core.NewModule` as every module does; one that arrives after login gets its
   `OnLoad` and `OnLogin` at once (Core already does this).
 - **Stores no game data** (CLAUDE.md, *Backend and views*): `seen` is a setting, kept by Core.
-- **The words live in the module,** not in the others: everything it shows is read only when it loads, so
-  no module carries pages of help at every login.
+- **The words live with each addon** (proposal, 2026-11-16; this plan said before that they all live in
+  Onboarding, read only when it loads): Onboarding is the machinery (the window, Setup's steps, What's new's
+  pages, the tutorials' callouts, *Show me*, how far the player got); each module carries its own words in a
+  small file of its own (`Onboarding.lua` in its folder: its Setup questions, its news per version, its
+  tutorial steps), handed to Core at login and only drawn by Onboarding. Core's own words (its Setup
+  questions: the character setup, when tooltips show; its news) stay in Onboarding, which always ships with
+  Core. Why:
+  - each module is a CurseForge project of its own with its own version, so its news ships with it; all in
+    Onboarding, Core's download would need a new version for every module's news, and would carry the words
+    of addons the player does not have, also of those not public;
+  - a tutorial names the module's own parts, which change with its code: in the same folder, the module's
+    tests check that each part still exists;
+  - every part explains itself where it stands (CLAUDE.md).
+
+  The cost: a few kilobytes of text per module at login; the window, its art and its drawing stay unloaded.
+  Keeping a module's words load on demand too would take a second addon per module in the addon list.
 
 ### Its settings page (Saneroki, 2026-10-16: the switch is on it; how, a proposal)
 
@@ -111,6 +131,9 @@ Files (proposal):
 | `Help.lua` | The help of each window, for its ? (*The ? in the title bar* below) |
 | `Art/` | The pictures, made as `Doc/guides/images.md` says |
 | `README.md` | As every module has |
+
+With *The words live with each addon* above, `Welcome.lua`, `News.lua` and `Help.lua` hold Core's words
+alone; each module's stand in its own `Onboarding.lua`, in the same shape.
 
 ## What's new: the words (proposal)
 
@@ -213,7 +236,9 @@ on our window small and full, not on the game's window, not in Edit Mode; the ne
 ## Order of work (proposal)
 
 1. **Core:** `SaneUIDB.seen`, the comparison, the load after login, `/sane new`, the module's page with its
-   switch; tests. Onboarding at first only prints a chat line with the version.
+   switch; tests. Onboarding at first only prints a chat line with the version. In `dev/tools/release`,
+   Onboarding goes into `CORE` and `CORE_PROJECT`, and its folder counts with Core's in `core_tree` (a
+   change to it, a new SaneUI Core).
 2. **The window** with What's new and its pages.
 3. **Welcome,** with the cards from the TOCs.
 4. **The ? and Show me:** the window option `help` and the ? in Core's title bar, the help plates in
@@ -227,7 +252,10 @@ on our window small and full, not on the game's window, not in Edit Mode; the ne
    when a new player is lost.
 3. **Screenshots:** worth their disk space, and for which features?
 4. **Per account** (proposal) **or per character:** should an alt see Welcome again?
+5. **Where the words live:** with each module (proposal, *The module*) or all in Onboarding (this plan's
+   earlier proposal)?
 
 Answered (Saneroki, 2026-10-16): after an update the window opens by itself unless its switch is off (was
 question 2); help comes from a ? in the title bar, in the Sane UI view only, instead of tips at the first
 meeting (was question 4). Answered (Saneroki, 2026-11-15): the module is called *Onboarding* (was question 1).
+Decided (Saneroki, 2026-11-16): Onboarding ships with Core, in Core's CurseForge project (*What it is*).
