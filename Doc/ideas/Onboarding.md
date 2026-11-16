@@ -48,8 +48,8 @@ own purpose."
   plates show; what the bar says; the border; rank and danger; spells on it; casts and damage numbers; on the bar;
   which plates show; size and transparency), sample plates drawn by the plates' own code from made-up units. New
   settings for it: *Level*, *Health*, *Health in percent*, and how many debuffs, buffs and crowd controls show.
-- **Second round (Saneroki, 2026-11-16):** the window's stage over the world (its plate cut round it), the loading
-  screen's bar for the progress, keys as controls (`{ binding = ... }` in a step), choices side by side; Nameplates'
+- **Second round (Saneroki, 2026-11-16):** the loading screen's bar for the progress (the stage over the world was
+  tried and taken back: "make it solid not transparent. it gets to confusing if it is transparent actually"), keys as controls (`{ binding = ... }` in a step), choices side by side; Nameplates'
   setup in his order with a first page, short lines in gold, and the plates' new settings (icon size and places,
   time left, class colours, raid markers, cast bar height, how much by distance, transparency by kind).
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its

@@ -14,8 +14,7 @@ this addon only draws them. Nameplates has the first setup.
 - **Open it again** with the button *Set up step by step* at the top of the module's options page (Esc > Options >
   AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`; `/sane setup` alone: the only
   one there, or the list of them).
-- **In the window:** the sample at the left, over the world itself (the window's plate stops round it, a thin
-  golden line frames it), the step at the right: its head, its words, its switches. Each switch is the module's own,
+- **In the window:** the sample at the left, in a solid grey box, the step at the right: its head, its words, its switches. Each switch is the module's own,
   as on its options page, with the same words and tips: a tick, a slider with its steppers, or a round button per
   choice (side by side for three or fewer); one under another stands a little in and is greyed out while that one is
   off. A key: click its box, then press the key (with Shift, Ctrl or Alt if you like); Esc keeps it as it was, a right
@@ -48,9 +47,8 @@ this addon only draws them. Nameplates has the first setup.
   Switches without words (kept values), buttons, colours, typed entries and multiple choices have no control in a
   step. A slider shown anew (`Refresh`) does not set its value again.
 - **The window** (`Window.lua`): a frame of its own on `UIParent` in the bronze (`Look.Dress`), 860 x 600, strata
-  `DIALOG` (over the game's options, `SettingsPanel` at `HIGH`, where the module's button opens it), moved by its head, closed by its X or Esc (`Core.Escape` while shown). The stage clips what it holds and has nothing behind it:
-  the window's plate (`heavybronze-frame-background`) is four pieces round it, each a clipping frame holding a plate
-  as large as the window's (so its picture runs on unbroken), under the bronze frame. Each step's controls are made
+  `DIALOG` (over the game's options, `SettingsPanel` at `HIGH`, where the module's button opens it), moved by its head, closed by its X or Esc (`Core.Escape` while shown). The stage is a grey box
+  (`Look.Box`) on the window's plate that clips what it holds. Each step's controls are made
   the first time it shows and kept. The progress: `Look.Headline` (the loading screen's bar) with
   `Interface\Glues\LoadingBar\Loading-BarFill` as far as the steps have come. The buttons
   are the red ones (`Look.Red`) with the game's `common-icon-backarrow` and `-forwardarrow`, as
@@ -70,8 +68,9 @@ this addon only draws them. Nameplates has the first setup.
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
-- 2026-11-16 (later) — The stage over the world, the loading screen's bar for the progress, keys as controls, choices
-  side by side, 600 high (Saneroki: "can that be fully transparent", "add the loading screen bar there").
+- 2026-11-16 (later) — The loading screen's bar for the progress, keys as controls, choices side by side, 600 high
+  (Saneroki: "add the loading screen bar there"). The stage over the world was tried and taken back the same day
+  (Saneroki: "make it solid not transparent. it gets to confusing if it is transparent actually"): the grey box again.
 
 - 2026-11-16 — First version (Saneroki: "I want a window where it goes step by step through to explain the nameplates
   and where people can see a live preview of a fake nameplate"): the window, the controls from a module's own

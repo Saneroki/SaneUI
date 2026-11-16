@@ -14,7 +14,7 @@ local _, ns = ...
 --  The steps, in Saneroki's order (2026-11-16), each a few short lines that
 --  start with a gold word ("A whole paragraph people will not read"), its
 --  switches and a board of sample plates (Sample.lua) drawn anew after each
---  change, over the world itself:
+--  change, in the window's solid grey box:
 --    intro    what this is
 --    size     size, size by distance and how much
 --    seen     how see-through each kind of plate is

@@ -19,7 +19,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 ## How to use
 - **Set it up step by step** (Saneroki, 2026-11-16): a window that goes through the plates a part at a time, twelve
   pages, each with its purpose, a few short lines that start with gold words, its switches, and sample plates at its
-  left, over the world itself, that show each choice at once. In Saneroki's order: what this is; size (and size by
+  left that show each choice at once. In Saneroki's order: what this is; size (and size by
   distance, how much); see-through (your target, creatures and foes, players you know, players you don't know,
   critters); which plates show (players you don't know: friendly players outside your party, raid, guild and friends
   list; critters) and the keys that switch plates (all, friendly players, enemies, players you don't know); rank and
@@ -510,7 +510,7 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 
 ## History
 - **2026-11-16 (later):** the setup in Saneroki's order with a first page saying what it is, twelve pages of short
-  lines starting with gold words, the samples over the world (the window's plate stops round them), the loading
+  lines starting with gold words (the samples over the world were tried and taken back: "make it solid"), the loading
   screen's bar for how far the steps have come. New settings: *Class colours*; *Raid markers*; where each kind of aura
   stands (*Your debuffs: where* ...: above, left, right; two on one side in rows); *Spell icon size* (the icons as high
   as the bar at first: the containers' scale); *Time left in the icons*, its size and its transparency (the game's

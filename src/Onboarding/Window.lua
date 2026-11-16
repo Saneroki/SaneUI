@@ -7,11 +7,11 @@ local _, ns = ...
 --  closed by its X or Esc. It never blocks the game: the world goes on behind
 --  it and the module's plates follow each change at once.
 --
---    left    the stage, the module's sample (the guide's Stage, drawn anew
---            whenever the step shows or a setting changes) over the world
---            itself: the window's plate stops round it, only a thin golden
---            line frames it (Saneroki, 2026-11-16: "fully transparent, so
---            that the player sees it like it would be in the real world")
+--    left    the stage: a grey box (Look.Box) on the window's plate, solid,
+--            the module draws its sample into (the guide's Stage), anew
+--            whenever the step shows or a setting changes (Saneroki,
+--            2026-11-16: see-through tried, "make it solid not transparent.
+--            it gets to confusing if it is transparent actually")
 --    right   the step: its head in the game's gold, its words, its controls
 --            (Controls.lua), made the first time the step shows and kept
 --    under   the loading screen's bar, filled as far as the steps have
@@ -39,7 +39,6 @@ Window.ARROWS = { back = "common-icon-backarrow", next = "common-icon-forwardarr
 Window.BAR = 28      -- the loading screen's bar's height
 Window.FILL = "Interface\\Glues\\LoadingBar\\Loading-BarFill" -- its fill
 Window.FILL_IN = { 0.9, 0.3 } -- the fill this far in from the bar's ends and edges, shares of its height
-Window.PLATE = "heavybronze-frame-background" -- the window's plate (Look.Frame's)
 
 local frame, look, stage, side, title, words, count, back, forward, progress
 local current   -- { name, guide, index } while a setup shows
@@ -115,39 +114,6 @@ local function Turn(by)
     Window.Go(index)
 end
 
--- The window's plate everywhere but over the stage: four pieces round it, each a frame that clips a plate as large as
--- the window's own (so the picture runs on unbroken), under the bronze frame (Look.Frame's level is the window's less
--- one); the stage in a thin golden line, nothing inside it.
-local function Hole(content)
-    look.frame.plate:SetAlpha(0)
-    local level = math.max((look.frame:GetFrameLevel() or 1) - 1, 0)
-    local pieces = {}
-    for index = 1, 4 do
-        local clip = CreateFrame("Frame", nil, frame)
-        clip:SetFrameLevel(level)
-        clip:SetClipsChildren(true)
-        local plate = clip:CreateTexture(nil, "BACKGROUND")
-        Look.Atlas(plate, Window.PLATE)
-        plate:SetHorizTile(false)
-        plate:SetVertTile(false)
-        plate:SetPoint("TOPLEFT", frame, "TOPLEFT", 4, -4)
-        plate:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -4, 4)
-        pieces[index] = clip
-    end
-    local top, below = Look.DRESS_HEAD + 4, Look.INSIDE + Window.FOOT -- the stage from the window's top and bottom
-    pieces[1]:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
-    pieces[1]:SetPoint("BOTTOMRIGHT", frame, "TOPRIGHT", 0, -top)
-    pieces[2]:SetPoint("TOPLEFT", stage, "BOTTOMLEFT", -Look.INSIDE, 0)
-    pieces[2]:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    pieces[3]:SetPoint("TOPLEFT", stage, "TOPLEFT", -Look.INSIDE, 0)
-    pieces[3]:SetPoint("BOTTOMRIGHT", stage, "BOTTOMLEFT", 0, 0)
-    pieces[4]:SetPoint("TOPLEFT", stage, "TOPRIGHT", 0, 0)
-    pieces[4]:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, below)
-    local line = Look.Outline(stage)
-    line.fill:Hide()
-    Window.pieces = pieces
-end
-
 -- The loading screen's bar (Look.Headline) with its fill as far as the steps have come and the count in its middle.
 local function Progress(content)
     local bar = Look.Headline(content, Window.BAR)
@@ -175,7 +141,6 @@ local function Build()
     frame:EnableMouse(true)
     frame:SetMovable(true)
     frame:SetClampedToScreen(true)
-    frame:SetFrameLevel(10) -- room under it for the plate's pieces round the stage (Hole)
     frame:Hide()
     look = Look.Dress(frame, "")
     look.close:SetScript("OnClick", ns.Guard(Window.Close))
@@ -186,13 +151,13 @@ local function Build()
     head:SetScript("OnDragStart", ns.Guard(function() frame:StartMoving() end))
     head:SetScript("OnDragStop", ns.Guard(function() frame:StopMovingOrSizing() end))
     local content = look.content
-    -- The stage: the module's sample over the world; what rises over a plate stays inside it.
+    -- The stage: the module's sample in a grey box; what rises over a plate stays inside it.
     stage = CreateFrame("Frame", nil, content)
     stage:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
     stage:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, Window.FOOT)
     stage:SetWidth(Window.STAGE)
     stage:SetClipsChildren(true)
-    Hole(content)
+    Look.Box(stage)
     -- The step.
     side = CreateFrame("Frame", nil, content)
     side:SetPoint("TOPLEFT", stage, "TOPRIGHT", Window.GAP, -4)
