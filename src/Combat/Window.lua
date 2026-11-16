@@ -4,10 +4,10 @@ local _, ns = ...
 --  Sane UI - Combat - Window
 --  The module's window, one of Core's (kind screen): docked in the screen's
 --  bottom middle, empty and see-through while small (nothing in it takes the
---  mouse; in Edit Mode it shows its box, to be put elsewhere). The mouse pushed
---  against the middle half of the screen's bottom edge (Core's option strip:
---  half the screen's width, however wide the window is) fills the screen with
---  it; pushed there again, or Esc, it goes back. Full, it holds your talents and
+--  mouse; in Edit Mode it shows its box, to be put elsewhere). A left click on
+--  the middle half of the screen's bottom edge (Core's option strip: half the
+--  screen's width, however wide the window is) fills the screen with it;
+--  clicked there again, or Esc, it goes back. Full, it holds your talents and
 --  your spellbook on Core's board (Board.lua): laid out once it stands
 --  (docked), gone as soon as it starts back. The threat and damage meter is never on
 --  or over it: out of sight from as it begins to fill until it is back (Meter.Cover).

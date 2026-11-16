@@ -91,7 +91,9 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
   heard or not as chosen. One compact line, `Sound: <dropdown of profiles, the one in use first> <cogwheel>`; the
   cogwheel a small flyout with a checkbox and a slider each for All sound, Music, SFX, Dialogue and Ambience, and
   Save, Load, New and Delete for the profile in use. Choosing a profile sets it at once; each client remembers its
-  last one and sets it again at its login. At first: *All sound on*, *Music off*, *Music and Ambience off*. Built:
+  last one and sets it again at its login. At first: *All sound on*, *Music off*, *Music and Ambience off*; in use at
+  first **Disabled** (Saneroki, 2026-11-16: "a preset called disabled that just don't interfere with the audio at all
+  ... that should be the default"), no profile: Sane UI sets none of the game's sounds until a profile is chosen. Built:
   Core's `Audio.lua` (per game account; Sync leaves its CVars alone), the line `AudioLine.lua`, first in the section
   *Sane UI*; the flyout is the game's own menu under the cogwheel, as the pin filter's sliders are.
 

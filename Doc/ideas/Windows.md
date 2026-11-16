@@ -202,6 +202,11 @@ Notes for building it: today `Edge.lua`'s strip takes only the mouse's motion (`
 expand. The strip is two physical pixels wide (the corner square four), so it takes almost nothing of the
 game's screen. These calls are fine on our own frames, which are not protected.
 
+Built: each module's toggle, *Hotcorner requires leftclick* in its section *Expand window* (`Edge.lua`,
+`expandClick`, `OnMouseDown` with `LeftButton`), on by default in every module since 2026-11-16 (Saneroki:
+"Make on all modules the hotcorner require a left click"). Core's section *Hotcorners* over them is not built:
+each module's own toggle is enough for now (*few settings*).
+
 ## Classic windows (Saneroki, 2026-10-16)
 
 - **Every full screen view has a dropdown *Classic windows*** (Core's, in the full screen's title bar left

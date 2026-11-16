@@ -50,9 +50,9 @@ local _, ns = ...
 --
 --  A message the list's top edge cuts through is not shown (Trim).
 --
---  Docked to a screen edge, the window fills the screen when the mouse is
---  pushed against that edge, on a background that hides the game as much as
---  set, and goes back when it is pushed there again (Core's Edge.lua, as the
+--  Docked to a screen edge, the window fills the screen at a left click on
+--  that edge, on a background that hides the game as much as set, and goes
+--  back at another click there (Core's Edge.lua, as the
 --  section Expand window of our settings says). Full, nothing behind it takes
 --  the mouse, and every message is there to read for as long as it stands
 --  full, wherever the mouse is (on a panel, on the guild window). The

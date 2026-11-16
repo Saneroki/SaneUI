@@ -358,7 +358,7 @@ end
 local function Push()
     W.Wait(1) -- a while after the square came under the mouse
     W.cursorX, W.cursorY = 1920, 0
-    square:GetScript("OnEnter")(square)
+    square:GetScript("OnMouseDown")(square, "LeftButton") -- a left click there (Hotcorner requires leftclick, on at first: Saneroki, 2026-11-16)
     W.cursorX, W.cursorY = 960, 500 -- the mouse goes away again: the next push counts
     W.Wait(Edge.LOOK)
 end

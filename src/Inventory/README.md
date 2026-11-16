@@ -3,17 +3,18 @@
 **Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' things in the bags' window · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105; in Retail the skills and PvP windows, resistances, pet stats, the ranged and ammo slots and the keyring stand down)
 
 ## TL;DR
-The module for what you carry and wear. Push the mouse into the screen's bottom right corner and the screen
+The module for what you carry and wear. Left-click the screen's bottom right corner and the screen
 fills with the module's windows: your character sheet, your bags (and in them your other characters' things), Sane UI's
-own, arranged as you like. Push it there again, or press Esc, and they go. Your bag keys open it too, with
+own, arranged as you like. Click there again, or press Esc, and they go. Your bag keys open it too, with
 your bags on it, and the game's bags stay closed. The game's own character sheet stays as it is, and its key
 opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Inventory* under *Sane UI* in the game's addon list.
-- **The full screen:** push the mouse all the way into the bottom right corner. Push it there again, or press
+- **The full screen:** left-click all the way in the bottom right corner. Click there again, or press
   Esc, to go back. Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Inventory >
-  Expand window*). In Edit Mode the window can be docked in another corner; the push goes with it.
+  Expand window*); with *Hotcorner requires leftclick* off there, the mouse pushed into the corner is enough. In
+  Edit Mode the window can be docked in another corner; the hot corner goes with it.
 - **Your bag keys** (the backpack's, *Open All Bags*, each bag's, the reagent bag's, whatever keys you gave them)
   open the full screen with your bags on it; pressed again, it goes back. The game's bag bar is gone from the
   screen, Edit Mode included. The game's own bags stay closed meanwhile (at a vendor or the bank too); the dropdown *Classic windows*

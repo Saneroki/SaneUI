@@ -60,7 +60,7 @@ in the rest.
 | `Selection.lua` | A window chosen in Edit Mode by a click on its box, and Core's dialog in Edit Mode's look (*Reset To Default Position*). |
 | `Escape.lua` | Esc: one stand-in in the game's `UISpecialFrames` for everything of Sane UI's that Esc closes (`Core.Escape`). |
 | `Watch.lua` | `Core.Watch` (a look a few times a second, only while out and shown) and `Core.Hover` (the mouse on a window: its coming by `OnEnter`, a watch until it has gone). |
-| `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). The switch *Hotcorner requires leftclick* there (`expandClick`, off at first) makes the edge strip take the left button. |
+| `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). The switch *Hotcorner requires leftclick* there (`expandClick`, on at first in every module since 2026-11-16) makes the edge strip take the left button; off, the mouse's coming is enough. |
 | `Classic.lua` | The game's windows ours stand for (`classic`): the dropdown *Classic windows* with every module's, each under its name; the button *Sane UI* on each game window (a secure one clicking the game's close button on its panels), ours instead, full where the entry says. |
 | `Views.lua` | A window's views behind the game's tabs (`tabs`), the tab last chosen kept. |
 | `Holder.lua` | The game's window kept out of sight while ours is chosen, and the game's own opening and closing of it followed (section 7, *The holder*). |

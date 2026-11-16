@@ -9,8 +9,8 @@ local ADDON, ns = ...
 --  switched on and off in the game's addon list. The plan is Doc/ideas/Inventory.md.
 --
 --  What you carry and wear. Its window (Window.lua) is docked in the screen's
---  bottom right corner: the mouse pushed into that corner fills the screen with
---  the module's windows on Core's board (Board.lua); pushed there again, or Esc,
+--  bottom right corner: a left click in that corner fills the screen with the
+--  module's windows on Core's board (Board.lua); clicked there again, or Esc,
 --  they go. Each window is a part in files of its own that registers itself
 --  with the board (Board.Part): the character sheet, the bags, the other
 --  characters. The game's own sheet and bags stay as they are, and their keys

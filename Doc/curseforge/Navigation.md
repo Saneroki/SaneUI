@@ -21,7 +21,7 @@ The editor set to *Markdown* when the project is made.
 
 ```markdown
 **SaneUI Navigation** puts your minimap and your world map into one window. Small, in the top right
-corner of the screen, it is your minimap. Move the mouse into that corner and it fills the screen as the
+corner of the screen, it is your minimap. Left-click that corner and it fills the screen as the
 world map: the same map, handled the same way, only bigger.
 
 Made for **WoW: Forever** (English client). It is part of **Sane UI**, a set of interface addons you can
@@ -55,7 +55,7 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
 
 ## How to use
 
-- **The map:** move the mouse into the screen's top right corner.
+- **The map:** left-click the screen's top right corner.
 - **Zoom:** the mouse wheel. **One map out:** right click. **Map pin:** double click.
 - **Options:** Esc > Options > AddOns > Sane UI > Navigation.
 - **Size:** drag the small map's free corner.

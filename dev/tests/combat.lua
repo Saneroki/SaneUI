@@ -194,7 +194,7 @@ if RETAIL then
     PlayerSpellsFrame = game
     local function Push()
         W.Wait(1) -- a while after the strip came under the mouse
-        strip:GetScript("OnEnter")(strip)
+        strip:GetScript("OnMouseDown")(strip, "LeftButton") -- a left click there (Hotcorner requires leftclick, on at first: Saneroki, 2026-11-16)
         W.cursorX, W.cursorY = 960, 500 -- the mouse goes away again: the next push counts
         W.Wait(Edge.LOOK)
     end
@@ -220,7 +220,7 @@ if RETAIL then
     end
 
     Push()
-    check(handle.edge.full, "the mouse pushed against the bottom edge fills the screen")
+    check(handle.edge.full, "a left click at the bottom edge fills the screen")
     Stand()
     local panel = layouts.panels.game
     check(layouts.standing and panel and panel:IsShown() and panel.title._text == ns.TEXT.book, "standing, the board holds its panel")
@@ -250,12 +250,12 @@ if RETAIL then
     W.Wait(0)
     check(Core.Lent(game) and not click._shown, "and it is seated there")
     Push()
-    check(not handle.edge.full and game:IsShown() and not Core.Lent(game), "pushed back: our code does not close it, it stands at its own place")
+    check(not handle.edge.full and game:IsShown() and not Core.Lent(game), "clicked back: our code does not close it, it stands at its own place")
     Back()
     Push()
     Stand()
     W.Wait(0)
-    check(Core.Lent(game), "open already, the next push seats it")
+    check(Core.Lent(game), "open already, the next click seats it")
     game:Hide()
     Back()
     Push()
@@ -1097,7 +1097,7 @@ local pad, edge, head = Core.Board.PAD, Core.Board.EDGE, Core.Board.HEAD
 
 local function Push()
     W.Wait(1) -- a while after the strip came under the mouse
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton") -- a left click there (Hotcorner requires leftclick, on at first: Saneroki, 2026-11-16)
     W.cursorX, W.cursorY = 960, 500 -- the mouse goes away again: the next push counts
     W.Wait(Edge.LOOK)
 end
@@ -1126,7 +1126,7 @@ local function In(key) return Body(layouts.rects[key]) end
 
 
 Push()
-check(handle.edge.full and not layouts.standing, "the mouse pushed against the middle of the bottom edge fills the screen; the board waits until it stands")
+check(handle.edge.full and not layouts.standing, "a left click in the middle of the bottom edge fills the screen; the board waits until it stands")
 Stand()
 local talents, book = layouts.panels.talents, layouts.panels.spellbook
 local hasTalents = Board.Present("talents")

@@ -27,8 +27,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   **Search:** click *Social* (or the magnifier) and type: only the messages that have every word you type
   are shown, found as a quick finder finds them (the letters in their order, *gld* finds *Guild*), in the
   message, the speaker's name or the chat's name. Esc empties it and every message is back.
-- **Full screen:** docked, push the mouse against that screen edge (the game window's very edge, where the
-  chat window touches it; docked in a corner, all the way into that corner): the window springs open to fill the whole screen, above the game's bars, on a
+- **Full screen:** docked, left-click that screen edge (the game window's very edge, where the
+  chat window touches it; with *Hotcorner requires leftclick* off, the mouse pushed there is enough; docked in a corner, all the way into that corner): the window springs open to fill the whole screen, above the game's bars, on a
   background that hides the game as much as set, every message there to read: while it stands full, none
   fades, wherever the mouse is. Nothing behind it takes the
   mouse: no click, no turn of the camera. On the way its corners start round, with a thin bronze trim, and

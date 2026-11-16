@@ -7,6 +7,16 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Sane UI 0.3.2 (2026-11-15)
+--------------------------
+- Full screens open with a left click on their screen edge or
+  corner, not when the mouse merely reaches it. Each addon's
+  Expand window settings can turn the click off.
+- Sound profiles start on Disabled: Sane UI leaves your game's
+  sound settings alone until you choose a profile in the
+  minimap's satchel.
+
+
 Navigation 0.3.3 (2026-11-15)
 -----------------------------
 - Pins: the route and the minimap's dots are always there; fewer

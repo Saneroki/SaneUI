@@ -1753,7 +1753,7 @@ do
     W.Wait(1)
     local moved = 0 -- what is done to the list as a whole: nothing (Core fades a window's content out on the way)
     box.CreateAnimationGroup = function(self) moved = moved + 1; return methods.CreateAnimationGroup(self) end
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     step(2)
     check(moved == 0 and box._alpha == 1, "the messages stay in sight while the window fills the screen")
     local back -- the window's background while it fills the screen, solid black: its piece as large as the screen
@@ -1762,7 +1762,7 @@ do
             and widget._width == 1920 and widget._height == 1080 then back = widget end
     end
     check(window._width == 1920 and window._height == 1080 and window._strata == "HIGH" and seen(old) == 1,
-        "pushed against the screen's edge there, it fills the screen, above the game's bars, every message there to read")
+        "a left click at the screen's edge there, it fills the screen, above the game's bars, every message there to read")
     do
         local was = window._mouseOver
         come()
@@ -1872,15 +1872,15 @@ do
     radius.setting:SetValue(10)
     W.cursorX, W.cursorY = 900, 500 -- the mouse goes from the edge: a push there counts again (Edge.lua)
     W.Wait(Core.Edge.LOOK)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     check(not window._mouse and not window._wheel, "back, the mouse goes through it again")
     check(box._mouse == false, "and through its list: at its size no words are picked, a click goes into the game")
     check(window._width == Layout.WIDTH and window._height == Layout.HEIGHT and window._points[1][1] == "LEFT" and window._strata == "MEDIUM",
-        "pushed there again, it is back in its zone, at its size")
+        "clicked there again, it is back in its zone, at its size")
     options.motion = "global"
     options.animations = false
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     check(window._width == 1920, "with all animations off it fills the screen at once, whatever its type")
     local classic -- Core's dropdown Classic windows, in the window's top right corner
     for _, widget in ipairs(W.frames) do
@@ -3208,7 +3208,7 @@ do
     socialEdge:Fill(false)
     end
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     W.printed = {}
     classic._items[2].fn()
     check(not window:IsShown() and options.window == false and native:IsShown() and W.printed[1]:find("/sane social"),
@@ -3243,17 +3243,17 @@ do
     check(keys == 1, "Social has one key")
     local kept = Core.Store("Social")
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     SlashCmdList.SANEUI("social")
     check(not window:IsShown() and Core.general.places["Social:place"].full == true and Core.general.places["Social:place"].native == true and options.window == false,
         "put away while it fills the screen: the switch and Core's window say the same, the game's chat; ours was left full")
     SlashCmdList.SANEUI("social")
     check(window:IsShown() and window._width == 1920 and Core.general.places["Social:place"].native == nil, "brought back, it fills the screen again, as it was left")
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     check(window._width == Layout.WIDTH, "(back in its zone)")
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
@@ -3267,12 +3267,12 @@ do
         "full, its button for the game's own window puts ours away and the game's chat is back: the switch and Core's window agree")
     SlashCmdList.SANEUI("social")
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     closeButton:GetScript("OnClick")(closeButton)
     check(not window:IsShown() and options.window == false, "its close button puts it away the same way")
     SlashCmdList.SANEUI("social")
     W.Wait(1)
-    strip:GetScript("OnEnter")(strip)
+    strip:GetScript("OnMouseDown")(strip, "LeftButton")
     options.animations = true
     expand.setting:SetValue(false)
     check(window._width == Layout.WIDTH and not strip:IsShown(), "switched off while it fills the screen, it is back at its size, and the edge does nothing")

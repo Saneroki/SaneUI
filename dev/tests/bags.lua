@@ -768,7 +768,7 @@ local square = handle.edge.strips.corner
 local function Push()
     W.Wait(1)
     W.cursorX, W.cursorY = 1920, 0
-    square:GetScript("OnEnter")(square)
+    square:GetScript("OnMouseDown")(square, "LeftButton") -- a left click there (Hotcorner requires leftclick, on at first: Saneroki, 2026-11-16)
     W.cursorX, W.cursorY = 960, 500
     W.Wait(Core.Edge.LOOK)
 end
@@ -2302,7 +2302,7 @@ row = RowNamed("All Items")
 row:GetScript("OnClick")(row, "LeftButton")
 
 Push()
-check(not panel:IsShown(), "pushed again: the bags go")
+check(not panel:IsShown(), "clicked again: the bags go")
 Stand()
 Put(0, 9, 7001, 1)
 W.Fire("BAG_UPDATE_DELAYED")

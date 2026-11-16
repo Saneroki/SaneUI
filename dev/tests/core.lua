@@ -2141,15 +2141,30 @@ do
     local function Saved(name)
         for _, profile in ipairs(store.audio.profiles) do if profile.name == name then return profile.sounds end end
     end
-    check(table.concat(Audio.Names(), ", ") == "All sound on, Music off, Music and Ambience off, All sound off"
-        and Audio.Current() == "All sound on" and #Audio.Kinds() == 5,
-        "an account without profiles gets the four first ones; the first is in use")
+    check(table.concat(Audio.Names(), ", ") == "Disabled, All sound on, Music off, Music and Ambience off, All sound off"
+        and Audio.Current() == Audio.NONE and Audio.Disabled() and #Audio.Kinds() == 5,
+        "an account without profiles gets the four first ones, Disabled before them and in use (Saneroki, 2026-11-16)")
     local both = Saved("Music and Ambience off")
     check(both.music.on == false and both.ambience.on == false and both.all.on and both.sfx.on and both.dialog.on
         and both.all.volume == 0.6 and both.music.volume == 0.3 and Saved("Music off").ambience.on
         and Saved("All sound on").music.on, "each with every sound on but those its name says, at the game's volumes")
     check(Saved("All sound off").all.on == false and Saved("All sound off").music.on and Saved("All sound off").all.volume == 0.6,
         "All sound off: the game's switch of all sound off (Saneroki, 2026-11-04)")
+    -- Disabled: nothing of the game's sounds written, not even at a login; no profile to differ from or to save into.
+    local function Untouched()
+        for _, kind in ipairs(Audio.KINDS) do
+            if W.cvars[kind.on] ~= nil then return false end
+        end
+        return W.cvars.Sound_MasterVolume == "0.6" and W.cvars.Sound_MusicVolume == "0.3" and W.cvars.Sound_SFXVolume == nil
+    end
+    W.Fire("PLAYER_ENTERING_WORLD", true, false)
+    check(Untouched() and not Audio.Changed() and Audio.Save() == false and Saved(Audio.NONE) == nil,
+        "Disabled is no profile: a login sets none of the game's sounds, nothing differs, nothing is saved")
+    local ok, why = Audio.Delete()
+    check(not ok and why == Audio.TEXT.none and Audio.Disabled(), "nor is it deleted")
+    check(Audio.Use(Audio.NONE) and Untouched() and Audio.Load() and Untouched(), "chosen or loaded again: still nothing set")
+    W.Wait(0)
+    told = 0
 
     check(Audio.Use("Music off") and Audio.Current() == "Music off" and W.cvars.Sound_EnableMusic == "0"
         and W.cvars.Sound_EnableAmbience == nil and W.cvars.Sound_MasterVolume == "0.6" and not Audio.Changed(),
@@ -2168,21 +2183,23 @@ do
     check(not Audio.Use("Nothing") and Audio.Current() == "Music off", "a name that is no profile changes nothing")
 
     check(Audio.New("  Raid  ") and Audio.Current() == "Raid" and Saved("Raid").sfx.volume == 0.42
-        and Saved("Raid").music.on == false and #Audio.Names() == 5,
+        and Saved("Raid").music.on == false and #Audio.Names() == 6,
         "New: a profile of the game's now, its name without spaces at its ends, in use")
-    local ok, why = Audio.New("raid")
-    check(not ok and why:find("raid") and #Audio.Names() == 5, "not a second one of the same name, in any case of letters")
+    ok, why = Audio.New("raid")
+    check(not ok and why:find("raid") and #Audio.Names() == 6, "not a second one of the same name, in any case of letters")
+    ok, why = Audio.New(" disabled ")
+    check(not ok and why:find("disabled") and not Audio.Add("Disabled") and #Audio.Names() == 6, "nor one called Disabled")
     ok, why = Audio.New("   ")
     check(not ok and why == Audio.TEXT.empty, "nor one without a name")
     check(Audio.New(("x"):rep(50)) and Audio.Current() == ("x"):rep(Audio.LETTERS), "a long name is cut")
-    check(Audio.Delete() and Audio.Current() == "All sound on" and W.cvars.Sound_EnableMusic == "1"
-        and #Audio.Names() == 5, "Delete: the profile in use gone, the first one in use and set")
+    check(Audio.Delete() and Audio.Disabled() and W.cvars.Sound_EnableMusic == "0" and #Audio.Names() == 6,
+        "Delete: the profile in use gone, Disabled in use: the game's sounds stay as they are")
     -- Add, for other code (Saneroki, 2026-11-04: a setup addon's profiles): every sound on but those named, not in use.
-    check(Audio.Add(" Quiet ", { all = true, ambience = true }) and Audio.Current() == "All sound on"
+    check(Audio.Add(" Quiet ", { all = true, ambience = true }) and Audio.Disabled()
         and Saved("Quiet").all.on == false and Saved("Quiet").ambience.on == false and Saved("Quiet").music.on
-        and #Audio.Names() == 6 and W.cvars.Sound_EnableAllSound ~= "0", "Add: a profile of those sounds off, not put in use")
+        and #Audio.Names() == 7 and W.cvars.Sound_EnableAllSound ~= "0", "Add: a profile of those sounds off, not put in use")
     ok, why = Audio.Add("quiet", {})
-    check(not ok and why:find("quiet") and not Audio.Add("  ") and #Audio.Names() == 6, "not a name taken, nor none")
+    check(not ok and why:find("quiet") and not Audio.Add("  ") and #Audio.Names() == 7, "not a name taken, nor none")
     check(Audio.Use("Quiet") and W.cvars.Sound_EnableAllSound == "0" and Audio.Delete(), "it is used as any other")
 
     -- The other client closed last and wrote its settings into the game's one file: this login sets this account's.
@@ -2195,6 +2212,11 @@ do
     W.Fire("PLAYER_ENTERING_WORLD", true, false)
     check(W.cvars.Sound_EnableAllSound == "1" and W.cvars.Sound_EnableMusic == "0" and W.cvars.Sound_SFXVolume == "0.42",
         "a login: the account's profile set again, whatever the file held")
+    Audio.Use(Audio.NONE)
+    W.cvars.Sound_EnableAllSound, W.cvars.Sound_EnableMusic, W.cvars.Sound_SFXVolume = "0", "1", "0.9"
+    W.Fire("PLAYER_ENTERING_WORLD", true, false)
+    check(W.cvars.Sound_EnableAllSound == "0" and W.cvars.Sound_EnableMusic == "1" and W.cvars.Sound_SFXVolume == "0.9",
+        "with Disabled a login leaves the game's sounds as the file held them")
 
     W.Wait(0)
     told = 0
@@ -2204,16 +2226,20 @@ do
     W.Wait(0)
     check(told == 1, "the game's options changing a profile's setting: the views told once; another CVar: not")
 
-    while #Audio.Names() > 1 do Audio.Delete() end
-    ok, why = Audio.Delete()
-    check(not ok and why == Audio.TEXT.last and #Audio.Names() == 1, "the last profile is not deleted")
+    while #Audio.Names() > 1 do
+        Audio.Use(Audio.Names()[2])
+        Audio.Delete()
+    end
+    check(table.concat(Audio.Names(), ", ") == Audio.NONE and Audio.Disabled(), "every profile may be deleted: Disabled stays")
+    store.audio = { profiles = {}, current = Audio.NONE }
+    check(table.concat(Audio.Names(), ", ") == Audio.NONE, "and the next session gives the first ones only to an account that never had any")
 
     -- Saved data of an older shape or edited by hand: what is spoiled is made right, not trusted.
     store.audio = { profiles = { { name = " Odd ", sounds = { all = { on = "yes", volume = 3 }, music = { on = false, volume = 2 } } },
-        { name = "odd" }, "x", { name = "" } }, current = "Gone" }
-    check(table.concat(Audio.Names(), ", ") == "Odd" and Audio.Current() == "Odd" and Saved("Odd").all.on == true
-        and Saved("Odd").music.on == false and Saved("Odd").music.volume == 1 and Saved("Odd").sfx.volume == 0.42,
-        "spoiled profiles: a double and a nameless one dropped, a wrong sound the game's now, a volume at most 1")
+        { name = "odd" }, "x", { name = "" }, { name = "DISABLED" } }, current = "Gone" }
+    check(table.concat(Audio.Names(), ", ") == "Disabled, Odd" and Audio.Disabled() and Saved("Odd").all.on == true
+        and Saved("Odd").music.on == false and Saved("Odd").music.volume == 1 and Saved("Odd").sfx.volume == select(2, Audio.Get("sfx")),
+        "spoiled profiles: a double, a nameless one and one called Disabled dropped, a wrong sound the game's now, a volume at most 1; a lost one in use is Disabled")
     W.cvarInfo.Sound_EnableAmbience, W.cvarInfo.Sound_AmbienceVolume = nil, nil
     check(#Audio.Kinds() == 4 and Audio.Get("ambience") == nil and Audio.Use("Odd"),
         "a client without one of the sounds: the others alone, nothing fails")

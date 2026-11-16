@@ -6,8 +6,8 @@ local _, ns = ...
 --  bottom right corner at first, empty and see-through while small (nothing in
 --  it takes the mouse; in Edit Mode it shows its box, to be docked elsewhere).
 --  Docked in a corner it has Core's square there (Edge.lua, four of the
---  screen's pixels): the mouse pushed all the way into the corner fills the
---  screen with it; pushed there again, or Esc, it goes back. Full, it holds the
+--  screen's pixels): a left click all the way in the corner fills the screen
+--  with it; clicked there again, or Esc, it goes back. Full, it holds the
 --  module's windows on Core's board (Board.lua): laid out once it stands
 --  (docked), gone as soon as it starts back. The bag keys fill it too, with the
 --  bags on it (Keys.lua: Window.Toggle).

@@ -6,8 +6,8 @@ local Core = SaneUI.Core
 --  (Window.KINDS). Its title bar moves it (let go in the middle of the screen,
 --  it docks there) and has the buttons of a panel, with one of the module's own
 --  before them (start the bar again); in Blizzard's Edit Mode its box moves it to
---  a corner or an edge too, and docked there the mouse pushed against that
---  screen edge fills the screen. Esc closes it, a click brings it to the front.
+--  a corner or an edge too, and docked there a left click on that screen edge
+--  fills the screen. Esc closes it, a click brings it to the front.
 --  Rest the mouse on it and it opens (Expand.lua): two views behind the game's
 --  tabs (Views.lua), one that explains it with a box Keep open, one with a bar
 --  (Bar.lua) that its button Add fills a step at a time; full, the bar starts
@@ -26,7 +26,7 @@ local TEXT = {
     bar = "Bar",
     help = "Rest the mouse on me and I open; take it away and I close a moment later, unless Keep open is ticked.\n\n"
         .. "Drag my title bar to move me: let go in the middle of the screen and I dock there. In Edit Mode "
-        .. "(Esc > Edit Mode) I dock at the corners and edges too; docked at one, push the mouse against that screen "
+        .. "(Esc > Edit Mode) I dock at the corners and edges too; docked at one, left-click that screen "
         .. "edge and I fill the screen. My buttons do the same, and close me, as Esc does.",
     barHelp = "Add fills the bar a step at a time; the button before mine starts it again.",
     keep = "Keep open",

@@ -14,8 +14,8 @@ local ADDON, ns = ...
 --  with them (cast bars, totems, bosses). The plan is Doc/ideas/Combat.md.
 --
 --  Built so far: its window (Window.lua), docked in the screen's bottom middle
---  and filling the screen when the mouse is pushed against the middle half of
---  the bottom edge; full, it holds on Core's board (Board.lua) your talents
+--  and filling the screen at a left click on the middle half of the bottom
+--  edge; full, it holds on Core's board (Board.lua) your talents
 --  (Talents/) and your spellbook (Book/), our own windows as the game's, and
 --  the window of a talent planner Sane UI knows (Core.Neighbours). Beside a
 --  creature's nameplate, a mark while it belongs to an objective still to do

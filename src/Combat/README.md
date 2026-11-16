@@ -8,9 +8,9 @@ focus and your pet, the party and the raid, your buffs and debuffs, and what goe
 totems, bosses). Each part, once built, gives the game's own frame back when it fails. The plan is in
 `Doc/ideas/Combat.md`; the nameplates are a module of their own (`src/Nameplates/`).
 
-Built so far: its window, docked in the screen's bottom middle. Push the mouse against the middle half of
+Built so far: its window, docked in the screen's bottom middle. Left-click the middle half of
 the bottom edge, or press your spellbook or talents key, and it fills the screen with our own spellbook and
-talents windows, which look and work as the game's, on Core's board that you arrange; push there again, press
+talents windows, which look and work as the game's, on Core's board that you arrange; click there again, press
 the key again, or Esc, and it goes back. A talent planner Sane UI knows is a window of its own there.
 
 Your frame, your target's and your focus's are ours, in the look of a nameplate and green (your target's and your
@@ -50,9 +50,10 @@ Sunder Armor), as you choose, nothing fixed.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
-- **The full screen:** push the mouse against the bottom edge of the screen anywhere in its middle half
-  (a quarter of the screen's width either side of the middle). Push there again, or press Esc, to go back.
-  Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Combat > Expand window*).
+- **The full screen:** left-click the bottom edge of the screen anywhere in its middle half
+  (a quarter of the screen's width either side of the middle). Click there again, or press Esc, to go back.
+  Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Combat > Expand window*); with
+  *Hotcorner requires leftclick* off there, the mouse pushed against the edge is enough.
 - **Your keys:** the keys you gave the game's spellbook (P), pet spellbook and talents (N) open the full
   screen with that window on it (the pet's: the spellbook at the pet's tab; without a pet, as the game's, it does
   nothing), and close it again, as they do the game's windows. Your key bindings stay as they are; *Your spellbook and talents keys open ours* off,

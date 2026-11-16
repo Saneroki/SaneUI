@@ -5,6 +5,10 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 
 ## 0.3.2 (2026-11-15)
 
+- Full screens open with a left click on their screen edge or corner, not when the mouse merely reaches it. Each
+  addon's *Expand window* settings can turn the click off.
+- Sound profiles start on *Disabled*: Sane UI leaves your game's sound settings alone until you choose a profile
+  (SaneUI Navigation's minimap satchel).
 - Comes with Onboarding, under Sane UI in the addon list: the step-by-step setup of Sane UI's addons, with a sample
   that shows each choice at once. It is read only when a setup opens; `/sane setup` lists them.
 - Dungeon maps (SaneUI Navigation): floors whose terrain view left bosses standing on nothing (the Deadmines'

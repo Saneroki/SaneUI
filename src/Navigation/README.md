@@ -170,12 +170,14 @@ and shows them on the map or puts the map pin there. The plan is in
     only, as the game opens it only so for an addon;
   - **Sane UI:** first the line **Sound:** with the sound profile in use in a dropdown and a cogwheel beside it
     (Core's sound profiles: each game account keeps its own and sets its last one again at each login). The
-    dropdown lists the profiles, the one in use first; choosing one sets it at once. *(changed)* after its name:
+    dropdown lists the profiles, the one in use first; choosing one sets it at once. **Disabled**, first of the
+    others and in use at first, is no profile: Sane UI leaves the game's sounds as they are (its tooltip says so). *(changed)* after its name:
     the game's sound settings differ from it now. The cogwheel opens a menu with the game's sound settings: a
     checkbox and a slider for each of *All sound*, *Music*, *SFX*, *Dialogue* and *Ambience*, working at once (the
     profile keeps them only when saved), then **Save** (the settings now into the profile), **Load** (the profile
     set again), **New** (a profile of the settings now, its name asked) and **Delete** (the profile in use, asked
-    first; not the last one). Then the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the
+    first; Disabled in use then). While Disabled is in use the menu's title is *Sound settings*, and Save, Load and
+    Delete are greyed out. Then the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the
     same as the box at the foot of the bags; on is ticked, off is faint;
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
     minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
@@ -602,8 +604,8 @@ and shows them on the map or puts the map pin there. The plan is in
   everything else open ours; with ours switched off on the bar, the game's quest tracker is back. With the game's minimap our small window rests out of sight; with the game's map
   its keys and buttons open the game's (chosen there, it is not opened at once: its key opens it, and the chat
   says which key). Either way the
-  mouse pushed into the top right corner still fills the screen with
-  our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window. The
+  hot corner at the top right (a left click there, as *Hotcorner requires leftclick* says) still fills the screen
+  with our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window. The
   game's map has the button *Sane UI* beside its close button, and the game's minimap one at its top right:
   ours is the one again (unticked), the map filling the screen.
 - **Size the small window** by its corner away from the screen's edges (at first the lower left): with the mouse
@@ -1224,11 +1226,12 @@ and shows them on the map or puts the map pin there. The plan is in
   button to the page is free.
 - **The sound line** (`AudioLine.lua`, over Core's `Core.Audio`): the word, a dropdown and a cogwheel, game
   `DropdownButton`s in pencil boxes (`Journal.Box`) whose menus are the game's own (`SetupMenu`): the profiles as
-  radios, the one in use first (`Audio.Use`); the cogwheel's a title (the profile's name), a checkbox per sound this
+  radios, the one in use first (`Audio.Use`), Disabled's (`Audio.NONE`) with a tooltip; the cogwheel's a title (the
+  profile's name, *Sound settings* while `Audio.Disabled`), a checkbox per sound this
   client has (`Audio.Kinds`, `Audio.Set`) with the game's `MinimalSliderWithSteppersTemplate` lent to its row as in the
   pin filter (0 to 100 % in `AudioLine.STEPS`, the game's 5 %), and the buttons Save and Load (the menu stays open,
-  its rows read anew: `MenuResponse.Refresh`), New (`Core.AskText`) and Delete (`Core.Confirm`; off for the last
-  profile). The gear is the game's silver atlas `GM-icon-settings` as it draws it, else the icon `INV_Misc_Gear_01`. The
+  its rows read anew: `MenuResponse.Refresh`), New (`Core.AskText`) and Delete (`Core.Confirm`); Save, Load and Delete
+  off while `Audio.Disabled`. The gear is the game's silver atlas `GM-icon-settings` as it draws it, else the icon `INV_Misc_Gear_01`. The
   dropdown's words follow `Audio.Watch`, *(changed)* while `Audio.Changed`.
 - **Following again:** the tracker follows again where `Again` says, never with a mouse button held. Where the game
   tells no place of the player (an instance) the small view does at once, so the game's minimap is the map there.
@@ -1592,6 +1595,11 @@ and shows them on the map or puts the map pin there. The plan is in
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-16, Disabled in the sound line:** Saneroki: "a preset called disabled that just don't interfere with the
+  audio at all ... that should be the default". Core's sound profiles start on Disabled (`Core.Audio.NONE`); the line
+  names it, its tooltip says Sane UI leaves the game's sounds alone, and the cogwheel greys out Save, Load and Delete
+  while it is in use. The top right corner fills the screen at a left click now (Core's *Hotcorner requires leftclick*,
+  on at first in every module).
 - **2026-11-16, the small map back on you after 2 seconds:** Saneroki: "make it so that the minimap automatically
   follows the player when the player is moving. I think right now we have a 5 second delay. Make it a 2s delay". The
   small map's own wait, `Canvas.SOON` (2); the full map keeps `Canvas.AGAIN` (5), so it can be looked around while

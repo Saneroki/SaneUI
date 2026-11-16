@@ -59,8 +59,8 @@ it back.
         now), and how many CVars are listed (*5 CVars*, or *1 matching* while searching or filtering).
   - *General:* the switches of no module (*Errors in chat*).
   - *Appearance:* the look of Sane UI as a whole. *Windows: Animation type* (Glide at first; Swing, Even,
-    Instant): how a window docked to a screen edge grows to fill the screen when you push the mouse against that
-    edge, and goes back; also how a window opens while the mouse rests on it. A window can have its own (Social).
+    Instant): how a window docked to a screen edge grows to fill the screen when you click that edge (or push the
+    mouse against it), and goes back; also how a window opens while the mouse rests on it. A window can have its own (Social).
   - *Social*, *Abilities*, *Tooltips*: one page per module that is switched on and has switches, called by its
     name, with the module's banner at the top in place of its title. A module that is switched off in the
     addon list has no page. A module whose switches are in tabs (*Social*) has over its tabs, at the right of

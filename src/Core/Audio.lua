@@ -14,25 +14,36 @@ local Core = SaneUI.Core
 --  login screen comes before any addon and sounds as the file says. Sync keeps
 --  none of these settings (Sync.Leave): they are the profiles'.
 --
+--  Disabled (Saneroki, 2026-11-16: "a preset called disabled that just don't
+--  interfere with the audio at all. It doesn't overwrite or change anything and
+--  that should be the default. Only when users interact with the sound presets
+--  it will have a effect."): first in the list, always there, no profile of
+--  sounds. While it is in use Sane UI sets none of the game's sounds, at a login
+--  neither: they stay as the game and the player have them. Every account starts
+--  on it; only a profile the player chooses (or makes with New) sets anything.
+--
 --  A profile is the game's settings as they were saved. The game's settings may
 --  move away from it (the sliders, the game's own options, its key that switches
 --  all sound) until the profile is saved or loaded again.
 --
+--      Core.Audio.NONE                  "Disabled": its name
 --      Core.Audio.KINDS                 { key, text, on = CVar, volume = CVar }, in the order shown
 --      Core.Audio.Kinds()               those this client has
---      Core.Audio.Names()               the profiles' names, in their order
---      Core.Audio.Current()             the profile in use: its name
---      Core.Audio.Use(name)             that profile set, and kept as the account's
+--      Core.Audio.Names()               Disabled, then the profiles' names, in their order
+--      Core.Audio.Current()             the one in use: its name (Disabled too)
+--      Core.Audio.Disabled()            whether Disabled is in use
+--      Core.Audio.Use(name)             that profile set, and kept as the account's; Disabled: kept, nothing set
 --      Core.Audio.Get(key)              on, volume (0 to 1): the game's now; nil where this client lacks it
 --      Core.Audio.Set(key, on, volume)  the game's now (nil: left as it is), not the profile
---      Core.Audio.Changed()             whether the game's now differs from the profile in use
---      Core.Audio.Save()                the game's now into the profile in use
---      Core.Audio.Load()                the profile in use set again
+--      Core.Audio.Changed()             whether the game's now differs from the profile in use (never Disabled)
+--      Core.Audio.Save()                the game's now into the profile in use; false while Disabled is
+--      Core.Audio.Load()                the profile in use set again (Disabled: nothing)
 --      Core.Audio.New(name)             a profile of the game's now, in use; false, why when not
 --      Core.Audio.Add(name, off)        a profile of every sound on but those in off ({ [key] = true }), at the
 --                                       game's volumes now, not put in use; false, why when not (other code: a
 --                                       setup addon)
---      Core.Audio.Delete()              the profile in use gone, the first one in use; false, why for the last
+--      Core.Audio.Delete()              the profile in use gone, Disabled in use (nothing set); false, why while
+--                                       Disabled is
 --      Core.Audio.Watch(fn)             fn() on the next frame after a change: a profile, the game's settings
 -------------------------------------------------------------------------------
 local Audio = {}
@@ -45,9 +56,10 @@ Audio.KINDS = {
     { key = "dialog", text = "Dialogue", on = "Sound_EnableDialog", volume = "Sound_DialogVolume" },
     { key = "ambience", text = "Ambience", on = "Sound_EnableAmbience", volume = "Sound_AmbienceVolume" },
 }
+Audio.NONE = "Disabled"
 -- The profiles every account starts with (Saneroki, 2026-11-04): every sound on but those named off, at the volumes
 -- the game had then. All sound off (Saneroki, 2026-11-04: "make it standard in the 3 default installed sound
--- profiles"): the game's switch of all sound off, the rest as they are.
+-- profiles"): the game's switch of all sound off, the rest as they are. None of them in use at first: Disabled is.
 Audio.DEFAULTS = {
     { name = "All sound on" },
     { name = "Music off", off = { music = true } },
@@ -59,7 +71,7 @@ Audio.EXACT = 0.005   -- two volumes this close are the same (the game's slider 
 Audio.TEXT = {
     empty = "a sound profile needs a name.",
     taken = "there is a sound profile called %s already.",
-    last = "the last sound profile cannot be deleted.",
+    none = "Disabled is no sound profile: there is nothing to delete.",
 }
 
 local byKey, ours = {}, {} -- [key] = its kind; [lower-case CVar] = true: the profiles' CVars
@@ -154,7 +166,9 @@ local function Find(name)
     return nil
 end
 
+-- Disabled's name is taken too.
 local function Taken(name)
+    if name:lower() == Audio.NONE:lower() then return true end
     for _, profile in ipairs(kept.profiles) do
         if profile.name:lower() == name:lower() then return true end
     end
@@ -186,37 +200,43 @@ local function Made(off)
 end
 
 -- The account's: { profiles = { { name, sounds = { [key] = { on, volume } } } }, current = name }, made right the
--- first time it is asked in a session; an account without any gets Audio.DEFAULTS.
+-- first time it is asked in a session; an account that never had any gets Audio.DEFAULTS, Disabled in use (one that
+-- deleted them all keeps none). A current that is no profile is Disabled.
 local function Kept()
     local store = Core.Store(Core.name)
     if kept and store.audio == kept then return kept end
     if type(store.audio) ~= "table" then store.audio = {} end
     kept = store.audio
+    local first = type(kept.profiles) ~= "table"
     local profiles = {}
-    for _, profile in ipairs(type(kept.profiles) == "table" and kept.profiles or {}) do
+    for _, profile in ipairs(first and {} or kept.profiles) do
         local name = type(profile) == "table" and Clean(profile.name)
-        local double = false
+        local double = name and name:lower() == Audio.NONE:lower()
         for _, other in ipairs(profiles) do double = double or (name and other.name:lower() == name:lower()) end
         if name and not double then profiles[#profiles + 1] = { name = name, sounds = Settle(profile.sounds) } end
     end
-    if #profiles == 0 then
+    if first then
         for _, default in ipairs(Audio.DEFAULTS) do
             profiles[#profiles + 1] = { name = default.name, sounds = Made(default.off) }
         end
     end
     kept.profiles = profiles
-    if not Find(kept.current) then kept.current = profiles[1].name end
+    if not Find(kept.current) then kept.current = Audio.NONE end
     return kept
 end
 
 function Audio.Names()
-    local names = {}
+    local names = { Audio.NONE }
     for _, profile in ipairs(Kept().profiles) do names[#names + 1] = profile.name end
     return names
 end
 
 function Audio.Current()
     return Kept().current
+end
+
+function Audio.Disabled()
+    return Kept().current == Audio.NONE
 end
 
 -- The game set to a profile's sounds, those this client has.
@@ -227,18 +247,20 @@ local function Apply(profile)
     end
 end
 
+-- Disabled: kept as the account's, the game's sounds left as they are.
 function Audio.Use(name)
     Kept()
     local profile = Find(name)
-    if not profile then return false end
-    kept.current = profile.name
-    Apply(profile)
+    if not (profile or name == Audio.NONE) then return false end
+    kept.current = profile and profile.name or Audio.NONE
+    if profile then Apply(profile) end
     Tell()
     return true
 end
 
 function Audio.Changed()
     local profile = Find(Kept().current)
+    if not profile then return false end
     for _, kind in ipairs(Audio.Kinds()) do
         local on, volume = Audio.Get(kind.key)
         local entry = profile.sounds[kind.key]
@@ -248,8 +270,11 @@ function Audio.Changed()
 end
 
 function Audio.Save()
-    Find(Kept().current).sounds = Now()
+    local profile = Find(Kept().current)
+    if not profile then return false end
+    profile.sounds = Now()
     Tell()
+    return true
 end
 
 function Audio.Load()
@@ -279,9 +304,9 @@ end
 
 function Audio.Delete()
     local _, index = Find(Kept().current)
-    if #kept.profiles < 2 then return false, Audio.TEXT.last end
+    if not index then return false, Audio.TEXT.none end
     table.remove(kept.profiles, index)
-    return Audio.Use(kept.profiles[1].name)
+    return Audio.Use(Audio.NONE)
 end
 
 -------------------------------------------------------------------------------
@@ -292,7 +317,7 @@ Core.On("CVAR_UPDATE", function(name)
     if type(name) == "string" and ours[name:lower()] then Tell() end
 end)
 
--- A login, not a /reload nor another loading screen: the account's profile set again.
+-- A login, not a /reload nor another loading screen: the account's profile set again (Disabled: nothing).
 Core.On("PLAYER_ENTERING_WORLD", function(initial)
     if initial then Audio.Load() end
 end)

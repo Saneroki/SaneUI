@@ -1781,28 +1781,39 @@ end)()
         if widget._kind == "FontString" and widget._shown and widget._text == Satchel.TEXT.switches then head = widget end
     end
     check(line and line._shown and head and near(-line._points[1][5], -head._points[1][5] + Satchel.HEAD)
-        and profiles.label._text == "All sound on" and cog.icon._atlas == nil and cog.icon._texture == Line.COG_FILE,
-        "the line under the title Sane UI: the profile in use, the first of the account's; a cogwheel beside it")
+        and profiles.label._text == Audio.NONE and cog.icon._atlas == nil and cog.icon._texture == Line.COG_FILE,
+        "the line under the title Sane UI: Disabled in use at first; a cogwheel beside it")
 
     profiles:GenerateMenu()
     local names = {}
     for index, item in ipairs(profiles._items) do names[index] = item.text end
-    check(table.concat(names, ", ") == "All sound on, Music off, Music and Ambience off, All sound off" and profiles._items[1].checked("All sound on"),
-        "its dropdown: the profiles, the one in use first and chosen")
-    profiles._items[2].fn(profiles._items[2].data)
+    check(table.concat(names, ", ") == "Disabled, All sound on, Music off, Music and Ambience off, All sound off"
+        and profiles._items[1].checked(Audio.NONE) and profiles._items[1].tooltip and not profiles._items[2].tooltip
+        and W.cvars.Sound_EnableMusic == nil and W.cvars.Sound_MusicVolume == "0.4",
+        "its dropdown: Disabled first and chosen, with a tooltip of what it is, then the profiles; none of the game's sounds set")
+    local rows, buttons
+    local function Cog()
+        cog:GenerateMenu()
+        rows, buttons = {}, {}
+        for _, item in ipairs(cog._items) do
+            if item.checked then rows[item.data] = item elseif item.fn then buttons[item.text] = item end
+        end
+    end
+    Cog()
+    check(cog._items[1].title == Line.TEXT.settings and rows.music and buttons.Save.disabled and buttons.Load.disabled
+        and buttons.Delete.disabled and not buttons.New.disabled,
+        "the cogwheel while Disabled is in use: the game's sounds, but no profile to save, load or delete; New makes one")
+    profiles._items[3].fn(profiles._items[3].data)
     W.Wait(0)
     profiles:GenerateMenu()
     check(W.cvars.Sound_EnableMusic == "0" and profiles.label._text == "Music off" and profiles._items[1].text == "Music off"
-        and profiles._items[2].text == "All sound on", "one chosen: set at once, named on the line, first in the list now")
+        and profiles._items[2].text == Audio.NONE, "one chosen: set at once, named on the line, first in the list now")
 
-    cog:GenerateMenu()
-    local rows, buttons = {}, {}
-    for _, item in ipairs(cog._items) do
-        if item.checked then rows[item.data] = item elseif item.fn then buttons[item.text] = item end
-    end
+    Cog()
     check(cog._items[1].title == "Music off" and rows.all and rows.music and rows.sfx and rows.dialog and rows.ambience
         and rows.music.text == "Music" and rows.all.checked(rows.all.data) and not rows.music.checked(rows.music.data)
-        and buttons.Save and buttons.Load and buttons.New and buttons.Delete and not buttons.Delete.disabled,
+        and buttons.Save and buttons.Load and buttons.New and buttons.Delete and not buttons.Delete.disabled
+        and not buttons.Save.disabled and not buttons.Load.disabled,
         "the cogwheel: the profile's name, a checkbox per sound as the game has it now, then Save, Load, New and Delete")
     local slider = { points = {} }
     function slider:SetWidth(width) self.width = width end
@@ -1857,12 +1868,10 @@ end)()
     check(dialog.which == "GENERIC_CONFIRMATION" and dialog.data.text_arg1 == "Quiet raid", "Delete asks first, naming the profile")
     dialog.data.callback()
     W.Wait(0)
-    check(Audio.Current() == "All sound on" and profiles.label._text == "All sound on" and #Audio.Names() == 4,
-        "deleted: the first profile in use")
-    while #Audio.Names() > 1 do Audio.Delete() end
-    cog:GenerateMenu()
-    for _, item in ipairs(cog._items) do if item.text == Line.TEXT.delete then buttons.Delete = item end end
-    check(buttons.Delete.disabled, "the last profile: Delete is off")
+    check(Audio.Disabled() and profiles.label._text == Audio.NONE and #Audio.Names() == 5,
+        "deleted: Disabled in use")
+    Cog()
+    check(buttons.Delete.disabled and buttons.Save.disabled, "and with it Delete and Save are off again")
     Satchel.Close()
 
     for _, name in ipairs(added) do W.cvarInfo[name], W.cvars[name] = nil, nil end
@@ -2137,6 +2146,34 @@ end)()
     tracker._scripts.OnUpdate(tracker, 0.016)
     check(not early and small.follow and near(small.u, 500),
         "the small map dragged: back on the walking player Canvas.SOON (2) seconds after, not sooner")
+    -- Zoomed out past the game's widest step (Saneroki, 2026-11-16: "zooms in to a reasonable level when you start
+    -- moving"): as the player walks, once the wheel has left it alone for Canvas.SOON, back in at the middle click's
+    -- zoom; at the game's widest step it stays. Whole seconds in all again.
+    local nativeWas, kWas = small.native, small.k
+    local function Walk(seconds)
+        player.x = player.x == wasX and wasX + 0.001 or wasX
+        W.Wait(seconds)
+        tracker._scripts.OnUpdate(tracker, 0.016)
+        tracker._scripts.OnUpdate(tracker, 0.016)
+    end
+    small.native = 0
+    Canvas.Layout()
+    for _ = 1, 2 do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
+    local far = small.native == nil and near(small.k, 100 / 240 / Camera.STEP ^ 2) and not minimap._shown
+    Walk(1)
+    local kept = small.native == nil and near(small.k, 100 / 240 / Camera.STEP ^ 2)
+    Walk(2)
+    local _, u, v = Live.Player()
+    check(far and kept and small.follow and small.native == Hybrid.HOME and near(small.k, 100 / radii[Hybrid.HOME])
+        and near(small.u, u) and near(small.v, v) and minimap._shown and minimap._zoom == Hybrid.HOME,
+        "zoomed out past the game's widest step: the walking player brings it in at the middle step after Canvas.SOON")
+    for _ = 1, Hybrid.HOME do frame._scripts.OnMouseWheel(frame, -1) W.Wait(0) end
+    Walk(3)
+    check(small.native == 0 and near(small.k, 100 / 240), "at the game's widest step it stays as the player walks")
+    player.x = wasX
+    small.native, small.k = nativeWas, kWas
+    Canvas.Layout()
+    tracker._scripts.OnUpdate(tracker, 0.016)
 
     -- In an instance the game tells no place: the game's minimap comes back at once, a drag or not: it is the map there.
     local wasCursor = cursorX

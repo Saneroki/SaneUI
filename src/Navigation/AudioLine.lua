@@ -9,13 +9,16 @@ local _, ns = ...
 --
 --  The dropdown names the profile in use, "(changed)" after it while the game's
 --  sound settings differ from it, and lists the profiles, the one in use first:
---  choosing one sets it at once. The cogwheel opens the game's menu under it
+--  choosing one sets it at once. Disabled, every account's at first, is no
+--  profile: Sane UI leaves the game's sounds alone (Core.Audio.NONE; Saneroki,
+--  2026-11-16). The cogwheel opens the game's menu under it
 --  with the game's sound settings now: a checkbox and a slider for each of All
 --  sound, Music, SFX, Dialogue and Ambience, set as they are clicked or moved
 --  (the profile keeps them only when saved); then Save (the settings now into
 --  the profile), Load (the profile set again), New (a profile of the settings
 --  now, named in the game's dialog) and Delete (the profile in use, asked first;
---  not the last one). The satchel stays open while one of these menus or
+--  Disabled in use then); while Disabled is in use, Save, Load and Delete are
+--  greyed out. The satchel stays open while one of these menus or
 --  dialogs is (Satchel's Held). In the kit's look: thin golden outlines, the game's font.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -42,6 +45,7 @@ AudioLine.TEXT = {
     changed = "(changed)",
     profileTip = "The sound profile in use. A click lists them: choosing one sets it.",
     changedTip = "The game's sound settings differ from it now: Save or Load in the cogwheel's menu.",
+    disabledTip = "Sane UI leaves the game's sound settings as they are. Choose a profile to have it set them, here and at each login.",
     settings = "Sound settings",
     settingsTip = "The game's sounds now, and Save, Load, New and Delete for the profile in use.",
     save = "Save",
@@ -66,20 +70,26 @@ local asked -- the dialog New or Delete opened, and its data: while it shows, th
 local Current = ns.Guard(function(name) return name == Audio.Current() end)
 local Choose = ns.Guard(function(name) Audio.Use(name) end)
 
--- The profiles, the one in use first, then the others in their order.
-local function Profiles(_, root)
-    local current = Audio.Current()
-    root:CreateRadio(current, Current, Choose, current)
-    for _, name in ipairs(Audio.Names()) do
-        if name ~= current then root:CreateRadio(name, Current, Choose, name) end
-    end
-end
-
 local function Tooltip(title, text)
     return ns.Guard(function(tooltip)
         GameTooltip_SetTitle(tooltip, title)
         GameTooltip_AddNormalLine(tooltip, text:format(Audio.Current()))
     end)
+end
+
+-- One of the profiles to choose; Disabled says what it is.
+local function Radio(root, name)
+    local item = root:CreateRadio(name, Current, Choose, name)
+    if name == Audio.NONE and item.SetTooltip then item:SetTooltip(Tooltip(name, TEXT.disabledTip)) end -- guarded: Tooltip's ns.Guard
+end
+
+-- The profiles, the one in use first, then the others in their order (Disabled first of them).
+local function Profiles(_, root)
+    local current = Audio.Current()
+    Radio(root, current)
+    for _, name in ipairs(Audio.Names()) do
+        if name ~= current then Radio(root, name) end
+    end
 end
 
 local function Percent(value) return ("%d%%"):format(math.floor(value + 0.5)) end
@@ -145,9 +155,11 @@ local Delete = ns.Guard(function()
     Asked(Core.Confirm(TEXT.askDelete, Audio.Current(), Gone, nil, TEXT.delete))
 end)
 
--- The game's sound settings now, each sound's checkbox and slider; the profile's buttons under them.
+-- The game's sound settings now, each sound's checkbox and slider; the profile's buttons under them (Save, Load and
+-- Delete greyed out while Disabled is in use: there is no profile to keep them).
 local function Settings(_, root)
-    root:CreateTitle(Audio.Current())
+    local disabled = Audio.Disabled()
+    root:CreateTitle(disabled and TEXT.settings or Audio.Current())
     local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
     for _, kind in ipairs(Audio.Kinds()) do
         local key = kind.key
@@ -166,7 +178,7 @@ local function Settings(_, root)
     for _, button in ipairs(buttons) do
         local item = root:CreateButton(button[1], button[2]) -- guarded: Save, Load, New, Delete are ns.Guard's
         if item.SetTooltip then item:SetTooltip(Tooltip(button[1], button[3])) end -- guarded: Tooltip's ns.Guard
-        if button[2] == Delete and #Audio.Names() < 2 then item:SetEnabled(false) end
+        if disabled and button[2] ~= New then item:SetEnabled(false) end
     end
 end
 
@@ -181,6 +193,7 @@ local function Tip(owner)
     else
         GameTooltip:SetText(Audio.Current())
         GameTooltip:AddLine(TEXT.profileTip, 1, 1, 1, true)
+        if Audio.Disabled() then GameTooltip:AddLine(TEXT.disabledTip, 1, 1, 1, true) end
         if Audio.Changed() then GameTooltip:AddLine(TEXT.changedTip, 1, 1, 1, true) end
     end
     GameTooltip:Show()

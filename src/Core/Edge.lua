@@ -2,10 +2,11 @@ local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
 --  Sane UI - Core - Edge
---  A window docked to the screen's edge (Dock.lua) fills the whole screen when
---  the mouse is pushed against that edge where the window touches it: the
---  game window's own last pixels, not the window's border. Pushed there again,
---  or with Esc, it goes back to its size in its zone. A window in the middle of
+--  A window docked to the screen's edge (Dock.lua) fills the whole screen at a
+--  left click on that edge where the window touches it (or, with the click
+--  switched off, when the mouse is pushed against it): the game window's own
+--  last pixels, not the window's border. Clicked there again, or with Esc, it
+--  goes back to its size in its zone. A window in the middle of
 --  the screen, or not docked, has no such edge: its full screen button does the
 --  same (Window.lua), and it goes back to where it stood. Full, it has a background
 --  of its own (solid black or one of Blizzard's tiles, as opaque as set: a plate,
@@ -96,9 +97,11 @@ local Core = SaneUI.Core
 --  of the full bags goes to the corner, the bags go back, it goes on the bars).
 --
 --  With Hotcorner requires leftclick (the section's expandClick, each window's
---  own: the bags may want a click while the map does not) the mouse's coming does nothing: a left click in the strip or the square
---  fills the screen, and another there brings the window back. The strips take
---  the left clicks then (nothing under them gets them).
+--  own; on at first in every module, Saneroki, 2026-11-16: "Make on all modules
+--  the hotcorner require a left click") the mouse's coming does nothing: a left
+--  click in the strip or the square fills the screen, and another there brings
+--  the window back. The strips take the left clicks then (nothing under them
+--  gets them). Switched off, the mouse's coming is enough, as above.
 -------------------------------------------------------------------------------
 local Edge = {}
 Core.Edge = Edge
@@ -123,7 +126,7 @@ Edge.SOLID = "Solid black"
 local BLACK = { 0, 0, 0 }
 
 -- The section's switches, as a window without settings of its own has them (edge = true).
-Edge.DEFAULTS = { expand = true, expandClick = false, motion = Core.Motion.GLOBAL, expandOpacity = 50, expandTexture = "solid" }
+Edge.DEFAULTS = { expand = true, expandClick = true, motion = Core.Motion.GLOBAL, expandOpacity = 50, expandTexture = "solid" }
 Edge.KEYS = { expand = true, expandClick = true, motion = true, expandOpacity = true, expandTexture = true }
 for key, value in pairs(Core.Shape.DEFAULTS) do
     Edge.DEFAULTS[key], Edge.KEYS[key] = value, true
@@ -140,9 +143,9 @@ function Edge.Options(list, at, tab, under)
     local section = {
         { key = "expand", default = Edge.DEFAULTS.expand, text = "Can expand to fullscreen", header = "Expand window",
           headerTip = "Docked to a screen edge, the window can fill the whole screen and go back.",
-          tip = "Push the mouse against the screen edge or corner the window is docked to and it fills the screen. Push there again and it goes back. Off: the edge does nothing." },
+          tip = "Left-click the screen edge or corner the window is docked to and it fills the screen. Left-click there again and it goes back. Off: the edge does nothing." },
         { key = "expandClick", default = Edge.DEFAULTS.expandClick, text = "Hotcorner requires leftclick", parent = "expand",
-          tip = "The mouse at the screen edge or corner the window is docked to is not enough: left-click there and it fills the screen, left-click there again and it goes back." },
+          tip = "The mouse at the screen edge or corner the window is docked to is not enough: left-click there and it fills the screen, left-click there again and it goes back. Off: the mouse pushed there is enough." },
         { key = "motion", default = Edge.DEFAULTS.motion, text = "Animation type", parent = "expand", choices = Core.Motion.Choices(true),
           tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under Sane UI > Appearance." },
         { key = "expandOpacity", default = Edge.DEFAULTS.expandOpacity, min = 0, max = 100, step = 5, unit = "%", text = "Background opacity", parent = "expand",
@@ -501,7 +504,8 @@ function methods:Pushed(key)
     self:Fill(not self.full)
 end
 
--- A left click in a strip, while the section's switch wants one: each click is one change. Not in Edit Mode.
+-- A left click in a strip, while the section's switch wants one: each click is one change, with something on the
+-- cursor too (an item carried out of the full bags: they go back for the drop). Not in Edit Mode.
 function methods:Clicked()
     if not Clicks(self) or Core.EditMode.active then return end
     local usable = self.window.options.usable

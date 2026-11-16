@@ -322,7 +322,7 @@ end
 local function Push()
     W.Wait(1) -- a while after the square came under the mouse
     W.cursorX, W.cursorY = 1920, 0
-    square:GetScript("OnEnter")(square)
+    square:GetScript("OnMouseDown")(square, "LeftButton") -- a left click there (Hotcorner requires leftclick, on at first: Saneroki, 2026-11-16)
     W.cursorX, W.cursorY = 960, 500 -- the mouse goes away again: the next push counts
     W.Wait(Edge.LOOK)
 end
@@ -336,7 +336,7 @@ end
 -------------------------------------------------------------------------------
 check(Slots.Button(1) == nil, "the sheet is built the first time its window is shown, not at login")
 Push()
-check(handle.edge.full, "the mouse pushed into the corner fills the screen")
+check(handle.edge.full, "a left click in the corner fills the screen")
 Stand()
 check(Board.layouts:Has("character"), "the first layout holds the character sheet")
 local panel = Board.Panel("character")
@@ -1110,7 +1110,7 @@ check(bags.searched == "linen", "what is typed into the search box goes to the p
 
 -- Pushed again: back, every panel hidden, the sheet deaf to the game.
 Push()
-check(not handle.edge.full and bags.shown == false and not panel:IsShown(), "pushed again: back, the windows go at once")
+check(not handle.edge.full and bags.shown == false and not panel:IsShown(), "clicked again: back, the windows go at once")
 Stand()
 worn[2].texture = "other"
 W.Fire("PLAYER_EQUIPMENT_CHANGED", 2, false)

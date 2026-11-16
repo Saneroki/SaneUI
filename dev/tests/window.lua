@@ -167,6 +167,12 @@ end
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
 local Dock, Window, Expand, Edge, Shape, Bar = Core.Dock, Core.Window, Core.Expand, Core.Edge, Core.Shape, Core.Bar
+-- The section's switches with Hotcorner requires leftclick off: the mouse pushed against the edge is enough. Most
+-- windows here are tried that way (edge = W.HOVER: the main chunk is at Lua's 200 locals); every module's is on at first
+-- (Saneroki, 2026-11-16), tried below.
+W.HOVER = {}
+for key, value in pairs(Edge.DEFAULTS) do W.HOVER[key] = value end
+W.HOVER.expandClick = false
 
 -- The zones --------------------------------------------------------------------------------------
 local count, top, bottom, corners = 0, 0, 0, 0
@@ -645,7 +651,7 @@ wide:SetFrameStrata("MEDIUM")
 local wideStore, fills, placed, own, native = {}, {}, 0, nil, 0
 local kept, keptShown = false, 0 -- a kept choice of the game's own window (its checkbox)
 local wideWindow = Window.New(wide, {
-    store = wideStore, sizable = true, dock = true, edge = true, content = list,
+    store = wideStore, sizable = true, dock = true, edge = W.HOVER, content = list,
     classic = { { text = "Friends list", show = function() native = native + 1 end },
                 { text = "Guild", show = function() kept, keptShown = true, keptShown + 1 end,
                   checked = function() return kept end, back = function() kept = false end } },
@@ -850,7 +856,7 @@ do
     local shares, going = {}, nil
     local roomyStore = {}
     local roomyWindow = Window.New(roomy, {
-        store = roomyStore, dock = true, edge = true, content = held,
+        store = roomyStore, dock = true, edge = W.HOVER, content = held,
         first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 },
         filled = function(on, width, height) going = { on, width, height } end,
         moving = function(share) shares[#shares + 1] = share end,
@@ -878,7 +884,7 @@ end
 local described = { { key = "first", default = true, text = "First" }, { key = "last", default = true, text = "Last" } }
 Edge.Options(described, 2, "Appearance")
 check(#described == 9 and described[1].key == "first" and described[2].key == "expand" and described[2].header == "Expand window"
-    and described[3].key == "expandClick" and described[3].parent == "expand" and described[3].default == false
+    and described[3].key == "expandClick" and described[3].parent == "expand" and described[3].default == true
     and described[3].text == "Hotcorner requires leftclick"
     and table.remove(described, 3)
     and described[3].key == "motion" and described[4].key == "expandOpacity" and described[5].key == "expandTexture"
@@ -944,6 +950,24 @@ do -- Hotcorner requires leftclick: the edge fills the screen by a left click on
     click:Hide()
 end
 
+do -- Every module's at first (Saneroki, 2026-11-16: "Make on all modules the hotcorner require a left click")
+    check(Edge.DEFAULTS.expandClick == true, "Hotcorner requires leftclick is on by default")
+    local frame = CreateFrame("Frame", nil, UIParent)
+    local handle = Window.New(frame, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
+        dock = true, edge = true, first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+    handle:Place()
+    W.Wait(1)
+    at(frame, 860, 0)
+    local bottom = handle.edge.strips.bottom
+    bottom:GetScript("OnEnter")(bottom)
+    check(bottom._mouse == true and not handle.edge.full, "a window on the defaults: its strip takes clicks, the mouse's coming does nothing")
+    bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
+    check(handle.edge.full, "a left click there fills the screen")
+    bottom:GetScript("OnMouseDown")(bottom, "LeftButton")
+    handle:Place()
+    frame:Hide()
+end
+
 local tall = CreateFrame("Frame", nil, UIParent)
 local tallSettings = { expand = true, motion = "off", expandOpacity = 100, expandTexture = "rock", corners = 10, squareEdges = true }
 local tallWindow = Window.New(tall, {
@@ -992,7 +1016,7 @@ check(not tallEdge.away and tall._mouse == false and tall._motion == true, "back
 -- A window with a skin fills the screen: its skin goes as the background comes
 local skinned = CreateFrame("Frame", nil, UIParent)
 local skinnedWindow = Window.New(skinned, {
-    store = { place = { x = 0, y = 260, width = 380, height = 260, dock = "BOTTOMLEFT" } }, sizable = true, dock = true, skin = "round", edge = true,
+    store = { place = { x = 0, y = 260, width = 380, height = 260, dock = "BOTTOMLEFT" } }, sizable = true, dock = true, skin = "round", edge = W.HOVER,
     first = { point = "CENTER", x = 0, y = 0, width = 380, height = 260 },
 })
 at(skinned, 0, 0)
@@ -1022,7 +1046,7 @@ local nativeShown, oursShown, closed, searched = 0, 0, 0, {}
 local trader = CreateFrame("Frame", nil, UIParent)
 local traderStore = {}
 local traderWindow = Window.New(trader, {
-    store = traderStore, title = "Vendor", titleBar = true, sizable = true, dock = true, edge = true,
+    store = traderStore, title = "Vendor", titleBar = true, sizable = true, dock = true, edge = W.HOVER,
     first = { point = "CENTER", x = 0, y = 0, width = 400, height = 300 },
     classic = { { text = "Vendor", show = function() end } },
     close = function() closed = closed + 1 end,
@@ -1237,7 +1261,7 @@ end)()
 
 -- Without a title bar
 local plain = CreateFrame("Frame", nil, UIParent)
-local plainWindow = Window.New(plain, { store = {}, first = { point = "CENTER", x = 0, y = 0 }, edge = true })
+local plainWindow = Window.New(plain, { store = {}, first = { point = "CENTER", x = 0, y = 0 }, edge = W.HOVER })
 plainWindow:Place()
 check(plainWindow.bar == nil and plainWindow.buttons == nil and not plainWindow:Draggable(),
     "a kind of window without a title bar (the small chat) has none, and nothing to move it by but Edit Mode")
@@ -1258,7 +1282,7 @@ trader:Hide()
 local secure = CreateFrame("Frame", nil, UIParent)
 local secureStore = { place = { x = 0, y = 690, width = 400, height = 300, dock = "LEFT", full = true } }
 local secureWindow = Window.New(secure, {
-    store = secureStore, title = "Spellbook", titleBar = true, sizable = true, dock = true, edge = true,
+    store = secureStore, title = "Spellbook", titleBar = true, sizable = true, dock = true, edge = W.HOVER,
     first = { point = "CENTER", x = 0, y = 0, width = 400, height = 300 },
 })
 secure._protected = true
@@ -1321,7 +1345,7 @@ end
 local talked = CreateFrame("Frame", nil, UIParent)
 local talkStore, talkClosed = {}, 0
 local talkWindow = Window.New(talked, {
-    store = talkStore, title = "Vendor", titleBar = true, dock = true, edge = true, escape = "close",
+    store = talkStore, title = "Vendor", titleBar = true, dock = true, edge = W.HOVER, escape = "close",
     first = { point = "CENTER", x = 0, y = 0, width = 400, height = 300 },
     close = function() talkClosed = talkClosed + 1; talked:Hide() end,
 })
@@ -1341,7 +1365,7 @@ talkWindow.edge:Fill(true)
 talked._group:Run(1)
 check(stand:IsShown(), "full, the same stand-in is shown")
 local spare = CreateFrame("Frame", nil, UIParent)
-local spareWindow = Window.New(spare, { store = {}, edge = true, sizable = true,
+local spareWindow = Window.New(spare, { store = {}, edge = W.HOVER, sizable = true,
     first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
 spareWindow:Place()
 at(spare, 860, 490)
@@ -1583,7 +1607,7 @@ do
     local room = { right = 10, top = 20 }
     local inset = CreateFrame("Frame", nil, UIParent)
     local insetStore = { place = { x = 0, y = 0, width = 300, height = 200, dock = "TOPRIGHT" } }
-    local insetWindow = Window.New(inset, { store = insetStore, sizable = true, dock = true, edge = true, insets = room,
+    local insetWindow = Window.New(inset, { store = insetStore, sizable = true, dock = true, edge = W.HOVER, insets = room,
         first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
     insetWindow:Place()
     check(stands(inset, "TOPRIGHT", 1910, 1060), "docked, a window with insets keeps that room from the edges it touches")
@@ -1970,7 +1994,7 @@ check(round(looseShape, 0, 0, 0, 0) and looseShape.trims[1]._points[1][4] == -2 
 -- One full screen at a time ----------------------------------------------------------------------
 local function screen(key)
     local frame = CreateFrame("Frame", nil, UIParent)
-    local handle = Window.New(frame, { store = {}, key = key, dock = true, edge = true,
+    local handle = Window.New(frame, { store = {}, key = key, dock = true, edge = W.HOVER,
         first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
     handle:Place()
     at(frame, 300, 300)
@@ -1999,7 +2023,7 @@ do
     gameMap:Hide()
     local function framed(key, title, list)
         local frame = CreateFrame("Frame", nil, UIParent)
-        local handle = Window.New(frame, { store = {}, key = key, title = title, dock = true, edge = true, classic = list,
+        local handle = Window.New(frame, { store = {}, key = key, title = title, dock = true, edge = W.HOVER, classic = list,
             first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
         handle:Place()
         at(frame, 300, 300)
@@ -2793,7 +2817,7 @@ end)()
     W.methods.SetFrameLevel = function(self, level) self._level = level end
     W.methods.GetFrameLevel = function(self) return self._level or 1 end
     local frame = CreateFrame("Frame", nil, UIParent)
-    local handle = Window.New(frame, { store = {}, key = "under", title = "Map", dock = true, edge = true, under = true,
+    local handle = Window.New(frame, { store = {}, key = "under", title = "Map", dock = true, edge = W.HOVER, under = true,
         untitled = true, classic = { { text = "World map", show = function() end } },
         first = { point = "CENTER", x = 0, y = 0, width = 300, height = 200 } })
     handle:Place()
