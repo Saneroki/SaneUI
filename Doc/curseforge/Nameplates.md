@@ -1,8 +1,8 @@
 # SaneUI Nameplates: the CurseForge project
 
-What goes into the project's fields on CurseForge (authors.curseforge.com) once Nameplates is released. The
+What goes into the project's fields on CurseForge (authors.curseforge.com). The
 file uploads come from `saneui publish` (`dev/tools/release`); their changelog is this project's own,
-`changelogs/Nameplates.md` (made with its first upload: `saneui makechangelog`).
+[changelogs/Nameplates.md](changelogs/Nameplates.md).
 
 | Field | Value |
 | --- | --- |
@@ -13,7 +13,7 @@ file uploads come from `saneui publish` (`dev/tools/release`); their changelog i
 | Avatar | `nameplates-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `nameplates-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Nameplates](<address>)`) |
 | Relations | SaneUI Core: Required Dependency (each upload sends it too) |
-| Release type | By the module's stage (dev now: nothing is uploaded until Saneroki promotes it). The part *Alpha* below is for an alpha |
+| Release type | Alpha, by the module's stage (since 0.3.1, 2026-11-16) |
 
 ## Description
 

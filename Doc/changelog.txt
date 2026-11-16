@@ -7,8 +7,38 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Navigation 0.3.4 (2026-11-16)
+-----------------------------
+- The first Navigation on CurseForge, as an alpha.
+- The small map follows you again 2 seconds after you leave
+  it alone, and zooms back in as you walk.
+- A little off the route, the golden line meets you further
+  on instead of turning you aside.
+- Quests on the map: the ? only where a quest is turned in;
+  one in progress shows by its objectives and its area. The
+  map pin's tooltip says how to put it and take it away.
+
+
+Tooltips 0.3.1 (2026-11-16)
+---------------------------
+- First public alpha of Tooltips: the game's tooltips redrawn
+  as tidy panels, with the quests, professions and gold of
+  every item at a glance. At first a tooltip shows while you
+  hold Shift; Show tooltips on its options page changes that.
+
+
+Nameplates 0.3.1 (2026-11-16)
+-----------------------------
+- First public alpha of Nameplates: one round health bar with
+  level, threat, name and health inside it, auras around it,
+  less clutter, and a setup that walks you through it page by
+  page (/sane setup nameplates).
+
+
 Sane UI 0.3.2 (2026-11-15)
 --------------------------
+- Comes with Onboarding: the step-by-step setup of Sane UI's
+  addons, with a sample that shows each choice at once.
 - Full screens open with a left click on their screen edge or
   corner, not when the mouse merely reaches it. Each addon's
   Expand window settings can turn the click off.
@@ -29,9 +59,6 @@ Navigation 0.3.3 (2026-11-15)
 - Classic windows can bring back the game's own quest log.
 - The Dungeons button left of the zone list; the quest log's
   scroll bar at the side it is docked to.
-- Quests on the map: the ? only where a quest is turned in;
-  one in progress shows by its objectives and its area. The
-  map pin's tooltip says how to put it and take it away.
 
 
 Sane UI 0.3.1 (2026-11-15)

@@ -1,8 +1,8 @@
 # SaneUI Tooltips: the CurseForge project
 
-What goes into the project's fields on CurseForge (authors.curseforge.com) once Tooltips is released. The file
-uploads come from `saneui publish` (`dev/tools/release`); their changelog is this project's own,
-`changelogs/Tooltips.md` (made with its first upload: `saneui makechangelog`).
+What goes into the project's fields on CurseForge (authors.curseforge.com). The file uploads come from
+`saneui publish` (`dev/tools/release`); their changelog is this project's own,
+[changelogs/Tooltips.md](changelogs/Tooltips.md).
 
 | Field | Value |
 | --- | --- |
@@ -13,7 +13,7 @@ uploads come from `saneui publish` (`dev/tools/release`); their changelog is thi
 | Avatar | `tooltips-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `tooltips-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Tooltips](<address>)`) |
 | Relations | SaneUI Core: Required Dependency (each upload sends it too) |
-| Release type | By the module's stage (dev now: nothing is uploaded until Saneroki promotes it). The part *Alpha* below is for an alpha |
+| Release type | Alpha, by the module's stage (since 0.3.1, 2026-11-16) |
 
 ## Description
 

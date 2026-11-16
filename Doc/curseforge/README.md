@@ -9,8 +9,8 @@ upload names its required dependency, so the CurseForge app installs Core with a
 | --- | --- |
 | [Core.md](Core.md) | SaneUI Core: name, summary, category, description |
 | [Navigation.md](Navigation.md) | SaneUI Navigation (`SaneUI_Navigation`): the same, and its gallery |
-| [Tooltips.md](Tooltips.md) | SaneUI Tooltips (`SaneUI_Tooltips`): ready for when it is released |
-| [Nameplates.md](Nameplates.md) | SaneUI Nameplates (`SaneUI_Nameplates`): ready for when it is released |
+| [Tooltips.md](Tooltips.md) | SaneUI Tooltips (`SaneUI_Tooltips`): the same, and its gallery |
+| [Nameplates.md](Nameplates.md) | SaneUI Nameplates (`SaneUI_Nameplates`): the same, and its gallery |
 | [changelogs/](changelogs/) | Each project's own CurseForge changelog: `Core.md`, `Navigation.md` (a part per version, only that addon's changes) |
 
 The logos and banners are drawn by `saneui makelogos` (`dev/tools/logo-art`) into `assets/generated/logos/`:
@@ -40,7 +40,10 @@ Onboarding's (`onboarding-*`) belong to Core's project, which ships it (Core.md,
    `published/<Module>/<version>-alpha`. Push the tags with main.
 7. A module's first upload waits for Core's project to be approved: CurseForge refuses a required dependency on
    a project it does not show yet (error 1018, "Invalid slug in project relations", 2026-11-15). Once *SaneUI
-   Core* is approved, `saneui publish alpha Navigation` again: Core, already up, is passed over.
+   Core* is approved, `saneui publish alpha Navigation` again: Core, already up, is passed over. Core was approved
+   on 2026-11-16, so a module's first upload goes through at once now; its project's own review follows.
+8. An older version of a module goes up only if its own tests pass with today's Core: Navigation 0.3.3 failed
+   them on 2026-11-16 (Core's options header had changed), so its first alpha on CurseForge is 0.3.4.
 
 ## CurseForge's moderation policies
 
