@@ -876,15 +876,28 @@ game in the background, and it reads a full scan another addon asked for just th
 
 ```lua
 local Scan = SaneUI.Core.Data.Scan
-Scan.State()      -- { phase, outcome, read, rows, next, span, kept, total, items }: phase closed, waiting, asking, reading;
-                  -- outcome kept, refused, lost; next, the server time of the next request; kept, total, items, the last scan
+Scan.State()      -- { phase, outcome, paused, read, rows, next, span, kept, total, items }: phase closed, waiting, asking,
+                  -- reading; outcome kept, refused, lost, cancelled; paused, the player's pause holds; next, the server
+                  -- time of the next request; kept, total, items, the last scan
 Scan.OnChange(fn) -- fn(state) at every change, and twice a second while the house is open
-Scan.Start()      -- a scan now (the bar, pressed); false while one runs
+Scan.Start()      -- a scan now (the bar, pressed), a pause ended; false while one runs
+Scan.Pause(on)    -- the player's pause (the bar's button), kept for the account until Pause(false); false: no change
+Scan.Cancel()     -- the scan underway dropped, nothing of it kept (the bar's X); false when none runs
 ```
 
 - **The bar** (`src/Core/Data/ScanBar.lua`) is a view of `State`: ours, under the bottom right corner of the game's window,
   anchored to it, made when the window is first there. It fills as the rows are read, then runs down to the next scan.
-  Pressed, it starts a scan; a light and a tooltip say so.
+  Pressed, it starts a scan; a light and a tooltip say so. At its right end the game's stopwatch buttons (pause, play) and
+  the game's X, shown while a scan runs *(Saneroki, 2026-11-17)*.
+- **Pause** (Saneroki: "if I pause it it should remember it that it is paused permanenently until i resume again"): no
+  request while it holds, however long; a scan underway waits at its next 64 rows (`Steps.Hold`), one the server or another
+  addon's request answers waits before its first row. Kept in Core's store of the account (`Core.Store(Core.name)`,
+  `auctionScanPaused`), so a `/reload`, a logout or another visit to the house keeps it; each account its own. A scan paused
+  halfway is dropped when the house closes (its rows go with the window). Play reads on from where it stood; the bar pressed
+  while paused resumes and asks at once.
+- **Cancel** (the X): the scan underway is dropped (`Steps.Stop`), nothing of it kept, and the game's answers are not read
+  again until our own next request (it tells of the same list again as item data comes in). Asked and not answered yet: the
+  next waits 16 minutes from that request, as the server may still answer. Not while what was read is being kept (a moment).
 - **`/sane data`** names each house: its days, its whole scans and what they weigh, its last scan.
 
 ### Fees (`src/Core/Data/Fees.lua`, on `Prices`) *(Saneroki, 2026-10-30)*
@@ -1152,6 +1165,7 @@ Steps.Run({ name = "Scan", priority = true, label = "Market: the scan",
 | `Steps.Fresh()` | In a job: waits for a frame of its own (no other work before it in that frame). |
 | `Steps.Spend()` | In a job: the frame's time is all used; nothing else runs in it. With `Fresh` before it: a step that cannot be cut runs alone in its frame. |
 | `Steps.Wait()` | In a job: waits for the next frame and leaves this one's time to the other jobs, for a step that has nothing to do until the game has answered (the scan's wait for an item's data). |
+| `Steps.Hold()`, `job:Release()`, `Steps.Release(name)` | In a job: waits, served in no frame, until released (a pause the player asked for: the auction scan's); while every job waits so, the scheduler has no OnUpdate. Released, it goes on from the next frame; stopped meanwhile, never. `Release` gives false when the job does not wait so. |
 | `Steps.Running(name)`, `Steps.Jobs()`, `Steps.Paused()` | Whether that job runs; the handles of the jobs running, in the order they were started; whether they wait now (a fight or a restriction). |
 
 - **The budget:** at most 5 ms a frame for all jobs together, and never more than a quarter of a frame at

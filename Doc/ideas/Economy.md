@@ -214,6 +214,10 @@ window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.m
   more means a request is not lost to a clock a few seconds off. A refusal is asked again after 3 minutes.
 - **By hand (Saneroki):** the bar, pressed, starts a scan at once. The server keeps its 15 minutes: a press inside them is
   refused like any request, and the wait goes on where it was.
+- **Pause, resume, cancel (Saneroki, 2026-11-17):** "put a x pause resume button to the scan line so i can pause or cancle
+  or resume the auctionhouse scan", and "if I pause it it should remember it that it is paused permanenently until i
+  resume again". The game's stopwatch buttons at the bar's right end pause and resume, the pause kept for the account
+  until resumed; the game's X drops the scan underway, nothing of it kept.
 - **In the background:** nothing of it needs a click, so it runs with the game behind other windows, at whatever frame
   rate the game keeps there: the frame budget per frame stays the same, the reading only takes longer.
 - **Every scan kept (Saneroki):** Forever's file keeps every row of every scan, whole; what goes on into the database is

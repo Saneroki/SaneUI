@@ -37,13 +37,18 @@ local Core = SaneUI.Core
 --  are per unit in copper: low is the lowest of the day, market the median of the units on offer, and
 --  everything but low comes from the last scan of the day that saw the item. 0: no buyout.
 --
---      Core.Data.Scan.State()      what a view shows: { phase, outcome, read, rows, next, span, kept, total, items }
---                                  phase: closed, waiting, asking or reading; outcome: how the last try ended,
---                                  kept, refused or lost; read of rows while reading; next: the server time of
---                                  the next request, span: the seconds that wait was; kept, total, items: the
---                                  last scan kept
+--      Core.Data.Scan.State()      what a view shows: { phase, outcome, paused, read, rows, next, span, kept, total,
+--                                  items } phase: closed, waiting, asking or reading; outcome: how the last try ended,
+--                                  kept, refused, lost or cancelled; paused: the player's pause holds; read of
+--                                  rows while reading; next: the server time of the next request, span: the
+--                                  seconds that wait was; kept, total, items: the last scan kept
 --      Core.Data.Scan.OnChange(fn) fn(state) at every change, and twice a second while the house is open
---      Core.Data.Scan.Start()      a scan now, whatever the time says (the bar, pressed); false while one runs
+--      Core.Data.Scan.Start()      a scan now, whatever the time says (the bar, pressed), a pause ended; false while
+--                                  one runs
+--      Core.Data.Scan.Pause(on)    the player's pause (the bar's button): no request while it holds, and the rows of a
+--                                  scan underway wait where they are; kept for the account, through logouts, until
+--                                  Pause(false). A scan paused halfway is lost when the house closes. False: no change
+--      Core.Data.Scan.Cancel()     the scan underway dropped, nothing of it kept (the bar's X); false when none runs
 -------------------------------------------------------------------------------
 local Data, Steps = Core.Data, Core.Steps
 local Scan = {}
@@ -85,6 +90,10 @@ local house           -- the part of the auction house that is open
 local open = false
 local openedAt, askedAt, finished = 0, 0, false
 local last            -- the last scan kept in this session, for what went since: { at, house, found }
+local holding = false -- the job waits in the player's pause (Steps.Hold)
+local keeping = false -- the job keeps what it read: too late to cancel
+local quiet = false   -- a scan cancelled: the game's answers are not read until our own next request
+local PAUSED = "auctionScanPaused" -- the pause, in Core's store of the account (Core.Store)
 
 local function Now()
     return Core.Ask(rawget(_G, "GetServerTime")) or 0
@@ -105,6 +114,16 @@ end
 
 local function Remember(known)
     state.kept, state.total, state.items = known.kept, known.rows, known.items
+end
+
+-- Between two pieces of reading: while the player's pause holds, the job waits here, served in no frame, until the
+-- player goes on (Scan.Pause) or the house closes (Closed stops it). Closed already (a fight held the job back), it
+-- reads on: the list is gone, and the scan is lost.
+local function Pausing()
+    if not (state.paused and open) then return end
+    holding = true
+    Steps.Hold()
+    holding = false
 end
 
 -------------------------------------------------------------------------------
@@ -176,6 +195,7 @@ end
 local function Later(scan)
     local deadline = GetTime() + Scan.ITEMS
     while #scan.later > 0 and GetTime() < deadline do
+        Pausing()
         local asks = 0
         for item in pairs(scan.wanted) do
             if asks >= Scan.ASKS then break end
@@ -282,6 +302,7 @@ end
 -- Kept in one go at the end: the day's string made anew, what this scan saw in place of its lines, the
 -- items only an earlier scan of the day saw as they were; each item's newest point; the scan whole.
 local function Keep(scan, home, day, now)
+    keeping = true
     local lines, items = {}, 0
     local recent = Core.ForGame(Scan.RECENT) and {} or nil
     local rhythm = scan.marks and home.rhythm or nil
@@ -359,21 +380,23 @@ local function Read(home, day, now)
         marks = Core.ForGame(Scan.RHYTHM), mine = {}, onSale = 0, onSaleCount = 0 }
     local index = 0
     while index < state.rows do
-        if not Row(scan, index) then return end
-        index = index + 1
         if index % ROWS == 0 then
             state.read = index
+            Pausing()
             Steps.Check()
             local rows = C_AuctionHouse.GetNumReplicateItems()
             if rows < index then return end
             state.rows = rows
         end
+        if not Row(scan, index) then return end
+        index = index + 1
     end
     state.read = index
     if Later(scan) then Keep(scan, home, day, now) end
 end
 
 local function Done()
+    keeping = false
     state.outcome = finished and "kept" or "lost"
     Phase("waiting")
 end
@@ -382,13 +405,13 @@ end
 --  The request and the answer
 -------------------------------------------------------------------------------
 local function Answered()
-    if not open or Steps.Running(JOB) then return end
+    if not open or quiet or Steps.Running(JOB) then return end
     local now, rows = Now(), C_AuctionHouse.GetNumReplicateItems()
     if rows <= 0 then return end
     if rows == house.rows and now - (tonumber(house.at) or 0) < SAME then return end
     house.at = now
     state.read, state.rows, state.outcome = 0, rows, nil
-    finished = false
+    finished, keeping = false, false
     Wait(now, Scan.INTERVAL)
     Phase("reading")
     Steps.Run({ name = JOB, priority = true, label = "data: auction scan", done = Done }, Read, house, math.floor(now / 86400), now)
@@ -401,8 +424,9 @@ local function Tick()
     TickSoon()
     local now = Now()
     if state.phase == "waiting" then
-        if now >= state.next and now >= openedAt + Scan.SETTLE and C_AuctionHouse.IsThrottledMessageSystemReady() then
-            askedAt, state.outcome = now, nil
+        if not state.paused and now >= state.next and now >= openedAt + Scan.SETTLE
+            and C_AuctionHouse.IsThrottledMessageSystemReady() then
+            askedAt, state.outcome, quiet = now, nil, false
             Phase("asking")
             C_AuctionHouse.ReplicateItems()
         end
@@ -422,7 +446,8 @@ local function Opened()
     local now = Now()
     house = Prices.House(Core.Ask(rawget(_G, "UnitExists"), "npc") and "npc" or "player")
     if not house then return end
-    open, openedAt = true, now
+    open, openedAt, quiet = true, now, false
+    state.paused = Core.Store(Core.name)[PAUSED] == true
     if Core.ForGame(Scan.WHOLE) and not scans then
         local addons = rawget(_G, "C_AddOns")
         Core.Ask(addons and addons.LoadAddOn, "SaneUI_AuctionScans") -- its file read now: a moment that grows with it
@@ -436,7 +461,8 @@ local function Opened()
 end
 
 local function Closed()
-    open, last = false, nil
+    if holding then Steps.Stop(JOB) end -- the rows go with the window: nothing of a paused scan is kept
+    open, last, holding = false, nil, false
     Prices.Open(nil)
     Phase("closed")
 end
@@ -456,12 +482,42 @@ function Scan.OnChange(fn)
     listeners[#listeners + 1] = fn
 end
 
--- The next look asks, whatever the time says. The server still decides: inside its 15 minutes it stays silent,
--- and that is told as any refusal.
+-- The next look asks, whatever the time says, and a pause ends. The server still decides: inside its 15 minutes it
+-- stays silent, and that is told as any refusal.
 function Scan.Start()
     if state.phase ~= "waiting" then return false end
+    Scan.Pause(false)
     state.next = Now()
     Tick()
+    return true
+end
+
+-- The player's pause, kept in Core's store of the account so a logout or /reload keeps it: no request while it
+-- holds, a scan underway waits at its next piece (the gear's wait too), and one the server answers waits before
+-- its first row. Going on: the scan read on from where it stood, the next request at its time.
+function Scan.Pause(on)
+    on = on and true or false
+    if (state.paused == true) == on then return false end
+    state.paused = on
+    Core.Store(Core.name)[PAUSED] = on or nil
+    if not on then Steps.Release(JOB) end
+    Changed()
+    return true
+end
+
+-- The player's X: the scan underway dropped, nothing of it kept, and the game's answer to it, which it tells again
+-- as item data comes in, not read again; the next comes at its time. One asked for and not answered yet: the
+-- server may still answer, and its 15 minutes would count from that answer, so the next waits 16 minutes from the
+-- request. False when no scan runs, or what it read is being kept already (a moment).
+function Scan.Cancel()
+    if state.phase == "asking" then
+        Wait(askedAt, math.max(Scan.INTERVAL, (tonumber(house.at) or 0) + Scan.INTERVAL - askedAt))
+    elseif state.phase ~= "reading" or keeping then
+        return false
+    end
+    Steps.Stop(JOB)
+    holding, quiet, state.outcome = false, true, "cancelled"
+    Phase("waiting")
     return true
 end
 

@@ -19,6 +19,8 @@ local Core = SaneUI.Core
 --  label = "..." }, fn, ...). A job with priority is served first in every frame; done(problem) is told when
 --  it ended, after its last step (problem nil) or an error (its text); error(problem) only after an error;
 --  label is what a failure is noted under (else "data job <name>"). A job that was stopped is told nothing.
+--  In a job, Core.Steps.Hold() waits, served no more, until job:Release() (or Core.Steps.Release("walk")):
+--  a pause, with no OnUpdate while every job waits so.
 --
 --  A job never yields inside pcall, xpcall or Core.Safe: Lua 5.1 cannot, the yield fails into the pcall,
 --  and the job runs on past its budget without a word. coroutine.resume is each job's own guard: an error
@@ -66,8 +68,16 @@ local function Sleep()
     frame:SetScript("OnUpdate", nil)
 end
 
+-- A job that wants its turns: one that does not wait in Hold.
+local function Busy()
+    for _, job in ipairs(jobs) do
+        if not job.held then return true end
+    end
+    return false
+end
+
 local function Wake()
-    if #jobs > 0 and not Core.Restricted() then
+    if Busy() and not Core.Restricted() then
         if not stepping then stepping = Core.Guard("data", Step) end
         frame:SetScript("OnUpdate", stepping)
         frame:Show()
@@ -83,7 +93,7 @@ local function Remove(job)
         end
     end
     if named[job.name] == job then named[job.name] = nil end
-    if #jobs == 0 then Sleep() end
+    if not Busy() then Sleep() end
 end
 
 -- A job ended by its last step (problem nil) or an error: gone, and told, outside its coroutine (Check
@@ -133,9 +143,9 @@ local function Serve(job)
     if debugprofilestop() - started >= limit then spent = true end
 end
 
--- Not served in this frame yet, and not a job that waits for a frame of its own after another one worked.
+-- Not served in this frame yet, not held, and not a job that waits for a frame of its own after another one worked.
 local function Due(job)
-    return job.round ~= round and not (job.fresh and worked)
+    return not job.held and job.round ~= round and not (job.fresh and worked)
 end
 
 function Step()
@@ -166,6 +176,7 @@ function Step()
         served = served + 1
         if Due(job) then Serve(job) end
     end
+    if not Busy() then Sleep() end -- every job left holds: no OnUpdate until one is released
 end
 
 -- Starts a job: fn(...) as a coroutine; name, or the options (above). Gives its handle; a job of the same
@@ -197,9 +208,22 @@ function Job:Running()
     return not self.over
 end
 
+-- A job waiting in Hold goes on, from the next frame. False if it does not wait so, or is over.
+function Job:Release()
+    if self.over or not self.held then return false end
+    self.held = nil
+    Wake()
+    return true
+end
+
 function Steps.Stop(name)
     local job = named[name]
     return job ~= nil and job:Stop()
+end
+
+function Steps.Release(name)
+    local job = named[name]
+    return job ~= nil and job:Release()
 end
 
 -- In a job, between pieces of work: yields when the frame's time is spent, else returns at once.
@@ -235,6 +259,14 @@ end
 -- it goes on in the next one at the earliest.
 function Steps.Wait()
     if not current or coroutine.running() ~= current.thread then return end
+    coroutine.yield()
+end
+
+-- In a job: waits, served in no frame, until it is released (Job:Release, Steps.Release); stopped meanwhile, it
+-- never goes on. For a pause the player asked for (the auction scan's): while every job waits so, no OnUpdate runs.
+function Steps.Hold()
+    if not current or coroutine.running() ~= current.thread then return end
+    if not current.over then current.held = true end
     coroutine.yield()
 end
 

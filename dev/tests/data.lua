@@ -278,6 +278,35 @@ do
     check(cheap == 2 and not frame:IsShown(), "also with the frame's time far from spent at that Check")
 end
 
+-- A job that holds waits, served in no frame, with no OnUpdate while every job waits so; released, it goes on
+do
+    local held = 0
+    local holdJob = Steps.Run("held", function()
+        held = 1
+        Steps.Hold()
+        held = 2
+        Steps.Hold()
+        held = 3
+    end)
+    Frame()
+    check(held == 1 and Steps.Running("held") and holdJob:Running() and not frame:IsShown() and not frame._scripts.OnUpdate,
+        "a job holds: still running, and the scheduler rests while it waits")
+    for _ = 1, 5 do Frame() end
+    check(held == 1, "served in no frame")
+    check(Steps.Release("held") == true and frame:IsShown() and Steps.Release("held") == false,
+        "released by its name: the scheduler goes on; released once")
+    Frame()
+    check(held == 2 and not frame:IsShown(), "it goes on, to its next hold")
+    local beside = { n = 0 }
+    Steps.Run("beside", Worker(5, 0.1, beside))
+    check(frame:IsShown(), "another job started beside it: the scheduler goes on for that one")
+    Frame()
+    check(beside.finished and held == 2 and not frame:IsShown(), "that one finishes, the held one still waits, and the scheduler rests again")
+    check(holdJob:Stop() == true and holdJob:Release() == false and not Steps.Running("held"), "a held job stopped: gone, nothing to release")
+    for _ = 1, 3 do Frame() end
+    check(held == 2, "and it never goes on")
+end
+
 -- Told when it ends: done(problem), and error(problem) after an error, outside its coroutine, after the report
 local ended = {}
 Steps.Run({ name = "ends", done = function(problem) ended.done, ended.inside = problem or "none", coroutine.running() end },
@@ -2252,6 +2281,96 @@ do
     W.Wait(Scan.ANSWER + 1)
     bar._scripts.OnEnter(bar)
     bar._scripts.OnLeave(bar)
+
+    -- Paused, resumed, cancelled: the game's stopwatch buttons and its X at the bar's right end
+    do
+        local hold, cancel
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == bar and widget._kind == "Button" then
+                if widget._template == "UIPanelCloseButtonNoScripts" then cancel = widget else hold = widget end
+            end
+        end
+        local store, JOB = Core.Store(Core.name), "Full auction scan"
+        local function Days() return saved().days[Today()] end
+        check(hold and cancel and hold:IsShown() and not cancel:IsShown() and hold.art:find("PauseButton"),
+            "beside the bar's words: the pause; no X while no scan runs")
+        rows = {}
+        for index = 1, 300 do rows[index] = Plain(index + 100, 1, 10, "Hal") end
+        bar._scripts.OnClick(bar)
+        check(state.phase == "asking" and cancel:IsShown(), "a scan asked for: the X is there")
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        local kept, asked = Days(), asks
+        rowCost = 1
+        Frame()
+        check(state.phase == "reading" and state.read > 0 and state.read < 300, "read in steps")
+        hold._scripts.OnClick(hold)
+        check(state.paused and store.auctionScanPaused == true and hold.art:find("NextPage"),
+            "the pause pressed: paused, kept in the account's store, and the button turns to play")
+        Frame()
+        local read = state.read
+        for _ = 1, 10 do Frame() end
+        check(state.read == read and read < 300 and Steps.Running(JOB) and state.phase == "reading",
+            "the reading waits where it stood, the scan still underway")
+        W.Wait(Scan.TICK)
+        check(select(2, Strip()) == ("Full scan paused: %d of 300 auctions"):format(read), "the bar says so: " .. select(2, Strip()))
+        W.Fire("AUCTION_HOUSE_CLOSED")
+        check(not Steps.Running(JOB) and Days() == kept, "the house closes: the paused scan is dropped, nothing of it kept")
+        state.paused = nil -- a new session: only the store remembers
+        W.Fire("AUCTION_HOUSE_SHOW")
+        check(state.paused == true and hold.art:find("NextPage"), "opened again, after a logout too: still paused")
+        W.Wait(Scan.INTERVAL * 2)
+        check(asks == asked and state.phase == "waiting" and select(2, Strip()):find("^Full scans paused%. The last finished at "),
+            "no request while paused, however long: " .. select(2, Strip()))
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        Frame()
+        check(state.phase == "reading" and state.read == 0 and Steps.Running(JOB), "a scan another addon asked for waits before its first row")
+        hold._scripts.OnClick(hold)
+        check(not state.paused and store.auctionScanPaused == nil and hold.art:find("PauseButton"), "resumed: the pause forgotten")
+        Read()
+        check(state.outcome == "kept" and state.total == 300 and Days() ~= kept, "the scan reads on and is kept")
+
+        -- The X while it reads: dropped, and the game telling of it again is not read
+        rows[301] = Plain(500, 1, 10, "Hal")
+        kept = Days()
+        bar._scripts.OnClick(bar)
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        Frame()
+        local due = state.next
+        check(state.phase == "reading" and state.read < 301, "the next scan reads")
+        cancel._scripts.OnClick(cancel)
+        check(state.phase == "waiting" and state.outcome == "cancelled" and not Steps.Running(JOB) and not cancel:IsShown(),
+            "the X pressed: the scan dropped, the X gone")
+        check(Days() == kept and state.next == due, "nothing of it kept; the next comes at its time")
+        check(select(2, Strip()):find("^The full scan was cancelled%. Next in 1[56]:%d%d$"), "the bar says so: " .. select(2, Strip()))
+        check(Scan.Cancel() == false, "nothing to cancel any more")
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        check(state.phase == "waiting", "the game tells of that scan again: not read")
+
+        -- The X while it waits for the server: its answer is not read either; the next after a whole interval
+        asked = asks
+        bar._scripts.OnClick(bar)
+        local at = GetServerTime()
+        cancel._scripts.OnClick(cancel)
+        check(asks == asked + 1 and state.phase == "waiting" and state.outcome == "cancelled" and state.next == at + Scan.INTERVAL,
+            "cancelled while the server is asked: the next 16 minutes from the request")
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        check(state.phase == "waiting", "its late answer is not read")
+        W.Wait(Scan.INTERVAL + Scan.TICK)
+        check(asks == asked + 2 and state.phase == "asking", "the next request at its time")
+        W.Fire("REPLICATE_ITEM_LIST_UPDATE")
+        Read()
+        check(state.outcome == "kept", "and its answer read again")
+
+        -- Paused while it waits; the bar pressed then resumes and scans now
+        hold._scripts.OnClick(hold)
+        asked = asks
+        bar._scripts.OnClick(bar)
+        check(not state.paused and store.auctionScanPaused == nil and asks == asked + 1, "paused, the bar pressed: resumed, and a scan asked for now")
+        W.Wait(Scan.ANSWER + 1)
+        hold._scripts.OnEnter(hold)
+        hold._scripts.OnLeave(hold)
+        rowCost = 0
+    end
 
     -- Retail keeps no scan whole; a price grows old
     Scan.WHOLE.forever, Scan.RECENT.forever = nil, nil

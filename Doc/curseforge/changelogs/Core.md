@@ -3,6 +3,11 @@
 What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.3 (2026-11-17)
+
+- The auction house's full scan line has a pause and resume button and an X: pause the scans (they stay paused on
+  your account, after a logout too, until you resume) or cancel the one running, nothing of it kept.
+
 ## 0.3.2 (2026-11-15)
 
 - Full screens open with a left click on their screen edge or corner, not when the mouse merely reaches it. Each

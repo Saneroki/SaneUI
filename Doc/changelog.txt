@@ -7,6 +7,12 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Sane UI 0.3.3 (2026-11-17)
+--------------------------
+- The auction house's full scan line has a pause and resume
+  button and an X: pause the scans (they stay paused, after a
+  logout too, until you resume) or cancel the one running.
+
 Navigation 0.3.5 (2026-11-16)
 -----------------------------
 - Share your map pin: right click it for your party, raid,
