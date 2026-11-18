@@ -4,11 +4,11 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 `saneui publish` (`dev/tools/release`); their changelog is this project's own,
 [changelogs/Combat.md](changelogs/Combat.md).
 
-**The project was *SaneUI Nameplates*** (0.3.1 alpha, 2026-11-16) until the nameplates became a part of Combat
-(Saneroki, 2026-11-18: "Rename it SaneUI Combat"). Its first upload as Combat: 0.3.2 alpha, 2026-11-18 (with
-SaneUI Core 0.3.3), to the same project id, so players who had SaneUI Nameplates get it; in
-`~/.config/saneui/curseforge.json` its key is `Combat`, named *SaneUI Combat*. On CurseForge the project itself is
-renamed by hand: Name, Summary, Description, Avatar, Banner below.
+**A project of its own since 2026-11-18:** *SaneUI Combat*, id 1814318, slug `saneui-combat` (Saneroki made it
+when the nameplates became a part of Combat; the project *SaneUI Nameplates*, id 1809723, 0.3.1 alpha of
+2026-11-16, he deletes). Its first upload: 0.3.2 alpha, 2026-11-18 (with SaneUI Core 0.3.3), file 9681843. In
+`~/.config/saneui/curseforge.json` its key is `Combat`. A first upload of 0.3.2 had gone to the old project (file
+9681798) before the new one was known; it goes with that project.
 
 | Field | Value |
 | --- | --- |
