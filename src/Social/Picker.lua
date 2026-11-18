@@ -23,13 +23,15 @@ local _, ns = ...
 --  A press on anything but the line takes its cursor, and the game puts an
 --  empty line without the cursor to rest (ShouldDeactivateChatOnEditFocusLost),
 --  the smiley with it (Saneroki, 2026-11-18: "While the input field is empty
---  clicking the smiley will close the input"). So the smiley takes no click:
---  it only shows itself, lit under the mouse with its tooltip, and the line
---  reaches over it (its hit rectangle, Input.lua): a press there is the
---  line's, which keeps its cursor, and the line's mouse up over the smiley
---  opens the list. The list belongs to the window; a mark chosen goes into the
---  line it was opened for (listFor), opened again where choosing it took the
---  cursor from an empty line.
+--  clicking the smiley will close the input"). Which the game does first, the
+--  smiley's press or the line's rest, is the game's: so a line put to rest
+--  while the mouse is over the smiley leaves the smiley there for its click
+--  (it goes once the mouse leaves it, the line still at rest), and its click
+--  opens the line it belonged to again (last) before the list. The list
+--  belongs to the window; a mark chosen goes into the line it was opened for
+--  (listFor), opened again where choosing it took the cursor from an empty
+--  line. (A smiley that took no click, the line reaching over it, never got
+--  the mouse in the game: the line is drawn above it.)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout = ns.Layout
@@ -49,9 +51,9 @@ local ZONE = Enum and Enum.PermanentChatChannelType and Enum.PermanentChatChanne
 local button   -- the smiley
 local holder   -- the window it stands in: the list's owner
 local editBox  -- the line it belongs to now
+local last     -- the line it belonged to last: opened again for its click
+local over     -- the mouse is over the smiley (its OnEnter, OnLeave)
 local listFor  -- the line the list was opened for
-local hovered  -- the mouse is over the smiley
-local heard = setmetatable({}, { __mode = "k" }) -- [line] = true: its mouse up is heard
 
 -- Whether what is written in that line can show the marks: not in one of the game's public channels.
 function Picker.Marks(line)
@@ -136,17 +138,13 @@ local function Fill(_, root)
     for _, token in ipairs(Picker.EMOTES) do root:CreateButton(Picker.Command(token), ns.Guard(Do), token) end
 end
 
--- The list, the window's, for the line the smiley belongs to.
+-- The list, the window's (the smiley may go with an empty line), for the line the smiley belongs to, or belonged to
+-- before its press put it to rest: open again.
 function Picker.Open()
-    listFor = editBox
-    Again(editBox)
+    local line = editBox or last
+    listFor = line
+    Again(line)
     MenuUtil.CreateContextMenu(holder or button, ns.Guard(Fill))
-end
-
--- The line's mouse up: over the smiley, the list (a press there was the line's, Picker.Take).
-local function Up(line, mouse)
-    if mouse ~= "LeftButton" or line ~= editBox or not hovered or not (button and button:IsShown()) then return end
-    Picker.Open()
 end
 
 -- The smiley, made with our window: at the line's right end, before the grip, on its first line's
@@ -166,27 +164,24 @@ function Picker.Take(frame, area)
         button["Set" .. kind .. "Texture"](button, art)
     end
     button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    -- Only the mouse's coming: a click goes through to the line, which reaches over the smiley. A client without
-    -- that way clicks the smiley itself.
-    if button.SetMouseClickEnabled and button.SetMouseMotionEnabled then
-        button:SetMouseMotionEnabled(true)
-        button:SetMouseClickEnabled(false)
-    end
     button:SetScript("OnClick", function() ns.Guarded(Picker.Open) end)
-    button:HookScript("OnEnter", ns.Guard(function() hovered = true end))
-    button:HookScript("OnLeave", ns.Guard(function() hovered = false end))
     Core.Tip(button, ns.TEXT.picker, nil, "ANCHOR_TOP")
+    -- Left there for a click while its line rests (Picker.Show): the mouse gone without one, it goes too.
+    button:HookScript("OnEnter", ns.Guard(function() over = true end))
+    button:HookScript("OnLeave", ns.Guard(function(self)
+        over = false
+        if not editBox then self:Hide() end
+    end))
     button:Hide()
 end
 
--- The line is there to write in (line), or gone (nil).
-function Picker.Show(line)
+-- The line is there to write in (line), or gone (nil; done: for good, our window going).
+function Picker.Show(line, done)
     editBox = line
-    if line and not heard[line] then
-        heard[line] = true
-        line:HookScript("OnMouseUp", function(self, mouse) ns.Guarded(Up, self, mouse) end)
-    end
+    if line then last = line end
     if not button then return end
-    if line == nil then hovered = false end
+    -- Gone while the mouse is over the smiley: put to rest by its press (before or after its click, as the game
+    -- has it); the smiley stays for its click (Open).
+    if line == nil and not done and (over or Core.Plain(button:IsMouseOver()) == true) then return end
     button:SetShown(line ~= nil)
 end

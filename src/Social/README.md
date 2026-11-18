@@ -186,8 +186,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   game's eight raid marks (star to skull): a click puts one into the line where the cursor is, and once
   sent it shows as its icon in everybody's chat. These are the only icons the game's chat draws from what
   a player writes; it shows none in its public channels (General, Trade, ...), so while you write in one
-  the list says so instead (on an empty line too: a click on the smiley is the line's, so the line stays open;
-  Saneroki, 2026-11-18: "While the input field is empty clicking the smiley will close the input"). Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
+  the list says so instead (on an empty line too: the click opens the line again; Saneroki, 2026-11-18: "While the
+  input field is empty clicking the smiley will close the input"). Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
   `/welcome`, `/cheer`, `/applaud`, `/congratulate`, `/laugh`, `/dance`, `/bow`, `/hug`): a click does it
   at once, at your target if you have one, as typing it would. While chat is locked down (a fight, a
   dungeon) the list offers no emotes and says so: the game refuses them to an addon then.
@@ -539,12 +539,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   (`Interface\ChatFrame\UI-ChatIcon-Chat-Up` / `-Down`).
 - **The smiley** (`Picker.lua`) is a child of the window at its lower right, left of the grip
   (`Layout.GRIP_ROOM`, `Layout.FACE`; the line ends before it, `Layout.INPUT_RIGHT`), on the first line's
-  height, shown by `Input` whenever the line is dressed and hidden when it rests, closes or is given back. It takes
-  only the mouse's coming (`SetMouseMotionEnabled`, not `SetMouseClickEnabled`): its light and tooltip, `hovered`.
-  The line's hit rectangle reaches over it (`Input` `Dress`: right inset `-(INPUT_RIGHT - GRIP_ROOM)`), so a press
-  there is the line's, which keeps its cursor (a press elsewhere takes it, and the game puts an empty line to rest,
-  `ShouldDeactivateChatOnEditFocusLost`); the line's `OnMouseUp` (hooked once per line, `Picker.Show`) over the
-  smiley opens the list (`Picker.Open`). A client without those two ways clicks the smiley itself (`OnClick`).
+  height, shown by `Input` whenever the line is dressed and hidden when it rests, closes or is given back. Its press
+  takes an empty line's cursor and the game puts that line to rest (`ShouldDeactivateChatOnEditFocusLost`), before or
+  after the click as the game has it: so `Picker.Show(nil)` leaves the smiley while the mouse is over it
+  (`IsMouseOver`), its click opens the line it belonged to (`last`) again (`ChatFrameUtil.ActivateChat`) and then the
+  list, and the mouse leaving it while no line is there takes it away (`OnLeave`). The line must not reach over it:
+  once the game gives the line the cursor it draws it above everything (`DIALOG`), and the smiley would never get
+  the mouse.
   Its list is the game's menu (`MenuUtil.CreateContextMenu`): a title, the marks, a divider, a title, the
   emotes. The marks are one line of the menu (`CreateFrame` with an initializer), eight buttons attached
   to it with `MenuTemplates.AttachBasicButton`, each with the game's mark art
@@ -959,8 +960,9 @@ style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.
 - 2026-11-18 — Going through the onboarding again (Saneroki: "the changes we made during that prompt including the
   fix to the smiley never worked"): a right click on a name, a message or a whisper's row opens the game's menu of
   that player owned by Social's part (`PlayerMenu.Open`, by `UnitPopup_OpenMenu`; Forever's game code made its hidden
-  chat frame the owner, and its menu manager closed the menu as it opened); the smiley takes no click, the line
-  reaching over it takes the press and keeps its cursor (`Picker.lua`, `Input.lua`'s hit rectangle). The full
+  chat frame the owner, and its menu manager closed the menu as it opened); the smiley stays under the mouse for its
+  click whether the game puts the empty line to rest before it or after, and opens the line again (`Picker.lua`;
+  first tried: a smiley taking no click under a line reaching over it, which the game draws above it). The full
   screen's first layout: the conversations on two thirds, the friends list on the third at the right
   (`Layout.SHARES` 2 and 1, `Layout.Board` without the guild window); the guild window only when put there (the
   dropdown *Windows*, the setup's tick: sharing the friends list's room); the setup's drawn full screen so.

@@ -840,17 +840,9 @@ rawset(_G, "MenuTemplates", { AttachBasicButton = function(parent) return Create
 Menu.GetManager = function() return { CloseMenu = function() closed = closed + 1 end } end
 MenuUtil.HookTooltipScripts = function() end
 function editBox:Insert(text) typed = text end
--- A click on the smiley as the game delivers it: the smiley takes only the mouse's coming, the line reaches over it
--- and takes the press, so the line keeps its cursor; the line's mouse up over the smiley opens the list.
-check(smiley._mouse == false and smiley._motion == true and editBox.hit and editBox.hit[1] == 0
-    and editBox.hit[2] == -(Layout.INPUT_RIGHT - Layout.GRIP_ROOM),
-    "the smiley takes no click, only the mouse's coming; the line reaches over it, so a press there is the line's")
-function W.Smile() -- (a field: the main chunk is at the game's limit of locals)
-    smiley._scripts.OnEnter(smiley)
-    editBox._scripts.OnMouseUp(editBox, "LeftButton")
-    smiley._scripts.OnLeave(smiley)
-end
-W.Smile()
+-- The smiley takes its own click: the line, drawn above everything once the game gives it the cursor, ends before it.
+check(smiley._mouse ~= false and editBox.hit and editBox.hit[2] == 0, "the smiley a button of its own, the line ending before it")
+smiley._scripts.OnClick(smiley)
 menu = W.menus[#W.menus]
 check(menu[1].title == "Icons" and menu[2].disabled and menu[2].text:find("public") and menu[3].title == "Emotes" and #menu == 3 + #ns.Picker.EMOTES,
     "writing in the game's public channel (Trade), where the game shows no marks, the list offers none; it has the emotes")
@@ -858,7 +850,7 @@ check(menu[4].text == "/hallo" and menu[5].text == "/wave", "each emote by its c
 menu[4].fn(menu[4].data)
 check(emoted[1] == "HELLO", "a click does the emote, as the game's chat menu does")
 editBox.target = 1
-W.Smile()
+smiley._scripts.OnClick(smiley)
 menu = W.menus[#W.menus]
 local row = CreateFrame("Frame")
 check(menu[2].frame and #menu[2].inits == 1, "anywhere else the marks stand in one row")
@@ -871,7 +863,7 @@ check(typed == "{rt8}" and closed == 1, "a mark goes into the line as the game w
 editBox.target = 2
 ;(function()
     W.locked = true
-    W.Smile()
+    smiley._scripts.OnClick(smiley)
     local list = W.menus[#W.menus]
     W.locked = false
     check(list[3].title == "Emotes" and list[4].disabled and list[4].text:find("locked down") and #list == 4,
@@ -879,29 +871,51 @@ editBox.target = 2
 end)()
 
 -- An empty line: a press anywhere but on the line takes its cursor, and the game puts an empty line to rest
--- (Saneroki, 2026-11-18: "While the input field is empty clicking the smiley will close the input"). The press on the
--- smiley is the line's: it keeps its cursor.
+-- (Saneroki, 2026-11-18: "While the input field is empty clicking the smiley will close the input"). Which comes first,
+-- the smiley's click or the line's rest, is the game's: both orders end with the list and the line open.
 ;(function()
+    local function mark(list, index)
+        local marksRow = CreateFrame("Frame")
+        list[2].inits[1](marksRow, nil, "the menu")
+        local marks = {}
+        for _, widget in ipairs(W.frames) do if widget._parent == marksRow then marks[#marks + 1] = widget end end
+        typed = nil
+        marks[index]._scripts.OnClick(marks[index])
+    end
     open()
     editBox:SetText("")
     editBox.target = 1 -- a channel where the marks show
     check(smiley:IsShown() and editBox:HasFocus(), "the line open and empty, the smiley beside it")
-    W.Smile()
+    smiley._scripts.OnEnter(smiley) -- the mouse comes over it (the game tells; IsMouseOver says so too)
+    smiley._mouseOver = true
+    leave() -- the press takes the cursor before the click
+    check(smiley:IsShown() and not editBox:HasFocus(), "the press puts the empty line to rest first: the smiley under the mouse stays for its click")
+    smiley._scripts.OnClick(smiley)
     local list = W.menus[#W.menus]
     check(list.owner == window and editBox:HasFocus() and editBox:IsShown() and smiley:IsShown(),
-        "a click on the smiley opens its list, the window's, and the empty line stays open with its cursor")
-    leave() -- the click on the list takes the cursor: the empty line rests
-    local marksRow = CreateFrame("Frame")
-    list[2].inits[1](marksRow, nil, "the menu")
-    local marks = {}
-    for _, widget in ipairs(W.frames) do if widget._parent == marksRow then marks[#marks + 1] = widget end end
-    typed = nil
-    marks[3]._scripts.OnClick(marks[3])
+        "its click opens the list, the window's, and the line again with its cursor")
+    leave() -- the click on the list takes the cursor again: the empty line rests
+    mark(list, 3)
     check(typed == "{rt3}" and editBox:HasFocus() and editBox:IsShown(), "a mark goes into that line, opened again for it")
+    editBox:SetText("")
     local count = #W.menus
-    editBox._scripts.OnMouseUp(editBox, "LeftButton")
-    editBox._scripts.OnMouseUp(editBox, "RightButton")
-    check(#W.menus == count, "a click elsewhere in the line, or a right click, opens nothing")
+    smiley._scripts.OnClick(smiley) -- the click before the line's rest
+    leave()
+    list = W.menus[#W.menus]
+    check(#W.menus == count + 1 and not list.closed and list.owner == window and smiley:IsShown(),
+        "the other order, the click first and the rest after: the list stays open, the smiley with it")
+    mark(list, 5)
+    check(typed == "{rt5}" and editBox:HasFocus() and editBox:IsShown(), "and a mark opens the line again for it")
+    editBox:SetText("")
+    leave()
+    check(smiley:IsShown(), "the line at rest, the mouse still over the smiley: it stays")
+    smiley._mouseOver = false
+    smiley._scripts.OnLeave(smiley)
+    check(not smiley:IsShown(), "the mouse gone from it without a click: it goes too")
+    open()
+    check(smiley:IsShown(), "the line open again: the smiley is back")
+    leave()
+    check(not smiley:IsShown(), "the line put to rest with the mouse elsewhere: the smiley goes with it")
     editBox.target = 2
     close()
 end)()
