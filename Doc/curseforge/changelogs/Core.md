@@ -3,7 +3,7 @@
 What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
-## 0.3.3 (2026-11-17)
+## 0.3.3 (2026-11-18)
 
 - The auction house's full scan line has a pause and resume button and an X: pause the scans (they stay paused on
   your account, after a logout too, until you resume) or cancel the one running, nothing of it kept.
@@ -18,6 +18,12 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   screen window's X (a window of its own, and back onto the full screen), and the *Classic windows* dropdown, which
   picks which one opens by default and works right there. `/sane setup` starts the whole onboarding again, every
   addon's setup from its first step.
+- A setup steps aside while Edit Mode is open and comes back at the same page when you leave it, and a setup can open
+  Edit Mode for you (SaneUI Combat's party and raid frames, placed and sized there by their corners and sides).
+- The *Classic windows* dropdown also offers SaneUI Combat's unit frames, party and raid frames and nameplates: each
+  the game's own or Sane UI's, one tick.
+- An old `SaneUI_Nameplates` folder left in your AddOns stays off, and Sane UI says once to delete it: the nameplates
+  are part of SaneUI Combat now.
 
 ## 0.3.2 (2026-11-15)
 
