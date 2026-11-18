@@ -3,6 +3,15 @@
 What changed in each version of SaneUI Combat (SaneUI Nameplates until 2026-11-18), newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.3 (2026-11-18)
+
+DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.
+
+- Your unit frames in Edit Mode: click a frame for its width and what it shows (level, the level hidden at 60, raid
+  marker, item level, name, health, health in percent, your resource's current, maximum and percent), each frame
+  its own. While Edit Mode is open, every frame shows a preview: your target and its target, your focus, your pet,
+  your breath and fatigue, and as a druid both your powers.
+
 ## 0.3.2 (2026-11-18)
 
 - SaneUI Nameplates is now **SaneUI Combat**: the nameplates, your unit frames, one frame for your party and raid,

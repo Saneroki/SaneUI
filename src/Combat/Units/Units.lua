@@ -33,8 +33,18 @@ local _, ns = ...
 --  frame's unit's events (RegisterUnitEvent), and while the row shows, reads
 --  the row's unit again every Units.POLL seconds (the game sends no events of
 --  a target's target; it reads its own so). Each frame is a window of Core's
---  without a frame (Core.Window): placed in the game's Edit Mode, where a frame
---  or row whose unit is not there shows as a sample (your own, named for it).
+--  without a frame (Core.Window): placed in the game's Edit Mode, where a click
+--  on its box opens its dialog (Core's Selection.lua) with its width and what it
+--  shows, a tick each (Saneroki, 2026-11-18: "options there where you can
+--  define the width of the unit frames and where you can define in edit mode
+--  what each frame includes"; each frame its own: Settings, face.show,
+--  Text.lua), and every frame and row shows a made-up preview, a real unit
+--  there or not ("show how the frames look as preview with target of target,
+--  pets, fatigue, breath and if you are a druid show 2 class resource
+--  previews"; Preview): a foe of yours a level above you, elite, a skull on it,
+--  its target you; a player as your focus, with an item level, its target a
+--  creature; your own frame with your pet, your cast, your breath and fatigue,
+--  and your two powers where you may have two (a druid's mana and energy).
 --
 --  The game's own frames go out of sight while ours show, nothing of theirs
 --  written: your target's and focus's frame stand in a hidden frame of ours
@@ -83,7 +93,7 @@ Units.ICON = 16  -- an aura's icon over the name, square
 -- whether its power shows under it. Your own frame's bars: the game's frames that go deaf for them, each with its setting and
 -- what it no longer hears.
 Units.KINDS = {
-    { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts", noName = true,
+    { unit = "player", option = "unitPlayer", game = "PlayerFrame", away = "parts",
       place = "playerPlace", first = { point = "TOP", relative = "BOTTOM", x = -190, y = 269 },
       row = { unit = "pet", option = "unitPet", game = "PetFrame", away = "fade", power = true },
       bars = { { option = "unitCast", game = "PlayerCastingBarFrame", away = "deaf", events = ns.UnitCast.GAME },
@@ -121,16 +131,56 @@ local function Threat(face)
     ns.UnitBar.Glow(face, tanking)
 end
 
--- The row's unit as the game says it now, while the row shows; a sample in Edit Mode where it is not there.
+-- What Edit Mode shows on each frame and its row, made up (Units.Preview): a share of health of the most, the powers
+-- (each { token, share }; the player's own: its power, and as a druid or where it may have two, mana first), the
+-- level (above: that much over yours; mine: yours), the rank, the raid marker, a player's item level and class, and the
+-- row's (its name: your own, a foe, your pet's; a pet's power).
+Units.PREVIEW = {
+    player = { mine = true, health = 0.82, most = 4200, row = { pet = true, health = 0.9, most = 1200, power = { "FOCUS", 0.6 } } },
+    target = { foe = true, above = 1, rank = "elite", mark = 8, health = 0.62, most = 1850, powers = { { "RAGE", 0.35 } },
+               row = { you = true, health = 0.82 } },
+    focus = { player = true, class = "PRIEST", gear = 32, health = 0.94, most = 3100, powers = { { "MANA", 0.7 } },
+              row = { foe = true, health = 0.45 } },
+}
+Units.SECOND = "ENERGY" -- a druid's second power in the preview: its Cat Form's
+
+-- The made-up row under the frame (its name, health and its pet's power), as it shows in Edit Mode.
+local function RowPreview(face)
+    local spec = Units.PREVIEW[face.unit]
+    local row = spec and spec.row
+    if not row then return end
+    local names = ns.TEXT.groupSamples
+    local name = row.you and Core.FullName("player") or row.foe and names.foes[1] or row.pet and names.pets[1] or ""
+    face.row:SetMinMaxValues(0, 1)
+    face.row:SetValue(row.health or 1)
+    ns.UnitText.Row(face, nil, type(name) == "string" and name or "")
+    local bar = face.rowPower
+    if not bar then return end
+    local on = row.power ~= nil
+    if on then
+        local most = row.most or 1
+        local now = math.floor(most * row.power[2])
+        bar:SetStatusBarColor(ns.UnitBar.PowerColour(row.power[1]))
+        bar:SetMinMaxValues(0, most)
+        bar:SetValue(now)
+        ns.UnitText.PowerSample(face, 0, now, most)
+    end
+    if on ~= bar.on then
+        bar.on = on
+        ns.UnitBar.Fit(face)
+    end
+end
+
+-- The row's unit as the game says it now, while the row shows; in Edit Mode its preview.
 local function Row(face)
     if not face.rowShown then return end
     local unit = face.rowUnit
-    face.rowSample = Core.EditMode.active and not Core.Ask(UnitExists, unit)
-    if face.rowSample then unit = "player" end
-    if not face.rowSample and not Core.Ask(UnitExists, unit) then return end
+    face.rowSample = Core.EditMode.active
+    if face.rowSample then return RowPreview(face) end
+    if not Core.Ask(UnitExists, unit) then return end
     ns.UnitBar.Health(face.row, unit)
     ns.UnitText.RowPower(face, unit, ns.UnitBar.RowPower(face, unit))
-    ns.UnitText.Row(face, unit, face.rowSample and ns.TEXT.samples[face.rowUnit] or nil)
+    ns.UnitText.Row(face, unit)
 end
 
 -- Your auras on the health bars over the face, as its unit has them: those shown on your unit frames
@@ -171,17 +221,91 @@ local function Powers(face, unit)
     Slots(face)
 end
 
--- Everything for the face's unit as the game says it now; in Edit Mode, a frame whose unit is not there shows your
--- own as a sample, named for what it stands for.
+-- The made-up powers of a frame's preview: its own, or for your frame your power, as a druid (or where you may have
+-- two) your mana first and the second under it.
+local function PreviewPowers(face, spec)
+    if not spec.mine then return spec.powers or {} end
+    local _, token = Core.Ask(UnitPowerType, "player")
+    token = type(token) == "string" and token or "MANA"
+    if not face.alternate then return { { token, 0.6 } } end
+    local _, class = Core.Ask(UnitClass, "player")
+    local second = class == "DRUID" and Units.SECOND or (token ~= "MANA" and token or Units.SECOND)
+    return { { "MANA", 0.7 }, { second, 0.55 } }
+end
+
+-- Every frame in Edit Mode, a real unit there or not: made up as Units.PREVIEW says, every piece it shows (face.show),
+-- so a choice in its dialog shows at once. Your own frame keeps your level, name and item level.
+local function Preview(face)
+    local spec = Units.PREVIEW[face.unit]
+    if not spec then return end
+    local Bar, Text = ns.UnitBar, ns.UnitText
+    local names = ns.TEXT.groupSamples
+    local mine = Core.Ask(UnitLevel, "player")
+    mine = type(mine) == "number" and mine or 1
+    local health = spec.foe and Bar.HOSTILE or Bar.GREEN
+    face.health:SetStatusBarColor(health[1], health[2], health[3])
+    local rank = Bar.RANKS[spec.rank] or Bar.PLAIN
+    if rank ~= face.rank then
+        face.rank = rank
+        Bar.Fit(face)
+    end
+    local colour = rank.colour
+    if colour then face.rankLine:SetVertexColor(colour[1], colour[2], colour[3], colour[4]) end
+    face.rankLine:SetShown(colour ~= nil)
+    face.danger = false
+    Bar.Glow(face, false)
+    local most = spec.most or 1
+    local now = math.floor(most * (spec.health or 1))
+    face.health:SetMinMaxValues(0, most)
+    face.health:SetValue(now)
+    face.marks:Set("player") -- barriers, lost health and dispels as yours are, as the samples always had them
+    local powers = PreviewPowers(face, spec)
+    for index, power in ipairs(powers) do
+        local bar = face.powers[index]
+        if bar then
+            local full = 100
+            local value = math.floor(full * power[2])
+            bar:SetStatusBarColor(Bar.PowerColour(power[1]))
+            bar:SetMinMaxValues(0, full)
+            bar:SetValue(value)
+            Text.PowerSample(face, index, value, full)
+        end
+    end
+    if #powers ~= face.powersShown then
+        face.powersShown = #powers
+        Bar.Fit(face)
+    end
+    Slots(face)
+    Text.ShowLevel(face, spec.mine and mine or math.min(mine + (spec.above or 0), Text.MaxLevel()), spec.foe == true)
+    Text.Mark(face, Text.Shows(face, "mark") and spec.mark or nil)
+    local name, gear
+    if spec.mine then
+        name = Core.FullName("player")
+        gear = Core.Inspect.Level("player", Core.Ask(UnitGUID, "player"))
+    elseif spec.player then
+        name, gear = names.first[2] .. " " .. names.last[3], spec.gear
+    else
+        name = names.foes[3]
+    end
+    Text.ShowGear(face, Text.Shows(face, "gear") and gear or nil)
+    Text.Name(face, nil, type(name) == "string" and name or "")
+    Text.Sample(face, now, most)
+    Row(face)
+    ns.UnitAuras.Set(face, "player")
+    Buffs(face)
+end
+
+-- Everything for the face's unit as the game says it now; in Edit Mode its preview.
 local function Fill(face)
-    face.sample = Core.EditMode.active and not Core.Ask(UnitExists, face.unit)
-    local unit = face.sample and "player" or face.unit
-    if not face.sample and not Core.Ask(UnitExists, unit) then return end
+    face.sample = Core.EditMode.active
+    if face.sample then return Preview(face) end
+    local unit = face.unit
+    if not Core.Ask(UnitExists, unit) then return end
     ns.UnitBar.Paint(face, unit)
     ns.UnitBar.Health(face.health, unit)
     face.marks:Set(unit)
     Powers(face, unit)
-    ns.UnitText.Set(face, unit, face.sample and ns.TEXT.samples[face.unit] or nil)
+    ns.UnitText.Set(face, unit)
     Threat(face)
     Row(face)
     ns.UnitAuras.Set(face, unit)
@@ -282,6 +406,29 @@ local function Rests(kind, face)
     ns.AuraRow.Doors(face)
 end
 
+-- A frame's settings in its Edit Mode dialog (Core's Selection.lua): its width and what it shows, each a key of the
+-- module's settings (Combat.lua, ns.FRAME_SHOWS: the frame's setting and the suffix), the level's top under the level.
+local function Settings(kind)
+    local list = {}
+    for _, entry in ipairs(ns.FRAME_SHOWS) do
+        local text = entry.text
+        if entry.top then text = text:format(ns.UnitText.MaxLevel()) end
+        list[#list + 1] = { key = kind.option .. entry.suffix, text = text, min = entry.min, max = entry.max,
+                            step = entry.step, check = entry.min == nil or nil,
+                            parent = entry.under and (kind.option .. entry.under) or nil }
+    end
+    return list
+end
+
+-- What a frame shows, as its settings say (Text.lua reads it; face.show).
+local function Shows(kind)
+    local show, options = {}, ns.options
+    for _, entry in ipairs(ns.FRAME_SHOWS) do
+        if entry.show then show[entry.show] = options[kind.option .. entry.suffix] end
+    end
+    return show
+end
+
 -- A frame: the game's secure unit button, our face on it (as high as the health bar, the rest hanging under it), a
 -- window of Core's to place it; its row's button under it.
 local function Make(kind)
@@ -292,7 +439,7 @@ local function Make(kind)
     face:SetPoint("TOPLEFT", button, "TOPLEFT")
     face:SetPoint("TOPRIGHT", button, "TOPRIGHT")
     face:SetHeight(Units.HEIGHT)
-    face.unit, face.noName, face.foes = kind.unit, kind.noName, kind.foes
+    face.unit, face.foes = kind.unit, kind.foes
     ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW,
                             rowPower = kind.row.power and Units.ROW_POWER or nil })
     ns.UnitText.Make(face)
@@ -333,7 +480,9 @@ local function Make(kind)
         Row(face)
     end))
     kind.window = Core.Window.New(button, { store = ns.store, key = kind.place, title = ns.TEXT[kind.option],
-                                            first = kind.first })
+                                            first = kind.first, settings = Settings(kind),
+                                            get = function(key) return ns.options[key] end,
+                                            set = function(key, value) Core.Set(ns.name, key, value) end })
     kind.window:Place()
     Rests(kind, face)
 end
@@ -501,7 +650,9 @@ local function Kind(kind)
     if not kind.button then Make(kind) end
     local button = kind.button
     button:SetScale((tonumber(ns.options.unitSize) or 100) / 100)
+    button:SetWidth(tonumber(ns.options[kind.option .. "Width"]) or Units.WIDTH) -- its own (Edit Mode's dialog)
     local face = button.face
+    face.show = Shows(kind)
     Units.Marks(face)
     face.alternate = Alternate(kind)
     Slots(face)
@@ -581,6 +732,14 @@ function Units.Start()
         end
     end)
     ns.On("PLAYER_LEVEL_UP", Core.Later(Again))
+    -- A player's item level came (inspected): on the frames of that player, where they show it.
+    Core.Inspect.Watch(ns.Guard(function(guid)
+        if ns.off or Core.EditMode.active then return end
+        for _, kind in ipairs(Units.KINDS) do
+            local face = kind.button and kind.button.face
+            if face and Core.Ask(UnitGUID, kind.unit) == guid then ns.UnitText.Gear(face, kind.unit) end
+        end
+    end))
     -- Once the world shows (the game's fonts and scales set up, also after a /reload), every frame measured anew.
     ns.On("PLAYER_ENTERING_WORLD", Core.Later(function()
         if ns.off then return end

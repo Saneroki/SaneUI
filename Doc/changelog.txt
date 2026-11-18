@@ -7,6 +7,16 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Combat 0.3.3 (2026-11-18)
+-------------------------
+- Your unit frames in Edit Mode: click a frame for its width
+  and what it shows (level, raid marker, item level, name,
+  health, your resource), each frame its own. While Edit Mode
+  is open every frame shows a preview: your target and its
+  target, your focus, your pet, breath, fatigue, and both of
+  a druid's powers.
+
+
 Combat 0.3.2 (2026-11-18)
 -------------------------
 - SaneUI Nameplates is now part of SaneUI Combat: the nameplates,

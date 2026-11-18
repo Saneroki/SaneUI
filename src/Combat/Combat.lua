@@ -157,7 +157,19 @@ ns.TEXT = {
     },
     samples = { player = "You", target = Core.Word("TARGET", "Target"), focus = Core.Word("FOCUS", "Focus"),
                 targettarget = "Target's target", focustarget = "Focus's target", pet = Core.Word("PET", "Pet"),
-                cast = "Cast bar", breath = Core.Word("BREATH_LABEL", "Breath") },
+                cast = "Cast bar", breath = Core.Word("BREATH_LABEL", "Breath"), fatigue = Core.Word("EXHAUSTION_LABEL", "Fatigue") },
+    -- A unit frame's dialog in Edit Mode (Units/Units.lua): its width and what it shows.
+    frameWidth = "Width",
+    showLevel = "Level",
+    showLevelMax = "Hide the level at %d",
+    showMark = "Raid marker",
+    showGear = "Item level",
+    showName = "Name",
+    showHealth = "Health",
+    showPercent = "Health in percent",
+    showPowerNow = "Resource: current",
+    showPowerMost = "Resource: maximum",
+    showPowerPercent = "Resource: percent",
     hideErrors = "Hide the red error text",
     hideErrorsTip = "The game's red line at the top of the screen, like Spell is not ready yet or Not enough rage, and its sound. Yellow lines, like a quest's progress, stay.",
     mouseRings = "Rings around the mouse",
@@ -262,6 +274,7 @@ ns.OPTIONS = {
     { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip, parent = "units" },
     { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip, parent = "units" },
     { key = "unitDispel", default = true, text = ns.TEXT.unitDispel, tip = ns.TEXT.unitDispelTip, parent = "units" },
+    -- Each frame's width and what it shows: chosen in Edit Mode's dialog (Units/Units.lua), added below.
     { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
     { key = "auraBlack", default = {} }, -- those never shown
     { key = "auraHidden", default = {} }, -- those out of sight in the game's list (Units/BuffList.lua)
@@ -320,6 +333,32 @@ end
 -- Another profile's settings came in.
 function ns.Replaced()
     ns.Nameplates.Replaced()
+end
+
+-- What each unit frame shows and how wide it is (Saneroki, 2026-11-18: "options there where you can define the width
+-- of the unit frames and where you can define in edit mode what each frame includes"; each frame its own): a key per
+-- frame of each (its setting and the suffix: unitTargetLevel), chosen in Edit Mode's dialog of that frame, no control on
+-- the options page. At first as before: level, marker, name (none on your own), health and its share, each power now
+-- and its share; no item level, the level shown at the top too, 240 wide.
+ns.FRAME_SHOWS = {
+    { suffix = "Width", text = ns.TEXT.frameWidth, default = 240, min = 120, max = 480, step = 10 },
+    { suffix = "Level", show = "level", text = ns.TEXT.showLevel, default = true },
+    { suffix = "LevelMax", show = "levelMax", text = ns.TEXT.showLevelMax, default = false, under = "Level", top = true },
+    { suffix = "Mark", show = "mark", text = ns.TEXT.showMark, default = true },
+    { suffix = "Gear", show = "gear", text = ns.TEXT.showGear, default = false },
+    { suffix = "Name", show = "name", text = ns.TEXT.showName, default = true },
+    { suffix = "Health", show = "health", text = ns.TEXT.showHealth, default = true },
+    { suffix = "Percent", show = "percent", text = ns.TEXT.showPercent, default = true },
+    { suffix = "PowerNow", show = "powerNow", text = ns.TEXT.showPowerNow, default = true },
+    { suffix = "PowerMost", show = "powerMost", text = ns.TEXT.showPowerMost, default = false },
+    { suffix = "PowerPercent", show = "powerPercent", text = ns.TEXT.showPowerPercent, default = true },
+}
+for _, frame in ipairs({ "unitPlayer", "unitTarget", "unitFocus" }) do
+    for _, entry in ipairs(ns.FRAME_SHOWS) do
+        local default = entry.default
+        if frame == "unitPlayer" and entry.suffix == "Name" then default = false end -- your own frame names nobody
+        ns.OPTIONS[#ns.OPTIONS + 1] = { key = frame .. entry.suffix, default = default, min = entry.min, max = entry.max }
+    end
 end
 
 -- Ours or the game's in Core's dropdown Classic windows too (Saneroki, 2026-11-18: "The classic window dropdown will

@@ -149,8 +149,9 @@ function Timers.Set(on)
     if not face then return end
     face.breath.timer, face.breath.on = nil, false
     for _, bar in ipairs(face.timers) do bar.timer, bar.on = nil, false end
-    if on and Core.EditMode.active then
+    if on and Core.EditMode.active then -- the preview: your breath and your fatigue (Units.lua, Preview)
         Run("BREATH", Timers.SAMPLE.value, Timers.SAMPLE.most, true, ns.TEXT.samples.breath)
+        Run("EXHAUSTION", Timers.SAMPLE.most - Timers.SAMPLE.value, Timers.SAMPLE.most, true, ns.TEXT.samples.fatigue)
     else
         Read()
     end

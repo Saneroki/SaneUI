@@ -94,6 +94,13 @@ Decided (Saneroki, 2026-10-16):
   click makes it the focus (the game lets no addon set a focus by itself), its X stops it. One not of your group
   (Saneroki, 2026-11-09: "It doesn't add units that are not in the group"; built): the click takes them as your target,
   makes the focus, and gives your target back as it was.
+- **Each unit frame's choices in Edit Mode** (Saneroki, 2026-11-18; built, `src/Combat/README.md`): "In edit mode,
+  can you have options there where you can define the width of the unit frames and where you can define in edit mode
+  what each frame includes, like raid symbol, level, hide level at 60, item level, name, current health, health
+  percentage, character resource current / total / percentage options and show how the frames look as preview with
+  target of target, pets, fatigue, breath and if you are a druid show 2 class resource previews etc." Asked, each
+  frame its own width (not one for all three), and the preview always while Edit Mode is open (not only while a
+  frame's dialog is). The width and the ticks are in each frame's Edit Mode dialog only, not on the options page.
 - **Casts and timers part of the frames** (Saneroki, 2026-10-30; built): the cast bars of all unit frames directly
   above the health bars, as part of them, while active, in place of the game's bars (yours, your target's, your
   focus's). Your breath over your health bar, 50 % transparent so the health shows underneath, in the bubble art of

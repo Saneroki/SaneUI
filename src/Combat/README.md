@@ -151,6 +151,14 @@ Sunder Armor), as you choose, nothing fixed.
     resource bar stay the game's and follow your frame, right under it and as large as it (*Unit frame size*;
     Saneroki, 2026-11-18). Edit Mode shows only ours to place: the game's boxes *Player Frame* and *Pet Frame*
     are gone while ours stand in for them (Saneroki, 2026-11-18), and the totems move with yours.
+- **Each unit frame in Edit Mode** (Saneroki, 2026-11-18): click a frame's box for its dialog: its *Width* (120 to
+  480, each frame its own, 240 at first) and a tick for each piece it shows: *Level* (with *Hide the level at 60* under
+  it, the game's top level), *Raid marker*, *Item level* (a player's: yours at once, another's once the game tells it;
+  off at first), *Name* (off on your own frame at first), *Health*, *Health in percent*, *Resource: current*, *Resource:
+  maximum* (off at first) and *Resource: percent*. Each shows on the frame at once. Meanwhile every frame and row shows
+  a made-up preview, a real unit there or not: your target a foe a level above you, elite, a skull on it, its target
+  you; your focus a player with an item level, its target a creature; your own frame with your pet and its power, a
+  cast, your breath and your fatigue, and as a druid both your powers, mana and energy.
 - **Settings:** *Sane UI > Combat*: the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
@@ -394,6 +402,21 @@ Sunder Armor), as you choose, nothing fixed.
   Looked at again on `QUEST_LOG_UPDATE` and `UNIT_QUEST_LOG_CHANGED`, once a frame (`Core.Later`).
 - **The red error text** (`ErrorText.lua`). No CVar does this. `UIErrorsFrame` hears `UI_ERROR_MESSAGE`; the game's own `/uierrorsoff`
   stops that and mutes every sound effect (`Sound_EnableSFX`). Here the event alone, given back at standing down.
+- **Each frame's choices and preview in Edit Mode** (`Units.lua`, `Text.lua`, Saneroki 2026-11-18): `ns.FRAME_SHOWS`
+  (`Combat.lua`) lists them: *Width* and the pieces, each a key per frame (its setting and the suffix: `unitTargetLevel`,
+  `unitPlayerWidth`), none with a control on the options page. `Settings(kind)` makes the frame's window's dialog rows
+  from it (Core's `Selection.lua`: a slider, ticks, the level's top under the level); `Kind` sizes the button
+  (`SetWidth`, out of a fight) and gives the face what it shows (`face.show`, `Shows(kind)`). `Text.lua` reads it
+  (`Text.Shows`: on a face without, the party and raid frames', all but the item level as before): the level and none
+  at `Text.MaxLevel()` where `levelMax`; the marker; `face.gear` between the marker and the name (`Text.Gear`,
+  `Core.Inspect.Level`; `Core.Inspect.Watch` writes it once it comes); the name; the health's words (`HealthFlags`) and
+  each power's (`PowerFlags`), plain by `Text.Plainly` ("3.2k / 4k | 85%"), hidden ones by the game's abbreviation and
+  curve as before (`Hidden`, with the same flags). In Edit Mode `Fill` is `Preview`: `Units.PREVIEW` per frame (a
+  share of health of the most, the rank, the raid marker, the level over yours, a player's class and item level, the
+  powers; your own frame your level, name and item level, its powers yours, as a druid or where you may have two
+  `{ MANA, Units.SECOND }`), and its row's (`RowPreview`: your name, a foe's, your pet's with its power); the made-up
+  words through `Text.Sample`, `Text.PowerSample`; `Timers.Set` your breath and your fatigue (`ns.TEXT.samples`);
+  `Cast.Set` a cast. No event fills a preview (`face.sample`); Edit Mode closed, `Units.Apply` fills each anew.
 - **The unit frames** (`Units/`): each of `Units.KINDS` (player, target, focus) is the game's
   `SecureUnitButtonTemplate` (`Units.WIDTH` x `Units.HEIGHT`, 240 x 26, scaled by `unitSize`; attributes `unit`,
   `*type1` `target`, `*type2` `togglemenu`; `RegisterUnitWatch`), its look a plain frame on it (`button.face`) that
@@ -763,14 +786,14 @@ Sunder Armor), as you choose, nothing fixed.
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar (your target's and focus's red on a foe), the power bars under it (your druid's mana and form), the row |
-| `Units/Text.lua` | The line inside it: level and raid marker left, then the name, the health right; each power's words; the row's name |
+| `Units/Text.lua` | The line inside it: level, raid marker and item level left, then the name, the health right; each power's words; the row's name; each piece as the frame shows it (Edit Mode's dialog) |
 | `Units/Auras.lua` | The auras that matter most around a frame: which, where, the game's own aura containers in a fight |
 | `Units/AuraRow.lua` | Those auras out of a fight, on icons of ours: your tooltip, the menu, a frame at rest shown |
 | `Units/Lists.lua` | Your marks: Important, Unimportant, Hidden; Prioritize on and Hide from unit frames; the one menu of an aura or spell (`Lists.Menu`), and the window Edit tracked (`/sane auras`, `/sane reminders`): one list with a tick per mark of the game's list, a cog (Edit Tracked conditions) and Tracked, the search, the chosen line's reminder under it |
 | `Units/BuffList.lua` | The game's list of your buffs and debuffs: the game's outline, fade, hidden last, the left click |
 | `Units/Cast.lua` | A unit's cast as part of its frame, directly above the health bar, in place of the game's cast bar |
 | `Units/Timers.lua` | Your breath and the game's other timers on you as part of your frame, in place of its bars |
-| `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode; the game's own out of sight; each out of sight at rest |
+| `Units/Units.lua` | Your frame, your target's and your focus's, and the rows under them (their targets, your pet): the game's secure unit buttons, placed in Edit Mode, each with its dialog there (its width, what it shows) and a made-up preview; the game's own out of sight; each out of sight at rest |
 | `Units/LookOut.lua` | Look out for, in your focus's place while you have none: the field, its + and X, the watch on nameplates, group and target, the game's secure button that focuses who it found on your click or key |
 | `Units/GroupFace.lua` | One member's frame: a nameplate's bar, marker, name, health, the power line, aggro in a fight too, the icons; live or made up |
 | `Units/GroupTools.lua` | Your own slot's button and its panel of the group's tools, in place of the game's raid manager, by the game's secure means |
@@ -790,6 +813,12 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-18:** each unit frame's width and what it shows in its Edit Mode dialog, and a made-up preview of every
+  frame and row in Edit Mode (Saneroki: "In edit mode, can you have options there where you can define the width of
+  the unit frames and where you can define in edit mode what each frame includes, like raid symbol, level, hide level
+  at 60, item level, name, current health, health percentage, character resource current / total / percentage options
+  and show how the frames look as preview with target of target, pets, fatigue, breath and if you are a druid show 2
+  class resource previews etc."; each frame its own width, the preview always).
 - **2026-11-18:** the nameplates, the unit frames, the party and raid frames and aura tracking in one module, each ours
   or the game's (Saneroki: "I want a combat module that has the unit frames, party frames, Nameplates and the edit aura
   tracking functionality in it [...] so people can for example choose to use our party and unit frames but disable our

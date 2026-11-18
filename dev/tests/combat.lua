@@ -404,7 +404,7 @@ do
     check(first.face.cog._points[1][1] == "LEFT" and first.face.cog._points[1][2] == first.face.floating
         and first.face.cog._points[1][4] == Face.INSET, "the cog at the far left")
     check(first.face.level._points[1][4] == Face.INSET + Face.MINE and second.face.level._points[1][4] == Face.INSET
-        and first.face.raid._points[1][2] == first.face.level and first.face.name._points[1][2] == first.face.raid
+        and first.face.raid._points[1][2] == first.face.level and first.face.name._points[1][2] == first.face.gear and first.face.gear._points[1][2] == first.face.raid
         and Face.MINE >= Face.ICON and first.face.ready._points[1][4] == Face.INSET + Face.MINE
         and first.face.role._points[1][4] == second.face.role._points[1][4] + Face.MINE,
         "your line after it: the raid marker, your name, the role's mark and the big icons, in front of none of them")
@@ -1477,7 +1477,8 @@ do
     face._width, face._height = Units.WIDTH, Units.HEIGHT -- the stand-in places nothing: as large as its button
     Text.Layout(face)
     check(face.level._points[1][1] == "LEFT" and face.value._points[1][1] == "RIGHT" and face.name._points[1][1] == "LEFT"
-        and face.name._points[1][2] == face.raid and near(face.name._points[2][4], -(face.room.right + Text.GAP)),
+        and face.name._points[1][2] == face.gear and face.gear._points[1][2] == face.raid
+        and near(face.name._points[2][4], -(face.room.right + Text.GAP)),
         "the level on the left, the name after it from the left up to the health, the health on the right")
     check(PlayerFrame.PlayerFrameContainer._alpha == 0 and PlayerFrame.PlayerFrameContent._alpha == 0
         and PlayerFrame._mouse == false and PlayerFrame._parent == UIParent,
@@ -1618,27 +1619,85 @@ do
     W.Fire("RAID_TARGET_UPDATE")
     check(not foe.raid._shown and foe.raid._width == Core.HealthMarks.NONE, "its marker taken off: none, and no room kept")
 
-    -- Edit Mode: a frame whose unit is not there shows a sample, to be placed; after it, the unit watch again.
+    -- Edit Mode (Saneroki, 2026-11-18): every frame and row a made-up preview, a real unit there or not, to be placed
+    -- and set up; a click on a frame's box its dialog with its width and what it shows; after it, the unit watch again.
+    local names = ns.TEXT.groupSamples
     EventRegistry:TriggerEvent("EditMode.Enter")
-    check(not watched[focus] and focus._shown and focus.face.sample and focus.face.name._text == ns.TEXT.samples.focus
-        and focus.face.level._text == "20", "in Edit Mode your focus's frame shows as a sample, named for it")
+    check(not watched[focus] and focus._shown and focus.face.sample and focus.face.name._text == names.first[2] .. " " .. names.last[3]
+        and focus.face.level._text == "20", "in Edit Mode your focus's frame a made-up player of your level")
+    check(target.face.sample and target.face.name._text == names.foes[3] and target.face.level._text == "21"
+        and target.face.raid._shown and target.face.rank == ns.UnitBar.RANKS.elite and target.face.health._barColor[1] == red[1]
+        and target.face.value._text == "1.1k | 62%",
+        "your target's a foe a level above you, elite, a skull on it, red, though a real one is targeted")
     check(MicroMenu._alpha == 1 and StanceBar._parent ~= UIParent,
         "the game's menu bar shows in Edit Mode, to be placed; its stance bar stays gone")
-    check(focus.face.rowShown and focus.face.rowName._text == ns.TEXT.samples.focustarget
-        and player.face.rowShown and player.face.rowName._text == ns.TEXT.samples.pet,
-        "and the rows under the frames too, named for what they stand for")
+    check(focus.face.rowShown and focus.face.rowName._text == names.foes[1] and target.face.rowShown
+        and player.face.rowShown and player.face.rowName._text == names.pets[1] and player.face.rowPower.on,
+        "the rows under them: your focus's target, your target's target, your pet with its power")
+    local fatigue
+    for _, bar in ipairs(player.face.timers) do if bar.on and bar.label._text == ns.TEXT.samples.fatigue then fatigue = bar end end
     check(player.face.cast._shown and player.face.cast.sample and player.face.cast.text._text == ns.TEXT.samples.cast
-        and player.face.breath._shown and player.face.breath.label._text == ns.TEXT.samples.breath
+        and player.face.breath._shown and player.face.breath.label._text == ns.TEXT.samples.breath and fatigue
         and focus.face.cast._shown and target.face.cast._shown and target.face.cast.text._text == ns.TEXT.samples.cast
-        and not target.face.breath, "every frame's cast as a sample, your breath on your own frame alone")
-    check(not target.face.sample and target.face.name._text == "Kobold Miner", "a frame whose unit is there shows it")
+        and not target.face.breath, "every frame's cast as a sample, your breath and your fatigue on your own frame")
+    check(player.face.powersShown == 1, "your one power, as a warrior")
+    -- As a druid: your two powers, mana and your Cat Form's energy.
+    units.player.class = "DRUID"
+    ns.Units.Apply()
+    check(player.face.powersShown == 2 and player.face.powers[2].value._text ~= "" and player.face.powers[1].value._text == "70 | 70%",
+        "as a druid both your powers, mana first")
+    units.player.class = "WARRIOR"
+    ns.Units.Apply()
+    -- Each frame's dialog: its width and a tick for each piece it shows.
+    local targetWindow
+    for _, one in ipairs(Core.Window.All()) do if one.options.key == "targetPlace" then targetWindow = one end end
+    Core.Selection.Select(targetWindow)
+    check(targetWindow.settingRows and #targetWindow.settingRows.shows == #ns.FRAME_SHOWS
+        and targetWindow.options.settings[1].key == "unitTargetWidth" and targetWindow.options.settings[3].parent == "unitTargetLevel"
+        and targetWindow.options.settings[3].text == ns.TEXT.showLevelMax:format(ns.UnitText.MaxLevel()),
+        "your target's dialog: its width, then a tick for each piece, the top level's under the level")
+    targetWindow.options.set("unitTargetWidth", 300)
+    check(target._width == 300 and focus._width == 240, "a frame's width its own")
+    targetWindow.options.set("unitTargetPercent", false)
+    check(target.face.value._text == "1.1k", "health without its share")
+    targetWindow.options.set("unitTargetHealth", false)
+    targetWindow.options.set("unitTargetPercent", true)
+    check(target.face.value._text == "62%", "its share alone")
+    targetWindow.options.set("unitTargetHealth", true)
+    targetWindow.options.set("unitTargetPowerMost", true)
+    check(target.face.powers[1].value._text == "35 / 100 | 35%", "a resource now, of most and its share")
+    targetWindow.options.set("unitTargetPowerNow", false)
+    targetWindow.options.set("unitTargetPowerMost", false)
+    check(target.face.powers[1].value._text == "35%", "its share alone")
+    targetWindow.options.set("unitTargetPowerNow", true)
+    targetWindow.options.set("unitTargetMark", false)
+    check(not target.face.raid._shown, "no raid marker")
+    targetWindow.options.set("unitTargetMark", true)
+    targetWindow.options.set("unitTargetName", false)
+    check(target.face.name._text == "", "no name")
+    targetWindow.options.set("unitTargetName", true)
+    targetWindow.options.set("unitTargetLevel", false)
+    check(target.face.level._text == "", "no level")
+    targetWindow.options.set("unitTargetLevel", true)
+    local top = ns.UnitText.MaxLevel
+    ns.UnitText.MaxLevel = function() return 21 end
+    targetWindow.options.set("unitTargetLevelMax", true)
+    check(target.face.level._text == "", "none at the top level, where it hides it")
+    targetWindow.options.set("unitTargetLevelMax", false)
+    ns.UnitText.MaxLevel = top
+    check(focus.face.gear._text == "", "no item level at first")
+    Core.Set(ns.name, "unitFocusGear", true)
+    check(focus.face.gear._text == "i32" and focus.face.gear._points[1][2] == focus.face.raid, "a player's item level, after the marker")
+    Core.Set(ns.name, "unitFocusGear", false)
+    targetWindow.options.set("unitTargetWidth", 240)
+    Core.Selection.Clear()
     EventRegistry:TriggerEvent("EditMode.Exit")
-    check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton],
-        "after Edit Mode the unit watch shows it again, and its row")
+    check(watched[focus] and not focus.face.sample and watched[focus.face.rowButton] and not target.face.sample
+        and target.face.name._text == "Kobold Miner", "after Edit Mode the unit watch shows it again, the real units back")
     check(MicroMenu._alpha == 0, "and the menu bar rests out of sight again")
     check(not player.face.cast._shown and not player.face.cast.sample and not target.face.cast._shown
-        and not player.face.breath._shown,
-        "and your cast and breath only while they run")
+        and not player.face.breath._shown and not fatigue.on,
+        "and your cast, breath and fatigue only while they run")
     focus.face.rowButton:Hide() -- the game's unit watch: your focus has no target
     player.face.rowButton:Hide() -- nor you a pet
     -- Edit Mode put the full screen back to its place (as every window of Core's): full again for what follows.

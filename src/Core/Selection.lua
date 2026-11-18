@@ -16,12 +16,17 @@ local Core = SaneUI.Core
 --
 --  A window may bring settings into the dialog, as the game's own frames do,
 --  a row each between its title and its button: the game's slider with its
---  steppers and the number at its right, or a field to type a number into. What
---  a row changes shows at once.
+--  steppers and the number at its right, a field to type a number into, or a
+--  tick with its words (check; Saneroki, 2026-11-18: in Edit Mode "options
+--  there where you can define the width of the unit frames and [...] what each
+--  frame includes"), a little in and greyed out while the tick it is under is
+--  off (parent). What a row changes shows at once.
 --
 --      Core.Window.New(frame, { ...,
 --          settings = { { key = "width", text = "Max width", min = 100, max = 1600, step = 10 },
---                       { key = "count", text = "Preview", min = 0, max = 40, input = true } },
+--                       { key = "count", text = "Preview", min = 0, max = 40, input = true },
+--                       { key = "level", text = "Level", check = true },
+--                       { key = "levelMax", text = "Hide at max level", check = true, parent = "level" } },
 --          get = function(key) return value end,  set = function(key, value) end })
 --
 --      Core.Selection.Select(window)   Core.Selection.Clear()   Core.Selection.window
@@ -33,6 +38,7 @@ Selection.WIDTH, Selection.BUTTON = 370, 28 -- the dialog's width and its button
 Selection.PADDING = 20                      -- from its sides, as Edit Mode's (half of its widthPadding)
 Selection.LEVEL = 200                       -- above what Edit Mode shows, as its own dialog (DIALOG, 200)
 Selection.ROW, Selection.LABEL = 34, 130    -- a setting's row: its height, and how wide its word is
+Selection.CHECK, Selection.UNDER = 26, 20   -- a tick's row: its height; one under another this far in
 Selection.NUMBER, Selection.FIELD = 44, 64  -- the room for a slider's number at its right, a field's width
 -- Where the dialog stands at first: where Edit Mode's own stands for a frame that names no other place.
 Selection.ANCHOR = { "BOTTOMRIGHT", -250, 200 }
@@ -46,9 +52,14 @@ local function Default(window)
     return type(place) ~= "table" or type(place.x) ~= "number"
 end
 
--- The dialog's height with that many rows.
+-- The dialog's height with its rows that high together.
 local function Height(rows)
-    return Selection.PADDING * 2 + 24 + 12 + Selection.BUTTON + (rows or 0) * Selection.ROW
+    return Selection.PADDING * 2 + 24 + 12 + Selection.BUTTON + (rows or 0)
+end
+
+-- A row's height: a tick's is lower than a slider's.
+local function RowHeight(setting)
+    return setting.check and Selection.CHECK or Selection.ROW
 end
 
 -- A setting's new value, within its limits and on its steps.
@@ -72,6 +83,28 @@ local function Slider(row, setting, window)
         Put(window, setting, value)
     end), row)
     return function() slider:SetValue(window.options.get(setting.key)) end
+end
+
+-- A row's tick: on or off as the window keeps it (nil counts as on), set at a click; greyed out while the tick it is
+-- under is off.
+local function Check(row, setting, window, word)
+    local box = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
+    box:SetSize(Selection.CHECK, Selection.CHECK)
+    local inset = setting.parent and Selection.UNDER or 0
+    box:SetPoint("LEFT", row, "LEFT", inset, 0)
+    word:ClearAllPoints()
+    word:SetPoint("LEFT", box, "RIGHT", 4, 0)
+    word:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+    box:SetScript("OnClick", Core.Guard("Edit Mode", function(self)
+        window.options.set(setting.key, self:GetChecked() and true or false)
+        Selection.Moved(window) -- the rows shown anew: the ticks under this one open or greyed out
+    end))
+    return function()
+        box:SetChecked(window.options.get(setting.key) ~= false)
+        local open = not setting.parent or window.options.get(setting.parent) ~= false
+        box:SetEnabled(open)
+        word:SetAlpha(open and 1 or 0.5)
+    end
 end
 
 -- A row's field: a number typed in, taken as it is typed; Enter or Esc let the field go.
@@ -103,21 +136,29 @@ local function Rows(window)
     local rows = CreateFrame("Frame", nil, dialog)
     rows:SetPoint("TOPLEFT", dialog, "TOPLEFT", Selection.PADDING, -(Selection.PADDING + 24))
     rows:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -Selection.PADDING, -(Selection.PADDING + 24))
-    rows:SetHeight(#window.options.settings * Selection.ROW)
     rows.shows = {}
+    local y = 0
     for index, setting in ipairs(window.options.settings) do
+        local height = RowHeight(setting)
         local row = CreateFrame("Frame", nil, rows)
-        row:SetHeight(Selection.ROW)
-        row:SetPoint("TOPLEFT", rows, "TOPLEFT", 0, -(index - 1) * Selection.ROW)
-        row:SetPoint("TOPRIGHT", rows, "TOPRIGHT", 0, -(index - 1) * Selection.ROW)
+        row:SetHeight(height)
+        row:SetPoint("TOPLEFT", rows, "TOPLEFT", 0, -y)
+        row:SetPoint("TOPRIGHT", rows, "TOPRIGHT", 0, -y)
+        y = y + height
         local word = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         word:SetPoint("LEFT", row, "LEFT", 0, 0)
         word:SetWidth(Selection.LABEL)
         word:SetJustifyH("LEFT")
         word:SetText(setting.text)
         local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
-        rows.shows[index] = (setting.input or not sliders) and Field(row, setting, window) or Slider(row, setting, window)
+        if setting.check then
+            rows.shows[index] = Check(row, setting, window, word)
+        else
+            rows.shows[index] = (setting.input or not sliders) and Field(row, setting, window) or Slider(row, setting, window)
+        end
     end
+    rows:SetHeight(math.max(y, 1))
+    rows.height = y
     window.settingRows = rows
     return rows
 end
@@ -132,7 +173,7 @@ local function Update()
     if settings then
         for _, show in ipairs(Rows(window).shows) do Core.Safe("Edit Mode", show) end
     end
-    dialog:SetHeight(Height(settings and #settings))
+    dialog:SetHeight(Height(settings and Rows(window).height))
 end
 
 local function Dialog()
