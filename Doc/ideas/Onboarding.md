@@ -81,7 +81,11 @@ own purpose."
   needs. The configure steps are found underer /sane setup or in the addon settings." So the run opens on a first
   page (Sane UI's logo, those words, a row per setup with *Choose defaults*, *Start*), and *Choose defaults* stands
   beside *Back* in each setup: its switches back to their defaults (asked first where some were changed; key bindings
-  stay), kept as done (`done[name].defaults`), so it no longer opens by itself until a new version.
+  stay), kept as done (`done[name].defaults`), so it no longer opens by itself until a new version. Then: "use a plain
+  Sane UI logo instead of the Core banner and show very clearly that the small button with the circle arrow means to
+  show the classic windows instead and also in fullscreen you have the dropdown selectors to choose which one is the
+  default one": the plain logo (`dev/tools/logo-art saneui`), and under it the button itself and the dropdown
+  *Classic windows* itself, each with what it does.
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.

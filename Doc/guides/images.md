@@ -24,7 +24,11 @@ puts each addon's icon and banner into `assets/Logos/`, and the recipe below mak
 of its options page) and `Art/icon.blp` (its icon in the addon list, the TOC's `## IconTexture:
 Interface\AddOns\<addon>\Art\icon`) ([Doc/curseforge/README.md](../curseforge/README.md)). Tooltips (a panel
 and the mouse's arrow, teal), Nameplates (a health bar under the target's arrow, rose) and Onboarding (steps and a
-flag, silver) joined on 2026-11-16; Onboarding has no options page, so only its icon is in the game.
+flag, silver) joined on 2026-11-16; Onboarding has no options page, so only its icon is in the game. The plain
+Sane UI logo (Saneroki, 2026-11-18: "use a plain Sane UI logo instead of the Core banner"): Core's badge and SANE UI
+beside it, no addon's word and no plate, on a clear ground, 3 : 1 (`dev/tools/logo-art saneui`,
+`assets/Logos/saneui-banner.png`), shipped as Onboarding's `Art/logo.blp` (kind banner, drawn 300 x 100) for the
+setups' first page.
 
 ## The recipe
 

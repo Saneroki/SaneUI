@@ -13,7 +13,9 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   them, then they follow one after another. Each is remembered once you reach its end; one closed early comes back at
   your next login where you left it, and every step says where to start it again. *Choose defaults*, on the first
   page and in each setup, keeps an addon as Sane UI sets it up instead. After a big change an addon can ask you
-  through its setup again; your settings stay.
+  through its setup again; your settings stay. The first page also shows the button with the circling arrows (the
+  game's classic window instead of Sane UI's, and back) and the full screen's *Classic windows* dropdown, which picks
+  which one opens by default.
 
 ## 0.3.2 (2026-11-15)
 

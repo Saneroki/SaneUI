@@ -122,6 +122,14 @@ check(parts.list:IsShown() and parts.rows[1]:IsShown() and parts.rows[1].label._
 check(parts.count._text == ons.TEXT.oneLeft and parts.forward._text:find(ons.TEXT.start, 1, true)
     and parts.back:IsEnabled() == false and not parts.defaults:IsShown() and parts.logo:IsVisible(),
     "under them: how many are left and Start; Sane UI's logo on the stage")
+local explained = parts.explained
+check(parts.logo._texture == ons.Window.LOGO and ons.Window.LOGO:find("SaneUI_Onboarding", 1, true),
+    "the plain Sane UI logo, the Onboarding addon's own (not Core's banner)")
+check(explained.swap and explained.swap.picture._texture == "Interface\\Buttons\\UI-RefreshButton"
+    and explained.swap:GetScale() == ons.Window.SWAP_SCALE and explained.beside._text == ons.TEXT.swap,
+    "under it the button with the circling arrows itself, larger, and what it does")
+check(explained.menu and explained.menu._kind == "DropdownButton" and explained.under._text == ons.TEXT.classic,
+    "and the dropdown Classic windows as full screen has it, with what it chooses")
 check(store.done.Garden == nil and store.left.Garden == nil, "nothing kept yet")
 parts.forward._scripts.OnClick(parts.forward)
 parts = window.Parts()

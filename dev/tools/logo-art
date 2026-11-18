@@ -20,6 +20,10 @@ For each addon (dev/tools/logo-art [name ...], all when none is named) it writes
 and family.png, every badge beside the others, large and at the sizes a list shows them. With --ship the icon and
 the banner of each also go into assets/Logos/ (the sources the game's textures are made from: dev/tools/art makes
 each addon's Art/icon.blp, its icon in the addon list, and Art/banner.blp, its options page's banner).
+
+The plain Sane UI logo (the name saneui; Saneroki, 2026-11-18: "use a plain Sane UI logo instead of the Core
+banner"): Core's badge and SANE UI beside it, no addon's word and no plate, on a clear ground, 3 : 1 as the banners
+(saneui-banner.png): the logo on the first page of the setups (dev/tools/art: Onboarding's Art/logo.blp).
 """
 import argparse
 import math
@@ -397,6 +401,27 @@ def banner(word, accent, symbol, width=1536, height=512):
     return canvas.resize((width, height), Image.LANCZOS)
 
 
+def plain(width=1536, height=512):
+    """The plain Sane UI logo, 3 : 1 on a clear ground: Core's badge at the left, SANE UI large beside it, a thin
+    gold rule under the words."""
+    n = SS
+    w, h = width * n, height * n
+    canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    mark = badge(440, None, "s").resize((440 * n, 440 * n), Image.LANCZOS)
+    canvas.alpha_composite(mark, (40 * n, (h - mark.height) // 2))
+    words = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(words)
+    left, word, big = 520 * n, "SANE UI", 200 * n
+    room = w - 60 * n - left
+    while big > 60 * n and sum(draw.textlength(ch, font=font(big)) + 14 * n for ch in word) > room:
+        big -= 4 * n
+    end = spaced(draw, (left, 318 * n), word, big, GOLD + (255,), 14 * n)
+    draw.rectangle((left + 4 * n, 352 * n, min(end, w - 60 * n), 357 * n), fill=GOLD_DARK + (255,))
+    shadow(canvas, words.getchannel("A"), (2 * n, 3 * n), 2 * n, 0.9)
+    canvas.alpha_composite(words)
+    return canvas.resize((width, height), Image.LANCZOS)
+
+
 def family(names, icons):
     """Every badge beside the others: large, then at 64 and 32 px, on a dark and a light ground."""
     cell, pad = 300, 30
@@ -416,16 +441,26 @@ def family(names, icons):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=__doc__.split("\n\n", 1)[1])
-    parser.add_argument("names", nargs="*", metavar="name", help="the addons to draw: " + ", ".join(ADDONS))
+    parser.add_argument("names", nargs="*", metavar="name",
+                        help="the addons to draw: " + ", ".join(ADDONS) + "; saneui: the plain Sane UI logo")
     parser.add_argument("--out", type=Path, default=OUT, help="the folder written into")
     parser.add_argument("--ship", action="store_true", help="the icons and banners into assets/Logos/ too")
     args = parser.parse_args()
-    names = args.names or list(ADDONS)
-    unknown = [n for n in names if n not in ADDONS]
+    names = args.names or list(ADDONS) + ["saneui"]
+    unknown = [n for n in names if n not in ADDONS and n != "saneui"]
     if unknown:
         parser.error(f"no addon {', '.join(unknown)} (the names: {', '.join(ADDONS)})")
     args.out.mkdir(parents=True, exist_ok=True)
     icons = {}
+    if "saneui" in names:
+        names = [n for n in names if n != "saneui"]
+        drawn = plain()
+        drawn.save(args.out / "saneui-banner.png")
+        print("saneui: saneui-banner.png (the plain logo)")
+        if args.ship:
+            SHIPPED.mkdir(parents=True, exist_ok=True)
+            drawn.save(SHIPPED / "saneui-banner.png")
+            print(f"    and into {SHIPPED.relative_to(ROOT)}: saneui-banner.png")
     for name in names:
         word, accent, symbol = ADDONS[name]
         icons[name] = badge(1024, accent, symbol)
@@ -439,8 +474,9 @@ def main():
             icons[name].save(SHIPPED / f"{name}-icon.png")
             drawn.save(SHIPPED / f"{name}-banner.png")
             print(f"    and into {SHIPPED.relative_to(ROOT)}: {name}-icon.png, {name}-banner.png")
-    family(names, icons).save(args.out / "family.png")
-    print(f"family.png; all in {args.out}")
+    if names:
+        family(names, icons).save(args.out / "family.png")
+        print(f"family.png; all in {args.out}")
 
 
 if __name__ == "__main__":

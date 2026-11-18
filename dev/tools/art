@@ -76,6 +76,8 @@ PICTURES = [
       for part in ("banner", "icon")],
     # Onboarding has no options page, so no banner in the game: only its icon (its banner is for CurseForge).
     ("Logos/onboarding-icon.png", "Logo-onboarding-icon", "icon", "Onboarding", "icon.blp"),
+    # The plain Sane UI logo (dev/tools/logo-art saneui): on the setups' first page (src/Onboarding/Window.lua).
+    ("Logos/saneui-banner.png", "Logo-saneui-banner", "banner", "Onboarding", "logo.blp"),
     ("SaneSpellbook-banner.png", "SaneSpellbook-banner", "banner", None),  # not shipped: Abilities has no banner
     ("SaneChat-ban*.png", "SaneChat-banner", "banner", None),  # came as "banenr"; not shipped: Social's is its logo's
     ("SaneTooltip-banner.png", "SaneTooltip-banner", "banner", None),  # not shipped: Tooltips' is its logo's

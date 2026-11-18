@@ -11,9 +11,12 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 
 - **All setups together:** a few seconds after the login (after the game's own What's new, never in a fight) the
   setups still to go through open in one window: those of the modules that are on and that this account has not
-  gone through yet, or that changed a lot since. **The first page** lists them, Sane UI's logo beside: please go
-  through them to configure your addons to your needs; where they are found again (`/sane setup`, the addon
-  settings); a row for each, its name, its steps and *Choose defaults*. *Start* opens the first, and they follow one
+  gone through yet, or that changed a lot since. **The first page** lists them: please go through them to configure
+  your addons to your needs; where they are found again (`/sane setup`, the addon settings); a row for each, its
+  name, its steps and *Choose defaults*. Beside them the plain Sane UI logo, and under it Sane UI's windows and the
+  game's own: the small button with the circling arrows (in a Sane UI window's title bar: the game's classic window
+  instead; on the game's window: Sane UI's back), and in full screen the dropdown *Classic windows*, which chooses
+  which one is the default. *Start* opens the first, and they follow one
   after another (*Navigation: setup 1 of 3*; *Next setup* on the last step of one); *Back* on a setup's first step
   comes back to the first page. A setup is gone through once its last step is done; closed before that, it opens
   again at the next login, at the step where it was left, the others after it.
@@ -90,8 +93,15 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 - **The first page** (Saneroki, 2026-11-18: "a very first page where all the onboardings that still need to go through
   is listed"; "On the first page it says that please go through this to configure your addons to your needs. The
   configure steps are found underer /sane setup or in the addon settings"): `Core.Onboarding.Start` opens it
-  (`Window.First`, through `ns.First`), the run's setups from `Core.Onboarding.Run()`: Sane UI's logo on the stage
-  (Core's banner, `Window.LOGO`), the words, a row each (`Window.ROW`: the setup's title in gold, its steps faint,
+  (`Window.First`, through `ns.First`), the run's setups from `Core.Onboarding.Run()`. On the stage the plain Sane UI
+  logo (Saneroki, 2026-11-18: "use a plain Sane UI logo instead of the Core banner"; `Window.LOGO`, this addon's
+  `Art/logo.blp`, drawn 300 x 100 by `dev/tools/logo-art saneui` and `dev/tools/art`) and under it, "very clearly"
+  ("show very clearly that the small button with the circle arrow means to show the classic windows instead and also
+  in fullscreen you have the dropdown selectors to choose which one is the default one"): the button itself (Core's
+  `Window.Swap`, the game's circling arrows, `Window.SWAP_SCALE` times its 24 units, its tip Core's) with what it does
+  beside it, then the dropdown *Classic windows* itself (`WowStyle1DropdownTemplate`, `Core.Edge.CLASSIC`, as wide as
+  full screen has it; a picture: it takes no mouse, made in `pcall`, without the template the words alone) with what
+  it chooses under it (`Explained`). At the right the words, a row each (`Window.ROW`: the setup's title in gold, its steps faint,
   *Choose defaults* at its right; done: *Defaults chosen* or *Set up*, faint), made when first needed; under them how
   many are left and *Start* (none left: *Done*), which shows the first still to go through (`Core.Onboarding.Continue`).
   *Back* on the first step of a run's setup comes back to it.
@@ -130,7 +140,8 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   the note at each step's foot ("during onboarding say that you can start this again in the addon settings"). Then
   *Skip setup* ("Add a Skip"), the same day *Choose defaults* in its place ("instead of skip it says Choose
   Defaults"), and the run's first page that lists its setups ("a very first page where all the onboardings that
-  still need to go through is listed").
+  still need to go through is listed"); on it the plain Sane UI logo, and the classic window's button and the full
+  screen's dropdown *Classic windows*, shown and said ("show very clearly").
 - 2026-11-18 — The key boxes hear the key again (Saneroki: "the configure keybinds don't work. When I click it it says
   press a key but it doesn't register any keypresses. I want it to work with the modifier keys as well so that
   someone could press like alt shift v"): each box had its `OnKeyDown` from the start, which in the game takes the

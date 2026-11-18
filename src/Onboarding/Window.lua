@@ -8,8 +8,13 @@ local _, ns = ...
 --  it and the module's plates follow each change at once.
 --
 --  The run's first page (Saneroki, 2026-11-18: "a very first page where all
---  the onboardings that still need to go through is listed"): Sane UI's logo
---  on the stage; at the right why and where ("please go through this to
+--  the onboardings that still need to go through is listed"): on the stage
+--  the plain Sane UI logo ("use a plain Sane UI logo instead of the Core
+--  banner") and under it, very clearly, Sane UI's windows and the game's own:
+--  the button with the circling arrows itself (Core's Window.Swap), larger,
+--  "means to show the classic windows instead", and the dropdown Classic
+--  windows itself as full screen has it, "to choose which one is the default
+--  one" (a picture: it opens nothing here); at the right why and where ("please go through this to
 --  configure your addons to your needs. The configure steps are found under
 --  /sane setup or in the addon settings") and a row for each setup of the run,
 --  its name, its steps and Choose defaults (done: Defaults chosen, or Set
@@ -66,11 +71,16 @@ Window.NOTE = 12     -- the faint note at the step's foot (every setup's steps l
 Window.WORDS = 14    -- a button of words alone (Choose defaults)
 Window.ROW = 34      -- a setup's row on the first page
 Window.NAME = 16     -- its name's size
-Window.LOGO = "Interface\\AddOns\\SaneUI\\Art\\banner" -- Sane UI's logo on the first page (Core's banner, 3 : 1)
-Window.LOGO_RIGHT = 0.75 -- the banner's box fills its file's left 768 of 1024 texels (Settings.lua: BANNER_RIGHT)
+Window.LOGO = "Interface\\AddOns\\SaneUI_Onboarding\\Art\\logo" -- the plain Sane UI logo (dev/tools/logo-art saneui)
+Window.LOGO_SIZE = { 300, 100 } -- drawn as dev/tools/art made it (kind banner)
+Window.LOGO_RIGHT = 0.75 -- its box fills the file's left 768 of 1024 texels
+Window.SWAP_SCALE = 1.75 -- the button with the circling arrows on the first page: its 24 units, larger
+Window.EXPLAIN = 15  -- the words beside it and under the dropdown
+Window.EXPLAIN_HEAD = 18 -- their head
 
 local frame, look, stage, side, title, words, count, back, forward, progress, note, defaults
 local list, logo  -- the first page's rows' holder and the logo on its stage
+local explained   -- under the logo: the classic window's button and the dropdown Classic windows, with their words
 local rows = {}   -- the first page's rows, made when first needed
 local first       -- true while the run's first page shows
 local current     -- { name, guide, index } while a setup shows
@@ -335,6 +345,52 @@ function Row(index)
     return row
 end
 
+-- Words for the first page's stage, wrapped, as wide as the stage leaves.
+local function Explain(holder, size, colour)
+    local text = holder:CreateFontString(nil, "ARTWORK")
+    Look.SetFont(text, size, false, colour)
+    text:SetJustifyH("LEFT")
+    text:SetJustifyV("TOP")
+    text:SetWordWrap(true)
+    text:SetSpacing(3)
+    return text
+end
+
+-- Under the logo, very clearly: the button with the circling arrows (Core's own, larger) and the words beside it,
+-- then the dropdown Classic windows as full screen has it (WowStyle1DropdownTemplate, a picture here: it takes no
+-- mouse) and the words under it. Without that template (another client) the words alone.
+local function Explained(holder)
+    local parts = {}
+    local head = Explain(holder, Window.EXPLAIN_HEAD, Look.GOLD)
+    head:SetPoint("TOPLEFT", holder, "TOPLEFT", 24, -168)
+    head:SetPoint("TOPRIGHT", holder, "TOPRIGHT", -24, -168)
+    head:SetText(ns.TEXT.windows)
+    local scale = Window.SWAP_SCALE
+    local swap = Core.Window.Swap(holder, Core.Window.TEXT.classic, Core.Window.TEXT.classicTip, function() end)
+    swap:SetScale(scale)
+    swap:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 2 / scale, -16 / scale)
+    local beside = Explain(holder, Window.EXPLAIN, Look.INK)
+    beside:SetPoint("TOPLEFT", head, "BOTTOMLEFT", Core.Window.BUTTON * scale + 18, -14)
+    beside:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", 0, -14)
+    beside:SetText(ns.TEXT.swap)
+    local made, menu = pcall(CreateFrame, "DropdownButton", nil, holder, "WowStyle1DropdownTemplate")
+    local under = Explain(holder, Window.EXPLAIN, Look.INK)
+    if made and menu then
+        menu:SetWidth(Core.Edge.MENU_WIDTH)
+        menu:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -100)
+        if menu.OverrideText then menu:OverrideText(Core.Edge.CLASSIC) end
+        menu:EnableMouse(false)
+        under:SetPoint("TOPLEFT", menu, "BOTTOMLEFT", 2, -10)
+        parts.menu = menu
+    else
+        under:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -100)
+    end
+    under:SetWidth(Window.STAGE - 2 * 24 - 2) -- a width, not a right anchor: that would pull its middle to the stage's
+    under:SetText(ns.TEXT.classic)
+    parts.head, parts.swap, parts.beside, parts.under = head, swap, beside, under
+    return parts
+end
+
 -- The loading screen's bar (Look.Headline) with its fill as far as the steps have come and the count in its middle.
 local function Progress(content)
     local bar = Look.Headline(content, Window.BAR)
@@ -412,8 +468,9 @@ local function Build()
     logo = holder:CreateTexture(nil, "ARTWORK")
     logo:SetTexture(Window.LOGO)
     logo:SetTexCoord(0, Window.LOGO_RIGHT, 0, 1)
-    logo:SetSize(Window.STAGE - 40, (Window.STAGE - 40) / 3)
-    logo:SetPoint("CENTER", holder, "CENTER", 0, 20)
+    logo:SetSize(Window.LOGO_SIZE[1], Window.LOGO_SIZE[2])
+    logo:SetPoint("TOP", holder, "TOP", 0, -24)
+    explained = Explained(holder)
     holder:Hide()
     -- Under them: the thin golden line, the count, Back and Next.
     local rule = Look.Rule(content)
@@ -470,5 +527,5 @@ function Window.Frame() return frame end
 function Window.Parts()
     return { stage = stage, title = title, words = words, count = count, back = back, forward = forward, made = made,
              current = current, progress = progress, own = own, note = note, head = look and look.title,
-             defaults = defaults, list = list, rows = rows, logo = logo, first = first }
+             defaults = defaults, list = list, rows = rows, logo = logo, first = first, explained = explained }
 end
