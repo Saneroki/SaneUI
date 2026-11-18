@@ -38,8 +38,7 @@ own purpose."
 - **Core** (`src/Core/Onboarding.lua`): `Core.Onboarding.Add(name, guide)` (a module hands in its setup: its steps
   and its `Stage`, the sample drawn into the window), `Open(name, step)` (reads the addon, out of a fight),
   `/sane setup <module>`; the first time a module with a setup is on, it opens by itself a few seconds after the
-  first loading screen, after the game's own What's new, one a session, kept as shown in
-  `SaneUIDB.modules.Onboarding.shown` (per account, outside the profiles).
+  first loading screen, after the game's own What's new (since 2026-11-18 all setups still to go through, below).
 - **The addon** `SaneUI_Onboarding` (`src/Onboarding/`, load on demand, in Core's download: `dev/tools/release`'s
   `CORE` and `CORE_PROJECT`): the window in the bronze, the module's sample at its left, the step's head, words and
   controls at its right (the module's own switches, made from their descriptions and set through `Core.Set`),
@@ -65,6 +64,18 @@ own purpose."
   and *3D model* as Yes or No, *Opacity*; the sample is the player's own tooltip, drawn by the panels' own code over
   Forever's loading screen, beside the game's mouse pointer or in the corner. Each module now draws into a frame of
   its own over the stage (`Window.lua`, `StageOf`).
+- **All setups together (Saneroki, 2026-11-18):** "We need to make sure that all saneui onboarding work together. So
+  lets say someone installs navigation, nameplates and tooltips and maybe other saneui addons together. When I login
+  to the game it should remember which onboardings the user went through and which onboardings still has to be gone
+  through." So at the login the setups still to go through (`Core.Onboarding.Due()`) open one after another in one
+  window, still one window a session (*Rules it keeps*): *Navigation: setup 1 of 3*, *Next setup* on the last step of
+  one. Gone through = its last step done (`done[name] = { version, day }`, per account, outside the profiles);
+  closed before that, it comes back at the next login where it was left (`left[name]`). "Also during onboarding say
+  that you can start this again in the addon settings": a faint note at each step's foot (the module's options page,
+  *Set up step by step*; else `/sane setup <module>`), so the setups' own *Later* lines went. "And we need a way to
+  invalidate the old settings so when we make big changes the user can go through the onboarding again to setup its
+  new settings": a guide's `version`, raised by its module after a big change, and `changed`, what changed, said in
+  gold on its first step; the settings chosen stay.
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.

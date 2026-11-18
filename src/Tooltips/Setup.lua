@@ -81,8 +81,7 @@ Setup.STEPS = {
       text = Lines({ "Tooltips", "items, spells, creatures, players: drawn anew in Sane UI's panel." },
           { "When", "at once, or only while you hold a key: the screen stays clear." },
           { "Where", "in the corner, where the game puts them, or at your mouse." },
-          { "At the left", "your own tooltip: every choice shows on it at once." },
-          { "Later", "Esc > Options > AddOns > Sane UI > Tooltips, or /sane setup tooltips." }),
+          { "At the left", "your own tooltip: every choice shows on it at once." }),
       settings = {
           "show",
           { key = "cursor", choices = { { "always", "Yes" }, { "default", "No" } },

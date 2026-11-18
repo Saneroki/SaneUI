@@ -14,19 +14,37 @@ local Core = SaneUI.Core
 --      Core.Onboarding.Open(name, step)  -- its window at that step (the first); after the fight in one
 --      Core.Onboarding.Guide(name)       -- the setup a module handed in; nil for none
 --      Core.Onboarding.Names()           -- the modules that handed one in, in that order
---      /sane setup <module>              -- the same, typed
+--      Core.Onboarding.Done(name)        -- whether this account went through it as it is now
+--      Core.Onboarding.Due()             -- the setups still to go through, in their order
+--      /sane setup <module>              -- the same, typed; /sane setup alone: those still to go through
 --
---  The first time a module with a setup is on (on this account), its setup
---  opens by itself a few seconds after the login (Onboarding.WAIT), out of a
---  fight, after the game's own What's new, one a session. That it was shown is
---  kept in the module Onboarding's store, for the account and outside the
---  profiles (SaneUIDB.modules.Onboarding.shown[name], the day): a profile
---  loaded never brings it back by itself; /sane setup and the button on the
---  module's options page do.
+--  All setups together (Saneroki, 2026-11-18: "it should remember which
+--  onboardings the user went through and which onboardings still has to be
+--  gone through"): a few seconds after the login (Onboarding.WAIT), out of a
+--  fight, after the game's own What's new, the setups of the modules that are
+--  on and not gone through yet open one after another in one window, the run
+--  (Navigation's, then Tooltips' when both are new; "setup 1 of 2"). A setup
+--  is gone through once its last step is done; closed before that it stays to
+--  go through and opens again at the next login, at the step where it was
+--  left, the others after it. Kept in the module Onboarding's store, for the
+--  account and outside the profiles (SaneUIDB.modules.Onboarding: done[name] =
+--  { version, day }, left[name] = the step): a profile loaded never brings
+--  one back by itself; /sane setup and the button Set up step by step on the
+--  module's options page (key setup, the window's words point there) do.
+--
+--  Its version (Saneroki, 2026-11-18: "a way to invalidate the old settings
+--  so when we make big changes the user can go through the onboarding again
+--  to setup its new settings"): a module that changes its setup a lot raises
+--  the guide's version, and every account that went through an older one
+--  goes through it again at its next login, told what changed (changed). The
+--  settings the player chose stay: the setup shows the values in use.
 --
 --  A guide:
 --      { title = "Nameplates",            -- the window's title
 --        steps = { step, ... },           -- in their order
+--        version = 2,                     -- raised after a big change (1 when it has none): gone through again
+--        changed = "...",                 -- what that change is, said on its first step to whoever went
+--                                         -- through an older version
 --        Stage = function(stage, step, index) end }
 --                                         -- draws the step's sample into stage (a frame of the window's),
 --                                         -- when the step shows and again after each change of a setting
@@ -51,6 +69,7 @@ Onboarding.TEXT = {
 }
 
 local guides, order = {}, {} -- [module name] = its guide; the names in the order they came
+local run                    -- the setups opened by themselves at the login, one after another; nil for none
 
 function Onboarding.Add(name, guide)
     if type(name) ~= "string" or type(guide) ~= "table" or type(guide.steps) ~= "table" then
@@ -77,11 +96,75 @@ local function Usable(name)
     return guides[name] ~= nil and type(module) == "table" and not module.off
 end
 
--- The setups shown so far on this account: [name] = the day.
-local function Shown()
+-- A setup's version: the guide's (whole, at least 1), raised by its module after a big change.
+local function Version(name)
+    local version = guides[name] and tonumber(guides[name].version)
+    return version and math.max(math.floor(version), 1) or 1
+end
+
+-- What this account went through (done[name] = { version, day }) and where a setup not gone through yet was left
+-- (left[name] = its step). The store of before (shown[name] = the day it first opened) counts as gone through, at 1.
+local function Records()
     local store = Core.Store(Onboarding.STORE)
-    if type(store.shown) ~= "table" then store.shown = {} end
-    return store.shown
+    if type(store.done) ~= "table" then store.done = {} end
+    if type(store.left) ~= "table" then store.left = {} end
+    if type(store.shown) == "table" then
+        for name, day in pairs(store.shown) do
+            if store.done[name] == nil then store.done[name] = { version = 1, day = type(day) == "string" and day or nil } end
+        end
+        store.shown = nil
+    end
+    return store
+end
+
+-- Whether this account went through a module's setup as it is now (its version, or a newer one).
+function Onboarding.Done(name)
+    local record = Records().done[name]
+    return type(record) == "table" and (tonumber(record.version) or 0) >= Version(name)
+end
+
+-- Whether it went through an older version of it: the setup changed since (the window says what, guide.changed).
+function Onboarding.Changed(name)
+    return type(Records().done[name]) == "table" and not Onboarding.Done(name)
+end
+
+-- Whether a module's setup has something to show: usable, with steps.
+local function Showable(name)
+    return Usable(name) and type(guides[name].steps) == "table" and #guides[name].steps > 0
+end
+
+-- The setups still to go through, in their order: of modules that are on, not gone through as they are now.
+function Onboarding.Due()
+    local due = {}
+    for _, name in ipairs(order) do
+        if Showable(name) and not Onboarding.Done(name) then due[#due + 1] = name end
+    end
+    return due
+end
+
+-- The window tells Core each step it shows: kept for a setup not gone through yet, which opens there again.
+function Onboarding.Reached(name, step)
+    if guides[name] and not Onboarding.Done(name) then Records().left[name] = tonumber(step) end
+end
+
+-- The setup the run goes on to after this one (the next in it still to go through); nil out of a run or at its end.
+function Onboarding.Following(name)
+    if not run then return nil end
+    local after = false
+    for _, other in ipairs(run) do
+        if after and Showable(other) and not Onboarding.Done(other) then return other end
+        if other == name then after = true end
+    end
+    return nil
+end
+
+-- Where a setup stands in the run: its place and the run's length; nil out of one.
+function Onboarding.Place(name)
+    if not run then return nil end
+    for index, other in ipairs(run) do
+        if other == name then return index, #run end
+    end
+    return nil
 end
 
 -- The window's addon read (once); false where it cannot be (switched off in the addon list, not there).
@@ -93,45 +176,65 @@ local function Load()
     return loaded == true
 end
 
--- The window on a module's setup; the setup kept as shown. Out of a fight (Open waits for its end).
+-- The window on a module's setup. Out of a fight (Go waits for its end). Whether it shows.
 local function Show(name, step, quiet)
     if not Load() then
         if not quiet then Core.Print(Onboarding.TEXT.missing) end
-        return
+        return false
     end
     local window = rawget(SaneUI, "Onboarding")
-    if type(window) ~= "table" or window.off or type(window.Show) ~= "function" then return end
-    if window.Show(name, step) then Shown()[name] = date("%Y-%m-%d") end
+    if type(window) ~= "table" or window.off or type(window.Show) ~= "function" then return false end
+    return window.Show(name, step) == true
 end
 
--- quiet: opened by itself (the first time), so nothing is said if it cannot be.
-function Onboarding.Open(name, step, quiet)
+-- quiet: opened by itself (the run), so nothing is said if it cannot be.
+local function Go(name, step, quiet)
     if not Usable(name) then return false end
     if not Core.AfterCombat("onboarding", Show, name, step, quiet) and not quiet then Core.Print(Onboarding.TEXT.later) end
     return true
 end
 
--- The first setup not shown yet, a few seconds after the first loading screen; again a little later while the
--- game's own What's new is open.
-local Due
-local due = Core.Later(function() Due() end, Onboarding.WAIT, "onboarding")
-function Due()
+-- Asked for (the options page's button, /sane setup <module>): that setup alone, at that step (the first).
+function Onboarding.Open(name, step, quiet)
+    run = nil
+    return Go(name, step, quiet)
+end
+
+-- The setups still to go through, one after another in one window, each at the step where it was left.
+function Onboarding.Start(quiet)
+    local due = Onboarding.Due()
+    if #due == 0 then return false end
+    run = due
+    return Go(due[1], Records().left[due[1]], quiet)
+end
+
+-- The window tells Core a setup was gone through to its end: kept with its version, and the run goes on to the
+-- next one in the same window. Whether one follows (the window closes otherwise).
+function Onboarding.Finished(name)
+    if not guides[name] then return false end
+    local following = Onboarding.Following(name)
+    local store = Records()
+    store.done[name] = { version = Version(name), day = date("%Y-%m-%d") }
+    store.left[name] = nil
+    if not following then return false end
+    return Go(following, Records().left[following], true)
+end
+
+-- The run, a few seconds after the first loading screen; again a little later while the game's own What's new is
+-- open. Once a session.
+local Begin
+local begin = Core.Later(function() Begin() end, Onboarding.WAIT, "onboarding")
+function Begin()
     local splash = rawget(_G, "SplashFrame")
-    if type(splash) == "table" and splash.IsShown and Core.Ask(splash.IsShown, splash) then return due() end
-    local shown = Shown()
-    for _, name in ipairs(order) do
-        if Usable(name) and not shown[name] then
-            Onboarding.Open(name, 1, true)
-            return
-        end
-    end
+    if type(splash) == "table" and splash.IsShown and Core.Ask(splash.IsShown, splash) then return begin() end
+    Onboarding.Start(true)
 end
 
 local looked = false
 Core.On("PLAYER_ENTERING_WORLD", function()
     if looked then return end
     looked = true
-    due()
+    begin()
 end)
 
 -- A setup's name as typed ("nameplates", "Nameplates"): the module's name; nil for none.
@@ -151,6 +254,8 @@ Core.Command("setup", Onboarding.TEXT.command, function(rest)
     if #usable == 0 then return Core.Print(Onboarding.TEXT.none) end
     rest = strtrim(rest or "")
     if rest == "" then
+        -- Those still to go through, one after another; else the only one; else the list.
+        if #Onboarding.Due() > 0 then return Onboarding.Start() end
         if #usable == 1 then return Onboarding.Open(usable[1]) end
         return Core.Print(Onboarding.TEXT.list:format(table.concat(usable, ", ")))
     end

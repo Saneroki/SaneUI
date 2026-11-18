@@ -2,7 +2,8 @@
 -- client (wowstub.lua), with a small module made here that hands in a setup of three steps: the window read only when
 -- a setup opens (load on demand), by itself the first time (after the game's What's new, out of a fight, once), by
 -- /sane setup and after a fight; the steps, their words and controls made from the module's own switches, set
--- through Core; Back, Next and Done; the module's sample drawn anew after each change; a setup kept as shown.
+-- through Core; Back, Next and Done; the module's sample drawn anew after each change; a setup kept where it was
+-- left and as gone through with its version; all setups to go through one after another (the run), a version raised.
 -- Nameplates' own setup (its steps and sample plates) is tested in dev/tests/nameplates.lua.
 -- Usage, from the project folder:  lua5.1 dev/tests/onboarding.lua
 
@@ -41,6 +42,7 @@ end
 -- A module of three steps: a switch, a number and one of a few, with a switch under one of the choices.
 local garden = Core.NewModule("SaneUI_Garden", "Garden", {})
 Core.Options("Garden", {
+    { key = "setup", text = "Set up step by step", button = function() Onboarding.Open("Garden") end },
     { key = "flowers", default = true, text = "Flowers", tip = "Flowers in the beds." },
     { key = "height", default = 75, min = 0, max = 100, step = 5, unit = "%", text = "Hedge height", tip = "How tall." },
     { key = "path", default = "gravel", choices = { { "gravel", "Gravel" }, { "stone", "Stone" } }, text = "Path",
@@ -109,9 +111,14 @@ SplashFrame:Hide()
 W.Wait(Onboarding.WAIT + 1)
 check(read == 1 and ons and ons.Window.Frame():IsShown(), "then the window is read and shows the module's setup")
 local store = Core.Store("Onboarding")
-check(type(store.shown.Garden) == "string", "kept as shown, for the account")
+check(store.done.Garden == nil and store.left.Garden == 1, "not gone through yet: kept where it was left, for the account")
+check(not Onboarding.Done("Garden") and Onboarding.Due()[1] == "Garden", "still to go through")
 local window = ons.Window
 local parts = window.Parts()
+check(parts.head._text == "Garden: setup", "a run of one: no count in the head")
+check(parts.note._text:find(ons.TEXT.unfinished, 1, true)
+    and parts.note._text:find(ons.TEXT.again:format("Garden"), 1, true),
+    "the note: closed before its end it comes back; where to start it again (the options page's button)")
 check(parts.title._text == "The beds" and parts.words._text == "What grows.", "the first step: its head and words")
 check(parts.count._text == "Step 1 of 4", "Step 1 of 4")
 check(parts.back:IsEnabled() == false, "no Back on the first step")
@@ -234,13 +241,19 @@ key.box._scripts.OnClick(key.box, "LeftButton")
 check(not key.box.listening, "in a fight keys stay as they are")
 W.combat = false
 check(parts.forward._text == ons.TEXT.done and parts.progress.share == 1, "the last step: the bar full, its button Done")
+check(store.left.Garden == 4 and not Onboarding.Done("Garden"), "each step kept as where it was left")
 parts.forward._scripts.OnClick(parts.forward)
 check(not window.Frame():IsShown(), "Done closes the window; what was chosen stays")
+check(Onboarding.Done("Garden") and store.done.Garden.version == 1 and type(store.done.Garden.day) == "string"
+    and store.left.Garden == nil and #Onboarding.Due() == 0, "gone through: kept with its version and day")
 check(options.path == "stone" and options.flowers == false, "the choices are the module's settings now")
 
 -- Asked for again: /sane setup (the only one there: its name not needed), at the first step; in a fight, after it.
 SlashCmdList.SANEUI("setup")
 check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 4", "/sane setup opens it again, at the start")
+check(not window.Parts().note._text:find(ons.TEXT.unfinished, 1, true), "gone through: the note no longer says it comes back")
+window.Parts().forward._scripts.OnClick(window.Parts().forward)
+check(store.left.Garden == nil, "a setup gone through keeps no step")
 window.Close()
 W.printed = {}
 W.Combat(true)
@@ -266,8 +279,94 @@ check(grows.rounds[2].button:GetChecked() == true, "the one in use lit (Flowers 
 grows.rounds[1].button._scripts.OnClick(grows.rounds[1].button)
 check(options.flowers == true, "a click sets the switch")
 
+-- All setups together: two more modules installed later, Orchard (two steps) and Shed (one, no button on its
+-- options page). At the next login they open one after another in one window, the run; Garden, gone through, not.
+local orchard = Core.NewModule("SaneUI_Orchard", "Orchard", {})
+Core.Options("Orchard", { { key = "setup", text = "Set up step by step", button = function() Onboarding.Open("Orchard") end },
+                          { key = "apples", default = true, text = "Apples" }, { key = "pears", default = true, text = "Pears" } })
+local ORCHARD = { title = "Orchard", steps = { { key = "a", title = "Apples", text = "Red.", settings = { "apples" } },
+                                               { key = "p", title = "Pears", text = "Green.", settings = { "pears" } } } }
+Onboarding.Add("Orchard", ORCHARD)
+local shed = Core.NewModule("SaneUI_Shed", "Shed", {})
+Core.Options("Shed", { { key = "tools", default = true, text = "Tools" } })
+Onboarding.Add("Shed", { title = "Shed", steps = { { key = "t", title = "Tools", text = "Kept dry.", settings = { "tools" } } } })
+W.Fire("ADDON_LOADED", "SaneUI_Orchard")
+W.Fire("ADDON_LOADED", "SaneUI_Shed")
+local due = Onboarding.Due()
+check(#due == 2 and due[1] == "Orchard" and due[2] == "Shed", "still to go through: the two new ones, in their order")
+check(Onboarding.Start(true) and window.Frame():IsShown(), "the next login's run opens")
+parts = window.Parts()
+check(parts.head._text == "Orchard: setup 1 of 2" and parts.count._text == "Step 1 of 2", "the first of two: its head counts")
+parts.forward._scripts.OnClick(parts.forward)
+parts = window.Parts()
+check(parts.forward._text:find(ons.TEXT.nextSetup, 1, true) and parts.note._text:find(ons.TEXT.following:format("Shed"), 1, true),
+    "its last step: Next setup, and the note says which")
+window.Close()
+check(store.left.Orchard == 2 and not Onboarding.Done("Orchard") and not Onboarding.Done("Shed"),
+    "closed before its end: kept where it was left, both still to go through")
+check(Onboarding.Start(true) and window.Parts().head._text == "Orchard: setup 1 of 2"
+    and window.Parts().count._text == "Step 2 of 2", "the login after: it opens again where it was left")
+parts = window.Parts()
+parts.forward._scripts.OnClick(parts.forward)
+parts = window.Parts()
+check(Onboarding.Done("Orchard") and window.Frame():IsShown() and parts.head._text == "Shed: setup 2 of 2"
+    and parts.count._text == "Step 1 of 1", "Next setup: Orchard gone through, Shed in the same window")
+check(parts.forward._text == ons.TEXT.done and not parts.note._text:find("Next:", 1, true), "the run's last: Done")
+check(parts.note._text:find(ons.TEXT.againTyped:format("shed"), 1, true), "no button on its options page: the command")
+parts.forward._scripts.OnClick(parts.forward)
+check(not window.Frame():IsShown() and Onboarding.Done("Shed") and #Onboarding.Due() == 0, "all gone through")
+check(not Onboarding.Start(true), "nothing to go through: no run")
+W.printed = {}
+SlashCmdList.SANEUI("setup")
+check(not window.Frame():IsShown() and printed("setups: Garden, Orchard, Shed"), "/sane setup: the list, none left")
+
+-- A big change: Orchard's setup raises its version, and whoever went through the older one goes through it again,
+-- told what changed on its first step. The settings chosen stay.
+options = Core.Settings("Orchard")
+Core.Set("Orchard", "pears", false)
+ORCHARD.version, ORCHARD.changed = 2, "plums too."
+check(not Onboarding.Done("Orchard") and Onboarding.Changed("Orchard") and Onboarding.Due()[1] == "Orchard",
+    "a new version: to go through again")
+check(Onboarding.Start(true) and window.Parts().head._text == "Orchard: setup", "the login after: alone in its run")
+parts = window.Parts()
+check(parts.words._text:find(ons.TEXT.changed:format("plums too."), 1, true) and parts.words._text:find("Red.", 1, true),
+    "its first step says what changed, then its own words")
+parts.forward._scripts.OnClick(parts.forward)
+check(not window.Parts().words._text:find("plums", 1, true), "only on the first step")
+check(Core.Settings("Orchard").pears == false, "the settings chosen stay")
+window.Parts().forward._scripts.OnClick(window.Parts().forward)
+check(Onboarding.Done("Orchard") and store.done.Orchard.version == 2 and not Onboarding.Changed("Orchard"),
+    "gone through again: kept at the new version")
+ORCHARD.version, ORCHARD.changed = 3, nil
+Onboarding.Start(true)
+check(window.Parts().words._text:find(ons.TEXT.changedAny, 1, true), "a new version without its words: said plainly")
+window.Close()
+
+-- Opened by hand (the options page's button) while others are to go through: that one alone, no run.
+check(Onboarding.Due()[1] == "Orchard", "Orchard still to go through")
+store.done.Shed = nil
+Onboarding.Open("Shed")
+parts = window.Parts()
+check(parts.head._text == "Shed: setup" and parts.forward._text == ons.TEXT.done, "by hand: alone, its last step Done")
+parts.forward._scripts.OnClick(parts.forward)
+check(not window.Frame():IsShown() and Onboarding.Done("Shed") and not Onboarding.Done("Orchard"), "only that one gone through")
+SlashCmdList.SANEUI("setup")
+check(window.Frame():IsShown() and window.Parts().head._text == "Orchard: setup", "/sane setup alone: those still to go through")
+window.Close()
+
+-- The store of before (shown: the day a setup first opened) counts as gone through, at version 1.
+store.done.Shed, store.shown = nil, { Shed = "2026-11-16" }
+check(Onboarding.Done("Shed") and store.shown == nil and store.done.Shed.version == 1 and store.done.Shed.day == "2026-11-16",
+    "shown of before: gone through at version 1")
+
+-- A module of the run that stood down is skipped.
+orchard.off = true
+due = Onboarding.Due()
+check(#due == 0, "Orchard stood down: nothing to go through")
+orchard.off = nil
+
 -- A module that stood down has no setup to show.
-garden.off = true
+garden.off, orchard.off, shed.off = true, true, true
 W.printed = {}
 check(Onboarding.Open("Garden") == false, "a module stood down: no setup")
 SlashCmdList.SANEUI("setup")

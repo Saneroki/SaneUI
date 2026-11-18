@@ -22,6 +22,10 @@ Sane UI 0.3.3 (2026-11-17)
 - The setups' key boxes take your key again: click a box,
   then press the key, with Shift, Ctrl or Alt held if you like
   (Alt-Shift-V), or a mouse button.
+- The setups of several Sane UI addons come one after another
+  in one window after the login. Each is remembered once you
+  finish it; one closed early comes back where you left it.
+  After a big change an addon can ask you through it again.
 
 Navigation 0.3.5 (2026-11-16)
 -----------------------------

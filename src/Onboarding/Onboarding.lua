@@ -31,6 +31,16 @@ ns.TEXT = {
     done = Core.Word("DONE", "Done"),
     step = "Step %d of %d",
     setup = "%s: setup",
+    setupOf = "%s: setup %d of %d", -- one of the run (Core.Onboarding.Start): the setups still to go through
+    nextSetup = "Next setup",
+    -- The note under each step: where to start it again; for one not gone through yet, that it comes back.
+    again = "Start this setup again any time: Esc > Options > AddOns > Sane UI > %s, Set up step by step.",
+    againTyped = "Start this setup again any time: /sane setup %s.",
+    unfinished = "Closed before its end, it opens again at your next login, where you left it.",
+    following = "Next: the setup of %s.",
+    -- On the first step, to whoever went through an older version of it (guide.version raised, guide.changed).
+    changed = "Changed since you last went through it: %s",
+    changedAny = "Changed since you last went through it: new steps and settings to choose.",
 }
 
 -- The window on a module's setup at that step (the first). False for a module without one.

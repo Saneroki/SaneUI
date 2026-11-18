@@ -96,8 +96,7 @@ Setup.STEPS = {
       text = Lines({ "Nameplates", "the bars over creatures and players near you, in Sane UI's dress." },
           { "This setup", "sets them up to your liking, a page for each part." },
           { "At the left", "a sample plate shows each choice at once." },
-          { "Every choice", "counts at once, on the plates around you too. Close at any time: it stays." },
-          { "Later", "Esc > Options > AddOns > Sane UI > Nameplates, or /sane setup nameplates." }),
+          { "Every choice", "counts at once, on the plates around you too. Close at any time: it stays." }),
       settings = {} },
     { key = "size", title = "Size",
       text = Lines({ "Nameplate size", "how large plates near you are." },
@@ -169,7 +168,7 @@ Setup.STEPS = {
       text = Lines({ "Health bar and spells", "all of it: everything of the pages before." },
           { "Health bar only", "no auras around it." },
           { "Spells only", "no bar, no name: a faint dot where a plate is, a gold arrow over your target." },
-          { "Done", "your plates are set. Come back at any time: /sane setup nameplates." }),
+          { "Done", "your plates are set." }),
       settings = { "style", "dot" } },
 }
 

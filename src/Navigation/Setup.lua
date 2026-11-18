@@ -115,8 +115,7 @@ Setup.STEPS = {
       text = Lines({ "The minimap", "is the map: small in its corner, the whole screen when you want it." },
           { "The same map", "in both, moved and zoomed the same way, each keeping its own place." },
           { "This setup", "shows how to open it, where it stands and how to find your way." },
-          { "Every choice", "counts at once. Close at any time: it stays." },
-          { "Later", "Esc > Options > AddOns > Sane UI > Navigation, or /sane setup navigation." }),
+          { "Every choice", "counts at once. Close at any time: it stays." }),
       settings = {} },
     { key = "corner", title = "Into the corner",
       text = Lines({ "The hot corner", "the screen's corner your map stands in: the big arrow points at it." },
@@ -149,7 +148,7 @@ Setup.STEPS = {
       text = Lines({ "A double click", "anywhere: the map pin there, and the way to it." },
           { "A right click", "often offers more: on a pin, a marker, the map pin." },
           { "The wheel", "zooms. A drag moves the map, the middle button brings it back to you." },
-          { "Done", "your map is set. Come back at any time: /sane setup navigation." }),
+          { "Done", "your map is set." }),
       settings = {} },
 }
 

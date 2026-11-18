@@ -9,11 +9,15 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 
 ## How to use
 
-- **It opens by itself** the first time a module with a setup is on, a few seconds after the login (after the game's
-  own What's new, never in a fight), once per account.
+- **All setups together:** a few seconds after the login (after the game's own What's new, never in a fight) the
+  setups still to go through open one after another in one window: those of the modules that are on and that this
+  account has not gone through yet, or that changed a lot since (*Navigation: setup 1 of 3*). The last step of one
+  says *Next setup*, and the next one follows in the same window. A setup is gone through once its last step is done;
+  closed before that, it opens again at the next login, at the step where it was left, the others after it.
 - **Open it again** with the button *Set up step by step* at the top of the module's options page (Esc > Options >
-  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`; `/sane setup` alone: the only
-  one there, or the list of them).
+  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`; `/sane setup` alone: those still
+  to go through, else the only one there, else the list of them). A faint note at the foot of every step says where,
+  and for a setup not gone through yet that it comes back.
 - **In the window:** the sample at the left, in a solid grey box, the step at the right: its head, its words, its switches. Each switch is the module's own,
   as on its options page, with the same words and tips: a tick, a slider with its steppers, or a round button per
   choice (side by side for three or fewer); one under another stands a little in and is greyed out while that one is
@@ -66,9 +70,22 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   are the red ones (`Look.Red`) with the game's `common-icon-backarrow` and `-forwardarrow`, as
   `CharacterCreateNavButtonMixin:UpdateText` puts them; sounds as the game's windows and steps play them.
 - **When it opens by itself:** Core looks a few seconds (`Core.Onboarding.WAIT`) after the first
-  `PLAYER_ENTERING_WORLD` of the session, waits while the game's `SplashFrame` shows, opens the first setup of a
-  module that is on and was never shown (`SaneUIDB.modules.Onboarding.shown[name]`, the day; for the account, outside
-  the profiles), one a session, through `Core.AfterCombat`.
+  `PLAYER_ENTERING_WORLD` of the session, waits while the game's `SplashFrame` shows, and starts the run
+  (`Core.Onboarding.Start`): every setup still to go through (`Core.Onboarding.Due()`: of a module that is on, with
+  steps, not gone through at the guide's `version`), in their order, the first at the step where it was left, once a
+  session, through `Core.AfterCombat`. The window tells Core each step it shows (`Reached`: kept as where a setup not
+  gone through yet was left) and the last one done (`Finished`: gone through, kept with its version; the run's next
+  setup, `Following`, shows in the same window; its head counts them, `Place`). Kept in
+  `SaneUIDB.modules.Onboarding` for the account, outside the profiles: `done[name] = { version, day }`, `left[name] =
+  step`; the store of before (`shown[name]`, the day a setup first opened) is read as gone through at version 1.
+  Opened by hand (`Open`), a setup shows alone, with no run.
+- **A setup changed a lot:** its module raises the guide's `version` (1 when it has none) and may say what changed
+  (`changed`); every account that went through an older version goes through it again at its next login, the first
+  step saying what changed in gold (*Changed since you last went through it: ...*). The settings chosen stay.
+- **The note** at each step's foot (faint, `Window.NOTE`): on a setup's last step in a run, which one comes next; for
+  a setup not gone through yet, that it opens again at the next login; always where to start it again: the module's
+  options page and its button when it has one (`Core.Described(name, "setup")`), else `/sane setup <module>`. So the
+  setups' own words no longer say it.
 
 ## Files
 
@@ -80,6 +97,11 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — All setups together (Saneroki: "it should remember which onboardings the user went through and which
+  onboardings still has to be gone through"): the run of every setup still to go through, kept where each was left
+  and as gone through at its end; a setup's `version` to have everyone go through it again after a big change
+  ("a way to invalidate the old settings so when we make big changes the user can go through the onboarding again");
+  the note at each step's foot ("during onboarding say that you can start this again in the addon settings").
 - 2026-11-18 — The key boxes hear the key again (Saneroki: "the configure keybinds don't work. When I click it it says
   press a key but it doesn't register any keypresses. I want it to work with the modifier keys as well so that
   someone could press like alt shift v"): each box had its `OnKeyDown` from the start, which in the game takes the
