@@ -165,3 +165,23 @@ about = "Blizzard's article on Forever's new dungeons, read 2026-11-15: the zone
 kind = "batch"
 game = "forever"
 about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-11-18, a newer reading of what batches 5, 17 and 24 read, checked against Forever's client 70959: the same fields on the same terms, and where the newer reading says otherwise than the one before did, it corrects what the master took from that (never a fact of the game, of its servers or of a person). Unverified: the game's word or our own sightings replace it entry by entry."
+
+[28]
+kind = "batch"
+game = "forever"
+about = "Herb, ore and treasure places for Forever's client as our tool picked them, 2026-11-18, a newer reading of the node places batch 5 read: the same terms, points near a known point of the same kind are that point, and where the newer reading no longer has a point it held before, it is taken back from entries that stand on imports alone (never a fact of the game, of its servers or of a person). Unverified: the game's word or our own sightings replace it entry by entry."
+
+[29]
+kind = "batch"
+game = "forever"
+about = "What Forever's live servers told players' games, and what was recorded in play, up to 2026-11-18 (builds up to 70959), as our tool picked it, a newer reading of what batch 20 read. The servers' answers: quests' names, levels, chains, objectives with their counts and texts, money, items, spells, reputation and tags; creatures' titles, ranks, kinds and families; these correct what imports said. Experience: as turn-ins paid or players captured it, else worked out from Forever's client (its table at the server's difficulty, times the server's multiplier). Recorded in play, filling only what the master lacks: creatures' levels, health and the spells they were seen to cast, services, vendors' goods, stocks and costs, what creatures, nodes and chests gave in more than one window (no chances), and weapons' damage as the game's tooltip shows it. Flights' times left out (they would stand in the game's own versions). Unverified: the game's word or our own sightings replace it entry by entry."
+
+[30]
+kind = "batch"
+game = "forever"
+about = "What was counted in play in Forever up to 2026-11-18 (builds up to 70959), as our tool picked it, a newer count of what batch 21 counted. Drops: what creatures, nodes, chests and fishing waters gave, with how many loots and drops and the chance those make, where at least 10 loots and 3 drops stand behind it (yields changed by a Legacy talent left out), else the item alone; bosses' rolled items from the kills. Places: the quests' objectives' areas where counts went up, and herb and ore points seen more than once. Unverified: the game's word or our own counts replace it."
+
+[31]
+kind = "batch"
+game = "forever"
+about = "What players' records of Forever itself show, 2026-11-18, a newer reading of what batch 19 read, only what the master lacked: what bosses were seen to drop, without chances. Unverified: the game's word or our own sightings replace it entry by entry."

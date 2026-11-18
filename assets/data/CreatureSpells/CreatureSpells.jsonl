@@ -3,28 +3,47 @@
 {"key":122,"since":0,"src":[20],"name":"Frost Nova","icon":135848,"school":16}
 {"key":172,"since":0,"src":[20],"name":"Corruption","icon":136118,"school":32,"castTime":2000}
 {"key":332,"since":0,"src":[20],"name":"Healing Wave","icon":136052,"school":8,"castTime":2000}
+{"key":421,"since":0,"src":[29],"name":"Chain Lightning","icon":136015,"school":8,"castTime":2500}
 {"key":467,"since":0,"src":[20],"name":"Thorns","icon":136104,"school":8}
+{"key":676,"since":0,"src":[29],"name":"Disarm","icon":132343,"school":1}
 {"key":700,"since":0,"src":[20],"name":"Sleep","icon":136090,"school":32,"castTime":1500}
-{"key":744,"since":0,"src":[20],"name":"Poison","icon":136016,"school":8}
+{"key":744,"since":0,"src":[20,29],"name":"Poison","icon":136016,"school":8}
+{"key":745,"since":0,"src":[29],"name":"Web","icon":132149,"school":1}
+{"key":845,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
 {"key":865,"since":0,"src":[20],"name":"Frost Nova","icon":135848,"school":16}
 {"key":913,"since":0,"src":[20],"name":"Healing Wave","icon":136052,"school":8,"castTime":3000}
+{"key":945,"since":0,"src":[29],"name":"Lightning Shield","icon":136051,"school":8}
 {"key":959,"since":0,"src":[20],"name":"Healing Wave","icon":136052,"school":8,"castTime":3000}
 {"key":970,"since":0,"src":[20],"name":"Shadow Word: Pain","icon":136207,"school":32}
+{"key":1006,"since":0,"src":[29],"name":"Inner Fire","icon":135926,"school":2}
+{"key":1020,"since":0,"src":[29],"name":"Divine Shield","icon":135896,"school":2}
 {"key":1460,"since":0,"src":[20],"name":"Arcane Intellect","icon":135932,"school":64}
+{"key":1766,"since":0,"src":[29],"name":"Kick","icon":132219,"school":1}
 {"key":2055,"since":0,"src":[20],"name":"Heal","icon":135915,"school":2,"castTime":3000}
 {"key":2138,"since":0,"src":[20],"name":"Fire Blast","icon":135807,"school":4}
+{"key":2590,"since":0,"src":[29],"name":"Backstab","icon":132090,"school":1}
+{"key":2601,"since":0,"src":[29],"name":"Fire Shield III","icon":135817,"school":4,"castTime":1000}
+{"key":2602,"since":0,"src":[29],"name":"Fire Shield IV","icon":135817,"school":4,"castTime":1000}
 {"key":2609,"since":0,"src":[20],"name":"Shock","icon":136115,"school":8}
 {"key":2767,"since":0,"src":[20],"name":"Shadow Word: Pain","icon":136207,"school":32}
+{"key":2941,"since":0,"src":[29],"name":"Immolate","icon":135817,"school":4,"castTime":2000}
 {"key":3248,"since":0,"src":[20],"name":"Improved Blocking","icon":135806,"school":1}
-{"key":3391,"since":0,"src":[20],"name":"Thrash","icon":132152,"school":1}
-{"key":3427,"since":0,"src":[20],"name":"Infected Wound","icon":136066,"school":8}
+{"key":3256,"since":0,"src":[29],"name":"Plague Cloud","icon":136127,"school":32,"castTime":2000}
+{"key":3356,"since":0,"src":[29],"name":"Flame Lash","icon":135807,"school":4,"castTime":1000}
+{"key":3358,"since":0,"src":[29],"name":"Leech Poison","icon":136067,"school":8}
+{"key":3391,"since":0,"src":[20,29],"name":"Thrash","icon":132152,"school":1}
+{"key":3427,"since":0,"src":[20,29],"name":"Infected Wound","icon":136066,"school":8}
+{"key":3472,"since":0,"src":[29],"name":"Holy Light","icon":135920,"school":2,"castTime":2500}
 {"key":3603,"since":0,"src":[20],"name":"Distracting Pain","icon":132278,"school":1}
-{"key":3604,"since":0,"src":[20],"name":"Tendon Rip","icon":132109,"school":1}
+{"key":3604,"since":0,"src":[20,29],"name":"Tendon Rip","icon":132109,"school":1}
 {"key":3605,"since":0,"src":[20],"name":"Summon Remote-Controlled Golem","icon":132281,"school":1,"castTime":3000}
+{"key":3636,"since":0,"src":[29],"name":"Crystalline Slumber","icon":136090,"school":1,"castTime":2000}
+{"key":3639,"since":0,"src":[29],"name":"Improved Blocking","icon":135806,"school":1}
 {"key":4971,"since":0,"src":[20],"name":"Healing Ward","icon":135928,"school":1,"castTime":2000}
 {"key":4979,"since":0,"src":[20],"name":"Quick Flame Ward","icon":135824,"school":1,"castTime":1500}
 {"key":5110,"since":0,"src":[20],"name":"Summon Living Flame","icon":135805,"school":1,"castTime":2000}
 {"key":5115,"since":0,"src":[20],"name":"Battle Command","icon":132277,"school":8}
+{"key":5137,"since":0,"src":[29],"name":"Call of the Grave","icon":136130,"school":32,"castTime":2000}
 {"key":5141,"since":0,"src":[20],"name":"Eject Sneed","icon":135805,"school":1}
 {"key":5159,"since":0,"src":[20],"name":"Melt Ore","icon":135826,"school":4,"castTime":1500}
 {"key":5172,"since":0,"src":[20],"name":"Bloodsail Companion","icon":132150,"school":1}
@@ -35,18 +54,25 @@
 {"key":5208,"since":0,"src":[20],"name":"Poisoned Harpoon","icon":132273,"school":8,"castTime":2000}
 {"key":5213,"since":0,"src":[20],"name":"Molten Metal","icon":135807,"school":4,"castTime":2000}
 {"key":5262,"since":0,"src":[20],"name":"Fanatic Blade","icon":135817,"school":1,"castTime":1000}
+{"key":5413,"since":0,"src":[29],"name":"Noxious Catalyst","icon":135914,"school":8}
 {"key":5416,"since":0,"src":[20],"name":"Venom Sting","icon":132274,"school":8}
 {"key":5532,"since":0,"src":[20],"name":"Cleave","icon":132338,"school":1}
-{"key":5568,"since":0,"src":[20],"name":"Trample","icon":136063,"school":1}
+{"key":5568,"since":0,"src":[20,29],"name":"Trample","icon":136063,"school":1}
+{"key":5589,"since":0,"src":[29],"name":"Hammer of Justice","icon":135963,"school":2}
+{"key":5605,"since":0,"src":[29],"name":"Healing Ward","icon":135928,"school":1,"castTime":2000}
 {"key":5708,"since":0,"src":[20],"name":"Swoop","icon":132338,"school":1}
 {"key":5781,"since":0,"src":[20],"name":"Threatening Growl","icon":132278,"school":1,"castTime":1000}
 {"key":6016,"since":0,"src":[20],"name":"Pierce Armor","icon":136231,"school":1}
-{"key":6063,"since":0,"src":[20],"name":"Heal","icon":135916,"school":2,"castTime":3000}
+{"key":6063,"since":0,"src":[20,29],"name":"Heal","icon":135916,"school":2,"castTime":3000}
+{"key":6064,"since":0,"src":[29],"name":"Heal","icon":135916,"school":2,"castTime":3000}
+{"key":6066,"since":0,"src":[29],"name":"Power Word: Shield","icon":135940,"school":2}
 {"key":6077,"since":0,"src":[20],"name":"Renew","icon":135953,"school":2}
 {"key":6143,"since":0,"src":[20],"name":"Frost Ward","icon":135850,"school":16}
+{"key":6146,"since":0,"src":[29],"name":"Slow","icon":136091,"school":8}
 {"key":6205,"since":0,"src":[20],"name":"Curse of Weakness","icon":136138,"school":32}
+{"key":6253,"since":0,"src":[29],"name":"Backhand","icon":132939,"school":1}
 {"key":6254,"since":0,"src":[20],"name":"Chained Bolt","icon":136015,"school":8,"castTime":1800}
-{"key":6268,"since":0,"src":[20],"name":"Rushing Charge","icon":132368,"school":1}
+{"key":6268,"since":0,"src":[20,29],"name":"Rushing Charge","icon":132368,"school":1}
 {"key":6278,"since":0,"src":[20],"name":"Creeping Mold","icon":136134,"school":8,"castTime":3000}
 {"key":6304,"since":0,"src":[20],"name":"Rhahk'Zor Slam","icon":132939,"school":1}
 {"key":6306,"since":0,"src":[20],"name":"Acid Splash","icon":132793,"school":8,"castTime":1000}
@@ -55,19 +81,22 @@
 {"key":6435,"since":0,"src":[20],"name":"Smite Slam","icon":132939,"school":1}
 {"key":6466,"since":0,"src":[20],"name":"Axe Toss","icon":132395,"school":1}
 {"key":6479,"since":0,"src":[20],"name":"Razormane Wolf","icon":132140,"school":1}
-{"key":6524,"since":0,"src":[20],"name":"Ground Tremor","icon":136025,"school":1}
+{"key":6524,"since":0,"src":[20,29],"name":"Ground Tremor","icon":136025,"school":1}
 {"key":6530,"since":0,"src":[20],"name":"Sling Dirt","icon":136090,"school":1,"castTime":1000}
-{"key":6533,"since":0,"src":[20],"name":"Net","icon":132149,"school":1}
+{"key":6533,"since":0,"src":[20,29],"name":"Net","icon":132149,"school":1}
 {"key":6535,"since":0,"src":[20],"name":"Lightning Cloud","icon":136014,"school":8,"castTime":3000}
+{"key":6547,"since":0,"src":[29],"name":"Rend","icon":132155,"school":1}
+{"key":6548,"since":0,"src":[29],"name":"Rend","icon":132155,"school":1}
 {"key":6607,"since":0,"src":[20],"name":"Lash","icon":132109,"school":1}
-{"key":6660,"since":0,"src":[20],"name":"Shoot","icon":132222,"school":1}
+{"key":6660,"since":0,"src":[20,29],"name":"Shoot","icon":132222,"school":1}
 {"key":6685,"since":0,"src":[20],"name":"Piercing Shot","icon":132312,"school":4}
-{"key":6713,"since":0,"src":[20],"name":"Disarm","icon":132343,"school":1}
+{"key":6713,"since":0,"src":[20,29],"name":"Disarm","icon":132343,"school":1}
 {"key":6728,"since":0,"src":[20],"name":"Enveloping Winds","icon":136018,"school":8,"castTime":2000}
 {"key":6730,"since":0,"src":[20],"name":"Head Butt","icon":132939,"school":1}
-{"key":6742,"since":0,"src":[20],"name":"Bloodlust","icon":136012,"school":8}
+{"key":6742,"since":0,"src":[20,29],"name":"Bloodlust","icon":136012,"school":8}
 {"key":6778,"since":0,"src":[20],"name":"Healing Touch","icon":136041,"school":8,"castTime":3500}
 {"key":6950,"since":0,"src":[20],"name":"Faerie Fire","icon":136033,"school":8,"castTime":2000}
+{"key":6979,"since":0,"src":[29],"name":"Fire Shot","icon":132312,"school":4}
 {"key":6984,"since":0,"src":[20],"name":"Frost Shot","icon":135989,"school":16}
 {"key":7054,"since":0,"src":[20],"name":"Forsaken Skills","icon":136121,"school":32,"castTime":2500}
 {"key":7057,"since":0,"src":[20],"name":"Haunting Spirits","icon":136123,"school":32,"castTime":2000}
@@ -84,12 +113,15 @@
 {"key":7132,"since":0,"src":[20],"name":"Summon Lupine Delusions","icon":136222,"school":1,"castTime":1000}
 {"key":7140,"since":0,"src":[20],"name":"Expose Weakness","icon":132109,"school":32}
 {"key":7145,"since":0,"src":[20],"name":"Diving Sweep","icon":132338,"school":1}
-{"key":7164,"since":0,"src":[20],"name":"Defensive Stance","icon":132341,"school":1}
-{"key":7165,"since":0,"src":[20],"name":"Battle Stance","icon":132349,"school":1}
+{"key":7159,"since":0,"src":[29],"name":"Backstab","icon":132090,"school":1}
+{"key":7164,"since":0,"src":[20,29],"name":"Defensive Stance","icon":132341,"school":1}
+{"key":7165,"since":0,"src":[20,29],"name":"Battle Stance","icon":132349,"school":1}
 {"key":7295,"since":0,"src":[20],"name":"Soul Drain","icon":136169,"school":32,"castTime":2000}
 {"key":7342,"since":0,"src":[20],"name":"Wide Slash","icon":132338,"school":1}
+{"key":7366,"since":0,"src":[29],"name":"Berserker Stance","icon":132275,"school":1}
+{"key":7395,"since":0,"src":[29],"name":"Deadmines Dynamite","icon":135826,"school":4,"castTime":2000}
 {"key":7399,"since":0,"src":[20],"name":"Terrify","icon":132270,"school":32}
-{"key":7405,"since":0,"src":[20],"name":"Sunder Armor","icon":132363,"school":1}
+{"key":7405,"since":0,"src":[20,29],"name":"Sunder Armor","icon":132363,"school":1}
 {"key":7481,"since":0,"src":[20],"name":"Howling Rage","icon":132091,"school":32,"castTime":5000}
 {"key":7483,"since":0,"src":[20],"name":"Howling Rage","icon":132091,"school":32,"castTime":1500}
 {"key":7484,"since":0,"src":[20],"name":"Howling Rage","icon":132091,"school":32,"castTime":1500}
@@ -98,112 +130,280 @@
 {"key":7588,"since":0,"src":[20],"name":"Void Bolt","icon":136197,"school":32,"castTime":3000}
 {"key":7621,"since":0,"src":[20],"name":"Arugal's Curse","icon":136160,"school":32}
 {"key":7645,"since":0,"src":[20],"name":"Dominate Mind","icon":136206,"school":32,"castTime":2000}
+{"key":7739,"since":0,"src":[29],"name":"Inferno Shell","icon":135826,"school":4,"castTime":3000}
 {"key":7741,"since":0,"src":[20],"name":"Summoned Demon","icon":136235,"school":1}
 {"key":7750,"since":0,"src":[20],"name":"Consuming Rage","icon":136146,"school":32}
 {"key":7803,"since":0,"src":[20],"name":"Thundershock","icon":135990,"school":8}
+{"key":7896,"since":0,"src":[29],"name":"Exploding Shot","icon":135808,"school":4,"castTime":1000}
 {"key":7947,"since":0,"src":[20],"name":"Localized Toxin","icon":136016,"school":8}
-{"key":7948,"since":0,"src":[20],"name":"Wild Regeneration","icon":136081,"school":8,"castTime":3000}
+{"key":7948,"since":0,"src":[20,29],"name":"Wild Regeneration","icon":136081,"school":8,"castTime":3000}
 {"key":7951,"since":0,"src":[20],"name":"Toxic Spit","icon":136016,"school":8,"castTime":2500}
+{"key":7952,"since":0,"src":[29],"name":"Clone","icon":136123,"school":32,"castTime":2500}
+{"key":7964,"since":0,"src":[29],"name":"Smoke Bomb","icon":132156,"school":1}
 {"key":7965,"since":0,"src":[20],"name":"Cobrahn Serpent Form","icon":136040,"school":1}
 {"key":7967,"since":0,"src":[20],"name":"Naralex's Nightmare","icon":136090,"school":32,"castTime":2000}
 {"key":7992,"since":0,"src":[20],"name":"Slowing Poison","icon":136093,"school":8,"castTime":1000}
+{"key":8005,"since":0,"src":[29],"name":"Healing Wave","icon":136052,"school":8,"castTime":3000}
 {"key":8016,"since":0,"src":[20],"name":"Spirit Decay","icon":135914,"school":8,"castTime":2000}
 {"key":8040,"since":0,"src":[20],"name":"Druid's Slumber","icon":136090,"school":32,"castTime":2500}
 {"key":8041,"since":0,"src":[20],"name":"Serpent Form","icon":132276,"school":8}
 {"key":8046,"since":0,"src":[20],"name":"Earth Shock","icon":136026,"school":8}
 {"key":8052,"since":0,"src":[20],"name":"Flame Shock","icon":135813,"school":4}
 {"key":8056,"since":0,"src":[20],"name":"Frost Shock","icon":135849,"school":16}
+{"key":8078,"since":0,"src":[29],"name":"Thunderclap","icon":136105,"school":8}
 {"key":8129,"since":0,"src":[20],"name":"Mana Burn","icon":136170,"school":32,"castTime":3000}
+{"key":8131,"since":0,"src":[29],"name":"Mana Burn","icon":136170,"school":32,"castTime":3000}
 {"key":8140,"since":0,"src":[20],"name":"Befuddlement","icon":136175,"school":32}
 {"key":8142,"since":0,"src":[20],"name":"Grasping Vines","icon":136025,"school":1,"castTime":1000}
 {"key":8147,"since":0,"src":[20],"name":"Thunderclap","icon":136105,"school":8}
 {"key":8148,"since":0,"src":[20],"name":"Thorns Aura","icon":136104,"school":8}
 {"key":8150,"since":0,"src":[20],"name":"Thundercrack","icon":136105,"school":8}
-{"key":8242,"since":0,"src":[20],"name":"Shield Slam","icon":132357,"school":1}
-{"key":8258,"since":0,"src":[20],"name":"Devotion Aura","icon":135893,"school":2}
+{"key":8211,"since":0,"src":[29],"name":"Chain Burn","icon":136170,"school":32,"castTime":3000}
+{"key":8242,"since":0,"src":[20,29],"name":"Shield Slam","icon":132357,"school":1}
+{"key":8258,"since":0,"src":[20,29],"name":"Devotion Aura","icon":135893,"school":2}
 {"key":8259,"since":0,"src":[20],"name":"Whirling Barrage","icon":135128,"school":1,"castTime":1500}
-{"key":8260,"since":0,"src":[20],"name":"Rushing Charge","icon":132368,"school":1}
+{"key":8260,"since":0,"src":[20,29],"name":"Rushing Charge","icon":132368,"school":1}
 {"key":8262,"since":0,"src":[20],"name":"Elemental Protection Totem","icon":136069,"school":1}
-{"key":8264,"since":0,"src":[20],"name":"Lava Spout Totem","icon":135826,"school":4}
+{"key":8264,"since":0,"src":[20,29],"name":"Lava Spout Totem","icon":135826,"school":4}
 {"key":8267,"since":0,"src":[20],"name":"Cursed Blood","icon":136020,"school":32}
 {"key":8268,"since":0,"src":[20],"name":"Cursed Blood","icon":136020,"school":32}
-{"key":8269,"since":0,"src":[20],"name":"Enrage","icon":136224,"school":1}
+{"key":8269,"since":0,"src":[20,29],"name":"Enrage","icon":136224,"school":1}
 {"key":8270,"since":0,"src":[20],"name":"Summon Earth Rumbler","icon":136025,"school":1}
 {"key":8272,"since":0,"src":[20],"name":"Mind Tremor","icon":136025,"school":32,"castTime":2000}
 {"key":8274,"since":0,"src":[20],"name":"Summon Tamed Battleboar","icon":135997,"school":1}
 {"key":8276,"since":0,"src":[20],"name":"Summon Tamed Hyena","icon":132143,"school":1}
-{"key":8281,"since":0,"src":[20],"name":"Sonic Burst","icon":136222,"school":1}
+{"key":8281,"since":0,"src":[20,29],"name":"Sonic Burst","icon":136222,"school":1}
 {"key":8282,"since":0,"src":[20],"name":"Curse of Blood","icon":136189,"school":32,"castTime":2000}
 {"key":8285,"since":0,"src":[20],"name":"Rampage","icon":136063,"school":1}
 {"key":8286,"since":0,"src":[20],"name":"Summon Boar Spirit","icon":135997,"school":1,"castTime":1500}
-{"key":8292,"since":0,"src":[20],"name":"Chain Bolt","icon":136015,"school":8,"castTime":2500}
+{"key":8292,"since":0,"src":[20,29],"name":"Chain Bolt","icon":136015,"school":8,"castTime":2500}
 {"key":8355,"since":0,"src":[20],"name":"Exploit Weakness","icon":132090,"school":1}
 {"key":8361,"since":0,"src":[20],"name":"Purity","icon":135920,"school":2}
-{"key":8362,"since":0,"src":[20],"name":"Renew","icon":135953,"school":2,"castTime":2000}
+{"key":8362,"since":0,"src":[20,29],"name":"Renew","icon":135953,"school":2,"castTime":2000}
 {"key":8365,"since":0,"src":[20],"name":"Enlarge","icon":136101,"school":1,"castTime":2000}
-{"key":8374,"since":0,"src":[20],"name":"Arcing Smash","icon":132338,"school":1}
-{"key":8376,"since":0,"src":[20],"name":"Earthgrab Totem","icon":136064,"school":1,"castTime":500}
+{"key":8374,"since":0,"src":[20,29],"name":"Arcing Smash","icon":132338,"school":1}
+{"key":8376,"since":0,"src":[20,29],"name":"Earthgrab Totem","icon":136064,"school":1,"castTime":500}
 {"key":8379,"since":0,"src":[20],"name":"Disarm","icon":132343,"school":1}
 {"key":8382,"since":0,"src":[20],"name":"Leech Poison","icon":136067,"school":8}
 {"key":8391,"since":0,"src":[20],"name":"Ravage","icon":132152,"school":1}
 {"key":8398,"since":0,"src":[20],"name":"Frostbolt Volley","icon":135846,"school":16,"castTime":2000}
 {"key":8399,"since":0,"src":[20],"name":"Sleep","icon":136090,"school":32,"castTime":1300}
+{"key":8422,"since":0,"src":[29],"name":"Flamestrike","icon":135826,"school":4,"castTime":3000}
 {"key":8435,"since":0,"src":[20],"name":"Forked Lightning","icon":136015,"school":8,"castTime":2000}
-{"key":8858,"since":0,"src":[20],"name":"Bomb","icon":135826,"school":4,"castTime":2000}
+{"key":8439,"since":0,"src":[29],"name":"Arcane Explosion","icon":136116,"school":64}
+{"key":8599,"since":0,"src":[29],"name":"Enrage","icon":136224,"school":1}
+{"key":8600,"since":0,"src":[29],"name":"Fevered Plague","icon":136066,"school":8,"castTime":4500}
+{"key":8721,"since":0,"src":[29],"name":"Backstab","icon":132090,"school":1}
+{"key":8788,"since":0,"src":[29],"name":"Lightning Shield","icon":136051,"school":8}
+{"key":8814,"since":0,"src":[29],"name":"Flame Spike","icon":135826,"school":4,"castTime":3000}
+{"key":8858,"since":0,"src":[20,29],"name":"Bomb","icon":135826,"school":4,"castTime":2000}
+{"key":8985,"since":0,"src":[29],"name":"Summon Fire Elemental","icon":135819,"school":1}
 {"key":8986,"since":0,"src":[20],"name":"Summon Illusionary Phantasm","icon":135824,"school":1,"castTime":2000}
-{"key":8988,"since":0,"src":[20],"name":"Silence","icon":135975,"school":8,"castTime":1500}
-{"key":9053,"since":0,"src":[20],"name":"Fireball","icon":135812,"school":4,"castTime":3000}
-{"key":9128,"since":0,"src":[20],"name":"Battle Shout","icon":132333,"school":1}
-{"key":9532,"since":0,"src":[20],"name":"Lightning Bolt","icon":136048,"school":8,"castTime":3000}
-{"key":9613,"since":0,"src":[20],"name":"Shadow Bolt","icon":136197,"school":32,"castTime":3000}
+{"key":8988,"since":0,"src":[20,29],"name":"Silence","icon":135975,"school":8,"castTime":1500}
+{"key":8989,"since":0,"src":[29],"name":"Whirlwind","icon":132369,"school":1}
+{"key":8990,"since":0,"src":[29],"name":"Retribution Aura","icon":135873,"school":2}
+{"key":9008,"since":0,"src":[29],"name":"Shoot","icon":132222,"school":1}
+{"key":9053,"since":0,"src":[20,29],"name":"Fireball","icon":135812,"school":4,"castTime":3000}
+{"key":9080,"since":0,"src":[29],"name":"Hamstring","icon":132316,"school":1}
+{"key":9081,"since":0,"src":[29],"name":"Shadow Bolt Volley","icon":136197,"school":32,"castTime":3000}
+{"key":9128,"since":0,"src":[20,29],"name":"Battle Shout","icon":132333,"school":1}
+{"key":9143,"since":0,"src":[29],"name":"Bomb","icon":135826,"school":4,"castTime":2000}
+{"key":9232,"since":0,"src":[29],"name":"Scarlet Resurrection","icon":135955,"school":1,"castTime":2000}
+{"key":9256,"since":0,"src":[29],"name":"Deep Sleep","icon":136090,"school":32}
+{"key":9257,"since":0,"src":[29],"name":"Lay on Hands","icon":135928,"school":2}
+{"key":9433,"since":0,"src":[29],"name":"Arcane Explosion","icon":136116,"school":64}
+{"key":9435,"since":0,"src":[29],"name":"Detonation","icon":135826,"school":4,"castTime":5000}
+{"key":9438,"since":0,"src":[29],"name":"Arcane Bubble","icon":135896,"school":2}
+{"key":9481,"since":0,"src":[29],"name":"Holy Smite","icon":135924,"school":2,"castTime":2500}
+{"key":9532,"since":0,"src":[20,29],"name":"Lightning Bolt","icon":136048,"school":8,"castTime":3000}
+{"key":9613,"since":0,"src":[20,29],"name":"Shadow Bolt","icon":136197,"school":32,"castTime":3000}
 {"key":9616,"since":0,"src":[20],"name":"Wild Regeneration","icon":136081,"school":8,"castTime":3000}
-{"key":9672,"since":0,"src":[20],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
-{"key":9734,"since":0,"src":[20],"name":"Holy Smite","icon":135924,"school":2,"castTime":2500}
+{"key":9672,"since":0,"src":[20,29],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
+{"key":9734,"since":0,"src":[20,29],"name":"Holy Smite","icon":135924,"school":2,"castTime":2500}
+{"key":9771,"since":0,"src":[29],"name":"Radiation Bolt","icon":136133,"school":8,"castTime":3000}
+{"key":9798,"since":0,"src":[29],"name":"Radiation","icon":136133,"school":8}
+{"key":9874,"since":0,"src":[29],"name":"Self Destruct","icon":135826,"school":4}
+{"key":9906,"since":0,"src":[29],"name":"Reflection","icon":136222,"school":1}
+{"key":10094,"since":0,"src":[29],"name":"Sand Storms","icon":136022,"school":1}
+{"key":10101,"since":0,"src":[29],"name":"Knock Away","icon":132939,"school":1}
+{"key":10132,"since":0,"src":[29],"name":"Sand Storms","icon":136022,"school":1}
+{"key":10251,"since":0,"src":[29],"name":"Biletoad Infection","icon":135914,"school":8}
+{"key":10252,"since":0,"src":[29],"name":"Awaken Earthen Guardians","icon":136025,"school":1}
+{"key":10258,"since":0,"src":[29],"name":"Awaken Vault Warder","icon":136025,"school":1,"castTime":5000}
+{"key":10341,"since":0,"src":[29],"name":"Radiation Cloud","icon":136133,"school":8}
+{"key":10345,"since":0,"src":[29],"name":"Rebuild","icon":136168,"school":32}
+{"key":10346,"since":0,"src":[29],"name":"Machine Gun","icon":132222,"school":1,"castTime":500}
+{"key":10348,"since":0,"src":[29],"name":"Tune Up","icon":132996,"school":1,"castTime":7000}
+{"key":10452,"since":0,"src":[29],"name":"Flame Buffet","icon":135807,"school":4,"castTime":2200}
+{"key":10666,"since":0,"src":[29],"name":"Earthen Guards Destroyed","icon":136025,"school":1}
+{"key":10730,"since":0,"src":[29],"name":"Pacify","icon":132311,"school":1}
+{"key":10732,"since":0,"src":[29],"name":"Supercharge","icon":135990,"school":1}
+{"key":10733,"since":0,"src":[29],"name":"Flame Spray","icon":135805,"school":4,"castTime":1700}
+{"key":10831,"since":0,"src":[29],"name":"Reflection Field","icon":132361,"school":1}
+{"key":10832,"since":0,"src":[29],"name":"Mass Nullify","icon":135894,"school":1}
+{"key":10887,"since":0,"src":[29],"name":"Crowd Pummel","icon":132938,"school":1}
+{"key":10966,"since":0,"src":[29],"name":"Uppercut","icon":132939,"school":1}
+{"key":11020,"since":0,"src":[29],"name":"Petrify","icon":132154,"school":1}
+{"key":11082,"since":0,"src":[29],"name":"Megavolt","icon":136015,"school":8,"castTime":2000}
+{"key":11086,"since":0,"src":[29],"name":"Ward of Zum'rah","icon":136232,"school":1}
+{"key":11130,"since":0,"src":[29],"name":"Knock Away","icon":132939,"school":1}
+{"key":11131,"since":0,"src":[29],"name":"Icicle","icon":135846,"school":16,"castTime":1500}
+{"key":11264,"since":0,"src":[29],"name":"Ice Blast","icon":135848,"school":16}
+{"key":11397,"since":0,"src":[29],"name":"Diseased Shot","icon":136127,"school":8,"castTime":2000}
+{"key":11427,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
+{"key":11428,"since":0,"src":[29],"name":"Knockdown","icon":132154,"school":1}
+{"key":11436,"since":0,"src":[29],"name":"Slow","icon":136091,"school":64}
+{"key":11443,"since":0,"src":[29],"name":"Cripple","icon":136135,"school":32,"castTime":3000}
+{"key":11445,"since":0,"src":[29],"name":"Bone Armor","icon":136225,"school":32}
+{"key":11518,"since":0,"src":[29],"name":"Activate Bomb 01","icon":136235,"school":1}
+{"key":11524,"since":0,"src":[29],"name":"Activate Bomb 04","icon":136235,"school":1}
+{"key":11526,"since":0,"src":[29],"name":"Activate Bomb 05","icon":136235,"school":1}
 {"key":11639,"since":0,"src":[20],"name":"Shadow Word: Pain","icon":136207,"school":32}
+{"key":11641,"since":0,"src":[29],"name":"Hex","icon":136071,"school":8}
+{"key":11642,"since":0,"src":[29],"name":"Heal","icon":135915,"school":2,"castTime":3500}
+{"key":11798,"since":0,"src":[29],"name":"Activate Bomb 03B","icon":136235,"school":1}
+{"key":11802,"since":0,"src":[29],"name":"Dark Iron Land Mine","icon":136172,"school":1,"castTime":1000}
+{"key":11820,"since":0,"src":[29],"name":"Electrified Net","icon":132149,"school":1,"castTime":500}
 {"key":11829,"since":0,"src":[20],"name":"Flamestrike","icon":135826,"school":4,"castTime":3000}
-{"key":11970,"since":0,"src":[20],"name":"Fire Nova","icon":135824,"school":4}
-{"key":11971,"since":0,"src":[20],"name":"Sunder Armor","icon":132363,"school":1}
-{"key":11972,"since":0,"src":[20],"name":"Shield Bash","icon":132357,"school":1}
-{"key":11976,"since":0,"src":[20],"name":"Strike","icon":132282,"school":1}
+{"key":11836,"since":0,"src":[29],"name":"Freeze Solid","icon":135852,"school":16,"castTime":2500}
+{"key":11837,"since":0,"src":[29],"name":"Wide Slash","icon":132338,"school":1}
+{"key":11876,"since":0,"src":[29],"name":"War Stomp","icon":132091,"school":1}
+{"key":11893,"since":0,"src":[29],"name":"Warder Despawn","icon":136235,"school":32}
+{"key":11894,"since":0,"src":[29],"name":"Antu'sul's Minion","icon":136235,"school":32}
+{"key":11898,"since":0,"src":[29],"name":"Blood Leech","icon":132278,"school":1}
+{"key":11899,"since":0,"src":[29],"name":"Healing Ward","icon":135928,"school":1,"castTime":2000}
+{"key":11902,"since":0,"src":[29],"name":"Gahz'rilla Slam","icon":132111,"school":1}
+{"key":11922,"since":0,"src":[29],"name":"Entangling Roots","icon":136100,"school":8,"castTime":1500}
+{"key":11962,"since":0,"src":[29],"name":"Immolate","icon":135817,"school":4,"castTime":2000}
+{"key":11970,"since":0,"src":[20,29],"name":"Fire Nova","icon":135824,"school":4}
+{"key":11971,"since":0,"src":[20,29],"name":"Sunder Armor","icon":132363,"school":1}
+{"key":11972,"since":0,"src":[20,29],"name":"Shield Bash","icon":132357,"school":1}
+{"key":11974,"since":0,"src":[29],"name":"Power Word: Shield","icon":135940,"school":2}
+{"key":11976,"since":0,"src":[20,29],"name":"Strike","icon":132282,"school":1}
 {"key":11977,"since":0,"src":[20],"name":"Rend","icon":132155,"school":1}
+{"key":11978,"since":0,"src":[29],"name":"Kick","icon":132219,"school":1}
+{"key":11980,"since":0,"src":[29],"name":"Curse of Weakness","icon":136138,"school":32}
 {"key":11986,"since":0,"src":[20],"name":"Healing Wave","icon":136052,"school":8,"castTime":3000}
+{"key":11990,"since":0,"src":[29],"name":"Rain of Fire","icon":136186,"school":4}
 {"key":12024,"since":0,"src":[20],"name":"Net","icon":132149,"school":1}
-{"key":12057,"since":0,"src":[20],"name":"Strike","icon":132282,"school":1}
+{"key":12039,"since":0,"src":[29],"name":"Heal","icon":135915,"school":2,"castTime":3000}
+{"key":12057,"since":0,"src":[20,29],"name":"Strike","icon":132282,"school":1}
 {"key":12166,"since":0,"src":[20],"name":"Muscle Tear","icon":132155,"school":1}
 {"key":12167,"since":0,"src":[20],"name":"Lightning Bolt","icon":136048,"school":8,"castTime":3000}
-{"key":12544,"since":0,"src":[20],"name":"Frost Armor","icon":135843,"school":16}
+{"key":12170,"since":0,"src":[29],"name":"Revenge","icon":132353,"school":1}
+{"key":12258,"since":0,"src":[29],"name":"Summon Shadowcaster","icon":136187,"school":1,"castTime":5000}
+{"key":12420,"since":0,"src":[29],"name":"Summon Skeletal Servant","icon":136187,"school":1}
+{"key":12461,"since":0,"src":[29],"name":"Backhand","icon":132939,"school":1}
+{"key":12471,"since":0,"src":[29],"name":"Shadow Bolt","icon":136197,"school":32,"castTime":3000}
+{"key":12491,"since":0,"src":[29],"name":"Healing Wave","icon":136052,"school":8,"castTime":3000}
+{"key":12528,"since":0,"src":[29],"name":"Silence","icon":135975,"school":8,"castTime":1500}
+{"key":12538,"since":0,"src":[29],"name":"Ravenous Claw","icon":132152,"school":1}
+{"key":12540,"since":0,"src":[29],"name":"Gouge","icon":132155,"school":1}
+{"key":12544,"since":0,"src":[20,29],"name":"Frost Armor","icon":135843,"school":16}
+{"key":12555,"since":0,"src":[29],"name":"Pummel","icon":132938,"school":1}
+{"key":12642,"since":0,"src":[29],"name":"Summon Frost Spectres","icon":136221,"school":1}
+{"key":12739,"since":0,"src":[29],"name":"Shadow Bolt","icon":136197,"school":32,"castTime":3000}
+{"key":12741,"since":0,"src":[29],"name":"Curse of Weakness","icon":136138,"school":32}
 {"key":12746,"since":0,"src":[20],"name":"Summon Voidwalker","icon":136221,"school":32}
-{"key":13322,"since":0,"src":[20],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
-{"key":13730,"since":0,"src":[20],"name":"Demoralizing Shout","icon":132366,"school":1}
+{"key":12747,"since":0,"src":[29],"name":"Entangling Roots","icon":136100,"school":8,"castTime":1500}
+{"key":13009,"since":0,"src":[29],"name":"Amnennar's Wrath","icon":132219,"school":1}
+{"key":13322,"since":0,"src":[20,29],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
+{"key":13323,"since":0,"src":[29],"name":"Polymorph","icon":136071,"school":1,"castTime":1500}
+{"key":13398,"since":0,"src":[29],"name":"Throw Wrench","icon":134520,"school":1}
+{"key":13446,"since":0,"src":[29],"name":"Strike","icon":132282,"school":1}
+{"key":13584,"since":0,"src":[29],"name":"Strike","icon":132282,"school":1}
+{"key":13728,"since":0,"src":[29],"name":"Earth Shock","icon":136026,"school":8}
+{"key":13730,"since":0,"src":[20,29],"name":"Demoralizing Shout","icon":132366,"school":1}
 {"key":13860,"since":0,"src":[20],"name":"Mind Blast","icon":136224,"school":32,"castTime":1500}
+{"key":13864,"since":0,"src":[29],"name":"Power Word: Fortitude","icon":135987,"school":2}
+{"key":14030,"since":0,"src":[29],"name":"Hooked Net","icon":132149,"school":1,"castTime":500}
+{"key":14032,"since":0,"src":[29],"name":"Shadow Word: Pain","icon":136207,"school":32}
+{"key":14099,"since":0,"src":[29],"name":"Mighty Blow","icon":132939,"school":1}
+{"key":14120,"since":0,"src":[29],"name":"Tunneler Acid","icon":136007,"school":1}
 {"key":14292,"since":0,"src":[20],"name":"Fling Torch","icon":135815,"school":1,"castTime":1000}
+{"key":14443,"since":0,"src":[29],"name":"Multi-Shot","icon":132330,"school":64}
 {"key":14514,"since":0,"src":[20],"name":"Blink","icon":135736,"school":8}
 {"key":14515,"since":0,"src":[20],"name":"Dominate Mind","icon":136206,"school":32,"castTime":2000}
+{"key":14516,"since":0,"src":[29],"name":"Strike","icon":132282,"school":1}
+{"key":14517,"since":0,"src":[29],"name":"Crusader Strike","icon":135924,"school":1}
+{"key":14518,"since":0,"src":[29],"name":"Crusader Strike","icon":135924,"school":1}
 {"key":14873,"since":0,"src":[20],"name":"Sinister Strike","icon":136189,"school":1}
 {"key":14900,"since":0,"src":[20],"name":"Chain Heal","icon":136042,"school":8,"castTime":2500}
 {"key":15043,"since":0,"src":[20],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
+{"key":15087,"since":0,"src":[29],"name":"Evasion","icon":136205,"school":1}
+{"key":15245,"since":0,"src":[29],"name":"Shadow Bolt Volley","icon":136197,"school":32,"castTime":3000}
+{"key":15284,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
+{"key":15496,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
+{"key":15530,"since":0,"src":[29],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
+{"key":15531,"since":0,"src":[29],"name":"Frost Nova","icon":135848,"school":16}
+{"key":15532,"since":0,"src":[29],"name":"Frost Nova","icon":135848,"school":16}
+{"key":15547,"since":0,"src":[29],"name":"Shoot","icon":132222,"school":1}
 {"key":15548,"since":0,"src":[20],"name":"Thunderclap","icon":136105,"school":8}
 {"key":15572,"since":0,"src":[20],"name":"Sunder Armor","icon":132363,"school":1}
+{"key":15607,"since":0,"src":[29],"name":"Throw","icon":132324,"school":1}
+{"key":15613,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
+{"key":15620,"since":0,"src":[29],"name":"Shoot","icon":132222,"school":1}
+{"key":15623,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
+{"key":15663,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
+{"key":15667,"since":0,"src":[29],"name":"Sinister Strike","icon":136189,"school":1}
 {"key":15708,"since":0,"src":[20],"name":"Mortal Strike","icon":132355,"school":1}
 {"key":15785,"since":0,"src":[20],"name":"Mana Burn","icon":136170,"school":32,"castTime":2000}
+{"key":15795,"since":0,"src":[29],"name":"Throw","icon":132324,"school":1}
+{"key":15800,"since":0,"src":[29],"name":"Mana Burn","icon":136170,"school":32,"castTime":3000}
+{"key":16000,"since":0,"src":[29],"name":"Throw","icon":132324,"school":1}
+{"key":16100,"since":0,"src":[29],"name":"Shoot","icon":132222,"school":1}
+{"key":16458,"since":0,"src":[29],"name":"Ghoul Plague","icon":135914,"school":1}
 {"key":16583,"since":0,"src":[20],"name":"Shadow Shock","icon":136197,"school":32}
+{"key":16609,"since":0,"src":[29],"name":"Warchief's Blessing","icon":135759,"school":1}
 {"key":16618,"since":0,"src":[20],"name":"Spirit of the Wind","icon":136022,"school":1}
+{"key":16790,"since":0,"src":[29],"name":"Knockdown","icon":132154,"school":1}
+{"key":17143,"since":0,"src":[29],"name":"Holy Strike","icon":132325,"school":2}
+{"key":17201,"since":0,"src":[29],"name":"Dispel Magic","icon":135894,"school":2}
 {"key":17228,"since":0,"src":[20],"name":"Shadow Bolt Volley","icon":136197,"school":32}
+{"key":17307,"since":0,"src":[29],"name":"Knockout","icon":132939,"school":1}
 {"key":17743,"since":0,"src":[20],"name":"Peon Sleeping","icon":136235,"school":1}
+{"key":17843,"since":0,"src":[29],"name":"Flash Heal","icon":135907,"school":2,"castTime":1500}
 {"key":18072,"since":0,"src":[20],"name":"Uppercut","icon":132939,"school":1}
-{"key":18266,"since":0,"src":[20],"name":"Curse of Agony","icon":136139,"school":32}
+{"key":18266,"since":0,"src":[20,29],"name":"Curse of Agony","icon":136139,"school":32}
 {"key":18267,"since":0,"src":[20],"name":"Curse of Weakness","icon":136138,"school":32}
+{"key":18399,"since":0,"src":[29],"name":"Flamestrike","icon":135826,"school":4,"castTime":3000}
 {"key":18546,"since":0,"src":[20],"name":"Overdrive","icon":133002,"school":1}
+{"key":18670,"since":0,"src":[29],"name":"Knock Away","icon":132939,"school":1}
 {"key":18972,"since":0,"src":[20],"name":"Slow","icon":136091,"school":64}
-{"key":19134,"since":0,"src":[20],"name":"Intimidating Shout","icon":132154,"school":1}
+{"key":19134,"since":0,"src":[20,29],"name":"Intimidating Shout","icon":132154,"school":1}
 {"key":19816,"since":0,"src":[20],"name":"Fireball","icon":135812,"school":4,"castTime":3000}
 {"key":20791,"since":0,"src":[20],"name":"Shadow Bolt","icon":136197,"school":32,"castTime":3000}
 {"key":20792,"since":0,"src":[20],"name":"Frostbolt","icon":135846,"school":16,"castTime":3000}
-{"key":20798,"since":0,"src":[20],"name":"Demon Skin","icon":136185,"school":32}
+{"key":20798,"since":0,"src":[20,29],"name":"Demon Skin","icon":136185,"school":32}
 {"key":20800,"since":0,"src":[20],"name":"Immolate","icon":135817,"school":4,"castTime":2000}
+{"key":21057,"since":0,"src":[29],"name":"Summon Theradrim Shardling","icon":135849,"school":1}
+{"key":21059,"since":0,"src":[29],"name":"Acid Spit","icon":136007,"school":8,"castTime":2000}
+{"key":21067,"since":0,"src":[29],"name":"Poison Bolt","icon":136016,"school":8,"castTime":2500}
+{"key":21068,"since":0,"src":[29],"name":"Corruption","icon":136118,"school":32,"castTime":2000}
+{"key":21069,"since":0,"src":[29],"name":"Larva Goo","icon":132104,"school":8}
+{"key":21070,"since":0,"src":[29],"name":"Noxious Cloud","icon":136006,"school":8}
+{"key":21071,"since":0,"src":[29],"name":"Boulder","icon":132324,"school":1,"castTime":2000}
+{"key":21331,"since":0,"src":[29],"name":"Entangling Roots","icon":136100,"school":8,"castTime":1500}
 {"key":21335,"since":0,"src":[20],"name":"Thorns","icon":136104,"school":8}
+{"key":21337,"since":0,"src":[29],"name":"Thorns","icon":136104,"school":8}
+{"key":21687,"since":0,"src":[29],"name":"Toxic Volley","icon":136016,"school":8}
+{"key":21707,"since":0,"src":[29],"name":"Summon Noxxion's Spawns","icon":136006,"school":1}
+{"key":21727,"since":0,"src":[29],"name":"Summon Player","icon":136235,"school":1}
+{"key":21749,"since":0,"src":[29],"name":"Thorn Volley","icon":136063,"school":8}
+{"key":21807,"since":0,"src":[29],"name":"Wrath","icon":136048,"school":8,"castTime":2000}
+{"key":21832,"since":0,"src":[29],"name":"Boulder","icon":132324,"school":1,"castTime":2000}
+{"key":21833,"since":0,"src":[29],"name":"Goblin Dragon Gun","icon":135818,"school":4}
+{"key":21869,"since":0,"src":[29],"name":"Repulsive Gaze","icon":132154,"school":1}
+{"key":21909,"since":0,"src":[29],"name":"Dust Field","icon":136018,"school":8}
+{"key":21968,"since":0,"src":[29],"name":"Corrupt Forces of Nature","icon":136036,"school":8}
+{"key":22167,"since":0,"src":[29],"name":"Heal","icon":135915,"school":2,"castTime":3500}
+{"key":22168,"since":0,"src":[29],"name":"Renew","icon":135953,"school":2,"castTime":2000}
+{"key":22187,"since":0,"src":[29],"name":"Power Word: Shield","icon":135940,"school":2}
+{"key":22540,"since":0,"src":[29],"name":"Cleave","icon":132338,"school":1}
 {"key":25710,"since":0,"src":[20],"name":"Heroic Strike","icon":132282,"school":1}
+{"key":29419,"since":0,"src":[29],"name":"Flash Bomb","icon":136142,"school":1}
 {"key":364161,"since":0,"src":[20],"name":"Arcane Intellect","icon":135932,"school":64}
+{"key":460939,"since":0,"src":[29],"name":"Might of Stormwind","icon":135763,"school":1}
 {"key":1240687,"since":0,"src":[20],"name":"Trample","icon":136063,"school":1}
 {"key":1240688,"since":0,"src":[20],"name":"Entangle","icon":136100,"school":8}
 {"key":1240692,"since":0,"src":[20],"name":"Fel Timbers","icon":132318,"school":32}
@@ -211,13 +411,23 @@
 {"key":1240738,"since":0,"src":[20],"name":"Drain Vitality","icon":132146,"school":64}
 {"key":1240750,"since":0,"src":[20],"name":"Debilitate","icon":136130,"school":64,"castTime":2000}
 {"key":1240869,"since":0,"src":[20],"name":"Manamorph","icon":136116,"school":1,"castTime":1500}
+{"key":1241506,"since":0,"src":[29],"name":"Arcane Bolt","icon":136096,"school":64,"castTime":1500}
+{"key":1241515,"since":0,"src":[29],"name":"Bounding Mana","icon":236222,"school":64,"castTime":2000}
 {"key":1292602,"since":0,"src":[20],"name":"Anvilmar's Curse","icon":236366,"school":32}
 {"key":1301404,"since":0,"src":[20],"name":"Lightning Cloud","icon":136014,"school":8}
 {"key":1303264,"since":0,"src":[20],"name":"Unholy Frenzy","icon":136224,"school":8}
 {"key":1303266,"since":0,"src":[20],"name":"Raise Dead","icon":136187,"school":1}
+{"key":1303308,"since":0,"src":[29],"name":"Entangling Roots","icon":136100,"school":8,"castTime":1500}
+{"key":1303309,"since":0,"src":[29],"name":"Venom Spit","icon":136016,"school":8,"castTime":2500}
+{"key":1303350,"since":0,"src":[29],"name":"Slow","icon":136091,"school":64}
 {"key":1303503,"since":0,"src":[20],"name":"Mana Leak","icon":132841,"school":1}
 {"key":1303551,"since":0,"src":[20],"name":"Chain Lightning","icon":136015,"school":8,"castTime":3000}
+{"key":1303598,"since":0,"src":[29],"name":"Mass Polymorph","icon":575586,"school":1,"castTime":1500}
+{"key":1303599,"since":0,"src":[29],"name":"Evocation","icon":136075,"school":64}
+{"key":1304398,"since":0,"src":[29],"name":"Arcane Explosion","icon":136116,"school":64}
 {"key":1304455,"since":0,"src":[20],"name":"Summon Manaling","icon":135933,"school":64}
 {"key":1304473,"since":0,"src":[20],"name":"Curse of Thorns","icon":136121,"school":32,"castTime":1500}
 {"key":1316480,"since":0,"src":[20],"name":"Entangling Roots","icon":136100,"school":8,"castTime":1500}
 {"key":1316489,"since":0,"src":[20],"name":"Highland Venom","icon":135914,"school":1}
+{"key":1322054,"since":0,"src":[29],"name":"Summon Skeletal Servant","icon":136187,"school":1}
+{"key":1326990,"since":0,"src":[29],"name":"Mind Blast","icon":136224,"school":32}
