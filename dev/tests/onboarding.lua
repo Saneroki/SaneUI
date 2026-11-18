@@ -198,6 +198,21 @@ check(window.Frame():IsShown(), "after the fight it opens")
 check(read == 1, "the addon read once")
 window.Close()
 
+-- A switch the step words its own way (Navigation's hot corner): its round buttons, one under another, set as the
+-- switch is; a key the module does not describe has no control.
+local worded = ons.Controls.Build(UIParent, "Garden", {
+    { key = "flowers", text = "What grows", choices = { { true, "Flowers" }, { false, "Only grass" } }, column = true },
+    { key = "weeds", text = "Weeds", choices = { { true, "Yes" } } } }, 300)
+local grows = worded.rows[1]
+check(#worded.rows == 1 and grows.option.text == "What grows" and grows.option.default == true and #grows.rounds == 2,
+    "a step's own words over the switch: its choices as round buttons")
+check(grows.rounds[2].button._points[1][4] == grows.rounds[1].button._points[1][4]
+    and grows.rounds[2].button._points[1][5] < grows.rounds[1].button._points[1][5], "one under another (column)")
+ons.Controls.Refresh(worded, "Garden")
+check(grows.rounds[2].button:GetChecked() == true, "the one in use lit (Flowers off)")
+grows.rounds[1].button._scripts.OnClick(grows.rounds[1].button)
+check(options.flowers == true, "a click sets the switch")
+
 -- A module that stood down has no setup to show.
 garden.off = true
 W.printed = {}

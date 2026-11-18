@@ -525,6 +525,8 @@ local function Run(frame, script) if frame._scripts[script] then frame._scripts[
 ShowUIPanel = function(frame) panels.shown = panels.shown + 1; frame._shown = true; Run(frame, "OnShow") end
 HideUIPanel = function(frame) panels.hidden = panels.hidden + 1; frame._shown = false; Run(frame, "OnHide") end
 local KEYS = { TOGGLEWORLDMAP = { "M" }, TOGGLEQUESTLOG = { "L" }, TOGGLEMINIMAP = { "CTRL-R" } }
+-- The game's map key's binding: the game's map shown or hidden by its panel functions.
+ToggleWorldMap = function() if worldMap._shown then HideUIPanel(worldMap) else ShowUIPanel(worldMap) end end
 GetBindingKey = function(action) return unpack(KEYS[action] or {}) end
 local overrides = {}
 SetOverrideBindingClick = function(_, _, key, button, click) overrides[key] = button .. ":" .. click end
@@ -869,14 +871,16 @@ if W.retailRun then (function()
     check(Canvas.view.layer == 2 and Drawn(142951, 142998) > 0 and Drawn(142901, 142912) == 0 and Drawn(141501, 141512) == 0
         and Drawn(94701, 94712) == 0, "close in: Elwynn's more detailed layer alone, nothing of its continent's or Azeroth's")
 
-    -- Right click: one map out, each whole, up to the top of the tree.
+    -- A right click zooms nothing (Saneroki, 2026-11-18); one map out (StepOut), each whole, up to the top of the tree.
+    frame._scripts.OnMouseDown(frame, "RightButton")
+    frame._scripts.OnMouseUp(frame, "RightButton")
+    check(small.shown == 1429 and small.level == "zone", "a right click: the map stays as it is")
     local function Right()
-        frame._scripts.OnMouseDown(frame, "RightButton")
-        frame._scripts.OnMouseUp(frame, "RightButton")
+        if small:StepOut() then Canvas.Layout() end
     end
     Right()
     check(small.shown == 1415 and small.level == "continent" and near(small.k, small.fit) and not small.follow
-        and Drawn(141501, 141512) > 0 and Drawn(142901, 142998) == 0, "right click: the continent whole, its art alone")
+        and Drawn(141501, 141512) > 0 and Drawn(142901, 142998) == 0, "one map out: the continent whole, its art alone")
     Right()
     check(small.shown == 947 and small.level == "world" and small.map == 1415 and Drawn(94701, 94712) > 0
         and Drawn(141501, 141512) == 0, "again: Azeroth whole, in the continent's plane")
@@ -2458,14 +2462,16 @@ end
     check(waypoint == nil and not ns.off, "Ctrl-click over a zone the game gives no world position for: no map pin, no error")
 end)()
 
--- Right click: one map out.
+-- A right click zooms nothing (Saneroki, 2026-11-18: "remove the rightclick that changes the zoom level or zooms out").
 small:Show(1415, 500, -8950, 0.5)
 small.native = nil
 Canvas.Layout()
 check(small.level == "zone", "close in: the zone's level")
 frame._scripts.OnMouseDown(frame, "RightButton")
 frame._scripts.OnMouseUp(frame, "RightButton")
-check(small.level == "continent" and near(small.k, small.fit), "right click: its continent whole")
+check(small.level == "zone" and near(small.u, 500) and near(small.v, -8950), "a right click: the map stays where it was")
+check(small:StepOut() and small.level == "continent" and near(small.k, small.fit), "one map out: its continent whole")
+Canvas.Layout()
 
 -- The continent whole: the zone under the mouse lights up, and a click opens it.
 local hover, light
@@ -2490,9 +2496,9 @@ check(not light._shown, "at a zone nothing lights up")
 frame._mouseOver = false
 hover._scripts.OnUpdate(hover, 0.016)
 check(not hover._scripts.OnUpdate, "off the map the look stops")
-frame._scripts.OnMouseDown(frame, "RightButton")
-frame._scripts.OnMouseUp(frame, "RightButton")
-check(small.level == "continent", "right click: its continent again")
+small:StepOut()
+Canvas.Layout()
+check(small.level == "continent", "its continent again")
 
 -------------------------------------------------------------------------------
 --  The full screen: the same map, its own camera; the views at every zoom
@@ -4424,9 +4430,11 @@ end)()
     cards[2]._scripts.OnClick(cards[2], "LeftButton")
     check(Dungeons.Shown() == 501 and cards[2].picked._shown and not cards[1].picked._shown, "another floor chosen")
     Dungeons.frame._scripts.OnMouseUp(Dungeons.frame, "RightButton")
+    check(Dungeons.Shown() == 501 and Dungeons.frame._shown, "a right click: the dungeon's map stays (Saneroki, 2026-11-18)")
+    Dungeons.Out()
     check(not Dungeons.Shown() and not Dungeons.frame._shown and full.map == was[1] and full.u == was[2] and full.v == was[3]
         and full.k == was[4] and full.level == was[5] and button._text == Dungeons.TEXT.dungeons and button._state == "NORMAL"
-        and #Cards() == 0, "a right click: back to the map it was opened from, as it was")
+        and #Cards() == 0, "out of it: back to the map it was opened from, as it was")
     check(Canvas.Show(600) and Dungeons.Shown() == 600 and #Cards() == 0,
         "a pin into a dungeon opens its map here; with one floor, no floors' buttons")
     button._scripts.OnClick(button, "LeftButton")
@@ -5361,7 +5369,10 @@ do
         "the zone dropdown: the world, each continent and its zones under it, the isle, which it says the map shows")
     frame._scripts.OnMouseDown(frame, "RightButton")
     frame._scripts.OnMouseUp(frame, "RightButton")
-    check(full.level == "world" and not full.follow, "right click on the isle: the world whole")
+    check(full.map == 2521 and full.level == "zone", "a right click on the isle: it stays")
+    full:StepOut()
+    Canvas.Layout()
+    check(full.level == "world" and not full.follow, "one map out from the isle: the world whole")
     local link = Coords.Link(2521, full.map)
     cursorX = 800 + (link.du + link.su * 0 - full.u) * full.k
     cursorY = TALL / 2 + (link.dv + link.sv * -250 - full.v) * full.k
@@ -5440,6 +5451,33 @@ W.Wait(0)
 check(worldMap._shown and worldMap._alpha == 1, "in a fight: the game's map stays open, as the game's")
 W.combat = false
 HideUIPanel(worldMap)
+-- Our map with a key of its own (SANEUI_MAP, Saneroki, 2026-11-18): the game's map key is the game's again and its
+-- map, opened by it, stays; every other way to the game's map still opens ours; our key fills the screen and back.
+;(function()
+    KEYS.SANEUI_MAP = { "SHIFT-M" }
+    W.Fire("UPDATE_BINDINGS")
+    check(ns.Native.Split() and overrides.M == nil and overrides.L == "SaneUINavigationKey:quests"
+        and overrides["CTRL-R"] == "SaneUINavigationKey:minimap", "our map has a key: the game's map key is the game's")
+    ToggleWorldMap()
+    W.Wait(0)
+    check(worldMap._shown and worldMap._alpha == 1, "the game's map key opens the game's map, and it stays")
+    ToggleWorldMap()
+    check(not worldMap._shown, "and closes it")
+    ShowUIPanel(worldMap)
+    W.Wait(0)
+    check(not worldMap._shown and worldMap._alpha == 1, "another way to the game's map: closed, ours instead")
+    Window.frame._group:Run(1)
+    local wasFull = Window.handle.edge.full
+    ns.Native.Own()
+    Window.frame._group:Run(1)
+    check(Window.handle.edge.full ~= wasFull, "our map's key: full screen and back")
+    ns.Native.Own()
+    Window.frame._group:Run(1)
+    check(Window.handle.edge.full == wasFull, "and again")
+    KEYS.SANEUI_MAP = nil
+    W.Fire("UPDATE_BINDINGS")
+    check(overrides.M == "SaneUINavigationKey:map", "its key gone: the game's map key opens ours again")
+end)()
 -- The switch Show the game's map: no longer caught, its keys the game's.
 Core.Set(ns.name, "nativeMap", true)
 check(overrides.M == nil and overrides["CTRL-R"], "Show the game's map: its keys are the game's again")
@@ -8689,8 +8727,7 @@ end)()
         cursorX = cursorX - 20
         check(near(boss._points[1][4], zoomedX + 20) and not view._scripts.OnUpdate, "a drag moves it")
         view._scripts.OnMouseUp(view, "RightButton")
-        check(Dungeons.Shown() == "90:1" and near(boss._points[1][4], wasX), "a right click: the whole floor again")
-        view._scripts.OnMouseWheel(view, 2)
+        check(Dungeons.Shown() == "90:1" and near(boss._points[1][4], zoomedX + 20), "a right click: no zoom, it stays")
         view._scripts.OnMouseUp(view, "MiddleButton")
         check(Dungeons.Shown() == "90:1" and near(boss._points[1][4], wasX), "the middle button: the whole floor too")
         -- the arrow beside the bag: the game's minimap and back, kept
@@ -10598,6 +10635,95 @@ end)()
     Plans.Remove(sketch)
     Plans.Remove(heard)
     Plans.Remove(pasted)
+end)()
+
+-- The setup, step by step (Setup.lua; the window is the addon Onboarding's, tested in dev/tests/onboarding.lua): the
+-- pages in Saneroki's order, each switch and key one the module or the game has, every board drawn without an error,
+-- and the big arrow on the screen pointing into the hot corner while the corner's or Edit Mode's page shows.
+;(function()
+    local Setup = ns.Setup
+    local guide = Core.Onboarding.Guide(ns.name)
+    local keys = {}
+    for index, step in ipairs(guide.steps) do keys[index] = step.key end
+    check(guide.title == Setup.TITLE and table.concat(keys, " ") == "intro corner keys move quests map",
+        "the map's setup: what it is, the hot corner, the keys, Edit Mode, the quest log, the map: " .. table.concat(keys, " "))
+    local named, short = true, true
+    for _, step in ipairs(guide.steps) do
+        for line in (step.text .. "\n"):gmatch("([^\n]*)\n") do
+            local plain = line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            short = short and line:find("|cff", 1, true) == 1 and #plain <= 110
+        end
+        for _, entry in ipairs(step.settings) do
+            if type(entry) == "table" and entry.binding then
+                named = named and type(entry.text) == "string"
+            else
+                local option = Core.Described(ns.name, type(entry) == "table" and entry.key or entry)
+                named = named and option ~= nil and type(option.text) == "string"
+            end
+        end
+    end
+    check(short and named, "each page a few short lines starting with gold words; its switches the module's, keys named")
+    local corner = guide.steps[2].settings[1]
+    check(corner.key == "expandClick" and corner.choices[1][1] == false and corner.choices[2][1] == true,
+        "the hot corner: the mouse into it, or a left click in it (the switch Hotcorner requires leftclick)")
+    local bindings = guide.steps[3].settings
+    check(bindings[1].binding == "SANEUI_MAP" and bindings[2].binding == "TOGGLEWORLDMAP"
+        and bindings[3].binding == "SANEUI_MAP_FIND", "the keys: Sane UI's map, the game's map, the map's search")
+    local stage = CreateFrame("Frame", nil, UIParent)
+    stage._width, stage._height = 420, 500
+    local function Draw(key)
+        for index, step in ipairs(guide.steps) do
+            if step.key == key then guide.Stage(stage, step, index) end
+        end
+        return Setup.Board(key)
+    end
+    for _, step in ipairs(guide.steps) do
+        check(Draw(step.key) and Setup.Board(step.key):IsShown(), "the page " .. step.key .. " draws its board")
+    end
+    local errors = 0
+    for label in pairs(Core.errors) do if tostring(label):find("setup sample", 1, true) then errors = errors + 1 end end
+    check(errors == 0, "every page's board drawn without an error")
+    check(not Setup.Board("intro"):IsShown() and Setup.Board("map"):IsShown(), "only the page's own board shows")
+    check(not (Setup.Pointer() and Setup.Pointer():IsShown()), "no big arrow on the other pages")
+
+    -- The big arrow: into the corner the map is docked in, the words as the switch says, after the full map too.
+    local wasFull = Window.handle.edge.full
+    if wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    Draw("corner")
+    local pointer = Setup.Pointer()
+    local strip, at = Setup.Spot()
+    check(strip and at == "TOPRIGHT" and pointer and pointer:IsShown() and pointer:GetFrameStrata() == "FULLSCREEN_DIALOG"
+        and not pointer:IsMouseEnabled(), "the corner's page: the big arrow on the screen, over the window, no mouse taken")
+    local reach = Setup.REACH * math.cos(math.rad(45))
+    check(pointer._points[1][2] == strip and near(pointer._points[1][4], -reach) and near(pointer._points[1][5], -reach)
+        and pointer.parts[1]._rotation == math.rad(45), "it points up and right into the top right corner, near it")
+    check(pointer.say._text == Setup.TEXT.into .. Setup.TEXT.click and pointer.say:IsShown(),
+        "a left click wanted there (at first): into the corner, then click")
+    Core.Set(ns.name, "expandClick", false)
+    Draw("corner")
+    check(pointer.say._text == Setup.TEXT.into and pointer.more._text == Setup.TEXT.fills
+        and Setup.Board("corner").parts.mouse:IsShown() == false, "the mouse into it is enough: said so, no click drawn")
+    Window.Toggle()
+    Window.frame._group:Run(1)
+    pointer._scripts.OnUpdate(pointer, 1)
+    check(pointer.say._text == Setup.TEXT.again and pointer.more._text == Setup.TEXT.back,
+        "the map fills the screen: into the corner again brings it back")
+    Window.Toggle()
+    Window.frame._group:Run(1)
+    Core.Set(ns.name, "expandClick", true)
+    if wasFull then
+        Window.Toggle()
+        Window.frame._group:Run(1)
+    end
+    Draw("keys")
+    check(not pointer:IsShown(), "the next page: the big arrow gone")
+    Draw("move")
+    check(pointer:IsShown(), "Edit Mode's page: the arrow where the hot corner is now")
+    Setup.Board("move"):Hide()
+    check(not pointer:IsShown(), "the window closed (its board out of sight): the arrow goes with it")
 end)()
 
 -- A failure stands the module down: everything given back.

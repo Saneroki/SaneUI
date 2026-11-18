@@ -554,7 +554,8 @@ but for a window to try those with (`/sane window`).
     started before they were there) every corner is square.
   - **Filling the screen** (`Edge.lua`): docked along a screen edge, along that side, inside the window, lies
     a strip two of the screen's own pixels wide (`GetPhysicalScreenSize`); docked in a corner, only a square
-    of `Edge.CORNER` (4) pixels in that corner, so a corner's two edges do not set it off. Strata `DIALOG`,
+    of `Edge.CORNER` (4) pixels in that corner, so a corner's two edges do not set it off (`edge:Spot()`: the one
+    in sight now, its side or corner, for a part that points at it: Navigation's setup). Strata `DIALOG`,
     fixed, it only takes the mouse's
     coming (`SetMouseMotionEnabled`): its `OnEnter` is the push. Not within `Edge.QUIET` (0.25 s) after the
     window was placed (a window let go at the edge, under the mouse), not while a button is held with nothing

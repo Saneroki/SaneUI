@@ -19,6 +19,7 @@ local ADDON, ns = ...
 --      Coords (the spaces, the map tree) . Camera . Live (what the game tells)   know no frames
 --      Canvas (the frame, its layers, the mouse) . Terrain . Art . Marks
 --      Hybrid (the game's minimap over ours) . Native (the game's map kept closed) . Window
+--      Setup (the setup, step by step: the addon Onboarding's window draws it)
 --
 --  The terrain's textures are Core's data (the set Tiles) and the
 --  module's overview (Art/Terrain); the art and every position come from the
@@ -44,6 +45,8 @@ ns.TEXT = {
     taxiHere = "You are here",
     taxiFly = "Click to fly there",
     taxiFar = "No flight there from here",
+    setup = "Set up step by step",
+    setupTip = "A window that walks you through the map, a page at a time: how to open it (the hot corner, its click, the keys), moving it in Edit Mode, the quest log and the map's clicks. Also /sane setup navigation.",
     nativeMinimap = "Show the game's minimap",
     nativeMinimapTip = "The game's own minimap in the top right corner instead of this map's small window; a left click in that corner still fills the screen with this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
@@ -248,6 +251,9 @@ local RARE_KINDS = { { "rare", "|A:dungeonskull:16:16|a Rares" }, { "treasure", 
 local RARE_SOUNDS = { { "horn", "War horn" }, { "chime", "Find chime" }, { "warning", "Raid warning" }, { "none", "None" } }
 
 local OPTIONS = {
+    -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
+    { key = "setup", text = ns.TEXT.setup, tip = ns.TEXT.setupTip,
+      button = function() Core.Onboarding.Open(ns.name) end },
     -- Every view a choice while the settings are first read; at login only those offered, and the view the map
     -- starts in here the default (Offer). One view alone: no setting (ns.Several).
     { key = "view", default = ns.FALLBACK, text = ns.TEXT.view, header = ns.TEXT.title, tip = ns.TEXT.viewTip,
@@ -377,7 +383,7 @@ end
 -- pin that can show anything here in the setting's list (TopBar's filter asks ns.KindOffered itself), and the
 -- section Herbs and ore only while one of its switches is there. At login.
 function ns.Offer()
-    local option = OPTIONS[1]
+    local option = Core.Described(ns.name, "view")
     wipe(option.choices)
     for _, choice in ipairs(CHOICES) do
         if ns.Offered(choice[1]) then option.choices[#option.choices + 1] = choice end

@@ -230,7 +230,8 @@ function single:Fit(map)
     return true
 end
 
--- One map out (the game's right click): the first map over the one shown that the view can show; false at the top.
+-- One map out: the first map over the one shown that the view can show; false at the top. (No click of ours does
+-- it since 2026-11-18: the wheel zooms.)
 function single:StepOut()
     local info, seen = Info(self.shown), 0
     local parent = info and info.parentMapID

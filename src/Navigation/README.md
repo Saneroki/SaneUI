@@ -4,7 +4,8 @@
 
 ## TL;DR
 Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
-move the mouse into that corner and it fills the screen as the map. Both are the same map, drawn and handled
+move the mouse into that corner (or click there, or press a key) and it fills the screen as the map; a setup, step
+by step, shows how the first time (`/sane setup navigation`). Both are the same map, drawn and handled
 the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
 zoom and place. The map is drawn two ways at every zoom, from close up out to the whole world, both
 continents always: *Parchment*, the world drawn by hand, Blizzard's zone maps in full joined into one map that
@@ -12,7 +13,7 @@ fades softly from zone to zone; or *Scrying*, the land as the minimap shows it, 
 (the docks, piers and bridges standing on it kept); or *Blended*, the one far out fading into the other close in.
 The game's own minimap lies over it for its live dots; the game's map stays closed, and its keys open ours.
 That is WoW: Forever's map; in Retail the map is the game's own map tree, one map at a time, as the game's own map
-shows it: a click into a map, a right click out to the one over it, the wheel within it.
+shows it: a click into a map, the wheel within it, the bar's map selector up to the one over it.
 On the map stand pins in the game's own looks (quests, flight points, rares, entrances, places, services, the
 party), always over the map; the quest log, a window of its own over the full map and on the screen while the map
 is small, and the maps of the dungeons and raids. A search in the full map's title bar finds NPCs (by name and by what
@@ -21,10 +22,27 @@ and shows them on the map or puts the map pin there. The plan is in
 `Doc/ideas/Navigation.md`.
 
 ## How to use
-- **The map:** move the mouse all the way into the screen's top right corner; the corner again (move away
-  from it first), Esc or the close button on its title bar brings it back. On the way the map grows and zooms
-  with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane map`,
-  and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
+- **The map:** move the mouse all the way into the screen's top right corner and click there (at first; or only the
+  mouse, as the setup's page *Into the corner* or the switch *Hotcorner requires leftclick* sets it); the corner again
+  (move away from it first), Esc or the close button on its title bar brings it back. On the way the map grows and
+  zooms with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane
+  map`, and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
+  The key **Sane UI's map** (the game's key bindings, under Sane UI; the setup's page *Or a key*) does the same; once
+  it has a key, the game's map key (M) opens the game's own map again (Saneroki, 2026-11-18: "Give them options to put
+  keybinds to open either the native map or our map"), and every other way still opens ours. The corner, its click
+  and the keys all work together. Moved in Edit Mode, the map takes its hot corner along: docked in another corner,
+  that corner; along an edge, that edge; away from the edges, none (a key opens it).
+- **The setup, step by step** (Saneroki, 2026-11-18: "make a onboarding window for the navigation module"): the
+  window of Sane UI's setups (the addon Onboarding), six pages: *Your map* (the minimap is the map), *Into the
+  corner* (the mouse into it, or a left click in it), *Or a key* (Sane UI's map, the game's map, the map's search;
+  all of them together), *Move it in Edit Mode* (the hot corner goes with the map), *The quest log* (a click opens a
+  quest, a double click puts a route to it) and *On the map* (a double click puts the map pin and a route there, a
+  right click often offers more). On the corner's page and Edit Mode's a **very big arrow** on the screen, the game's
+  own tutorial arrow, points into your hot corner wherever the map stands, moving towards it again and again, with
+  *All the way into the corner* (*, then click* where a click is wanted) beside it, and once the map fills the
+  screen, that the corner brings it back; the mouse goes through it. It opens by itself the first time, a few
+  seconds after the login; again with *Set up step by step* at the top of the module's options page, or `/sane
+  setup navigation` (`/sane setup map`).
 - **The same in both views:**
   - **drag** with the left button: the map moves, and stops following you; anywhere on the world map, at any
     zoom: dragged off a continent over the other (or Zephras Isle), the map goes on there, no continent to choose
@@ -32,7 +50,9 @@ and shows them on the map or puts the map pin there. The plan is in
   - **the mouse wheel** zooms around the point under the mouse; while the map follows you it walks the game's
     minimap's zoom steps first (its live dots show then), then goes on out to the whole continent and the
     world, and in past the game's nearest step four times nearer than it;
-  - **right click:** one map out (a zone, its continent, the world), as on the game's map;
+  - **right click:** zooms nothing and goes nowhere (Saneroki, 2026-11-18: "remove the rightclick that changes the
+    zoom level or zooms out"): it is for what a thing offers, a pin's, a marker's or the map pin's (below); the wheel
+    zooms;
   - **middle click:** back onto you, following you again, near enough for the game's minimap's dots: on the
     small map at the game's middle zoom step (of its six), on the full map where that step's square takes half the
     map's height (the game's dots show around you there too); in Retail on the map you are on;
@@ -76,7 +96,7 @@ and shows them on the map or puts the map pin there. The plan is in
   sight with the face, under the mouse, and only there: "only show it on mouse over and in cases where it is
   neccessary like in instances"; "make the button that toggles it look like the players arrow") swaps to the game's
   minimap (it shows where you stand, with its own ground and dots; the wheel walks its zoom steps) and back; a notch
-  out past the game's widest step brings ours back too. On our map the wheel zooms and a drag moves it, as on the full map, and a right or a middle click
+  out past the game's widest step brings ours back too. On our map the wheel zooms and a drag moves it, as on the full map, and a middle click
   shows the whole floor again (Saneroki, 2026-11-15: zoomed in, "the games minimap is forced on me and covers my own
   map"); the face (the time, the place, the bag and the arrow) shows while the mouse is anywhere on it. The choice is
   kept for your account, into the next dungeon. Elsewhere (a battleground, a dungeon we have no map of) the
@@ -423,8 +443,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   colours and 3 lines and other stuff so we are as compatible as possible with their map sharing"); with the Text tool
   on, the same squares are four sizes of words (Small, Normal, Large, Huge, an A on each: "add a fourth text size so
   their smallest matches too"), chosen apart from the lines' width. While a tool is on the left button is the tool's
-  and a **right-drag moves the map** (a right click still
-  steps out; the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
+  and a **right-drag moves the map** (the wheel zooms). It all works the same on a dungeon's map: drawings and markers there stand on the
   floor's own map, move and zoom with it, and come back whenever that floor is opened.
   - **Sketches** (*plans* in the code; Saneroki, 2026-11-15: "I don't like the word "plan" in front of each drawing",
     *Sketch* his pick): what you draw and mark goes into the **sketch** chosen in the palette's dropdown (*My markers*
@@ -513,8 +532,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   description and, under each item, *Uncollected* first while you lack its look, then its effects (Use, Equip,
   Chance on hit: a recipe's what it teaches), last its damage, speed and damage per second, armour and block and
   stats (no price, slot, binding, requirements, durability, set or lore). Where the data knows them, the
-  enemies stand there too, each a small red dot under the bosses, its name in its tooltip (six dungeons so far). The wheel zooms it, a drag moves it, a right
-  click goes back to the map it was opened from. Shift and a click on a dungeon's entrance opens it too, and inside a
+  enemies stand there too, each a small red dot under the bosses, its name in its tooltip (six dungeons so far). The wheel zooms it, a drag moves it, the bar's
+  button goes back to the map it was opened from (a right click no longer does: Saneroki, 2026-11-18). Shift and a click on a dungeon's entrance opens it too, and inside a
   dungeon the full map opens on its map, at its lowest floor. Instance maps keep rules of their own, apart from the
   world map's and its indoor maps': Forever tells nobody's place inside an instance, so they show no arrow for you
   and no party or raid; what stands still there, the bosses, stands on them.
@@ -530,7 +549,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   the caverns Forever rebuilt east of it, so it shows its ground in every view, *Parchment* too. The bosses, the
   enemies, your drawings and markers stand where they stood.
 - **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
-  map pin stand on it, a click on it at the world opens it, and a right click on it goes out to the world (there is
+  map pin stand on it, a click on it at the world opens it, and the wheel out goes on to the world (there is
   no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
   sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on the continents.
 - **Routes:** put the game's map pin (a double click, on a quest in the quest log too, or Ctrl and a click; Speed Leveling's guide puts it on its places by itself) and a golden line leads you there from where you stand,
@@ -840,7 +859,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   (kept through the full screen and back, `Dungeons.Small` at each layout of the small view, looked at anew after a
   loading screen) until the arrow (`Dungeons.Out`, the game's minimap kept as the choice), and the
   game's minimap out of sight under it meanwhile (`Hybrid.Hide`, `whole` in `Canvas.lua`); no player's arrow and no
-  group (Forever tells no place inside an instance). `Canvas.Show` of a dungeon's map opens it; going small or a right click closes it (the map under it
+  group (Forever tells no place inside an instance). `Canvas.Show` of a dungeon's map opens it; going small or the bar's button closes it (the map under it
   stays as it was). The list is kept once the game told of a dungeon map or the set was read. Core's set *Dungeons* (pack World)
   adds the dungeons the game has no map of: walked once it is there (`Each`), each floor keyed `"<instance>:<floor>"`
   (`Dungeons.Key(instance)` gives the lowest; an entrance's pin takes it as its `to`), its art from the set's tiles
@@ -1126,7 +1145,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   map, x, y, title, text, icon, made }`, `markerNext` the next id; each game's in its own saved files), personal notes,
   never shared or shipped. Alt and a left click on the canvas (not on a pin) is `Markers.New(Where(x, y))` (no marker at
   the world: no zone there); while one waits for its new place (`Markers.Moving`, the card's Move) a left click puts it
-  (`Markers.Put`), a right click leaves it (`Markers.Stay`) instead of stepping out. `Markers.Pins()` makes their pins
+  (`Markers.Put`), a right click leaves it (`Markers.Stay`). `Markers.Pins()` makes their pins
   anew after a change (kind `mark`, `Pins.SIZE.mark`, `ORDER.mark` under the search's, never combined: `Apart`;
   `pin.label` their title, drawn by `PinView`'s `Name` on the full map), `Pins.For` takes them in at every zoom on both
   maps while `Showing("mark")`; `PinView.Act` opens the card (`Markers.Open`). The card: Core's kit (`Look.Dress`, its
@@ -1523,7 +1542,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   the view has none), its ground on (`C_Minimap.SetDrawGroundTextures`), whatever the pin filter says; off again
   once your place is known, and on, as the game has it, when given back.
 - **The game's map** (`Native.lua`): the keys bound to the game's map, quest log and minimap click a button
-  of ours (override bindings, out of combat, again when the bindings change). Every other way to the game's
+  of ours (override bindings, out of combat, again when the bindings change). While our own key `SANEUI_MAP`
+  (`Bindings.xml`, `Native.Own`: `Window.Toggle`) has a key (`Native.Split`), the game's map key is left to the
+  game: its own binding runs `ToggleWorldMap` (secure, the game's; our code never opens its panels), and a hook after
+  `ToggleWorldMap` that finds the game's map shown lets it stay (`kept` until it hides), while every other way to it
+  still opens ours. Every other way to the game's
   map shows `WorldMapFrame`: a hook after its `OnShow` makes it unseen at once and hides it on the next frame
   by its own `Hide`, and ours opens at the map it was asked for; with the game's quest log chosen (`nativeQuestLog`,
   *Classic windows*) the quest log's key stays the game's, and a map that shows its quest log beside it on that next
@@ -1535,6 +1558,19 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   `OnHide` would run as ours in the fight). To see it in the game: `/console taintLog 1`, `/reload`, a click on a
   quest in the objective tracker (our map opens), then C (the character sheet): `Logs/taint.log` has no line of
   Sane UI's for it.
+- **The setup** (`Setup.lua`): the module's own steps, words and boards handed to Core (`Core.Onboarding.Add`,
+  title *Map*); the window, its controls and keys are the addon Onboarding's (`src/Onboarding/README.md`). The hot
+  corner's page words the Edge section's switch `expandClick` as two round buttons (a step's own entry `{ key, text,
+  choices, column }`, `Controls.lua`); the keys' page binds `SANEUI_MAP`, the game's `TOGGLEWORLDMAP` and
+  `SANEUI_MAP_FIND`. Each board is drawn on the window's grey box from the game's art (the tutorial arrows
+  `NPE_ArrowRight` and its glow, turned by `SetRotation`; the cursor `Interface\CURSOR\Point`; the minimap's arrow;
+  the tutorial mouse icons; the map pin `Waypoint-MapPin-Tracked`; the route's own line art) and Core's thin golden
+  outline, anew at each change. The big arrow (`Setup.Point`): a frame of its own on `UIParent` at
+  `FULLSCREEN_DIALOG`, no mouse, its middle `Setup.REACH` from the spot Core's `edge:Spot()` gives (the corner's
+  square or the side's strip in sight: Edge.lua), turned that way (`Setup.ANGLES`), a Translation of `Setup.TRAVEL`
+  bouncing towards it; looked at anew every `Setup.LOOK` seconds while it shows (Edit Mode docks the map elsewhere,
+  the switch changes, the map fills the screen); shown by the corner's and Edit Mode's boards, gone with their
+  `OnHide`.
 - **What the game tells** (`Live.lua`): the player, the map pin, the group, the quests, the flight points,
   rares and chests nearby, the game's own points and the explored parts of a map, each read when the game says
   it changed (one message `LIVE` a frame). The player and the pin are drawn now; the rest is for the pins.
@@ -1549,8 +1585,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   them. The map shown (`camera.shown`) fills the view whole at first; the wheel zooms in on it up to the largest
   scale of its art (as near as the game's own map comes, or `Camera.DEEP` units to a pixel of its art) and out to it
   whole; a click goes into the map the game says is under the mouse (`camera:Under`, as its `NavigateToCursor`), at
-  every level, lit up before (`Art.Light` on the map shown); a right click goes up to the map over it: a zone, its
-  continent, Azeroth, the Cosmic map of every world (`StepOut`). Following the player, it shows the map the player is
+  every level, lit up before (`Art.Light` on the map shown); the bar's map selector goes up to the map over it: a zone,
+  its continent, Azeroth, the Cosmic map of every world (`StepOut` the camera's way up; no click of ours since
+  2026-11-18). Following the player, it shows the map the player is
   on (`Camera.Wanted`: the game's best map, or the first over it that can be shown). Only that map's art is drawn, in
   the layer its zoom asks for (`camera.layer`, as Blizzard's scroll controller picks the layers), with its explored
   parts; the pins and the quest areas are that map's (`Pins.For`, `Areas.Place`), at a continent only the continent's
@@ -1650,8 +1687,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
-| `Bindings.xml` | The key *Search the map* (Sane UI's section of the game's key bindings): the full map, the cursor in its search |
+| `Bindings.xml` | The keys *Sane UI's map* (full screen and back; once bound, the game's map key opens the game's map) and *Search the map* (the full map, the cursor in its search), in Sane UI's section of the game's key bindings |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
+| `Setup.lua` | The setup, step by step: its six pages' words, switches and keys, their boards, the big arrow into the hot corner (the window is the addon Onboarding's) |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Zones/*.blp` | Each zone's outline over its map's box, made by `dev/tools/terrain-art` from the game's files |
 | `Art/Sketches/*.blp` | The stitched map: every zone's full map on its continent (or the isle), in the terrain's blocks, made by `dev/tools/terrain-art` |
@@ -1663,6 +1701,18 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, the setup step by step; no right click zoom:** Saneroki: "Can you make a onboarding window for the
+  navigation module", with the hot corner one of the first pages (the mouse into it, or a click in it, or a key;
+  "Remind people that it is possible to use a combination of things"), "a very big clear arror during the onbarding
+  on the corner so people know that they should move the mouse all the way into the corner", keys for "either the
+  native map or our map", Edit Mode moving the hot corner with the map, the quest log's click and double click, the
+  map's double click and right click. So `Setup.lua`, six pages in the addon Onboarding's window, the big arrow over
+  everything while the corner's and Edit Mode's pages show (Core's `edge:Spot()`), the key `SANEUI_MAP` and the game's
+  map key left to the game once ours has one (`Native.Split`, a hook after `ToggleWorldMap`), the button *Set up step
+  by step* on the options page (`ns.Offer` finds the view's switch by its key now). And "remove the rightclick that
+  changes the zoom level or zooms out": a right click on the map steps out no more (`Canvas.lua`), nor on a dungeon's
+  map (the whole floor again on the small map, back on the full one): the wheel zooms, the middle button and the
+  bar's button stay.
 - **2026-11-16, the fall meter:** Saneroki: "The fall damage in this game is pretty low. You can fall quite far
   before you actually die. I want to make the routing allow for bigger fall downs so the routing can route over
   mountains". The walking data has no fall yet (two floors one way only within 2.6 yards, both ways), and how high a

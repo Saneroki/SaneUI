@@ -193,8 +193,8 @@ function methods:ZoomAt(notches, dx, dy)
     self:Settle()
 end
 
--- One map out (the game's right click on its map): from a zone its continent whole, from a continent (or a
--- plane of its own) the world whole. False at the world.
+-- One map out: from a zone its continent whole, from a continent (or a plane of its own) the world whole. False at
+-- the world. (The game's map does it at a right click; ours no longer, Saneroki, 2026-11-18: the wheel zooms.)
 function methods:StepOut()
     if self.level == "zone" and not self.alone then
         self.native = nil

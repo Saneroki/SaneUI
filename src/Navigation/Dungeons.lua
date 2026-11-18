@@ -33,8 +33,8 @@ local _, ns = ...
 --                   rebuilt (the Wailing Caverns; Saneroki, 2026-11-15, "Yes, terrain there")
 --      small map    inside a dungeon the small view is the game's own minimap (Canvas.lua); one notch of
 --                   the wheel out past its widest step shows the dungeon's whole map there instead, its
---                   bosses and enemies at Dungeons.SMALL of their size; a notch in, a right or a middle
---                   click: the game's minimap again at its widest step. Kept through the full screen and
+--                   bosses and enemies at Dungeons.SMALL of their size; a notch in: the game's minimap
+--                   again at its widest step; the middle button: the whole floor. Kept through the full screen and
 --                   back and into the next dungeon until then (Dungeons.Whole, Dungeons.Small)
 --      the bosses   where Core's set Dungeons has them: the game's boss mark at each one's place and the
 --                   boss's own 3D model standing on it (the game's model of its display), the same size at
@@ -50,8 +50,9 @@ local _, ns = ...
 --      enemies      where the set has them, each enemy as a small red dot where it stands (under the bosses),
 --                   its name in the tooltip
 --      the mouse    on the full map the wheel zooms around the mouse (from the whole map up to
---                   Dungeons.NEAR times nearer), a drag moves it, a right click goes back to the map it
---                   was opened from (the map stays under the dungeon's view, as it was)
+--                   Dungeons.NEAR times nearer), a drag moves it; the bar's button goes back to the map it
+--                   was opened from (the map stays under the dungeon's view, as it was). A right click
+--                   zooms nothing and goes nowhere (Saneroki, 2026-11-18)
 --      also         a pin that leads into a dungeon (Shift and a click on its entrance) opens its map here
 --                   (Canvas.Show)
 --      no player    Forever tells no place of the player inside an instance, nor of the party or raid
@@ -149,7 +150,7 @@ local dragX, dragY -- where the cursor was at the last step of a drag
 local onSmall = false -- the view stands on the small map (Dungeons.Small), not the full one
 -- Inside an instance the small map shows our map of its dungeon first (Saneroki, 2026-11-15: "Yes ours first"): its
 -- bosses, your markers and drawings; the game's minimap (the one that knows where you stand: the game tells addons
--- nobody's place inside) once chosen (a notch in, the middle button, a right click, the satchel's arrow), kept for
+-- nobody's place inside) once chosen (a notch in, the satchel's arrow), kept for
 -- the account (ns.store.instanceMap "game") until our map is chosen again (a notch out, the arrow).
 local function Wanted() return not (ns.store and ns.store.instanceMap == "game") end
 local function Want(on)
@@ -595,14 +596,16 @@ local function Up(_, button)
         if ns.Markers.Moving() then return ns.Markers.Put({ map = map, x = x, y = y }) end
         return ns.Markers.New({ map = map, x = x, y = y })
     end
+    -- A right click zooms nothing and goes nowhere (Saneroki, 2026-11-18: "remove the rightclick that changes the
+    -- zoom level or zooms out"); it only lets a marker waiting for its new place stay. The middle button on the
+    -- small map: the whole floor again (the game's minimap only by the satchel's arrow); full, the bar's button and
+    -- the map selector go back.
     if (button == "RightButton" and not moved) or (button == "MiddleButton" and onSmall) then
         if ns.Markers.Moving() then return ns.Markers.Stay() end
-        -- on the small map: the whole floor again (the game's minimap only by the satchel's arrow); else back
-        if onSmall then
+        if button == "MiddleButton" then
             zoom, panX, panY = 1, 0, 0
             return Place()
         end
-        Dungeons.Out()
     end
 end
 

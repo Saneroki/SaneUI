@@ -52,6 +52,13 @@ own purpose."
   tried and taken back: "make it solid not transparent. it gets to confusing if it is transparent actually"), keys as controls (`{ binding = ... }` in a step), choices side by side; Nameplates'
   setup in his order with a first page, short lines in gold, and the plates' new settings (icon size and places,
   time left, class colours, raid markers, cast bar height, how much by distance, transparency by kind).
+- **Navigation's setup (Saneroki, 2026-11-18):** "Can you make a onboarding window for the navigation module" —
+  `src/Navigation/Setup.lua`, six pages: what the map is; the hot corner (the mouse into it, or a left click in it,
+  the switch `expandClick` as round buttons: a step may word a switch its own way), with a very big arrow of the
+  game's on the screen pointing into the player's own hot corner (Core's `edge:Spot()`); the keys for Sane UI's map
+  and the game's map (once ours has a key, the game's map key opens the game's map) and the search, all of them
+  together; Edit Mode moving the hot corner with the map; the quest log's click and double click; the map's double
+  click and right click.
 - **Tooltips' setup (Saneroki, 2026-11-18):** "a very simple onboarding for the Tooltip window where we basically
   only have Show tooltip while x held, Show at mouse cursor yes / no, 3d model yes / no, opacity slider with a life
   preview" — `src/Tooltips/Setup.lua`, one page: *Show tooltips* (always, or while a key is held), *at the mouse*

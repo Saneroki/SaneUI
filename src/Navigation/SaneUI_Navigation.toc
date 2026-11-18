@@ -117,3 +117,5 @@ Farms.lua
 FindBox.lua
 # The window: the minimap in the top right corner, the map when it fills the screen
 Window.lua
+# The setup, step by step: each page's words, its switches and keys, its board; the big arrow into the hot corner (the window is the addon Onboarding's)
+Setup.lua

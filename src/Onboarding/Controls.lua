@@ -13,6 +13,10 @@ local _, ns = ...
 --                       a click, then the key to bind it to (Esc: none);
 --                       a right click unbinds it (the game's own key
 --                       bindings, saved as its key binding window saves them)
+--  A step may word one of the module's switches its own way: its entry
+--  { key = "expandClick", text, tip, choices = { { value, words }, ... },
+--  column = true } over the switch's description (a switch shown as round
+--  buttons, one under another with column; Navigation's setup).
 --  Each shows the value in use (Core.Settings) and sets it through Core.Set,
 --  as a menu or a command does: the module is told and follows it, its options
 --  page shows it, its profile keeps it. One under another (parent) stands a
@@ -186,7 +190,7 @@ end
 -- One of a few: its words, then a round button and the words of each choice; side by side where they are few.
 local function Choice(host, name, option, width)
     local row = CreateFrame("Frame", nil, host)
-    local across = #option.choices <= Controls.ACROSS
+    local across = not option.column and #option.choices <= Controls.ACROSS
     row:SetSize(width, Controls.WORDS + (across and 1 or #option.choices) * Controls.CHOICE)
     local words = Words(row)
     words:SetPoint("TOPLEFT", row, "TOPLEFT", 2, 0)
@@ -327,6 +331,17 @@ local function Key(host, entry, width)
     return row
 end
 
+-- One of the module's switches as a step words it ({ key, text, tip, choices, column }): its description with the
+-- step's fields over it; nil for a switch the module does not describe.
+local function Worded(name, entry)
+    local option = type(entry.key) == "string" and Core.Described(name, entry.key)
+    if not option then return nil end
+    local worded = {}
+    for field, value in pairs(option) do worded[field] = value end
+    for field, value in pairs(entry) do worded[field] = value end
+    return worded
+end
+
 -- The control for a switch of the module's, by its kind; nil for a kind a step does not show.
 local function Make(host, name, option, width)
     if option.button or option.multi or option.color or option.entry then return nil end
@@ -343,9 +358,10 @@ function Controls.Build(parent, name, keys, width)
     local rows, y = {}, 0
     local options = Core.Settings(name) or {}
     for _, key in ipairs(keys or {}) do
-        -- A key ({ binding = "COMMAND", text, tip }), or one of the module's switches by its key.
+        -- A key ({ binding = "COMMAND", text, tip }), one of the module's switches by its key, or one the step words
+        -- its own way ({ key = "...", text, choices }).
         local binding = type(key) == "table" and type(key.binding) == "string" and key
-        local option = not binding and Core.Described(name, key)
+        local option = not binding and (type(key) == "table" and Worded(name, key) or Core.Described(name, key))
         local hidden = option and type(option.hidden) == "function" and ns.Safe("hidden", option.hidden, options)
         local inset = option and option.parent and Controls.UNDER or 0
         local row

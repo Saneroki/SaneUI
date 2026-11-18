@@ -8,6 +8,13 @@ local _, ns = ...
 --                   override bindings on a button of ours (SaneUINavigationKey), set out of combat
 --                   and again when the bindings change. The map's and the quest log's fill the screen
 --                   with our map and back; the minimap's shows or hides our window
+--      our own key  Sane UI's map has a key of its own (SANEUI_MAP, in the game's key bindings under Sane
+--                   UI; the setup's Keys, Setup.lua): once it has one, the game's map key is the game's
+--                   again and opens the game's map (Saneroki, 2026-11-18: "Give them options to put
+--                   keybinds to open either the native map or our map"). The game's own binding opens it
+--                   (ToggleWorldMap, its secure code; our code never opens the game's panels): a hook after
+--                   ToggleWorldMap sees it shown and lets it stay (kept); every other way to the game's
+--                   map still opens ours
 --      every other  way to the game's map (the minimap's zone text, the quest log's button, the objective
 --                   tracker, a chat link, an event of the game) ends in WorldMapFrame showing: seen by
 --                   a hook after its OnShow, out of sight at once, hidden on the next frame (its own
@@ -36,11 +43,26 @@ ns.Native = Native
 -- The game's key bindings Navigation takes, and what each does here.
 Native.KEYS = { TOGGLEWORLDMAP = "map", TOGGLEQUESTLOG = "quests", TOGGLEMINIMAP = "minimap" }
 Native.BUTTON = "SaneUINavigationKey"
+Native.OWN = "SANEUI_MAP" -- our map's own key (Bindings.xml)
+BINDING_NAME_SANEUI_MAP = "Sane UI's map (full screen and back)"
 local WAIT = "navigation: keys"
 
 local button, hooked
 local bound = "" -- the keys as last set: one text, to set them again only when they changed
 local pressed    -- a key's press was acted on: its release is not
+local kept       -- the game's map opened by its own key while ours has a key of its own: it stays until it closes
+
+-- Whether our map has a key of its own (SANEUI_MAP): the game's map key is the game's then.
+function Native.Split()
+    local key = Core.Ask(rawget(_G, "GetBindingKey"), Native.OWN)
+    return type(key) == "string" and key ~= ""
+end
+
+-- Our map's own key (Bindings.xml): full screen and back, as the game's map key does while ours takes it.
+function Native.Own()
+    if ns.off then return end
+    ns.Window.Toggle()
+end
 
 -- Whether Navigation takes that window's key now.
 local function Takes(which)
@@ -66,8 +88,9 @@ function Native.Bind()
     if not button then return end
     if InCombatLockdown() then return Core.AfterCombat(WAIT, Native.Bind) end
     local list = {}
+    local split = Native.Split()
     for action, which in pairs(Native.KEYS) do
-        if Takes(which) then
+        if Takes(which) and not (which == "map" and split) then
             for _, key in ipairs({ GetBindingKey(action) }) do list[#list + 1] = key .. "\t" .. which end
         end
     end
@@ -104,7 +127,7 @@ Native.GameQuestLog = GameQuestLog
 local function Close()
     local map = Map()
     if not map:IsShown() then return map:SetAlpha(1) end
-    if InCombatLockdown() or GameQuestLog(map) then return map:SetAlpha(1) end
+    if InCombatLockdown() or GameQuestLog(map) or kept then return map:SetAlpha(1) end
     local asked = map:GetMapID()
     map:Hide()
     map:SetAlpha(1)
@@ -120,7 +143,17 @@ local function Shown()
 end
 
 local function Hidden()
+    kept = false
     Map():SetAlpha(1)
+end
+
+-- After the game's ToggleWorldMap (its map key's binding, run by the game): opened while our map has a key of its
+-- own, the game's map stays, in sight at once (its OnShow, above, has just put it out of sight).
+local function Toggled()
+    local map = Map()
+    if not (map and Core.Plain(map:IsShown()) and Takes("map") and Native.Split()) then return end
+    kept = true
+    map:SetAlpha(1)
 end
 
 -- Hooks after the game's map's OnShow and OnHide, once it exists (it comes with the game's map addon).
@@ -130,6 +163,7 @@ local function Hook()
     hooked = true
     map:HookScript("OnShow", ns.Guard(Shown))
     map:HookScript("OnHide", ns.Guard(Hidden))
+    if type(rawget(_G, "ToggleWorldMap")) == "function" then hooksecurefunc("ToggleWorldMap", ns.Guard(Toggled)) end
 end
 
 function Native.Start()

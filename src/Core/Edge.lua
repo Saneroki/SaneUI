@@ -53,7 +53,8 @@ local Core = SaneUI.Core
 --  (edge:Update()); the module need not pass it on.
 --  edge.full: it fills the screen or is on its way there. edge.away: it is not
 --  at rest in its zone (full, or on its way back); it is neither moved nor
---  sized then, and its grip is out of sight.
+--  sized then, and its grip is out of sight. edge:Spot(): the strip or the
+--  corner's square in sight now (Navigation's setup points its arrow there).
 --
 --  The motion: size and place go from where the window is at that moment to
 --  the whole screen, or back to its zone, as its kind of motion says (Swing
@@ -589,6 +590,17 @@ function methods:Docked(name)
     self.placed = not self.off
     self.quiet = GetTime() + Edge.QUIET
     Strips(self)
+end
+
+-- Where the mouse fills the screen from now, for a part that points at it (Navigation's setup): the strip or the
+-- corner's square in sight, its key (a side, or "corner") and in a corner which one (TOPRIGHT, ...); nil where there
+-- is none (not docked to an edge, not allowed to fill the screen, or the window out of sight).
+function methods:Spot()
+    local zone = self.zone and Core.Dock.ZONES[self.zone]
+    for key, strip in pairs(self.strips) do
+        if strip:IsVisible() then return strip, key, key == "corner" and zone and zone[1] or nil end
+    end
+    return nil
 end
 
 -- A switch of the section Expand window was changed. Switched off, a window that fills the screen is

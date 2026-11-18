@@ -5,7 +5,7 @@
 The setup of a Sane UI addon, step by step: one window that walks you through what a module shows, a step at a time,
 each step with its own purpose, its words, the switches it is about and a sample that shows each choice at once. It
 comes with Sane UI (Core's download) and is read only when a setup opens. Each module keeps its own words and sample;
-this addon only draws them. Nameplates has the first setup.
+this addon only draws them. Nameplates has the first setup, Navigation the second (`src/Navigation/Setup.lua`).
 
 ## How to use
 
@@ -42,7 +42,9 @@ this addon only draws them. Nameplates has the first setup.
 - **The controls** (`Controls.lua`) are made from the module's own descriptions (`Core.Described`: `text`, `tip`,
   `choices`, `min`, `max`, `step`, `unit`, `distance`, `parent`, `parentValue`, `hidden`), or for a key from the step's
   own entry (`{ binding = "COMMAND", text, tip }`: `GetBindingKey`, `SetBinding`, `SaveBindings`; the key's other
-  command said in chat), and set through `Core.Set`,
+  command said in chat), or from a switch the step words its own way (`{ key = "expandClick", text, tip, choices = {
+  { value, words }, ... }, column = true }` over the switch's description: a switch as round buttons, one under
+  another with `column`; Navigation's hot corner), and set through `Core.Set`,
   as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it.
   Switches without words (kept values), buttons, colours, typed entries and multiple choices have no control in a
   step. A slider shown anew (`Refresh`) does not set its value again.
@@ -71,6 +73,8 @@ this addon only draws them. Nameplates has the first setup.
 ## History
 - 2026-11-18 — Tooltips' setup (`src/Tooltips/Setup.lua`: one step, your own tooltip as the sample); each module's
   sample in a frame of its own over the stage, the others' hidden.
+- 2026-11-18 — Navigation's setup, the second (Saneroki: "Can you make a onboarding window for the navigation
+  module"); a step may word one of its module's switches its own way (its own words and round buttons).
 - 2026-11-16 (later) — The loading screen's bar for the progress, keys as controls, choices side by side, 600 high
   (Saneroki: "add the loading screen bar there"). The stage over the world was tried and taken back the same day
   (Saneroki: "make it solid not transparent. it gets to confusing if it is transparent actually"): the grey box again.

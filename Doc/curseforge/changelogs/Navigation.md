@@ -7,6 +7,11 @@ What changed in each version of SaneUI Navigation, newest first: a version's par
 
 DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.
 
+- A setup, step by step, the first time (again with `/sane setup navigation`): how to open the map (the mouse into
+  the corner, a click there, a key, or all of them), moving it in Edit Mode, the quest log and the map's clicks. A
+  big arrow points into your own corner meanwhile.
+- A key for Sane UI's map (Key Bindings, under Sane UI); once it has one, the game's map key opens the game's own map.
+- A right click on the map no longer zooms out: the wheel zooms, a right click is for what a thing offers.
 - Navigation: eight colours, three widths, one to one with the dungeon map addon
 - Navigation: sketches both ways with a dungeon map addon
 - Share your map pin: right-click it to send it to your party, raid, guild or someone. They are asked first; kept,

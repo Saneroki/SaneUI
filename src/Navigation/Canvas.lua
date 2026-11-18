@@ -786,8 +786,10 @@ end
 -- map pin goes on then: the pin clicked, else the place on the map as it was (Where).
 local last
 
--- A click on the map, or on a pin (pin: its record, PinView.lua). The right button steps one map out; Ctrl and the
--- left puts the game's map pin there. Two plain left clicks on the same (a pin, or the map) within Canvas.DOUBLE,
+-- A click on the map, or on a pin (pin: its record, PinView.lua). The right button zooms nothing (Saneroki,
+-- 2026-11-18: "remove the rightclick that changes the zoom level or zooms out"): a right click is for what a thing
+-- offers (a pin's, a quest's menu), the wheel zooms; it only lets a marker waiting for its new place stay. Ctrl and
+-- the left puts the game's map pin there. Two plain left clicks on the same (a pin, or the map) within Canvas.DOUBLE,
 -- near each other: the map pin where the first was (the view may have changed in between). One: the pin's own
 -- (PinView.Act), else the map under the mouse opens, else a ping there, at once (Ping.Send: so the first click of a
 -- double click pings too). In an instance our map is not drawn: no place to pin, the game's minimap pings itself.
@@ -801,7 +803,6 @@ local function Clicked(button, pin)
     if button == "RightButton" then
         last = nil
         if ns.Markers.Moving() then return ns.Markers.Stay() end -- (a marker waiting for its place stays)
-        if camera:StepOut() then Canvas.Layout() end
         return
     end
     if button ~= "LeftButton" then return end
