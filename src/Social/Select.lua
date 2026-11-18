@@ -263,8 +263,15 @@ local function Take(box, button)
     driver:Show()
 end
 
--- Let go: the words picked wait for Ctrl+C; none (a press without a drag), nothing is picked.
-local function Let(_, button)
+-- Let go: the words picked wait for Ctrl+C; none (a press without a drag), nothing is picked. A right click on a
+-- message: the game's menu of whoever wrote it, with Social's lines (PlayerMenu.lua; Saneroki, 2026-11-18: "Enable
+-- right click on peoples chat messages").
+local function Let(box, button)
+    if button == "RightButton" then
+        local entry = Under(box)
+        if entry and ns.PlayerMenu then ns.PlayerMenu.Message(entry) end
+        return
+    end
     if button ~= "LeftButton" or not held then return end
     held = false
     driver:Hide()

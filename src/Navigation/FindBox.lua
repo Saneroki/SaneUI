@@ -1071,6 +1071,12 @@ function FindBox.Search(text)
     if text and text ~= "" then Run() end
 end
 
+-- Another module's "show on map" (Core.Ways.Look: Social's on a player, Saneroki, 2026-11-18): the full map, searching
+-- for those words; not while the module stands down.
+Core.Ways.Lookout(function(text)
+    if not ns.off then ns.Guarded(FindBox.Search, text) end
+end)
+
 -- The key Search the map (the game's key bindings, SaneUI): the full map, the cursor in its field.
 BINDING_NAME_SANEUI_MAP_FIND = "Search the map"
 function FindBox.Key()

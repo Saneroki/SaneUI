@@ -205,6 +205,9 @@ local OPTIONS = {
     { key = "first", default = "all", choices = OPENS, text = ns.TEXT.bagsFirst, tip = ns.TEXT.bagsFirstTip,
       header = ns.TEXT.bags },
     { key = "bagKeys", default = true, text = ns.TEXT.bagsKeys, tip = ns.TEXT.bagsKeysTip },
+    -- The game's character key opens ours (Keys.lua) until its tick in the dropdown Classic windows says the game's
+    -- own (Saneroki, 2026-11-18): no control here, the tick is the place.
+    { key = "characterKey", default = true },
     { key = "talks", default = true, text = ns.TEXT.talks, tip = ns.TEXT.talksTip },
     { key = "bags", default = {} }, -- the bags' display, order, categories and columns (Bags.lua), each profile its own
     { key = "autoSell", default = true, text = ns.TEXT.bagsAutoSell, tip = ns.TEXT.bagsAutoSellTip },
@@ -231,7 +234,7 @@ Core.Edge.Options(OPTIONS, 1)
 -- keys are the game's again (Keys.Taken); Auto Sell and Auto Repair change only their boxes; a bags' setting draws
 -- the bags anew.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
-    if key == "bagKeys" or key == "expand" then return ns.Guarded(ns.Keys.Apply) end
+    if key == "bagKeys" or key == "characterKey" or key == "expand" then return ns.Guarded(ns.Keys.Apply) end
     if Core.Edge.KEYS[key] then return end
     if key == "autoSell" or key == "autoRepair" then return ns.Guarded(ns.Vendor.Refresh) end
     if key == "bags" then return ns.Guarded(ns.Bags.Reload) end

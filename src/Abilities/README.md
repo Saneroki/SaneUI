@@ -226,9 +226,11 @@ spellbook and talents window.
   you leave if it was opened for you. Each is a layout of its own behind a tab first in the title bar (*Trainer*,
   *Profession Trainer*), kept as you arrange it; a right click on its tab resets it. When the trainer closes, the full
   screen goes back, unless it was open already before. *Full Screen at Trainers* switches it off.
-- **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*: the
-  full screen goes back and what opens the game's is said: its key, or, while your keys open ours, its button
-  in the micro menu (our code does not open the game's spellbook). The game's spellbook has the button *SaneUI*
+- **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*, each a
+  tick, ticked while that window's key is the game's (Saneroki, 2026-11-18: "Make sure you can check all of them";
+  `spellbookKey`, `talentsKey`, the pet book's with the spellbook's): ticked, the full screen goes back and what opens
+  the game's is said: its key, now the game's again (our code does not open the game's spellbook); unticked, its
+  key opens ours again. The game's spellbook has the button *SaneUI*
   left of its sizing button: the game's closes and this full screen comes, with our spellbook or talents.
 - **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
   decoration or background: no frame, end caps or dividers on the bars, no frame or slot on a button. The main
@@ -834,6 +836,8 @@ spellbook and talents window.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-18 — Each window's keys by its tick in Classic windows (`Keys.SWITCHES`: `spellbookKey`, `talentsKey`, under
+  `keys`; `Keys.lua`'s `Ours`), *Spellbook* and *Talents* there kept choices (`Screen.lua`, `Kept`).
 - 2026-11-18 — the full screen at the bottom middle comes to Abilities from Combat (Saneroki: "The macro editor,
   spellbook and other parts that are more for the fullscreen windows are part of the SaneUI abilities part"): its window
   (`Screen.lua`, Combat's `Window.lua`), the board, our own spellbook (`Spellbook/`, Combat's `Book/`) and talents, the

@@ -121,7 +121,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     the cursor into its line; a reply (or *Whisper* on a name) to somebody with a conversation chooses
     theirs; anything else the game's line opens with (`/`, a whisper to somebody new) chooses the chat, whose
     line it is. A right click on a whisper opens the
-    game's menu of that player. *Whisper* opens the game's line with `/w` to name whom; your first message
+    game's menu of that player, with *Add Friend*, *Pin them on the map*, *Show on map* and *Delete conversation*
+    under it; on a group's conversation, its name and *Delete conversation* (asked first; Saneroki, 2026-11-18:
+    "rightclick on whispers and group windows to say Delete the conversation"). *Whisper* opens the game's line with `/w` to name whom; your first message
     chooses the new conversation. *Remove* takes the one chosen away (a conversation with its messages, or a
     chat view), once confirmed. A
     group you are in is listed though nobody spoke yet. Each keeps its last messages (a setting), for each
@@ -136,11 +138,17 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     groups (leader, activity, comment) and conversations (by name or by their messages). Going back, the
     panels go at once, the guild window with them, and the chat has the whole window.
 - **Classic windows:** full, the dropdown *Classic windows* in the top right corner offers the game's own
-  windows instead: *Chat* puts this window away (the switch *Chat window* goes off) and the game's chat is
+  windows instead, each a tick, ticked while the game's own is the one (Saneroki, 2026-11-18: "Make sure you can
+  check all of them"; untick it for ours again): *Chat* puts this window away (the switch *Chat window* goes off) and the game's chat is
   back; its button *SaneUI* (the game's square button with circling arrows, just above its chat menu
   button, left of the game's chat), `/sane social` or the switch brings this one again. *Friends list*: the window goes back to its
   place and the game's friends list opens (in a fight the game refuses that to an addon: a line says to use the
-  game's own key). *Group finder*: the same for the game's group finder (in Retail its own). The game's friends
+  game's own key), and its keys are the game's again. *Group finder*: the same for the game's group finder (in Retail its own).
+- **The friends list's and the group finder's keys open ours:** the game's keys for its friends list (*Toggle Social*,
+  *Toggle Friends Tab*, O at first) and its group finder (*Toggle Group Finder*) open this full screen with the
+  friends list at that tab; pressed again, back to its size. Until their tick in *Classic windows* says the game's
+  own; not while *Can expand to fullscreen* is off or Edit Mode is open; the group finder's only in WoW: Forever.
+  Their own keys are in the game's key bindings under SaneUI too. The game's friends
   list (or its newer social window, where the game has that on) and group finder have the button *SaneUI* beside
   their close button: it closes the game's window and this one fills the screen. The dropdown lists the other modules' game windows too, each under its module's name.
 - **Scroll:** mouse wheel, or the bar at the right, which is only there while you are scrolled up from
@@ -149,7 +157,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **No background, no border, clicks go through:** the messages stand over the game, and a click on them
   is a click into the game. Only a link, a speaker's name and the chat button take the mouse. The chat
   button is only there while the mouse is over the window; the window has no bar of its own.
-- **Click a speaker's name** to whisper to them, right click it for their menu, as in the game's chat.
+- **Click a speaker's name** to whisper to them, right click it for their menu, as in the game's chat; on the full
+  screen a right click anywhere on someone's message does the same. Under the game's lines Social adds *Add Friend*
+  (not for a friend already), *Pin them on the map* (the map pin at their place, with its golden line: a member of
+  your group whose place the game tells) and *Show on map* (the full map searching for them: in your group, a guild
+  member's SaneUI that says where it stands, else their zone; while the map is SaneUI's). The game's own lines are
+  *Whisper*, *Invite*, *Ignore*, *Report*, *Copy Character Name* and the like (Saneroki, 2026-11-18: "invite, whisper,
+  set alias, set note, Ignore, copy character name, pin, show on map, add wow friend, report player").
   Its *Set Alias* (Core's) gives the character a name of your own: their messages, and the friends list,
   show it in place of theirs (a click still whispers to the character), and the search finds it.
 - **More chat windows on the screen** (Saneroki, 2026-11-18: "the option to have more then one chat window on the
@@ -173,12 +187,15 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   game's eight raid marks (star to skull): a click puts one into the line where the cursor is, and once
   sent it shows as its icon in everybody's chat. These are the only icons the game's chat draws from what
   a player writes; it shows none in its public channels (General, Trade, ...), so while you write in one
-  the list says so instead. Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
+  the list says so instead (on an empty line too: the click keeps the line open for a mark; Saneroki, 2026-11-18:
+  "While the input field is empty clicking the smiley will close the input"). Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
   `/welcome`, `/cheer`, `/applaud`, `/congratulate`, `/laugh`, `/dance`, `/bow`, `/hug`): a click does it
   at once, at your target if you have one, as typing it would. While chat is locked down (a fight, a
   dungeon) the list offers no emotes and says so: the game refuses them to an addon then.
 - **The newest message is at the bottom.** A few messages stand at the bottom of the window, not at its top.
-- **Messages fade out,** each by itself, 10 seconds after it came. Neither the mouse over the window nor
+- **Your messages** stand on the right, or on the left with your class icon and name as everybody else's (*Your
+  messages*, tab *Appearance*, and the setup; Saneroki, 2026-11-18).
+- **Messages fade out,** each by itself, 10 seconds after it came (*Fade messages after*). Neither the mouse over the window nor
   the line to write in brings them back: turn the mouse wheel over it and all of them fade back in to
   read. They fade out again once the mouse has left at the newest message (scrolled up, they stay). On
   the full screen every message stays.
@@ -194,8 +211,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   (`/sane setup chat`), and by itself once after the login with the other setups (the addon Onboarding's window): what
   the chat is; the hot corner, one choice of three: *Not at all: only by a key*, *With a left click in it*, *When the
   mouse goes into it*, the tutorial arrow pointing into the corner the chat is docked in; the keys (*Social's full
-  screen*, *The chat window*); the windows (*Chat window*, *Show the game's chat too*, *The second chat on the screen*,
-  *Group finder*); the full screen (the conversations' parts, chat views, and ticks for *The friends list on the full
+  screen*, *The chat window*) on the same page (Saneroki, 2026-11-18); the windows (*Chat window*, *Show the game's chat
+  too*, *The second chat on the screen*, *Group finder*); your messages (*Your messages* on the right or the left, *Fade
+  out* and *Fade messages after*, *Bubble opacity*; that the mouse wheel scrolls back to older ones); what is kept
+  (*Save chat history* and *Messages kept*, *Messages kept per conversation*, *A new conversation for each group*); the full screen (the conversations' parts, chat views, and ticks for *The friends list on the full
   screen* and *The guild window on the full screen*, in or out of the layout chosen, as the dropdown *Windows* there
   puts them; Saneroki, 2026-11-18: "Add the friends list and guild window to the setup too").
 - **Settings** (Esc > Options > AddOns > SaneUI > Social), in two tabs:
@@ -374,11 +393,22 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   conversations find by it too, thousands of messages with all conversations full (`Talks.MOST` × *Messages kept
   per conversation*): the lists are filtered anew 0.15 s after a key (`Core.Later`), once for the keys typed
   meanwhile, not at every key.
-  The title bar holds Core's dropdown *Classic windows*, whose list is `ns.CLASSIC` (`Social.lua`): *Chat* (`Choose(false)`, a
-  line in chat says how to bring the window back), *Friends list* (`ToggleFriendsFrame(FRIEND_TAB_FRIENDS)`,
+  The title bar holds Core's dropdown *Classic windows*, whose list is `ns.CLASSIC` (`Social.lua`), each a kept choice
+  (`checked`, `back`): *Chat* (`Choose(false)`, a line in chat says how to bring the window back; ticked while
+  `window` is off), *Friends list* (`friendsKey` off, then `ToggleFriendsFrame(FRIEND_TAB_FRIENDS)`,
   as the game's key opens it, only if neither `FriendsFrame` nor `SocialUIFrame` is shown; nothing if the game has no
-  such function), *Group finder* (`ns.OpenFinder`: Forever's `ToggleGroupFinderFrame`, Retail's `PVEFrame_ToggleFrame`;
-  its button on `LFGParentFrame` or `PVEFrame`). The
+  such function), *Group finder* (`finderKey` off, then `ns.OpenFinder`: Forever's `ToggleGroupFinderFrame`, Retail's
+  `PVEFrame_ToggleFrame`; its button on `LFGParentFrame` or `PVEFrame`). The keys (`Keys.lua`): override bindings of
+  `SANEUI_SOCIAL_FRIENDS` and `SANEUI_SOCIAL_FINDER` (`Bindings.xml`) on the keys of `TOGGLESOCIAL`, `TOGGLEFRIENDSTAB` and
+  `TOGGLEGROUPFINDER` while `Keys.Taken` (the switch, the module, `expand`, Edit Mode closed; the finder's not where
+  `ns.RetailFinder` or with `boardFinder` off), out of a fight; `Keys.Press(tab)`: `Window.Standing`, `Board.Put`,
+  `Friends.Want` (the tab once the panel is made). The player menu (`PlayerMenu.lua`): `PlayerMenu.With(what, fn, ...)`
+  opens the game's menu with `asked` set, and `Menu.ModifyMenu` on `MENU_UNIT_FRIEND`, `_OFFLINE`, `BN_FRIEND`,
+  `_OFFLINE` adds Social's lines only then (and to that menu made anew: a weak table by its context); from `Links.lua`
+  (a right click on a player link), `Select.lua` (on the full screen, `Let` with the right button: the message under
+  the mouse, `PlayerMenu.Message`, its link's own right click) and `Conversations.lua` (`PlayerMenu.Talk`). *Pin them on
+  the map*: the game's user waypoint (`C_Map.SetUserWaypoint`, `C_SuperTrack`), only for a member of your group whose
+  place `C_Map.GetPlayerMapPosition` tells; *Show on map*: `Core.Ways.Look(name)`, served by Navigation's map search. The
   section *Expand window* is Core's (`Edge.Options`, with its corner switches, `Shape.Options`), put at the
   top of the tab, before the first switch of the tab *Appearance*, its *Animation type* also under *All
   animations and fades* (`Edge.Options`' `under`); the window reads it by `edge = ns.options`, and Core
@@ -893,6 +923,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
 | `ChatWindows.lua` | A chat view on the screen as a chat window of its own beside the chat: Core's window, moved and sized in Edit Mode, fading by age, its button's list (rename, close, what it shows), New Window |
 | `Setup.lua` | Social's setup, step by step, for the addon Onboarding's window: the hot corner (not at all, a left click, the mouse) and the keys on one page, the windows, the full screen; a drawn board for each |
+| `PlayerMenu.lua` | A right click on someone (a name, a message on the full screen, a whisper's row): the game's menu of the player with Social's lines (Add Friend, Pin them on the map, Show on map, Delete conversation); a group's row: its own menu |
+| `Keys.lua` | The game's friends list and group finder keys open the full screen with ours, until their ticks in Classic windows say the game's |
 | `Talks.lua` | The conversations: whispers, and each group you join (its chat apart, named by its members, ended when you leave), kept per character. Knows no frames |
 | `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
 | `Friends.lua` | The friends list's panel: you on Battle.net at its head, its tabs, the search box and the filter, the list of the tab chosen |
@@ -914,6 +946,14 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-18 — Going through the onboarding (Saneroki): a right click on a whisper's or a group's row has *Delete
+  conversation*; one on a name or (on the full screen) a message opens the game's menu of that player with *Add Friend*,
+  *Pin them on the map* and *Show on map* (`PlayerMenu.lua`, new in the TOC; Core's `Ways.Look`); the smiley works on an
+  empty line (`Picker.lua`: the list the window's, the line opened again); every entry of *Classic windows* a tick, the
+  friends list's and group finder's keys opening the full screen (`Keys.lua`, new in the TOC; `friendsKey`,
+  `finderKey`); *Your messages* on the left or right (`mineSide`, `Bubble.Mine`); *A new conversation for each group*
+  (`groupEach`, `Talks.lua`: one conversation per category while off); the setup's pages *Your messages* and *What is
+  kept*; the corner board's key words no longer take the drawn chat's name (*keyFull*, *keyChat*).
 - 2026-11-18 — The full screen's first layout as Saneroki likes it (his picture): the conversations, the friends list
   and the guild window side by side and as high as the screen, as wide as `Layout.SHARES` share it (650, 390 and 889
   pixels on his screen), each at its least at most (`Layout.Board`: the guild window left out first, then the friends

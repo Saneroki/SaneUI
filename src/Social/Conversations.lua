@@ -38,8 +38,11 @@ local _, ns = ...
 --
 --  A click chooses a conversation: its messages are read. A right click on a
 --  whisper opens the game's own menu of that player, as the friends list's does
---  (whisper, invite, ignore, Set Alias, Set Note); on a chat view, Rename,
---  Remove and Its own window on the screen (ChatWindows.lua). A conversation you begin
+--  (whisper, invite, ignore, Set Alias, Set Note), with Social's lines and
+--  Delete conversation (PlayerMenu.lua; Saneroki, 2026-11-18: "rightclick on
+--  whispers and group windows to say Delete the conversation"); on a group's,
+--  its name and Delete conversation; on a chat view, Rename, Remove and Its own
+--  window on the screen (ChatWindows.lua). A conversation you begin
 --  yourself (from anywhere: the chat's line, a name's menu) is chosen as soon
 --  as your first message comes back. A group you are in is listed though
 --  nobody spoke there yet, to write in.
@@ -361,18 +364,6 @@ end
 
 -- The game's own menu of the player a whisper is with, as its friends list opens it (and our lines in it,
 -- Core.People). A Battle.net friend only while the game knows the account.
-local function Menu(talk)
-    if talk.kind == "WHISPER" then
-        local show = rawget(_G, "FriendsFrame_ShowDropdown")
-        if show then show(talk.with, true, nil, "WHISPER", DEFAULT_CHAT_FRAME) end
-    elseif talk.kind == "BN_WHISPER" then
-        local show, account = rawget(_G, "FriendsFrame_ShowBNDropdown"), Talks.Account(talk)
-        if show and account then
-            show(talk.name, true, nil, "BN_WHISPER", DEFAULT_CHAT_FRAME, nil, account, nil, nil, nil, nil, talk.with)
-        end
-    end
-end
-
 -------------------------------------------------------------------------------
 --  The one chosen
 -------------------------------------------------------------------------------
@@ -680,7 +671,8 @@ local function Click(row, button)
     if talk.head then return Fold(talk) end
     if button == "RightButton" then
         if talk.view then return ViewMenu(row, talk) end
-        return Menu(talk)
+        if talk.pinned then return end -- the chat: no menu
+        return ns.PlayerMenu.Talk(row, talk, Update)
     end
     if talk ~= open then Choose(talk) end
 end

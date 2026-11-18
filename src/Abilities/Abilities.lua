@@ -329,6 +329,9 @@ local OPTIONS = {
     { key = "menuHover", default = true, text = TEXT.menuHover, tip = TEXT.menuHoverTip },
     -- The full screen and its windows (Screen.lua, Board.lua): your keys open ours, a trainer comes with its layout.
     { key = "keys", default = true, text = TEXT.keys, header = TEXT.book, tip = TEXT.keysTip },
+    -- Each window's keys, by its tick in the dropdown Classic windows (Saneroki, 2026-11-18; Keys.lua): no control here.
+    { key = "spellbookKey", default = true },
+    { key = "talentsKey", default = true },
     { key = "trainers", default = true, text = TEXT.trainers, tip = TEXT.trainersTip },
     { key = "macroChecks", default = true, text = TEXT.macroChecks, header = TEXT.macros, tip = TEXT.macroChecksTip },
     { key = "macroDim", default = true, text = TEXT.macroDim, tip = TEXT.macroDimTip },
@@ -375,7 +378,7 @@ Core.Options(ns.name, OPTIONS, function(key, value)
         ns.Bar1.Apply()
     elseif key == "tightBars" then
         ns.Spacing.Apply()
-    elseif key == "keys" then
+    elseif key == "keys" or key == "spellbookKey" or key == "talentsKey" then
         ns.Guarded(ns.Keys.Bind)
     elseif key == "cleanBars" or key:match("^barsRest") then
         ns.Guarded(ns.ActionBars.Apply)

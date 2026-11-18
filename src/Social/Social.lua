@@ -192,6 +192,12 @@ local OPTIONS = {
     { key = "talkSize", default = 100, min = 20, max = 500, step = 10, unit = "messages", text = "Messages kept per conversation", header = "Full screen",
       headerTip = "What the full screen's windows hold. Which windows stand there, and where, you arrange on the full screen itself: drag a window's head to move it, the gap between two to share their room, add one from the dropdown Windows, take one off with its X; each layout behind a tab of its own.",
       tip = "How many of the last messages each conversation keeps, also for the next login (then 1,000 of all conversations together at most, the newest first)." },
+    -- The game's friends list and group finder keys open ours (Keys.lua), each until its tick in the dropdown Classic
+    -- windows says the game's own (Saneroki, 2026-11-18): no control here, the tick is the place.
+    { key = "friendsKey", default = true },
+    { key = "finderKey", default = true },
+    { key = "groupEach", default = true, text = "A new conversation for each group",
+      tip = "Each party or raid you join gets a conversation of its own, named by who is in it, to read on after you leave. Off: one conversation for all your parties and raids, and one for your instance groups, read on from where they were." },
     { key = "boardFinder", default = true, text = "Group finder", hidden = function() return ns.RetailFinder() ~= nil end,
       tip = "The group finder as a tab of the friends list, as the game's: the groups and players looking for others in a category. Whisper a leader, or invite a player who is alone." },
 
@@ -204,6 +210,9 @@ local OPTIONS = {
       tip = "What the bubbles and the line to write in stand on: a colour of your choice, or one of the game's own background textures." },
     { key = "bubbleColor", default = "26262B", color = true, text = "Bubble colour", tab = LOOK, parent = "bubbleBack", parentValue = "solid",
       tip = "The colour of the bubbles and the line to write in while the background is Solid colour. Click to pick it." },
+    { key = "mineSide", default = "right", text = "Your messages", tab = LOOK,
+      choices = { { "right", "On the right" }, { "left", "On the left" } },
+      tip = "Where your own messages stand: on the right, as in a messenger, or on the left with your name and class, as everybody else's." },
     { key = "shortNames", default = false, text = "Short names", tab = LOOK,
       tip = "The chat above a message is named by its initials: G for Guild, P for Party, RW for Raid Warning. Off: its whole name." },
 
@@ -256,6 +265,8 @@ end
 
 Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = function(key)
     if key == "presence" then return ns.Safe("channels", ns.Join.Settle) end
+    -- Whether the game's friends list and group finder keys open ours (Keys.lua).
+    if key == "friendsKey" or key == "finderKey" or key == "expand" or key == "boardFinder" then ns.Guarded(ns.Keys.Bind) end
     -- The section Expand window: Core's window takes it in by itself (Edge.lua); its Animation type is asked
     -- for each time the window fills the screen.
     if Core.Edge.KEYS[key] then return end
@@ -264,6 +275,7 @@ Core.Options(ns.name, OPTIONS, { version = 3, upgrade = Upgrade, changed = funct
     -- The group finder is a tab of the friends list: its switch offers the tab or takes it away.
     if key == "boardFinder" then return ns.Safe("friends tabs", ns.Friends.Relabel) end
     if key == "talkSize" then return ns.Safe("conversations", ns.Talks.Trim) end
+    if key == "groupEach" then return end -- the next group you join
     if key == "history" or key == "historySize" then return ns.Keep() end
     local Window = ns.Window
     ns.Guarded(key == "textSize" and Window.Resize or key == "showNative" and Window.Native or MOVES[key] and Window.Animate
@@ -279,6 +291,7 @@ end
 -- Something failed (Core's StandDown calls this once): the edit boxes go back to where the game had
 -- them first, then the window goes and the game's own chat is back, with every line it got meanwhile.
 function ns.GiveBack()
+    Back(ns.Keys.Leave)
     Back(ns.Input.Release)
     Back(ns.Input.Forget)
     Back(ns.Window.Hide)
@@ -388,6 +401,7 @@ function ns.OnLogin()
         ns.Safe("conversations", ns.Talks.Save, char)
     end)
     ns.Guarded(ns.Window.Follow)
+    ns.Safe("keys", ns.Keys.Start)
     -- An alias given or changed (Core.People, the game's menu of a player): the names above the bubbles anew.
     if Core.People then Core.People.Watch(function() ns.Guarded(ns.Window.Repaint) end) end
 end
@@ -400,8 +414,10 @@ local function Choose(on)
 end
 
 -- The game's own windows ours stands for, in Core's dropdown Classic windows while the window fills
--- the screen (Edge.lua): its chat, for which ours is put away (the switch Chat window off), and its
--- friends list, opened as its key opens it (ToggleFriendsFrame), only if it is not open already. The
+-- the screen (Edge.lua), each a tick, ticked while the game's own is the one (Saneroki, 2026-11-18: "Make sure
+-- you can check all of them"): its chat, for which ours is put away (the switch Chat window off); its friends
+-- list and its group finder, whose keys then open the game's again (friendsKey, finderKey: Keys.lua), opened
+-- as its key opens it (ToggleFriendsFrame), only if it is not open already. Unticked, ours again. The
 -- window goes back to its zone either way (Core's). In a fight the game refuses to open its panels from
 -- an addon's code ("Interface action failed"; UIParentPanelManager.lua): then it is only said.
 -- The game's friends list is FriendsFrame, or its newer social window (SocialUIFrame) where the game has that on
@@ -442,11 +458,22 @@ end
 local function Ours() Choose(true) end
 local function Running() return not ns.off end
 ns.CLASSIC = {
-    { text = ns.TEXT.classicChat, show = PutAway },
-    { text = ns.TEXT.classicFriends, show = function() ns.Safe("friends list", Friends) end,
+    { text = ns.TEXT.classicChat, show = PutAway, checked = function() return ns.options.window == false end,
+      back = function() Choose(true) end },
+    { text = ns.TEXT.classicFriends, checked = function() return ns.options.friendsKey == false end,
+      show = function()
+          Core.Set(ns.name, "friendsKey", false)
+          ns.Safe("friends list", Friends)
+      end,
+      back = function() Core.Set(ns.name, "friendsKey", true) end,
       frame = FRIENDS, full = true, ours = Ours, ready = Running },
     -- The finder of either game: Forever's comes with its addon, loaded on demand; Retail's is there from the start.
-    { text = ns.TEXT.classicFinder, show = function() ns.Safe("group finder", ns.OpenFinder) end,
+    { text = ns.TEXT.classicFinder, checked = function() return ns.options.finderKey == false end,
+      show = function()
+          Core.Set(ns.name, "finderKey", false)
+          ns.Safe("group finder", ns.OpenFinder)
+      end,
+      back = function() Core.Set(ns.name, "finderKey", true) end,
       frame = { "LFGParentFrame", "PVEFrame" }, addon = "Blizzard_GroupFinder_VanillaStyle", full = true, ours = Ours,
       ready = Running },
 }

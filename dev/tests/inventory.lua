@@ -1191,6 +1191,33 @@ check(next(Overrides()) == nil and ContainerFrameCombinedBags:GetParent() == UIP
     "the setting off: the game's keys, bags and bag bar are the game's")
 Core.Set(ns.name, "bagKeys", true)
 check(Overrides().B == Keys.COMMAND and ContainerFrameCombinedBags:GetParent() ~= UIParent and BagsBar:GetParent() ~= UIParent, "on again")
+-- The character key (Saneroki, 2026-11-18: every entry of Classic windows a tick, "Keys open ours"): ours too, the
+-- full screen with the character sheet, until its tick says the game's own.
+do
+    local bindings = GetBindingKey
+    GetBindingKey = function(action)
+        if action == "TOGGLECHARACTER0" then return "C" end
+        return bindings(action)
+    end
+    W.Fire("UPDATE_BINDINGS")
+    check(Overrides().C == Keys.CHARACTER_COMMAND and Overrides().B == Keys.COMMAND,
+        "the character key runs ours, beside the bag keys")
+    Keys.Press("character")
+    Stand()
+    check(handle.edge.full and Board.Has("character"), "pressed: the full screen with the character sheet")
+    Keys.Press("character")
+    Stand()
+    check(not handle.edge.full, "pressed again: back to its size")
+    local entries = Core.Classic.List(handle)
+    check(entries[1].checked() == false and entries[2].checked() == false, "in Classic windows both are ticks, unticked: ours")
+    entries[1].show()
+    check(Overrides().C == nil and Overrides().B == Keys.COMMAND and entries[1].checked() == true,
+        "Character ticked: the game's key is the game's again, the bag keys stay ours")
+    entries[1].back()
+    check(Overrides().C == Keys.CHARACTER_COMMAND and not entries[1].checked(), "unticked: ours again")
+    GetBindingKey = bindings
+    W.Fire("UPDATE_BINDINGS")
+end
 -- Can expand to fullscreen off: the full screen never comes, so the bag keys and bags are the game's, and a key
 -- pressed then wishes for nothing later (the bags taken off the layout first, to see that they stay off).
 Push()

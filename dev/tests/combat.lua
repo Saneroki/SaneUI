@@ -2845,6 +2845,19 @@ do
     C_SpecializationInfo.GetCombatConfigIDForSpecGroup, GetBindingKey = configs, keyOf
     ab.Keys.Bind()
     check(Board.Present("talents") and W.overrides[owner].P == ab.Keys.COMMANDS.spellbook, "back in Forever: both ours again")
+    -- Each a tick in Classic windows (Saneroki, 2026-11-18: "Keys open ours"): ticked, that window's key the game's.
+    GetBindingKey = function(action) return ({ TOGGLESPELLBOOK = "P", TOGGLETALENTS = "N" })[action] end
+    ab.Keys.Bind()
+    local both = Core.Classic.List(handle)
+    check(#both == 2 and both[1].checked() == false and both[2].checked() == false and W.overrides[owner].N == ab.Keys.COMMANDS.talents,
+        "the spellbook and the talents: two ticks, unticked while their keys open ours")
+    both[2].show()
+    check(both[2].checked() == true and W.overrides[owner].N == nil and W.overrides[owner].P == ab.Keys.COMMANDS.spellbook,
+        "the talents ticked: their key is the game's again, the spellbook's stays ours")
+    both[2].back()
+    check(not both[2].checked() and W.overrides[owner].N == ab.Keys.COMMANDS.talents, "unticked: ours again")
+    GetBindingKey = keyOf
+    ab.Keys.Bind()
 end
 
 -------------------------------------------------------------------------------

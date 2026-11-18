@@ -423,6 +423,7 @@ function Window.Repaint()
     if not frame then return end
     Bubble.Opacity(ns.options.bubbleOpacity)
     Bubble.Brief(ns.options.shortNames)
+    Bubble.Mine(ns.options.mineSide == "left")
     ns.Input.Paint()
     Rewrap()
     ns.Feed.Rewrap()
@@ -574,6 +575,12 @@ function Window.Full()
     handle.edge:Fill(not handle.edge.full)
 end
 
+-- Whether it stands full now (its motion there is over).
+function Window.Standing()
+    local edge = handle and handle.edge
+    return edge ~= nil and edge.full == true and not (edge.clock and edge.clock:IsRunning())
+end
+
 -- The zone the chat is docked to now ("BOTTOMLEFT" at first), or nil while it stands free or is not made yet: its hot
 -- corner's place (Setup.lua).
 function Window.Zone()
@@ -631,6 +638,7 @@ local function Build()
     Bubble.Size(ns.options.textSize)
     Bubble.Opacity(ns.options.bubbleOpacity)
     Bubble.Brief(ns.options.shortNames)
+    Bubble.Mine(ns.options.mineSide == "left")
     Bubble.Ruler(frame)
     view = CreateScrollBoxListLinearView(0, 0, 0, 0, Layout.SPACING)
     view:SetElementExtentCalculator(Height)

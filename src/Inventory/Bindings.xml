@@ -5,4 +5,8 @@
 	<Binding name="SANEUI_INVENTORY_BAGS" category="BINDING_HEADER_SANEUI">
 		SaneUI.Inventory.Safe("keys", SaneUI.Inventory.Keys.Press)
 	</Binding>
+	<!-- The full screen with the character sheet: Keys.lua also puts it on the game's character key while that is ours. -->
+	<Binding name="SANEUI_INVENTORY_CHARACTER" category="BINDING_HEADER_SANEUI">
+		SaneUI.Inventory.Safe("keys", SaneUI.Inventory.Keys.Press, "character")
+	</Binding>
 </Bindings>

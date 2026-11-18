@@ -11,6 +11,10 @@ SaneUI 0.3.5 (2026-11-18)
 --------------------------
 - The setups' first page has a button that opens Edit Mode,
   to place and size your frames before you start.
+- Every entry of Classic windows is a tick: ticked, the
+  game's own window is the one its key opens; unticked,
+  SaneUI's (the character key, the spellbook's and talents'
+  keys each on their own).
 
 Social 0.3.2 (2026-11-18)
 -------------------------
@@ -20,6 +24,17 @@ Social 0.3.2 (2026-11-18)
   brings it back.
 - The setup's hot corner and keys are on one page: choose how
   the corner opens the full screen, and set its key under it.
+- Right click someone's name, or their message on the full
+  screen: whisper, invite, ignore, report, copy their name,
+  set an alias or a note, add them as a friend, pin them on
+  the map or show them on it.
+- Right click a conversation to delete it.
+- Your own messages on the right or the left, a new
+  conversation for each group or one for all, and how long
+  messages stay: asked in the setup.
+- The friends list's and group finder's keys open the full
+  screen with them.
+- The smiley works on an empty line too.
 
 Social 0.3.1 (2026-11-18)
 -------------------------

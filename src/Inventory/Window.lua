@@ -46,10 +46,11 @@ local function Search(text)
     ns.Board.Search(text)
 end
 
--- The game's own character sheet and bags, in Core's dropdown Classic windows; on them the button SaneUI: ours,
--- filling the screen (Core's Classic.lua). Our code never opens the game's character sheet (README, *Never the
--- game's panels*): its key is said instead. The bags are no panel: they open and close by our code; chosen, they
--- show (Keys.GameBags: else they stand hidden while the bag keys open ours).
+-- The game's own character sheet and bags, in Core's dropdown Classic windows, each a tick, ticked while the game's
+-- own is the one its keys open (Saneroki, 2026-11-18: "Make sure you can check all of them"; characterKey, bagKeys:
+-- Keys.lua); on them the button SaneUI: ours, filling the screen (Core's Classic.lua). Our code never opens the game's
+-- character sheet (README, *Never the game's panels*): its key is said instead. The bags are no panel: they open and
+-- close by our code; chosen, they show (Keys.GameBags: else they stand hidden while the bag keys open ours).
 local CHARACTER = Core.Word("CHARACTER", "Character")
 local function Bags()
     ns.Keys.GameBags(true)
@@ -64,9 +65,22 @@ end
 -- The button SaneUI is there only while ours can come: the module running, Can expand to fullscreen on.
 local function Running() return not ns.off and (ns.options or {}).expand ~= false end
 local CLASSIC = {
-    { text = CHARACTER, show = function() Core.Classic.Press(CHARACTER, "TOGGLECHARACTER0") end,
+    { text = CHARACTER, checked = function() return ns.options.characterKey == false end,
+      show = function()
+          Core.Set(ns.name, "characterKey", false)
+          Core.Classic.Press(CHARACTER, "TOGGLECHARACTER0") -- its key, the game's again, opens it
+      end,
+      back = function() Core.Set(ns.name, "characterKey", true) end,
       frame = "CharacterFrame", full = true, ready = Running },
-    { text = Core.Word("BAGSLOTTEXT", "Bags"), show = function() ns.Safe("classic bags", Bags) end,
+    { text = Core.Word("BAGSLOTTEXT", "Bags"), checked = function() return ns.options.bagKeys == false end,
+      show = function()
+          Core.Set(ns.name, "bagKeys", false)
+          ns.Safe("classic bags", Bags)
+      end,
+      back = function()
+          ns.Safe("classic bags", CloseBags)
+          Core.Set(ns.name, "bagKeys", true)
+      end,
       frame = { "ContainerFrameCombinedBags", "ContainerFrame1" }, plain = true, full = true, ready = Running, hide = CloseBags },
 }
 

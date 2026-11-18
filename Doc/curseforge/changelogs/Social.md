@@ -10,6 +10,16 @@ What changed in each version of SaneUI Social, newest first: a version's part is
   then *Reset*, brings this one back.
 - The setup's hot corner and keys are on one page: choose how the corner opens the full screen, and set its key and
   the chat window's right under it.
+- Right click someone's name, or anywhere on their message on the full screen: the game's own menu of them (whisper,
+  invite, ignore, report, copy their name, set an alias or a note), with *Add Friend*, *Pin them on the map* (a member
+  of your group) and *Show on map* under it.
+- Right click a whisper or a group in the conversations' list to delete it with all its messages.
+- The setup asks more: your own messages on the right or the left, how long messages stay before they fade, how
+  solid the bubbles are, how many messages are kept, and a new conversation for each group you join or one for all.
+  It also shows that the mouse wheel scrolls back to older messages.
+- The game's friends list and group finder keys open the full screen with the friends list at that tab. Tick them in
+  *Classic windows* to have the game's own windows again.
+- The smiley beside the line works on an empty line too.
 
 ## 0.3.1 (2026-11-18)
 

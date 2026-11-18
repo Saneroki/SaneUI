@@ -10,6 +10,10 @@ local _, ns = ...
 --  instance group one of its own. A group's conversation is known by the
 --  group's own GUID (GROUP_JOINED), its chat (party, raid, raid warning;
 --  instance) goes there and nowhere else, and it is named by the others in it.
+--  With the switch A new conversation for each group off (groupEach; Saneroki,
+--  2026-11-18, the setup asks it), every group of a category shares one
+--  conversation ("G:<category>"), read on from where it was, named by who is
+--  in the group now.
 --  Once you leave (GROUP_LEFT) it ends: it stays in the list to read, as long
 --  as the others do, and is written in no more. Knows no frames: the full
 --  screen's panel shows them (Conversations.lua).
@@ -260,8 +264,12 @@ end
 -- its own, last in the list until somebody speaks there.
 local function Begin(category, guid)
     guid = Core.Plain(guid)
-    local key = "G:" .. (type(guid) == "string" and guid ~= "" and guid or (category .. ":" .. time()))
+    local shared = ns.options and ns.options.groupEach == false
+    local key = shared and ("G:" .. category)
+        or "G:" .. (type(guid) == "string" and guid ~= "" and guid or (category .. ":" .. time()))
     local talk = Talks.by[key] or Make(key, KindOf(category), nil, true)
+    -- One conversation for every group: named by who is in this one, not by all who ever were.
+    if shared and Talks.current[category] ~= key then talk.members = {} end
     talk.category, talk.started, talk.ended = category, talk.started or time(), nil
     Talks.current[category] = key
     Roster(talk)

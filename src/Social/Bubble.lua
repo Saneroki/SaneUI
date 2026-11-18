@@ -32,6 +32,7 @@ local sized = 0  -- counts the changes of that size: a message measured before o
 local look = { top = { 0.15, 0.15, 0.17 }, alpha = 1 } -- every bubble's fill (Core's Shape), as set
 local painted = 0 -- counts the changes of that look: a bubble drawn before one is painted again
 local brief = true -- the chats' names in short: "G" for "Guild"
+local mineLeft = false -- your own messages on the left with your name and class, as everybody else's (mineSide)
 local ruler
 local parts = {} -- [row] = { body, ring, icon, name, meta, bubble, plate, text, clock, painted }
 
@@ -72,6 +73,20 @@ end
 -- The chats' names above the bubbles in short, or in full.
 function Bubble.Brief(on)
     brief = on and true or false
+end
+
+-- Your own messages on the left (Saneroki, 2026-11-18: the setup asks "if they want your own messages to be on the
+-- left or right side of the chat window"), drawn as everybody else's: your class icon, your name; or on the right.
+function Bubble.Mine(left)
+    mineLeft = left and true or false
+end
+
+-- You, as a message of yours on the left names you (made once, asked anew each time: a name comes after the login).
+local me = {}
+local function Me()
+    me.name = Core.FullName and Core.FullName("player") or Core.Ask(UnitName, "player")
+    me.class = select(2, Core.Ask(UnitClass, "player"))
+    return me
 end
 
 -- Paints a plate (Core's Shape) as the bubbles are painted; the line you write in has their fill too.
@@ -203,6 +218,8 @@ function Bubble.Init(row, entry, rowWidth)
     local part = parts[row] or Build(row)
     local fit = Measured(entry, rowWidth) -- already known, unless the width or the text size changed since
     local side = entry.side
+    local mine = side == "right" and mineLeft
+    if mine then side = "left" end
     local note, theirs = side == "center", side == "left"
 
     part.body:Show()
@@ -215,12 +232,13 @@ function Bubble.Init(row, entry, rowWidth)
     -- A note has nothing above it: it is no one's, or its text says whose.
     part.meta:ClearAllPoints()
     if theirs then
-        Icon(part, entry)
-        local color = entry.class and RAID_CLASS_COLORS[entry.class] or HIGHLIGHT_FONT_COLOR
+        local who = mine and Me() or entry
+        Icon(part, who)
+        local color = who.class and RAID_CLASS_COLORS[who.class] or HIGHLIGHT_FONT_COLOR
         part.name:SetHeight(Layout.HEAD)
-        part.name:SetText(Bubble.Speaker(entry)) -- a click on it whispers to them (Links.lua)
+        part.name:SetText(mine and (who.name or "") or Bubble.Speaker(entry)) -- a click on it whispers to them (Links.lua)
         part.name:SetTextColor(color.r, color.g, color.b)
-        part.meta:SetPoint("LEFT", part.name, "RIGHT", entry.name and Layout.GAP or 0, 0)
+        part.meta:SetPoint("LEFT", part.name, "RIGHT", who.name and Layout.GAP or 0, 0)
     elseif not note then
         part.meta:SetPoint("RIGHT", part.body, "TOPRIGHT", -2, -Layout.HEAD / 2)
     end

@@ -1761,6 +1761,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, the map's search for other modules:** `FindBox.lua` serves Core's `Ways.Look(text)` (`Ways.Lookout`): the
+  full map searching for those words, as Social's *Show on map* on a player asks it; not while the module stands down.
 - **2026-11-18, the corner and the keys on one page:** the setup's *Into the corner* and *Or a key* became *Into the
   corner, or a key* (Saneroki: "Map into the corner should have a create keybind area here were you can see the
   native keybind for map, our keybind for maps. Merge the or a key with the into the corner setup page"): the corner's

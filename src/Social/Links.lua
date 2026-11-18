@@ -59,6 +59,10 @@ local function Click(link, text, button)
     -- A kind the game answers with its link tooltip: in a fight it refuses that window to our code ("Interface action
     -- failed"), and the tooltip on the mouse shows the link already.
     if not down and SHOWN[kind] and InCombatLockdown() then return end
+    -- A right click on a player: the game's menu of them, with Social's lines under it (PlayerMenu.lua).
+    if button == "RightButton" and ns.PlayerMenu and (kind == "player" or kind == "BNplayer") then
+        return ns.PlayerMenu.With({}, SetItemRef, link, text, button, DEFAULT_CHAT_FRAME)
+    end
     SetItemRef(link, text, button, DEFAULT_CHAT_FRAME)
 end
 

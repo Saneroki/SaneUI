@@ -8,4 +8,12 @@
 	<Binding name="SANEUI_SOCIAL_FULL" category="BINDING_HEADER_SANEUI">
 		SaneUI.Social.Safe("full screen key", SaneUI.Social.Full)
 	</Binding>
+	<!-- The full screen with the friends list, at its tab Friends or Group Finder: Keys.lua also puts them on the game's
+	     friends list and group finder keys (override bindings) while those are ours. -->
+	<Binding name="SANEUI_SOCIAL_FRIENDS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Social.Safe("keys", SaneUI.Social.Keys.Press, "Friends")
+	</Binding>
+	<Binding name="SANEUI_SOCIAL_FINDER" category="BINDING_HEADER_SANEUI">
+		SaneUI.Social.Safe("keys", SaneUI.Social.Keys.Press, "Finder")
+	</Binding>
 </Bindings>

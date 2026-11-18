@@ -19,6 +19,14 @@ local _, ns = ...
 --
 --  The list is the game's menu (MenuUtil), as the one on the chat's name; the
 --  marks stand in one row in it, as small buttons (MenuTemplates).
+--
+--  An empty line loses the cursor to a press on the smiley, and the game puts
+--  an empty line without the cursor to rest (ShouldDeactivateChatOnEditFocusLost);
+--  the smiley would go with it, and the game closes a menu whose owner goes
+--  (Saneroki, 2026-11-18: "While the input field is empty clicking the smiley
+--  will close the input"). So the smiley stays for its own click (pressed),
+--  the list belongs to the window, the line is opened again, and a mark
+--  chosen goes into the line it was opened for (for), opened again if needed.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Layout = ns.Layout
@@ -36,7 +44,10 @@ Picker.EMOTES = { "HELLO", "WAVE", "BYE", "THANK", "WELCOME", "CHEER", "APPLAUD"
 local ZONE = Enum and Enum.PermanentChatChannelType and Enum.PermanentChatChannelType.Zone or 1
 
 local button   -- the smiley
+local holder   -- the window it stands in: the list's owner
 local editBox  -- the line it belongs to now
+local pressed  -- the line the smiley was pressed for, until its click is done
+local listFor  -- the line the list was opened for
 
 -- Whether what is written in that line can show the marks: not in one of the game's public channels.
 function Picker.Marks(line)
@@ -59,11 +70,18 @@ function Picker.Command(token)
     return commands[token] or ("/" .. token:lower())
 end
 
--- A mark goes into the line where the cursor is; the cursor stays in the line.
+-- The line in use again, the cursor in it: an empty one the game put to rest is opened anew.
+local function Again(line)
+    if line and not line:HasFocus() then ChatFrameUtil.ActivateChat(line) end
+end
+
+-- A mark goes into the line the list was opened for where the cursor is; the cursor stays in the line.
 local function Mark(index)
-    if not (editBox and editBox:IsShown()) then return end
-    editBox:Insert(("{rt%d}"):format(index))
-    if not editBox:HasFocus() then ChatFrameUtil.ActivateChat(editBox) end
+    local line = listFor or editBox
+    if not line then return end
+    Again(line)
+    if not line:IsShown() then return end
+    line:Insert(("{rt%d}"):format(index))
 end
 
 local function Emote(token)
@@ -98,7 +116,8 @@ end
 
 local function Fill(_, root)
     root:CreateTitle(ns.TEXT.marks)
-    if editBox and ns.Guarded(Picker.Marks, editBox) then
+    local line = listFor or editBox
+    if line and ns.Guarded(Picker.Marks, line) then
         root:CreateFrame():AddInitializer(ns.Guard(Lay))
     else
         root:CreateButton(ns.TEXT.noMarks):SetEnabled(false)
@@ -113,8 +132,13 @@ local function Fill(_, root)
     for _, token in ipairs(Picker.EMOTES) do root:CreateButton(Picker.Command(token), ns.Guard(Do), token) end
 end
 
-function Picker.Open(owner)
-    MenuUtil.CreateContextMenu(owner, ns.Guard(Fill))
+-- The list, the window's (the smiley may go with an empty line); that line open again for a mark.
+function Picker.Open()
+    local line = editBox or pressed
+    pressed = nil
+    listFor = line
+    Again(line)
+    MenuUtil.CreateContextMenu(holder or button, ns.Guard(Fill))
 end
 
 -- The smiley, made with our window: at the line's right end, before the grip, on its first line's
@@ -122,6 +146,7 @@ end
 -- chat's, Window.lua). Out of sight until the line is there.
 function Picker.Take(frame, area)
     if button then return end
+    holder = frame
     button = CreateFrame("Button", nil, frame)
     button:SetSize(Layout.FACE, Layout.FACE)
     button:SetPoint("BOTTOMRIGHT", area or frame, "BOTTOMRIGHT", -Layout.GRIP_ROOM, Layout.INPUT_BOTTOM + (Layout.INPUT_HEIGHT - Layout.FACE) / 2)
@@ -133,7 +158,8 @@ function Picker.Take(frame, area)
         button["Set" .. kind .. "Texture"](button, art)
     end
     button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-    button:SetScript("OnClick", function(self) ns.Guarded(Picker.Open, self) end)
+    button:SetScript("OnMouseDown", ns.Guard(function() pressed = editBox end))
+    button:SetScript("OnClick", function() ns.Guarded(Picker.Open) end)
     Core.Tip(button, ns.TEXT.picker, nil, "ANCHOR_TOP")
     button:Hide()
 end
@@ -141,5 +167,8 @@ end
 -- The line is there to write in (line), or gone (nil).
 function Picker.Show(line)
     editBox = line
-    if button then button:SetShown(line ~= nil) end
+    if not button then return end
+    -- The line rests because the smiley took its cursor: the smiley stays for its click (Open).
+    if line == nil and pressed and Core.Plain(button:IsMouseOver()) == true then return end
+    button:SetShown(line ~= nil)
 end

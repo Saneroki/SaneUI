@@ -15,6 +15,10 @@ local _, ns = ...
 --  your key bindings change (UPDATE_BINDINGS, only when the keys of those
 --  actions did), and taken away when the switch is off or the module stands
 --  down; in a fight, once it is over. Our keys themselves work in a fight too.
+--  Each window's keys by its own tick too (spellbookKey, talentsKey: Saneroki,
+--  2026-11-18, every entry of Core's dropdown Classic windows a tick, "Keys
+--  open ours"; ticked, that window's key is the game's again; no control on the
+--  options page), under the switch for all of them (keys).
 --  Only the keys of a window of ours this game has (Board.Present): in Retail,
 --  where our spellbook and talents are not (Abilities.lua, ns.Serves), the game's
 --  keys stay the game's.
@@ -29,6 +33,8 @@ Keys.ORDER = { "TOGGLESPELLBOOK", "TOGGLEPETBOOK", "TOGGLETALENTS" }
 -- Our own keys (Bindings.xml), and the window of ours each opens.
 Keys.COMMANDS = { spellbook = "SANEUI_ABILITIES_SPELLBOOK", pet = "SANEUI_ABILITIES_PETBOOK", talents = "SANEUI_ABILITIES_TALENTS" }
 Keys.WINDOWS = { spellbook = "spellbook", pet = "spellbook", talents = "talents" }
+-- Each window's own switch: its tick in Classic windows (the pet book goes with the spellbook).
+Keys.SWITCHES = { spellbook = "spellbookKey", talents = "talentsKey" }
 
 -- Their words in the game's key bindings.
 BINDING_NAME_SANEUI_ABILITIES_SPELLBOOK = "Open the spellbook on the full screen"
@@ -49,10 +55,12 @@ local function Signature()
     return table.concat(parts, "|")
 end
 
--- Whether the window of ours that one of the game's actions would open is there in this game.
+-- Whether the window of ours that one of the game's actions would open is there in this game, and its key is ours
+-- (its tick in Classic windows unticked).
 local function Ours(action)
     local what = Keys.ACTIONS[action]
-    return what ~= nil and ns.Board.Present(Keys.WINDOWS[what])
+    local window = what and Keys.WINDOWS[what]
+    return window ~= nil and ns.Board.Present(window) and (ns.options or {})[Keys.SWITCHES[window]] ~= false
 end
 
 -- Our keys on the game's: out of a fight, or once it is over.

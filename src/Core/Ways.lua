@@ -18,6 +18,13 @@ local Core = SaneUI.Core
 --                  a walk is left
 --          to      where that ride brings one, its name
 --          here    true: the player is at that ride, which starts here: nothing to point at, it is to be taken
+--
+--  And the map's search, between a module that knows someone and the one whose map searches (Saneroki,
+--  2026-11-18: Social's "show on map" on a player): the full map, searching for those words.
+--
+--      Core.Ways.Lookout(fn)      fn(text): the map's search for those words (the module whose map searches)
+--      Core.Ways.CanLook()        whether a map searches now
+--      Core.Ways.Look(text)       the full map, searching for text (a character's name: where they stand, their zone)
 -------------------------------------------------------------------------------
 local Ways = {}
 Core.Ways = Ways
@@ -35,4 +42,15 @@ end
 function Ways.Ahead()
     if finder then return Core.Safe("ways", finder.Ahead) end
     return nil
+end
+
+local looker
+function Ways.Lookout(fn)
+    looker = fn
+end
+function Ways.CanLook()
+    return type(looker) == "function"
+end
+function Ways.Look(text)
+    if looker and type(text) == "string" and text ~= "" then Core.Safe("map search", looker, text) end
 end

@@ -127,6 +127,16 @@ function Friends.Open(key, focus)
     if focus and view.Focus then ns.Safe(key:lower(), view.Focus) end
 end
 
+-- A tab asked for by a key (Keys.lua): chosen now, or once the panel is made.
+local wanted
+function Friends.Want(key)
+    if panel then return Friends.Open(key) end
+    wanted = key
+end
+
+-- The tab shown now (its key), nil before the panel is made.
+function Friends.Current() return current end
+
 local Relabel = Core.Later(function()
     if not panel then return end -- not made yet (its switch changed before it was ever shown): laid out when it is
     ns.Safe("friends tabs", function()
@@ -194,6 +204,11 @@ function Friends.Build(holder)
     end))
     Arrange()
     group:SelectAtIndex(1)
+    if wanted then
+        local key = wanted
+        wanted = nil
+        Friends.Open(key)
+    end
 end
 
 -- The panel is that wide now (under a guild window wider than the game's friends list): the tabs anew.

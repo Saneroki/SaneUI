@@ -27,6 +27,17 @@ local _, ns = ...
 --    windows  the windows: the chat window itself, the game's chat beside it,
 --             the second chat as a window of its own on the screen (a chat view:
 --             no switch, its own tick, ChatWindows.lua), the group finder's tab
+--    messages your messages (Saneroki, 2026-11-18: "ask the user if they want
+--             your own messages to be on the left or right side", "how long
+--             messages should stay on screen before disappearing", "bubble
+--             oppacity", "tell them that they can scroll the window to see older
+--             messages"): their side, Fade out and Fade messages after, Bubble
+--             opacity; a drawn chat that shows each choice
+--    keep     what is kept ("ask if the user wants a new conversation each time
+--             they join a new party and how many messages should be saved"):
+--             Save chat history and Messages kept, Messages kept per
+--             conversation, A new conversation for each group; a drawn list of
+--             the conversations as the choice makes them
 --    full     the full screen: the conversations in parts (whispers, groups),
 --             a head folds its part; chat views; the friends list and the guild
 --             window ticked into its layout or out of it (Saneroki, 2026-11-18:
@@ -81,6 +92,15 @@ Setup.TEXT = {
     whispers = "Whispers",
     groups = "Groups",
     friends = "Friends",
+    you = "You",
+    wheel = "The mouse wheel over the chat: older messages, scrolled back.",
+    fadeAfter = "They fade out %d seconds after they come.",
+    fadeNever = "They stay: no fading out.",
+    kept = "The chat keeps its last %d messages over a logout.",
+    keptNone = "The chat starts empty at each login.",
+    keptTalk = "Each conversation keeps its last %d.",
+    eachGroup = "A new conversation for each group.",
+    oneGroup = "One conversation for all your groups.",
 }
 
 local function Hued(words)
@@ -143,6 +163,17 @@ Setup.STEPS = {
                    { check = function() return SecondShown() end, set = function(on) ShowSecond(on) end,
                      text = Setup.TEXT.second, tip = Setup.TEXT.secondTip },
                    "boardFinder" } },
+    { key = "messages", title = "Your messages",
+      text = Lines({ "Yours", "on the right, as in a messenger, or on the left with your name, as everybody else's." },
+          { "They fade", "out a while after they come, as long as set here. Off: they stay." },
+          { "Older ones", "turn the mouse wheel over the chat: it scrolls back to them." },
+          { "The bubbles", "as solid as you like: 100 % solid, 0 % only the words." }),
+      settings = { "mineSide", "fade", "fadeAfter", "bubbleOpacity" } },
+    { key = "keep", title = "What is kept",
+      text = Lines({ "The chat", "keeps its last messages over a logout, as many as set here." },
+          { "Each conversation", "keeps its own last messages too: every whisper, every group." },
+          { "A group you join", "a conversation of its own each time, or one for all your parties and raids." }),
+      settings = { "history", "historySize", "talkSize", "groupEach" } },
     { key = "full", title = "The full screen",
       text = Lines({ "Conversations", "every whisper and every group you join, each its own, kept to read." },
           { "In parts", "the whispers, then the groups: a click on a part's head folds it away." },
@@ -333,8 +364,8 @@ function DRAW.corner(board)
     Caption(board, "words", 40 + Setup.SCREEN[2] + 16, say)
     -- Under it what each key opens and the key it has now (the boxes at the step's right set them).
     local none = Core.Word("NOT_BOUND", "Not bound")
-    Caption(board, "full", 330, Hued(Setup.TEXT.keyFull) .. ": " .. (KeyWords("SANEUI_SOCIAL_FULL") or none))
-    Caption(board, "chat", 360, Hued(Setup.TEXT.keyChat) .. ": " .. (KeyWords("SANEUI_SOCIAL") or none))
+    Caption(board, "keyFull", 330, Hued(Setup.TEXT.keyFull) .. ": " .. (KeyWords("SANEUI_SOCIAL_FULL") or none))
+    Caption(board, "keyChat", 360, Hued(Setup.TEXT.keyChat) .. ": " .. (KeyWords("SANEUI_SOCIAL") or none))
     Caption(board, "together", 400, "The hot corner and the keys work side by side.")
 end
 
@@ -361,6 +392,109 @@ function DRAW.windows(board)
     second:SetPoint("BOTTOMLEFT", chat, "TOPLEFT", 0, 6)
     second:SetShown(options.window ~= false and SecondShown())
     Caption(board, "words", 40 + Setup.SCREEN[2] + 16, Hued("On the screen") .. " as ticked at the right.")
+end
+
+-- A drawn message: an icon and a name above a bubble (somebody's, or yours on the left), or a bubble alone at the right
+-- (yours); the bubble as solid as Bubble opacity, its words always there.
+local function Message(board, parent, name)
+    return Part(board, name, function()
+        local row = CreateFrame("Frame", nil, parent)
+        row:SetSize(Setup.SCREEN[1] - 24, 34)
+        row.icon = row:CreateTexture(nil, "ARTWORK")
+        row.icon:SetSize(14, 14)
+        row.name = row:CreateFontString(nil, "OVERLAY")
+        Look.SetFont(row.name, 10, false)
+        row.bubble = row:CreateTexture(nil, "BACKGROUND")
+        row.words = row:CreateTexture(nil, "ARTWORK")
+        row.words:SetColorTexture(0.85, 0.85, 0.85, 1)
+        return row
+    end)
+end
+
+local function Lay(row, left, who, class, width)
+    row.icon:ClearAllPoints()
+    row.name:ClearAllPoints()
+    row.bubble:ClearAllPoints()
+    row.icon:SetShown(left)
+    row.name:SetShown(left)
+    if left then
+        local colour = class and RAID_CLASS_COLORS and RAID_CLASS_COLORS[class]
+        row.icon:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+        row.icon:SetColorTexture(colour and colour.r or 0.6, colour and colour.g or 0.6, colour and colour.b or 0.6, 1)
+        row.name:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
+        row.name:SetText(who)
+        if colour then row.name:SetTextColor(colour.r, colour.g, colour.b) end
+        row.bubble:SetPoint("TOPLEFT", row, "TOPLEFT", 18, -16)
+    else
+        row.bubble:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, -16)
+    end
+    row.bubble:SetSize(width, 16)
+    row.words:ClearAllPoints()
+    row.words:SetPoint("LEFT", row.bubble, "LEFT", 6, 0)
+    row.words:SetSize(width - 12, 3)
+end
+
+-- The chat drawn with somebody's messages and yours, on the side chosen, the bubbles as solid as set, the older ones
+-- faded as Fade out says; under it what each choice does, and that the wheel brings older ones back.
+function DRAW.messages(board)
+    local options = ns.options
+    local screen = Part(board, "chat", function() return Boxed(board, Setup.FULL) end)
+    screen:ClearAllPoints()
+    screen:SetSize(Setup.SCREEN[1], 230)
+    screen:SetPoint("TOP", board, "TOP", 0, -30)
+    local left = options.mineSide == "left"
+    local opacity = math.max(math.min((tonumber(options.bubbleOpacity) or 50) / 100, 1), 0)
+    local fading = options.animations ~= false and options.fade ~= false
+    local _, class = Core.Ask(UnitClass, "player")
+    local rows = { { "Thrall", "SHAMAN", 150 }, { false, nil, 110 }, { "Jaina", "MAGE", 180 }, { false, nil, 90 } }
+    for index, spec in ipairs(rows) do
+        local row = Message(board, screen, "message" .. index)
+        local mine = spec[1] == false
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", screen, "TOPLEFT", 12, -10 - (index - 1) * 52)
+        Lay(row, not mine or left, mine and Setup.TEXT.you or spec[1], mine and class or spec[2], spec[3])
+        row.bubble:SetColorTexture(Setup.PLATE[1], Setup.PLATE[2], Setup.PLATE[3], opacity)
+        row:SetAlpha(fading and index <= 2 and 0.3 or 1) -- the older two faded out
+    end
+    local after = tonumber(options.fadeAfter) or 10
+    Caption(board, "fades", 30 + 230 + 14, fading and Setup.TEXT.fadeAfter:format(after) or Setup.TEXT.fadeNever)
+    Caption(board, "wheel", 30 + 230 + 44, Hued(Setup.TEXT.wheel))
+end
+
+-- The conversations drawn as they are kept: the whispers, and the groups' (one each, or one for all as chosen);
+-- beside it how many messages the chat and each conversation keep.
+function DRAW.keep(board)
+    local options = ns.options
+    local list = Part(board, "list", function()
+        local panel = Boxed(board, Setup.FULL)
+        panel.lines = {}
+        for index = 1, 7 do
+            local words = panel:CreateFontString(nil, "OVERLAY")
+            Look.SetFont(words, 11, false)
+            words:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8 - (index - 1) * 20)
+            words:SetJustifyH("LEFT")
+            panel.lines[index] = words
+        end
+        return panel
+    end)
+    list:ClearAllPoints()
+    list:SetSize(Setup.SCREEN[1], 160)
+    list:SetPoint("TOP", board, "TOP", 0, -30)
+    local each = options.groupEach ~= false
+    local lines = { Hued("- " .. Setup.TEXT.whispers), "   Thrall", "   Jaina", Hued("- " .. Setup.TEXT.groups) }
+    if each then
+        lines[#lines + 1] = "   Party: Varian, Anduin"
+        lines[#lines + 1] = "   Party: Thrall, Jaina"
+        lines[#lines + 1] = "   Raid: Rexxar, Valeera +12"
+    else
+        lines[#lines + 1] = "   Party: Varian, Anduin"
+    end
+    for index, words in ipairs(list.lines) do words:SetText(lines[index] or "") end
+    local history = options.history ~= false
+    Caption(board, "kept", 30 + 160 + 16, history and Setup.TEXT.kept:format(tonumber(options.historySize) or 100)
+        or Setup.TEXT.keptNone)
+    Caption(board, "keptTalk", 30 + 160 + 42, Setup.TEXT.keptTalk:format(tonumber(options.talkSize) or 100))
+    Caption(board, "groups", 30 + 160 + 68, Hued(each and Setup.TEXT.eachGroup or Setup.TEXT.oneGroup))
 end
 
 -- A drawn full screen: the conversations in their parts at the left, the chat beside them, and at the right the guild

@@ -33,6 +33,8 @@ Native.lua
 Input.lua
 # The list behind the chat's name in that line: where to write, what to show, the game's channels
 Menu.lua
+# A right click on someone: the game's menu of a player with Social's lines (Add Friend, the map, Delete conversation)
+PlayerMenu.lua
 # The smiley beside that line: raid marks to write, emotes to do
 Picker.lua
 # The game's own chat channels, the same on every character as wished. Knows no frames
@@ -57,6 +59,8 @@ Contacts\Quick.lua
 Contacts\Finder.lua
 # The friends list's panel: everything the game's friends list holds, and the group finder, its lists under tabs
 Friends.lua
+# The game's friends list and group finder keys open the full screen with ours (Classic windows' ticks)
+Keys.lua
 # The conversations' panel of the full screen: the chat, the second chat and the conversations, the one chosen beside them
 Conversations.lua
 # The window: moved, sized, scrolled

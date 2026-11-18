@@ -30,7 +30,11 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   again. On the full screen the corners size a window too, as the mouse goes.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Character* (the full screen
   goes back and the game's key for its character sheet is said: our code never opens it) and *Bags* (the
-  game's bags open). The game's character sheet and bags have the button *SaneUI* beside their close button:
+  game's bags open), each a tick, ticked while the game's own is the one its keys open (Saneroki, 2026-11-18:
+  "Make sure you can check all of them"; *Bags* is *Bag Keys Open Our Bags* off), unticked: ours again.
+- **The character key opens ours:** the key you gave the game's character sheet (C) opens this full screen with the
+  character sheet, and pressed again, back to its size; the game's sheet from its micro menu button. Its tick
+  *Character* in *Classic windows* gives the key back to the game (`characterKey`, no control on the options page). The game's character sheet and bags have the button *SaneUI* beside their close button:
   the game's closes and this full screen comes (not with *Can expand to fullscreen* off).
 - **Arranging the windows:** as on every SaneUI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
@@ -850,6 +854,9 @@ classes' gains can be held against each other; `early` for a character without a
 | `Alts/Alts.lua` | Another character's things in the bags' own window: their canvas and read-only buttons, drawn by the bags' views, the doll, their foot, the events |
 
 ## History
+- 2026-11-18 — The character key opens the full screen with the character sheet (`Keys.lua`: `TOGGLECHARACTER0`,
+  `SANEUI_INVENTORY_CHARACTER` in `Bindings.xml`, `characterKey`, `Keys.Sheet`, `Keys.Press(what)`); *Character* and
+  *Bags* in Classic windows are ticks (`checked`, `back`: `characterKey`, `bagKeys`).
 - **2026-10-20:** set up as a module of its own. First the bottom right corner opened the game's own bags and
   character sheet; the sheet failed in the game (tainted by our call, on the player frame's secret health), so
   the corner opened the bags only. Then (Saneroki) our own windows instead: the module's window docked in the

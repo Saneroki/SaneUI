@@ -23,6 +23,12 @@ local _, ns = ...
 --  the full screen never comes, and, for the keys and windows, Edit Mode while
 --  it is open (Core.EditMode); standing down gives it all back.
 --
+--  The character key too (TOGGLECHARACTER0; Saneroki, 2026-11-18: every entry
+--  of Core's dropdown Classic windows a tick, "Keys open ours"): it opens the
+--  full screen with the character sheet (SANEUI_INVENTORY_CHARACTER), by its
+--  own switch (characterKey, the tick Character; no control on the options
+--  page); the game's sheet then opens from its micro menu button only.
+--
 --  Override bindings change out of a fight only: set at the login, anew when
 --  your key bindings change (UPDATE_BINDINGS, only when the keys of those
 --  actions did); in a fight, once it is over. Our key itself works in a fight
@@ -36,6 +42,9 @@ ns.Keys = Keys
 Keys.ACTIONS = { "TOGGLEBACKPACK", "OPENALLBAGS", "TOGGLEBAG1", "TOGGLEBAG2", "TOGGLEBAG3", "TOGGLEBAG4", "TOGGLEREAGENTBAG1" }
 Keys.COMMAND = "SANEUI_INVENTORY_BAGS"
 BINDING_NAME_SANEUI_INVENTORY_BAGS = "Open the bags on Inventory's full screen"
+-- The character key's action, and our command for it.
+Keys.CHARACTER, Keys.CHARACTER_COMMAND = "TOGGLECHARACTER0", "SANEUI_INVENTORY_CHARACTER"
+BINDING_NAME_SANEUI_INVENTORY_CHARACTER = "Open the character sheet on Inventory's full screen"
 
 local owner         -- the frame our override bindings belong to
 local hidden        -- the hidden frame the game's bag windows and bag bar stand in
@@ -46,9 +55,19 @@ local gameBags = false -- the player chose the game's bags (Classic windows): th
 
 -- Whether ours stand in for the game's bags: the setting on, the module running, and the full screen able to come
 -- (with Can expand to fullscreen off it never does).
-local function Ours()
+local function Running()
     local options = ns.options or {}
-    return owner ~= nil and not ns.off and options.bagKeys ~= false and options.expand ~= false
+    return owner ~= nil and not ns.off and options.expand ~= false
+end
+local function Ours()
+    return Running() and (ns.options or {}).bagKeys ~= false
+end
+
+-- Whether the character key opens ours now: its switch on, the module running and the full screen able to come,
+-- Edit Mode closed.
+function Keys.Sheet()
+    local editing = Core.EditMode and Core.EditMode.active
+    return Running() and (ns.options or {}).characterKey ~= false and not editing
 end
 
 -- Whether our bags are the bags now: so, and Edit Mode closed (the game's keys and bags are the game's until then).
@@ -72,6 +91,8 @@ local function Signature()
         local one, two = keys(action)
         parts[#parts + 1] = action .. "=" .. tostring(one) .. "," .. tostring(two)
     end
+    local one, two = keys(Keys.CHARACTER)
+    parts[#parts + 1] = Keys.CHARACTER .. "=" .. tostring(one) .. "," .. tostring(two)
     return table.concat(parts, "|")
 end
 
@@ -82,6 +103,11 @@ function Keys.Bind()
     if InCombatLockdown() then return Core.AfterCombat("Inventory: keys", Keys.Bind) end
     clear(owner)
     bound = Signature()
+    if Keys.Sheet() then
+        for _, key in ipairs({ keys(Keys.CHARACTER) }) do
+            if type(key) == "string" and key ~= "" then set(owner, false, key, Keys.CHARACTER_COMMAND) end
+        end
+    end
     if not Keys.Taken() then return end
     for _, action in ipairs(Keys.ACTIONS) do
         for _, key in ipairs({ keys(action) }) do
@@ -165,10 +191,10 @@ end
 -------------------------------------------------------------------------------
 --  Opening ours
 -------------------------------------------------------------------------------
--- Our key (Bindings.xml): the full screen with the bags, or back from it.
-function Keys.Press()
+-- Our key (Bindings.xml): the full screen with the bags (what: or the character sheet), or back from it.
+function Keys.Press(what)
     if ns.off then return end
-    ns.Safe("keys", ns.Window.Toggle, "bags")
+    ns.Safe("keys", ns.Window.Toggle, what or "bags")
 end
 
 function Keys.Start()

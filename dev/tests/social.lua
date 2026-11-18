@@ -676,6 +676,16 @@ do
     ns.Bubble.Init(rows[4], note, width)
 end
 check(box.ends >= 4, "at the newest message, the list follows each new one")
+;(function() -- your messages on the left (Saneroki, 2026-11-18: the setup asks it): your class icon and name, as others'
+    local width = Layout.RowWidth(window._width)
+    Core.Set("Social", "mineSide", "left")
+    ns.Bubble.Init(rows[3], box.provider.list[3], width)
+    check(bubble(rows[3])._points[1][1] == "TOPLEFT" and icon(rows[3]):IsShown() and name(rows[3]):IsShown()
+        and name(rows[3])._text ~= "", "Your messages on the left: yours there with your icon and name, as everybody else's")
+    Core.Set("Social", "mineSide", "right")
+    ns.Bubble.Init(rows[3], box.provider.list[3], width)
+    check(bubble(rows[3])._points[1][1] == "TOPRIGHT" and not icon(rows[3]):IsShown(), "on the right again: as before")
+end)()
 
 box.atEnd, box.scrolls = false, true
 box.scrolled()
@@ -842,6 +852,34 @@ editBox.target = 2
     W.locked = false
     check(list[3].title == "Emotes" and list[4].disabled and list[4].text:find("locked down") and #list == 4,
         "while chat is locked down the list offers no emotes (the game refuses them to an addon then), and says why")
+end)()
+
+-- An empty line: a press on the smiley takes its cursor and the game puts an empty line to rest (Saneroki, 2026-11-18:
+-- "While the input field is empty clicking the smiley will close the input").
+;(function()
+    open()
+    editBox:SetText("")
+    editBox.target = 1 -- a channel where the marks show
+    check(smiley:IsShown() and editBox:HasFocus(), "the line open and empty, the smiley beside it")
+    smiley._mouseOver = true
+    smiley._scripts.OnMouseDown(smiley, "LeftButton")
+    leave()
+    check(smiley:IsShown(), "the line goes to rest as the press takes its cursor: the smiley stays for its click")
+    smiley._scripts.OnClick(smiley)
+    local list = W.menus[#W.menus]
+    check(list.owner == window and editBox:HasFocus() and editBox:IsShown() and smiley:IsShown(),
+        "its list opens, the window's (not the smiley's, which may go with the line), and the line is open again")
+    leave() -- the click on the list takes the cursor again: the empty line rests
+    local marksRow = CreateFrame("Frame")
+    list[2].inits[1](marksRow, nil, "the menu")
+    local marks = {}
+    for _, widget in ipairs(W.frames) do if widget._parent == marksRow then marks[#marks + 1] = widget end end
+    typed = nil
+    marks[3]._scripts.OnClick(marks[3])
+    check(typed == "{rt3}" and editBox:HasFocus() and editBox:IsShown(), "a mark goes into that line, opened again for it")
+    smiley._mouseOver = false
+    editBox.target = 2
+    close()
 end)()
 
 -- The window's width: the messages are wrapped anew once the sizing is over, not on every step of it
@@ -1377,6 +1415,19 @@ over._scripts.OnHyperlinkClick(over, lockbox, "[Strong Iron Lockbox]", "LeftButt
 check(clicked[1] == lockbox and clicked[3] == "LeftButton" and clicked[4] == native, "a click is the game's own click on a chat link")
 body(rows[1])._scripts.OnHyperlinkClick(body(rows[1]), "player:Thrall-Stub:1:SAY", "Thrall", "LeftButton")
 check(clicked[1] == "player:Thrall-Stub:1:SAY", "the speaker's name is the game's link to them: a click on it whispers to them, with the realm")
+;(function() -- a right click on it: the game's menu of them, with Social's lines under it (PlayerMenu.lua)
+    local itemRef, lines = SetItemRef, {}
+    SetItemRef = function(link, shown, button)
+        clicked = { link, shown, button }
+        W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Thrall-Stub", chatType = "SAY" })
+    end
+    body(rows[1])._scripts.OnHyperlinkClick(body(rows[1]), "player:Thrall-Stub:1:SAY", "Thrall", "RightButton")
+    SetItemRef = itemRef
+    local pin
+    for _, item in ipairs(lines) do if item.text == ns.PlayerMenu.TEXT.pin then pin = item end end
+    check(clicked[3] == "RightButton" and pin and pin.disabled,
+        "a right click on the name: the game's menu of them, Social's lines under it (Pin them on the map greyed out)")
+end)()
 -- Only clicks that open none of the game's panels go to the game: shown from our code, a panel runs its manager tainted.
 ;(function()
     local down = rawget(_G, "IsModifierKeyDown")
@@ -1871,6 +1922,16 @@ do
         ns.Window.Pick("feed")
         check(not copy:IsShown() and lit(2) == 0 and lit(1) == 0, "another of the conversations' rows chosen: what was picked goes")
         ns.Window.Pick("chat")
+        -- A right click on someone's message: the game's menu of them, as a right click on their name (PlayerMenu.lua;
+        -- Saneroki, 2026-11-18: "Enable right click on peoples chat messages").
+        local itemRef = SetItemRef
+        local asked
+        SetItemRef = function(link, shown, button) asked = { link, shown, button } end
+        W.cursorX, W.cursorY = 100 + 6, 375 -- on "hello there", Thrall's
+        box._scripts.OnMouseUp(box, "RightButton")
+        check(asked and asked[1]:find("^player:Thrall%-Stub") and asked[3] == "RightButton" and not copy:IsShown(),
+            "a right click on someone's message opens the game's menu of them, as one on their name does; nothing is picked")
+        SetItemRef = itemRef
         W.cursorX, W.cursorY = mouseX, mouseY
         check(not Core.errors["Social: selection"], "(nothing went wrong in picking)")
     end
@@ -1899,8 +1960,10 @@ do
         if widget._kind == "DropdownButton" and widget._parent == window and widget ~= ns.Board.layouts.menu then classic = widget end
     end
     check(classic and classic:IsShown() and #classic._items == 4 and classic._items[1].title == ns.TEXT.title and classic._items[2].text == "Chat"
-        and classic._items[3].text == "Friends list" and classic._items[4].text == "Group finder",
-        "full, the dropdown Classic windows offers the game's chat, friends list and group finder")
+        and classic._items[3].text == "Friends list" and classic._items[4].text == "Group finder"
+        and classic._items[2].checkbox and classic._items[3].checkbox and classic._items[4].checkbox
+        and not classic._items[3].checked(),
+        "full, the dropdown Classic windows offers the game's chat, friends list and group finder, each a tick (unticked: ours)")
     local coreBar -- Core's title bar at the top of the full window
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
@@ -2707,6 +2770,29 @@ do
         "the new group's chat goes into its own conversation only")
     grouped = false
     W.Fire("GROUP_LEFT", LE_PARTY_CATEGORY_HOME, "Party-2")
+    W.Wait(0.1)
+    -- One conversation for all groups (groupEach off; Saneroki, 2026-11-18): every party joined reads on in it.
+    Core.Set("Social", "groupEach", false)
+    grouped = true
+    W.Fire("GROUP_JOINED", LE_PARTY_CATEGORY_HOME, "Party-3")
+    W.Wait(0.1)
+    local shared = Talks.by["G:" .. LE_PARTY_CATEGORY_HOME]
+    W.Fire("CHAT_MSG_PARTY", "first group", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 11, THRALL)
+    grouped = false
+    W.Fire("GROUP_LEFT", LE_PARTY_CATEGORY_HOME, "Party-3")
+    W.Wait(0.1)
+    grouped = true
+    W.Fire("GROUP_JOINED", LE_PARTY_CATEGORY_HOME, "Party-4")
+    W.Wait(0.1)
+    W.Fire("CHAT_MSG_PARTY", "second group", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 12, THRALL)
+    check(shared and Talks.by["G:Party-3"] == nil and Talks.by["G:Party-4"] == nil and not shared.ended
+        and shared.messages[#shared.messages].text == "second group" and shared.messages[#shared.messages - 1].text == "first group",
+        "A new conversation for each group off: both parties' chat in one conversation, read on")
+    grouped = false
+    W.Fire("GROUP_LEFT", LE_PARTY_CATEGORY_HOME, "Party-4")
+    W.Wait(0.1)
+    Talks.Remove(shared)
+    Core.Set("Social", "groupEach", true)
     UnitName, GetNumSubgroupMembers = unitName, nil
     W.Wait(0.1)
     -- A command goes to the game's line; in a lockdown nothing is sent.
@@ -2739,14 +2825,56 @@ do
     check(ns.store.talkFolds.whispers == nil and rowOf(jaina), "its part folded away is shown again, to see it chosen")
     check(messages:IsVisible() and edit:IsVisible() and not column:IsVisible() and Talks.reading == rexxar,
         "begun while the chat was chosen, it is chosen whole: its messages and its line beside the list, the chat out of sight")
-    -- A right click: the game's own menu of that player, as the friends list opens it.
-    local menu
-    FriendsFrame_ShowDropdown = function(name, connected, _, kind) menu = name .. " " .. tostring(connected) .. " " .. kind end
+    -- A right click: the game's own menu of that player, as the friends list opens it, with Social's lines under it
+    -- and Delete conversation (PlayerMenu.lua; Saneroki, 2026-11-18). The game makes its menu as it opens it: its
+    -- hooks on that menu run then (Menu.ModifyMenu), Core's Set Alias and Set Note, then Social's.
+    local menu, lines
+    FriendsFrame_ShowDropdown = function(name, connected, lineID, kind)
+        menu = name .. " " .. tostring(connected) .. " " .. kind
+        lines = {}
+        W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = name, chatType = kind, lineID = lineID })
+    end
+    local function line(text)
+        for _, item in ipairs(lines or {}) do if item.text == text then return item end end
+    end
+    local T = ns.PlayerMenu.TEXT
+    C_FriendList = C_FriendList or {}
+    local added
+    C_FriendList.AddFriend = function(name) added = name end
+    C_FriendList.GetFriendInfo = function() return nil end
+    local looked
+    Core.Ways.Lookout(function(text) looked = text end)
     click(rowOf(thrall), "RightButton")
-    check(menu == "Thrall-Stub true WHISPER", "a right click opens the game's menu of the player")
+    check(menu == "Thrall-Stub true WHISPER" and line(T.addFriend) and line(T.pin) and line(T.pin).disabled
+        and line(T.show) and line(T.delete),
+        "a right click opens the game's menu of the player, under it Add Friend, Pin them on the map (greyed out: not in "
+        .. "your group), Show on map and Delete conversation")
+    line(T.addFriend).fn()
+    line(T.show).fn()
+    check(added == "Thrall-Stub" and looked == "Thrall-Stub", "Add Friend puts the character on the list; Show on map "
+        .. "opens the map's search for them")
+    lines = {}
+    W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Thrall-Stub" })
+    check(not line(T.addFriend) and not line(T.delete), "the same menu opened by the game itself (its own chat, its "
+        .. "friends list): none of Social's lines")
+    local asked, confirm = nil, Core.Confirm
+    Core.Confirm = function(_, _, yes) asked = true; yes() end
+    W.Fire("CHAT_MSG_WHISPER", "bye", "Garrosh-Stub", "", "", "", "", 0, 0, "", 0, 10, nil)
+    W.Wait(0.1)
+    local garrosh = Talks.by["W:Garrosh-Stub"]
+    click(rowOf(garrosh), "RightButton")
+    line(T.delete).fn()
+    Core.Confirm = confirm
+    check(garrosh and asked and Talks.by["W:Garrosh-Stub"] == nil and not rowOf(garrosh),
+        "Delete conversation, asked first: it and its messages are gone from the list")
     menu = nil
     click(rows.rows[1], "RightButton")
     check(menu == nil, "the chat has none")
+    local count = #W.menus
+    click(rowOf(party), "RightButton")
+    local own = W.menus[#W.menus]
+    check(#W.menus == count + 1 and own[1].title == Talks.Name(party) and own[2].text == T.delete and menu == nil,
+        "a group's row: a menu of Social's own, its name and Delete conversation")
     -- An alias: in the list and above the conversation, the whole name and the note in the tooltip.
     W.Fire("CHAT_MSG_WHISPER", "hi there", "Droopy Fairwind", "", "", "", "", 0, 0, "", 0, 9, nil)
     W.Wait(0.1)
@@ -3371,6 +3499,7 @@ do
     classic._items[3].fn()
     check(tab == 1 and window._width == Layout.WIDTH and window:IsShown() and not classic:IsShown(),
         "Friends list: the window goes back to its zone, and the game's friends list opens")
+    check(options.friendsKey == false and classic._items[3].checked(), "ticked: its key is the game's again (Keys.lua)")
     check(listTop() == -Layout.EDGE and not panels.friends:IsShown() and not panels.talks:IsShown() and column:IsShown()
         and box:IsShown(), "back, the panels are gone and the chat starts at the window's top again")
     do
@@ -3383,6 +3512,7 @@ do
     for _, made in ipairs(Core.Window.All()) do if made.frame == window then socialEdge = made.edge end end
     check(not FriendsFrame:IsShown() and window:IsShown() and socialEdge and socialEdge.full,
         "pressed, the game's friends list goes and ours fills the screen")
+    check(options.friendsKey == true, "and the friends list's key is ours again (the tick taken off)")
     socialEdge:Fill(false)
     end
     W.Wait(1)
@@ -3418,6 +3548,21 @@ do
             check(not window:IsShown() and options.window == false and native:IsShown(), "pressed, it puts our window away as /sane social does")
             press()
             check(window:IsShown() and options.window == true and window._width == Layout.WIDTH, "pressed again, it is back")
+        elseif name ~= "SANEUI_SOCIAL_FULL" then (function()
+            -- The friends list's and the group finder's keys (Keys.lua): the full screen at that tab, and back.
+            local edge
+            for _, made in ipairs(Core.Window.All()) do if made.frame == window then edge = made.edge end end
+            local tab = name == "SANEUI_SOCIAL_FRIENDS" and "Friends" or "Finder"
+            check((name == "SANEUI_SOCIAL_FRIENDS" or name == "SANEUI_SOCIAL_FINDER") and edge and not edge.full,
+                "(the friends list's or the group finder's key)")
+            press()
+            W.Wait(1)
+            check(edge.full and ns.Board.Has("friends") and ns.Friends.Current() == tab,
+                "its key: the full screen with the friends list at its tab " .. tab)
+            press()
+            W.Wait(2)
+            check(not edge.full and not Core.errors["Social: keys"], "pressed again, back to its size")
+        end)()
         else (function() -- (in a function of its own: the main chunk is at Lua's 200 locals)
             -- The full screen's own key: in and out, as the hot corner; also with the corner off (Setup.lua).
             local edge
@@ -3440,7 +3585,7 @@ do
             check(not edge.full and not Core.errors["Social: full screen key"], "and back to its size")
         end)() end
     end
-    check(keys == 2, "Social has two keys: the chat window, its full screen")
+    check(keys == 4, "Social has four keys: the chat window, its full screen, the friends list's, the group finder's")
     local kept = Core.Store("Social")
     W.Wait(1)
     strip:GetScript("OnMouseDown")(strip, "LeftButton")
@@ -3738,9 +3883,9 @@ end)()
     local guide, Setup = Core.Onboarding.Guide(ns.name), ns.Setup
     local keys = {}
     for index, step in ipairs(guide and guide.steps or {}) do keys[index] = step.key end
-    check(guide and guide.title == "Social" and table.concat(keys, " ") == "intro corner windows full",
-        "Social's setup: what it is, the hot corner and the keys on one page (Saneroki, 2026-11-18), the windows, the full "
-        .. "screen: " .. table.concat(keys, " "))
+    check(guide and guide.title == "Social" and table.concat(keys, " ") == "intro corner windows messages keep full",
+        "Social's setup: what it is, the hot corner and the keys on one page (Saneroki, 2026-11-18), the windows, your "
+        .. "messages, what is kept, the full screen: " .. table.concat(keys, " "))
     check(Core.Described(ns.name, "setup") and Core.Described(ns.name, "setup").button, "its options page opens it: Set up step by step")
     local named, short = true, true
     for _, step in ipairs(guide.steps) do
@@ -3802,12 +3947,34 @@ end)()
     options.expandCorner = false
     Draw("corner")
     check(not board.parts.arrow:IsShown() and board.parts.words._text:find("use the key", 1, true), "not at all: no arrow, the key said")
-    check(board.parts.full._text:find(Setup.TEXT.keyFull, 1, true) and board.parts.chat._text:find(Setup.TEXT.keyChat, 1, true),
-        "the corner's board: each key and what it opens, under the screen")
+    check(board.parts.keyFull._text:find(Setup.TEXT.keyFull, 1, true) and board.parts.keyChat._text:find(Setup.TEXT.keyChat, 1, true)
+        and board.parts.chat.bubbles ~= nil and board.parts.chat.name._text == Setup.TEXT.chat,
+        "the corner's board: each key and what it opens, under the screen, the drawn chat left as it is")
     options.expandCorner, options.expandClick = was.expandCorner, was.expandClick
+    -- Your messages and what is kept (Saneroki, 2026-11-18): their switches, and boards that follow them.
+    local mineStep, keepStep = guide.steps[4].settings, guide.steps[5].settings
+    check(table.concat(mineStep, " ") == "mineSide fade fadeAfter bubbleOpacity"
+        and table.concat(keepStep, " ") == "history historySize talkSize groupEach"
+        and Core.Described(ns.name, "mineSide").default == "right" and Core.Described(ns.name, "groupEach").default == true,
+        "your messages: their side (on the right at first), fading, how long, the bubbles' opacity; what is kept: the "
+        .. "chat's history and how much, each conversation's, a conversation for each group")
+    check(guide.steps[4].text:find("mouse wheel", 1, true), "and that the mouse wheel scrolls back to older messages")
+    Draw("messages")
+    local drawn = Setup.Board("messages")
+    check(drawn.parts.message2.bubble:IsShown() and not drawn.parts.message2.icon:IsShown()
+        and drawn.parts.message2.bubble._points[1][1] == "TOPRIGHT", "drawn: yours on the right, without a name")
+    options.mineSide = "left"
+    Draw("messages")
+    check(drawn.parts.message2.icon:IsShown() and drawn.parts.message2.bubble._points[1][1] == "TOPLEFT"
+        and drawn.parts.message2.name._text == Setup.TEXT.you, "on the left: yours with your name, as everybody else's")
+    options.mineSide = "right"
+    options.groupEach = false
+    Draw("keep")
+    check(Setup.Board("keep").parts.groups._text:find(Setup.TEXT.oneGroup, 1, true), "one conversation for all groups, drawn so")
+    options.groupEach = true
     -- The full screen's page: the friends list and the guild window ticked into the layout chosen, or out of it, while
     -- the full screen is away (Board.Put, Core's board:Put).
-    local full = guide.steps[4].settings
+    local full = guide.steps[6].settings
     local friends, guildTick = full[1], full[2]
     check(friends.check and friends.text == Setup.TEXT.friendsTick and guildTick.check and guildTick.text == Setup.TEXT.guildTick,
         "the full screen's page: a tick for the friends list and one for the guild window")

@@ -55,14 +55,28 @@ end
 local SPELLBOOK, TALENTS = Core.Word("SPELLBOOK", "Spellbook"), Core.Word("TALENTS", "Talents")
 local function Running() return not ns.off end
 local function Binding(name) return not ns.Keys.Taken(name) and name or nil end
+-- Each a tick (Saneroki, 2026-11-18: "Make sure you can check all of them"): ticked while that window's key is the
+-- game's (spellbookKey, talentsKey: Keys.lua); unticked, ours again.
+local function Kept(switch, word, binding)
+    return {
+        checked = function() return ns.options[switch] == false end,
+        show = function()
+            Core.Set(ns.name, switch, false)
+            Core.Classic.Press(word, Binding(binding))
+        end,
+        back = function() Core.Set(ns.name, switch, true) end }
+end
 local CLASSIC = {
-    { window = "spellbook", text = SPELLBOOK, show = function() Core.Classic.Press(SPELLBOOK, Binding("TOGGLESPELLBOOK")) end,
-      ours = function() ns.Safe("classic", Screen.Open, "spellbook") end,
+    { window = "spellbook", text = SPELLBOOK, ours = function() ns.Safe("classic", Screen.Open, "spellbook") end,
       frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", full = true, ready = Running },
-    { window = "talents", text = TALENTS, show = function() Core.Classic.Press(TALENTS, Binding("TOGGLETALENTS")) end,
-      ours = function() ns.Safe("classic", Screen.Open, "talents") end,
+    { window = "talents", text = TALENTS, ours = function() ns.Safe("classic", Screen.Open, "talents") end,
       frame = "PlayerSpellsFrame", addon = "Blizzard_PlayerSpells", full = true, ready = Running },
 }
+for _, entry in ipairs(CLASSIC) do
+    local spellbook = entry.window == "spellbook" -- (the switches as Keys.SWITCHES names them; Keys.lua is read later)
+    local kept = Kept(spellbook and "spellbookKey" or "talentsKey", entry.text, spellbook and "TOGGLESPELLBOOK" or "TOGGLETALENTS")
+    entry.checked, entry.show, entry.back = kept.checked, kept.show, kept.back
+end
 local function Classic()
     local list = {}
     for _, entry in ipairs(CLASSIC) do

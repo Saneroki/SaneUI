@@ -7,6 +7,8 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 
 - The setups' first page has a *Place and size in Edit Mode* button, so you can place and size your frames, SaneUI's
   and the game's, before you start.
+- Every entry in a full screen's *Classic windows* is a tick: ticked, the game's own window is the one its key opens;
+  unticked, SaneUI's.
 
 ## 0.3.4 (2026-11-18)
 
