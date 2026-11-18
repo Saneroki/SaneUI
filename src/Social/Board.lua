@@ -21,11 +21,12 @@ local _, ns = ...
 --               among the conversations
 --      view:<id> a chat view (Feed.lua), each one a window of its own: a list of
 --               its own in it, and the list of the chats it shows on its head
---  The first layout is the arrangement the full screen has at first: the
---  guild window at the top right as large as it is, the friends list under it
---  and as wide, the conversations at the left (Layout.Board gives the rooms,
---  Default makes a layout of them), laid out for the screen as it is until
---  you change it. A layout without the conversations has no chat in it.
+--  The first layout is the arrangement the full screen has at first: side
+--  by side and as high as the screen, the conversations at the left, the
+--  friends list, the guild window at the right, as wide as Saneroki likes them
+--  (2026-11-18, his picture; Layout.Board gives the rooms, Default makes a
+--  layout of them), laid out for the screen as it is until you change it. A
+--  layout without the conversations has no chat in it.
 --
 --  A panel is Core's (Board.lua: a plate in SaneUI's look, a head with its
 --  title at the left, its buttons and the X at its right, its body under the
@@ -114,8 +115,8 @@ local function Framed(size)
     return { size[1] + 2 * Layout.EDGE, size[2] + Core.Board.HEAD + 2 * Layout.EDGE }
 end
 
--- The first layout: the rooms the full screen has at first (Layout.Board), the conversations at the left, at the
--- right the guild window over the friends list, each share as large as its room.
+-- The first layout: the rooms the full screen has at first (Layout.Board), side by side, each share as wide as its room:
+-- the conversations, the friends list, the guild window.
 local function Default(width, height)
     -- The guild's window: the module Guild's own, offered to this board (Core.Board.Offer), as large as it wants
     -- to be (out of a guild it wants no room); else the window the guild key opens, as large as it is.
@@ -123,17 +124,12 @@ local function Default(width, height)
     local size = offered and offered.want and ns.Safe("board", offered.want, width, height) or (not offered and ns.Guild.Size(inside))
     local rooms = Layout.Board(width, height, { friends = true, talks = true, guild = Framed(size or nil),
                                                 list = ns.store.talkList })
-    local guild, friends, talks = rooms.guild, rooms.friends, rooms.talks
-    local right
-    if guild and friends then
-        right = { split = "y", parts = { { key = "guild" }, { key = "friends" } }, shares = { guild[4], friends[4] } }
-    elseif guild or friends then
-        right = { key = guild and "guild" or "friends" }
+    local parts, shares = {}, {}
+    for _, key in ipairs({ "talks", "friends", "guild" }) do
+        if rooms[key] then parts[#parts + 1], shares[#shares + 1] = { key = key }, rooms[key][3] end
     end
-    if not talks then return right end
-    if not right then return { key = "talks" } end
-    local column = (friends or guild)[3]
-    return { split = "x", parts = { { key = "talks" }, right }, shares = { talks[3], column } }
+    if #parts < 2 then return parts[1] end
+    return { split = "x", parts = parts, shares = shares }
 end
 
 -- Core's window is made (Window.lua): its full screen is Core's board.
@@ -164,9 +160,9 @@ function Board.Holds(key)
     return layouts ~= nil and layouts:Holds(key) or false
 end
 
--- Where the setup puts a window it ticks: the friends list at the right of the conversations, the guild window over
--- the friends list (at the conversations' right without it), as the first layout has them.
-local BESIDE = { friends = { "talks", "right" }, guild = { "friends", "top" } }
+-- Where the setup puts a window it ticks: the friends list at the right of the conversations, the guild window at
+-- the right of the friends list (of the conversations without it), as the first layout has them.
+local BESIDE = { friends = { "talks", "right" }, guild = { "friends", "right" } }
 
 -- A window of the full screen into the layout chosen, or off it (the setup's ticks): kept, laid out anew if it stands.
 function Board.Put(key, on)

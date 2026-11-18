@@ -55,8 +55,13 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     fitted to your screen until you change it; then it is kept as you left it. *+* makes an empty layout. A
     right click on a tab renames it, resets the first to the arrangement below, or deletes another. The
     layouts are the same on all your characters.
-  - **At first** (the tab *Default*):
-  - **Guild window** at the top right: the very window the guild key opens, held in its window there and
+  - **At first** (the tab *Default*; Saneroki, 2026-11-18: "look at this picture to see what size I like the
+    panels as default"): three windows side by side, each as high as the screen: the conversations at the left (a
+    third of the width), the friends list beside them (a fifth), the guild window at the right (the rest, nearly
+    half). On a smaller screen the conversations and the friends list keep their least width and the guild window
+    is narrower; where it would be too narrow it is left out, and so is the friends list after it. Out of a guild,
+    or with the guild window closed, the conversations take its room.
+  - **Guild window** at the right: the very window the guild key opens, held in its window there and
     working as always: the game's own guild and communities window, or the window of another addon that
     answers the guild key instead. With the module Guild on, Guild's own guild window stands here instead (offered
     to this board through Core, `Core.Board.Offer`), and the game's is left alone. Its room is as large as the window is (it follows when the window is
@@ -65,7 +70,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     screen stands (its close button, Esc), the others take its room; opened again with the guild key, it is
     back. In a fight the game opens no window for an addon: one that closes in a fight comes back after it.
     Only while you are in a guild.
-  - **Friends list** at the right, under the guild window and as wide (the game's friends list's width at
+  - **Friends list** between the conversations and the guild window (the game's friends list's width at
     least), as the game's: online Battle.net friends, online characters, a divider,
     then the offline ones; each with the game's status icon (online, away, busy, offline), the name (a
     Battle.net friend with the character they play in brackets), where they are or what they play, and the
@@ -790,7 +795,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   board*): Social gives Core its windows (`talks`, `friends`, `guild`: each a part's `Build`, `Show`, `Size`,
   `Search` behind `ns.Safe`, and its `least`; the guild window's `present` asks `Guild.Size`) and the first
   layout (`Default`: the rooms of `Layout.Board`, the guild window's framed with its panel's head and edges, made
-  a layout: the conversations beside a column of the guild window over the friends list, shares as large as the
+  a layout: the conversations, the friends list and the guild window side by side, shares as large as the
   rooms). Core lays the layout chosen out, makes and places the panels (`Board.panels` is its table) and gives
   back each window's rect; `Board.Show` holds the guild window in its panel's body (`Guild.Hold`) and returns
   the chat's place (`chat`: the conversations' part beside their list and under the line with the name), none
@@ -884,7 +889,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Art/smiley.blp` | The smiley (24 x 24). Original art of SaneUI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
 | `Board.lua` | The full screen's windows on Core's board, its first layout, the guild window held in its panel, the search to all; the list, row and buttons the friends list's tabs share |
-| `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
+| `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its right |
 | `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
 | `ChatWindows.lua` | A chat view on the screen as a chat window of its own beside the chat: Core's window, moved and sized in Edit Mode, fading by age, its button's list (rename, close, what it shows), New Window |
 | `Setup.lua` | Social's setup, step by step, for the addon Onboarding's window: the hot corner (not at all, a left click, the mouse) and the keys on one page, the windows, the full screen; a drawn board for each |
@@ -909,6 +914,11 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-18 — The full screen's first layout as Saneroki likes it (his picture): the conversations, the friends list
+  and the guild window side by side and as high as the screen, as wide as `Layout.SHARES` share it (650, 390 and 889
+  pixels on his screen), each at its least at most (`Layout.Board`: the guild window left out first, then the friends
+  list; one left out gives its share to the conversations); the setup ticks the guild window in at the friends list's
+  right (`BESIDE`), its drawn full screen in those columns.
 - 2026-11-18 — Social's setup: the hot corner and the keys on one page, *The hot corner, or a key* (Saneroki: "Same for
   Social setup with the Hotcorner and or a key page"): the corner's choice, then the keys of the full screen and the
   chat window; its board the corner and both keys as they are set now.

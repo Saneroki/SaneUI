@@ -31,7 +31,8 @@ local _, ns = ...
 --             a head folds its part; chat views; the friends list and the guild
 --             window ticked into its layout or out of it (Saneroki, 2026-11-18:
 --             "Add the friends list and guild window to the setup too"; the
---             layout chosen, also while the full screen is away: Board.Put)
+--             layout chosen, also while the full screen is away: Board.Put);
+--             its drawn full screen in the first layout's columns
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Look = Core.Look
@@ -374,33 +375,45 @@ function DRAW.full(board)
             local words = panel:CreateFontString(nil, "OVERLAY")
             Look.SetFont(words, 10, false, row[2] and Look.GOLD or Look.INK)
             words:SetPoint("TOPLEFT", panel, "TOPLEFT", row[2] and 6 or 14, -6 - (index - 1) * 16)
+            words:SetJustifyH("LEFT")
+            words:SetWordWrap(false)
             words:SetText((row[2] and "- " or "") .. row[1])
+            words.inset = row[2] and 6 or 14
             lines[index] = words
         end
         panel.lines = lines
         return panel
     end)
+    -- As the first layout has them (Layout.SHARES, Saneroki's picture): side by side, as high as the screen, the
+    -- conversations (their list and the chat beside it), the friends list, the guild window; one not ticked gives
+    -- its room to the conversations.
     local width, height = Setup.SCREEN[1], Setup.SCREEN[2]
     local friendsOn, guildOn = ns.Board.Holds("friends"), ns.Board.Holds("guild")
-    local column = (friendsOn or guildOn) and math.floor(width * 0.28) or 0
+    local shares = ns.Layout.SHARES
+    local whole = shares.talks + shares.friends + shares.guild
+    local room = width - 12 - (friendsOn and 4 or 0) - (guildOn and 4 or 0)
+    local friendsWide = friendsOn and math.floor(room * shares.friends / whole) or 0
+    local guildWide = guildOn and math.floor(room * shares.guild / whole) or 0
+    local talksWide = room - friendsWide - guildWide
+    local listWide = math.floor(talksWide * 0.5)
     list:ClearAllPoints()
     list:SetPoint("TOPLEFT", screen, "TOPLEFT", 6, -6)
-    list:SetPoint("BOTTOMLEFT", screen, "BOTTOMLEFT", 6, 6)
-    list:SetWidth(math.floor(width * 0.34))
+    list:SetSize(listWide, height - 12)
+    for _, words in ipairs(list.lines) do words:SetWidth(math.max(listWide - words.inset - 2, 1)) end
     local chat = Part(board, "chat", function() return Chat(screen, Setup.TEXT.chat, Setup.FULL) end)
     chat:ClearAllPoints()
     chat:SetPoint("TOPLEFT", list, "TOPRIGHT", 4, 0)
-    chat:SetPoint("BOTTOMRIGHT", screen, "BOTTOMRIGHT", -(6 + (column > 0 and column + 4 or 0)), 6)
-    local guild = Part(board, "guild", function() return Chat(screen, Setup.TEXT.guild, Setup.FULL) end)
+    chat:SetSize(math.max(talksWide - listWide - 4, 1), height - 12)
     local friends = Part(board, "friends", function() return Chat(screen, Setup.TEXT.friends, Setup.FULL) end)
+    friends:ClearAllPoints()
+    friends:SetPoint("TOPLEFT", screen, "TOPLEFT", 6 + talksWide + 4, -6)
+    friends:SetSize(math.max(friendsWide, 1), height - 12)
+    friends:SetShown(friendsOn)
+    local guild = Part(board, "guild", function() return Chat(screen, Setup.TEXT.guild, Setup.FULL) end)
     guild:ClearAllPoints()
     guild:SetPoint("TOPRIGHT", screen, "TOPRIGHT", -6, -6)
-    guild:SetSize(math.max(column, 1), friendsOn and math.floor((height - 16) * 0.45) or height - 12)
+    guild:SetSize(math.max(guildWide, 1), height - 12)
     guild:SetShown(guildOn)
-    friends:ClearAllPoints()
-    friends:SetPoint("BOTTOMRIGHT", screen, "BOTTOMRIGHT", -6, 6)
-    friends:SetSize(math.max(column, 1), guildOn and height - 16 - math.floor((height - 16) * 0.45) or height - 12)
-    friends:SetShown(friendsOn)
     Caption(board, "words", 30 + height + 12, Hued("Full screen") .. ": the conversations in their parts, the chat beside "
         .. "them" .. ((friendsOn or guildOn) and ", at the right what you ticked." or "."))
 end

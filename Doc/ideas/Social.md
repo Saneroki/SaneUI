@@ -24,7 +24,9 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
   the middle of the screen instead of the game's gossip, quest and book windows (`Doc/ideas/Dialogue.md`).
 - **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`). *Held 2026-10-20*
   (Saneroki) at the full screen's top right (`Guild.lua`): the very window the guild key opens, the game's or
-  the one that answers the key instead, as large as it is, the friends list under it. A guild view of our own:
+  the one that answers the key instead, as large as it is, the friends list under it; since 2026-11-18 (Saneroki's
+  picture of the sizes he likes) the first layout's right column, as high as the screen, the friends list between it
+  and the conversations (`Layout.SHARES`). A guild view of our own:
   *built 2026-10-20* as the module Guild (`Doc/ideas/Guild.md`), whose window stands here in its place while Guild is on
   (`Core.Board.Offer`), the guild key opening it; showing the aliases the player gave (Core's `Core.People.Shown`) is
   still to come.

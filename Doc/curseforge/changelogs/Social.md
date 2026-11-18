@@ -5,6 +5,9 @@ What changed in each version of SaneUI Social, newest first: a version's part is
 
 ## 0.3.2 (2026-11-18)
 
+- The full screen starts with three windows side by side, each as high as the screen: your conversations at the left,
+  the friends list, and the guild window at the right. Already arranged your own? A right click on the tab *Default*,
+  then *Reset*, brings this one back.
 - The setup's hot corner and keys are on one page: choose how the corner opens the full screen, and set its key and
   the chat window's right under it.
 

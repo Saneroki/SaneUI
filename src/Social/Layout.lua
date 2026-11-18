@@ -40,17 +40,20 @@ Layout.GRIP_ROOM = 18                          -- the room the grip takes at the
 Layout.FACE = 24                               -- the smiley beside the line, before the grip (Picker.lua)
 Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the smiley
 
--- The full screen's first layout (Board.lua, Default: Core's board lays out the others): at its right the guild window
--- (Guild.lua) with the friends list under it (the group finder one of its tabs), at its left the conversations
--- (Conversations.lua), whose part beside their list holds the chat chosen there: a conversation, the chat or the
--- second chat. All within PAD of the screen and of each other.
--- The guild window is as large as it is, made smaller where the conversations would be narrower than TALKS_MIN or
--- the friends list under it lower than FRIENDS_LOW, and left out below GUILD_LEAST of its size; the friends list is
--- as wide as the guild window, FRIENDS_WIDTH at least, and left out where the conversations would lack their room.
--- Without the conversations (want.talks) the chat stands in their place, CHAT_MIN wide at least.
+-- The full screen's first layout (Board.lua, Default: Core's board lays out the others): side by side, each as high
+-- as the room, the conversations (Conversations.lua) at the left, whose part beside their list holds the chat chosen
+-- there (a conversation, the chat or the second chat), the friends list (Friends.lua, the group finder one of its
+-- tabs) beside them, the guild window (Guild.lua) at the right. As wide as SHARES share the room (Saneroki,
+-- 2026-11-18: "look at this picture to see what size I like the panels as default"; measured on his full screen:
+-- 650, 390 and 889 pixels side by side), each at least as wide as it may be: the conversations TALKS_MIN, the
+-- friends list FRIENDS_WIDTH, the guild window GUILD_LEAST of its own width. Where the room lacks that, the guild
+-- window is left out, then the friends list; one left out, or not wished, gives its share to the conversations. All
+-- within PAD of the screen and of each other. Without the conversations (want.talks) the chat stands in their
+-- place, CHAT_MIN wide at least.
 Layout.PAD = SaneUI.Core.Board.PAD                -- (Core's board's)
+Layout.SHARES = { talks = 650, friends = 390, guild = 889 } -- the first layout's widths, as shares of the room
 Layout.FRIENDS_WIDTH = 340                     -- the game's friends list is as wide (Blizzard_FriendsFrame)
-Layout.FRIENDS_LOW = 220                       -- the friends list under the guild window, at its lowest
+Layout.FRIENDS_LOW = 220                       -- the friends list at its lowest
 Layout.GUILD_LEAST = 0.6                       -- the guild window made smaller to this much of its size at most
 Layout.GUILD_LEVEL = 10                        -- the guild window drawn so far above what the full window holds
 Layout.CHAT_MIN = 420
@@ -126,43 +129,73 @@ end
 
 -- Where each part of the full screen stands, in a room that wide and high (what the window holds, under its
 -- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which parts are
--- wished: friends, talks (true), guild ({ width, height }: the guild window's own size), list (the width the
--- conversations' list was dragged to). The guild window's rect has a fifth number, how much smaller it is made
--- (1: not). A part not wished, or without room, is nil; chat is always there: the conversations' part beside their
--- list and under the line with its name, or their place.
+-- wished: friends, talks (true), guild ({ width, height }: the guild window's own size, framed), list (the width the
+-- conversations' list was dragged to). A part not wished, or without room, is nil; chat is always there: the
+-- conversations' part beside their list and under the line with its name, or their place.
 function Layout.Board(width, height, want)
     local pad = Layout.PAD
-    local left, right = pad, math.floor(width) - pad
-    local top, bottom = pad, math.floor(height) - pad
-    local least = want.talks and Layout.TALKS_MIN or Layout.CHAT_MIN -- what stays at the left at least
-    local board, column = {}, 0 -- column: the width of the right part
+    local top, high = pad, math.floor(height) - 2 * pad
+    local room = math.floor(width) - 2 * pad
+    local first = want.talks and "talks" or "chat"
+    local columns = { { key = first, least = want.talks and Layout.TALKS_MIN or Layout.CHAT_MIN } }
+    if want.friends then columns[#columns + 1] = { key = "friends", least = Layout.FRIENDS_WIDTH } end
     local guild = want.guild
     if guild and guild[1] > 0 and guild[2] > 0 then
-        local wide = right - left - pad - least
-        local high = bottom - top - (want.friends and pad + Layout.FRIENDS_LOW or 0)
-        local scale = math.min(1, wide / guild[1], high / guild[2])
-        if scale >= Layout.GUILD_LEAST then
-            local w, h = math.floor(guild[1] * scale + 0.5), math.floor(guild[2] * scale + 0.5)
-            board.guild = { right - w, top, w, h, scale }
-            column = w
-        end
+        columns[#columns + 1] = { key = "guild", least = math.ceil(guild[1] * Layout.GUILD_LEAST) }
     end
-    if want.friends then
-        local w = math.max(column, Layout.FRIENDS_WIDTH)
-        if right - left - pad - w >= least then
-            local y = board.guild and top + board.guild[4] + pad or top
-            board.friends = { right - w, y, w, bottom - y }
-            column = w
-        end
+    -- Too little room for each at its least: the guild window is left out, then the friends list.
+    local function Needed()
+        local sum = pad * (#columns - 1)
+        for _, column in ipairs(columns) do sum = sum + column.least end
+        return sum
     end
-    if column > 0 then right = right - column - pad end
-    local room = { left, top, right - left, bottom - top }
-    if want.talks and room[3] >= Layout.TALKS_MIN then
-        board.talks = room
-        local beside, under = Layout.TalkList(want.list, room[3]) + 1, Layout.HEADER + Layout.TALK_HEAD
-        board.chat = { left + beside, top + under, room[3] - beside, room[4] - under }
-    else
-        board.chat = room
+    while #columns > 1 and Needed() > room do table.remove(columns) end
+    local board = {}
+    if #columns == 1 and room < columns[1].least then -- not even the conversations: the chat alone
+        board.chat = { pad, top, room, high }
+        return board
+    end
+    -- Each its share (one left out gives its share to the first); one below its least takes that, the others share
+    -- the rest anew.
+    local shares, taken = {}, 0
+    for index, column in ipairs(columns) do
+        shares[index] = Layout.SHARES[column.key] or Layout.SHARES.talks
+        taken = taken + shares[index]
+    end
+    local whole = Layout.SHARES.talks + Layout.SHARES.friends + Layout.SHARES.guild
+    shares[1] = shares[1] + math.max(whole - taken, 0)
+    local free, fixed = room - pad * (#columns - 1), {}
+    local rest, total
+    repeat
+        local again = false
+        rest, total = free, 0
+        for index in ipairs(columns) do
+            if fixed[index] then rest = rest - fixed[index] else total = total + shares[index] end
+        end
+        for index, column in ipairs(columns) do
+            if not fixed[index] and math.floor(rest * shares[index] / total) < column.least then
+                fixed[index], again = column.least, true
+            end
+        end
+    until not again or total == 0
+    local x, used, last = pad, 0, nil
+    for index in ipairs(columns) do
+        if not fixed[index] then last = index end
+    end
+    for index, column in ipairs(columns) do
+        local size = fixed[index]
+        if not size then
+            size = index == last and rest - used or math.floor(rest * shares[index] / total)
+            used = used + size
+        end
+        if index == 1 and not last then size = size + rest end -- each at its least: the first takes what is left
+        board[column.key] = { x, top, size, high }
+        x = x + size + pad
+    end
+    local talks = board.talks
+    if talks then
+        local beside, under = Layout.TalkList(want.list, talks[3]) + 1, Layout.HEADER + Layout.TALK_HEAD
+        board.chat = { talks[1] + beside, talks[2] + under, talks[3] - beside, talks[4] - under }
     end
     return board
 end

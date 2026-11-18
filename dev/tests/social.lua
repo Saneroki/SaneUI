@@ -1905,36 +1905,44 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
-    -- The full screen's parts: the guild window at the top right with the friends list under it (the group finder a
-    -- tab of it), the conversations at the left, the chat chosen there beside their list.
+    -- The full screen's parts (Saneroki, 2026-11-18, his picture): side by side and as high as the room, the
+    -- conversations at the left, the friends list (the group finder a tab of it), the guild window at the right, as
+    -- wide as Layout.SHARES share it; the chat chosen in the conversations beside their list.
     local tall = 1080 - Core.Window.FULL_BAR
     local board = Layout.Board(1920, tall, { friends = true, talks = true })
-    check(board.friends and board.talks and not board.guild and board.friends[1] == 1920 - Layout.PAD - Layout.FRIENDS_WIDTH
+    do
+    local S = Layout.SHARES
+    local talksWide = math.floor((1920 - 3 * Layout.PAD) * (S.talks + S.guild) / (S.talks + S.friends + S.guild))
+    check(board.friends and board.talks and not board.guild and board.talks[1] == Layout.PAD and board.talks[3] == talksWide
+        and board.friends[1] == 2 * Layout.PAD + talksWide and board.friends[3] == 1920 - 3 * Layout.PAD - talksWide
         and board.friends[2] == Layout.PAD and board.friends[4] == tall - 2 * Layout.PAD
-        and board.talks[1] == Layout.PAD and board.talks[3] == 1920 - 3 * Layout.PAD - Layout.FRIENDS_WIDTH
         and board.talks[4] == tall - 2 * Layout.PAD and board.chat[1] == Layout.PAD + Layout.TALK_LIST + 1
         and board.chat[2] == Layout.PAD + Layout.HEADER + Layout.TALK_HEAD and board.chat[3] == board.talks[3] - Layout.TALK_LIST - 1
         and board.chat[4] == board.talks[4] - Layout.HEADER - Layout.TALK_HEAD,
-        "the full screen: the friends list at the right, the conversations at the left, the chat beside their list")
-    do
+        "out of a guild: the conversations at the left with the guild window's share too, the friends list beside them "
+        .. "as wide as in a guild, the chat beside the conversations' list")
     local guilded = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 814, 426 } })
-    check(guilded.guild and guilded.guild[1] == 1920 - Layout.PAD - 814 and guilded.guild[2] == Layout.PAD
-        and guilded.guild[3] == 814 and guilded.guild[4] == 426 and guilded.guild[5] == 1
-        and guilded.friends[1] == guilded.guild[1] and guilded.friends[3] == 814 and guilded.friends[2] == 2 * Layout.PAD + 426
-        and guilded.friends[4] == tall - 3 * Layout.PAD - 426 and guilded.talks[3] == 1920 - 3 * Layout.PAD - 814,
-        "a guild window at the top right, as large as it is, the friends list under it and as wide, the conversations beside")
-    local small = Layout.Board(1200, 700, { friends = true, talks = true, guild = { 814, 426 } })
-    check(small.guild and small.guild[5] < 1 and small.guild[3] == math.floor(814 * small.guild[5] + 0.5)
-        and small.talks[3] == Layout.TALKS_MIN and small.friends[4] >= Layout.FRIENDS_LOW,
-        "on a smaller screen the guild window is made smaller: the conversations keep their least width")
-    local low = Layout.Board(1920, 600, { friends = true, talks = true, guild = { 814, 426 } })
-    check(low.guild[5] < 1 and low.friends[4] == Layout.FRIENDS_LOW and low.guild[4] == 600 - 3 * Layout.PAD - Layout.FRIENDS_LOW,
-        "and on a low one, the friends list under it keeps its least height")
-    local tiny = Layout.Board(900, 600, { friends = true, talks = true, guild = { 814, 426 } })
-    check(not tiny.guild and tiny.friends and tiny.talks, "where it would be too small it is left out, the friends list stays")
+    local three, whole = 1920 - 4 * Layout.PAD, S.talks + S.friends + S.guild
+    check(guilded.guild and guilded.talks[3] == math.floor(three * S.talks / whole)
+        and guilded.friends[3] == math.floor(three * S.friends / whole)
+        and guilded.guild[3] == three - guilded.talks[3] - guilded.friends[3]
+        and guilded.friends[1] == guilded.talks[1] + guilded.talks[3] + Layout.PAD
+        and guilded.guild[1] == guilded.friends[1] + guilded.friends[3] + Layout.PAD
+        and guilded.guild[1] + guilded.guild[3] == 1920 - Layout.PAD and guilded.guild[2] == Layout.PAD
+        and guilded.guild[4] == tall - 2 * Layout.PAD and guilded.friends[4] == tall - 2 * Layout.PAD
+        and math.abs(guilded.friends[3] - board.friends[3]) <= 4, -- the friends list as wide in a guild and out of one
+        "in a guild: three columns as high as the room, as wide as Saneroki's picture shares them: the conversations, "
+        .. "the friends list, the guild window")
+    local small = Layout.Board(1365, 700, { friends = true, talks = true, guild = { 814, 426 } })
+    check(small.guild and small.talks[3] == Layout.TALKS_MIN and small.friends[3] == Layout.FRIENDS_WIDTH
+        and small.guild[3] == 1365 - 4 * Layout.PAD - Layout.TALKS_MIN - Layout.FRIENDS_WIDTH,
+        "on a smaller screen the conversations and the friends list keep their least width, the guild window the rest")
+    local tiny = Layout.Board(1200, 600, { friends = true, talks = true, guild = { 814, 426 } })
+    check(not tiny.guild and tiny.friends and tiny.talks,
+        "where the guild window would be narrower than its least it is left out, the friends list stays")
     check(not Layout.Board(1920, tall, { friends = true, talks = true, guild = { 0, 0 } }).guild, "a guild window of no size is none")
     local alone = Layout.Board(1920, tall, { friends = true })
-    check(not alone.talks and alone.chat[1] == Layout.PAD and alone.chat[3] == 1920 - 3 * Layout.PAD - Layout.FRIENDS_WIDTH
+    check(not alone.talks and alone.chat[1] == Layout.PAD and alone.chat[3] == talksWide
         and alone.chat[2] == Layout.PAD, "without the conversations the chat stands in their place")
     local dragged = Layout.Board(1920, tall, { friends = true, talks = true, list = 300 })
     check(dragged.chat[1] == Layout.PAD + 300 + 1 and dragged.chat[3] == dragged.talks[3] - 300 - 1,
@@ -3074,17 +3082,18 @@ do
     local guild = Layout.Board(1920, tall, { friends = true, talks = true, guild = framed })
     check(toggles == 1 and game:IsShown() and panels.guild and panels.guild:IsShown() and held(game)
         and game._scale == 1 and game._level == 1 + Layout.GUILD_LEVEL,
-        "the full screen opens the guild window by the guild key's work and holds it in its panel at the top right, its own size")
-    check(panels.guild._points[1][4] == guild.guild[1] and panels.friends._points[1][5] == -guild.friends[2]
-        and panels.friends._width == framed[1] and column._width == guild.chat[3] and panels.talks._width == guild.talks[3],
-        "its panel as large as it is with its head, the friends list under it and as wide")
+        "the full screen opens the guild window by the guild key's work and holds it in its panel at the right, its own size")
+    check(panels.guild._points[1][4] == guild.guild[1] and panels.guild._width == guild.guild[3]
+        and panels.friends._points[1][4] == guild.friends[1] and panels.friends._points[1][5] == -guild.friends[2]
+        and panels.friends._width == guild.friends[3] and column._width == guild.chat[3] and panels.talks._width == guild.talks[3],
+        "the three columns of the first layout: the conversations, the friends list, the guild window's panel at the right")
     game:ClearAllPoints()
     game:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
     check(#game._points == 1 and game._points[1][3] == "BOTTOMLEFT", "placed anew by the game, it is put back in its room")
     game._width = 600
     game:GetScript("OnSizeChanged")(game)
     W.Wait(0.1)
-    check(panels.friends._width == 600 + 2 * EDGE and held(game), "a new size makes its room anew")
+    check(panels.guild._width == guild.guild[3] and held(game), "a new size: held anew in its panel, which keeps its width")
     game._height = tall -- too high for the screen
     game:GetScript("OnSizeChanged")(game)
     W.Wait(0.1)
@@ -3092,9 +3101,11 @@ do
     game._width, game._height = 814, 426
     game:Hide()
     W.Wait(0.1)
+    local unguilded = Layout.Board(1920, tall, { friends = true, talks = true })
     check(game._points[1][3] == "TOPLEFT" and game._points[1][4] == 16 and panels.friends._points[1][5] == -Layout.PAD
-        and panels.friends._width == Layout.FRIENDS_WIDTH and not panels.guild:IsShown() and toggles == 1,
-        "closed by the player: its place back as it was, the friends list takes the room, it is not opened again")
+        and panels.friends._width == unguilded.friends[3] and panels.talks._width == unguilded.talks[3]
+        and not panels.guild:IsShown() and toggles == 1,
+        "closed by the player: its place back as it was, the conversations take its room, it is not opened again")
     check(game._scale == 1 and game._level == 1 and game._strata == "MEDIUM", "and its scale and layer")
     game:Show()
     W.Wait(0.1)
@@ -3118,7 +3129,7 @@ do
     function answer:GetName() return "SomeGuildWindow" end
     UISpecialFrames[#UISpecialFrames + 1] = "SomeGuildWindow"
     anew()
-    check(answer:IsShown() and not game:IsShown() and held(answer) and panels.friends._width == 900 + 2 * EDGE
+    check(answer:IsShown() and not game:IsShown() and held(answer) and panels.guild._width == guild.guild[3]
         and ns.store.guildWindow == "SomeGuildWindow",
         "a window that answers the guild key instead is the one held, as large as it is, and known by its name")
     ns.Board.Hide()
@@ -3132,7 +3143,7 @@ do
     answer:Hide()
     guilded = false
     anew()
-    check(toggles == 0 and not answer:IsShown() and panels.friends._width == Layout.FRIENDS_WIDTH, "out of a guild there is none")
+    check(toggles == 0 and not answer:IsShown() and panels.friends._width == unguilded.friends[3], "out of a guild there is none")
     guilded = true
     ns.store.board.tabs[1].tree = { split = "x", parts = { { key = "talks" }, { key = "friends" } }, shares = { 0.7, 0.3 } }
     anew()
@@ -3170,18 +3181,20 @@ do
     check(not Core.errors["Social: guild window"] and not ns.off, "nothing went wrong with the guild window")
     ToggleGuildFrame, UIPanelWindows = nil, nil
     ns.Window.Reboard()
-    -- A guild window another module offers: the first layout gives it room while it wants some, as large as it wants,
-    -- the friends list under it; out of a guild it wants none, and the friends list has that room too.
+    -- A guild window another module offers: the first layout gives it its column while it wants some, at the right of
+    -- the friends list; out of a guild it wants none, and the conversations have that room too.
     local wants = { 900, 500 }
     Core.Board.Offer("Social", { key = "guild", title = "offered", want = function() return wants end })
+    local offered = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 900 + 2 * Layout.EDGE, 500 } })
     check(ns.Board.Has("guild") and panels.guild:IsShown() and panels.friends:IsShown()
-        and panels.guild._width == 900 + 2 * Layout.EDGE and panels.friends._width == panels.guild._width,
-        "the first layout gives an offered guild window its room, the friends list under it")
+        and panels.guild._width == offered.guild[3] and panels.friends._width == offered.friends[3]
+        and panels.guild._points[1][4] > panels.friends._points[1][4],
+        "the first layout gives an offered guild window its column, at the right of the friends list")
     wants = nil
     Core.Board.Told("Social")
     check(not ns.Board.Has("guild") and not panels.guild:IsShown() and panels.friends:IsShown()
-        and panels.friends._width == Layout.FRIENDS_WIDTH and panels.friends._points[1][5] == -Core.Board.PAD,
-        "out of a guild it has none: the friends list stands at the top right")
+        and panels.friends._width == unguilded.friends[3] and panels.friends._points[1][5] == -Core.Board.PAD,
+        "out of a guild it has none: the friends list stands at the right, the conversations take its room")
     Core.Board.Withdraw("Social", "guild")
     check(not Core.errors.board and not Core.errors["Social: board"] and not ns.off, "nothing went wrong with the offered window")
     end)()
@@ -3813,11 +3826,15 @@ end)()
         "ticked again: at the conversations' right")
     guildTick.set(true)
     tree = tabs[1].tree
-    local right = tree.parts[2]
-    check(guildTick.check() == true and right.split == "y" and right.parts[1].key == "guild" and right.parts[2].key == "friends",
-        "the guild window ticked: over the friends list, as the first layout has it")
+    local order = {}
+    for index, part in ipairs(tree.parts) do order[index] = part.key or part.split end
+    check(guildTick.check() == true and tree.split == "x" and table.concat(order, " ") == "talks friends guild",
+        "the guild window ticked: at the friends list's right, as the first layout has it: " .. table.concat(order, " "))
     Draw("full")
-    check(Setup.Board("full").parts.guild:IsShown() and Setup.Board("full").parts.friends:IsShown(), "both drawn at the right")
+    local drawn = Setup.Board("full").parts
+    check(drawn.guild:IsShown() and drawn.friends:IsShown() and drawn.guild:GetHeight() == drawn.friends:GetHeight()
+        and drawn.guild:GetWidth() > drawn.friends:GetWidth() and drawn.list:GetWidth() + drawn.chat:GetWidth() > drawn.friends:GetWidth(),
+        "both drawn at the right, side by side and as high, in the first layout's shares")
     guildTick.set(false)
     check(not guildTick.check() and friends.check(), "unticked, it goes; the friends list stays")
     tabs[1].tree = kept
