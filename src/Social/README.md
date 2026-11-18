@@ -770,14 +770,15 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   has words nothing is folded. The one chosen stays chosen in a folded part; one chosen by itself (`Choose` from
   `Added` or `Opened`) shows its part again (`Unfold`). The first chosen when the one before is gone is the first that
   is no head.
-- **The setup** (`Setup.lua`, `Core.Onboarding.Add`; the addon Onboarding's window draws it): steps `intro`, `corner`,
-  `keys`, `windows`, `full`. The corner's choice is one control over three switches (Onboarding's choice of a table,
+- **The setup** (`Setup.lua`, `Core.Onboarding.Add`; the addon Onboarding's window draws it): steps `intro`, `corner`
+  (the hot corner and the keys on one page; Saneroki, 2026-11-18: "Same for Social setup with the Hotcorner and or a
+  key page"), `windows`, `full`. The corner's choice is one control over three switches (Onboarding's choice of a table,
   `parent = false` so it is never greyed out): `{ expand = true, expandCorner = false }` (not at all),
   `{ expand, expandCorner, expandClick = true }` (a left click), `{ expand, expandCorner, expandClick = false }` (the
   mouse). `expandCorner`, *Hotcorner*, is a switch of Core's section *Expand window* (every module's), right under
   *Can expand to fullscreen* (`Edge.lua`: off, no strip and no square; the full screen still fills by `Window.Full`, the key
   `SANEUI_SOCIAL_FULL` in `Bindings.xml`, `ns.Full`, behind `ns.Safe`); *Hotcorner requires leftclick* stands under
-  both. The keys' step binds `SANEUI_SOCIAL_FULL` and `SANEUI_SOCIAL`; the windows' step has `window`, `showNative`, a
+  both. Under the corner's choice, the same page binds `SANEUI_SOCIAL_FULL` and `SANEUI_SOCIAL`; the windows' step has `window`, `showNative`, a
   tick the module answers (`check`/`set`: the first view's `screen`, `ChatWindows.Put`) and `boardFinder`; the full
   screen's step two such ticks, the friends list and the guild window in the layout chosen (`Board.Holds`, `Board.Put`:
   Core's `board:Holds`, `board:Put`, also while the full screen is away; the friends list at the conversations' right,
@@ -886,7 +887,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
 | `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
 | `ChatWindows.lua` | A chat view on the screen as a chat window of its own beside the chat: Core's window, moved and sized in Edit Mode, fading by age, its button's list (rename, close, what it shows), New Window |
-| `Setup.lua` | Social's setup, step by step, for the addon Onboarding's window: the hot corner (not at all, a left click, the mouse), the keys, the windows, the full screen; a drawn board for each |
+| `Setup.lua` | Social's setup, step by step, for the addon Onboarding's window: the hot corner (not at all, a left click, the mouse) and the keys on one page, the windows, the full screen; a drawn board for each |
 | `Talks.lua` | The conversations: whispers, and each group you join (its chat apart, named by its members, ended when you leave), kept per character. Knows no frames |
 | `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
 | `Friends.lua` | The friends list's panel: you on Battle.net at its head, its tabs, the search box and the filter, the list of the tab chosen |
@@ -908,6 +909,9 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-18 — Social's setup: the hot corner and the keys on one page, *The hot corner, or a key* (Saneroki: "Same for
+  Social setup with the Hotcorner and or a key page"): the corner's choice, then the keys of the full screen and the
+  chat window; its board the corner and both keys as they are set now.
 - 2026-11-18 — More than one chat window on the screen (Saneroki): a chat view stands on the screen as a chat window of
   its own (`ChatWindows.lua`, new in the TOC; the chat's list's column *Chat windows*, *New Window*, a view's right
   click, its own button). The conversations in two parts, Whispers and Groups, under heads that fold. Social's setup

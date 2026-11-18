@@ -62,7 +62,9 @@ Sunder Armor), as you choose, nothing fixed.
   goes through them by itself), and *Place and size in Edit Mode*: the game's own Edit Mode opens, the setup steps aside
   until you leave it, the frame's box has a grip at each corner and a handle on each side to size it; then the
   nameplates' pages (`Nameplates/README.md`), aura tracking, last when your frames show. Each sample shows each choice
-  at once, faint while its part is the game's.
+  at once, faint while its part is the game's. Your unit frames' pages show the frames themselves as they look: their
+  bars and words, the row under each (your pet, your target's and your focus's target), as Edit Mode's preview fills
+  them.
 - **The red error text:** the switch *Hide the red error text* (on at first): the game's red line at the top of the screen and
   its sound are gone, always. Yellow lines stay.
 - **Quest marks beside nameplates:** a creature that belongs to a quest in your log shows a small mark left of
@@ -368,8 +370,13 @@ Sunder Armor), as you choose, nothing fixed.
   Mode's preview shows the same; nothing goes through them by itself. *Place and size in Edit Mode* is Onboarding's
   command control (`{ macro = "/editmode", command = "EDITMODE" }`): the game's secure button runs the game's own
   `/editmode`; Onboarding's window steps aside while Edit Mode is open. The last step, `sight`: when your three
-  frames show. The unit frames' board: made-up faces
-  of the group frames (`GroupFace.Make`, `Sample`), the same look.
+  frames show. The unit frames' boards (`units`, `sight`; Saneroki, 2026-11-18: the sample "does not represent the unit
+  frames at all"): the frames themselves, `Units.Sample(board, unit)` (`Units/Units.lua`): our face on a plain frame
+  of the board's, made once a board and unit, no button, events, window or rest (`face.board`), at the frame's own
+  width, its `face.show`, resource side, marks and two powers as the frame has them, its row while that is on, filled
+  by Edit Mode's `Preview` (no auras; `Slots` sets its slots itself, nothing secure to size); scaled to *Unit frame
+  size* or the board's room (`Guide.WORDS` kept for the words), `Guide.SLOT` apart; faint while the frame is the
+  game's, and on `sight` while it shows only on mouseover.
 - **The party and raid frames in Edit Mode, sized by the mouse** (`Units/Group.lua`): the window's option `resize`
   (Core's `Window.Edges`: a grip at each corner, a handle along each side): `sized(width, height, done)` is
   `Group.Dragged`: while dragged, `Limits()` gives the size in hand and the preview is laid out anew at each step;
@@ -822,6 +829,8 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-18:** the setup's unit frame samples are the frames themselves (`Units.Sample`; Saneroki: the preview "does
+  not represent the unit frames at all"), in place of the party frames' faces.
 - **2026-11-18:** each unit frame's width and what it shows in its Edit Mode dialog, and a made-up preview of every
   frame and row in Edit Mode (Saneroki: "In edit mode, can you have options there where you can define the width of
   the unit frames and where you can define in edit mode what each frame includes, like raid symbol, level, hide level

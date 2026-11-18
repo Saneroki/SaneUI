@@ -20,8 +20,11 @@ local _, ns = ...
 --  configure your addons to your needs. The configure steps are found under
 --  /sane setup or in the addon settings") and a row for each setup of the run,
 --  its name, its steps and Choose defaults (done: Defaults chosen, or Set
---  up); under them Start, to the first setup still to go through. Back on a
---  setup's first step comes back to it.
+--  up); under the rows the button Place and size in Edit Mode (Saneroki,
+--  2026-11-18: "The edit mode button should be on the very first page"; the
+--  game's own Edit Mode, as a step's button opens it: Controls.lua); under
+--  them Start, to the first setup still to go through. Back on a setup's
+--  first step comes back to it.
 --
 --    left    the stage: a grey box (Look.Box) on the window's plate, solid,
 --            the module draws its sample into (the guide's Stage; each
@@ -80,9 +83,11 @@ Window.SWAP_SCALE = 1.75 -- the button with the circling arrows on the first pag
 Window.EXPLAIN = 15  -- the words beside it and under the dropdown
 Window.EXPLAIN_HEAD = 18 -- their head
 Window.EXPLAIN_ROW = 62 -- a button's row there, with its words beside it
+Window.EDIT_GAP = 14    -- the first page's Edit Mode button under its rows
 
 local frame, look, stage, side, title, words, count, back, forward, progress, note, defaults
 local list, logo  -- the first page's rows' holder and the logo on its stage
+local editMode    -- the first page's button for Edit Mode, under its rows (a step's command control, Controls.lua)
 local explained   -- under the logo: the classic window's button and the dropdown Classic windows, with their words
 local rows = {}   -- the first page's rows, made when first needed
 local first       -- true while the run's first page shows
@@ -174,6 +179,7 @@ function Window.Go(index)
     if not current then return end
     first = false
     list:Hide()
+    editMode:Hide()
     StageOf(current.name) -- the first page's logo out of sight, whether the module draws a sample or not
     local steps = current.guide.steps
     index = math.max(1, math.min(tonumber(index) or 1, #steps))
@@ -234,6 +240,7 @@ local function Listed()
         y = y + Window.ROW
     end
     for index = #names + 1, #rows do rows[index]:Hide() end
+    list:SetHeight(math.max(y, 1)) -- the Edit Mode button stands under the rows
     count:SetText(left == 0 and ns.TEXT.noneLeft or left == 1 and ns.TEXT.oneLeft or ns.TEXT.left:format(left))
     forward:SetText(left == 0 and ns.TEXT.done or Arrowed(ns.TEXT.start, Window.ARROWS.next))
     return left
@@ -257,6 +264,9 @@ local function FirstPage()
     list:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 0, -18)
     list:SetPoint("TOPRIGHT", words, "BOTTOMRIGHT", 0, -18)
     list:Show()
+    editMode:ClearAllPoints()
+    editMode:SetPoint("TOPLEFT", list, "BOTTOMLEFT", 0, -Window.EDIT_GAP)
+    editMode:Show()
     defaults:Hide()
     progress:SetPoint("RIGHT", back, "LEFT", -16, 0)
     progress:Share(0)
@@ -546,6 +556,9 @@ local function Build()
     list = CreateFrame("Frame", nil, side)
     list:SetHeight(1)
     list:Hide()
+    editMode = ns.Controls.Build(side, ns.name, { { macro = "/editmode", command = "EDITMODE", text = ns.TEXT.editMode,
+        tip = ns.TEXT.editModeTip, missing = ns.TEXT.editModeMissing } }, Window.WIDTH - Window.STAGE - Window.GAP - 2 * Look.INSIDE)
+    editMode:Hide()
     local holder = StageOf("*first")
     logo = holder:CreateTexture(nil, "ARTWORK")
     logo:SetTexture(Window.LOGO)
@@ -641,5 +654,6 @@ function Window.Frame() return frame end
 function Window.Parts()
     return { stage = stage, title = title, words = words, count = count, back = back, forward = forward, made = made,
              current = current, progress = progress, own = own, note = note, head = look and look.title,
-             defaults = defaults, list = list, rows = rows, logo = logo, first = first, explained = explained }
+             defaults = defaults, list = list, rows = rows, logo = logo, first = first, explained = explained,
+             editMode = editMode }
 end

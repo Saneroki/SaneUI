@@ -13,18 +13,22 @@ local _, ns = ...
 --  gold words, its switches and a board drawn on the window's solid grey box:
 --    intro    what this is: the minimap is the map, small in its corner, the
 --             whole screen when you want it
---    corner   the hot corner, one of the first (Saneroki: "people should move
---             their mouse into the corner of the minimap to open the map full
---             screen and closing it the same way. The other way would be to
---             do the same but requires a click in the corner"): not at all,
---             a click in it, or the mouse into it (2026-11-18, as Social's: one
---             choice over Can expand to fullscreen, Hotcorner and Hotcorner
---             requires leftclick, as round buttons); the big arrow points into
---             the real corner meanwhile (below), none with the corner off
---    keys     "The 3rd would be to use the keybind": SaneUI's map, the
---             game's map (Native.lua: once ours has a key, the game's map key
---             opens the game's), the map's search; "Remind people that it is
---             possible to use a combination of things"
+--    corner   the hot corner and the keys on one page (Saneroki,
+--             2026-11-18: "Merge the or a key with the into the corner setup
+--             page", with "a create keybind area here were you can see the
+--             native keybind for map, our keybind for maps"). The corner, one
+--             of the first (Saneroki: "people should move their mouse into the
+--             corner of the minimap to open the map full screen and closing
+--             it the same way. The other way would be to do the same but
+--             requires a click in the corner"): not at all, a click in it, or
+--             the mouse into it (one choice over Can expand to fullscreen,
+--             Hotcorner and Hotcorner requires leftclick, as round buttons);
+--             the big arrow points into the real corner meanwhile (below),
+--             none with the corner off. Under it the keys ("The 3rd would be
+--             to use the keybind"): SaneUI's map, the game's map (Native.lua:
+--             once ours has a key, the game's map key opens the game's), the
+--             map's search; "Remind people that it is possible to use a
+--             combination of things"
 --    move     Edit Mode moves the map, and its hot corner with it; the big
 --             arrow shows where it is now
 --    quests   the quest log: a click opens a quest, a double click puts a
@@ -132,22 +136,16 @@ Setup.STEPS = {
           { "This setup", "shows how to open it, where it stands and how to find your way." },
           { "Every choice", "counts at once. Close at any time: it stays." }),
       settings = {} },
-    { key = "corner", title = "Into the corner",
+    { key = "corner", title = "Into the corner, or a key",
       text = Lines({ "The hot corner", "the screen's corner your map stands in: the big arrow points at it." },
-          { "The mouse", "all the way into it: the map fills the screen. Again: it goes back." },
-          { "Or a click", "the mouse in the corner, then a left click: nothing opens by mistake." },
-          { "Not at all", "the corner does nothing: a key opens the map." },
-          { "Or a key", "the next page. They all work together." }),
+          { "The mouse", "all the way into it, or into it and a left click: the map fills the screen." },
+          { "Or a key", "SaneUI's map, or the game's: its key opens SaneUI's map until that has one." },
+          { "A key", "click its box, press the key. Right click: no key. They all work together." }),
       settings = { { key = "expandCorner", text = Setup.TEXT.cornerSwitch, tip = Setup.TEXT.cornerTip, column = true, parent = false,
                      choices = { { { expand = true, expandCorner = false }, Setup.TEXT.cornerOff },
                                  { { expand = true, expandCorner = true, expandClick = true }, Setup.TEXT.cornerClick },
-                                 { { expand = true, expandCorner = true, expandClick = false }, Setup.TEXT.cornerHover } } } } },
-    { key = "keys", title = "Or a key",
-      text = Lines({ "SaneUI's map", "full screen and back by a key of its own." },
-          { "The game's map", "its key opens SaneUI's map until that has a key: then the game's map." },
-          { "Together", "the corner and the keys work side by side: use any of them, or all." },
-          { "A key", "click its box, press the key. Right click: no key." }),
-      settings = { { binding = ns.Native.OWN, text = Setup.TEXT.keyOwn, tip = Setup.TEXT.keyOwnTip },
+                                 { { expand = true, expandCorner = true, expandClick = false }, Setup.TEXT.cornerHover } } },
+                   { binding = ns.Native.OWN, text = Setup.TEXT.keyOwn, tip = Setup.TEXT.keyOwnTip },
                    { binding = "TOGGLEWORLDMAP", text = Setup.TEXT.keyGame, tip = Setup.TEXT.keyGameTip },
                    { binding = "SANEUI_MAP_FIND", text = Setup.TEXT.keyFind, tip = Setup.TEXT.keyFindTip } } },
     { key = "move", title = "Move it in Edit Mode",
@@ -465,9 +463,35 @@ function DRAW.intro(board)
     Caption(board, "bottomWords", 260 + Setup.SCREEN[2] + 8, Hued("Full screen") .. ": the same map, all of it")
 end
 
--- The screen with the map in its corner, the mouse there, the arrow into it; a click where the corner wants one.
+-- A key's row on the corner's board: its box at the left with the key set now, its words beside it.
+local function Row(board, index, y, text, key)
+    local box = Part(board, "box" .. index, function()
+        local frame = CreateFrame("Frame", nil, board)
+        frame:SetSize(110, 26)
+        frame.outline = Look.Outline(frame)
+        local label = frame:CreateFontString(nil, "OVERLAY")
+        Look.SetFont(label, Setup.SIZE, false, Look.GOLD)
+        label:SetPoint("LEFT", 4, 0)
+        label:SetPoint("RIGHT", -4, 0)
+        label:SetJustifyH("CENTER")
+        frame.label = label
+        return frame
+    end)
+    box:ClearAllPoints()
+    box:SetPoint("TOPLEFT", board, "TOPLEFT", 24, -y)
+    box.label:SetText(key or Hued(Look.FAINT, Core.Word("NOT_BOUND", "Not bound")))
+    local words = Words(board, "row" .. index)
+    words:ClearAllPoints()
+    words:SetPoint("LEFT", box, "RIGHT", 14, 0)
+    words:SetWidth(Wide(board) - 24 - 110 - 14 - 16)
+    words:SetJustifyH("LEFT")
+    words:SetText(text)
+end
+
+-- The screen with the map in its corner, the mouse there, the arrow into it; a click where the corner wants one. Under
+-- it the map's keys as they are set now (the boxes at the step's right set them): they work beside the corner.
 function DRAW.corner(board)
-    local screen = Screen(board, "screen", 40)
+    local screen = Screen(board, "screen", 20)
     local small = Part(board, "small", function() return Map(screen) end)
     local _, at = Setup.Spot()
     Dock(small, screen, at) -- (not docked: in the middle, no arrow)
@@ -484,57 +508,23 @@ function DRAW.corner(board)
     mouse:SetShown(at ~= nil and Clicks())
     local words
     if ns.options.expandCorner == false then
-        words = Hued("The corner does nothing") .. ": open the map by a key (the next page)."
+        words = Hued("The corner does nothing") .. ": open the map by a key (below)."
     elseif not at then
-        words = "Your map is not docked to the screen's edge, so it has no hot corner: dock it in Edit Mode (two pages "
-            .. "on), or use a key (the next page)."
+        words = "Your map is not docked to the screen's edge, so it has no hot corner: dock it in Edit Mode (the next "
+            .. "page), or use a key (below)."
     elseif Clicks() then
         words = Hued("The mouse into the corner, then a left click") .. ": the map fills the screen. "
             .. "A click there again: back."
     else
         words = Hued("The mouse all the way into the corner") .. ": the map fills the screen. Into it again: back."
     end
-    Caption(board, "words", 40 + Setup.SCREEN[2] + 64, words)
-    Caption(board, "seen", 40 + Setup.SCREEN[2] + 130, "The big arrow on your screen points into your own corner. Try it now.",
+    Caption(board, "words", 20 + Setup.SCREEN[2] + 58, words)
+    local own = KeyWords(ns.Native.OWN)
+    Row(board, 1, 334, Hued(Setup.TEXT.keyOwn) .. ": full screen and back", own)
+    Row(board, 2, 370, Hued(Setup.TEXT.keyGame) .. ": " .. (own and "the game's own map"
+        or "SaneUI's map, until that has a key"), KeyWords("TOGGLEWORLDMAP"))
+    Caption(board, "seen", 418, "The big arrow on your screen points into your own corner. Try it now.",
         Setup.SIZE, Look.FAINT)
-end
-
--- A row of the keys' board: an icon or a key's box at the left, its words beside it.
-local function Row(board, index, y, text, key)
-    local box = Part(board, "box" .. index, function()
-        local frame = CreateFrame("Frame", nil, board)
-        frame:SetSize(110, 26)
-        frame.outline = Look.Outline(frame)
-        local label = frame:CreateFontString(nil, "OVERLAY")
-        Look.SetFont(label, Setup.SIZE, false, Look.GOLD)
-        label:SetPoint("LEFT", 4, 0)
-        label:SetPoint("RIGHT", -4, 0)
-        label:SetJustifyH("CENTER")
-        frame.label = label
-        return frame
-    end)
-    box:ClearAllPoints()
-    box:SetPoint("TOPLEFT", board, "TOPLEFT", 24, -y)
-    box.label:SetText(key or Hued(Look.FAINT, "No key"))
-    local words = Words(board, "row" .. index)
-    words:ClearAllPoints()
-    words:SetPoint("LEFT", box, "RIGHT", 14, 0)
-    words:SetWidth(Wide(board) - 24 - 110 - 14 - 16)
-    words:SetJustifyH("LEFT")
-    words:SetText(text)
-end
-
--- The ways to open the map, each as it is set now, and that they work together.
-function DRAW.keys(board)
-    local own, game, find = KeyWords(ns.Native.OWN), KeyWords("TOGGLEWORLDMAP"), KeyWords("SANEUI_MAP_FIND")
-    Row(board, 1, 34, Hued("The corner") .. ": " .. (Clicks() and "the mouse into it, then a left click"
-        or "the mouse all the way into it"), Clicks() and "Click" or "Mouse")
-    Row(board, 2, 84, Hued(Setup.TEXT.keyOwn) .. ": full screen and back", own)
-    Row(board, 3, 134, Hued(Setup.TEXT.keyGame) .. ": " .. (own and "the game's own map"
-        or "SaneUI's map, until that has a key"), game)
-    Row(board, 4, 184, Hued(Setup.TEXT.keyFind) .. ": the full map, the cursor in its search", find)
-    Caption(board, "together", 250, Hued("All of them work side by side") .. ": the corner for the mouse, a key for "
-        .. "when your hands are on the keyboard.")
 end
 
 -- The screen with every place the map can stand faint, the one it stands now in the outline, and the arrow there.

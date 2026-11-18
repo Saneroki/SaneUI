@@ -45,6 +45,10 @@ local _, ns = ...
 --  its target you; a player as your focus, with an item level, its target a
 --  creature; your own frame with your pet, your cast, your breath and fatigue,
 --  and your two powers where you may have two (a druid's mana and energy).
+--  The setup's samples are the same faces (Units.Sample; Saneroki, 2026-11-18:
+--  the setup's preview "does not represent the unit frames at all"): on a
+--  plain frame of its board, no button, no events, no window, filled as that
+--  preview fills them.
 --
 --  The game's own frames go out of sight while ours show, nothing of theirs
 --  written: your target's and focus's frame stand in a hidden frame of ours
@@ -177,7 +181,7 @@ end
 local function Row(face)
     if not face.rowShown then return end
     local unit = face.rowUnit
-    face.rowSample = Core.EditMode.active
+    face.rowSample = face.board or Core.EditMode.active -- a setup's sample (Units.Sample): always made up
     if face.rowSample then return RowPreview(face) end
     if not Core.Ask(UnitExists, unit) then return end
     ns.UnitBar.Health(face.row, unit)
@@ -210,6 +214,10 @@ local function Wanted(face)
 end
 local function Slots(face)
     if Wanted(face) == face.slots then return end
+    if face.board then -- a setup's sample (Units.Sample): no button to size, nothing secure
+        face.slots = Wanted(face)
+        return ns.UnitBar.Fit(face)
+    end
     Core.AfterCombat("unit frame slots " .. face.unit, function()
         face.slots = Wanted(face)
         face:GetParent():SetHeight(Units.HEIGHT + face.slots * Units.POWER)
@@ -293,6 +301,7 @@ local function Preview(face)
     Text.Name(face, nil, type(name) == "string" and name or "")
     Text.Sample(face, now, most)
     Row(face)
+    if face.board then return end -- a setup's sample: the frame's bars and words, no auras
     ns.UnitAuras.Set(face, "player")
     Buffs(face)
 end
@@ -683,6 +692,40 @@ end
 function Units.Marks(face)
     local options = ns.options
     face.marks:Switch(options.unitBarrier, options.unitLost, options.unitDispel)
+end
+
+-- A frame as it looks, for the setup's board (Setup.lua): our face on a plain frame of the board's, made once a board
+-- and unit (no button, no events, no window, no rest), at the frame's own width, showing what its settings show, its
+-- resource numbers on their side, your two powers where you may have two, and its row under it while that is on (your
+-- pet, your target's target, your focus's target), filled as Edit Mode's preview fills it (Preview). Nil for a unit
+-- with no frame of ours.
+function Units.Sample(parent, unit)
+    local kind
+    for _, each in ipairs(Units.KINDS) do
+        if each.unit == unit then kind = each end
+    end
+    if not kind then return nil end
+    parent.unitSamples = parent.unitSamples or {}
+    local face = parent.unitSamples[unit]
+    if not face then
+        face = CreateFrame("Frame", nil, parent)
+        face:SetSize(Units.WIDTH, Units.HEIGHT)
+        face.unit, face.foes, face.board, face.sample = kind.unit, kind.foes, true, true
+        ns.UnitBar.Make(face, { health = Units.HEIGHT, power = Units.POWER, row = Units.ROW,
+                                rowPower = kind.row.power and Units.ROW_POWER or nil })
+        ns.UnitText.Make(face)
+        face:SetScript("OnSizeChanged", OnSizeChanged)
+        parent.unitSamples[unit] = face
+    end
+    face:SetWidth(tonumber(ns.options[kind.option .. "Width"]) or Units.WIDTH)
+    face.show = Shows(kind)
+    ns.UnitText.PowerSide(face)
+    Units.Marks(face)
+    face.alternate = Alternate(kind)
+    face.rowShown = ns.options[kind.row.option] ~= false
+    Fit(face)
+    Preview(face)
+    return face
 end
 
 local function Apply()

@@ -49,6 +49,11 @@ ns.TEXT = {
     oneLeft = "1 setup to go through",
     noneLeft = "All set",
     start = "Start",
+    -- The first page's button for Edit Mode (Saneroki, 2026-11-18: "The edit mode button should be on the very first
+    -- page").
+    editMode = "Place and size in Edit Mode",
+    editModeTip = "Opens the game's Edit Mode: drag SaneUI's frames and the game's where you like them, and size them. This window steps aside and comes back when you leave Edit Mode.",
+    editModeMissing = "Open Edit Mode from the game's menu: Esc, then Edit Mode.",
     -- On the first page's stage, under the logo (Saneroki, 2026-11-18: "show very clearly that the small button with
     -- the circle arrow means to show the classic windows instead and also in fullscreen you have the dropdown
     -- selectors to choose which one is the default one").

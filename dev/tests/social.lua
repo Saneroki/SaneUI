@@ -3725,8 +3725,9 @@ end)()
     local guide, Setup = Core.Onboarding.Guide(ns.name), ns.Setup
     local keys = {}
     for index, step in ipairs(guide and guide.steps or {}) do keys[index] = step.key end
-    check(guide and guide.title == "Social" and table.concat(keys, " ") == "intro corner keys windows full",
-        "Social's setup: what it is, the hot corner, the keys, the windows, the full screen: " .. table.concat(keys, " "))
+    check(guide and guide.title == "Social" and table.concat(keys, " ") == "intro corner windows full",
+        "Social's setup: what it is, the hot corner and the keys on one page (Saneroki, 2026-11-18), the windows, the full "
+        .. "screen: " .. table.concat(keys, " "))
     check(Core.Described(ns.name, "setup") and Core.Described(ns.name, "setup").button, "its options page opens it: Set up step by step")
     local named, short = true, true
     for _, step in ipairs(guide.steps) do
@@ -3752,10 +3753,10 @@ end)()
     local hot = Core.Described(ns.name, "expandCorner")
     check(hot and hot.default == true and hot.parent == "expand" and Core.Described(ns.name, "expandClick").parent[2] == "expandCorner",
         "the switch Hotcorner, under Can expand to fullscreen, Hotcorner requires leftclick under both")
-    local bindings = guide.steps[3].settings
-    check(bindings[1].binding == "SANEUI_SOCIAL_FULL" and bindings[2].binding == "SANEUI_SOCIAL",
-        "the keys: Social's full screen, the chat window")
-    local windows = guide.steps[4].settings
+    local bindings = guide.steps[2].settings
+    check(#bindings == 3 and bindings[2].binding == "SANEUI_SOCIAL_FULL" and bindings[3].binding == "SANEUI_SOCIAL",
+        "under the corner, on its page: the keys of Social's full screen and the chat window")
+    local windows = guide.steps[3].settings
     local second = ns.Feed.Views()[1]
     check(windows[1] == "window" and windows[2] == "showNative" and windows[3].check and windows[4] == "boardFinder",
         "the windows: the chat window, the game's chat beside it, the second chat on the screen, the group finder")
@@ -3788,10 +3789,12 @@ end)()
     options.expandCorner = false
     Draw("corner")
     check(not board.parts.arrow:IsShown() and board.parts.words._text:find("use the key", 1, true), "not at all: no arrow, the key said")
+    check(board.parts.full._text:find(Setup.TEXT.keyFull, 1, true) and board.parts.chat._text:find(Setup.TEXT.keyChat, 1, true),
+        "the corner's board: each key and what it opens, under the screen")
     options.expandCorner, options.expandClick = was.expandCorner, was.expandClick
     -- The full screen's page: the friends list and the guild window ticked into the layout chosen, or out of it, while
     -- the full screen is away (Board.Put, Core's board:Put).
-    local full = guide.steps[5].settings
+    local full = guide.steps[4].settings
     local friends, guildTick = full[1], full[2]
     check(friends.check and friends.text == Setup.TEXT.friendsTick and guildTick.check and guildTick.text == Setup.TEXT.guildTick,
         "the full screen's page: a tick for the friends list and one for the guild window")

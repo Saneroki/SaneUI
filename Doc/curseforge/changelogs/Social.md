@@ -3,6 +3,11 @@
 What changed in each version of SaneUI Social, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.2 (2026-11-18)
+
+- The setup's hot corner and keys are on one page: choose how the corner opens the full screen, and set its key and
+  the chat window's right under it.
+
 ## 0.3.1 (2026-11-18)
 
 - First public alpha of SaneUI Social: the game's chat as a messenger, every message in a bubble, yours on the

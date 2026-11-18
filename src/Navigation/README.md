@@ -28,15 +28,17 @@ and shows them on the map or puts the map pin there. The plan is in
   (move away from it first), Esc or the close button on its title bar brings it back. On the way the map grows and
   zooms with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane
   map`, and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
-  The key **SaneUI's map** (the game's key bindings, under SaneUI; the setup's page *Or a key*) does the same; once
+  The key **SaneUI's map** (the game's key bindings, under SaneUI; the setup's page *Into the corner, or a key*) does the same; once
   it has a key, the game's map key (M) opens the game's own map again (Saneroki, 2026-11-18: "Give them options to put
   keybinds to open either the native map or our map"), and every other way still opens ours. The corner, its click
   and the keys all work together. Moved in Edit Mode, the map takes its hot corner along: docked in another corner,
   that corner; along an edge, that edge; away from the edges, none (a key opens it).
 - **The setup, step by step** (Saneroki, 2026-11-18: "make a onboarding window for the navigation module"): the
-  window of SaneUI's setups (the addon Onboarding), six pages: *Your map* (the minimap is the map), *Into the
-  corner* (the mouse into it, or a left click in it), *Or a key* (SaneUI's map, the game's map, the map's search;
-  all of them together), *Move it in Edit Mode* (the hot corner goes with the map), *The quest log* (a click opens a
+  window of SaneUI's setups (the addon Onboarding), five pages: *Your map* (the minimap is the map), *Into the
+  corner, or a key* (the mouse into it, a left click in it, or not at all; under it the keys of SaneUI's map, the
+  game's map and the map's search, each box showing the key set now, and the board the map's two keys; all of them
+  together: Saneroki, 2026-11-18: "Merge the or a key with the into the corner setup page"), *Move it in Edit Mode*
+  (the hot corner goes with the map), *The quest log* (a click opens a
   quest, a double click puts a route to it) and *On the map* (a double click puts the map pin and a route there, a
   right click often offers more). On the corner's page and Edit Mode's a **very big arrow** on the screen, the game's
   own tutorial arrow, points into your hot corner wherever the map stands, moving towards it again and again, with
@@ -1759,6 +1761,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, the corner and the keys on one page:** the setup's *Into the corner* and *Or a key* became *Into the
+  corner, or a key* (Saneroki: "Map into the corner should have a create keybind area here were you can see the
+  native keybind for map, our keybind for maps. Merge the or a key with the into the corner setup page"): the corner's
+  choice, then the keys of SaneUI's map, the game's map and the search; its board the corner and the two map keys.
 - **2026-11-18, routes worked out without stutters:** asked how long a route takes in the worst situations, Saneroki
   had the stutters fixed: 452 of 500 random routes had a piece the game ran in one frame of over 16.7 ms (up to 130).
   A tile's openings each rectangle against only those of its line that begin within the longest's length before it

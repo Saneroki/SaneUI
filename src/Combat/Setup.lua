@@ -14,7 +14,10 @@ local _, ns = ...
 --    parts    which parts are ours: unit frames, party and raid frames,
 --             nameplates, aura tracking ("people can for example choose to
 --             use our party and unit frames but disable our nameplates")
---    units    your frame, your target's, your focus's, your pet; how large
+--    units    your frame, your target's, your focus's, your pet; how large;
+--             its sample the frames themselves as they look (Units.Sample,
+--             Saneroki, 2026-11-18: the sample "does not represent the unit
+--             frames at all"), each with the row under it, as the settings say
 --    party    the party and raid frames: a preview of 5, 10, 20 or 40, a
 --             click on a number shows it ("previews of the party with 5, 10, 20
 --             and 40 people in it where people can see where everything is"),
@@ -33,7 +36,8 @@ local _, ns = ...
 --             beginning"): each always in sight at first; Show only on
 --             mouseover, and under it Always show in combat and in a group
 --             (ns.FRAME_SHOWS, the same ticks as in its Edit Mode dialog); its
---             sample faint while the mouse would have to bring it
+--             sample, the frames as they look, faint while the mouse would
+--             have to bring it
 --  A step of a part switched off says so, and its sample is faint.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -45,8 +49,8 @@ Guide.PAD = 16          -- the samples' room from the stage's edges
 Guide.TABS = 26         -- the numbers' row over the party's sample
 Guide.SIZE = 13         -- the boards' words (Look.SetFont)
 Guide.FAINT = 0.35      -- a sample of a part that is the game's now
-Guide.ROW = 30          -- a unit frame's sample: its height, and the gap under it
-Guide.UNIT = 240        -- its width
+Guide.SLOT = 104        -- a unit frame's sample (Units.Sample) with the row under it: its room down the board
+Guide.WORDS = 120       -- the room kept at its right for its words
 Guide.RESTING = 0.3     -- a frame's sample while it shows only on mouseover
 
 -- Words in the game's gold, then the rest: one line each, so a step reads at a glance.
@@ -70,7 +74,8 @@ Guide.TEXT = {
     you = "Your frame",
     target = "Your target",
     focus = "Your focus",
-    pet = "Your pet",
+    petUnder = "your pet under it",
+    targetUnder = "its target under it",
     mouseover = "%s: show only on mouseover",
     always = "always in sight",
     onMouse = "on mouseover",
@@ -247,25 +252,31 @@ function Guide.Party(board)
     Party(board, board.shown, Guide.TABS)
 end
 
--- One of your unit frames as a member's frame shows (the same look: Units/GroupFace.lua), with its words beside it.
-local function Unit(board, index, sample, words)
+-- Your frames as they look (Units.Sample: each frame's own bars and words, filled as Edit Mode's preview fills it, the
+-- row under it while that is on), one under another at the size the settings say (narrower where the board has no
+-- room), its words beside it; faint while the game's own frame is in its place.
+Guide.UNITS = { { unit = "player", option = "unitPlayer", name = T.you, row = "unitPet", under = T.petUnder },
+                { unit = "target", option = "unitTarget", name = T.target, row = "unitTargetTarget", under = T.targetUnder },
+                { unit = "focus", option = "unitFocus", name = T.focus, row = "unitFocusTarget", under = T.targetUnder } }
+local function Unit(board, index)
+    local entry = Guide.UNITS[index]
     board.units = board.units or {}
-    local face = board.units[index]
-    if not face then
-        face = ns.GroupFace.Make(board, true)
-        board.units[index] = face
-    end
-    local y = Guide.PAD + (index - 1) * (Guide.ROW + 10)
+    local face = ns.Units.Sample(board, entry.unit)
+    board.units[index] = face
+    if not face then return end
+    local width = Core.Plain(face:GetWidth()) or 240
+    local room = Wide(board) - 2 * Guide.PAD - Guide.WORDS
+    local scale = math.max(math.min((tonumber(ns.options.unitSize) or 100) / 100, room / math.max(width, 1)), 0.3)
+    face:SetScale(scale)
     face:ClearAllPoints()
-    face:SetPoint("TOPLEFT", board, "TOPLEFT", Guide.PAD, -y)
-    face:SetSize(Guide.UNIT * (tonumber(ns.options.unitSize) or 100) / 100 * 0.6, Guide.ROW)
-    ns.GroupFace.Fit(face)
-    ns.GroupFace.Sample(face, sample)
+    face:SetPoint("TOPLEFT", board, "TOPLEFT", Guide.PAD / scale, -(Guide.PAD + (index - 1) * Guide.SLOT) / scale)
+    face:SetAlpha(ns.options[entry.option] == false and Guide.FAINT or 1)
     face:Show()
     local line = Words(board, index)
     line:ClearAllPoints()
     line:SetPoint("LEFT", face, "RIGHT", 10, 0)
-    line:SetText(words)
+    local under = ns.options[entry.row] ~= false and ("\n|cffb0b0b0" .. entry.under .. "|r") or ""
+    line:SetText(entry.name .. under)
 end
 
 local DRAW = {}
@@ -279,13 +290,7 @@ function DRAW.tracking(board)
     Party(board, ns.Group.PREVIEWS[1], 0)
 end
 function DRAW.units(board)
-    local class = select(2, Core.Ask(UnitClass, "player"))
-    local names = ns.TEXT.groupSamples
-    Unit(board, 1, { name = "", health = 0.85, most = 4200, class = class, icons = {} }, T.you)
-    Unit(board, 2, { name = names.foes[1], health = 0.6, most = 1800, reaction = 2, icons = {} }, T.target)
-    Unit(board, 3, { name = names.first[2] .. " " .. names.last[3], health = 1, most = 3100, class = "PRIEST", mana = 0.7,
-                     icons = {} }, T.focus)
-    Unit(board, 4, { name = names.pets[1], health = 0.9, most = 900, icons = {} }, T.pet)
+    for index = 1, #Guide.UNITS do Unit(board, index) end
 end
 
 -- When a frame shows, in words: "always in sight", or "on mouseover, in combat, in a group".
@@ -298,16 +303,14 @@ function Guide.Sight(option)
     return table.concat(words, ", ")
 end
 
--- Your three frames, each faint while only the mouse would bring it, its name and when it shows beside it.
+-- Your three frames as they look, each faint while only the mouse would bring it, its name and when it shows beside it.
 function DRAW.sight(board)
     DRAW.units(board)
     for index, frame in ipairs(Guide.SIGHT) do
         local face, line = board.units[index], Words(board, index)
-        face:SetAlpha(ns.options[frame.option .. "Mouseover"] == true and Guide.RESTING or 1)
+        if face then face:SetAlpha(ns.options[frame.option .. "Mouseover"] == true and Guide.RESTING or 1) end
         line:SetText(frame.name .. "\n|cffb0b0b0" .. Guide.Sight(frame.option) .. "|r")
     end
-    if board.units[4] then board.units[4]:Hide() end -- the pet goes with your frame: not one of the three
-    Words(board, 4):SetText("")
 end
 
 -- The step's board on the stage, the others out of sight (the nameplates' too, Nameplates/Setup.lua, which draws

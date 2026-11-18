@@ -143,6 +143,10 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   the right the words, a row each (`Window.ROW`: the setup's title in gold, its steps faint,
   *Choose defaults* at its right; done: *Defaults chosen* or *Set up*, faint), made when first needed; under them how
   many are left and *Start* (none left: *Done*), which shows the first still to go through (`Core.Onboarding.Continue`).
+  Between the rows and the count the button *Place and size in Edit Mode* (Saneroki, 2026-11-18: "The edit mode button
+  should be on the very first page"): a step's command control (`Controls.Build` with `{ macro = "/editmode", command
+  = "EDITMODE" }`, the game's secure button over it), under the rows (`list` as high as they are), on the first page
+  only; the window steps aside while Edit Mode is open and comes back to the first page.
   *Back* on the first step of a run's setup comes back to it.
 - **Choose defaults** (Saneroki, 2026-11-18: "Add a Skip", then "instead of skip it says Choose Defaults on each of the
   onboardings"): words alone in the colours of Forever's top bar (`Look.NAV`, lit `Look.NAV_LIT` under the mouse; red
@@ -172,6 +176,8 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — The first page's *Place and size in Edit Mode* (`Window.lua`: under the setups' rows, the command
+  control of Combat's party page, on the first page only).
 - 2026-11-18 — The Edit Mode button works (`Controls.lua`: `useOnKeyDown` false, it acts on the release); `Window.Clear`
   closes the game's options (`SettingsPanel:Close(true)`) and its menu (`HideUIPanel`) as the window opens and before
   that button acts, out of a fight. `Controls` read by Core (`Core.Onboarding.Controls`) for the key box in Core's

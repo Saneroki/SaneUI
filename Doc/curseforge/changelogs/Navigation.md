@@ -8,8 +8,9 @@ What changed in each version of SaneUI Navigation, newest first: a version's par
 DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.
 
 - A setup, step by step, the first time (again with `/sane setup navigation`): how to open the map (the mouse into
-  the corner, a click there, a key, or all of them), moving it in Edit Mode, the quest log and the map's clicks. A
-  big arrow points into your own corner meanwhile. The hot corner can also be off: then the map's key opens it.
+  the corner, a click there, a key, or all of them, on one page with the keys of SaneUI's map and the game's map),
+  moving it in Edit Mode, the quest log and the map's clicks. A big arrow points into your own corner meanwhile. The
+  hot corner can also be off: then the map's key opens it.
 - The quest log on the screen is always in sight at first. It can show only on mouseover, and still show in combat
   and in a group if you like: on the setup's quest log page, or its box in Edit Mode.
 - A key for SaneUI's map (Key Bindings, under SaneUI); once it has one, the game's map key opens the game's own map.

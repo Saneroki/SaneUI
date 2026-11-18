@@ -7,6 +7,16 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+SaneUI 0.3.5 (2026-11-18)
+--------------------------
+- The setups' first page has a button that opens Edit Mode,
+  to place and size your frames before you start.
+
+Social 0.3.2 (2026-11-18)
+-------------------------
+- The setup's hot corner and keys are on one page: choose how
+  the corner opens the full screen, and set its key under it.
+
 Social 0.3.1 (2026-11-18)
 -------------------------
 - First public alpha of SaneUI Social: the game's chat as a
@@ -58,6 +68,8 @@ Combat 0.3.3 (2026-11-18)
 - The party and raid preview no longer changes by itself:
   pick 5, 10, 20 or 40 in its box in Edit Mode or in the
   setup.
+- The setup's unit frame pages show your frames as they
+  really look.
 
 
 Combat 0.3.2 (2026-11-18)
@@ -111,8 +123,9 @@ SaneUI 0.3.3 (2026-11-18)
 Navigation 0.3.5 (2026-11-16)
 -----------------------------
 - A setup, step by step: how to open the map (the corner,
-  its click, a key), moving it in Edit Mode, the quest log
-  and the map's clicks; a big arrow points into your corner.
+  its click, a key, on one page with the keys of SaneUI's map
+  and the game's), moving it in Edit Mode, the quest log and
+  the map's clicks; a big arrow points into your corner.
   The hot corner can be off too: then the map's key opens it.
 - A key for SaneUI's map; once it has one, the game's map
   key opens the game's own map.

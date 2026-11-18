@@ -16,12 +16,14 @@ local _, ns = ...
 --  and a board drawn on the window's solid grey box:
 --    intro    what this is: the chat as a messenger, the game's chat out of
 --             sight and keeping every line, Enter to write as always
---    corner   the hot corner: the screen's corner the chat is docked in fills
+--    corner   the hot corner and the keys on one page (Saneroki, 2026-11-18:
+--             "Same for Social setup with the Hotcorner and or a key page", as
+--             Navigation's): the screen's corner the chat is docked in fills
 --             the screen with Social and brings it back; not at all, with a left
 --             click, or with the mouse alone (one choice over three switches:
---             Can expand to fullscreen, Hotcorner, Hotcorner requires leftclick)
---    keys     a key of its own for the full screen, and the chat window's key;
---             they work beside the corner
+--             Can expand to fullscreen, Hotcorner, Hotcorner requires leftclick);
+--             under it a key of its own for the full screen, and the chat
+--             window's key; they work beside the corner
 --    windows  the windows: the chat window itself, the game's chat beside it,
 --             the second chat as a window of its own on the screen (a chat view:
 --             no switch, its own tick, ChatWindows.lua), the group finder's tab
@@ -53,7 +55,7 @@ Setup.ANGLES = { TOPRIGHT = 45, TOPLEFT = 135, BOTTOMLEFT = 225, BOTTOMRIGHT = 3
 
 Setup.TEXT = {
     corner = "The hot corner",
-    cornerTip = "The screen's corner (or edge) the chat is docked to fills the screen with Social, and brings it back. Not at all: only its key does (the next page).",
+    cornerTip = "The screen's corner (or edge) the chat is docked to fills the screen with Social, and brings it back. Not at all: only its key does (below).",
     cornerOff = "Not at all: only by a key",
     cornerClick = "With a left click in it",
     cornerHover = "When the mouse goes into it",
@@ -120,21 +122,16 @@ Setup.STEPS = {
           { "This setup", "shows how to open Social's full screen and which windows you want." },
           { "Every choice", "counts at once. Close at any time: it stays." }),
       settings = {} },
-    { key = "corner", title = "The hot corner",
+    { key = "corner", title = "The hot corner, or a key",
       text = Lines({ "The hot corner", "the screen's corner your chat is docked in: the arrow points at it." },
-          { "Into it", "the mouse all the way into it: Social fills the screen. Again: it goes back." },
-          { "Or a click", "the mouse in the corner, then a left click: nothing opens by mistake." },
-          { "Not at all", "the corner does nothing: a key opens the full screen (the next page)." }),
+          { "Into it", "the mouse all the way into it, or into it and a left click: Social fills the screen." },
+          { "Or a key", "Social's full screen and the chat window, each by a key of its own if you want one." },
+          { "A key", "click its box, press the key. Right click: no key. They all work together." }),
       settings = { { key = "expandCorner", text = Setup.TEXT.corner, tip = Setup.TEXT.cornerTip, column = true, parent = false,
                      choices = { { { expand = true, expandCorner = false }, Setup.TEXT.cornerOff },
                                  { { expand = true, expandCorner = true, expandClick = true }, Setup.TEXT.cornerClick },
-                                 { { expand = true, expandCorner = true, expandClick = false }, Setup.TEXT.cornerHover } } } } },
-    { key = "keys", title = "Or a key",
-      text = Lines({ "Social's full screen", "full screen and back by a key of its own, if you want one." },
-          { "The chat window", "SaneUI's chat or the game's, by a key." },
-          { "Together", "the corner and the keys work side by side: use any of them, or all." },
-          { "A key", "click its box, press the key. Right click: no key." }),
-      settings = { { binding = "SANEUI_SOCIAL_FULL", text = Setup.TEXT.keyFull, tip = Setup.TEXT.keyFullTip },
+                                 { { expand = true, expandCorner = true, expandClick = false }, Setup.TEXT.cornerHover } } },
+                   { binding = "SANEUI_SOCIAL_FULL", text = Setup.TEXT.keyFull, tip = Setup.TEXT.keyFullTip },
                    { binding = "SANEUI_SOCIAL", text = Setup.TEXT.keyChat, tip = Setup.TEXT.keyChatTip } } },
     { key = "windows", title = "Your windows",
       text = Lines({ "The chat window", "SaneUI's chat in place of the game's. Off: the game's chat, as it was." },
@@ -302,6 +299,19 @@ function DRAW.intro(board)
         .. "after they came, and the mouse wheel brings them back to read.")
 end
 
+-- The keys bound to a command in the game's words ("Shift-M"), or nil.
+local function KeyWords(command)
+    local keys = { Core.Ask(rawget(_G, "GetBindingKey"), command) }
+    local said = {}
+    for _, key in ipairs(keys) do
+        if type(key) == "string" and key ~= "" then
+            local words = Core.Ask(rawget(_G, "GetBindingText"), key)
+            said[#said + 1] = type(words) == "string" and words ~= "" and words or key
+        end
+    end
+    return #said > 0 and table.concat(said, ", ") or nil
+end
+
 -- The screen with the chat in its corner, the arrow into it as the choice says: the mouse, a click, or nothing.
 function DRAW.corner(board)
     local options = ns.options
@@ -320,29 +330,11 @@ function DRAW.corner(board)
         say = Hued(Setup.TEXT.into .. (options.expandClick and Setup.TEXT.click or "")) .. " " .. Setup.TEXT.fills
     end
     Caption(board, "words", 40 + Setup.SCREEN[2] + 16, say)
-end
-
--- The keys bound to a command in the game's words ("Shift-M"), or nil.
-local function KeyWords(command)
-    local keys = { Core.Ask(rawget(_G, "GetBindingKey"), command) }
-    local said = {}
-    for _, key in ipairs(keys) do
-        if type(key) == "string" and key ~= "" then
-            local words = Core.Ask(rawget(_G, "GetBindingText"), key)
-            said[#said + 1] = type(words) == "string" and words ~= "" and words or key
-        end
-    end
-    return #said > 0 and table.concat(said, ", ") or nil
-end
-
--- What each key opens, and the key it has now.
-function DRAW.keys(board)
-    local full = KeyWords("SANEUI_SOCIAL_FULL")
-    local chat = KeyWords("SANEUI_SOCIAL")
+    -- Under it what each key opens and the key it has now (the boxes at the step's right set them).
     local none = Core.Word("NOT_BOUND", "Not bound")
-    Caption(board, "full", 90, Hued(Setup.TEXT.keyFull) .. "\n" .. (full or none))
-    Caption(board, "chat", 170, Hued(Setup.TEXT.keyChat) .. "\n" .. (chat or none))
-    Caption(board, "together", 260, "The hot corner and the keys work side by side.")
+    Caption(board, "full", 330, Hued(Setup.TEXT.keyFull) .. ": " .. (KeyWords("SANEUI_SOCIAL_FULL") or none))
+    Caption(board, "chat", 360, Hued(Setup.TEXT.keyChat) .. ": " .. (KeyWords("SANEUI_SOCIAL") or none))
+    Caption(board, "together", 400, "The hot corner and the keys work side by side.")
 end
 
 -- The screen with the windows ticked: SaneUI's chat, the game's beside it, the second chat above it.

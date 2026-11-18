@@ -10971,8 +10971,9 @@ end)()
     local guide = Core.Onboarding.Guide(ns.name)
     local keys = {}
     for index, step in ipairs(guide.steps) do keys[index] = step.key end
-    check(guide.title == Setup.TITLE and table.concat(keys, " ") == "intro corner keys move quests map",
-        "the map's setup: what it is, the hot corner, the keys, Edit Mode, the quest log, the map: " .. table.concat(keys, " "))
+    check(guide.title == Setup.TITLE and table.concat(keys, " ") == "intro corner move quests map",
+        "the map's setup: what it is, the hot corner and the keys on one page (Saneroki, 2026-11-18), Edit Mode, the quest "
+        .. "log, the map: " .. table.concat(keys, " "))
     local named, short = true, true
     for _, step in ipairs(guide.steps) do
         for line in (step.text .. "\n"):gmatch("([^\n]*)\n") do
@@ -10989,7 +10990,7 @@ end)()
         end
     end
     check(short and named, "each page a few short lines starting with gold words; its switches the module's, keys named")
-    local sight = guide.steps[5].settings
+    local sight = guide.steps[4].settings
     check(#sight == 3 and sight[1].key == "questLogMouseover" and sight[1].text == Setup.TEXT.questMouseover
         and Core.Described(ns.name, sight[2].key).parent == "questLogMouseover" and sight[3].key == "questLogGroup",
         "late, on the quest log's page: when it shows on the screen, Show only on mouseover and the two under it")
@@ -10998,9 +10999,10 @@ end)()
     check(corner.key == "expandCorner" and corner.parent == false and off.expand and off.expandCorner == false
         and click.expandCorner and click.expandClick == true and mouse.expandCorner and mouse.expandClick == false,
         "the hot corner, one choice of three: not at all (the map still by its key), a left click in it, the mouse into it")
-    local bindings = guide.steps[3].settings
-    check(bindings[1].binding == "SANEUI_MAP" and bindings[2].binding == "TOGGLEWORLDMAP"
-        and bindings[3].binding == "SANEUI_MAP_FIND", "the keys: SaneUI's map, the game's map, the map's search")
+    local bindings = guide.steps[2].settings
+    check(#bindings == 4 and bindings[2].binding == "SANEUI_MAP" and bindings[3].binding == "TOGGLEWORLDMAP"
+        and bindings[4].binding == "SANEUI_MAP_FIND",
+        "under the corner, on its page: the keys of SaneUI's map, the game's map and the map's search")
     local stage = CreateFrame("Frame", nil, UIParent)
     stage._width, stage._height = 420, 500
     local function Draw(key)
@@ -11061,8 +11063,12 @@ end)()
         Window.Toggle()
         Window.frame._group:Run(1)
     end
-    Draw("keys")
-    check(not pointer:IsShown(), "the next page: the big arrow gone")
+    local board = Setup.Board("corner")
+    check(board.parts.box1.label._text and board.parts.row1._text:find(Setup.TEXT.keyOwn, 1, true)
+        and board.parts.row2._text:find(Setup.TEXT.keyGame, 1, true),
+        "the corner's board: the map's keys under the screen, as they are set now")
+    Draw("intro")
+    check(not pointer:IsShown(), "another page: the big arrow gone")
     Draw("move")
     check(pointer:IsShown(), "Edit Mode's page: the arrow where the hot corner is now")
     Setup.Board("move"):Hide()

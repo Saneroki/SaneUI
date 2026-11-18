@@ -2124,7 +2124,28 @@ do
     Draw("sight")
     local board = ns.Guide.Board("sight")
     check(board.units[1]:GetAlpha() == 1 and board.words[1]:GetText():find(ns.Guide.TEXT.always, 1, true)
-        and not board.units[4]:IsShown(), "at first each sample solid, always in sight; no pet")
+        and board.units[4] == nil, "at first each sample solid, always in sight; three frames")
+    -- The samples are the frames themselves (Units.Sample; Saneroki, 2026-11-18: the sample "does not represent the unit
+    -- frames at all"): their bars and words, the row under each, filled as Edit Mode's preview fills them.
+    local you, target, focus = board.units[1], board.units[2], board.units[3]
+    check(you.board and you.health and you.powers and you.row:IsShown() and you.unit == "player"
+        and target.unit == "target" and target.row:IsShown() and focus.unit == "focus" and you:GetParent() == board,
+        "your frame, your target's and your focus's as they look, each with its row under it, on the board")
+    check(target.name._text == ns.TEXT.groupSamples.foes[3] and target.health._value == math.floor(1850 * 0.62)
+        and target.rank == ns.UnitBar.RANKS.elite and focus.gear._text ~= nil,
+        "filled as Edit Mode's preview: an elite foe a level above you, a player as your focus with an item level")
+    check(you:GetWidth() == (tonumber(ns.options.unitPlayerWidth) or ns.Units.WIDTH) and you:GetScale() <= 1,
+        "at the frame's own width, scaled to the setting and the board's room")
+    Core.Set(ns.name, "unitPet", false)
+    Draw("sight")
+    check(not you.row:IsShown(), "your pet off: no row under your frame")
+    Core.Set(ns.name, "unitPet", true)
+    Draw("sight")
+    check(you.row:IsShown(), "back: its row under it again")
+    Draw("units")
+    check(ns.Guide.Board("units").units[1] ~= you and ns.Guide.Board("units").units[1].board
+        and ns.Guide.Board("units").words[1]:GetText():find(ns.Guide.TEXT.petUnder, 1, true),
+        "the unit frames' step: the same frames, made for its own board, your pet named under yours")
     Core.Set(ns.name, "unitTargetMouseover", true)
     Core.Set(ns.name, "unitTargetGroup", false)
     Draw("sight")

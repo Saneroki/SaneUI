@@ -97,6 +97,12 @@ own purpose."
   red buttons are shown and said, and each part only where a window of an addon that is on has it. Then "/sane
   setup does not restart the onboarding": `/sane setup` alone starts the whole onboarding again (its first page with
   every setup, each from its first step), where it had opened only those still to go through.
+  Then, going through the whole onboarding (2026-11-18): "The edit mode button should be on the very first page" (the
+  first page's *Place and size in Edit Mode*, under the rows); Combat's "when your frames show" preview "does not
+  represent the unit frames at all" (both unit frame pages show the frames themselves now, `Units.Sample`); "Map into
+  the corner should have a create keybind area here were you can see the native keybind for map, our keybind for maps.
+  Merge the or a key with the into the corner setup page", and "Same for Social setup with the Hotcorner and or a key
+  page" (one page each: the corner's choice, then the keys).
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.

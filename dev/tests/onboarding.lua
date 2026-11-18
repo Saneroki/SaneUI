@@ -122,6 +122,12 @@ check(parts.list:IsShown() and parts.rows[1]:IsShown() and parts.rows[1].label._
 check(parts.count._text == ons.TEXT.oneLeft and parts.forward._text:find(ons.TEXT.start, 1, true)
     and parts.back:IsEnabled() == false and not parts.defaults:IsShown() and parts.logo:IsVisible(),
     "under them: how many are left and Start; SaneUI's logo on the stage")
+-- The button for Edit Mode on the very first page (Saneroki, 2026-11-18), under the rows: a step's command control.
+local editRow = parts.editMode and parts.editMode.rows[1]
+check(parts.editMode:IsShown() and editRow and editRow.button.label._text == ons.TEXT.editMode
+    and editRow.option.key == "/editmode" and parts.editMode._points[1][2] == parts.list
+    and parts.editMode._points[1][3] == "BOTTOMLEFT" and parts.list:GetHeight() == ons.Window.ROW,
+    "the first page: Place and size in Edit Mode under the rows")
 local explained = parts.explained
 check(parts.logo._texture == ons.Window.LOGO and ons.Window.LOGO:find("SaneUI_Onboarding", 1, true),
     "the plain SaneUI logo, the Onboarding addon's own (not Core's banner)")
@@ -200,9 +206,11 @@ check(parts.note._text:find(ons.TEXT.unfinished, 1, true)
     "the note: closed before its end it comes back; where to start it again (the options page's button)")
 check(parts.title._text == "The beds" and parts.words._text == "What grows.", "the first step: its head and words")
 check(parts.count._text == "Step 1 of 4", "Step 1 of 4")
+check(not parts.editMode:IsShown(), "a setup's step: the first page's Edit Mode button gone")
 check(parts.back:IsEnabled() ~= false, "Back on the first step of a run's setup")
 parts.back._scripts.OnClick(parts.back)
-check(window.Parts().first and window.Parts().rows[1].label._text == "Garden", "Back: the first page again")
+check(window.Parts().first and window.Parts().rows[1].label._text == "Garden" and window.Parts().editMode:IsShown(),
+    "Back: the first page again, its Edit Mode button with it")
 window.Parts().forward._scripts.OnClick(window.Parts().forward)
 parts = window.Parts()
 check(parts.title._text == "The beds", "and Start: the setup where it was left")
