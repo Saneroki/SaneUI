@@ -328,7 +328,7 @@ Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = funct
         return ns.Guarded(ns.Native.Update)
     end
     if key == "nativeMap" or key == "nativeQuestLog" then
-        ns.Guarded(ns.QuestLog.Tracker)
+        ns.Guarded(ns.QuestLog.Chosen) -- ours or the game's quest tracker on the screen
         return ns.Guarded(ns.Native.Update)
     end
     if key:match("^questLogRest") then return ns.Guarded(ns.QuestLog.Rested) end

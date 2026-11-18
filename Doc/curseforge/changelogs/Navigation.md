@@ -21,6 +21,8 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - `/sane falls`: a fall meter. After each fall the chat tells how far down it was and how much health it took.
 - Routes go down ledges and cliffs you land from alive (up to 50 m) and down mountainsides too steep to walk, never
   back up them: over the mountains instead of around.
+- The quest log on the screen starts under the minimap, where the game's quest tracker stands. Tick the quest log in
+  Classic windows and the game's tracker shows there instead of ours; untick it, ours again.
 
 ## 0.3.4 (2026-11-16)
 

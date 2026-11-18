@@ -4689,8 +4689,22 @@ end)()
         check(not log.buttons._shown and not log.frame._mouse and not box._wheel,
             "no pin, no close button; clicked through, the mouse wheel the game's while its list fits")
         local point = log.frame._points[1]
-        check(log.options.key == "questLogSmallPlace" and point[1] == "TOPLEFT" and point[3] == "TOPLEFT" and point[4] == 0
-            and point[5] == 0, "at a place of its own: at first the screen's top left corner")
+        local top = ns.Window.UNDER + ns.QuestLog.BELOW
+        check(log.options.key == "questLogSmallPlace" and point[1] == "TOPRIGHT" and point[3] == "TOPRIGHT" and point[4] == 0
+            and point[5] == -top and log.frame._height == UIParent._height - top - ns.QuestLog.FOOT,
+            "at a place of its own: at first under the minimap at the screen's right edge, where the game's quest tracker "
+            .. "stands, as high as leaves the action bars free (Saneroki, 2026-11-18)")
+        ;(function()
+            -- The minimap measured where it ends (ns.Window.Under: the small map standing small): there anew.
+            local uiTop, mapBottom = UIParent._top, ns.Window.frame._bottom
+            UIParent._top, ns.Window.frame._bottom = UIParent._height, UIParent._height - 250
+            ns.QuestLog.Lay(false)
+            point = log.frame._points[1]
+            check(point[1] == "TOPRIGHT" and point[5] == -(250 + ns.QuestLog.BELOW)
+                and log.frame._height == UIParent._height - 250 - ns.QuestLog.BELOW - ns.QuestLog.FOOT,
+                "the minimap ends lower: the log under it there, never moved")
+            UIParent._top, ns.Window.frame._bottom = uiTop, mapBottom
+        end)()
         rows = box:Draw()
         check(#rows == 4 and rows[1].row.quest == 8 and rows[2].row.turnIn and rows[3].row.quest == 7
             and not rows[4].row.done, "the objectives done left out, a done quest's turn in kept")
@@ -4797,9 +4811,27 @@ end)()
     check(ObjectiveTrackerFrame._parent == GameTooltip, "and its manager may place it then: the hook leaves it alone")
     ObjectiveTrackerFrame:SetParent(UIParent)
     switch._scripts.OnClick(switch)
-    check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "ours on: gone again while it shows")
+    check(log.frame._shown and ObjectiveTrackerFrame._parent == UIParent,
+        "ours on over the full map; the game's quest tracker stays, the game's quest log chosen")
     Core.Set(ns.name, "nativeMap", false)
     check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "the game's no longer chosen: gone for good")
+    -- On the screen ours or the game's quest tracker, as the dropdown Classic windows has it (Saneroki, 2026-11-18:
+    -- "make sure that you either see ours or the native one, depending on what you selected in the classic windows").
+    W.SmallAndBack(function()
+        check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "the map small: ours on the screen, not the game's")
+        Core.Set(ns.name, "nativeQuestLog", true)
+        check(not log.frame._shown and ObjectiveTrackerFrame._parent == UIParent,
+            "the game's quest log ticked in Classic windows: the game's quest tracker, ours gone from the screen")
+        Core.Set(ns.name, "nativeQuestLog", false)
+        check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "unticked: ours again, the game's gone")
+        Core.Set(ns.name, "nativeQuestLog", true)
+    end)
+    check(log.frame._shown and ObjectiveTrackerFrame._parent == UIParent, "over the full map ours as its button says")
+    W.SmallAndBack(function()
+        check(not log.frame._shown and ObjectiveTrackerFrame._parent == UIParent, "and small again the game's alone")
+    end)
+    Core.Set(ns.name, "nativeQuestLog", false)
+    check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "let go: ours alone again")
     -- In Edit Mode the tracker is the game's, to be seen and placed; ours again as Edit Mode closes. (With the map
     -- small: Edit Mode sends a window that fills the screen back to its corner.)
     W.SmallAndBack(function()

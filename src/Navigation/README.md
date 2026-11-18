@@ -306,8 +306,12 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 - **The quest log**, a window over the full map and on the screen while the map is small (**the button *Quest Log* on
   the full map's bar turns it on or off, in both**; no pin, no close button; drag its title bar to move it, dock it at
   a screen edge, size it by its corner). On the screen alone it stands in place of the game's quest tracker, which
-  stays out of sight even with the log turned off (*Show the game's map* brings it back), at a place and size of its own (at first the screen's top left corner), without a background, a
-  border or a line under its title, only the list over the game, clicked through but its title bar and its words.
+  stays out of sight even with the log turned off, at a place and size of its own: at first where the game's quest
+  tracker stands, under the minimap at the screen's right edge, reading from that edge inwards (Saneroki, 2026-11-18),
+  without a background, a border or a line under its title, only the list over the game, clicked through but its
+  title bar and its words. **Ours or the game's, never both:** with the game's quest log ticked in *Classic windows*
+  (or *Show the game's map*) the game's quest tracker is back on the screen and ours leaves it (over the full map it
+  stays, as its button says); unticked, ours again.
   There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, off at first:
   Saneroki, 2026-11-15): it
   shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
@@ -658,7 +662,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   minimap* and *Show the game's map* on the page. **The game's quest log** (Saneroki, 2026-11-15: "so you can still
   see the native questlog even when you use our addon"): its key (the chat says which), its button and a click on a
   quest in the game's quest tracker open the game's map with its quest log beside it, while the map's key and
-  everything else open ours; with ours switched off on the bar, the game's quest tracker is back. With the game's minimap our small window rests out of sight; with the game's map
+  everything else open ours; on the screen the game's quest tracker then stands in place of ours. With the game's minimap our small window rests out of sight; with the game's map
   its keys and buttons open the game's (chosen there, it is not opened at once: its key opens it, and the chat
   says which key). Either way the
   hot corner at the top right (a left click there, as *Hotcorner requires leftclick* says) still fills the screen
@@ -1014,13 +1018,16 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
   on it), in two looks (`Dress`), each with its place and size (`window:Use`): over the full map
   (`store.questLogPlace`) in the layer `DIALOG` with its dark background, the mouse taken, every objective; and
-  on the screen alone (`store.questLogSmallPlace`, at first
-  the screen's top left corner) in the layer `LOW` without one (no skin, `barLine = false`), the frame without the mouse
+  on the screen alone (`store.questLogSmallPlace`, at first at the screen's right edge `QuestLog.BELOW` under the
+  minimap, where the game's quest tracker stands: `Small`, by `Window.Under`, the minimap measured as it stands; one
+  moved into the screen's lower half counts as `Window.UNDER`; as high as leaves `QuestLog.FOOT` of the screen's bottom,
+  `QuestLog.HEIGHT` at most; measured anew as it goes onto the screen alone, a place never moved follows) in the layer `LOW` without one (no skin, `barLine = false`), the frame without the mouse
   and each row's hit rect only its words (`Reach`), the mouse wheel
   the game's while the list fits, the objectives done left out, no fold marks. One switch for both, `store.questLog`
   (TopBar's button); no buttons on its low title bar (Core's `bare`, `barHeight`). The game's `ObjectiveTrackerFrame`
   lent to a hidden frame (`Core.Lend`; `QuestLog.Tracker`), the log shown or off, while `nativeMap` and
-  `nativeQuestLog` are off (either on: only while ours shows); it is a
+  `nativeQuestLog` are off; either on (`QuestLog.Game`), the game's tracker stays and ours is not shown on the screen
+  alone (`QuestLog.Lay`; the switches call `QuestLog.Chosen`), over the full map as its button says; it is a
   managed frame, which the game's frame manager reparents whenever an Edit Mode layout is applied, so a hook after its
   `SetParent` puts it back at once. An objective's words made anew from the game's
   (`Objective`, `Asked`, `QuestLog.ASKS`). Sorted (`store.questLogSort`, by Core's `titleClick` on its
@@ -1713,6 +1720,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, the quest log under the minimap; ours or the game's:** Saneroki: "Can we put it underneath the minimap
+  as default where the native questlog normally is? And make sure that you either see ours or the native one,
+  depending on what you selected in the classic widnows." The log on the screen alone starts at the screen's right
+  edge under the minimap (`QuestLog.Small`, `BELOW`, `FOOT`; the minimap's bottom measured by `Window.Under`, which the
+  Sane Rare tracker's notices use too), where the game's quest tracker stands. The game's quest log chosen (ticked in
+  *Classic windows*, or *Show the game's map*): the game's quest tracker on the screen and ours gone from it; before,
+  ours still showed there and hid the game's (`QuestLog.Game`, `QuestLog.Chosen`).
 - **2026-11-18, hops tightened:** Saneroki: "it does work now but the getting up on a steep slope or jumping up is a
   little to loose. There are areas where it thinks you can get up there but you can't". A hop now joins only a
   sample's neighbours (not over a whole steep sample), crosses at most one triangle over 50 degrees, and gains no

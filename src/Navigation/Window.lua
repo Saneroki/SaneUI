@@ -40,13 +40,39 @@ local Window = {}
 ns.Window = Window
 
 Window.WIDTH, Window.HEIGHT = 200, 200 -- small, about as large as the game's minimap
+Window.UNDER = 230 -- from the screen's top to the minimap's bottom, where nothing tells it (the small map: measured)
 
 local frame, handle, inside, canvas
+local under           -- from the screen's top to the minimap's bottom, last measured (Window.Under)
 local resting = false -- out of sight: the game's own minimap is chosen (Rest)
 local going           -- on the way: true to the full screen, false back, nil standing
 local aimed = false   -- the full view was just set to a map the game was asked for (OpenTo): it opens there
 local small, full = ns.Camera.New(), ns.Camera.New() -- each view's camera
 Window.small, Window.full = small, full
+
+-- How far below the screen's top a region's bottom is; nil where it is not in sight or nothing can be told.
+local function Below(region)
+    if not (region and region.IsShown and region:IsShown()) then return nil end
+    local bottom, top = Core.Plain(region:GetBottom()), Core.Plain(UIParent:GetTop())
+    if type(bottom) ~= "number" or type(top) ~= "number" or top <= 0 then return nil end
+    local from = top - bottom * region:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    if from > 0 and from < top then return from end
+    return nil
+end
+
+-- How far below the screen's top the minimap's bottom is, what stands under it starts there (the Sane Rare tracker's
+-- notices, the quest log on the screen alone): the small map's window, measured while it stands small (not full, nor
+-- on its way), the game's minimap where it is chosen; else as last measured, else Window.UNDER.
+function Window.Under()
+    local measured
+    if ns.options and ns.options.nativeMinimap then
+        measured = Below(rawget(_G, "MinimapCluster")) or Below(rawget(_G, "Minimap"))
+    elseif frame and going == nil and ns.Canvas.camera ~= full then
+        measured = Below(frame)
+    end
+    under = measured or under
+    return under or Window.UNDER
+end
 
 -- The views' buttons (TopBar.lua) as the views offered say (Navigation.lua, Offer).
 function Window.Arrange()

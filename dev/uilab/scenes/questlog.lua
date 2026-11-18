@@ -4,8 +4,8 @@
 -- from a giver's exclamation mark on the map on top, one for a group. Two quests want an item used, their buttons at
 -- the far end of their rows with their tooltips; the lab has not the game's secure template, so a click does nothing here.
 -- In the console, LabQuestLog is the module's log: LabQuestLog.Text(1102) unfolds another quest, LabQuestLog.Text(nil)
--- folds it; LabOnScreen() shows its look on the screen alone, LabOnScreen(true) back over the full map; LabRight() moves
--- it to the right half.
+-- folds it; LabOnScreen() shows its look on the screen alone, at its first place under the small map's stand-in at the
+-- top right, LabOnScreen(true) back over the full map; LabRight() moves it to the right half.
 Lab.TOC("src/Core/SaneUI.toc")
 local Core = SaneUI.Core
 local ns = Lab.Addon("SaneUI_Navigation")
@@ -18,10 +18,23 @@ ns.Pins = { ICONS = { offer = "questnormal" }, RED = { 1, 0.2, 0.15 }, Standing 
             Changed = function() end }
 ns.TopBar = { LogShown = function() return true end, Update = function() end }
 ns.Areas = { Hover = function() end }
-ns.Window = { OpenTo = function() end }
+-- The small map at the screen's top right, as large as Navigation's (Window.lua): a plain square standing in, its
+-- bottom what the quest log on the screen alone stands under at first (Window.Under).
+local map = CreateFrame("Frame", nil, UIParent)
+map:SetSize(200, 200)
+map:SetPoint("TOPRIGHT")
+map:SetFrameStrata("LOW")
+local mapBack = map:CreateTexture(nil, "BACKGROUND")
+mapBack:SetAllPoints()
+mapBack:SetColorTexture(0.12, 0.16, 0.12, 0.9)
+local mapWords = map:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+mapWords:SetPoint("CENTER")
+mapWords:SetText("the small map")
+ns.Window = { OpenTo = function() end, UNDER = 230, frame = map,
+              Under = function() return UIParent:GetTop() - map:GetBottom() end }
 ns.Coords = { Planes = function() return {} end, Zones = function() return {} end }
 ns.Canvas = { DOUBLE = 0.3, LookAt = function() end }
-ns.PinView = { Drop = function() end }
+ns.PinView = { Drop = function() end, Light = function() end }
 ns.Live = { Quests = function() return {} end }
 
 local QUESTS = {

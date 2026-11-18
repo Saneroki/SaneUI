@@ -50,7 +50,6 @@ local Coords, Live = ns.Coords, ns.Live
 local RareTracker = {}
 ns.RareTracker = RareTracker
 
-RareTracker.UNDER = 230  -- from the screen's top to the minimap's bottom, where nothing tells it (the small map: measured)
 RareTracker.BELOW = 10   -- between the minimap and the first notice
 RareTracker.WIDTH = 250  -- the shade, without its edges that fade out
 RareTracker.EDGE = 60
@@ -108,7 +107,6 @@ local NPCS, OBJECTS, QUESTS = Core.Data.Set("NPCs"), Core.Data.Set("Objects"), C
 local holder        -- the notices' place, as large as one, dragged; its OnUpdate keeps them (shown while one shows):
                     -- RareTracker.holder
 local dragging      -- the notices are being dragged
-local under         -- from the screen's top to the minimap's bottom, last measured
 local shown = {}    -- the notices in sight, the newest first (RareTracker.shown, read only)
 local spare = {}    -- notices let go, to be used again
 local seen = {}     -- [thing] = GetTime() it was last told
@@ -407,34 +405,16 @@ local function Make()
     return notice
 end
 
--- How far below the screen's top a region's bottom is; nil where it is not in sight or nothing can be told.
-local function Below(region)
-    if not (region and region.IsShown and region:IsShown()) then return nil end
-    local bottom, top = Core.Plain(region:GetBottom()), Core.Plain(UIParent:GetTop())
-    if type(bottom) ~= "number" or type(top) ~= "number" or top <= 0 then return nil end
-    local from = top - bottom * region:GetEffectiveScale() / UIParent:GetEffectiveScale()
-    if from > 0 and from < top then return from end
-    return nil
-end
-
--- The notices' place: where they were let go, else at the screen's right edge under the minimap (the small map's window,
--- measured while it is small; the game's minimap where it is chosen), the shade's fading edge ending at the screen's.
--- How far below the screen's top it is.
+-- The notices' place: where they were let go, else at the screen's right edge under the minimap (Window.Under: the
+-- small map's window, measured while it is small; the game's minimap where it is chosen), the shade's fading edge
+-- ending at the screen's. How far below the screen's top it is.
 local function Place()
     local saved = ns.store and ns.store.rareTracker
     local right, top
     if type(saved) == "table" and tonumber(saved.right) and tonumber(saved.top) then
         right, top = tonumber(saved.right), tonumber(saved.top)
     else
-        local window = ns.Window.frame
-        local measured
-        if ns.options and ns.options.nativeMinimap then
-            measured = Below(rawget(_G, "MinimapCluster")) or Below(rawget(_G, "Minimap"))
-        elseif ns.Canvas.camera ~= ns.Window.full then
-            measured = Below(window)
-        end
-        under = measured or under
-        right, top = RareTracker.EDGE, (under or RareTracker.UNDER) + RareTracker.BELOW
+        right, top = RareTracker.EDGE, ns.Window.Under() + RareTracker.BELOW
     end
     holder:ClearAllPoints()
     holder:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -right, -top)

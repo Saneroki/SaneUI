@@ -67,7 +67,9 @@ local _, ns = ...
 --  (Saneroki 2026-10-29):
 --      over the full map    its dark background, to be read over the map, which is not clicked through it;
 --                           every objective, the done ones grey
---      on the screen alone  at first in the screen's top left corner; no background, no border, no line under
+--      on the screen alone  at first under the minimap at the screen's right edge, where the game's own quest
+--                           tracker stands (Saneroki, 2026-11-18: "Can we put it underneath the minimap as default
+--                           where the native questlog normally is?"); no background, no border, no line under
 --                           its title bar, only the list and its words over the game;
 --                           closer to the screen's edge; clicked through but its title bar, its words and its
 --                           items; the objectives done left out, the
@@ -75,9 +77,13 @@ local _, ns = ...
 --  On the screen alone it rests out of sight (Core.Rest, the setting Hide the quest log at rest; Saneroki, 2026-11-01):
 --  it shows with the mouse on its words, title bar or items, and as your unit frames and action bars do while something
 --  goes on. Its items' tray goes with it. With In a group too it rests in a group as well (Saneroki, 2026-11-07).
---  The game's quest tracker is out of sight, the log shown or off (lent to a hidden frame, Core.Lend: QuestLog.Tracker),
---  but in Edit Mode, where it is the game's to place. Its quest timers with it: ours stand at the top of the log, over
---  the list, in sight while one runs, the log at rest, folded or off (The quest timers; Saneroki, 2026-11-06).
+--  On the screen it is ours or the game's quest tracker, never both (Saneroki, 2026-11-18: "make sure that you either
+--  see ours or the native one, depending on what you selected in the classic windows"): with the game's quest log
+--  chosen (the quest log ticked in the dropdown Classic windows, or Show the game's map) the game's tracker and not
+--  ours on the screen alone (ours stays over the full map, its button says); else ours, the game's tracker out of sight
+--  (lent to a hidden frame, Core.Lend: QuestLog.Tracker), the log shown or off, but in Edit Mode, where it is the
+--  game's to place. Its quest timers with it: ours stand at the top of the log, over the list, in sight while one runs,
+--  the log at rest, folded or off (The quest timers; Saneroki, 2026-11-06).
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -89,7 +95,10 @@ ns.QuestLog = QuestLog
 QuestLog.WIDTH, QuestLog.HEIGHT = 320, 640 -- the window's first size
 QuestLog.LEAST = 220      -- its least width and height
 QuestLog.FIRST = { x = 12, y = -84 } -- its first place, from the screen's top left: under the map's bar
-QuestLog.FIRST_SMALL = { x = 0, y = 0 } -- on the screen alone: the screen's top left corner
+QuestLog.BELOW = 10       -- on the screen alone, at first: at the screen's right edge, so far under the minimap, where
+                          -- the game's own quest tracker stands (Saneroki, 2026-11-18)
+QuestLog.FOOT = 160       -- and as high as leaves that much of the screen's bottom free (the action bars), QuestLog.HEIGHT
+                          -- at the most
 QuestLog.SORTS = { "proximity", "level", "zone", "type" } -- a click on its title: the next of them, round
 QuestLog.RESORT = 2       -- sorted by proximity: the order looked at again every so many seconds while in sight
 QuestLog.CLOCK = 1        -- the quest timers counted down every so many seconds while they show (The quest timers)
@@ -1279,10 +1288,16 @@ end)
 -------------------------------------------------------------------------------
 --  The panel
 -------------------------------------------------------------------------------
+-- The game's quest log chosen: Show the game's map, or the quest log ticked in the dropdown Classic windows. On the
+-- screen the game's quest tracker then, not ours (Saneroki, 2026-11-18).
+local function Game()
+    return ns.options and (ns.options.nativeMap or ns.options.nativeQuestLog) and true or false
+end
+QuestLog.Game = Game
+
 -- The game's quest tracker out of sight (Saneroki, 2026-10-31): whether ours shows or was switched off, while the
--- game's map and quest log are not chosen (Show the game's map, or the game's quest log in the dropdown Classic
--- windows; chosen, it goes only while ours shows). Lent to a
--- hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
+-- game's map and quest log are not chosen; chosen, it stays the game's, and ours stays off the screen alone (Lay).
+-- Lent to a hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
 -- once the game's are chosen, or the module stands down. The tracker is a frame the game manages: each time a layout
 -- of Edit Mode is applied (the login, Edit Mode closing, a layout changed) its manager takes it back under its own
 -- parent, whatever parent it has now. A hook after its SetParent puts it out of sight again at once. Not in Edit Mode:
@@ -1296,8 +1311,7 @@ end
 
 function QuestLog.Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
-    local hide = not ns.off and not Core.EditMode.active
-        and (not (ns.options and (ns.options.nativeMap or ns.options.nativeQuestLog)) or (frame and frame:IsShown()))
+    local hide = not ns.off and not Core.EditMode.active and not Game()
     if hide and tracker and not lent then
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
@@ -1532,13 +1546,27 @@ local function NextTip()
         .. (QuestLog.Folded() and QuestLog.TEXT.unfold or QuestLog.TEXT.fold)
 end
 
--- Its first place in each look, from the screen's top left (Dress).
+-- Its first place in each look (Dress): over the full map from the screen's top left, under the map's bar; on the
+-- screen alone at its right edge under the minimap (Small).
 local FIRST = {
     [true] = { point = "TOPLEFT", x = QuestLog.FIRST.x, y = QuestLog.FIRST.y, width = QuestLog.WIDTH, height = QuestLog.HEIGHT },
-    [false] = { point = "TOPLEFT", x = QuestLog.FIRST_SMALL.x, y = QuestLog.FIRST_SMALL.y, width = QuestLog.WIDTH,
-                height = QuestLog.HEIGHT },
+    [false] = { point = "TOPRIGHT", x = 0, y = 0, width = QuestLog.WIDTH, height = QuestLog.HEIGHT }, -- y, height: Small
 }
 local KEY = { [true] = "questLogPlace", [false] = "questLogSmallPlace" } -- where each look's place is kept
+
+-- Its first place on the screen alone, where the game's quest tracker stands: at the screen's right edge, under the
+-- minimap as it stands now (ns.Window.Under: the small map, or the game's minimap where it is chosen; one moved into
+-- the screen's lower half: where the small map stands at first), as high as leaves the action bars free.
+local function Small()
+    local first = FIRST[false]
+    local screen = Core.Plain(UIParent:GetHeight())
+    if type(screen) ~= "number" or screen <= 0 then screen = 768 end
+    local top = ns.Window.Under()
+    if type(top) ~= "number" or top > screen / 2 then top = ns.Window.UNDER end
+    top = top + QuestLog.BELOW
+    first.y = -top
+    first.height = math.max(QuestLog.LEAST, math.min(QuestLog.HEIGHT, screen - top - QuestLog.FOOT))
+end
 
 -- The window, built at login with the map's (Window.lua); hidden until the full map or its pin shows it.
 function QuestLog.Build()
@@ -1677,18 +1705,24 @@ local function Dress(on)
     frame:SetFrameStrata(on and "DIALOG" or "LOW") -- the full map stands in the layer HIGH (Core's Edge)
     timers:SetFrameStrata(frame:GetFrameStrata())
     timers:SetFrameLevel(frame:GetFrameLevel() + QuestLog.OVER)
-    handle:Use(KEY[on], FIRST[on])
+    local first = FIRST[on]
+    local y, height = first.y, first.height
+    if not on then Small() end
+    local same = handle.options.key == KEY[on]
+    handle:Use(KEY[on], first)
+    -- Still on the screen alone, the minimap now ends elsewhere: at its first place anew, if it was never moved there.
+    if same and (first.y ~= y or first.height ~= height) then handle:Place() end
     handle:Refresh()
     Doors()
     QuestLog.Rested()
 end
 
 -- Shown or not, as the full map's bar's button has it, in the look of the map as it is (on: it fills the screen and
--- stands there; Dress).
+-- stands there; Dress); on the screen alone not while the game's quest log is chosen (Game).
 function QuestLog.Lay(on)
     if not frame then return end
     Dress(on)
-    local shown = ns.TopBar.LogShown()
+    local shown = ns.TopBar.LogShown() and (full or not Game())
     if shown and not frame:IsShown() then frame:Show() elseif not shown and frame:IsShown() then frame:Hide() end
     QuestLog.Tracker()
     if shown and stale then QuestLog.Refresh() end
@@ -1701,6 +1735,13 @@ end
 
 function QuestLog.Shown()
     return frame and frame:IsShown() or false
+end
+
+-- The game's quest log chosen or let go (Show the game's map, the dropdown Classic windows): ours or the game's
+-- quest tracker on the screen, in the look it has now.
+function QuestLog.Chosen()
+    if frame then return QuestLog.Lay(full) end
+    QuestLog.Tracker()
 end
 
 -- Its box on the screen while it shows, in the screen's pixels: left, right, bottom, top (a dungeon's map is fitted

@@ -336,6 +336,11 @@ When the window fills the screen:
     through, the objectives done and the fold marks (+) left out. A done quest's *Report back to ...* is an
     objective still to do: never left out.
   - **The game's quest tracker hidden** while the quest log shows.
+- **Under the minimap; ours or the game's (Saneroki, 2026-11-18; built):** "Can we put it underneath the minimap as
+  default where the native questlog normally is? And make sure that you either see ours or the native one, depending
+  on what you selected in the classic widnows." On the screen alone it starts at the screen's right edge under the
+  minimap, where the game's quest tracker stands (the top left corner before); with the game's quest log chosen in
+  *Classic windows* (or *Show the game's map*) the game's quest tracker shows on the screen and ours does not.
 - **The quest log leaner, its items (Saneroki, 2026-10-30; built):**
   - **No question marks, no ticks, not the word Quest Log:** he knows what it is. The rows closer to the screen's edge.
   - **A double click on a quest puts the map pin on it,** so the route in Forever leads there; **a click expands the
