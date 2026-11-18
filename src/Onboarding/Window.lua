@@ -572,7 +572,10 @@ local function Build()
     count = progress:CreateFontString(nil, "OVERLAY")
     Look.SetFont(count, 14, false, Look.INK)
     count:SetPoint("CENTER", progress, "CENTER", 0, 1)
-    frame:HookScript("OnShow", ns.Guard(function() Core.Escape(frame, Window.Close) end))
+    frame:HookScript("OnShow", ns.Guard(function()
+        Core.Escape(frame, Window.Close)
+        ns.Safe("setup", Window.Clear)
+    end))
     frame:HookScript("OnHide", ns.Guard(function() Core.Escape(frame, nil) end))
     -- Edit Mode opened while it shows (a step's button for it, or the game's menu): out of sight until Edit Mode
     -- closes, then back at the same step, its sample drawn anew (Saneroki, 2026-11-18: "During the edit mode the
@@ -588,6 +591,21 @@ local function Build()
             Window.Changed()
         end
     end))
+end
+
+-- Other windows out of the way as a setup opens (Saneroki, 2026-11-18: "When People start the onboarding menu other
+-- windows should be closed, like for example the esc -> options window"), and before its Edit Mode button acts
+-- (Controls.lua): the game's options (where a module's Set up step by step opens it) and the game's menu, each the
+-- game's own way: SettingsPanel:Close (what changed is kept; settings still to apply ask first, as its X asks),
+-- straight back to the game (no menu again), and HideUIPanel. Out of a fight only.
+function Window.Clear()
+    if InCombatLockdown() then return end
+    local settings = rawget(_G, "SettingsPanel")
+    if type(settings) == "table" and settings:IsShown() and type(settings.Close) == "function" then
+        settings:Close(true)
+    end
+    local menu = rawget(_G, "GameMenuFrame")
+    if type(menu) == "table" and menu:IsShown() then HideUIPanel(menu) end
 end
 
 -- The window on a module's setup at that step (the first). True once it shows.

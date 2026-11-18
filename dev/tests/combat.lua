@@ -1019,7 +1019,7 @@ do
     end
     check(members == 5 and small > 0 and placed,
         "a party previewed: beside the members a foe they target and a pet, half as wide and high, as in the game")
-    -- From Combat's setup (Saneroki, 2026-11-18): the preview goes through 5, 10, 20 and 40, a few seconds each.
+    -- Its preview chosen in its dialog, 5, 10, 20 or 40, never going through them by itself (Saneroki, 2026-11-18).
     local function Shown()
         local count = 0
         for _, widget in ipairs(W.frames) do
@@ -1027,15 +1027,22 @@ do
         end
         return count
     end
-    Group.Cycle(true)
-    check(select(2, Group.Cycling()) == 5 and Shown() == 5, "the setup's cycle: five first")
-    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
-    check(select(2, Group.Cycling()) == 10 and Shown() == 10, "then ten")
-    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
-    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
-    check(Shown() == 40, "then twenty, forty")
-    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
-    check(Shown() == 5 and ns.options.groupPreview == 5, "and five again; the setting Preview units untouched")
+    check(host._scripts.OnUpdate == nil and Shown() == 5, "five at first, and nothing goes through the numbers by itself")
+    W.methods.LockHighlight = W.methods.LockHighlight or function(self) self._lit = true end
+    W.methods.UnlockHighlight = W.methods.UnlockHighlight or function(self) self._lit = false end
+    local preview = window.options.settings[4]
+    check(preview.key == "groupPreview" and #preview.choices == 4 and preview.choices[3][1] == 20 and preview.choices[4][2] == "40",
+        "its dialog's Preview: a button each for 5, 10, 20 and 40")
+    Core.Selection.Select(window)
+    local twenty
+    for _, widget in ipairs(W.frames) do
+        if widget._template == "UIPanelButtonTemplate" and widget._text == "20" and widget._parent
+            and widget._parent._parent == window.settingRows then twenty = widget end
+    end
+    twenty:GetScript("OnClick")(twenty)
+    check(ns.options.groupPreview == 20 and Shown() == 20 and twenty._lit, "20 clicked: twenty in the preview, its button lit")
+    Core.Selection.Clear()
+    Core.Set(ns.name, "groupPreview", 5)
     -- Its box dragged by a side (Core's resize): the preview follows as the mouse goes, the size kept once let go.
     check(window.edges and #window.edges == 8 and window.edges[1]:IsShown(), "its box: a grip at each corner and side")
     window.options.resize.sized(600, 100, false)
@@ -1046,7 +1053,6 @@ do
     Core.Set(ns.name, "groupHeight", 140)
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(W.drivers[live] and W.drivers[live].values == Group.SHOWN and not host._shown, "after Edit Mode: the live frames again")
-    check(not Group.Cycling(), "and the setup's cycle over with it")
     -- The setup's own sample: as many in a frame of its own, at the size the settings keep.
     local sampleFrame = CreateFrame("Frame", nil, UIParent)
     local sampleWidth, sampleHeight = Group.Sample(sampleFrame, 20)
@@ -1662,6 +1668,14 @@ do
         "last when it shows: Show only on mouseover, under it Always show in combat and in a group")
     targetWindow.options.set("unitTargetWidth", 300)
     check(target._width == 300 and focus._width == 240, "a frame's width its own")
+    local power = target.face.powers[1].value
+    check(power._points[1][1] == "LEFT" and Core.Described(ns.name, "unitTargetPowerRight").default == false,
+        "its resource numbers at first on their bar's left")
+    targetWindow.options.set("unitTargetPowerRight", true)
+    check(power._points[1][1] == "RIGHT" and power._points[1][3] == "RIGHT"
+        and focus.face.powers[1].value._points[1][1] == "LEFT", "Resource numbers on the right: on its right, that frame's alone")
+    targetWindow.options.set("unitTargetPowerRight", false)
+    check(power._points[1][1] == "LEFT", "unticked: back on the left")
     targetWindow.options.set("unitTargetPercent", false)
     check(target.face.value._text == "1.1k", "health without its share")
     targetWindow.options.set("unitTargetHealth", false)

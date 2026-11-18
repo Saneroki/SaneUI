@@ -20,14 +20,31 @@ local Core = SaneUI.Core
 --  tick with its words (check; Saneroki, 2026-11-18: in Edit Mode "options
 --  there where you can define the width of the unit frames and [...] what each
 --  frame includes"), a little in and greyed out while the tick it is under is
---  off (parent). What a row changes shows at once.
+--  off (parent: a key, or a list of them, all on), or a button for each of a few
+--  choices side by side, the one chosen lit (choices = { { value, words }, ... };
+--  the party and raid frames' preview: 5, 10, 20, 40). What a row changes shows
+--  at once.
+--
+--  A window with a hot corner (its option edge, the settings of a module that
+--  holds the section Expand window, Edge.Options) brings more rows after its own
+--  (Saneroki, 2026-11-18: "add in the edit widget options window there if hot
+--  corners are active, require left click and the button to change or define
+--  the keybind to open its window"): its module's Can expand to fullscreen,
+--  Hotcorner and Hotcorner requires leftclick, in the module's own words, each
+--  under the one before, set as the options page sets them (Core.Set); and with
+--  its option binding (the key that opens it: "SANEUI_MAP"), a key box, the one
+--  of the setups (the addon Onboarding's, read for it; Controls: click it, press
+--  the key, right click for none). A row's own get and set stand in for the
+--  window's.
 --
 --      Core.Window.New(frame, { ...,
 --          settings = { { key = "width", text = "Max width", min = 100, max = 1600, step = 10 },
 --                       { key = "count", text = "Preview", min = 0, max = 40, input = true },
 --                       { key = "level", text = "Level", check = true },
---                       { key = "levelMax", text = "Hide at max level", check = true, parent = "level" } },
---          get = function(key) return value end,  set = function(key, value) end })
+--                       { key = "levelMax", text = "Hide at max level", check = true, parent = "level" },
+--                       { key = "preview", text = "Preview", choices = { { 5, "5" }, { 10, "10" } } } },
+--          get = function(key) return value end,  set = function(key, value) end,
+--          binding = "SANEUI_MAP" })
 --
 --      Core.Selection.Select(window)   Core.Selection.Clear()   Core.Selection.window
 -------------------------------------------------------------------------------
@@ -42,7 +59,12 @@ Selection.CHECK, Selection.UNDER = 26, 20   -- a tick's row: its height; one und
 Selection.NUMBER, Selection.FIELD = 44, 64  -- the room for a slider's number at its right, a field's width
 -- Where the dialog stands at first: where Edit Mode's own stands for a frame that names no other place.
 Selection.ANCHOR = { "BOTTOMRIGHT", -250, 200 }
-local TEXT = { reset = Core.Word("HUD_EDIT_MODE_RESET_POSITION", "Reset To Default Position") }
+Selection.KEY = 40                          -- a key's row (the setups' key box)
+local TEXT = { reset = Core.Word("HUD_EDIT_MODE_RESET_POSITION", "Reset To Default Position"),
+               key = "Key to open it",
+               keyTip = "Click the box, then press the key, with Shift, Ctrl or Alt held if you like. Right click: no key.",
+               keyElsewhere = "Its key: Esc > Options > Keybindings, SaneUI" }
+Selection.TEXT = TEXT
 
 local dialog
 
@@ -57,9 +79,18 @@ local function Height(rows)
     return Selection.PADDING * 2 + 24 + 12 + Selection.BUTTON + (rows or 0)
 end
 
--- A row's height: a tick's is lower than a slider's.
+-- A row's height: a tick's is lower than a slider's, a key's higher.
 local function RowHeight(setting)
+    if setting.binding then return Selection.KEY end
     return setting.check and Selection.CHECK or Selection.ROW
+end
+
+-- A row's value and its change: its own get and set (a module's switch the dialog brings, Extra), else the window's.
+local function Get(window, setting, key)
+    return (setting.get or window.options.get)(key or setting.key)
+end
+local function Set(window, setting, value)
+    return (setting.set or window.options.set)(setting.key, value)
 end
 
 -- A setting's new value, within its limits and on its steps.
@@ -68,7 +99,17 @@ local function Put(window, setting, value)
     if not value then return end
     local step = setting.step or 1
     value = math.floor(value / step + 0.5) * step
-    window.options.set(setting.key, math.max(math.min(value, setting.max), setting.min))
+    Set(window, setting, math.max(math.min(value, setting.max), setting.min))
+end
+
+-- Whether the ticks a row stands under are all on.
+local function Open(window, setting)
+    local parents = setting.parent
+    if parents == nil then return true end
+    for _, key in ipairs(type(parents) == "table" and parents or { parents }) do
+        if Get(window, setting, key) == false then return false end
+    end
+    return true
 end
 
 -- A row's slider: the game's, with its steppers and the number at its right.
@@ -77,12 +118,12 @@ local function Slider(row, setting, window)
     local slider = CreateFrame("Frame", nil, row, "MinimalSliderWithSteppersTemplate")
     slider:SetPoint("LEFT", row, "LEFT", Selection.LABEL, 0)
     slider:SetPoint("RIGHT", row, "RIGHT", -Selection.NUMBER, 0)
-    slider:Init(window.options.get(setting.key), setting.min, setting.max, (setting.max - setting.min) / (setting.step or 1),
+    slider:Init(Get(window, setting), setting.min, setting.max, (setting.max - setting.min) / (setting.step or 1),
         { [mixin.Label.Right] = function(value) return tostring(math.floor(value + 0.5)) end })
     slider:RegisterCallback(mixin.Event.OnValueChanged, Core.Guard("Edit Mode", function(_, value)
         Put(window, setting, value)
     end), row)
-    return function() slider:SetValue(window.options.get(setting.key)) end
+    return function() slider:SetValue(Get(window, setting)) end
 end
 
 -- A row's tick: on or off as the window keeps it (nil counts as on), set at a click; greyed out while the tick it is
@@ -96,14 +137,39 @@ local function Check(row, setting, window, word)
     word:SetPoint("LEFT", box, "RIGHT", 4, 0)
     word:SetPoint("RIGHT", row, "RIGHT", 0, 0)
     box:SetScript("OnClick", Core.Guard("Edit Mode", function(self)
-        window.options.set(setting.key, self:GetChecked() and true or false)
+        Set(window, setting, self:GetChecked() and true or false)
         Selection.Moved(window) -- the rows shown anew: the ticks under this one open or greyed out
     end))
     return function()
-        box:SetChecked(window.options.get(setting.key) ~= false)
-        local open = not setting.parent or window.options.get(setting.parent) ~= false
+        box:SetChecked(Get(window, setting) ~= false)
+        local open = Open(window, setting)
         box:SetEnabled(open)
         word:SetAlpha(open and 1 or 0.5)
+    end
+end
+
+-- A row's choices: a button for each, side by side right of its words, the one chosen lit (as the game's own buttons
+-- are while held: LockHighlight); a click chooses it.
+local function Choices(row, setting, window)
+    local buttons, count = {}, #setting.choices
+    local room = Selection.WIDTH - 2 * Selection.PADDING - Selection.LABEL
+    local each = math.floor((room - (count - 1) * 4) / count)
+    for index, choice in ipairs(setting.choices) do
+        local button = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+        button:SetSize(each, 22)
+        button:SetPoint("LEFT", row, "LEFT", Selection.LABEL + (index - 1) * (each + 4), 0)
+        button:SetText(choice[2])
+        button:SetScript("OnClick", Core.Guard("Edit Mode", function()
+            Set(window, setting, choice[1])
+            Selection.Moved(window)
+        end))
+        buttons[index] = button
+    end
+    return function()
+        local now = Get(window, setting)
+        for index, button in ipairs(buttons) do
+            if setting.choices[index][1] == now then button:LockHighlight() else button:UnlockHighlight() end
+        end
     end
 end
 
@@ -117,7 +183,7 @@ local function Field(row, setting, window)
     box:SetMaxLetters(#tostring(setting.max))
     box:SetJustifyH("CENTER")
     local function Shown()
-        box:SetText(tostring(window.options.get(setting.key)))
+        box:SetText(tostring(Get(window, setting)))
         box:SetCursorPosition(0)
     end
     box:SetScript("OnTextChanged", Core.Guard("Edit Mode", function(_, typed)
@@ -130,6 +196,62 @@ local function Field(row, setting, window)
     return Shown
 end
 
+-- A row's key box: the setups' own (Onboarding's Controls, its addon read for it), its words beside it; where that
+-- addon cannot be read, the words say where the game sets it.
+local function Key(row, setting, word)
+    local controls = Core.Onboarding and Core.Onboarding.Controls and Core.Onboarding.Controls()
+    if not controls then
+        word:SetWidth(Selection.WIDTH - 2 * Selection.PADDING)
+        word:SetText(TEXT.keyElsewhere)
+        return function() end
+    end
+    word:SetText("")
+    local holder = controls.Build(row, setting.name, { { binding = setting.binding, text = setting.text, tip = setting.tip } },
+        Selection.WIDTH - 2 * Selection.PADDING)
+    holder:SetPoint("LEFT", row, "LEFT", 0, 0)
+    row.keys = holder
+    return function() controls.Refresh(holder, setting.name) end
+end
+
+-- The module whose settings these are (the table Core.Settings gives it), nil for none.
+local function Owner(settings)
+    for name in pairs(Core.described) do
+        if Core.Settings(name) == settings then return name end
+    end
+    return nil
+end
+
+-- Each of the section's switches the dialog shows, and the one it stands under.
+Selection.EDGE = { { "expand" }, { "expandCorner", "expand" }, { "expandClick", { "expand", "expandCorner" } } }
+
+-- A window's rows: its own settings, then its hot corner's switches and its key (above). Made once a window.
+local function Extra(window)
+    if window.dialogSettings then return window.dialogSettings end
+    local list = {}
+    for _, setting in ipairs(window.options.settings or {}) do list[#list + 1] = setting end
+    local settings = window.edge and window.options.edge
+    local name = type(settings) == "table" and Owner(settings) or nil
+    if name then
+        local get = function(key) return settings[key] end
+        local set = function(key, value) Core.Set(name, key, value) end
+        for _, entry in ipairs(Selection.EDGE) do
+            local option = Core.Described(name, entry[1])
+            if option and option.text then
+                list[#list + 1] = { key = entry[1], text = option.text, check = true, parent = entry[2], get = get, set = set }
+            end
+        end
+    end
+    local binding = window.options.binding
+    if type(binding) == "string" then
+        local named = rawget(_G, "BINDING_NAME_" .. binding)
+        list[#list + 1] = { key = binding, binding = binding, name = name or Core.name, text = TEXT.key,
+                            tip = (type(named) == "string" and named .. "\n" or "") .. TEXT.keyTip }
+    end
+    window.dialogSettings = list
+    return list
+end
+Selection.Extra = Extra
+
 -- The rows of a window's settings, made when it is first chosen; each row's way to show its value anew.
 local function Rows(window)
     if window.settingRows then return window.settingRows end
@@ -138,7 +260,7 @@ local function Rows(window)
     rows:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -Selection.PADDING, -(Selection.PADDING + 24))
     rows.shows = {}
     local y = 0
-    for index, setting in ipairs(window.options.settings) do
+    for index, setting in ipairs(Extra(window)) do
         local height = RowHeight(setting)
         local row = CreateFrame("Frame", nil, rows)
         row:SetHeight(height)
@@ -151,7 +273,11 @@ local function Rows(window)
         word:SetJustifyH("LEFT")
         word:SetText(setting.text)
         local sliders = rawget(_G, "MinimalSliderWithSteppersMixin") ~= nil
-        if setting.check then
+        if setting.binding then
+            rows.shows[index] = Key(row, setting, word)
+        elseif setting.choices then
+            rows.shows[index] = Choices(row, setting, window)
+        elseif setting.check then
             rows.shows[index] = Check(row, setting, window, word)
         else
             rows.shows[index] = (setting.input or not sliders) and Field(row, setting, window) or Slider(row, setting, window)
@@ -169,7 +295,7 @@ local function Update()
     if not (dialog and window) then return end
     dialog.title:SetText(window.options.title or "")
     dialog.reset:SetEnabled(not Default(window))
-    local settings = window.options.settings
+    local settings = #Extra(window) > 0
     if settings then
         for _, show in ipairs(Rows(window).shows) do Core.Safe("Edit Mode", show) end
     end

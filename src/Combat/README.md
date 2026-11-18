@@ -58,11 +58,11 @@ Sunder Armor), as you choose, nothing fixed.
   page: ticked, the game's own is the one; a pick changes only that, the full screen stays.
 - **Set it up step by step:** the button at the top of its page, or `/sane setup combat` (`/sane setup nameplates`
   opens it at the nameplates' first page); the first time by itself. Its pages: the parts; your unit frames; the party
-  and raid frames, their sample going through 5, 10, 20 and 40 players a few seconds each (click a number to hold it),
-  and *Place and size in Edit Mode*: the game's own Edit Mode opens, the setup steps aside until you leave it, the
-  frame's box has a grip at each corner and a handle on each side to size it, and its preview goes through 5, 10, 20
-  and 40 meanwhile; then the nameplates' pages (`Nameplates/README.md`), last aura tracking. Each sample shows each
-  choice at once, faint while its part is the game's.
+  and raid frames, their sample with 5, 10, 20 or 40 players (click a number: Edit Mode's preview shows the same; nothing
+  goes through them by itself), and *Place and size in Edit Mode*: the game's own Edit Mode opens, the setup steps aside
+  until you leave it, the frame's box has a grip at each corner and a handle on each side to size it; then the
+  nameplates' pages (`Nameplates/README.md`), aura tracking, last when your frames show. Each sample shows each choice
+  at once, faint while its part is the game's.
 - **The red error text:** the switch *Hide the red error text* (on at first): the game's red line at the top of the screen and
   its sound are gone, always. Yellow lines stay.
 - **Quest marks beside nameplates:** a creature that belongs to a quest in your log shows a small mark left of
@@ -200,7 +200,7 @@ Sunder Armor), as you choose, nothing fixed.
   game's rule. Esc or its close button closes it. *Restrict pings* and the game's filters for its own raid frames are not in it.
 - **Its sizes and preview:** in Edit Mode, drag a corner or a side of its box to size it as the mouse goes (Saneroki,
   2026-11-18: "a dragable corner to resize it by draging corners or sides"), or click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
-  and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
+  and *Preview*, a button each for 5, 10, 20 and 40 (Saneroki, 2026-11-18: "it does not cycle on its own through the 5 10 20 40 looks on its own but have it as previews in its edit frame options"): that many made-up units show, your own slot first, with random health, mana, raid
   markers, ready checks, aggro, the dead and offline, your auras' icons, a foe and a pet beside a party's members, barriers, lost health and dispels; they stay the same while you
   slide the sizes. A slot is a fifth of the max height high, whoever is there, so five fill the window even with three in the party. It is as
   wide as the max unit width (at first as wide as your unit frames), and only where the columns in use would not fit into the max width do all
@@ -364,18 +364,19 @@ Sunder Armor), as you choose, nothing fixed.
   `tracking`) with the nameplates' (`ns.Setup.STEPS` but `intro`, each copied with its title headed *Nameplates*)
   before `tracking`; `aliases = { nameplates = "size" }`. Its stage: the nameplates' boards (`ns.Setup.Stage`) and its
   own (`DRAW`), faint (`Guide.FAINT`) while its part is the game's. The party's board: `Group.Sample(frame, count)`
-  scaled to fit, the numbers' tabs over it, its `OnUpdate` going through `Group.CYCLE` every `Group.CYCLE_SECONDS`
-  until a tab holds one. *Place and size in Edit Mode* is Onboarding's command control (`{ macro = "/editmode",
-  command = "EDITMODE", done }`): the game's secure button runs the game's own `/editmode`, then `done` starts
-  `Group.Cycle(true)`; Onboarding's window steps aside while Edit Mode is open. The unit frames' board: made-up faces
+  scaled to fit, the numbers' tabs over it (`Group.PREVIEWS`), the one of `groupPreview` lit; a tab sets it, so Edit
+  Mode's preview shows the same; nothing goes through them by itself. *Place and size in Edit Mode* is Onboarding's
+  command control (`{ macro = "/editmode", command = "EDITMODE" }`): the game's secure button runs the game's own
+  `/editmode`; Onboarding's window steps aside while Edit Mode is open. The last step, `sight`: when your three
+  frames show. The unit frames' board: made-up faces
   of the group frames (`GroupFace.Make`, `Sample`), the same look.
 - **The party and raid frames in Edit Mode, sized by the mouse** (`Units/Group.lua`): the window's option `resize`
   (Core's `Window.Edges`: a grip at each corner, a handle along each side): `sized(width, height, done)` is
   `Group.Dragged`: while dragged, `Limits()` gives the size in hand and the preview is laid out anew at each step;
   let go, `groupWidth` and `groupHeight` (whole pixels) and the window keeps its place. The preview is a pool
   (`Pool`: its parent, samples, faces, those beside a party) laid out by `Lay(pool, count, width, height, unit)`:
-  Edit Mode's, and one per frame for the setup (`Group.Sample`). `Group.Cycle(on)`: the count from `Group.CYCLE`,
-  the next every `Group.CYCLE_SECONDS` (the preview's `OnUpdate`), until Edit Mode closes.
+  Edit Mode's, and one per frame for the setup (`Group.Sample`). How many: `groupPreview`, one of `Group.PREVIEWS`
+  in its dialog (Core's `Selection.lua`, a row of `choices`).
 - **Mouse rings** (`MouseRings.lua`): a hidden holder at the `TOOLTIP` strata with two `Cooldown` widgets, their swipes Core's rings
   (`Shape.RING`, `RING_WIDE`) in `Rings.ALPHA`, both turned by `Rings.TURN` so they start and end on the line from their centre to the cursor's tip
   (the widget turns as a texture does, counter-clockwise). Above them a frame with the leading line and its glow, the game's cast bar spark twice, added
@@ -404,7 +405,9 @@ Sunder Armor), as you choose, nothing fixed.
 - **The red error text** (`ErrorText.lua`). No CVar does this. `UIErrorsFrame` hears `UI_ERROR_MESSAGE`; the game's own `/uierrorsoff`
   stops that and mutes every sound effect (`Sound_EnableSFX`). Here the event alone, given back at standing down.
 - **Each frame's choices and preview in Edit Mode** (`Units.lua`, `Text.lua`, Saneroki 2026-11-18): `ns.FRAME_SHOWS`
-  (`Combat.lua`) lists them: *Width*, the pieces and when it shows (*Out of sight at rest*, below), each a key per frame (its setting and the suffix: `unitTargetLevel`,
+  (`Combat.lua`) lists them: *Width*, the pieces, *Resource numbers on the right* (`…PowerRight`, off: at its bar's
+  left; `Text.PowerSide`; Saneroki, 2026-11-18: "a checkbox that toggles to have the class resource numbers left or
+  right anchored") and when it shows (*Out of sight at rest*, below), each a key per frame (its setting and the suffix: `unitTargetLevel`,
   `unitPlayerWidth`), none with a control on the options page. `Settings(kind)` makes the frame's window's dialog rows
   from it (Core's `Selection.lua`: a slider, ticks, the level's top under the level); `Kind` sizes the button
   (`SetWidth`, out of a fight) and gives the face what it shows (`face.show`, `Shows(kind)`). `Text.lua` reads it
@@ -788,7 +791,7 @@ Sunder Armor), as you choose, nothing fixed.
 | `Combat.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its switches (`ns.OPTIONS`: *Ours or the game's*, the unit frames, the group frames, the quest marks, the rings, the meter, the reminders), what a change tells each part (`ns.Changed`), its parts in Core's *Classic windows*, `GiveBack`, the start |
 | `Nameplates/` | The nameplates: the game's plates in our dress, the combat text, their words, switches and setup steps ([their README](Nameplates/README.md)) |
 | `Settings.lua` | The module's switches handed to Core once every part added its own |
-| `Setup.lua` | Combat's setup, step by step: the parts, the unit frames, the party and raid frames (their preview of 5, 10, 20 and 40, Edit Mode), the nameplates' steps, aura tracking |
+| `Setup.lua` | Combat's setup, step by step: the parts, the unit frames, the party and raid frames (their preview of 5, 10, 20 or 40, Edit Mode), the nameplates' steps, aura tracking, when your frames show |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar (your target's and focus's red on a foe), the power bars under it (your druid's mana and form), the row |

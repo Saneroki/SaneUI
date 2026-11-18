@@ -254,7 +254,8 @@ for _, widget in ipairs(W.frames) do if widget._strata == nil and widget._script
 check(watcher == nil, "nothing looks at the mouse before a window is dragged")
 at(frame, 600, 400)
 bar:GetScript("OnDragStart")(bar)
-for _, widget in ipairs(W.frames) do if widget._scripts.OnUpdate then watcher = widget end end
+-- Dock's (the guide lines' watch, Arrange.lua, stands in the layer HIGH)
+for _, widget in ipairs(W.frames) do if widget._scripts.OnUpdate and widget._strata == nil then watcher = widget end end
 for index, widget in ipairs(W.frames) do if widget == watcher then ghost = W.frames[index - 2] end end
 check(frame._moving and watcher:IsShown() and not ghost:IsShown(), "dragged by its box it moves, and its place is watched")
 at(frame, 20, 800)
@@ -1514,11 +1515,13 @@ do
     check(panel.reset:IsEnabled(), "moved, the dialog can put it back")
     -- A window of another scale than the screen's is snapped in the screen's units (its edges where they are on
     -- the screen) and kept in its own: at 226, 994 of its own it stands at 113, 497 of the screen's
+    picked:Hide() -- its edges would draw guide lines for this one (below): here the grid alone
     at(small, 226, 994)
     smallWindow.box:GetScript("OnDragStart")(smallWindow.box)
     smallWindow.box:GetScript("OnDragStop")(smallWindow.box)
     check(smallStore.place.x == 220 and smallStore.place.y == 1080 and stands(small, "TOPLEFT", 220, 1080),
         "a scaled window snaps where its edges are on the screen, and is kept in its own units")
+    picked:Show()
     snapping = false
     at(picked, 113, 497)
     pickedBox:GetScript("OnDragStart")(pickedBox)
@@ -1527,6 +1530,111 @@ do
     panel.reset:GetScript("OnClick")(panel.reset)
     check(pickedStore.place == nil and picked._points[1][1] == "CENTER" and not panel.reset:IsEnabled(),
         "Reset To Default Position puts it at its first place and size")
+
+    -- SaneUI's panel in Edit Mode, its two ticks, and the red guide lines while a window is dragged, as the game's own
+    -- frames have them (Arrange.lua; Saneroki, 2026-11-18). A function of its own: the main chunk's locals.
+    ;(function()
+        local Arrange = Core.Arrange
+        local snap = Arrange.Panel()
+        check(snap and snap:IsShown() and snap.title._text == "SaneUI" and snap.corners:GetChecked() == true
+            and snap.grid:GetChecked() == false, "Edit Mode open: SaneUI's panel, Snap to hot corners ticked, Snap to grid not")
+        snapping = true
+        small:Hide()
+        local function Drag(left, bottom)
+            at(picked, left, bottom)
+            pickedBox:GetScript("OnDragStart")(pickedBox)
+            Arrange.Look()
+            return Arrange.Lines()
+        end
+        local function Drop() pickedBox:GetScript("OnDragStop")(pickedBox) end
+        local lines = Drag(960 - 150 + 5, 300) -- its middle 5 right of the screen's
+        check(lines.x:IsShown() and lines.x._points[1][4] == 960 and lines.x._texture[1] == 1 and lines.x._texture[2] == 0
+            and lines.x._width > 0, "its middle near the screen's: a thin red line down the screen's middle")
+        Drop()
+        check(pickedStore.place.x == 810 and not Arrange.Lines().x:IsShown(), "let go: its middle on the screen's, the line gone")
+        small:Show()
+        at(small, 400, 200) -- half the screen's scale: its left at 200 of the screen's
+        lines = Drag(203, 300)
+        check(lines.x:IsShown() and lines.x._points[1][4] == 200, "near another window's left edge: a line along it")
+        Drop()
+        check(pickedStore.place.x == 200, "let go: on it")
+        small:Hide()
+        local system = CreateFrame("Frame", nil, UIParent) -- a frame of the game's in Edit Mode, with its box
+        system._left, system._bottom, system._width, system._height = 1500, 700, 100, 100
+        system.Selection = CreateFrame("Frame", nil, system)
+        manager.registeredSystemFrames = { system }
+        lines = Drag(1500 - 300 - 4, 300)
+        check(lines.x:IsShown() and lines.x._points[1][4] == 1500, "its right edge near a frame of the game's: a line along that frame's left")
+        Drop()
+        check(pickedStore.place.x == 1200, "let go: beside it")
+        manager.registeredSystemFrames = nil
+        snapping = false
+        lines = Drag(815, 300)
+        check(not lines.x:IsShown(), "the game's Snap off: no lines, as the game's own frames")
+        Drop()
+        check(pickedStore.place.x == 815, "and it stays where it was let go")
+        snap.grid:SetChecked(true)
+        snap.grid:GetScript("OnClick")(snap.grid)
+        check(Core.general.snapGrid == true, "Snap to grid ticked: kept in Core's settings")
+        Drag(833, 300)
+        Drop()
+        check(pickedStore.place.x == 810 and pickedStore.place.y == 490,
+            "Snap to grid: let go anywhere, onto the nearest lines of the grid, the game's Snap off and all")
+        snap.grid:SetChecked(false)
+        snap.grid:GetScript("OnClick")(snap.grid)
+        Drag(1920 - 300 - 5, 3)
+        Drop()
+        check(pickedStore.place.dock == "BOTTOMRIGHT", "near the screen's lower right corner it docks there")
+        snap.corners:SetChecked(false)
+        snap.corners:GetScript("OnClick")(snap.corners)
+        Drag(1920 - 300 - 5, 3)
+        Drop()
+        check(Core.general.snapCorners == false and pickedStore.place.dock == nil and pickedStore.place.x == 1615,
+            "Snap to hot corners off: it stays exactly where it was let go")
+        Core.Set(Core.name, "snapCorners", true)
+        check(snap.corners:GetChecked() == true, "set elsewhere: the tick follows")
+        panel.reset:GetScript("OnClick")(panel.reset)
+    end)()
+
+    -- A window with a hot corner: its module's Can expand to fullscreen, Hotcorner and Hotcorner requires leftclick in
+    -- its dialog, and its key (Selection.lua; Saneroki, 2026-11-18).
+    ;(function()
+        local list = {}
+        Core.Edge.Options(list, 1)
+        Core.Options("Lantern", list)
+        local settings = Core.Settings("Lantern")
+        local lantern = CreateFrame("Frame", nil, UIParent)
+        lantern:SetSize(200, 200)
+        local lanternWindow = Window.New(lantern, { store = {}, title = "Lantern", edge = settings, binding = "SANEUI_LANTERN",
+            first = { dock = "TOPRIGHT" } })
+        lanternWindow:Place()
+        EventRegistry:TriggerEvent("EditMode.Exit")
+        EventRegistry:TriggerEvent("EditMode.Enter")
+        lanternWindow.box:GetScript("OnMouseDown")(lanternWindow.box)
+        local rows = Core.Selection.Extra(lanternWindow)
+        check(#rows == 4 and rows[1].key == "expand" and rows[1].text == Core.Described("Lantern", "expand").text
+            and rows[2].key == "expandCorner" and rows[2].text == "Hotcorner" and rows[2].parent == "expand"
+            and rows[3].key == "expandClick" and rows[3].parent[2] == "expandCorner" and rows[4].binding == "SANEUI_LANTERN",
+            "its dialog: Can expand to fullscreen, Hotcorner under it, requires leftclick under that, then its key")
+        local made = lanternWindow.settingRows
+        check(made and made:IsShown() and #made.shows == 4, "the rows made as it is chosen")
+        local function Box(index)
+            for _, widget in ipairs(W.frames) do
+                if widget._template == "UICheckButtonTemplate" and widget._parent and widget._parent._parent == made then
+                    index = index - 1
+                    if index == 0 then return widget end
+                end
+            end
+        end
+        local corner, click = Box(2), Box(3)
+        check(corner:GetChecked() == true and click:IsEnabled(), "at first the hot corner on, its left click open")
+        corner:SetChecked(false)
+        corner:GetScript("OnClick")(corner)
+        check(settings.expandCorner == false and not click:IsEnabled(), "Hotcorner off: set in the module's settings, its left click greyed out")
+        Core.Set("Lantern", "expandCorner", true)
+        lantern:Hide()
+        Core.Selection.Clear()
+    end)()
     talkWindow.box:GetScript("OnMouseDown")(talkWindow.box)
     check(selection.window == talkWindow and pickedBox.Center._atlas == "editmode-actionbar-highlight"
         and talkWindow.box.Center._atlas == "editmode-actionbar-selected" and panel.title._text == "Vendor",
@@ -1535,6 +1643,7 @@ do
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(not panel:IsShown() and selection.window == nil and talkWindow.box.Center._atlas == "editmode-actionbar-highlight",
         "Edit Mode closed, nothing is chosen and the dialog is gone")
+    check(not Core.Arrange.Panel():IsShown(), "and SaneUI's panel with it")
     picked:Hide()
     small:Hide()
     manager.IsSnapEnabled, manager.Grid = nil, nil

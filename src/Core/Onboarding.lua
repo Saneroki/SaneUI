@@ -205,6 +205,15 @@ local function Load()
     return loaded == true
 end
 
+-- The setups' controls (the addon's Controls: its key box for Core's dialog in Edit Mode, Selection.lua), the addon
+-- read for them; nil where it cannot be.
+function Onboarding.Controls()
+    if not Load() then return nil end
+    local addon = rawget(SaneUI, "Onboarding")
+    if type(addon) ~= "table" or addon.off or type(addon.Controls) ~= "table" then return nil end
+    return addon.Controls
+end
+
 -- The window on a module's setup (name nil: the run's first page). Out of a fight (Go waits for its end). Whether
 -- it shows.
 local function Show(name, step, quiet)

@@ -51,6 +51,9 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 - **Edit Mode** opened while it shows (a step's button for it, as Combat's *Place and size in Edit Mode*, or the game's
   menu): the window steps aside until Edit Mode closes, then comes back at the same step, its sample drawn anew
   (Saneroki, 2026-11-18: "During the edit mode the setup window is temporarily hiden until you exit edit mode again").
+- **Other windows out of the way:** as the window opens, and again just before a step's Edit Mode button acts, the
+  game's options window and its Esc menu close, each the game's own way (Saneroki, 2026-11-18: "When People start the
+  onboarding menu other windows should be closed, like for example the esc -> options window").
 - **Switched off** in the addon list (under SaneUI), no setup opens; `/sane setup` says where to switch it on.
 
 ## Technical details
@@ -86,6 +89,9 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   command (Edit Mode opens as from its menu, nothing of ours in its way); there while the row shows and out of a fight,
   gone at `PLAYER_REGEN_DISABLED`, before the game locks it, back after it; following the row while the window is
   dragged (the row's `OnUpdate`); `done` after it (`PostClick`); without `SLASH_<command>1` the click says `missing`;
+  it acts on the release, as it is registered (`useOnKeyDown` false: unset, the game's key-down setting, on at first,
+  has the template act on the press alone, which it never hears, and the click did nothing; Saneroki, 2026-11-18: "The
+  button for entering edit mode in the onbording process does not work"); before it acts (`PreClick`), `Window.Clear`;
   Combat's *Place and size in Edit Mode*), and set through `Core.Set`,
   as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it. A
   choice's value may be a table of several switches (`{ expand = true, expandCorner = false }`: Social's hot corner, not
@@ -166,6 +172,10 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — The Edit Mode button works (`Controls.lua`: `useOnKeyDown` false, it acts on the release); `Window.Clear`
+  closes the game's options (`SettingsPanel:Close(true)`) and its menu (`HideUIPanel`) as the window opens and before
+  that button acts, out of a fight. `Controls` read by Core (`Core.Onboarding.Controls`) for the key box in Core's
+  Edit Mode dialog (`Selection.lua`).
 - 2026-11-18 — A command of the game's as a step's control (`Controls.lua`, `Command`: the game's secure button runs
   its `/editmode` over a plain one), the window out of sight while Edit Mode is open and back after it (`Window.lua`),
   for Combat's setup, which holds the nameplates' now ("a onboarding for our combat module that integrates the

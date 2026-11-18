@@ -13,6 +13,7 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - The quest log on the screen is always in sight at first. It can show only on mouseover, and still show in combat
   and in a group if you like: on the setup's quest log page, or its box in Edit Mode.
 - A key for SaneUI's map (Key Bindings, under SaneUI); once it has one, the game's map key opens the game's own map.
+  Click the map's box in Edit Mode to set it there, beside its hot corner's switches.
 - A right click on the map no longer zooms out: the wheel zooms, a right click is for what a thing offers.
 - Navigation: eight colours, three widths, one to one with the dungeon map addon
 - Navigation: sketches both ways with a dungeon map addon

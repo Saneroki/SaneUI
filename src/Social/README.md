@@ -13,7 +13,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Move and size,** as the game's own frames: only in Blizzard's Edit Mode (Esc > Edit Mode). There the
   window shows Edit Mode's blue box, with *Social* on it while the mouse is on it: drag the box to move
   it, the grip in its lower right corner to size it. Smallest size 180 × 130. Place and size are kept.
-  Outside Edit Mode it has no grip and stays where it is.
+  Outside Edit Mode it has no grip and stays where it is. A click on the box: its dialog has *Can expand to
+  fullscreen*, *Hotcorner*, *Hotcorner requires leftclick* and a box for the key of its full screen
+  (`SANEUI_SOCIAL_FULL`; Core's `Selection.lua`).
 - **Dock:** in Edit Mode, let the window go near a corner of the screen or the middle of one of its edges, and it
   snaps there (a tinted shape shows where). It then
   stays at that edge at any size; the grip moves to a corner that is not at the screen's edge. Drag it

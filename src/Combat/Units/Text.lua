@@ -178,6 +178,24 @@ function Text.Make(face)
     face.rowName:SetPoint("RIGHT", face.row, "RIGHT", 1 - Text.INSET, 0)
 end
 
+-- A frame's resource numbers on their bar's left (as made), or on its right with its tick Resource numbers on the right
+-- (face.show.powerRight; Saneroki, 2026-11-18). Its own powers' only: the row's stay at the left.
+function Text.PowerSide(face)
+    local right = face.show ~= nil and face.show.powerRight == true
+    for _, power in ipairs({ face.powers[1], face.powers[2] }) do
+        local value = power and power.value
+        if value then
+            value:ClearAllPoints()
+            if right then
+                value:SetPoint("RIGHT", power, "RIGHT", 1 - Text.INSET, 0)
+            else
+                value:SetPoint("LEFT", power, "LEFT", Text.INSET - 1, 0)
+            end
+            value:SetJustifyH(right and "RIGHT" or "LEFT")
+        end
+    end
+end
+
 -- The name's room: from the item level's right (none: as wide as nothing, after the raid marker) to the health's left.
 function Text.Layout(face)
     local right, gap = face.room.right, face.gap

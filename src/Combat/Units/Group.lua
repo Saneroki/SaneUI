@@ -53,11 +53,11 @@ local _, ns = ...
 --  handle along each side (Core's window option resize; Saneroki, 2026-11-18:
 --  "a dragable corner to resize it by draging corners or sides"): dragged, the
 --  preview follows the size as the mouse goes, and let go, the size is its Max
---  width and Max height. Opened from Combat's setup (Group.Cycle; Saneroki:
---  "the preview cycles through 5, 10, 20 and 40 party members view"), the
---  preview goes through 5, 10, 20 and 40 units, a few seconds each, until Edit
---  Mode closes. The setup's own sample is the same layout in its stage
---  (Group.Sample).
+--  width and Max height. How many units it previews is chosen in its dialog:
+--  5, 10, 20 or 40 (Group.PREVIEWS; Saneroki, 2026-11-18: "it does not cycle
+--  on its own through the 5 10 20 40 looks on its own but have it as previews
+--  in its edit frame options"), the same choice as the numbers over the
+--  setup's sample, the same layout in its stage (Group.Sample).
 --
 --  The game's party frame, raid container and the raid manager at the screen's
 --  edge stand in a hidden frame of ours while ours shows (Core.Lend), with their
@@ -76,13 +76,15 @@ Group.GAME = { "PartyFrame", "CompactRaidFrameContainer", "CompactRaidFrameManag
 Group.SHOWN = "[group] show; hide"                         -- when the live frames show
 Group.BESIDE_SHOWN = "[group:raid] hide; [group] show; hide" -- when the column beside a party shows
 Group.READ = 0.25 -- seconds between two reads of the members' targets beside a party
+Group.PREVIEWS = { 5, 10, 20, 40 } -- the units its preview can show: a party, then raids
 -- What can be chosen in Edit Mode (each also an option of the module, Combat.lua).
 Group.SETTINGS = {
     { key = "groupWidth", min = 100, max = 2000, step = 10 },
     { key = "groupHeight", min = 30, max = 800, step = 5 },
     { key = "groupUnitWidth", min = 40, max = 400, step = 5 },
-    { key = "groupPreview", min = 0, max = Group.GROUPS * Group.PER_GROUP, input = true },
+    { key = "groupPreview", choices = {} },
 }
+for index, count in ipairs(Group.PREVIEWS) do Group.SETTINGS[4].choices[index] = { count, tostring(count) } end
 
 local holder, window, live, preview, box -- the window, the live frames' parent, the preview's parent, the game's hidden frame
 local headers, lends = {}, nil -- the headers; what is lent
@@ -92,9 +94,6 @@ local beside, reading = nil, nil -- the column beside a party, its buttons by sl
 local function Pool(parent) return { parent = parent, samples = {}, faces = {}, besides = {} } end
 local pool                        -- Edit Mode's
 local dragged                     -- the size the box is being dragged to: { width, height }, while it is
-Group.CYCLE = { 5, 10, 20, 40 }    -- the units the preview goes through from Combat's setup
-Group.CYCLE_SECONDS = 2.5          -- each this long
-local cycling, cycle, cycled = false, 1, 0
 local built = false -- the headers have their buttons
 local holdCount = 0 -- ready checks ended: only the last one's result is taken away
 
@@ -405,23 +404,13 @@ local function Lay(pool, count, width, height, unit)
     end
 end
 
--- Edit Mode's preview: as many units as the setting says, or going through 5, 10, 20 and 40 from the setup.
+-- Edit Mode's preview: as many units as the setting says (its dialog's 5, 10, 20 or 40).
 local function Preview()
-    local count = cycling and Group.CYCLE[cycle] or tonumber(ns.options.groupPreview) or 0
+    local count = tonumber(ns.options.groupPreview) or Group.PREVIEWS[1]
     pool = pool or Pool(preview)
     Lay(pool, count, Limits())
     preview:Show()
 end
-
--- The preview going through 5, 10, 20 and 40 units (on), from Combat's setup as it opens Edit Mode, or as the
--- setting says again (off); it stops by itself when Edit Mode closes.
-function Group.Cycle(on)
-    cycling, cycle, cycled = on and true or false, 1, 0
-    if preview and preview:IsShown() then ns.Guarded(Preview) end
-end
-
--- Whether it goes through them now, and how many it shows (for the tests).
-function Group.Cycling() return cycling, Group.CYCLE[cycle] end
 
 -- The setup's sample (Setup.lua): that many made-up units in frame, laid out as the party and raid frames are at the
 -- limits the settings keep; frame is made that large (the caller scales it to fit). Returns its width and height.
@@ -452,7 +441,7 @@ local function Build()
     local settings = {}
     for index, setting in ipairs(Group.SETTINGS) do
         settings[index] = { key = setting.key, min = setting.min, max = setting.max, step = setting.step,
-                            input = setting.input, text = ns.TEXT[setting.key] }
+                            input = setting.input, choices = setting.choices, text = ns.TEXT[setting.key] }
     end
     window = Core.Window.New(holder, {
         store = ns.store, key = "groupPlace", title = ns.TEXT.group, first = Group.FIRST, settings = settings,
@@ -462,15 +451,6 @@ local function Build()
                    minWidth = Group.SETTINGS[1].min, maxWidth = Group.SETTINGS[1].max,
                    minHeight = Group.SETTINGS[2].min, maxHeight = Group.SETTINGS[2].max } })
     window:Place()
-    -- The preview's clock, from the setup: the next number of units every few seconds (only while it shows).
-    preview:SetScript("OnUpdate", ns.Guard(function(_, elapsed)
-        if not cycling then return end
-        cycled = cycled + elapsed
-        if cycled < Group.CYCLE_SECONDS then return end
-        cycled = 0
-        cycle = cycle % #Group.CYCLE + 1
-        Preview()
-    end))
 end
 
 -- Its box dragged by a corner or a side (Core's window, option resize): the preview follows the size as the mouse
@@ -593,7 +573,7 @@ function Group.Start()
     ns.On("PARTY_LEADER_CHANGED", Core.Later(function() ns.Guarded(ns.GroupTools.Refresh) end))
     ns.On("UI_SCALE_CHANGED", Core.Later(Group.Apply))
     Core.EditMode.Watch(ns.Guard(function(on)
-        if not on then cycling, dragged = false, nil end -- the setup's cycle ends with Edit Mode
+        if not on then dragged = nil end
         Group.Apply()
     end))
     Group.Apply()

@@ -13,6 +13,9 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
   your breath and fatigue, and as a druid both your powers.
 - Your frame, your target's and your focus's are always in sight at first. Each can show only on mouseover, and
   still show in combat and in a group if you like: the setup's last step, or the frame's own box in Edit Mode.
+- Each unit frame can show its resource's numbers on the right: its box in Edit Mode.
+- The party and raid preview no longer changes by itself: pick 5, 10, 20 or 40 in its box in Edit Mode or in the
+  setup.
 
 ## 0.3.2 (2026-11-18)
 

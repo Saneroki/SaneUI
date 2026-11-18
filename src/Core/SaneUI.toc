@@ -47,6 +47,7 @@ Window.lua
 Classic.lua
 Views.lua
 Selection.lua
+Arrange.lua
 Holder.lua
 Seat.lua
 # What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled

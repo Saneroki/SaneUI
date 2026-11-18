@@ -79,6 +79,7 @@ function Screen.Build()
     frame:SetSize(Screen.WIDTH, Screen.HEIGHT) -- not sizable: its size is ours, not kept
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
+        binding = "SANEUI_ABILITIES_SPELLBOOK", -- its key, in its Edit Mode dialog (Core's Selection.lua)
         first = { dock = "BOTTOM" }, sizable = false, classic = Classic,
         strip = Screen.STRIP,
         filled = function(full) ns.Guarded(Filled, full) end,

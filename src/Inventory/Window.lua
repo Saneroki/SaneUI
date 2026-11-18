@@ -76,6 +76,7 @@ function Window.Build()
     frame:SetSize(Window.WIDTH, Window.HEIGHT) -- not sizable: its size is ours, not kept
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options,
+        binding = "SANEUI_INVENTORY_BAGS", -- its key, in its Edit Mode dialog (Core's Selection.lua)
         first = { dock = "BOTTOMRIGHT" }, sizable = false, classic = CLASSIC,
         search = function(text) ns.Guarded(Search, text) end,
         filled = function(full) ns.Guarded(Filled, full) end,

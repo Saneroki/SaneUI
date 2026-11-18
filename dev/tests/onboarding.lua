@@ -438,6 +438,26 @@ do
     check(row and row.button.outline and row.button.label._text == "Place it in Edit Mode" and cover and cover._parent == UIParent
         and cover._attributes.type == "macro" and cover._strata == ons.Controls.COVER and not cover:IsShown(),
         "the button seen a plain one; the game's secure button on UIParent, out of sight until the row shows")
+    check(cover._attributes.useOnKeyDown == false,
+        "it acts on the release it is registered for, whatever the game's key-down setting says (else the click did nothing)")
+    -- Before it acts, the game's options and its menu close, each the game's own way.
+    local closed, menuHidden = nil, false
+    SettingsPanel = CreateFrame("Frame", nil, UIParent)
+    function SettingsPanel:Close(skip) closed = skip self:Hide() end
+    GameMenuFrame = CreateFrame("Frame", nil, UIParent)
+    local hideUIPanel = rawget(_G, "HideUIPanel")
+    HideUIPanel = function(panel) if panel == GameMenuFrame then menuHidden = true end panel:Hide() end
+    cover._scripts.PreClick(cover, "LeftButton")
+    check(closed == true and not SettingsPanel:IsShown() and menuHidden, "the options closed straight to the game, the menu too")
+    SettingsPanel:Show()
+    closed = nil
+    W.Combat(true)
+    cover._scripts.PreClick(cover, "LeftButton")
+    check(closed == nil and SettingsPanel:IsShown(), "in a fight they are left as they are")
+    W.Combat(false)
+    ons.Window.Clear()
+    check(closed == true, "and a setup opening closes them too (Window.Clear)")
+    SettingsPanel, GameMenuFrame, HideUIPanel = nil, nil, hideUIPanel
     row.button._left, row.button._top = 500, 400
     row._scripts.OnShow(row)
     check(cover:IsShown() and cover._points[1][4] == 500 and cover._points[1][5] == 400, "the row shown: the secure button over it")
@@ -454,6 +474,28 @@ do
     check(cover:IsShown(), "back after it")
     row._scripts.OnHide(row)
     check(not cover:IsShown(), "the row hidden: so is the secure button")
+end
+
+-- Core's dialog in Edit Mode: a window's key (its option binding) in the setups' own key box (Selection.lua,
+-- Core.Onboarding.Controls; Saneroki, 2026-11-18: "the button to change or define the keybind to open its window").
+do
+    check(Core.Onboarding.Controls() == ons.Controls, "Core reaches the setups' controls")
+    local lamp = CreateFrame("Frame", nil, UIParent)
+    lamp:SetSize(100, 100)
+    local lampWindow = Core.Window.New(lamp, { store = {}, title = "Lamp", binding = "SANEUI_GARDEN_LIGHT",
+        first = { point = "CENTER", x = 0, y = 0 } })
+    lampWindow:Place()
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    Core.Selection.Select(lampWindow)
+    local rows = lampWindow.settingRows
+    local row = rows and rows.shows and select(2, next(rows.shows)) and lampWindow.dialogSettings[1]
+    local keyRow
+    for _, widget in ipairs(W.frames) do if rawget(widget, "keys") and widget._parent == rows then keyRow = widget end end
+    check(row and row.binding == "SANEUI_GARDEN_LIGHT" and keyRow and keyRow.keys.rows[1].box,
+        "its key in the dialog: the setups' key box for that command")
+    Core.Selection.Clear()
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    lamp:Hide()
 end
 
 -- Edit Mode opened while a setup shows (its command, or the game's menu): the window steps aside until it closes, then

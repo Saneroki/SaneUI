@@ -15,16 +15,16 @@ local _, ns = ...
 --             nameplates, aura tracking ("people can for example choose to
 --             use our party and unit frames but disable our nameplates")
 --    units    your frame, your target's, your focus's, your pet; how large
---    party    the party and raid frames: a preview of 5, 10, 20 and 40, going
---             through them a few seconds each, a click on a number holds it
---             ("previews of the party with 5, 10, 20 and 40 people in it where
---             people can see where everything is"), at the size the settings
---             keep; and the button Place and size in Edit Mode: the game's own
---             Edit Mode opens (its /editmode, by Onboarding's secure command
---             button), this window steps out of the way until it closes, the
---             frame's box has a grip at each corner and a handle on each side,
---             and its preview goes through 5, 10, 20 and 40 meanwhile
---             (Units/Group.lua, Group.Cycle)
+--    party    the party and raid frames: a preview of 5, 10, 20 or 40, a
+--             click on a number shows it ("previews of the party with 5, 10, 20
+--             and 40 people in it where people can see where everything is"),
+--             never going through them by itself (Saneroki, 2026-11-18), at the
+--             size the settings keep; the number is the frame's own Preview,
+--             as its Edit Mode dialog chooses it (groupPreview). And the button
+--             Place and size in Edit Mode: the game's own Edit Mode opens (its
+--             /editmode, by Onboarding's secure command button), this window
+--             steps out of the way until it closes, the frame's box has a grip
+--             at each corner and a handle on each side, its preview as chosen
 --    then the nameplates' steps (Nameplates/Setup.lua), each headed Nameplates
 --    tracking aura tracking: your marks of auras, the icons you track
 --    sight    when your frame, your target's and your focus's show, late in
@@ -62,10 +62,10 @@ end
 Guide.TEXT = {
     title = "Combat",
     editMode = "Place and size in Edit Mode",
-    editModeTip = "Opens the game's Edit Mode with your party and raid frames in it, going through 5, 10, 20 and 40 players. Drag the frame to move it, a corner or a side to size it. This window steps aside and comes back when you leave Edit Mode.",
+    editModeTip = "Opens the game's Edit Mode with your party and raid frames in it, at the number chosen here. Drag the frame to move it, a corner or a side to size it; click it for its sizes and its preview of 5, 10, 20 or 40. This window steps aside and comes back when you leave Edit Mode.",
     editModeMissing = "Open Edit Mode from the game's menu (Esc, then Edit Mode): your party and raid frames are in it.",
     count = "%d",
-    countTip = "Show it with %d players. Click again to let it go through 5, 10, 20 and 40.",
+    countTip = "Show it with %d players, here and in Edit Mode's preview.",
     gameNow = "Off: the game's own is in its place now.",
     you = "Your frame",
     target = "Your target",
@@ -97,12 +97,12 @@ local OWN = {
       settings = { "unitPlayer", "unitTarget", "unitFocus", "unitPet", "unitSize" } },
     { key = "party", title = "Party and raid frames",
       text = Lines({ "One frame", "for your party and your raid, up to forty, in place of the game's two." },
-          { "5, 10, 20, 40", "the sample goes through them: click a number to hold it." },
+          { "5, 10, 20, 40", "click a number to see it with so many; Edit Mode's preview shows the same." },
           { "It fills", "up from its bottom left corner, five to a column, a column per raid group." },
           { "Edit Mode", "moves it and sizes it: drag a corner or a side." }),
       settings = { "groupClass", "groupBeside",
                    { macro = "/editmode", command = "EDITMODE", text = T.editMode, tip = T.editModeTip,
-                     missing = T.editModeMissing, done = function() ns.Guarded(ns.Group.Cycle, true) end } } },
+                     missing = T.editModeMissing } } },
     { key = "tracking", title = "Aura tracking",
       text = Lines({ "Click a buff", "or a debuff, or right click a spell in the spellbook: mark it, or track it." },
           { "Important", "glows and comes first. Unimportant fades. Hidden goes." },
@@ -208,11 +208,12 @@ local function Party(board, count, top)
     return frame
 end
 
--- The numbers over the party's sample: the one shown lit; a click holds it, again lets it go through them.
+-- The numbers over the party's sample: the one shown lit; a click shows that many, here and in Edit Mode's preview
+-- (the frame's Preview, groupPreview). Nothing goes through them by itself.
 local function Tabs(board)
     if board.tabs then return board.tabs end
     local tabs = {}
-    for index, count in ipairs(ns.Group.CYCLE) do
+    for index, count in ipairs(ns.Group.PREVIEWS) do
         local tab = CreateFrame("Button", nil, board)
         tab:SetSize(36, Guide.TABS - 6)
         tab:SetPoint("TOPLEFT", board, "TOPLEFT", Guide.PAD + (index - 1) * 42, -Guide.PAD / 2)
@@ -223,32 +224,21 @@ local function Tabs(board)
         words:SetText(T.count:format(count))
         tab.outline, tab.words, tab.count = outline, words, count
         tab:SetScript("OnClick", ns.Guard(function()
-            board.held = board.held ~= count and count or nil
-            board.shown = count
+            Core.Set(ns.name, "groupPreview", count) -- the setup's sample drawn anew as the setting changes
             Guide.Party(board)
         end))
         Core.Tip(tab, T.count:format(count), T.countTip:format(count))
         tabs[index] = tab
     end
     board.tabs = tabs
-    -- Through the numbers a few seconds each while it shows and none is held, as Edit Mode's preview from here.
-    board.cycled = 0
-    board:SetScript("OnUpdate", ns.Guard(function(_, elapsed)
-        if board.held then return end
-        board.cycled = board.cycled + elapsed
-        if board.cycled < ns.Group.CYCLE_SECONDS then return end
-        board.cycled = 0
-        local list, at = ns.Group.CYCLE, 1
-        for index, count in ipairs(list) do if count == board.shown then at = index end end
-        board.shown = list[at % #list + 1]
-        Guide.Party(board)
-    end))
     return tabs
 end
 
--- The party's board as it stands: the count shown (held or going through), its tabs lit.
+-- The party's board as it stands: as many as the frame's Preview, one of the numbers (else the first), its tab lit.
 function Guide.Party(board)
-    board.shown = board.held or board.shown or ns.Group.CYCLE[1]
+    local chosen = tonumber(ns.options.groupPreview)
+    board.shown = ns.Group.PREVIEWS[1]
+    for _, count in ipairs(ns.Group.PREVIEWS) do if count == chosen then board.shown = count end end
     for _, tab in ipairs(Tabs(board)) do
         local lit = tab.count == board.shown
         tab.outline:SetStrong(lit)
@@ -280,13 +270,13 @@ end
 
 local DRAW = {}
 function DRAW.parts(board)
-    Party(board, ns.Group.CYCLE[1], 0)
+    Party(board, ns.Group.PREVIEWS[1], 0)
 end
 function DRAW.party(board)
     Guide.Party(board)
 end
 function DRAW.tracking(board)
-    Party(board, ns.Group.CYCLE[1], 0)
+    Party(board, ns.Group.PREVIEWS[1], 0)
 end
 function DRAW.units(board)
     local class = select(2, Core.Ask(UnitClass, "player"))

@@ -31,7 +31,8 @@ end (`dev/build`, from `assets/data/`).
 | `Window.lua` | Own windows (*Window contracts* below): `Core.Window.New`, `KINDS` (screen, panel, talk), `Mover`/`Sizer`/`Corner`, `CloseOf`/`Beside`, `All`/`ResetAll`/`PlaceAll` |
 | `Classic.lua` | The game's windows ours stand for: `Core.Classic.Menu`/`List`/`Windows`/`Pick`/`Ticked`, `Attach`/`Button` (the button *SaneUI* on the game's window), `Press(what, binding)` (the key of a panel our code may not open) |
 | `Views.lua` | Views behind the game's tabs (`TabSystemTemplate`) at the top of `window.inside`: `Window.Views(window)`, `TABS`/`TAB_INSET`/`TAB_WIDTHS` (the spellbook's) |
-| `Selection.lua` | A window chosen in Edit Mode and Core's own dialog for it: `Core.Selection.Select`/`Clear`/`Moved`, `LEVEL` 200, `ANCHOR` |
+| `Selection.lua` | A window chosen in Edit Mode and Core's own dialog for it: `Core.Selection.Select`/`Clear`/`Moved`, `LEVEL` 200, `ANCHOR`; rows a slider, field, tick or `choices`; `Extra` (a hot corner's switches, `EDGE`, and the key box of `options.binding`) |
+| `Arrange.lua` | Where a window goes when let go in Edit Mode: `Core.Arrange.Start`/`Stop` (the red guide lines, `REACH` 8), `Grid`, `Corners`, `Changed`; the panel *Snap to hot corners* / *Snap to grid* (`snapCorners`, `snapGrid`) |
 | `Holder.lua` | The game's window kept out of sight while ours stands for it (`native.hold`): `Core.Holder.Take(window)`, `TINY`; `holder:Native`/`GiveBack` |
 | `Seat.lua` | A window not ours seated in a room of a full window (place, scale, layer lent, never the parent): `Core.Seat.New(frame, { label, sized, gone })`, `seat:Hold`/`Free`/`Size` |
 | `HealthMarks.lua` | What every health bar shows besides the health (barrier, lost maximum, dispellable): `Core.HealthMarks.New(host, health, options)`, `EVENTS`, `ICONS` |

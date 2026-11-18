@@ -593,6 +593,7 @@ local function Build()
 
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options, classic = ns.CLASSIC,
+        binding = "SANEUI_SOCIAL_FULL", -- its key, in its Edit Mode dialog (Core's Selection.lua)
         native = ns.NATIVE, close = ns.Close, search = function(text) ns.Guarded(Window.Search, text) end,
         first = { dock = "BOTTOMLEFT", width = Layout.WIDTH, height = Layout.HEIGHT },
         minWidth = Layout.MIN_WIDTH, minHeight = Layout.MIN_HEIGHT,

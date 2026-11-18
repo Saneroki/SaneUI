@@ -655,6 +655,7 @@ local function Kind(kind)
     button:SetWidth(tonumber(ns.options[kind.option .. "Width"]) or Units.WIDTH) -- its own (Edit Mode's dialog)
     local face = button.face
     face.show = Shows(kind)
+    ns.UnitText.PowerSide(face) -- its resource numbers at the left or the right, as its tick says
     Units.Marks(face)
     face.alternate = Alternate(kind)
     Slots(face)

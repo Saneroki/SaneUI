@@ -270,6 +270,9 @@ end
 -- General and Appearance.
 Core.Options(Core.name, {
     { key = "places", default = {} }, -- where the windows stand, by module and window (Window.lua: Held)
+    -- Chosen on SaneUI's panel in Edit Mode (Arrange.lua): a window docks where it is let go; it goes on the grid.
+    { key = "snapCorners", default = true },
+    { key = "snapGrid", default = false },
     { key = "errors", default = true, text = "Errors in chat", header = "Errors",
       headerTip = "What SaneUI says when something of it goes wrong.",
       tip = "Says in chat when something of SaneUI goes wrong, and how to report it (/sane bug): one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
@@ -296,6 +299,7 @@ Core.Options(Core.name, {
       tip = "How SaneUI's windows move when they fill the screen from a screen edge and go back, and when they open while the mouse rests on them. Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. A window can have its own, in its section Expand window (Social: tab Appearance)." },
 }, function(key)
     if key == "units" then Core.GameClock() end
+    if (key == "snapCorners" or key == "snapGrid") and Core.Arrange then Core.Arrange.Changed() end
     -- Sharing switched: what waited to be shared goes now (Data/Confirm.lua, read after this file)
     if key == "shareData" and Core.Data and Core.Data.Confirmations then Core.Data.Confirmations.Switched() end
 end)

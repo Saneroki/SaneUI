@@ -16,6 +16,16 @@ SaneUI 0.3.4 (2026-11-18)
 - Every full screen's hot corner can be switched off
   (Hotcorner, under Expand window): the corner does nothing,
   and the window's key still opens the full screen.
+- Edit Mode draws red guide lines for SaneUI's windows too,
+  as for the game's frames, where a window lines up with the
+  screen's middle, its edges or another frame, and it snaps
+  onto them when you let go. A small SaneUI panel under Edit
+  Mode's window has two ticks: Snap to hot corners (on) and
+  Snap to grid (off).
+- Click a full screen window's box in Edit Mode for its hot
+  corner's switches and a box to set the key that opens it.
+- A setup's Edit Mode button works again, and a setup closes
+  the game's options window and its menu when it opens.
 
 
 Combat 0.3.3 (2026-11-18)
@@ -30,6 +40,11 @@ Combat 0.3.3 (2026-11-18)
   sight at first. Each can show only on mouseover, still in
   sight in combat and in a group if you like: the setup's
   last step, or the frame's own box in Edit Mode.
+- Each unit frame can show its resource's numbers on the
+  right (its box in Edit Mode).
+- The party and raid preview no longer changes by itself:
+  pick 5, 10, 20 or 40 in its box in Edit Mode or in the
+  setup.
 
 
 Combat 0.3.2 (2026-11-18)

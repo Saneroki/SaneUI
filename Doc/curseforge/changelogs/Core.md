@@ -5,12 +5,16 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 
 ## 0.3.4 (2026-11-18)
 
-DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.
-
 - Edit Mode shows its blue boxes only under the mouse, on SaneUI's frames and the game's alike, so you see your
   interface as it looks; the frame you picked keeps its yellow box.
+- Edit Mode draws red guide lines for SaneUI's windows too, as it does for the game's frames, where a window lines
+  up with the screen's middle, its edges or another frame, and the window snaps onto them when you let go. A small
+  SaneUI panel under Edit Mode's window has two ticks: *Snap to hot corners* (on) and *Snap to grid* (off).
 - Every full screen's hot corner can be switched off (*Hotcorner*, in the section *Expand window* of each addon's
-  options): the corner does nothing, and the window's key still opens the full screen.
+  options): the corner does nothing, and the window's key still opens the full screen. Click a full screen window's
+  box in Edit Mode for the same switches and a box to set its key.
+- A setup's *Place and size in Edit Mode* button works again, and a setup closes the game's options window and its
+  menu when it opens.
 
 ## 0.3.3 (2026-11-18)
 

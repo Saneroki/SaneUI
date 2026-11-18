@@ -53,8 +53,14 @@ but for a window to try those with (`/sane window`).
     (its name on it while the mouse is on it); drag the box. Sizing is only there: a window that can be
     sized has its grip only in Edit Mode. A click on the box selects it, as one of the game's frames: the
     box turns yellow and a small dialog in Edit Mode's look names it, with *Reset To Default Position*
-    (its first place and size). With Edit Mode's *Snap* on, a free window let go near a line of its grid
-    (or the screen's middle) lines up with it.
+    (its first place and size). A window with a hot corner has in its dialog its module's *Can expand to
+    fullscreen*, *Hotcorner* and *Hotcorner requires leftclick*, and a box for the key that opens it. With Edit
+    Mode's *Snap* on, red guide lines show while it is dragged, as on the game's frames, where it lines up with
+    the screen's middle or edges, another SaneUI window or a frame of the game's; let go, it goes onto them, else
+    near a line of the grid onto that. SaneUI's small panel under Edit Mode's window has two ticks: *Snap to hot
+    corners* (on: a window let go near a corner, an edge's middle or the screen's middle docks there; off, it
+    stays exactly where it was let go) and *Snap to grid* (off; on: a free window always goes onto the nearest
+    grid lines, the grid shown or not).
   - **Dock:** in Edit Mode, let it go near a corner of the screen, the middle of one of its edges (top, bottom,
     left, right) or the middle of the screen. A tinted shape
     shows where it will land. Docked, it is one with the edge: its corners there are square and its
@@ -543,10 +549,19 @@ but for a window to try those with (`/sane window`).
     zone when Edit Mode opens, and the screen's edge does nothing in it (`Edge` `Pushed`); one in hand when
     it closes is let go and kept, once (letting go twice does nothing), as is one hidden in the middle of a drag
     or a sizing (a hidden frame hears no end of either). The place is kept at once, as before:
-    not in Edit Mode's layouts. A click on the box selects the window (`Selection.lua`, above); with Edit
-    Mode's *Snap* on (`EditModeManagerFrame:IsSnapEnabled()`, only read), a free window let go with an edge
-    within `REACH` (8, Edit Mode's magnetism) of a line of its grid (`manager.Grid`'s spacing, from the
-    screen's middle) lines up with it.
+    not in Edit Mode's layouts. A click on the box selects the window (`Selection.lua`, above). Where it goes
+    when let go (`Arrange.lua`, Saneroki, 2026-11-18: "a checkbox to toggle snap to hotcorner and a checkbox to
+    "snap to grid" [...] Native windows have the red guide lines"): with Edit Mode's *Snap* on
+    (`EditModeManagerFrame:IsSnapEnabled()`, only read), while the box is dragged (`Arrange.Start`, from the box's
+    `started`) a red line as the game's (`MagnetismPreviewLineTemplate`'s colour and `Arrange.LINE` 1.5 pixels,
+    across the screen) where an edge or the middle comes within `Arrange.REACH` (8, Edit Mode's magnetism) of the
+    screen's middle or edge, or of an edge or the middle of another window of ours or a frame Edit Mode shows (only
+    read: the game's frames do not snap to ours); let go (`Arrange.Stop`), it goes onto those lines, else onto the
+    grid (`Arrange.Grid`: `manager.Grid`'s spacing from the screen's middle, near a line while the grid shows; with
+    *Snap to grid* the nearest line always, at the game's Grid Spacing or `Arrange.SPACING` 100). The panel under
+    Edit Mode's window, in its dialogs' look, while Edit Mode is open: *Snap to hot corners* (`snapCorners`, on;
+    off, `Core.Dock.Watch` gets no zones, so nothing docks in Edit Mode) and *Snap to grid* (`snapGrid`, off),
+    Core's general settings with no control on an options page (`Saved.lua`, `Arrange.Changed`).
   - **Docked means hanging on the zone,** not on a place: the window is anchored by the point that
     touches the edge, so it stays there at any size and grows away from the edge. Its grip moves to a
     corner that is not at a screen edge. When the screen's size or the UI's scale changes, every shown window
@@ -667,7 +682,8 @@ but for a window to try those with (`/sane window`).
 | `Edge.lua` | A docked window that fills the screen at a left click on its screen edge (or the mouse pushed there, with the click off); whether some window fills the screen (`Edge.AnyFull`, `Edge.Watch`) |
 | `Classic.lua` | The game's windows SaneUI's stand for: the dropdown *Classic windows* across modules, the button *SaneUI* on the game's windows |
 | `Views.lua` | A window's views behind the game's tabs |
-| `Selection.lua` | A window chosen in Edit Mode, and its dialog, with the settings a window brings |
+| `Selection.lua` | A window chosen in Edit Mode, and its dialog, with the settings a window brings: sliders, fields, ticks, a row of choices; a window with a hot corner also its module's switches of *Expand window* and its key (`options.binding`, the setups' key box) |
+| `Arrange.lua` | Where a window goes when let go in Edit Mode: the red guide lines while it is dragged, onto them or Edit Mode's grid, and SaneUI's panel under Edit Mode's window (*Snap to hot corners*, *Snap to grid*) |
 | `HealthMarks.lua` | What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled |
 | `AuraLog.lua` | The buffs and debuffs seen on whoever you can attack, kept as a history for a view to show (`Core.AuraLog`) |
 | `AuraMarks.lua` | The menu of an aura or a spell between Combat, which keeps your marks, and Abilities, whose spellbook and aura history show it (`Core.AuraMarks`); an aura icon's look (`Core.AuraMarks.Paint`) |
@@ -705,6 +721,14 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-11-18 — `Arrange.lua` (new, in Core's TOC after `Selection.lua`): red guide lines in Edit Mode as the game's,
+  a window let go onto them or the grid (`Window.lua`'s `Snap` takes their offsets), and the panel *Snap to hot
+  corners* / *Snap to grid* (`snapCorners`, `snapGrid`, `Saved.lua`). `Selection.lua`: a row of `choices` (Combat's
+  party preview, 5, 10, 20, 40), a tick under several (`parent` a list), a row's own `get` and `set`; a window with a
+  hot corner gets its module's *Can expand to fullscreen*, *Hotcorner* and *Hotcorner requires leftclick*
+  (`Selection.EDGE`) and, with `options.binding`, the setups' key box (`Core.Onboarding.Controls`, where the addon
+  Onboarding can be read; else words on where the game sets it). The map's, the bags' and the spellbook's windows
+  name their keys.
 - 2026-11-18 — `Board.lua`: `board:Holds(key)` and `board:Put(key, on, target, side)`, the layout chosen read and changed while
   the full screen is away too (Saneroki: "Add the friends list and guild window to the setup too").
 - 2026-11-18 — `Edge.lua`: the section *Expand window* has *Hotcorner* (`expandCorner`, on; Saneroki: the hot corner "not

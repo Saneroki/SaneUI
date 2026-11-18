@@ -501,6 +501,11 @@ end
 -- the click: there while the row shows and out of a fight, gone as a fight begins (PLAYER_REGEN_DISABLED comes
 -- before the game locks it) and back after it, following the row while the window is dragged. done runs after the
 -- command (PostClick). Where the game knows no such command (no SLASH_<command>1), the click says missing instead.
+-- It acts on the release, as it is registered (useOnKeyDown false): unset, the game's key-down setting, on at first,
+-- has the template act on the press alone, which it never hears, and the click did nothing (Saneroki, 2026-11-18:
+-- "The button for entering edit mode in the onbording process does not work"). Before it acts, the game's options
+-- and its menu close (Window.Clear: "the esc -> options window should be closed automatically when the edit mode is
+-- started").
 Controls.COMMAND = 260          -- the button's width at most
 Controls.COVER = "FULLSCREEN_DIALOG" -- the secure button's layer: over the setup's window
 local covers = {}               -- [row] = its secure button, made once
@@ -528,8 +533,12 @@ local function Cover(row, entry)
     local cover = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
     cover:SetFrameStrata(Controls.COVER)
     cover:RegisterForClicks("LeftButtonUp")
+    cover:SetAttribute("useOnKeyDown", false)
     cover:SetAttribute("type", "macro")
     cover:SetAttribute("macrotext", entry.macro)
+    cover:SetScript("PreClick", ns.Guard(function()
+        if ns.Window and ns.Window.Clear then ns.Safe("command", ns.Window.Clear) end
+    end))
     cover:SetScript("PostClick", ns.Guard(function()
         if entry.done then ns.Safe("command", entry.done) end
     end))

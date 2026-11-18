@@ -227,6 +227,7 @@ function Window.Build()
     inside = CreateFrame("Frame", nil, frame)
     handle = Core.Window.New(frame, {
         kind = "screen", store = ns.store, title = ns.TEXT.title, edge = ns.options, content = inside, classic = CLASSIC,
+        binding = ns.Native.OWN, -- its key, in its Edit Mode dialog (Core's Selection.lua) beside its hot corner's switches
         under = true, untitled = true, -- full, the map under the title bar, which holds its controls (TopBar.lua)
         first = { dock = "TOPRIGHT", width = Window.WIDTH, height = Window.HEIGHT },
         minWidth = Window.WIDTH / 2, minHeight = Window.HEIGHT / 2,

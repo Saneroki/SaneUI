@@ -632,46 +632,47 @@ function methods:Escapes(on)
     end
 end
 
--- The spacing of Edit Mode's grid while the game shows it and snaps to it, nil else. Edit Mode is read here,
--- never written: its manager's IsSnapEnabled, its grid's own fields.
-local function Grid()
-    local manager = rawget(_G, "EditModeManagerFrame")
-    if not (Core.EditMode.active and manager and type(manager.IsSnapEnabled) == "function") then return nil end
-    if not Core.Ask(manager.IsSnapEnabled, manager) then return nil end
-    local grid = rawget(manager, "Grid")
-    if type(grid) ~= "table" or not grid:IsShown() then return nil end
-    local spacing = Core.Plain(rawget(grid, "gridSpacing"))
-    return type(spacing) == "number" and spacing > 0 and spacing or nil
-end
-
 -- How far to move a side that runs from low to high so its start, middle or end lies on the nearest of the
--- grid's lines (every spacing from the screen's middle, at middle): the least way, nil when none is in reach.
-local function Line(low, high, middle, spacing)
+-- grid's lines (every spacing from the screen's middle, at middle): the least way; nil when none is in reach
+-- (always: the nearest, however far).
+local function Line(low, high, middle, spacing, always)
     local best
     for _, at in ipairs({ low, (low + high) / 2, high }) do
         local by = middle + math.floor((at - middle) / spacing + 0.5) * spacing - at
-        if math.abs(by) <= REACH and (not best or math.abs(by) < math.abs(best)) then best = by end
+        if (always or math.abs(by) <= REACH) and (not best or math.abs(by) < math.abs(best)) then best = by end
     end
     return best
 end
 
--- A free place let go in Edit Mode, near a line of its grid: an edge (or the middle) of the window on that
--- line, as the game's own frames snap to it while its snapping is on. Returns the top left corner then, in the
--- window's own units: the grid is the screen's, so a scaled window is measured in the screen's units for it.
-local function Snap(window)
-    local spacing, frame = Grid(), window.frame
+-- A free place let go in Edit Mode: onto the red guide lines it met (byX, byY: how far, in the screen's units;
+-- Arrange.lua), else onto Edit Mode's grid (Arrange.Grid: near a line of it while the game snaps and shows it, as the
+-- game's own frames snap, or always with Snap to grid). Returns the top left corner then, in the window's own units:
+-- the screen's lines and grid are the screen's, so a scaled window is measured in the screen's units for them.
+local function Snap(window, byX, byY)
+    local frame = window.frame
     local left, top = frame:GetLeft(), frame:GetTop()
-    if not (spacing and left and top) then return nil end
+    if not (left and top) then return nil end
+    local spacing, always
+    if Core.Arrange then spacing, always = Core.Arrange.Grid() end
+    if not (spacing or byX or byY) then return nil end
     local scale = Scale(frame)
     local width, height = frame:GetWidth() * scale, frame:GetHeight() * scale
     left, top = left * scale, top * scale
-    local x = Line(left, left + width, UIParent:GetWidth() / 2, spacing) or 0
-    local y = Line(top - height, top, UIParent:GetHeight() / 2, spacing) or 0
+    local x = byX or spacing and Line(left, left + width, UIParent:GetWidth() / 2, spacing, always) or 0
+    local y = byY or spacing and Line(top - height, top, UIParent:GetHeight() / 2, spacing, always) or 0
     return (left + x) / scale, (top + y) / scale
 end
 
+-- Whether a window docks where it is let go (Snap to hot corners on SaneUI's panel in Edit Mode, Arrange.lua): the
+-- zones a drag may dock it to (nil: those the drag offers; none: none).
+local NONE = {}
+local function Zones(only)
+    if Core.Arrange and not Core.Arrange.Corners() then return NONE end
+    return only
+end
+
 -- A drag of the box, or a sizing by the grip, is over (also when Edit Mode closes in the middle of it):
--- a dragged window docks where it was let go (free, on Edit Mode's grid, if near a line of it), a sized one
+-- a dragged window docks where it was let go (free, onto the guide lines or Edit Mode's grid: Snap), a sized one
 -- stays in its zone. Once: Edit Mode let go of it, and the game's end of the drag that comes after finds
 -- nothing in hand.
 local function Moved(window)
@@ -679,9 +680,11 @@ local function Moved(window)
     window.moving = false
     window.frame:StopMovingOrSizing()
     window.frame:SetUserPlaced(false) -- the place is kept by us
+    local byX, byY
+    if Core.Arrange then byX, byY = Core.Arrange.Stop() end
     local zone = window.options.dock and Core.Dock.Drop() or nil
     local x, y
-    if not zone then x, y = Snap(window) end
+    if not zone then x, y = Snap(window, byX, byY) end
     Keep(window, zone, x, y)
     if Core.Selection then Core.Selection.Moved(window) end
 end
@@ -696,7 +699,9 @@ local function Carried(window, handle, dragged)
             if dragged then dragged() end
             if options.lifted then Core.Safe("window", options.lifted) end
             -- Outside Edit Mode a drag docks only where a screen edge is not (the middle), or not at all.
-            if options.dock then Core.Dock.Watch(frame, not options.dragDocked and Window.DRAG_ZONES or nil, options.insets) end
+            if options.dock then
+                Core.Dock.Watch(frame, Zones(not options.dragDocked and Window.DRAG_ZONES or nil), options.insets)
+            end
         end,
         stopped = function() Moved(window) end,
     })
@@ -770,7 +775,9 @@ local function Box(window)
         usable = window.usable,
         started = function()
             window.moving = true
-            if options.dock then Core.Dock.Watch(frame, nil, options.insets) end
+            if options.dock then Core.Dock.Watch(frame, Zones(nil), options.insets) end
+            -- In Edit Mode the red guide lines while it moves, as the game's own frames have (Arrange.lua).
+            if Core.EditMode.active and Core.Arrange then Core.Safe("Edit Mode", Core.Arrange.Start, frame) end
         end,
         stopped = function() Moved(window) end,
     })

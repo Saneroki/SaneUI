@@ -144,7 +144,7 @@ ns.TEXT = {
     groupWidth = "Max width",
     groupHeight = "Max height",
     groupUnitWidth = "Max unit width",
-    groupPreview = "Preview units",
+    groupPreview = "Preview",
     groupSamples = {
         first = { "Aldren", "Brisa", "Caelum", "Dorin", "Elsbeth", "Fenrick", "Gwyn", "Halden", "Ilsa", "Joren", "Kestra", "Lorcan" },
         last = { "Ashford", "Brightwater", "Crowley", "Dunmere", "Everhart", "Fallowfield", "Greymoor", "Hollow" },
@@ -166,6 +166,7 @@ ns.TEXT = {
     showPowerNow = "Resource: current",
     showPowerMost = "Resource: maximum",
     showPowerPercent = "Resource: percent",
+    showPowerRight = "Resource numbers on the right",
     -- When it shows (Saneroki, 2026-11-18): there and in the setup's step (Setup.lua), always in sight at first.
     showMouseover = "Show only on mouseover",
     showMouseoverTip = "Out of sight until the mouse is on it: on its place, its row or its auras. A cast or a timer on it shows it too, and Edit Mode. Out of sight it still takes the mouse. Off: always in sight.",
@@ -357,6 +358,9 @@ ns.FRAME_SHOWS = {
     { suffix = "PowerNow", show = "powerNow", text = ns.TEXT.showPowerNow, default = true },
     { suffix = "PowerMost", show = "powerMost", text = ns.TEXT.showPowerMost, default = false },
     { suffix = "PowerPercent", show = "powerPercent", text = ns.TEXT.showPowerPercent, default = true },
+    -- Its resource's numbers at its bar's left, or its right (Saneroki, 2026-11-18: "a checkbox that toggles to have
+    -- the class resource numbers left or right anchored").
+    { suffix = "PowerRight", show = "powerRight", text = ns.TEXT.showPowerRight, default = false },
     { suffix = "Mouseover", text = ns.TEXT.showMouseover, default = false },
     { suffix = "Fight", text = ns.TEXT.showFight, default = true, under = "Mouseover" },
     { suffix = "Group", text = ns.TEXT.showGroup, default = true, under = "Mouseover" },
