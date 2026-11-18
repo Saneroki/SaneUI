@@ -9909,6 +9909,126 @@ end)()
     W.Wait(FindBox.WAIT + 0.01)
     Frames(4)
     check(#select(1, Listed()) >= 1, "the next words: searched again")
+
+    -- Your guild's members where they stand (Saneroki, 2026-11-18: "Guild members exact placement on the map should
+    -- not be default but should be visible when someone searches for that guild member in the map searchbar"): the
+    -- search shows members, their SaneUI is asked by the guild's channel (kind H), each answers by a whisper; only
+    -- then a pin stands at the place told, in the class's colour; nothing asked while no search shows them.
+    ;(function()
+        local Whereabouts, Wire = ns.Whereabouts, Core.Wire
+        local first = Core.Surnames() and "Brannoc Steelvein" or "Brannoc"
+        local second = Core.Surnames() and "Ilyra Moonbrook" or "Ilyra"
+        local gone = Core.Surnames() and "Oldwin Greyhand" or "Oldwin"
+        local ROSTER = { { first, "Elwynn Forest", true, "WARRIOR" }, { second, "Elwynn Forest", true, "DRUID" },
+                         { gone, "", false, "MAGE" } }
+        local saved = { IsInGuild = rawget(_G, "IsInGuild"), GetNumGuildMembers = rawget(_G, "GetNumGuildMembers"),
+                        GetGuildRosterInfo = rawget(_G, "GetGuildRosterInfo"), Send = Wire.Send }
+        local sent = {}
+        IsInGuild = function() return true end
+        GetNumGuildMembers = function() return #ROSTER, 2 end
+        GetGuildRosterInfo = function(index)
+            local member = ROSTER[index]
+            return member[1], "Member", 1, 20, "Class", member[2], "", "", member[3], 0, member[4]
+        end
+        Wire.Send = function(kind, fields, channel, target, hurry) -- (Core's own to the guild left out)
+            if kind ~= Whereabouts.KIND then return true end
+            sent[#sent + 1] = { kind = kind, fields = fields, channel = channel, target = target, hurry = hurry }
+            return true
+        end
+        local function Crowd()
+            local list = {}
+            for _, pin in ipairs(Find.Pins()) do if pin.key:find("^crowd:") then list[#list + 1] = pin end end
+            return list
+        end
+        local function Type(text)
+            box:SetText(text)
+            box._scripts.OnTextChanged(box, true)
+            W.Wait(FindBox.WAIT + 0.01)
+            Frames(4)
+        end
+        check(ns.options.guildPlace == true, "the switch for it on by default")
+        local answer = Ask("guild")
+        check(answer.members and #answer.members == 2 and answer.members[1].who == first
+            and answer.members[2].who == second, "Guild: its members online, the offline left out")
+        check(FindBox.Up(), "the field in sight: the map fills the screen")
+        Type("guild")
+        local ask = sent[1] or {}
+        check(#sent == 1 and ask.kind == Whereabouts.KIND and ask.channel == "GUILD" and ask.hurry
+            and ask.fields[1] == "?" and ask.fields[2] == first .. "," .. second,
+            "the guild asked at once, urgent, for the members shown (their names)")
+        check(#Crowd() == 0, "nobody told: no member stands anywhere exact on the map")
+        local entry = answer.members[1]
+        check(Find.Spots(entry)[1].point.zone, "until then: the middle of its zone, as the roster names it")
+        -- answers: by a whisper from a member asked; a stranger's, one on the guild's channel, a place off the map, a
+        -- map the game does not know: not taken
+        Whereabouts.Heard("Stranger Danger", { "!", "1429", "0.5000", "0.5000" }, "WHISPER", "Stranger Danger")
+        Whereabouts.Heard(first, { "!", "1429", "0.3000", "0.4000" }, "GUILD", first)
+        Whereabouts.Heard(first, { "!", "1429", "1.5000", "0.4000" }, "WHISPER", first)
+        Whereabouts.Heard(first, { "!", "4242", "0.3000", "0.4000" }, "WHISPER", first)
+        W.Wait(0.3)
+        check(#Crowd() == 0 and not Whereabouts.Place(first), "a stranger's answer, the guild's channel, off the map, no map: none")
+        Whereabouts.Heard(first, { "!", "1429", "0.3000", "0.4000" }, "WHISPER", first)
+        W.Wait(0.3)
+        local pins = Crowd()
+        local warrior = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARRIOR
+        check(#pins == 1 and pins[1].name == first and pins[1].map == 1429 and near(pins[1].x, 0.3) and near(pins[1].y, 0.4)
+            and pins[1].atlas == "PlayerPartyBlip" and pins[1].sought
+            and (not warrior or pins[1].tint and near(pins[1].tint[1], warrior.r)),
+            "told: a pin where it stands, in its class's colour")
+        local point = Find.Spots(entry)[1].point
+        check(point.told and point.map == 1429 and near(point.x, 0.3) and not point.zone, "its find: there, not its zone")
+        check(Find.Show(entry) and #Crowd() == 0 and #Find.Pins() == 1, "shown itself: one pin for it, not two")
+        Find.Clear()
+        check(#Crowd() == 1, "cleared: the members found stay while the search holds them")
+        wipe(sent)
+        W.Wait(Whereabouts.EVERY + 0.1)
+        check(#sent == 1 and sent[1].fields[1] == "?", "asked again a few seconds later")
+        W.Wait(Whereabouts.FRESH)
+        check(#Crowd() == 0 and not Whereabouts.Place(first), "not told anew: its pin goes")
+        Whereabouts.Heard(first, { "!", "1429", "0.3000", "0.4000" }, "WHISPER", first)
+        Whereabouts.Heard(first, { "!" }, "WHISPER", first)
+        W.Wait(0.3)
+        check(not Whereabouts.Place(first), "told no place (inside an instance): forgotten")
+        Type("brannoc")
+        W.Wait(Whereabouts.LEAST + 0.1)
+        check(sent[#sent].fields[2] == first, "a member's name: only that member asked")
+        FindBox.Clear()
+        wipe(sent)
+        W.Wait(Whereabouts.EVERY * 3)
+        check(#sent == 0, "the field emptied: nothing asked any more")
+        Whereabouts.Heard(first, { "!", "1429", "0.3000", "0.4000" }, "WHISPER", first)
+        check(not Whereabouts.Place(first), "nor an answer taken")
+        -- asked ourselves: the place told by a whisper to the one who asked, while the switch lets it
+        local mine = Core.PlayerKey("player")
+        Whereabouts.Heard(first, { "?", "" }, "GUILD", first)
+        local told = sent[1] or {}
+        check(#sent == 1 and told.channel == "WHISPER" and told.target == first and told.fields[1] == "!"
+            and told.fields[2] == tostring(C_Map.GetBestMapForUnit("player")) and tonumber(told.fields[3]),
+            "the guild asked for all: our map and place whispered back")
+        Whereabouts.Heard(first, { "?", "" }, "GUILD", first)
+        check(#sent == 1, "asked again at once: one answer")
+        W.Wait(Whereabouts.GAP + 0.1)
+        Whereabouts.Heard(first, { "?", second }, "GUILD", first)
+        Whereabouts.Heard(first, { "?", "" }, "WHISPER", first)
+        check(#sent == 1, "another member asked for, an ask by a whisper: no answer")
+        Whereabouts.Heard(first, { "?", second .. "," .. tostring(mine) }, "GUILD", first)
+        check(#sent == 2, "named among others: answered")
+        W.Wait(Whereabouts.GAP + 0.1)
+        W.combat = true
+        Whereabouts.Heard(first, { "?", "" }, "GUILD", first)
+        W.combat = false
+        ns.options.guildPlace = false
+        Whereabouts.Heard(first, { "?", "" }, "GUILD", first)
+        ns.options.guildPlace = true
+        check(#sent == 2, "in a fight, the switch off: nothing told")
+        local position = C_Map.GetPlayerMapPosition
+        C_Map.GetPlayerMapPosition = function() return nil end
+        Whereabouts.Heard(first, { "?", "" }, "GUILD", first)
+        C_Map.GetPlayerMapPosition = position
+        check(#sent == 3 and sent[3].fields[1] == "!" and sent[3].fields[2] == nil, "no place the game tells: ! alone")
+        IsInGuild, GetNumGuildMembers, GetGuildRosterInfo = saved.IsInGuild, saved.GetNumGuildMembers, saved.GetGuildRosterInfo
+        Wire.Send = saved.Send
+    end)()
     check(Coords.PlaneOf("1429") == Coords.PlaneOf(1429) and Coords.ContinentOf("1429") == Coords.ContinentOf(1429),
         "a map told as words: the same plane and continent")
     FindBox.Clear()

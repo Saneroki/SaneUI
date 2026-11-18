@@ -103,7 +103,7 @@ ns.PinView = { Drop = function() end }
 ns.Planner = { Knows = function() return true end }
 ns.Window = { Full = function() end }
 -- The pins' icons as the map's own pins have them (Pins.lua): a trainer's by its title, a merchant's by its goods.
-local SERVICES = { repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "auctioneer",
+local SERVICES = { repair = "repair", innkeeper = "innkeeper", banker = "banker", auctioneer = "Professions-Crafting-Orders-Icon",
                    stablemaster = "stablemaster", trainer = "profession", vendor = "repair", flightmaster = "flightmaster" }
 ns.Pins = {
     LookOf = function(services, title)
@@ -115,14 +115,15 @@ ns.Pins = {
             end
             if SERVICES[service] then return SERVICES[service] end
         end
-        return "monsterneutral"
+        return 132053 -- (the speech bubble, Pins.NPC_LOOKS.talk)
     end,
     ObjectLook = function(kind) return ({ herb = "professions_tracking_herb", ore = "professions_tracking_ore",
                                           mailbox = "mailbox" })[kind] or "vignetteloot" end,
     PlaceLook = function(kind) return ({ dungeon = "dungeon", raid = "raid" })[kind] or "poi-town" end,
 }
 
-Lab.Addon("SaneUI_Navigation", "src/Navigation/Find.lua", "src/Navigation/Farms.lua", "src/Navigation/FindBox.lua")
+Lab.Addon("SaneUI_Navigation", "src/Navigation/Find.lua", "src/Navigation/Whereabouts.lua", "src/Navigation/Farms.lua",
+          "src/Navigation/FindBox.lua")
 
 -- The full map's title bar, as Core's window draws it while it fills the screen (Window.lua): the title at its left,
 -- a thin gold line under it, the close button at its right; Elwynn's map art under it.

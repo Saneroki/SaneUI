@@ -15,7 +15,9 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    search (`FindBox.lua` the field and its list, `Find.lua` the finds: Core's NPCs, objects, places, items and where
    they come from, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends;
    "nearest", "who sells X", "in <zone>", levels; its places as pins of kind `find` on the full map, the map pin at the
-   nearest; the key *Search the map*, `Bindings.xml`; 2026-11-15). *Where to farm X* (`Farms.lua`): the places thickest
+   nearest; the key *Search the map*, `Bindings.xml`; 2026-11-15). Guild members it shows (a name, *guild*) stand where
+   their SaneUI says, asked only then (`Whereabouts.lua`, Core's wire, kind `H`; the setting *Where I am, for my
+   guild's map search*; 2026-11-18). *Where to farm X* (`Farms.lua`): the places thickest
    with what gives it, clustered from Core's spawns weighed by drop chance, glowing on the full map (the canvas' layer
    `farms`), a pin at each; a mistyped word put right.
 8. Your own markers (`Markers.lua`, 2026-11-15): Alt and a click on the map puts one; a card (the kit's bronze) to
@@ -109,8 +111,7 @@ character, learnt at a flight master).
 - Core's windows: the holder (`src/Core/Holder.lua`), the board (`Board.lua`) and the Edit Mode box and dialog
   (`Selection.lua`) are built. Navigation needs neither the holder nor the board: it keeps the game's map itself
   (`Native.lua`) and lays out its full screen in `docked`.
-- Not built: a travel pin's ways under the mouse (the plan, *Map pins*); exact places of guild members outside your
-  group (the search shows the zone the roster names; card #38); the dungeons' three zooms and our own art where the game
+- Not built: a travel pin's ways under the mouse (the plan, *Map pins*); the dungeons' three zooms and our own art where the game
   has none (the plan, *Dungeon, instance and raid maps in three zooms*; `dev/tools/map-layers` makes the levels); rares' spawn
   areas and patrol paths on the map (the sets are there, Navigation does not read them).
 

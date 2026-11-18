@@ -59,6 +59,8 @@ ns.TEXT = {
     pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map (its Pins and its Tracking). Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you. Always there, with no switch: what the game's minimap shows around you (players, tracked herbs and ore), on the full map too, and the golden line from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; on foot orange where enemies a few levels above you spawn near it, red where they are far above you. Drag it on the full map to put a waypoint there: the line goes there first, then on to the pin.",
     markerShares = "Markers and map pins others share",
     markerSharesTip = "When a member of your party, raid or guild shares map markers or a map pin with you, a small card asks whether to keep them; kept, markers stand on your map marked as from them, a map pin takes the place of yours. Off: nobody asks, nothing is kept. Share your own from a marker's card (Share) or with a right click on your map pin.",
+    guildPlace = "Where I am, for my guild's map search",
+    guildPlaceTip = "When a member of your guild searches the full map for you (your name, or Guild), their SaneUI asks yours where you are, and you stand there on their map while their search shows you; at other times nobody asks, and nothing is kept. Inside an instance and in a fight nothing is told. Off: you stand at the middle of your zone for them, as the game's guild list tells it. Search for Guild yourself to see where the members are who leave it on.",
     -- The map pin's tooltip, under the game's words (Marks.lua): how to put it.
     pinDouble = "<Double click on the map to put the pin there, with a route to it>",
     -- A waypoint of the golden line (Planner.Via, Marks.Vias).
@@ -261,6 +263,8 @@ local OPTIONS = {
     { key = "pins", default = PIN_DEFAULT, multi = true, choices = PIN_CHOICES, text = ns.TEXT.pins, tip = ns.TEXT.pinsTip },
     -- Markers a member of your party, raid or guild shares (Markers.lua): asked about while on.
     { key = "markerShares", default = true, text = ns.TEXT.markerShares, tip = ns.TEXT.markerSharesTip },
+    -- Where you stand, told to a member of your guild whose map search shows you (Whereabouts.lua): while on.
+    { key = "guildPlace", default = true, text = ns.TEXT.guildPlace, tip = ns.TEXT.guildPlaceTip },
     -- Each kind's size in percent, [kind] = percent, set by its slider in the pin filter (TopBar.lua): no
     -- control on the options page.
     { key = "pinSizes", default = {} },

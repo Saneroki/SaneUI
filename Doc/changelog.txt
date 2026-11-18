@@ -68,6 +68,9 @@ Navigation 0.3.5 (2026-11-16)
   guild or someone; they are asked first, and kept, their
   map pin goes there with the golden line.
 - The mouse on a party or raid member's dot names who it is.
+- Search the map for a guild member, or type Guild, to see
+  where they are (those with SaneUI; each can turn it off
+  on the page Navigation).
 - Vendors of trade goods, auctioneers and other NPCs have
   clear pictures of what they do; no NPC is a gold coin.
 - Routes go down ledges and cliffs you land from alive (up

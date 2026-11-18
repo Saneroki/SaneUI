@@ -406,6 +406,8 @@ local function Answered(text, found)
     Lines(found)
     -- where to farm it: its places glow on the map at once (the map not moved)
     if found and found.farms and found.about then Find.Farms(found.farms, found.about.entry) end
+    -- the guild's members found: where they stand, as they say it (Find.Crowd)
+    Find.Crowd(found and found.members)
     Open(found ~= nil and box:HasFocus() or (list and list:IsShown()))
     return true
 end
@@ -414,6 +416,7 @@ end
 local FAILED = { failed = true }
 local function Failed()
     answer, typed = nil, nil
+    Find.Crowd(nil)
     Lines(FAILED)
     Open(box:HasFocus() or (list and list:IsShown()))
 end
@@ -430,6 +433,7 @@ local function Run()
     local text = box:GetText() or ""
     if text:match("^%s*$") then
         answer, typed = nil, nil
+        Find.Crowd(nil)
         Lines(nil)
         return Open(false)
     end
@@ -796,6 +800,7 @@ function FindBox.Clear()
     box:ClearFocus()
     Lines(nil)
     Open(false)
+    Find.Crowd(nil)
     Find.Clear()
 end
 
@@ -1075,5 +1080,11 @@ end
 
 function FindBox.Hide()
     if field then FindBox.SetShown(false) end
+    Find.Crowd(nil)
     Find.Clear()
+end
+
+-- Whether the field is in sight: the map fills the screen (Whereabouts.lua asks the guild only then).
+function FindBox.Up()
+    return field ~= nil and Plain(field:IsVisible()) == true
 end

@@ -409,6 +409,14 @@ When the window fills the screen:
   under it, as the game's map does, each in the class colour, Guild beside one of your guild; its clicks stay the
   map's. Only the party and raid have places the game tells; a guild member outside the group stands at its zone's
   middle only when searched for (the search's pin and tooltip).
+- **Guild members where they are, only when searched (Saneroki, 2026-11-18; built):** "Guild members exact placement
+  on the map should not be default but should be visible when someone searches for that guild member in the map
+  searchbar, so for example if someone writes "Guild" in the search bar all the guild members precise location is
+  shown on the map but not by default normally." While the map's search shows members of your guild (a name, or
+  *guild* for all), their SaneUI is asked where they stand, every few seconds, and those who tell it stand there on
+  the full map in their class's colour; at other times nobody is asked and nothing is kept. Each player's own switch
+  (*Where I am, for my guild's map search*, on at first) lets its SaneUI answer; nothing told inside an instance or in
+  a fight. Members without SaneUI, or with the switch off, stay at their zone's middle.
 - **Tooltips without the click (Saneroki, 2026-10-20):** a pin's tooltip does not say that a click puts the map pin
   there.
 - **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and

@@ -16,6 +16,9 @@ local _, ns = ...
 --      Find.Preview(find)      its points drawn, the map not moved (the mouse on its row)
 --      Find.Farms(places, find) the places to farm a thing glowing on the map, a pin at each (Farms.lua)
 --      Find.Clear()            no find on the map any more
+--      Find.Crowd(members)     the guild's members of the answer in the field: asked where they stand
+--                              (Whereabouts.lua), a pin at each place told, beside the find shown; nil: none
+--      Find.Retold()           a member said where it stands: the pins made anew
 --      Find.Pins()             the pins of the find shown, for Pins.For
 --      Find.Look(find)         its icon on the map: an atlas or a texture
 --
@@ -26,7 +29,8 @@ local _, ns = ...
 --  Core's set (entrances, caves, crossings, meeting stones), what a trainer teaches; and from
 --  the game: the zones and continents, the dungeons' maps, the flight points of your side, the
 --  members of your guild and group and your friends, your corpse, and a point typed as two
---  numbers.
+--  numbers. Your guild's members stand where their SaneUI says while the search shows them (all
+--  of them for "guild"), else at the middle of their zone; nobody's place is asked otherwise.
 --
 --  How it reads (our own words, below): plain words find names and kinds forgivingly (Core's
 --  Fuzzy: the whole word, its beginning, a word's beginning, inside; a short word also the
@@ -629,7 +633,8 @@ local function Yards(point, plane, pu, pv)
     return math.sqrt((u - pu) ^ 2 + (v - pv) ^ 2), u, v
 end
 
--- A member's place: in your group where the game tells it, else the middle of the zone the roster names.
+-- A member's place: in your group where the game tells it, else where a guild member's SaneUI said it stands
+-- (Whereabouts.lua: only while the search shows it), else the middle of the zone the roster names.
 local function Someone(entry)
     local unit = entry.unit
     if not unit and entry.who then
@@ -645,6 +650,8 @@ local function Someone(entry)
         local x, y = position and Plain(position.x), position and Plain(position.y)
         if x and y then return { { map = map, x = x, y = y, exact = true } } end
     end
+    local told = entry.kind == "member" and ns.Whereabouts and ns.Whereabouts.Place(entry.who)
+    if told then return { { map = told.map, x = told.x, y = told.y, exact = true, told = true } } end
     local map = entry.online and ZoneNamed(entry.zone)
     if map then return { { map = map, x = 0.5, y = 0.5, zone = true } } end
     return {}
@@ -1143,8 +1150,20 @@ end
 -- Groups for the list: by kind, each in its order, the groups by their best find; nearness asked: one list. At most
 -- Find.SHOWN finds, Find.GROUP of a group where several share the list.
 local GROUP_ORDER = { marker = 0, people = 1, npc = 2, place = 3, item = 4, quest = 5, zone = 6, spell = 7 }
+-- The guild's members online among the finds, all of them (not only those the list holds): answer.members, whose
+-- places the map shows while the answer does (Find.Crowd).
+local function Members(answer, rows)
+    for _, row in ipairs(rows) do
+        local entry = row.entry
+        if entry.kind == "member" and entry.online then
+            answer.members = answer.members or {}
+            answer.members[#answer.members + 1] = entry
+        end
+    end
+end
 local function Grouped(rows, near, title)
     local answer = { count = #rows }
+    Members(answer, rows)
     if near or title then
         local group = { title = title or Find.TEXT.groups.near, rows = {} }
         for position = 1, math.min(#rows, Find.SHOWN) do group.rows[position] = rows[position] end
@@ -1499,6 +1518,8 @@ end
 local shown        -- the find whose points the map shows
 local pins = {}    -- their pins (Pins.For takes them in)
 local farmed       -- the places to farm glowing on the map (Farms.Draw), and the thing farmed: { places, target }
+local made         -- what the pins were made of last (Made): { entry, role, farming }, to make them anew
+local crowd        -- the guild's members the answer in the field holds (Find.Crowd): those who said where they stand
 
 -- A find's look on the map: its own icon (an NPC's as its pin's would be, Pins.LookOf), else the map pin's; a place to
 -- farm the thing's (an item's picture: a number).
@@ -1548,12 +1569,39 @@ local function Marker(place, target, index)
     return pin
 end
 
+-- The guild's members of the answer in the field (crowd) who said where they stand (Whereabouts.lua), a pin each in its
+-- class's colour, but the find drawn already (except) and who is in your group (the map shows them as they are).
+local function Crowded(except)
+    if not crowd then return end
+    local grouped, raid = {}, IsInRaid()
+    for index = 1, raid and GetNumGroupMembers() or GetNumSubgroupMembers() do
+        local name = Core.FullName((raid and "raid" or "party") .. index)
+        if name then grouped[name] = true end
+    end
+    local colors = rawget(_G, "RAID_CLASS_COLORS")
+    for _, member in ipairs(crowd) do
+        local told = not (except and except.key == member.key) and not grouped[member.who] and ns.Whereabouts
+                     and ns.Whereabouts.Place(member.who)
+        local home = told and Coords.PlaneOf(told.map)
+        local u, v
+        if home then u, v = Coords.MapToPlane(told.map, told.x, told.y, home) end
+        if u then
+            local color = member.class and colors and colors[member.class]
+            pins[#pins + 1] = { kind = "find", key = "crowd:" .. member.key, name = member.name, role = member.role,
+                                home = home, u = u, v = v, map = told.map, x = told.x, y = told.y, sought = true,
+                                atlas = Look(member), tint = color and { color.r, color.g, color.b } or nil }
+        end
+    end
+end
+
 -- The points of what a find stands for, as pins: the nearest Find.PLACES of them all, at least Find.EACH of each
 -- (an item's every source in sight); a member's at the middle of its zone, said so; with places to farm (farming:
--- its places, the thing farmed) a pin at each place's middle too. Gives the nearest point.
+-- its places, the thing farmed) a pin at each place's middle too; the guild's members found who said where they
+-- stand beside them (Crowded). Gives the nearest point.
 Find.EACH = 3
 local function Made(entry, role, farming)
     wipe(pins)
+    made = { entry = entry, role = role, farming = farming }
     local list = Standing(entry, role, farming)
     local each = math.max(Find.EACH, math.floor(Find.PLACES / math.max(#list, 1)))
     local nearest, best
@@ -1580,6 +1628,7 @@ local function Made(entry, role, farming)
     for index, place in ipairs(farming and farming.places or NONE) do
         if place.plane then pins[#pins + 1] = Marker(place, farming.target, index) end
     end
+    Crowded(entry)
     return nearest
 end
 
@@ -1598,11 +1647,12 @@ function Find.Farms(places, target)
         return
     end
     farmed = { places = places, target = target }
-    shown = target
+    shown, made = target, nil
     wipe(pins)
     for index, place in ipairs(places) do
         if place.plane then pins[#pins + 1] = Marker(place, target, index) end
     end
+    Crowded(nil)
     ns.Farms.Draw(places)
 end
 
@@ -1689,14 +1739,39 @@ function Find.Pin(entry)
     return true
 end
 
+-- No find on the map any more; the guild's members of the answer in the field stay (Find.Crowd).
 function Find.Clear()
     if farmed then
         farmed = nil
         ns.Farms.Draw(nil)
     end
+    made = nil
     if not shown and #pins == 0 then return end
     shown = nil
     wipe(pins)
+    Crowded(nil)
+    Redraw()
+end
+
+-- The guild's members of the answer in the field (FindBox.lua; nil: none): asked where they stand (Whereabouts.lua)
+-- while it holds them, a pin at the place of each who says so, beside the find shown.
+function Find.Crowd(members)
+    crowd = members and #members > 0 and members or nil
+    if ns.Whereabouts then ns.Whereabouts.Want(crowd) end
+    Find.Retold()
+end
+
+-- A member said where it stands, or the crowd changed: the pins made anew, the map not moved.
+function Find.Retold()
+    if made then
+        Made(made.entry, made.role, made.farming)
+    else
+        wipe(pins)
+        for index, place in ipairs(farmed and farmed.places or NONE) do
+            if place.plane then pins[#pins + 1] = Marker(place, farmed.target, index) end
+        end
+        Crowded(nil)
+    end
     Redraw()
 end
 

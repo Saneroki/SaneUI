@@ -1298,6 +1298,13 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
   A whole plan (markers and drawings, 2026-11-15) as version 2: "2", its head (origin, name, part, parts, the share's
   stamp), then rows `m` (a marker's) and `d` (a drawing's: origin, map, kind, colour, width, its points as three letters
   of base 36 each), in parts put together by sender, origin and stamp.
+- **A map pin** *(Saneroki, 2026-11-16)*: kind `W` (map, x, y to four places), only when the player shares it (a
+  right click on the map pin, Navigation's `Marks.lua`), to the raid or party, the guild or one player by a whisper;
+  the one who gets it is asked first on the markers' card and keeps it only as the game's map pin.
+- **Guild members' places** *(Saneroki, 2026-11-18)*: kind `H`, only while a player's map search shows members of
+  the guild (Navigation's `Whereabouts.lua`): `?` and the keys asked (none: all) to the guild, every few seconds; `!`
+  with map, x and y (none: no place the game tells, inside an instance) whispered back by each one asked while its
+  switch is on, never in a fight. Personal data: kept a few seconds in memory, never saved, never passed on.
 - **Speed Leveling's place in a guide** *(Saneroki, 2026-11-05)*: kind `S` (the guide's key, at most 180 bytes of it;
   the row of the step's first line in the guide's text; letters: `w` waiting there, `c` busy with a class quest on top
   of it, `a` asking for the others' places), to the party or the raid only, as the place changes, nothing when it follows no guide (an empty key: forget me). Not

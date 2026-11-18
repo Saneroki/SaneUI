@@ -388,6 +388,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   - **my trainer** (your class's), **my corpse**, **unknown flight points** (those you have not found);
   - **a first word that keeps one kind:** *items*, *quests*, *zones*, *dungeons*, *raids*, *flights*, *mailboxes*,
     *guild*, *party*, *friends* (*dungeons* alone lists them all);
+  - **your guild's members where they are** (Saneroki, 2026-11-18): a member's name, or *guild* for all of them. Those
+    whose SaneUI leaves *Where I am, for my guild's map search* on (page Navigation, on at first) stand on the full map
+    where they are, a dot in their class's colour, kept up to date every few seconds while the search holds them; the
+    others at the middle of their zone, as the game's guild list names it. Nobody's place is asked at any other time,
+    nor kept; inside an instance and in a fight nobody tells one;
   - **not X** or **-X** without it, **X or Y** either, **"two words"** together;
   - **two numbers:** a point of the zone shown (*45 60*), or of a zone named (*elwynn 45.2 60.1*): the map pin there;
   - **a typo** is put right where nothing is found: *peaceblossom* searches for *peacebloom* and says so at the top.
@@ -1136,8 +1141,24 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   (`Find.CLOSE` of them). Shown (`Find.Show`): the find's points (an item's sources', a spell's trainers'), the nearest
   `Find.PLACES` of them all and at least `Find.EACH` of each, are pins of the kind `find` (`Pins.For` takes them in at
   every zoom, on the full map alone, over every other pin; `PinView` gives them the glow), the map at the nearest
-  (`Canvas.LookAt`); the map pin by `PinView.Drop`. A guild member outside your group stands at the middle of the zone
-  the roster names (the game tells an addon no other member's place); one in your group where the game tells it.
+  (`Canvas.LookAt`); the map pin by `PinView.Drop`. A member of your group stands where the game tells it; a guild
+  member outside it where its SaneUI said it stands (`Whereabouts.lua`, below), else at the middle of the zone the
+  roster names (the game tells an addon no other member's place). The answer's guild members online, all of them
+  (`answer.members`, not only those the list holds), are the crowd (`Find.Crowd`, from `FindBox.lua` with each
+  answer, nil once the field is emptied): a pin of kind `find` at the place of each who said where it stands
+  (`crowd:` keys, `PlayerPartyBlip` in its class's colour), beside the find shown and after `Find.Clear`; a member of
+  your group left out (the map shows its mark), the find shown not twice. `Find.Retold` makes the pins anew, the map
+  not moved.
+- **Guild members' places** (`Whereabouts.lua`, no frames; Saneroki, 2026-11-18): `Whereabouts.Want(members)` while
+  the crowd holds members: the guild asked at once (urgent, Core's wire, kind `H`: `?` and their keys cut by commas,
+  none where they pass `Whereabouts.NAMES` bytes: all), then every `Whereabouts.EVERY` seconds, never closer than
+  `Whereabouts.LEAST`, only while the field is in sight (`FindBox.Up`, the full map), in a guild, out of a fight (the
+  wire would hold it back) and while Navigation stands; nil stops it. Asked on the guild's channel, a member named (or
+  all asked) answers with a whisper while `guildPlace` is on (*Where I am, for my guild's map search*, on): `!`, its
+  map (`C_Map.GetBestMapForUnit`) and place to four places, or `!` alone where the game tells it none (an instance);
+  never in a fight, to one asker once every `Whereabouts.GAP` seconds. Taken only by a whisper, from a member asked
+  within `Whereabouts.HOLD` seconds, of a map the game knows and a place on it; kept `Whereabouts.FRESH` seconds in
+  memory alone (`Whereabouts.Place`), a place not told anew dropped at the next tick, never saved.
 - **Farms** (`Farms.lua`, its glow on the canvas' layer `farms`, level 6, between the zone's light and the quest
   areas): what gives a thing (an item's creatures and objects by Core's drop counts, `Data.Drops():From`, the
   likeliest `Farms.SOURCES`; each weighed by its chance, an unknown creature's `Farms.UNKNOWN`, a node 1; quests' own
@@ -1709,6 +1730,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Exchange.lua` | Sketches shared both ways with a dungeon map addon Sane UI knows, in its own way of sharing (Core's words for it): its share strings written and read, its drawings as ours and ours as its, its shares heard, ours sent in its format too; **Paste from ...** in the Sketches menu (no frames) |
 | `DrawBar.lua` | The dropdown Sketches on the full map's bar (each sketch shown or hidden, its own menu) and the palette: the tools, the colours, the widths, the plan's dropdown and its menus, Undo and Clear |
 | `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
+| `Whereabouts.lua` | Where your guild's members stand: asked of their SaneUI on Core's wire (kind `H`) while the map's search shows them, answered by a whisper while *Where I am, for my guild's map search* is on; kept a few seconds in memory alone (no frames) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
 | `Bindings.xml` | The keys *Sane UI's map* (full screen and back; once bound, the game's map key opens the game's map) and *Search the map* (the full map, the cursor in its search), in Sane UI's section of the game's key bindings |
@@ -1725,6 +1747,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, guild members where they are, when searched:** Saneroki: "Guild members exact placement on the map
+  should not be default but should be visible when someone searches for that guild member in the map searchbar, so
+  for example if someone writes "Guild" in the search bar all the guild members precise location is shown on the map
+  but not by default normally." The game tells an addon no place of a guild member outside the group, so each one's
+  SaneUI tells it, only when asked: `Whereabouts.lua`, the wire's kind `H` (an ask to the guild, answers by whisper);
+  `Find.Crowd`, `Find.Retold`, `answer.members`; `FindBox.Up`; the setting *Where I am, for my guild's map search*
+  (`guildPlace`, on). Card #38.
 - **2026-11-18, the quest log under the minimap; ours or the game's:** Saneroki: "Can we put it underneath the minimap
   as default where the native questlog normally is? And make sure that you either see ours or the native one,
   depending on what you selected in the classic widnows." The log on the screen alone starts at the screen's right
