@@ -50,13 +50,23 @@ with most of its floors buried (the ground DEPTH yards and more under a building
 ground), but one a lift or a portal lands on (the floor nearest its end within LANDING yards, its height within RISE,
 as Navigation finds its landing: Freewind Post's mesa, the Wizard's Sanctum's rooms).
 
+A drop is one way down (Saneroki, 2026-11-16: "route over mountains where you can fall down without dying"): off a
+floor whose neighbour on a side holds no floor that high less CLIMB, no wall or railing at the edge, along that side
+over at most RUN samples of nothing but ground falling away (too steep to walk, or air under a ledge: no hole, nothing
+built) to the first floor lower by more than CLIMB, at most FALL yards, no wall on the way into it and nothing over it
+below the top: off a deck or a balcony, a cliff, a mountainside. Into the next tile too, over its samples along the
+edge. Kept with its height (whole yards, up), only into a rectangle of its own region (regions stay two-way: a walk
+the regions allow is always there without one), those off one side into one rectangle side by side joined while their
+heights lie within BAND. Navigation takes those up to its Walk.FALL (dev/tools/walk-gates' FALL alike), so another
+height is a walk-gates run, not one of this tool.
+
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
                                     tiles around it that have ground) and block (below)
 
 A block is CBOR (the game reads it with C_EncodingUtil.DeserializeCBOR), deflated (DecompressString) and in base64
-(DecodeBase64): an array of the format's number (FORMAT), the surfaces, the rectangles and the openings, each a flat
-array of whole numbers:
+(DecodeBase64): an array of the format's number (FORMAT), the surfaces, the rectangles, the openings and the drops,
+each a flat array of whole numbers:
 
   surfaces     per surface (its rectangles come one after the other, in this order) 3 numbers: how many rectangles
                it has, its kind (1 land, 2 water, 3 a building's floor) and its region
@@ -70,6 +80,8 @@ array of whole numbers:
                tile), and the neighbour. The neighbour is its index (from 0) times 5 plus where it lies (0 on the
                same tile, else 1 + the next tile's direction, as the sides). On its own tile an opening is written
                once, from the north or west of the two; into the next tile, from both.
+  drops        6 numbers each, from the rectangle it leaves alone (one way): that rectangle's index, its side, the first
+               and last sample along it, the rectangle it lands on (as an opening's neighbour) and its height in yards
 
 The input, for every map with terrain files (the continents, the isle), as the game's files are extracted:
   game files    a folder with adt/ (the root terrain files, <tile key>.adt), adt-obj0/ (the object files: where
@@ -143,6 +155,10 @@ LANDING = 20           # yards from a lift's or a portal's end its landing may l
 RISE = 12              # yards a landing may lie over or under the lift's end (Navigation's Walk.RISE)
 LEVEL = 3              # a yard up or down counts as this many across when a landing is chosen (Navigation's
                        # Walk.Landing): one gets off level with the car, beside its shaft, not onto the roof over it
+FALL = 70              # yards: the highest drop kept, more than a route takes (Navigation's Walk.FALL picks among them,
+                       # so another height is a dev/tools/walk-gates run and Walk.FALL alone, no run of this tool)
+RUN = 24               # samples a drop may cross before it lands (50 yards): steep ground falling away, or air
+BAND = 4               # yards: drops side by side off one rectangle into another are one while their heights lie within
 # A square of the ground (outside buildings) may take this share of steep samples at its edges, by its side: the
 # edges of walkable ground, ragged at two yards, make no crowd of small rectangles.
 TAKEN = {2: 0.5, 4: 0.75, 8: 0.85, 16: 0.9, 32: 0.95}
@@ -152,7 +168,7 @@ STEEP = math.tan(math.radians(SLOPE)) * SAMPLE  # height over one sample past wh
 YARDS = np.array([SAMPLE, SAMPLE, 1.0])          # the samples' space (columns, rows, height) in yards
 LAND, WATER, BUILT = 1, 2, 3  # a floor's kind: the ground, a water's surface, a building's or a doodad's floor
 SKY, COVERED, BURIED = 1, 0, -1  # what is over a floor: the sky, something, a building DEPTH yards or more (the ground)
-FORMAT = 1             # the blocks' format, as Navigation's Walk.lua reads it
+FORMAT = 2             # the blocks' format, as Navigation's Walk.lua reads it (2: with the drops)
 
 
 def art():
@@ -1108,6 +1124,141 @@ def plan(alone, found, specks, built, walls=None):
 
 
 # -------------------------------------------------------------------------------------------------
+#  Drops: off a ledge or a cliff, one way down
+# -------------------------------------------------------------------------------------------------
+def cell(here, r, c, back):
+    """What a drop finds at a sample, come in from its side back: (z, rect, over, ground). Where it has a floor, z
+    its highest floor's height, rect that floor's rectangle (-1: none) and over the lowest of what lies over it (a
+    roof, the ground over a cave; -inf where a wall stands on the way in); where it has none, z NaN and ground the
+    ground's height where a drop may pass over it (nothing there but the ground: no hole, nothing built, no wall),
+    else NaN. here: the tile's (columns, owner, spans, walls, hole, its ground's height as its floors are made)."""
+    columns, owner, spans, walls, hole, level = here
+    floors = columns[r][c]
+    if floors:
+        i = max(range(len(floors)), key=lambda n: floors[n][0])
+        z = floors[i][0]
+        over = min((low for low, high, _ in spans.get((r, c), ()) if high > z + JOIN), default=math.inf)
+        if not hole[r, c] and level[r, c] > z + ROOM:
+            over = min(over, float(level[r, c]))
+        if stands(walls.get((r, c, back), ()), z, z):
+            over = -math.inf
+        return z, owner.get((r, c, i), -1), over, math.nan
+    clear = not hole[r, c] and (r, c) not in spans and not any((r, c, side) in walls for side in range(4))
+    return math.nan, -1, math.nan, float(level[r, c]) if clear else math.nan
+
+
+def onward(cells, a, crossed, before):
+    """A drop's way on from a floor at height a over the samples ahead (cells, as cell gives them, in order), having
+    crossed so many samples, the last at the ground's height before: ("drop", rect, height) where it lands on the
+    first floor lower than a by more than CLIMB, at most FALL, over at most RUN samples of ground falling away;
+    ("on", crossed, before) where the samples run out first (the tile's edge: the next tile's go on, across_drops);
+    None where it meets a floor too high or ground rising, a hole, something built, a wall on the way into its
+    landing or a roof over it, or goes on too far."""
+    for z, rect, over, ground in cells:
+        if not math.isnan(z):
+            if z >= a - CLIMB or a - z > FALL or over < a + ROOM or rect < 0:
+                return None
+            return ("drop", rect, a - z)
+        if math.isnan(ground) or ground > before + JOIN or crossed == RUN:
+            return None
+        crossed, before = crossed + 1, ground
+    return ("on", crossed, before)
+
+
+def ahead(here, r, c, side):
+    """The samples a drop off (r, c) on that side passes, as cell gives them, to the tile's edge (RUN + 1 at most)."""
+    _, dr, dc = SIDES[side]
+    back = (side + 2) % 4
+    for step in range(1, RUN + 2):
+        nr, nc = r + dr * step, c + dc * step
+        if not (0 <= nr < SIDE and 0 <= nc < SIDE):
+            return
+        yield cell(here, nr, nc, back)
+
+
+def drops(here, owner):
+    """The drops off a tile's rectangles: from every floor whose neighbour on a side holds no floor that high (less
+    CLIMB: one way with it, or a step up) and no wall or railing between, the way on along that side (onward). Off a
+    deck or a balcony onto the floor under it, off a cliff onto the ground at its foot, down a mountainside too steep
+    to walk. {rect: [(side, position along the side, rect landed on, height)]} on the tile, and those whose way runs
+    off its edge, to go on over the next tile's samples there (across_drops): [(rect, side, position, a, crossed,
+    before)]. Kept only where both rectangles are of one region (kept): regions stay two-way."""
+    columns, walls = here[0], here[3]
+    found, pending = {}, []
+    for (r, c, i), number in owner.items():
+        a = columns[r][c][i][0]
+        for side, dr, dc in SIDES:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < SIDE and 0 <= nc < SIDE and any(f[0] >= a - CLIMB for f in columns[nr][nc]):
+                continue
+            if stands(walls.get((r, c, side), ()), a, a):
+                continue
+            way = onward(ahead(here, r, c, side), a, 0, a)
+            position = c if side in (0, 2) else r
+            if way is None:
+                continue
+            if way[0] == "drop":
+                found.setdefault(number, []).append((side, position, way[1], way[2]))
+            else:
+                pending.append((number, side, position, a, way[1], way[2]))
+    return found, pending
+
+
+def strips(here):
+    """What a drop from the next tile finds along each of this tile's edges: {side: (z, rect, over, ground)}, each
+    an array of RUN + 1 rows (the edge's samples first, then inward) by the SIDE samples along it, as cell gives
+    them, come in from that side."""
+    found = {}
+    for side in range(4):
+        arrays = (np.full((RUN + 1, SIDE), np.nan, np.float32), np.full((RUN + 1, SIDE), -1, np.int32),
+                  np.full((RUN + 1, SIDE), np.nan, np.float32), np.full((RUN + 1, SIDE), np.nan, np.float32))
+        for depth in range(RUN + 1):
+            for position in range(SIDE):
+                r, c = ((depth, position), (position, SIDE - 1 - depth), (SIDE - 1 - depth, position),
+                        (position, depth))[side]
+                for array, value in zip(arrays, cell(here, r, c, side)):
+                    array[depth, position] = value
+        found[side] = arrays
+    return found
+
+
+def across_drops(tiles):
+    """The drops whose way runs over a tile's edge, gone on over the next tile's samples there (strips): each kept
+    on its tile beside the others, the rectangle landed on as the openings into the next tile name it (its index +
+    65536 x (1 + the side))."""
+    for key, (rects, links, borders, opened, buried, found, pending, _) in tiles.items():
+        continent, rest = divmod(key, GRID * GRID)
+        row, column = divmod(rest, GRID)
+        for number, side, position, a, crossed, before in pending:
+            dr, dc, opposite = NEXT[side]
+            other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+            if other not in tiles or not (0 <= row + dr < GRID and 0 <= column + dc < GRID):
+                continue
+            z, rect, over, ground = tiles[other][7][opposite]
+            cells = ((float(z[d, position]), int(rect[d, position]), float(over[d, position]),
+                      float(ground[d, position])) for d in range(RUN + 1 - crossed))
+            way = onward(cells, a, crossed, before)
+            if way and way[0] == "drop":
+                found.setdefault(number, []).append((side, position, way[1] + 65536 * (1 + side), way[2]))
+
+
+def runs(found):
+    """A rectangle's drops joined: those off one side into one rectangle side by side while their heights lie within
+    BAND, each [side, first, last, target, height], its height the greatest in whole yards (up), in the order of
+    their sides and first samples."""
+    joined = []
+    for side, position, target, height in sorted(found, key=lambda d: (d[0], d[2], d[1])):
+        last = joined[-1] if joined else None
+        if (last and last[0] == side and last[3] == target and position == last[2] + 1
+                and max(last[4], height) - min(last[5], height) <= BAND):
+            last[2], last[4], last[5] = position, max(last[4], height), min(last[5], height)
+        else:
+            joined.append([side, position, position, target, height, height])
+    return sorted(([side, first, last, target, math.ceil(most - 1e-6)] for side, first, last, target, most, _ in joined),
+                  key=lambda d: (d[0], d[1], d[3]))
+
+
+# -------------------------------------------------------------------------------------------------
 #  A tile
 # -------------------------------------------------------------------------------------------------
 def sunken(triangles, height, hole):
@@ -1120,11 +1271,12 @@ def sunken(triangles, height, hole):
 
 def tile(job):
     """Everything of one tile: (key, rects, openings, borders, open: the rectangles with the sky over some of their
-    floors, buried: {rectangle: how many of its floors are buried}), or (key, None, ...) without ground."""
+    floors, buried: {rectangle: how many of its floors are buried}, its drops and those that run off its edge
+    (drops), what a drop from the next tile finds along its edges (strips)), or (key, None, ...) without ground."""
     key, folder, waters, liquids, near_places = job
     path = folder / "adt" / f"{key}.adt"
     if not path.exists():
-        return key, None, None, None, None, None
+        return (key,) + (None,) * 8
     height, hole, water, closed, steep = ground(path, waters, liquids)
     row0, col0 = key % (GRID * GRID) // GRID, key % GRID
     north0, west0 = HALF - row0 * TILE, HALF - col0 * TILE
@@ -1155,14 +1307,16 @@ def tile(job):
     alone, found, specks, built = floors(height, hole, water, closed, spans, walls, steep)
     rects, owner, columns, links, borders = plan(alone, found, specks, built, walls)
     if not rects:
-        return key, None, None, None, None, None
+        return (key,) + (None,) * 8
     opened, buried = set(), {}
     for (r, c, i), number in owner.items():
         if columns[r][c][i][2] == SKY:
             opened.add(number)
         elif columns[r][c][i][2] == BURIED:
             buried[number] = buried.get(number, 0) + 1
-    return key, rects, links, borders, opened, buried
+    here = (columns, owner, spans, walls, hole, smooth(height.astype(np.float64)))
+    falls, pending = drops(here, owner)
+    return key, rects, links, borders, opened, buried, falls, pending, strips(here)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1292,7 +1446,9 @@ def regions(tiles, keep=()):
 
 
 def kept(tiles, region_of):
-    """Each tile's rectangles of the regions kept, numbered anew, their openings pointing at the new numbers."""
+    """Each tile's rectangles of the regions kept, numbered anew, their openings and drops pointing at the new numbers:
+    (rects, links, drops). A drop is kept only into a rectangle of its own region (drops), joined with those beside
+    it (runs)."""
     renumber = {}
     for key, (rects, *_) in tiles.items():
         count = 0
@@ -1301,27 +1457,41 @@ def kept(tiles, region_of):
                 renumber[(key, number)] = count
                 count += 1
     out = {}
-    for key, (rects, links, *_) in tiles.items():
-        continent, rest = divmod(key, GRID * GRID)
-        row, column = divmod(rest, GRID)
-        new_rects, new_links = [], {}
+    for key, (rects, links, *rest) in tiles.items():
+        falls = rest[3] if len(rest) > 3 and rest[3] else {}  # made-up tiles: none
+        continent, row_column = divmod(key, GRID * GRID)
+        row, column = divmod(row_column, GRID)
+
+        def there(target):
+            where, other_index = divmod(target, 65536)
+            other = key
+            if where:
+                dr, dc, _ = NEXT[where - 1]
+                other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
+            return where, (other, other_index)
+
+        new_rects, new_links, new_drops = [], {}, {}
         for number, rect in enumerate(rects):
             if (key, number) not in region_of:
                 continue
             index = len(new_rects)
-            new_rects.append(rect + [region_of[(key, number)]])
+            region = region_of[(key, number)]
+            new_rects.append(rect + [region])
             moved = []
             for side, first, last, target in links.get(number, []):
-                where, other_index = divmod(target, 65536)
-                other = key
-                if where:
-                    dr, dc, _ = NEXT[where - 1]
-                    other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
-                if (other, other_index) in renumber:
-                    moved.append([side, first, last, where * 65536 + renumber[(other, other_index)]])
+                where, other = there(target)
+                if other in renumber:
+                    moved.append([side, first, last, where * 65536 + renumber[other]])
             new_links[index] = moved
+            down = []
+            for side, position, target, height in falls.get(number, ()):
+                where, other = there(target)
+                if region_of.get(other) == region:
+                    down.append((side, position, where * 65536 + renumber[other], height))
+            if down:
+                new_drops[index] = runs(down)
         if new_rects:
-            out[key] = (new_rects, new_links)
+            out[key] = (new_rects, new_links, new_drops)
     return out
 
 
@@ -1385,16 +1555,18 @@ def shared(a, b, side, dr, dc):
     return (first, last) if first <= last else None
 
 
-def block(rects, links, key, tiles):
-    """A tile's block: [FORMAT, surfaces, rectangles, openings]. Its rectangles come surface by surface; a
+def block(rects, links, key, tiles, falls=None):
+    """A tile's block: [FORMAT, surfaces, rectangles, openings, drops]. Its rectangles come surface by surface; a
     surface is written as how many rectangles it has, its kind and its region; a rectangle as its column, row,
     width, height and z. Two rectangles of one surface that share an edge are one way along all of it, as the
     game works out from the rectangles themselves; every other opening is written: along the whole edge two
     rectangles share as the neighbour alone, else as -1 - side, then the first and last sample, then the
     neighbour. The neighbour is its index times 5 plus where it lies (0 on the tile, else 1 + the next tile's
     direction). On its own tile an opening is written once, on the north or west side of the two (the game
-    adds the other way when it unpacks the tile); into the next tile, from both."""
-    flat_surfaces, flat_rects, flat_links = [], [], []
+    adds the other way when it unpacks the tile); into the next tile, from both. A drop (falls: {rect: runs}) is
+    written only from the rectangle it leaves, one way: that rectangle's index, its side, the first and last sample
+    along it, the rectangle it lands on (as an opening's neighbour) and its height in whole yards."""
+    flat_surfaces, flat_rects, flat_links, flat_drops = [], [], [], []
     for number, rect in enumerate(rects):
         column, row, width, height, z, kind, surface, region = rect
         if number == 0 or rects[number - 1][6] != surface:
@@ -1418,8 +1590,11 @@ def block(rects, links, key, tiles):
                 out.extend([-1 - side, first, last, index * 5 + where])
         flat_links.append(len(out))
         flat_links.extend(out)
+        for side, first, last, target, height in (falls or {}).get(number, ()):
+            where, index = divmod(target, 65536)
+            flat_drops.extend([number, side, first, last, index * 5 + where, height])
     packed = zlib.compressobj(9, zlib.DEFLATED, -15)
-    data = packed.compress(cbor([FORMAT, flat_surfaces, flat_rects, flat_links])) + packed.flush()
+    data = packed.compress(cbor([FORMAT, flat_surfaces, flat_rects, flat_links, flat_drops])) + packed.flush()
     return base64.b64encode(data).decode("ascii")
 
 
@@ -1507,6 +1682,13 @@ def main():
     waters = ART.waters(tables)
     formats = {row["ID"]: int(row["LVF"]) for row in ART.table(tables, "LiquidMaterial")}
     liquids = {int(row["ID"]): formats.get(row["MaterialID"], 0) for row in ART.table(tables, "LiquidType")}
+    roots = {path.stem for path in (folder / "wmo").glob("*.wmo") if "_" not in path.stem}
+    lacking = roots - {path.stem.split("_")[0] for path in (folder / "wmo").glob("*_*.wmo")}
+    if lacking:  # (Forever's 70755 and 70938 were so extracted: half the rectangles gone)
+        print(f"{len(lacking)} of {len(roots)} buildings in {folder / 'wmo'} have no group files: their floors and walls "
+              "would be lost. Extract them, or take an earlier build's files where the world is the same (the terrain, "
+              "the object files, the buildings and the models).", file=sys.stderr)
+        return 1
     places = placements(folder)
     keys = sorted(int(path.stem) for path in (folder / "adt").glob("*.adt"))
     if maps:
@@ -1530,9 +1712,9 @@ def main():
         jobs.append((key, folder, waters, liquids, near_places))
     tiles = {}
     with Pool(given["processes"], maxtasksperchild=TASKS) as pool:
-        for done, (key, rects, links, borders, opened, buried) in enumerate(pool.imap_unordered(tile, jobs, chunksize=1), 1):
+        for done, (key, rects, *rest) in enumerate(pool.imap_unordered(tile, jobs, chunksize=1), 1):
             if rects:
-                tiles[key] = (rects, links, borders, opened, buried)
+                tiles[key] = (rects, *rest)
             if done % 50 == 0 or done == len(jobs):
                 print(f"{done} of {len(jobs)} tiles read", file=sys.stderr, flush=True)
             used = memory_held()
@@ -1542,19 +1724,23 @@ def main():
                       f"staging written. Run it one map at a time: --maps <map> --processes {PROCESSES}.", file=sys.stderr)
                 return 1
     across(tiles)
+    across_drops(tiles)
+    for key, value in tiles.items():
+        tiles[key] = value[:7]  # what the next tiles' drops found along its edges, no longer needed
     tiles = kept(tiles, regions(tiles, landings(tiles, ends())))
-    lines, total, count = [], 0, 0
+    lines, total, count, fallen = [], 0, 0, 0
     for key in sorted(tiles):
         if only and key not in only:
             continue
-        rects, links = tiles[key]
+        rects, links, falls = tiles[key]
         if pictures:
             picture(pictures, key, rects, links)
         if only:
             continue  # no staging of a few tiles: their region numbers cannot agree with the master's (regions)
-        text = block(rects, links, key, tiles)
+        text = block(rects, links, key, tiles, falls)
         total += len(text)
         count += len(rects)
+        fallen += sum(len(list_) for list_ in falls.values())
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
         around = [continent * GRID * GRID + (row + dr) * GRID + (column + dc)
@@ -1566,7 +1752,7 @@ def main():
               + ": no staging written, a few tiles' region numbers cannot agree with the master's.")
         return 0
     held = save(STAGING, lines, maps)
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} tiles, {count} rectangles, {total // 1024} KB of blocks"
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} tiles, {count} rectangles, {fallen} drops, {total // 1024} KB of blocks"
           + (f"; {held - len(lines)} tiles of other maps kept." if maps else "."))
     return 0
 

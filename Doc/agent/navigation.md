@@ -93,7 +93,8 @@ graph over every plane, the walks priced by the coarse layer first, the floors, 
 `Gates.lua` and `Lifts.lua`; the plan's *The planner* and *The walking data* hold the decisions. Core's set *Walking*
 is made by `dev/tools/walk-data` (`saneui makewalkdata`), its coarse layer `gates` by `dev/tools/walk-gates`
 (`saneui makewalkgates`; `dev/tests/walk.py` fails on a stale layer); its master `assets/data/Walking/Walking.jsonl`
-is about 43 MB. The flight points a character has found are Navigation's own (`Planner.lua`, `flightPoints` per
+is about 81 MB. Its drops (one way down off a ledge or a cliff, format 2) are taken up to `Walk.FALL` (54 yards:
+a fall of 50 metres measured safe); another height is a `walk-gates` run and `Walk.FALL`, not one of `walk-data`. The flight points a character has found are Navigation's own (`Planner.lua`, `flightPoints` per
 character, learnt at a flight master).
 
 ## What is not there yet

@@ -20,6 +20,8 @@ local _, ns = ...
 --      Walk.Nearest(continent, u, v, reach, region, kind)  the nearest rectangle within reach yards
 --      Walk.Regions(continent, u, v, reach)   the regions of the floors under a point and around it
 --      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
+--      Walk.Drops(tile, index), Walk.Drop(tile, index, n)   its drops: one way down off a ledge or a cliff
+--      Walk.Fall(tile, index, side, first, last, next, other)   a drop's way off and where it lands, in the plane
 --      Walk.Follow(continent, u, v, key, index, fromU, fromV)   the floor a walker has come to from the one before
 --      Walk.Straight(tile, index, u1, v1, u2, v2, dry)   whether a walker on a floor gets to a place going straight
 --      Walk.Floor(continent, u, v, indoors, reach, height)   the floor a walker stands on where it is not followed
@@ -35,13 +37,22 @@ local _, ns = ...
 --  one that holds them now (Follow); where it cannot be, it is chosen (Floor): near
 --  the height they had, else outdoors the highest floor under them, indoors the
 --  lowest of a building's floors near them.
+--
+--  A drop: one way down off a rectangle's side onto a lower one (Saneroki,
+--  2026-11-16: "route over mountains where you can fall down without dying"), off
+--  a ledge, a cliff or a mountainside too steep to walk, the ground falling away
+--  over at most 24 samples between; with its height in whole yards. The search
+--  takes those up to Walk.FALL, never back up; the floor's following takes any
+--  (the walker fell).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
 local Walk = {}
 ns.Walk = Walk
 
-Walk.FORMAT = 1
+Walk.FORMAT = 2                    -- the blocks' format (dev/tools/walk-data's FORMAT; 2: with the drops)
+Walk.FALL = 54                     -- yards: the highest drop a walk takes (49 metres; Saneroki, 2026-11-18: "A fall of
+                                   -- 50 meters is safe", measured with /sane falls). dev/tools/walk-gates' FALL alike
 Walk.SIDE = 256                    -- samples along a tile's side
 Walk.SAMPLE = Coords.TILE / Walk.SIDE
 Walk.KEEP = 48                     -- tiles kept unpacked: the one asked for longest ago let go
@@ -129,7 +140,7 @@ end
 -- openings only once they are needed (Walk.Links): they take most of an unpacking's time and memory.
 local function Read(tile, block)
     local surfaces, rects = block[2], block[3]
-    tile.rects, tile.kind, tile.region, tile.surface, tile.links = rects, {}, {}, {}, block[4]
+    tile.rects, tile.kind, tile.region, tile.surface, tile.links, tile.falls = rects, {}, {}, {}, block[4], block[5]
     tile.count = #rects / 5
     local index, number = 0, 0
     for s = 1, #surfaces, 3 do
@@ -142,12 +153,22 @@ local function Read(tile, block)
 end
 
 -- A tile's openings (tile.opens[index]: a rectangle's), worked out the first time they are needed: those of one
--- surface that touch (Touching), and those the block writes, once on their tile, with their other way.
+-- surface that touch (Touching), and those the block writes, once on their tile, with their other way. Its drops too
+-- (tile.drops[index]: { side, first, last, where, index, height } each, only of the rectangles that have any).
 function Walk.Links(tile)
     local opens = tile.opens
     if opens then return opens end
     opens = {}
     tile.opens = opens
+    local drops, falls = {}, tile.falls
+    tile.drops = drops
+    for at = 1, #falls, 6 do
+        local rect, target = falls[at] + 1, falls[at + 4]
+        drops[rect] = drops[rect] or {}
+        table.insert(drops[rect], { falls[at + 1], falls[at + 2], falls[at + 3], target % 5, math.floor(target / 5) + 1,
+                                    falls[at + 5] })
+    end
+    tile.falls = nil
     for index = 1, tile.count do opens[index] = {} end
     local surface, first = tile.surface, 1
     for index = 1, tile.count do
@@ -214,7 +235,7 @@ function Walk.Tile(key)
     local text = Walking:Get(key, "block")
     local block = text and Walk.Unpack(text)
     if type(block) ~= "table" or block[1] ~= Walk.FORMAT or type(block[2]) ~= "table" or type(block[3]) ~= "table"
-        or type(block[4]) ~= "table" then
+        or type(block[4]) ~= "table" or type(block[5]) ~= "table" then
         open[key] = false
         return nil
     end
@@ -394,6 +415,43 @@ function Walk.Openings(tile, index, fn)
     end
 end
 
+-- A rectangle's drops: { { side, first, last, where, index, height }, ... } (none: an empty list, not to be changed).
+local NONE = {}
+function Walk.Drops(tile, index)
+    if not tile.opens then Walk.Links(tile) end
+    return tile.drops[index] or NONE
+end
+
+-- A rectangle's drop n (1 to #Walk.Drops(tile, index)): its side, the first and last sample along it (on the
+-- rectangle's own tile), the tile (unpacked) and index of the rectangle it lands on, and its height in yards; nil for one
+-- into a tile that is not there.
+function Walk.Drop(tile, index, n)
+    local drop = Walk.Drops(tile, index)[n]
+    local next = tile
+    if drop[4] > 0 then next = Walk.Tile(tile.key + STEP[drop[4] - 1]) end
+    if not next or drop[5] > next.count then return nil end
+    return drop[1], drop[2], drop[3], next, drop[5], drop[6]
+end
+
+-- A drop in the plane: the way off (u1, v1, u2, v2: its stretch of the rectangle's side, as Walk.Portal gives it), then
+-- where it lands, the same stretch moved across to the side of the rectangle landed on that faces it (where that one
+-- reaches under the way off, a deck's edge over the ground: the way off itself).
+function Walk.Fall(tile, index, side, first, last, next, other)
+    local au, av, bu, bv = Walk.Portal(tile, index, side, first, last)
+    local left, right, top, bottom = Walk.Box(next, other)
+    local du, dv = 0, 0
+    if side == 0 then
+        dv = math.max(0, bottom - av)
+    elseif side == 1 then
+        du = math.max(0, left - au)
+    elseif side == 2 then
+        dv = math.min(0, top - av)
+    else
+        du = math.min(0, right - au)
+    end
+    return au, av, bu, bv, au + du, av + dv, bu + du, bv + dv
+end
+
 -- An opening as a segment of the plane: its two ends (u1, v1, u2, v2), from the rectangle's side.
 function Walk.Portal(tile, index, side, first, last)
     local r, base = tile.rects, (index - 1) * 5
@@ -439,11 +497,11 @@ local function Apart(au, av, bu, bv, cu, cv, du, dv)
 end
 
 -- The floor a walker stands on at a point (u, v), who stood on rectangle index of tile key at (fromU, fromV) before
--- (Walk.Follow's last answer): that one while the point lies on it; else, of the rectangles its openings lead to (and
--- theirs, at most Walk.FOLLOW of them, within Walk.STRIDE yards of the point), the one that holds the point through
--- the openings nearest the way the walker went: the floors over and under the right one are reached through openings
--- elsewhere (a cave's mouth is not the path up the hill over it). Gives its key and index; nil when none holds it (a
--- jump down, the walker taken away, a place the data has no floor at).
+-- (Walk.Follow's last answer): that one while the point lies on it; else, of the rectangles its openings and drops lead
+-- to (and theirs, at most Walk.FOLLOW of them, within Walk.STRIDE yards of the point), the one that holds the point
+-- through the openings nearest the way the walker went: the floors over and under the right one are reached through
+-- openings elsewhere (a cave's mouth is not the path up the hill over it). A drop of any height: the walker fell. Gives
+-- its key and index; nil when none holds it (in the air, the walker taken away, a place the data has no floor at).
 local tiles, numbers, costs, closed = {}, {}, {}, {} -- reused: asked for while the player moves
 local function Clean(size)
     for n = 1, size do tiles[n], numbers[n], costs[n] = nil, nil, nil end
@@ -482,6 +540,15 @@ function Walk.Follow(continent, u, v, key, index, fromU, fromV)
                     costs[size] = cost + Apart(au, av, bu, bv, fromU, fromV, u, v)
                 end
             end
+            for n = 1, #Walk.Drops(here, number) do
+                local side, first, last, next, other = Walk.Drop(here, number, n)
+                if side and not closed[next.key * 65536 + other] and Off(next, other, u, v) <= Walk.STRIDE then
+                    local au, av, bu, bv = Walk.Portal(here, number, side, first, last)
+                    size = size + 1
+                    tiles[size], numbers[size] = next, other
+                    costs[size] = cost + Apart(au, av, bu, bv, fromU, fromV, u, v)
+                end
+            end
         end
     end
     Clean(size)
@@ -507,8 +574,9 @@ end
 
 -- Whether a walker on rectangle index of tile at (u1, v1) gets to (u2, v2) going straight: from rectangle to
 -- rectangle through the openings the line crosses their edges at (so on the floor they are on, as Follow: never
--- onto the one over or under it), to one that holds the end; never into water where dry; at most Walk.RAY
--- rectangles. False where the line meets an edge with no opening there, or the start does not lie on the rectangle.
+-- onto the one over or under it, nor down a drop), to one that holds the end; never into water where dry; at most
+-- Walk.RAY rectangles. False where the line meets an edge with no opening there, or the start does not lie on the
+-- rectangle.
 function Walk.Straight(tile, index, u1, v1, u2, v2, dry)
     local du, dv = u2 - u1, v2 - v1
     local length = math.sqrt(du * du + dv * dv)

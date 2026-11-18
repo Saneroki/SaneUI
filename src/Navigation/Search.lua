@@ -8,10 +8,12 @@ local _, ns = ...
 --  the rectangle was entered to where the straight line on to the next aim crosses
 --  the opening, so open ground costs its straight way, not a stair of nearest
 --  points; a yard swum the water's price, Search.WATER or the planner's; and
---  Search.CLIMB times what it climbs); then the line pulled straight through the
---  openings it passes (a funnel: corners only where something is in the way), the
---  openings drawn in a little from their ends so the line does not graze a wall.
---  Knows no frames.
+--  Search.CLIMB times what it climbs); down the drops too, one way (off a ledge or
+--  a cliff, Walk.FALL high at most: the way across and Search.DROP times each yard
+--  fallen); then the line pulled straight through the openings it passes (a
+--  funnel: corners only where something is in the way; a drop's way off and where it
+--  lands), the openings drawn in a little from their ends so the line does not
+--  graze a wall. Knows no frames.
 --
 --  In two steps, over the coarse layer (Gates.lua): first the price (Search.Price),
 --  rectangle by rectangle only on the tiles where the walk starts and ends, across
@@ -66,6 +68,8 @@ Search.WATER = 1 / 0.6  -- a yard swum costs so many on land, where the walk is 
 Search.CLIMB = 0.25     -- each yard up costs so many yards more: the game runs as fast up a hill as on the flat
                         -- (no slope over 50 degrees is a floor at all), so the shorter way over a hill or a pass is
                         -- taken; of two ways about as long the flatter
+Search.DROP = 1         -- each yard fallen off a drop costs so many yards more: a fall takes health, so of two ways
+                        -- about as long the one with the smaller fall
 Search.EDGE = 0.8       -- yards an opening is drawn in from its ends
 Search.ASIDE = 500      -- yards more a walk from another floor at the start costs than one from the floor it was
                         -- guessed on: taken only where no way leaves that one (a roof, a rock's top over a street, a
@@ -271,6 +275,14 @@ local function Portal(tile, index, side, first, last)
     return { u2, v2, u1, v1 }
 end
 
+-- A drop as two openings the line passes: its way off (as Portal) and where it lands (Walk.Fall), alike.
+local function Fallen(tile, index, side, first, last, next, other)
+    local off = Portal(tile, index, side, first, last)
+    local au, av, _, _, cu, cv = Walk.Fall(tile, index, side, first, last, next, other)
+    local du, dv = cu - au, cv - av
+    return off, { off[1] + du, off[2] + dv, off[3] + du, off[4] + dv }
+end
+
 
 -- The next tile north, east, south, west.
 local STEP = { [0] = -64, [1] = 1, [2] = 64, [3] = -1 }
@@ -306,7 +318,7 @@ end
 local function Run(sources, goals, u2, v2, check, water, opts)
     local near, way, guide, out = opts.near, opts.way, opts.guide, opts.out
     local g, from, enterU, enterV, tiles, indexes = {}, {}, {}, {}, {}, {}
-    local viaSide, viaFirst, viaLast, across, aim, first = {}, {}, {}, {}, {}, {}
+    local viaSide, viaFirst, viaLast, viaDrop, across, aim, first = {}, {}, {}, {}, {}, {}, {}
     local closed, heap, keys = {}, {}, {}
     local within, ahead = way and way.tiles, way and #way.u or 0
     local weight = way and Search.AIM or 1
@@ -328,6 +340,14 @@ local function Run(sources, goals, u2, v2, check, water, opts)
             end
         end
         return sqrt((u2 - pu) ^ 2 + (v2 - pv) ^ 2) * weight
+    end
+    -- The way's next gate from m on, where a step from tile into next crosses the border m lies on: the one after it.
+    local function Onward(m, tile, next)
+        if next ~= tile and m <= ahead and ((way.a[m] == tile.key and way.b[m] == next.key)
+            or (way.b[m] == tile.key and way.a[m] == next.key)) then
+            return m + 1
+        end
+        return m
     end
     local function Reach(nid, cost, parent, pu, pv, m)
         if g[nid] == nil or cost < g[nid] then
@@ -416,14 +436,30 @@ local function Run(sources, goals, u2, v2, check, water, opts)
                             local cost = here + sqrt(du * du + dv * dv) * weight
                             local rise = next.rects[other * 5] / 4 - z
                             if rise > 0 then cost = cost + rise * Search.CLIMB end
-                            -- Across the border the way's next gate lies on: on to the gate after it.
-                            local mm = m
-                            if next ~= tile and mm <= ahead and ((way.a[mm] == tile.key and way.b[mm] == next.key)
-                                or (way.b[mm] == tile.key and way.a[mm] == next.key)) then
-                                mm = mm + 1
+                            if Reach(nid, cost, id, pu, pv, Onward(m, tile, next)) then
+                                viaSide[nid], viaFirst[nid], viaLast[nid], viaDrop[nid] = side, low, high, nil
+                                tiles[nid], indexes[nid] = next, other
                             end
-                            if Reach(nid, cost, id, pu, pv, mm) then
-                                viaSide[nid], viaFirst[nid], viaLast[nid] = side, low, high
+                        end
+                    end
+                end
+                -- Down its drops, one way: to where the line on to the aim crosses the way off, across to where it
+                -- lands, each yard fallen Search.DROP more. Into another tile only where that one is searched
+                -- rectangle by rectangle (no gate crosses a border down a drop).
+                local drops = Walk.Drops(tile, index)
+                for n = 1, #drops do
+                    if drops[n][6] <= Walk.FALL then
+                        local side, low, high, next, other, height = Walk.Drop(tile, index, n)
+                        local nid = side and next.key * 65536 + other
+                        if nid and not closed[nid] and (not within or within[next.key])
+                            and not (next ~= tile and gates and not near[next.key] and Gates.Tile(next.key)) then
+                            local au, av, bu, bv, cu, cv = Walk.Fall(tile, index, side, low, high, next, other)
+                            local pu, pv = Through(fu, fv, au, av, bu, bv, tu, tv)
+                            local qu, qv = pu + cu - au, pv + cv - av
+                            local cost = here + sqrt((pu - fu) ^ 2 + (pv - fv) ^ 2) * weight
+                                + sqrt((qu - pu) ^ 2 + (qv - pv) ^ 2) + height * Search.DROP
+                            if Reach(nid, cost, id, qu, qv, Onward(m, tile, next)) then
+                                viaSide[nid], viaFirst[nid], viaLast[nid], viaDrop[nid] = side, low, high, true
                                 tiles[nid], indexes[nid] = next, other
                             end
                         end
@@ -474,6 +510,16 @@ local function Run(sources, goals, u2, v2, check, water, opts)
                                 across[nid] = key
                             end
                         end
+                        -- The ways down a drop from it, one way (into another part of the tile too).
+                        local falls = gates.falls[a]
+                        for f = 1, falls and #falls or 0, 3 do
+                            local b = falls[f]
+                            local nid = -gates.id[b]
+                            if not closed[nid] and Reach(nid, here + Gates.Down(falls[f + 1], falls[f + 2], water), id,
+                                gates.u[b], gates.v[b], m) then
+                                across[nid] = key
+                            end
+                        end
                     end
                 end
             end
@@ -481,7 +527,7 @@ local function Run(sources, goals, u2, v2, check, water, opts)
     end
     if g[GOAL] == nil and not out then return nil end
     return { g = g, from = from, enterU = enterU, enterV = enterV, tiles = tiles, indexes = indexes, viaSide = viaSide,
-             viaFirst = viaFirst, viaLast = viaLast, across = across, first = first }
+             viaFirst = viaFirst, viaLast = viaLast, viaDrop = viaDrop, across = across, first = first }
 end
 
 -- The walk's start and end on the walking data: its sources, the floor it stands on (own) and its goals (at the
@@ -530,7 +576,14 @@ local function Line(state, goals, own, u1, v1, u2, v2)
     local tiles, indexes = state.tiles, state.indexes
     while state.viaSide[id] do
         local parent = state.from[id]
-        table.insert(list, 1, Portal(tiles[parent], indexes[parent], state.viaSide[id], state.viaFirst[id], state.viaLast[id]))
+        if state.viaDrop[id] then
+            local off, landed = Fallen(tiles[parent], indexes[parent], state.viaSide[id], state.viaFirst[id],
+                state.viaLast[id], tiles[id], indexes[id])
+            table.insert(list, 1, landed)
+            table.insert(list, 1, off)
+        else
+            table.insert(list, 1, Portal(tiles[parent], indexes[parent], state.viaSide[id], state.viaFirst[id], state.viaLast[id]))
+        end
         id = parent
     end
     local su, sv = state.enterU[id], state.enterV[id]
@@ -640,15 +693,22 @@ local function Back(zone, ends, near, u1, v1, u2, v2, water, check)
                 local gates = not near[key] and Gates.Tile(key)
                 local a = gates and gates.byId[gid]
                 local group = a and gates.group[a]
-                for y = 1, group and group.size or 0 do
-                    local b = group.gates[y]
+                -- The gates of its part, then those whose ways down a drop come to it (the drop taken the way it goes).
+                local landed = a and gates.landed[a]
+                local size = group and group.size or 0
+                for y = 1, size + (landed and #landed / 3 or 0) do
+                    local b, c
+                    if y <= size then
+                        b = group.gates[y]
+                        c = b ~= a and cost[gid] + Gates.Cost(gates, b, a, water)
+                    else
+                        local f = (y - size) * 3 - 2
+                        b, c = landed[f], cost[gid] + Gates.Down(landed[f + 1], landed[f + 2], water)
+                    end
                     local bid = gates.id[b]
-                    if b ~= a and not closed[bid] then
-                        local c = cost[gid] + Gates.Cost(gates, b, a, water)
-                        if not cost[bid] or c < cost[bid] then
-                            cost[bid] = c
-                            Push(heap, keys, c + sqrt((gates.u[b] - u1) ^ 2 + (gates.v[b] - v1) ^ 2), bid)
-                        end
+                    if c and not closed[bid] and (not cost[bid] or c < cost[bid]) then
+                        cost[bid] = c
+                        Push(heap, keys, c + sqrt((gates.u[b] - u1) ^ 2 + (gates.v[b] - v1) ^ 2), bid)
                     end
                 end
             end

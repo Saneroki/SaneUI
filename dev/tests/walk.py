@@ -18,6 +18,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import struct
 import sys
 import tempfile
@@ -473,7 +474,7 @@ def blocked(rects, links):
 
 rects, owner, columns, links, _ = shore
 data = blocked(rects, links)
-check("a block: its format, surfaces, rectangles, openings", (data[0], len(data)), (walk.FORMAT, 4))
+check("a block: its format, surfaces, rectangles, openings, drops", (data[0], len(data), data[4]), (walk.FORMAT, 5, []))
 check("each rectangle five numbers", len(data[2]), 5 * len(rects))
 check("the surfaces add up to the rectangles", sum(data[1][0::3]), len(rects))
 written = []
@@ -579,6 +580,136 @@ check("the hall and the ground under it then one opening apart",
       sum(1 for n, _, _, t in places if rects[n][5] == BUILT and rects[t][5] == LAND), 1)
 check("it too on both rectangles' sides, both ways", all(
     walk.meets(rects[n], rects[t], side) and (t, (side + 2) % 4, p, n) in places for n, side, p, t in places), True)
+
+# --- Drops -----------------------------------------------------------------------------------------
+def fallen(alone, found, specks, built, level, spans=None, walls=None, hole=None):
+    """A tile's rectangles and what its drops are found from (drops' here)."""
+    rects, owner, columns = walk.rectangles(alone, found, specks, built, walls)
+    hole = np.zeros((SIDE, SIDE), bool) if hole is None else hole
+    return rects, owner, (columns, owner, spans or {}, walls or {}, hole, level)
+
+
+def heights(found):
+    return sorted({round(height, 1) for list_ in found.values() for *_, height in list_})
+
+
+# A cliff: the east half 20 yards higher, upright. Off its edge westward onto the ground at its foot; never up it.
+alone, found, specks, built = ground()
+alone[:, 128:] = 30.0
+rects, owner, here = fallen(alone, found, specks, built, alone.copy())
+falls, pending = walk.drops(here, owner)
+check("off a cliff: a drop from each of its edge's samples, onto the ground at its foot",
+      (sum(len(list_) for list_ in falls.values()), heights(falls)), (SIDE, [20.0]))
+check("only off its top, westward", {(rects[number][0], side) for number, list_ in falls.items() for side, *_ in list_},
+      {(128, 3)})
+check("and each landing beside it", {rects[target][0] + rects[target][2] for list_ in falls.values()
+                                    for _, _, target, _ in list_}, {128})
+check("the ways off the tile's edges wait for the next tile's samples", len(pending) > 0, True)
+joined = walk.runs(falls[owner[(0, 128, 0)]])
+check("a rectangle's drops into one rectangle side by side joined, the height in whole yards",
+      joined, [[3, 0, walk.WIDEST - 1, owner[(0, 127, 0)], 20]])
+check("heights within BAND joined, the greatest kept; past it apart",
+      (walk.runs([(1, 5, 9, 20.2), (1, 6, 9, 23.9), (1, 7, 9, 24.1)]), walk.runs([(1, 5, 9, 20.0), (1, 6, 9, 30.0)])),
+      ([[1, 5, 7, 9, 25]], [[1, 5, 5, 9, 20], [1, 6, 6, 9, 30]]))
+_, flat_owner, flat_here = fallen(*ground(), np.full((SIDE, SIDE), 10.0))
+check("a flat tile has none", walk.drops(flat_here, flat_owner)[0], {})
+
+# A mountainside too steep to walk (columns 128 to 135) between a plateau 30 yards high in the west and a field 10
+# yards high in the east: one slides down it.
+alone, found, specks, built = ground()
+level = np.full((SIDE, SIDE), 10.0)
+level[:, :128] = 30.0
+for column in range(128, 136):
+    level[:, column] = 30.0 - (column - 127) * 2.4
+alone[:, :128] = 30.0
+alone[:, 128:136] = np.nan
+specks[:, 128:136] = level[:, 128:136]
+rects, owner, here = fallen(alone, found, specks, built, level)
+falls, _ = walk.drops(here, owner)
+check("down a mountainside too steep to walk: over its steep samples onto the field at its foot",
+      (sum(len(list_) for list_ in falls.values()), heights(falls),
+       {rects[target][0] for list_ in falls.values() for _, _, target, _ in list_}), (SIDE, [20.0], {136}))
+rising = level.copy()
+rising[:, 130] = 31.0
+def count(spans=None, walls=None, hole=None, level_=None):
+    """How many drops the mountainside gives with something on it."""
+    hole = np.zeros((SIDE, SIDE), bool) if hole is None else hole
+    found_, _ = walk.drops((here[0], owner, spans or {}, walls or {}, hole, level if level_ is None else level_), owner)
+    return sum(len(list_) for list_ in found_.values())
+
+
+ridge = np.zeros((SIDE, SIDE), bool)
+ridge[5, 131] = True
+check("not where the ground rises on the way (a ridge), over a hole or something built (a tree, a fence)",
+      (count(level_=rising), count(hole=ridge), count(spans={(5, 131): [(15.0, 16.0, False)]})), (0, SIDE - 1, SIDE - 1))
+check("nor with a roof over the landing", count(spans={(5, 136): [(20.0, 21.0, False)]}), SIDE - 1)
+check("nor past a railing at the edge (a wall rising over the floor), nor through a wall into the landing; a wall "
+      "under the edge is the cliff's face", [count(walls=walls_) for walls_ in (
+          {(5, 127, 1): [(29.0, 31.0)]}, {(5, 136, 3): [(9.0, 13.0)]}, {(5, 127, 1): [(25.0, 29.5)]})],
+      [SIDE - 1, SIDE - 1, SIDE])
+high = level.copy()
+high[:, :128] = 10.0 + walk.FALL + 1
+alone_high = alone.copy()
+alone_high[:, :128] = 10.0 + walk.FALL + 1
+_, high_owner, high_here = fallen(alone_high, found, specks, built, high)
+check("nor a fall higher than FALL", walk.drops(high_here, high_owner)[0], {})
+wide = np.full((SIDE, SIDE), 10.0)
+wide[:, :100] = 80.0
+alone_wide, found_wide, specks_wide, built_wide = ground()
+alone_wide[:, :100] = 80.0
+alone_wide[:, 100:100 + walk.RUN + 1] = np.nan
+for column in range(100, 100 + walk.RUN + 1):
+    wide[:, column] = 80.0 - (column - 99) * 2.5
+specks_wide[:, 100:100 + walk.RUN + 1] = wide[:, 100:100 + walk.RUN + 1]
+_, wide_owner, wide_here = fallen(alone_wide, found_wide, specks_wide, built_wide, wide)
+check("nor one crossing more than RUN samples", walk.drops(wide_here, wide_owner)[0], {})
+# A balcony 8 yards over the ground (columns 4 to 7 of rows 0 to 7, a building's floor), the ground going on under it:
+# off its edges onto the ground beside it.
+alone, found, specks, built = ground()
+for row in range(8):
+    for column in range(4, 8):
+        found[(row, column)] = [(10.0, LAND, True), (18.0, BUILT, True)]
+        built[row, column] = True
+rects, owner, here = fallen(alone, found, specks, built, np.full((SIDE, SIDE), 10.0))
+falls, _ = walk.drops(here, owner)
+check("off a balcony onto the ground beside it, on its three open sides",
+      (sorted({side for list_ in falls.values() for side, *_ in list_}), heights(falls)), ([1, 2, 3], [8.0]))
+
+# Across a tile's edge: a plateau 30 yards high at the east edge of one tile, the next tile's ground falling away from
+# its west edge (columns 0 to 3) to a field 10 yards high.
+alone, found, specks, built = ground()
+alone[:, :] = 30.0
+west_rects, west_owner, west_here = fallen(alone, found, specks, built, alone.copy())
+falls_west, pending_west = walk.drops(west_here, west_owner)
+alone, found, specks, built = ground()
+level = np.full((SIDE, SIDE), 10.0)
+for column in range(4):
+    level[:, column] = 30.0 - (column + 1) * 4.0
+alone[:, :4] = np.nan
+specks[:, :4] = level[:, :4]
+east_rects, east_owner, east_here = fallen(alone, found, specks, built, level)
+falls_east, pending_east = walk.drops(east_here, east_owner)
+tiles = {middle: (west_rects, {}, {}, set(), {}, falls_west, pending_west, walk.strips(west_here)),
+         middle + 1: (east_rects, {}, {}, set(), {}, falls_east, pending_east, walk.strips(east_here))}
+walk.across_drops(tiles)
+crossing = [(side, target // 65536, east_rects[target % 65536][0], round(height, 1))
+            for list_ in falls_west.values() for side, _, target, height in list_]
+check("across a tile's edge: off the plateau over the next tile's steep samples onto its field",
+      (len(crossing), set(crossing)), (SIDE, {(1, 2, 4, 20.0)}))
+
+# Kept into a rectangle of its own region only (regions stay two-way), numbered anew, joined; in the block, one way.
+rects = [[0, 0, 64, 64, 120, LAND, 0], [64, 0, 64, 64, 40, LAND, 1], [128, 0, 64, 64, 40, LAND, 2]]
+links = {0: [], 1: [], 2: []}
+falls = {0: [(1, row, 1, 20.0) for row in range(64)], 1: [(1, row, 2, 0.0) for row in range(3)]}
+falls[2] = [(3, row, 0, 20.0) for row in range(64)]
+region_of = {(0, 0): 1, (0, 1): 1, (0, 2): 2}
+kept_tiles = walk.kept({0: (rects, links, {}, set(), {}, falls, [])}, region_of)
+check("a drop kept into a rectangle of its own region, joined; none into another region",
+      kept_tiles[0][2], {0: [[1, 0, 63, 1, 20]]})
+data = decode(zlib.decompress(base64.b64decode(walk.block(kept_tiles[0][0], kept_tiles[0][1], 0, kept_tiles,
+                                                            kept_tiles[0][2])), -15))[0]
+check("the block's drops: off which rectangle, its side, its first and last sample, onto which (index x 5 + where), "
+      "its height", data[4], [0, 1, 0, 63, 5, 20])
 
 # --- Regions ---------------------------------------------------------------------------------------
 small = [[0, 0, 4, 4, 40, LAND, 0], [10, 10, 64, 64, 40, LAND, 1]]
@@ -835,8 +966,9 @@ def layer(blocks):
 
 
 def made(texts, tiles, borders, key):
-    """A tile's field as the tool makes it, read back: [format, check, rects, north, east, south, west, costs]."""
-    job = (key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "part", "key")},
+    """A tile's field as the tool makes it, read back: [format, check, rects, north, east, south, west, costs, ways
+    down]."""
+    job = (key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "drops", "part", "key")},
            gates.sides(tiles, borders, key), gates.check_of(texts, key))
     return gates.unpack(gates.field(job)[1])
 
@@ -858,11 +990,11 @@ def parts_of(number):
 # Four fields in a row (tiles 2592 to 2595, 10 yards high), each open into the next along all its edge; the second cut in
 # two by a wall (columns 128 to 143) but at its north end, a door (rows 0 to 15): the halves one surface, the door
 # another, joined by the openings written (Navigation's tests have the same tiles).
-row = {2592: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 2]],
-       2593: [1, [2, 1, 20, 1, 1, 20], [0, 0, 128, 256, 40, 144, 0, 112, 256, 40, 128, 0, 16, 16, 40],
-              [5, -2, 0, 15, 10, 4, 1, 2, 4, -2, 0, 15, 5]],
-       2594: [1, [1, 1, 20], [0, 0, 256, 256, 40], [2, 9, 2]],
-       2595: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 4]]}
+row = {2592: [2, [1, 1, 20], [0, 0, 256, 256, 40], [1, 2], []],
+       2593: [2, [2, 1, 20, 1, 1, 20], [0, 0, 128, 256, 40, 144, 0, 112, 256, 40, 128, 0, 16, 16, 40],
+              [5, -2, 0, 15, 10, 4, 1, 2, 4, -2, 0, 15, 5], []],
+       2594: [2, [1, 1, 20], [0, 0, 256, 256, 40], [2, 9, 2], []],
+       2595: [2, [1, 1, 20], [0, 0, 256, 256, 40], [1, 4], []]}
 texts, tiles, borders = layer(row)
 check("a tile's parts: its surfaces joined by the openings between them (the halves and the door one)",
       tiles[2593]["part"], [1, 1, 1])
@@ -887,10 +1019,10 @@ check("a tile's check: CRC-32 of its block and its neighbours', a missing one em
 # of it (rows 0 to 15), fields east and west of the tile: from the west side's second gate to the east side's (rows 64
 # to 127), on foot (a yard swum 1.5) the way swims straight across, 117 of its yards; a rider (3) goes round by the
 # bridge, 650 yards dry, kept besides.
-pond = {2699: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 2]],
-        2700: [1, [3, 1, 20, 1, 2, 20], [0, 0, 100, 256, 40, 100, 0, 56, 16, 40, 156, 0, 100, 256, 40, 100, 16, 56, 240, 40],
-               [5, -2, 16, 255, 15, 4, 4, -3, 100, 155, 15, 1, 2, 4, -2, 16, 255, 10]],
-        2701: [1, [1, 1, 20], [0, 0, 256, 256, 40], [1, 14]]}
+pond = {2699: [2, [1, 1, 20], [0, 0, 256, 256, 40], [1, 2], []],
+        2700: [2, [3, 1, 20, 1, 2, 20], [0, 0, 100, 256, 40, 100, 0, 56, 16, 40, 156, 0, 100, 256, 40, 100, 16, 56, 240, 40],
+               [5, -2, 16, 255, 15, 4, 4, -3, 100, 155, 15, 1, 2, 4, -2, 16, 255, 10], []],
+        2701: [2, [1, 1, 20], [0, 0, 256, 256, 40], [1, 14], []]}
 texts, tiles, borders = layer(pond)
 across = made(texts, tiles, borders, 2700)
 foot, ride = pair(across[7], 2, 6)
@@ -898,6 +1030,44 @@ check("a way that swims: its yards on land and swum; the rider's dry way kept be
       (parts_of(foot), ride and parts_of(ride)), ((417, 0, 0, 117), (650, 0, 0, 0)))
 check("the packed number holds each part in its own room",
       parts_of(gates.number(1803, 354, 332, 872)), (1803, 354, 332, 872))
+check("no drop: no way down", (walled[8], across[8]), ([], []))
+# A plateau 30 yards high (columns 0 to 127) and a field 10 yards high (columns 136 to 255) across a tile, a
+# mountainside too steep to walk between: a drop off the plateau's east side onto the field, 20 yards. Two parts (no
+# walk between them on the tile): ways down from each of the west gates (the plateau's) to each of the east ones, none
+# back up.
+cliff = {2799: [2, [1, 1, 20], [0, 0, 256, 256, 120], [1, 2], []],
+         2800: [2, [1, 1, 20, 1, 1, 20], [0, 0, 128, 256, 120, 136, 0, 120, 256, 40], [1, 4, 1, 2],
+                [0, 1, 0, 255, 5, 20]],
+         2801: [2, [1, 1, 20], [0, 0, 256, 256, 40], [1, 9], []]}
+texts, tiles, borders = layer(cliff)
+check("a tile's drops read, one way, off the rectangle they leave", tiles[2800]["drops"], [[(1, 0, 255, 1, 20)], []])
+down = made(texts, tiles, borders, 2800)
+falls = [down[8][at:at + 4] for at in range(0, len(down[8]), 4)]
+check("ways down from each of the plateau's gates (the west side's: 5 to 8) to each of the field's (the east's: 1 to "
+      "4), none back up", sorted({(a, b) for a, b, *_ in falls}), [(a, b) for a in range(5, 9) for b in range(1, 5)])
+check("straight across, down the drop (8 samples across): its yards with the fall's price, 20 yards down, the rider's "
+      "the same", (parts_of(falls[0][2]), falls[0][3] == falls[0][2]) if falls else None,
+      ((round(256 * gates.SAMPLE + 20 * gates.DROP), 0, 20, 0), True))
+check("the parts' own costs as before: the plateau's four gates, the first two 133 yards apart",
+      (down[7][:5], parts_of(down[7][5])), ([4, 5, 6, 7, 8], (133, 0, 0, 0)))
+# The same, a ramp at the north end (rows 0 to 15, 20 yards high) joining the plateau and the field: one part. A way
+# down kept only where it costs less than the walk: from the plateau's south gate to the field's, not from the north
+# one's (the ramp's way is shorter than the drop's yards with its fall).
+ramp = {2899: [2, [1, 1, 20], [0, 0, 256, 256, 120], [1, 2], []],
+        2900: [2, [1, 1, 20, 1, 1, 20, 1, 1, 20], [0, 0, 128, 256, 120, 128, 0, 8, 16, 80, 136, 0, 120, 256, 40],
+               [1, 4, 1, 0, 2, 5, 2], [0, 1, 16, 255, 10, 20]],
+        2901: [2, [1, 1, 20], [0, 0, 256, 256, 40], [1, 14], []]}
+texts, tiles, borders = layer(ramp)
+kept_down = {(a, b) for a, b, *_ in (lambda f: [f[at:at + 4] for at in range(0, len(f), 4)])(made(texts, tiles, borders, 2900)[8])}
+check("one part: a way down kept where it costs less than the walk, not where the walk is cheaper, never back up",
+      ((8, 4) in kept_down, (5, 1) in kept_down, tiles[2900]["part"], all(a > 4 >= b for a, b in kept_down)),
+      (True, False, [1, 1, 1], True))
+lua = {name: (ROOT / "src" / "Navigation" / f"{name}.lua").read_text(encoding="utf-8") for name in ("Walk", "Search", "Gates")}
+check("walk-data's FORMAT is Walk.lua's, walk-gates' Gates.lua's; walk-gates' FALL Walk.FALL, its DROP Search.DROP",
+      [re.search(pattern, lua[name]).group(1) for name, pattern in (
+          ("Walk", r"Walk\.FORMAT = (\d+)"), ("Gates", r"Gates\.FORMAT = (\d+)"), ("Walk", r"Walk\.FALL = (\d+)"),
+          ("Search", r"Search\.DROP = (\d+)"))],
+      [str(walk.FORMAT), str(gates.FORMAT), str(gates.FALL), str(gates.DROP)])
 # The master's coarse layer made from its blocks as they are: each tile's check its own block's and its neighbours'
 # (after the walking data is made anew, dev/tools/walk-gates and the import, too).
 newest = {}

@@ -8,12 +8,17 @@ local _, ns = ...
 --  tile (one for each part of the tile that meets a part of the next one there,
 --  at most a quarter of the border long), and what the walk between each two
 --  gates of one part costs inside the tile. A part: the rectangles of a tile one
---  can walk between without leaving it. Search.lua crosses the tiles between a
+--  can walk between without leaving it. And the ways down a drop (Walk.lua's
+--  drops, Walk.FALL high at most), one way, from a gate to another of the tile
+--  (of its part or another) where they save 10 yards on the walk or the walk has
+--  none (dev/tools/walk-gates' SAVES). Search.lua crosses the tiles between a
 --  walk's start and its end by their gates. Knows no frames.
 --
 --      Gates.Tile(key)              a tile's gates, unpacked the first time (Walk.Unpack); the Gates.KEEP asked for
 --                                   last kept; nil where the tile has none (no ground, or the layer is not there)
 --      Gates.Cost(gates, a, b, water)   what the walk from gate a to gate b of one part costs, in yards on land
+--      Gates.Down(foot, ride, water)    what a way down a drop costs (gates.falls[a]: b, foot, ride each, from a;
+--                                       gates.landed[b]: a, foot, ride each, to b)
 --      Gates.Ends(id)               the two tiles a gate lies between (north or west first), its side on the first
 --      Gates.Parts(tile)            each rectangle's part on a walking tile (Walk.Tile's)
 --      Gates.Edges(tile, side)      the rectangles of a walking tile with an opening across one of its sides
@@ -31,7 +36,7 @@ local Coords, Walk = ns.Coords, ns.Walk
 local Gates = {}
 ns.Gates = Gates
 
-Gates.FORMAT = 1
+Gates.FORMAT = 2      -- the field's format (dev/tools/walk-gates' FORMAT; 2: with the ways down a drop)
 Gates.KEEP = 400      -- tiles' gates kept unpacked (some 16 KB each): the one asked for longest ago let go
 Gates.CLIMB = 0.25    -- each yard up costs so many yards more (Search.CLIMB)
 
@@ -65,13 +70,14 @@ end
 
 -- A tile's field read (dev/tools/walk-gates): its gates, side by side, and its parts' costs: per part its gates, then
 -- one number for each two of them in order (1 and 2, 1 and 3, ..., 2 and 3, ...), then the ways a rider takes instead
--- (the pair, that way's number).
+-- (the pair, that way's number); then the ways down a drop (from, to, on foot, a rider's).
 local function Read(key, block)
     local rest = key % 4096
     local left, top = Coords.Corner(rest % 64, math.floor(rest / 64))
     local s = Walk.SAMPLE
     local gates = { key = key, rects = block[3], side = {}, first = {}, last = {}, part = {}, u = {}, v = {}, id = {},
-                    byId = {}, bySide = { [0] = {}, {}, {}, {} }, group = {}, at = {}, costs = block[8] }
+                    byId = {}, bySide = { [0] = {}, {}, {}, {} }, group = {}, at = {}, costs = block[8], falls = {},
+                    landed = {} }
     local n = 0
     for side = 0, 3 do
         local list = block[side + 4]
@@ -115,6 +121,15 @@ local function Read(key, block)
         end
         at = at + 1 + 2 * ride
     end
+    local falls = block[9]
+    for f = 1, #falls, 4 do
+        local a, b, foot, ride = falls[f], falls[f + 1], falls[f + 2], falls[f + 3]
+        gates.falls[a] = gates.falls[a] or {}
+        gates.landed[b] = gates.landed[b] or {}
+        local down, into = gates.falls[a], gates.landed[b]
+        down[#down + 1], down[#down + 2], down[#down + 3] = b, foot, ride
+        into[#into + 1], into[#into + 2], into[#into + 3] = a, foot, ride
+    end
     return gates
 end
 
@@ -143,7 +158,7 @@ function Gates.Tile(key)
     if not Walk.Ready() then return nil end
     local text = Walking:Get(key, "gates")
     local block = text and Walk.Unpack(text)
-    if type(block) ~= "table" or block[1] ~= Gates.FORMAT or type(block[8]) ~= "table" then
+    if type(block) ~= "table" or block[1] ~= Gates.FORMAT or type(block[8]) ~= "table" or type(block[9]) ~= "table" then
         open[key] = false
         return nil
     end
@@ -181,6 +196,20 @@ function Gates.Cost(gates, a, b, water)
     if other then
         land, up, down, swum = Way(other)
         other = land + water * swum + Gates.CLIMB * (forward and up or down)
+        if other < cost then cost = other end
+    end
+    return cost
+end
+
+-- What a way down a drop costs, in yards on land (its yards, the fall's price in them, Search.DROP; a yard swum at the
+-- walker's price, water; each yard up Gates.CLIMB more): of the way on foot and the one a rider takes instead, the
+-- cheaper (the same number: none other).
+function Gates.Down(foot, ride, water)
+    local land, up, _, swum = Way(foot)
+    local cost = land + water * swum + Gates.CLIMB * up
+    if ride ~= foot then
+        land, up, _, swum = Way(ride)
+        local other = land + water * swum + Gates.CLIMB * up
         if other < cost then cost = other end
     end
     return cost

@@ -19,6 +19,8 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - Hover a party or raid member's dot on the map to see who it is.
 - Trade goods vendors, auctioneers and other NPCs have clear pictures of what they do; no NPC is a gold coin any more.
 - `/sane falls`: a fall meter. After each fall the chat tells how far down it was and how much health it took.
+- Routes go down ledges and cliffs you land from alive (up to 50 m) and down mountainsides too steep to walk, never
+  back up them: over the mountains instead of around.
 
 ## 0.3.4 (2026-11-16)
 

@@ -1816,9 +1816,44 @@ samples, *The ground as the game draws it*, below).
     by gate (its turns forced through the gates' middles); finer parts in densely built tiles (Dalaran's 15,000
     rectangles: a walk out of it is priced through all of them where its way out winds; quarters of a tile cut
     rectangles that cross them).
-- **Not yet:** one-way drops (a ledge one can jump down but not climb) are no way (Saneroki, 2026-11-16: "route over
-  mountains where you can fall down without dying"; card #559: drops kept with their heights, one way within a
-  region, up to the height he measures in the game with the fall meter, `/sane falls`, `Falls.lua`); an instance's portal or a closed
+- **Built (2026-11-18): drops, one way down.** Saneroki, 2026-11-16: "The fall damage in this game is pretty low. You
+  can fall quite far before you actually die. I want to make the routing allow for bigger fall downs so the routing can
+  route over mountains where you can fall down without dying"; measured in the game with the fall meter (`/sane
+  falls`, `Falls.lua`), 2026-11-18: "A fall of 50 meters is safe" (card #559).
+  - **Found** by `dev/tools/walk-data`: from every floor whose neighbour on a side holds no floor as high less `CLIMB`,
+    no wall or railing at its edge, along that side over at most `RUN` (24) samples of nothing but the ground falling
+    away (upright under a ledge, or too steep to walk: no hole, nothing built, a doodad neither) to the first floor more
+    than `CLIMB` lower, at most `FALL` (70) yards, no wall on the way into it and nothing over it below the top (a roof,
+    the ground over a cave); into the next tile over its samples along the edge. Off a deck or a balcony onto the floor
+    beside it, off a cliff, down a mountainside.
+  - **Kept** with its height (whole yards, up), only into a rectangle of its own region: the regions stay two-way, so
+    the planner's test of a walk (two places of one region) still holds, a drop only shortens it. Those off one side
+    into one rectangle side by side joined while their heights lie within `BAND` (4 yards). The block's format 2: a
+    fifth array, six numbers a drop, written only from the rectangle it leaves.
+  - **Taken** (`Walk.lua`, `Search.lua`): a walk down a drop up to `Walk.FALL` (54 yards, 49 metres, under the 50 he
+    measured), never back up; it costs the way to where the line crosses its way off, across to where it lands, and
+    `Search.DROP` (1) yard more each yard fallen, so of two ways about as long the one with the smaller fall; the line
+    pulled through where it leaves and where it lands. The floor's following takes any drop (the walker fell); a
+    straight walk none. Into another tile only where that one is searched rectangle by rectangle.
+  - **The coarse layer** (`dev/tools/walk-gates` and `Gates.lua`, format 2): the ways down a drop between a tile's
+    gates, one way, from a gate to another of its part or of another part, where they cost less than the walk or the
+    walk has none (the fall's price in their yards); the costs between a part's gates stay without drops, the same
+    both ways. None across a border.
+  - **Another height** is a `walk-gates` run and `Walk.FALL` (`dev/tests/walk.py` holds `FALL` and `DROP` alike in the
+    tool and the code), not a run of `walk-data`.
+  - **Made from 70707's game files:** the world of 70938 is the same (its terrain and object files, its buildings and
+    models byte for byte), but its extraction (and 70755's) lacks the buildings' group files: from it the isle had half
+    its rectangles. `walk-data` refuses such a folder now. From 70707's the rectangles and openings are the master's
+    as they were, tile for tile.
+  - **Measured:** 822,719 drops on the 1,750 tiles (71 % under 10 yards, 6,870 of 50 and more), the blocks 31.0 MB
+    (23.3); in the coarse layer 184,356 ways down a drop, kept where they save at least `SAVES` (10) yards on the walk
+    (within the layer's own reach: a gate is priced through its middle) or the walk has none (98,618, into another
+    part), 3.8 MB (2.0). Outside the game over the whole data (200 journeys between NPCs, both sides): none failing
+    and 3 walks drawn straight as before, 156 journeys down drops (444 of them), the yards walked 2.7 % fewer (the
+    median journey 1.1 %, at most 25 %), 173 ms a route (149); the 29 fixed journeys all from the player to the pin
+    with their legs. A walk's line crosses a drop's steep ground over no floor (by design: the walker slides or
+    falls there).
+- **Not yet:** an instance's portal or a closed
   gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
   door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground; diving (a
   way under water); indoors without a height the lowest of a building's floors is taken, not its upper storeys.

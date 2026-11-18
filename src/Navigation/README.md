@@ -1341,16 +1341,25 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   up the hill over it), and chosen where it cannot be (`Walk.Floor`): near the height they had (within `Walk.RISE`),
   else outdoors the highest under them, indoors the lowest within `Walk.ROOF` yards, a building's floor before the
   ground (the game's indoors is inside a building or a cave: not the ground deep under Stormwind's buildings).
+  **Drops** (format 2, 2026-11-18): one way down off a rectangle's side onto a lower one, off a deck, a cliff or a
+  mountainside too steep to walk, with its height in whole yards (`Walk.Drops`, `Walk.Drop`; in the plane its way off
+  and where it lands, `Walk.Fall`). A walk takes those up to `Walk.FALL` (54 yards, 49 metres: Saneroki measured a fall
+  of 50 metres safe with `/sane falls`); the floor's following takes any (the walker fell); a straight walk none.
 - **Gates** (`Gates.lua`, no frames): the walking data's coarse layer, the set *Walking*'s field `gates`, made by
   `dev/tools/walk-gates` from its blocks: per terrain tile its gates, where one walks across its border into the next
   tile (the openings between a part of the tile and a part of the next, joined along the border and cut into pieces of
   at most 64 samples, each the same on both tiles: `Gates.Id`, `Gates.Ends`; a part: the rectangles one walks between
   without leaving the tile, `Gates.Parts`), and what the walk between each two gates of one part costs inside the tile
   (`Gates.Cost`: its yards on land, those swum at the walker's price, each yard up `Search.CLIMB` more, of the way on
-  foot and the one a rider takes instead, where the one on foot swims, the cheaper). Unpacked when first needed (some
-  16 KB a tile), the `Gates.KEEP` asked for last kept; a tile's layer made from another block than the one the game
-  holds (another number of rectangles) is passed over there.
+  foot and the one a rider takes instead, where the one on foot swims, the cheaper). And the ways down a drop, one way
+  (`gates.falls`, `gates.landed`, `Gates.Down`): from a gate to another of the tile (of its part or another) down its
+  drops, where that saves 10 yards or more on the walk or the walk has none. Unpacked when first needed (some 16 KB a tile), the
+  `Gates.KEEP` asked for last kept; a tile's layer made from another block than the one the game holds (another number
+  of rectangles) is passed over there.
 - **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
+  and down their drops, one way (`Walk.FALL` high at most: to where the line crosses the way off, across to where it
+  lands, each yard fallen `Search.DROP` yards more, so of two ways about as long the smaller fall; into another tile
+  only where that one is searched rectangle by rectangle; the line pulled through its way off and where it lands)
   (from where a rectangle was entered to where the straight line on to the end crosses the next opening, so open
   ground costs its straight way; a yard swum at the character's own price, its speed on land over its speed in
   water, the planner's `Speeds`: on land the fastest it was seen riding, kept per character as `ride`, so a rider
@@ -1643,9 +1652,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Art.lua` | The view Parchment: Blizzard's world and continent maps, the stitched map, every zone's full map cut to its outline; the highlight under the mouse |
 | `Pins.lua` | The pins as plain records: the game's and Core's data per map, one per thing, filtered, side by side in a cloud where they would cover each other. No frames |
 | `Goals.lua` | What your quests still ask of the world and where exactly it stands: the open objectives' things at every spawn Core's data knows. No frames |
-| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions and openings; the floor a walker stands on, followed or chosen; whether a straight walk from it gets to a place (`Walk.Straight`). No frames |
-| `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the parts of a tile. No frames |
-| `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end: priced across the tiles by their gates, then drawn along that way. No frames |
+| `Walk.lua` | Core's walking data: a tile's block unpacked, its rectangles, regions, openings and drops (one way down, `Walk.FALL` high at most for a walk); the floor a walker stands on, followed or chosen; whether a straight walk from it gets to a place (`Walk.Straight`). No frames |
+| `Gates.lua` | The walking data's coarse layer: each tile's gates into the next tiles, what the walks between two of them cost, the ways down a drop between them, the parts of a tile. No frames |
+| `Search.lua` | A walk between two points over the walking data, from the floor the start stands on to a floor at the end, down drops one way: priced across the tiles by their gates, then drawn along that way. No frames |
 | `Lifts.lua` | The lifts of Core's set *Travel* on the walking data: each end at its landing, the levels they join (stacked or side by side), where a place stands among them. No frames |
 | `Taxi.lua` | At a flight master: our full map in place of the game's flight map (Shift held: the game's), its flight points large, a click flies there, the way there drawn. No frames of its own |
 | `Falls.lua` | The fall meter (`/sane falls`): each fall's height from its time in the air (`Falls.Height`: the game's gravity up to its fastest fall, a jump's way up taken off) and the health the landing took, told in the chat. One frame, looking each frame only while on |
@@ -1713,6 +1722,18 @@ Tests: `dev/tests/navigation.lua`.
   changes the zoom level or zooms out": a right click on the map steps out no more (`Canvas.lua`), nor on a dungeon's
   map (the whole floor again on the small map, back on the full one): the wheel zooms, the middle button and the
   bar's button stay.
+- **2026-11-18, routes down drops:** Saneroki measured it with the fall meter: "A fall of 50 meters is safe". So the
+  walking data has drops now (format 2, `dev/tools/walk-data`): one way down off a floor's edge where the ground falls
+  away (an upright cliff, a deck, a mountainside too steep to walk, over at most 24 samples) onto the first floor more
+  than 2.6 yards lower, up to 70 yards, nothing built on the way, no railing, no roof over the landing; each kept with
+  its height, only within one region (regions stay two-way). A walk takes those up to `Walk.FALL`, 54 yards (49
+  metres), never back up, each yard fallen a yard more (`Search.DROP`), the line drawn through where it leaves and
+  where it lands; the coarse layer has the ways down a drop between a tile's gates, one way (`dev/tools/walk-gates`
+  format 2); the floor a walker stands on is followed down a drop. Another height is a `walk-gates` run and
+  `Walk.FALL` only. Rebuilt from the game files of 70707 (the world of 70938 the same; 70938's extraction lacks the
+  buildings' group files, and `walk-data` refuses such a folder now): the rectangles and openings as before, tile for
+  tile, and 822,719 drops (71 % of them under 10 yards, 6,870 of 50 yards and more); the blocks 31.0 MB (23.3) (card
+  #559).
 - **2026-11-16, the fall meter:** Saneroki: "The fall damage in this game is pretty low. You can fall quite far
   before you actually die. I want to make the routing allow for bigger fall downs so the routing can route over
   mountains". The walking data has no fall yet (two floors one way only within 2.6 yards, both ways), and how high a

@@ -15,7 +15,12 @@ end's by their gates first, then is searched rectangle by rectangle along that w
               next opening, a yard swum at WATERS[0] yards on land), measured along the line pulled straight through
               the openings it passes: its yards on land, the yards it swims, the yards it climbs and those it goes
               down (the search counts each yard up a little more, Search.CLIMB). Where the way swims it is chosen again
-              with a yard swum at WATERS[1] (a rider's price) and kept too where that takes another way
+              with a yard swum at WATERS[1] (a rider's price) and kept too where that takes another way. Never down a
+              drop: each cost holds both ways
+  a way down  from a gate to another of the tile (of its part or another), down the tile's drops (FALL high at most,
+              one way: dev/tools/walk-data's drops; across a border none), where it costs SAVES yards less than the walk
+              or the walk has none: as a cost, each yard fallen DROP yards more on land (Search.DROP), the climb its
+              own way
 
   dev/data/staging/walking-gates.jsonl   one line per tile with ground: set Walking, the tile's key, its field gates;
                                          taken in by dev/tools/data import ... --apply --take
@@ -24,7 +29,7 @@ The field is CBOR (the game reads it with C_EncodingUtil.DeserializeCBOR), defla
 array of the format's number (FORMAT), the tile's check (CRC-32 of its block and of its four neighbours', from the
 north clockwise, each followed by a line feed, a missing one empty: dev/tests/walk.py finds a layer made from other
 blocks), how many rectangles its block has (Navigation passes over a layer made from another block), the gates on its
-north, east, south and west side, and the costs:
+north, east, south and west side, the costs and the ways down a drop:
 
   a side's gates   3 numbers each, in order along the border: the first and the last sample of its stretch (counted
                    along the side from its west end, or its north end) and its part on this tile
@@ -34,6 +39,10 @@ north, east, south and west side, and the costs:
                    from the first to the second + 2^23 x the yards it goes down + 2^33 x the yards it swims (each whole);
                    then how many ways the rider's price takes instead (w), and for each its pair's number (from 1, in
                    that order) and that way's number alike
+  the ways down    4 numbers each: the gate it starts from and the one it ends at (their numbers on the tile), its
+                   number on foot and the rider's (the same where it swims nowhere or the rider takes it too), each as
+                   a cost's but one way: the yards it climbs from the first to the second, the fall's price in its
+                   yards on land
 
 Usage:  dev/tools/walk-gates [walking.jsonl] [--only key[,key...]] [--processes N]
         walking.jsonl: the set's lines (default the master's assets/data/Walking/Walking.jsonl, an entry's newest
@@ -55,7 +64,11 @@ ROOT = Path(__file__).resolve().parents[2]
 MASTER = ROOT / "assets" / "data" / "Walking" / "Walking.jsonl"
 STAGING = ROOT / "dev" / "data" / "staging" / "walking-gates.jsonl"
 BUILD = 70938          # the client build of the walking data (dev/tools/walk-data's)
-FORMAT = 1             # the field's format, as Navigation's Gates.lua reads it
+FORMAT = 2             # the field's format, as Navigation's Gates.lua reads it (2: with the ways down a drop)
+FALL = 54              # yards: the highest drop a way down takes (Navigation's Walk.FALL; dev/tests/walk.py checks)
+DROP = 1               # each yard fallen costs so many yards more on land (Navigation's Search.DROP)
+SAVES = 10             # yards a way down a drop must save on the walk to be kept (less is within the layer's own
+                       # reach: a border's gate is priced through its middle, up to some 17 yards off)
 
 GRID = 64              # tiles along each side of a continent
 SIDE = 256             # samples along a tile's side
@@ -93,10 +106,11 @@ def unpack(text):
 
 def read(text):
     """A tile's block: its rectangles (column, row, width, height, z in quarter yards), each one's kind and surface
-    (from 1), and its openings [side, first, last, where, other] as Walk.lua finds them: those written (on the tile
+    (from 1), its openings [side, first, last, where, other] as Walk.lua finds them: those written (on the tile
     once, the other way added) and those between rectangles of one surface that touch (side None: along the whole
-    edge two rectangles share; where 0 on the tile, else 1 + the next tile's side; other from 0)."""
-    _, surfaces, flat, links = unpack(text)
+    edge two rectangles share; where 0 on the tile, else 1 + the next tile's side; other from 0); and its drops per
+    rectangle, one way: (side, first, last, other, height), those on the tile up to FALL high alone."""
+    _, surfaces, flat, links, falls = unpack(text)
     count = len(flat) // 5
     rects = [tuple(flat[at * 5:at * 5 + 5]) for at in range(count)]
     kind, surface = [0] * count, [0] * count
@@ -106,6 +120,11 @@ def read(text):
             kind[at], surface[at] = surfaces[s + 1], s // 3 + 1
             at += 1
     opens = [[] for _ in range(count)]
+    drops = [[] for _ in range(count)]
+    for at in range(0, len(falls), 6):
+        rect, side, first, last, target, height = falls[at:at + 6]
+        if target % 5 == 0 and height <= FALL:
+            drops[rect].append((side, first, last, target // 5, height))
     at = 0
     for rect in range(count):
         stop = at + links[at]
@@ -143,7 +162,7 @@ def read(text):
                 if a <= b:
                     opens[rect].append([2, a, b, 0, other])
                     opens[other].append([0, a, b, 0, rect])
-    return {"rects": rects, "kind": kind, "surface": surface, "opens": opens}
+    return {"rects": rects, "kind": kind, "surface": surface, "opens": opens, "drops": drops}
 
 
 def side_of(a, b):
@@ -284,6 +303,21 @@ def held(u, v, seg):
     return (au, min(max(v, min(av, bv)), max(av, bv)))
 
 
+def landing(a, b, side, seg):
+    """Where a drop off rectangle a's side (its stretch seg) lands on b: seg moved across to b's side that faces it
+    (Walk.lua's Fall), and how far: (du, dv) in samples."""
+    du = dv = 0.0
+    if side == 0:
+        dv = max(0.0, -(b[1] + b[3]) - seg[1])
+    elif side == 1:
+        du = max(0.0, b[0] - seg[0])
+    elif side == 2:
+        dv = min(0.0, -b[1] - seg[1])
+    else:
+        du = min(0.0, b[0] + b[2] - seg[0])
+    return du, dv
+
+
 def portal(seg, side):
     """An opening as left and right ends going through it from the rectangle's side (Search.lua's Portal)."""
     au, av, bu, bv = seg
@@ -362,10 +396,12 @@ def lengths(su, sv, portals, eu, ev, kinds):
     return land, swum
 
 
-def ways(tile, gates, members, start, targets, water):
+def ways(tile, gates, members, start, targets, water, down=False):
     """From a gate's point to each of the targets' (gates of its part): Dijkstra over the tile's rectangles, each step
     from where a rectangle was entered to the nearest point of the next opening, a yard swum at water; then each way's
-    line pulled straight through its openings. {target: (land, up, down, swum)} in whole yards."""
+    line pulled straight through its openings. {target: (land, up, down, swum)} in whole yards. down: down the
+    tile's drops too (one way: from the nearest point of the way off across to where it lands, each yard fallen DROP
+    yards more, in its yards on land), to any gate of the tile."""
     rects, kind, opens, key = tile["rects"], tile["kind"], tile["opens"], tile["key"]
     su, sv = point(*gates[start][:3])
     cost, entry, parent, heap = {}, {}, {}, []
@@ -392,6 +428,18 @@ def ways(tile, gates, members, start, targets, water):
             if other not in cost or new < cost[other]:
                 cost[other], entry[other], parent[other] = new, (qu, qv), (rect, side, first, last)
                 heapq.heappush(heap, (new, other))
+        for side, first, last, other, height in tile["drops"][rect] if down else ():
+            if other in done:
+                continue
+            seg = segment(rects[rect], side, first, last)
+            qu, qv = held(fu, fv, seg)
+            du, dv = landing(rects[rect], rects[other], side, seg)
+            new = (here + math.hypot(qu - fu, qv - fv) * SAMPLE * weight + math.hypot(du, dv) * SAMPLE
+                   + height * DROP)
+            if other not in cost or new < cost[other]:
+                cost[other], entry[other] = new, (qu + du, qv + dv)
+                parent[other] = (rect, side, first, last, (du, dv), height)
+                heapq.heappush(heap, (new, other))
     found = {}
     for target in targets:
         tu, tv = point(*gates[target][:3])
@@ -406,15 +454,24 @@ def ways(tile, gates, members, start, targets, water):
                     best = (total, rect)
         if best is None:
             continue
-        chain, portals, rect = [best[1]], [], best[1]
+        chain, portals, kinds, fallen, rect = [best[1]], [], [kind[best[1]]], 0, best[1]
         while parent[rect] is not None:
-            before, side, first, last = parent[rect]
-            portals.append(portal(segment(rects[before], side, first, last), side))
+            before, side, first, last, *drop = parent[rect]
+            seg = segment(rects[before], side, first, last)
+            if drop:  # a drop: its way off, the way across (falling, on land) and where it lands
+                (du, dv), height = drop
+                portals.append(portal((seg[0] + du, seg[1] + dv, seg[2] + du, seg[3] + dv), side))
+                kinds.append(1)
+                fallen += height
+            portals.append(portal(seg, side))
+            kinds.append(kind[before])
             chain.append(before)
             rect = before
         chain.reverse()
         portals.reverse()
-        land, swum = lengths(su, sv, portals, tu, tv, [kind[rect] for rect in chain])
+        kinds.reverse()
+        land, swum = lengths(su, sv, portals, tu, tv, kinds)
+        land += fallen * DROP
         up = down = 0.0
         for a, b in zip(chain, chain[1:]):
             rise = (rects[b][4] - rects[a][4]) / 4
@@ -424,6 +481,13 @@ def ways(tile, gates, members, start, targets, water):
                 down -= rise
         found[target] = (round(land), round(up), round(down), round(swum))
     return found
+
+
+def price(value, water, forward=True):
+    """What a way (land, up, down, swum) costs in yards on land, as Gates.lua prices it: a yard swum at water, each yard
+    up CLIMB more (forward: its own way, else the other)."""
+    land, up, down, swum = value
+    return land + water * swum + CLIMB * (up if forward else down)
 
 
 def number(land, up, down, swum):
@@ -450,6 +514,7 @@ def field(job):
     for at, gate in enumerate(gates):
         by_part[gate[3]].append(at)
     costs, pairs = [], 0
+    foot_of, ride_of = {}, {}  # the walks between two gates, each way: (land, up, down, swum) from the first
     for _, numbers in sorted(by_part.items()):
         if len(numbers) < 2:
             continue
@@ -461,6 +526,9 @@ def field(job):
             if any(value[3] for value in found.values()):
                 ride.update(((start, target), value) for target, value in
                             ways(tile, gates, members, start, targets, WATERS[1]).items())
+        for walks, of in ((foot, foot_of), (ride, ride_of)):
+            for (start, target), (land, up, down, swum) in walks.items():
+                of[(start, target)], of[(target, start)] = (land, up, down, swum), (land, down, up, swum)
         costs.append(len(numbers))
         costs.extend(at + 1 for at in numbers)
         other = []
@@ -476,8 +544,23 @@ def field(job):
         pairs += pair
         costs.append(len(other) // 2)
         costs.extend(other)
+    falls = []
+    if any(tile["drops"]):
+        # The ways down a drop, from each gate to any other of the tile: kept where they cost SAVES yards less than the
+        # walk (on foot or a rider's), or the walk has none (another part).
+        for start in range(len(gates)):
+            targets = [at for at in range(len(gates)) if at != start]
+            foot = ways(tile, gates, members, start, targets, WATERS[0], True)
+            ride = (ways(tile, gates, members, start, targets, WATERS[1], True)
+                    if any(value[3] for value in foot.values()) else {})
+            for target, value in sorted(foot.items()):
+                walk = foot_of.get((start, target)), ride_of.get((start, target))
+                rider = ride.get(target, value)
+                if (walk[0] is None or price(value, WATERS[0]) <= price(walk[0], WATERS[0]) - SAVES
+                        or price(rider, WATERS[1]) <= price(walk[1] or walk[0], WATERS[1]) - SAVES):
+                    falls.extend([start + 1, target + 1, number(*value), number(*rider)])
     lists = [[value for a, b, mine in around[side] for value in (a, b, mine)] for side in range(4)]
-    return key, pack([FORMAT, check, len(rects)] + lists + [costs]), len(gates), pairs
+    return key, pack([FORMAT, check, len(rects)] + lists + [costs, falls]), len(gates), pairs, len(falls) // 4
 
 
 def check_of(blocks, key):
@@ -531,15 +614,16 @@ def main():
     for key, tile in tiles.items():
         tile["part"] = parts(tile, key)
     borders = {(key, side): border(tiles, key, side) for key in tiles for side in (1, 2)}
-    jobs = [(key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "part", "key")},
+    jobs = [(key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "drops", "part", "key")},
              sides(tiles, borders, key), check_of(blocks, key))
             for key in keys if not only or key in only]
     STAGING.parent.mkdir(parents=True, exist_ok=True)
-    made, size, gates_count, pairs_count = {}, 0, 0, 0
+    made, size, gates_count, pairs_count, falls_count = {}, 0, 0, 0, 0
     with Pool(processes) as pool:
-        for done, (key, text, gates, pairs) in enumerate(pool.imap_unordered(field, jobs, chunksize=1), 1):
+        for done, (key, text, gates, pairs, falls) in enumerate(pool.imap_unordered(field, jobs, chunksize=1), 1):
             made[key] = text
             size, gates_count, pairs_count = size + len(text), gates_count + gates, pairs_count + pairs
+            falls_count += falls
             if done % 250 == 0 or done == len(jobs):
                 print(f"{done} of {len(jobs)} tiles", file=sys.stderr, flush=True)
     with open(STAGING, "w", encoding="utf-8") as out:
@@ -548,7 +632,7 @@ def main():
                     "fields": {"gates": made[key]}}
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
     print(f"Wrote {STAGING.relative_to(ROOT)}: {len(made)} tiles, {gates_count // 2} gates, {pairs_count} pairs of "
-          f"gates, {size // 1024} KB.")
+          f"gates, {falls_count} ways down a drop, {size // 1024} KB.")
     return 0
 
 

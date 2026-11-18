@@ -744,44 +744,50 @@ end
 -- the coarse layer (the field gates, walkGates below): four fields in a row (region 20, 10 yards high), each open into
 -- the next along all its edge; 2593 cut in two by a wall (columns 128 to 143) but at its north end, a door (rows 0 to
 -- 15; the halves one surface, the door another, joined by the openings written). Tile 2600 alone, gates only: its
--- costs as numbers to read.
+-- costs as numbers to read. Tile 2720 (its north west corner at u 0, v -5333), with drops: a plateau (1, 30 yards high,
+-- columns 0 to 127) and a field (2, 10 yards, columns 136 to 255), a mountainside too steep to walk between, and a rock
+-- (3, 90 yards, columns 112 to 119, rows 0 to 7) on the plateau's north east corner, all of one region (joined far
+-- off): off the plateau's east side onto the field a drop of 20 yards, off the rock's onto the plateau one of 60.
 local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") -- kept until the end
 local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
 local walkBlocks = {
-    [3104] = { 1,
+    [3104] = { 2,
         { 3, 1, 1,   1, 2, 1,   1, 1, 7 },
         { 0, 0, 128, 256, 160,   128, 100, 32, 20, 160,   160, 0, 96, 240, 160,   128, 200, 32, 10, 160,   240, 248, 8, 8, 160 },
-        { 0,   0,   2, 15, 2,   1, 0,   0 } },
-    [3105] = { 1, { 1, 1, 1 }, { 0, 0, 64, 256, 160 }, { 1, 14 } },
-    [6176] = { 1,
+        { 0,   0,   2, 15, 2,   1, 0,   0 }, {} },
+    [3105] = { 2, { 1, 1, 1 }, { 0, 0, 64, 256, 160 }, { 1, 14 }, {} },
+    [6176] = { 2,
         { 1, 1, 1,   1, 1, 1,   2, 1, 1,   1, 1, 2 },
         { 0, 0, 64, 128, 40,   64, 0, 64, 128, 20,   64, 0, 64, 128, 160,   128, 0, 128, 128, 40,   160, 32, 32, 32, 320 },
-        { 8, -2, 60, 67, 5, -2, 0, 7, 10,   0,   0,   0,   0 } },
-    [6177] = { 1,
+        { 8, -2, 60, 67, 5, -2, 0, 7, 10,   0,   0,   0,   0 }, {} },
+    [6177] = { 2,
         { 2, 1, 3,   1, 1, 4,   1, 1, 5 },
         { 0, 0, 128, 256, 40,   128, 128, 128, 128, 40,   128, 0, 128, 128, 320,   144, 144, 96, 96, -80 },
-        { 0, 0, 0, 0 } },
-    [6178] = { 1, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 } },
-    [6179] = { 1, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
-               { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 } },
-    [2340] = { 1, { 1, 1, 11,   1, 3, 11 }, { 0, 0, 256, 256, 240,   0, 112, 240, 32, -160 }, { 0, 0 } },
-    [2592] = { 1, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 2 } },
-    [2593] = { 1, { 2, 1, 20,   1, 1, 20 }, { 0, 0, 128, 256, 40,   144, 0, 112, 256, 40,   128, 0, 16, 16, 40 },
-               { 5, -2, 0, 15, 10, 4,   1, 2,   4, -2, 0, 15, 5 } },
-    [2594] = { 1, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 2, 9, 2 } },
-    [2595] = { 1, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 4 } },
-    [2600] = { 1, { 1, 1, 21 }, { 0, 0, 256, 256, 40 }, { 0 } },
+        { 0, 0, 0, 0 }, {} },
+    [6178] = { 2, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 }, {} },
+    [6179] = { 2, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
+               { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 }, {} },
+    [2340] = { 2, { 1, 1, 11,   1, 3, 11 }, { 0, 0, 256, 256, 240,   0, 112, 240, 32, -160 }, { 0, 0 }, {} },
+    [2592] = { 2, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 2 }, {} },
+    [2593] = { 2, { 2, 1, 20,   1, 1, 20 }, { 0, 0, 128, 256, 40,   144, 0, 112, 256, 40,   128, 0, 16, 16, 40 },
+               { 5, -2, 0, 15, 10, 4,   1, 2,   4, -2, 0, 15, 5 }, {} },
+    [2594] = { 2, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 2, 9, 2 }, {} },
+    [2595] = { 2, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 4 }, {} },
+    [2600] = { 2, { 1, 1, 21 }, { 0, 0, 256, 256, 40 }, { 0 }, {} },
+    [2720] = { 2, { 1, 1, 30,   1, 1, 30,   1, 1, 30 }, { 0, 0, 128, 256, 120,   136, 0, 120, 256, 40,   112, 0, 8, 8, 360 },
+               { 0, 0, 0 }, { 0, 1, 0, 255, 5, 20,   2, 1, 0, 7, 0, 60 } },
 }
 -- Their gates (dev/tools/walk-gates' field): one along each border between two of them; through 2593 by its door 718
 -- yards from its west gate's middle to its east one's, across 2594 533. 2600's way between its two gates 400 yards,
--- 8 up, 2 down, 100 swum (400 + 2^13 x 8 + 2^23 x 2 + 2^33 x 100), a rider's 520 dry.
+-- 8 up, 2 down, 100 swum (400 + 2^13 x 8 + 2^23 x 2 + 2^33 x 100), a rider's 520 dry; a way down a drop from its
+-- south gate to its north one 300 yards with the fall's price, 20 down (300 + 2^23 x 20), a rider's 520.
 local walkGates = {
-    [2592] = { 1, 0, 1, {}, { 0, 255, 1 }, {}, {}, {} },
-    [2593] = { 1, 0, 3, {}, { 0, 255, 1 }, {}, { 0, 255, 1 }, { 2, 1, 2, 718, 0 } },
-    [2594] = { 1, 0, 1, {}, { 0, 255, 1 }, {}, { 0, 255, 1 }, { 2, 1, 2, 533, 0 } },
-    [2595] = { 1, 0, 1, {}, {}, {}, { 0, 255, 1 }, {} },
-    [2600] = { 1, 0, 1, { 0, 255, 1 }, {}, { 0, 255, 1 }, {}, { 2, 1, 2, 859010302352, 1, 1, 520 } },
+    [2592] = { 2, 0, 1, {}, { 0, 255, 1 }, {}, {}, {}, {} },
+    [2593] = { 2, 0, 3, {}, { 0, 255, 1 }, {}, { 0, 255, 1 }, { 2, 1, 2, 718, 0 }, {} },
+    [2594] = { 2, 0, 1, {}, { 0, 255, 1 }, {}, { 0, 255, 1 }, { 2, 1, 2, 533, 0 }, {} },
+    [2595] = { 2, 0, 1, {}, {}, {}, { 0, 255, 1 }, {}, {} },
+    [2600] = { 2, 0, 1, { 0, 255, 1 }, {}, { 0, 255, 1 }, {}, { 2, 1, 2, 859010302352, 1, 1, 520 }, { 2, 1, 167772460, 520 } },
 }
 Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links", "block", "gates"',
     '"int", "list int", "text", "text"',
@@ -790,7 +796,7 @@ Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links",
     .. 'R[2340] = "70245\t\t0\t\tblock:2340"\n'
     .. 'R[2592] = "70245\t\t0\t2593\tblock:2592\tgates:2592"\nR[2593] = "70245\t\t0\t2592\0302594\tblock:2593\tgates:2593"\n'
     .. 'R[2594] = "70245\t\t0\t2593\0302595\tblock:2594\tgates:2594"\nR[2595] = "70245\t\t0\t2594\tblock:2595\tgates:2595"\n'
-    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\n')
+    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\nR[2720] = "70245\t\t0\t\tblock:2720"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text)
@@ -5762,6 +5768,56 @@ end)()
     check(stale and stale > 1674 and stale < 1800, "a coarse layer made from another block: that tile rectangle by rectangle")
     walkGates[2592][3] = 1
     Gates.Forget()
+end)()
+-- Drops (tile 2720): a walk down the plateau's drop, never back up it; none off the rock (higher than Walk.FALL); the
+-- walker followed down it. The coarse layer's ways down a drop: read one way, priced, crossed the way they go.
+;(function()
+    local top = -10 * Coords.TILE
+    local tile = Walk.Tile(2720)
+    local function At(column, row) return column * s, top - row * s end
+    local side, first, last, next, other, height = Walk.Drop(tile, 1, 1)
+    check(#Walk.Drops(tile, 1) == 1 and #Walk.Drops(tile, 2) == 0 and side == 1 and first == 0 and last == 255
+        and next == tile and other == 2 and height == 20,
+        "a tile's drops: off the plateau's east side onto the field, 20 yards; none off the field")
+    local au, av, _, bv, cu, cv, _, dv = Walk.Fall(tile, 1, side, first, last, next, other)
+    check(near(au, 128 * s) and near(cu, 136 * s) and near(av, top) and near(cv, top) and near(bv, top - 256 * s)
+        and near(dv, bv), "a drop in the plane: its way off the plateau's side, where it lands on the field's facing it")
+    local ou, ov = At(116, 4)
+    local lu, lv, _, _, ru = Walk.Fall(tile, 3, Walk.Drop(tile, 3, 1))
+    check(near(lu, 120 * s) and near(ru, lu) and near(lv, top), "off the rock onto the plateau under it: where it leaves")
+    local fu, fv = At(60, 128)
+    local tu, tv = At(200, 128)
+    local points, cost = Search.Walk(1415, fu, fv, tu, tv)
+    check(points and math.abs(cost - (140 * s + 20 * Search.DROP)) < 0.5 and #points == 4,
+        "a walk off the plateau onto the field: down the drop, its yards and the fall's price, straight")
+    check(Search.Walk(1415, tu, tv, fu, fv) == nil, "never back up it")
+    local pu, pv = At(100, 4)
+    local _, stay = Search.Walk(1415, ou, ov, pu, pv, { 2720, 3 })
+    local fall = Walk.FALL
+    Walk.FALL = 70
+    local _, down = Search.Walk(1415, ou, ov, pu, pv, { 2720, 3 })
+    Walk.FALL = fall
+    check(stay and stay > 150 and down and math.abs(down - (24 * s + 60 * Search.DROP)) < 0.5,
+        "off the rock (60 yards, higher than Walk.FALL) no way down: to its edge, the rest straight; down it once raised")
+    local key, index = Walk.Follow(1415, tu, tv, 2720, 1, At(126, 128))
+    local au2, av2 = At(132, 128)
+    check(key == 2720 and index == 2 and Walk.Follow(1415, au2, av2, 2720, 1, At(126, 128)) == nil,
+        "a walker who fell off the plateau onto the field: followed down the drop; in the air over the mountainside, none")
+    local Gates = ns.Gates
+    local alone = Gates.Tile(2600)
+    check(alone.falls[2] and alone.falls[2][1] == 1 and alone.landed[1] and alone.landed[1][1] == 2 and not alone.falls[1]
+        and Gates.Down(alone.falls[2][2], alone.falls[2][3], 1.5) == 300 and Gates.Down(167772460, 250, 1.5) == 250,
+        "a way down a drop: from its gate to the other, one way; its cost, of the way on foot and a rider's the cheaper")
+    -- One through the walled tile 2593 from its west gate to its east one (set on its gates as unpacked), 300 yards
+    -- where the walk is 718: a walk eastward across it priced by it, westward not.
+    local row = -8 * Coords.TILE
+    local wu, wv, eu, ev = 128 * s, row - 128 * s, 3 * Coords.TILE + 128 * s, row - 128 * s
+    local middle = Gates.Tile(2593)
+    middle.falls[2], middle.landed[1] = { 1, 300, 300 }, { 2, 300, 300 }
+    local east, west = Search.Price(1415, wu, wv, eu, ev, nil, nil, 1.5), Search.Price(1415, eu, ev, wu, wv, nil, nil, 1.5)
+    Gates.Forget()
+    check(east and math.abs(east - (1784.33 - 418)) < 0.5 and west and math.abs(west - 1784.33) < 0.5,
+        "across a tile by its gates: down its way down the way it goes, the walk the other way")
 end)()
 -- The journey: the pin far away (Elwynn's south west, 1750 yards), a flight point near the player and one near
 -- the pin, both known: walk, fly, walk.
