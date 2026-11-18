@@ -54,6 +54,11 @@ Relations have no API: they are edited on authors.curseforge.com (Saneroki's sig
 in his browser. Its Markdown editor turns every line break into a hard one, so a description goes in with each
 paragraph and each list item on one line (the files here wrap them for reading).
 
+A picture in a description (the banners) goes under the project's Media first (*Add media*, *Upload or Drag
+Image*; not featured, so the gallery under the description keeps the screenshots) and into the description by
+its address on media.forgecdn.net. The editor's own image button only writes `![alt text](url)`. Its *Discard
+changes* switches the editor to WYSIWYG: to drop an edit, leave the page without saving instead (2026-11-18).
+
 ## CurseForge's moderation policies
 
 From CurseForge's support article *Moderation Policies* (read 2026-11-15; it has no section of its own for

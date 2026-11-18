@@ -11,7 +11,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Summary | The game's tooltips redrawn as tidy panels: quests, professions and gold for every item, at a glance. (put in 2026-11-18, in place of a shorter one) |
 | Category | Tooltip |
 | Avatar | `tooltips-avatar.png` of `saneui makelogos` (400 x 400) |
-| Banner | `tooltips-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Tooltips](<address>)`) |
+| Banner | `tooltips-banner.png`, under the project's Media (not featured) and at the top of the description since 2026-11-18, the description's first line |
 | Relations | SaneUI Core: Required Dependency, under Default Relations (set 2026-11-18; each upload sends it too) |
 | Release type | Alpha, by the module's stage (since 0.3.1, 2026-11-16) |
 | Uploads | 0.3.1 alpha (2026-11-16); 0.3.2 alpha (2026-11-18, with SaneUI Core 0.3.3), file 9682011 |
@@ -22,6 +22,8 @@ The editor set to *Markdown* when the project is made. Changed with 0.3.2 (2026-
 setup and says tooltips show at once (no longer *Hold Shift*); put in on CurseForge the same day.
 
 ```markdown
+![SaneUI Tooltips](https://media.forgecdn.net/attachments/2229/799/tooltips-banner-png.png)
+
 **SaneUI Tooltips** redraws the game's tooltips as tidy dark panels with round corners, each in the colour
 of what it shows: an item's quality, a player's class, a spell's school. Every kind of tooltip has a layout
 of its own, and an item's panel tells you what it is for and what it is worth.

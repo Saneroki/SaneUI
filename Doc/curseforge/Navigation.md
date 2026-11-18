@@ -11,7 +11,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. (put in 2026-11-18, in place of "Rebuild minimap and ...") |
 | Category | Map & Minimap (and Quests & Leveling) |
 | Avatar | `maps-avatar.png` of `saneui makelogos` (400 x 400) |
-| Banner | `maps-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Navigation](<address>)`) |
+| Banner | `maps-banner.png`, under the project's Media (not featured) and at the top of the description since 2026-11-18, the description's first line |
 | Relations | SaneUI Core: Required Dependency, under Default Relations (set 2026-11-18; each upload sends it too) |
 | Release type | Alpha, by the module's stage |
 
@@ -21,6 +21,8 @@ The editor set to *Markdown* when the project is made. Put in on CurseForge on 2
 Maps* there).
 
 ```markdown
+![SaneUI Navigation](https://media.forgecdn.net/attachments/2229/795/navigation-banner-png.png)
+
 **SaneUI Navigation** puts your minimap and your world map into one window. Small, in the top right
 corner of the screen, it is your minimap. Left-click that corner and it fills the screen as the
 world map: the same map, handled the same way, only bigger.

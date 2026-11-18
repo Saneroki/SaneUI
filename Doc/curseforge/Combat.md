@@ -17,7 +17,7 @@ when the nameplates became a part of Combat; the project *SaneUI Nameplates*, id
 | Summary | Clean unit frames, party and raid frames and nameplates in one look, each yours or the game's. |
 | Category | Unit Frames (and Combat) |
 | Avatar | `combat-avatar.png` of `saneui makelogos` (400 x 400) |
-| Banner | `combat-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Combat](<address>)`) |
+| Banner | `combat-banner.png`, under the project's Media (not featured) and at the top of the description since 2026-11-18, the description's first line |
 | Relations | SaneUI Core: Required Dependency, under Default Relations (set 2026-11-18; each upload sends it too) |
 | Release type | Alpha, by the module's stage (since 0.3.2, 2026-11-18) |
 
@@ -27,6 +27,8 @@ The editor set to *Markdown* when the project is made. Changed on 2026-11-18: th
 only on mouseover (no longer *Out of sight at rest*); put in on CurseForge the same day.
 
 ```markdown
+![SaneUI Combat](https://media.forgecdn.net/attachments/2229/801/combat-banner-png.png)
+
 **SaneUI Combat** gives you clean frames for the fight in one look: your own frame, your target's and your focus's,
 one frame for your party and your raid, and the game's nameplates dressed in the same style: one bar with round
 corners, everything you need on a single line inside it. Each part is yours or the game's: keep our party and unit

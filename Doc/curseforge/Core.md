@@ -11,7 +11,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Summary | The shared base of every SaneUI addon: one options page, profiles and safe error handling. |
 | Category | Libraries |
 | Avatar | `core-avatar.png` of `saneui makelogos` (400 x 400) |
-| Banner | `core-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Core](<address>)`) |
+| Banner | `core-banner.png`, under the project's Media (not featured) and at the top of the description since 2026-11-18, the description's first line |
 | Slug | goes into `~/.config/saneui/curseforge.json` (`projects.Core.slug`): each module names it its dependency |
 | Release type | the highest any module uploaded with it needs (the pipeline sees to it) |
 
@@ -22,6 +22,8 @@ Combat* in *SaneUI addons*, put in on CurseForge the same day with the summary (
 module that goes up gets its line there.
 
 ```markdown
+![SaneUI Core](https://media.forgecdn.net/attachments/2229/784/core-banner-png.png)
+
 **SaneUI Core** is what every SaneUI addon shares. SaneUI is a set of interface addons for
 **WoW: Forever** (English client), each a download of its own, so you take only the parts you like.
 The CurseForge app installs Core with any of them; you do not need to get it yourself.

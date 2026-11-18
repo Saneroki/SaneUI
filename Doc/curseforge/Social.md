@@ -15,7 +15,7 @@ goes into `~/.config/saneui/curseforge.json` under the key `Social`.
 | Summary | Chat like a messenger: message bubbles, a conversation per whisper, and friends, guild and groups on one screen. |
 | Category | Chat & Communication |
 | Avatar | `social-avatar.png` of `saneui makelogos` (400 x 400: two speech bubbles, the purple ring) |
-| Banner | `social-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Social](<address>)`) |
+| Banner | `social-banner.png`, at the top of the description: after the project is made, uploaded under its Media (not featured) and put in by its address as the description's first line, `![SaneUI Social](<address>)` (README, *The API and the website*) |
 | Relations | SaneUI Core: Required Dependency (each upload sends it too) |
 | Release type | By the module's stage: dev today, so nothing goes up yet |
 
