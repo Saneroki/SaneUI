@@ -117,10 +117,15 @@ ns.TEXT = {
     debuffPlace = "Your debuffs: where",
     buffPlace = "Buffs on foes: where",
     controlPlace = "Crowd control: where",
-    placeTip = "Where these icons stand: above the bar, at its left or at its right. Two kinds on the same side stand in rows, one above the other.",
-    above = "Above",
+    placeTip = "Where these icons stand: over the bar at its left, middle or right; beside it at its left or right; or under it (under the cast bar) at its left, middle or right. Two kinds at one place stand in rows; at different places over or under the bar they share its width.",
+    topleft = "Top left",
+    top = "Top center",
+    topright = "Top right",
     left = "Left",
     right = "Right",
+    bottomleft = "Bottom left",
+    bottom = "Bottom center",
+    bottomright = "Bottom right",
     duration = "Time left in the icons",
     durationTip = "The seconds left of a debuff or buff, in its icon: the number alone, no s or m. More than a minute left reads 60, so it always fits.",
     durationSize = "Time left: size",
@@ -150,8 +155,12 @@ ns.STYLES = { { "both", ns.TEXT.styleBoth }, { "bar", ns.TEXT.styleBar }, { "spe
 -- How many of each kind of aura show at most (Saneroki, 2026-11-16: "how many buffs, debuffs and CCs they want to
 -- see"), each 0 for none: the switches Your debuffs, Buffs on foes and Crowd control were these before.
 ns.AURAS = { debuffCount = 8, buffCount = 3, controlCount = 2 }
--- Where each kind stands (Saneroki, 2026-11-16: "choose where the spells are"): above the bar, at its left or right.
-ns.PLACES = { { "above", ns.TEXT.above }, { "left", ns.TEXT.left }, { "right", ns.TEXT.right } }
+-- Where each kind stands (Saneroki, 2026-11-16: "choose where the spells are"; 2026-11-18: eight places), as the
+-- aura containers stand there (Auras.PLACES).
+ns.PLACES = {}
+for _, place in ipairs({ "topleft", "top", "topright", "left", "right", "bottomleft", "bottom", "bottomright" }) do
+    ns.PLACES[#ns.PLACES + 1] = { place, ns.TEXT[place] }
+end
 
 local OPTIONS = {
     -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
@@ -168,7 +177,7 @@ local OPTIONS = {
     { key = "marker", default = true, text = ns.TEXT.marker, tip = ns.TEXT.markerTip },
     { key = "debuffCount", default = ns.AURAS.debuffCount, min = 0, max = 12, step = 1, text = ns.TEXT.debuffs,
       tip = ns.TEXT.debuffsTip },
-    { key = "debuffPlace", default = "above", choices = ns.PLACES, text = ns.TEXT.debuffPlace, tip = ns.TEXT.placeTip },
+    { key = "debuffPlace", default = "topleft", choices = ns.PLACES, text = ns.TEXT.debuffPlace, tip = ns.TEXT.placeTip },
     { key = "buffCount", default = ns.AURAS.buffCount, min = 0, max = 6, step = 1, text = ns.TEXT.buffs,
       tip = ns.TEXT.buffsTip },
     { key = "buffPlace", default = "left", choices = ns.PLACES, text = ns.TEXT.buffPlace, tip = ns.TEXT.placeTip },
@@ -220,6 +229,7 @@ end
 
 -- A switch changed: what it touches done anew.
 local function Apply(key)
+    if ns.Auras then ns.Auras.Changed() end -- where the auras stand, worked out anew (counts, places, style ...)
     if key == "resource" then
         ns.Guarded(ns.Resource.Update)
     elseif key == "range" then
@@ -228,8 +238,10 @@ local function Apply(key)
         ns.Guarded(ns.Scale.Update)
     elseif key == "duration" or key == "durationSize" or key == "durationTransparency" then
         ns.Guarded(ns.Auras.Restyle)
-    elseif key == "auraSize" or key == "debuffPlace" or key == "buffPlace" or key == "controlPlace" then
-        -- The icons' rows above the bar change how closely the plates stack (Scale.Stacking).
+    elseif key == "auraSize" or key == "debuffPlace" or key == "buffPlace" or key == "controlPlace"
+        or key == "debuffCount" or key == "buffCount" or key == "controlCount" or key == "castBar" or key == "castHeight" then
+        -- The icons' rows over and under the bar (under the cast bar's place) change how closely the plates stack
+        -- (Scale.Stacking).
         ns.Guarded(ns.Plate.Refresh)
         ns.Guarded(ns.Scale.Update)
     elseif key == "combatText" or key == "combatSelf" or key == "combatGame" then

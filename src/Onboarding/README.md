@@ -50,7 +50,10 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   and passes no key on, so no box holds it, one box waits at a time, and the keyboard goes back to the game after the
   key, Esc, another box's click or the step hidden), or from a switch the step words its own way (`{ key = "expandClick", text, tip, choices = {
   { value, words }, ... }, column = true }` over the switch's description: a switch as round buttons, one under
-  another with `column`; Navigation's hot corner), and set through `Core.Set`,
+  another with `column`; Navigation's hot corner; with `around = true`, choices that are places round a bar
+  (`Controls.PLACES`: top left ... bottom right) as a small bar with a round button at each place, the choice's
+  words its tooltip; with `beside = true`, at the right of the control before it, without words of its own, that one
+  narrower: Nameplates' places beside their counts), and set through `Core.Set`,
   as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it.
   Switches without words (kept values), buttons, colours, typed entries and multiple choices have no control in a
   step. A slider shown anew (`Refresh`) does not set its value again.

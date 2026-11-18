@@ -706,13 +706,58 @@ check(math.abs(own._scale - dress._height * 1.5 / Auras.SIZE) < 1e-6, "Spell ico
 check(select(2, Auras.Above(dress._height)) == 1 and math.abs(Auras.Above(dress._height) - (dress._height * 1.5 + Auras.GAP)) < 1e-6,
     "one row above the bar, as high as its icons and a gap (the plates stack by it)")
 Core.Set(ns.name, "auraSize", 100)
--- Where each kind stands: two on one side in rows, the first nearest the bar; the arrow over them all.
+-- Where each kind stands: eight places round the bar (Saneroki, 2026-11-18); two at one place in rows, the first
+-- nearest the bar; at different places over or under it they share its row, each with its share of the bar.
+check(#ns.PLACES == 8 and ns.PLACES[1][1] == "topleft" and ns.PLACES[2][1] == "top" and ns.PLACES[8][1] == "bottomright"
+    and Core.Described(ns.name, "debuffPlace").default == "topleft", "eight places to choose from, your debuffs top left")
 local row = Auras.Size(dress._height) + Auras.GAP
-Core.Set(ns.name, "buffPlace", "above")
+local size = Auras.Size(dress._height)
+local flow = AnchorUtil.FlowDirection
+Core.Set(ns.name, "buffPlace", "topleft")
 check(foes._points[1][1] == "BOTTOMLEFT" and foes._points[1][3] == "TOPLEFT"
-    and math.abs(foes._points[1][5] - row / foes._scale) < 1e-6 and foes._growth[1] == AnchorUtil.FlowDirection.Right
-    and own._points[1][5] == 0, "buffs above too: a row over your debuffs, growing right")
+    and math.abs(foes._points[1][5] - row / foes._scale) < 1e-6 and foes._growth[1] == flow.Right
+    and own._points[1][5] == 0, "buffs top left too: a row over your debuffs, growing right")
 check(select(2, Auras.Above(dress._height)) == 2, "two rows above the bar")
+Core.Set(ns.name, "buffPlace", "topright")
+check(foes._points[1][1] == "BOTTOMRIGHT" and foes._points[1][3] == "TOPRIGHT" and foes._points[1][5] == 0
+    and foes._corner == "BOTTOMRIGHT" and foes._growth[1] == flow.Left and foes._growth[2] == flow.Up
+    and select(2, Auras.Above(dress._height)) == 1, "buffs top right: on your debuffs' row, from the bar's right end leftwards")
+check(own._groups.own.most == math.min(Auras.Slots(dress._width / 2, size), ns.AURAS.debuffCount)
+    and foes._groups.foes.most == math.min(Auras.Slots(dress._width / 2, size), Auras.BUFFS),
+    "two on one row: each no more than fit in half the bar")
+check(dress.marks.lead._points[1][3] == "TOPRIGHT" and math.abs(dress.marks.lead._points[1][5] - (2 + row)) < 1e-6,
+    "the dispel type's icon over the icons at the bar's right end")
+Core.Set(ns.name, "controlPlace", "top")
+check(control._points[1][1] == "BOTTOM" and control._points[1][3] == "TOP" and control._points[1][4] == 0
+    and control._corner == "BOTTOMLEFT" and control._growth[1] == flow.Right
+    and own._groups.own.most == math.min(Auras.Slots(dress._width / 3, size), ns.AURAS.debuffCount),
+    "crowd control top center: centred over the bar (the container as wide as its icons); with it, a third each")
+-- Under the bar: under the cast bar's place (cast or not), growing down; the foot under them.
+Core.Set(ns.name, "buffPlace", "bottomleft")
+Core.Set(ns.name, "controlPlace", "bottom")
+check(foes._points[1][1] == "TOPLEFT" and foes._points[1][2] == dress.low and foes._points[1][3] == "TOPLEFT"
+    and math.abs(foes._points[1][5] + Auras.GAP / foes._scale) < 1e-6 and foes._corner == "TOPLEFT"
+    and foes._growth[2] == flow.Down, "buffs bottom left: under the cast bar's place, growing down")
+check(control._points[1][1] == "TOP" and control._points[1][2] == dress.low and control._corner == "TOPLEFT",
+    "crowd control bottom center: centred under it")
+check(dress.low._points[1][2] == dress.cast and dress.low._points[1][3] == "BOTTOMLEFT" and not dress.cast:IsShown(),
+    "they hang under the cast bar's place while nothing is cast, so a cast never moves them")
+check(dress.foot._points[1][2] == dress.low and math.abs(dress.foot._points[1][5] + row) < 1e-6
+    and select(2, Auras.Below(dress._height)) == 1, "the foot (what another module shows under the plate) under them")
+check(dress.marks.lead._points[1][5] == 2 and select(2, Auras.Above(dress._height)) == 1, "the dispel type's icon back on the bar")
+Core.Set(ns.name, "castBar", false)
+check(dress.low._points[1][2] == dress, "the cast bar off (the game's): right under the bar")
+Core.Set(ns.name, "castBar", nil)
+Core.Set(ns.name, "buffPlace", "bottomright")
+check(foes._points[1][1] == "TOPRIGHT" and foes._points[1][3] == "TOPRIGHT" and foes._growth[1] == flow.Left,
+    "buffs bottom right: from the right end leftwards")
+-- A place kept by its earlier name: above is top left.
+local kept = ns.options.debuffPlace
+ns.options.debuffPlace = "above"
+Auras.Changed()
+check(Auras.Where(Auras.KINDS[1]) == "topleft", "a place saved as above reads top left")
+ns.options.debuffPlace = kept
+Auras.Changed()
 Core.Set(ns.name, "controlPlace", "left")
 Core.Set(ns.name, "buffPlace", "left")
 check(foes._points[1][1] == "BOTTOMRIGHT" and foes._points[1][5] == 0 and control._points[1][1] == "BOTTOMRIGHT"
@@ -2016,8 +2061,11 @@ do
             short = short and line:find("|cff", 1, true) == 1 and #plain <= 110
         end
         for _, key in ipairs(step.settings) do
-            if type(key) == "table" then
+            if type(key) == "table" and key.binding then
                 named = named and type(key.binding) == "string" and type(key.text) == "string"
+            elseif type(key) == "table" then -- a switch the step shows its own way (the places round a small bar)
+                local option = Core.Described(ns.name, key.key)
+                named = named and option ~= nil and type(option.text) == "string"
             else
                 local option = Core.Described(ns.name, key)
                 named = named and option ~= nil and type(option.text) == "string"
@@ -2175,6 +2223,23 @@ do
         and math.abs(auras.icons.foes[1]._points[1][5] - (auras.auraSize + ns.Auras.GAP) / auras.icons.foes[1]:GetScale()) < 1e-6,
         "your debuffs at the left, six buffs a row over them, the icons half again as high")
     for _, key in ipairs({ "debuffPlace", "buffCount", "auraSize" }) do Core.Set(ns.name, key, nil) end
+    -- Under the bar, in its middle: centred under the cast bar's place, as the containers stand; the words say where.
+    Core.Set(ns.name, "controlPlace", "bottom")
+    Core.Set(ns.name, "buffPlace", "topright")
+    auras = Draw("auras").samples[1]
+    local first, second = auras.icons.control[1], auras.icons.control[2]
+    local step = auras.auraSize + ns.Auras.GAP
+    check(first._points[1][1] == "TOP" and first._points[1][2] == auras.low and first._points[1][3] == "TOP"
+        and math.abs(first._points[1][4] + step / 2 / first:GetScale()) < 1e-6
+        and math.abs(second._points[1][4] - step / 2 / second:GetScale()) < 1e-6,
+        "crowd control bottom center: two icons centred under the cast bar's place")
+    check(auras.icons.foes[1]._points[1][1] == "BOTTOMRIGHT" and auras.icons.foes[1]._points[1][3] == "TOPRIGHT"
+        and Count(auras.icons.own) == math.min(ns.Auras.Slots(auras:GetWidth() / 2, auras.auraSize), ns.AURAS.debuffCount),
+        "buffs top right beside your debuffs: half the bar each")
+    check(Setup.Board("auras").lines[1]._text:find("bottom center", 1, true)
+        and Setup.Board("auras").lines[1]._text:find("top right", 1, true),
+        "the words under it say where each kind stands")
+    for _, key in ipairs({ "controlPlace", "buffPlace" }) do Core.Set(ns.name, key, nil) end
     -- The seconds left: the number alone, more than a minute 60, as large and see-through as the settings say.
     local timers = Draw("timers").samples[1]
     local capped, under, fits = 0, 0, true

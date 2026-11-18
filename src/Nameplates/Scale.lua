@@ -191,15 +191,20 @@ local function Restore(list)
 end
 
 -- How closely the game stacks plates (nameplateOverlapV, a share of its own plate's height): as high as ours are at the
--- full size, our bar and a row of auras over it (a foe's buffs and the crowd control stand beside the bar, within it),
--- Auras.GAP to the next plate's bar; the bar alone while the plates show no auras (Health bar only). The share rounded
--- up (two plates never over each other). Nil while the game tells no size of its plate.
+-- full size, our bar and the rows of auras over it (those beside the bar stand within it), Auras.GAP to the next
+-- plate's bar; with rows under the bar those too and the cast bar's place over them (Auras.Below, Bar.Outline); the
+-- bar alone while the plates show no auras (Health bar only). The share rounded up (two plates never over each
+-- other). Nil while the game tells no size of its plate.
 function Scale.Stacking()
     local _, theirs = Core.Ask(C_NamePlate.GetNamePlateSize)
     theirs = Plain(theirs)
     if type(theirs) ~= "number" or theirs <= 0 then return nil end
     local high = ns.Text.Height(UIParent)
-    if ns.Style() ~= "bar" then high = high + ns.Auras.Above(high) end
+    if ns.Style() ~= "bar" then
+        local under, rows = ns.Auras.Below(high)
+        local cast = rows > 0 and (ns.options or {}).castBar ~= false and ns.Cast.Height(high) or 0
+        high = high + ns.Auras.Above(high) + under + cast
+    end
     local ours = high * Scale.Full()
     return ("%.2f"):format(math.ceil(ours / theirs * 100 - 1e-6) / 100)
 end

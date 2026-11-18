@@ -2,23 +2,29 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Nameplates - Auras
---  Around a plate's bar, without a gap, each kind where its setting puts it
---  (Saneroki, 2026-11-16: "choose where the spells are"): above the bar,
---  growing right from its left end; at its left, growing away from it; or at
---  its right, growing away from it. At first:
---    above   the debuffs and damage over time you put on the unit, as many as
---            fit over the bar (eight at most)
---    left    up to three of its buffs, on a unit you can attack, as the game
---            picks buffs for its own plates
---    right   the crowd control on it (stuns, fears, roots, by anyone), up to
---            two
+--  Around a plate's bar, each kind at one of eight places its setting
+--  chooses (Saneroki, 2026-11-16: "choose where the spells are"; 2026-11-18:
+--  "left, right, top left (above the healthbar but anchored to the left side
+--  over the healthbar), top right, top center, bottom left, bottom center,
+--  bottom right"; Auras.PLACES): over the bar from its left end, its middle
+--  or its right end; at its left or right, growing away from it; under it
+--  the same three, under the combo points and the cast bar's place (Bar.Outline:
+--  dress.low), so a cast never moves them. At first:
+--    top left  the debuffs and damage over time you put on the unit, as many
+--              as fit over the bar (eight at most)
+--    left      up to three of its buffs, on a unit you can attack, as the game
+--              picks buffs for its own plates
+--    right     the crowd control on it (stuns, fears, roots, by anyone), up to
+--              two
 --  How many of each at most are the settings Your debuffs, Buffs on foes and
 --  Crowd control (Auras.Most; 0: none); where, Your debuffs: where and so on
---  (Auras.Where). Two kinds on one side stand in rows, the first nearest the
---  bar (debuffs, then buffs, then crowd control). The icons are as high as
---  the bar at first, a share of it by the setting Spell icon size (Saneroki,
---  2026-11-16: "Make the default size of the spells the same height as the
---  nameplate bar"). Your crowd control shows with the crowd control only.
+--  (Auras.Where). Two kinds at one place stand in rows, the first nearest the
+--  bar (debuffs, then buffs, then crowd control); kinds at different places
+--  over or under the bar share its row, each with its share of the bar's
+--  width (Auras.Layout). The icons are as high as the bar at first, a share
+--  of it by the setting Spell icon size (Saneroki, 2026-11-16: "Make the
+--  default size of the spells the same height as the nameplate bar"). Your
+--  crowd control shows with the crowd control only.
 --
 --  All are the game's own aura containers (CustomAuraContainerTemplate,
 --  Blizzard_AuraContainer), one per kind and plate, made with the plate's
@@ -64,11 +70,24 @@ Auras.CC = "HARMFUL|CROWD_CONTROL"                -- crowd control on it, by any
 -- The kinds, nearest the bar first where two share a side: the dress's key, the filter, its count's and its place's
 -- settings.
 Auras.KINDS = {
-    { key = "own", filter = Auras.OWN, count = "debuffCount", place = "debuffPlace", first = "above" },
+    { key = "own", filter = Auras.OWN, count = "debuffCount", place = "debuffPlace", first = "topleft" },
     { key = "foes", filter = Auras.FOES, count = "buffCount", place = "buffPlace", first = "left" },
     { key = "control", filter = Auras.CC, count = "controlCount", place = "controlPlace", first = "right" },
 }
-Auras.SIDES = { above = true, left = true, right = true }
+-- The eight places: the band (over the bar, under it, at its left or right), the corner of a container and of an
+-- icon that stands on the bar's (or, under the bar, on dress.low's) corner named by to, and which way the icons grow
+-- along it (dir: 1 to the right, -1 to the left; middle: centred on it); side: away from the bar by Auras.GAP.
+Auras.PLACES = {
+    topleft = { band = "top", point = "BOTTOMLEFT", to = "TOPLEFT", dir = 1 },
+    top = { band = "top", point = "BOTTOM", to = "TOP", dir = 1, middle = true },
+    topright = { band = "top", point = "BOTTOMRIGHT", to = "TOPRIGHT", dir = -1 },
+    left = { band = "left", point = "BOTTOMRIGHT", to = "BOTTOMLEFT", dir = -1, side = -1 },
+    right = { band = "right", point = "BOTTOMLEFT", to = "BOTTOMRIGHT", dir = 1, side = 1 },
+    bottomleft = { band = "bottom", point = "TOPLEFT", to = "TOPLEFT", dir = 1 },
+    bottom = { band = "bottom", point = "TOP", to = "TOP", dir = 1, middle = true },
+    bottomright = { band = "bottom", point = "TOPRIGHT", to = "TOPRIGHT", dir = -1 },
+}
+Auras.OLD = { above = "topleft" } -- a place kept by its earlier name
 -- The game's own nameplate auras' look: the icon's mask, its border (reaching past a 25-unit icon by these
 -- shares), the swipe of the time gone.
 Auras.MASK = "UI-HUD-CoolDownManager-Mask"
@@ -85,10 +104,49 @@ function Auras.Most(key)
     return math.max(math.floor(most), 0)
 end
 
--- Where a kind stands ("above", "left", "right"), as its setting says.
+-- Where a kind stands (a key of Auras.PLACES), as its setting says.
 function Auras.Where(kind)
     local place = (ns.options or {})[kind.place]
-    return Auras.SIDES[place] and place or kind.first
+    place = Auras.OLD[place] or place
+    return Auras.PLACES[place] and place or kind.first
+end
+
+-- Where each kind stands now, by its key: { place, look (its Auras.PLACES entry), band, row, share, shown }. A row
+-- further out for each kind before it at the same place (0 nearest the bar); over and under the bar, kinds at
+-- different places on one row split its width (share: two at its ends a half each; one in its middle with others a
+-- third each, so none reaches into another). A kind that shows none (0, Health bar only) takes no row. Made anew
+-- after a setting changed (Auras.Changed) or another profile came in.
+local layout, laidFor
+function Auras.Changed()
+    layout = nil
+end
+function Auras.Layout()
+    local options = ns.options or {}
+    if layout and laidFor == options then return layout end
+    local spots, taken, lines = {}, {}, {}
+    local on = ns.Style() ~= "bar"
+    for _, kind in ipairs(Auras.KINDS) do
+        local place = Auras.Where(kind)
+        local look = Auras.PLACES[place]
+        local spot = { place = place, look = look, band = look.band, row = taken[place] or 0, share = 1,
+                       shown = on and Auras.Most(kind.count) > 0 }
+        if spot.shown then
+            taken[place] = spot.row + 1
+            if look.band == "top" or look.band == "bottom" then
+                local line = look.band .. spot.row
+                lines[line] = lines[line] or {}
+                table.insert(lines[line], spot)
+            end
+        end
+        spots[kind.key] = spot
+    end
+    for _, line in pairs(lines) do
+        local middle = false
+        for _, spot in ipairs(line) do middle = middle or spot.look.middle == true end
+        for _, spot in ipairs(line) do spot.share = #line > 1 and middle and 3 or #line end
+    end
+    layout, laidFor = spots, options
+    return spots
 end
 
 -- An icon's size, in the units of a dress that high: the setting Spell icon size, a share of the bar's height.
@@ -97,16 +155,18 @@ function Auras.Size(height)
     return math.max((Plain(height) or 0) * share, 4)
 end
 
--- The rows of icons above a bar that high, and their height: one per kind above it that shows at all (Scale.Stacking,
--- the gold arrow).
-function Auras.Above(height)
-    if ns.Style() == "bar" then return 0, 0 end
+-- The rows of icons in a band over a bar that high, or under it: their height and how many (Auras.Layout).
+local function Rows(band, height)
     local rows = 0
-    for _, kind in ipairs(Auras.KINDS) do
-        if Auras.Where(kind) == "above" and Auras.Most(kind.count) > 0 then rows = rows + 1 end
+    for _, spot in pairs(Auras.Layout()) do
+        if spot.shown and spot.band == band then rows = math.max(rows, spot.row + 1) end
     end
     return rows * (Auras.Size(height) + Auras.GAP), rows
 end
+
+-- Over the bar (Scale.Stacking, the gold arrow); under it, from dress.low (Bar.Outline: the foot under them).
+function Auras.Above(height) return Rows("top", height) end
+function Auras.Below(height) return Rows("bottom", height) end
 
 -- The seconds left's look: the face of the game's numbers, a share of the icon's height (Time left: size).
 local function Font(timer)
@@ -254,15 +314,18 @@ function Auras.Restyle()
     end
 end
 
--- Where a container's icons start and which way they grow, for its side: above and at the right from the bottom left
--- corner rightwards, at the left from the bottom right corner leftwards (and up). Told the game only when it changed.
+-- Where a container's icons start and which way they grow, for its place: from its own corner on the bar (its
+-- point; in the middle from its left, the container as wide as its icons and centred), left or right as its place
+-- grows, up over the bar and beside it, down under it. Told the game only when it changed.
 local function Flow(container, place)
     if container.place == place then return end
     local flow = rawget(_G, "AnchorUtil") and AnchorUtil.FlowDirection
-    if not flow then return end
-    local left = place == "left"
-    if pcall(container.SetFlowLayoutAnchorPoint, container, left and "BOTTOMRIGHT" or "BOTTOMLEFT")
-        and pcall(container.SetFlowLayoutGrowthDirection, container, left and flow.Left or flow.Right, flow.Up) then
+    local look = Auras.PLACES[place]
+    if not flow or not look then return end
+    local start = look.middle and (look.band == "bottom" and "TOPLEFT" or "BOTTOMLEFT") or look.point
+    if pcall(container.SetFlowLayoutAnchorPoint, container, start)
+        and pcall(container.SetFlowLayoutGrowthDirection, container, look.dir < 0 and flow.Left or flow.Right,
+            look.band == "bottom" and flow.Down or flow.Up) then
         container.place = place
     end
 end
@@ -291,38 +354,55 @@ function Auras.Make(dress)
     Auras.Place(dress)
 end
 
--- Each kind's container at its side, at the setting's size, a row further out for each kind before it on that side;
--- the gold arrow over your target (Spells only) above the rows over the bar. dress.auraSize: the icons' size now.
+-- Where an icon or a container of a kind stands (spot: Auras.Layout's) on a dress: the frame and its corner it
+-- stands on, and how far from it; along: how far along its row (0 for a container: the game lays its icons out).
+-- Over the bar and beside it a row further up for each before it; under it a row further down, from dress.low.
+function Auras.Spot(dress, spot, along, row)
+    local look = spot.look
+    local out = spot.row * row
+    local x = (look.side or 0) * Auras.GAP + look.dir * along
+    if look.band == "bottom" then return dress.low or dress, look.to, x, -(out + Auras.GAP) end
+    return dress, look.to, x, out
+end
+
+-- The rows over the bar on a dress, and of them those at its right end: the gold arrow over your target (Spells
+-- only) above them all, the dispel type's icon (Core.HealthMarks) above the bar's right end and the icons there.
+function Auras.Over(dress, spots, row)
+    local top, right = 0, 0
+    for _, spot in pairs(spots) do
+        if spot.shown and spot.band == "top" then
+            top = math.max(top, spot.row + 1)
+            if spot.place == "topright" then right = math.max(right, spot.row + 1) end
+        end
+    end
+    if dress.arrow then
+        dress.arrow:ClearAllPoints()
+        dress.arrow:SetPoint("BOTTOM", dress, "TOP", 0, math.max(top, 1) * row)
+    end
+    if dress.marks then dress.marks:Place("BOTTOMRIGHT", dress, "TOPRIGHT", 0, 2 + right * row) end
+    return top
+end
+
+-- Each kind's container at its place, at the setting's size (Auras.Layout, Auras.Spot); the arrow and the dispel
+-- type's icon over them (Auras.Over). dress.auraSize: the icons' size now; dress.auraRows: the rows over and under it.
 function Auras.Place(dress)
     local height = Plain(dress:GetHeight()) or 0
     local size = Auras.Size(height)
     local scale, row = size / Auras.SIZE, size + Auras.GAP
-    local rows = { above = 0, left = 0, right = 0 }
-    local on = ns.Style() ~= "bar"
+    local spots = Auras.Layout()
     for _, kind in ipairs(Auras.KINDS) do
-        local place = Auras.Where(kind)
-        local out = rows[place]
-        if on and Auras.Most(kind.count) > 0 then rows[place] = out + 1 end
+        local spot = spots[kind.key]
         local container = dress[kind.key]
         if container then
             container:SetScale(scale)
-            Flow(container, place)
+            Flow(container, spot.place)
             container:ClearAllPoints()
-            local up = out * row / scale -- a container's own units are its scale's
-            if place == "above" then
-                container:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", 0, up)
-            elseif place == "left" then
-                container:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -Auras.GAP / scale, up)
-            else
-                container:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", Auras.GAP / scale, up)
-            end
+            local on, to, x, y = Auras.Spot(dress, spot, 0, row)
+            container:SetPoint(spot.look.point, on, to, x / scale, y / scale) -- a container's own units are its scale's
         end
     end
-    dress.auraSize, dress.auraRows = size, rows
-    if dress.arrow then
-        dress.arrow:ClearAllPoints()
-        dress.arrow:SetPoint("BOTTOM", dress, "TOP", 0, math.max(rows.above, 1) * row)
-    end
+    dress.auraSize = size
+    dress.auraRows = { top = Auras.Over(dress, spots, row), bottom = select(2, Auras.Below(height)) }
 end
 
 -- How many icons of that size (Auras.SIZE at first) fit side by side over a bar that wide.
@@ -344,11 +424,14 @@ local function Shown(container, unit, on)
     container:SetShown(on)
 end
 
--- How many icons of a kind a dress shows at most: its setting's; above the bar no more than fit over it.
+-- How many icons of a kind a dress shows at most: its setting's; over and under the bar no more than fit in its
+-- share of the bar's width (Auras.Layout).
 function Auras.Count(dress, kind)
     local most = Auras.Most(kind.count)
-    if Auras.Where(kind) == "above" then
-        most = math.min(Auras.Slots(dress:GetWidth(), dress.auraSize or Auras.Size(dress:GetHeight())), most)
+    local spot = Auras.Layout()[kind.key]
+    if spot.band == "top" or spot.band == "bottom" then
+        local width = (Plain(dress:GetWidth()) or 0) / spot.share
+        most = math.min(Auras.Slots(width, dress.auraSize or Auras.Size(dress:GetHeight())), most)
     end
     return most
 end

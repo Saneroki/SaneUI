@@ -126,38 +126,32 @@ local function Row(dress, kind, files, most, scale, at)
     end
 end
 
--- The auras around the bar as the containers stand (Auras.Place): each kind at its side, a row further out for each
--- kind before it there, at the setting's size, as many as the settings say (above the bar no more than fit over it);
--- none while the plates show the health bar only.
+-- The auras around the bar as the containers stand (Auras.Place): each kind at its place (Auras.Layout, Auras.Spot),
+-- at the setting's size, as many as the settings say (over and under the bar no more than fit in its share of the
+-- bar's width), in the middle centred as a container centres them; none while the plates show the health bar only.
 local function Auras(dress)
     local spec, Auras = dress.spec or {}, ns.Auras
-    local on = ns.Style() ~= "bar"
     local size = Auras.Size(dress:GetHeight())
     local scale, step = size / Auras.SIZE, size + Auras.GAP
-    local rows = { above = 0, left = 0, right = 0 }
+    local spots = Auras.Layout()
     for _, kind in ipairs(Auras.KINDS) do
-        local place = Auras.Where(kind)
-        local out = rows[place]
-        local most = Auras.Most(kind.count)
-        if on and most > 0 then rows[place] = out + 1 end
-        if place == "above" then most = math.min(most, Auras.Slots(dress:GetWidth(), size)) end
-        if not on or (kind.key == "foes" and not spec.hostile) then most = 0 end
-        local up = out * step
-        Row(dress, kind.key, spec[kind.key == "own" and "debuffs" or kind.key == "foes" and "buffs" or "control"], most,
-            scale, function(icon, index)
-                local along = (index - 1) * step
-                if place == "above" then
-                    icon:SetPoint("BOTTOMLEFT", dress, "TOPLEFT", along / scale, up / scale)
-                elseif place == "left" then
-                    icon:SetPoint("BOTTOMRIGHT", dress, "BOTTOMLEFT", -(Auras.GAP + along) / scale, up / scale)
-                else
-                    icon:SetPoint("BOTTOMLEFT", dress, "BOTTOMRIGHT", (Auras.GAP + along) / scale, up / scale)
-                end
-            end)
+        local spot = spots[kind.key]
+        local most = spot.shown and Auras.Most(kind.count) or 0
+        if spot.band == "top" or spot.band == "bottom" then
+            most = math.min(most, Auras.Slots(dress:GetWidth() / spot.share, size))
+        end
+        if kind.key == "foes" and not spec.hostile then most = 0 end
+        local files = spec[kind.key == "own" and "debuffs" or kind.key == "foes" and "buffs" or "control"]
+        local count = math.min(most, #(files or {}))
+        Row(dress, kind.key, files, most, scale, function(icon, index)
+            local along = (index - 1) * step
+            if spot.look.middle then along = along - (count - 1) * step / 2 end
+            local on, to, x, y = Auras.Spot(dress, spot, along, step)
+            icon:SetPoint(spot.look.point, on, to, x / scale, y / scale)
+        end)
     end
-    dress.auraSize, dress.auraRows = size, rows
-    dress.arrow:ClearAllPoints()
-    dress.arrow:SetPoint("BOTTOM", dress, "TOP", 0, math.max(rows.above, 1) * step)
+    dress.auraSize = size
+    dress.auraRows = { top = Auras.Over(dress, spots, step), bottom = select(2, Auras.Below(dress:GetHeight())) }
 end
 
 -- Laid out for its size, as a plate is (Plate.lua's Fit): the bar, the cast bar, the auras.

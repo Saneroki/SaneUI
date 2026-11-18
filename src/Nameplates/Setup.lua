@@ -26,7 +26,9 @@ local _, ns = ...
 --             health; the dispel icon
 --    bar      mana, rage, energy, combo points, barrier, lost health
 --    cast     the cast bar and its height, damage numbers
---    auras    how many debuffs, buffs, crowd control, where, how large
+--    auras    how many debuffs, buffs, crowd control, where (eight places
+--             round the bar, picked on a small bar), how large; damage
+--             numbers rising over them
 --    timers   the seconds left in the icons
 --    look     what plates show (Plates show)
 --  Size and Spells on it each took two pages where one held too many switches.
@@ -152,11 +154,12 @@ Setup.STEPS = {
       settings = { "castBar", "castHeight", "combatText", "combatHeals", "combatSelf", "combatGame" } },
     { key = "auras", title = "Spells on it",
       text = Lines({ "Your debuffs", "what you put on it. Buffs: a foe's own. Crowd control: stuns, fears, roots." },
-          { "Where", "above the bar, at its left or right; two on one side stand in rows." },
+          { "Where", "click a dot round the small bar. Under it: below the cast bar." },
           { "How many", "0 shows none. Icon size: 100% as high as the bar." },
-          { "Watch", "the damage numbers: icons above the bar can hide them." }),
-      settings = { "debuffCount", "debuffPlace", "buffCount", "buffPlace", "controlCount", "controlPlace",
-                   "auraSize" } },
+          { "Damage numbers", "rise over the bar and cover the icons above it." }),
+      settings = { "debuffCount", { key = "debuffPlace", around = true, beside = true },
+                   "buffCount", { key = "buffPlace", around = true, beside = true },
+                   "controlCount", { key = "controlPlace", around = true, beside = true }, "auraSize" } },
     { key = "timers", title = "Time left in the icons",
       text = Lines({ "The seconds left", "of each debuff and buff, in its icon." },
           { "Just the number", "no s or m. More than a minute left reads 60." },
@@ -393,20 +396,24 @@ function DRAW.cast(board)
 end
 
 function DRAW.auras(board)
-    local spec = As(Target(), { control = Setup.CONTROL, numbers = true })
-    spec.cast, spec.lit = nil, nil
-    local dress = Put(board, 1, spec, "CENTER", Wide(board) / 2, 220)
     local Auras = ns.Auras
+    local spec = As(Target(), { control = Setup.CONTROL, numbers = true })
+    spec.lit = nil
+    -- It casts only while a kind stands under the bar: those icons stand under the cast bar's place.
+    if select(2, Auras.Below(1)) == 0 then spec.cast = nil end
+    local dress = Put(board, 1, spec, "CENTER", Wide(board) / 2, 220)
     local words = {}
     for _, kind in ipairs(Auras.KINDS) do
         local name = kind.key == "own" and "Your debuffs" or kind.key == "foes" and "Its buffs" or "Crowd control"
         local most = Auras.Most(kind.count)
-        local where = Auras.Where(kind)
-        local place = where == "above" and "above" or where == "left" and "at the left" or "at the right"
+        local place = (ns.TEXT[Auras.Where(kind)] or ""):lower()
         words[#words + 1] = Hued(name) .. ": " .. (most > 0 and (most .. ", " .. place) or "none")
     end
     if ns.Style() == "bar" then words[#words + 1] = "Plates show the health bar only (the last page): no spells." end
-    Under(board, 1, dress, table.concat(words, "\n"), 46)
+    -- Under the icons under the bar where there are some, and the cast bar's place over them.
+    local under, rows = Auras.Below(dress:GetHeight())
+    local cast = rows > 0 and (ns.options or {}).castBar ~= false and ns.Cast.Height(dress) or 0
+    Under(board, 1, dress, table.concat(words, "\n"), 24 + cast + under)
 end
 
 function DRAW.timers(board)

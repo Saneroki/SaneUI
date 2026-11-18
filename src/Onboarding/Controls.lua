@@ -8,7 +8,9 @@ local _, ns = ...
 --    a number           its words, its value at the right, the game's slider
 --                       with its steppers under them (MinimalSliderWithSteppers)
 --    one of a few       its words, then a round button and the words of each,
---                       side by side where three or fewer fit on a line
+--                       side by side where three or fewer fit on a line;
+--                       places round a bar (around): a round button at each
+--                       place round a small bar, its tooltip its words
 --    a key              its words, and a box with the keys it is bound to:
 --                       a click, then the key to bind it to, with Shift,
 --                       Ctrl and Alt as held (Alt-Shift-V), or a mouse
@@ -18,7 +20,10 @@ local _, ns = ...
 --  A step may word one of the module's switches its own way: its entry
 --  { key = "expandClick", text, tip, choices = { { value, words }, ... },
 --  column = true } over the switch's description (a switch shown as round
---  buttons, one under another with column; Navigation's setup).
+--  buttons, one under another with column; Navigation's setup). With
+--  around = true the choices are places round a bar (Controls.PLACES); with
+--  beside = true a control stands at the right of the one before it, without
+--  words of its own, that one narrower (Nameplates' place beside each count).
 --  Each shows the value in use (Core.Settings) and sets it through Core.Set,
 --  as a menu or a command does: the module is told and follows it, its options
 --  page shows it, its profile keeps it. One under another (parent) stands a
@@ -42,6 +47,14 @@ Controls.RADIO = "Interface\\Buttons\\UI-RadioButton" -- the game's round button
 Controls.DIM = 0.5    -- the words of a control greyed out
 Controls.ACROSS = 3   -- one of a few with at most this many choices: side by side
 Controls.KEY = { 150, 24 } -- a key's box
+-- Places round a bar (option.around): each choice's value, its round button's row (1 over the bar, 2 beside it, 3
+-- under it) and column (0 at the bar's left, 1 its left end, 2 its middle, 3 its right end, 4 at its right).
+Controls.PLACES = { topleft = { 1, 1 }, top = { 1, 2 }, topright = { 1, 3 }, left = { 2, 0 }, right = { 2, 4 },
+                    bottomleft = { 3, 1 }, bottom = { 3, 2 }, bottomright = { 3, 3 } }
+Controls.BAR = { 64, 10 } -- the small bar they stand round
+Controls.ROUND = 16       -- a round button
+Controls.AROUND = { Controls.ROUND * 2 + 64 + 12, 3 * (Controls.ROUND + 4) } -- the places' room: width, height
+Controls.BAR_COLOUR = { 0.75, 0.12, 0.08 } -- the small bar: a foe's red
 Controls.LISTENER = "FULLSCREEN_DIALOG" -- the frame that hears the key: over the window (DIALOG)
 -- Keys no binding takes alone (the game's IsKeyPressIgnoredForBinding where it has none): the modifiers, the two main
 -- mouse buttons.
@@ -194,8 +207,69 @@ local function Round(host)
     return button
 end
 
+-- Whether every choice is a place round a bar (Controls.PLACES).
+local function Places(option)
+    if not option.around then return false end
+    for _, choice in ipairs(option.choices) do
+        if not Controls.PLACES[choice[1]] then return false end
+    end
+    return true
+end
+
+-- Places round a bar (option.around): its words (none beside another control), then a small bar with a round button
+-- at each place round it, the choice's words its tooltip.
+local function Around(host, name, option, width)
+    local row = CreateFrame("Frame", nil, host)
+    local top = option.beside and 0 or Controls.WORDS
+    row:SetSize(option.beside and Controls.AROUND[1] or width, top + Controls.AROUND[2])
+    local words
+    if not option.beside then
+        words = Words(row)
+        words:SetPoint("TOPLEFT", row, "TOPLEFT", 2, 0)
+        words:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, 0)
+        words:SetText(option.text or option.key)
+    end
+    local left = option.beside and 0 or 6
+    local round, step = Controls.ROUND, Controls.ROUND + 4
+    local start = left + round + 6 -- the small bar's left end
+    local bar = row:CreateTexture(nil, "ARTWORK")
+    bar:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    local colour = Controls.BAR_COLOUR
+    bar:SetVertexColor(colour[1], colour[2], colour[3])
+    bar:SetSize(Controls.BAR[1], Controls.BAR[2])
+    bar:SetPoint("TOPLEFT", row, "TOPLEFT", start, -(top + step + (round - Controls.BAR[2]) / 2))
+    local edge = CreateFrame("Frame", nil, row)
+    edge:SetAllPoints(bar)
+    Look.Outline(edge)
+    local columns = { [0] = left, start, start + (Controls.BAR[1] - round) / 2, start + Controls.BAR[1] - round,
+                      start + Controls.BAR[1] + 6 }
+    local rounds = {}
+    for index, choice in ipairs(option.choices) do
+        local at = Controls.PLACES[choice[1]]
+        local button = Round(row)
+        button:SetPoint("TOPLEFT", row, "TOPLEFT", columns[at[2]], -(top + (at[1] - 1) * step))
+        button:SetScript("OnClick", ns.Guard(function()
+            Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+            ns.Window.Set(name, option.key, choice[1])
+        end))
+        Core.Tip(button, choice[2], option.text)
+        rounds[index] = { button = button, value = choice[1] }
+    end
+    function row.Refresh(_, options, open)
+        for _, entry in ipairs(rounds) do
+            entry.button:SetChecked(options[option.key] == entry.value)
+            entry.button:SetEnabled(open)
+        end
+        bar:SetAlpha(open and 1 or Controls.DIM)
+        if words then Dim(words, open) end
+    end
+    row.rounds, row.bar = rounds, bar
+    return row
+end
+
 -- One of a few: its words, then a round button and the words of each choice; side by side where they are few.
 local function Choice(host, name, option, width)
+    if Places(option) then return Around(host, name, option, width) end
     local row = CreateFrame("Frame", nil, host)
     local across = not option.column and #option.choices <= Controls.ACROSS
     row:SetSize(width, Controls.WORDS + (across and 1 or #option.choices) * Controls.CHOICE)
@@ -410,7 +484,14 @@ function Controls.Build(parent, name, keys, width)
     local holder = CreateFrame("Frame", nil, parent)
     local rows, y = {}, 0
     local options = Core.Settings(name) or {}
-    for _, key in ipairs(keys or {}) do
+    local last -- the control made just before, and where it stands: for one beside it
+    keys = keys or {}
+    for index, key in ipairs(keys) do
+        local before = last
+        last = nil
+        local beside = type(key) == "table" and key.beside and before
+        local after = keys[index + 1]
+        local narrow = type(after) == "table" and after.beside -- the next one stands at the right of this one
         -- A key ({ binding = "COMMAND", text, tip }), one of the module's switches by its key, or one the step words
         -- its own way ({ key = "...", text, choices }).
         local binding = type(key) == "table" and type(key.binding) == "string" and key
@@ -418,17 +499,24 @@ function Controls.Build(parent, name, keys, width)
         local hidden = option and type(option.hidden) == "function" and ns.Safe("hidden", option.hidden, options)
         local inset = option and option.parent and Controls.UNDER or 0
         local row
+        local room = width - inset - (narrow and Controls.AROUND[1] + 3 * Controls.GAP or 0)
         if binding then
-            row = Key(holder, binding, width)
+            row = Key(holder, binding, room)
             option = { key = binding.binding }
         else
-            row = option and option.text and not hidden and Make(holder, name, option, width - inset)
+            row = option and option.text and not hidden and Make(holder, name, option, room)
+        end
+        if row and beside then
+            row:SetPoint("TOPRIGHT", holder, "TOPRIGHT", 0, -beside.y)
+            y = beside.y + math.max(beside.row:GetHeight(), row:GetHeight()) + Controls.GAP
+        elseif row then
+            row:SetPoint("TOPLEFT", holder, "TOPLEFT", inset, -y)
+            last = { row = row, y = y }
+            y = y + row:GetHeight() + Controls.GAP
         end
         if row then
-            row:SetPoint("TOPLEFT", holder, "TOPLEFT", inset, -y)
             row.option = option
             rows[#rows + 1] = row
-            y = y + row:GetHeight() + Controls.GAP
         end
     end
     holder:SetSize(width, math.max(y, 1))

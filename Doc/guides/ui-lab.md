@@ -108,6 +108,9 @@ prints its log.
   tooltip as the sample over Forever's loading screen, the lab's unit tooltip standing in for the game's;
   `LabSet("cursor", "always")`, `LabSet("opacity", 40)` change a switch as the window's controls do, `LabSetup()`
   opens it again; the panel's ground is white here too),
+  `setup-nameplates` (Core, Nameplates and Onboarding from their TOCs: Nameplates' setup window at *Spells on it*, its
+  sample plates drawn by the module's own code, the game's plates not in the lab; `LabStep(4)` goes to a page,
+  `LabSet("controlPlace", "bottom")` changes a switch as the window's controls do, `LabSetup()` opens it again),
   `auralists` (Core and Combat from their TOCs with Core's built spell sets, `BUILD/SaneUI/Sets`: the aura lists' window with marks and a search typed; `LabSearch("rejuv")` in the console), `combat-full` (Core and Combat from their TOCs: Combat's full screen with Sane Macros and the action bars as windows, the bars
   standing in; `LabMacros`, `LabBars.Full()`), `basics` (plain widgets), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats

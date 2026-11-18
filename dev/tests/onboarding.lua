@@ -46,6 +46,10 @@ Core.Options("Garden", {
     { key = "path", default = "gravel", choices = { { "gravel", "Gravel" }, { "stone", "Stone" } }, text = "Path",
       tip = "What the path is made of." },
     { key = "moss", default = false, parent = "path", parentValue = "stone", text = "Moss between the stones" },
+    { key = "pond", default = "topleft", text = "Pond", tip = "Where the pond is.",
+      choices = { { "topleft", "Top left" }, { "top", "Top center" }, { "topright", "Top right" }, { "left", "Left" },
+                  { "right", "Right" }, { "bottomleft", "Bottom left" }, { "bottom", "Bottom center" },
+                  { "bottomright", "Bottom right" } } },
     { key = "kept", default = {} },
     { key = "reset", text = "Reset the garden", button = function() end },
 })
@@ -54,7 +58,8 @@ Onboarding.Add("Garden", {
     title = "Garden",
     steps = {
         { key = "beds", title = "The beds", text = "What grows.", settings = { "flowers", "kept", "reset" } },
-        { key = "hedge", title = "The hedge", text = "How tall it is.", settings = { "height" } },
+        { key = "hedge", title = "The hedge", text = "How tall it is.",
+          settings = { "height", { key = "pond", around = true, beside = true } } },
         { key = "path", title = "The path", text = "What you walk on.", settings = { "path", "moss" } },
         { key = "keys", title = "Keys", text = "Keys for it.",
           settings = { { binding = "SANEUI_GARDEN_WATER", text = "Water the garden" },
@@ -140,6 +145,19 @@ window.Changed()
 check(ons.Controls.Value(number.option, 40) == "40%", "its value with its unit")
 check(ons.Controls.Value({ unit = "%", offAt = 100 }, 100) == "Off" and ons.Controls.Value({ unit = "%", offAt = 100 }, 95) == "95%",
     "a slider with offAt says Off there, its number below it")
+-- Places round a bar (around), beside the number (beside): a round button at each, at the right of the slider's row.
+local pond = parts.made.Garden[2].rows[2]
+check(pond and #pond.rounds == 8 and pond.bar ~= nil and pond._points[1][1] == "TOPRIGHT"
+    and pond._points[1][5] == number._points[1][5] and number._width < parts.made.Garden[2]._width - pond._width,
+    "places round a small bar, beside the number on its row, the number narrower")
+check(pond.rounds[1].button:GetChecked() == true and pond.rounds[1].button._points[1][5] == 0
+    and pond.rounds[7].button._points[1][5] < pond.rounds[4].button._points[1][5]
+    and pond.rounds[4].button._points[1][5] < 0 and pond.rounds[4].button._points[1][4] == 0
+    and pond.rounds[5].button._points[1][4] > pond.rounds[3].button._points[1][4],
+    "top left lit; over, beside and under the bar in three rows, left and right beyond its ends")
+pond.rounds[7].button._scripts.OnClick(pond.rounds[7].button)
+check(options.pond == "bottom" and pond.rounds[7].button:GetChecked() == true and pond.rounds[1].button:GetChecked() == false,
+    "a click on the one under the middle: Bottom center, set through Core")
 
 -- The last: one of a few, and a switch under one of them, greyed out until it is chosen.
 parts.forward._scripts.OnClick(parts.forward)

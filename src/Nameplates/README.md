@@ -97,11 +97,16 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   of the bar at most *Crowd control* (2 at first, up to 4) crowd controls on it, by anyone; your own show there, not
   twice. Each at 0 shows none (Saneroki, 2026-11-16: "how many buffs, debuffs and CCs they want to see"; they were
   switches before, and one that was off is 0). Where each stands is its own setting (*Your debuffs: where*, *Buffs
-  on foes: where*, *Crowd control: where*: above, left or right; Saneroki, 2026-11-16: "choose where the spells
-  are"): above the bar they grow right from its left end (your debuffs no more than fit over it), at its left or right
-  away from it; two kinds on one side stand in rows, debuffs nearest the bar, then buffs, then crowd control. The
+  on foes: where*, *Crowd control: where*; Saneroki, 2026-11-16: "choose where the spells are"; 2026-11-18: eight
+  places, "left, right, top left (above the healthbar but anchored to the left side over the healthbar), top right,
+  top center, bottom left, bottom center, bottom right"): over the bar from its left end, centred on its middle or
+  from its right end (no more than fit over it); at its left or right, away from it; under it the same three, below
+  the combo points and the cast bar's place, cast or not, so a cast never moves them (what another module shows under
+  the plate goes under them). Two kinds at one place stand in rows, debuffs nearest the bar, then buffs, then crowd
+  control; kinds at different places over or under the bar share its row, each with half of it (a third with one in
+  its middle). The dispel type's icon stands above the icons at the bar's right end. The
   icons are as high as the bar at first (Saneroki, 2026-11-16), a share of it by *Spell icon size* (50 to 200%); the
-  plates stack as close as the bar and the rows above it. In each icon the seconds left, the number alone (no s or
+  plates stack as close as the bar, the rows above it and, with icons under it, the cast bar's place and those rows. In each icon the seconds left, the number alone (no s or
   m), never over 60: more time left reads 60 (Saneroki, 2026-11-16: "don't show s or m on the nameplates just the
   numbers and never more then 60"; the game's own number formatter, `Auras.Numbers`, whole seconds rounded up):
   setting *Time left in the icons*, its size (*Time left: size*, a share of the icon) and *Time left: transparency*. Hover one for its tooltip (the game's aura container gives it; Forever's own
@@ -307,10 +312,18 @@ the game's gold arrow over your target). When it fails, every plate is the game'
     places a real one may have ("8.8k", "8.88m"). The health text is as wide as it is (`SetWidth(0)`), never cut short.
 - **Auras** (`Auras.lua`): three of the game's aura containers per dress (`CreateFrame("AuraContainer", ...,
   "CustomAuraContainerTemplate")`, `Blizzard_AuraContainer`): `own`, `Auras.OWN` (`HARMFUL|PLAYER|!CROWD_CONTROL`),
-  its `BOTTOMLEFT` on the dress's `TOPLEFT`, growing right, as many as `Auras.Slots` of the dress's width; `foes`,
-  `HELPFUL|INCLUDE_NAME_PLATE_ONLY` (the filter of the game's own plates), at most `Auras.BUFFS`, its
-  `BOTTOMRIGHT` left of the dress's `BOTTOMLEFT` past the icons outside it (`dress.outside`), growing left; `control`, `Auras.CC` (`HARMFUL|CROWD_CONTROL`), at
-  most `Auras.CONTROL`, its `BOTTOMLEFT` right of the dress (`Auras.Place`), growing right; up a row each. The game assigns the auras, icons, times and stacks (hidden values
+  top left at first; `foes`, `HELPFUL|INCLUDE_NAME_PLATE_ONLY` (the filter of the game's own plates), at most
+  `Auras.BUFFS`, left; `control`, `Auras.CC` (`HARMFUL|CROWD_CONTROL`), at most `Auras.CONTROL`, right. Each place is an
+  entry of `Auras.PLACES`: its band (`top`, `bottom`, `left`, `right`), the corner of the container on the bar's (under
+  it on `dress.low`, which `Bar.Outline` puts under the combo points and, while the cast bar is ours, under the cast
+  bar's frame, shown or not), which way the icons grow (`SetFlowLayoutAnchorPoint`, `SetFlowLayoutGrowthDirection`:
+  up over the bar and beside it, down under it), and for the middle its `BOTTOM` or `TOP`: the container is as wide as
+  its icons (the game's flow layout sizes it), so they stand centred. `Auras.Layout` (kept until a setting changes,
+  `Auras.Changed`) gives each kind its row (a row out for each kind before it at its place) and, over and under the bar,
+  its share of the bar's width when kinds at other places share its row (`Auras.Count`: no more than `Auras.Slots` of
+  that share); `Auras.Spot` where a container or an icon stands (the setup's samples too), `Auras.Over` the gold arrow
+  and the dispel type's icon over the rows, `Auras.Above` and `Auras.Below` the rows' height (`Scale.Stacking`, the
+  foot); a place saved as `above` reads `topleft` (`Auras.OLD`). The game assigns the auras, icons, times and stacks (hidden values
   and all); our code runs only when a container makes a frame (`Dress`, its `initializeFrame`, guarded): a
   `Auras.SIZE` square icon cut by the game's nameplate aura mask (`UI-HUD-CoolDownManager-Mask`), its border
   (`UI-HUD-CoolDownManager-IconOverlay`), a `CooldownFrameTemplate` with the game's swipe, the count in a frame
@@ -495,7 +508,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 | `Nameplates.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings, `GiveBack`, the start |
 | `Bar.lua` | The health bar: round at both ends, its border lit on your target and focus, the rank's line and the glow behind it, the power line |
 | `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
-| `Auras.lua` | Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers |
+| `Auras.lua` | Your debuffs, a foe's buffs and crowd control at eight places round the bar (top left, left and right at first), in the game's own aura containers |
 | `Marks.lua` | The raid marker, in the line (alone in the middle in *Spells only*); in *Spells only* the faint dot where a plate is and the gold arrow over your target |
 | `Resource.lua` | Your combo points in a row under the bar of the unit holding them |
 | `Cast.lua` | A unit's cast under its plate's bar: the icon with the seconds left, the spell and its target, cut to fit |
@@ -511,6 +524,14 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-18 (places):** each kind of aura at one of eight places round the bar (Saneroki: "left, right, top left
+  (above the healthbar but anchored to the left side over the healthbar), top right, top center, bottom left, bottom
+  center, bottom right"): `Auras.PLACES`, `Auras.Layout` (kinds at different places sharing a row over or under the bar
+  split its width), `Auras.Spot`, `Auras.Over` (the dispel type's icon over the icons at the bar's right end),
+  `Auras.Below`; under the bar on `dress.low` (`Bar.Outline`: below the combo points and the cast bar's place), the foot
+  under them; the plates stack with them and the cast bar's place (`Scale.Stacking`, `Cast.Height` of a number). The
+  setup's page *Spells on it*: a small bar with a round button at each place beside each count (Onboarding's
+  `around`, `beside`), its sample casting while icons stand under the bar, its damage numbers rising over the icons.
 - **2026-11-16 (numbers):** the seconds left in the aura icons are the number alone, never over 60 (more time left
   reads 60), in place of the game's "12 s" and none over a minute: `Auras.Numbers`, the game's number formatter by
   one rule (`C_StringUtil.CreateNumericRuleFormatter`: step 1 rounded up, at most 60, no unit) handed to its aura

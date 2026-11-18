@@ -221,6 +221,10 @@ function Bar.Make(dress, sample)
     foot:SetFrameLevel(level + 6)
     foot:SetHeight(1)
     dress.foot = foot
+    -- Where the auras under the bar hang from (Auras.Spot): under the combo points and the cast bar's place (Bar.Outline).
+    local low = CreateFrame("Frame", nil, dress)
+    low:SetHeight(1)
+    dress.low = low
     -- The glow: its plates' strengths are their vertex alpha, so only its frame's alpha switches it.
     local holder = CreateFrame("Frame", nil, dress)
     holder:SetAllPoints(dress)
@@ -304,10 +308,24 @@ function Bar.Outline(dress)
         dress.cast:SetPoint("TOPLEFT", above, "BOTTOMLEFT", 0, 0)
         dress.cast:SetPoint("TOPRIGHT", above, "BOTTOMRIGHT", 0, 0)
     end
+    -- The auras under the bar (Auras.Spot) under the combo points while they show and under the cast bar's place while
+    -- the cast bar is ours, cast or not, so a cast never moves them; the foot under them where there are some, else
+    -- right under the lowest row that shows.
+    local low = (dress.cast and (ns.options or {}).castBar ~= false) and dress.cast or strip or dress
+    dress.low:ClearAllPoints()
+    dress.low:SetPoint("TOPLEFT", low, "BOTTOMLEFT", 0, 0)
+    dress.low:SetPoint("TOPRIGHT", low, "BOTTOMRIGHT", 0, 0)
+    local hangs, rows = 0, 0
+    if ns.Auras then hangs, rows = ns.Auras.Below(height) end
     local below = cast or strip or dress
     dress.foot:ClearAllPoints()
-    dress.foot:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 0, 0)
-    dress.foot:SetPoint("TOPRIGHT", below, "BOTTOMRIGHT", 0, 0)
+    if rows > 0 then
+        dress.foot:SetPoint("TOPLEFT", dress.low, "TOPLEFT", 0, -hangs)
+        dress.foot:SetPoint("TOPRIGHT", dress.low, "TOPRIGHT", 0, -hangs)
+    else
+        dress.foot:SetPoint("TOPLEFT", below, "BOTTOMLEFT", 0, 0)
+        dress.foot:SetPoint("TOPRIGHT", below, "BOTTOMRIGHT", 0, 0)
+    end
     -- Spells only (ns.Style): no bar, so the outline goes around the rows under it alone, from the highest of them; none
     -- while no row shows.
     local head, tall = dress, height

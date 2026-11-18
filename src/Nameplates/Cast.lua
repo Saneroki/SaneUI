@@ -214,10 +214,12 @@ function Cast.Make(dress)
 end
 
 -- Laid out for the dress's size (Plate's Fit): as high as its bar.
--- The cast bar as high as the setting Cast bar height says (Saneroki, 2026-11-16), a share of the health bar's.
+-- The cast bar as high as the setting Cast bar height says (Saneroki, 2026-11-16), a share of the health bar's: a
+-- dress's, or a bar that high (Scale.Stacking).
 function Cast.Height(dress)
     local share = (tonumber((ns.options or {}).castHeight) or 100) / 100
-    return (Plain(dress:GetHeight()) or 0) * math.max(share, 0.1)
+    local height = type(dress) == "number" and dress or Plain(dress:GetHeight()) or 0
+    return height * math.max(share, 0.1)
 end
 
 function Cast.Fit(dress)
