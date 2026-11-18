@@ -600,7 +600,7 @@ Sunder Armor), as you choose, nothing fixed.
   (`unitPlayerMouseover`, off at first: always in sight; `rest:Switch`), under it *Always show in combat*
   (`unitPlayerFight`, on: `rest:Fight`) and *Always show in a group* (`unitPlayerGroup`, on: `rest:InGroup` the other
   way round), the same for `unitTarget…` and `unitFocus…`; none on the options page. The action bars keep
-  `barsRest` (on at first) and `barsRestGroup` (Abilities). Your frames are a set each (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
+  `barsRest` and `barsRestGroup` (Abilities; off at first since 2026-11-18, always in sight as well). Your frames are a set each (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
   or a timer on it does too (`Running`; `Bar.Fit` looks again as they come and go), since nothing else shows them and
   you need your breath under water. The action bars are one set (`ActionBars.lua`): `Bars.BARS`, each hot, each of
   their buttons a door, so the mouse on one shows them all; what stands beside a bar out of its layout (a child marked

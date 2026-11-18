@@ -141,8 +141,8 @@ Decided (Saneroki, 2026-10-16):
   target unit frames to be show only on mouseover, show always during combat, always show in part[y]. But those hide /
   show checkboxes are something later in the setup windows, not in the beginning." So your frame, your target's and
   your focus's each have *Show only on mouseover* (off), and under it *Always show in combat* and *Always show in a
-  group* (on): the setup's last step and each frame's Edit Mode dialog (`rest:Fight` in Core). The action bars kept
-  theirs, on at first: not named.
+  group* (on): the setup's last step and each frame's Edit Mode dialog (`rest:Fight` in Core). The action bars too,
+  asked: "Yes, them too": *Hide the action bars at rest* off at first.
 - **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
   mouseover (`GameBars.lua`). Around the mouse, only while they run, rings for the global cooldown and your cast, centred on
   the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). SaneUI's own experience and stance bars are still to come; the game's stance keys and

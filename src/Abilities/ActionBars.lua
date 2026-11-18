@@ -26,7 +26,8 @@ local _, ns = ...
 --  they hang on the bar, not on the button.
 --
 --  Out of sight at rest (Core.Rest, the setting Hide the action bars at rest;
---  Saneroki, 2026-11-01), the bars as one set, by their alpha: the mouse on any
+--  Saneroki, 2026-11-01; off at first, always in sight, 2026-11-18), the bars
+--  as one set, by their alpha: the mouse on any
 --  bar shows them all, their buttons take it as ever and their keys work. They
 --  stay in sight in a vehicle (its actions stand on them), on the full screen
 --  (BarsWindow.lua, Seated) and while something is dragged or your keys are set
@@ -308,7 +309,7 @@ local function Apply()
         if want then Clean() else Restore() end
     end
     rest:InGroup((ns.options or {}).barsRestGroup == true)
-    rest:Switch(not ns.off and (ns.options or {}).barsRest ~= false)
+    rest:Switch(not ns.off and (ns.options or {}).barsRest == true)
 end
 
 function Bars.Apply()

@@ -321,7 +321,8 @@ local OPTIONS = {
     { key = "tightBars", default = true, text = "Action bar buttons touch",
       tip = "No space between the buttons of your action bars, side by side or between the rows of a bar: the icons stand directly against each other. Bars snapped together in Edit Mode touch as well. Edit Mode's Icon Padding has no effect while this is on. It changes after the fight if you are in one." },
     { key = "cleanBars", default = true, text = TEXT.cleanBars, tip = TEXT.cleanBarsTip },
-    { key = "barsRest", default = true, text = TEXT.barsRest, tip = TEXT.barsRestTip },
+    -- Off at first, always in sight, as your unit frames and the quest log (Saneroki, 2026-11-18: "Yes, them too").
+    { key = "barsRest", default = false, text = TEXT.barsRest, tip = TEXT.barsRestTip },
     { key = "barsRestGroup", default = false, text = TEXT.barsRestGroup, tip = TEXT.barsRestGroupTip, parent = "barsRest" },
     { key = "hideTracking", default = true, text = TEXT.hideTracking, tip = TEXT.hideTrackingTip },
     { key = "hideStance", default = true, text = TEXT.hideStance, tip = TEXT.hideStanceTip },

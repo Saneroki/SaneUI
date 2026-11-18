@@ -2657,8 +2657,8 @@ do
         and Core.Described(ns.name, "unitTargetGroup").default == true and Core.Described(ns.name, "unitTargetGroup").parent == "unitTargetMouseover",
         "each frame's three: Show only on mouseover off, Always show in combat and in a group on, under it")
     for _, kind in ipairs(ns.Units.KINDS) do Core.Set(ns.name, kind.option .. "Mouseover", true) end
-    Core.Set(ab.name, "barsRest", false)
-    check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and not bars:Resting(), "Hide the action bars at rest off: always in sight")
+    check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and not bars:Resting()
+        and Core.Described(ab.name, "barsRest").default == false, "Hide the action bars at rest off at first: always in sight")
     Core.Set(ab.name, "barsRest", true)
     local function Rested()
         return you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 0 and StanceBar._alpha == 0

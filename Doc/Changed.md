@@ -6,6 +6,12 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Abilities: the action bars always in sight at first (Saneroki, 2026-11-18)
+Asked whether the action bars, still hidden at rest by default, should be always visible too, as the unit frames and the quest log now are: "Yes, them too". A `/reload` takes it in.
+- **`src/Abilities/Abilities.lua`, `ActionBars.lua`:** *Hide the action bars at rest* (`barsRest`) off at first; the set rests only while it is ticked (`== true`). *In a group too* under it as before.
+- **Tests:** `dev/tests/combat.lua`: the bars in sight at first, the switch off by default.
+- **Docs:** `src/Abilities/README.md`, `src/Combat/README.md`, `Doc/ideas/Combat.md`.
+
 ### Navigation: the longest walks' search without its stutter (Saneroki, 2026-11-18)
 Saneroki: "Yes, fix it" (the stutter left in the longest walks). Card #574. A `/reload` takes it in.
 - **Why:** a walk's search kept 14 tables with a key per node (its cost, where it came from, where it entered, ...); Lua makes a full table twice as large all at once, and past some 130,000 nodes all 14 did so at the same node: one table at 524,000 keys takes 22 ms, six 126 ms, in one frame.

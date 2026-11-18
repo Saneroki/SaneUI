@@ -24,7 +24,8 @@ spellbook and talents windows, which look and work as the game's, on Core's boar
 press the key again, or Esc, and it goes back. On it too: the trainer's window at a trainer, Sane Macros (macros and
 sequences in the game's macro window's stead), the action bars as windows, a talent planner SaneUI knows, and the aura
 history (the buffs and debuffs seen on whoever you can attack; their menu, your marks of an aura, is Combat's, through
-Core). The game's action bars are clean, only the buttons that hold something, out of sight at rest; its experience and
+Core). The game's action bars are clean, only the buttons that hold something, and in sight at all times (out of sight
+at rest if you like: *Hide the action bars at rest*); its experience and
 stance bars are gone, its menu bar shows only while the mouse is on it. In Retail the full screen holds the game's own
 spellbook and talents window.
 ## How to use
