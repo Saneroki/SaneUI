@@ -63,7 +63,7 @@ Formerly **SaneUI Nameplates**: the nameplates are now one part of SaneUI Combat
 
 ## Alpha
 
-SaneUI Combat is in alpha once promoted: it works, but it is still changing, and you may find bugs. If it ever runs
+SaneUI Combat is in alpha: it works, but it is still changing, and you may find bugs. If it ever runs
 into an error, Sane UI gives the frames and plates back to the game's own until your next `/reload`, so your game
 keeps working. `/sane errors` lists what went wrong.
 
