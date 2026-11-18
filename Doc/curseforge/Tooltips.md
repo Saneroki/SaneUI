@@ -14,10 +14,12 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Banner | `tooltips-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Tooltips](<address>)`) |
 | Relations | SaneUI Core: Required Dependency (each upload sends it too) |
 | Release type | Alpha, by the module's stage (since 0.3.1, 2026-11-16) |
+| Uploads | 0.3.1 alpha (2026-11-16); 0.3.2 alpha (2026-11-18, with SaneUI Core 0.3.3), file 9682011 |
 
 ## Description
 
-The editor set to *Markdown* when the project is made.
+The editor set to *Markdown* when the project is made. Changed with 0.3.2 (2026-11-18): *How to use* says
+tooltips show at once (no longer *Hold Shift*); the project's description on CurseForge takes it by hand.
 
 ```markdown
 **SaneUI Tooltips** redraws the game's tooltips as tidy dark panels with round corners, each in the colour

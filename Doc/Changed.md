@@ -167,6 +167,12 @@ Saneroki: "on the onboarding patges the configure keybinds don't work. When I cl
 - **Tests:** `dev/tests/onboarding.lua` (two keys on the last step: no box takes the keyboard; the listener hears the keys while a box waits and lets go after; one box waits at a time; Alt-Shift-V the second box's while the first keeps Shift-F; the middle mouse button, Ctrl and a side button; the game's own chord where it has one; hidden while it waits). Navigation's setup driven in the lab through its own key dispatch and the game's `BindingUtil`: Alt-Shift-V bound to the box clicked.
 - **Docs:** `src/Onboarding/README.md` (*How to use*, *The controls*, *Files*, *History*), `Doc/guides/ui-lab.md` (the keys), `Doc/curseforge/changelogs/Core.md` (0.3.3), `Doc/changelog.txt`.
 
+### SaneUI Tooltips 0.3.2 on CurseForge, alpha (Saneroki, 2026-11-18)
+Saneroki: "make Tooltips alpha and upload to curseforge".
+- **Promoted:** `saneui promote Tooltips alpha --version 0.3.2` (its tests on `b4111b1b`), tag `Tooltips/0.3.2-alpha`: the setup and tooltips shown at once at first. Before it, the setup's words say SaneUI (`src/Tooltips/Setup.lua`); the TOC's category stays *Sane UI*, as the Core and Combat on CurseForge have it, so the addon list keeps them together.
+- **Uploaded** (`saneui publish alpha Tooltips`): SaneUI Tooltips 0.3.2 (CurseForge file 9682011, project 1809731), SaneUI Core 0.3.3 already there; tag `published/Tooltips/0.3.2-alpha`, not pushed.
+- **`Doc/curseforge/Tooltips.md`:** the uploads; *How to use* changed with 0.3.2, for the project's description on CurseForge by hand.
+
 ### Tooltips: shown at once at first (Saneroki, 2026-11-18)
 Saneroki: "make Always the default for show tooltips". A `/reload` takes it in. Card #506.
 - **`src/Tooltips/Tooltips.lua`:** *Show tooltips* is `always` at first (was `shift`), and `ns.Allowed()` falls back to it. The settings' version 4: a copy saved before with Shift (0.3.1's default, written into every copy) is *Always* now; another key stays.
