@@ -7,6 +7,19 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Social 0.3.1 (2026-11-18)
+-------------------------
+- First public alpha of SaneUI Social: the game's chat as a
+  messenger, every message in a bubble, yours on the right,
+  everybody else's on the left with their class icon.
+- Left-click the screen's edge where the chat is docked and
+  it fills the screen: conversations, friends list, guild
+  window and group finder side by side, in layouts of yours.
+- A conversation for every whisper, party and raid, more chat
+  windows on the screen, channels the same on every
+  character, and one search over it all.
+- A setup the first time (again: /sane setup social).
+
 SaneUI 0.3.4 (2026-11-18)
 --------------------------
 - Edit Mode shows its blue boxes only under the mouse, on
