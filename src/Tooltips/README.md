@@ -26,7 +26,12 @@ only read.
 - **Switch it on or off:** tick or untick *Tooltips* under *Sane UI* in the game's addon list. Switched
   off, the tooltips are the game's own again.
 - **Nothing to set up.** Point at an item, a spell, a player.
-- **Seven settings**, on the page *Tooltips* of the options (Esc > Options > AddOns > Sane UI). A change counts from the next tooltip on.
+- **A short setup** (Saneroki, 2026-11-18): one page in Sane UI's setup window, with your own tooltip at its left
+  over a piece of the world: when tooltips show (at once, or while a key is held), at the mouse (*Yes* or *No*), the
+  3D model (*Yes* or *No*) and the opacity. Each choice shows on the sample at once, and counts at once. It opens by
+  itself the first time the module is on (one setup a session, after Nameplates' if that one is still to come); again
+  with the button *Set up step by step* at the top of the options page, or `/sane setup tooltips`.
+- **Seven settings**, on the page *Tooltips* of the options (Esc > Options > AddOns > Sane UI), under the button *Set up step by step*. A change counts from the next tooltip on.
 
   | Setting | At first | What it does |
   |---|---|---|
@@ -584,6 +589,15 @@ only read.
   - A spell's school and its numbers in other languages than English (its facts strip works in every
     language, by the game's own sentences).
   - Small pictures the game puts into a tooltip's lines (`AddTexture`).
+- **The setup's sample** (`Setup.lua`): a tooltip of the game's own (`GameTooltipTemplate`, named
+  `SaneUI_TooltipsSample`, a child of the setup's stage) is owned with `ANCHOR_NONE`, filled with `SetUnit("player")`,
+  read by `ns.Read` into the sample panel's model, and hidden again. It is never placed, so the module's own hooks
+  take it for one nobody sees (`OnScreen`) and leave it to the game. The sample panel (`Panel.Sample`) is made as
+  every panel but inside the stage, at its strata, and kept out of `Panel.All()`: no gate, host, queue or redraw of the
+  tooltips touches it, and `Finish` gives it its full strength whatever *Show tooltips* says. Its live parts follow
+  you while it shows (`Live.Start`, `Stop`, `Update` from its own scripts, in `ns.Safe`: a sample stands nothing down).
+  Behind it, Forever's loading screen *Excavation*, cut to the stage's shape between the picture's bars (`Setup.Cut`);
+  Retail has no such picture and keeps the grey box.
 - **Tests:** `lua5.1 dev/tests/tooltips.lua`, on a few made-up quests, drops, nodes and a row of
   disenchanting compiled
   into set files on the real schemas (`dev/tests/data/tooltips/`, `dev/tests/data/sets.py`): the quest part,
@@ -641,10 +655,17 @@ only read.
 | `Pools.lua` | The parts a panel is drawn with (texts, lines, small icons, bars, a graph's strokes), used again; a text's size |
 | `Panel.lua` | The panel: its parts, the layout, the 3D model in the picture's place, your character beside it (the stage) |
 | `PriceGraph.lua` | How an item's price went, at the end of its Gold section while Alt is held: the ranges as buttons, the two lines, Ctrl for the next range |
+| `Setup.lua` | The setup: its one step's words and switches (the mouse and the 3D model as *Yes* or *No*), your own tooltip as its sample (`Panel.Sample`) over Forever's loading screen, handed to Core (`Core.Onboarding.Add`); the window is the addon Onboarding's |
 | `Host.lua` | Where each panel stands (by its tooltip's corner, beside another panel, comparisons at slots of their own); the game's tooltip out of sight meanwhile, its mouse area the panel's, all set back after |
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-11-18 — The setup (Saneroki: "a very simple onboarding for the Tooltip window where we basically only have Show
+  tooltip while x held, Show at mouse cursor yes / no, 3d model yes / no, opacity slider with a life preview"): one
+  step in the addon Onboarding's window, your own character's tooltip as the sample, drawn by the panels' own code
+  (`Panel.Sample`: a panel inside the setup's stage, not among the tooltips' panels, always seen) over Forever's
+  loading screen, at the mouse pointer or in the corner; the button *Set up step by step* on the options page;
+  *Opacity* in percent.
 - 2026-10-30 — The advice weighs your side's house against a neutral one, each by its own fees: buy in one, sell in the other (Saneroki).
 - 2026-10-30 — Forever's real fees (Core's *Fees*): 15% at a neutral house, the deposit by the duration you chose, prices of what does
   not stack in whole silver. Money is written 1g1s1c, with the game's coin icons (Saneroki).

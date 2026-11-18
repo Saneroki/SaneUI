@@ -8,8 +8,9 @@ local _, ns = ...
 --  it and the module's plates follow each change at once.
 --
 --    left    the stage: a grey box (Look.Box) on the window's plate, solid,
---            the module draws its sample into (the guide's Stage), anew
---            whenever the step shows or a setting changes (Saneroki,
+--            the module draws its sample into (the guide's Stage; each
+--            module into a frame of its own over it, the others' hidden),
+--            anew whenever the step shows or a setting changes (Saneroki,
 --            2026-11-16: see-through tried, "make it solid not transparent.
 --            it gets to confusing if it is transparent actually")
 --    right   the step: its head in the game's gold, its words, its controls
@@ -43,6 +44,19 @@ Window.FILL_IN = { 0.9, 0.3 } -- the fill this far in from the bar's ends and ed
 local frame, look, stage, side, title, words, count, back, forward, progress
 local current   -- { name, guide, index } while a setup shows
 local made = {} -- [module name] = { [step index] = its controls' frame }, made the first time each shows
+local own = {}  -- [module name] = its own frame over the stage, which it draws into; the other modules' hidden
+
+-- The module's own frame on the stage, the others' out of sight: what one module drew never shows under another's.
+local function StageOf(name)
+    local frame = own[name]
+    if not frame then
+        frame = CreateFrame("Frame", nil, stage)
+        frame:SetAllPoints(stage)
+        own[name] = frame
+    end
+    for other, mine in pairs(own) do mine:SetShown(other == name) end
+    return frame
+end
 
 -- A button's words with the game's arrow at its side (CharacterCreateNavButtonMixin:UpdateText).
 local function Arrowed(text, arrow, before)
@@ -67,7 +81,7 @@ function Window.Changed()
     if holder then ns.Controls.Refresh(holder, current.name) end
     local guide = current.guide
     if type(guide.Stage) == "function" then
-        ns.Safe("sample", guide.Stage, stage, guide.steps[index], index)
+        ns.Safe("sample", guide.Stage, StageOf(current.name), guide.steps[index], index)
     end
 end
 
@@ -213,5 +227,5 @@ end
 function Window.Frame() return frame end
 function Window.Parts()
     return { stage = stage, title = title, words = words, count = count, back = back, forward = forward, made = made,
-             current = current, progress = progress }
+             current = current, progress = progress, own = own }
 end

@@ -46,3 +46,5 @@ Panel.lua
 PriceGraph.lua
 # Where each panel stands, and the game's tooltip kept out of sight meanwhile, then restored
 Host.lua
+# The setup, step by step: its words, the switches it is about and your own tooltip as a sample (the window is the addon Onboarding's)
+Setup.lua

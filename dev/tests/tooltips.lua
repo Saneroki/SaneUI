@@ -274,7 +274,8 @@ GetMoney = function() return 12345 end
 
 -- The addons: Core (with its data framework), then the module -------------------------------------------
 -- Of Core only what the module uses: its tools, the kit (pools, pixels, a frame lent), the saved settings
--- and where they live (Profiles), Fuzzy for a text without its codes, the data framework, and the inspections.
+-- and where they live (Profiles), Fuzzy for a text without its codes, the look and the setups (Setup.lua), the data
+-- framework, and the inspections.
 W.Load(root, "SaneUI", "Core/Core", {})
 W.Load(root, "SaneUI", "Core/Kit", {})
 W.Load(root, "SaneUI", "Core/Units", {})
@@ -285,6 +286,8 @@ W.Load(root, "SaneUI", "Core/Saved", {})
 W.Load(root, "SaneUI", "Core/Presets", {})
 W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
+W.Load(root, "SaneUI", "Core/Look", {})       -- the kit's parts, for the setup's words (Setup.lua)
+W.Load(root, "SaneUI", "Core/Onboarding", {}) -- where the module hands in its setup
 for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Rhythm", "Prices", "Fees", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
@@ -306,7 +309,7 @@ local function Steps(frames)
 end
 local files = { "Tooltips", "Texts", "Model", "Read", "Live", "Inspect", "Numbers", "Quests", "Gathering", "Figures" }
 for _, name in ipairs({ "Kinds/Gold", "Kinds/Inventory", "Kinds/Item", "Kinds/Spell", "Kinds/Unit", "Kinds/Aura", "Kinds/Quest",
-    "Kinds/Object", "Pools", "Panel", "PriceGraph", "Host" }) do
+    "Kinds/Object", "Pools", "Panel", "PriceGraph", "Host", "Setup" }) do
     files[#files + 1] = name
 end
 for _, file in ipairs(files) do
@@ -321,7 +324,7 @@ check(options == Core.Settings("Tooltips"), "the switches are the table Core kee
 check(options.cursor == "always" and options.classColors == true and options.icons == true and options.textSize == 14 and options.opacity == 97,
     "its settings: the mouse off, class colours and icons on, the text 14 high, the background almost solid")
 check(options.show == "shift", "and tooltips shown while Shift is held (a saved value that is no choice of the option gets that)")
-check(Core.described.Tooltips.list[2].choices[1][1] == "default" and Core.described.Tooltips.list[2].default == "default",
+check(Core.Described("Tooltips", "cursor").choices[1][1] == "default" and Core.Described("Tooltips", "cursor").default == "default",
     "the mouse option at first: the game's place; one saved as switched on (an older version) is Always now")
 options.cursor = "default"
 options.show = "always" -- shown at once, until the key is tried (below)
@@ -1683,8 +1686,8 @@ tip:Fill({ type = TYPE.Item, id = 6003 }, { { "Helm" } })
 check(#loads == asked and head(panel).model == nil and head(panel).dress == "item:6003",
     "without icons there is no picture and no model in its place; the stage still comes with Alt")
 options.icons = true
-check(Core.described.Tooltips.list[5].key == "models" and Core.described.Tooltips.list[5].text == "3D model in tooltips"
-    and Core.described.Tooltips.list[5].default == true, "the setting: 3D model in tooltips, ticked at first")
+check(Core.Described("Tooltips", "models").text == "3D model in tooltips"
+    and Core.Described("Tooltips", "models").default == true, "the setting: 3D model in tooltips, ticked at first")
 W.methods.SetDisplayInfo, W.methods.TryOn, W.methods.Dress, W.methods.SetUnit, W.methods.SetFacing = nil, nil, nil, nil, nil
 C_MountJournal, C_PetJournal, C_Item.IsDressableItemByID, C_Item.GetItemInfoInstant = nil, nil, nil, instant
 figure:Hide()
@@ -2491,6 +2494,88 @@ SaneUI.Core.described.Tooltips.changed("opacity", 50)
 shopping:Fill({ type = TYPE.Item, id = 19019 }, { { "Thunderfury", nil, { 0.64, 0.21, 0.93 } }, { "Epic" } })
 check(colors[1].a == 0.5, "and a changed opacity a fainter background")
 options.opacity = 97
+
+-- The setup, step by step (Setup.lua; Saneroki, 2026-11-18): one step, the module's own switches (the mouse and the 3D
+-- model as a plain Yes or No), and your own tooltip as the sample, drawn by the panels' own code over the world, anew
+-- after each change, seen whatever the option show says. (In a function of its own: the main chunk is at 200 locals.)
+;(function()
+    local Setup = ns.Setup
+    local guide = Core.Onboarding.Guide("Tooltips")
+    check(guide and guide.title == "Tooltips" and #guide.steps == 1 and guide.steps[1].key == "tooltips",
+        "the tooltips' setup, handed to Core: one step")
+    local settings = guide.steps[1].settings
+    check(settings[1] == "show" and settings[2].key == "cursor" and settings[3].key == "models" and settings[4] == "opacity",
+        "when they show, at the mouse, the 3D model, the opacity")
+    check(settings[2].choices[1][1] == "always" and settings[2].choices[2][1] == "default" and settings[2].choices[1][2] == "Yes"
+        and settings[3].choices[1][1] == true and settings[3].choices[2][1] == false and settings[3].choices[2][2] == "No",
+        "the mouse and the 3D model as a plain Yes or No")
+    check(Core.Described("Tooltips", "opacity").unit == "%" and type(Core.Described("Tooltips", "setup").button) == "function",
+        "the opacity in percent; a button on the options page opens the setup")
+    -- Your character's tooltip, filled by the game into the setup's own tooltip (Reader), which nobody sees.
+    units["Player-2"] = "player"
+    local reader = Tooltip(Setup.READER)
+    Setup.reader = reader
+    local filled = 0
+    function reader:SetUnit(unit)
+        filled = filled + 1
+        self.filledWith = unit
+        self:Fill({ type = TYPE.Unit, guid = "Player-2" }, { { "Sane", nil, { 0.5, 0.5, 1 } }, { "Level 60 Human Mage (Player)" } })
+    end
+    W.methods.SetUnit = function(self, unit) self._unit = unit return true end -- the model frame takes your character
+    local stage = CreateFrame("Frame", nil, UIParent)
+    local was = { show = options.show, cursor = options.cursor, models = options.models, opacity = options.opacity }
+    W.shift = false
+    Core.Set("Tooltips", "show", "shift")
+    Core.Set("Tooltips", "cursor", "default")
+    local function Stage() guide.Stage(stage, guide.steps[1], 1) end
+    Stage()
+    local board = Setup.Board()
+    local sample = board and board.sample
+    check(sample and sample:IsShown() and sample:GetParent() == board and board:GetParent() == stage and filled == 1
+        and reader.filledWith == "player" and head(sample).unit == "player", "the sample: your own tooltip, read from the game's, on the stage")
+    local listed = false
+    for _, other in pairs(ns.Panel.All()) do listed = listed or other == sample end
+    check(not listed and not reader:IsShown() and sample:GetFrameStrata() == stage:GetFrameStrata(),
+        "not one of the tooltips' panels: nothing that runs the tooltips touches it; the tooltip read from hidden again")
+    check(sample:GetAlpha() == 1, "seen though Shift is not held: a sample")
+    local said = board.words:GetText()
+    check(said:find("Hold ", 1, true) and said:find("Shift", 1, true) and said:find(Setup.TEXT.corner, 1, true),
+        "the band says it: hold Shift; in the corner")
+    local point = sample._points[1] or {}
+    check(not board.pointer:IsShown() and point[1] == "BOTTOMRIGHT" and point[2] == board.world and point[4] == -Setup.MARGIN,
+        "No: in the corner, where the game puts tooltips")
+    check(sample.figure and sample.figure:IsShown() and sample.figure._unit == "player", "3D model: your character in the portrait's place")
+    Core.Set("Tooltips", "cursor", "always")
+    Stage()
+    point = sample._points[1] or {}
+    check(board.pointer:IsShown() and point[1] == "TOPLEFT" and point[2] == board.pointer and filled == 2
+        and board.words:GetText():find(Setup.TEXT.mouse, 1, true), "Yes: beside the mouse pointer, read anew")
+    Core.Set("Tooltips", "models", false)
+    Stage()
+    check(not sample.figure:IsShown() and sample.icon:IsShown() and sample.icon.portrait == "player", "No 3D model: the portrait")
+    Core.Set("Tooltips", "opacity", 40)
+    Stage()
+    check(colors[1].a == 0.4, "the opacity: the sample's background as solid as chosen")
+    Core.Set("Tooltips", "show", "always")
+    Stage()
+    check(board.words:GetText():find(Setup.TEXT.always, 1, true), "Always: the band says they show at once")
+    -- The world cut to the stage's shape, between the loading screen's bars.
+    local cut = {}
+    Setup.Cut({ SetTexCoord = function(_, ...) cut = { ... } end }, 408, 478)
+    local aspect = (cut[2] - cut[1]) * Setup.WORLD_SIZE[1] / ((cut[4] - cut[3]) * Setup.WORLD_SIZE[2])
+    check(math.abs(aspect - 408 / 478) < 1e-9 and cut[3] == 0.19 and cut[4] == 0.81 and math.abs(cut[1] + cut[2] - 1) < 1e-9,
+        "the world: the loading screen's middle, as high as between its bars, in the stage's shape")
+    check(board.world:IsShown() and board.world._texture == Setup.WORLD.forever, "Forever's own loading screen behind it")
+    -- The module stood down: nothing to show but that.
+    ns.off = true
+    Stage()
+    check(not sample:IsShown() and board.words:GetText() == Setup.TEXT.off, "stood down: no sample, the band says why")
+    ns.off = nil
+    W.methods.SetUnit = nil
+    for key, value in pairs(was) do Core.Set("Tooltips", key, value) end
+    board:Hide()
+    frame()
+end)()
 
 -- The tooltip a chat link opens ------------------------------------------------------------------
 -- On a screen of 1000 by 800 the tooltip, 100 by 50, stands in the middle once it is placed there.

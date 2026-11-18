@@ -110,6 +110,8 @@ check(parts.title._text == "The beds" and parts.words._text == "What grows.", "t
 check(parts.count._text == "Step 1 of 4", "Step 1 of 4")
 check(parts.back:IsEnabled() == false, "no Back on the first step")
 check(drawn[#drawn].key == "beds" and drawn[#drawn].index == 1 and drawn[#drawn].stage ~= nil, "the module drew its sample")
+check(drawn[#drawn].stage == parts.own.Garden and parts.own.Garden:GetParent() == parts.stage and parts.own.Garden:IsShown(),
+    "into a frame of its own over the stage: what another module drew never shows under it")
 
 -- The first step's controls: the switch alone (kept values and buttons have none).
 local holder = parts.made.Garden[1]

@@ -100,6 +100,10 @@ prints its log.
   section on made-up scans; `LabRange("24h")`, `LabTap()` for Ctrl, `LabAlt(false)`, `LabPinned()` for a chat link's tooltip, whose
   buttons take the mouse; when to buy and sell it: `LabBuying(2900)` as a row of the house's list, `LabBuying()` as yours,
   `LabSold(false)`, `LabScans(1)`; the panel's ground is white, as the lab does not load its art),
+  `setup-tooltips` (Core, Tooltips and Onboarding from their TOCs: Tooltips' setup window on its one step, your own
+  tooltip as the sample over Forever's loading screen, the lab's unit tooltip standing in for the game's;
+  `LabSet("cursor", "always")`, `LabSet("opacity", 40)` change a switch as the window's controls do, `LabSetup()`
+  opens it again; the panel's ground is white here too),
   `auralists` (Core and Combat from their TOCs with Core's built spell sets, `BUILD/SaneUI/Sets`: the aura lists' window with marks and a search typed; `LabSearch("rejuv")` in the console), `combat-full` (Core and Combat from their TOCs: Combat's full screen with Sane Macros and the action bars as windows, the bars
   standing in; `LabMacros`, `LabBars.Full()`), `basics` (plain widgets), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats

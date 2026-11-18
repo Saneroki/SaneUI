@@ -52,9 +52,15 @@ own purpose."
   tried and taken back: "make it solid not transparent. it gets to confusing if it is transparent actually"), keys as controls (`{ binding = ... }` in a step), choices side by side; Nameplates'
   setup in his order with a first page, short lines in gold, and the plates' new settings (icon size and places,
   time left, class colours, raid markers, cast bar height, how much by distance, transparency by kind).
+- **Tooltips' setup (Saneroki, 2026-11-18):** "a very simple onboarding for the Tooltip window where we basically
+  only have Show tooltip while x held, Show at mouse cursor yes / no, 3d model yes / no, opacity slider with a life
+  preview" — `src/Tooltips/Setup.lua`, one page: *Show tooltips* (always, or while a key is held), *at the mouse*
+  and *3D model* as Yes or No, *Opacity*; the sample is the player's own tooltip, drawn by the panels' own code over
+  Forever's loading screen, beside the game's mouse pointer or in the corner. Each module now draws into a frame of
+  its own over the stage (`Window.lua`, `StageOf`).
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
-  character setup, when tooltips show) and the other modules' setups.
+  character setup) and the other modules' setups.
 
 ## Its three parts (Saneroki, 2026-11-15)
 

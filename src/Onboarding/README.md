@@ -48,7 +48,8 @@ this addon only draws them. Nameplates has the first setup.
   step. A slider shown anew (`Refresh`) does not set its value again.
 - **The window** (`Window.lua`): a frame of its own on `UIParent` in the bronze (`Look.Dress`), 860 x 600, strata
   `DIALOG` (over the game's options, `SettingsPanel` at `HIGH`, where the module's button opens it), moved by its head, closed by its X or Esc (`Core.Escape` while shown). The stage is a grey box
-  (`Look.Box`) on the window's plate that clips what it holds. Each step's controls are made
+  (`Look.Box`) on the window's plate that clips what it holds. Each module draws into a frame of its own over it (`StageOf`), the
+  other modules' hidden, so a sample left from another setup never shows under it. Each step's controls are made
   the first time it shows and kept. The progress: `Look.Headline` (the loading screen's bar) with
   `Interface\Glues\LoadingBar\Loading-BarFill` as far as the steps have come. The buttons
   are the red ones (`Look.Red`) with the game's `common-icon-backarrow` and `-forwardarrow`, as
@@ -68,6 +69,8 @@ this addon only draws them. Nameplates has the first setup.
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — Tooltips' setup (`src/Tooltips/Setup.lua`: one step, your own tooltip as the sample); each module's
+  sample in a frame of its own over the stage, the others' hidden.
 - 2026-11-16 (later) — The loading screen's bar for the progress, keys as controls, choices side by side, 600 high
   (Saneroki: "add the loading screen bar there"). The stage over the world was tried and taken back the same day
   (Saneroki: "make it solid not transparent. it gets to confusing if it is transparent actually"): the grey box again.

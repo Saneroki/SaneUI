@@ -231,8 +231,6 @@ local function Create(tooltip)
     -- A unit's health and power bars together are one block with round corners.
     panel.barMask = panel:CreateMaskTexture()
     panel.barMask:SetTexture(BAR_MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-
-    panels[tooltip] = panel
     return panel
 end
 
@@ -380,7 +378,24 @@ end
 
 -- The tooltip's panel, made when it is first asked for.
 function Panel.Of(tooltip)
-    return panels[tooltip] or Create(tooltip)
+    local panel = panels[tooltip]
+    if not panel then
+        panel = Create(tooltip)
+        panels[tooltip] = panel
+    end
+    return panel
+end
+
+-- A panel for the setup's sample (Setup.lua), read from that tooltip: made as every panel, but inside parent (the
+-- setup's stage) and not among the tooltips' panels, so nothing that runs the tooltips (Tooltips.lua, Host.lua)
+-- touches it; always seen, whatever the option show says.
+function Panel.Sample(tooltip, parent)
+    local panel = Create(tooltip)
+    panel:SetParent(parent)
+    panel:SetFrameStrata(parent:GetFrameStrata())
+    panel:SetClampedToScreen(false)
+    panel.sample = true
+    return panel
 end
 
 function Panel.All()
@@ -925,9 +940,9 @@ local function Finish(panel, head, pictured, r, g, b)
         panel.dragon:SetPoint("TOPLEFT", panel.icon, "CENTER", -dragon[5] * scale - DRAGON_LEFT, dragon[6] * scale)
     end
     -- What you wear stands back a little; any tooltip is see-through while it may not be seen yet
-    -- (the option show: Tooltips.lua)
+    -- (the option show: Tooltips.lua); the setup's sample always (Panel.Sample)
     panel.strength = head.compared and COMPARED_ALPHA or 1
-    Panel.Strength(panel, ns.Allowed())
+    Panel.Strength(panel, panel.sample or ns.Allowed())
     -- (A chat link's tooltip has no X here: a click on it closes it. Tooltips.lua, Host.lua)
     -- Over its tooltip. (A frame's level may be hidden: then the panel keeps its own.)
     local level = Plain(panel.tooltip:GetFrameLevel())

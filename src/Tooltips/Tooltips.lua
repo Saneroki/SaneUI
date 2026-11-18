@@ -43,6 +43,10 @@ end
 -- The keys the two options below can wait for
 local KEYS = { { "shift", "While Shift is held" }, { "ctrl", "While Ctrl is held" }, { "alt", "While Alt is held" } }
 Core.Options(ns.name, {
+    -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
+    { key = "setup", text = "Set up step by step",
+      tip = "A short setup: when tooltips show, where, with a 3D model or not, and how solid, with your own tooltip as a sample that shows each choice at once. Also /sane setup tooltips.",
+      button = function() Core.Onboarding.Open(ns.name) end },
     { key = "show", default = "shift", text = "Show tooltips", header = "When and where",
       headerTip = "When tooltips show, and where they stand.",
       choices = { { "always", "Always" }, KEYS[1], KEYS[2], KEYS[3], { "shiftalt", "While Shift and Alt are held" } },
@@ -60,7 +64,7 @@ Core.Options(ns.name, {
       tip = "Hold Alt over an item: the Gold section shows how its price went at the auction house, over this long. Tap Ctrl while the graph is on show for the next range." },
     { key = "textSize", header = "Look", headerTip = "How large and how solid tooltips are.", default = 14, min = 10, max = 20, step = 1, text = "Text size",
       tip = "How large a tooltip's name and lines are written. The smaller texts follow." },
-    { key = "opacity", default = 97, min = 30, max = 100, step = 1, text = "Opacity",
+    { key = "opacity", default = 97, min = 30, max = 100, step = 1, unit = "%", text = "Opacity",
       tip = "How solid a tooltip's background is, in percent. Its texts and pictures stay as they are." },
 }, { version = VERSION, upgrade = Upgrade, changed = function()
     -- A switch was flipped: what the panels show is no longer what they would show.

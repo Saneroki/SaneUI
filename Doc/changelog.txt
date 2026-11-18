@@ -7,6 +7,13 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Tooltips 0.3.2 (2026-11-18)
+---------------------------
+- A short setup the first time (again: /sane setup tooltips):
+  when tooltips show, at the mouse or in the corner, the 3D
+  model and how solid they are, with your own tooltip as a
+  sample that shows each choice at once.
+
 Sane UI 0.3.3 (2026-11-17)
 --------------------------
 - The auction house's full scan line has a pause and resume
