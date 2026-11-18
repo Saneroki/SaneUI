@@ -8,7 +8,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | --- | --- |
 | Name | SaneUI Navigation |
 | Folder in the game | `SaneUI_Navigation` (listed under *SaneUI* as *Navigation*) |
-| Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. (On CurseForge 2026-11-18: "Rebuild minimap and world map in one window, with quest pins, a search and routes to your map pin.") |
+| Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. (put in 2026-11-18, in place of "Rebuild minimap and ...") |
 | Category | Map & Minimap (and Quests & Leveling) |
 | Avatar | `maps-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `maps-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Navigation](<address>)`) |
