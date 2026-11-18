@@ -1,4 +1,4 @@
-# Sane UI: developer changelog
+# SaneUI: developer changelog
 
 Every change, newest first. The short version for users is [changelog.txt](changelog.txt).
 
@@ -21,6 +21,13 @@ Saneroki: "make the totems scale with our unit frame size". Card #570. A `/reloa
 - **`src/Combat/Units/Units.lua`:** `Size`: the holder of the game's totems and a class's resource bar (`PlayerBottomManagedFrameContainer`, hung under ours by `Hang`) lent its scale too: our button's effective scale over its parent's (the game's frame, at the size Edit Mode gives it), so on the screen it is as large as your frame whatever size the game's own has; set anew at each `Units.Apply` (*Unit frame size*, Edit Mode, the interface's scale), after the fight where the holder is protected. Given back with the frame.
 - **Tests:** `dev/tests/combat.lua` (628 checks; 30 in Retail): at 150 % the totems at 1.5; the game's frame at 1.25: the holder at 1.2, as large as yours on the screen; back at 100 %; your frame off: the game's size and place; on again: under yours, as large. The stand-in game frame's effective scale is its own (`dev/tests/combatclient.lua`).
 - **Docs:** `src/Combat/README.md`.
+
+### SaneUI, one word, everywhere; Discord's dev-log pings by choice (Saneroki, 2026-11-18)
+Saneroki: "it is not Sane <space> UI it is SaneUI without any spaces. Make sure of that and write it down into the claude.md"; "The devlog should be the same optin ping like the announcement channel". A game restart takes it in (the TOCs changed).
+- **The name:** "Sane UI" is written SaneUI in every file of the project (575): the game's texts, the TOCs' `## Category` and `## Notes`, the key bindings' header, the options page (`Core.TITLE`), comments, guides, READMEs, both changelogs, the CurseForge descriptions, tests and tools; a name split over two lines joined on the second. Left as they are: `LICENSE`, CurseForge's address `sane-ui` and ComfyUI's folder of workflows (`dev/tools/comfy-library`, a path), and so its name in ComfyUI's menu, *Workflows > Sane UI* (Saneroki's pick).
+- **Logos:** `dev/tools/logo-art` writes SANEUI; every banner drawn anew (`saneui makelogos --ship`) and its texture made (`dev/tools/art`): each module's options banner and Onboarding's logo. The banners on the CurseForge pages, uploaded by hand, still read SANE UI.
+- **Discord:** every text of the server in one word (the channels' topics, the forums' guidelines, the server's description, the onboarding's question and welcome sign, the #welcome post; a stray "┃welcome" off #welcome's topic). #dev-log: members write there (30 s slow mode) and start threads; its pings by choice like #announcements', the role Dev Log, a second answer to the onboarding's question (*Which pings would you like from SaneUI?*, several answers allowed).
+- **Tests:** all pass (`saneui installdev`).
 
 ### Navigation: guild members where they are, when searched (Saneroki, 2026-11-18)
 Saneroki: "Guild members exact placement on the map should not be default but should be visible when someone searches for that guild member in the map searchbar, so for example if someone writes "Guild" in the search bar all the guild members precise location is shown on the map but not by default normally." Card #38. A game restart takes it in (a new file in Navigation's TOC).
@@ -121,10 +128,10 @@ Saneroki: "/sane setup does not restart the onboarding". It opened only the setu
 
 ### Onboarding: the first page's dropdown works, the red buttons, each only where it applies (Saneroki, 2026-11-18)
 Saneroki: "make the dropdown on the first page actually work and also show that the red arrow up / down button will detatch windows from fullscreen or not. The problem is that some addons like the navigation, tooltip and nameplate doesn't have those buttons in it so if only those addons are part of the onboarding then it should not show those because that would cause confusion. On addons that do have those icons should show them on the onboarding." Card #565. A `/reload` takes it in.
-- **`src/Core/Classic.lua`:** `Classic.Kept()` (every window's kept choices, its entries with `checked`), `Classic.Keep(window, entry)` (ticked: its `back`, Sane UI's again; else its `show`, the game's kept, and the game's window gets its button; nothing filled or closed), `Classic.KeptMenu(root)` (each window's kept choices under its name, a tick each).
+- **`src/Core/Classic.lua`:** `Classic.Kept()` (every window's kept choices, its entries with `checked`), `Classic.Keep(window, entry)` (ticked: its `back`, SaneUI's again; else its `show`, the game's kept, and the game's window gets its button; nothing filled or closed), `Classic.KeptMenu(root)` (each window's kept choices under its name, a tick each).
 - **`src/Core/Board.lua`:** `Board.Apart()`: whether some board has a window that can be one of its own (not `apart = false`, not `fit`).
 - **`src/Onboarding/Window.lua`, `Onboarding.lua`:** `Window.Has()` asks which the windows of the addons that are on have (a window with `native`: the button with the circling arrows; `Core.Board.Apart`: the red buttons; `Core.Classic.Kept`: the dropdown), and `Lay` shows those under their head, one under another, each time the first page shows; none: not the head either. The red buttons beside a full screen window's X as Core's board draws them (`RedButton-Condense`, its own window; `-Expand`, back onto the full screen), larger, with Core's tips and what each does beside it. The dropdown *Classic windows* takes the mouse now: its menu is `Core.Classic.KeptMenu`. The new words are `alone` and `onto` (a first try named them `back`, which took the place of the *Back* button's word).
-- **Tests:** `dev/tests/onboarding.lua` (132 checks: without a module that has them, none shown; a stand-in window with the button with the circling arrows and a kept choice plus an entry without, and a full screen whose window can stand alone: `Board.Apart`, `Classic.Kept` only the kept choice, all three shown one under another, the red buttons with their words, *Back* still the button's word; the menu: the window's name, a tick, chosen: the game's kept, again: Sane UI's, nothing else opened; that window gone: only the red buttons). In the lab: the first page with the three, and the dropdown's menu opened by the mouse, *Friends list* ticked by a click.
+- **Tests:** `dev/tests/onboarding.lua` (132 checks: without a module that has them, none shown; a stand-in window with the button with the circling arrows and a kept choice plus an entry without, and a full screen whose window can stand alone: `Board.Apart`, `Classic.Kept` only the kept choice, all three shown one under another, the red buttons with their words, *Back* still the button's word; the menu: the window's name, a tick, chosen: the game's kept, again: SaneUI's, nothing else opened; that window gone: only the red buttons). In the lab: the first page with the three, and the dropdown's menu opened by the mouse, *Friends list* ticked by a click.
 - **Docs:** `src/Onboarding/README.md`, `src/Core/README.md` (`Core.Board`, *Classic windows*), `Doc/ideas/Onboarding.md`, `Doc/curseforge/changelogs/Core.md` (0.3.3), `Doc/changelog.txt`.
 
 ### Forever 70959: the interface, the database, the world and the patch notes (Saneroki, 2026-11-18)
@@ -134,16 +141,16 @@ Saneroki: "run the patch day for 70959": Forever's 1.60.1.70959 against 70938 (R
 - **The world:** no tile changed; the buildings (4,819 files, every part: the extraction takes them all again) and models (5,657) byte for byte 70707's, which the walking data is made of, so it and the instance maps stand. Maps (50 zones, 27 entrances) and travel (339) agree. No repaint job.
 - **`assets/data/PatchNotes/`:** 70959's notes, 76 points (7 Blizzard's and the client's, 16 the client's alone, 53 Blizzard's alone), 40 of the build's 266 changes tied to them; Blizzard published no notes for the build, its Forever hotfix log of November 16 and 17 merged in. `Patchnotes/Forever-1.60.1.70959.html`.
 
-### Onboarding: the plain Sane UI logo, the classic windows explained (Saneroki, 2026-11-18)
-Saneroki: "use a plain Sane UI logo instead of the Core banner and show very clearly that the small button with the circle arrow means to show the classic windows instead and also in fullscreen you have the dropdown selectors to choose which one is the default one". Card #565. A game restart takes it in (a new picture in Onboarding's art).
-- **The plain logo:** `dev/tools/logo-art saneui` (`plain`): Core's badge and SANE UI beside it, a thin gold rule under the words, no addon's word and no plate, on a clear ground, 3 : 1 (`assets/Logos/saneui-banner.png`); `dev/tools/art` makes `Logo-saneui-banner.blp` (1024 x 256, kind banner) and ships it as Onboarding's `Art/logo.blp`.
-- **`src/Onboarding/Window.lua`, `Onboarding.lua`:** the first page's stage has the plain logo (300 x 100, `Window.LOGO`) in place of Core's banner, and under it *Sane UI's windows and the game's own* (`Explained`): Core's own button with the circling arrows (`Core.Window.Swap`, 1.75 times its 24 units, its tip Core's), with beside it that it shows the game's classic window instead and that the same button on the game's window brings Sane UI's back; then the dropdown *Classic windows* as full screen has it (`WowStyle1DropdownTemplate`, `Core.Edge.CLASSIC`, 180 wide; a picture that takes no mouse, made in `pcall`), with under it that in full screen it chooses which one is the default (ticked: the game's classic window opens instead of Sane UI's).
+### Onboarding: the plain SaneUI logo, the classic windows explained (Saneroki, 2026-11-18)
+Saneroki: "use a plain SaneUI logo instead of the Core banner and show very clearly that the small button with the circle arrow means to show the classic windows instead and also in fullscreen you have the dropdown selectors to choose which one is the default one". Card #565. A game restart takes it in (a new picture in Onboarding's art).
+- **The plain logo:** `dev/tools/logo-art saneui` (`plain`): Core's badge and SANEUI beside it, a thin gold rule under the words, no addon's word and no plate, on a clear ground, 3 : 1 (`assets/Logos/saneui-banner.png`); `dev/tools/art` makes `Logo-saneui-banner.blp` (1024 x 256, kind banner) and ships it as Onboarding's `Art/logo.blp`.
+- **`src/Onboarding/Window.lua`, `Onboarding.lua`:** the first page's stage has the plain logo (300 x 100, `Window.LOGO`) in place of Core's banner, and under it *SaneUI's windows and the game's own* (`Explained`): Core's own button with the circling arrows (`Core.Window.Swap`, 1.75 times its 24 units, its tip Core's), with beside it that it shows the game's classic window instead and that the same button on the game's window brings SaneUI's back; then the dropdown *Classic windows* as full screen has it (`WowStyle1DropdownTemplate`, `Core.Edge.CLASSIC`, 180 wide; a picture that takes no mouse, made in `pcall`), with under it that in full screen it chooses which one is the default (ticked: the game's classic window opens instead of SaneUI's).
 - **Tests:** `dev/tests/onboarding.lua` (121 checks: the logo is Onboarding's own, the button with the circling arrows larger with its words, the dropdown with its words). In the lab: the first page with the logo, the button and the dropdown, the words clear of each other (the window's dress shows magenta there since the lab took in Forever's export 70959, not from this change).
 - **Docs:** `src/Onboarding/README.md`, `Doc/guides/images.md` (*Logos*), `Doc/ideas/Onboarding.md`, `Doc/curseforge/changelogs/Core.md` (0.3.3), `Doc/changelog.txt`.
 
 ### Onboarding: the run's first page, Choose defaults (Saneroki, 2026-11-18)
 Saneroki: "Can we have a very first page where all the onboardings that still need to go through is listed and instead of skip it says Choose Defaults on each of the onboardings. On the first page it says that please go through this to configure your addons to your needs. The configure steps are found underer /sane setup or in the addon settings." Card #565. A `/reload` takes it in.
-- **`src/Onboarding/Window.lua`, `Onboarding.lua`:** the run opens on its first page (`Window.First`, `ns.First`): *Sane UI: setup*, Sane UI's logo on the stage (Core's banner), *Set up your addons* and his words (please go through them; found again under `/sane setup` or in the addon settings), a row per setup of the run (its title in gold, its steps faint, *Choose defaults*; done: *Defaults chosen* or *Set up*), how many are left and *Start* (none left: *Done*). *Back* on the first step of a run's setup comes back to it. *Skip setup* is now *Choose defaults*, a button of words alone (`WordsButton`) on the rows and beside *Back*.
+- **`src/Onboarding/Window.lua`, `Onboarding.lua`:** the run opens on its first page (`Window.First`, `ns.First`): *SaneUI: setup*, SaneUI's logo on the stage (Core's banner), *Set up your addons* and his words (please go through them; found again under `/sane setup` or in the addon settings), a row per setup of the run (its title in gold, its steps faint, *Choose defaults*; done: *Defaults chosen* or *Set up*), how many are left and *Start* (none left: *Done*). *Back* on the first step of a run's setup comes back to it. *Skip setup* is now *Choose defaults*, a button of words alone (`WordsButton`) on the rows and beside *Back*.
 - **`src/Core/Onboarding.lua`:** `Start` shows the first page (`Show`/`Go` with no name); `Run()`, `Continue()` (the first setup of the run still to go through, where it was left); `Defaults(name, after)`: the setup's switches (its steps' keys, not the game's key bindings) back to their defaults (`Core.Reset`), kept as `done[name] = { version, day, defaults = true }`; where one differs from its default, the game's yes or no asks first (`Core.Confirm`, *Choose defaults*; no: nothing changes). `Skipped` became `Defaulted`; `Finished(name)` alone marks a setup gone through.
 - **Tests:** `dev/tests/onboarding.lua` (118 checks: the first page at the login, its words, rows, count and Start, the logo; Back from a setup's first step to it, and Start again where it was left; opened by hand: no Back on the first step; a run of two on its page, in their order; Choose defaults on a row at once where nothing differs, its row and count; in a setup asked first where a switch differs, nothing changed until yes, then its defaults and the run closed with none left; opened by hand after: no Choose defaults; a new version brings it back; gone through after all; Garden's switches back to their defaults with its key binding kept). In the lab: the first page with three rows, *Choose defaults* on one.
 - **Docs:** `src/Onboarding/README.md`, `src/Core/README.md`, `Doc/ideas/Onboarding.md`, `Doc/curseforge/changelogs/Core.md` (0.3.3), `Doc/changelog.txt`.
@@ -223,7 +230,7 @@ Saneroki: "Can we have a very simple onboarding for the Tooltip window where we 
 ### Navigation: the setup step by step, the big arrow into the hot corner; no right click zoom (Saneroki, 2026-11-18)
 Saneroki: "Can you make a onboarding window for the navigation module. One of the first ones should be configuring the hotcorner that people should move their mouse into the corner of the minimap to open the map full screen and closing it the same way. The other way would be to do the same but requires a click in the corner. The 3rd would be to use the keybind. Remind people that it is possible to use a combination of things. Show a very big clear arror during the onbarding on the corner so people know that they should move the mouse all the way into the corner to activate hot corner. Give them options to put keybinds to open either the native map or our map." Then Edit Mode moving the hot corner, the quest log's click and double click, the map's double click and right click; and "remove the rightclick that changes the zoom level or zooms out". A game restart takes it in (a new file in Navigation's TOC, a new key binding).
 - **`src/Navigation/Setup.lua`** (new, in the TOC after `Window.lua`): the module's setup handed to Core (`Core.Onboarding.Add`, title *Map*): *Your map*, *Into the corner* (the switch `expandClick` as two round buttons: the mouse into it, or a left click in it), *Or a key* (`SANEUI_MAP`, the game's `TOGGLEWORLDMAP`, `SANEUI_MAP_FIND`; all of them together), *Move it in Edit Mode*, *The quest log*, *On the map*; each page's board drawn from the game's art (tutorial arrows and mouse icons, the cursor, the minimap's arrow, the map pin, the route's line art) and Core's thin golden outline. The big arrow (`Setup.Point`): the game's tutorial arrow and glow, 170 units, at `FULLSCREEN_DIALOG`, no mouse, turned and bouncing towards the spot Core's `edge:Spot()` gives, its words beside it (into the corner, then click; once full, back the same way), looked at anew five times a second while the corner's or Edit Mode's page shows, gone with their board.
-- **`src/Navigation/Native.lua`, `Bindings.xml`:** the key `SANEUI_MAP` (*Sane UI's map*, `Native.Own`: full screen and back); while it has a key (`Native.Split`) the game's map key is not overridden and the game's own binding opens the game's map, which a hook after `ToggleWorldMap` lets stay (`kept`); every other way to the game's map still opens ours.
+- **`src/Navigation/Native.lua`, `Bindings.xml`:** the key `SANEUI_MAP` (*SaneUI's map*, `Native.Own`: full screen and back); while it has a key (`Native.Split`) the game's map key is not overridden and the game's own binding opens the game's map, which a hook after `ToggleWorldMap` lets stay (`kept`); every other way to the game's map still opens ours.
 - **`src/Navigation/Canvas.lua`, `Dungeons.lua`:** a right click steps out no more (the map, Retail's map tree, a dungeon's map on the full screen) and resets no zoom (a dungeon's small map); it still lets a marker waiting for its place stay. The cameras' `StepOut` stays (no click calls it).
 - **`src/Navigation/Navigation.lua`:** the button *Set up step by step* at the top of the options page; `ns.Offer` finds the view's switch by its key.
 - **`src/Core/Edge.lua`:** `edge:Spot()`, the strip or corner square in sight, its side or corner.
@@ -299,9 +306,9 @@ Saneroki asked how hard it would be to bring a dungeon map addon's drawings onto
 ### CurseForge: Navigation, Tooltips and Nameplates up as alpha (Saneroki, 2026-11-16)
 Saneroki: "core got approved. Can you upload the navigation, nameplates and tooltips addon as well now?" Then, asked which Navigation, since 0.3.3 failed its tests with today's Core: "Promote newest, upload".
 - **Stages** (on Saneroki's word): `saneui promote Tooltips alpha` and `Nameplates alpha` (0.3.1, tags `Tooltips/0.3.1-alpha`, `Nameplates/0.3.1-alpha`), `Navigation alpha` (0.3.4 from main, tag `Navigation/0.3.4-alpha`).
-- **Uploaded** (`saneui publish alpha`): SaneUI Core 0.3.2 (file 9646214), SaneUI Nameplates 0.3.1 (9646215), SaneUI Tooltips 0.3.1 (9646216), SaneUI Navigation 0.3.4 (9646264), each tagged `published/<Module>/<version>-alpha`. Navigation 0.3.3 never went up: `dev/tests/navigation.lua` failed with today's Core (the line under the title of Sane UI's options), and an older version goes in only if its own tests pass with today's Core.
+- **Uploaded** (`saneui publish alpha`): SaneUI Core 0.3.2 (file 9646214), SaneUI Nameplates 0.3.1 (9646215), SaneUI Tooltips 0.3.1 (9646216), SaneUI Navigation 0.3.4 (9646264), each tagged `published/<Module>/<version>-alpha`. Navigation 0.3.3 never went up: `dev/tests/navigation.lua` failed with today's Core (the line under the title of SaneUI's options), and an older version goes in only if its own tests pass with today's Core.
 - **`~/.config/saneui/curseforge.json`:** the projects Tooltips (1809731, `saneui-tooltips`) and Nameplates (1809723, `saneui-nameplates`).
-- **Changelogs:** `Doc/curseforge/changelogs/Tooltips.md`, `Nameplates.md` (new, 0.3.1, the first alpha); `Navigation.md` its first-alpha part made 0.3.4. `Doc/changelog.txt`: Navigation 0.3.4, Tooltips 0.3.1, Nameplates 0.3.1, Onboarding in Sane UI 0.3.2; the line *Quests on the map* moved from Navigation 0.3.3 to 0.3.4 (it came after that tag).
+- **Changelogs:** `Doc/curseforge/changelogs/Tooltips.md`, `Nameplates.md` (new, 0.3.1, the first alpha); `Navigation.md` its first-alpha part made 0.3.4. `Doc/changelog.txt`: Navigation 0.3.4, Tooltips 0.3.1, Nameplates 0.3.1, Onboarding in SaneUI 0.3.2; the line *Quests on the map* moved from Navigation 0.3.3 to 0.3.4 (it came after that tag).
 - **Docs:** `Doc/curseforge/README.md` (Core approved; step 8, the older version and today's Core), `Tooltips.md`, `Nameplates.md` (release type alpha; the setup page by page). Board #548: done, a note.
 
 ### Navigation: the question mark only where a quest is turned in; the map pin's tooltip (Saneroki, 2026-11-16)
@@ -324,7 +331,7 @@ Saneroki: "Can we have the sound presets to be have a preset called disabled tha
 - **`src/Navigation/AudioLine.lua`:** Disabled's radio has a tooltip (`TEXT.disabledTip`, also on the dropdown's); while it is in use the cogwheel's title is *Sound settings* and Save, Load and Delete are greyed out.
 - **`src/Core/Edge.lua`:** `Edge.DEFAULTS.expandClick` true, so *Hotcorner requires leftclick* is on at first in Combat, Inventory, Navigation and Social (and every window on `edge = true`); the tips of *Can expand to fullscreen* and the click switch say so. The words that said "push the mouse": Navigation's *native minimap* and *native map* tips, `/sane window`'s help (`Demo.lua`), the module files' notes.
 - **Tests:** `dev/tests/core.lua` (Disabled: nothing set at a login, not saved or deleted, a name taken; Delete leads to it; every profile deleted, none come back), `dev/tests/navigation.lua` (the line on Disabled, its tooltip, the greyed buttons), `dev/tests/window.lua` (the push tried on `W.HOVER`, the click switch off; a window on the defaults wants the click), the full screens of `combat.lua`, `inventory.lua`, `bags.lua`, `sheet.lua` and `social.lua` opened by a left click.
-- **Docs:** `src/Core/README.md`, `src/Navigation/README.md`, `src/Inventory/README.md`, `src/Combat/README.md`, `src/Social/README.md`, `src/Core/Settings/README.md`, `Doc/guides/windows.md`, `Doc/ideas/Windows.md`, `Doc/ideas/Navigation.md`, `Doc/changelog.txt` (Sane UI 0.3.2), `Doc/curseforge/changelogs/Core.md`, `Doc/curseforge/changelogs/Navigation.md` and `Doc/curseforge/Navigation.md` (a left click opens the map).
+- **Docs:** `src/Core/README.md`, `src/Navigation/README.md`, `src/Inventory/README.md`, `src/Combat/README.md`, `src/Social/README.md`, `src/Core/Settings/README.md`, `Doc/guides/windows.md`, `Doc/ideas/Windows.md`, `Doc/ideas/Navigation.md`, `Doc/changelog.txt` (SaneUI 0.3.2), `Doc/curseforge/changelogs/Core.md`, `Doc/curseforge/changelogs/Navigation.md` and `Doc/curseforge/Navigation.md` (a left click opens the map).
 
 ### Nameplates: transparency to 100%, called Off (Saneroki, 2026-11-16)
 Saneroki: "transparency should go to 100% and switch the number to "Off"". A `/reload` takes it in.
@@ -417,8 +424,8 @@ Saneroki promoted Navigation again (`saneui promote Navigation alpha`: 0.3.3, ta
 - **`Doc/curseforge/changelogs/Navigation.md`:** 0.3.2 was never uploaded, so the first file's changelog, 0.3.3, is the first alpha's words (what the module does, that it needs SaneUI Core); the list of changes since 0.3.2 left it, kept in `Doc/changelog.txt` (*Navigation 0.3.3*) and here.
 
 ### CurseForge: the projects SaneUI Core and SaneUI Navigation (Saneroki, 2026-11-15)
-Saneroki made the two projects on CurseForge as *SaneUI Core* (`saneui-core`) and *SaneUI Navigation* (`saneui-navigation`), and on "Rename Sane UI Maps to SaneUI Navigation in the descriptions and the changelog?": "Yes, rename".
-- **`Doc/curseforge/`:** `Maps.md` is `Navigation.md`; the names, summaries' pages, descriptions and both projects' changelogs say *SaneUI Core* and *SaneUI Navigation* (the set of addons and the options page stay *Sane UI*, the game's name for them).
+Saneroki made the two projects on CurseForge as *SaneUI Core* (`saneui-core`) and *SaneUI Navigation* (`saneui-navigation`), and on "Rename SaneUI Maps to SaneUI Navigation in the descriptions and the changelog?": "Yes, rename".
+- **`Doc/curseforge/`:** `Maps.md` is `Navigation.md`; the names, summaries' pages, descriptions and both projects' changelogs say *SaneUI Core* and *SaneUI Navigation* (the set of addons and the options page stay *SaneUI*, the game's name for them).
 - **`dev/tools/release`:** a project without a name in the config uploads as *SaneUI Core* or *SaneUI <title>*; the config's example names the real slugs.
 - **`dev/tools/logo-art`:** Navigation's banner says *NAVIGATION*, no longer *MAPS*; a word too long for the plate is drawn smaller until it fits (Inventory's ran past the gold line). Both banners made anew (`assets/Logos/`, `assets/optimized/<Module>/Art/banner.blp`).
 - **`Doc/changelog.txt`:** Navigation 0.3.2 names *SaneUI Navigation*.
@@ -437,7 +444,7 @@ Saneroki: "Can you purge the lfs of the local git history so I can upload a slim
 Saneroki: "Can yo do some performance tests on the navigation module and its core dependencies? Can we increase the performance". Measured offline under Lua 5.1 on Navigation's test world with Core's real sets (Elwynn, Stormwind and Westfall on the full map): the frames themselves cost 10 to 50 µs (the minimap standing, walking, the full map dragged or zoomed), but each `QUEST_LOG_UPDATE` (every kill of a quest's creature) 5.5 ms and 1.5 MB of garbage: every NPC's pin of every map in view made anew (Elwynn 428, of them 65 quest givers), each quest's standing asked again.
 - **`src/Navigation/Pins.lua`:** the pins of the NPCs that give no quest are kept per map while Core's places of it stay the same list (`steady`), and the quest givers' are made anew only when the quests in the log are others (`Goals.Log`) or the level changed, no longer at a kill that only counts on; `Pins.Spread`'s loop over the clouds asks no function (a cloud keeps its `rings`, the wider step picked by hand, no `^ 2`), the same places to the last bit, 2.2 times as fast.
 - **`src/Navigation/Goals.lua`:** `Goals.Log()`, the quests in the log and the turn-ins of the session in one line, read with the objectives (`QUEST_TURNED_IN` counted: the log may list a quest handed in a moment longer). **`Live.lua`:** `QUEST_TURNED_IN` is a quests' change.
-- **`src/Core/Core.lua`:** `Core.Plain` and `Core.Ask`'s answers check the game's `issecretvalue` themselves, read at each call, and skip nil (no `Core.Secret` asked): `Core.Ask` 2.2 times as fast, `Core.Plain` 1.5 (about 1,500 places in Sane UI).
+- **`src/Core/Core.lua`:** `Core.Plain` and `Core.Ask`'s answers check the game's `issecretvalue` themselves, read at each call, and skip nil (no `Core.Secret` asked): `Core.Ask` 2.2 times as fast, `Core.Plain` 1.5 (about 1,500 places in SaneUI).
 - Result: a quest update on the full map 1.0 ms and 106 KB (was 5.5 ms, 1.5 MB), `Pins.For` after it 0.3 ms (was 4.0), a zone's or a vignette's change 1.0 ms (1.2), every frame 7 to 20 % lighter. Core's 50 data sets take 157 ms and 56.5 MB to load (Walking 53 ms, 25 MB): for the planned load-on-demand data package (#129).
 - **Tests:** `dev/tests/navigation.lua` (2106: a kill keeps the quest givers' pins, a quest taken or handed in makes them anew).
 - **Docs:** `src/Navigation/README.md` (*How it works*, the pins kept).
@@ -447,9 +454,9 @@ Saneroki: "Can yo do some performance tests on the navigation module and its cor
 Saneroki: "I want to create the projects on curseforge for saneUI and SaneUI Navigation. Can you give me the files for the icons and a copy able summary and description for the addons".
 - **`Doc/curseforge/Core.md`, `Maps.md`:** each file's changelog is its project's own (`changelogs/<Module>.md`), no longer `Doc/changelog.txt`; the banner left the description to paste (a local file's name shows nothing on CurseForge) and is a field of its own: uploaded under the project's Images once it is made, put in at the top by its address; the editor set to *Markdown* when the project is made.
 
-### Sane UI's Discord at its own address, discord.gg/saneui (Saneroki, 2026-11-15)
+### SaneUI's Discord at its own address, discord.gg/saneui (Saneroki, 2026-11-15)
 Saneroki: "I have added a custom dicord link. I think our discord is now reachable at discord.gg/saneui" (it leads to the server SaneUI and never expires).
-- **`src/Core/Core.lua`:** `Core.DISCORD` is `https://discord.gg/saneui`: the Discord row of the page Sane UI copies it, and the line told in chat for a problem ends with discord.gg/saneui, short to type.
+- **`src/Core/Core.lua`:** `Core.DISCORD` is `https://discord.gg/saneui`: the Discord row of the page SaneUI copies it, and the line told in chat for a problem ends with discord.gg/saneui, short to type.
 - **Docs:** `src/Core/Settings/README.md` (*The feedback window*); the CurseForge descriptions (`Doc/curseforge/Core.md`, `Maps.md`) link it in place of "(link)".
 - A `/reload` takes it in.
 
@@ -469,7 +476,7 @@ Saneroki: "i did a saneui freshinstall navigation and it did not take the change
 Saneroki, card #542: "1. On the pin dropdown lists: Route to the map pin and minimap dots should not be part of the dropdown menu 2. Quest Offers, Low level Quests, Quests for Later, Done Quests Quest Areas, Quest areas on minimap, Rares, Treasures, Books, Possible herbs, possible ore should all be off by default. The rest should be set to on at 100% 3. The button for dungeons should move to the left infront of the dropdown for the world zones. 4. Add to the classic windows a toggle for the native questlog, so you can still see the native questlog even when you use our addon. 5. When our questlog is docked to the left side of the screen the scrollbar should also be on the left side. When it is docked on the right side the scrollbar should be on the right side of the window. 6. ... All the stuff you have in tracking are just regular static pins where found herbs found ores, find humandoids, track beasts etc those are tracking things but trainers and auctioneer and flightmaster etc are not tracking abilities. So we need to clean that up. Books and Treasures and rares could be under tracking."
 - **`src/Navigation/Navigation.lua`, `Pins.lua`:** the kinds *Route to the map pin* and *Minimap dots* left `ns.KINDS` (the pin filter, the satchel, the setting's list): the golden line and the game's minimap's dots always show (`Pins.ALWAYS`; at a flight master `Taxi.Shows` still hides the dots); the route's size slider went with it. At first off: the quest offers, low-level quests, quests for later, done quests, the quest areas (map and minimap), rares, treasures, books, possible herbs and ore; every other kind on, at 100%. The sections: *Around you* (party, markers), *Quests*, *Travel*, *Towns and services*, *Gathering* (possible herbs and ore), *Tracking* (`ns.TRACKING`: found herbs, ore and fishing pools, rares, treasures, books) in place of *Rares and treasures*. Saved pins stay as each player set them.
 - **`src/Navigation/TopBar.lua`:** the button Dungeons right of the view's button (or the quest log's), the zone dropdown right of it, the search's room from there.
-- **`src/Navigation/Window.lua`, `Native.lua`, `QuestLog.lua`:** *Classic windows* has *Quest Log* (`nativeQuestLog`, no control on the options page), a kept choice: the quest log's key is the game's again (the chat says which), the game's map that shows its quest log beside it a frame after it opened stays the game's (`Native.GameQuestLog`), the map's key and every other way open ours; the game's quest tracker is back while ours is off, as with *Show the game's map*. The button *Sane UI* on the game's map is there with either choice.
+- **`src/Navigation/Window.lua`, `Native.lua`, `QuestLog.lua`:** *Classic windows* has *Quest Log* (`nativeQuestLog`, no control on the options page), a kept choice: the quest log's key is the game's again (the chat says which), the game's map that shows its quest log beside it a frame after it opened stays the game's (`Native.GameQuestLog`), the map's key and every other way open ours; the game's quest tracker is back while ours is off, as with *Show the game's map*. The button *SaneUI* on the game's map is there with either choice.
 - **`src/Navigation/QuestLog.lua`:** the scroll bar at the side the log is docked at (else the half it stands in) in both looks; on the screen alone the list leaves the window's edge's room there while it is longer than its room (`Margin`, `scrolled`).
 - **`src/Navigation/Satchel.lua`:** *Pins* the pin filter's kinds but its section *Tracking*; *Tracking* that section, then the game's tracking spells (an entry whose filter has a spell, Track Humanoids, a hunter's beasts) but the finders; the game's townsfolk entries (flight masters, trainers, auctioneers, bankers...) left the satchel (`Satchel.OPTIONAL` went). What the game keeps on of them still draws its icons on the minimap: card #543.
 - **Tests:** `dev/tests/navigation.lua` (2103: the pins at first; no route or minimap dots in the filter, always shown; the sections; the quest log's choice, its key, its map kept with its quest log, the tracker; the satchel's Pins and Tracking without the townsfolk; the scroll bar on the screen alone; Dungeons right of the quest log's button). The interface lab's scene *satchel* in the new sections.
@@ -477,9 +484,9 @@ Saneroki, card #542: "1. On the pin dropdown lists: Route to the map pin and min
 - **Then, the flight points' words at a flight master three lines** (Saneroki: "On the flightpath window where it shows the flightpath icon and the text next to it, can you make it a 3 liner? Where it shows like: Refuge Pointe / Arathi / 8s19c"): `src/Navigation/Taxi.lua` (`Taxi.Label`: the game's name cut at its last comma into place and zone, the price under them; a name without a comma one line), `PinView.lua` (the label left aligned); `dev/tests/navigation.lua` (2104).
 - A `/reload` takes it in.
 
-### Errors in chat: the line says how to report it, /sane bug and Sane UI's Discord (Saneroki, 2026-11-15)
+### Errors in chat: the line says how to report it, /sane bug and SaneUI's Discord (Saneroki, 2026-11-15)
 Saneroki: "When some error occures the addon writes in chat that something bad happend. Can we change the text to tell the user to use the /sane bug command and copy paste it into the saneui discord?"
-- **`src/Core/Core.lua`:** the line told once per kind of problem (`TOLD`, `Core.Report`) reads "problem in <where>. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord: discord.gg/dVGfWVPXQ5". Saneroki then: "Add the Discord invite link to the chat line too": the invite is `Core.DISCORD`, kept once, written short in chat (chat cannot be copied, so it is typed) and whole on the page Sane UI (`src/Core/Settings/About.lua`, `About.LINKS`). `/sane bug` (an alias of `/sane feedback`) opens the bug report, which carries the latest errors; `/sane errors` still lists the log.
+- **`src/Core/Core.lua`:** the line told once per kind of problem (`TOLD`, `Core.Report`) reads "problem in <where>. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on SaneUI's Discord: discord.gg/dVGfWVPXQ5". Saneroki then: "Add the Discord invite link to the chat line too": the invite is `Core.DISCORD`, kept once, written short in chat (chat cannot be copied, so it is typed) and whole on the page SaneUI (`src/Core/Settings/About.lua`, `About.LINKS`). `/sane bug` (an alias of `/sane feedback`) opens the bug report, which carries the latest errors; `/sane errors` still lists the log.
 - **`src/Core/Saved.lua`:** the tooltip of *Errors in chat* says the line tells how to report it.
 - **Tests:** `dev/tests/core.lua` (517: the line names /sane bug and ends with the Discord's invite; /sane bug opens the bug report).
 - **Docs:** `src/Core/README.md`, `src/Core/Settings/README.md`, `Doc/agent/core.md`.
@@ -487,13 +494,13 @@ Saneroki: "When some error occures the addon writes in chat that something bad h
 
 ### Release: a CurseForge changelog per addon, never the whole suite's (Saneroki, 2026-11-15)
 Saneroki: "So this is one huge changelog for the entire SaneUI suite. we need to have the pipeline to generate seperate changelogs for each module. So The changelogs of Navigation doesn't contain all the changelogs from all the other modules that have their own changelog. This is for curseforge specifically."
-- **`Doc/curseforge/changelogs/`:** each CurseForge project's own changelog, `Core.md` (Sane UI Core) and `Navigation.md` (Sane UI Maps): a part `## <version> (<date>)` per version, newest first, only that addon's changes. The first parts, *0.3.1* and *0.3.2*, moved there in players' words (Core's with the Discord line another session wrote under *Sane UI 0.3.1*). `Doc/changelog.txt` stays the whole suite's and is never uploaded.
+- **`Doc/curseforge/changelogs/`:** each CurseForge project's own changelog, `Core.md` (SaneUI Core) and `Navigation.md` (SaneUI Maps): a part `## <version> (<date>)` per version, newest first, only that addon's changes. The first parts, *0.3.1* and *0.3.2*, moved there in players' words (Core's with the Discord line another session wrote under *SaneUI 0.3.1*). `Doc/changelog.txt` stays the whole suite's and is never uploaded.
 - **`dev/tools/release`:** `changelog(folder, version)` reads the project's own file (`changelog_file`); `publish` uploads that part as the file's changelog, `changelogType` Markdown, and names the file and heading it misses; `changelog` (`saneui makechangelog`) drafts each missing part into that project's file, from only the commits that changed that addon (Core's folders, or the module's and what it carries), and makes the file with its heading for a project's first.
 - **Docs:** `README.md` (*Building*), `Doc/agent/development.md`, `Doc/curseforge/README.md`.
 - **Tests:** `dev/tests/release.py` (80: a project's words from its own file, never the suite's or another's; a draft into the module's own file with only its commits, another project's file untouched; a first changelog made with its heading; uploaded as Markdown).
 
-### Sane UI's Discord: its invite on the page Sane UI, each report to its own channel (Saneroki, 2026-11-15)
-Saneroki set up a Discord server for Sane UI's community, for feedback, ideas and bug reports. Its channels: *Start here* (#welcome, #announcements, #dev-log), *Community*, *Feedback* (the forums #help, #bug-reports and #suggestions, tagged by module, and #feedback), a private *Staff*; card #538.
+### SaneUI's Discord: its invite on the page SaneUI, each report to its own channel (Saneroki, 2026-11-15)
+Saneroki set up a Discord server for SaneUI's community, for feedback, ideas and bug reports. Its channels: *Start here* (#welcome, #announcements, #dev-log), *Community*, *Feedback* (the forums #help, #bug-reports and #suggestions, tagged by module, and #feedback), a private *Staff*; card #538.
 - **`src/Core/Settings/About.lua`:** Discord's row has its address, an invite that never expires (`About.LINKS`), so *Copy link* is on. Each kind of feedback names where its made report goes (`About.KINDS[...].where`): a bug into #bug-reports (or a GitHub issue), an idea into #suggestions, general feedback into #feedback; `TEXT.where` is left for a kind without a place.
 - **Tests:** `dev/tests/core.lua` (515: Discord's invite to copy, Website still *Coming soon*; a made bug report says #bug-reports).
 - **Docs:** `src/Core/Settings/README.md` (*The feedback window*).
@@ -509,7 +516,7 @@ Saneroki: "The dropdown menue for the classic windows, why doesn't it work anymo
 ### Release: changelog parts drafted from the commits, a draft never uploaded; the first two parts written (Saneroki, 2026-11-15)
 Saneroki asked "Do we need to add changelog creation to the pipeline?", then "Yes, both" to a draft step and the first two entries. The players' words stay a person's: commit messages and this file are a developer's.
 - **`dev/tools/release changelog <channel> [Module ...]`** (`saneui makechangelog`): for each upload publish would make that has no part in `Doc/changelog.txt` (`due`: Core when new, each module not up at that channel or higher, none made for another game only), a part above the newest: its heading, its dashes, a `DRAFT:` line, one line per commit that changed the addon since its last upload (Core's folders, or the module's and what it carries), "The first release of ..." for a first. A part already there is left alone. **`publish`** refuses a part while its `DRAFT:` line stands.
-- **`Doc/changelog.txt`:** *Sane UI 0.3.1* and *Navigation 0.3.2*, the first public alpha of Sane UI Core and of Sane UI Maps, in players' words.
+- **`Doc/changelog.txt`:** *SaneUI 0.3.1* and *Navigation 0.3.2*, the first public alpha of SaneUI Core and of SaneUI Maps, in players' words.
 - **Docs:** `README.md` (*Building*), `Doc/agent/development.md`, `Doc/curseforge/README.md`, `dev/saneui` (`makechangelog`).
 - **Tests:** `dev/tests/release.py` (78: a draft for the new version only, above the newest part, from the commits since the last upload; a part there left alone; a draft refused, its rewrite uploaded; nothing due once up).
 
@@ -527,16 +534,16 @@ Saneroki: "Can we have arguments like freshinstall navigation inventory And that
 
 ### A fresh install tried in the real game, then your own setup back: `saneui freshinstall`, `saneui myinstall` (Saneroki, 2026-11-15)
 Saneroki: "a workflow where I can quickly test out a fresh install of my addon ... Like if someone has already played wow before and now installs saneUI, I want to quickly see how that new user would be greated with the new addon and then quickly switch back to my own configured personalised setup".
-- **`dev/tools/fresh-install`** (`saneui freshinstall`, `saneui myinstall`; `status`): in both games at once, or neither, and never while a client of either runs (the game writes its WTF at logout). The start sets each game's `WTF` and `Interface` aside whole into `<game>/SaneUI-FreshInstall/` (a rename: instant, nothing in them touched) and gives the game a player who has played before: the game's own files of every account and character (Config.wtf, the server-kept copies of settings, key bindings, macros, Edit Mode layouts, chat), Blizzard's own saved files, but no addon's saved files, no `AddOns.txt` and none of Sane UI's keys among the bindings; `Interface/AddOns` holds Sane UI's addons alone, as the game has them installed (no tool-made addon), or the zips named with `--zip` (a channel's packages). The test's Config.wtf turns the game's syncing with Blizzard's servers off (`synchronizeConfig`, `synchronizeBindings`, `synchronizeChatFrames`), so what the test changes there does not come back into the real setup at the next login. `myinstall` deletes only folders carrying the test's mark, puts the real ones back as they were and names the game's own files the test changed; a failure half way through the start puts everything back. `--dry` says what either would do.
+- **`dev/tools/fresh-install`** (`saneui freshinstall`, `saneui myinstall`; `status`): in both games at once, or neither, and never while a client of either runs (the game writes its WTF at logout). The start sets each game's `WTF` and `Interface` aside whole into `<game>/SaneUI-FreshInstall/` (a rename: instant, nothing in them touched) and gives the game a player who has played before: the game's own files of every account and character (Config.wtf, the server-kept copies of settings, key bindings, macros, Edit Mode layouts, chat), Blizzard's own saved files, but no addon's saved files, no `AddOns.txt` and none of SaneUI's keys among the bindings; `Interface/AddOns` holds SaneUI's addons alone, as the game has them installed (no tool-made addon), or the zips named with `--zip` (a channel's packages). The test's Config.wtf turns the game's syncing with Blizzard's servers off (`synchronizeConfig`, `synchronizeBindings`, `synchronizeChatFrames`), so what the test changes there does not come back into the real setup at the next login. `myinstall` deletes only folders carrying the test's mark, puts the real ones back as they were and names the game's own files the test changed; a failure half way through the start puts everything back. `--dry` says what either would do.
 - **`dev/saneui`:** the two commands; `saneui installed` says when a test is on.
 - **Docs:** `Doc/agent/development.md`, `README.md` (*Building*).
 - **Tests:** `dev/tests/fresh_install.py` (44: both games set aside and back byte for byte, the test's WTF and AddOns, a running game, an unmarked folder, a game folder gone, a zip reaching outside AddOns, a failure half way).
 
-### Release: Core's download is Sane UI alone; the auction data's addons go with Economy (Saneroki, 2026-11-15)
+### Release: Core's download is SaneUI alone; the auction data's addons go with Economy (Saneroki, 2026-11-15)
 Asked whether to leave *Data: Auction House* and *Data: Auction Scans* out of Core's download until Economy ships, Saneroki: "Yes, leave them out". Installed, they have Core scan the whole auction house whenever it opens and keep every auction (card #503); a player who took only the map never asked for that. Without them Core has nowhere to keep prices, so it neither scans nor shows any, and says nothing.
 - **`dev/tools/release`:** `CORE_PROJECT` (Core's zip: `SaneUI` alone, its version from its code alone) and `CARRIED` (addons a module's zip holds beside it, from main's newest commit, dressed with the module's version and the Core it was tested with): the two data holders with Economy. They still have no stage.
 - **Docs:** `Doc/curseforge/Core.md`, `README.md` (*Building*), `Doc/agent/development.md`.
-- **Tests:** `dev/tests/release.py` (72: Core's zip Sane UI alone, a carried addon beside its module in the zip).
+- **Tests:** `dev/tests/release.py` (72: Core's zip SaneUI alone, a carried addon beside its module in the zip).
 
 ### The new logos in the game: each addon's options banner and its icon in the addon list (Saneroki, 2026-11-15)
 Saneroki: "put the new logos into the game". The old emblem (the glossy gold and blue S an image model made) is gone.
@@ -547,7 +554,7 @@ Saneroki: "put the new logos into the game". The old emblem (the glossy gold and
 
 ### Release: CurseForge's moderation policies met, the token checked; the projects' texts; one logo family (Saneroki, 2026-11-15)
 Saneroki: "Read this and make sure our publishing pipeline is complient with those policies" (CurseForge's *Moderation Policies*: no section for World of Warcraft, so its general rules), "we need short summary, descriptions etc for the map and core part. and we need a logo and banner for both", "a logo style that can differientiate between the modulse but still instill familiarity", and "I have an API token for curseforge so we can build our pipeline around it".
-- **`dev/tools/release`:** a changelog part with only its heading counts as none (every file needs a changelog of what changed); the same code uploaded again up a channel (an alpha made beta) says so first ("Unchanged since 0.4.0 (alpha), now beta."), no other re-upload; `check` (`saneui checkcurseforge`): the token tried on CurseForge's upload API, its WoW game version types listed with their newest versions, the game versions named found, what the config still lacks said; the token never shown. Core's files are named *Sane UI Core* unless the config names them.
+- **`dev/tools/release`:** a changelog part with only its heading counts as none (every file needs a changelog of what changed); the same code uploaded again up a channel (an alpha made beta) says so first ("Unchanged since 0.4.0 (alpha), now beta."), no other re-upload; `check` (`saneui checkcurseforge`): the token tried on CurseForge's upload API, its WoW game version types listed with their newest versions, the game versions named found, what the config still lacks said; the token never shown. Core's files are named *SaneUI Core* unless the config names them.
 - **`dev/tools/logo-art`** (`saneui makelogos`): the logos of Core and every module, drawn from shapes and Noto Serif Display (SIL Open Font License), none of the game's art or fonts (CurseForge takes no copyrighted imagery in an avatar): the gold ring with its diamond and the dark middle shared, a gold symbol (S, compass rose, coins, a chest, speech bubbles, crossed swords; Saneroki: "Center the gold coins and the S into the middle and for the inventory have a different icon. It looks right now as a circle with a crown, not a bag", so each symbol stands by the box round all its parts in the badge's middle and Inventory has a chest) and a thin ring of the module's colour its own; per addon a 1024 icon, a 400 x 400 avatar and a 1536 x 512 banner, and the family on one sheet, into `assets/generated/logos/` (drafts, until one is picked).
 - **`Doc/curseforge/`:** `README.md` (setting the projects up, the moderation policies and how they are met), `Core.md`, `Maps.md` (name, one-sentence summary, category, description, gallery).
 - **Docs:** `Doc/guides/images.md` (*Logos*), `Doc/agent/development.md`, `README.md` (*Building*), `dev/saneui` (`makelogos`, `checkcurseforge`).
@@ -555,15 +562,15 @@ Saneroki: "Read this and make sure our publishing pipeline is complient with tho
 
 ### Release: Core and each module a CurseForge project of their own; Maps first, alone (Saneroki, 2026-11-15)
 Saneroki: "So I feel that our Maps / navigation is most polished. So I was thinking to release this one now first alone." "Can I create a addon called SaneUI Core that only has the Core module and does not do anything on its own but everyone who downloads any of my other adds will also automatically install snaeUI core with it." Then "Yes, rework it". The CurseForge app installs a project's required dependencies with it, from CurseForge's own relation list (the TOC's `Dependencies` does not count there); a manual download needs Core fetched by hand.
-- **`dev/tools/release`:** a channel's packages are a zip per addon (`saneui makepackage <channel> [Module ...]`): Core's (`SaneUI-<version>-<channel>.zip`, Core and its data holders from main's newest commit) and each module's newest version at that stage or higher (`SaneUI_<Module>-<version>-<channel>.zip`). Core has a version of its own: the same code keeps its number, new code one above Core's TOC and every upload of it (`--core-version` to pick one). A module's packaged TOC names the Core it was tested with (`## X-SaneUI-Core`). `saneui publish <channel> [Module ...]` uploads what is not on CurseForge at that channel or higher yet, Core first and only when its code changed, each module's upload naming Core's project its required dependency (`relations`), and tags each `published/<Module>/<version>-<channel>` (the tags `v<version>-<channel>` of one package are gone; none was made). The players' words: a part of `Doc/changelog.txt` per addon and version (`Navigation 0.3.1 (date)`, `Sane UI 0.3.1 (date)`). `~/.config/saneui/curseforge.json` holds `projects`: Core's id and slug, each module's id and the name its files get (*Sane UI Maps*); a module without one is not uploaded, and named, refused.
-- **`src/Core/Core.lua`:** `Core.NewerCoreWanted(addon)`: a packaged module's `X-SaneUI-Core` newer than this Core's version; as such an addon loads, Core says once in chat that it was made with a newer Sane UI and asks to update Sane UI too. A build made here names no Core, so nothing is said.
+- **`dev/tools/release`:** a channel's packages are a zip per addon (`saneui makepackage <channel> [Module ...]`): Core's (`SaneUI-<version>-<channel>.zip`, Core and its data holders from main's newest commit) and each module's newest version at that stage or higher (`SaneUI_<Module>-<version>-<channel>.zip`). Core has a version of its own: the same code keeps its number, new code one above Core's TOC and every upload of it (`--core-version` to pick one). A module's packaged TOC names the Core it was tested with (`## X-SaneUI-Core`). `saneui publish <channel> [Module ...]` uploads what is not on CurseForge at that channel or higher yet, Core first and only when its code changed, each module's upload naming Core's project its required dependency (`relations`), and tags each `published/<Module>/<version>-<channel>` (the tags `v<version>-<channel>` of one package are gone; none was made). The players' words: a part of `Doc/changelog.txt` per addon and version (`Navigation 0.3.1 (date)`, `SaneUI 0.3.1 (date)`). `~/.config/saneui/curseforge.json` holds `projects`: Core's id and slug, each module's id and the name its files get (*SaneUI Maps*); a module without one is not uploaded, and named, refused.
+- **`src/Core/Core.lua`:** `Core.NewerCoreWanted(addon)`: a packaged module's `X-SaneUI-Core` newer than this Core's version; as such an addon loads, Core says once in chat that it was made with a newer SaneUI and asks to update SaneUI too. A build made here names no Core, so nothing is said.
 - **Docs:** `README.md` (*Building*), `Doc/agent/development.md`, `Doc/agent/core.md`, Core's README, `Doc/changelog.txt` (its parts name the addon), `dev/saneui` (`makepackage`, `publish`).
 - **Tests:** `dev/tests/release.py` (64: a zip per addon, a module's zip that module alone with its Core named, modules named, the changelog's part per addon, the dependency in a module's upload, Core first then the module, nothing new sent twice, Core alone when only it changed, a module without a project refused); `dev/tests/core.lua` (a newer Core asked for by numbers, told once).
 - A /reload takes it in.
 
 ### Core: profiles off at first; module stages, channel packages and the pipeline to CurseForge (Saneroki, 2026-11-15)
 Saneroki: "I think the whole profiles should be disabled by default and can be activated in the settings or during the onboarding procedure. The first time a "accountwide" profile is created it will take the current settings and make it part of the accountwide profile." And: "we will work through the modules and will make them go through phases: Dev, Alpha, beta, release ... Right now I think everything is Dev but Navigation is elevated to be alpha." And: "We need to create a pipeline where we can automate the make package, upload it to curseforge workflow." Board #521, #535, #512.
-- **`src/Core/Profiles.lua`:** profiles off on a fresh install (`SaneUIDB.profilesOn`, `Profiles.VERSION` 3): every character keeps its own settings, a new one starts on its own, no profile made, no preset given. `Core.Profiles.SetEnabled(on)` / `Enabled()` (the switch, `/sane profile on|off`, Onboarding later): on the first time, Accountwide is this character's settings as they are (Sane UI's copied, the game's read by `Sync.Take`), nothing written into the game; off, the profiles are kept and every character keeps what it had as its own (`TakeOwn` at an alt's next login). Saved settings of before (a character seen, a profile with settings) count as on and stay as they are. `Fill` leaves a module's table as it is when nothing differs; a Speedleveling made as a copy gets its presets over it.
+- **`src/Core/Profiles.lua`:** profiles off on a fresh install (`SaneUIDB.profilesOn`, `Profiles.VERSION` 3): every character keeps its own settings, a new one starts on its own, no profile made, no preset given. `Core.Profiles.SetEnabled(on)` / `Enabled()` (the switch, `/sane profile on|off`, Onboarding later): on the first time, Accountwide is this character's settings as they are (SaneUI's copied, the game's read by `Sync.Take`), nothing written into the game; off, the profiles are kept and every character keeps what it had as its own (`TakeOwn` at an alt's next login). Saved settings of before (a character seen, a profile with settings) count as on and stay as they are. `Fill` leaves a module's table as it is when nothing differs; a Speedleveling made as a copy gets its presets over it.
 - **`src/Core/Presets.lua`:** Accountwide is given no presets (no recommended CVars, no Newcomer Chat wish); Speedleveling keeps its own.
 - **`src/Core/Sync/`:** `Sync.Take` (the game's settings read into the profile, nothing written, no defaults, no /reload); `Sync.Moved` gives no defaults while the profiles are off; `Sync.FindNow` (Game.lua) finds the per-character CVars at once; Chat.lua guarded where the game's chat functions are missing.
 - **`src/Core/Settings/Profiles.lua`:** *Share settings between characters* at the top of the page Profiles; off, one line says so and the tabs stay hidden.
@@ -884,7 +891,7 @@ Saneroki: "Run /patchday": Forever's build 70938 is the newest export (`dev/tool
 ### Interface style: the kit, the login screen's parts as the main elements (Saneroki, 2026-11-15)
 Saneroki: "I want to restyle windows fullscreens now. I don't like the styling we did previously. I want to be closer to Wow Forever styling with its native elements. [...] Can you find elements etc that the login screen have so we can make those our main elements for the new redesign of our ui". Board #222.
 - **`Doc/guides/interface-style.md`:** *The kit*, nine parts from his screenshots, each with its atlases or files, sizes, slices, catalogue numbers and what Retail has: the character screen's top bar, the character list's window (heavy bronze, its search box and glass, the cards), the grey square buttons and their icons, the red buttons for the important ones (their disabled state the grey button), the ruleset card's angled corners, the shop's grey box (`generic-frame-chamfered-12d-2o`), the shop's title bar, the loading screen's bar as a frame for headlines, the character window's parts. *The new direction*: Friz Quadrata the main font; red buttons back for the important ones.
-- **`Doc/guides/gui-development.md`:** *Sane UI's own look* says the same.
+- **`Doc/guides/gui-development.md`:** *SaneUI's own look* says the same.
 - **`dev/tools/game_art_kit.py`** (new) and **`dev/tools/game-art kit`** (`saneui makegamekit`): each part rebuilt from Forever's own pieces at a 2x screen, beside his screenshot, in the game's own Friz Quadrata (pulled from the game's install), into `assets/generated/game-art/kit/` (`/art/kit/` on the tools' server, `board.png`); all of an atlas' sizes read, Forever's own member first.
 - **`dev/saneui`:** `makegamekit`.
 
@@ -967,7 +974,7 @@ Saneroki: "All elements should have elements on the rightclick where you can unl
 - A game restart takes it in (a new file in Core's TOC).
 
 ### Core, Combat, Nameplates: another druid shows one power again; the mana sharing taken out (Saneroki, 2026-11-13)
-Saneroki: "It doesn't show on the party members. So I think something is buggy or blocked. Could be that we should just revert back to how it was with only one class bar." Sending a druid's mana between Sane UIs never reached his warrior (both clients started after the install; nothing in the error log), and he chose one power bar for other players over a check to find where it stopped. The game tells a druid's mana in a form to that druid alone, so only your own frames show your mana beside the form's power.
+Saneroki: "It doesn't show on the party members. So I think something is buggy or blocked. Could be that we should just revert back to how it was with only one class bar." Sending a druid's mana between SaneUIs never reached his warrior (both clients started after the install; nothing in the error log), and he chose one power bar for other players over a check to find where it stopped. The game tells a druid's mana in a form to that druid alone, so only your own frames show your mana beside the form's power.
 - **`src/Core/Mana.lua`** gone, with its two lines in Core's TOC.
 - **`src/Core/Data/Wire.lua`:** the live messages gone (`Wire.SendLive`, `Wire.ListenLive`, `Open(fight)`, `Refill`): as before the sharing.
 - **`src/Core/Kit.lua`:** `Core.Mana(unit)` the game's alone; `Core.FormPower(unit)` nil for anyone but yourself (`UnitIsUnit(unit, "player")`).
@@ -978,8 +985,8 @@ Saneroki: "It doesn't show on the party members. So I think something is buggy o
 - A game restart takes it in (a file gone from Core's TOC).
 
 ### Core, Combat, Nameplates: a druid's mana for its group; on the unit frames the form's power under the mana (Saneroki, 2026-11-13)
-Saneroki: "When I as a warrior look at the druids nameplates or party plates it does not show me the manabar. Only on my druid itself." The game tells a druid's mana in a form whose power is not mana to that druid's own client alone; another member's answers none, so `Core.FormPower` stood down to the form's power. Then: "Yes, let my druid send its mana to the party. On unit frame the bars should be like it was before. Put them below the mana bar on unit frames." So a druid's Sane UI tells its group its mana, and every view reads mana through Core; on the unit frames the form's power stands under the mana again, and your target's and focus's frames keep a slot for each power their unit shows.
-- **`src/Core/Mana.lua`** (new, in Core's TOC after `AuraLog.lua`): a druid in a form whose power is not mana, in a party, raid or instance group, sends its mana and most (kind `M`, a live message) at once as it takes such a form or the group changes, then while it changes at most every `EVERY` (2) seconds and every `BEAT` (6) while it stays; a look four times a second while that holds, else none. Every Sane UI keeps members' per player key for `FRESH` (15) seconds (`Core.SharedMana`: nil for yourself, and while the member shows mana: then the game gives it to all), drops what is no number, more than its most or from another channel, and tells the views (`Core.OnMana(fn)`: fn(key)); what went stale goes, told too. Nothing saved, no switch.
+Saneroki: "When I as a warrior look at the druids nameplates or party plates it does not show me the manabar. Only on my druid itself." The game tells a druid's mana in a form whose power is not mana to that druid's own client alone; another member's answers none, so `Core.FormPower` stood down to the form's power. Then: "Yes, let my druid send its mana to the party. On unit frame the bars should be like it was before. Put them below the mana bar on unit frames." So a druid's SaneUI tells its group its mana, and every view reads mana through Core; on the unit frames the form's power stands under the mana again, and your target's and focus's frames keep a slot for each power their unit shows.
+- **`src/Core/Mana.lua`** (new, in Core's TOC after `AuraLog.lua`): a druid in a form whose power is not mana, in a party, raid or instance group, sends its mana and most (kind `M`, a live message) at once as it takes such a form or the group changes, then while it changes at most every `EVERY` (2) seconds and every `BEAT` (6) while it stays; a look four times a second while that holds, else none. Every SaneUI keeps members' per player key for `FRESH` (15) seconds (`Core.SharedMana`: nil for yourself, and while the member shows mana: then the game gives it to all), drops what is no number, more than its most or from another channel, and tells the views (`Core.OnMana(fn)`: fn(key)); what went stale goes, told too. Nothing saved, no switch.
 - **`src/Core/Data/Wire.lua`:** `Wire.SendLive(kind, fields, channel)`: at once, in a fight too, where the game lets addon messages go (`Open(false)`: its lockdown still counts) and the queue's budget has a message (`Refill`, shared with the queue); else not at all, never queued. `Wire.ListenLive(kind, fn)`: such a kind is taken in as it comes, past the inbox, in a fight too.
 - **`src/Core/Kit.lua`:** `Core.Mana(unit)`: what a member shared (`Core.SharedMana`, when `Mana.lua` is loaded), else the game's; `Core.FormPower` asks it for the most.
 - **`src/Combat/Units/Bar.lua`:** the powers under the health bar again, mana first (`Bar.Fit`); `frame.slots` back, the row under the slots or under the powers shown where there are more; `Bar.Read(unit, kind)`: a power now and most, mana through `Core.Mana`, read by `Power` and `Text.lua`'s words.
@@ -987,7 +994,7 @@ Saneroki: "When I as a warrior look at the druids nameplates or party plates it 
 - **`src/Combat/Units/GroupFace.lua`, `Group.lua`:** `Face.Mana(face, key)`, heard from `Group.Start`; the mana line through `Core.Mana` (`Bar.Power`).
 - **`src/Nameplates/Bar.lua`:** `Line` reads mana through `Core.Mana`; `Core.OnMana`, registered at its load, fills the plates whose unit's key it names.
 - **Docs:** Core's README (the API, *Files*, the history), Combat's (*Unit frames*, *Group frames*, the button's height and the powers, `Power`, *Files*, the history), Nameplates' (*The power line* twice, the history), `Doc/guides/data.md` (*Messages*: the live messages, kind `M`), `Doc/ideas/Data.md` (*What is shared*), `Doc/ideas/Combat.md` (*Decisions*), `Doc/guides/interface-style.md`.
-- **Tests:** `dev/tests/guild.lua` (157): a druid in cat form in a party sends at once, nothing for the same a second later, a change after two seconds, a beat, in a fight too, nothing in the game's lockdown and nothing queued, the newest once let go, nothing out of the form or alone; a member's message taken in a fight, its mana known and the views told, the same again told nobody, bad numbers and the guild's channel dropped, your own always the game's, gone and told after a while. `dev/tests/combat.lua` (597, 30 in Retail): your druid frame two slots, mana then energy under it; a druid target: mana, rage under it, the button a slot higher, one slot for a kobold, in a fight both bars at once and the slot after it; its mana kept back, then told by its Sane UI in a fight; a party druid's mana told: along the bottom again; out of the form the game's. `dev/tests/nameplates.lua` (406): a druid's plate told its mana. `dev/tests/core.lua`, `data.lua`, `aurahistory.lua`, `speedguide.lua`, `reminders.lua` as they were.
+- **Tests:** `dev/tests/guild.lua` (157): a druid in cat form in a party sends at once, nothing for the same a second later, a change after two seconds, a beat, in a fight too, nothing in the game's lockdown and nothing queued, the newest once let go, nothing out of the form or alone; a member's message taken in a fight, its mana known and the views told, the same again told nobody, bad numbers and the guild's channel dropped, your own always the game's, gone and told after a while. `dev/tests/combat.lua` (597, 30 in Retail): your druid frame two slots, mana then energy under it; a druid target: mana, rage under it, the button a slot higher, one slot for a kobold, in a fight both bars at once and the slot after it; its mana kept back, then told by its SaneUI in a fight; a party druid's mana told: along the bottom again; out of the form the game's. `dev/tests/nameplates.lua` (406): a druid's plate told its mana. `dev/tests/core.lua`, `data.lua`, `aurahistory.lua`, `speedguide.lua`, `reminders.lua` as they were.
 - A game restart takes it in (a new file in Core's TOC).
 
 ### Combat: your own group slot shows your name and health, the cog in front of the name (Saneroki, 2026-11-13)
@@ -1057,7 +1064,7 @@ Saneroki: "[...] a lot more information and quests for Forever. Can you make sur
 - Forever is on build 70888 while the master's client facts are of 70755: once that build is taken in, the reading runs again for what only 70888 has.
 
 ### Speed Leveling: your bought guides' newest texts in Forever's guide pack (Saneroki, 2026-11-12)
-Saneroki: "Can you update our guides with this new one". The guide packs are made on this computer (never committed); no file of Sane UI changes.
+Saneroki: "Can you update our guides with this new one". The guide packs are made on this computer (never committed); no file of SaneUI changes.
 - **The guides:** 202 bought guides (were 198): Riverglades I and II for each side are new (Alliance 38-40 and 44-46, Horde 40-42 and 43-44), chosen from the guides menu, since no other guide leads there; 66 others have newer steps. The free guides of both packs are the newest too.
 - **Checked:** every guide reads with no line left unread for 72 characters of both sides at levels 1, 30 and 60, and for a night elf warrior and druid read together; no normal guide takes a new dungeon quest; every next guide stays in its group, but for one Mage guide whose next is missing from the texts, as before. Core's *Quests* had none of Riverglades' quests (its NPCs and items it had); they came in the same day (the database's entry above).
 - A `/reload` takes it in (the pack's files are the same ones).
@@ -1366,7 +1373,7 @@ Saneroki: "The dialogue option has common things like The hearthstone, Trainer, 
 
 ### Satchel: each addon's picture under its own name (Saneroki, 2026-11-11)
 Saneroki: "Can you go through an extensive bughunt pass on the \"other addons icons in the minimap addon\"? The icons and names sometimes don't match". Card #452. Four causes, in `Strays.lua` and `Satchel.lua`: (1) a held button was named by the addon the game says set its global (`issecurevariable`), but code addons share (a library the first of them loaded for all, and its event handling, through which the others start) runs in the name of that first addon, so another addon's button made through it stood under the first one's title, and the other's compartment entry came beside it as well; (2) a compartment entry whose icon is an atlas was cut as a file (`Satchel.TRIM`), so the cell showed a piece of another picture of that atlas' file; (3) the picture was the largest `ARTWORK` texture even when hidden or faded to 0 (another state of the button), and a mask counted as a texture; (4) a button showing no texture of its own got the game's question mark, not its addon's icon.
-- **`src/Navigation/Strays.lua`:** `Owner`: a held button's addon is the loaded one (Sane UI's left out) whose folder's name or title, letters and digits alone and `Strays.NAMED` (4) at least, its own name holds, the one ending last in it (shared code puts its own name first), then the longest, then the game's word; else the game's word. `Loaded` asked once a look, only where a new button is held. `Icon`: the addon's own picture (its TOC's `IconTexture`, else `IconAtlas`), kept with the held button and given in `Strays.List`. `Shows`: `Strays.Picture` takes only a texture, not a mask, shown, not faded to 0, with a file or atlas; its normal texture so too.
+- **`src/Navigation/Strays.lua`:** `Owner`: a held button's addon is the loaded one (SaneUI's left out) whose folder's name or title, letters and digits alone and `Strays.NAMED` (4) at least, its own name holds, the one ending last in it (shared code puts its own name first), then the longest, then the game's word; else the game's word. `Loaded` asked once a look, only where a new button is held. `Icon`: the addon's own picture (its TOC's `IconTexture`, else `IconAtlas`), kept with the held button and given in `Strays.List`. `Shows`: `Strays.Picture` takes only a texture, not a mask, shown, not faded to 0, with a file or atlas; its normal texture so too.
 - **`src/Navigation/Satchel.lua`:** `Picture` tells whether it set an atlas; `Cut` cuts a file only (a compartment's icon, a switch's, a tracking spell's), an atlas whole. `Drawn`: a held button's picture as it shows it now, else its addon's icon, else the question mark; again every `Satchel.EVERY` second while the page is open, so a picture its addon changes changes there too.
 - **Tests:** `dev/tests/navigation.lua`: a button made through shared code standing as an addon of its own, under the title of the addon its name holds last, once, its compartment entry left out; one whose name holds only an addon not loaded, under the game's word; a hidden and a faded larger texture passed over; a button without a picture, its addon's icon; a compartment atlas whole; a picture changed while open, changed in its cell within a second. Navigation's README.
 - A `/reload` takes it in.
@@ -1463,7 +1470,7 @@ Saneroki: "When you hover over a zone it gets highlighted, right? When that happ
 
 ### Satchel: a button to the game's minimap and back (Saneroki, 2026-11-10)
 Saneroki: "The little button on the native minimap to go back to our own minimap. Can you also add that one to our own minimap bag window so we have a toggle so we can go back and forth".
-- **`src/Navigation/Satchel.lua`:** left of the page's X, at its level, the same button as on the game's minimap (the game's square button with the circling arrows), *Classic minimap*: its click closes the page and sets `nativeMinimap`, as the dropdown *Classic windows* does; the game's minimap then has its button *Sane UI window*, which brings ours back.
+- **`src/Navigation/Satchel.lua`:** left of the page's X, at its level, the same button as on the game's minimap (the game's square button with the circling arrows), *Classic minimap*: its click closes the page and sets `nativeMinimap`, as the dropdown *Classic windows* does; the game's minimap then has its button *SaneUI window*, which brings ours back.
 - **`src/Core/Window.lua`:** `Window.Swap(parent, text, tip, click)`, that button unplaced for a module's own frame.
 - **Tests:** `dev/tests/navigation.lua` (1606 checks): the satchel's button beside its X, its click to the game's minimap, the game's button back to ours. READMEs of Navigation and Core.
 - A `/reload` takes it in.
@@ -1494,7 +1501,7 @@ Saneroki: "Can you go on another bughunt of the profile system and see if you ca
 - **Tests:** `dev/tests/sync.lua` (230 checks): the profile in use renamed stays ticked and *Yes* keeps the change; a ticked profile deleted, no tick, *Yes* off; a profile chosen while changes wait is the line's after a logout; the profile's newer word kept, an older one taken and stamped; a capture stamps only what changed; the logout record has its time. READMEs of Core, Settings and Sync.
 
 ### Profiles: a change no longer pops back at a /reload; addons switched on the character screen kept (Saneroki, 2026-11-10)
-Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload. Feels like things are not saved reliably into each profiles when I change settings and reload the game." Three causes: (1) a `/reload` or logout with the save window unanswered took every change since the last save back in the saved settings (Sane UI's switches, the game's settings, the addons), and Sync wrote the old values into the game at the next login; (2) the exception meant for the addon list (its *Reload UI* saves first) never ran: `AddonListMixin:OnLoad` gives `OkayButton` the function `AddonList_OnOkay` itself, so a `hooksecurefunc` on the global made later is never called by a click; (3) an addon switched on the character screen was switched back at the login by the profile's list (the error log, 2026-11-09 21:23: *Sync: a /reload settled nothing*, your addons). Card #436.
+Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload. Feels like things are not saved reliably into each profiles when I change settings and reload the game." Three causes: (1) a `/reload` or logout with the save window unanswered took every change since the last save back in the saved settings (SaneUI's switches, the game's settings, the addons), and Sync wrote the old values into the game at the next login; (2) the exception meant for the addon list (its *Reload UI* saves first) never ran: `AddonListMixin:OnLoad` gives `OkayButton` the function `AddonList_OnOkay` itself, so a `hooksecurefunc` on the global made later is never called by a click; (3) an addon switched on the character screen was switched back at the login by the profile's list (the error log, 2026-11-09 21:23: *Sync: a /reload settled nothing*, your addons). Card #436.
 - **`src/Core/Unsaved.lua`:** at `PLAYER_LOGOUT` unanswered changes are saved as *Yes* saves them (`Keep`, shared with `Save`): into every other profile ticked; only the one in use, unticked, takes the last save's values. The `AddonList_OnOkay` hook and `reloads` are gone.
 - **`src/Core/Core.lua`:** the *Reload* of `Core.AskReload` reloads at once (was: waited for the save window; `RELOAD.after` is gone).
 - **`src/Core/Settings/Save.lua`:** a line over *Save to*, *A /reload or logout saves them too.*; *Yes*'s tooltip says the same.
@@ -1525,7 +1532,7 @@ Saneroki: "The actionbar window still becomes dark after spells or Macros are dr
 - **Tests:** `dev/tests/window.lua` (a seated frame's strata and level put back, in a fight after it; both fail without the hooks), `dev/tests/combat.lua` (full brightness and the game's grey and blue given back; `Content`, `Beyond`, the board's fitted window under Sane Macros, the bar seated in the full screen's layer and kept there when the game sets MEDIUM), `dev/tests/abilities.lua` (a mage none, a warrior's Bar 2 through its three stances, in a fight, unticked in a fight, a druid's Bar 2 beside its form bar, a rogue's Stealth, standing down, a tall bar). The snippet's calls are in the newest export's restricted environment. `src/Combat/README.md`, `src/Abilities/README.md`, `src/Core/README.md`, `Doc/agent/abilities.md`. Cards #427, #428, #429.
 
 ### Core Settings: the save window, Save and Load last settings (Saneroki, 2026-11-09)
-Saneroki: "When settings are changed in ESC menues like addon and the game settings, can you make it so a window pops up that ask me if I want to save the new changes on the side, while I can still edit the Settings and then keep the window Until I say no or yes. I can also choose in the settings a multiple choice to save the changed settings to." "There should also a save button and a load last settings in the profile settings window." Asked, he chose: a change counts at once and No takes back every change since the last save; several profiles ticked, the one in use at first; the game's options, key bindings, Edit Mode, the CVar list and the game's addon list count too; *Load last settings* goes back to the last save; unanswered, a `/reload` or logout takes the changes back, but the addon list's *Reload UI* saves them first; another profile chosen and the *Reload* Sane UI offers wait for the save window.
+Saneroki: "When settings are changed in ESC menues like addon and the game settings, can you make it so a window pops up that ask me if I want to save the new changes on the side, while I can still edit the Settings and then keep the window Until I say no or yes. I can also choose in the settings a multiple choice to save the changed settings to." "There should also a save button and a load last settings in the profile settings window." Asked, he chose: a change counts at once and No takes back every change since the last save; several profiles ticked, the one in use at first; the game's options, key bindings, Edit Mode, the CVar list and the game's addon list count too; *Load last settings* goes back to the last save; unanswered, a `/reload` or logout takes the changes back, but the addon list's *Reload UI* saves them first; another profile chosen and the *Reload* SaneUI offers wait for the save window.
 - **`src/Core/Unsaved.lua`** (new, in Core's TOC after Sync): `Core.Unsaved`. The last save is a copy of every module's settings, taken when a menu opens with nothing waiting (the game's `SettingsPanel` and `AddonList` by hooks after their `OnShow` and `OnHide`, only while shown; Edit Mode by `Core.EditMode.Watch`; a full screen's options view). While a menu is open a change is looked at at most every 0.3 s (`Panel.Refresh`, `CVAR_UPDATE`, `UPDATE_BINDINGS`, `EDIT_MODE_LAYOUTS_UPDATED`, a hook after `AddonList_Update`): `Sync.Capture` reads the game's settings in, then each described setting that differs is a path into its module's settings (down into tables of names, a list as one value; not where the windows stand, not Sync's `from`). `Save()` writes each path into every other profile ticked (Sync's only into a profile of this game) and gives the one in use, unticked, its last save back; `Undo()` fills the settings in use with the last save's values (`Profiles.Put`: modules told, Sync writing the game's). `Wait(words, fn)` holds a step until the answer. At `PLAYER_LOGOUT`, after Profiles' capture, unanswered changes take the last save's values in the saved settings only (the game gets them from the profile at the next login); after a hook on `AddonList_OnOkay` saw a `/reload` due, they are saved. The profiles ticked besides the one in use are kept in `SaneUIDB.saveTo`.
 - **`src/Core/Settings/Save.lua`** (new, in Core's TOC after `Synced.lua`): the window `SaneUISaveChanges` (`ButtonFrameTemplate`, no portrait or close button, strata `DIALOG`, movable): *Save the changes?*, what changed (8 lines at most: *General: Errors in chat*, *Game settings: Controls*), the step that waits, *Save to* (the game's dropdown with a checkbox per profile; Character specific only while in use), *Yes* and *No*; right of the game's options or addon list, else at the screen's right.
 - **`src/Core/Profiles.lua`:** `Profiles.Settings(name)`, `Profiles.Put(fill)`; with changes unsaved `Use`, `SetCharacter` of this character and `Delete` of the profile in use wait for the answer (`Answer`) and say why in chat; `Move` tells `Core.Unsaved.Moved`. **`src/Core/Core.lua`:** the *Reload* of `Core.AskReload` waits for the answer with changes unsaved (*Then the interface reloads.*).
@@ -1572,7 +1579,7 @@ Saneroki: "Mail window should open inside the inventory fullscreen with the mail
 
 ### Core and Tooltips: the check for a Shift the game was not told of taken out (Saneroki, 2026-11-09)
 Saneroki: "take it out and remove /sane keys as well"
-- The test in the game showed the check had nothing to find: `/sane keys` read Shift down only in the window where it was pressed, also when going back to the first one. The game client does not take a key already held when its window gets the keyboard, so no event is missing for Sane UI to pass on; a fix would be on the PC (a helper outside the addon).
+- The test in the game showed the check had nothing to find: `/sane keys` read Shift down only in the window where it was pressed, also when going back to the first one. The game client does not take a key already held when its window gets the keyboard, so no event is missing for SaneUI to pass on; a fix would be on the PC (a helper outside the addon).
 - **Gone:** `src/Core/Modifiers.lua` (`Core.Modifiers`, `/sane keys`), `Core.Raise` in `Core.lua`, the `Want` calls of `src/Tooltips/Tooltips.lua`, `src/Navigation/PinView.lua` and `Dungeons.lua`, their checks in `dev/tests/core.lua` (486) and `tooltips.lua` (607), their entries in the READMEs of Core and Tooltips. A game restart takes it in (a file gone from Core's TOC).
 
 ### Nameplates: Health bar only, Spells only, your target's transparency (Saneroki, 2026-11-09)
@@ -1603,7 +1610,7 @@ Saneroki: "The travel widget has shows the times, when you have traveled once on
 
 ### Speed Leveling: Select a guide, and the guide's settings on a middle click (Saneroki, 2026-11-09)
 Saneroki: while no guide is loaded, the guide view should say to select a guide, with a button that opens the guide selection; "Press middle Mouse button for settings [opens a flyout where you can add things like Proffesions leveling and Wait for party members]. Left click will pause and resume a step. Rightclick will skip a step." Asked, he chose: the words *Select a guide*, the button opening the menu of the guides, *Wait for party members* being *Together with the party*, and in the flyout also the guide's other switches, *Your guide* and *All settings...*.
-- **`src/SpeedLeveling/Steps.lua`:** with no guide followed, a card on the steps' shade in their place (`DrawEmpty`): *Select a guide* and the button *Guides* after it, on a gold band of round corners (`Steps.BUTTON` 20 high; the band of a step at hand in the list, more solid with the mouse on it), under them *Middle click for settings. Left click pauses and resumes a step. Right click skips a step.* The button, or a click on the card, opens the menu of the guides for this character, as a right click on the zone; with none for this character or game, the window of the guides. The paused line stands on the same card. A middle click on a step, a line of the list, the head or the card opens the settings (`Settings`): *Your guide* On, Paused, Off; *Professions along the way*, *Together with the party*, *Class quests*, *Show the arrow*, *Map pin on the guide's place*, *Targets and items with the guide* (`Steps.SETTINGS`), each with the options page's words and tip, set by `Core.Set`; *All settings...* opens Speed Leveling's page (in a fight Sane UI's options, once it is over). The left click pauses and the right click skips as since 2026-11-04.
+- **`src/SpeedLeveling/Steps.lua`:** with no guide followed, a card on the steps' shade in their place (`DrawEmpty`): *Select a guide* and the button *Guides* after it, on a gold band of round corners (`Steps.BUTTON` 20 high; the band of a step at hand in the list, more solid with the mouse on it), under them *Middle click for settings. Left click pauses and resumes a step. Right click skips a step.* The button, or a click on the card, opens the menu of the guides for this character, as a right click on the zone; with none for this character or game, the window of the guides. The paused line stands on the same card. A middle click on a step, a line of the list, the head or the card opens the settings (`Settings`): *Your guide* On, Paused, Off; *Professions along the way*, *Together with the party*, *Class quests*, *Show the arrow*, *Map pin on the guide's place*, *Targets and items with the guide* (`Steps.SETTINGS`), each with the options page's words and tip, set by `Core.Set`; *All settings...* opens Speed Leveling's page (in a fight SaneUI's options, once it is over). The left click pauses and the right click skips as since 2026-11-04.
 - **`src/SpeedLeveling/Guide.lua`:** `Guide.Empty()` says why none is followed (`none`, `unchosen`, `elsewhere`) instead of the view's words; the three old lines are gone. **`SpeedLeveling.lua`:** the words; *Show the guide*'s tip names the middle click.
 - **Tests:** `dev/tests/speedguide.lua` (377): the card, its button after the words, under them what the mouse does; none kept, the button opens the window; one for you, the menu of the guides; a middle click on a step neither pauses nor skips it; the settings in order, with their words and state; a tick switches; paused and on again from there; *All settings...* opens the page; the head's middle and right clicks; a listed line's middle click. README; card #411.
 
@@ -1818,7 +1825,7 @@ Saneroki: "Didn't we develop a more advanced spellbook where we can see where we
 - **`src/Abilities/Book/Home.lua`:** `Groups`, `Surface(parent, Header)` and `Draw(surface, place)` apart, so Home draws on either book's pages; `Home.Offer`.
 - **`src/Abilities/Book/Menu.lua`:** `Lines(root, own)`; `ns.BookMenu(root)` without compact pages and moving, nothing waiting for the game's pages (a tooltip made apart for such a line).
 - **`src/Abilities/Book/Drag.lua`, `Item.lua`:** `Drag.Start(entry, button)`, `Drag.Source()`; a grey entry hidden ends a drag taken from it.
-- **`src/Abilities/Sources.lua`:** `S.Matching(words, showRanks)`. **`src/Abilities/Abilities.lua`:** the tip of *Sane UI lays out the spellbook pages* says Combat's book needs it not.
+- **`src/Abilities/Sources.lua`:** `S.Matching(words, showRanks)`. **`src/Abilities/Abilities.lua`:** the tip of *SaneUI lays out the spellbook pages* says Combat's book needs it not.
 - **`src/Combat/Book/Data.lua`:** the offer's Home tab first, a skill line's tab with its `line`; `Data.Groups(tab, tabs)` with the offer's entries (`{ future = entry }`) and sections; `Data.Search` with its finds.
 - **`src/Combat/Book/Book.lua`:** a pool of the offer's frames among our entries (no secure button over them), the Home pane (hidden by us), the book opening on Home while the offer says so, the offer's menu lines, its switch left of the page controls, drawn anew on `Core.Spellbook.Watch`; a tab's tooltip line.
 - **Tests:** `dev/tests/book.lua` (the offer's tab, entries, sections, search, Home on both pages, no secure button over its entries, the switch, the menu, opening on the tab left, the offer gone), `dev/tests/abilities.lua` (the offer's spells, sections, search, nothing with the switch off, Home on another book's pages and on one, `First`, an entry dragged and its drag ended when hidden, the menu's lines, the switch, `Changed` once a frame, no offer once the module is off). `src/Core/README.md`, `src/Abilities/README.md`, `src/Combat/README.md`, `Doc/agent/core.md`, `Doc/agent/abilities.md`, `Doc/ideas/Combat.md`, `Doc/changelog.txt`, card #379.
@@ -1838,7 +1845,7 @@ Saneroki: "Yes, bring them back". Water detail was the crash in the Ruins of Lor
 The bug hunt found it: standing in the Ruins, `/sane hunt shadowMode` (4) and `/sane hunt SSAO` (4) held; `/sane hunt waterDetail` wrote 3 at 21:52:04.426 and the client crashed the same second (ERROR #132, as all thirteen before). Saneroki: "Set that everywhere you can to game default and don't let SaneUI edit or save or load that setting."
 - **`src/Core/Sync/Game.lua`:** `BARRED`: waterDetail, RAIDWaterDetail and the game's Liquid Detail that sets them (graphicsLiquidDetail, raidGraphicsLiquidDetail), each `Sync.Leave`d (no part, no CVar kept by name writes or reads it); `Sync.Barred(name)`; `Sync.Settable` answers "barred".
 - **`src/Core/Sync/Sync.lua`:** `Sync.Keep` does not keep a barred one; `ReadNamed` drops one a profile holds, so it is not saved again.
-- **`src/Core/Settings/CVars.lua`:** the tab *CVars* does not set it ("Sane UI leaves it to the game's own graphics menu"), and its tip says so.
+- **`src/Core/Settings/CVars.lua`:** the tab *CVars* does not set it ("SaneUI leaves it to the game's own graphics menu"), and its tip says so.
 - **`src/Core/Presets.lua`:** no waterDetail.
 - **Tests:** `dev/tests/sync.lua` (barred: not settable, not set by name or by a part, gone from the profile at a capture, not kept when ticked), `dev/tests/core.lua` (the tab; neither profile's preset). `src/Core/README.md`, `src/Core/Sync/README.md`, `Doc/changelog.txt`, card #377.
 - **His saved settings (a dev step):** waterDetail out of Accountwide and Speedleveling in all four `SaneUI.lua` (Forever and Retail, two accounts each), the hunt switch off in Forever's two; Retail's `Config.wtf` without its waterDetail 3 and graphicsLiquidDetail 3 (Forever's held the game's 2). Backups in each game's `WTF-Backups/2026-11-06-before-water`.
@@ -1860,7 +1867,7 @@ Saneroki: "ground density i know works fine. Can you set them back to the settin
 - **Tests:** `dev/tests/core.lua`. `src/Core/README.md`, `Doc/changelog.txt`, card #377. His saved profiles (a dev step): the eight back in both Retail accounts' Accountwide and Speedleveling.
 
 ### Core: no graphics settings in the presets; Forever's client crashed in the Ruins of Lordaeron (Saneroki, 2026-11-06)
-Saneroki: "Every time I have saneui core it crashes when I am inside the ruins of lorderon." Eight crashes of Forever's client that evening (ERROR #132, a null read in one of the renderer's worker threads, map 2999), the last with Core alone: 1.3 s after a `/reload` the game's log shows Sync writing the presets' world preload off, water 3, SSAO 4 and shadows 4, the renderer restarting, and the crash 0.24 s later. Every crash report lists all of the presets' world CVars in force, one with no addon loaded at all: they stayed in `Config.wtf`. The game's own values (WTF reset) ran 45 minutes clean without Sane UI. Which of them the client trips on is not known; none is needed.
+Saneroki: "Every time I have saneui core it crashes when I am inside the ruins of lorderon." Eight crashes of Forever's client that evening (ERROR #132, a null read in one of the renderer's worker threads, map 2999), the last with Core alone: 1.3 s after a `/reload` the game's log shows Sync writing the presets' world preload off, water 3, SSAO 4 and shadows 4, the renderer restarting, and the crash 0.24 s later. Every crash report lists all of the presets' world CVars in force, one with no addon loaded at all: they stayed in `Config.wtf`. The game's own values (WTF reset) ran 45 minutes clean without SaneUI. Which of them the client trips on is not known; none is needed.
 - **`src/Core/Presets.lua`:** `RECOMMENDED` keeps the frame rate (`maxFPS`, `maxFPSBk`, `targetFPS` and their switches), `cameraDistanceMaxZoomFactor` and `screenshotQuality`. Gone: farclip, horizonClip, horizonStart, groundEffectDensity, groundEffectDist, groundEffectFade, weatherDensity, shadowMode, shadowTextureSize, SSAO, waterDetail, worldPreloadNonCritical, worldPreloadHighResTextures, now named in `Presets.WORLD`. The world is drawn as the game's graphics menu sets it.
 - **Tests:** `dev/tests/core.lua` (neither profile holds a CVar of `Presets.WORLD`), `dev/tests/sync.lua` (a kept preset: maxFPS). `src/Core/README.md`, `Doc/changelog.txt`, the board: card #377.
 - **His saved settings (a dev step):** the thirteen at the presets' values taken out of `named` in Accountwide and Speedleveling of both Retail accounts' `SaneUI.lua`; his own picks in Speedleveling (graphicsViewDistance 9, the level of detail, the preload timeout) stay.
@@ -1897,7 +1904,7 @@ Saneroki: "all the zones that have been rendered. Are they moved ot the ingame a
 - **Docs:** `src/Atlas/README.md` (status, where its art comes from), `Doc/guides/images.md` (sizes).
 
 ### Navigation: a button another addon makes at the login stays in the satchel (Saneroki, 2026-11-06)
-Saneroki found no button of the guild addon Sane UI knows in the minimap's satchel. That addon makes its minimap button only at the login, and another addon he has gathers minimap buttons into a bar of its own a second after the login; the satchel looked again only after three seconds (its 2 seconds went through `Core.Later`'s second), so that bar had the button first and it was no longer on the minimap for the satchel to find.
+Saneroki found no button of the guild addon SaneUI knows in the minimap's satchel. That addon makes its minimap button only at the login, and another addon he has gathers minimap buttons into a bar of its own a second after the login; the satchel looked again only after three seconds (its 2 seconds went through `Core.Later`'s second), so that bar had the button first and it was no longer on the minimap for the satchel to find.
 - **`src/Navigation/Strays.lua`:** `Strays.AGAIN` `{ 0, 2, 10 }`: a look on the next frame after the login, for the buttons addons make at the login itself, and the 2 and 10 seconds called straight (`Strays.Look`), no longer through the second's wait after an addon loads.
 - **Tests:** `dev/tests/navigation.lua` (a button made after Navigation's login held on the next frame). `src/Navigation/README.md`.
 
@@ -2109,8 +2116,8 @@ Saneroki on Retail: the list should show each macro's picture, bigger, "more lik
 ### Core and Navigation: sound profiles per game account, in the satchel (Saneroki, 2026-11-04)
 Saneroki plays two clients of one installation at once and wants to hear one, the other or neither, the recording keeping what the chosen client plays. The game keeps its sound settings in one file for the whole installation (`WTF/Config.wtf`), written by the client that closes last, while each running client holds its own.
 - **`src/Core/Audio.lua`** (new, in Core's TOC after Sync): `Core.Audio`, sound profiles: the five sounds (`Sound_EnableAllSound` and `Sound_MasterVolume`; Music, SFX, Dialog and Ambience the same) on or off with their volumes under a name, kept per game account in `SaneUIDB.modules.Core.audio`; at first *All sound on*, *Music off* and *Music and Ambience off*, at the game's volumes then. `Use` sets one at once; the one in use is set again at each login (`PLAYER_ENTERING_WORLD` with `isInitialLogin`; not at a `/reload` nor another loading screen). `Save`, `Load`, `New`, `Delete` (not the last one), `Changed`, `Watch` (also on the game's `CVAR_UPDATE` for these). Spoiled saved profiles are made right.
-- **`src/Core/Sync/Game.lua`:** `Sync.Leave(name)`, a CVar another part of Sane UI keeps: no part of Sync reads it (`ReadCVars`) or writes it (`Sync.SetCVar`). The part Audio no longer keeps those ten CVars, so a profile's writing 2 seconds after the login undoes nothing.
-- **`src/Navigation/AudioLine.lua`** (new, in Navigation's TOC) and **`Satchel.lua`:** the satchel's section *Sane UI* starts with `Sound: <profile> <cogwheel>`: the profiles in a dropdown, the one in use first, *(changed)* after its name while the game's settings differ from it; the cogwheel's menu a checkbox and the game's slider for each sound, then Save, Load, New (the game's input dialog) and Delete (asked first, off for the last profile). The satchel stays open while such a dialog shows (`AudioLine.Held`).
+- **`src/Core/Sync/Game.lua`:** `Sync.Leave(name)`, a CVar another part of SaneUI keeps: no part of Sync reads it (`ReadCVars`) or writes it (`Sync.SetCVar`). The part Audio no longer keeps those ten CVars, so a profile's writing 2 seconds after the login undoes nothing.
+- **`src/Navigation/AudioLine.lua`** (new, in Navigation's TOC) and **`Satchel.lua`:** the satchel's section *SaneUI* starts with `Sound: <profile> <cogwheel>`: the profiles in a dropdown, the one in use first, *(changed)* after its name while the game's settings differ from it; the cogwheel's menu a checkbox and the game's slider for each sound, then Save, Load, New (the game's input dialog) and Delete (asked first, off for the last profile). The satchel stays open while such a dialog shows (`AudioLine.Held`).
 - **Tests:** `dev/tests/core.lua` (the profiles: the first three, use, save, load, new, delete, a login against a `/reload`, spoiled data, a client without one of the sounds), `dev/tests/navigation.lua` (the line, both menus, the sliders, the dialogs, the satchel held by one), `dev/tests/sync.lua` (Sync leaves the profiles' CVars alone). `src/Core/README.md`, `src/Core/Sync/README.md`, `src/Navigation/README.md`, `Doc/agent/`. Card #343.
 
 ### Social: messages fade after 10 seconds, in and up in half a second (Saneroki, 2026-11-04)
@@ -3012,7 +3019,7 @@ removed, "just default and not clutter the ui"; the entire addon everywhere in M
 SDmg, Res, ASpd, APen, and Bonus Arm (not BArm, which reads too close to Block and BVal). A game restart takes it in (a new file in Core's TOC).
 - **`src/Core/Units.lua` (new):** `Core.Metric`, `Distance`, `DistanceNumber`, `DistanceText`, `Clock`, `ClockAt`, `GameClock`. The
   setting *Units* (page General, `Core.general.units`): Metric at first, or Imperial. 0.9144 m to the yard, whole meters.
-  All of Sane UI keeps yards; only what a player reads comes through here. An option `distance = true` is a slider of
+  All of SaneUI keeps yards; only what a player reads comes through here. An option `distance = true` is a slider of
   yards shown so (`Panel.Said`).
 - **Distances:** a spell's range and the yards in a spell's, buff's or item's text in the tooltips, the guide's arrow, the far
   herbs' and ore's rings (the number alone, in their unit), *Switch finders every*, `/sane range`, the options' tips of
@@ -3036,7 +3043,7 @@ shortened. A game restart takes it in (new files in Core's and Inventory's TOCs,
 - **`src/Core/Stats.lua` (new):** `Core.StatWord`, `Core.StatLine`, the one place of the short words: Str, Agi, Stam, Int, Spi,
   HP, Arm, Def, Block val, Crit, Crit dmg, Hit, AP, RAP, Haste, Exp, ArP, SP, Spell dmg, Heal, SPen, MP5, HP5, Mast, Vers,
   Resil, Avoid, Move, DPS, iLvl, and for each school its res, dmg and pen. Sentences stay as they are.
-- **Everywhere Sane UI names a stat:** the tooltips' item lines and comparisons (`Kinds/Item.lua`: every line goes through
+- **Everywhere SaneUI names a stat:** the tooltips' item lines and comparisons (`Kinds/Item.lua`: every line goes through
   `Core.StatLine`, which also does the comparisons' DPS, so `PATTERN.DPS_WORDS` is gone), the stats' window and the slots'
   strips (`Sheet/Stats.lua`, `Sheet/Slots.lua`), a quest reward's changes (`Lore/Rewards.lua`), a boss's loot with Alt
   (`Navigation/Dungeons.lua`). The game's own windows keep its words: its strings are not ours to write.
@@ -3458,7 +3465,7 @@ A setting in Speed Leveling that skips all cinematics. A right click on the arro
   nil means Speedleveling. *Defaults* sets the preset again.
 - **Own settings** start at the defaults, no copy of a profile's. Turning to Character specific the CVars the last capture
   read go back to the game's defaults (`ToDefaults`, `C_CVar.GetCVarDefault`); they stay in the profile left.
-- **Sync: `Addons.lua`**, a new part: which addons are on, kept in the profile, a /reload offered; never Sane UI itself.
+- **Sync: `Addons.lua`**, a new part: which addons are on, kept in the profile, a /reload offered; never SaneUI itself.
 - **Skip cinematics** (`cinematics`): on `CINEMATIC_START` and `PLAY_MOVIE`, a frame later, `StopCinematic`, `CancelScene` where
   `CanCancelScene`, `MovieFrame:FinishMovie`; not the game's own `CinematicFrame_CancelCinematic`, which would leave a vehicle.
 - **`window:Unlock(on)`** (`Window.lua`): the box of Edit Mode outside it, `options.unlockedMenu` on its right click. The zone's
@@ -3477,7 +3484,7 @@ Leveling on or off for playing with others. Group rolls handled, on both of his 
 - **Solo** (`solo`, on at first; a box in the foot, `Vendor.BOXES`, with `module`: another module's switch, no box without it):
   off, the module rests with `ns.off` set, the key's bindings and driver gone, the guide hidden, Loot's switches back; on again
   `Key.Wake` and the rest return. The run keeps its place, the guide catches up.
-- **Roll on group loot** (`Rolls.lua`, `rolls`, on at first): each Sane UI says what the thing brings over `Core.Wire` (kind `SLR`,
+- **Roll on group loot** (`Rolls.lua`, `rolls`, on at first): each SaneUI says what the thing brings over `Core.Wire` (kind `SLR`,
   by item ID), the one it brings the most Needs, the others Greed, a tie by GUID; no word from anybody: Need on an upgrade.
   `CONFIRM_LOOT_ROLL` answered for rolls made here.
 
@@ -3556,7 +3563,7 @@ tracker hidden while the quest log is pinned.
 
 ### Loot: short tags under a name: BoP red, BoE orange, Uncollected light blue (Saneroki, 2026-10-29)
 Saneroki: things like uncollected, BoE, BoP as abbreviations, not whole words; BoP red, BoE orange, Uncollected in the
-uncollected colour (none of Sane UI's yet: the game's own, `LIGHTBLUE_FONT_COLOR`, as its "You haven't collected this
+uncollected colour (none of SaneUI's yet: the game's own, `LIGHTBLUE_FONT_COLOR`, as its "You haven't collected this
 appearance").
 - **`Slots.Note`:** BoP (`RED_FONT_COLOR`), BoE, BoU and WuE (`ORANGE_FONT_COLOR`), BoA; *Uncollected*
   (`LIGHTBLUE_FONT_COLOR`) after it; a quest's item *Quest*, one that starts a quest *Starts a quest*. The colours from
@@ -3793,7 +3800,7 @@ Saneroki: resizing much snappier, smoother and quicker; the raid icon next to th
   `exp(-elapsed / Scale.EASE)`: quick at first, slower as it arrives, never past it, there within `Scale.SNAP`
   (0.002). `Scale.EASE` 0.08 s by distance (about a quarter of a second for a step of the range ladder), `Scale.QUICK`
   0.05 s selected or let go; was an even 0.2 shares a second (several seconds a step) and 2.
-- **The raid marker in the line (`Text.lua`, `Marks.lua`):** right after the level, as on Sane UI's unit frames,
+- **The raid marker in the line (`Text.lua`, `Marks.lua`):** right after the level, as on SaneUI's unit frames,
   `Text.BESIDE` (2) either side of it (`Gap`); no longer outside the bar left of the quest's icon, which is now the
   only piece outside (the foe's buffs stand left of it alone).
 - **Tests:** `dev/tests/nameplates.lua` 271 checks (a plate eased to its size, never past it, within half a second;
@@ -3827,7 +3834,7 @@ the enemies', shown for enemies who can attack you, your party, raid, guild, fri
   it: `888 | 100%` for a level 3 creature showing `101`) stands between the name and it.
 - **Friendly players not by name only (`Scale.ALWAYS`):** the game's *Show only names for friendly players*
   (`nameplateShowOnlyNameForFriendlyPlayerUnits`) hid their health bar, auras and cast bar and took the plate's
-  clicks, so Sane UI left those plates to the game. Now 0 whenever the module is on (with *Size by distance* or
+  clicks, so SaneUI left those plates to the game. Now 0 whenever the module is on (with *Size by distance* or
   without), kept and given back like `Scale.CVARS` (`Ours`, `Restore` take the list; the logout, standing down and
   `CVAR_UPDATE` cover both), so friendly players get the same dress as any other.
 - **Who shows (`Plate.Wanted`):** a player who may attack you, or whom you may attack (`UnitCanAttack` both ways),
@@ -3916,7 +3923,7 @@ Saneroki: E did nothing again, and the error log held thousands of "the game blo
   block per question, every 0.2 s per plate. Now no item is asked about a foe in a fight (`Fighting`: the lockdown or
   the game's addon restriction for combat); your spells answer alone there. Not the key.
 - **E did nothing on the second account:** the game keeps key bindings per account; there E was still bound to the
-  button of the questing addon used before (switched off), so a press did nothing, and Sane UI's key had none. The
+  button of the questing addon used before (switched off), so a press did nothing, and SaneUI's key had none. The
   hint that the key has no key was said once per account ever; now at every login while it has none, in words that
   name the per-account bindings (`Key.lua`, the setting `told` gone). `/sane key` says "none" for its keys.
 - **Tests:** `dev/tests/nameplates.lua` 250 checks (a foe in a fight: no item asked, the spells still answer; a
@@ -3946,7 +3953,7 @@ used, its sell value and its improvement without its tooltip (board #107).
 - **The interface out of sight** (`Quiet.lua`): `UIParent`'s alpha lent and faded to 0 while talking (at once back in
   a fight); `StaticPopup1`–`4` and `UIErrorsFrame` kept in sight, `GameTooltip` and its comparisons only while a
   reward shows one (`SetIgnoreParentAlpha`, each noted and put back).
-- **Tooltips:** a panel follows its tooltip's `IsIgnoringParentAlpha` (`Host.Seat`), so Sane UI's tooltip panels stay
+- **Tooltips:** a panel follows its tooltip's `IsIgnoringParentAlpha` (`Host.Seat`), so SaneUI's tooltip panels stay
   in sight over the faded interface with it.
 - **Tests:** `dev/tests/lore.lua` (83 checks, Retail too), in `dev/tests/run`.
 
@@ -3987,7 +3994,7 @@ Saneroki: 15 yards at first, and a slider in the settings for how far you move b
 - A `/reload` takes it in.
 
 ### Navigation: the finders take turns every 7 yards, Find Fish among them, and come back after death (Saneroki, 2026-10-28)
-Saneroki: Find Herbs, Find Minerals and Find Fish are lost at death; Sane UI should cast them again every 7 yards,
+Saneroki: Find Herbs, Find Minerals and Find Fish are lost at death; SaneUI should cast them again every 7 yards,
 in turn among those the character has (only the one, where it has one), and put it back on after reviving.
 - **Turns by yards (`Nodes.lua`):** the setting *Finders in turn* (`nodeYards`, 7 at first, 0 never) counts the
   yards you move (your speed at each look, `GetUnitSpeed`) in place of seconds (`nodeTurns`, let go by the options'
@@ -4028,7 +4035,7 @@ there to choose by a right click on the guide, beside those imported; the minima
 section only with buttons in it, the latency home and world on one line, and switch the guide on, off or pause it.
 - **Guide packs (`Guide.lua`):** the guides that come for each game are in a pack of their own per game (*Guides:
   Forever*, `SaneUI_GuidesForever`, 105 guides; *Guides: Retail*, `SaneUI_GuidesRetail`, 147 to choose and 116 parts
-  of longer ways), made apart from Sane UI's code and put into each game; no guide's text is in this repository. A
+  of longer ways), made apart from SaneUI's code and put into each game; no guide's text is in this repository. A
   pack's TOC says `X-SaneUI-Guides`, its game and `LoadOnDemand`; Speed Leveling loads its game's pack at the start
   (`Guide.LoadPacks`) and the pack hands over each guide's head and its zlib-packed text
   (`SaneUI.SpeedLeveling.TakeGuides`); they are not kept. A guide added under the same key goes first; a new
@@ -4051,7 +4058,7 @@ section only with buttons in it, the latency home and world on one line, and swi
 - **Quick switches (`Core/Switches.lua`, new):** `Core.Offer`, `Core.Switches`, `Core.SwitchChanged`,
   `Core.OnSwitches`: a module offers a switch, a view lists them; Speed Leveling offers *Leveling guide* (a click
   pauses or goes on, a right click chooses on, paused or off).
-- **The satchel (`Navigation/Satchel.lua`):** a section *Sane UI* with the modules' switches (on ticked, paused said
+- **The satchel (`Navigation/Satchel.lua`):** a section *SaneUI* with the modules' switches (on ticked, paused said
   under its name, off faint); the *AddOns* section only while it has a button; the latency *N ms home, N world* on
   one line.
 - **Tests:** `dev/tests/navigation.lua` 661 checks (the switches section, its click, paused and off; no AddOns
@@ -4100,16 +4107,16 @@ addon: our own display and engine, able to import, open and run the paid guides,
 also reported the module was buggy — active targets showed looted items and gear, some steps would not skip, the
 priority order was off — and asked for a logical order: loot around you, then quest givers, then things on the ground,
 then enemies.
-- **Independent (`src/Core/Neighbours.lua`):** the leveling guide Sane UI knows is no longer used at runtime. Of it,
-  Sane UI reads only the words of its text format (`Neighbours.Format`: commands, marks, modes, colours, game tags)
+- **Independent (`src/Core/Neighbours.lua`):** the leveling guide SaneUI knows is no longer used at runtime. Of it,
+  SaneUI reads only the words of its text format (`Neighbours.Format`: commands, marks, modes, colours, game tags)
   and the recipe its bought guides are locked by (`Neighbours.Lock`), both as copies. The runtime integration (its
   loaded guide, window, arrow, boxes, targets, items — `Book`/`Targets`/`Uses`/`GoTo`/`Complete`/`Pointing`/`Arrow`/
   `Boxes`/`Menu`/`Frame`) is gone.
 - **Opening bought guides (`Unlock.lua`):** a bought guide comes as an import string locked to the buyer's account.
-  Sane UI makes the key from the BattleTag of the account played (`BNGetInfo`), in memory and never kept, and opens
+  SaneUI makes the key from the BattleTag of the account played (`BNGetInfo`), in memory and never kept, and opens
   each piece (base64 and zlib are the game's own, `C_EncodingUtil`) over frames (`Core.Steps`); a string bought for
   another account stays shut. Checked offline against the real paid guide: 191 guides open and parse, 15,129 steps
-  for a Horde character, no error. No guide's text ships with Sane UI.
+  for a Horde character, no error. No guide's text ships with SaneUI.
 - **Our own engine (`Format.lua`, `Lines.lua`, `Run.lua`, `Guide.lua`):** the reader now covers the full command and
   mark set the guides use (61 commands, all the step marks), with game tags and per-character/level conditions;
   `Lines.lua` asks the game what each line's thing is (quests, items, spells, skills, auras, the level, where you
@@ -4130,7 +4137,7 @@ then enemies.
 ### Speed Leveling's guide: any step at hand ticked off, the list through the whole guide, no blocked actions (Saneroki, 2026-10-25)
 Saneroki, in Retail: steps 2 and 14 of the Shadowglen guide could not be skipped; he wants to scroll through every
 step, done ones too, and go to one with a right click; and chat said the game blocked an action (the error log:
-"the game blocked UNKNOWN()", 2,680 times in three minutes, blamed on Sane UI).
+"the game blocked UNKNOWN()", 2,680 times in three minutes, blamed on SaneUI).
 - **Skipping (`Guide.lua`, `src/Core/Neighbours.lua`):** the known guide keeps steps in view before its current step
   (one with a line to tick by hand that goes along up to a named step; one that goes along with the step before it).
   A click now ticks the step off whole, each line by the known guide's own function as the box beside a line does
@@ -4141,8 +4148,8 @@ step, done ones too, and go to one with a right click; and chat said the game bl
   game's tick, the steps at hand lighter; it starts after the steps at hand again when the guide moves on. A right
   click on a listed step opens its menu: *Go to step N*, then the known guide's own menu (else the guides kept).
 - **No more blocked actions (`Icons.lua`):** the known guide's boxes of targets and items were put into a hidden frame
-  of ours; they hold its secure buttons, and in a fight the game blocked their layout under a parent set by Sane UI's
-  code. They are left as they are now; Sane UI's own icons stand beside them (they can be switched off in the known
+  of ours; they hold its secure buttons, and in a fight the game blocked their layout under a parent set by SaneUI's
+  code. They are left as they are now; SaneUI's own icons stand beside them (they can be switched off in the known
   guide's own settings).
 - **Tests:** `dev/tests/speedguide.lua` 148 checks.
 - **Docs:** `src/SpeedLeveling/README.md`.
@@ -4154,7 +4161,7 @@ games at the same time.
   (`WOW_RETAIL`, default `_retail_` beside it), both or neither: each must have its `Interface/AddOns` and a
   `.flavor.info` of its own game, or nothing is copied into either and the build says which folder is missing (before,
   whichever game folders were there, and `WOW_FOREVER` named one alone).
-- **`dev/saneui`:** `saneui installed` names the build in Forever's and Retail's game, and a game without Sane UI.
+- **`dev/saneui`:** `saneui installed` names the build in Forever's and Retail's game, and a game without SaneUI.
 - **Docs:** `dev/installdev`, `dev/installrelease`, `Scripts/update`, `README.md`, `Doc/agent/development.md`.
 
 ### Nameplates: critters without a plate or a name, a setting shows them (Saneroki, 2026-10-25)
@@ -4191,7 +4198,7 @@ items to use as clean icons only, above the guide's top.
   train, inn, hearth, fly or go. Under it the step's first words and *177 yd · 0:25*: the time from the pace you close
   in (measured every 0.5 s, smoothed, none slower than 0.8 yd/s or past a leap of 50 yd/s). The known guide's arrow is
   put away here now.
-- **`src/SpeedLeveling/Icons.lua`** (new): a row of Sane UI's own secure buttons over the guide's top, placed by the
+- **`src/SpeedLeveling/Icons.lua`** (new): a row of SaneUI's own secure buttons over the guide's top, placed by the
   screen: the steps' items in your bags and the game's quest items (type item), then the NPCs and creatures (a macro
   that targets, with the skull); round leather rings (`Art/mark-round`), cooldowns, counts, portraits once seen,
   tooltips; set out of a fight only. The known guide's boxes are put away (`Core.Lend`, a hidden parent) in place of
@@ -4204,7 +4211,7 @@ items to use as clean icons only, above the guide's top.
   `Doc/ideas/Leveling.md`, the public changelog.
 
 ### Speed Leveling's guide: the leather arrow, Expressway, the guide's own menu and boxes (Saneroki, 2026-10-25)
-Saneroki asked for the arrow in Sane UI's leather ring with its point, the view's words in Expressway, the next steps
+Saneroki asked for the arrow in SaneUI's leather ring with its point, the view's words in Expressway, the next steps
 greyed out, the known guide's own menu on a right click, and its boxes of targets and items gathered with the view so
 they need no placing.
 - **`src/SpeedLeveling/Steps.lua`:** the arrow at the view's top: the far herbs' pointed ring (`Art/mark-pointed`),
@@ -4227,8 +4234,8 @@ they need no placing.
   guide over the world*), `Doc/ideas/Leveling.md`, the public changelog.
 
 ### Speed Leveling: your leveling guide over the world (Saneroki, 2026-10-25)
-Saneroki asked for his leveling guide in Speed Leveling, over the world without a window, in Sane UI's own style:
-the guide the leveling guide Sane UI knows has loaded, while it is loaded, else guides pasted as text in its format
+Saneroki asked for his leveling guide in Speed Leveling, over the world without a window, in SaneUI's own style:
+the guide the leveling guide SaneUI knows has loaded, while it is loaded, else guides pasted as text in its format
 (its import strings are locked to the buyer's account and are never read).
 - **`src/SpeedLeveling/Format.lua`** (new): a guide written as text read into our own shape for one character: its
   head, steps, lines kept or left out for side, race and class (`Format.For`), each command into a line to do, words,
@@ -4339,8 +4346,8 @@ own world, Retail's own maps*).
   answers, following, right clicks up to the Cosmic map, clicks back in, the zoom's limits and layers, the pins of
   the map shown, the full map's first look).
 
-### Sane UI works in Retail: every module gone through (Saneroki, 2026-10-25)
-Sane UI's first run in Retail failed in places, and stood down where it should not: Combat's own talents (Forever's
+### SaneUI works in Retail: every module gone through (Saneroki, 2026-10-25)
+SaneUI's first run in Retail failed in places, and stood down where it should not: Combat's own talents (Forever's
 two talent groups, `TabSystemButtonMixin:UpdateTabText`) took the whole module down, Abilities' scan asked for
 Forever's spell ranks, and Sync wrote the game settings kept in Forever into Retail. Every module was gone through
 against Retail's export (the Forever-Retail lookup, `uses.md`); what both games share works in both, what needs
@@ -4381,7 +4388,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   `Doc/guides/blizzard-updates.md` (the stand-in's list; a file for one game: `standard` only), the modules'
   READMEs (*Forever and Retail*).
 
-### Sane UI in Forever and Retail; our own patch notes after every patch (Saneroki, 2026-10-25)
+### SaneUI in Forever and Retail; our own patch notes after every patch (Saneroki, 2026-10-25)
 - **One code for both games** (Saneroki: development aimed at Forever, Retail compatible, its data later). Core knows
   the game: `Core.GAME` (`forever`, `retail`), `Core.FOREVER`, `Core.RETAIL`, `Core.ForGame({ forever = a, retail = b })`,
   `Core.TellGame()` (told as Core is read; again by the tests). `Data.Game()` answers `retail`, `retail-beta` and
@@ -4399,8 +4406,8 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 - **After a patch:** `saneui readpatch` (`dev/tools/blizzard patch [forever|retail] [--again] [--no-card]`): a game
   whose installed build is newer than its newest export is exported (the settings' `extract`), and its new export
   against the one before written as our own patch notes (`notes.md`: Blizzard's addons, the API by namespace,
-  events, widgets, enums, structures, CVars, templates, Lua, code files and art), the tables of every change, Sane
-  UI's todo list (`todo.md`) and the brief of the session that fixes it (`session.md`), with a card on the board;
+  events, widgets, enums, structures, CVars, templates, Lua, code files and art), the tables of every change,
+  SaneUI's todo list (`todo.md`) and the brief of the session that fixes it (`session.md`), with a card on the board;
   the Forever-Retail lookup made anew. `saneui fixpatch` starts Claude Code on the newest brief (`--print`: the
   prompt). New `dev/blizzard/patch.py`; `games.py` names its two sides. Settings in `~/.config/saneui/blizzard.json`:
   `install`, `extract`, `reports`. `Doc/guides/blizzard-updates.md`, *After a patch*.
@@ -4409,14 +4416,14 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 - Tests: Core 394 checks, data in the game 269, Navigation 601, blizzard 91, saneui 257.
 
 ### dev: Blizzard's code of Forever and Retail side by side (Saneroki, 2026-10-25)
-- Sane UI is to work in Forever and Retail (Saneroki). `dev/blizzard/export.py` knows both games (`GAMES`, `CLIENTS`):
+- SaneUI is to work in Forever and Retail (Saneroki). `dev/blizzard/export.py` knows both games (`GAMES`, `CLIENTS`):
   `newest()` and `required()` are Forever's newest export unless asked for Retail's (`newest("code", "retail")`),
   so Retail's higher version numbers (12.x) never take Forever's place in the lab, `adopt` and the art tools. An
   export is read as its own client loads it (Forever: `camelot` and `mainline`, `[Game]` Camelot; Retail: `standard`
   and `mainline`, `[Game]` Standard); TOC names are matched without regard to capitals.
 - `dev/tools/blizzard games [--out FOLDER]` (new `dev/blizzard/games.py`): lookup tables of where the two games
   differ: `symbols.tsv`, `files.tsv`, `addons.tsv`, `art.tsv`, `art-folders.tsv`, a `README.md` of counts, and
-  `uses.md`, what of Sane UI's own uses Retail lacks or calls differently. `check` and `show` take `--retail`
+  `uses.md`, what of SaneUI's own uses Retail lacks or calls differently. `check` and `show` take `--retail`
   (`show C_ActionBar.FindSpellActionButtons --retail`); `where` names both games' newest exports.
   `Doc/guides/blizzard-updates.md`, *Forever and Retail*. `dev/tests/blizzard.py`: 82 checks.
 
@@ -4451,7 +4458,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 - Tests: `dev/tests/speedleveling.lua` 91 checks (objects and the soft target, the hearth, the items, the switches).
 
 ### Speed Leveling: one key for questing (Saneroki, 2026-10-25)
-- **New module** `SaneUI_SpeedLeveling` (Saneroki asked for it): one key (the game's key bindings, under Sane UI),
+- **New module** `SaneUI_SpeedLeveling` (Saneroki asked for it): one key (the game's key bindings, under SaneUI),
   pressed again and again: it loots the corpse beside you, finds what your quests and your leveling guide want around
   you, marks it with a skull, and attacks it or talks to it. Looting without a press is not possible: the game lets an
   addon interact with a corpse, target and attack only by its secure ways on the player's key press.
@@ -5378,7 +5385,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 - The master: a version's `verified` mark (`{"day","times"}`, after `src`; `master.py`, `schema.py`), `Master.confirmed`
   (a source of the kind game or hand, or the mark). The compiler lists each set's entries not yet verified in its file
   (`S.unverified`, `compile.py`).
-- `Data.lua`: `Handle:Unverified(key, part)`; `Data.LearnRow` (a row from somebody else's Sane UI, taken where
+- `Data.lua`: `Handle:Unverified(key, part)`; `Data.LearnRow` (a row from somebody else's SaneUI, taken where
   `accept` says so), `Data.Learned`, `Data.NoteBuild` (`builds[build] = patch` in the learned part).
 - `Data/Confirm.lua` (new, in Core's TOC): `Data.Confirm`, `Confirmed`, `ConfirmedParts`, `OnConfirm`, `Share`; kept in
   `SaneUIData_Learned[game].confirmed`; shared with the guild and the raid or party (the wire's kinds V and L) from an
@@ -5641,7 +5648,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   straight down again to walk on; each end of a lift its level's heights, and a walk to the upper end from the hall
   under it none; of the journeys priced whole the quickest drawn).
 
-### Inventory, Core: the character, the bags and the alts in Sane UI's own look (Saneroki, 2026-10-22)
+### Inventory, Core: the character, the bags and the alts in SaneUI's own look (Saneroki, 2026-10-22)
 - Saneroki asked for the inventory's windows in the new art and style (`Doc/guides/interface-style.md`), resizable
   on the board as before. Three windows changed; the stats and the sheet's other windows keep the dark plate.
 - **Core.Journal** (`src/Core/Journal.lua`, new; from the interface lab's draft, which it replaces): the window of
@@ -5680,7 +5687,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   `CreateFont`.
 
 ### dev: Blizzard's code and art from the newest export, never references/ (Saneroki, 2026-10-22)
-- A hard rule (Saneroki, 2026-10-22): Sane UI's tools read Blizzard's interface code and art from the newest
+- A hard rule (Saneroki, 2026-10-22): SaneUI's tools read Blizzard's interface code and art from the newest
   export, the build with the highest version number in the exports' folder this computer's settings name
   (`~/.config/saneui/blizzard.json`, `{"exports": "<folder>"}`, or `$BLIZZARD_EXPORTS`; one
   `<product>-<version>/interface/` folder a build, with `BlizzardInterfaceCode/` and `BlizzardInterfaceArt/` in the
@@ -5785,7 +5792,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   deep and no deeper; its art running on, the glints in step, Route.xml's duration; a turn under 10 degrees a corner
   still; the player on the curve, the head meeting it). The stub's `Play` keeps its offset.
 
-### Core, dev: the beta's copy of Sane UI with its own data sets (2026-10-22)
+### Core, dev: the beta's copy of SaneUI with its own data sets (2026-10-22)
 - In the game, every route was one straight line to its pin: the beta's client (`_classic_beta_`, game version
   `forever-beta`) had a copy of live's folder, whose sets (all made for `forever`) it refuses, so Navigation planned
   without the walking data and Travel (the error log: "Walking is not used: made for forever, this client is
@@ -5797,7 +5804,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
 - `saneui showerrors` (`dev/tools/errors`) reads the game folder played last (whose `SaneUI.lua` was written last);
   `saneui installed` names the build in each game folder.
 - `Data.Add`: set files of another game version are refused as before, but said once for them all (`data: game`:
-  "Sane UI's data is not used: made for forever, this client is forever-beta"), not in a chat line for each of the
+  "SaneUI's data is not used: made for forever, this client is forever-beta"), not in a chat line for each of the
   37 sets.
 - README.md (*How to use*, *Building*), `Doc/guides/data.md` (*Loading*). Tests: `dev/tests/data.lua` (209: the sets
   of another game version said once).
@@ -6578,7 +6585,7 @@ Forever's systems or data stands down in Retail without a word, and Forever is u
   (`installdev`, `installrelease`, `build`, `installed`, `test`, `showerrors`, `atlas`, `makeimages`, `data`,
   `makevoices`, ...); `saneui start|pause|resume|stop|status gpujobs` (the GPU runner) and `comfyui`; `saneui`
   alone lists them by group, `saneui help <command>` gives the script's own help. `--card` gives the main ones
-  for the Konsole greeting (a Sane UI block under the Toolbox), `--names` the names for fish's completion.
+  for the Konsole greeting (a SaneUI block under the Toolbox), `--names` the names for fish's completion.
 - `dev/build` now only tests and builds (`--install` copies into the game too; `--no-install` is still
   taken). `dev/installdev` is the old `dev/build`: the working tree, tested, built, into the game.
   `--release [TAG]` (default `current`) builds a release from git's copy of its tag, LFS art included, into
@@ -6690,7 +6697,7 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
     endless numbers and table keys; `Profiles.Copies` and `Exists` went (unused); one shared refresh of the options after
     a profile action (`Config.RefreshSoon`). `Fuzzy.Plain` drops named colour codes (`|cnIQ5:`); its second `Ranked` is
     `RowRank`.
-  - *Windows* (`Window.lua`, `Board.lua`, `Edge.lua`, `Classic.lua`): the secure *Sane UI* button clicks the game's close
+  - *Windows* (`Window.lua`, `Board.lua`, `Edge.lua`, `Classic.lua`): the secure *SaneUI* button clicks the game's close
     button also with *Action button use key down* on (`useOnKeyDown` false); in a fight it follows the game's window by
     its alpha and does nothing while unseen; `Board.Open` fills only a shown window and says false when no full screen
     comes; a panel whose key another spec takes is built anew for it (`Offer` tells a standing board too); kept layouts
@@ -6745,7 +6752,7 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
     click redraw the bank too; the take highlight by its colour's alpha; every banker kind; pooled bank rows forget their
     last use.
   - *Sheet, alts, keys:* with *Can expand to fullscreen* off, or in Edit Mode, the bag keys, the bag buttons and the
-    *Sane UI* button leave the game's bags to the game; GiveBack's steps each on their own, the keys first; equipment sets
+    *SaneUI* button leave the game's bags to the game; GiveBack's steps each on their own, the keys first; equipment sets
     keep their ignored slots (shirt and tabard); a faction moved to Inactive stays chosen; stats rows are left alone in a
     fight; a tab clicked again does nothing, the pet tab falls back to stats without a pet; the player's unit events only;
     the alts' items follow their category, their menu steps fail alone, their saved facts are type-checked; a drop on the
@@ -6755,7 +6762,7 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
     code (that left the panel manager tainted, and the character sheet then broke on C until a `/reload`); choosing the
     game's map in *Classic windows* only sets the switch, its key or button opens it next; inside an instance the small
     window shows the game's minimap with its ground (our map has no place for you there), ours again once there is one;
-    no *Sane UI* button on the game's minimap inside ours; GiveBack's steps each on their own, the map and keys first; a
+    no *SaneUI* button on the game's minimap inside ours; GiveBack's steps each on their own, the map and keys first; a
     fight's deferred minimap update runs guarded.
   - *The map:* a map in another instance than its continent's plane is not placed on it (a battleground's coordinates
     read as the continent's); the zone in the middle asked at most every `Canvas.LOOK`; a zone change re-places only the
@@ -6845,17 +6852,17 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
   X, the scroll bar at rest, with the mouse, at either side; a found herb's tooltip and map pin). A `/reload` takes
   it in.
 
-### Core: Sane UI's options on every full screen (Saneroki, 2026-10-21)
+### Core: SaneUI's options on every full screen (Saneroki, 2026-10-21)
 - **The title bar of a full window** (`Window.lua`): two buttons more, left of the others, only while it fills the
-  screen: the game's cog (`questlog-icon-setting`, Sane UI's options over the full screen) and a question mark in
+  screen: the game's cog (`questlog-icon-setting`, SaneUI's options over the full screen) and a question mark in
   the game's gold words (`Square` takes `art.text`), the full screen's tour: the window's option `help`, without
   which it does nothing yet.
 - **The options view** (new `Settings/Screen.lua`, `Config.Screen`): over what the window holds, in the layer
-  `DIALOG` (over the map's quest log), dark, taking the mouse and its wheel. At the left Sane UI's pages as the
+  `DIALOG` (over the map's quest log), dark, taking the mouse and its wheel. At the left SaneUI's pages as the
   game's options list them (*General*, *Appearance*, a page per module that is on and has switches) in the look of
   the game's own list of pages; at the right the chosen one, drawn as a page in tabs is (`Config.BuildTabbed`),
   built when first chosen; the window's module chosen first (found by the settings its edge reads), the last chosen
-  kept for the session. *All options* at the list's foot opens the game's options at Sane UI (Profiles is only
+  kept for the session. *All options* at the list's foot opens the game's options at SaneUI (Profiles is only
   there), the full screen going back first. The cog again, Esc, the window going back or closing take it away;
   while it is there Esc is its own (`edge:Escapes`, new in `Edge.lua`).
 - **`Config.BuildTabbed(page, name, onPage, title)`**: only the switches of one page (Core's *General* and
@@ -7047,7 +7054,7 @@ for nothing; what held up was fixed, each with checks that fail on the old code.
   searchable table, online and offline folding, the member's page with rank up and down, notes, history, whisper,
   invite), equipment (everybody's gear on a paper doll with model, item level, slots). The other views say they come.
   Placeholders of the game's art stand where its own pictures go (`Art.lua`).
-- **Core's wire** (new `src/Core/Data/Wire.lua`, `Core.Wire`, in Core's TOC): Sane UI's addon messages, built ahead of
+- **Core's wire** (new `src/Core/Data/Wire.lua`, `Core.Wire`, in Core's TOC): SaneUI's addon messages, built ahead of
   Data-build 1f.1: messages and packed blocks in parts, a queue that keeps to the game's budget, an inbox the scheduler
   takes in, senders by key, the player's own and other game versions' dropped, 90 a minute from a sender.
 - **Core's guild records** (new `src/Core/Data/Guild.lua`, `Data.Guild`; the pack *Data: Guild*, saved data): the roster
@@ -7264,7 +7271,7 @@ Saneroki asked that the bag slots and categories work and that the categories an
 - **"+" cells** (`Views.lua`, `Layout.lua`, `Bags.lua`): after Pinned (shown when empty too) and every category
   that takes items: an item brought to it goes in (`Menus.Drop`); clicked with nothing, the next item clicked does.
 - **Choosing by clicks** (`Bags/Select.lua`, new): a catcher over the items takes the mouse, the item under it lit
-  in Sane UI's colour, the rest of the window dimmed; a click puts the item in (and ends) or, in the junk marker's
+  in SaneUI's colour, the rest of the window dimmed; a click puts the item in (and ends) or, in the junk marker's
   mode, marks or unmarks it as junk (and stays); a right click, Esc, a click on the dimmed parts or a fight ends it.
 - **The junk marker** (`Bags.lua`): the coin on the bar, while the marker is on: a click begins or ends the mode,
   an item brought to it is marked or unmarked at once. A grey item unmarked anywhere is kept out of Junk
@@ -7376,9 +7383,9 @@ Saneroki asked for a much richer bag view, in features and looks.
   buttons, dropdown bands, tabs, side tabs, chat bubbles, the doll, bags, the guild window, animation) and what
   code makes (text, stains, sketches); its pictures in `assets/Concept art/UI style/`; listed in CLAUDE.md's
   guides; `ui-paper/style.txt` rewritten from it; image-generation.md points to it.
-- Sane UI's own look replaces Blizzard's art (Saneroki): every window and view Sane UI makes or recreates gets its
+- SaneUI's own look replaces Blizzard's art (Saneroki): every window and view SaneUI makes or recreates gets its
   own layout, art, fonts and style; the native windows stay mostly untouched. `gui-development.md` says so (a new
-  section, its art, window and font rules narrowed to native windows; Kalam as Sane UI's own font on paper); the
+  section, its art, window and font rules narrowed to native windows; Kalam as SaneUI's own font on paper); the
   house style `dev/imagegen/style.txt` is now the journal look, its anchor `assets/Concept art/UI style/
   edges-and-buttons.png` instead of `Elements.png`. The guide gains its scope, the two top-tab styles, leather
   patch pieces repeated to any width and the chat window with bubbles anchored left, right and middle. New lists:
@@ -7468,7 +7475,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   pieces by group with what `pieces.json` says of each, previews that keep their transparency, a backdrop to choose
   (checks, the page's paper, dark, light), full quality and true pixels on a click, the 4K views built from them.
 - **The interface lab** (`dev/tools/ui-lab`, `dev/uilab/`, `saneui showuilab`, 127.0.0.1 port 8774; guide
-  `Doc/guides/ui-lab.md`): Sane UI's Lua run under Lua 5.1 as the game runs it and drawn in the browser, so windows
+  `Doc/guides/ui-lab.md`): SaneUI's Lua run under Lua 5.1 as the game runs it and drawn in the browser, so windows
   are built with the code that goes into the game. A stand-in of the game's widget API: frames, buttons, check
   buttons, edit boxes, scroll frames, sliders, status bars, message frames, the tooltip, cooldowns, animations;
   textures with coordinates, tiling, nine slices, masks, blend modes, colours; font strings measured with the font
@@ -7555,7 +7562,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   the level-link lock, the sheen; tooltip, drag, link), `Casts.lua` (the game's `SecureActionButtonTemplate`
   over each castable icon, on UIParent, out of a fight only: a spell by its ID, a pet ability by name and its
   autocast on a right click, no cast on Shift; away at `PLAYER_REGEN_DISABLED`, back after the fight).
-- **Your keys** (new `Keys.lua`, `Bindings.xml`): Combat's keys under Sane UI in the game's key bindings, put on
+- **Your keys** (new `Keys.lua`, `Bindings.xml`): Combat's keys under SaneUI in the game's key bindings, put on
   the keys of the game's spellbook, pet book and talents by override bindings (out of a fight; anew when those
   keys change; cleared with the switch *Your spellbook and talents keys open ours* off and at standing down):
   the full screen with that window, pressed again back (`Window.Open`, `Window.Toggle`).
@@ -7563,7 +7570,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   there), seated in its panel, opened and closed with it; its opening brings the full screen while its window
   is on the layout.
 - **Classic windows** (Core's, `Window.lua`): while our keys are on the game's, the game's spellbook and talents
-  are said to open from the micro menu (`Classic.Press` without a binding); the Sane UI button on the game's
+  are said to open from the micro menu (`Classic.Press` without a binding); the SaneUI button on the game's
   window opens ours with the spellbook or talents on it (`ours = Window.Open`).
 - Tests: `dev/tests/book.lua` (35 checks, new, in `dev/tests/run`), `dev/tests/combat.lua` (35: the board, the
   keys, the planner, the quest marks; the seat's and clicks' checks gone with them).
@@ -7574,7 +7581,7 @@ Saneroki asked for a much richer bag view, in features and looks.
 - **Classic windows** (new `Core/Classic.lua`, in Core's TOC after `Window.lua`; `Edge.lua` builds its dropdown
   from it): the dropdown lists every window's game windows, each under its window's title, the open one's
   first; one of another module's chosen, both full screens go back first.
-- **The button Sane UI on the game's windows** (`Classic.Attach`, `Window.Beside`, `Window.CloseOf`): an entry
+- **The button SaneUI on the game's windows** (`Classic.Attach`, `Window.Beside`, `Window.CloseOf`): an entry
   with `frame` puts it beside the game's window's close button; pressed, ours comes instead (`ours`, `full`, a
   kept choice's `back`). On the game's panels it is a `SecureActionButtonTemplate` on UIParent that clicks the
   game's close button (our code neither shows nor hides the game's panels), our part in `PostClick`, made and
@@ -8186,7 +8193,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   layout's scale with its top right corner at its room's; closed, its scale and layer are back too.
 
 ### Combat: its window at the bottom middle, your talents and spellbook on its full screen (Saneroki, 2026-10-20)
-- **The known addons** (Saneroki, 2026-10-20, the one exception to *No other addons*): Sane UI's code may see that
+- **The known addons** (Saneroki, 2026-10-20, the one exception to *No other addons*): SaneUI's code may see that
   certain other addons are installed and adapt to them. Their names stand in one file only,
   `src/Core/Neighbours.lua` (new, in Core's TOC before `Bindings.lua`): `Core.Neighbours.Window(key)` is a handle on
   one while it is loaded and has what is used of it (`Frame`, `Shown`, `Open` and `Close` by its own functions behind
@@ -8211,13 +8218,13 @@ Saneroki asked for a much richer bag view, in features and looks.
 - **The board** (`src/Combat/Board.lua`, new): two panels, *Talents* and *Spellbook*, side by side (`Board.Layout`:
   `MARGIN`, `GAP`, each as wide as its share of the widths both want; `Board.TALENTS`, `Board.SPELLBOOK` the game's
   own sizes for an empty one). The game's talents and spellbook are one window (`PlayerSpellsFrame`), seated in the
-  panel of the tab it shows; with a talent planner Sane UI knows, the planner's window is the Talents panel (opened
+  panel of the tab it shows; with a talent planner SaneUI knows, the planner's window is the Talents panel (opened
   with the full screen, closed when it goes) and the game's window takes the Spellbook panel whatever it shows.
   Hooks after the game's window's `OnShow` (loaded on demand: `EventUtil.ContinueOnAddOnLoaded`) and its tabs'
   `OnShow`, and after the planner's opening: whatever opens one brings the full screen, or its panel when full.
   Our code never shows or hides the game's window (its `OnShow` and `OnHide` touch the action bars' protected
   grids, and a panel shown by addon code runs the window manager tainted: `Doc/guides/addon-standards.md`, *Known
-  traps*). An empty panel shows a plate in Sane UI's look with its title, the game's key for it and an *Open*
+  traps*). An empty panel shows a plate in SaneUI's look with its title, the game's key for it and an *Open*
   button: for the game's window a `SecureActionButtonTemplate` (`type = "click"` on the game's `TalentMicroButton`
   or `SpellbookMicroButton`, `useOnKeyDown = false`) on UIParent in `DIALOG`, not in our window (it would lock it
   in a fight), made, placed, shown and hidden out of a fight only, hidden at `PLAYER_REGEN_DISABLED` and back
@@ -8275,14 +8282,14 @@ Saneroki asked for a much richer bag view, in features and looks.
 - A game restart takes it in (a new file in Social's TOC).
 
 ### Inventory: a new module, the bags from the corner (Saneroki, 2026-10-20)
-- **The module** (`src/Inventory/`, addon `SaneUI_Inventory`, *Inventory* under Sane UI in the addon list): what the
+- **The module** (`src/Inventory/`, addon `SaneUI_Inventory`, *Inventory* under SaneUI in the addon list): what the
   player carries and wears. It needs Core only and has no options page yet.
 - **The corner** (`Corner.lua`): the mouse pushed into the screen's bottom right corner opens the game's own bags
   (`OpenAllBags`, as their key); whenever a bag is open, however it was opened, a push closes them (`CloseAllBags`).
   In a fight too: the game keeps a bag button's bag in a secure attribute, so items used from bags an addon opened
   stay the game's own clicks. A square of `Edge.CORNER` screen pixels in the strata `DIALOG` that takes only the
   mouse's coming, one push one change as at a docked window's corner (`Edge.AWAY`, `Edge.LOOK`, `Edge.QUIET`); no
-  push during a drag, in Edit Mode or while a window of Sane UI's fills the screen; a window docked in that corner
+  push during a drag, in Edit Mode or while a window of SaneUI's fills the screen; a window docked in that corner
   keeps it (its square lies above).
 - **Not the character sheet** (from the game's error log): it opened with the bags at first
   (`ToggleCharacter("PaperDollFrame")`, closed by `HideUIPanel`). Shown by our code, the game's window manager ran
@@ -8839,7 +8846,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   time, as the game's.
 
 ### Errors handled gracefully, a hard rule (Saneroki, 2026-10-18)
-- Core (`Core.lua`, *Errors*): every piece of Sane UI's code the game calls runs behind a guard, a step
+- Core (`Core.lua`, *Errors*): every piece of SaneUI's code the game calls runs behind a guard, a step
   (`Safe`, `Guarded`) or the door it came in by. An error at a door that no step caught stands the module it
   came from down (`StandDown`: `off`, `GiveBack`, kept and told once); Core's own is told once under the door's
   name and Core goes on.
@@ -8854,7 +8861,7 @@ Saneroki asked for a much richer bag view, in features and looks.
     noted as "Lua error": it stands its module down too, and Core's own is told once as "Core". A Lua warning
     of ours is noted only (`Lua warning`).
   - The game's error window shows an error caught at a door only when the CVar `scriptErrors` is on, as for
-    every addon; then it is not noted a second time. Players get no pop-up from Sane UI.
+    every addon; then it is not noted a second time. Players get no pop-up from SaneUI.
   - `/sane` lists a module that stood down as *stopped* (was *failed to start*, for a failed `OnLoad` only).
   - Event listeners of a module that stood down still hear their events: Social's channel wishes and the
     Tooltips' mouse switch work beside the game's own on purpose (they run `Safe`).
@@ -8910,7 +8917,7 @@ Saneroki asked for a much richer bag view, in features and looks.
 
 ### Development: Blizzard updates, the todo list of a new build (Saneroki, 2026-10-18)
 - `dev/tools/blizzard` (new, Python in `dev/blizzard/`): a new build's Blizzard interface code against
-  `references/BlizzardInterfaceCode`, and what of the difference reaches Sane UI.
+  `references/BlizzardInterfaceCode`, and what of the difference reaches SaneUI.
   - `check [<new>]`: the todo list in `dev/blizzard/reports/` (Markdown and JSON, not committed): broken (gone,
     or a name Blizzard's code no longer mentions), deprecated (with what the stand-in calls), changed
     (parameters, API arguments, returns and flags, payloads, structures, template keys, enums), review (hooked or
@@ -8919,7 +8926,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   - `show <name>`, `uses [--list] [--unknown]`, `adopt` (the new export into `references/`, with a `.build` note,
     and CVarLabels and Pages made again). `--old git:<revision>` compares with a commit's `references/`.
   - Reads exports as this client loads them (game type camelot with the group mainline) and the API
-    documentation whole; Sane UI's globals by `luac5.1`'s listing.
+    documentation whole; SaneUI's globals by `luac5.1`'s listing.
 - `dev/tools/cvar-labels`, `dev/tools/sync-pages`: `BLIZZARD_CODE` reads another export than `references/`.
 - `Doc/guides/blizzard-updates.md` (new): the pipeline, the sections, how both sides are read, the limits.
 - Tests: `dev/tests/blizzard.py` (new, in `dev/tests/run`), 74 checks.
@@ -9026,7 +9033,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   - TOC: `Contacts\Finder.lua` in place of `Finder.lua`. Tests: 423 checks (Social).
 - 2026-10-18 — Social: the full screen's friends panel holds all of the game's friends list: your BattleTag, status, broadcast, contacts menu; tabs Friends (favourites, invite button, tooltip, filter), Recent Allies, Requests (add friend, accept/decline/block), Raid (groups by drag, assistants, Raid Info), Quick Join; ignore list; search box and filter (`Friends.lua`, `Contacts/`). Handoff: `Doc/handoff/Social-friends-panel.md`.
 - **Standing full, the chat window holds panels around the chat** (`Board.lua`, `Layout.Board`): the friends list
-  at the left, the group finder at the right, a second chat above the chat. Each is a plate in Sane UI's look
+  at the left, the group finder at the right, a second chat above the chat. Each is a plate in SaneUI's look
   (`Core.Skin`) with a head; built when first shown, out of sight at the window's size, never sized on the
   way (they come in once it stands, go when it starts back). Too narrow a screen leaves out the group finder,
   then the friends list; too low a one the second chat. Each part runs under `ns.Safe`: a failing panel is
@@ -9051,8 +9058,8 @@ Saneroki asked for a much richer bag view, in features and looks.
 - **Accountwide settings** (on at first): every character uses a profile, a named set of the settings of
   every module and of the game's own that Sync keeps (CVars, Edit Mode layout, chat windows, ...). At first
   there is one, *Accountwide*, used by every character, so all of them have the same settings; more can be
-  made and given to characters, each its own. Off: no profile is in use, each character keeps its own Sane
-  UI settings (a copy of its profile's to begin with, made anew each time it is switched off: `ownSince`,
+  made and given to characters, each its own. Off: no profile is in use, each character keeps its own
+  SaneUI settings (a copy of its profile's to begin with, made anew each time it is switched off: `ownSince`,
   `since`) and Sync reads and writes nothing of the game's.
 - **One place for each module's settings** (`Profiles.lua` rewritten): the table a module holds
   (`Core.Settings`, `store.options` through a metatable, never kept twice in the saved file) lives in the
@@ -9093,12 +9100,12 @@ Saneroki asked for a much richer bag view, in features and looks.
   settings add to the kept count. `Kit.lua`: `Core.Word`, `RGB`/`Hex`, `Pixels`, `Tip`, `Pool`, `Confirm` (with
   its own word), `AskText`, `Font`, `Sound`, `Lend` (a frame of the game's changed for a while and given back
   exactly; its alpha at once in a fight). `Core.Fuzzy.Plain`. The switch *Animations* on Appearance (off:
-  nothing of Sane UI moves). A button *Reset window positions* on General.
+  nothing of SaneUI moves). A button *Reset window positions* on General.
 
 ### Windows (Core) and Social
 - Windows: close and Esc wait for a fight's end; a first zone (`first.dock`, talk in the middle), standing clear
   of a held zone (`Window.CASCADE`); a motion whose frame is hidden is at its end at once; no full screen in
-  Edit Mode; every module hook guarded; letting go is done once. One Esc stand-in for all of Sane UI
+  Edit Mode; every module hook guarded; letting go is done once. One Esc stand-in for all of SaneUI
   (`Core.Escape`, `SaneUIEscape`; the profile window and the feedback window too). New: `window.inside`,
   `SetTitle`, module `buttons`, tabs (`Views.lua`, the game's tab system), `toplevel`, `insets`,
   `Window.All`/`ResetAll` (`/sane window reset all`), the holder (`Holder.lua`), Edit Mode selection and its
@@ -9321,7 +9328,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   every game version and checks their TOCs and Lua. Tests: 148 checks (same bytes twice, live without the
   beta, the beta on live, every row read back by Lua 5.1 as Python wrote it, rows cut into functions,
   packs without entries not made).
-  - *In the game:* the addon list shows *Data: Game* under Sane UI, not loaded.
+  - *In the game:* the addon list shows *Data: Game* under SaneUI, not loaded.
 - **1a.2 The master and its check.** `assets/data/` with `builds.toml` (Forever live 70245, the beta 70425
   and 70450, an empty PTR), `sources.toml` (`game`, `hand`), `packs.toml` (*Game*) and the first set,
   *CVarLabels* (225 CVars, from the game's options code in `references/`; the old Lua file stays as it is).
@@ -9451,7 +9458,7 @@ Saneroki asked for a much richer bag view, in features and looks.
 - Not yet tried in the game: everything above. The in-game checks are listed in each module's README.
 
 ### Images: one pipeline for concept art, interface parts and animations
-- Saneroki asked (2026-10-17) for a pipeline on this computer's ComfyUI that keeps Sane UI's art alike.
+- Saneroki asked (2026-10-17) for a pipeline on this computer's ComfyUI that keeps SaneUI's art alike.
   New `dev/imagegen/`:
   - `style.txt`, the house style: the look of the concept art in words; its picture, the anchor, is
     `assets/Concept art/Elements.png`.
@@ -9545,9 +9552,9 @@ Saneroki asked for a much richer bag view, in features and looks.
   worked out from the version.
 - Found through Battle.net's own list of installed games (`product.db`), then the usual places (every drive,
   every Wine prefix); shown to the player to confirm; otherwise a folder the player picks or types, checked.
-- The player chooses which game versions get Sane UI (Forever's now, retail's later), any number at once in
+- The player chooses which game versions get SaneUI (Forever's now, retail's later), any number at once in
   any number of installations, each with its own channel, pin, rollback and backups; an update waits only
-  for the game version that runs. Sane UI put there by hand or by `dev/build` is taken over only after a yes.
+  for the game version that runs. SaneUI put there by hand or by `dev/build` is taken over only after a yes.
 - *In the background:* the same program and background work on Windows, macOS and Linux; tried on real
   Windows and Mac computers before players get it.
 
@@ -9607,7 +9614,7 @@ Saneroki asked for a much richer bag view, in features and looks.
   each. `Doc/ideas/Lore.md`, *Downloading and updating*, points to it.
 
 ### Ideas: Lore: the voices are downloads of their own
-- `Doc/ideas/Lore.md`, *Voice packs*: Saneroki (2026-10-16): the voices are Sane UI packages of their own,
+- `Doc/ideas/Lore.md`, *Voice packs*: Saneroki (2026-10-16): the voices are SaneUI packages of their own,
   downloaded separately; Lore plays a voice only when it finds its package installed.
   - Packs titled *Voices: ...*; each holds its sound files and the index of its own lines (the `Voices`
     set is gone from `SaneUI_Data_Lore`).
@@ -9648,8 +9655,8 @@ Saneroki asked for a much richer bag view, in features and looks.
     text to speech as the fallback.
   - Open questions for Saneroki at the end.
 
-### The page Sane UI: links and feedback
-- `Settings/About.lua` (new, in Core's TOC after `Synced.lua`): under the banner of the page *Sane UI*,
+### The page SaneUI: links and feedback
+- `Settings/About.lua` (new, in Core's TOC after `Synced.lua`): under the banner of the page *SaneUI*,
   the sections *Community* (Discord, Website, GitHub) and *Feedback* (Report a bug, Suggest a feature,
   General feedback), the game's own section headers and button rows (`Config.Fill` calls `About.Fill`).
   - A link's *Copy link* shows its address selected in the game's `GENERIC_INPUT_BOX` (an addon cannot
@@ -9665,10 +9672,10 @@ Saneroki asked for a much richer bag view, in features and looks.
   `tinsert`, `ButtonFrameTemplate_HidePortrait`, `InputScrollFrame_SetInstructions`, two sounds.
 - Tests: 207 checks (Core).
 
-### Social: the button Sane UI on the game's chat; no title on the small window
+### Social: the button SaneUI on the game's chat; no title on the small window
 - `Social.lua`: `ns.NATIVE` now has `frame` (the strip of buttons left of the game's chat,
   `ChatFrame1ButtonFrame`), `back` (ours shown again, the switch *Chat window* on) and `anchor`.
-  - Core's button *Sane UI* stands just above the game's chat menu button and fades with the game's buttons.
+  - Core's button *SaneUI* stands just above the game's chat menu button and fades with the game's buttons.
   - A click brings our window back.
   - The line said when ours is put away names the button.
 - `Window.lua` (Social):
@@ -9680,13 +9687,13 @@ Saneroki asked for a much richer bag view, in features and looks.
 - Tests: 336 checks (Social).
 
 ### The name Sane Sync in the licence; licensing left to Saneroki
-- `LICENSE`, section 2: *Sane Sync* is a name kept to Saneroki like *Sane UI*; an addon or app built from the
+- `LICENSE`, section 2: *Sane Sync* is a name kept to Saneroki like *SaneUI*; an addon or app built from the
   code carries another name (Saneroki, 2026-10-16). The builds' `LICENSE.txt` follow.
 - `AGENTS.md`: the licence rule is replaced by Saneroki's new one: agents do not handle licensing unless
   Saneroki asks (it stands over every earlier licensing note).
 - `Doc/ideas/SaneSync.md`: the licence questions taken out; the name in the `LICENSE` noted as decided.
 
-### Ideas: the app is Sane Sync; Sane UI is open source
+### Ideas: the app is Sane Sync; SaneUI is open source
 - `Doc/ideas/App.md` renamed `Doc/ideas/SaneSync.md` (Saneroki, 2026-10-16: the app is called **Sane Sync**;
   not Core's Sync). Saneroki: the repository is public and fully open source, anybody may fork it and add
   code. New part *Open source*: only Saneroki's versions carry his signature, code from others comes in by
@@ -9698,17 +9705,17 @@ Saneroki asked for a much richer bag view, in features and looks.
 - `Doc/ideas/Onboarding.md`: Saneroki answered two questions. After an update What's new opens by itself,
   unless *Show what's new after an update* is off on the module's own page (put up by Core at login, as the
   module loads on demand). Help comes from a ? in a window's title bar, before the button to the game's
-  own window, only in the Sane UI view: Blizzard's help plates over the window (this client hides
+  own window, only in the SaneUI view: Blizzard's help plates over the window (this client hides
   Blizzard's own ? buttons); no tips by themselves, no `HelpTip`. `Doc/ideas/Windows.md`, *Title bars*:
   the ? noted.
 
-### Ideas: the Sane UI app
+### Ideas: the SaneUI app
 - `Doc/ideas/App.md`, new (Saneroki, 2026-10-16): a small program for Windows, Linux and macOS, outside the
-  game, that keeps Sane UI up to date. Proposals: versions given out as one signed zip per addon folder
+  game, that keeps SaneUI up to date. Proposals: versions given out as one signed zip per addon folder
   (Ed25519, the key only on Saneroki's computer; a folder that did not change is not downloaded again),
   installed only while the game is closed; channels, pinning and rollback with the saved files from before
-  the update; daily backups of Sane UI's saved files; a tray icon and the start with the login per system;
-  Go. It only reads and writes Sane UI's own files and never touches the running game.
+  the update; daily backups of SaneUI's saved files; a tray icon and the start with the login per system;
+  Go. It only reads and writes SaneUI's own files and never touches the running game.
 - **Beyond the guild,** smallest first: Blizzard's web API for prices (to check for this game), a hidden
   realm channel, then a server through the app. Data goes out through an outbox the addon fills and comes
   back as a data file the app writes (never code), taken in like one more guild member's.
@@ -9731,7 +9738,7 @@ Saneroki asked for a much richer bag view, in features and looks.
 - Tests: 234 checks (windows).
 
 ### Windows reviewed: the guide, and what the review fixed
-- **`Doc/guides/windows.md`**, new: how every window of Sane UI is built, for whoever builds the next one.
+- **`Doc/guides/windows.md`**, new: how every window of SaneUI is built, for whoever builds the next one.
   The kinds (HUD, panel, talk) and their options, Core's parts and the module's share, the states and the
   invariants that keep them apart, what is kept, the recipe, the rules (taint with the game's own windows,
   combat, performance, resilience, look), what is not built yet in order, and every fact it rests on with
@@ -9754,11 +9761,11 @@ Saneroki asked for a much richer bag view, in features and looks.
 
 ### Ideas: Onboarding
 - `Doc/ideas/Onboarding.md`, new (Saneroki, 2026-10-16): a module of its own, loaded on demand when a new
-  version of Sane UI is found, that helps players understand its features. Proposals: Core finds the new
+  version of SaneUI is found, that helps players understand its features. Proposals: Core finds the new
   version at login (`SaneUIDB.seen`, per account, outside the profiles) and loads the module only then;
   Welcome the first time, What's new after an update, laid out like Blizzard's own splash; *Show me* per
   feature, one-time tips with `HelpTip`; the words in `News.lua`, kept in step with `changelog.txt` by a
-  test. For later: Sane UI is not given to others yet. Six open questions, among them the name.
+  test. For later: SaneUI is not given to others yet. Six open questions, among them the name.
 
 ### The Navigation plan reviewed, and how it is built
 - `Doc/ideas/Navigation.md` reordered: Saneroki's decisions, a review, the design, the build order, the
@@ -9947,7 +9954,7 @@ Tests: 330 checks (Social), 202 checks (windows). Not tried in the game. New fil
   (*Title bars*, *Full screen views*, *The game's own triggers*, the spellbook to be rebuilt on Core's window).
 
 ### Art: making pictures with image models
-- `Doc/guides/image-generation.md` (Saneroki asked, 2026-10-16): local, free image generation for Sane UI's
+- `Doc/guides/image-generation.md` (Saneroki asked, 2026-10-16): local, free image generation for SaneUI's
   art. ComfyUI installed by hand (Python 3.13, CUDA 13), five models for a 12 GB card (Qwen-Image 2.1 as
   the main one: references and transparent pictures; FLUX.2 [klein]; Z-Image Turbo; SDXL; FLUX.2 [dev]),
   how to ask for interface art, and how a frame becomes pieces the game stretches (slice margins, nine
@@ -9962,7 +9969,7 @@ Tests: 330 checks (Social), 202 checks (windows). Not tried in the game. New fil
 ### Combat: a new module, set up
 - Saneroki, 2026-10-16: a module **Combat** for everything about party, raid, buffs, unit frames, nameplates
   and pets. `src/Combat/`, addon `SaneUI_Combat` (`SaneUI_Combat.toc`, title *Combat* in the addon list,
-  under Sane UI, needs Core only), first file `Combat.lua`: `Core.NewModule(ADDON, "Combat", ns)` and nothing
+  under SaneUI, needs Core only), first file `Combat.lua`: `Core.NewModule(ADDON, "Combat", ns)` and nothing
   else. It loads and changes nothing; no options page until its first part has switches. Module README.
 - The plan: `Doc/ideas/Combat.md`: its parts and the game's frames each stands for in this client
   (camelot), the game's Edit Mode settings for them, what is secret in a fight, party and raid headers,
@@ -10049,7 +10056,7 @@ Tests: 327 checks (Social), 178 checks (windows). Not tried in the game. `/reloa
   screen or goes back: `window:Refresh()` from `Place`, `Edge.Fill`, `Edge:Update`, Edit Mode); with
   `options.native = { frame, show, back }`, the game's square button (`UI-SquareButton-*`) with its circling
   arrows (`UI-RefreshButton`), tip *Classic window*: `native.show()`. `window:Attach()` (also at `New`)
-  puts the same button (tip *Sane UI window*: `native.back()`) on the game's window, beside its close button
+  puts the same button (tip *SaneUI window*: `native.back()`) on the game's window, beside its close button
   (`CloseButton` or the global *name*`CloseButton`, read raw), at its level: our frame, kept in our own
   table. Shown buttons stand side by side (`buttons.first`: the leftmost).
 - **Edge:** a free or centred window fills the screen by its button (`placed`, was: only docked windows)
@@ -10265,15 +10272,15 @@ Tests: 305 checks (Social), 141 checks (windows). Not tried in the game. New fil
   like *Animation type*), and the page of *Hotcorners*.
 
 ### Ideas: windows in Edit Mode's layouts; chat views as windows and tabs
-- `Doc/ideas/Windows.md` (Saneroki, 2026-10-16): Edit Mode's layouts keep the size and place of every Sane UI
+- `Doc/ideas/Windows.md` (Saneroki, 2026-10-16): Edit Mode's layouts keep the size and place of every SaneUI
   window, each layout its own, switching with Blizzard's frames; moves count as layout changes until
   *Save*, and Revert puts the windows on their default position, all as Edit Mode does it. Notes for
-  building it (our places kept per layout in Sane UI's settings, Blizzard's events and hooks, enabling
+  building it (our places kept per layout in SaneUI's settings, Blizzard's events and hooks, enabling
   Blizzard's *Save* button, a dialog with *Reset To Default Position*). A window still saved in a removed
   quarter zone needs nothing (Core ignores a zone it does not know).
 - `Doc/ideas/Social.md`: a chat view can be a window of its own and a tab of the small Social window, like
   the game's chat windows. The old `SaneUI_Chat` folder is deleted (gone from the game, `src/` and
-  `BUILD/`); Sane UI is not given out yet, so no player's old copy is to be handled.
+  `BUILD/`); SaneUI is not given out yet, so no player's old copy is to be handled.
 
 ### Ideas: expand by a left click; Expand on hover
 - `Doc/ideas/Windows.md` (Saneroki, 2026-10-16): a docked window fills the screen only on a left click on its
@@ -10447,9 +10454,9 @@ Tooltips module and the structural Spellbook performance items were done: see th
   *Transparency*, 0 solid, the opposite of every other opacity slider; a kept value is turned round once,
   `bubbleOpacity`), *Bubble colour*, *Solid colour*; Spellbook's *Show unlearned spells* (was *Show hidden
   spells*, which read as the opposite of the game's *Hide Passives* beside it), *Move and resize the spellbook*,
-  *Show reservations on the action bars*, *Sane UI lays out the spellbook pages*; the Expand window section's
+  *Show reservations on the action bars*, *SaneUI lays out the spellbook pages*; the Expand window section's
   tips; Sync's part tips name only what a part holds. British spelling throughout.
-- **Spellbook, options:** the master switch *Sane UI lays out the spellbook pages* is first, under a header
+- **Spellbook, options:** the master switch *SaneUI lays out the spellbook pages* is first, under a header
   *Spellbook*, and the four switches that do nothing without it are under it, greyed out while it is off; the
   action bar switches under *Action bars*. Flipping it offers the /reload in the game's dialog (`Core.AskReload`)
   besides the chat line. The in-book checkbox has a tooltip. The spellbook's menu has the three switches about
@@ -10571,7 +10578,7 @@ From a full review of Core, Settings and Sync. Not tried in the game. Tests: 194
   counts in place; `/sane errors` skips saved entries it cannot read.
 - **Sync, taint:** the game answers a new Edit Mode layout (`EDIT_MODE_LAYOUTS_UPDATED`) and a new chat colour
   (`UPDATE_CHAT_COLOR`) with events that run inside our call (synchronous), so its manager and chat frames ran
-  under Sane UI's taint until a `/reload`. The Edit Mode part (`reload`, also when a waiting layout is set
+  under SaneUI's taint until a `/reload`. The Edit Mode part (`reload`, also when a waiting layout is set
   later: `Sync.AskReload`) and a chat colour alone now offer the reload, as the chat windows did. The dialog
   says the game "takes them over fully" after it.
 - **Sync, timing:** given only once the game has its stored settings (`C_CVar.AreCVarsLoaded`, else on
@@ -10603,7 +10610,7 @@ Not tried in the game. Tests: 94 checks (windows), 294 checks (Chat).
 - **Chat:** the section at the top of the tab *Appearance* (`Edge.Options(OPTIONS, 1, LOOK)`); `Window.Expand`.
   *Enable all Animations and Fades* off still makes it fill the screen at once.
 
-### Profiles: Empty; SaneUI Defaults only Sane UI's own settings
+### Profiles: Empty; SaneUI Defaults only SaneUI's own settings
 Not tried in the game. Tests: 190 checks (Core).
 - **Empty** (`Profiles.EMPTY`): no profile, as a profile in the lists (first, chosen at first; was *None* on a
   character's line). The settings as they are kept, the account's (or each character's own), loaded at every
@@ -10612,7 +10619,7 @@ Not tried in the game. Tests: 190 checks (Core).
   renamed or deleted; on a character's line both checkboxes ticked and switched off. A saved profile called
   Empty is moved to *Empty (old)*.
 - **SaneUI Defaults** leaves out the game's settings that Sync keeps (`GameSettings`): loading it (or duplicating
-  it) changes only Sane UI's modules and general switches; with *Load at login* Sync's settings stay where they
+  it) changes only SaneUI's modules and general switches; with *Load at login* Sync's settings stay where they
   were (`Wanted`).
 - `Home(name)` (where a module's settings come from without a profile) split out of `Wanted`.
 
@@ -10715,7 +10722,7 @@ Not tried in the game. Tests: lint (4 addons), 183 checks (Core), 47 checks (Syn
   puts up the pages at login (`PutUpPages`, `Core.pages`, `Core.frames`, `Core.Tabbed`, moved from Core.lua),
   hooks the options window's `OnShow` and owns `/sane options`; the controls are still made only when the
   options first open (`Config.Fill`, was `Config.OnLogin`). `Core.LoadSettings` is gone, and so is the message
-  that the options are switched off. `## AddonCompartmentFunc` is in Core's TOC. Sane UI's banner is Core's
+  that the options are switched off. `## AddonCompartmentFunc` is in Core's TOC. SaneUI's banner is Core's
   (`src/Core/Art/banner.blp`, `Interface\AddOns\SaneUI\Art\banner`; `dev/tools/art` writes it there).
 - **Sync → `Core.Sync`** (was the module `SaneUI.Sync`). Its switches keep the name `Sync`
   (`SaneUIDB.modules.Sync`): nothing saved changes. `Sync.Safe` notes as `Sync: <step>`; `Sync.OnLoad` runs
@@ -10749,7 +10756,7 @@ Not tried in the game. Tests: 175 checks (Core and Settings).
   `Core.Options`. `Duplicate` makes a profile of your own from it. `Save`, `Rename` and `Delete` refuse it
   (`Fixed`), no other profile takes its name, *Save at logout* never saves into it (`Character` reports
   `autoSave` false). `Exists` (any profile) is apart from `Saved` (a saved one). A saved profile of that name
-  from before is moved to *SaneUI Defaults (old)*. Sane UI sets no CVar values of its own, so loading it leaves
+  from before is moved to *SaneUI Defaults (old)*. SaneUI sets no CVar values of its own, so loading it leaves
   the game's values as they are.
 - **Core, `Saved.lua`:** a table's default (Sync's `cvars`, `saved`) is copied into the settings, not shared
   with the description: what the module kept in it changed the default (`Core.Copy`, now also Profiles').
@@ -10808,7 +10815,7 @@ Not tried in the game. Tests: 241 checks (Chat), 160 checks (Core and Settings).
   at login, `Core.pages["Chat/Appearance"]`); `parent` draws it under an earlier switch
   (`SetParentInitializer`), greyed out while any switch above it is off. Sliders with steps below 1 show two
   decimals. `Add` returns the initializer.
-- **Chat, page Appearance** (Esc > Options > AddOns > Sane UI > Chat > Appearance): text size, bubble
+- **Chat, page Appearance** (Esc > Options > AddOns > SaneUI > Chat > Appearance): text size, bubble
   transparency and short names (moved from Chat), *Fade messages out* and its seconds (moved), and new:
   *All animations*, *Fade in (seconds)*, *Fade out (seconds)*, *Slide animation*, *Slide time (seconds)*.
   `Fade.Times`, `Window.Animate`; with no time a fade is at once, and `Refade` paints at once.
@@ -10862,7 +10869,7 @@ Not tried in the game. Tests: 206 checks (Chat).
 
 ### Player names: first name and surname
 Not tried in the game. Tests: 160 checks (Core and Settings), 276 checks (Tooltips), 274 (Spellbook).
-- A Forever name is a first name and a surname; `UnitName` gives both (two values). Sane UI kept only the first.
+- A Forever name is a first name and a surname; `UnitName` gives both (two values). SaneUI kept only the first.
   New `Core.FullName(unit)` (as the game's Camelot `NameUtil.FormatUnitNameForDisplay`: the separator is
   `Constants.CharacterNameSeparatorConsts.CHARACTERNAME_SURNAME_SEPARATOR`). `Core.charName` is the whole name,
   so the Characters list of the page Profiles shows it (a character listed before updates at its next login).
@@ -10887,7 +10894,7 @@ Not tried in the game. Tests: 160 checks (Core and Settings), 53 checks (Sync).
 - **All settings accountwide** (ticked at first, `SaneUIDB.separate` when not): for the account, replacing the
   per-character *Character specific settings*. Under it: *Ticked will sync all settings accountwide by
   default. Profiles overwrites the setting on a per character basis.*
-- **Tab Accountwide** (was *Sync settings*): a first box *Sane UI* with a checkbox per module (General, Chat,
+- **Tab Accountwide** (was *Sync settings*): a first box *SaneUI* with a checkbox per module (General, Chat,
   Spellbook, Tooltips; `SaneUIDB.perCharacter`): unticked, that module's settings are each character's own.
   The tab's checkboxes are switched off while all settings are each character's. It is there without the Sync
   module too.
@@ -10921,16 +10928,16 @@ Not tried in the game. Tests: 156 checks (Core and Settings), 53 checks (Sync).
   `Sync/Switches.lua` describes the switches in group order; `ns.Part`, `ns.GROUPS`, `ns.CVarsOf`.
 - The test stand-in has canvas pages, tab groups, dropdown menus and the templates' parts.
 
-### Options: Sane UI with only its logo, then Profiles, General, Appearance, the modules
+### Options: SaneUI with only its logo, then Profiles, General, Appearance, the modules
 Not tried in the game (the layout it replaces was). Tests: 150 checks (Core and Settings); the Spellbook, Chat
 and Sync suites follow the new page names.
-- **The pages:** *Sane UI* shows only its banner. Under it, in this order: *Profiles* (the profile rows
+- **The pages:** *SaneUI* shows only its banner. Under it, in this order: *Profiles* (the profile rows
   without a header, the Sync module's sections, the CVar list), *General* (*Errors in chat*), *Appearance*
   (one line: nothing to set yet), then the modules' pages by their plain names: *Chat*, *Spellbook*,
-  *Tooltips* (were *Sane Chat*, ...). `/sane options` and the minimap's addon list open *Sane UI*.
+  *Tooltips* (were *Sane Chat*, ...). `/sane options` and the minimap's addon list open *SaneUI*.
 - **Core:** `Core.pages.top`, `.Profiles`, `[Core.name]` (*General*), `.Appearance`, then a page per module
   titled `module.title`; the game keeps that order (it sorts sub-pages only when asked). A module's
-  `optionsPage` names one of Sane UI's own pages for its switches; Sync's is `"Profiles"` (was
+  `optionsPage` names one of SaneUI's own pages for its switches; Sync's is `"Profiles"` (was
   `onGeneralPage`).
 - **Settings:** `Note.xml` (`SaneUISettingsNoteTemplate`), a line of text as a row.
 - `CLAUDE.md`, the root README and the Spellbook and Tooltips READMEs name the pages as they are now.
@@ -10938,12 +10945,12 @@ and Sync suites follow the new page names.
 ### Sync, the game's CVars, and profiles loaded and saved by themselves
 Not tried in the game. Tests: lint, 146 checks (Core and Settings), 43 checks (Sync, new), the other suites
 unchanged.
-- **New module Sync (`SaneUI_Sync`):** keeps the settings the game saves for each character with Sane UI's
+- **New module Sync (`SaneUI_Sync`):** keeps the settings the game saves for each character with SaneUI's
   settings: the account's, a character's own, profiles. Parts, each a switch: Edit Mode layout (by name),
   chat windows (names, text size, colour, shown/locked/docked, message groups, channels; chat colours), your
   own chat channels, camera, nameplates, other game settings (the rest of the per-character CVars, without
   tracked/collapsed/counted/last-chosen state; guild invitations), action bars shown (off at first).
-  - Taken when Sane UI's settings are saved (logout, profile save: Core's new `capture`), and only after the
+  - Taken when SaneUI's settings are saved (logout, profile save: Core's new `capture`), and only after the
     session gave them; given 2 s after entering the world, after a fight if in one, and when a profile is
     loaded. Only what differs is set.
   - Only CVars the game keeps per character (`GetCVarInfo`), found at run time (`ConsoleGetAllCommands`): no
@@ -10976,7 +10983,7 @@ unchanged.
 
 ### Profiles: the account's settings or a character's own, and named copies of them
 Not tried in the game. Tests: lint, 121 checks (Core and Settings), the other suites unchanged.
-- **New section *Profiles*** on the general page *Sane UI*, under *General* (Settings, new `Profiles.lua`):
+- **New section *Profiles*** on the general page *SaneUI*, under *General* (Settings, new `Profiles.lua`):
   - *Character specific settings* (checkbox): ticked, the character has settings of its own, at first a
     copy of the account's; unticked, it is back on the account's and keeps its own for the next time.
     Modelled on the game's *Character Specific Key Bindings* (a proxy setting without a default, so the
@@ -11018,7 +11025,7 @@ Not tried in the game. Tests: lint, 85 checks (Core and Settings), the other sui
 
 ### Art and banners in the options
 Not tried in the game. Tests: lint, 84 checks (Core and Settings), the other suites unchanged.
-- **The art:** the banners, icons and logo drawn for Sane UI (PNGs in `assets/`, 1.6-1.9 MB each) are
+- **The art:** the banners, icons and logo drawn for SaneUI (PNGs in `assets/`, 1.6-1.9 MB each) are
   made into game textures by the new `dev/tools/art`: BLP2 with DXT5 and a full chain of mipmaps, as
   Blizzard's own logos are, in `assets/optimized/`. Banners 512 x 256 (171 KB), icons 128 x 128
   (22 KB), the big logo 256 x 256 (86 KB): 864 KB in all, from 15.3 MB. On the way the drawings' solid
@@ -11026,8 +11033,8 @@ Not tried in the game. Tests: lint, 84 checks (Core and Settings), the other sui
   carried into the clear pixels, so no dark seam shows. The DXT5 blocks come from ImageMagick's cluster
   fit: Pillow's own writer washed out the letters.
 - **Banners in the options:** each page shows the banner of the addon it belongs to at the top, in place
-  of the page's title: the general page Sane UI's (above *General*), *Sane Spellbook*, *Sane Chat* and
-  *Sane Tooltips* their module's. A module ships its own as `Art/banner.blp`; Sane UI's is the Settings
+  of the page's title: the general page SaneUI's (above *General*), *Sane Spellbook*, *Sane Chat* and
+  *Sane Tooltips* their module's. A module ships its own as `Art/banner.blp`; SaneUI's is the Settings
   module's. The banner is a row of the game's own list (`Banner.xml`, `SaneUISettingsBannerTemplate`):
   made only when its page is shown, drawn at 300 x 100 with `TRILINEAR` filtering; the game's title is
   hidden only while the row is there (another page or scrolling it away brings it back). An addon
@@ -11136,7 +11143,7 @@ Not tried in the game. Tests: 274 checks (Spellbook) and 270 with the Settings m
 
 ### Core: the options' AddOns tab, shared tools, hardening
 Not tried in the game. Tests: 80 checks (Core and Settings).
-- **Fixed: the game's options had no AddOns tab** (so no Sane UI pages) when Sane UI was the only addon
+- **Fixed: the game's options had no AddOns tab** (so no SaneUI pages) when SaneUI was the only addon
   with options. `SettingsPanelMixin:OnShow` hides the *Game* and *AddOns* tabs for the session if no addon
   category exists when the window first opens, and Settings (load on demand) was only read after that, from
   a hook after `OnShow`. Core now puts up the pages at login, empty (`Core.pages`; only when the Settings
@@ -11545,7 +11552,7 @@ Tests: 64 checks (Core and Settings).
   file (an addon cannot write another): the game writes it at a `/reload` or a logout.
 - **Errors nothing of ours caught are noted too:** at login Core hooks the game's error window
   (`hooksecurefunc(ScriptErrorsFrame, "DisplayMessageInternal", ...)`) and notes the errors that name a
-  Sane UI addon, with their stack. The game's own error handling is not touched.
+  SaneUI addon, with their stack. The game's own error handling is not touched.
 - **`dev/tools/errors`** prints the log from the game's saved settings file (`10`, a number, `all`, `short`).
 - `/sane errors` says how many entries the log has; `/sane errors clear` empties it too.
 
@@ -11656,7 +11663,7 @@ Tests: 247 checks (Spellbook) and 243 more with the Settings module switched off
 ### Removed
 - **The built-in training list** and all that only it used: the folder `src/Spellbook/Training` with its
   tab, window, menus, art, key binding (`Bindings.xml`) and saved variables, `/sane sb train`, its line in
-  the spellbook's menu, and the tool that built the folder. `dev/tests/lint` allows no globals but Sane UI's
+  the spellbook's menu, and the tool that built the folder. `dev/tests/lint` allows no globals but SaneUI's
   own.
 - **`BINDING_HEADER_SANEUI`** in Core: no module has a key binding any more.
 
@@ -11670,13 +11677,13 @@ Tests: 247 checks (Spellbook) and 243 more with the Settings module switched off
   when the answer arrives (was: the training code's own cache did that). The stats field `data` is the same.
 - **A grey entry's tooltip** shows the trainer's base price as one line.
 - **Module titles** in the addon list are the plain names: *Settings*, *Spellbook*, *Tooltips* (were
-  *Sane UI Settings*, ...). The minimap's addon list shows *Settings*.
+  *SaneUI Settings*, ...). The minimap's addon list shows *Settings*.
 - **Settings is load-on-demand** (`## LoadOnDemand: 1`). Core loads it when the game's options window opens
   (hook on `SettingsPanel` `OnShow`) or on `/sane options`, which is now Core's command and says so when
   the module is switched off. `Core.LoadSettings()`.
 - **Core starts a module that arrives after the login:** `OnLoad`, then `OnLogin` at once.
 - **A module's options page is called "Sane" and its name** (*Sane Spellbook*, *Sane Tooltips*): that is
-  the entry under *Sane UI* and the title at the top of the page.
+  the entry under *SaneUI* and the title at the top of the page.
 - **The reserved mark** in the spellbook is a small clock (atlas `auctionhouse-icon-clock`), was a tick.
   With *Show all spell ranks* on, only the rank that was dragged onto the button carries it and says
   *Reserved on ...*; with one icon per spell, that icon does.
@@ -11802,27 +11809,27 @@ The split into three addons is not yet tried in the game. Tests: lint, 56 checks
 204 checks (Spellbook) and 201 more with the Settings module switched off.
 
 ### Changed
-- **One addon per module.** Sane UI was one addon folder with one TOC. Now Core is the addon `SaneUI`
-  (*Sane UI* in the addon list) and every other module an addon of its own under it: `SaneUI_Settings`
-  (*Sane UI Settings*) and `SaneUI_Spellbook` (*Sane UI Spellbook*). Each can be switched on and off by
+- **One addon per module.** SaneUI was one addon folder with one TOC. Now Core is the addon `SaneUI`
+  (*SaneUI* in the addon list) and every other module an addon of its own under it: `SaneUI_Settings`
+  (*SaneUI Settings*) and `SaneUI_Spellbook` (*SaneUI Spellbook*). Each can be switched on and off by
   itself. Their TOCs say `## Dependencies: SaneUI` and `## Group: SaneUI`.
 - **A module depends on Core only.** Spellbook no longer needs Settings: it runs the same with the Settings
   module switched off, without its options page.
 - **Shared table:** the addons find each other in one global table, `SaneUI` (was the table the game hands
   the files of one addon). A module's own table is the one the game hands its addon:
   `local ADDON, ns = ...`, then `Core.NewModule(ADDON, "Spellbook", ns)` (was `Core.NewModule(name)`).
-- **Start of a module:** `OnLoad` runs when the module's own addon is loaded (was: when Sane UI was).
+- **Start of a module:** `OnLoad` runs when the module's own addon is loaded (was: when SaneUI was).
 - **Saved settings moved from Settings to Core** (`Core/Saved.lua`): `Core.Store`, `Core.Character`,
   `Core.Options` (were `Config.Store`, `Config.Character`, `Config.Options`). `SaneUIDB` keeps its shape
   and stays in `SavedVariables/SaneUI.lua`, so reservations, layouts and switches carry over.
 - **Settings is the options module only.** It reads the described switches from Core at login
   (`Core.described`, `Core.optionOrder`), so the order in which the game reads the modules does not matter.
-- **The options:** *Sane UI* is a general page and has one page per module that is switched on under it
+- **The options:** *SaneUI* is a general page and has one page per module that is switched on under it
   (`Settings.RegisterVerticalLayoutSubcategory`). Was: one page with a heading per module. A module that
   is switched off, or has no switches, has no page.
 - **Rows of the options pages** go in through `Settings.RegisterInitializer` (the game's own code adds
   them) instead of `Settings.CreateCheckbox` and `layout:AddInitializer` (addon code added them).
-- **The minimap's addon list** shows *Sane UI Settings* (was *Sane UI*): the entry belongs to the Settings
+- **The minimap's addon list** shows *SaneUI Settings* (was *SaneUI*): the entry belongs to the Settings
   module and is gone when that is switched off, as is `/sane options`.
 - **The training list's own settings** (`SaneUITraining_...`) are declared by `SaneUI_Spellbook` and saved
   to `SavedVariables/SaneUI_Spellbook.lua` (was `SaneUI.lua`).
@@ -11831,8 +11838,8 @@ The split into three addons is not yet tried in the game. Tests: lint, 56 checks
   (the key binding goes with the module). New: `src/Core/Saved.lua`, `src/Settings/SaneUI_Settings.toc`,
   `src/Spellbook/SaneUI_Spellbook.toc`. In the game the files of an addon no longer sit in a folder named
   after the module (`SaneUI/Core.lua`, `SaneUI_Spellbook/Spellbook.lua`).
-- **Icons:** a gear for *Sane UI*, the engineering icon for *Sane UI Settings*, the book stays with
-  *Sane UI Spellbook*.
+- **Icons:** a gear for *SaneUI*, the engineering icon for *SaneUI Settings*, the book stays with
+  *SaneUI Spellbook*.
 - **`dev/build`** builds one folder per addon into `BUILD` (`BUILD/SaneUI`, `BUILD/SaneUI_Settings`,
   `BUILD/SaneUI_Spellbook`), each named after the TOC in its `src` folder and each with `LICENSE.txt`, and
   copies them all into the game. An addon folder in `BUILD` that no module makes any more is removed; one
@@ -11861,7 +11868,7 @@ The split into three addons is not yet tried in the game. Tests: lint, 56 checks
 Not yet tried in the game. Tests: lint, 45 checks (Core and Settings), 203 checks (Spellbook).
 
 ### Added
-- **The addon Sane UI** (`src`, interface 16001, addon list category *Sane UI*): one addon folder,
+- **The addon SaneUI** (`src`, interface 16001, addon list category *SaneUI*): one addon folder,
   one TOC, one folder per module, each with a README.
 - **Core** (`Core/Core.lua`): `NewModule` with `OnLoad`/`OnLogin` in TOC order, `Print`, `On` (game events),
   `Safe` and `NoteError` (errors caught, told once, kept), `Plain`/`Secret`, `Command` (`/sane <word>`),
@@ -11872,17 +11879,17 @@ Not yet tried in the game. Tests: lint, 45 checks (Core and Settings), 203 check
 - **`/sane errors`** lists the kept errors, `/sane errors clear` forgets them. Errors carry a date.
 - **Spellbook module** (`Spellbook/`): the former addon *Actionbar Organizer* 0.3.0, on Core and Settings.
 - Spellbook's four switches are also on the options page; the spellbook's menu and the page share their
-  texts (`ns.OPTION`). New on the page: *Let Sane UI lay out the spellbook's pages*.
+  texts (`ns.OPTION`). New on the page: *Let SaneUI lay out the spellbook's pages*.
 - Spellbook warns when *Actionbar Organizer* is loaded next to it.
 - **`dev/build`**: tests, builds `BUILD/SaneUI` (no READMEs, plus `LICENSE.txt`), copies it into the game.
   `--no-install`, `--check`. Replaces Actionbar Organizer's `install`.
 - **`dev/tests/lint`**: every file in the TOC exists and every file is in the TOC; all Lua parses; no file
-  writes a global that is not Sane UI's own.
+  writes a global that is not SaneUI's own.
 - **`dev/tests/core.lua`**, **`dev/tests/run`** (everything). The stand-in client learned the game's options,
   `xpcall` with arguments, `CallErrorHandler`, `date`.
 - `Doc/changelog.txt`, `Doc/Changed.md`, READMEs for the project and for Core and Settings.
 
-- **`LICENSE`**: the code stays MIT. New in front of it: the name *Sane UI* and its logo are trademarks and
+- **`LICENSE`**: the code stays MIT. New in front of it: the name *SaneUI* and its logo are trademarks and
   the original art is all rights reserved, neither is under MIT; Blizzard's code and art stay Blizzard's;
   a request (not a condition) not to publish the whole addon again as a new one.
 
@@ -11893,7 +11900,7 @@ Not yet tried in the game. Tests: lint, 45 checks (Core and Settings), 203 check
   are `SaneUITraining_...`. Nothing is carried over: the old addon was never installed under that name.
 - **Names in the game:** frames `ActionbarOrganizerBook(Pager)` are `SaneUISpellbook(Pager)`, `ABOTraining...`
   are `SaneUITraining...`; popups `SANEUI_SPELLBOOK_SAVE/LOAD`; key binding `SANEUI_SPELLBOOK_TRAINING` under
-  the header *Sane UI*.
+  the header *SaneUI*.
 - **Art paths:** `Interface\AddOns\SaneUI\Spellbook\Training\...`.
 - **The minimap's addon list** opens the options (was: the training list, still on its key binding and
   `/sane sb train`).
@@ -11911,7 +11918,7 @@ Not yet tried in the game. Tests: lint, 45 checks (Core and Settings), 203 check
 ### Project
 - **`Doc/guides/`**, three guides written from Blizzard's posts and talks, the add-on policy and the
   Warcraft Wiki, with every template and function name checked against `references/`:
-  `blizzard-design-principles.md` (13 principles, each with what it means for Sane UI, and a checklist),
+  `blizzard-design-principles.md` (13 principles, each with what it means for SaneUI, and a checklist),
   `addon-standards.md` (policy, TOC, loading, globals, taint, secret values, performance, saved variables,
   languages, resilience), `gui-development.md` (which Blizzard part to build what from; windows, layout,
   art, text, lists, menus, tooltips, changing Blizzard windows). Each lists its sources and says which

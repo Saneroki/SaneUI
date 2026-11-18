@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Sane UI's logos: one family for Core and every module, drawn here from shapes and a free font (Saneroki,
+"""SaneUI's logos: one family for Core and every module, drawn here from shapes and a free font (Saneroki,
 2026-11-15: "a logo style that can differientiate between the modulse but still instill familiarity when seeing
 them so just by looking at the icon the user will recognize that they fit together"; "simple ... that doesn't
 screem of ai generated").
 
 What they share: the gold ring with its diamond at the top, the dark middle, the gold of the symbol, the font.
 What tells them apart: the symbol in the middle and a thin ring of the module's own colour inside the gold.
-Core's symbol is the S of Sane UI and its inner ring gold.
+Core's symbol is the S of SaneUI and its inner ring gold.
 
 Nothing of the game's art or fonts is in them: CurseForge takes no copyrighted imagery in a project's avatar
 (its moderation policies), so they are drawn from circles and polygons here, the words in Noto Serif Display
@@ -16,13 +16,13 @@ For each addon (dev/tools/logo-art [name ...], all when none is named) it writes
 (assets/generated/logos/ unless --out names another):
   <name>-icon.png      1024 x 1024, the source for the game's icon and logo (dev/tools/art)
   <name>-avatar.png    400 x 400, CurseForge's project avatar (a PNG: CurseForge advises against WebP)
-  <name>-banner.png    1536 x 512, the 3 : 1 of every banner: the badge, SANE UI over the addon's name
+  <name>-banner.png    1536 x 512, the 3 : 1 of every banner: the badge, SANEUI over the addon's name
 and family.png, every badge beside the others, large and at the sizes a list shows them. With --ship the icon and
 the banner of each also go into assets/Logos/ (the sources the game's textures are made from: dev/tools/art makes
 each addon's Art/icon.blp, its icon in the addon list, and Art/banner.blp, its options page's banner).
 
-The plain Sane UI logo (the name saneui; Saneroki, 2026-11-18: "use a plain Sane UI logo instead of the Core
-banner"): Core's badge and SANE UI beside it, no addon's word and no plate, on a clear ground, 3 : 1 as the banners
+The plain SaneUI logo (the name saneui; Saneroki, 2026-11-18: "use a plain SaneUI logo instead of the Core
+banner"): Core's badge and SANEUI beside it, no addon's word and no plate, on a clear ground, 3 : 1 as the banners
 (saneui-banner.png): the logo on the first page of the setups (dev/tools/art: Onboarding's Art/logo.blp).
 """
 import argparse
@@ -369,7 +369,7 @@ def spaced(draw, xy, text, size, fill, spacing):
 
 
 def banner(word, accent, symbol, width=1536, height=512):
-    """The 3 : 1 banner: a dark plate with a thin gold line round it, the badge at the left, SANE UI small over
+    """The 3 : 1 banner: a dark plate with a thin gold line round it, the badge at the left, SANEUI small over
     the addon's word."""
     n = SS
     w, h = width * n, height * n
@@ -387,7 +387,7 @@ def banner(word, accent, symbol, width=1536, height=512):
     words = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(words)
     left = 520 * n
-    spaced(draw, (left, 196 * n), "SANE UI", 70 * n, GOLD_DARK + (255,), 16 * n)
+    spaced(draw, (left, 196 * n), "SANEUI", 70 * n, GOLD_DARK + (255,), 16 * n)
     big = 190 * n if len(word) <= 7 else 150 * n
     room = w - 70 * n - (left - 6 * n)   # a long word (NAVIGATION) made smaller until it fits the plate
     while big > 60 * n and sum(draw.textlength(ch, font=font(big)) + 10 * n for ch in word) > room:
@@ -402,7 +402,7 @@ def banner(word, accent, symbol, width=1536, height=512):
 
 
 def plain(width=1536, height=512):
-    """The plain Sane UI logo, 3 : 1 on a clear ground: Core's badge at the left, SANE UI large beside it, a thin
+    """The plain SaneUI logo, 3 : 1 on a clear ground: Core's badge at the left, SANEUI large beside it, a thin
     gold rule under the words."""
     n = SS
     w, h = width * n, height * n
@@ -411,7 +411,7 @@ def plain(width=1536, height=512):
     canvas.alpha_composite(mark, (40 * n, (h - mark.height) // 2))
     words = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(words)
-    left, word, big = 520 * n, "SANE UI", 200 * n
+    left, word, big = 520 * n, "SANEUI", 200 * n
     room = w - 60 * n - left
     while big > 60 * n and sum(draw.textlength(ch, font=font(big)) + 14 * n for ch in word) > room:
         big -= 4 * n
@@ -442,7 +442,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter,
                                      epilog=__doc__.split("\n\n", 1)[1])
     parser.add_argument("names", nargs="*", metavar="name",
-                        help="the addons to draw: " + ", ".join(ADDONS) + "; saneui: the plain Sane UI logo")
+                        help="the addons to draw: " + ", ".join(ADDONS) + "; saneui: the plain SaneUI logo")
     parser.add_argument("--out", type=Path, default=OUT, help="the folder written into")
     parser.add_argument("--ship", action="store_true", help="the icons and banners into assets/Logos/ too")
     args = parser.parse_args()
