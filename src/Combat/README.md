@@ -30,8 +30,8 @@ Around the mouse, only while they run, two see-through rings: the global cooldow
 the cast's. They go around the whole picture of the cursor, so it stands in their middle, and start and end at its tip.
 
 The threat and damage meter: your party or raid, you on top, each with their class, level, item level and name and
-a thin bar each for threat, damage, healing and interrupts. No title bar and no background, and clicks go through
-it; the mouse on it brings its buttons.
+a thin bar each for threat, damage, healing and interrupts, none at 0: who did nothing is not on it. No title bar and
+no background, and clicks go through it to the world but on its names and buttons; the mouse on it brings its buttons.
 
 The aura history, a window of the full screen: the buffs and debuffs seen on whoever you can attack, newest on top,
 each a proper aura icon (its tooltip, a click its menu: the marks, *Add tracking*), with whom it was on, from whom, when
@@ -334,6 +334,12 @@ Sunder Armor), as you choose, nothing fixed.
   - **The bars:** left to right, in the colour of what they count, its word in the bar and on the right its numbers: per
     second and the fight's total (interrupts: how many). A bar's length is the total against the highest of the fight;
     threat's, while you have a mob as your target (or a boss is there), the share of that mob, up to the point of taking its aggro.
+  - **Nothing at 0** (Saneroki, 2026-11-18: "if someone doesn't do any damage it should not show that line"): a bar
+    whose number is 0 is not drawn (a healer who did no damage has no damage bar), and a character with no bar left,
+    you too, is not on the list. In a fight the game hides the numbers: there a bar stands for whoever its list holds.
+  - **The mouse** (Saneroki, 2026-11-18: "make the window clickthrough on the background"): a click on the window goes
+    through to the world, but on what stands there to be clicked while the mouse is on it: the buttons, each name as
+    far as its words reach (a right click: that character's flyout; the first one drags the window) and the grip.
   - **Its buttons**, with the mouse on it, at the right end of the first line: the arrows and the page's number between
     them go through the fights the game holds (the last page is the live one; a new fight goes back to it); the note
     opens *Saved fights*; the cog the ticks: *My self on top*, *Show Threat*, *Show Damage*, *Show Healing*, *Show
@@ -991,7 +997,14 @@ Sunder Armor), as you choose, nothing fixed.
     differs from the ticks; a saved fight keeps each GUID so its people have theirs. So rows differ in height: the list's extent is
     a calculator, `Fit` takes whole rows from `first` (the wheel moves it, a character a notch), and the scroll box is exactly as
     high as they are, scrolled by `ScrollToElementDataIndex`. A row's `line`, a button over its name that only shows on hover,
-    takes the right click; on the first line `drag` lies over it and takes it. `Types` reads what anybody has (`Shows.Wanted`).
+    takes the right click; on the first line `drag` lies over it and takes it. Both are only as wide as the words reach
+    (`row.reach`: `Row.NAME` and the name's `GetUnboundedStringWidth`, up to the row's width less the buttons' room; `Grab`
+    sizes `drag` from the first row's), so past a name, between the lines and on the bars clicks go through (no
+    `SetPassThroughButtons`: the game blocks it for addons). `Types` reads what anybody has (`Shows.Wanted`).
+  - **Nothing at 0:** `Bars(person)` is `Shows.Of(person)` less what `Row.Has` finds empty: no entry (`Read.Entry`, which asks
+    `Read.One` once per member and kind where the sources' GUIDs are hidden, and keeps it with the read fight), or a plain
+    total not above 0; threat also counts a share of the mob. A secret number may not be asked whether it is 0, so it counts.
+    `Listed` leaves out whoever has no bar, `me` too, before `Lay`; with nobody on the first line `drag` hides.
   - **In sight:** `Wanted()` (Edit Mode, a saved fight, or both Hide ticks satisfied). With *Show on mouseover*
     the frame stays shown and only `block` goes, so `Core.Hover` still hears the mouse's coming; without, the frame hides. Hidden, nothing is read.
     Combat's full screen hides the frame whole (`Meter.Cover`, from `Window.lua`'s `filled` as it begins to fill and its `docked`), so
@@ -1107,6 +1120,9 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-18:** the meter leaves out what is at 0, a bar and a character with none left, and lets clicks through
+  to the world but on its names, buttons and grip (Saneroki: "The damage meter should not show lines that are 0 [...]
+  make the window clickthrough on the background").
 - **2026-11-13:** another druid's mana: one power again (Saneroki: "It doesn't show on the party members [...] revert
   back to how it was with only one class bar"): the game tells a druid's mana in a form to that druid alone, and
   sending it between Sane UIs never came through, so another druid's frames show the power it shows now. Your own keep

@@ -22,7 +22,7 @@ local _, ns = ...
 --  are in your group; what was seen of them is kept until the next /reload, so a
 --  past fight still shows who left since.
 --
---  A read fight is { people, numbers, top, rank, seconds, hidden }:
+--  A read fight is { people, numbers, top, rank, seconds, hidden }; a row asks it for one number by Read.Entry:
 --      numbers[guid].damage = { total, rate }  also healing, interrupts (no rate), threat (and its share)
 --      top.damage                              the highest total, a bar's whole length
 --      rank.damage[guid]                       its place in the game's list
@@ -168,6 +168,21 @@ function Read.One(read, kind, guid)
     end
     if not ok or type(source) ~= "table" then return nil end
     return { total = source.totalAmount }
+end
+
+-- One character's number of a kind in a read fight: from the game's list, else, where that list could not tell who
+-- its sources are, asked for by their GUID (Read.One) once, and kept with the fight for the row that draws it.
+function Read.Entry(read, kind, guid)
+    local numbers = read.numbers[guid]
+    local entry = numbers and numbers[kind]
+    if entry or not read.unknown then return entry end
+    read.asked = read.asked or {}
+    local key = guid .. " " .. kind
+    if read.asked[key] then return nil end
+    read.asked[key] = true
+    entry = Read.One(read, kind, guid)
+    if entry then Numbers(read, guid)[kind] = entry end
+    return entry
 end
 
 -- Whoever fought in a past fight, as far as they are known, and you, in it or not.

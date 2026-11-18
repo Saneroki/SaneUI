@@ -284,12 +284,27 @@ check(Bar(mine, "Damage").value._text:find("3000", 1, true) and Bar(mine, "Damag
     "its numbers: per second and the whole fight")
 check(Bar(mine, "Interrupts").value._text == "1", "interrupts: a count alone")
 check(Bar(healer, "Healing")._barColor[2] > Bar(healer, "Healing")._barColor[1], "healing green")
-check(Bar(mine, "Threat") and Bar(mine, "Damage") and Bar(mine, "Healing") and Bar(mine, "Interrupts"), "a bar for each thing")
+check(Bar(mine, "Damage") and Bar(mine, "Healing") and Bar(mine, "Interrupts"), "a bar for each thing")
+check(Bar(mine, "Threat") == nil and mine:GetHeight() == Row.Height(3), "but nothing at 0: no threat yet, no bar for it")
+local dorinRow = Find("Dorin Dunmere")
+check(Bar(dorinRow, "Damage") and not Bar(dorinRow, "Healing") and not Bar(dorinRow, "Interrupts"),
+    "who healed nobody and interrupted nothing has damage alone")
+check(Bar(Find("Brisa Ashford"), "Interrupts") and not Bar(Find("Brisa Ashford"), "Healing"), "each their own")
 
-Set("meterThreat", false)
-check(Bar(mine, "Threat") == nil and Bar(mine, "Damage") ~= nil, "unticked, on every character")
-check(mine:GetHeight() == Row.Height(3), "and the row is lower")
-Set("meterThreat", true)
+Set("meterInterrupts", false)
+check(Bar(mine, "Interrupts") == nil and Bar(mine, "Damage") ~= nil, "unticked, on every character")
+check(mine:GetHeight() == Row.Height(2), "and the row is lower")
+Set("meterInterrupts", true)
+
+-- Nothing at 0: who has no bar left is not on the list, your own line neither.
+local hogger = fights[1].list
+fights[1].list = Session(Numbers({ ["Player-1-1"] = { damage = 0, healing = 0 }, ["Player-1-4"] = { damage = 50 },
+                                   ["Player-1-2"] = { damage = 0, interrupts = 0 } }), 10)
+Meter.Refresh()
+check(Order() == "Dorin" and not mine._shown, "who did nothing is not there, you neither")
+fights[1].list = hogger
+Meter.Refresh()
+check(Order() == "Dorin, Brisa, Caelum" and mine._shown, "all back once they have something")
 
 Set("meterMine", false)
 check(Order():find("Droopy", 1, true) and Order():find("^Dorin"), "My self on top off: you among the others")
@@ -307,10 +322,10 @@ for _, one in ipairs(asked) do rate = rate or one.type == Enum.DamageMeterType.D
 check(rate, "by DPS the game's list by DPS is read")
 
 -- Only as many as fit, the wheel for the rest.
-frame._height = Row.Height(4) * 2 + 1
+frame._height = Row.Height(3) + Row.Height(1) + Row.Height(2) + 1 -- you, Dorin and Brisa; Caelum not
 frame:GetScript("OnSizeChanged")(frame)
 check(frame._wheel == true, "more than fit: the wheel scrolls them")
-check(box._height == Row.Height(4), "whole rows only")
+check(box._height == Row.Height(1) + Row.Height(2), "whole rows only")
 frame:GetScript("OnMouseWheel")(frame, -1)
 check(box.first == 2, "a character a notch")
 frame:GetScript("OnMouseWheel")(frame, -1)
@@ -346,6 +361,24 @@ frame._mouseOver = true
 frame:GetScript("OnEnter")(frame)
 check(controls._shown and frame.drag._shown, "the mouse on it: the buttons, and the first line to drag it by")
 check(handle:Draggable(), "which moves a window without a title bar")
+-- Clicks go through to the world but on what stands there to be clicked: a name as far as its words reach, the
+-- first one to drag by, the buttons and the grip.
+local reach = Row.NAME + #mine.name._text * 6 -- the stand-in's words are 6 wide a letter
+check(mine.line._shown and mine.line._width == reach and mine.line:GetNumPoints() == 1, "a name takes the mouse as far as it reaches")
+check(frame.drag._width == reach, "and so does the first line's drag: past it a click goes through")
+check(not block:IsMouseEnabled() and not box:IsMouseEnabled() and not Bar(mine, "Damage"):IsMouseEnabled(),
+    "the list and its bars take no click")
+block._width = 120
+Meter.Refresh()
+check(mine.reach == 120 - ns.MeterControls.WIDTH and frame.drag._width == mine.reach, "a long name stops before the buttons")
+block._width = nil
+fights[1].list = Session(Numbers({ ["Player-1-1"] = { damage = 0 } }), 10)
+Meter.Refresh()
+check(Order() == "" and not mine._shown and not frame.drag._shown and controls._shown,
+    "nobody on the first line: nothing to drag by, the buttons still there")
+fights[1].list = hogger
+Meter.Refresh()
+check(frame.drag._shown and frame.drag.person == mine.line.person, "somebody again, the drag again")
 frame._mouseOver = false
 W.Wait(1)
 for _ = 1, 20 do
@@ -397,40 +430,41 @@ local function Choice(words)
         if item.text == words then return item end
     end
 end
-Set("meterDamage", false)
+Set("meterThreat", false)
 Set("meterHealing", false)
 Set("meterInterrupts", false)
 local brisaRow = Find("Brisa Ashford")
-check(Bar(brisaRow, "Threat") and not Bar(brisaRow, "Damage"), "the window set to threat alone")
+check(Bar(brisaRow, "Damage") and not Bar(brisaRow, "Interrupts"), "the window set to damage alone")
 check(not brisaRow.line._shown, "a name takes no click at rest")
 frame:GetScript("OnEnter")(frame)
 frame._mouseOver = true
 check(brisaRow.line._shown, "with the mouse on the window it does")
 brisaRow.line:GetScript("OnClick")(brisaRow.line, "RightButton")
-check(Choice("Show Damage") and not Choice("Show Damage").checked("damage"), "a right click on a name: that character's own flyout")
-Choice("Show Damage").fn("damage")
+check(Choice("Show Interrupts") and not Choice("Show Interrupts").checked("interrupts"),
+    "a right click on a name: that character's own flyout")
+Choice("Show Interrupts").fn("interrupts")
 brisaRow = Find("Brisa Ashford")
-check(Bar(brisaRow, "Threat") and Bar(brisaRow, "Damage"), "damage for that character alone")
-check(not Bar(Find("Dorin Dunmere"), "Damage"), "and for nobody else")
+check(Bar(brisaRow, "Damage") and Bar(brisaRow, "Interrupts"), "interrupts for that character alone")
+check(not Bar(mine, "Interrupts"), "and for nobody else")
 check(box.view.extent(nil, brisaRow.line.person) > box.view.extent(nil, Find("Dorin Dunmere").line.person),
     "their row is higher")
-check(ns.store.meterPeople[GUID.raid2].damage == true, "kept by who they are")
+check(ns.store.meterPeople[GUID.raid2].interrupts == true, "kept by who they are")
 frame.drag:GetScript("OnMouseUp")(frame.drag, "RightButton")
-check(Choice("Show Threat").checked("threat"), "your own line's name takes it too")
-Choice("Show Threat").fn("threat")
-check(not Bar(mine, "Threat") and #Find("Dorin Dunmere").bars >= 1, "and a bar can go for one character as well")
+check(Choice("Show Healing") and not Choice("Show Healing").checked("healing"), "your own line's name takes it too")
+Choice("Show Healing").fn("healing")
+check(Bar(mine, "Healing") and not Bar(Find("Caelum Crowley"), "Healing"), "a bar for one character as well")
 frame.drag:GetScript("OnMouseUp")(frame.drag, "RightButton") -- the game's menu builds itself anew after a tick
 Choice("As the window's ticks").fn()
-check(Bar(mine, "Threat") and ns.store.meterPeople[GUID.player] == nil, "as the window's ticks again")
+check(not Bar(mine, "Healing") and ns.store.meterPeople[GUID.player] == nil, "as the window's ticks again")
 brisaRow.line:GetScript("OnClick")(brisaRow.line, "RightButton")
-Set("meterDamage", true)
-Choice("Show Damage").fn("damage")
-check(not Bar(Find("Brisa Ashford"), "Damage") and Bar(Find("Dorin Dunmere"), "Damage"),
-    "with the window showing damage, one character can do without")
-Choice("Show Damage").fn("damage")
-check(ns.store.meterPeople[GUID.raid2] == nil, "what comes out as the ticks is no choice of its own")
-Set("meterHealing", true)
 Set("meterInterrupts", true)
+Choice("Show Interrupts").fn("interrupts")
+check(not Bar(Find("Brisa Ashford"), "Interrupts") and Bar(mine, "Interrupts"),
+    "with the window showing interrupts, one character can do without")
+Choice("Show Interrupts").fn("interrupts")
+check(ns.store.meterPeople[GUID.raid2] == nil, "what comes out as the ticks is no choice of its own")
+Set("meterThreat", true)
+Set("meterHealing", true)
 frame._mouseOver = false
 for _ = 1, 20 do
     for _, widget in ipairs(W.frames) do
@@ -499,7 +533,8 @@ W.Combat(true)
 Meter.Refresh()
 check(not ns.off, "no number hidden by the game was compared or computed")
 check(issecretvalue(Bar(mine, "Damage")._value) and issecretvalue(Bar(mine, "Damage")._max), "they go to the bar as they came")
-check(Order() == "Caelum, Dorin, Brisa", "sorted by the places on the game's list")
+check(Order() == "Caelum, Dorin", "sorted by the places on the game's list, who is not on it left out")
+check(issecretvalue(Bar(mine, "Healing")._value), "a number it hides is shown, as it may not be asked whether it is 0")
 check(issecretvalue(Bar(mine, "Threat")._value), "a share on a boss too")
 check(Bar(mine, "Threat").value._text ~= nil, "and into its words")
 

@@ -4,9 +4,11 @@ local _, ns = ...
 --  Sane UI - Combat - Meter - Row
 --  One character on the meter: a line with their class's icon, level, item level
 --  and name, and under it a bar for each thing shown, left to right, in its own
---  colour, its name in it and its numbers at its right end. Nothing else: no
---  background, and nothing takes the mouse but, while the mouse is on the window, the
---  line with the name for a right click (Controls.Character).
+--  colour, its name in it and its numbers at its right end. A bar at 0 is not drawn
+--  (Row.Has): the meter leaves out what says nothing. Nothing else: no background,
+--  and nothing takes the mouse but, while the mouse is on the window, the line with
+--  the name for a right click (Controls.Character), only as far as its words reach:
+--  past the name, between the lines and on the bars clicks go through to the world.
 --
 --  A bar's length is the character's total against the highest of the fight; threat's,
 --  while there is a mob, their share of it, as the game counts aggro.
@@ -24,6 +26,7 @@ Row.ICON = 13    -- the class's icon
 Row.LEVEL = 16   -- the room for the level
 Row.ITEM = 22    -- the room for the item level
 Row.TEXT = 3     -- the words in a bar from its ends
+Row.NAME = Row.ICON + 3 + Row.LEVEL + Row.ITEM + 2 -- where the name begins on its line
 Row.ALPHA = 0.42 -- a bar's fill: subtle, the world still shows through
 Row.FONT = "NumberFontNormalSmall" -- the game's own meter writes in this family: outlined, read over anything
 Row.FILL = "Interface\\Buttons\\WHITE8X8"
@@ -53,6 +56,23 @@ local function Short(number)
     return AbbreviateLargeNumbers(Given(number))
 end
 
+-- Whether a number says something: one the game hides (in a fight) may not be asked what it is, so it does; a plain
+-- one above 0.
+local function Some(number)
+    if Core.Secret(number) then return true end
+    return type(number) == "number" and number > 0
+end
+
+-- Whether that character's bar of that kind has something to show, in a read fight (Read.Fight): a number above 0;
+-- threat also a share of the mob while there is one. In a fight, where the game hides its numbers, whoever its list
+-- holds of that kind.
+function Row.Has(read, person, kind)
+    local entry = ns.MeterRead.Entry(read, kind, person.guid)
+    if not entry then return false end
+    if kind == "threat" and Some(entry.share) then return true end
+    return Some(entry.total)
+end
+
 local function Bar(row, index)
     local bar = CreateFrame("StatusBar", nil, row)
     bar:SetStatusBarTexture(Row.FILL)
@@ -75,8 +95,7 @@ local function Make(row)
     row.bars = {}
     row.line = CreateFrame("Button", nil, row)
     row.line:SetPoint("TOPLEFT")
-    row.line:SetPoint("TOPRIGHT")
-    row.line:SetHeight(Row.LINE)
+    row.line:SetSize(Row.NAME, Row.LINE) -- as wide as its words: Reach
     row.line:RegisterForClicks("RightButtonUp")
     row.line:SetScript("OnClick", ns.Guard(Picked))
     row.line:Hide()
@@ -143,10 +162,20 @@ local function Amount(bar, kind, entry, top)
     Rated(bar.value, entry)
 end
 
+-- How far the line's words reach from its left: the icon, level and item level, and the name as far as it shows
+-- (wide: the row's width, where known; room: what stays free at its right end).
+local function Reach(row, room, wide)
+    local name = row.name
+    local text = name.GetUnboundedStringWidth and name:GetUnboundedStringWidth() or name:GetStringWidth() or 0
+    local reach = Row.NAME + text
+    if wide and wide > room then reach = math.min(reach, wide - room) end
+    return math.max(reach, Row.ICON)
+end
+
 -- That character's line and a bar for each of kinds, from a read fight (Read.Fight). room: what stays free at the
 -- line's right end (the buttons stand there on the first line); live: the mouse is on the window, the line takes a
--- right click.
-function Row.Draw(row, person, read, kinds, room, live)
+-- right click; wide: the row's width. row.reach: how far its words reach, all of the line that takes the mouse.
+function Row.Draw(row, person, read, kinds, room, live, wide)
     if not row.bars then Make(row) end
     row.line.person = person
     row.line:SetShown(live and true or false)
@@ -158,14 +187,14 @@ function Row.Draw(row, person, read, kinds, room, live)
         row.room = room
         row.name:SetPoint("RIGHT", row, "TOPRIGHT", -room, -Row.LINE / 2)
     end
-    local numbers = read.numbers[person.guid]
+    row.reach = Reach(row, room, wide)
+    row.line:SetWidth(row.reach)
     for index, kind in ipairs(kinds) do
         local bar = row.bars[index] or Bar(row, index)
         local colour = Row.COLOURS[kind]
         bar:SetStatusBarColor(colour[1], colour[2], colour[3], Row.ALPHA)
         bar.label:SetText(ns.TEXT.meterKinds[kind])
-        local entry = numbers and numbers[kind]
-        if not entry and read.unknown then entry = ns.MeterRead.One(read, kind, person.guid) end
+        local entry = ns.MeterRead.Entry(read, kind, person.guid)
         if kind == "threat" then Threat(bar, entry, read.top.threat) else Amount(bar, kind, entry, read.top[kind]) end
         bar:Show()
     end
