@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - LevelUp
+--  SaneUI - Inventory - LevelUp
 --  A new level, told once below the screen's top, right of its middle beside
 --  the guide's arrow (Saneroki, 2026-11-04), in place of the game's toast and
 --  its lines in the chat (Saneroki, 2026-10-30):

@@ -13,7 +13,7 @@
 #   [[job]]
 #   name = "instancemaps"                            # letters, digits, - and _; its log is <name>.log
 #   priority = 2
-#   command = ["dev/tools/map-layers", "paint"]      # run from Sane UI's folder; run again after each stop
+#   command = ["dev/tools/map-layers", "paint"]      # run from SaneUI's folder; run again after each stop
 #   status = ["dev/tools/map-layers", "status"]      # optional: its first line shows in gpu-runner status
 #   done = '^(\d+) of \1 paintings made'             # optional: finished when status's output matches this
 #   comfyui = true                                   # false: the job needs no ComfyUI (the runner leaves it off)

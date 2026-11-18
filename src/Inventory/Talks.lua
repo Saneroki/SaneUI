@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Talks
+--  SaneUI - Inventory - Talks
 --  The full screen at a vendor and a banker (Saneroki, 2026-11-09): "When
 --  vendor is open show vendor on the left and the bags on the right in the
 --  fullscreen", "When the banker is open show the banker window on the right

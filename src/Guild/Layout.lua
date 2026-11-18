@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Layout
+--  SaneUI - Guild - Layout
 --  Every size and spacing of the guild window in one place, and the arithmetic
 --  that follows from the room it has (Doc/guides/gui-development.md, *Layout*).
 --  Knows no frames, so the tests can check it.

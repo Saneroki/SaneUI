@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Figures
+--  SaneUI - Tooltips - Figures
 --  Which 3D model a tooltip's thing has (Panel.lua, the option models). A
 --  unit's is its own (Kinds/Unit.lua: its portrait); here are a thing's:
 --

@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Fuzzy
+--  SaneUI - Core - Fuzzy
 --  Finding what was typed in a text, forgivingly: whole, as a piece of it, as
 --  the first letters of its words, or as letters spread through it in their
 --  order. What a window's search box (Window.lua) hands its module, and what

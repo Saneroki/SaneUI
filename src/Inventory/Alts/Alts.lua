@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Alts
+--  SaneUI - Inventory - Alts
 --  Another character's things, in the bags' own window (Bags.lua; Saneroki,
 --  2026-11-15: "keep our bags window but add the search and dropdown menu to
 --  select other characters to the proper bags window that we had before"):

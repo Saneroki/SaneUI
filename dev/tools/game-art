@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The game's own interface art, numbered (Saneroki, 2026-10-30): the frames, panels, buttons, tabs, bars and ornaments
 of Forever's look, cut out of the newest export and laid out on one page, so Saneroki can go through them and say
-what Sane UI's windows are built from.
+what SaneUI's windows are built from.
 
   dev/tools/game-art make        cuts the catalogue into assets/generated/game-art (saneui makegameart)
   dev/tools/game-art find WORD   the numbers and atlases whose name holds WORD

@@ -2,7 +2,7 @@ local ADDON = ...
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Shape
+--  SaneUI - Core - Shape
 --  The plate a window stands on: a fill with round corners, and a thin trim
 --  along its edge that follows their round. How round is a setting of the
 --  window's (Shape.Options):
@@ -405,7 +405,7 @@ local function Face()
     return face
 end
 
--- size: in 1080p pixels, as Sane UI's other words. On the game's font object, as Nameplates' Text.lua: its shadow is
+-- size: in 1080p pixels, as SaneUI's other words. On the game's font object, as Nameplates' Text.lua: its shadow is
 -- the game's, none of ours.
 function Shape.BarFont(fs, size)
     local look = Face()

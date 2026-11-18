@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Face
+--  SaneUI - Abilities - Macros - Face
 --  Our button lying over a bar button: the macro's look there and its own press
 --  (the same hub, Press.lua). It sits in the bar's frame, so it comes and goes
 --  with the bar, at rest too, and it never touches the game's button, which

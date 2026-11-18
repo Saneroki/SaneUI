@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync - Chat: the chat channels of your own, and the chat
+--  SaneUI - Core - Sync - Chat: the chat channels of your own, and the chat
 --  windows (their tabs, what each shows, where they stand) with the colours of
 --  the kinds of chat. The game's own channels, joined or left, are the Social
 --  module's.

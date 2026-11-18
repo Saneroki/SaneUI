@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Prices
+--  SaneUI - Core - Data - Prices
 --  What a thing fetches at the auction house, for every view: the one place a price is read (Doc/guides/data.md,
 --  *Prices*). A price comes from what the game told last: the auction house's own lists while you look at them
 --  (browsing, an item's offers), newest of all, else the last full scan that saw the thing (Scan.lua), kept in

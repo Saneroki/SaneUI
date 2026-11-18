@@ -24,7 +24,7 @@ check(Core and Core.VERSION == "1.2.3", "the addons share one table, SaneUI; the
 
 -- An error before the saved settings are there
 check(Core.Safe("early", function() error("too soon") end) == nil and printedMatch("problem in early. Type /sane bug"), "a failing step is caught and told")
-check(printedMatch("Sane UI's Discord: discord%.gg/" .. Core.DISCORD:match("[^/]+$") .. "$"), "and the line ends with the Discord's invite, short, to type")
+check(printedMatch("SaneUI's Discord: discord%.gg/" .. Core.DISCORD:match("[^/]+$") .. "$"), "and the line ends with the Discord's invite, short, to type")
 W.printed = {}
 SlashCmdList.SANEUI("")
 check(printedMatch("version 1%.2%.3%. No module is switched on") and printedMatch("/sane options"), "/sane alone says so when no module is switched on")
@@ -102,7 +102,7 @@ check(Core.Config and SaneUI.Settings == nil and SaneUI.Sync == nil and Core.Syn
 SettingsPanel = W.NewWidget("Frame", "SettingsPanel") -- the game's options window
 SettingsPanel:Hide() -- closed: its OnShow is run by hand below; the save window's checks (sync.lua) open it
 -- The game finds a picture only if its file is there: Interface\AddOns\SaneUI_<Module>\<path> is
--- assets/optimized/<Module>/<path>.blp (SaneUI: Core), put in by dev/build. So Core has its banner (Sane UI's), the Demo module none.
+-- assets/optimized/<Module>/<path>.blp (SaneUI: Core), put in by dev/build. So Core has its banner (SaneUI's), the Demo module none.
 function W.methods:SetTexture(file)
     self._texture = file
     local addon, path = tostring(file):match("^Interface\\AddOns\\([%w_]+)\\(.+)$")
@@ -191,10 +191,10 @@ check(Core.Character(demo.name).note == "mine", "and found again")
 
 -- The options pages -----------------------------------------------------------------
 local top, profilesPage, general, appearance, page = unpack(W.options.pages)
-check(top.name == "Sane UI" and top.registered and not top.parent, "the game's options get one entry, Sane UI")
+check(top.name == "SaneUI" and top.registered and not top.parent, "the game's options get one entry, SaneUI")
 local banner = top.items[1]
 check(banner.template == "SaneUISettingsBannerTemplate" and banner.data.file == "Interface\\AddOns\\SaneUI\\Art\\banner",
-    "its own page starts with Sane UI's banner")
+    "its own page starts with SaneUI's banner")
 
 -- Under it: the links and feedback (About.lua)
 local About = Config.About
@@ -219,7 +219,7 @@ check(#W.popups == 1, "one without an address shows nothing")
 local bug, idea = About.KINDS[1], About.KINDS[2]
 Core.log[#Core.log + 1] = { when = "2026-10-16 12:00:00", label = "Test", text = "broke\nat line 1", count = 2 }
 local report = About.Report(bug, "  The bar vanished.  ")
-check(report:find("Sane UI Bug report: 1.2.3", 1, true) and report:find("Game 1.60.1 (70245), enUS", 1, true)
+check(report:find("SaneUI Bug report: 1.2.3", 1, true) and report:find("Game 1.60.1 (70245), enUS", 1, true)
     and report:find("Character: MAGE", 1, true) and report:find("\nThe bar vanished.\n", 1, true)
     and report:find("- Test (2026-10-16 12:00:00, 2x): broke | at line 1", 1, true),
     "a bug report carries the versions, the class, what was written and the latest errors")
@@ -236,7 +236,7 @@ window.Box:SetText("The bar vanished.")
 About.Toggle()
 check(window.made and window.Box:GetText():find("Latest errors", 1, true) and window.Make:GetText() == About.TEXT.edit,
     "written, it makes the report to copy")
-check(window.Ask:GetText():find("#bug-reports on Sane UI's Discord", 1, true), "a bug is pasted into the Discord's forum for bugs")
+check(window.Ask:GetText():find("#bug-reports on SaneUI's Discord", 1, true), "a bug is pasted into the Discord's forum for bugs")
 About.Toggle()
 check(not window.made and window.Box:GetText() == "The bar vanished.", "and goes back to what was written")
 window:Hide()
@@ -263,11 +263,11 @@ window:Hide()
 table.remove(Core.log)
 check(profilesPage.name == "Profiles" and general.name == "General" and appearance.name == "Appearance"
     and profilesPage.parent == top and general.parent == top and appearance.parent == top,
-    "under it first Sane UI's own pages: Profiles, General, Appearance")
+    "under it first SaneUI's own pages: Profiles, General, Appearance")
 local resetRow = general.items[4]
 check(#general.items == 11 and general.items[1].header == "Errors" and general.items[2].setting.name == "Errors in chat" and general.items[3].header == "Windows"
     and resetRow and resetRow.button == "Reset window positions", "General: the switches of no module, and a button that puts every window back")
-check(general.items[5].header == "Units" and general.items[6].setting.name == "Units", "and how Sane UI writes distances and the time")
+check(general.items[5].header == "Units" and general.items[6].setting.name == "Units", "and how SaneUI writes distances and the time")
 check(general.items[7].header == "Data" and general.items[8].setting.name == "Share data with my guild and group"
     and general.items[9].setting.name == "Chat message for new data changes" and general.items[10].setting.name == "Chat message for new auction house data"
     and general.items[11].button == "Forget shared data",
@@ -304,7 +304,7 @@ local resetAll, resets = Core.Window.ResetAll, 0
 Core.Window.ResetAll = function() resets = resets + 1 end
 resetRow.click()
 Core.Window.ResetAll = resetAll
-check(resets == 1, "the button puts every window of Sane UI back")
+check(resets == 1, "the button puts every window of SaneUI back")
 local windows, animations, motion = appearance.items[1], appearance.items[2], appearance.items[3]
 local kinds = {}
 for index, choice in ipairs(motion and motion.options and motion.options() or {}) do kinds[index] = choice.value .. "=" .. choice.label end
@@ -627,7 +627,7 @@ do
     other:Hide()
 end
 
--- Sane UI's options on a full screen (Screen.lua): the pages the game's options have under Sane UI, in a view over
+-- SaneUI's options on a full screen (Screen.lua): the pages the game's options have under SaneUI, in a view over
 -- the window, the window's own module chosen first; Esc takes the view away, not the full screen ----------------
 do
     local Screen = Config.Screen
@@ -664,7 +664,7 @@ do
         return false
     end
     check(table.concat(names, ", ") == "General, Appearance, Demo module, Listed module, Tabbed module",
-        "at the left Sane UI's pages as the game's options list them: General, Appearance, a page per module")
+        "at the left SaneUI's pages as the game's options list them: General, Appearance, a page per module")
     check(rows["Tabbed module"].bar._shown and not rows.General.bar._shown and Says("Tabbed module") and Says("Fade out"),
         "the window's own module chosen first, its page drawn as in the game's options")
     rows.General._scripts.OnClick(rows.General)
@@ -906,14 +906,14 @@ dialog.data.callback()
 check(Profiles.InUse() == "Solo" and held.loud == false and SaneUIDB.profiles.Accountwide.Demo.loud == false and SaneUIDB.profiles.Accountwide.Demo ~= held,
     "the profile in use takes the other's settings, as a copy")
 
--- Defaults: Sane UI's settings in the profile in use back to their defaults; the game's stay
+-- Defaults: SaneUI's settings in the profile in use back to their defaults; the game's stay
 local syncTaken = Core.Settings("Sync").taken
 syncTaken.marker = { kept = true }
 shy.setting:SetValue(false)
 Click(buttons.Defaults)
 Dialog().data.callback()
 check(held.loud == true and held.shy == false and Core.Settings("Sync").taken.marker and Core.Settings("Sync").taken.marker.kept,
-    "every setting of Sane UI at its default, the game's as they were")
+    "every setting of SaneUI at its default, the game's as they were")
 syncTaken.marker = nil
 
 -- Export and import, as a line of text
@@ -921,7 +921,7 @@ Click(buttons.Export)
 local textWindow = SaneUIProfileText
 local text = textWindow.Box:GetText()
 local value = Core.Serial.Read(text)
-check(textWindow:IsShown() and type(value) == "table" and value.kind == "Sane UI profile" and value.name == "Solo"
+check(textWindow:IsShown() and type(value) == "table" and value.kind == "SaneUI profile" and value.name == "Solo"
     and value.settings.Demo.loud == true, "Export shows the profile in use as a line of text to copy")
 textWindow:Hide()
 Click(buttons.Import)
@@ -937,7 +937,7 @@ check(Profiles.Import("nonsense") == false and Profiles.Import(Core.Serial.Write
 -- A profile from another player keeps of its single CVars (Sync's named) only those the game's options set, and
 -- nothing of that player's addons and key bindings (Sync.PERSONAL).
 do
-    local theirs = Core.Serial.Write({ kind = "Sane UI profile", version = 2, name = "Theirs",
+    local theirs = Core.Serial.Write({ kind = "SaneUI profile", version = 2, name = "Theirs",
         settings = { Sync = { named = { autoLootDefault = "1", scriptErrors = "1" }, taken = { addons = { One = false },
             keyBindings = { JUMP = { "X" } }, CONTROLS_LABEL = { cvars = { autoLootDefault = "1" } },
             ownChannels = { "Raiders", left = { world = "World" } } } } } })
@@ -1028,7 +1028,7 @@ shy.setting:SetValue(false)
 
 W.printed = {}
 SlashCmdList.SANEUI("options")
-check(W.options.opened == top.id, "/sane options opens the options, at Sane UI")
+check(W.options.opened == top.id, "/sane options opens the options, at SaneUI")
 W.options.opened = nil
 SaneUI_OnAddonCompartmentClick()
 check(W.options.opened == top.id, "and so does the minimap's addon list")
@@ -1121,7 +1121,7 @@ check(graphics.checked(graphics.data) and Listed() == "graphicsQuality", "one of
 local every = Item("Every kind")
 every.fn(every.data)
 W.Wait(0.2)
-check(Item("Kept with Sane UI") and #frame.List._provider.rows == 5, "and a filter for the CVars Sync keeps")
+check(Item("Kept with SaneUI") and #frame.List._provider.rows == 5, "and a filter for the CVars Sync keeps")
 
 -- A row
 local row = Made(SaneUISettingsCVarRowMixin, { Name = W.NewWidget("FontString"), Label = W.NewWidget("FontString"),
@@ -1316,7 +1316,7 @@ ahead["X-SaneUI-Core"] = "1.3.0"
 W.printed = {}
 W.Fire("ADDON_LOADED", "SaneUI_Ahead")
 W.Fire("ADDON_LOADED", "SaneUI_Ahead")
-check(#W.printed == 1 and printedMatch("Maps was made with Sane UI 1%.3%.0, and this is 1%.2%.3: update Sane UI too"),
+check(#W.printed == 1 and printedMatch("Maps was made with SaneUI 1%.3%.0, and this is 1%.2%.3: update SaneUI too"),
     "a Core older than a module's is told once, in a line")
 table.remove(W.addons)
 W.printed = {}
@@ -1524,7 +1524,7 @@ W.combat = true
 check(Core.Locked(guarded) and not Core.Locked(W.NewWidget("Frame")), "Core.Locked: a protected frame in a fight")
 W.combat = false
 
--- An action the game blocked because of Sane UI's code is noted; another addon's is not ours
+-- An action the game blocked because of SaneUI's code is noted; another addon's is not ours
 W.printed = {}
 W.Fire("ADDON_ACTION_BLOCKED", "SaneUI_Social", "Frame:Hide()")
 W.Fire("ADDON_ACTION_FORBIDDEN", "SomeOther", "CastSpell()")
@@ -1773,7 +1773,7 @@ do
         "Accountwide none of them: it is made from a player's own settings (Saneroki, 2026-11-15)")
     check(fast.named.farclip == "10000" and fast.named.worldPreloadNonCritical == "0" and fast.named.shadowMode == "4"
         and fast.named.groundEffectDensity == "256", "how far and how much the world shows, and loading screens that do not wait")
-    check(fast.named.waterDetail == nil, "no water detail: Sane UI never sets it")
+    check(fast.named.waterDetail == nil, "no water detail: SaneUI never sets it")
     check(fast.named.ffxDeath == "0" and fast.named.maxFPS == "115" and fast.solo == nil,
         "and nothing that stops or slows you")
     check(Profiles.SetCharacter(Profiles.NEW, Profiles.OWN) and Profiles.Character(Profiles.NEW).profile == Profiles.OWN,
@@ -1857,7 +1857,7 @@ Profiles.Use("Accountwide")
 check(shaped.size == "large" and SaneUIDB.profiles.Raid.Shaped._version == 2, "each copy carries its own version")
 Profiles.Use("Raid")
 
--- The first shape of these settings (an earlier version of Sane UI) is brought over once
+-- The first shape of these settings (an earlier version of SaneUI) is brought over once
 UnitGUID = guid
 NextSession({
     modules = { Demo = { options = { loud = false, shy = true }, version = 1 }, Chat = { options = { window = false } } },
@@ -2075,7 +2075,7 @@ check(Core.Data.Set("Quests"):State() == "missing" and Core.Data.Set("Quests"):G
 local People = Core.People
 check(W.menuModifiers.MENU_UNIT_FRIEND and W.menuModifiers.MENU_UNIT_GUILD and W.menuModifiers.MENU_UNIT_TARGET
     and W.menuModifiers.MENU_UNIT_COMMUNITIES_GUILD_MEMBER and W.menuModifiers.MENU_UNIT_CHAT_ROSTER,
-    "the game's menus of a player (a chat name, friends, the guild, the target) get Sane UI's lines")
+    "the game's menus of a player (a chat name, friends, the guild, the target) get SaneUI's lines")
 local lines = {}
 W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Droopy Fairwind" })
 check(#lines == 2 and lines[1].text == "Set Alias" and lines[2].text == "Set Note" and not lines[1].tooltip,

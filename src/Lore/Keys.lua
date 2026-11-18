@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Keys
+--  SaneUI - Lore - Keys
 --  Space goes on while the talk shows (the setting Space goes on): an override
 --  binding of ours (SetOverrideBindingClick, on a button of ours) that lives
 --  exactly as long as the talk, and is given back the moment it ends. Every

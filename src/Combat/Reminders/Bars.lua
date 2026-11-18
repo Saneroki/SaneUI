@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Reminders - Bars
+--  SaneUI - Combat - Reminders - Bars
 --  The reminder bars: invisible, like an action bar with no buttons, placed in
 --  Edit Mode. Only the icons of what shows now can be seen, side by side and
 --  centred on the bar's place, so a bar is as wide as what it holds. A bar's

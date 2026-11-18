@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests of dev/saneui, the one command of Sane UI's scripts: every command runs a script that is there, the names
+"""Tests of dev/saneui, the one command of SaneUI's scripts: every command runs a script that is there, the names
 are one word of small letters, every script in dev/, dev/tools/ and Scripts/ has one, the greeting card's words fit
 its column, completion offers what may follow.
 Run by dev/tests/run."""

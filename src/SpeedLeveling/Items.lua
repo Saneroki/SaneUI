@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Items
+--  SaneUI - Speed Leveling - Items
 --  What the key uses; Key.lua writes it into the macro of Find, out of a
 --  fight only:
 --    the hearth  when the step at hand of your leveling guide wants it (its

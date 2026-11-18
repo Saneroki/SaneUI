@@ -1,7 +1,7 @@
 <Bindings>
-	<!-- Navigation's keys, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua; their
+	<!-- Navigation's keys, in the game's key bindings under SaneUI (BINDING_HEADER_SANEUI, Core's Bindings.lua; their
 	     words in Native.lua and FindBox.lua); the game reads this file from the addon's folder by itself. -->
-	<!-- Sane UI's map full screen and back (Native.lua: once it has a key, the game's map key opens the game's map). -->
+	<!-- SaneUI's map full screen and back (Native.lua: once it has a key, the game's map key opens the game's map). -->
 	<Binding name="SANEUI_MAP" category="BINDING_HEADER_SANEUI">
 		SaneUI.Navigation.Safe("map key", SaneUI.Navigation.Native.Own)
 	</Binding>

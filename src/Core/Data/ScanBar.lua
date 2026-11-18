@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Scan bar
+--  SaneUI - Core - Data - Scan bar
 --  The full scan on the game's auction house window: a bar under its bottom right corner, beside the
 --  window's tabs, that says the scan started, how far it is, that it finished, and when the next one comes.
 --  It fills as the rows are read and then runs down to the next scan; pressed, it starts one now. At its right

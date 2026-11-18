@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The interface lab: Sane UI's Lua drawn in the browser as the game would draw it (Doc/guides/ui-lab.md).
+"""The interface lab: SaneUI's Lua drawn in the browser as the game would draw it (Doc/guides/ui-lab.md).
 
   saneui showuilab                         the lab in a browser (dev/tools/web-pages serves it at /lab/)
   dev/tools/ui-lab serve --port PORT       a session's own server with a lab of its own (web-pages run --port)

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Rolls
+--  SaneUI - Loot - Rolls
 --  When your group rolls for a thing (START_LOOT_ROLL), a card that is one
 --  line of the loot window (Row.lua; Saneroki, 2026-11-02: the same design): a
 --  bar as the nameplates' in the thing's quality colour, its picture at the

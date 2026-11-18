@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Gold
+--  SaneUI - Tooltips - Kinds - Gold
 --  An item's Gold section (Kinds/Item.lua draws it last): what one of the item
 --  brings in, two ways, and in one line what to do with it. Always for one,
 --  also when you point at a stack: the ways compare one to one.

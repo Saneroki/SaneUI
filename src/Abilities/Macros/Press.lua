@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Press
+--  SaneUI - Abilities - Macros - Press
 --  A macro's secure button, the hub: it holds the macro's turns and where the
 --  macro stands, in numbered attributes, and a key clicks it. A bar button of
 --  the macro (Face.lua) is a button of its own that reads the same hub.

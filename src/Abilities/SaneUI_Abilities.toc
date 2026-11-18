@@ -1,9 +1,9 @@
 ## Interface: 16001, 120105
 ## Title: Abilities
-## Notes: Sane UI's spells and abilities. Docked at the screen's bottom middle: click the middle of the bottom edge, or press your spellbook or talents key, and our own spellbook, talents, Sane Macros and the action bars fill the screen; Esc and they go back. The spells you have not learned yet are in your spellbook, in grey, and a Home page says what you can learn now. Drag a grey spell onto an action bar button and the button is reserved until you learn the spell. The game's action bars clean, out of sight at rest. Type /sane abilities.
+## Notes: SaneUI's spells and abilities. Docked at the screen's bottom middle: click the middle of the bottom edge, or press your spellbook or talents key, and our own spellbook, talents, Sane Macros and the action bars fill the screen; Esc and they go back. The spells you have not learned yet are in your spellbook, in grey, and a Home page says what you can learn now. Drag a grey spell onto an action bar button and the button is reserved until you learn the spell. The game's action bars clean, out of sight at rest. Type /sane abilities.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\Icons\INV_Misc_Book_09
@@ -51,7 +51,7 @@ Book\Book.lua
 Book\Home.lua
 Book\Window.lua
 Book\Menu.lua
-# The spells still to learn, the Home page and the menu's lines for a spellbook of Sane UI's own (the full screen's, Spellbook/), through Core
+# The spells still to learn, the Home page and the menu's lines for a spellbook of SaneUI's own (the full screen's, Spellbook/), through Core
 Book\Offer.lua
 
 # The full screen at the bottom middle and its windows (Combat's until 2026-11-18)

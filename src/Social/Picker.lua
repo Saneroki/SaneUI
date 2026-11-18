@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Picker
+--  SaneUI - Social - Picker
 --  The smiley right of the line you write in, and the list it opens: the
 --  game's raid marks, to put into the line, and the emotes played most, to
 --  do at once. The smiley is there while the line is (Input.lua).
@@ -25,7 +25,7 @@ local Layout = ns.Layout
 local Picker = {}
 ns.Picker = Picker
 
-local ART = "Interface\\AddOns\\SaneUI_Social\\Art\\smiley.blp" -- Sane UI's own (dev/tools/smiley-art)
+local ART = "Interface\\AddOns\\SaneUI_Social\\Art\\smiley.blp" -- SaneUI's own (dev/tools/smiley-art)
 local FALLBACK = "Interface\\ChatFrame\\UI-ChatIcon-Chat-Up"   -- the game's chat button, should ours be missing
 local MARK = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_%d" -- as the game's chat draws them (ICON_LIST)
 local MARKS, MARK_SIZE, MARK_GAP, MARK_PAD = 8, 20, 4, 10

@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Keys
+--  SaneUI - Inventory - Keys
 --  Your bag keys open our bags instead of the game's (Saneroki, 2026-10-20):
 --  whatever keys the game's key bindings give its actions TOGGLEBACKPACK,
 --  OPENALLBAGS, TOGGLEBAG1 to TOGGLEBAG4 and TOGGLEREAGENTBAG1 run ours
---  (Bindings.xml, in the game's key bindings under Sane UI), by the game's own
+--  (Bindings.xml, in the game's key bindings under SaneUI), by the game's own
 --  override bindings, which leave your key bindings as they are: the full
 --  screen with the bags on it, and pressed again while it shows, back to its
 --  size.

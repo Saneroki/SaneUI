@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Presets
+--  SaneUI - Core - Presets
 --  What the profile Speedleveling sets over the defaults (Saneroki, 2026-10-30):
 --  our recommended CVars, kept as single CVars of Sync's (Sync.Keep, the tick in
 --  the tab CVars), so they are written into the game at the login and what the
@@ -29,7 +29,7 @@ local Presets = { VERSION = 6, profiles = {} }
 Core.Presets = Presets
 
 -- Our recommended CVars, in Speedleveling. No water detail: its 3 crashed Forever's client in the Ruins of
--- Lordaeron, and Sane UI never sets it (Sync.Barred; Saneroki, 2026-11-06).
+-- Lordaeron, and SaneUI never sets it (Sync.Barred; Saneroki, 2026-11-06).
 local RECOMMENDED = {
     -- How far and how much the world shows.
     farclip = "10000",               -- terrain and buildings out to the engine's ceiling

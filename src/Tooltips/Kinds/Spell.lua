@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Spell
+--  SaneUI - Tooltips - Kinds - Spell
 --  A spell's or a pet ability's tooltip:
 --
 --      REVENGE                         [icon]

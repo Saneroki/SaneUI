@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Row
+--  SaneUI - Loot - Row
 --  One line of the loot window, a bar drawn as the nameplates draw theirs
 --  (Saneroki, 2026-10-29: "like the nameplates": their font, colour, round,
 --  border and shading; the colour by the thing): the game's shaded health

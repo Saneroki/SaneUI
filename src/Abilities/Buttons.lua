@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Buttons
+--  SaneUI - Abilities - Buttons
 --  Every action button there is, and where it stands on the screen.
 --
 --  The buttons are found by what they are, not by their names: a button that

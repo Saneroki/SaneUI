@@ -3,7 +3,7 @@
 ## Notes: A chat window in the style of a messenger: every message in a bubble, yours on the right, everybody else's on the left with name and class icon. Enter or / opens the line to write in at its bottom, a click on the chat's name there lists the chats to write in. Move and size it in Edit Mode; push the mouse against the screen edge it is docked at and it fills the screen. The game's chat is out of sight while it is open and keeps every line; the setting Show the game's chat too keeps it on screen. /sane social (or /sane chat) hides this window.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\AddOns\SaneUI_Social\Art\icon

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Ghosts
+--  SaneUI - Abilities - Ghosts
 --  Shows each reservation as a grey icon on the real, still empty button, with
 --  the small clock in its corner that the spell also carries in the spellbook.
 --  The ghost takes no clicks while its button is shown, so the button under it works as

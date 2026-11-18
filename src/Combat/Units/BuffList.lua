@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Buff list
+--  SaneUI - Combat - Units - Buff list
 --  The game's own lists of your buffs and debuffs at the top of the screen, with
 --  your marks of them (Lists.lua) on it:
 --      Important      the game's golden animated outline around it

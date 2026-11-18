@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Sort
+--  SaneUI - Inventory - Bags - Sort
 --  Our own sort of the bags, the bar's clean-up button in One Bag (the other
 --  views keep the game's C_Container.SortBags): the items of the ordinary
 --  bags (the backpack and the bags any item goes in; never the reagent bag,

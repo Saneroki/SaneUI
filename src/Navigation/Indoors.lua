@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Indoors
+--  SaneUI - Navigation - Indoors
 --  Inside a building or a cave (Live.Indoors: the game's IsIndoors, or its
 --  minimap showing its indoor plan, as in Ironforge's halls and the Undercity,
 --  which the game counts as outdoors), its indoor map over our map, whatever

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Allies
+--  SaneUI - Social - Contacts - Allies
 --  Recent allies, as the game's tab of its friends list (C_RecentAllies): the
 --  players you grouped, traded or fought beside of late, in the game's order
 --  (pinned ones first, a divider, then online, the latest, by name). A row has

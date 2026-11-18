@@ -1,4 +1,4 @@
-# Sane UI: Tooltips
+# SaneUI: Tooltips
 
 **Status:** working · **Since:** 2026-10-14 · **Addon:** `SaneUI_Tooltips`
 
@@ -19,19 +19,19 @@ section of its own at the end, *Addons*, never among the panel's own lines. Wher
 creature, a player, a mount, a pet) it stands in the picture's place; over a piece of gear, Alt shows your
 own character wearing it beside the panel, turning slowly. A herb or an ore, and what it gives, show under
 *Professions* how likely gathering it raises your skill, in the game's orange, yellow, green and grey. The
-quest, gathering and disenchanting facts are Sane UI's database (Core's data framework), which the panels
+quest, gathering and disenchanting facts are SaneUI's database (Core's data framework), which the panels
 only read.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Tooltips* under *Sane UI* in the game's addon list. Switched
+- **Switch it on or off:** tick or untick *Tooltips* under *SaneUI* in the game's addon list. Switched
   off, the tooltips are the game's own again.
 - **Nothing to set up.** Point at an item, a spell, a player.
-- **A short setup** (Saneroki, 2026-11-18): one page in Sane UI's setup window, with your own tooltip at its left
+- **A short setup** (Saneroki, 2026-11-18): one page in SaneUI's setup window, with your own tooltip at its left
   over a piece of the world: when tooltips show (at once, or while a key is held), at the mouse (*Yes* or *No*), the
   3D model (*Yes* or *No*) and the opacity. Each choice shows on the sample at once, and counts at once. It opens by
   itself the first time the module is on (one setup a session, after Nameplates' if that one is still to come); again
   with the button *Set up step by step* at the top of the options page, or `/sane setup tooltips`.
-- **Seven settings**, on the page *Tooltips* of the options (Esc > Options > AddOns > Sane UI), under the button *Set up step by step*. A change counts from the next tooltip on.
+- **Seven settings**, on the page *Tooltips* of the options (Esc > Options > AddOns > SaneUI), under the button *Set up step by step*. A change counts from the next tooltip on.
 
   | Setting | At first | What it does |
   |---|---|---|
@@ -45,7 +45,7 @@ only read.
 
 - **Two game windows, one on each screen:** Shift (or Ctrl, Alt) held in one window and the mouse moved into the other: the
   game does not take a key that is already held when its window gets the keyboard (it only counts a key it saw pressed),
-  so press the key again over that window. Sane UI cannot change that.
+  so press the key again over that window. SaneUI cannot change that.
 
 - **What each panel shows:**
 
@@ -73,7 +73,7 @@ only read.
   under *IDs*; other addons' lines under *Addons* (with Alt). Two neighbours of the same kind are one section
   (the game's empty line between them is a small gap).
 
-  **Unconfirmed Data:** a tooltip about something the game has not confirmed yet (a map's pin from Sane UI's
+  **Unconfirmed Data:** a tooltip about something the game has not confirmed yet (a map's pin from SaneUI's
   data, a boss's abilities and loot) ends with a quiet note at its very bottom, *! Unconfirmed Data !*: small grey
   words in the middle, as written, no rules, the marks in the game's red (Saneroki, 2026-10-23). In such a tooltip a
   red ! stands before the name of each thing not yet confirmed (Core's `Core.UNCONFIRMED_MARK`), so the note says
@@ -190,7 +190,7 @@ only read.
   lists right now while you look at it, else its last full scan. A price not seen for 30 days counts for
   nothing. The shown panels are read anew when prices change. The module keeps none of its own.
 - **Quests** (`Quests.lua`): what you must kill the game says in the tooltip's own quest lines. Which
-  creature drops a quest item, who gives which quest and who takes it back, the game does not say; Sane UI's
+  creature drops a quest item, who gives which quest and who takes it back, the game does not say; SaneUI's
   database has it (Core's data framework, `Doc/guides/data.md`), in two data packs that load soon after the
   login: *Data: Quests* (the set *Quests*: 4796 quests with their levels, side, races and classes, what they
   ask first, who gives and takes them back (1805 NPCs), the items that start them (370) and the items their
@@ -222,7 +222,7 @@ only read.
   *Sane*), in its class's colour (see *Colour players by their class*): you first, then the others by name,
   the account's own bank last; at the right where and how many (*Bags 12 · Bank 8*, *Worn 1*). With two or
   more, *Total* and how many in all. Two characters
-  with the same first name are two characters. Sane UI keeps this itself (Core's data framework: the pack
+  with the same first name are two characters. SaneUI keeps this itself (Core's data framework: the pack
   *Data: Characters*, which ships nothing and keeps what your characters have in its own saved file, never
   shared): each character's bags, what it wears and its bank as last seen. A character's bags are known
   once it has logged in, its bank once you have opened the bank with it; the panel follows a change at once
@@ -252,7 +252,7 @@ only read.
 - **A unit's buffs and debuffs:** all of them, without a key held, buffs first, in as many lines of small icons as they take.
 - **In a fight** a unit's buffs are not shown (the game does not hand them out then), and a tooltip the
   game hides lines of stays the game's own.
-- **In Retail** the panels are the same, but for what needs Forever's rules or Sane UI's database, which holds
+- **In Retail** the panels are the same, but for what needs Forever's rules or SaneUI's database, which holds
   no Retail data yet: there an item's and a creature's panel have no quests from the database (the game's own
   quest lines stay), no chances of gathering under *Professions*, no *Disenchant* row under *Gold*, and a
   creature no experience row; a player's class line has the specialization without talent points.
@@ -633,7 +633,7 @@ only read.
 | File | What it is |
 |---|---|
 | `SaneUI_Tooltips.toc` | The addon `SaneUI_Tooltips` |
-| `Art/banner.blp` | The module's banner, shown at the top of its options page (by Core's options). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneTooltip-banner.png` |
+| `Art/banner.blp` | The module's banner, shown at the top of its options page (by Core's options). Original art of SaneUI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/SaneTooltip-banner.png` |
 | `Tooltips.lua` | The module's table, its settings, the hooks, the fall-back, the chat link's tooltip |
 | `Texts.lua` | The module's own words; the sentences of the game it must know, as patterns |
 | `Model.lua` | What a panel shows, as data: head and rows (a strip's cells in its array part), in two copies; the palette (`ns.COLOR`, each colour one of the game's moved toward another), `ns.Hex`, `ns.Like` |

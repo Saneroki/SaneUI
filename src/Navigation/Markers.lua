@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Markers
+--  SaneUI - Navigation - Markers
 --  Your own markers on the map (Saneroki, 2026-11-15: "a system where we can place our own custom map markers on
 --  maps with our own text and description when you click on them"):
 --
@@ -97,7 +97,7 @@ Markers.ICONS = {
     { key = "arrow", group = "calls", atlas = "common-icon-forwardarrow" },
     { key = "yes", group = "calls", atlas = "common-icon-checkmark" },
     { key = "no", group = "calls", atlas = "common-icon-redx" },
-    -- (protect and heal here: each a mark of the dungeon map addon Sane UI knows, one of ours; Saneroki, 2026-11-16)
+    -- (protect and heal here: each a mark of the dungeon map addon SaneUI knows, one of ours; Saneroki, 2026-11-16)
     { key = "shield", group = "calls", texture = I .. "INV_Shield_06", cut = ICON_CUT },
     { key = "heal", group = "calls", texture = I .. "Spell_Holy_Heal", cut = ICON_CUT },
     -- crowd control
@@ -154,7 +154,7 @@ Markers.TEXT = {
     inPlan = "in %s",
     offerPlan = "%s shares the sketch %s with you: %d markers, %d drawings.",
     offerVia = "Shared with %s.",
-    offerLeft = "%d of its drawings lie on maps Sane UI has no match for and are left out.",
+    offerLeft = "%d of its drawings lie on maps SaneUI has no match for and are left out.",
     share = "Share",
     shareTip = "This marker, or all of yours in its zone, to your party or raid, to your guild, or to someone: they are asked whether to keep them.",
     shareOne = "This marker with your %s",
@@ -466,7 +466,7 @@ local function Build()
     look.head:RegisterForDrag("LeftButton")
     look.head:SetScript("OnDragStart", ns.Guard(function() card:StartMoving() end))
     look.head:SetScript("OnDragStop", ns.Guard(function() card:StopMovingOrSizing() end))
-    -- Esc closes it, as Core closes all of Sane UI's that is open (Core.Escape)
+    -- Esc closes it, as Core closes all of SaneUI's that is open (Core.Escape)
     card:SetScript("OnShow", ns.Guard(function() Core.Escape(card, Markers.Close) end))
     card:SetScript("OnHide", ns.Guard(function()
         Core.Escape(card, nil)
@@ -687,7 +687,7 @@ function Markers.Send(list, channel, target)
         size = size + #row + 1
     end
     Flush()
-    -- and in the format of the dungeon map addon Sane UI knows, for its players on that channel (Exchange.lua)
+    -- and in the format of the dungeon map addon SaneUI knows, for its players on that channel (Exchange.lua)
     local exchange = ns.Exchange
     if sent > 0 and exchange and exchange.on then
         local first = list[1]
@@ -842,7 +842,7 @@ function Ask()
     local first = share.rows[1] or share.drawings and share.drawings[1] or share.pin
     local zone = first and Where(first.map)
     if zone and zone ~= "" then words = words .. " (" .. zone .. ")" end
-    -- one shared by a dungeon map addon Sane UI knows (Exchange.lua): which, and what lay on maps we have no match for
+    -- one shared by a dungeon map addon SaneUI knows (Exchange.lua): which, and what lay on maps we have no match for
     if share.via then words = words .. " " .. Markers.TEXT.offerVia:format(share.via) end
     if (share.left or 0) > 0 then words = words .. " " .. Markers.TEXT.offerLeft:format(share.left) end
     if share.pin then words = words .. " " .. Markers.TEXT.keepPin end

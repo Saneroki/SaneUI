@@ -1,10 +1,10 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Stats
+--  SaneUI - Inventory - Sheet - Stats
 --  The stats' window (the key "stats" on the module's board, Board.lua): the
 --  player's stats, and the pet's under them while there is a pet, on the
---  journal's page in Sane UI's own look (Doc/guides/interface-style.md): each
+--  journal's page in SaneUI's own look (Doc/guides/interface-style.md): each
 --  of the game's categories (PAPERDOLL_STATCATEGORIES: WoW: Forever's general,
 --  attributes, weapons, modifiers, defense, then the resistances, a pet's
 --  named with its name; Retail's attributes and enhancements, no resistances

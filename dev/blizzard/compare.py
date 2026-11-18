@@ -1,11 +1,11 @@
-"""Two exports side by side, and what of their difference reaches Sane UI: the findings of the todo list.
+"""Two exports side by side, and what of their difference reaches SaneUI: the findings of the todo list.
 
-  broken      Sane UI uses what the new export no longer has (a symbol gone, or a name its code no longer
+  broken      SaneUI uses what the new export no longer has (a symbol gone, or a name its code no longer
               mentions anywhere: a parentKey, a menu's tag, a callback)
-  deprecated  what Sane UI uses lives on only in Blizzard's deprecated addons, which go away later
-  changed     what Sane UI uses is called differently now: parameters, arguments, returns, the API's flags
+  deprecated  what SaneUI uses lives on only in Blizzard's deprecated addons, which go away later
+  changed     what SaneUI uses is called differently now: parameters, arguments, returns, the API's flags
               (protected, secret values, restrictions), a payload, a template's parents or keys, an enum
-  review      Sane UI hooks it or builds on it and its code changed; or an atlas or file Blizzard's code no
+  review      SaneUI hooks it or builds on it and its code changed; or an atlas or file Blizzard's code no
               longer names (it may still be in the game)
   housekeeping  the TOCs' Interface number, files made from Blizzard's code, notes citing changed files
 """
@@ -179,16 +179,16 @@ def changes(old, new):
     return found
 
 
-# -- what Sane UI meets of it ------------------------------------------------------------------------------
+# -- what SaneUI meets of it ------------------------------------------------------------------------------
 
 class Analysis:
     def __init__(self, old, new, uses, tocs=(), generated=None):
-        """old and new are Exports, uses Sane UI's Uses; tocs the paths of Sane UI's TOCs; generated a function
+        """old and new are Exports, uses SaneUI's Uses; tocs the paths of SaneUI's TOCs; generated a function
         that gives (tool, made file) pairs out of date against the new export, or None to skip that."""
         self.old, self.new, self.uses = old, new, uses
         self.changes = changes(old, new)
         self.findings = {}  # (section, key) -> Finding
-        self.resolved = defaultdict(list)  # [id] = the uses of each symbol Sane UI takes by its name
+        self.resolved = defaultdict(list)  # [id] = the uses of each symbol SaneUI takes by its name
         self._reported = set()  # (use id, name) pairs a finding already covers
         self._tails = defaultdict(list)
         for id_ in new.symbols:
@@ -281,7 +281,7 @@ class Analysis:
         return found
 
     def report(self, id_, uses, hook=False):
-        """The findings one symbol Sane UI uses makes, if it changed."""
+        """The findings one symbol SaneUI uses makes, if it changed."""
         self.resolved[id_].extend(uses)
         change = self.changes.get(id_)
         record = self.new.symbols.get(id_) or self.old.symbols.get(id_)
@@ -308,7 +308,7 @@ class Analysis:
             self.add("changed", id_, change.notes + extra, uses, diff=self.diff(change) if hook else None)
         elif change.status == "body":
             if hook or change.new["kind"] in ("lua", "xml") and change.new["what"] != "table":
-                self.add("review", id_, (["hooked by Sane UI"] if hook else []) + change.notes + extra, uses,
+                self.add("review", id_, (["hooked by SaneUI"] if hook else []) + change.notes + extra, uses,
                          diff=self.diff(change) if hook else None)
 
     # -- the kinds of use --
@@ -376,7 +376,7 @@ class Analysis:
                     self.report(id_, [use], hook=True)
             else:
                 self.add("review", f"method:{use.name}", [
-                    f"hooked by Sane UI; {len(changed)} of the {len(ids)} Blizzard methods of this name changed: "
+                    f"hooked by SaneUI; {len(changed)} of the {len(ids)} Blizzard methods of this name changed: "
                     + ", ".join(i.partition(":")[2] for i in changed[:12]) + (" ..." if len(changed) > 12 else "")],
                     [use], label=f"`:{use.name}` (hooked method)")
 
@@ -392,16 +392,16 @@ class Analysis:
                     continue
                 widget = id_.startswith("widget:")
                 if not widget and name in self.uses.own:
-                    continue  # Sane UI has a method of this name itself
+                    continue  # SaneUI has a method of this name itself
                 if change.status == "removed" and (widget or not ids_new):
                     if not [i for i in ids_new if i.startswith("widget:") == widget]:
                         self.add("broken", id_, ["gone from the new export"], uses, self.hints(id_))
                 elif change.status in ("changed", "deprecated"):
-                    notes = change.notes + ([] if widget else ["a method of this name; Sane UI may call another's"])
+                    notes = change.notes + ([] if widget else ["a method of this name; SaneUI may call another's"])
                     self.add("changed" if change.status == "changed" else "deprecated", id_, notes, uses)
 
     def _vanished(self):
-        """Names Sane UI uses that the old export mentioned and the new one mentions nowhere."""
+        """Names SaneUI uses that the old export mentioned and the new one mentions nowhere."""
         gone = self.old.names - self.new.names
         groups = defaultdict(list)
         for use in self.uses.items:
@@ -486,7 +486,7 @@ class Analysis:
         return dict(statuses)
 
     def new_api(self):
-        """API new in the namespaces Sane UI calls."""
+        """API new in the namespaces SaneUI calls."""
         spaces = {use.name.split(".")[0] for use in self.uses.of("global") if use.name.startswith("C_")}
         return sorted(id_.partition(":")[2] for id_, c in self.changes.items()
                       if c.status == "added" and id_.startswith("api:") and id_[4:].split(".")[0] in spaces)

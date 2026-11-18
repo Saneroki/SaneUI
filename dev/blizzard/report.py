@@ -7,9 +7,9 @@ from pathlib import Path
 from compare import SECTIONS
 
 TITLES = {
-    "broken": "Broken: Sane UI uses what is gone",
+    "broken": "Broken: SaneUI uses what is gone",
     "deprecated": "Deprecated: only Blizzard's deprecated addons still have it",
-    "changed": "Changed: check how Sane UI calls it",
+    "changed": "Changed: check how SaneUI calls it",
     "review": "Review: hooked or built on, and changed inside",
     "housekeeping": "Housekeeping",
 }
@@ -37,7 +37,7 @@ def markdown(analysis, out, root, new_path_arg=None):
         f"- Blizzard changed {changed_files} files. Symbols: {counts.get('added', 0)} new, {counts.get('removed', 0)} "
         f"gone, {counts.get('changed', 0)} called differently, {counts.get('deprecated', 0)} deprecated, "
         f"{counts.get('body', 0)} changed inside.",
-        "- For Sane UI: " + ", ".join(f"{len(sections[s])} {s}" for s in SECTIONS) + ".",
+        "- For SaneUI: " + ", ".join(f"{len(sections[s])} {s}" for s in SECTIONS) + ".",
         f"- Made {date.today().isoformat()} by `dev/tools/blizzard check`.",
         "",
         "Work from the top and tick each item when it is done. `dev/tools/blizzard show <name>` shows a symbol in",
@@ -67,7 +67,7 @@ def markdown(analysis, out, root, new_path_arg=None):
               "then build, try it in the game and commit."]
     added = analysis.new_api()
     if added:
-        lines += ["", "## For information", "", f"New API in the namespaces Sane UI calls ({len(added)}): "
+        lines += ["", "## For information", "", f"New API in the namespaces SaneUI calls ({len(added)}): "
                   + ", ".join(f"`{name}`" for name in added[:60]) + (" ..." if len(added) > 60 else "") + "."]
     warnings = old.warnings + new.warnings + analysis.uses.problems
     if warnings:

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - QuestMarks
+--  SaneUI - Combat - QuestMarks
 --  A small mark beside a creature's nameplate while it belongs to a quest in your
 --  log with an objective still to do, as the game itself says in the creature's
 --  tooltip data (Core.UnitQuest, src/Core/Objectives.lua): the game's sword where
@@ -23,7 +23,7 @@ local QuestMarks = {}
 ns.QuestMarks = QuestMarks
 
 QuestMarks.SIZE = 18 -- the mark, a square
--- The game's mouse cursors for a creature to fight and one to loot, as Sane UI's tooltips show objectives.
+-- The game's mouse cursors for a creature to fight and one to loot, as SaneUI's tooltips show objectives.
 QuestMarks.ICONS = { kill = "Interface\\CURSOR\\Attack", loot = "Interface\\CURSOR\\LootAll" }
 
 local shown = {}  -- [unit token] = the mark on its plate

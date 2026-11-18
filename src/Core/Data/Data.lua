@@ -2,8 +2,8 @@ local ADDON = ...
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data
---  Sane UI's own databases, as a module reads them (Doc/guides/data.md, *In the game*). The data is part of
+--  SaneUI - Core - Data
+--  SaneUI's own databases, as a module reads them (Doc/guides/data.md, *In the game*). The data is part of
 --  Core: one file per set (Sets/<Set>.lua), compiled from the master in assets/data and listed at the end of
 --  Core's TOC, so the game reads every set with Core, in the loading screen (Saneroki, 2026-10-21: the data is
 --  wanted in the game anyway, and a second of loading screen and some memory are a fair price for it). A
@@ -45,18 +45,18 @@ local WEAK = { __mode = "v" }
 local LIST, VERSION = "\030", "\028"
 
 local TEXT = {
-    missing = "Sane UI holds no set %s",
-    noSaved = "%s is no saved variable of Sane UI's data",
+    missing = "SaneUI holds no set %s",
+    noSaved = "%s is no saved variable of SaneUI's data",
     refused = "%s is not used: %s",
-    noGame = "this client's game version cannot be told, so Sane UI's data is not used",
-    format = "of format %s, this Sane UI reads %d",
+    noGame = "this client's game version cannot be told, so SaneUI's data is not used",
+    format = "of format %s, this SaneUI reads %d",
     otherGame = "made for %s, this client is %s",
     unreadable = "its fields cannot be read",
     badRow = "a row of %s cannot be read",
     -- /sane data
-    about = "Sane UI's databases: the sets and what they hold (/sane data show <set> <key>)",
+    about = "SaneUI's databases: the sets and what they hold (/sane data show <set> <key>)",
     client = "data of %s, build %s (project %s; beta: %s; test: %s); %s.",
-    unknown = "this client's game version cannot be told (project %s; beta: %s; test: %s): Sane UI's data is not used.",
+    unknown = "this client's game version cannot be told (project %s; beta: %s; test: %s): SaneUI's data is not used.",
     surnames = "players by first name and surname (regional names: %s)",
     realms = "players by name and realm (regional names: %s)",
     none = "no set is there.",
@@ -375,7 +375,7 @@ local function Oldest(rows)
     return oldest
 end
 
--- A row learned by somebody else's Sane UI (Confirm.lua, Bundle.lua: a guild or group member's): kept apart from what was
+-- A row learned by somebody else's SaneUI (Confirm.lua, Bundle.lua: a guild or group member's): kept apart from what was
 -- learned here (taken, never shared on, never harvested) and read over the set's as one learned here, when it can be read,
 -- this client learned nothing of the entry itself (what the player saw here wins) and accept(record, current) says so
 -- (current: the entry as this client has it, or nil). most: rows of the set kept from members at most, the oldest making
@@ -453,10 +453,10 @@ function Data.Add(format, name, header)
         Say("data: game", TEXT.noGame, true)
         return nil
     elseif type(header) ~= "table" or header.game ~= client then
-        -- A copy of Sane UI made for another game folder: every set of it is another game version's, said once.
+        -- A copy of SaneUI made for another game folder: every set of it is another game version's, said once.
         set.refused = true
         set.why = TEXT.otherGame:format(tostring(type(header) == "table" and header.game), client)
-        Say("data: game", TEXT.refused:format("Sane UI's data", set.why), true)
+        Say("data: game", TEXT.refused:format("SaneUI's data", set.why), true)
         return nil
     end
     local ok, decode
@@ -492,7 +492,7 @@ end
 -------------------------------------------------------------------------------
 --  Records
 -------------------------------------------------------------------------------
-local FROZEN = { __newindex = function() error("a record of Sane UI's data is read-only", 2) end }
+local FROZEN = { __newindex = function() error("a record of SaneUI's data is read-only", 2) end }
 local Copy, Same = Core.Copy, Core.Same
 
 local function Freeze(value)

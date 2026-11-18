@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Quests
+--  SaneUI - Core - Data - Quests
 --  The quest watchers (Doc/guides/data.md, *Checked in play*): every quest the player is offered, takes, works on and
 --  hands in, compared with the set Quests (Data.Check), so a quest our data has is confirmed field by field and one it
 --  lacks (a quest only Forever has) is learned whole as the game shows it, while the player does it.

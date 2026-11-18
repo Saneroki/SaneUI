@@ -1,6 +1,6 @@
 -- Runs the Combat module against the stand-in client (wowstub.lua): its window docked at the bottom middle, the
 -- middle half of the bottom edge filling the screen, its windows there on Core's board (our own talents and
--- spellbook side by side, each as wide as its share of the game's sizes), a planner Sane UI knows as a window of
+-- spellbook side by side, each as wide as its share of the game's sizes), a planner SaneUI knows as a window of
 -- its own (listed only while it is there, seated in its panel, opened and closed with it), the quest marks beside
 -- nameplates, and giving everything back. Our spellbook itself is tried in dev/tests/book.lua, our talents in
 -- dev/tests/talents.lua. The look can only be judged in the game. At its end it runs again as Retail loads the module
@@ -1280,7 +1280,7 @@ do
     main._width, main._height = 0, 0
     layouts:Show(layouts.inside, layouts.width, layouts.height)
 end
-check(not Board.Present("planner"), "without a talent planner Sane UI knows, there is no planner's window to add")
+check(not Board.Present("planner"), "without a talent planner SaneUI knows, there is no planner's window to add")
 check(not Board.Present("game") and not layouts.panels.game, "with ours there, the game's own window stands on no panel")
 Push()
 check(not handle.edge.full, "back to its size")
@@ -1335,7 +1335,7 @@ check(not handle.edge.full, "pressed again there: back to its size, as the game'
 Back()
 
 -------------------------------------------------------------------------------
---  A talent planner Sane UI knows: a window of its own
+--  A talent planner SaneUI knows: a window of its own
 -------------------------------------------------------------------------------
 -- Its folder, window and functions as Core knows them (Neighbours.lua), so this file names no addon.
 local known = Core.Neighbours.KNOWN.talents

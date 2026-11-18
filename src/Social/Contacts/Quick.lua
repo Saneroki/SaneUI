@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Quick
+--  SaneUI - Social - Contacts - Quick
 --  Quick Join, as the game's tab of its friends list (Blizzard_QuickJoin): the
 --  groups your friends, your guild and your communities are in or queued
 --  with, that you may ask to join (C_SocialQueue). A row: who you know there,

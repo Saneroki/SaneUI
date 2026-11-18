@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Art
+--  SaneUI - Abilities - Talents - Art
 --  What our talent trees stand on, as the game's class talents frame draws it
 --  (Camelot: ClassTalents/Blizzard_ClassTalentsFrame.xml, ClassTalentsFrame-
 --  Template's layers and animations; the class's art from Camelot's
@@ -17,7 +17,7 @@ local _, ns = ...
 --  Each class has one picture in this client, named after the class, as the
 --  game's tables name it; a picture or light the client lacks is left out.
 --  The drifting and the lights run while the window is shown, and not at all
---  with Sane UI's animations switched off.
+--  with SaneUI's animations switched off.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Talents = ns.Talents

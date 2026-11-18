@@ -1223,7 +1223,7 @@ W.printed = {}
 ns.Presets.AskDelete("Raid")
 StaticPopup_Show = show
 check(printedMatch("type /sane ab delete Raid"), "without the game's dialog the command to type is said")
-check(lines[1].title == "Sane UI", "under the addon's name")
+check(lines[1].title == "SaneUI", "under the addon's name")
 do
     -- The game's menu asks a line whether it is enabled, and for its tooltip, while it is open.
     local function Opened()
@@ -1249,7 +1249,7 @@ do
         "a line's tooltip and whether it is enabled are asked of functions of ours made once, not at every opening")
 end
 
--- Sane UI, its own pages Profiles, General and Appearance, then the module's
+-- SaneUI, its own pages Profiles, General and Appearance, then the module's
 check(#W.options.pages == 5 and #W.options.pages[5].items == 0,
     "the options are not filled before somebody wants them; their pages are up, empty")
 SlashCmdList.SANEUI("options")
@@ -1259,8 +1259,8 @@ local function box(text)
 end
 -- The full screen's sections first (Expand window, Window corners), then the spellbook and the action bars, the full
 -- screen's trainers (the keys' switch only where our spellbook is: not in this stand-in client), Sane Macros, the aura history.
-check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 36
-    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its switches under seven headers")
+check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "SaneUI" and #page.items == 36
+    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under SaneUI, called Abilities, with its switches under seven headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)
 check(ns.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")
@@ -1274,9 +1274,9 @@ check(ns.options.showHidden == false and ghostCount() == 0 and (box("Show unlear
 line("Show unlearned spells").fn()
 W.Wait(0.1)
 W.printed = {}
-box("Sane UI lays out the spellbook pages"):SetValue(false)
+box("SaneUI lays out the spellbook pages"):SetValue(false)
 check(ns.options.book == false and printedMatch("after /reload") and ghostCount() > 0, "giving the pages back to the game waits for a /reload, and says so")
-box("Sane UI lays out the spellbook pages"):SetValue(true)
+box("SaneUI lays out the spellbook pages"):SetValue(true)
 
 ns.class, ns.DB.presets.WARRIOR = "WARRIOR", {}
 lines = {}
@@ -1531,7 +1531,7 @@ tabSystem.selectedTabID = 3
 do -- its own locals: the main chunk has room for no more
     local offer = Core.Spellbook.Offer()
     check(offer and offer.Home and offer.Home.name == "Home" and offer.Switch.text == "Show unlearned spells",
-        "the module offers its spells still to learn, Home and its switch to a book of Sane UI's own")
+        "the module offers its spells still to learn, Home and its switch to a book of SaneUI's own")
     local lines = { 1, 2, 3, 4 }
     local blinkTab = entry("Blink").tab
     local own = offer.Spells(blinkTab, false)
@@ -1847,7 +1847,7 @@ do
     ns.class = "WARRIOR"
     W.menuModifiers.MENU_SPELL_BOOK_SETTINGS(nil, W.Description(lines))
     ns.class = "MAGE"
-    check(lines[1].title == "Sane UI" and line("Show reservations on the action bars") and line("Action bar layouts")
+    check(lines[1].title == "SaneUI" and line("Show reservations on the action bars") and line("Action bar layouts")
         and not line("Show unlearned spells") and not line("Compact spellbook pages") and not line("Show all spell ranks")
         and not line("Move buttons up to a new rank"),
         "Retail: the spellbook's menu has the bars' lines only, also for a warrior")

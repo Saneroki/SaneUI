@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Feed
+--  SaneUI - Loot - Feed
 --  What you receive rises over the world, without a window, where Edit Mode
 --  placed it: a line a thing, its picture, its name in its quality's colour
 --  with a thin dark outline (Kalam Bold, its hand-drawn font: Core.Look.HAND), how many

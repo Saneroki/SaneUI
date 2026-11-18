@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Kit
+--  SaneUI - Core - Kit
 --  Small things every module needs and none should write again: the game's
 --  own words, colours as hex, the screen's pixels, a druid's two powers, a
 --  tooltip on a region, a pool of parts, the game's dialogs for a question or
@@ -91,7 +91,7 @@ end
 
 -- Your druid's mana in sight beside a form's rage or energy (Saneroki, 2026-11-13), on your own frames only: the game
 -- tells a druid's mana in a form to that druid alone, so another druid shows the one power it shows now (Saneroki,
--- 2026-11-13: "revert back to how it was with only one class bar", after sharing it between Sane UIs never came
+-- 2026-11-13: "revert back to how it was with only one class bar", after sharing it between SaneUIs never came
 -- through).
 Core.MANA = rawget(_G, "Enum") and Enum.PowerType and Enum.PowerType.Mana or 0 -- the game's number for mana
 
@@ -146,7 +146,7 @@ end
 
 -- A region with that tooltip while the mouse is on it. Its own OnEnter and OnLeave stay: these come after.
 -- The line a tooltip ends with where what it shows is not yet confirmed by the game (imported, the older game's):
--- the words between two red marks (the game's red), in the game's grey. Sane UI's tooltips (the module Tooltips)
+-- the words between two red marks (the game's red), in the game's grey. SaneUI's tooltips (the module Tooltips)
 -- know it by its words and draw it as a quiet grey note at the panel's bottom, the marks red.
 Core.UNCONFIRMED_WORDS = "Unconfirmed Data"
 do
@@ -162,7 +162,7 @@ function Core.Unconfirmed(tooltip)
     tooltip:AddLine(Core.UNCONFIRMED, 0.5, 0.5, 0.5)
 end
 
--- A tooltip about a creature that is no unit of the game's (a boss on a dungeon's map): its look, which Sane UI's
+-- A tooltip about a creature that is no unit of the game's (a boss on a dungeon's map): its look, which SaneUI's
 -- tooltips (the module Tooltips) draw like a unit's: { display (its 3D model: the game's creature display), or
 -- creature (its model by the NPC's ID: a rare on the map), dragon ("boss", "elite", "silver": round its portrait),
 -- badge (its level: "??" for a boss) }. Its lines are written into

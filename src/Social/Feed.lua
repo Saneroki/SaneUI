@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Feed
+--  SaneUI - Social - Feed
 --  The chat views of the full screen: as many as you make, each with its own
 --  name and its own choice of chats (its ticks, apart from what the chat
 --  shows), the messages in the chat's bubbles, but every one there to read:

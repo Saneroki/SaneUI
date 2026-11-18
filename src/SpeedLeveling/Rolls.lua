@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Rolls
+--  SaneUI - Speed Leveling - Rolls
 --  Group rolls decided for you (the switch Roll on group loot, in the profile
 --  Speedleveling; Saneroki, 2026-10-30): each character on its own Needs what
 --  is an upgrade to it (Core.Upgrade), where the game lets it, and Greeds the

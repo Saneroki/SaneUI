@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds Sane UI, and with --install puts it into the game. The commands in daily use are
+# Builds SaneUI, and with --install puts it into the game. The commands in daily use are
 # saneui build, saneui installdev and saneui installrelease (dev/saneui, README.md *Building*).
 #
 # Two kinds of build, told apart in each built TOC by ## X-SaneUI-Build:
@@ -119,7 +119,7 @@ names="$(printf '%s\n' "${!source[@]}" | sort)"
 to_build() { rsync -a --delete --exclude='*.md' --exclude='/LICENSE' --filter='P /LICENSE.txt' --filter='P /Sets/' "${@:2}" "${source[$1]}/" ${assets[$1]:+"${assets[$1]}/"} "$build/$1/"; }
 to_game() { rsync -a --delete "${@:2}" "$build/$1/" "$addons/$1/"; }
 
-# stale <folder>: the Sane UI addons in it that this build does not make (a module renamed or removed; the
+# stale <folder>: the SaneUI addons in it that this build does not make (a module renamed or removed; the
 # data packs SaneUI_Data_* of before, now part of Core). A guide pack of Speed Leveling's (its TOC says
 # X-SaneUI-Guides) and the auction database (X-SaneUI-Made) are made on this computer, not by the build: not stale.
 stale() {
@@ -252,7 +252,7 @@ into() {
         fi
     done
     if [ -z "$game" ]; then
-        echo "Core's sets are live's: the game folder's product (.flavor.info) is not one Sane UI knows, so Core uses none." >&2
+        echo "Core's sets are live's: the game folder's product (.flavor.info) is not one SaneUI knows, so Core uses none." >&2
     elif [ "$game" != "forever" ] && [ -d "$addons/SaneUI" ]; then
         "$root/dev/tools/data" compile "$addons/SaneUI" --game "$game" | sed "s|$addons/||"
     fi

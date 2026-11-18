@@ -10,7 +10,7 @@ good. The game reads them as that addon's files at a login or a /reload; Core ta
 runs in the background, and the WTF folder is never written.
 
 Only an account that has saved its file gets a link: a link to nothing is a file the game cannot load, a warning at
-every login (an account never played with Sane UI). dev/build --install makes them anew, so an account's first save
+every login (an account never played with SaneUI). dev/build --install makes them anew, so an account's first save
 gets its link at the next install; the addon's list of files changed, the game needs a restart.
 
   dev/tools/auction-database link        the addon made anew for every game folder, said only where it changed
@@ -38,8 +38,8 @@ def accounts(folder):
 
 
 def toc_file(folder, count):
-    """The addon's TOC, with the game's Interface number and Sane UI's version as Core's say them: each link, and after it
-    a file that hands what it left to Core. None where Sane UI is not there."""
+    """The addon's TOC, with the game's Interface number and SaneUI's version as Core's say them: each link, and after it
+    a file that hands what it left to Core. None where SaneUI is not there."""
     core = folder / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
     if not core.is_file():
         return None
@@ -50,8 +50,8 @@ def toc_file(folder, count):
         return None
     lines = [f"## Interface: {interface.group(1)}", "## Title: Data: Auction Database",
              "## Notes: Every account's auction data on this computer, read through links to each account's own Data: "
-             "Auction House. Made by a tool of Sane UI's.",
-             "## Author: Saneroki", f"## Version: {version.group(1) if version else '0'}", "## Category: Sane UI",
+             "Auction House. Made by a tool of SaneUI's.",
+             "## Author: Saneroki", f"## Version: {version.group(1) if version else '0'}", "## Category: SaneUI",
              "## Group: SaneUI", "## Dependencies: SaneUI", "## X-SaneUI-Made: 1", "## X-License: MIT", ""]
     for number in range(1, count + 1):
         lines += [f"Account{number}.lua", f"Take{number}.lua"]
@@ -64,8 +64,8 @@ def saved(folder):
 
 
 def wanted(folder, names):
-    """What the addon's folder should hold: {file name: ("text", its text) or ("link", where it points)}. None where Sane
-    UI is not there."""
+    """What the addon's folder should hold: {file name: ("text", its text) or ("link", where it points)}. None where
+    SaneUI is not there."""
     toc = toc_file(folder, len(names))
     if toc is None:
         return None
@@ -90,8 +90,8 @@ def holds(addon):
 
 
 def link(folder):
-    """The addon of a game folder made anew: (accounts linked, accounts left out, whether it changed); None where Sane
-    UI is not there. Nothing is written where it already holds just that."""
+    """The addon of a game folder made anew: (accounts linked, accounts left out, whether it changed); None where
+    SaneUI is not there. Nothing is written where it already holds just that."""
     names = saved(folder)
     files = wanted(folder, names)
     if files is None:
@@ -120,7 +120,7 @@ def link_all(changed_only=False):
         made = link(folder)
         if made is None:
             if not changed_only:
-                print(f"{folder.name}: Sane UI is not in this game folder.")
+                print(f"{folder.name}: SaneUI is not in this game folder.")
             continue
         count, left, changed = made
         if changed_only and not changed:

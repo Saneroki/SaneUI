@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Ways
+--  SaneUI - Core - Ways
 --  The way to a place, between a module that leads the player and the one that
 --  finds ways (Saneroki, 2026-10-31, for the guide's arrow, which points
 --  straight at its place again since 2026-11-07: nobody asks now), so neither

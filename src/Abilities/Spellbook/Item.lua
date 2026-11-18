@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book item
+--  SaneUI - Abilities - Book item
 --  One entry of our spellbook, as the game's own entry looks and behaves
 --  (Blizzard_PlayerSpells, SpellBook/Blizzard_SpellBookItem.xml and .lua,
 --  SpellBookItemMixin): its plate, the spell's icon in the game's frame (a

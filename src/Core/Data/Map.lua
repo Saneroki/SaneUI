@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Map
+--  SaneUI - Core - Data - Map
 --  What Core's data puts on a map (Doc/ideas/Data.md, *Places on the map*): the
 --  places of the sets Spawns (NPCs with a service, rares, quest givers, the
 --  objects players use), Places (crossings, caves, entrances, piers, mailboxes,
@@ -59,7 +59,7 @@ local job, stale   -- a walk (or a look through the facts) is running; a set cha
 local changed = {} -- [set name] = true: changed since the last walk began
 local Again        -- what a change asks for, below
 local NONE = {}
-local FROZEN = { __newindex = function() error("a place of Sane UI's data is read-only", 2) end }
+local FROZEN = { __newindex = function() error("a place of SaneUI's data is read-only", 2) end }
 
 -- Whether a set can be had: Core holds it (or is still reading it), and it is not refused.
 local function Usable(handle)

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Look
+--  SaneUI - Lore - Look
 --  What the talk's parts share. No window over the world, but each part on a
 --  plate of its own (Saneroki, 2026-11-11: first the shades faded into each
 --  other, then "instead of the black sharp border ... a fuzzy fadeout with

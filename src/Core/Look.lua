@@ -1,9 +1,9 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Look
+--  SaneUI - Core - Look
 --  The kit (Saneroki, 2026-11-15; Doc/guides/interface-style.md, The kit):
---  Sane UI's windows built from WoW: Forever's own parts, the login screen's
+--  SaneUI's windows built from WoW: Forever's own parts, the login screen's
 --  first, in the game's own Friz Quadrata. Every part is the game's atlas by
 --  its name, so each game draws its own picture under it; where a game has no
 --  picture by that name (Retail lacks Forever's heavy bronze), a stand-in of

@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Steps
+--  SaneUI - Abilities - Macros - Steps
 --  A macro's steps in a list, one line each: its number, picture, what it does
 --  and when, how often it comes up, a mark if something is wrong, on or off,
 --  delete. A click chooses a line (Detail.lua shows it), a drag moves it, and a

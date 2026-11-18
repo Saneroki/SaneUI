@@ -1,14 +1,14 @@
 local ADDON = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Core
+--  SaneUI - Core
 --  What every module needs and none should build twice: a line in chat, the
 --  game's events, a way to run a step so that an error in it stops nothing
 --  else, the list of modules, the /sane command and the saved settings (Saved.lua).
 --  Core also holds the options (Settings/) and keeps the game's own settings with
---  Sane UI's (Sync/).
+--  SaneUI's (Sync/).
 --
---  Sane UI is several addons: this one (the addon "SaneUI"), and one per module
+--  SaneUI is several addons: this one (the addon "SaneUI"), and one per module
 --  (SaneUI_Abilities, SaneUI_Social, ...), each in a folder of its own. A module
 --  depends on this addon and on no other module, so every one of them can be
 --  switched on and off by itself in the game's addon list.
@@ -30,10 +30,10 @@ local ADDON = ...
 local Core = { name = "Core" }
 SaneUI = { Core = Core }
 
-Core.TITLE = "Sane UI"
+Core.TITLE = "SaneUI"
 Core.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
 Core.GOLD = { 0.525, 0.439, 0.282 }
--- Sane UI's Discord, by the server's own address (it never expires): on the page Sane UI (About.lua) and in the
+-- SaneUI's Discord, by the server's own address (it never expires): on the page SaneUI (About.lua) and in the
 -- line told for a problem.
 Core.DISCORD = "https://discord.gg/saneui"
 local PREFIX = "|cff867048" .. Core.TITLE .. ":|r "
@@ -42,7 +42,7 @@ function Core.Print(text)
     print(PREFIX .. text)
 end
 
--- The game this client is: Sane UI is one code for WoW: Forever and Retail (Doc/guides/addon-standards.md,
+-- The game this client is: SaneUI is one code for WoW: Forever and Retail (Doc/guides/addon-standards.md,
 -- *Forever and Retail*). Core.GAME is "forever" or "retail", nil on any other client; Core.FOREVER and
 -- Core.RETAIL say the same for code that differs. Forever's client is Retail's with a layer of its own, so
 -- WOW_PROJECT_ID tells them apart (18 and 1, should the game's names for them be missing). Told as Core is
@@ -65,7 +65,7 @@ function Core.ForGame(choices)
     return choices[Core.GAME]
 end
 
--- Whether an addon of Sane UI serves this game: "## X-SaneUI-Games: forever" in its TOC names the games it
+-- Whether an addon of SaneUI serves this game: "## X-SaneUI-Games: forever" in its TOC names the games it
 -- is made for (a module that needs the one game's art or systems); without it, both.
 function Core.ServesGame(addon)
     local ok, games = pcall(C_AddOns.GetAddOnMetadata, addon, "X-SaneUI-Games")
@@ -76,7 +76,7 @@ function Core.ServesGame(addon)
     return false
 end
 
--- The Sane UI an addon of ours was published with, when this Core is older: each module is a download of its
+-- The SaneUI an addon of ours was published with, when this Core is older: each module is a download of its
 -- own and Core one beside them (dev/tools/release), so a player may update a module and not Core. A packaged
 -- module's TOC names its Core ("## X-SaneUI-Core: 0.3.2"); a copy built here names none. nil: Core is new enough.
 local function Numbers(version)
@@ -101,7 +101,7 @@ local function TellOldCore(addon)
     if not wanted then return end
     toldOld[addon] = true
     local ok, title = pcall(C_AddOns.GetAddOnMetadata, addon, "Title")
-    Core.Print(("%s was made with Sane UI %s, and this is %s: update Sane UI too."):format(
+    Core.Print(("%s was made with SaneUI %s, and this is %s: update SaneUI too."):format(
         ok and type(title) == "string" and title or addon, wanted, Core.VERSION))
 end
 
@@ -221,7 +221,7 @@ function Core.PlayerKeyOf(text)
     return Key(name, realm)
 end
 
--- An amount of money, the one way Sane UI writes it: 1g1s1c, the letters being the game's coin icons, at the size of the words
+-- An amount of money, the one way SaneUI writes it: 1g1s1c, the letters being the game's coin icons, at the size of the words
 -- around them, with no spaces (Saneroki, 2026-10-30). A coin there is none of is left out. Where the game has not its coins' words,
 -- what it writes itself; nil if it cannot.
 function Core.Coins(copper)
@@ -255,7 +255,7 @@ end
 
 -------------------------------------------------------------------------------
 --  Errors: caught, told once, kept, and the part that failed steps aside
---  Every piece of Sane UI's code the game calls runs behind a guard: a step (Safe, a module's
+--  Every piece of SaneUI's code the game calls runs behind a guard: a step (Safe, a module's
 --  Guarded) or the door it came in by (an event, Later, a module's start, module.Guard). What
 --  slips past all of them reaches the game's error window, and is caught there too. A module's
 --  error stands that module down: it gives the game's own back and stops (module.StandDown).
@@ -310,9 +310,9 @@ function Core.NoteError(label, text)
 end
 
 -- The line in chat for a problem: where it happened, and how the player reports it: /sane bug makes the report
--- (with the latest errors, About.lua) to paste on Sane UI's Discord. Chat cannot be copied, so the invite is
--- written short, to type (the page Sane UI copies it whole).
-local TOLD = "problem in %s. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord: "
+-- (with the latest errors, About.lua) to paste on SaneUI's Discord. Chat cannot be copied, so the invite is
+-- written short, to type (the page SaneUI copies it whole).
+local TOLD = "problem in %s. Type /sane bug to make a bug report, then copy and paste it into #bug-reports on SaneUI's Discord: "
     .. (Core.DISCORD:gsub("^https?://", ""))
 
 -- Keeps a problem and says so in chat, once per label (unless the player switched that off).
@@ -388,7 +388,7 @@ local function Failed(owner, label, problem, seen)
 end
 
 -- An error that slipped past every guard (a frame's script or a hook that has none) goes to the
--- game's own error handler, which hands it to its error window: those of Sane UI are caught there,
+-- game's own error handler, which hands it to its error window: those of SaneUI are caught there,
 -- and fail as at any door. The game's handling is left as it is: this only listens. A Lua warning
 -- (messageType 1, no error) is only noted.
 local function GameError(_, message, messageType, stack)
@@ -475,7 +475,7 @@ end
 --  A /reload offered
 -------------------------------------------------------------------------------
 local RELOAD = {
-    text = "Sane UI changed %s. The game shows the change after the interface is reloaded.",
+    text = "SaneUI changed %s. The game shows the change after the interface is reloaded.",
     reload = "Reload",
     later = "Later",
     both = "%s and %s",
@@ -622,7 +622,7 @@ function Core.Locked(frame)
     return InCombatLockdown() and frame:IsProtected() and true or false
 end
 
--- The restrictions under which Sane UI's long work waits (Enum.AddOnRestrictionType): combat, an
+-- The restrictions under which SaneUI's long work waits (Enum.AddOnRestrictionType): combat, an
 -- encounter, a challenge mode, a PvP match, a map that restricts addons. Not chat, which only limits
 -- addon messages. The game tells each change before a restriction begins and after it ends; its state
 -- is kept from that event, not asked (the game answers false while the event is sent).
@@ -683,7 +683,7 @@ Core.On("PLAYER_REGEN_ENABLED", function()
     end
 end)
 
--- An action the game blocked because it came from Sane UI's code ("Interface action failed because of
+-- An action the game blocked because it came from SaneUI's code ("Interface action failed because of
 -- an AddOn"): noted, so the error log says what did it. Another addon's are not ours to note. The game
 -- tells it while the blocked call still runs, so the trace names the place that made it: the action
 -- alone is often UNKNOWN(), and the addon named is the one whose code came first (Core, whose guards
@@ -713,8 +713,8 @@ local retired = {} -- the old addons that were loaded, told at the login
 -- tools above and messages of its own (Listen and Fire) for its files to talk.
 -- addon is the folder its files are in: the module is started when that addon is loaded.
 function Core.NewModule(addon, name, module)
-    assert(type(addon) == "string" and type(name) == "string", "Sane UI: a module needs its addon and a name")
-    assert(SaneUI[name] == nil, "Sane UI: there are two modules called " .. name)
+    assert(type(addon) == "string" and type(name) == "string", "SaneUI: a module needs its addon and a name")
+    assert(SaneUI[name] == nil, "SaneUI: there are two modules called " .. name)
     module = module or {}
     module.addon, module.name = addon, name
     module.title = module.title or name

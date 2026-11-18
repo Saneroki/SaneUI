@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Corpse
+--  SaneUI - Navigation - Corpse
 --  While you are dead, the game's map pin stands where you died, so the golden
 --  line leads you back to your corpse; alive again, the pin you had before comes
 --  back (Saneroki, 2026-11-10: "when you die the map pin is changed to where you

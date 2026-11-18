@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Check
+--  SaneUI - Core - Data - Check
 --  What the game told in play of an entry, compared with the set field by field (Doc/guides/data.md, *Checked in
 --  play*): what agrees is confirmed, what differs or is missing is learned, so the data grows more right with every
 --  player who plays. Core's watchers only (Quests.lua, Facts.lua, Loot.lua); a module reads the sets as ever.

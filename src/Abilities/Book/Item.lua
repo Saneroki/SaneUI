@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book item
+--  SaneUI - Abilities - Book item
 --  One grey icon in the spellbook: a spell or a rank you have not learned yet.
 --
 --  It is drawn with the same art as the game's own spellbook entries

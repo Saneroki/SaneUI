@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Views
+--  SaneUI - Core - Views
 --  A window with several views, each behind a tab, in the game's own style:
 --  the tab system of its spellbook and its housing dashboard (TabSystemTemplate,
 --  with the tabs that stand on what they belong to: TabSystemTopButtonTemplate;

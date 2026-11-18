@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates - Text
+--  SaneUI - Combat - Nameplates - Text
 --  The line inside a plate's bar, left to right, each piece taking room only
 --  while it shows (Saneroki, 2026-11-16: the quest's icon inside the bar too):
 --    quest    the game's sword (to kill) or sack (to loot) and the count
@@ -9,8 +9,8 @@ local _, ns = ...
 --             objective still open (Core.UnitQuest)
 --    level    the unit's level in the game's colour for how hard it is to you
 --             (a skull where it is too high to tell)
---    marker   the raid marker (Marks.lua), right after the level, as on Sane
---             UI's unit frames (Text.BESIDE either side of it)
+--    marker   the raid marker (Marks.lua), right after the level, as on
+--             SaneUI's unit frames (Text.BESIDE either side of it)
 --    gear     a player's item level ("i32"), once inspected (Core.Inspect)
 --    threat   your threat on it while you are on its threat list: grey while
 --             low, orange when you are about to take its aggro, red while you
@@ -67,7 +67,7 @@ Text.NAME = 80   -- the room of a name the game hides, before a plain one was se
 Text.MOST = 400  -- the most room a name takes (cut short beyond it): long names make the bar longer
 Text.GEAR = { 0.75, 0.75, 0.75 } -- the item level's colour
 Text.SKULL = "|TInterface\\TargetingFrame\\UI-TargetingFrame-Skull:0|t" -- the game's mark for a level too high to tell
--- The game's mouse cursors for a creature to fight and one to loot, as Sane UI shows objectives elsewhere.
+-- The game's mouse cursors for a creature to fight and one to loot, as SaneUI shows objectives elsewhere.
 Text.QUEST = { kill = "Interface\\CURSOR\\Attack", loot = "Interface\\CURSOR\\LootAll" }
 -- Threat by the game's kinds (UnitDetailedThreatSituation's status): 0 low, 1 about to take aggro, 2 and 3 having it.
 Text.THREAT = {

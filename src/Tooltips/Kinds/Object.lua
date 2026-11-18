@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Object
+--  SaneUI - Tooltips - Kinds - Object
 --  A thing in the world (a mailbox, a chest, a herb, a vein): its name and its
 --  lines, as any other kind (Read.Generic). A herb or an ore Core's data knows
 --  by its name also has the section Professions (Gathering.lua); the game's own

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Doll
+--  SaneUI - Inventory - Sheet - Doll
 --  The character's doll in the kit's look (Core.Look; Doc/guides/interface-
 --  style.md, The kit: the character window, "a prime example"): the heavy
 --  bronze frame round it, the gear slots in the game's two columns with

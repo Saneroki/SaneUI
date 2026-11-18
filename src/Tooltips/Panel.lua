@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Panel
+--  SaneUI - Tooltips - Panel
 --  The panel that is drawn in place of a tooltip, from a model (Model.lua):
 --
 --      /---------------------------------------\

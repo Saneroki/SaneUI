@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - PinView
+--  SaneUI - Navigation - PinView
 --  The pins drawn: a button for each pin Pins.For gives, at a fixed size on the
 --  screen whatever the zoom, in the game's own looks (its quest marks, flight
 --  points, vignettes, town tracking and map legend), on a layer of the canvas
@@ -202,7 +202,7 @@ local function Creature(pin)
     return tonumber(tostring(pin.key):match("^npc:(%d+)$"))
 end
 
--- A rare's tooltip as a dungeon boss's (Dungeons.lua, BossTip): its look (Core.TipLook), drawn by Sane UI's tooltips
+-- A rare's tooltip as a dungeon boss's (Dungeons.lua, BossTip): its look (Core.TipLook), drawn by SaneUI's tooltips
 -- as a creature's panel: its model by its creature, the silver dragon, its level on the plaque. Core's NPCs tell its rank,
 -- levels, kind, side, abilities and how long it takes to come back, where they know them.
 local NPC_FACTS = Core.Data.Set("NPCs")

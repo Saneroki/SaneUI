@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Spacing
+--  SaneUI - Abilities - Spacing
 --  The buttons of every action bar touch (Saneroki, 2026-10-31): no space
 --  between the icons, side by side or between the rows of a bar.
 --

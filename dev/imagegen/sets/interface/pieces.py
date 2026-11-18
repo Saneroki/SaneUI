@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The final pieces (Doc/guides/interface-style.md, *Pieces*): every decided element at 4K, alone on transparency,
-trimmed to what it covers, so code can build any of Sane UI's windows from them like a puzzle. Made in code from
+trimmed to what it covers, so code can build any of SaneUI's windows from them like a puzzle. Made in code from
 the parts at 4K (catalog.py hires: one render each) and from the decided references; nothing is painted here.
   window      #12 cut into its pieces: the top's two ends and its middle (stretched), the bottom's the same, the
               left and right edges (tiles that repeat without a seam), the clasp; the window's paper moved to the

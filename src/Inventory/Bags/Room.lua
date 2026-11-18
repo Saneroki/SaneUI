@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Room
+--  SaneUI - Inventory - Bags - Room
 --  One slot of your bags kept free for what comes (Saneroki, 2026-10-30; Loot's
 --  switch Make room for loot, also a box at the foot of the bags). When the last
 --  slot fills, the junk worth the least goes: what the bags call junk

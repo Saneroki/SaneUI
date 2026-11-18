@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Links
+--  SaneUI - Social - Links
 --  The links in a message ([Strong Iron Lockbox], a spell, a quest, a player):
 --  the mouse over one shows its tooltip, a click does what a click on it does
 --  in the game's chat.

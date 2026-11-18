@@ -2,7 +2,7 @@ local ADDON = ...
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Saved settings
+--  SaneUI - Core - Saved settings
 --  What Core and every module keep between sessions.
 --
 --  All of it is one table, SaneUIDB, which the game writes to
@@ -178,7 +178,7 @@ end
 -- shows nothing).
 -- unit = "seconds", "%": written after a number's value. distance = true: a slider's value is yards, shown as the
 -- setting Units says (Core.Distance).
--- page = "Appearance" (Core's own switches only): on that page of Sane UI's instead of General.
+-- page = "Appearance" (Core's own switches only): on that page of SaneUI's instead of General.
 -- validate = function(value) return ok end: a value it refuses gets the default (at the load, Core.Set).
 -- reload = true: the game shows a change only after a /reload, which is offered.
 -- button = function() end: an action on the options page (no default, nothing kept).
@@ -266,23 +266,23 @@ function Core.Reset(name, only)
     end
 end
 
--- The general switches (Core.general): described here like a module's, shown on Sane UI's own pages
+-- The general switches (Core.general): described here like a module's, shown on SaneUI's own pages
 -- General and Appearance.
 Core.Options(Core.name, {
     { key = "places", default = {} }, -- where the windows stand, by module and window (Window.lua: Held)
     { key = "errors", default = true, text = "Errors in chat", header = "Errors",
-      headerTip = "What Sane UI says when something of it goes wrong.",
-      tip = "Says in chat when something of Sane UI goes wrong, and how to report it (/sane bug): one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
+      headerTip = "What SaneUI says when something of it goes wrong.",
+      tip = "Says in chat when something of SaneUI goes wrong, and how to report it (/sane bug): one line for each kind of problem. Switched off, the problems are still kept: type /sane errors." },
     { key = "resetWindows", text = "Reset window positions", header = "Windows",
-      headerTip = "Where Sane UI's windows stand.",
-      tip = "Puts every window of Sane UI back at its first place and size. Whether a window was left in full screen, or the game's own window chosen instead, stays as it is. Also /sane window reset all.",
+      headerTip = "Where SaneUI's windows stand.",
+      tip = "Puts every window of SaneUI back at its first place and size. Whether a window was left in full screen, or the game's own window chosen instead, stays as it is. Also /sane window reset all.",
       button = function() if Core.Window and Core.Window.ResetAll then Core.Window.ResetAll() end end },
-    { key = "units", default = "metric", text = "Units", header = "Units", headerTip = "How Sane UI writes distances and the time of day.",
+    { key = "units", default = "metric", text = "Units", header = "Units", headerTip = "How SaneUI writes distances and the time of day.",
       choices = { { "metric", "Metric" }, { "imperial", "Imperial" } },
-      tip = "Metric: distances in meters and the time in 24 hours (27 m, 23:59). Imperial: yards and 12 hours (30 yd, 11:59 PM). Everywhere Sane UI writes them, and on the game's own clock. The tips on the options pages follow at the next /reload." },
+      tip = "Metric: distances in meters and the time in 24 hours (27 m, 23:59). Imperial: yards and 12 hours (30 yd, 11:59 PM). Everywhere SaneUI writes them, and on the game's own clock. The tips on the options pages follow at the next /reload." },
     { key = "shareData", default = true, text = "Share data with my guild and group", header = "Data",
-      headerTip = "What Sane UI swaps with other players.",
-      tip = "Sane UI players in your guild and group swap general game knowledge (auction prices, new quests, changes after a patch, drop chances and what gathering gives), so everybody's is up to date. Nothing about you or your characters is sent, and it does not slow the game. Off: Sane UI neither sends nor takes any of it." },
+      headerTip = "What SaneUI swaps with other players.",
+      tip = "SaneUI players in your guild and group swap general game knowledge (auction prices, new quests, changes after a patch, drop chances and what gathering gives), so everybody's is up to date. Nothing about you or your characters is sent, and it does not slow the game. Off: SaneUI neither sends nor takes any of it." },
     { key = "chatData", default = false, text = "Chat message for new data changes",
       tip = "One line in chat when the game showed something our data did not have: a new quest, a changed vendor, a drop nobody listed. Summed up, at most one line in 15 minutes, never in a fight." },
     { key = "chatPrices", default = false, text = "Chat message for new auction house data",
@@ -290,10 +290,10 @@ Core.Options(Core.name, {
     { key = "forgetShared", text = "Forget shared data", tip = "Takes out everything your guild and group sent: auction prices, drop counts and discoveries, and what still waits. Your own stays as it was. Discoveries go at the next /reload. Also /sane data forget.",
       button = function() if Core.Data and Core.Data.ForgetShared then Core.Data.ForgetShared() end end },
     { key = "animations", default = true, text = "Animations", page = "Appearance",
-      header = "Windows", headerTip = "How Sane UI's windows move.",
-      tip = "Sane UI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },
+      header = "Windows", headerTip = "How SaneUI's windows move.",
+      tip = "SaneUI's windows move, fade and slide. Off: everything is at once where it goes, in every module, whatever its own settings say." },
     { key = "motion", default = Core.Motion.DEFAULT, text = "Animation type", choices = Core.Motion.Choices(), page = "Appearance", parent = "animations",
-      tip = "How Sane UI's windows move when they fill the screen from a screen edge and go back, and when they open while the mouse rests on them. Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. A window can have its own, in its section Expand window (Social: tab Appearance)." },
+      tip = "How SaneUI's windows move when they fill the screen from a screen edge and go back, and when they open while the mouse rests on them. Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. A window can have its own, in its section Expand window (Social: tab Appearance)." },
 }, function(key)
     if key == "units" then Core.GameClock() end
     -- Sharing switched: what waited to be shared goes now (Data/Confirm.lua, read after this file)

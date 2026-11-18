@@ -1,4 +1,4 @@
-"""dev/tools/fresh-install: a new player's first Sane UI in both games, the real WTF and Interface set aside whole and
+"""dev/tools/fresh-install: a new player's first SaneUI in both games, the real WTF and Interface set aside whole and
 put back as they were; nothing deleted that is not the test's; nothing done while a game runs.
 Run by dev/tests/run."""
 import hashlib
@@ -105,7 +105,7 @@ with tempfile.TemporaryDirectory() as temporary:
 
     # A dry run changes nothing.
     said = quiet(tool.start, [], True)
-    check("would set WTF and Interface aside" in said and "2 Sane UI keys taken off" in said, "dry: says what it would do")
+    check("would set WTF and Interface aside" in said and "2 SaneUI keys taken off" in said, "dry: says what it would do")
     check(not (forever / tool.HOLD).exists() and tree(forever / "WTF") == before[forever][0], "  and does nothing")
 
     # The start.
@@ -120,16 +120,16 @@ with tempfile.TemporaryDirectory() as temporary:
               and b'SET synchronizeBindings "0"\r\n' in config and b'SET synchronizeChatFrames "0"\r\n' in config
               and b'SET portal "EU"\r\n' in config, f"{folder.name}: Config.wtf kept, the game's syncing off, CRLF")
         keys = (wtf / "Account/1#1/bindings-cache.wtf").read_bytes()
-        check(keys == b"bind Q MOVEFORWARD\r\nbind W STRAFELEFT\r\n", f"{folder.name}: the player's keys kept, Sane UI's taken off")
+        check(keys == b"bind Q MOVEFORWARD\r\nbind W STRAFELEFT\r\n", f"{folder.name}: the player's keys kept, SaneUI's taken off")
         saved = sorted(str(p.relative_to(wtf)) for p in wtf.rglob("SavedVariables/*"))
         check(saved == ["Account/1#1/SavedVariables/Blizzard_ClassTalentUI.lua", "SavedVariables/Blizzard_Console.lua"],
               f"{folder.name}: no addon's saved files, Blizzard's kept: {saved}")
-        check(not list(wtf.rglob("AddOns.txt")), f"{folder.name}: no addon list, so the game turns Sane UI on")
+        check(not list(wtf.rglob("AddOns.txt")), f"{folder.name}: no addon list, so the game turns SaneUI on")
         check((wtf / "Account/1#1/93/Sane-Lunatic/layout-local.txt").is_file()
               and (wtf / "Account/1#1/macros-cache.txt").read_bytes() == (hold / "WTF/Account/1#1/macros-cache.txt").read_bytes(),
               f"{folder.name}: the characters and the game's own files kept")
-        check(sorted(p.name for p in addons.iterdir()) == ALL[folder.name], f"{folder.name}: AddOns holds Sane UI's alone, no tool-made one")
-        check((addons / "SaneUI/Core.lua").read_text() == "-- core\n", f"{folder.name}: Sane UI as the game had it installed")
+        check(sorted(p.name for p in addons.iterdir()) == ALL[folder.name], f"{folder.name}: AddOns holds SaneUI's alone, no tool-made one")
+        check((addons / "SaneUI/Core.lua").read_text() == "-- core\n", f"{folder.name}: SaneUI as the game had it installed")
     check("SaneUI_Inventory, SaneUI_Loot, SaneUI_Navigation" in said and "saneui myinstall" in said,
           "the start says what went in and the way back")
     check("a fresh-install test since" in quiet(tool.status), "status: a test is on")
@@ -137,7 +137,7 @@ with tempfile.TemporaryDirectory() as temporary:
     why = refused(tool.start, [], False)
     check(why and "test is on" in why, "a second start is refused while a test is on")
 
-    # The game plays the test: Sane UI saves, a key is bound, the test's own files change.
+    # The game plays the test: SaneUI saves, a key is bound, the test's own files change.
     write(forever / "WTF/Account/1#1/SavedVariables/SaneUI.lua", "SaneUIDB = { fresh = true }\r\n")
     write(forever / "WTF/Account/1#1/bindings-cache.wtf", "bind Q MOVEFORWARD\r\nbind E CLICK SaneUISpeedLevelingFind:LeftButton\r\n")
     write(forever / "Interface/AddOns/SaneUI/New.lua", "-- installdev into the test\n")
@@ -194,7 +194,7 @@ with tempfile.TemporaryDirectory() as temporary:
         return got, said
     got, said = picked("navigation")
     check(got["_forever_"] == got["_retail_"] == ["SaneUI", "SaneUI_Navigation", "SaneUI_Onboarding"],
-          f"navigation: Core's download (Sane UI and Onboarding) and Navigation alone: {got}")
+          f"navigation: Core's download (SaneUI and Onboarding) and Navigation alone: {got}")
     got, said = picked("Navigation", "SaneUI_Inventory")
     check(got["_forever_"] == ["SaneUI", "SaneUI_Inventory", "SaneUI_Loot", "SaneUI_Navigation", "SaneUI_Onboarding"],
           f"navigation inventory: and what Inventory's TOC needs first, any spelling: {got}")
@@ -204,7 +204,7 @@ with tempfile.TemporaryDirectory() as temporary:
           f"economy: with the auction data it carries: {got}")
     check("Retail: " in said and "SaneUI_AuctionScans" in said.split("Retail: ")[-1], "  and Retail's lack of one is said")
     got, said = picked("core")
-    check(got["_forever_"] == ["SaneUI", "SaneUI_Onboarding"], f"core: Core's download alone (Sane UI and Onboarding): {got}")
+    check(got["_forever_"] == ["SaneUI", "SaneUI_Onboarding"], f"core: Core's download alone (SaneUI and Onboarding): {got}")
     got, said = picked("navigation", zips=[package])
     check(got["_forever_"] == ["SaneUI", "SaneUI_Navigation", "SaneUI_Onboarding"], f"a module out of the zips: {got}")
     for words, words_why in ((["maps"], "No module maps"), (["lore"], "SaneUI_Lore is in neither game's AddOns")):

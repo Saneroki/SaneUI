@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Taxi
+--  SaneUI - Navigation - Taxi
 --  At a flight master, our full map in place of the game's flight map
 --  (Saneroki, 2026-11-10): "if you open it normally it shows our own fullscreen
 --  map instead but where the flightpath icons are huge and you can click them to

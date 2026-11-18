@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Engine
+--  SaneUI - Abilities - Engine
 --  Keeps the reservations and turns them into real buttons.
 --
 --  The one rule (Saneroki's decision): what you put on a button last wins. So a slot

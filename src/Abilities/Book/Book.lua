@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book
+--  SaneUI - Abilities - Book
 --  Puts the spells you have not learned yet into the game's own spellbook.
 --
 --  The game's spell entries stay exactly what they are: they are made, filled

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Draws the smiley beside the line to write in (Social, Picker.lua): assets/SaneSocial-Smiley.png.
 
-The game has no smiley of its own to use there (no atlas, no file in its chat art), so it is Sane UI's
+The game has no smiley of its own to use there (no atlas, no file in its chat art), so it is SaneUI's
 own: a round face in warm gold with a dark bronze rim, eyes and a smile, a small shine on the upper
 left. Drawn large (1024 x 1024); dev/tools/art makes the game's texture of it (assets/optimized/Social/Art/smiley.blp,
 drawn 24 x 24). A drawing by hand can take its place in assets/ under the same name.

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Quest
+--  SaneUI - Tooltips - Kinds - Quest
 --  A quest's tooltip:
 --
 --      THE FURY RUNS DEEP

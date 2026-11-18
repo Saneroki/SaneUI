@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Statistics
+--  SaneUI - Inventory - Sheet - Statistics
 --  The sheet's statistics tab, as the game's sheet has it (Camelot's
 --  StatisticsFrame, from the game's addon Blizzard_Statistics), ours: over the
 --  left pane the game's statistics (GetStatisticsCategoryList) as a tree: each

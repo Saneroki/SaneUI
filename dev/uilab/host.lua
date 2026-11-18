@@ -1,7 +1,7 @@
--- The interface lab's host: runs Sane UI's Lua under Lua 5.1 as the game runs it, with the lab's stand-in for the
+-- The interface lab's host: runs SaneUI's Lua under Lua 5.1 as the game runs it, with the lab's stand-in for the
 -- game's API (dev/uilab/lab/), and talks with the lab's server (dev/tools/ui-lab) a JSON line at a time on its
 -- standard input and output. The server starts it again for a reload.
---   lua5.1 dev/uilab/host.lua <Sane UI's folder> <Blizzard's code: the newest export's BlizzardInterfaceCode>
+--   lua5.1 dev/uilab/host.lua <SaneUI's folder> <Blizzard's code: the newest export's BlizzardInterfaceCode>
 local ROOT = assert(arg[1], "the project's folder")
 local CODE = assert(arg[2] ~= "" and arg[2], "the newest export of Blizzard's code (dev/tools/blizzard where)")
 package.path = ROOT .. "/dev/uilab/?.lua;" .. package.path
@@ -171,7 +171,7 @@ local function newAddon(name, fields)
     return a
 end
 
--- Sane UI's Core catches its errors and those of its modules (its guards) and keeps them in its error log
+-- SaneUI's Core catches its errors and those of its modules (its guards) and keeps them in its error log
 -- (/sane errors): the lab shows each one of this run as an error, with the place the log has for it.
 local function coreErrors()
     local Core = rawget(G, "SaneUI") and G.SaneUI.Core
@@ -179,7 +179,7 @@ local function coreErrors()
     local function show(label, text)
         text = tostring(text):gsub(ROOT .. "/", "")
         local first, rest = text:match("^([^\n]*)\n?(.*)$")
-        Lab.Note("error", "Sane UI caught (" .. tostring(label) .. "): " .. first, { stack = rest ~= "" and rest or nil })
+        Lab.Note("error", "SaneUI caught (" .. tostring(label) .. "): " .. first, { stack = rest ~= "" and rest or nil })
     end
     for _, e in ipairs(Core.log or {}) do show(e.label, e.text) end
     local note = Core.NoteError

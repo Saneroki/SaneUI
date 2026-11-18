@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book
+--  SaneUI - Abilities - Book
 --  Our own spellbook, a window on the full screen (Board.lua: the part
 --  spellbook), that looks and works as the game's own book in this client
 --  (Blizzard_PlayerSpells: SpellBook/Blizzard_SpellBookFrame.xml and .lua, the

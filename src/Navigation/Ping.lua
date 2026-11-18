@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Ping
+--  SaneUI - Navigation - Ping
 --  The game's minimap ping, from our map. The game has one way to show the party
 --  and raid a place: its minimap's ping (Minimap:PingLocation), which every
 --  member sees on their minimap. Knows no frames of ours.

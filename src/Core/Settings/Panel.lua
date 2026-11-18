@@ -1,7 +1,7 @@
 local Config = SaneUI.Core.Config -- Settings.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings - Panel
+--  SaneUI - Core - Settings - Panel
 --  The parts of an options page of our own (a canvas: the page Profiles, a
 --  module's page in tabs), all made from the game's templates and art:
 --      Header    the page's title over the game's divider, as its own pages have

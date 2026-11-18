@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates - Auras
+--  SaneUI - Combat - Nameplates - Auras
 --  Around a plate's bar, each kind at one of eight places its setting
 --  chooses (Saneroki, 2026-11-16: "choose where the spells are"; 2026-11-18:
 --  "left, right, top left (above the healthbar but anchored to the left side

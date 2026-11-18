@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Log
+--  SaneUI - Social - Log
 --  The messages: what one of the game's chat events says (Read), and the list
 --  of the last ones (Add). Knows no frames.
 --

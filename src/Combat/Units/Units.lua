@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units
+--  SaneUI - Combat - Units
 --  Our own frames for you, your target and your focus, each in place of the
 --  game's own, in the look of a nameplate (Bar.lua, Text.lua): a round green
 --  health bar (your target's and your focus's red while you can attack it),

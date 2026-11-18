@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - AuraMarks
+--  SaneUI - Core - AuraMarks
 --  The menu of an aura or a spell, between the module that keeps your marks of
 --  auras (Combat, Units/Lists.lua: Important, Unimportant, Hidden, Prioritize on
 --  and Hide from unit frames, Edit tracked..., Add tracking) and those that show

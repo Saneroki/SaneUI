@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - GameBars
---  The game's bars a Sane UI screen does without (Saneroki, 2026-10-31), each
+--  SaneUI - Abilities - GameBars
+--  The game's bars a SaneUI screen does without (Saneroki, 2026-10-31), each
 --  by its switch; off, or standing down, the game's own again:
---    experience bars  the game's experience and reputation bars are gone (Sane
---                     UI's own comes later)
+--    experience bars  the game's experience and reputation bars are gone
+--                     (SaneUI's own comes later)
 --    stance bar       the game's stance, form and aura buttons are gone; the
 --                     keys bound to them and your action bars change stances
 --                     still (its keys run the game's StanceBar:Select)

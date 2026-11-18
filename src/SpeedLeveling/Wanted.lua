@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Wanted
+--  SaneUI - Speed Leveling - Wanted
 --  What the key looks for around you, by name, in this order (the key takes
 --  the first it finds), the NPCs before the creatures (Saneroki, 2026-10-25):
 --    1. the NPCs the steps at hand of your guide name (Guide.Targets; while the

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Reputation
+--  SaneUI - Inventory - Sheet - Reputation
 --  The sheet's reputation tab, as the game's sheet has it (Camelot's
 --  ReputationFrame), ours: over the left pane the factions you know
 --  (C_Reputation), in the game's order and looks (Rows.lua): a header (a click

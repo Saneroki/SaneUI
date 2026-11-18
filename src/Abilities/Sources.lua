@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Sources
+--  SaneUI - Abilities - Sources
 --  Which spells you have, which are still to come, and in which spellbook tab
 --  each of them belongs.
 --

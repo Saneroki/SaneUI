@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Areas
+--  SaneUI - Navigation - Areas
 --  Where a quest's objectives are found, shaded as the game shades them on its
 --  own map: the game's quest area frame (a QuestPOIFrame, the engine draws the
 --  area of a quest on a map into it) laid over each zone in view, as large as the

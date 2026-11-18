@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Route
+--  SaneUI - Navigation - Route
 --  The way to the map pin drawn on the map: a thin golden line, pulsing towards
 --  the pin, on a layer of the canvas under the pins (Canvas.LEVELS), in both views.
 --  The way itself is the planner's (Planner.lua); this draws what it gives:

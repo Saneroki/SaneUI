@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Page
+--  SaneUI - Guild - Page
 --  The guild window's page, whichever window it stands in (Window.lua): the
 --  head with the guild's crest at its left, the guild's name and realm, how
 --  many are online, when the guild's records were last asked for, the gear
@@ -130,7 +130,7 @@ local function BuildHead()
     page.dot:SetTexture("Interface\\FriendsFrame\\StatusIcon-Online")
 end
 
--- The options page Guild (Core's), or Sane UI's options where the game cannot open it now.
+-- The options page Guild (Core's), or SaneUI's options where the game cannot open it now.
 function Page.Options()
     local category = Core.pages and Core.pages[ns.name]
     local settings = rawget(_G, "Settings")

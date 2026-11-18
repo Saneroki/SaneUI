@@ -256,7 +256,7 @@ end
 local names = {}
 for index, tab in ipairs(canvas.tabs) do names[index] = tab.Text._text end
 check(table.concat(names, ", ") == "Profiles, Game settings, CVars", "its tabs: Profiles, Game settings, CVars")
-check(not Control("General") and not Control("Sync"), "Game settings: no box of Sane UI's modules: all of their settings are in the profile")
+check(not Control("General") and not Control("Sync"), "Game settings: no box of SaneUI's modules: all of their settings are in the profile")
 check(Shows("Gameplay") and Shows("Accessibility") and Shows("System") and Shows("Elsewhere in the game"),
     "then the game's groups of options pages, and what is on none")
 check(Control("Controls") and Control("Nameplate options") and Control("Graphics") and Control("Edit Mode layout")
@@ -281,7 +281,7 @@ do
 end
 
 -- Character A comes into the game: nothing kept yet, so nothing is written --------------------------
--- A slow login: the game has its stored settings only after entering the world. Sane UI waits for them.
+-- A slow login: the game has its stored settings only after entering the world. SaneUI waits for them.
 local loaded = false
 C_CVar.AreCVarsLoaded = function() return loaded end
 W.Fire("PLAYER_ENTERING_WORLD", true, false)
@@ -764,7 +764,7 @@ do
     check(options.named.autoLootDefault == nil and options.dropped.autoLootDefault == true, "a page's own too (Controls)")
     W.cvars.graphicsQuality = "1"
     Sync.Give()
-    check(W.cvars.graphicsQuality == "1", "so nothing of Sane UI's writes graphics any more")
+    check(W.cvars.graphicsQuality == "1", "so nothing of SaneUI's writes graphics any more")
     Sync.Keep("graphicsQuality", true)
     check(options.named.graphicsQuality == "1" and options.dropped.graphicsQuality == nil,
         "ticked in the CVars tab afterwards: kept all the same, the latest word")
@@ -951,7 +951,7 @@ do
     Sync.Give()
     check(loaded == nil, "a login with no keys in the profile: the keys stay as the game has them")
     Profiles.Reset()
-    check(loaded == nil, "Defaults on the page Profiles (Sane UI's settings only, the game's stay): the keys stay too")
+    check(loaded == nil, "Defaults on the page Profiles (SaneUI's settings only, the game's stay): the keys stay too")
     Sync.Moved()
     check(loaded == 0, "come over from another profile: the game's own keys, not the keys of the one left")
     local count = GetNumBindings
@@ -1022,7 +1022,7 @@ do
     check(read.One == true and read.Two == false and read.SaneUI == true, "which addons are on, read")
     check(part.Write({ One = false, Two = true, SaneUI = false, Gone = true }) == true and states.One == 0 and states.Two == 2,
         "written as the profile has them: a /reload is due")
-    check(states.SaneUI == 2 and states.Gone == nil and saved == 1, "never Sane UI itself, nor one this client lacks")
+    check(states.SaneUI == 2 and states.Gone == nil and saved == 1, "never SaneUI itself, nor one this client lacks")
     check(part.Write({ One = false, Two = true }) == false and saved == 1, "nothing to change: nothing asked")
     -- Switched on the character screen since this character's last logout (Sync.Outside): the profile takes it, so
     -- the login does not switch it back; one the profile changed meanwhile (on another character) stays the profile's.
@@ -1201,7 +1201,7 @@ do
     Click(keep)
     check(Errors() == not now and not Unsaved.Pending() and SaneUIDB.profiles[use].Core.errors == not now, "Save keeps them")
 
-    -- A /reload Sane UI offers waits for nothing: the /reload saves the changes, as every /reload does (below)
+    -- A /reload SaneUI offers waits for nothing: the /reload saves the changes, as every /reload does (below)
     Frames()
     Core.Set(Core.name, "errors", now)
     Frames()
@@ -1214,7 +1214,7 @@ do
     W.reloaded = nil
 
     -- A /reload or logout unanswered saves the changes as Yes does (Saneroki, 2026-11-10: a change must not pop back
-    -- at a /reload): Sane UI's switch, the game's setting, an addon switched off in the game's addon list, into the
+    -- at a /reload): SaneUI's switch, the game's setting, an addon switched off in the game's addon list, into the
     -- profile in use and the one ticked besides
     Frames()
     SettingsPanel:Hide()

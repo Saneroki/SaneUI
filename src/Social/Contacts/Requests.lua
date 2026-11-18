@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Requests
+--  SaneUI - Social - Contacts - Requests
 --  Friend requests, and a friend to add: the requests the game's friends list
 --  shows at its top, and what its dialog Add Friend asks for, in one tab.
 --

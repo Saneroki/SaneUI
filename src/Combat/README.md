@@ -1,4 +1,4 @@
-# Sane UI: Combat
+# SaneUI: Combat
 
 **Status:** quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); one frame for party and raid (built); rings around the mouse for the global cooldown and your cast (built); the threat and damage meter (built); aura icons and bars where you track them (built); in Retail all of it. Its window and full screen at the bottom middle (our spellbook, talents, Sane Macros, the action bars, the aura history) went to Abilities on 2026-11-18 · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
@@ -49,9 +49,9 @@ nameplates its icon then shows on each frame or plate whose unit lacks it (your 
 Sunder Armor), as you choose, nothing fixed.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
+- **Switch it on or off:** tick or untick *Combat* under *SaneUI* in the game's addon list.
 - **Ours or the game's** (Saneroki, 2026-11-18: "has the ability to choose which ones use ours and which one are not
-  using ours"): the first section of *Sane UI > Combat*: *Unit frames*, *Party and raid frames*, *Nameplates*, *Aura
+  using ours"): the first section of *SaneUI > Combat*: *Unit frames*, *Party and raid frames*, *Nameplates*, *Aura
   tracking*, each on at first; one off is the game's own at once (the nameplates back on: after a `/reload`), its
   switches below greyed out. The same three of the game's windows, *Unit frames*, *Party and raid frames* and
   *Nameplates*, stand under *Combat* in the dropdown *Classic windows* of every full screen and on Onboarding's first
@@ -133,7 +133,7 @@ Sunder Armor), as you choose, nothing fixed.
     *Healer (@healer)*, a *Party member* (@party1 to 4) or a *Raid member* (@raid1 to 40); its **X** stops it, Esc
     closes it. What you look out for is watched on the nameplates, among your group and as your target, in a fight
     too, and kept for the character. Once found, the place shows *Focus found: Add it now* in a gold edge, and a click
-    on it, or its key (*Focus who you look out for*, under Sane UI in the game's key bindings), makes that one your
+    on it, or its key (*Focus who you look out for*, under SaneUI in the game's key bindings), makes that one your
     focus. The game lets no addon set a focus by itself, so that click is yours; it focuses only while you have none.
     One not of your group, whom the game's `/focus` does not know by name (Saneroki, 2026-11-09: "It doesn't add units
     that are not in the group"), the click takes as your target first, makes your focus, and gives you back the target
@@ -159,11 +159,11 @@ Sunder Armor), as you choose, nothing fixed.
   a made-up preview, a real unit there or not: your target a foe a level above you, elite, a skull on it, its target
   you; your focus a player with an item level, its target a creature; your own frame with your pet and its power, a
   cast, your breath and your fatigue, and as a druid both your powers, mana and energy.
-- **Settings:** *Sane UI > Combat*: the section *Unit frames* (*Your
+- **Settings:** *SaneUI > Combat*: the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
   rest* with *In a group too* under it, *Auras on the frames*); *Quest marks on nameplates*. The action bars' switches,
-  your keys and the full screen's sections are Abilities' (*Sane UI > Abilities*).
+  your keys and the full screen's sections are Abilities' (*SaneUI > Abilities*).
 - **In Retail:** all of it works as in Forever (Retail's names have no surname: a player's name alone).
 
 - **Your party and raid:** one frame of ours for both, in place of the game's party and raid frames (*Party and raid
@@ -776,9 +776,9 @@ Sunder Armor), as you choose, nothing fixed.
 
 | File | What it holds |
 |---|---|
-| `SaneUI_Combat.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
-| `Art/banner.blp`, `Art/icon.blp` | The module's logo (crossed swords): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/combat-banner.png` and `combat-icon.png` |
-| `Bindings.xml` | Combat's keys in the game's key bindings, under Sane UI: *Focus who you look out for*, *Show or hide players you don't know* (the game reads it by itself) |
+| `SaneUI_Combat.toc` | The addon: needs Core (`SaneUI`), stands under SaneUI in the addon list |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (crossed swords): one of SaneUI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of SaneUI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/combat-banner.png` and `combat-icon.png` |
+| `Bindings.xml` | Combat's keys in the game's key bindings, under SaneUI: *Focus who you look out for*, *Show or hide players you don't know* (the game reads it by itself) |
 | `Combat.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its switches (`ns.OPTIONS`: *Ours or the game's*, the unit frames, the group frames, the quest marks, the rings, the meter, the reminders), what a change tells each part (`ns.Changed`), its parts in Core's *Classic windows*, `GiveBack`, the start |
 | `Nameplates/` | The nameplates: the game's plates in our dress, the combat text, their words, switches and setup steps ([their README](Nameplates/README.md)) |
 | `Settings.lua` | The module's switches handed to Core once every part added its own |
@@ -840,11 +840,11 @@ Sunder Armor), as you choose, nothing fixed.
   make the window clickthrough on the background").
 - **2026-11-13:** another druid's mana: one power again (Saneroki: "It doesn't show on the party members [...] revert
   back to how it was with only one class bar"): the game tells a druid's mana in a form to that druid alone, and
-  sending it between Sane UIs never came through, so another druid's frames show the power it shows now. Your own keep
+  sending it between SaneUIs never came through, so another druid's frames show the power it shows now. Your own keep
   your mana beside the form's power.
 - **2026-11-13:** another druid's mana (Saneroki: "When I as a warrior look at the druids nameplates or party plates it
   does not show me the manabar"; "Yes, let my druid send its mana to the party. On unit frame the bars should be like it
-  was before. Put them below the mana bar on unit frames."): sent by a druid's Sane UI to its group (taken back the
+  was before. Put them below the mana bar on unit frames."): sent by a druid's SaneUI to its group (taken back the
   same day). On the unit frames the form's power under the mana again; your target's and focus's frames keep a slot
   for each.
 - **2026-11-13:** your own slot among the group frames shows your name and your health's share; its cog stands at the far
@@ -853,9 +853,9 @@ Sunder Armor), as you choose, nothing fixed.
   manabar is visible"): on your frame, your target's and your focus's the mana stays under the health bar and a form's
   rage or energy stands on top of it; on the party and raid frames the mana line along the bottom, the form's along the
   top. Your frame no longer keeps a second slot under the health bar.
-- **2026-11-11:** the casts of your party's and raid's Sane UI in the aura history (Saneroki: "Can we use the guild
+- **2026-11-11:** the casts of your party's and raid's SaneUI in the aura history (Saneroki: "Can we use the guild
   and party sharing to get the spells and information from other party members combat?"): after each fight each
-  member's Sane UI sends its player's casts of buffs and debuffs in it, with whom and when; *Share casts in a fight
+  member's SaneUI sends its player's casts of buffs and debuffs in it, with whom and when; *Share casts in a fight
   with your group* on Combat's page.
 - **2026-11-11:** what a fight hides in the aura history (Saneroki: "Yess add them"): your own casts in a fight of a
   spell that puts an aura on, and after each fight the spells of the game's damage meter of it, each member's damage,
@@ -905,7 +905,7 @@ Sunder Armor), as you choose, nothing fixed.
 - **2026-11-01:** the threat and damage meter (Saneroki), on the game's own meter and threat, with its pages and saved fights.
 - **2026-10-16:** set up as a module of its own, for party, raid, buffs, unit frames, nameplates and pets.
 - **2026-10-20:** its window, docked at the bottom middle (Saneroki); the bottom edge's middle half fills the
-  screen with the talents and the spellbook as panels; a talent planner Sane UI knows as the Talents panel.
+  screen with the talents and the spellbook as panels; a talent planner SaneUI knows as the Talents panel.
 - **2026-10-20:** quest marks beside nameplates (Saneroki), from the game's own tooltip data.
 - **2026-10-20:** the full screen on Core's board (Saneroki): layouts behind tabs, the windows arranged as on
   every board; an empty window of the game's opens with a click anywhere in it instead of an *Open* button.

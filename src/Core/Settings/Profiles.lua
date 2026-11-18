@@ -1,7 +1,7 @@
 local Config = SaneUI.Core.Config -- Settings.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings - Profiles
+--  SaneUI - Core - Settings - Profiles
 --  The page Profiles, a page of our own in the game's options (a canvas: Core
 --  puts it up, Core.frames.Profiles): its title, the switch that turns the
 --  profiles on or off (Profiles.SetEnabled; off on a fresh install, and then
@@ -27,7 +27,7 @@ local Profiles = Core.Profiles
 local TEXT = {
     title = "Profiles",
     enable = "Share settings between characters",
-    enableTip = "Profiles: one setup, Sane UI's settings and the game's own (key bindings, Edit Mode layout, chat windows, graphics and more), shared by every character that uses it: a change on one is there for all of them. Turned on, this character's current settings become the profile Accountwide, and nothing changes in the game; characters you have not played yet start on it, the others keep their own until you choose a profile for them here. Turned off, every character keeps its own settings again, and the game's stay as they are.",
+    enableTip = "Profiles: one setup, SaneUI's settings and the game's own (key bindings, Edit Mode layout, chat windows, graphics and more), shared by every character that uses it: a change on one is there for all of them. Turned on, this character's current settings become the profile Accountwide, and nothing changes in the game; characters you have not played yet start on it, the others keep their own until you choose a profile for them here. Turned off, every character keeps its own settings again, and the game's stay as they are.",
     off = "Profiles are off: every character keeps its own settings. Tick the box above to share this character's settings with your other characters.",
     turnedOn = "profiles are on: this character uses the profile %s.",
     turnedOff = "profiles are off: every character keeps its own settings from now on.",
@@ -35,7 +35,7 @@ local TEXT = {
     tab = "Profiles",
     yours = "This character",
     profile = "Profile",
-    profileTip = "The profile this character uses: its settings, Sane UI's and the game's, are the profile's. A change made on any options page counts at once; the save window then asks whether to keep it, in this profile or others, for every character that uses them. Character specific is no shared profile: Sane UI at its defaults, the game's settings back at the game's defaults, and from then on each character keeps its own.",
+    profileTip = "The profile this character uses: its settings, SaneUI's and the game's, are the profile's. A change made on any options page counts at once; the save window then asks whether to keep it, in this profile or others, for every character that uses them. Character specific is no shared profile: SaneUI at its defaults, the game's settings back at the game's defaults, and from then on each character keeps its own.",
     new = "New",
     newTip = "A new profile of your own, a copy of the settings in use, which this character uses from then on.",
     askNew = "A new profile, a copy of the settings in use. Its name:",
@@ -46,10 +46,10 @@ local TEXT = {
     deleteTip = "Deletes the profile in use. Every character that used it uses Accountwide from then on, this one at once. Not the three standard ones.",
     askDelete = "Delete the profile %s? Every character that used it uses Accountwide from then on, this one at once.",
     defaults = "Defaults",
-    defaultsTip = "Every setting of Sane UI in the profile in use back to its default. The game's settings stay as they are.",
-    askDefaults = "Set every setting of Sane UI in the profile %s back to its default? The game's settings stay as they are.",
+    defaultsTip = "Every setting of SaneUI in the profile in use back to its default. The game's settings stay as they are.",
+    askDefaults = "Set every setting of SaneUI in the profile %s back to its default? The game's settings stay as they are.",
     copyFrom = "Copy from",
-    copyFromTip = "The settings in use take those of another profile: Sane UI's and the game's.",
+    copyFromTip = "The settings in use take those of another profile: SaneUI's and the game's.",
     askCopy = "Copy the settings of the profile %s into the one in use? What it has now is replaced.",
     export = "Export",
     exportTip = "The profile in use as a line of text, to copy and keep or share.",
@@ -64,15 +64,15 @@ local TEXT = {
     character = "Character",
     you = "(this character)",
     newCharacters = "New Characters",
-    newCharactersTip = "The profile a character Sane UI has not seen yet (a new one, or one that has not logged in since Sane UI was installed) starts with at its first login. Its own line here can change it afterwards.",
+    newCharactersTip = "The profile a character SaneUI has not seen yet (a new one, or one that has not logged in since SaneUI was installed) starts with at its first login. Its own line here can change it afterwards.",
     useTip = "The profile this character uses. For the character you are playing it counts at once, for the others at their next login.",
     forget = "Forget",
-    forgetTip = "Forgets the character: its line here and what Sane UI keeps for it. For a character deleted, or moved to another account.",
-    askForget = "Forget the character %s? Sane UI forgets what it keeps for it.",
+    forgetTip = "Forgets the character: its line here and what SaneUI keeps for it. For a character deleted, or moved to another account.",
+    askForget = "Forget the character %s? SaneUI forgets what it keeps for it.",
     created = "the profile %s is made, and this character uses it.",
     renamed = "the profile is called %s now.",
     deleted = "the profile %s is deleted.",
-    reset = "every setting of Sane UI in the profile %s is back at its default.",
+    reset = "every setting of SaneUI in the profile %s is back at its default.",
     copied = "the settings of %s are in use now.",
     imported = "the profile %s is imported.",
     used = "this character uses the profile %s.",
@@ -80,7 +80,7 @@ local TEXT = {
     save = "Save",
     saveTip = "Keeps the changes made since the last save, in every profile ticked under Save to in the save window (the profile in use at first). Only while there are changes not saved yet.",
     load = "Load last settings",
-    loadTip = "Takes back every change made since the last save: the settings in use as they were then, Sane UI's and the game's. Only while there are changes not saved yet.",
+    loadTip = "Takes back every change made since the last save: the settings in use as they were then, SaneUI's and the game's. Only while there are changes not saved yet.",
     askLoad = "Take back every change made since the last save?",
     saved = "the changes are saved.",
     loaded = "the settings are back as they were at the last save.",

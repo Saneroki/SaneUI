@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book casts
+--  SaneUI - Abilities - Book casts
 --  What makes a click on our spellbook cast, as a click on the game's does:
 --  a secure button of the game's (SecureActionButtonTemplate) over the icon of
 --  each spell the page shows that a click casts (a learned spell, a pet's

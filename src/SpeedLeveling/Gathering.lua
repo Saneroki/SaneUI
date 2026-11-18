@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Gathering
+--  SaneUI - Speed Leveling - Gathering
 --  Your professions keep up with where the guide takes you (Saneroki, 2026-10-29;
 --  as steps of the guide 2026-10-30; where the guide passes the most nodes anyway
 --  2026-10-31). The guide is walked as it is taken up, with the guides after it,

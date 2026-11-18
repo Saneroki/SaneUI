@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Detail
+--  SaneUI - Abilities - Macros - Detail
 --  The chosen step's settings, under the list: its kind, what it does, who it is
 --  cast on, how often it comes up, when it runs, and the line the game gets.
 --  Only what the step's kind uses shows. A spell's name has a + beside it, the

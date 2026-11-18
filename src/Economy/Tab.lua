@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Economy - Tab
+--  SaneUI - Economy - Tab
 --  The tab Deals on the game's auction house window, in the game's own look, and
 --  open first (the option Open on Deals):
 --

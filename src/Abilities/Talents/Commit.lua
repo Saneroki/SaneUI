@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Commit
+--  SaneUI - Abilities - Talents - Commit
 --  The cast that applies your changes, or switches your specialization, as the
 --  game's class talents frame shows it over the trees (the shared
 --  ClassTalents/Blizzard_ClassTalentsFrame.lua: SetCommitVisualsActive,

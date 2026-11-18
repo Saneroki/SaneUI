@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - Objectives
+--  SaneUI - Core - Objectives
 --  What is still to do about a creature for a quest in your log, as the game
 --  itself says it in the creature's tooltip data, for every view that shows it
 --  (a nameplate, a mark beside one): Core.UnitQuest(unit).

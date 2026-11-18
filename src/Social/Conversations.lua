@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Conversations
+--  SaneUI - Social - Conversations
 --  The conversations' panel of the full screen (Board.lua), at its left: the
 --  list of conversations (Talks.lua), the newest message first, and beside it
 --  the one chosen, its messages in the chat's bubbles (Bubble.lua) and a line

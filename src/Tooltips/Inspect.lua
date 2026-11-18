@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Inspect
+--  SaneUI - Tooltips - Inspect
 --  The item level and the talents of the player a tooltip shows: Core's
 --  (Core.Inspect, src/Core/Inspect.lua), which paces the inspections for
 --  every view that asks. Start(arrived): arrived(guid) when a player's

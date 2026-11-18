@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Spirit
+--  SaneUI - Lore - Spirit
 --  Resurrecting at the spirit healer without being asked (Saneroki,
 --  2026-11-11: a "Don't ask me again" on the second window, counting for
 --  both). The game asks in one window of two steps (its XP_LOSS: what

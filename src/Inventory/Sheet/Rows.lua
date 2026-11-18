@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Rows
+--  SaneUI - Inventory - Sheet - Rows
 --  The rows the sheet's reputation and skills tabs list, in the game's three
 --  looks (ReputationFrame.xml, SkillsFrame.xml, the same in both):
 --      header     the game's collapse-and-expand art, its name, its fold sign

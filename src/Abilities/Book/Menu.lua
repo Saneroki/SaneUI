@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Menu
+--  SaneUI - Abilities - Menu
 --  The module's lines in the spellbook's own options menu (the small arrow at
 --  the top right of the spellbook).
 --
@@ -77,7 +77,7 @@ local function Layouts(root)
     end
 end
 
--- The book's own lines, and the divider under them. own: a book of Sane UI's (the full screen's), whose pages are
+-- The book's own lines, and the divider under them. own: a book of SaneUI's (the full screen's), whose pages are
 -- always ours: no line waits for the game's pages, and compact pages and moving are the game's book's.
 local function BookLines(root, own)
     local wait = not own and PagesOurs or nil
@@ -135,7 +135,7 @@ end
 
 local function Extend(_, root) Lines(root, false) end
 
--- The same lines in a book of Sane UI's own (Offer.lua).
+-- The same lines in a book of SaneUI's own (Offer.lua).
 function ns.BookMenu(root) Lines(root, true) end
 
 if Menu and Menu.ModifyMenu then

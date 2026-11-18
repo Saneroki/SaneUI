@@ -1,11 +1,11 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Escape
---  Esc closes what Sane UI has open, as it closes the game's own panels. The
+--  SaneUI - Core - Escape
+--  Esc closes what SaneUI has open, as it closes the game's own panels. The
 --  game hides every frame its list UISpecialFrames names when Esc is pressed
 --  (CloseSpecialWindows). One frame of ours stands in that list for all of
---  Sane UI, with nothing to see: shown while something of ours is to be closed
+--  SaneUI, with nothing to see: shown while something of ours is to be closed
 --  by Esc, and when the game hides it, each of those is closed as its owner
 --  says (a window Esc closes closes, full as it is; a window that fills the
 --  screen goes back; the feedback window hides). A moment later it is shown

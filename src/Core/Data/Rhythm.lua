@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Rhythm
+--  SaneUI - Core - Data - Rhythm
 --  How an item's price goes at an auction house, in one short line per item: what it usually costs, where that is
 --  heading, how it swings with the time of day and the day of the week, how much of it sells. Each full scan moves the
 --  lines of a house (Scan.lua), and a view reads one through Prices:Outlook, so a forecast opens no history.

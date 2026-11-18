@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Quest
+--  SaneUI - Lore - Quest
 --  Under the words, as wide as they are, on a plate of its own (Look.Plate):
 --  the quest the NPC talks about (Saneroki, 2026-10-28). Its title in the
 --  game's gold, then:

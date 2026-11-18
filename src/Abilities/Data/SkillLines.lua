@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - which spellbook tab a spell belongs to (last resort)
+--  SaneUI - Abilities - which spellbook tab a spell belongs to (last resort)
 --
 --  The game tells an addon the tab of a spell only once you know one of its
 --  ranks, or at the class trainer (his list is grouped by tab). For a spell

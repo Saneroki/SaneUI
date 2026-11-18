@@ -3,9 +3,9 @@ local Sync = Core.Sync -- Sync.lua
 local Plain = Core.Plain
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync - Keys
+--  SaneUI - Core - Sync - Keys
 --  The key bindings (Saneroki, 2026-10-30: part of a profile like the rest):
---  every key of the game's list, Sane UI's keys and other addons' among them,
+--  every key of the game's list, SaneUI's keys and other addons' among them,
 --  kept by command. Written out of a fight, as the rest of Sync, and saved in
 --  the game's binding set in use. A command this client does not list now
 --  (its addon is off) keeps its keys in the profile.
@@ -13,7 +13,7 @@ local Plain = Core.Plain
 local ID = "keyBindings"
 local TEXT = {
     text = "Key bindings",
-    tip = "Every key bound in Esc > Options > Keybindings, Sane UI's own keys too.",
+    tip = "Every key bound in Esc > Options > Keybindings, SaneUI's own keys too.",
 }
 
 local function Game(name, ...)

@@ -1,9 +1,9 @@
 ## Interface: 16001, 120105
 ## Title: Loot
-## Notes: Sane UI's loot window: what a corpse, a chest or a catch holds, each thing a bar like the nameplates' in its quality's colour, a green arrow before an upgrade's name; taken with a click, or at once by your own rules (coins, currencies, quest items and junk at first; everything, or trade goods, gear, consumables; an A for a list of your own). A master looter's menu, cards for your group's rolls with who chose what, a feed of what you and your group receive, and a page that finds room when your bags are full.
+## Notes: SaneUI's loot window: what a corpse, a chest or a catch holds, each thing a bar like the nameplates' in its quality's colour, a green arrow before an upgrade's name; taken with a click, or at once by your own rules (coins, currencies, quest items and junk at first; everything, or trade goods, gear, consumables; an A for a list of your own). A master looter's menu, cards for your group's rolls with who chose what, a feed of what you and your group receive, and a page that finds room when your bags are full.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\Icons\INV_Misc_Bag_10

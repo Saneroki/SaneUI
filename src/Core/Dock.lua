@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Dock
+--  SaneUI - Core - Dock
 --  Places a window snaps to, like to a magnet, when it is let go near one: the
 --  four corners of the screen, the middle of each of its edges, and the middle
 --  of the screen, for windows the player talks to (a vendor, a trainer, the

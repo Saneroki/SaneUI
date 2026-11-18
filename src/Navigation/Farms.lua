@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Farms
+--  SaneUI - Navigation - Farms
 --  Where to farm a thing (Saneroki, 2026-11-15: "where to farm Silk cloth" or "peaceblossom" ... "show dense areas
 --  were you could farm them on the map or put custom map pins there that are not tied to the routing but just shows
 --  where a lot of enemies are dense clustered that drop those things or zones where these nodes are plenty in"): the
@@ -26,7 +26,7 @@ local _, ns = ...
 --  hottest's heat and holds Farms.FEW spawns or more, Farms.MOST places at most. Spawns inside a dungeon (the game's map type) make one place a dungeon, listed after those outside (a whole dungeon's
 --  worth is not weighed against a few cells'), its map shown when chosen.
 --
---  The glow: Navigation's soft round mark (Art/mark-soft), in Sane UI's gold, as wide as the place in yards (so it
+--  The glow: Navigation's soft round mark (Art/mark-soft), in SaneUI's gold, as wide as the place in yards (so it
 --  grows as the map zooms in), the hottest the strongest. Only on the full map: the small one stays clear.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core

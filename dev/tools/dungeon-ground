@@ -145,7 +145,7 @@ def build_of(folder):
             info[parts[0]] = parts[1].strip()
     game = IA.GAMES.get(info.get("product"))
     if not game:
-        sys.exit(f"{folder}/build.txt names no product Sane UI knows ({info.get('product')})")
+        sys.exit(f"{folder}/build.txt names no product SaneUI knows ({info.get('product')})")
     return game, int(info["version"].rsplit(".", 1)[1])
 
 

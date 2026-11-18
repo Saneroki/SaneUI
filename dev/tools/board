@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The task board (Saneroki, 2026-10-23): every todo and idea of Sane UI as a card that goes from Backlog to
+"""The task board (Saneroki, 2026-10-23): every todo and idea of SaneUI as a card that goes from Backlog to
 Finalized, shared by Saneroki's page and the sessions' command line.
 
   Backlog -> Next up -> In progress -> Review -> Finalized

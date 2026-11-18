@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Picker
+--  SaneUI - Abilities - Macros - Picker
 --  The list behind the + button: the game's conditions by group, each with its
 --  explanation. The same list serves a step's conditions and macro text. A
 --  condition that needs a word more asks for it: a number from a short list, a

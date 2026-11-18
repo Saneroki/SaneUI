@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Makes src/Core/Sync/Data/Pages.lua: for each of the game's options pages in its groups Gameplay and
-Accessibility (Esc > Options), what that page sets, so Sync can keep it with Sane UI's settings.
+Accessibility (Esc > Options), what that page sets, so Sync can keep it with SaneUI's settings.
 
 It reads Blizzard's options code of the newest export (dev/tools/blizzard where) as this client loads it: the
 Lua files of Blizzard_SettingsDefinitions_Shared and _Frame as dev/blizzard/export.py reads their TOCs (the

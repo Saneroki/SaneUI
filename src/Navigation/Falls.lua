@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Falls
+--  SaneUI - Navigation - Falls
 --  The fall meter, /sane falls: how far the character fell and what the
 --  landing took, told in the chat after each fall. For finding out in the game
 --  how high a fall the routes may take (Saneroki, 2026-11-16: "The fall damage

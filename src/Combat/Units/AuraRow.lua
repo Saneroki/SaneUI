@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Aura row
+--  SaneUI - Combat - Units - Aura row
 --  The icons above a unit frame while the game tells addons a unit's auras (out
 --  of a fight), as Auras.lua says which show and where: frames of ours, because
 --  no script of an addon runs on the game's aura icons, nor on anything made a

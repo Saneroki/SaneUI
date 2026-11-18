@@ -3,11 +3,11 @@ local Core = SaneUI.Core
 local Sync = Core.Sync -- Sync.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync - Addons
+--  SaneUI - Core - Sync - Addons
 --  Which addons are switched on (Saneroki, 2026-10-30: all characters of a
 --  profile the same, addons too). The game keeps that for each character; a
 --  part of Sync keeps it in the profile. Only addons this client has are
---  written, and Sane UI itself is never switched off: the game shows a change
+--  written, and SaneUI itself is never switched off: the game shows a change
 --  after a /reload, which is offered. An addon switched on the character
 --  screen since this character's last logout is the player's word: it goes
 --  into the profile at the login instead of being switched back (Sync.Outside;

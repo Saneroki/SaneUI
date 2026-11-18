@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Home
+--  SaneUI - Abilities - Home
 --  A tab of our own in front of the spellbook's tabs, and its page: what your
 --  trainer can teach you right now and what it costs, and which spells you get
 --  from quests. It is the page the spellbook opens on.

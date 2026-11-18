@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Talk
+--  SaneUI - Lore - Talk
 --  The talk with an NPC as the game tells it (its own events and calls), shown
 --  by our parts in place of the game's gossip and quest windows, which
 --  Native.lua holds out of sight meanwhile:

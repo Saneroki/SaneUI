@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync - Game: the game's options pages, its graphics and
+--  SaneUI - Core - Sync - Game: the game's options pages, its graphics and
 --  sound, and what else it keeps for each character
 --      a page part     one per options page of the game's groups Gameplay and
 --                      Accessibility, holding what that page sets (Data/Pages.lua:
@@ -64,7 +64,7 @@ end
 -------------------------------------------------------------------------------
 --  CVars by name
 -------------------------------------------------------------------------------
--- CVars another part of Sane UI keeps its own way (Core's sound profiles, Audio.lua: per game account, set at each
+-- CVars another part of SaneUI keeps its own way (Core's sound profiles, Audio.lua: per game account, set at each
 -- login): Sync neither reads nor writes them, whichever part or name holds them (Sync.Leave(name)).
 local left = {} -- [lower-case name] = true
 
@@ -76,7 +76,7 @@ function Sync.Left(name)
     return type(name) == "string" and left[name:lower()] == true
 end
 
--- CVars Sane UI never sets, reads back or keeps: in no part, not by name, not in the options' CVar list. Water
+-- CVars SaneUI never sets, reads back or keeps: in no part, not by name, not in the options' CVar list. Water
 -- detail, and the game's Liquid Detail that sets it: water 3 crashed Forever's client in the Ruins of Lordaeron the
 -- moment Sync wrote it (card #377; Saneroki, 2026-11-06: "don't let SaneUI edit or save or load that setting").
 -- The game's own graphics menu still sets it.

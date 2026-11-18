@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Dungeons
+--  SaneUI - Navigation - Dungeons
 --  The maps of the dungeons and raids, chosen in the full map's bar (TopBar.lua)
 --  and shown over the map in its place: a dungeon's map is drawn by the game for
 --  that dungeon alone, not where it lies in the world, so it has a view of its

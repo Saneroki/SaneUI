@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Vendor
+--  SaneUI - Inventory - Bags - Vendor
 --  Auto Sell and Auto Repair (Saneroki, 2026-10-30): two checkboxes in the foot
 --  of the bags, left of the gold, the game's checkboxes (the settings
 --  autoSell and autoRepair, on at first, also on the page Inventory), and what

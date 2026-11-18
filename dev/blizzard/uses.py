@@ -1,4 +1,4 @@
-"""What Sane UI takes from Blizzard: every name in src/ that may be Blizzard's, and where it stands.
+"""What SaneUI takes from Blizzard: every name in src/ that may be Blizzard's, and where it stands.
 
   global   a global the code reads, with what it reaches through it (C_Spell.GetSpellInfo, GameTooltip:AddLine,
            Enum.SpellBookSpellBank.Player); luac tells a global from a local
@@ -7,11 +7,11 @@
   hook     a function or method hooked with hooksecurefunc (its body matters, not only its name)
   method   a method called by its name (frame:SetPoint): the game's widgets or a Blizzard mixin
   field    a key read by its name (frame.ScrollBox, starting with a capital): a template's parentKey or a value
-  xml      an attribute of Sane UI's XML (inherits, mixin, font, atlas, file)
+  xml      an attribute of SaneUI's XML (inherits, mixin, font, atlas, file)
   cite     a note in src/ or Doc/ that cites a Blizzard file (Blizzard_ChatFrame/Shared/ChatFrame.lua 120-140)
 
-own holds the names Sane UI defines itself (function A:Name, A.Name = ..., { Name = ... }): a method or field
-of that name may be Sane UI's own, so its name alone is not taken as Blizzard's.
+own holds the names SaneUI defines itself (function A:Name, A.Name = ..., { Name = ... }): a method or field
+of that name may be SaneUI's own, so its name alone is not taken as Blizzard's.
 """
 import re
 import subprocess
@@ -42,7 +42,7 @@ class Use:
 
 
 class Uses:
-    """Everything Sane UI's source takes by name, read from a source folder (src/) and its notes (Doc/)."""
+    """Everything SaneUI's source takes by name, read from a source folder (src/) and its notes (Doc/)."""
 
     def __init__(self, src, notes=(), root=None):
         self.src = Path(src)

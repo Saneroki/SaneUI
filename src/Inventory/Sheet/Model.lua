@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Model
+--  SaneUI - Inventory - Sheet - Model
 --  The character's model in the hero's place of the doll (Doll.lua), as the
 --  game's sheet shows it (Camelot's CharacterModelScene): Blizzard's model
 --  scene for the character sheet (ModelSceneUtil.SetUpCharacterSheetScene: its

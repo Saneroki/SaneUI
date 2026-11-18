@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Serial
+--  SaneUI - Core - Serial
 --  Plain values as one line of text and back, to copy out of the game and into
 --  it again (a profile to share: Profiles.Export, Profiles.Import). Only what
 --  saved settings hold: tables, strings, numbers, true and false. The text is

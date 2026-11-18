@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Timers
+--  SaneUI - Combat - Units - Timers
 --  What the game counts down on you (its mirror timers: your breath under
 --  water, fatigue far out at sea, feign death), as part of your frame, in place
 --  of its bars at the top of the screen, each in the game's own art for it.

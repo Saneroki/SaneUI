@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet
+--  SaneUI - Inventory - Sheet
 --  The character: the paper doll of the game's character sheet (Camelot's
 --  CharacterFrame and PaperDollFrame), ours, a window of its own on the
 --  module's full screen (Board.lua, the key "character"), in the kit's look

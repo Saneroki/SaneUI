@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Puts Sane UI's image work into ComfyUI's own window, to follow it and to work on it there
+"""Puts SaneUI's image work into ComfyUI's own window, to follow it and to work on it there
 (Doc/guides/image-generation.md, *In ComfyUI's window*):
 
   Templates   ComfyUI's Templates > Extensions > saneui: every workflow (dev/imagegen/workflows/ and the
@@ -121,7 +121,7 @@ def write_json(path, data):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sane UI's workflows and recipes as ComfyUI templates and apps.")
+    parser = argparse.ArgumentParser(description="SaneUI's workflows and recipes as ComfyUI templates and apps.")
     parser.add_argument("--server", default="127.0.0.1:8188")
     parser.add_argument("--if-changed", action="store_true")
     args = parser.parse_args()
@@ -134,7 +134,7 @@ def main():
     written = json.loads(WRITTEN.read_text()) if WRITTEN.is_file() else {}
     TEMPLATES.mkdir(parents=True, exist_ok=True)
     APPS.mkdir(parents=True, exist_ok=True)
-    (PACK / "__init__.py").write_text("# Sane UI's templates for ComfyUI's Templates window, written by Sane UI's\n"
+    (PACK / "__init__.py").write_text("# SaneUI's templates for ComfyUI's Templates window, written by SaneUI's\n"
                                       "# dev/tools/comfy-library. No nodes of its own.\n"
                                       "NODE_CLASS_MAPPINGS = {}\n", encoding="utf-8")
     templates, apps, kept = set(), {}, []

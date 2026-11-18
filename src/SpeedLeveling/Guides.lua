@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Guides
+--  SaneUI - Speed Leveling - Guides
 --  The window of the guides (/sane guides, or the last line of the guide's
 --  menu): at the left the guides, those that come in this game's guide pack
 --  and those kept, under their groups' headings; a click follows one (those
@@ -14,7 +14,7 @@ local _, ns = ...
 --  text into, and Read, which keeps each guide of it (an import string pasted
 --  there is opened too). It says how many were kept and which lines could not
 --  be read.
---  A panel of Sane UI's (Core.Window), made when first opened.
+--  A panel of SaneUI's (Core.Window), made when first opened.
 --
 --      Guides.Open()     shown, or hidden again
 -------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Settings
+--  SaneUI - Combat - Settings
 --  The module's switches handed to Core once every part has added its own:
 --  Combat.lua's (ns.OPTIONS), then the nameplates' (Nameplates/Nameplates.lua).
 --  A switch that changes goes to ns.Changed (Combat.lua), which tells the part

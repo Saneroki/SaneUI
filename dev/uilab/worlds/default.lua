@@ -1,5 +1,5 @@
 -- The lab's fake server: a character, their guild, what the guild and the world say in chat. The people are made up;
--- the items are the game's own (their IDs from Sane UI's data master, which gives names, icons and qualities).
+-- the items are the game's own (their IDs from SaneUI's data master, which gives names, icons and qualities).
 -- A scene may change any of it before its addons load (Lab.world()).
 --
 -- Names are a first name and a surname, as WoW: Forever's are. Chat lines may hold {item:ID}, {spell:ID} and

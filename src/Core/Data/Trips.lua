@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Trips
+--  SaneUI - Core - Data - Trips
 --  The trip the player is on now: a flight from a flight master, a boat or a
 --  zeppelin (Data.Ships), the tram (Core's set Travel). Where it goes, its stops,
 --  how far along it is and how long it still takes.

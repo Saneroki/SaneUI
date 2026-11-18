@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Fade
+--  SaneUI - Social - Fade
 --  How much of a message is seen: fading in, there, fading out, gone. Knows
 --  no frames.
 --
@@ -16,7 +16,7 @@ local _, ns = ...
 --  A fade begins from wherever the message is: one that turns back half way
 --  turns back from there, and takes only the time for the rest of the way.
 --  How long a whole fade takes, in and out, is a setting (Fade.Times); with
---  no time, or Sane UI's animations off (Core.general.animations), a message is
+--  no time, or SaneUI's animations off (Core.general.animations), a message is
 --  there or not at once. Its way is one of the game's easing curves, slow at
 --  both ends (Core.Motion.Ease, Fade.CURVE).
 -------------------------------------------------------------------------------

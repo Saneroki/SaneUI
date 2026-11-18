@@ -1,23 +1,23 @@
-# Sane UI: Core
+# SaneUI: Core
 
 **Status:** written and tested offline · **Since:** 2026-10-14 · **Addon:** `SaneUI`
 
 ## TL;DR
 The main addon, the one every module needs: chat lines, game events, error catching, the list of modules,
 the `/sane` command, the saved settings of all modules (each character's own at first; with the profiles turned on,
-in profiles: *Speedleveling*, *Accountwide*, *Character specific*, your own), Sane UI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
-Sane UI's (`Sync/`), and what every window can use: moving, sizing,
+in profiles: *Speedleveling*, *Accountwide*, *Character specific*, your own), SaneUI's options (`Settings/`), Sync, which keeps the game's own per-character settings with
+SaneUI's (`Sync/`), and what every window can use: moving, sizing,
 docking to a screen edge, round corners, opening while the mouse rests on it, filling the screen, tabs
 in the game's style, Esc, Edit Mode's dialog, and a progress bar. It does nothing you can see by itself,
 but for a window to try those with (`/sane window`).
 
 ## How to use
-- **In the addon list** it is the line *Sane UI*. The modules stand under it (*Social*,
-  *Abilities*, *Tooltips*): tick or untick each one by itself. With *Sane UI* itself unticked no module loads.
+- **In the addon list** it is the line *SaneUI*. The modules stand under it (*Social*,
+  *Abilities*, *Tooltips*): tick or untick each one by itself. With *SaneUI* itself unticked no module loads.
 - `/sane` says which modules are switched on and lists their commands. `/saneui` is the same.
 - **Alias and note:** right click a player's name (in a chat, the friends list, the guild, the target or
   a group frame): under the game's own lines are *Set Alias* and *Set Note*. An alias is a name of your own
-  for that character, shown by Sane UI in place of theirs (in its chat, friends list and tooltips): give
+  for that character, shown by SaneUI in place of theirs (in its chat, friends list and tooltips): give
   all five alts of one friend the alias *Saneroki*, and each shows as *Saneroki*. A note is shown in the
   player's tooltip. While a player has one, *Remove Alias* or *Remove Note* takes it away. Kept for your
   account, never sent to anybody.
@@ -25,26 +25,26 @@ but for a window to try those with (`/sane window`).
   Music, SFX, Dialogue, Ambience), each on or off with its volume, kept under a name: *All sound on*, *Music off*,
   *Music and Ambience off* and *All sound off* at first (Saneroki, 2026-11-04), more by *New*. Choosing one sets it at once.
   First in the list stands **Disabled**, every account's at first (Saneroki, 2026-11-16: "a preset called disabled that just
-  don't interfere with the audio at all"): no profile, Sane UI then sets none of the game's sounds, at a login neither; only
+  don't interfere with the audio at all"): no profile, SaneUI then sets none of the game's sounds, at a login neither; only
   a profile the player chooses or makes sets anything. Each game account keeps its
   own profiles and the one it used last, and sets that one again at each login, so two clients of two accounts on
   one computer can sit on different profiles at the same time (the game itself keeps one file of these settings
   for the whole installation, written by the client that closes last). The login screen sounds as that file says.
 - `/sane errors` lists the error log, one line per problem; `/sane errors clear` empties it. When something
   fails, one line in chat says where and how to report it (*problem in Navigation. Type /sane bug to make a bug
-  report, then copy and paste it into #bug-reports on Sane UI's Discord: discord.gg/...*, the invite
+  report, then copy and paste it into #bug-reports on SaneUI's Discord: discord.gg/...*, the invite
   `Core.DISCORD` written short, to type), once per kind of problem.
   A module that fails steps aside: what it stands in for is the game's own again until the next `/reload`
-  (`/sane` lists it as *stopped*). The game's own error window shows Sane UI's errors only when it shows Lua
+  (`/sane` lists it as *stopped*). The game's own error window shows SaneUI's errors only when it shows Lua
   errors at all (`/console scriptErrors 1`).
 - **The error log.** Every problem is also kept in a log, in the order it happened, with the place it
   happened. It is in the saved settings file (`WTF/Account/<account>/SavedVariables/SaneUI.lua`, under
   `log`), which the game writes at a `/reload` and when you log out. `dev/tools/errors` prints it.
-- `/sane arrange` moves and sizes Sane UI's windows as Edit Mode does, only in a game without Blizzard's Edit
+- `/sane arrange` moves and sizes SaneUI's windows as Edit Mode does, only in a game without Blizzard's Edit
   Mode (there: Esc > Edit Mode).
-- `/sane window` shows a small window to try what every Sane UI window can do, a panel as the spellbook
+- `/sane window` shows a small window to try what every SaneUI window can do, a panel as the spellbook
   will be (again: hides it; `/sane window reset`: its first place; `/sane window reset all`: every window of
-  Sane UI at its first place and size, the chat's too):
+  SaneUI at its first place and size, the chat's too):
   - **Title bar:** its name at the left, its buttons at the right. Drag the title bar to move it, at any
     time (a window docked at a screen edge only in Edit Mode). A window whose content can be searched has a
     magnifier before its name: a click there opens a search box over the bar (this one has nothing to
@@ -93,10 +93,10 @@ but for a window to try those with (`/sane window`).
   again (its first page with every setup, each from its first step); a few seconds after the login the setups this account has not gone
   through yet (or that changed a lot since) open in one window, listed on a first page, then one after another, each
   remembered once its last step is done or its defaults are chosen. The window is the addon *Onboarding*, which comes with Core and is read only when a setup opens.
-- **Keys:** in the game's key bindings (Esc > Options > Keybindings) a section *Sane UI* has a key for
-  Sane UI's options (none set at first), and a key for each module that has one (Social: the chat window).
-- **The options** (Esc > Options > AddOns > Sane UI, see [Settings' README](Settings/README.md)): *Sane UI* itself shows only
-  its logo; under it are Sane UI's own pages *Profiles*, *General* and *Appearance*, then a page per module
+- **Keys:** in the game's key bindings (Esc > Options > Keybindings) a section *SaneUI* has a key for
+  SaneUI's options (none set at first), and a key for each module that has one (Social: the chat window).
+- **The options** (Esc > Options > AddOns > SaneUI, see [Settings' README](Settings/README.md)): *SaneUI* itself shows only
+  its logo; under it are SaneUI's own pages *Profiles*, *General* and *Appearance*, then a page per module
   (*Social*, *Abilities*, *Tooltips*). On every full screen the cog in its title bar shows them there too
   (*General*, *Appearance* and the modules' pages, the full screen's own module first); the question mark beside
   it will hold a tour of that full screen.
@@ -112,7 +112,7 @@ but for a window to try those with (`/sane window`).
     switch *Share settings between characters* at its top and a line saying why the rest is not there.
     Turned on (that switch, `/sane profile on`, Onboarding through `Core.Profiles.SetEnabled(true)`, or a profile chosen
     by name, the box *Speed Leveling* in the bags too), the first time, this character's settings as they are become
-    *Accountwide*: a copy of Sane UI's and the game's as Sync reads them that moment (`Sync.Take`), nothing written into
+    *Accountwide*: a copy of SaneUI's and the game's as Sync reads them that moment (`Sync.Take`), nothing written into
     the game, no `/reload` offered. This character uses it, characters not seen yet start on the profile for new
     characters (*Accountwide* unless chosen otherwise), the others keep their own until moved on the page. Turned off
     (the switch, `/sane profile off`), the profiles are kept for later, every character keeps the settings it had as its
@@ -127,7 +127,7 @@ but for a window to try those with (`/sane window`).
     - *Accountwide*: made from the settings of the character that turned the profiles on (Saneroki, 2026-11-15:
       "Accountwide profile should be generated from the users current settings instead of my generic defaults"), none
       of our presets; every change shared by all the characters on it. Where every new character starts.
-    - *Character specific*: no shared profile. Sane UI at its defaults and each character keeping its own, the game's
+    - *Character specific*: no shared profile. SaneUI at its defaults and each character keeping its own, the game's
       settings left to the game, as a fresh install. A character turning to it gets the game's default CVars back
       (they stay in the profile it left).
   - **What Speedleveling sets** (`Presets.lua`, Saneroki, 2026-10-30; Accountwide no longer, 2026-11-15): the game's CVars as single
@@ -147,28 +147,28 @@ but for a window to try those with (`/sane window`).
     back into it when the character leaves (logout, `/reload`). What is no setting (a module's `Core.Store`: guides
     added, prices, notes on characters; also the full screen's layouts and the quest log's sort) is the account's, the
     same for every profile.
-  - *This character:* the profile it uses (choose another: its settings, Sane UI's and the game's, are that
+  - *This character:* the profile it uses (choose another: its settings, SaneUI's and the game's, are that
     profile's at once). *New* makes a copy of the settings in use under a name and uses it; *Rename*, *Delete*
-    (every character that had it uses *Accountwide*); *Defaults* sets Sane UI's settings of the profile in use
+    (every character that had it uses *Accountwide*); *Defaults* sets SaneUI's settings of the profile in use
     back to their defaults (the game's stay); *Copy from* takes another profile's settings; *Export* shows the
     profile as a line of text to copy, *Import* makes a profile from one (of the single CVars it keeps, only
     those the game's options set). The three standard ones cannot be renamed or deleted. `/sane profile` lists the
     profiles, `/sane profile <name>` uses one, `/sane profile on` and `off` turn them on or off.
   - *Characters:* every character seen on the account, each with its profile (for another character it counts
-    at its next login) and *Forget* (its line and what Sane UI keeps for it: for a character deleted or moved).
-    The first line, *New Characters*, is the profile a character Sane UI has not seen yet starts with: *Accountwide*
+    at its next login) and *Forget* (its line and what SaneUI keeps for it: for a character deleted or moved).
+    The first line, *New Characters*, is the profile a character SaneUI has not seen yet starts with: *Accountwide*
     at first.
   - Every change on any options page goes into the profile in use, for every character that uses it. Nothing
     is copied at a logout: the settings live in their profile, and only the game's are read into it.
   - **The save window** (`Unsaved.lua`, `Settings/Save.lua`; Saneroki, 2026-11-09): a change made in a menu (the
-    game's options with Sane UI's pages, its own pages, key bindings and the CVar list; Edit Mode; the addon list;
-    Sane UI's options over a full screen) counts at once, and a window beside the menu asks *Save the changes?*
+    game's options with SaneUI's pages, its own pages, key bindings and the CVar list; Edit Mode; the addon list;
+    SaneUI's options over a full screen) counts at once, and a window beside the menu asks *Save the changes?*
     until it is answered, the menu closed too: what changed since the last save, *Save to* (a tick per profile,
     the one in use at first, the others as ticked the last time), *Yes* (saved into every profile ticked; the one
     in use, unticked, gets its settings back) and *No* (every change since the last save taken back, the game's
     too). The page Profiles has the same as *Save* and *Load last settings*. Another profile chosen (also the box
     *Speed Leveling* in the bags) waits for the answer. A /reload or logout unanswered saves the changes as *Yes*
-    does, the addon list's *Reload UI* and the *Reload* Sane UI offers too (Saneroki, 2026-11-10: a change must not
+    does, the addon list's *Reload UI* and the *Reload* SaneUI offers too (Saneroki, 2026-11-10: a change must not
     pop back at a /reload): only *No* and *Load last settings* take changes back.
 
 ## Technical details
@@ -246,7 +246,7 @@ but for a window to try those with (`/sane window`).
     Onboarding), `On()` (this character uses a profile), `InUse()` (the profile in use, *Character specific* too),
     `List()` (Speedleveling, Accountwide, Character specific first; only Character specific while off),
     `Fixed(name)` (the three standard ones), `Create(name, from)` (a copy of the settings in use, or of
-    profile `from`), `Use(name)`, `Rename(name, as)`, `Delete(name)`, `CopyFrom(name)`, `Reset()` (Sane UI's
+    profile `from`), `Use(name)`, `Rename(name, as)`, `Delete(name)`, `CopyFrom(name)`, `Reset()` (SaneUI's
     settings in use at their defaults), `Export(name)` (a line of text, `Core.Serial`), `Import(text, as)`,
     `Characters()`, `Character(key)` (`Profiles.NEW`: *New Characters*), `SetCharacter(key, name)`,
     `Forget(key)`, `Capture()`. A step returns true, or false and a line for chat saying why not. Names are up
@@ -304,7 +304,7 @@ but for a window to try those with (`/sane window`).
 - **Load little, start late.** A file only defines things when it is read. Work starts in `OnLoad` or
   `OnLogin`, or later, when what it serves is first used (a window when it is opened). A game event is only
   asked of the game once somebody listens (`Core.On`).
-- **Errors are handled, always (a hard rule).** Every piece of Sane UI's code the game calls runs behind a
+- **Errors are handled, always (a hard rule).** Every piece of SaneUI's code the game calls runs behind a
   guard, and no error of ours breaks the game or leaves a broken part of it on screen
   ([addon standards](../../Doc/guides/addon-standards.md), *Errors and resilience*):
   - **Steps.** `Safe(label, fn, ...)` runs one step that may fail alone: its error is told once in chat and
@@ -322,7 +322,7 @@ but for a window to try those with (`/sane window`).
     `dev/tests/lint` fails on a script, hook, timer or menu function without a guard, here and in every module.
   - **What slipped past every guard** (a script without one) reaches the game's own error handler. Core
     listens at the game's error window (`hooksecurefunc` on `ScriptErrorsFrame.DisplayMessageInternal`,
-    which leaves the game's handling as it is) and treats those of Sane UI as at a door; a Lua warning is
+    which leaves the game's handling as it is) and treats those of SaneUI as at a door; a Lua warning is
     only noted.
   - **The game's error window** shows an error caught at a door only when the game shows Lua errors at all
     (the CVar `scriptErrors`, `/console scriptErrors 1`): as it does every addon's, and during development.
@@ -359,7 +359,7 @@ but for a window to try those with (`/sane window`).
 | Function | What it does |
 |---|---|
 | `Core.NewModule(addon, name, table)` | Makes a module of that addon and returns its table |
-| `Core.Print(text)` | A chat line with the Sane UI prefix |
+| `Core.Print(text)` | A chat line with the SaneUI prefix |
 | `Core.On(event, fn)` | Listen to a game event |
 | `Core.Safe(label, fn, ...)` | Run a step; an error is caught, told once, kept |
 | `Core.Report(label, text)` | Keep a problem a module found itself and tell it once |
@@ -376,12 +376,12 @@ but for a window to try those with (`/sane window`).
 | `Core.FullName(unit)` | A unit's whole name as the game shows it: a Forever character's first name and surname (`UnitName` gives both), joined by the game's separator; nil when hidden. Use it wherever a player's name is shown |
 | `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` | A player's key, the one name that tells players apart: on Forever first name and surname as one (`Droopy Fairwind`, any realm dropped: the whole name is unique across the region), elsewhere `Name-Realm`; nil for a name that is not whole (a first name alone). Use it wherever a player is kept, counted, compared or shared ([Doc/guides/data.md](../../Doc/guides/data.md), *Players*) |
 | `Core.Surnames()` | Whether this client names players by first name and surname (Forever, or `RegionalUniqueNamesEnabled`) |
-| `Core.GAME`, `Core.FOREVER`, `Core.RETAIL` | The game this client is: `"forever"` or `"retail"` (nil on another client), by `WOW_PROJECT_ID`; Sane UI is one code for both ([Doc/guides/addon-standards.md](../../Doc/guides/addon-standards.md), *Forever and Retail*) |
+| `Core.GAME`, `Core.FOREVER`, `Core.RETAIL` | The game this client is: `"forever"` or `"retail"` (nil on another client), by `WOW_PROJECT_ID`; SaneUI is one code for both ([Doc/guides/addon-standards.md](../../Doc/guides/addon-standards.md), *Forever and Retail*) |
 | `Core.ForGame(choices)` | This game's one of a choice made per game: `Core.ForGame({ forever = 6, retail = 8 })`; nil for a game not named |
-| `Core.ServesGame(addon)` | Whether an addon of Sane UI serves this game: its TOC's `## X-SaneUI-Games: forever` names its games, without it both. A module made for the other game only is off from the start (`module.elsewhere`), without a word and without an options page |
+| `Core.ServesGame(addon)` | Whether an addon of SaneUI serves this game: its TOC's `## X-SaneUI-Games: forever` names its games, without it both. A module made for the other game only is off from the start (`module.elsewhere`), without a word and without an options page |
 | `Core.RETIRED` | A module that is part of another now, by its old name: `{ Nameplates = { into = "Combat", addon = "SaneUI_Nameplates" } }` (2026-11-18). Its old addon, still in a player's AddOns folder, stays off (as `module.elsewhere`, and `module.retired`), is left out of `/sane`'s list and says once at the login to delete its folder |
-| `Core.NewerCoreWanted(addon)` | The Sane UI an addon of ours was published with (its packaged TOC's `## X-SaneUI-Core`, written by `dev/tools/release`) when this Core is older; nil when Core is new enough or the TOC names none (a build made here). Each module is a download of its own beside Core, so a player may update one and not the other: Core says so once in chat as the addon loads ("Navigation was made with Sane UI 0.3.2, and this is 0.3.1: update Sane UI too"); the module runs on |
-| `Core.Data.Set(name)` and its handle | Sane UI's databases, part of Core (its set files, `Sets/`, read with it at the login); a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Core.NewerCoreWanted(addon)` | The SaneUI an addon of ours was published with (its packaged TOC's `## X-SaneUI-Core`, written by `dev/tools/release`) when this Core is older; nil when Core is new enough or the TOC names none (a build made here). Each module is a download of its own beside Core, so a player may update one and not the other: Core says so once in chat as the addon loads ("Navigation was made with SaneUI 0.3.2, and this is 0.3.1: update SaneUI too"); the module runs on |
+| `Core.Data.Set(name)` and its handle | SaneUI's databases, part of Core (its set files, `Sets/`, read with it at the login); a module only reads ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Core.Data.Map()`: `On(map)`, `Spawns(key)`, `OnChange(fn)` | What the data puts on a map: the places of Spawns, Places and Travel per map, each with what it is ([Doc/guides/data.md](../../Doc/guides/data.md), *What a map shows*) |
 | `Core.Data.Ships()`: `Table(key)`, `Next(key, stop, at)`, `Aboard()`, `Near(yards)`, `Seen(key)`, `OnLearn(fn)` | The boats' and zeppelins' timetables, when they sail on this realm (learnt on a ride, kept on this computer per realm), aboard one, the stops near the player ([Doc/guides/data.md](../../Doc/guides/data.md), *The ships' times*) |
 | `Core.Data.Trips()`: `Now()`, `CanLand()`, `Land()`, `OnChange(fn)`, `NearTram(yards)`, `TramNext(key, at)` | The trip the player is on (a flight, a boat or zeppelin, the tram): its stops, how far along (and its pace, to move it on between looks), how long; a flight's early landing; the tram's next train at a station, learnt on a ride ([Doc/guides/data.md](../../Doc/guides/data.md), *The trip underway*) |
@@ -404,8 +404,8 @@ but for a window to try those with (`/sane window`).
 | `Core.AfterCombat(key, fn, ...)`, `Core.Owed(key)`, `Core.Locked(frame)`, `Core.Restricted()` | Run now, or once the fight is over (the same key once); a protected frame in a fight; a fight or a restriction of the game's |
 | `Core.Off(event, fn)`, `Core.OnUnit(event, unit, fn)`, `Core.OffUnit(event, unit, fn)` | Stop listening; an event of one unit only |
 | `Core.Config` | The options (`Settings/`): `Fill()` makes the pages' controls (once), `Open()` opens them |
-| `Core.Sync` | Sync (`Sync/`): the game's own settings kept with Sane UI's |
-| `Core.Data` | Sane UI's own databases (`Data/`): a set's handle (`Data.Set(name)`: `Get`, `History`, `Each`, `OnStamp`, ...), `Data.Prepare(name)`, `Data.WhenReady(set, fn)` ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Core.Sync` | Sync (`Sync/`): the game's own settings kept with SaneUI's |
+| `Core.Data` | SaneUI's own databases (`Data/`): a set's handle (`Data.Set(name)`: `Get`, `History`, `Each`, `OnStamp`, ...), `Data.Prepare(name)`, `Data.WhenReady(set, fn)` ([Doc/guides/data.md](../../Doc/guides/data.md)) |
 | `Core.Steps` | The scheduler of long work (`Data/Steps.lua`): `Run(name or options, fn, ...)` gives a job's handle (`:Stop()`); a job asks `Check()` between pieces and goes on in the next frame when the frame's few milliseconds are spent; nothing in a fight or under a restriction |
 | `Core.Copy(value)` | A copy of a value that shares no table with it |
 | `Core.described`, `Core.optionOrder` | The described switches, for whoever shows them (Settings) |
@@ -426,7 +426,7 @@ but for a window to try those with (`/sane window`).
   | `Core.Fuzzy.Query(text)`, `Fuzzy.Match(query, ...)`, `Fuzzy.Rank(word, text, lower, spots)`, `Fuzzy.Highlight(text, spots)`, `Fuzzy.Plain(text)` | Forgiving search: the typed words; whether every word is in one of the texts (the sum of their ranks); one word's rank in one text, a whole number whose hundreds say how it was found (600 the whole text, 500 its beginning, 400 a word's beginning, 300 its words' first letters, 200 inside, 100 letters spread out in order) and up to 90 more for a close fit, and the bytes it took; the text with those letters in the game's gold (`NORMAL_FONT_COLOR`); a text of the game's as it reads (no colour, link or icon codes). One pass through a text per look, no table without spots, each text lowered once per `Match` |
   | `Core.Fuzzy.Filter(rows, query, fields, done)` | The rows every word is found in (`fields`: keys of a row, or functions of it), ranked best first: `done(found, ranks)`. Up to `Fuzzy.AT_ONCE` (200) rows at once; a longer list a part per frame on `Core.Steps`, a newer search stopping an older one (a counter); a row's texts lowered once while they stay the same |
   | `Core.Fuzzy.Keys(box)`, `keys:Rows(list)`, `keys:Take()` | The keys over a search box's fly-out of finds (the aura search's box, a settings page's search; Saneroki, 2026-11-09): Up and Down light one of the rows it shows now (`Rows`, in order; nil: none), round at the ends as the game's name completion, as the mouse would (`LockHighlight`, its `OnEnter`: a tooltip; `OnLeave` when it goes); `Take()` first in the box's Enter clicks the lit one (true), else false and Enter does what it did. New rows: none lit |
-  | `Core.Escape(owner, close)` | Esc runs `close(owner)` from now on (nil: no more): one stand-in of ours, `SaneUIEscape`, the only entry of Sane UI's in the game's `UISpecialFrames`, for every window, Edge's full screen and the feedback window |
+  | `Core.Escape(owner, close)` | Esc runs `close(owner)` from now on (nil: no more): one stand-in of ours, `SaneUIEscape`, the only entry of SaneUI's in the game's `UISpecialFrames`, for every window, Edge's full screen and the feedback window |
   | `Core.Watch(frame, every, fn, label)`, `Core.Hover(frame, options)` | A look every `every` seconds while it is out and its frame is shown (`watch:Start()`, `Stop()`, `IsRunning()`); the mouse on a window: `hot` (whose `OnEnter` starts it), `dwell`, `linger`, `margin`, `every`, `keep`, `enter`, `leave`; `hover.over`, `hover:Start(over)`, `hover:Stop()`. The window takes only the mouse's coming, clicks go through |
   | `Core.Window.Mover(handle, frame, hooks)`, `Core.Window.Sizer(frame, hooks)` | Only the dragging and the grip, for a window that is not ours to keep (the game's spellbook). Nothing is written into the frame |
   | `Core.Window.Edges(frame, hooks)`; a window's option `resize = { sized(width, height, done), minWidth, ... }` | A grip at each corner and a handle along each side (2026-11-18, Combat's party and raid frames: "draging corners or sides"), in Edit Mode for a window of ours: each sizes from its own point, the one across held; `sized` at every step and once let go (`done`, the place kept first); the size is the module's |
@@ -436,7 +436,7 @@ but for a window to try those with (`/sane window`).
   | `Core.Dock.Rect(zone, width, height, screenWidth, screenHeight, insets)` | Where a window of that size stands docked there: its lower left corner |
   | `Core.Dock.Hold(frame, zone)`, `Core.Dock.Holder(zone, frame)` | A zone holds one window at a time: the window docked there now; the shown one other than `frame` holding it. A drag offers no zone another holds; a window opening with such a zone kept stands clear that time, where it stood or beside the zone, `Window.CASCADE` (32) down and to the side of each window already there (`Window.lua`) |
   | `Core.Shape.New(host, settings, rect)` | A plate with round corners and a trim: `settings.radius` (a fixed radius in UI units: a chat's bubble) or `corners` %, `settings.trim` (the trim's width in UI units; `Shape.TRIM` at first), `shape:Look({ file, size, top, bottom, trim, alpha })` (trims and holes only made for a look with a trim), `shape:Fit(left, bottom, width, height)` (or the frame's own place), `shape:Follow()` (fitted to its frame at every size), `shape:Base(width, height)`, `shape:Flatten(share)` (that far to square), `shape:SetAlpha(fill, trim)`, `shape:SetShown(on)`, `shape.radii`. `Shape.Round(texture)`: an icon or portrait cut round (the circle mask, else the game's portrait mask). `Shape.CAP_LEFT`, `Shape.CAP_RIGHT`: the masks of a bar's round ends (`Art/cap-*.blp`; a quarter of the bar's height wide, `CLAMPTOWHITE`; Nameplates' bar). `Shape.SOFT_CORNER`: the top left corner of a plate whose edge fades out softly (`Art/soft-corner.blp`), a texture laid as nine pieces, the corners turned by their texture coordinates, the sides its last column or row stretched (Lore's talk, `Look.Plate`). `Shape.CORNER.TOPLEFT`, `TOPRIGHT`, `BOTTOMLEFT`, `BOTTOMRIGHT`: one corner cut round (`Art/corner-*.blp`), laid over that corner as large as the radius with `CLAMPTOWHITE`: that corner alone round, at any radius and height (Nameplates' outline and its cast bar). `Shape.Bar(frame, height)`: a thing's bar as the nameplates draw theirs (the game's raid health fill in a colour, a border of one screen pixel nearly black, round a quarter of its height; `bar:Paint(r, g, b)`, `bar:SetLit(on)` grey, `bar:SetChosen(on)` gold; `bar.fill`, `bar.inner`, `bar.pixel`), with `Shape.Caps(texture, anchor, height)` (a texture's ends round as such a bar), `Shape.BarFont(fontString, size)` (the game's outlined nameplate font, size in 1080p pixels), `Shape.Quality(quality)`, `Shape.Gold()`: Loot's lines and rolls and Lore's quest rewards, so rolling on loot and choosing a quest's reward look the same. `Shape.Options(list, at, tab, parent)`: the switches *Corner radius* and *Don't round corners on screen edges* (`corners`, `squareEdges`; `Shape.DEFAULTS`, `Shape.KEYS`) |
-  | `Core.Skin.New(frame, settings)` | The tile of the game's dark dialogs (`Skin.TILE`) and a trim in Sane UI's colour on a Shape; `skin:Rest()` (placed: corners measured on this size), `skin:Fit(...)`, `skin:Hold(on)` (while a motion sizes the window: no refit at every size, the motion fits it once a step) |
+  | `Core.Skin.New(frame, settings)` | The tile of the game's dark dialogs (`Skin.TILE`) and a trim in SaneUI's colour on a Shape; `skin:Rest()` (placed: corners measured on this size), `skin:Fit(...)`, `skin:Hold(on)` (while a motion sizes the window: no refit at every size, the motion fits it once a step) |
   | `Core.Skin.TILES`, `Skin.Tile(key)`, `Skin.Choices(solid)` | The game's quiet background tiles a window or a chat's bubbles can stand on (Marble, Rock, Slate, Iron, Night: `{ key, text, file, size }`); one by its key; the choices for a dropdown, `solid` (a colour of its own) first |
   | `Core.Expand.New(frame, options)` | Opens to `width` × `height` once the mouse has rested on it `Expand.DWELL` (0.2 s; anywhere, or only in `corner`; not with `hover = false`), closes once it has been away `Expand.LINGER` (0.5 s), on `Core.Hover`; `expand:Stay(on)` keeps it open (a control of the window's own; nothing watches the mouse meanwhile); `motion` its own kind, `still` while another part has its size. `expand:Open()`, `expand:Close()`, `expand:Stay(on)`, `expand.open`, `expand.stays` |
   | `Core.Bar.New(parent, options)` | A progress bar in the art of the game's experience bar (`Bar.ART`: background, fill, the part still to come, its pip, the dividers, the flare): `bar:SetValue(value, most, ahead)` (a gain rises in `Bar.RISE` to `Bar.RISE_WHOLE` seconds by its size, with the game's flare; a loss is there at once), `bar:SetSize(width, height)` (moves there); `width`, `height`, `segments` (nil: the game's own count), `fill`, `flare`, `motion`, `moved` (the value the fill stands for, on its way too); `bar.frame` |
@@ -456,16 +456,16 @@ but for a window to try those with (`/sane window`).
   | `Core.Seat.Part(options)` | A window not ours as a part of a module's board (the game's vendor, trainer and Profession windows): `options = { frame (its global name), addon (loaded by the game on demand), label, level, width, opened = fn(frame), closed = fn(frame) }`; the part's `Build`, `Show`, `Size`, `Present` (while the window is open), `Leave`, and `part.Frame()`, `part.Width()` (its own width, UIParent's units), `part.Follow()` (hooks after its `OnShow` and `OnHide`, now or once its addon has loaded). Seated in its panel's body while both are shown; the game opens and closes it, our code only follows |
   | `Core.Lend(frame)`, `Core.Lent(frame)` | A frame of the game's changed for a while and given back exactly (`lent:SetParent`, `SetPoints(fn)`, `SetLayer`, `SetAlpha`, `SetScale`, `SetMouse`, `SetShown`, `Lent()`, `Return()`); whether a frame is lent now, to any module (Abilities leaves the spellbook's place alone while Combat holds it) |
   | `Core.Neighbours.Window(key)` | The known addons (Saneroki, 2026-10-20), named in `Neighbours.lua` only: a handle on one while it is loaded (`"talents"`: a talent planner), nil otherwise: `handle.title`, `handle:Frame()`, `Shown()`, `Open()`, `Close()` (by its own functions), `Follow(fn)` (after each opening of it, a hook after its opening function, made once) |
-  | `Core.Neighbours.Format(key)` | A known leveling guide's text format (`"guide"`, Saneroki, 2026-10-25): its command words, step marks, colour words and game tags, each by Sane UI's own word for it (`commands`, `marks`, `modes`, `colours`, `gameTags`), copies; nil for one without. Speed Leveling runs guides written in it with an engine of its own, so nothing of the addon is read or called at runtime |
+  | `Core.Neighbours.Format(key)` | A known leveling guide's text format (`"guide"`, Saneroki, 2026-10-25): its command words, step marks, colour words and game tags, each by SaneUI's own word for it (`commands`, `marks`, `modes`, `colours`, `gameTags`), copies; nil for one without. Speed Leveling runs guides written in it with an engine of its own, so nothing of the addon is read or called at runtime |
   | `Core.Neighbours.Sketches(key)` | A known dungeon map addon's way of sharing map drawings (`"dungeonMaps"`, Saneroki, 2026-11-16): its prefix and messages, its share string (head, kinds, letters, sums, the tags its tables are written in), its drawing's fields, its marks and colours by ours, its dungeon maps as our floors (the same 0 to 1, or a fit), a copy; nil for one without. Navigation's sketches go both ways with its players by it (`Exchange.lua`), nothing of the addon called or read |
   | `Core.Neighbours.Lock(key)` | The recipe a known guide's bought import strings are locked to the buyer's account by (`"guide"`): a copy of `{ account, tag, width, taps, mark, close, version }`; nil for one without. Speed Leveling (`Unlock.lua`) opens the guides bought for the player's own account with it |
-  | `Core.Metric()`, `Core.Distance(yards)`, `Core.DistanceNumber(yards)`, `Core.DistanceText(text)`, `Core.Clock(hour, minute, second)`, `Core.ClockAt(stamp, seconds)`, `Core.GameClock()` | Distances and the time of day as the setting *Units* says (`Units.lua`, Saneroki, 2026-10-30; page General, Metric at first): `"27 m"`, `"23:59"`, or Imperial `"30 yd"`, `"11:59 PM"`. The game counts in yards, so all of Sane UI keeps yards (settings too) and only what a player reads comes through here, at 0.9144 m to the yard, rounded to whole meters. `DistanceText` turns the yards a text of the game's names (a spell's description, *8-25 yd*); `Clock` takes an hour and minute (and a second: `"23:59:07"`), `ClockAt` a moment (with its second where `seconds`); `GameClock` sets the game's own 24-hour switch (`timeMgrUseMilitaryTime`) at the login and when the setting changes. An option `distance = true` is a slider of yards shown this way |
+  | `Core.Metric()`, `Core.Distance(yards)`, `Core.DistanceNumber(yards)`, `Core.DistanceText(text)`, `Core.Clock(hour, minute, second)`, `Core.ClockAt(stamp, seconds)`, `Core.GameClock()` | Distances and the time of day as the setting *Units* says (`Units.lua`, Saneroki, 2026-10-30; page General, Metric at first): `"27 m"`, `"23:59"`, or Imperial `"30 yd"`, `"11:59 PM"`. The game counts in yards, so all of SaneUI keeps yards (settings too) and only what a player reads comes through here, at 0.9144 m to the yard, rounded to whole meters. `DistanceText` turns the yards a text of the game's names (a spell's description, *8-25 yd*); `Clock` takes an hour and minute (and a second: `"23:59:07"`), `ClockAt` a moment (with its second where `seconds`); `GameClock` sets the game's own 24-hour switch (`timeMgrUseMilitaryTime`) at the login and when the setting changes. An option `distance = true` is a slider of yards shown this way |
   | `Core.TOAST_TOP` | How far below the screen's top what tells something over the world stands, where the game's own toast stands (`Kit.lua`): the toast of a new level (right of the middle, beside the guide's arrow) and the travel overlay keep this height |
   | `Core.TellsAtTop(frame)`, `Core.TopTaken()`, `Core.OnTopTaken(fn)` | What tells something at that height for a while says so once (`Kit.lua`): while one of those frames shows, `TopTaken()` is true and what only stands there makes way (Speed Leveling's arrow); `fn()` whenever one came or went |
   | `Core.Ways.Serve(finder)`, `Core.Ways.Aim(map, x, y)`, `Core.Ways.Ahead()` | The way to a place, between a module that leads the player and the one that finds ways (Saneroki, 2026-10-31), so neither needs the other (`Ways.lua`). Navigation serves; nobody asks since 2026-11-07, when Speed Leveling's arrow went back to pointing straight at its place. Whoever asks: `Aim` once for each place (a map of the game's, x and y 0 to 1; none: nowhere), `Ahead()` as often as it likes: `{ way, yards, ride, to, here }` (the way to turn, as the game's facing; the yards along the line to the next ride or the end; that ride; where it brings one; whether it starts where the player stands), a reused table, or nil while no way is known |
   | `Core.Sight.Serve(finder)`, `Core.Sight.Nodes()` | The herbs and ore in sight now, what a place of Core's data cannot say: each `{ node, map, x, y, seen }`. Navigation's `Found.lua` serves it, the guide's detours ask it, neither needs the other; with nobody to find them, none |
   | `Core.AuraMarks.Serve(module, menu)`, `Core.AuraMarks.Menu(owner, spell)`, `Core.AuraMarks.Served()`, `Core.AuraMarks.Paint(frame)` | The menu of an aura or a spell (`AuraMarks.lua`, 2026-11-18): Combat serves it (your marks, *Edit tracked...*, *Add tracking*), Abilities' spellbook and aura history open it; nobody serving, a click does nothing. `Paint` makes an aura's icon: the picture cropped square, the swipe of the time gone, the stack count |
-  | `Core.SpellSearch.Box(parent, x, y, opts)`, `Core.SpellSearch.Find(text, done)`, `Core.SpellSearch.Tip(owner, id, name)`, `Core.SpellSearch.Icon(id)` | The search over every spell Sane UI knows (`SpellSearch.lua`, Combat's aura search until 2026-11-18), its box with suggestions in groups; every door of the box `Core.Gently`'s |
+  | `Core.SpellSearch.Box(parent, x, y, opts)`, `Core.SpellSearch.Find(text, done)`, `Core.SpellSearch.Tip(owner, id, name)`, `Core.SpellSearch.Icon(id)` | The search over every spell SaneUI knows (`SpellSearch.lua`, Combat's aura search until 2026-11-18), its box with suggestions in groups; every door of the box `Core.Gently`'s |
   | `Core.Spellbook.Serve(module, offer)`, `Core.Spellbook.Offer()`, `Core.Spellbook.Changed()`, `Core.Spellbook.Watch(fn)` | What a spellbook shows beyond the game's own spells, between the module that knows it and the one whose book shows it (Saneroki, 2026-11-06), so neither needs the other (`Spellbook.lua`). Abilities serves (`Book/Offer.lua`, Forever), Combat's spellbook draws it: `Spells(line, showRanks)` the entries still to learn of a tab, `Sections(line, lines, hidePassives, showRanks)` sections of their own under them, `Search(words, lines, showRanks)` the finds by tab, `Make(parent)` and `Set(frame, entry, width)` the offer's own frame for an entry, `Home` a tab and page of its own (`Surface`, `Draw` on the book's two pages, `First`), `Menu(root)` lines in the book's settings menu, `Switch` one switch beside its page controls. `Offer()` is nil while nobody serves or the serving module stood down; `Changed()` tells the watchers on the next frame |
   | `Core.StatWord(word)`, `Core.StatLine(line)` | The stats as players write them (`Stats.lua`, Saneroki, 2026-10-30): `"Strength"` is `"Str"`, a line of a number and a stat `"+8 Stam"` (a coloured number too); a word that is no stat and a sentence stay as they came. The one place the short words are kept: every view that names a stat goes through these. The game's own windows keep its words |
   | `Core.Upgrade(link, id)`, `Core.WeighWith(fn)` | Whether an item would make the character better (`Upgrade.lua`): gear wearable now, with nothing worn in its place or something worth less there, never lighter armour than worn. Worth: its stats (`GetItemStats`) by the character's weights, a two-handed weapon against both hands, else its item level. On a shield build (`shield` in the weights) never a two-hander, and one held counts as nothing; a one-hander against the main hand alone, only a shield in the off hand. `"empty"` or `"better"`, what it brings and the place it goes (of two the empty or the weaker one); nil: no upgrade. `fn()` gives the weights, `{ [the game's stat key] = worth, ranged = worth of a ranged weapon's damage per second, shield = true on a shield build }`: Inventory's (`src/Inventory/Weights.lua`); with Inventory off item levels decide |
@@ -491,7 +491,7 @@ but for a window to try those with (`/sane window`).
     that came: `Refresh` from `Edge.Fill`, `Place`, `Edge:Update`); with `options.native`, the game's square
     button (`UI-SquareButton-*`, `Window.BUTTON` 24) with its circling arrows (`UI-RefreshButton`, as its
     group finder's refresh), tip *Classic window*: `window:Native(true)`. `window:Attach()` puts the same
-    button (tip *Sane UI window*, `window:Native(false)`) on the game's window, `RIGHT` of its close button
+    button (tip *SaneUI window*, `window:Native(false)`) on the game's window, `RIGHT` of its close button
     (`CloseButton`, or the global *name*`CloseButton`, read raw), at that button's level: a frame of ours,
     kept in our own table (nothing written into the game's frame), once per window. `Window.Swap(parent, text,
     tip, click)` gives that button, unplaced, to a module's own frame (Navigation's satchel). Not in Edit Mode. Shown
@@ -509,7 +509,7 @@ but for a window to try those with (`/sane window`).
     (`Edge.Fill`), `Place` waits for `PLAYER_REGEN_ENABLED` (`Later`), a full screen motion on its way is put at
     its end at `PLAYER_REGEN_DISABLED` (before the game locks), and `Open` returns `"locked"` for a hidden one.
     Its close button and Esc close it once the fight is over (`Core.AfterCombat`); meanwhile Esc is the game's.
-  - **Esc** (`escape = "close"`, `Escape.lua`): one stand-in of ours, `SaneUIEscape`, Sane UI's only entry in
+  - **Esc** (`escape = "close"`, `Escape.lua`): one stand-in of ours, `SaneUIEscape`, SaneUI's only entry in
     the game's `UISpecialFrames`, is shown while anything of ours is to be closed by Esc (`Core.Escape`); when
     the game hides it (Esc), each one closes (`options.close`, else hidden), a full one as it is (Edge leaves it:
     no `Fill(false)`, so `full` stays kept); a moment later the stand-in is shown again while one still is (one
@@ -597,7 +597,7 @@ but for a window to try those with (`/sane window`).
     time it shows: the full map's bar stands over the map, `Window.UNDER`, and carries its controls 5 over it):
     every window's entries (`Window.All`), each under its window's title (`CreateTitle`), this one's
     first. One chosen: `edge:Fill(false)`, then the entry's `show()`. The other way, an entry with `frame`
-    puts the button *Sane UI* onto the game's window (`Window.Beside`, beside its close button or left of its
+    puts the button *SaneUI* onto the game's window (`Window.Beside`, beside its close button or left of its
     sizing button, `MaximizeMinimizeButton`/`MaximizeMinimizeFrame`): pressed, the game's goes, a kept choice
     is ours again (`back`), ours is shown (`ours`, else `Native(false)` and `Show`) and with `full` fills the
     screen. On a panel of the game's (it has a close button, no `plain`) the button is a
@@ -648,16 +648,16 @@ but for a window to try those with (`/sane window`).
 | `Dock.lua` | The zones at the screen's edges, and the shape that shows where a dragged window docks |
 | `Shape.lua` | A plate with round corners and a trim, square where it touches the screen's edge |
 | `Skin.lua` | A round dark plate on a Shape, one with an edge it is docked to (a window's with `skin = "round"`; the options' screen, small fields) |
-| `Look.lua` | The kit (`Core.Look`, `Doc/guides/interface-style.md`, *The kit*): Sane UI's windows of WoW: Forever's own parts by their atlas names, a stand-in where a game lacks one: the heavy bronze frame (`Look.Frame`, every window's skin and the board's panels), its plate, the thin golden line, the grey square and the red buttons, the character list's search box, the character window's heads, bands and gear slots, the inside frame, the grey box, the loading bar's frame, the top bar's tabs, Friz Quadrata (`Look.Font`) |
+| `Look.lua` | The kit (`Core.Look`, `Doc/guides/interface-style.md`, *The kit*): SaneUI's windows of WoW: Forever's own parts by their atlas names, a stand-in where a game lacks one: the heavy bronze frame (`Look.Frame`, every window's skin and the board's panels), its plate, the thin golden line, the grey square and the red buttons, the character list's search box, the character window's heads, bands and gear slots, the inside frame, the grey box, the loading bar's frame, the top bar's tabs, Friz Quadrata (`Look.Font`) |
 | `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant) on the game's easing curves, and a clock that runs only while something moves |
 | `Window.lua` | Moving and sizing a window (in Edit Mode), keeping its place |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open |
-| `Escape.lua` | Esc: one stand-in in the game's list for everything of Sane UI's it closes |
+| `Escape.lua` | Esc: one stand-in in the game's list for everything of SaneUI's it closes |
 | `Watch.lua` | A look a few times a second while there is something to see; the mouse on a window |
 | `Rest.lua` | What shows only while it is needed: a set of frames out of sight while you are at rest |
 | `Fuzzy.lua` | Forgiving search of typed words in texts, ranked, for the windows' search; a long list a part per frame; Up, Down and Enter over a search box's fly-out |
 | `Edge.lua` | A docked window that fills the screen at a left click on its screen edge (or the mouse pushed there, with the click off); whether some window fills the screen (`Edge.AnyFull`, `Edge.Watch`) |
-| `Classic.lua` | The game's windows Sane UI's stand for: the dropdown *Classic windows* across modules, the button *Sane UI* on the game's windows |
+| `Classic.lua` | The game's windows SaneUI's stand for: the dropdown *Classic windows* across modules, the button *SaneUI* on the game's windows |
 | `Views.lua` | A window's views behind the game's tabs |
 | `Selection.lua` | A window chosen in Edit Mode, and its dialog, with the settings a window brings |
 | `HealthMarks.lua` | What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled |
@@ -668,8 +668,8 @@ but for a window to try those with (`/sane window`).
 | `Seat.lua` | A window not ours seated in a room of a full window: its place, scale and layer lent (its pinned parts' layer too), followed, given back |
 | `Board.lua` | A module's full screen of windows, laid out as the player arranges them, in layouts behind tabs |
 | `Icons.lua` | The icon chooser: the game's icons by group, searched, for every module that lets the player pick one |
-| `SpellSearch.lua` | The search over every spell Sane UI knows, in groups (each class's auras, the enemies', the items'), and its box with suggestions: Combat's aura lists and reminders, Abilities' Sane Macros (`Core.SpellSearch`) |
-| `Neighbours.lua` | The other addons Sane UI knows and adapts to when they are installed: the one file that names them |
+| `SpellSearch.lua` | The search over every spell SaneUI knows, in groups (each class's auras, the enemies', the items'), and its box with suggestions: Combat's aura lists and reminders, Abilities' Sane Macros (`Core.SpellSearch`) |
+| `Neighbours.lua` | The other addons SaneUI knows and adapts to when they are installed: the one file that names them |
 | `Switches.lua` | The quick switches the modules offer, for a view that gathers them (`Core.Offer`) |
 | `Onboarding.lua` | Each module's setup, step by step, handed in by the module (`Core.Onboarding`); opening it in the addon *Onboarding*, read on demand: by itself the first time, from a module's options page, `/sane setup` |
 | `Ways.lua` | The way to a place, between a module that leads the player and the one that finds ways (`Core.Ways`) |
@@ -680,16 +680,16 @@ but for a window to try those with (`/sane window`).
 | `Upgrade.lua` | Whether an item would make the character better (`Core.Upgrade`), for the loot, the bags and quest rewards |
 | `Expand.lua` | A window that opens while the mouse rests on it, and can be kept open |
 | `Bar.lua` | A progress bar whose value and size move |
-| `Bindings.lua`, `Bindings.xml` | Sane UI's section in the game's key bindings, and its key for the options |
+| `Bindings.lua`, `Bindings.xml` | SaneUI's section in the game's key bindings, and its key for the options |
 | `Demo.lua` | `/sane window` |
 | `Objectives.lua` | `Core.UnitQuest(unit)`: what is still to do about a creature for a quest in your log, as the game says it in its tooltip data (`C_QuestLog.UnitIsRelatedToActiveQuest`, then `C_TooltipInfo.GetUnit`'s lines of the kind `QuestObjective`): `"kill"` or `"loot"` and the count of the first objective still open; `false` while the game hides it. Read by Nameplates and Combat's quest marks |
 | `Inspect.lua` | `Core.Inspect`: a player's item level and talents for every view (`Level`, `Talents`, `Watch(fn)`; Forever's talents as a spec with its points per group, Retail's the specialization alone), by paced inspections: out of a fight, `CanInspect` and `CheckInteractDistance`, the game's inspect window closed, one question at a time 2 seconds after anybody's last (`NotifyInspect` hooked), the same player not again for 15 seconds, an answer kept 5 minutes. Read by Tooltips and Nameplates |
 | `Audio.lua` | The sound profiles (`Core.Audio`): the game's five sounds on or off with their volumes under a name, the account's last one set again at each login; *Disabled* first and in use at first (nothing set); the defaults *All sound on*, *Music off*, *Music and Ambience off*, *All sound off*; `Add` for other code |
 | `People.lua` | Aliases and notes of players: *Set Alias* and *Set Note* (and *Remove Alias*, *Remove Note* for one that is there) in the game's menu of a player (`Menu.ModifyMenu` on its `MENU_UNIT_*` tags), kept in `SaneUIDB.modules.Core.people` by the player's key |
-| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a set's row into a record, and a record learned into a row), `Data.lua` (the sets, the answers, the data's saved variables, what Core learns in play), `Map.lua` (what the data puts on a map), `Ships.lua` (the ships' timetables and times), `Trips.lua` (the trip underway), `Teleports.lua` (where a teleport of *Travel* brought the player, learnt), `Characters.lua` (what the account's characters have), `Wire.lua` (Sane UI's addon messages: messages and blocks, the queue that keeps to the game's budget, the inbox; a known addon's prefix heard and sent on, `Wire.Hear`, `Wire.Say`), `Guild.lua` (the guild's records: the roster, its history, what members share with the guild), `Confirm.lua` (what the game confirmed in play of the data not yet verified, kept and shared with the guild and the group), `Check.lua` (what the game told compared with the sets field by field: confirmed or learned), `Tally.lua` (what play counts per build period: loots, visits, places seen, cells), `Drops.lua` (how often things come, for every view: the set Drops, this account's counts, the members'), `Found.lua` (the discoveries and their chat lines), `Watchers.lua` (Core's watchers: creatures, things, mailboxes, crossings, a boss's loot and casts, the stats of the items the character has), `Quests.lua` (the quest watchers: offered, taken, worked on, handed in), `Loot.lua` (every loot window counted: corpses, skinning, pockets, nodes, fishing, quest items, where), `Facts.lua` (creatures, their services, vendors' goods, spells and the tooltips' items, compared), `Rhythm.lua` (how an item's price goes with the clock and how it sells, one short line per item, for a forecast), `Prices.lua` (what a thing fetches at the auction house, for every view: what it lists now, else the last scan), `Fees.lua` (what the auction house takes and what that leaves, by the game's own rates), `Scan.lua` (the full scan of the auction house while it is open, every 16 minutes, kept per house in `SaneUIData_Market`, the file of its own of `SaneUI_AuctionData`), `ScanBar.lua` (its bar under the game's auction house window), `Relay.lua` (a scan shared with the guild and the group: have, want, blocks, the login's question), `Bundle.lua` (counts and discoveries shared with the guild and the group every 15 minutes, kept apart in `SaneUIData_Shared`) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
-| `Sync/` | Sync: the game's own per-character settings kept with Sane UI's ([README](Sync/README.md)) |
+| `Data/` | The data framework: `Steps.lua` (the scheduler), `Codec.lua` (a set's row into a record, and a record learned into a row), `Data.lua` (the sets, the answers, the data's saved variables, what Core learns in play), `Map.lua` (what the data puts on a map), `Ships.lua` (the ships' timetables and times), `Trips.lua` (the trip underway), `Teleports.lua` (where a teleport of *Travel* brought the player, learnt), `Characters.lua` (what the account's characters have), `Wire.lua` (SaneUI's addon messages: messages and blocks, the queue that keeps to the game's budget, the inbox; a known addon's prefix heard and sent on, `Wire.Hear`, `Wire.Say`), `Guild.lua` (the guild's records: the roster, its history, what members share with the guild), `Confirm.lua` (what the game confirmed in play of the data not yet verified, kept and shared with the guild and the group), `Check.lua` (what the game told compared with the sets field by field: confirmed or learned), `Tally.lua` (what play counts per build period: loots, visits, places seen, cells), `Drops.lua` (how often things come, for every view: the set Drops, this account's counts, the members'), `Found.lua` (the discoveries and their chat lines), `Watchers.lua` (Core's watchers: creatures, things, mailboxes, crossings, a boss's loot and casts, the stats of the items the character has), `Quests.lua` (the quest watchers: offered, taken, worked on, handed in), `Loot.lua` (every loot window counted: corpses, skinning, pockets, nodes, fishing, quest items, where), `Facts.lua` (creatures, their services, vendors' goods, spells and the tooltips' items, compared), `Rhythm.lua` (how an item's price goes with the clock and how it sells, one short line per item, for a forecast), `Prices.lua` (what a thing fetches at the auction house, for every view: what it lists now, else the last scan), `Fees.lua` (what the auction house takes and what that leaves, by the game's own rates), `Scan.lua` (the full scan of the auction house while it is open, every 16 minutes, kept per house in `SaneUIData_Market`, the file of its own of `SaneUI_AuctionData`), `ScanBar.lua` (its bar under the game's auction house window), `Relay.lua` (a scan shared with the guild and the group: have, want, blocks, the login's question), `Bundle.lua` (counts and discoveries shared with the guild and the group every 15 minutes, kept apart in `SaneUIData_Shared`) ([Doc/guides/data.md](../../Doc/guides/data.md)) |
+| `Sync/` | Sync: the game's own per-character settings kept with SaneUI's ([README](Sync/README.md)) |
 | `Settings/` | The options: the pages, their controls, `/sane options` ([README](Settings/README.md)) |
-| `Art/banner.blp`, `Art/icon.blp` | Sane UI's logo (the S), the banner on the options' page *Sane UI*: one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/core-banner.png` and `core-icon.png` |
+| `Art/banner.blp`, `Art/icon.blp` | SaneUI's logo (the S), the banner on the options' page *SaneUI*: one of SaneUI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of SaneUI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/core-banner.png` and `core-icon.png` |
 | `Art/circle.blp`, `Art/circle-hole.blp` | The masks round corners are cut with: a white disc, and a white square with the disc taken out (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 | `Art/ring.blp`, `Art/ring-wide.blp` | White rings as large as the picture (`Shape.RING`, `RING_WIDE`, the wide one the thicker band), for the game's Cooldown widget to sweep: Combat's rings around the mouse (256 × 256, DXT5 with mipmaps). Made by `dev/tools/shape-art`, drawn by code |
 | `Art/corner-tl.blp`, `Art/corner-tr.blp`, `Art/corner-bl.blp`, `Art/corner-br.blp` | One corner of a rectangle (`Shape.CORNER`): white but for the corner it is named for, cut away outside a quarter circle as wide as the picture (64 × 64, DXT5 with mipmaps), laid over that corner as large as the radius with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
@@ -722,7 +722,7 @@ but for a window to try those with (`/sane window`).
   channel, target)` (through the same queue and budget).
 - 2026-11-16 — Sound profiles: **Disabled** (Saneroki: "a preset called disabled that just don't interfere with the audio
   at all. It doesn't overwrite or change anything and that should be the default"): first in the list and every
-  account's at first, no profile; while it is in use Sane UI sets none of the game's sounds, at a login neither. The four
+  account's at first, no profile; while it is in use SaneUI sets none of the game's sounds, at a login neither. The four
   first profiles are still made, not put in use; deleting the profile in use leads to Disabled (the game's sounds stay),
   and every profile may be deleted (the first ones come only to an account that never had any).
 - 2026-11-16 — *Hotcorner requires leftclick* on at first in every module (Saneroki: "Make on all modules the hotcorner
@@ -794,7 +794,7 @@ but for a window to try those with (`/sane window`).
   made by `dev/tools/data` and listed at the end of the built TOC), read with Core at the login, so the addon list
   shows only the modules; the data's saved variables (`SaneUIData_Characters`, `SaneUIData_Guild`) are Core's
   (`Data.SAVED`, `Data.Saved`), and `/sane data` lists the sets and the saved parts (Saneroki).
-- 2026-10-20 — Sane UI's addon messages (`Data/Wire.lua`, `Core.Wire`: the prefix `SaneUI`, messages and packed blocks,
+- 2026-10-20 — SaneUI's addon messages (`Data/Wire.lua`, `Core.Wire`: the prefix `SaneUI`, messages and packed blocks,
   a queue that keeps to the game's budget, an inbox the scheduler takes in) and the guild's records (`Data/Guild.lua`,
   `Data.Guild`: the roster and its history, members' records shared with the guild, this character's card; the pack
   *Guild*), for the module Guild; a module's window on another module's board (`Core.Board.Offer`, `Withdraw`,
@@ -831,13 +831,13 @@ but for a window to try those with (`/sane window`).
 - 2026-10-17 — The windows, finished and filled in: closing and Esc wait for a fight's end; a first zone
   (`first.dock`: the talk kind in the middle) and standing clear of a window that holds it (`Window.CASCADE`);
   a motion whose frame is hidden is at its end at once; no full screen in Edit Mode; every module hook
-  guarded. One Esc stand-in for all of Sane UI (`Core.Escape`, `SaneUIEscape`). `Core.Watch`, `Core.Hover`
+  guarded. One Esc stand-in for all of SaneUI (`Core.Escape`, `SaneUIEscape`). `Core.Watch`, `Core.Hover`
   (Expand on them), `Motion.Fade`, `Motion.Slide`, `Fuzzy.Filter`, `Skin.TILES` (was `Edge.TEXTURES`),
   `Shape`'s fixed radius, `Follow`, `alpha` and `Shape.Round`. `Edge.Options` takes the module's own parents,
   and a change of the section is followed by Core. New for windows: `inside`, `SetTitle`, module buttons,
   tabs in the game's style (`Views.lua`), to the front (`toplevel`), `insets`, `Window.All`, `ResetAll`
   (`/sane window reset all`), the holder (`Holder.lua`), and in Edit Mode a click on a box selects it, with a
-  dialog *Reset To Default Position* (`Selection.lua`) and the grid's snap. Key bindings: a section *Sane UI*
+  dialog *Reset To Default Position* (`Selection.lua`) and the grid's snap. Key bindings: a section *SaneUI*
   and a key for the options (`Bindings.xml`). `/sane window` is a panel with two tabs and a button of its own.
 - 2026-10-17 — Profiles anew (Saneroki): *Accountwide settings* (on at first) with the profile *Accountwide* for every character, the game's settings in profiles only, each module's settings in one place (the profile in use or, off, the character's own) and moved, never copied at the logout; *Empty*, *SaneUI Defaults*, *Load at login*, *Save at logout* and the per-module switches gone (the first shape brought over once). New: *Copy from*, *Defaults*, *Export*/*Import* (`Core.Serial`), *Forget*, `/sane profile`. Settings carry their version (`version`, `upgrade`), are made right whenever they come into use (`Core.Settle`), and can be set from elsewhere (`Core.Set`). Core: `AfterCombat`, `Locked`, `Restricted`, `Off`, `OnUnit`, blocked actions in the error log, the kit (`Kit.lua`).
 - 2026-10-17 — Players' keys: `Core.PlayerKey(unit)`, `Core.PlayerKeyOf(text)` and `Core.Surnames()`. A
@@ -920,11 +920,11 @@ but for a window to try those with (`/sane window`).
   profile, *Load at login* and *Save at logout* (was this character's only). `Arrange` moves each module's
   settings to where they come from.
 - 2026-10-14 — The page *Profiles* is a canvas (`Core.frames.Profiles`) that the Settings module fills with tabs.
-- 2026-10-14 — The options' pages: *Sane UI* with only its logo; under it *Profiles*, *General*, *Appearance*,
-  then the modules' pages by their plain names (*Chat*, was *Sane Chat*). `/sane options` opens *Sane UI*.
+- 2026-10-14 — The options' pages: *SaneUI* with only its logo; under it *Profiles*, *General*, *Appearance*,
+  then the modules' pages by their plain names (*Chat*, was *Sane Chat*). `/sane options` opens *SaneUI*.
 - 2026-10-14 — Profiles: *Load at login* and *Save at logout*; a module's `capture` brings its settings up to
   date before they are saved. `Core.Options`: section headers, switches kept without a control. A module can
-  have its switches on one of Sane UI's own pages (`optionsPage`). The general switch is called *Errors in chat*.
+  have its switches on one of SaneUI's own pages (`optionsPage`). The general switch is called *Errors in chat*.
 - 2026-10-14 — Profiles: a character can have settings of its own (`SaneUICharDB`, per character); the
   settings of every module can be kept under a name and loaded, duplicated, renamed and deleted
   (`Profiles.lua`).
@@ -939,7 +939,7 @@ but for a window to try those with (`/sane window`).
   the login. The key binding header is gone with the last binding.
 - 2026-10-14 — 0.2.0: Core is the main addon and every module an addon of its own. The saved settings
   moved here from Settings (`Saved.lua`). First general switch.
-- 2026-10-14 — First version (Sane UI 0.1.0). The tools came out of Actionbar Organizer's `Core.lua`.
+- 2026-10-14 — First version (SaneUI 0.1.0). The tools came out of Actionbar Organizer's `Core.lua`.
 - 2026-10-23 — What the game says about a unit, for every view (Saneroki: data is Core's): a creature's quest
   objective (`Objectives.lua`, from Combat's quest marks) and players' item level and talents by paced inspections
   (`Inspect.lua`, from Tooltips).

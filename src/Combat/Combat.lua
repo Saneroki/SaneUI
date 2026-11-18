@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat
+--  SaneUI - Combat
 --  The module's own table (ns in all its files), its words, its settings, and
 --  how it stands down.
 --
@@ -49,11 +49,11 @@ ns.TEXT = {
     setupTip = "A window that walks you through Combat a step at a time: which parts are ours, your unit frames, your party and raid frames with a preview of 5, 10, 20 and 40 and a place for them in Edit Mode, and every part of the nameplates, each with a sample that shows each choice at once. Also /sane setup combat.",
     -- Ours or the game's (Saneroki, 2026-11-18): each part's switch, the first section.
     parts = "Ours or the game's",
-    partsTip = "Which parts of the fight are Sane UI's. A part switched off is the game's own again, as it was before Sane UI; the others stay ours. The same choices stand in the dropdown Classic windows of a full screen.",
+    partsTip = "Which parts of the fight are SaneUI's. A part switched off is the game's own again, as it was before SaneUI; the others stay ours. The same choices stand in the dropdown Classic windows of a full screen.",
     partUnits = "Unit frames",
     partUnitsTip = "Your frame, your target's and your focus's in a nameplate's look, with your pet and their targets in rows under them, instead of the game's. Off: the game's own frames. Each frame has its own switch below.",
     partPlates = "Nameplates",
-    partPlatesTip = "The game's nameplates in Sane UI's dress, and the combat text rising over them and over your character. Off: the game's own plates and combat text. Back on, they are ours after a /reload.",
+    partPlatesTip = "The game's nameplates in SaneUI's dress, and the combat text rising over them and over your character. Off: the game's own plates and combat text. Back on, they are ours after a /reload.",
     partAuras = "Aura tracking",
     partAurasTip = "Track an aura and its icon shows where and when you choose: on an invisible aura bar, on the health bars of your unit frames and your party and raid frames, or right under each nameplate (Edit tracked, /sane auras). Off: no aura icons and no aura bars.",
     nameplates = "Nameplates",

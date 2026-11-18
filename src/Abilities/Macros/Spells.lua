@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Spells
+--  SaneUI - Abilities - Macros - Spells
 --  The spell window (Saneroki, 2026-11-07: "big spell window on the plus"): the
 --  + beside a spell step's name opens it over whatever shows, the full screen
 --  too, as the picture window does (Core's icon chooser, Core.Icons). On the left the groups: the

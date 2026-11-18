@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Icons
+--  SaneUI - Lore - Icons
 --  An NPC's services as big pictures without words, in a row over the talk
 --  (Saneroki, 2026-11-11: big icons with no text on them, "over the
 --  conversation window so you can quickly click them"): the hearthstone (an

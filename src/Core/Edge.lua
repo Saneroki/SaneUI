@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Edge
+--  SaneUI - Core - Edge
 --  A window docked to the screen's edge (Dock.lua) fills the whole screen at a
 --  left click on that edge where the window touches it (or, with the click
 --  switched off, when the mouse is pushed against it): the game window's own
@@ -15,13 +15,13 @@ local Core = SaneUI.Core
 --  nor scrolled, as the game's map does it while it is locked.
 --
 --  Full, it has a dropdown Classic windows in its top right corner: the game's
---  own windows that Sane UI's windows stand for (their option classic), each
+--  own windows that SaneUI's windows stand for (their option classic), each
 --  module's under its name, this window's first (Classic.lua). One chosen, the
 --  window goes back to its zone and the game's own comes instead (the entry's
 --  show: the game's friends list, or the game's chat with ours put away). An
 --  entry that is a kept choice (checked) is a checkbox, ticked while the game's
 --  own is the one kept; chosen again, ours is the one again (back) and the
---  window stays as it is. The game's windows have the button Sane UI the other
+--  window stays as it is. The game's windows have the button SaneUI the other
 --  way.
 --
 --  Each window has a section Expand window in its options (Edge.Options):
@@ -170,7 +170,7 @@ function Edge.Options(list, at, tab, under)
         { key = "expandClick", default = Edge.DEFAULTS.expandClick, text = "Hotcorner requires leftclick", parent = "expand",
           tip = "The mouse at the screen edge or corner the window is docked to is not enough: left-click there and it fills the screen, left-click there again and it goes back. Off: the mouse pushed there is enough." },
         { key = "motion", default = Edge.DEFAULTS.motion, text = "Animation type", parent = "expand", choices = Core.Motion.Choices(true),
-          tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under Sane UI > Appearance." },
+          tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under SaneUI > Appearance." },
         { key = "expandOpacity", default = Edge.DEFAULTS.expandOpacity, min = 0, max = 100, step = 5, unit = "%", text = "Background opacity", parent = "expand",
           tip = "How much the background hides the game while the window fills the screen: 0 shows all of it, 100 hides it." },
         { key = "expandTexture", default = Edge.DEFAULTS.expandTexture, text = "Background texture", parent = "expand", choices = Core.Skin.Choices(Edge.SOLID),
@@ -246,7 +246,7 @@ local function Strip(edge, key)
     return strip
 end
 
--- The background as set: one of Blizzard's tiles, or solid black; the trim in Sane UI's bronze.
+-- The background as set: one of Blizzard's tiles, or solid black; the trim in SaneUI's bronze.
 local function Paint(edge)
     local tile = Core.Skin.Tile(edge.settings.expandTexture)
     edge.back:Look({ file = tile and tile.file, size = tile and tile.size, top = BLACK, bottom = BLACK, trim = Core.GOLD })

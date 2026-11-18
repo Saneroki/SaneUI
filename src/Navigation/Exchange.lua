@@ -1,8 +1,8 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Exchange
---  Sketches shared with the players of a dungeon map addon Sane UI knows (Saneroki, 2026-11-16: "Yes, build it";
+--  SaneUI - Navigation - Exchange
+--  Sketches shared with the players of a dungeon map addon SaneUI knows (Saneroki, 2026-11-16: "Yes, build it";
 --  "it would be nice to make the map sharing as compatible as possible were we can from out side"), both ways, in
 --  that addon's own way of sharing, whose words Core gives (Core.Neighbours.Sketches): nothing of the addon is
 --  called, read or changed, and all of it works the same whether it is installed or not.
@@ -13,7 +13,7 @@ local _, ns = ...
 --              (DrawBar.lua): kept at once, each drawing a sketch of its own; pasted again, the copy replaced
 --      sent    a sketch shared (Plans.Share) and markers shared (Markers.Send) go in its format too, on the same
 --              channel: one of its drawings per dungeon and one for the game's maps; its players get them as its
---              own shares, and Sane UI's leave that copy for ours (a field of ours, Exchange.MARK, says ours came)
+--              own shares, and SaneUI's leave that copy for ours (a field of ours, Exchange.MARK, says ours came)
 --
 --      Exchange.on                     whether it works here (Forever: that addon's game; Core knows its words)
 --      Exchange.Pack(kind, value)      a share string of its kind; Exchange.Unpack(text): value, kind, sum, or nil
@@ -40,7 +40,7 @@ local neighbours = Core.Neighbours
 local words = neighbours and neighbours.Sketches and neighbours.Sketches("dungeonMaps")
 Exchange.on = words ~= nil and Core.FOREVER == true
 Exchange.words = words
-Exchange.MARK = "sane"     -- our own field in a drawing we send: a Sane UI share of it came too
+Exchange.MARK = "sane"     -- our own field in a drawing we send: a SaneUI share of it came too
 Exchange.MOST_PARTS = 100  -- parts of one drawing sent at most (its players keep a share's parts two minutes; ours go
                            -- one a second once the first ten went)
 Exchange.GATHERING = 20    -- shares being put together at once at most
@@ -52,8 +52,8 @@ Exchange.TEXT = {
     markers = "Markers",
     alsoSent = "Also sent for those who use %s.",
     kept = "Kept from %s: %s.",
-    left = "%d of its drawings lie on maps Sane UI has no match for and were left out.",
-    nothing = "Nothing in it lies on a map Sane UI has.",
+    left = "%d of its drawings lie on maps SaneUI has no match for and were left out.",
+    nothing = "Nothing in it lies on a map SaneUI has.",
     format = "That is no drawing copied from %s: copy it with its Export or Backup and paste it whole.",
     damaged = "That text is cut short or damaged: copy it again and paste it whole.",
 }

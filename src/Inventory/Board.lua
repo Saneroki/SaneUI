@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Board
+--  SaneUI - Inventory - Board
 --  The full screen's windows, while the window stands full: on Core's board
 --  (Core.Board), so they share the screen as you arrange them, in layouts
 --  behind tabs in the full window's title bar (drag a window's head to move
@@ -32,7 +32,7 @@ local _, ns = ...
 --  a banker and a mailbox the full screen comes with a layout of its own for that talk
 --  (Talks.lua: Core's board's occasions, registered by Board.Occasion).
 --
---  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
+--  A panel is Core's (Board.lua: a plate in SaneUI's look, a head with its
 --  title and the X, the body under it); what is in it is its part's. A part
 --  runs apart from the rest (ns.Safe): one that fails is noted and the others
 --  go on; only the window's own work stands the module down.

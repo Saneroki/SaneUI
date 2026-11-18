@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Found
+--  SaneUI - Navigation - Found
 --  The herbs and ore the game's minimap shows as dots, found and drawn over it
 --  in their own pictures: what each gives (its herb, its ore) in a round ring of
 --  stitched leather, the far sparkles' (Glints.lua) without their point, grey

@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Ships
+--  SaneUI - Core - Data - Ships
 --  The boats and zeppelins of Core's set Travel as timetables, and when they
 --  really sail on this realm, learnt in play (Doc/guides/data.md, *The ships'
 --  times*). The game tells neither: its tables hold a transport's way and how

@@ -1,4 +1,4 @@
-# Sane UI: Data: Auction Scans
+# SaneUI: Data: Auction Scans
 
 ## TL;DR
 
@@ -8,7 +8,7 @@ fills it. It is what the database is filtered from later, so nothing in it is th
 ## How to use
 
 Nothing to do. The file is `WTF/Account/<account>/SavedVariables/SaneUI_AuctionScans.lua`, one per WoW account, for
-WoW: Forever. Sane UI loads it when the auction house opens, so opening the auction house for the first time in a
+WoW: Forever. SaneUI loads it when the auction house opens, so opening the auction house for the first time in a
 session takes longer as the file grows. A login and a `/reload` do not read it.
 
 ## Technical details

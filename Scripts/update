@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Brings this copy of Sane UI up to date with GitHub, builds it and puts it into the game, in one go:
+# Brings this copy of SaneUI up to date with GitHub, builds it and puts it into the game, in one go:
 # the quick way to try in the game what a Claude cloud session pushed.
 #
 #   1. Fetches from GitHub (origin), and forgets the branches deleted there.
@@ -49,7 +49,7 @@ if [ -n "$list" ]; then
 fi
 
 if [ "$current" != main ]; then
-    echo "This copy stands on ${current:-no branch}, not on main, and main is the only branch of Sane UI." >&2
+    echo "This copy stands on ${current:-no branch}, not on main, and main is the only branch of SaneUI." >&2
     echo "git switch main (its commits, if any, kept with git merge), then run this again. Nothing was changed." >&2
     exit 1
 fi

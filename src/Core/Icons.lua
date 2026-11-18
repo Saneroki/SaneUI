@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Icons
+--  SaneUI - Core - Icons
 --  The icon chooser (Saneroki, 2026-11-04, the macros' picture window; Core's
 --  for every module since 2026-11-15: "We have already a system, where we can
 --  search the games icons and have a window for it with search etc for the

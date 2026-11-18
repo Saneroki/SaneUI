@@ -168,7 +168,7 @@ def run_harvest(args):
         files += harvests.sent_files(Path(path))
     if not files:
         where = ", ".join(args.sent) if args.sent else f"{args.wow} (its game folders' WTF)"
-        print(f"Data: no saved file of Sane UI under {where}.", file=sys.stderr)
+        print(f"Data: no saved file of SaneUI under {where}.", file=sys.stderr)
         return 1
     ledger = plays.Ledger(ledger_path(args.ledger))
     lines, report = harvests.harvest(master, files, ledger)

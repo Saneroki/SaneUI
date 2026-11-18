@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Terrain
+--  SaneUI - Navigation - Terrain
 --  The land as the minimap shows it, at every zoom, in two levels of detail:
 --
 --      tiles      the game's own minimap textures, one of 512 x 512 per tile of a continent's

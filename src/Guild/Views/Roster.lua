@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Views - Roster
+--  SaneUI - Guild - Views - Roster
 --  The members (Guild › Roster). At its top the guild's head: its name, how
 --  many members and how many online, the message of the day (a click changes
 --  it, for those the game lets), and the buttons Invite to Guild, Guild

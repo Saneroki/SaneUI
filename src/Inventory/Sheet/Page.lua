@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Page
+--  SaneUI - Inventory - Sheet - Page
 --  What a window of the game's character sheet stands on, on the module's full
 --  screen (Board.lua): its panel's body cut as the game's sheet cuts its
 --  window. A left part takes the room there is (a list, the PvP rank); a window

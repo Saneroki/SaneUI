@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Columns
+--  SaneUI - Inventory - Bags - Columns
 --  The list display's columns: which there are, which are shown and in what
 --  order, how wide, what each shows of an item, and the head over the list
 --  that arranges them:

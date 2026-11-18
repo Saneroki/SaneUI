@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - TopBar
+--  SaneUI - Navigation - TopBar
 --  The full map's controls, in its title bar (Core's, standing over the map, which reaches up behind it;
 --  Saneroki, 2026-11-15: "Put the dropdown for the zones, dungeons and pins and the questlog, blended scrying into
 --  the titlebar"), left to right:

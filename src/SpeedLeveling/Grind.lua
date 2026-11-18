@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Grind
+--  SaneUI - Speed Leveling - Grind
 --  Cloth where you kill anyway (Saneroki, 2026-10-31): after a step that has you
 --  kill humanoids, whoever works with cloth gets a step of its own to kill on for
 --  a while. Humanoids drop cloth by their level (Grind.CLOTH), so this is cloth

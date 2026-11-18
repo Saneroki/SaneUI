@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync - Layout: the Edit Mode layout in use
+--  SaneUI - Core - Sync - Layout: the Edit Mode layout in use
 --  Kept by its name and kind (the game numbers its layouts in a list that is
 --  not the same on every character), and as the game's own text of it (Saneroki,
 --  2026-10-30: the layouts themselves too): one that a character does not have

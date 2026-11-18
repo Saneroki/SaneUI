@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Look out for
+--  SaneUI - Combat - Units - Look out for
 --  In your focus's place while you have no focus: Look out for. It rests out
 --  of sight; the mouse on that place shows it. A click opens it into a field
 --  that grows to the frame's width: a name, or by its + one of your group

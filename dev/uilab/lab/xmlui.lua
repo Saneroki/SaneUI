@@ -36,7 +36,7 @@ return function(Lab)
         if ctx then ctx.loads[#ctx.loads + 1] = o else Lab.Run(o, "OnLoad") end
     end
 
-    -- What the reader says: a problem in Sane UI's XML is a warning (an unknown script an error, as SetScript's),
+    -- What the reader says: a problem in SaneUI's XML is a warning (an unknown script an error, as SetScript's),
     -- one in Blizzard's a line of the lab's own (Blizzard's XML is right for the game; the lab falls short).
     local told = {}
     local function tell(how, kind, text, at)

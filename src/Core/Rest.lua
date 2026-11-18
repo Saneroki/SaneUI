@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Rest
+--  SaneUI - Core - Rest
 --  What shows only while it is needed (Saneroki, 2026-11-01): a set of frames,
 --  out of sight while you are at rest, in sight while
 --      the mouse is on it

@@ -1770,7 +1770,7 @@ end)()
     for _, button in ipairs({ other, quiet, bare }) do button:Hide() end -- out of the satchel the rest of the run
 end)()
 
--- The satchel's sound line (AudioLine.lua): first in its section Sane UI, Core's sound profile in use in a dropdown,
+-- The satchel's sound line (AudioLine.lua): first in its section SaneUI, Core's sound profile in use in a dropdown,
 -- the game's sound settings and the profile's buttons under a cogwheel.
 ;(function()
     local Satchel, Line, Audio = ns.Satchel, ns.AudioLine, Core.Audio
@@ -1794,7 +1794,7 @@ end)()
     end
     check(line and line._shown and head and near(-line._points[1][5], -head._points[1][5] + Satchel.HEAD)
         and profiles.label._text == Audio.NONE and cog.icon._atlas == nil and cog.icon._texture == Line.COG_FILE,
-        "the line under the title Sane UI: Disabled in use at first; a cogwheel beside it")
+        "the line under the title SaneUI: Disabled in use at first; a cogwheel beside it")
 
     profiles:GenerateMenu()
     local names = {}
@@ -2056,7 +2056,7 @@ end)()
     page._mouseOver = false
 end)()
 
--- The satchel's Sane UI section: the quick switches the modules offer (Core.Offer), a click their module's own; and
+-- The satchel's SaneUI section: the quick switches the modules offer (Core.Offer), a click their module's own; and
 -- the AddOns section only while other addons have buttons for it.
 ;(function()
     local Satchel = ns.Satchel
@@ -2076,7 +2076,7 @@ end)()
     local texts, cells = Shown()
     local guide = cells["Test guide"]
     check(texts[Satchel.TEXT.switches] and guide and guide.tick._shown and guide.picture._alpha == 1,
-        "the Sane UI section: a module's switch, on: whole and ticked")
+        "the SaneUI section: a module's switch, on: whole and ticked")
     guide._scripts.OnClick(guide, "RightButton")
     check(clicked == "RightButton", "a click on it is its module's own, with its mouse button")
     state = "off"
@@ -2094,7 +2094,7 @@ end)()
     check(Shown()[Satchel.TEXT.addons], "with one: the section is there")
     state = nil -- the module gone: its switch is not listed
     Satchel.Fill()
-    check(not Shown()[Satchel.TEXT.switches], "no switch offered: no Sane UI section")
+    check(not Shown()[Satchel.TEXT.switches], "no switch offered: no SaneUI section")
     Satchel.button._scripts.OnClick(Satchel.button, "LeftButton")
 end)()
 
@@ -2207,7 +2207,7 @@ end)()
     check(small.follow and near(small.u, 500) and Canvas.Laid(), "out of it: on the player")
 end)()
 
--- Core's button Sane UI on the game's minimap only while that is the game's own, not inside our map. In an instance,
+-- Core's button SaneUI on the game's minimap only while that is the game's own, not inside our map. In an instance,
 -- where the game tells no place of the player in our planes: the game's minimap alone, with its own ground. The zone
 -- in the middle asked of the game a few times a second, not at each step. A zone entered: the pins placed anew only.
 ;(function()
@@ -2216,7 +2216,7 @@ end)()
         if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
             and not W.others[widget] then sane = widget end
     end
-    check(sane and not sane._shown and minimap._shown, "inside our map the game's minimap carries no button Sane UI")
+    check(sane and not sane._shown and minimap._shown, "inside our map the game's minimap carries no button SaneUI")
     local step = minimap._zoom
     player.map = 500 -- a dungeon: its map has no box, so the game tells no place of the player in our planes
     tracker._scripts.OnUpdate(tracker, 0.016)
@@ -5601,7 +5601,7 @@ check(cluster._alpha == 1 and cluster._mouse and cluster.ZoneTextButton._mouse a
         if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
             and not W.others[widget] then sane = widget end
     end
-    check(sane and sane._shown and minimap._shown, "the game's own minimap again: its button Sane UI on it, back to ours")
+    check(sane and sane._shown and minimap._shown, "the game's own minimap again: its button SaneUI on it, back to ours")
 end)()
 check(overrides["CTRL-R"] == nil, "and its key")
 check(Window.frame._shown and Window.frame._alpha == 0 and not Canvas.frame._mouse and not Canvas.frame._wheel and not Canvas.Laid(),
@@ -5639,7 +5639,7 @@ check(W.stray:GetParent() ~= minimap and ns.Satchel.button._shown, "the other ad
         if widget._parent == minimap and widget._kind == "Button" and widget ~= minimap.ZoomIn and widget ~= W.late
             and not W.others[widget] then sane = widget end
     end
-    check(sane and sane._shown, "on the game's minimap its button Sane UI window")
+    check(sane and sane._shown, "on the game's minimap its button SaneUI window")
     sane._scripts.OnClick(sane, "LeftButton")
     check(not ns.options.nativeMinimap and Hybrid.Taken() and Window.frame._alpha == 1 and Satchel.button._shown,
         "and that one brings ours back, with the satchel's button")
@@ -10623,7 +10623,7 @@ end)()
     end
 end)()
 
--- Sketches both ways with a dungeon map addon Sane UI knows (Exchange.lua; Saneroki, 2026-11-16: "Yes, build it";
+-- Sketches both ways with a dungeon map addon SaneUI knows (Exchange.lua; Saneroki, 2026-11-16: "Yes, build it";
 -- "make the map sharing as compatible as possible"): its share strings written and read, ours as its drawings and
 -- back, its maps on our floors, its shares heard and asked about, ours sent in its format on the same channel.
 ;(function()
@@ -10860,7 +10860,7 @@ end)()
     check(small and smallBack and smallBack.width == 0, "the smallest words stay small on our own wire")
     Plans.Remove(keptAll)
     Exchange.Heard("Brannoc Steelvein", Message("1", Exchange.Pack(words.route, dungeon)):gsub("~1~2~", "~1~1~"))
-    check(not Markers.offer:IsShown(), "one of ours in its format heard (a Sane UI share came too): not asked twice")
+    check(not Markers.offer:IsShown(), "one of ours in its format heard (a SaneUI share came too): not asked twice")
 
     -- ours sent in its format too, on the same channel (the guild and a whisper as well), in its parts
     local say, sendBlock, said_ = Wire.Say, Wire.SendBlock, {}
@@ -10924,7 +10924,7 @@ end)()
         "the hot corner: the mouse into it, or a left click in it (the switch Hotcorner requires leftclick)")
     local bindings = guide.steps[3].settings
     check(bindings[1].binding == "SANEUI_MAP" and bindings[2].binding == "TOGGLEWORLDMAP"
-        and bindings[3].binding == "SANEUI_MAP_FIND", "the keys: Sane UI's map, the game's map, the map's search")
+        and bindings[3].binding == "SANEUI_MAP_FIND", "the keys: SaneUI's map, the game's map, the map's search")
     local stage = CreateFrame("Frame", nil, UIParent)
     stage._width, stage._height = 420, 500
     local function Draw(key)

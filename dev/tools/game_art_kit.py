@@ -1,4 +1,4 @@
-"""The kit (Saneroki, 2026-11-15): Saneroki's references for Sane UI's new look, each rebuilt from Forever's own pieces.
+"""The kit (Saneroki, 2026-11-15): Saneroki's references for SaneUI's new look, each rebuilt from Forever's own pieces.
 
 dev/tools/game-art kit (saneui makegamekit) writes the pictures into assets/generated/game-art/kit/, the page /art/kit/
 on the tools' web server: one picture per reference, his screenshot beside it where there is one
@@ -315,7 +315,7 @@ class Kit:
         out = Image.new("RGBA", (w + 40 * S, h + 40 * S), backdrop)
         out.alpha_composite(self.nine(self.raw("generic-frame-chamfered-12d-2o"), 20, 20, 20, 20, w, h), (20 * S, 20 * S))
         cx = out.width // 2
-        self.text(out, (cx, 52 * S), "Sane UI", 26 * S, WHITE)
+        self.text(out, (cx, 52 * S), "SaneUI", 26 * S, WHITE)
         self.text(out, (cx, 88 * S), "A section that is no window", 12 * S, GOLD)
         self.text(out, (cx, 112 * S), "Text and buttons inside it", 12 * S, GREY)
         cancel = self.red_button(130 * S, "Cancel", state="disabled", size=14)
@@ -362,7 +362,7 @@ class Kit:
         if window is None:
             return self.shop_header(900 * S)
         window.alpha_composite(self.shop_header(900 * S), (60 + 30 * S, 60 + 24 * S))
-        self.text(window, (window.width // 2, 60 + 12 * S), "Sane UI", 13 * S, GOLD)
+        self.text(window, (window.width // 2, 60 + 12 * S), "SaneUI", 13 * S, GOLD)
         return window.crop((0, 0, window.width, 60 + 100 * S))
 
     def loading_bar(self, width=700 * S, words=None, fill=0.0, buttons=False):

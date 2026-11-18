@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Gear
+--  SaneUI - Inventory - Sheet - Gear
 --  The equipment manager, a window of its own on the module's board (the key
 --  "gear", Board.lua) on the journal's page, as the game's sheet has it (Camelot's EquipmentManagerPane): your gear sets
 --  (C_EquipmentSet) in lines on the journal's page (the set's icon in a pencil

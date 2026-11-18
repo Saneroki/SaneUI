@@ -485,14 +485,14 @@ def shown(text):
 with tempfile.TemporaryDirectory(prefix="saneui-sets-") as folder:
     out = Path(folder)
     (out / "one").mkdir()
-    (out / "one" / "SaneUI.toc").write_text("## Title: Sane UI\nCore.lua\n")
+    (out / "one" / "SaneUI.toc").write_text("## Title: SaneUI\nCore.lua\n")
     made = compiler.compile_sets(sample, out / "one", "forever")
     compiler.compile_sets(sample, out / "two", "forever")
     check("compile: the sets made", [name for name, _ in made], ["Folk", "Gear", "Labels"])
     check("compile: the same master, the same set files", files_of(out / "one" / "Sets") == files_of(out / "two" / "Sets"), True)
     check("compile: one file per set, in Sets", sorted(p.name for p in (out / "one" / "Sets").iterdir()), ["Folk.lua", "Gear.lua", "Labels.lua"])
     toc = (out / "one" / "SaneUI.toc").read_text().splitlines()
-    check("compile: Core's TOC lists them at its end", toc, ["## Title: Sane UI", "Core.lua", "", compiler.MARK,
+    check("compile: Core's TOC lists them at its end", toc, ["## Title: SaneUI", "Core.lua", "", compiler.MARK,
                                                          "Sets\\Folk.lua", "Sets\\Gear.lua", "Sets\\Labels.lua"])
     check("compile: no TOC, no list", sorted(p.name for p in (out / "two").iterdir()), ["Sets"])
     sets = out / "one" / "Sets"

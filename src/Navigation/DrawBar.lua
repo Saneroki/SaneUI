@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - DrawBar
+--  SaneUI - Navigation - DrawBar
 --  The button and the palette of drawing and planning on the map (Saneroki, 2026-11-15: "I want a button somwhere
 --  that helps me to activate menues and helpers to drop pins and draw on the map and save those drawings and map
 --  pins together so they can be shared or grouped together"):
@@ -184,7 +184,7 @@ local function Options(item, plan)
     end))
 end
 
--- A drawing pasted from the dungeon map addon Sane UI knows (Exchange.lua: its Export or Backup, copied): each
+-- A drawing pasted from the dungeon map addon SaneUI knows (Exchange.lua: its Export or Backup, copied): each
 -- of its drawings kept as a sketch, what lies on maps we have no match for said.
 local function Pasted(text)
     local Exchange = ns.Exchange

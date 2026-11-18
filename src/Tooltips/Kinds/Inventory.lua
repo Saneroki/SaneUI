@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Inventory
+--  SaneUI - Tooltips - Kinds - Inventory
 --  An item's Inventory section (Kinds/Item.lua): who of your characters has
 --  it, and where, from Core's characters' data (Data.Count; Doc/guides/data.md,
 --  *Characters*). Each character by its whole name, first name and surname,

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Trainer
+--  SaneUI - Abilities - Trainer
 --  The full screen at a trainer (Saneroki, 2026-11-09): "When the class
 --  trainer is open show the fullscreen with Class Trainer on the left and the
 --  skills window on the right"; asked, the skills window is our spellbook,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Makes a release of Sane UI: a snapshot of the dev build as it is committed (README.md, *Building*).
+"""Makes a release of SaneUI: a snapshot of the dev build as it is committed (README.md, *Building*).
 
   1. Takes main's newest commit: what is committed, never the working tree (changes not yet committed stay out,
      and are listed).
@@ -112,7 +112,7 @@ def main():
     # main moves only if nobody committed meanwhile (compare and swap); then the names.
     if subprocess.run(["git", "-C", str(ROOT), "update-ref", "refs/heads/main", commit, base]).returncode:
         sys.exit("main moved while the tests ran: no release made; run it again")
-    named = subprocess.run(["git", "-C", str(ROOT), "tag", "-a", tag, "-m", f"Sane UI {version}", commit],
+    named = subprocess.run(["git", "-C", str(ROOT), "tag", "-a", tag, "-m", f"SaneUI {version}", commit],
                            capture_output=True, text=True)
     if named.returncode:
         # Without its tag there is no release: main goes back to where it stood (if nothing moved it since), so a

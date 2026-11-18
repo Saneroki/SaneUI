@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Window
+--  SaneUI - Navigation - Window
 --  The map's window, one of Core's (kind screen): docked in the screen's top
 --  right corner, where the game's minimap was, and filling the screen when the
 --  mouse goes into that corner (Edge.lua); the corner again, Esc or its close
@@ -190,7 +190,7 @@ end
 local function Keep(key, on)
     ns.Safe("classic window", Core.Set, ns.name, key, on)
 end
--- The button Sane UI on the game's minimap (at its top right) and on its map (beside the close button on its
+-- The button SaneUI on the game's minimap (at its top right) and on its map (beside the close button on its
 -- border, a secure button that clicks it): ours again, the map filling the screen (Core's Classic.lua). Only
 -- while that window is the game's own (its switch) and the module runs: on the game's minimap inside our map,
 -- or on the game's map caught for the frame before it is hidden, it would only be in the way.

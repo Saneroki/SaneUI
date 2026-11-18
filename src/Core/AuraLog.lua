@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Aura log
+--  SaneUI - Core - Aura log
 --  The buffs and debuffs seen on whoever you can attack (creatures, bosses, a
 --  foe of the other faction), kept as a history, for a view to show (Combat's
 --  full screen, its window Aura history). What the game tells addons is the
@@ -27,7 +27,7 @@ local Core = SaneUI.Core
 --                      damage taken, dispels and interrupts in that fight, whom
 --                      from, whom on (kind "fight", what: AuraLog.METER), the
 --                      swings left out, yours that were logged as casts too
---      a member's casts  your group's Sane UI sends you its player's casts of a
+--      a member's casts  your group's SaneUI sends you its player's casts of a
 --                      fight once it is over (Core.Wire, the kind AuraLog.KIND, by
 --                      the server's clock): the same lines, from that member
 --                      (shared); one that is an aura seen already marks it
@@ -464,7 +464,7 @@ local function Skew()
     return server - clock
 end
 
--- Your casts of a fight just over, to your group's Sane UI: a line each, the spell, when (the server's clock), whom
+-- Your casts of a fight just over, to your group's SaneUI: a line each, the spell, when (the server's clock), whom
 -- at. Waits in Core's wire while the game holds addon messages back.
 local function Send(done)
     local wire, skew, channel = Core.Wire, Skew(), Group()

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Chat
+--  SaneUI - Loot - Chat
 --  The game tells of loot in sentences of its own (its global strings, in the
 --  player's language): "You receive loot: %s.", "%s has selected Need for:
 --  %s". Each is turned once into a pattern, and a line of the chat read back

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Strays
+--  SaneUI - Navigation - Strays
 --  The buttons other addons hang on and around the game's minimap, and the
 --  addons the game's own addon compartment lists. While our window is the
 --  minimap (Hybrid.Taken) the game's minimap lies inside our map, shown at its
@@ -12,7 +12,7 @@ local _, ns = ...
 --
 --  Another addon's: a frame on the minimap, its backdrop or its cluster with a
 --  name of its own, whose global the game says an addon set (issecurevariable:
---  not secure, and by which addon; the game's own frames are secure, Sane UI's
+--  not secure, and by which addon; the game's own frames are secure, SaneUI's
 --  are left), no larger than Strays.LARGEST, taking the mouse, not protected,
 --  its name not ending in a number (one of a pool: an addon's marks of places
 --  in the world on the minimap, its quests', many at once; they stay there).
@@ -39,8 +39,8 @@ local _, ns = ...
 --  The game's addon compartment (AddonCompartmentFrame, in both games; out of
 --  sight with the cluster): each addon it lists is a cell too, its icon and its
 --  title, a click and the mouse over it calling that addon's own as the game's
---  menu calls them, behind pcall (a failure there is that addon's, never Sane
---  UI's). An addon with a button held shows once, by its button.
+--  menu calls them, behind pcall (a failure there is that addon's, never
+--  SaneUI's). An addon with a button held shows once, by its button.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Strays = {}
@@ -132,7 +132,7 @@ local function Hangers()
     return { rawget(_G, "Minimap"), rawget(_G, "MinimapBackdrop"), cluster, cluster and rawget(cluster, "MinimapContainer") }
 end
 
--- The addon whose button a frame is: named, its global set by that addon (not Sane UI); nil for the game's own, and
+-- The addon whose button a frame is: named, its global set by that addon (not SaneUI); nil for the game's own, and
 -- for every frame where the client cannot tell (none held then).
 local function Whose(frame)
     local name, ask = frame:GetName(), rawget(_G, "issecurevariable")
@@ -284,7 +284,7 @@ function Strays.List()
     local registered = compartment and compartment.registeredAddons
     for _, entry in ipairs(type(registered) == "table" and registered or {}) do
         local title = type(entry) == "table" and Plain(entry.text)
-        if title and not titles[Same(title)] and not title:find("^Sane UI") then
+        if title and not titles[Same(title)] and not title:find("^SaneUI") then
             list[#list + 1] = { entry = entry, title = title, icon = entry.icon }
             titles[Same(title)] = true
         end

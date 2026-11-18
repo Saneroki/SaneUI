@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates - Range
+--  SaneUI - Combat - Nameplates - Range
 --  How far each plate's unit is from your character, and whether any of your
 --  attacks reach it. The game tells addons no distance; it does tell whether
 --  a unit is within the range of an item's use (C_Item.IsItemInRange) or of

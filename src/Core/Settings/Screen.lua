@@ -1,13 +1,13 @@
 local Config = SaneUI.Core.Config -- Settings.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings - Screen
---  Sane UI's options on a full screen, besides the game's own (Esc > Options >
---  AddOns > Sane UI): the button with the game's cog in a full window's title
+--  SaneUI - Core - Settings - Screen
+--  SaneUI's options on a full screen, besides the game's own (Esc > Options >
+--  AddOns > SaneUI): the button with the game's cog in a full window's title
 --  bar (Window.lua) puts this view over what the window holds. Pressed again,
 --  Esc, or the window going back, and it goes.
 --
---      at the left   Sane UI's pages as the game's options list them: General and
+--      at the left   SaneUI's pages as the game's options list them: General and
 --                    Appearance, then a page for each module that is switched on and
 --                    has switches; in the look of the game's own list of pages (the
 --                    one chosen lit by its bar). The window's own module is chosen
@@ -15,7 +15,7 @@ local Config = SaneUI.Core.Config -- Settings.lua
 --      at the right  the chosen page, drawn as a page of our own in the game's options
 --                    is (Tabbed.lua): its title, the search box and Defaults, its
 --                    switches in tabs; built the first time it is chosen
---      at the foot   the game's options at Sane UI, for what is only there (Profiles,
+--      at the foot   the game's options at SaneUI, for what is only there (Profiles,
 --                    the game's own settings): the window goes back first
 --
 --  A change goes through Core.Set as on the game's pages, which show it too
@@ -43,12 +43,12 @@ Screen.LEVEL = 100       -- the view over the window's own levels (the map's pin
 Screen.STRATA = "DIALOG"
 Screen.COVER = { 0.02, 0.02, 0.025, 0.97 } -- the dark over what the window holds
 Screen.TEXT = {
-    title = Core.TITLE or "Sane UI",
+    title = Core.TITLE or "SaneUI",
     general = type(GENERAL) == "string" and GENERAL or "General",
     appearance = "Appearance",
     modules = "Modules",
     all = "All options",
-    allTip = "The game's options at Sane UI (Esc > Options > AddOns): there too Profiles and the game's own settings. The full screen goes back first.",
+    allTip = "The game's options at SaneUI (Esc > Options > AddOns): there too Profiles and the game's own settings. The full screen goes back first.",
 }
 
 local screens = {} -- [window] = its view, once made
@@ -71,7 +71,7 @@ local function Controls(name, onPage)
     return false
 end
 
--- The pages as the game's options have them under Sane UI (Settings.lua, PutUpPages), but Profiles: a page
+-- The pages as the game's options have them under SaneUI (Settings.lua, PutUpPages), but Profiles: a page
 -- is { key, name, page, title, module }.
 local function Pages()
     local pages = {}
@@ -159,7 +159,7 @@ local function Sized(screen)
     if screen.plate.skin and screen.plate.skin.Rest then screen.plate.skin:Rest() end
 end
 
--- The game's options at Sane UI, the full screen gone back first (it stands over them).
+-- The game's options at SaneUI, the full screen gone back first (it stands over them).
 local function All(screen)
     local edge = screen.window.edge
     if edge and edge.full then edge:Fill(false) end
@@ -187,7 +187,7 @@ local function Make(window)
     plate.skin = Core.Skin.New(plate, { radius = Core.Board and Core.Board.RADIUS or 8 })
     screen.plate = plate
 
-    -- The list at the left: Sane UI's own pages, then the modules'; the way to the game's options at its foot.
+    -- The list at the left: SaneUI's own pages, then the modules'; the way to the game's options at its foot.
     local list = CreateFrame("Frame", nil, plate)
     list:SetPoint("TOPLEFT", 8, -12)
     list:SetPoint("BOTTOMLEFT", 8, 12)

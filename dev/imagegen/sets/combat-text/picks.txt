@@ -1,5 +1,5 @@
 # Combat text, round 2: Saneroki's picks of round 1 (drawings.txt: evade-2, block-4, parry-1, dodge-1), each image 1
-# for its subject and layout, redrawn in the pencil-icon style of Sane UI's journal, image 2 the decided pencil icons
+# for its subject and layout, redrawn in the pencil-icon style of SaneUI's journal, image 2 the decided pencil icons
 # of the bags' sidebar as the style alone.
 #   dev/tools/imagegen dev/imagegen/sets/combat-text/picks.txt
 # chosen:

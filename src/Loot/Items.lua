@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Items
+--  SaneUI - Loot - Items
 --  The options' tab Your items (Saneroki, 2026-10-29: a list in the settings
 --  to see at a glance which items are taken at once and which are not). The
 --  things met in loot of late (options.seen, kept by the loot window) and those

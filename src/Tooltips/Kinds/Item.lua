@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Item
+--  SaneUI - Tooltips - Kinds - Item
 --  An item's tooltip:
 --
 --      Arcanite Reaper                 [icon]     its name in the colour of its quality

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Window
+--  SaneUI - Loot - Window
 --  The loot window (Saneroki, 2026-10-29): no paper, no frame, no title; a
 --  line for each thing the loot holds (Row.lua: a bar as the nameplates draw
 --  theirs, in its quality's colour; its picture, name and an A), and at its

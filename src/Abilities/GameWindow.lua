@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - GameWindow
+--  SaneUI - Abilities - GameWindow
 --  The full screen's window in a game where ours are not (Abilities.lua, ns.Serves:
 --  Retail): the game's own talents and spellbook, one window of the game's
 --  (PlayerSpellsFrame, load on demand) with its own tabs, seated in a panel of

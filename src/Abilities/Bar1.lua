@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Bar 1
+--  SaneUI - Abilities - Bar 1
 --  Action Bar 1 keeps the page you chose (Saneroki, 2026-10-31): a stance, a
 --  form or stealth no longer puts another row of buttons on it. Its pages are
 --  yours, turned with its arrows or your page keys, in a fight too.

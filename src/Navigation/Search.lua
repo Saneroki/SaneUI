@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Search
+--  SaneUI - Navigation - Search
 --  A walk from one point of a plane to another over the walking data (Walk.lua):
 --  the rectangles from the floor the start stands on to a floor at the end,
 --  through their openings, the shortest by A* (each step costs the way from where

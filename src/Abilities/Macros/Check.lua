@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Check
+--  SaneUI - Abilities - Macros - Check
 --  What would not work as it stands, found out of a fight, when a macro changes
 --  or the character learns something. It says what can be known ahead: whether
 --  a spell is ready at a given moment stays the game's to say on the press.

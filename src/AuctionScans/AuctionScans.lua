@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Data: Auction Scans
+--  SaneUI - Data: Auction Scans
 --  Every full scan whole, a file of its own: each account's,
 --  WTF/Account/<account>/SavedVariables/SaneUI_AuctionScans.lua, holding SaneUIData_Scans and nothing else. It grows
 --  fastest of all and no view reads it in play, so it is loaded on demand, when the auction house opens, and a

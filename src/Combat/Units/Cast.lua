@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Cast
+--  SaneUI - Combat - Units - Cast
 --  A unit's cast as part of its frame (yours, your target's, your focus's), in
 --  place of the game's cast bar: while it casts, one more bar in the frame's
 --  stack, inside its one outline (Bar.Fit), directly above the health bar: the

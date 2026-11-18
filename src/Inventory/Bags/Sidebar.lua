@@ -1,15 +1,15 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Sidebar
+--  SaneUI - Inventory - Bags - Sidebar
 --  A window's sidebar, at its left under the bar: a dark column of rows
 --  (an icon, a name, a count) under a little head with its name; the names
 --  always show. It scrolls with the wheel when its rows are more than its
 --  height. The row shown is
---  lit, with a bar at its left in Sane UI's colour. Sidebar.New makes one for
+--  lit, with a bar at its left in SaneUI's colour. Sidebar.New makes one for
 --  a window; the window fills it (Begin, Row, Divider, Done) and answers its
 --  clicks (its choose, drop, menu, add). A row the window marks (row.drag)
---  can be dragged: a ghost of it follows the cursor, a line in Sane UI's
+--  can be dragged: a ghost of it follows the cursor, a line in SaneUI's
 --  colour shows where it would go (a row lit in that colour: into it), and
 --  where it is let go the window's place puts it (its aim says where a row
 --  may go, from how far down the row under the cursor is). A window that
@@ -189,7 +189,7 @@ local function MakeRow(rail)
     return row
 end
 
--- An icon: one of Sane UI's pencil drawings whole, an atlas where the game has it, else the game's texture, cut a
+-- An icon: one of SaneUI's pencil drawings whole, an atlas where the game has it, else the game's texture, cut a
 -- little round its edge.
 local function Icon(texture, file, atlas)
     texture:SetTexCoord(0, 1, 0, 1)

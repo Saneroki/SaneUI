@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Watch
+--  SaneUI - Core - Watch
 --  Looking at something a few times a second, only while there is something
 --  to see.
 --

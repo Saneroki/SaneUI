@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Hybrid
+--  SaneUI - Navigation - Hybrid
 --  The game's own minimap over our map, for what only it can show: its live dots
 --  (nearby players, the creatures and the herbs and ore it tracks, quest areas)
 --  and its tooltips over them. Our map is the ground: its own is switched off
@@ -217,7 +217,7 @@ local function Give()
     else
         minimap:SetMaskTexture(Hybrid.ROUND)
     end
-    -- Hidden first, so what follows its showing (Core's button Sane UI on it, Classic.lua) looks again: its lend shows
+    -- Hidden first, so what follows its showing (Core's button SaneUI on it, Classic.lua) looks again: its lend shows
     -- it last (each puts back in the reverse order of Take's changes, the minimap's after the cluster's, border's and
     -- buttons').
     minimap:Hide()

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Friends
+--  SaneUI - Social - Contacts - Friends
 --  The friends list itself, as the game's (Blizzard_FriendsFrame, its Camelot
 --  copy), in its order: your favourite Battle.net friends, a divider, the
 --  Battle.net friends and characters online, a divider, the offline ones. A

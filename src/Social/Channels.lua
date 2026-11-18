@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Channels
+--  SaneUI - Social - Channels
 --  Where you can write right now: the list behind the input's label.
 --  Knows no frames.
 --

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Live
+--  SaneUI - Navigation - Live
 --  What the game tells while playing, read for the map. Knows no frames.
 --
 --      Live.Player()           the plane's map, the point in its plane, the facing (nil: not known; Coords.Player)

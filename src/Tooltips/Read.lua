@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Read
+--  SaneUI - Tooltips - Read
 --  Reads a tooltip the game has filled and sorts what it says into a model
 --  (Model.lua), from which its panel is drawn.
 --

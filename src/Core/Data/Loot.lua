@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Loot
+--  SaneUI - Core - Data - Loot
 --  What every loot window teaches (Doc/guides/data.md, *Counted in play*), counted into the build's tally
 --  (Tally.lua): one loot for each corpse, node or chest it came from and how (looted, skinned or gathered from the
 --  corpse, picked from a pocket, gathered, fished), and each item it gave, so that the harvest can work out the

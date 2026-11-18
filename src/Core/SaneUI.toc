@@ -1,9 +1,9 @@
 ## Interface: 16001, 120105
-## Title: Sane UI
-## Notes: A sane user interface, built in modules. This is the part every module needs, with Sane UI's options (Esc > Options > AddOns > Sane UI, or /sane options) and the game settings it keeps the same on all your characters. The modules are listed below it: switch each one on or off by itself. Type /sane.
+## Title: SaneUI
+## Notes: A sane user interface, built in modules. This is the part every module needs, with SaneUI's options (Esc > Options > AddOns > SaneUI, or /sane options) and the game settings it keeps the same on all your characters. The modules are listed below it: switch each one on or off by itself. Type /sane.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## SavedVariables: SaneUIDB, SaneUIData_Characters, SaneUIData_Guild, SaneUIData_Learned, SaneUIData_Shared
 ## SavedVariablesPerCharacter: SaneUICharDB
 ## IconTexture: Interface\AddOns\SaneUI\Art\icon
@@ -40,7 +40,7 @@ Rest.lua
 Fuzzy.lua
 Shape.lua
 Skin.lua
-# The kit: Sane UI's windows of WoW: Forever's own parts, the login screen's first (Doc/guides/interface-style.md)
+# The kit: SaneUI's windows of WoW: Forever's own parts, the login screen's first (Doc/guides/interface-style.md)
 Look.lua
 Edge.lua
 Window.lua
@@ -63,9 +63,9 @@ Expand.lua
 Bar.lua
 # The icon chooser: the game's icons by group, searched, for every module that lets the player pick one
 Icons.lua
-# The search over every spell Sane UI knows, in groups: Combat's aura lists and reminders, Abilities' Sane Macros
+# The search over every spell SaneUI knows, in groups: Combat's aura lists and reminders, Abilities' Sane Macros
 SpellSearch.lua
-# The other addons Sane UI knows and adapts to when they are installed (the one file that names them)
+# The other addons SaneUI knows and adapts to when they are installed (the one file that names them)
 Neighbours.lua
 # Quick switches the modules offer, for a view that gathers them (the minimap's satchel)
 Switches.lua
@@ -82,11 +82,11 @@ Spellbook.lua
 Stats.lua
 # Whether an item would make the character better, for the loot, the bags and quest rewards
 Upgrade.lua
-# The words of Sane UI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)
+# The words of SaneUI's keys in the game's key bindings (what they do: Bindings.xml, read by the game itself)
 Bindings.lua
 # /sane window: a window to try them with
 Demo.lua
-# The data framework: Sane UI's own databases, and the scheduler that does their long work in steps, a few
+# The data framework: SaneUI's own databases, and the scheduler that does their long work in steps, a few
 # milliseconds a frame (Doc/guides/data.md). The sets themselves (Sets\<Set>.lua) are made by dev/tools/data
 # from the master in assets/data and listed at the end of this file in the build; what Core keeps of the data
 # in the game is in the saved variables SaneUIData_<Name> (Data.SAVED), what it learns in play in SaneUIData_Learned
@@ -103,7 +103,7 @@ Data\Trips.lua
 Data\Teleports.lua
 # What each of the account's characters has (bags, bank, worn), kept in the saved variable SaneUIData_Characters
 Data\Characters.lua
-# Sane UI's addon messages: the prefix, messages and blocks, a queue that keeps to the game's budget, the inbox (Core.Wire)
+# SaneUI's addon messages: the prefix, messages and blocks, a queue that keeps to the game's budget, the inbox (Core.Wire)
 Data\Wire.lua
 # The guild's records: the roster and its history, every member's records, shared with the guild (Data.Guild)
 Data\Guild.lua
@@ -141,7 +141,7 @@ People.lua
 # What the game says about a unit for every view: its quest objective, a player's item level and talents (paced inspections)
 Objectives.lua
 Inspect.lua
-# Sync: the game's own settings kept with Sane UI's settings, a part per options page of the game
+# Sync: the game's own settings kept with SaneUI's settings, a part per options page of the game
 # and a few for what is on none (Edit Mode layout, chat windows, own channels). Pages.lua is made
 # by dev/tools/sync-pages from Blizzard's options code.
 Sync\Sync.lua
@@ -166,7 +166,7 @@ Settings\Profiles.lua
 Settings\Synced.lua
 # The save window beside the menus: Yes into the profiles ticked, No takes the changes back
 Settings\Save.lua
-# The page Sane UI: links (Discord, website, GitHub) and feedback
+# The page SaneUI: links (Discord, website, GitHub) and feedback
 Settings\About.lua
 Settings\Data\CVarLabels.lua
 Settings\CVars.lua

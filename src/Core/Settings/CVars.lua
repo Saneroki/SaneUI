@@ -1,9 +1,9 @@
 local Config = SaneUI.Core.Config -- Settings.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings - CVars
+--  SaneUI - Core - Settings - CVars
 --  The tab "CVars" on the page Profiles: every CVar of the game in one list,
---  to look up, change, and keep with Sane UI's settings.
+--  to look up, change, and keep with SaneUI's settings.
 --      over the list  a search box (a CVar's name, or the label the game's own
 --                     options give it) and the game's filter button: only those
 --                     not at their default, only kept ones, one kind of CVar
@@ -34,13 +34,13 @@ local TEXT = {
     header = "CVars",
     intro = "Every console setting of the game. Enter sets a typed value; a tick keeps the CVar in the profile in use.",
     notDefault = "Not at their default",
-    kept = "Kept with Sane UI",
+    kept = "Kept with SaneUI",
     kind = "Kind",
     everyKind = "Every kind",
     kinds = { game = "Game", graphics = "Graphics", sound = "Sound", combat = "Combat", net = "Network", other = "Other" },
     total = "%d CVars",
     matching = "%d matching",
-    keep = "Keep with Sane UI's settings",
+    keep = "Keep with SaneUI's settings",
     keepTip = "Kept in the profile in use: the same on every character that uses it. Taken when you log out, set when a character comes into the game. Not with Accountwide settings off.",
     reset = "Back to the default",
     resetTip = "The game's default: %s",
@@ -49,7 +49,7 @@ local TEXT = {
     account = "The game keeps it for your account.",
     computer = "The game keeps it on this computer.",
     fixed = "It cannot be changed.",
-    barred = "Sane UI leaves it to the game's own graphics menu.",
+    barred = "SaneUI leaves it to the game's own graphics menu.",
     secure = "Not in a fight.",
     inCombat = "The game does not let this one change in a fight.",
     heldAt = "The game keeps it at %s.",

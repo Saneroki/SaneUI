@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Pins
+--  SaneUI - Navigation - Pins
 --  The map's pins as plain records, from what the game tells (Live.lua) and from
 --  Core's data (Data.Map), one pin per thing, as the pin filter lets them through.
 --  Knows no frames: PinView.lua draws what For gives.

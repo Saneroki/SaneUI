@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Pin
+--  SaneUI - Speed Leveling - Pin
 --  The game's own map pin on the place the guide sends you to, as soon as that
 --  place comes up (Saneroki, 2026-10-30; the switch Map pin on the guide's
 --  place). The game's pin, not one of ours: Navigation's golden line follows it

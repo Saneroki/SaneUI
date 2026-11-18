@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Ignored
+--  SaneUI - Social - Contacts - Ignored
 --  The ignore list, as the game's window of it beside its friends list: the
 --  players you ignore, and under them the Battle.net accounts whose invites
 --  you block, each under the game's heading. Opened from the contacts menu

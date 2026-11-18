@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Input
+--  SaneUI - Social - Input
 --  The line you write in, at the bottom of our window.
 --
 --  It is the game's own edit box, not one of ours: only its place and its

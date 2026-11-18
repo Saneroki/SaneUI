@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore
+--  SaneUI - Lore
 --  The module's own table (ns in all its files), its words, its settings, and
 --  how it stands down.
 --

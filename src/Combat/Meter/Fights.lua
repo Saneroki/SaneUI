@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter - Fights
+--  SaneUI - Combat - Meter - Fights
 --  Which fight the meter shows. Its pages are the fights the game's meter holds,
 --  oldest first; the last page is the live one, and a new fight goes back there:
 --      Reset on new combat ticked   the live page is this fight alone: every number starts at nothing

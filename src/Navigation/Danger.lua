@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Danger
+--  SaneUI - Navigation - Danger
 --  How dangerous a place is for you: the enemies that spawn near it, by their levels
 --  against yours (Saneroki, 2026-11-11: "Color the golden routing line in depending on
 --  how dangerous it is. So we know where which enemies spawn and what their level is.

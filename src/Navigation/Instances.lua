@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Instances
+--  SaneUI - Navigation - Instances
 --  The bar's button Dungeons (TopBar.lua): every dungeon and raid of Forever this year, as banners over the full map
 --  under its title bar (Saneroki, 2026-11-15: "when the button is pressed you can see all the dungeons and raids that
 --  are currently available in Forever ... sort them into dungeons and raids ... you can press on the banners with

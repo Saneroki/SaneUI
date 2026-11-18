@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Onboarding - Window
+--  SaneUI - Onboarding - Window
 --  The setup's window, made the first time one opens: a window of its own in
 --  the bronze (Look.Dress), in the middle of the screen, moved by its head,
 --  closed by its X or Esc. It never blocks the game: the world goes on behind
@@ -9,8 +9,8 @@ local _, ns = ...
 --
 --  The run's first page (Saneroki, 2026-11-18: "a very first page where all
 --  the onboardings that still need to go through is listed"): on the stage
---  the plain Sane UI logo ("use a plain Sane UI logo instead of the Core
---  banner") and under it, very clearly, Sane UI's windows and the game's own,
+--  the plain SaneUI logo ("use a plain SaneUI logo instead of the Core
+--  banner") and under it, very clearly, SaneUI's windows and the game's own,
 --  each only where a window of a module that is on has it (Window.Has): the
 --  button with the circling arrows itself (Core's Window.Swap), larger,
 --  "means to show the classic windows instead"; the red buttons beside a full
@@ -73,7 +73,7 @@ Window.NOTE = 12     -- the faint note at the step's foot (every setup's steps l
 Window.WORDS = 14    -- a button of words alone (Choose defaults)
 Window.ROW = 34      -- a setup's row on the first page
 Window.NAME = 16     -- its name's size
-Window.LOGO = "Interface\\AddOns\\SaneUI_Onboarding\\Art\\logo" -- the plain Sane UI logo (dev/tools/logo-art saneui)
+Window.LOGO = "Interface\\AddOns\\SaneUI_Onboarding\\Art\\logo" -- the plain SaneUI logo (dev/tools/logo-art saneui)
 Window.LOGO_SIZE = { 300, 100 } -- drawn as dev/tools/art made it (kind banner)
 Window.LOGO_RIGHT = 0.75 -- its box fills the file's left 768 of 1024 texels
 Window.SWAP_SCALE = 1.75 -- the button with the circling arrows on the first page: its 24 units, larger
@@ -542,7 +542,7 @@ local function Build()
     note:SetJustifyV("BOTTOM")
     note:SetWordWrap(true)
     note:SetSpacing(2)
-    -- The first page: its rows under its words, Sane UI's logo on the stage.
+    -- The first page: its rows under its words, SaneUI's logo on the stage.
     list = CreateFrame("Frame", nil, side)
     list:SetHeight(1)
     list:Hide()

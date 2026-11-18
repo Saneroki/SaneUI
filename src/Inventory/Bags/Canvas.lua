@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Canvas
+--  SaneUI - Inventory - Bags - Canvas
 --  Where a window of items (the bags, the bank, the alts) draws what
 --  Layout.lua laid out, in its scroll area's child: the heads (a part's and a group's title
 --  with a pencil rule under them, a block's and a group member's: its words

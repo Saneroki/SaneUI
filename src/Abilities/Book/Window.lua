@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Window
+--  SaneUI - Abilities - Window
 --  Lets you move the spellbook by the bar at its top and give it another size by
 --  its lower right corner. The size and the place are kept; Book.lua and Home.lua
 --  measure the pages every time they draw, so the entries follow the size.

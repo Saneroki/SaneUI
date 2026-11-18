@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Draw
+--  SaneUI - Navigation - Draw
 --  Drawing on the map (Saneroki, 2026-11-15: "Can we draw on the map too? ... draw on the map and save those
 --  drawings and map pins together so they can be shared or grouped together. This will be especially helpful in
 --  instance maps"): the drawings of the plans shown (Plans.lua) on the full and the small map and on a dungeon's
@@ -40,7 +40,7 @@ ns.Draw = Draw
 
 Draw.TOOLS = { "marker", "pen", "line", "arrow", "circle", "route", "text", "erase" }
 Draw.THICK = { 3, 6, 10 } -- a drawing's thickness in units, thin, medium and thick (Saneroki, 2026-11-16: "expand to 8
-                        -- colours and 3 lines", as the dungeon map addon Sane UI knows draws them)
+                        -- colours and 3 lines", as the dungeon map addon SaneUI knows draws them)
 Draw.EDGE = 2           -- units of dark edge round it
 Draw.STEP = 4           -- units the mouse goes before a pen's next point
 Draw.LEAST = 4          -- units a line, an arrow or a circle's radius is long at least

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Onboarding - Controls
+--  SaneUI - Onboarding - Controls
 --  A step's controls: the module's own switches as its options page has them
 --  (Core.Described: the switch's words, its tip, its kind), one under another:
 --    a switch           a tick and its words (the words click it too)

@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Icons
+--  SaneUI - Abilities - Macros - Icons
 --  The picture window (Saneroki, 2026-11-04): a click on the chosen macro's
 --  picture opens Core's icon chooser (Core.Icons: the game's icons by group,
 --  searched; Core's since 2026-11-15, for every module) over whatever shows,

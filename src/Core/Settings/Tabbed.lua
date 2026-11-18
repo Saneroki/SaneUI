@@ -1,7 +1,7 @@
 local Config = SaneUI.Core.Config -- Settings.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings - Tabbed
+--  SaneUI - Core - Settings - Tabbed
 --  A module's page of our own, in tabs, as the page Profiles has them: for a
 --  module whose switches name their tab (option.tab; Core puts the page up,
 --  Core.frames[module], and has it built the first time it is shown). Drawn from

@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Board
+--  SaneUI - Core - Board
 --  A module's full screen of windows (Doc/guides/windows.md, section 8: the
 --  board), laid out as the player arranges them, in layouts behind tabs in
 --  the full window's title bar.

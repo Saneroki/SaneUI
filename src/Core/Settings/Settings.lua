@@ -1,15 +1,15 @@
 local ADDON = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings
---  The options of Sane UI in the game's own options (Esc > Options > AddOns >
---  Sane UI, /sane options, or the minimap's addon list):
---      Sane UI             Sane UI's banner, its links and feedback (About.lua)
+--  SaneUI - Core - Settings
+--  The options of SaneUI in the game's own options (Esc > Options > AddOns >
+--  SaneUI, /sane options, or the minimap's addon list):
+--      SaneUI             SaneUI's banner, its links and feedback (About.lua)
 --        Profiles          a page of our own with tabs (Profiles.lua): whose settings are in
 --                          use and copies of them under names; Sync's switches (Synced.lua);
 --                          every CVar of the game (CVars.lua)
 --        General           the switches of no module
---        Appearance        the look of Sane UI as a whole: how its windows move
+--        Appearance        the look of SaneUI as a whole: how its windows move
 --        Social, Abilities one page per module that is switched on and has switches,
 --        ...               its banner at the top
 --
@@ -74,12 +74,12 @@ Config.RefreshSoon = Core.Later(function() Config.Refresh() end)
 -------------------------------------------------------------------------------
 --  The pages, put up at login, empty
 -------------------------------------------------------------------------------
--- The pages of Sane UI in the game's options, empty until Config.Fill fills them:
---      Core.pages.top          "Sane UI": its logo, links and feedback
+-- The pages of SaneUI in the game's options, empty until Config.Fill fills them:
+--      Core.pages.top          "SaneUI": its logo, links and feedback
 --      Core.pages.Profiles     the profiles, Sync's switches and the CVars: a page of our own (a
 --                              canvas), its frame Core.frames.Profiles
 --      Core.pages[Core.name]   "General": the switches of no module
---      Core.pages.Appearance   the look of Sane UI as a whole
+--      Core.pages.Appearance   the look of SaneUI as a whole
 --      Core.pages[module name] "Social", "Abilities", ...: that module's switches; a page of our own
 --                              (Core.frames[module name]) if they are in tabs (their option.tab)
 Core.pages = {}
@@ -121,7 +121,7 @@ local function PutUpPages()
     local top = Settings.RegisterVerticalLayoutCategory(Core.TITLE)
     Core.pages.top = top
     local canvas = Settings.RegisterCanvasLayoutSubcategory
-    -- Under it, in this order (the game keeps it): Sane UI's own pages, then one per module, called
+    -- Under it, in this order (the game keeps it): SaneUI's own pages, then one per module, called
     -- by its name, also the title at the top of the page.
     for _, page in ipairs(PAGES) do
         if page.canvas and canvas then
@@ -161,7 +161,7 @@ end)
 -------------------------------------------------------------------------------
 --  The banners: the picture of the addon a page belongs to, at its top, in
 --  place of the page's title. Each addon ships its own as Art\banner.blp
---  (made by dev/tools/art); the page Sane UI has Sane UI's, which is Core's. A row of the page (Banner.xml), so the game makes it only when the
+--  (made by dev/tools/art); the page SaneUI has SaneUI's, which is Core's. A row of the page (Banner.xml), so the game makes it only when the
 --  page is shown and lets it go when another page is, or when it is scrolled
 --  out of sight: the game's title of the page is hidden only for that long.
 -------------------------------------------------------------------------------
@@ -513,9 +513,9 @@ end
 
 -- The controls of the game's lists, made the first time the options are opened (long after the login,
 -- when every module has described its switches and the pages are up):
---      Sane UI      its banner, its links and feedback (About.lua)
+--      SaneUI      its banner, its links and feedback (About.lua)
 --      General      the switches of no module
---      Appearance   the look of Sane UI as a whole: the general switches that name it
+--      Appearance   the look of SaneUI as a whole: the general switches that name it
 --      Social, ...  a module's banner and switches
 -- A page of our own (Profiles, a module's in tabs) is built when it is first shown (OwnPage).
 function Config.Fill()
@@ -537,7 +537,7 @@ function Config.Fill()
     end
 end
 
--- The options, at Sane UI. The game does not let an addon open them in a fight: then they open
+-- The options, at SaneUI. The game does not let an addon open them in a fight: then they open
 -- once it is over.
 function Config.Open()
     local category = Core.pages.top

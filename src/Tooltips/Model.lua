@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Model
+--  SaneUI - Tooltips - Model
 --  The contents of a panel, as plain data: a head (what holds for the whole panel)
 --  and a list of rows, top to bottom. The readers fill it (Read.lua and the
 --  files in Kinds), Panel.lua draws it.

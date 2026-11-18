@@ -1,9 +1,9 @@
-# Sane UI: Settings (part of Core)
+# SaneUI: Settings (part of Core)
 
 **Status:** written and tested outside the game · **Since:** 2026-10-14 · **Addon:** `SaneUI` (Core), folder `src/Core/Settings/`
 
 ## TL;DR
-Shows the switches of Sane UI in the game's own options: the page *Sane UI* with its logo, under it *Profiles*
+Shows the switches of SaneUI in the game's own options: the page *SaneUI* with its logo, under it *Profiles*
 (with the synced game settings and every CVar of the game), *General* and *Appearance*, then one page for
 every module that is switched on.
 Checkboxes, sliders for numbers, boxes to type words or a number into, dropdowns for one of a few (or several,
@@ -12,10 +12,10 @@ After a change in a menu, a save window beside it asks whether to keep it: *Yes*
 it back.
 
 ## How to use
-- **Open the options:** Esc > Options > AddOns > Sane UI, or `/sane options`, or click *Sane UI* in
+- **Open the options:** Esc > Options > AddOns > SaneUI, or `/sane options`, or click *SaneUI* in
   the minimap's addon list. In a fight the game does not let an addon open its options: chat says so, and
   they open by themselves once the fight is over.
-- **Sane UI** itself shows only Sane UI's logo. Under it, in this order (the button in front of *Sane UI* folds
+- **SaneUI** itself shows only SaneUI's logo. Under it, in this order (the button in front of *SaneUI* folds
   them in and out):
   - *Profiles:* a page of its own: its title, at its top the switch *Share settings between characters* (Saneroki,
     2026-11-15: the profiles off on a fresh install; its tip says what profiles are, one setup shared by the
@@ -27,7 +27,7 @@ it back.
       - *This character*: the profile it uses (a dropdown: *Speedleveling*, *Accountwide*, *Character specific*,
         your own; choosing one uses it at once), the buttons *New*
         (asks for a name: a copy of the settings in use, used from then on), *Rename*, *Delete* (asks first;
-        the characters that had it use *Accountwide*), *Defaults* (asks first: Sane UI's settings of the
+        the characters that had it use *Accountwide*), *Defaults* (asks first: SaneUI's settings of the
         profile in use back to their defaults), then *Copy from* (a dropdown of the other profiles; asks
         first), *Export* (a window with the profile as a line of text, selected to copy) and *Import* (the same
         window, empty: paste, *Import*, a name). The three standard ones cannot be renamed or deleted, and on
@@ -42,13 +42,13 @@ it back.
       (`Sync.GROUPS`: the game's own options groups, then *Elsewhere in the game*), checkboxes in two columns,
       kept per profile. All ticked at first; switched off for a character on *Character specific*. Unticking a
       part unticks its CVars in the tab *CVars* too, once; one ticked there afterwards is kept all the same.
-    - *CVars:* *Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with Sane
-      UI's settings.* Every CVar of the game in one list, to look up, change and keep:
+    - *CVars:* *Every console setting of the game. Enter sets a typed value; a tick keeps the CVar with
+      SaneUI's settings.* Every CVar of the game in one list, to look up, change and keep:
       - Over the list a search box (a CVar's name, or the label the game's own options give it) and the game's
-        filter button: *Not at their default*, *Kept with Sane UI*, and one *Kind* (Game, Graphics, Sound,
+        filter button: *Not at their default*, *Kept with SaneUI*, and one *Kind* (Game, Graphics, Sound,
         Combat, Network, Other; *Every kind* at first). While a filter is set the button has its red cross,
         which clears them all.
-      - Each row, two lines high: a tick to keep it with Sane UI's settings (by Sync: the same on every
+      - Each row, two lines high: a tick to keep it with SaneUI's settings (by Sync: the same on every
         character, and in profiles); its name, and under it its label; at the right its value in a box: type
         a new one and press Enter (Esc, or clicking elsewhere, leaves it as it was). While it is not at its
         default the game's undo arrow stands beside it: a click gives it the default back. One the game does not
@@ -58,7 +58,7 @@ it back.
       - Under the list: why the last change did not take (the game keeps another value, or will not change it
         now), and how many CVars are listed (*5 CVars*, or *1 matching* while searching or filtering).
   - *General:* the switches of no module (*Errors in chat*).
-  - *Appearance:* the look of Sane UI as a whole. *Windows: Animation type* (Glide at first; Swing, Even,
+  - *Appearance:* the look of SaneUI as a whole. *Windows: Animation type* (Glide at first; Swing, Even,
     Instant): how a window docked to a screen edge grows to fill the screen when you click that edge (or push the
     mouse against it), and goes back; also how a window opens while the mouse rests on it. A window can have its own (Social).
   - *Social*, *Abilities*, *Tooltips*: one page per module that is switched on and has switches, called by its
@@ -73,7 +73,7 @@ it back.
 - A change counts at once. One the game shows only after a `/reload` offers it (the game's dialog: *Reload*,
   *Later*).
 - **The save window** (Saneroki, 2026-11-09): after a change here, in the game's own options (its pages, key
-  bindings, the tab *CVars*), in Edit Mode, in the game's addon list or in Sane UI's options over a full screen,
+  bindings, the tab *CVars*), in Edit Mode, in the game's addon list or in SaneUI's options over a full screen,
   a window *Save the changes?* stands beside the menu while it can still be used, and stays until *Yes* or *No*,
   the menu closed too (it has no close button; Esc leaves it; it can be dragged). It lists what changed since the
   last save (*General: Errors in chat*, *Game settings: Graphics*, up to 8 lines), and under *Save to* the profiles
@@ -88,9 +88,9 @@ it back.
   - A profile renamed or deleted takes its tick under *Save to* along (the one in use renamed stays ticked).
   - A `/reload` or logout with the window unanswered saves the changes as *Yes* does, into the profiles ticked
     (Saneroki, 2026-11-10: a change must not pop back at a `/reload`); so do the addon list's *Reload UI* and the
-    *Reload* Sane UI offers, which waits for nothing. The window says so under the list: *A /reload or logout saves
+    *Reload* SaneUI offers, which waits for nothing. The window says so under the list: *A /reload or logout saves
     them too.* Only *No* and *Load last settings* take changes back.
-  - Only what the profiles keep counts: Sane UI's settings, and of the game's what the tab *Game settings* ticks
+  - Only what the profiles keep counts: SaneUI's settings, and of the game's what the tab *Game settings* ticks
     (and the CVars kept by name). A change made with no menu open (a window moved, a box in a window) is none.
 - Words or a number in a box: Enter sets what was typed, Esc (or a click elsewhere) leaves the value as it was.
   A number is kept within its ends; words the module refuses get the default back.
@@ -110,7 +110,7 @@ it back.
   TOC: `SaneUI_OnAddonCompartmentClick`) open the options (`Config.Open`); in a fight once it is over
   (`Core.AfterCombat("options", Config.Open)`: asked twice, it opens once).
 - **The pages, in this order** (`Config.Fill`):
-  - *Sane UI* (`Core.pages.top`): the banner, then `About.lua`'s rows (the game's section headers and button
+  - *SaneUI* (`Core.pages.top`): the banner, then `About.lua`'s rows (the game's section headers and button
     rows): *Community* (Discord, Website, GitHub: *Copy link* shows the address selected in the game's
     `GENERIC_INPUT_BOX`; an address left empty in `About.LINKS` shows *Coming soon*, its button off) and
     *Feedback* (*Report a bug*, *Suggest a feature*, *General feedback*: each opens the feedback window).
@@ -119,11 +119,11 @@ it back.
 - **The feedback window** (`About.lua`, `SaneUIFeedbackFrame`, made when first opened; also `/sane feedback`
   [`bug`|`idea`|`note`], `/sane bug`): a `ButtonFrameTemplate` over the options (strata DIALOG), Esc closes
   it, with the kind's question and an `InputScrollFrameTemplate` box. *Make report* puts the report in the
-  box, selected to copy (`About.Report`: Sane UI's version, the game's version, build and language, the
+  box, selected to copy (`About.Report`: SaneUI's version, the game's version, build and language, the
   modules switched on, the class and level but no name, what was written, and for a bug the 5 newest
   entries of Core's error log); *Back to writing* returns. What was written is kept per kind for the
   session, not saved. The words over a made report say where to paste it, each kind its own channel of
-  Sane UI's Discord (`About.KINDS[...].where`): a bug into the forum #bug-reports (or a GitHub issue), an
+  SaneUI's Discord (`About.KINDS[...].where`): a bug into the forum #bug-reports (or a GitHub issue), an
   idea into the forum #suggestions, the rest into #feedback. Discord's link is the server's own address,
   discord.gg/saneui (2026-11-15), `Core.DISCORD` (Core.lua), also at the end of the line told in chat for a
   problem.
@@ -148,7 +148,7 @@ it back.
     none: *General*).
   - A module's page, called by its name (*Abilities*).
 - **The banners:** at the top of a page, in place of its title, the banner of the addon it belongs to:
-  `Interface\AddOns\<addon>\Art\banner` (a module may ship its own; the page *Sane UI* has Sane UI's, which
+  `Interface\AddOns\<addon>\Art\banner` (a module may ship its own; the page *SaneUI* has SaneUI's, which
   is Core's; Abilities and Social ship none, their pages keep the game's title). It is a row of the game's own list (`Settings.CreateElementInitializer` with
   `SaneUISettingsBannerTemplate` from `Banner.xml`), so the game makes it only when the page is shown and
   lets it go when another page is shown or it is scrolled out of sight; the game's title of the page is
@@ -163,7 +163,7 @@ it back.
   the options first open, long after every addon that is switched on has been read. So a module needs nothing
   from the options, and the order in which the game reads the addons does not matter.
 - **The pages are Blizzard's** vertical settings lists: `Settings.RegisterVerticalLayoutCategory` for
-  *Sane UI*, `Settings.RegisterVerticalLayoutSubcategory` for each module, `Settings.RegisterProxySetting` for a
+  *SaneUI*, `Settings.RegisterVerticalLayoutSubcategory` for each module, `Settings.RegisterProxySetting` for a
   switch (it reads the module's settings, `Core.Settings`, and writes them through `Core.Set`: checked, told to
   the module, a `/reload` offered for `reload = true`, the page shown anew); the game makes the controls only
   when a page is opened. *Profiles* and a module's page in tabs are pages of our own
@@ -272,8 +272,8 @@ it back.
   - Keeping one is Sync's (`Core.Sync.Keep`).
 - **On a full screen too** (`Screen.lua`, Saneroki, 2026-10-21): every window that fills the screen has the game's
   cog in its title bar (`Window.lua`, left of its buttons, with the question mark of its tour); a click puts
-  Sane UI's options over what the full screen holds, besides the game's own: at the left the pages as the game
-  lists them under Sane UI (*General*, *Appearance*, a page per module that is on and has switches; Profiles
+  SaneUI's options over what the full screen holds, besides the game's own: at the left the pages as the game
+  lists them under SaneUI (*General*, *Appearance*, a page per module that is on and has switches; Profiles
   only in the game's options, its button *All options* at the list's foot opens them there, the full screen going
   back first), in the look of the game's own list of pages (`Options_List_Active`, `Options_List_Hover`); at the
   right the chosen page, drawn by `Config.BuildTabbed` as a page in tabs is (Core's own pages too: `onPage`, only
@@ -294,17 +294,17 @@ it back.
 | `Settings.lua` | The pages (put up at login; the lists filled when the options first open, a page of our own built when first shown), the kinds of switches and their rows on the game's lists, the row to type into, the banners, `/sane options` |
 | `Panel.lua` | The parts of a page of our own: header, tabs over their box, scroll area, titled boxes, checkboxes, sliders, dropdowns (one or several), boxes to type into, colours, buttons; each page's controls shown anew together |
 | `Tabbed.lua` | A module's page in tabs, drawn from its switches' descriptions (`tab`, `header`, `headerTip`, `parent`, `parentValue`, `inline`, `unit`, `hidden`, the kinds), its search and *Defaults* |
-| `Screen.lua` | Sane UI's options over a full screen (its title bar's cog): the list of pages, the chosen one drawn as a page in tabs |
+| `Screen.lua` | SaneUI's options over a full screen (its title bar's cog): the list of pages, the chosen one drawn as a page in tabs |
 | `Profiles.lua` | The page *Profiles*: its tabs, the tab *Profiles* (with *Save* and *Load last settings*), the export/import window |
 | `Save.lua` | The save window beside the menus after a change: what changed, *Save to* (a tick per profile), *Yes*, *No* |
 | `Synced.lua` | The tab *Game settings*: Sync's parts, kept per profile |
 | `CVars.lua` | The tab *CVars* on the page *Profiles*: the list of the game's CVars |
 | `CVars.xml` | The list's frame, and one CVar's row in it |
 | `Data/CVarLabels.lua` | The names of the game's strings for the CVars its options show; made by `dev/tools/cvar-labels` |
-| `About.lua` | The page *Sane UI* under its banner: the links (`About.LINKS`), the feedback buttons, the feedback window and its report, `/sane feedback` |
+| `About.lua` | The page *SaneUI* under its banner: the links (`About.LINKS`), the feedback buttons, the feedback window and its report, `/sane feedback` |
 | `Banner.xml` | Our rows in the game's lists: the one a banner is drawn in (its height, the art's size and place), and the one to type into |
 
-Sane UI's banner, for the page *Sane UI*, is Core's: `assets/optimized/Core/Art/banner.blp` (original art of Sane UI, see
+SaneUI's banner, for the page *SaneUI*, is Core's: `assets/optimized/Core/Art/banner.blp` (original art of SaneUI, see
 the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`).
 
 ## History
@@ -312,7 +312,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 - 2026-11-15 — The page *Profiles*: the switch *Share settings between characters* at its top, off on a fresh install (Saneroki: "the whole profiles should be disabled by default and can be activated in the settings or during the onboarding procedure"); off, the rest of the page gives way to a line saying why. The line on the profiles no longer calls Accountwide our recommended settings: it is made from the settings of the character that turned profiles on.
 - 2026-11-10 — A part unticked in *Game settings* unticks its CVars in the tab *CVars* too (Graphics: our recommended view distance, shadows and frame rate), and an untick there stays when the presets get a new version.
 - 2026-11-10 — A profile chosen while the window waits is the character's from its next login when a `/reload` or logout answers instead; a profile renamed keeps its tick under *Save to* (the one in use renamed lost it, and *Yes* took the changes back), one deleted loses it.
-- 2026-11-10 — The save window keeps what is not answered (Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload"): a `/reload` or logout saves the changes as *Yes* does (was: took them back, and the addon list's *Reload UI*, meant to save first, never did); the *Reload* Sane UI offers no longer waits for the answer. A line in the window says so.
+- 2026-11-10 — The save window keeps what is not answered (Saneroki: "I can't turn off addons or change settings because they will just pop up back when I reload"): a `/reload` or logout saves the changes as *Yes* does (was: took them back, and the addon list's *Reload UI*, meant to save first, never did); the *Reload* SaneUI offers no longer waits for the answer. A line in the window says so.
 - 2026-11-09 — The save window (Saneroki): a change in the options, the game's own, Edit Mode or the addon list brings *Save the changes?* beside the menu until *Yes* (into the profiles ticked under *Save to*) or *No* (taken back); the page Profiles has *Save* and *Load last settings*. Another profile and an offered `/reload` wait for the answer; unanswered, a `/reload` or logout takes the changes back.
 - 2026-10-17 — The page *Profiles* anew (Saneroki): *Accountwide settings*; *This character* with its profile and *New*, *Rename*, *Delete*, *Defaults*, *Copy from*, *Export*, *Import*; *Characters* with a profile each and *Forget*. *Load*, *Save*, *Duplicate*, *Load at login*, *Save at logout*, *Empty* and *SaneUI Defaults* are gone. The tab *Accountwide* is *Game settings*, without the box of modules.
 - 2026-10-17 — Every kind of switch on both kinds of page: words and numbers typed into a box (`entry`), several
@@ -338,23 +338,23 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 - 2026-10-14 — The tab *Chat channels* is gone from the page *Profiles*: the game's channels are on the page
   *Chat* now (the Chat module's switches, the game's own dropdowns).
 - 2026-10-14 — The tab *Profiles*: *All settings accountwide*, and a list of every character with its profile,
-  *Load at login* and *Save at logout*. The tab *Sync settings* is now *Accountwide*, with a box *Sane UI*
+  *Load at login* and *Save at logout*. The tab *Sync settings* is now *Accountwide*, with a box *SaneUI*
   for the modules.
 - 2026-10-14 — The page *Profiles* is a page of our own with tabs (*Profiles*, *Sync settings*, *Chat
   channels*, *CVars*) and titled boxes; a line says settings are saved account
   wide by default, and one over the CVar list what its ticks do.
-- 2026-10-14 — The pages: *Sane UI* shows only its banner; under it *Profiles* (profiles, the Sync module's
+- 2026-10-14 — The pages: *SaneUI* shows only its banner; under it *Profiles* (profiles, the Sync module's
   sections, CVars), *General*, *Appearance* (nothing yet), then the modules' pages by their plain names.
 - 2026-10-14 — The general page: *Load at login* and *Save at logout* under the profile; the Sync module's
   sections; the section *CVars*, a list of every CVar of the game to find, change and keep.
 - 2026-10-14 — Profiles: the section *Profiles* on the general page, with *Character specific settings*, a
   dropdown of the profiles and the buttons *Load*, *Save*, *Duplicate*, *Rename*, *Delete*.
 - 2026-10-14 — Banners: each page shows the banner of its module at the top in place of its title;
-  the general page Sane UI's, above *General*.
+  the general page SaneUI's, above *General*.
 - 2026-10-14 — Fills the pages Core puts up at login, instead of making them when it is read: the
-  game's options had lost their *AddOns* tab when Sane UI was the only addon with options.
+  game's options had lost their *AddOns* tab when SaneUI was the only addon with options.
 - 2026-10-14 — 0.3.0: loaded on demand; called *Settings* in the addon list; a module's page is called
   *Sane* and its name. `/sane options` moved to Core.
 - 2026-10-14 — 0.2.0: an addon of its own. A general page with one page per module under it (was: one
   page with a heading per module). Keeping the saved settings moved to Core.
-- 2026-10-14 — First version (Sane UI 0.1.0).
+- 2026-10-14 — First version (SaneUI 0.1.0).

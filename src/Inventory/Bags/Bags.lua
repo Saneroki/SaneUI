@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags
+--  SaneUI - Inventory - Bags
 --  Our bags: a window on the module's full screen (Board.lua, the key
 --  "bags") that shows and handles everything the character carries. The
 --  game's own bag windows stay as they are: our code neither opens nor closes

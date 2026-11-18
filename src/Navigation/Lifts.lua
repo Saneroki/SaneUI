@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Lifts
+--  SaneUI - Navigation - Lifts
 --  The lifts of Core's set Travel on the walking data (Walk.lua): each end of
 --  a lift's car on its landing, the floor beside its shaft at its height, and
 --  the levels a lift joins (the region of its lower landing and that of its

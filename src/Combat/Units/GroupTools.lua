@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - GroupTools
+--  SaneUI - Combat - Units - GroupTools
 --  The tools of a party or raid, in place of the game's raid manager at the
 --  screen's edge (it stays out of sight, Group.lua): the cog on your own slot
 --  among the group's frames (Saneroki, 2026-10-30) opens a small panel over it,

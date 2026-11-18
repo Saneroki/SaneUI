@@ -170,7 +170,7 @@ edit(new_root, test, "function OldFunction()\n\treturn C_Test.NewFunction();\nen
 edit(new_root, test, "TEST_CONSTANT = 5;", "TEST_CONSTANT = 6;")  # a value
 edit(new_root, test, '"MENU_TEST_TAG"', '"MENU_TEST_TAG_NEW"')  # a name no longer mentioned
 edit(new_root, test, "Refresh(force)", "Refresh(force, again)")  # a hooked method's parameters
-edit(new_root, test, "Settings.Open(category)", "Settings.Open(category, page)")  # Sane UI's local has that name
+edit(new_root, test, "Settings.Open(category)", "Settings.Open(category, page)")  # SaneUI's local has that name
 edit(new_root, "Blizzard_Test/Shared/Test.xml", '\t\t<Frames>\n\t\t\t<Frame parentKey="Box"/>\n\t\t</Frames>\n', "")
 edit(new_root, "Blizzard_Test/Shared/Test.xml", "test-atlas-old", "test-atlas-new")
 edit(new_root, "Blizzard_Test/Mainline/Family.lua", "return 1;", "return 2;")
@@ -238,7 +238,7 @@ check("an atlas gone: a close new one", by_id["name:test-atlas-old"].hints, ["`t
 check("deprecated: what stands in", by_id["lua:OldFunction"].hints, ["`C_Test.NewFunction`"])
 check("deprecated: where", by_id["lua:OldFunction"].notes[0], "now only in AddOns/Blizzard_DeprecatedTest/Deprecated.lua")
 check("hooked: its diff", "+\tframe:Raise();" in (by_id["lua:Test_Hooked"].diff or []), True)
-check("hooked: said so", by_id["lua:Test_Hooked"].notes[0], "hooked by Sane UI")
+check("hooked: said so", by_id["lua:Test_Hooked"].notes[0], "hooked by SaneUI")
 check("hooked method: its diff", any(line.startswith("+function TestMixin:Refresh(force, again)")
                                      for line in by_id["lua:TestMixin:Refresh"].diff or []), True)
 check("secret values", by_id["api:C_Test.Secretive"].notes, ["flag SecretReturns: (none) → True"])
@@ -291,9 +291,9 @@ with tempfile.TemporaryDirectory() as out:
     check("patch notes: the title", notes.splitlines()[0], "# Patch notes: Forever old → 1.60.2.70000")
     check("patch notes: a function gone, by namespace", "### C_Test (" in notes and "**Gone** (1): `C_Test.Removed`" in notes, True)
     check("patch notes: an event's payload", "`TEST_EVENT`: payload new: `guid` WOWGUID" in notes, True)
-    check("patch notes: what reaches Sane UI", "## What it means for Sane UI" in notes, True)
+    check("patch notes: what reaches SaneUI", "## What it means for SaneUI" in notes, True)
     check("patch: the board's card", card, "7")
-    check("brief: the task, the card, the lookup", brief.startswith("# Make Sane UI comply with Forever 1.60.2.70000")
+    check("brief: the task, the card, the lookup", brief.startswith("# Make SaneUI comply with Forever 1.60.2.70000")
           and "`saneui board start 7`" in brief and "`the-lookup`" in brief and "dev/tools/blizzard adopt" in brief, True)
     check("brief: the patch's folder and the exports by the tools' words, no folder of this computer",
           ("`patches/forever-old-to-new` in the reports' folder" in brief and "`dev/tools/blizzard show <name>`" in brief,
@@ -321,11 +321,11 @@ listed = (ROOT / "dev/tests/games.lua").read_text(encoding="utf-8")
 check("the stand-in's list: made, with what Retail lacks", "\nC_SpellBook.IsSpellBookItemLowRank\n" in listed
       and listed.rstrip().endswith("}"), True)
 
-# -- Sane UI's own source reads without problems ------------------------------------------------------------
+# -- SaneUI's own source reads without problems ------------------------------------------------------------
 
 real = sane.Uses(ROOT / "src", notes=[ROOT / "Doc"], root=ROOT)
-check("Sane UI's source: luac reads it", real.problems, [])
-check("Sane UI's source: globals found", len(real.of("global")) > 100, True)
+check("SaneUI's source: luac reads it", real.problems, [])
+check("SaneUI's source: globals found", len(real.of("global")) > 100, True)
 
 print(f"blizzard: {checks_run} checks, {failed} failed")
 sys.exit(1 if failed else 0)

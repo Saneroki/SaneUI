@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - BarsWindow
+--  SaneUI - Abilities - BarsWindow
 --  The game's action bars as windows of the full screen, so that no other window
 --  lies over them and something can be dragged onto them there: the parts bars
 --  (the wide ones) and sidebars (the tall ones, in a narrow window of their own: a

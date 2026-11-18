@@ -1,8 +1,8 @@
-# references/: only Blizzard's interface code is kept, the base Sane UI is built on and the ground truth
+# references/: only Blizzard's interface code is kept, the base SaneUI is built on and the ground truth
 # for the client's API (46 MB). Everything else there, such as Blizzard's interface art (11 GB), stays local
 /references/*
 !/references/BlizzardInterfaceCode/
-# The instructions for the sessions that work on Sane UI: kept on this computer only
+# The instructions for the sessions that work on SaneUI: kept on this computer only
 /CLAUDE.md
 /AGENTS.md
 

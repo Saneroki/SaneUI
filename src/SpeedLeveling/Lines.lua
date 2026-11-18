@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Lines
+--  SaneUI - Speed Leveling - Lines
 --  What the game says about the things a guide's lines ask (Saneroki,
 --  2026-10-25: our own engine runs the guides): quests (in the log, ready,
 --  handed in, their objectives), items (in the bags and the bank, worn), spells

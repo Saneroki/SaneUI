@@ -14,7 +14,7 @@ Sets, and what each takes:
   stats' values, armour or a weapon's damage: the client works those out from the item's level, and a value
   worked out again by us would only be close (the crawl reads them in the game).
 - ItemSets: name, items (those Items keeps), bonuses (how many items, the spell).
-- Spells: the players' spells: every spell of a skill line Sane UI keeps (classes, their pets, professions,
+- Spells: the players' spells: every spell of a skill line SaneUI keeps (classes, their pets, professions,
   secondary skills, weapons, armour, languages, riding, mounts, companions, runes, racials) and every spell of
   a talent or Legacy node. Name, rank, icon, cost (an amount of a power, or a share of the base mana), cast time,
   cooldown, range, and its effects with their numbers and the shares of spell and attack power they add, which is

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Blizzard's interface code of a new game build against the one before it, and what the difference means for
-Sane UI: a todo list of what broke, what is deprecated, what is called differently, what to review, and the
-housekeeping (Doc/guides/blizzard-updates.md). Sane UI is built on the newest export (the highest build in the
+SaneUI: a todo list of what broke, what is deprecated, what is called differently, what to review, and the
+housekeeping (Doc/guides/blizzard-updates.md). SaneUI is built on the newest export (the highest build in the
 exports' folder this computer's settings name: ~/.config/saneui/blizzard.json), never on references/.
 
 Usage:  dev/tools/blizzard where      the newest export's code and art folders, and its build (Forever's and Retail's),
@@ -12,28 +12,28 @@ Usage:  dev/tools/blizzard where      the newest export's code and art folders, 
                                    a symbol (C_Spell.GetSpellInfo, GameTooltip_SetDefaultAnchor, PLAYER_LOGIN,
                                    UIPanelButtonTemplate, lua:FooMixin:Bar) in both exports, with its diff
         dev/tools/blizzard uses [--list] [--unknown]
-                                   what Sane UI takes from Blizzard, by kind, as the newest export has it; --unknown:
+                                   what SaneUI takes from Blizzard, by kind, as the newest export has it; --unknown:
                                    the globals it reads that the export does not define (the client's own)
         dev/tools/blizzard adopt   the files made from Blizzard's code made again from the newest export
                                    (CVarLabels.lua, Pages.lua); commit them after the build
         dev/tools/blizzard games [--out <folder>]
                                    Forever's newest export against Retail's: the lookup tables of where the two
-                                   games differ (symbols, files, addons, art) and what of Sane UI's uses differs
+                                   games differ (symbols, files, addons, art) and what of SaneUI's uses differs
         dev/tools/blizzard patch [forever|retail] [--again] [--no-card]
                                    after a patch (saneui readpatch): a game whose installed build is newer than its
                                    newest export is exported; its new export against the one before it written as
-                                   our own patch notes, the tables of every change, Sane UI's todo list and the
+                                   our own patch notes, the tables of every change, SaneUI's todo list and the
                                    brief of the session that fixes it, with a card on the board; the Forever-Retail
                                    lookup made anew. --again: the newest two exports once more, nothing exported
         dev/tools/blizzard fix [forever|retail] [--print]
-                                   the session that makes Sane UI comply with the newest patch (saneui fixpatch):
+                                   the session that makes SaneUI comply with the newest patch (saneui fixpatch):
                                    Claude Code started on its brief; --print: only the brief, to paste
 
 check and show take --retail: Retail's newest export against Forever's, in place of <new> and --old.
 
 <new> is an export's code folder (BlizzardInterfaceCode, or the game folder the game exported into, or its
 Interface folder); without it, the newest export. --old is the export before the newest unless given: another
-export, or git:<revision> for references/ as a commit has it (the in-game export Sane UI was first built on).
+export, or git:<revision> for references/ as a commit has it (the in-game export SaneUI was first built on).
 The build of an export is read from its note (.build) or the game folder it is in (.build.info); --build gives the
 new one's by hand.
 """
@@ -183,7 +183,7 @@ def run_uses(args):
     by_kind, unknown = {}, {}
     for id_, places in result.resolved.items():
         by_kind.setdefault(id_.partition(":")[0], []).append((id_, places))
-    print(f"Sane UI takes {len(result.resolved)} symbols from Blizzard's code ({export.label}):")
+    print(f"SaneUI takes {len(result.resolved)} symbols from Blizzard's code ({export.label}):")
     for kind, items in sorted(by_kind.items(), key=lambda item: -len(item[1])):
         print(f"  {len(items):5} {compare.KIND.get(kind, kind)}")
         if args.list:
@@ -273,8 +273,8 @@ def extract(product):
 
 
 def board_card(game, old, new, out):
-    """A card on the board for the session that fixes Sane UI; its number, or None. Not twice for one patch."""
-    title = f"Patch: {patch.TITLE[game]} {old.build} → {new.build}: make Sane UI comply"
+    """A card on the board for the session that fixes SaneUI; its number, or None. Not twice for one patch."""
+    title = f"Patch: {patch.TITLE[game]} {old.build} → {new.build}: make SaneUI comply"
     board = [str(ROOT / "dev" / "tools" / "board")]
     listed = subprocess.run(board + ["list"], capture_output=True, text=True).stdout
     for line in listed.splitlines():
@@ -324,12 +324,12 @@ def run_patch(args):
         print(f"The patch notes: {out / 'notes.md'}" + (f"; the board's card #{card}" if card else ""))
         done.append(game)
     if done:
-        print("Start the session that makes Sane UI comply: saneui fixpatch" + (f" {done[0]}" if len(done) == 1 else ""))
+        print("Start the session that makes SaneUI comply: saneui fixpatch" + (f" {done[0]}" if len(done) == 1 else ""))
 
 
 def run_fix(args):
     """Claude Code started in the project on the newest patch's brief: its text, not its path, so the session is
-    told nothing of where the reports' folder is (no file of Sane UI names it)."""
+    told nothing of where the reports' folder is (no file of SaneUI names it)."""
     briefs = sorted((reports_folder() / "patches").glob(f"{args.game or '*'}-*/session.md"),
                     key=lambda path: path.stat().st_mtime)
     if not briefs:

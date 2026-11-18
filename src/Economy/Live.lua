@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Economy - Live
+--  SaneUI - Economy - Live
 --  What the server says of the items in sight. A scan has no auction IDs and can
 --  be 15 minutes old, so a purchase always goes by this answer. The lines in
 --  sight are asked one at a time, as the game allows, so that a click can buy at

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Makes Sane UI's voice overs, and short sounds for its windows, with the cloud voice service.
+"""Makes SaneUI's voice overs, and short sounds for its windows, with the cloud voice service.
 How it is used: Doc/guides/voice-generation.md, *The voice tool*. What gets a voice, who says it and how:
 the voice database, dev/tools/voicedb.
 
@@ -262,7 +262,7 @@ def pick(name, n):
         sys.exit(f"voicegen: no preview {n} of {name}: dev/tools/voicegen design {name}")
     cfg = config()
     answer, _ = call(cfg, "POST", "/v1/text-to-voice", {
-        "voice_name": f"Sane UI {name}", "voice_description": p["design prompt"][:1000],
+        "voice_name": f"SaneUI {name}", "voice_description": p["design prompt"][:1000],
         "generated_voice_id": previews["previews"][n - 1]["id"]})
     voices = load(VOICES_FILE, {})
     voices.setdefault("presets", {})[name] = {"voice": answer["voice_id"], "preview": n, "date": today(),
@@ -297,7 +297,7 @@ def send_names():
                              {"rules": rules})
         else:
             answer, _ = call(cfg, "POST", "/v1/pronunciation-dictionaries/add-from-rules",
-                             {"name": f"Sane UI names, {kind}", "rules": rules})
+                             {"name": f"SaneUI names, {kind}", "rules": rules})
         voices["names"][kind] = {"dictionary": answer["id"], "version": answer["version_id"],
                                  "hash": digest(rules)[:12], "names": len(rules), "date": today()}
         save(VOICES_FILE, voices)

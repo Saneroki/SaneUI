@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Setup
+--  SaneUI - Navigation - Setup
 --  The map's setup, step by step (Saneroki, 2026-11-18: "make a onboarding
 --  window for the navigation module"). The module's own words and samples,
 --  handed to Core (Core.Onboarding.Add); the window is the addon Onboarding's,
@@ -19,7 +19,7 @@ local _, ns = ...
 --             do the same but requires a click in the corner"): the mouse
 --             into it, or a click in it (expandClick, as round buttons); the
 --             big arrow points into the real corner meanwhile (below)
---    keys     "The 3rd would be to use the keybind": Sane UI's map, the
+--    keys     "The 3rd would be to use the keybind": SaneUI's map, the
 --             game's map (Native.lua: once ours has a key, the game's map key
 --             opens the game's), the map's search; "Remind people that it is
 --             possible to use a combination of things"
@@ -80,10 +80,10 @@ Setup.TEXT = {
     again = "Into the corner again",
     againEdge = "To the edge again",
     back = "and the map goes back",
-    keyOwn = "Sane UI's map",
+    keyOwn = "SaneUI's map",
     keyOwnTip = "Full screen and back, from wherever you are.",
     keyGame = "The game's map",
-    keyGameTip = "The game's own map. Until Sane UI's map has a key of its own, this key opens Sane UI's map.",
+    keyGameTip = "The game's own map. Until SaneUI's map has a key of its own, this key opens SaneUI's map.",
     keyFind = "Search the map",
     keyFindTip = "The full map, the cursor in its search: type a name, a place, an item.",
     cornerSwitch = "The corner opens the map",
@@ -125,8 +125,8 @@ Setup.STEPS = {
       settings = { { key = "expandClick", text = Setup.TEXT.cornerSwitch, tip = Setup.TEXT.cornerTip, column = true,
                      choices = { { false, Setup.TEXT.cornerHover }, { true, Setup.TEXT.cornerClick } } } } },
     { key = "keys", title = "Or a key",
-      text = Lines({ "Sane UI's map", "full screen and back by a key of its own." },
-          { "The game's map", "its key opens Sane UI's map until that has a key: then the game's map." },
+      text = Lines({ "SaneUI's map", "full screen and back by a key of its own." },
+          { "The game's map", "its key opens SaneUI's map until that has a key: then the game's map." },
           { "Together", "the corner and the keys work side by side: use any of them, or all." },
           { "A key", "click its box, press the key. Right click: no key." }),
       settings = { { binding = ns.Native.OWN, text = Setup.TEXT.keyOwn, tip = Setup.TEXT.keyOwnTip },
@@ -508,7 +508,7 @@ function DRAW.keys(board)
         or "the mouse all the way into it"), Clicks() and "Click" or "Mouse")
     Row(board, 2, 84, Hued(Setup.TEXT.keyOwn) .. ": full screen and back", own)
     Row(board, 3, 134, Hued(Setup.TEXT.keyGame) .. ": " .. (own and "the game's own map"
-        or "Sane UI's map, until that has a key"), game)
+        or "SaneUI's map, until that has a key"), game)
     Row(board, 4, 184, Hued(Setup.TEXT.keyFind) .. ": the full map, the cursor in its search", find)
     Caption(board, "together", 250, Hued("All of them work side by side") .. ": the corner for the mouse, a key for "
         .. "when your hands are on the keyboard.")

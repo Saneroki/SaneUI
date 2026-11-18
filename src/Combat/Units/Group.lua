@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Group
+--  SaneUI - Combat - Units - Group
 --  One frame for your party and your raid, in place of the game's party and
 --  raid frames: the same window whatever the group, only with more slots. It
 --  fills from its bottom left corner: you and your party up, five to a column,

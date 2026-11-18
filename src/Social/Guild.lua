@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Guild
+--  SaneUI - Social - Guild
 --  The guild window on the full screen (Board.lua): one of its windows, at
 --  its top right at first, the friends list under it. Not built anew: the
 --  guild window itself is held in its panel and works as always, as large as

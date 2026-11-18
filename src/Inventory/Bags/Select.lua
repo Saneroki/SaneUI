@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Select
+--  SaneUI - Inventory - Bags - Select
 --  Choosing items in the bag window by clicking them, instead of using them:
 --      put      a category's "+" clicked with nothing on the cursor: the
 --               next item clicked goes into that category (Pinned: it is
@@ -11,7 +11,7 @@ local _, ns = ...
 --               clicked again
 --  While a mode is on, the rest of the window (the bar, the strip, the
 --  sidebar, the foot) is dimmed and a catcher over the items takes the mouse:
---  the item under it is lit (a thick border in Sane UI's colour, a pale
+--  the item under it is lit (a thick border in SaneUI's colour, a pale
 --  veil), a click acts on it and never reaches the game's button. A right
 --  click, a click on the dimmed parts, Esc or a fight ends the mode.
 -------------------------------------------------------------------------------

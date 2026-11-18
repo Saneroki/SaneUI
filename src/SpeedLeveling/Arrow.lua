@@ -1,8 +1,8 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Arrow
---  The way to the guide's place (Saneroki, 2026-10-25): Sane UI's leather ring
+--  SaneUI - Speed Leveling - Arrow
+--  The way to the guide's place (Saneroki, 2026-10-25): SaneUI's leather ring
 --  that runs out into a point, turned the way to the place (up: ahead), in its
 --  hole the game's own picture of what to do there (its cursors': a speech
 --  bubble to talk, a sword to kill, a bag to loot, an open hand to use, the

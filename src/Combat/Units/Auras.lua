@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Auras
+--  SaneUI - Combat - Units - Auras
 --  Above a unit frame, in one line over what stands on the frame now (its cast:
 --  the containers stand on its roof, Bar.Fit), the auras that matter most,
 --  four buffs, two crowd control and four debuffs at most, each kind a block of

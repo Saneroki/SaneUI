@@ -1,14 +1,14 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Classic
---  The game's own windows that Sane UI's windows stand for (a window's option
+--  SaneUI - Core - Classic
+--  The game's own windows that SaneUI's windows stand for (a window's option
 --  classic, Window.lua), both ways:
 --    - the dropdown Classic windows on a full window (Edge.lua): the game's
 --      windows of every module, each module's under its name, this window's
 --      first. One chosen, the full window goes back and the game's comes; a
 --      kept choice is a checkbox, chosen again while ticked: ours again.
---    - the button Sane UI on each of those game windows, beside its close
+--    - the button SaneUI on each of those game windows, beside its close
 --      button: the game's window goes and ours comes instead (filling the
 --      screen where the entry says so); a kept choice is ours again.
 --    - the kept choices alone (Kept, Keep, KeptMenu): the dropdown on
@@ -110,7 +110,7 @@ function Classic.Pick(edge, window, entry)
     Classic.Attach(window)
 end
 
--- The kept choices of every window (an entry with checked: the game's own window or Sane UI's, kept), each window's
+-- The kept choices of every window (an entry with checked: the game's own window or SaneUI's, kept), each window's
 -- with it: { { window = window, entries = { entry, ... } }, ... }; empty without any.
 function Classic.Kept()
     local kept = {}
@@ -165,7 +165,7 @@ function Classic.Menu(edge, root)
 end
 
 -------------------------------------------------------------------------------
---  The button Sane UI on the game's windows
+--  The button SaneUI on the game's windows
 -------------------------------------------------------------------------------
 local buttons = setmetatable({}, { __mode = "k" }) -- [the game's frame] = its button
 

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Nodes
+--  SaneUI - Abilities - Talents - Nodes
 --  The nodes of our talent trees, as the game's class talents draw them
 --  (Blizzard_PlayerSpells: ClassTalents/Blizzard_ClassTalentUtil.lua, which
 --  chooses each node's template and behaviour; Camelot's ClassTalentUtil.lua,

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Text
+--  SaneUI - Combat - Units - Text
 --  The line inside a unit frame's bar, in a nameplate's font and colours:
 --    left     the unit's level, in the game's colour for how hard it is to
 --             you (a skull where it is too high to tell), the raid marker while

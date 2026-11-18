@@ -1,12 +1,12 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Unlock
+--  SaneUI - Speed Leveling - Unlock
 --  The guides you bought, opened for the account you play (Saneroki,
---  2026-10-25). A bought guide of the leveling guide Sane UI knows comes as an
+--  2026-10-25). A bought guide of the leveling guide SaneUI knows comes as an
 --  import string that only the buyer's account opens: pieces of the guides'
 --  text, each packed (zlib) and locked with a key made from the buyer's
---  BattleTag. Sane UI opens it as that guide does, with the BattleTag of the
+--  BattleTag. SaneUI opens it as that guide does, with the BattleTag of the
 --  account you play and no other: the key is made in memory and never kept, and
 --  a string bought for another account stays shut. How the key is made and how
 --  the string is marked are that guide's (Core.Neighbours.Lock); base64 and zlib

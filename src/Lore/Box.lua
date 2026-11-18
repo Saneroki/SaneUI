@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Box
+--  SaneUI - Lore - Box
 --  The NPC's face, name and words, low in the middle of the screen (Saneroki,
 --  2026-10-28), see-through over the world: at the left the NPC's own 3D face
 --  (the game's model of the unit you talk to, with no background; a thing with

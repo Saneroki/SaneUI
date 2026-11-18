@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Keys
+--  SaneUI - Abilities - Keys
 --  Your spellbook, pet book and talents keys open our own windows instead of
 --  the game's (Saneroki, 2026-10-20): whatever keys the game's key bindings
 --  give its actions TOGGLESPELLBOOK, TOGGLEPETBOOK and TOGGLETALENTS run ours
---  (Bindings.xml, in the game's key bindings under Sane UI), by the game's own
+--  (Bindings.xml, in the game's key bindings under SaneUI), by the game's own
 --  override bindings, which leave your key bindings as they are: the full
 --  screen with that window (the pet book: the spellbook at the pet's tab), and
 --  pressed again while it shows, back to its size, as the game's keys toggle

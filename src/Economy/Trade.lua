@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Economy - Trade
+--  SaneUI - Economy - Trade
 --  A purchase and a post. The game takes each only from a click of the player
 --  (HasRestrictions in its documentation), so each runs inside the button's
 --  OnClick, never after a timer or an event, and one click does one thing: never a

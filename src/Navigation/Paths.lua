@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Paths
+--  SaneUI - Navigation - Paths
 --  The ways of the flight point or dock under the mouse, drawn over the map while
 --  the mouse is on its pin (Saneroki, 2026-11-10): at a flight point every flight
 --  of your side that leaves it, white as a flight's line (Route.lua), fainter to a

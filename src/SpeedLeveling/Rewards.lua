@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Rewards
+--  SaneUI - Speed Leveling - Rewards
 --  Which reward to take where a quest offers a choice (Saneroki, 2026-10-30;
 --  the switch Choose quest rewards): the biggest upgrade for your gear
 --  (Core.Upgrade: what it gains by your weights), else the reward your guide's

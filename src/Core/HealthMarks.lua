@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - HealthMarks
+--  SaneUI - Core - HealthMarks
 --  What every health bar of ours shows of a unit besides its health, the same
 --  on all of them (Combat's unit and group frames, Nameplates' plates):
 --

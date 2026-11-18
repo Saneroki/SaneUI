@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Data: Auction House
+--  SaneUI - Data: Auction House
 --  The auction data's file of its own, apart from the settings (Saneroki, 2026-10-30): the game keeps a
 --  saved variable in a file per addon, so this addon is here for its file,
 --  WTF/Account/<account>/SavedVariables/SaneUI_AuctionData.lua, which holds SaneUIData_Market and nothing

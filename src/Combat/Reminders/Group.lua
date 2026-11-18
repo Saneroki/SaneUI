@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Reminders - Group
+--  SaneUI - Combat - Reminders - Group
 --  The reminders shown on the health bars: Reminders.FRAMES among their
 --  places on your own frame, your target's and your focus's (Units.lua, Unit
 --  frames), Reminders.GROUP on the party and raid frames, your own slot too

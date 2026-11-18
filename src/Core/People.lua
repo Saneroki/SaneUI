@@ -1,9 +1,9 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - People
+--  SaneUI - Core - People
 --  What the player writes about other players: an alias, a name of their own
---  choosing that Sane UI shows in place of a character's name (five alts of one
+--  choosing that SaneUI shows in place of a character's name (five alts of one
 --  friend can all be "Saneroki"), and a note. Kept for the account, by the
 --  player's key (Core.PlayerKeyOf: the whole name on Forever, Name-Realm
 --  elsewhere), in SaneUIDB.modules.Core.people; personal data, never shared
@@ -30,7 +30,7 @@ local TEXT = {
     note = Core.Word("SET_NOTE", "Set Note"),
     removeAlias = "Remove Alias",
     removeNote = "Remove Note",
-    askAlias = "The name Sane UI shows for %s:",
+    askAlias = "The name SaneUI shows for %s:",
     askNote = "A note about %s:",
 }
 People.TEXT = TEXT

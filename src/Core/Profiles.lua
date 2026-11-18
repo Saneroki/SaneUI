@@ -2,7 +2,7 @@ local ADDON = ...
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Profiles
+--  SaneUI - Core - Profiles
 --  Whose settings are in use, and where they live (Saneroki, 2026-10-17; the
 --  three profiles every account has, 2026-10-30; off at first, 2026-11-15).
 --
@@ -11,13 +11,13 @@ local Core = SaneUI.Core
 --  no preset is given. Turned on (Profiles.SetEnabled, the switch at the top of
 --  the page Profiles, /sane profile on, Onboarding), the first time, this
 --  character's settings as they are become the profile Accountwide: a copy of
---  Sane UI's, and the game's as Sync reads them this moment (Sync.Take), nothing
+--  SaneUI's, and the game's as Sync reads them this moment (Sync.Take), nothing
 --  written into the game; this character uses it, characters not seen yet start
 --  on the profile for new characters, the others keep their own until moved.
 --  Turned off, the profiles are kept for later and every character keeps its
 --  settings as its own: this one at once, another at its next login (TakeOwn);
 --  the game's settings stay as they are. Once on, each character uses a profile:
---    Speedleveling        Sane UI's settings, the game's, Speed Leveling's
+--    Speedleveling        SaneUI's settings, the game's, Speed Leveling's
 --                         automation on and our recommended CVars (Presets.lua)
 --    Accountwide          the one new characters start with, made from the
 --                         settings of the character that turned profiles on;
@@ -69,7 +69,7 @@ Profiles.OWN = "Character specific" -- no profile: the character's own settings,
 Profiles.NEW = "new"       -- the line of the characters not seen yet (Character, SetCharacter)
 Profiles.PRESET = Core.Presets.profiles -- what a standard profile sets over the defaults (Presets.lua)
 Profiles.MAX_NAME = 32     -- letters in a profile's name
-Profiles.EXPORT = "Sane UI profile" -- what an exported text says it is
+Profiles.EXPORT = "SaneUI profile" -- what an exported text says it is
 
 local ACCOUNTWIDE, SPEEDLEVELING, OWN, NEW = Profiles.ACCOUNTWIDE, Profiles.SPEEDLEVELING, Profiles.OWN, Profiles.NEW
 
@@ -89,8 +89,8 @@ local TEXT = {
     nextOff = "Then profiles are turned off.",
     using = "this character uses the profile %s.",
     current = "that is the character you are playing.",
-    unknown = "Sane UI has not seen that character.",
-    notProfile = "that is no Sane UI profile.",
+    unknown = "SaneUI has not seen that character.",
+    notProfile = "that is no SaneUI profile.",
     first = "the changes are not saved yet: the save window asks first, then the profile %s is used.",
     next = "Then the profile %s is used.",
     old = "%s (old)",
@@ -319,7 +319,7 @@ local function Ticks(name, new)
 end
 
 -------------------------------------------------------------------------------
---  The first shape of these settings, brought over once (an earlier version of Sane UI)
+--  The first shape of these settings, brought over once (an earlier version of SaneUI)
 -------------------------------------------------------------------------------
 -- Before: the account's settings in modules.<Module>.options (or kept aside in account while a
 -- character used other ones), profiles copied in at login and out at logout where a character's line
@@ -476,7 +476,7 @@ end
 --  The profiles turned off: each character keeps the settings it had
 -------------------------------------------------------------------------------
 -- A character that still names a profile while the profiles are off (it was not played since they were turned off)
--- takes a copy of that profile's settings as its own, Sane UI's (the game's stay as the game has them), so that it
+-- takes a copy of that profile's settings as its own, SaneUI's (the game's stay as the game has them), so that it
 -- looks as it did; from then on it keeps its own (Character specific). The modules that hold theirs already are told.
 local function TakeOwn(line)
     if Enabled() or not line or line.profile == OWN then return end
@@ -628,7 +628,7 @@ local function Rehomed()
 end
 
 -- On. The first time (or with Accountwide holding nothing), Accountwide is this character's settings as they are:
--- Sane UI's (the modules not switched on today too) and the game's as Sync reads them now (Sync.Take: nothing written
+-- SaneUI's (the modules not switched on today too) and the game's as Sync reads them now (Sync.Take: nothing written
 -- into the game, no /reload, no defaults, none of our recommended CVars). Otherwise this character uses the
 -- Accountwide kept from before, as when it is chosen. Speedleveling is made (a copy of Accountwide, with its presets).
 local function TurnOn()
@@ -808,7 +808,7 @@ function Profiles.Delete(name)
     return true
 end
 
--- The settings in use take another profile's: Sane UI's and, in a profile, the game's too.
+-- The settings in use take another profile's: SaneUI's and, in a profile, the game's too.
 function Profiles.CopyFrom(name)
     local from = Saved(name)
     if not from then return false, TEXT.missing:format(tostring(name)) end
@@ -824,7 +824,7 @@ function Profiles.CopyFrom(name)
     return true
 end
 
--- Every setting of Sane UI's in use back to its default, and what a standard profile sets; the game's settings stay.
+-- Every setting of SaneUI's in use back to its default, and what a standard profile sets; the game's settings stay.
 function Profiles.Reset()
     local holder = source and Saved(source) or Own()
     local preset = source and Profiles.PRESET[source] or {}

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Full
+--  SaneUI - Loot - Full
 --  Your bags are full and the loot window holds a thing you cannot take: at
 --  the right of the window's lines, made as they are (Saneroki, 2026-11-02: all
 --  of the loot window as the nameplates): no paper, no frame, on the world,

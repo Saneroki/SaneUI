@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Headers
+--  SaneUI - Abilities - Talents - Headers
 --  Over each of the three trees its head, and at the top right your unspent
 --  points, as the game's class talents frame shows them (Camelot:
 --  ClassTalents/Blizzard_ClassTalentsFrame.xml, ClassTalentTreeHeaderTemplate

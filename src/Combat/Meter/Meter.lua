@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter
+--  SaneUI - Combat - Meter
 --  The threat and damage meter, a window of Core's on the screen, its place and size
 --  kept; at first right of the quest log's first place at the very top of the screen.
 --  Never on or over a full screen (Abilities', the map's, any): out of sight while one is up (Cover, Core's

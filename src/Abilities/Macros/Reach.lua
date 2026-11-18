@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Reach
+--  SaneUI - Abilities - Macros - Reach
 --  How a press reaches a macro, on this character. Nothing of this goes into the
 --  game's own key settings or action slots, so taking it away leaves them as
 --  they were.

@@ -1,12 +1,12 @@
 set = "PatchNotes"
 key = "int"              # the game's build these notes are of
-about = "What each build of the game changed: Sane UI's patch notes, by build: the points as a page shows them, and what each changed in the other sets."
+about = "What each build of the game changed: SaneUI's patch notes, by build: the points as a page shows them, and what each changed in the other sets."
 
 [fields]
 patch    = { type = "text" }                    # the game's patch number: 1.60.2
 from     = { type = "int", min = 0 }            # the build they are compared with
 official = { type = "list", of = "text" }       # the pages of Blizzard's the notes were compared with
-sane     = { type = "list", of = "text" }       # what changed in Sane UI for this build
+sane     = { type = "list", of = "text" }       # what changed in SaneUI for this build
 points   = { type = "list", of = "tuple", parts = [
     { name = "section", type = "text" },        # Blizzard's section: Classes, Items and Rewards, ...
     { name = "group",   type = "text" },        # a class, a race, an instance

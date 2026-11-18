@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter - Shows
+--  SaneUI - Combat - Meter - Shows
 --  Which bars a character has: what the window's ticks say, unless you chose otherwise
 --  for that character (a right click on their name, Controls.lua). Kept by their GUID for
 --  this account, only where it differs from the ticks, in store.meterPeople:

@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation
+--  SaneUI - Navigation
 --  The module's own table (ns in all its files), its settings, the command, and
 --  giving the game's minimap and map back.
 --
@@ -74,7 +74,7 @@ ns.TEXT = {
     tripView = "Your trip on screen",
     tripViewTip = "On a flight, a boat, a zeppelin or the tram, high up the screen: where it began and where it goes at the ends of a golden line that fills as you go, each flight point on it, the time to the end, the next stop and the time to it, and the zone below you. The button to get out stands here too, in place of the game's at the action bars: on a flight it lands you at the next flight point, in a vehicle it lets you out.",
     dockTimes = "Ship times at a dock",
-    dockTimesTip = "At the dock of a boat or a zeppelin and at a station of the tram, high up the screen: where the next to come goes, a golden line that fills as it nears, when it arrives (board now) and when it leaves; the others there below. Its times show once you have ridden it on this realm (the game tells no timetable: Sane UI learns it on the ride), until then how often it sails.",
+    dockTimesTip = "At the dock of a boat or a zeppelin and at a station of the tram, high up the screen: where the next to come goes, a golden line that fills as it nears, when it arrives (board now) and when it leaves; the others there below. Its times show once you have ridden it on this realm (the game tells no timetable: SaneUI learns it on the ride), until then how often it sails.",
     nodes = "Herbs and ore",
     nodeSparkles = "Sparkles on herbs and ore",
     nodeSparklesTip = "Gold sparkles in the world on the herb or ore your interact key would gather, so you see it among the grass and rocks. Sets the game's Enable Interact Key on and lets it find herbs and ore all around you up to " .. Core.Distance(20) .. "; switched off, those settings are as they were.",

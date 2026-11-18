@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter - Controls
+--  SaneUI - Combat - Meter - Controls
 --  What stands at the right end of the first line while the mouse is on the
 --  meter, and nothing of it otherwise, from the left:
 --      < 3 >    the arrows page through the fights, the number the page

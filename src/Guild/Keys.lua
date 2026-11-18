@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Keys
+--  SaneUI - Guild - Keys
 --  Your guild key opens our guild window instead of the game's (the switch The
 --  Guild Key Opens It): whatever keys the game's key bindings give its action
 --  TOGGLEGUILDTAB run ours (Bindings.xml, in the game's key bindings under
---  Sane UI), by the game's own override bindings, which leave your key
+--  SaneUI), by the game's own override bindings, which leave your key
 --  bindings as they are. Pressed again while it shows, it closes, as the
 --  game's key toggles its window. The game's micro menu button still opens the
 --  game's own guild window.

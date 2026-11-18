@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Answers
+--  SaneUI - Lore - Answers
 --  What you can answer, a column beside the words (Saneroki, 2026-10-28): its
 --  top level with the box's top, right of it. A line an answer, each a dark bar
 --  of its own (Look.Plate), lighter and its words gold under the mouse,

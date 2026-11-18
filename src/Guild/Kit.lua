@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Kit
+--  SaneUI - Guild - Kit
 --  The parts the guild window's views are built from, all of the game's own
 --  (Doc/guides/gui-development.md): a sunken inset (InsetFrameTemplate), a
 --  panel (an inset with a heading), a table (the game's scrolling list with

@@ -755,10 +755,10 @@ def main():
         run(jobs_path)
     elif args.command == "install":
         SERVICE.parent.mkdir(parents=True, exist_ok=True)
-        SERVICE.write_text(f"""# Sane UI's GPU runner: ComfyUI work while the graphics card is idle ({Path(__file__).resolve()}).
+        SERVICE.write_text(f"""# SaneUI's GPU runner: ComfyUI work while the graphics card is idle ({Path(__file__).resolve()}).
 # Written by gpu-runner install; gpu-runner uninstall takes it away.
 [Unit]
-Description=Sane UI GPU runner (ComfyUI work while the card is idle)
+Description=SaneUI GPU runner (ComfyUI work while the card is idle)
 
 [Service]
 Type=simple

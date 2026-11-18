@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Goals
+--  SaneUI - Navigation - Goals
 --  What your quests still ask of the world, and where exactly it stands: of each quest in the log that Core's
 --  data holds, the open objectives' things (a creature to kill or speak to, an object to use, what gives an item to
 --  loot) at every point Core's sets know them, so the map can pin the very spawns and not only the quest's area.

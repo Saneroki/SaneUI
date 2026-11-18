@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Nodes
+--  SaneUI - Navigation - Nodes
 --  Herbs and ore: what one is by the name the game shows (Core's sets Objects
 --  and Drops), its picture, and the game's three finders, Find Herbs, Find
 --  Minerals and Find Fish. Knows no frames.
@@ -28,7 +28,7 @@ local _, ns = ...
 --  pools are no records of Core's: the game's own minimap dots show them, and only herbs and ore are told by their
 --  names (Nodes.DRAWN). Without Core's herbs and ore (Nodes.Known: Retail, until its data comes) nothing is told by
 --  its name. A finder is a spell, and
---  switching it sounds as a cast: Sane UI's own switches are silent. The game's effect sounds are off from the switch
+--  switching it sounds as a cast: SaneUI's own switches are silent. The game's effect sounds are off from the switch
 --  until the cast went through (a moment later; at most Nodes.QUIET seconds), then as they were; what they
 --  were is kept in the store meanwhile, so a /reload in between puts it back (Start).
 -------------------------------------------------------------------------------

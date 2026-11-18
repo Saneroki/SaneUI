@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot
+--  SaneUI - Loot
 --  The module's own table (ns in all its files), its words, its sizes, its
 --  settings, and how it stands down.
 --
@@ -109,7 +109,7 @@ ns.TEXT = {
     groupTab = "Rolls and feed",
     -- the options
     windowHeader = "Loot window",
-    windowSwitch = "Sane UI's loot window",
+    windowSwitch = "SaneUI's loot window",
     windowSwitchTip = "What a corpse, a chest or a catch holds, a line a thing, a bar as the nameplates draw theirs in its quality's colour (a quest's in gold): its picture, its name (a green arrow in front of it on an upgrade) and an A to take it at once from now on. Link and Close at the foot. A click takes a thing and the next comes under the mouse. While it is on, the game's own Auto Loot is off: the switches Taken at once decide (Shift while looting still takes everything). Off: the game's own loot window.",
     atMouse = "At the mouse",
     atMouseTip = "The loot window opens where the mouse is, its first thing under it. Off: where you placed it in Edit Mode (Esc > Edit Mode).",
@@ -149,7 +149,7 @@ ns.TEXT = {
     itemsForget = "Forget the rest",
     itemsForgetTip = "Takes the things you gave no word on off this list (until you loot them again).",
     rollsHeader = "Group rolls",
-    rolls = "Sane UI's roll cards",
+    rolls = "SaneUI's roll cards",
     rollsTip = "When your group rolls for a thing: a line as in the loot window with its picture and name, on it the game's icons for Need, Greed and Pass (Disenchant or Transmog when the game offers them), over its foot the time left, running down from green to red, the seconds on it. Your part done, it fades until the roll is over, then shows for a few seconds who got the thing. Placed in Edit Mode. Off: the game's own roll frames.",
     tally = "Who chose what",
     tallyTip = "On each choice of a card, how many of your group took it; the mouse on the card or a choice lists who chose what and who has still to roll. Read from the game's own lines about the rolls.",

@@ -1,8 +1,8 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - EditMode
---  Whether Blizzard's Edit Mode is open. Sane UI's windows are moved and sized
+--  SaneUI - Core - EditMode
+--  Whether Blizzard's Edit Mode is open. SaneUI's windows are moved and sized
 --  only then, as the game's own frames are (Window.lua); the rest of the time
 --  they stay where they are.
 --
@@ -22,7 +22,7 @@ local Core = SaneUI.Core
 --
 --  Should this client have no such Edit Mode (or no event registry to hear it
 --  by), our windows are not stuck: /sane arrange opens and closes the same mode
---  for Sane UI's windows alone (the resilience rule: never stuck, never broken).
+--  for SaneUI's windows alone (the resilience rule: never stuck, never broken).
 -------------------------------------------------------------------------------
 local EditMode = { active = false, available = false }
 Core.EditMode = EditMode
@@ -57,7 +57,7 @@ Core.On("PLAYER_LOGIN", function()
     Tell(Core.Ask(manager.IsEditModeActive, manager) and true or false)
 end)
 
-Core.Command("arrange", "move and size Sane UI's windows, if this game has no Edit Mode (Esc > Edit Mode) to do it in", function()
+Core.Command("arrange", "move and size SaneUI's windows, if this game has no Edit Mode (Esc > Edit Mode) to do it in", function()
     if EditMode.available then
         Core.Print("windows are arranged in the game's Edit Mode: Esc > Edit Mode.")
     else

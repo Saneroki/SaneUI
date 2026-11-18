@@ -1,8 +1,8 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Wire
---  Sane UI's addon messages (Doc/guides/data.md, *Messages*): what Core sends to the Sane UI of other
+--  SaneUI - Core - Data - Wire
+--  SaneUI's addon messages (Doc/guides/data.md, *Messages*): what Core sends to the SaneUI of other
 --  players in the guild, the party or the raid, and takes from them. One prefix, SaneUI, for everything.
 --
 --      local Wire = SaneUI.Core.Wire
@@ -16,8 +16,8 @@ local Core = SaneUI.Core
 --                                      or when its parts do not all fit in the queue
 --      Wire.SendBlock("G", text, "GUILD", nil, tag)   with a tag of the sender's own (a record's kind), so that
 --      Wire.Drop("G", tag)             what still waits of it can be dropped (a switch turned off)
---      Wire.Hear(prefix, fn)           fn(sender, text, channel, name): every message on the prefix of an addon Sane
---                                      UI knows (Core.Neighbours), taken in as ours are, in its own words
+--      Wire.Hear(prefix, fn)           fn(sender, text, channel, name): every message on the prefix of an addon
+--                                      SaneUI knows (Core.Neighbours), taken in as ours are, in its own words
 --      Wire.Say(prefix, text, "PARTY")  a message on that prefix, queued in bulk with ours (the same budget); false
 --                                      when not sent (too long, no such channel, the queue full)
 --
@@ -195,7 +195,7 @@ function Wire.SendBlock(kind, text, channel, target, tag)
     return true
 end
 
--- A message on another addon's prefix (one Sane UI knows), in its own words, in bulk. false: not sent.
+-- A message on another addon's prefix (one SaneUI knows), in its own words, in bulk. false: not sent.
 function Wire.Say(prefix, text, channel, target)
     if type(prefix) ~= "string" or prefix == "" or #prefix > 16 or prefix == Wire.PREFIX then return false end
     if type(text) ~= "string" or #text > Wire.MAX or not Wire.CHANNELS[channel] then return false end
@@ -412,7 +412,7 @@ local function Register()
     Core.On("CHAT_MSG_ADDON", Heard)
 end
 
--- fn(sender, text, channel, name) for every message on another addon's prefix (one Sane UI knows), registered with
+-- fn(sender, text, channel, name) for every message on another addon's prefix (one SaneUI knows), registered with
 -- the game for it.
 function Wire.Hear(prefix, fn)
     if type(prefix) ~= "string" or prefix == "" or #prefix > 16 or prefix == Wire.PREFIX then return false end

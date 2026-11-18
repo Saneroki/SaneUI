@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Expand
+--  SaneUI - Core - Expand
 --  A window that is small at rest and grows to a larger size while the mouse
 --  rests on it. The mouse has to stay a moment (Expand.DWELL) before it opens,
 --  so passing over it does nothing; open, it waits a moment after the mouse has

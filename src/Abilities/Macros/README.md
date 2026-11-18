@@ -1,4 +1,4 @@
-# Sane UI: Abilities: Sane Macros
+# SaneUI: Abilities: Sane Macros
 
 **Status:** built · **Since:** 2026-11-02 · **Part of:** the module Abilities (`SaneUI_Abilities`, `src/Abilities/Macros/`) · **Game:** WoW:
 Forever and Retail · **Tests:** `dev/tests/macros.lua`; the lab's scene `abilities-full`.
@@ -10,7 +10,7 @@ condition of the game's macros is an option with its explanation, behind a **+**
 of your normal action bar buttons. The macros are your account's, on every character.
 
 ## How to use
-- **Open it:** `/macro`, the game menu's *Macros*, `/sane macros`, or the key *Open or close Sane Macros* (Sane UI, in
+- **Open it:** `/macro`, the game menu's *Macros*, `/sane macros`, or the key *Open or close Sane Macros* (SaneUI, in
   the game's key bindings). It opens on the full screen, beside your action bars; where that cannot come (Edit Mode, the
   full screen switched off) as a window of its own, whose first title bar button goes to the game's own macro window. The
   game's macros stay as they are.
@@ -46,7 +46,7 @@ of your normal action bar buttons. The macros are your account's, on every chara
   choosing another macro or closing the window keeps it too. Up to 500 letters; shown only here.
 - **The game's macros** (Saneroki, 2026-11-03) stand in the list under yours, under their own line and marked with a gold **W**. A click opens it in the
   game's own macro window, on that macro; a drag puts it on an action bar as the game's macro; a right click makes a Sane
-  Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *Sane UI*
+  Macro of it. The button *Game macros* over the list opens the game's window, from the full screen too; its button *SaneUI*
   brings Sane Macros back. Until then `/macro` opens the game's.
 - **Its key:** *Set key*, then press the key, with Shift, Ctrl or Alt if you like, or a mouse's extra button. Esc leaves it
   as it was; a right click takes it away. For this character, and it stays out of the game's own key settings.

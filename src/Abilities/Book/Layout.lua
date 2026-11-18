@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book layout
+--  SaneUI - Abilities - Book layout
 --  Where every icon of a spellbook tab goes: which page, which column, which row.
 --
 --  Nothing in here touches the game's frames: lists in, lists out. The numbers are the

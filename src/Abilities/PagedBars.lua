@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Paged bars
+--  SaneUI - Abilities - Paged bars
 --  Any of Action Bars 2 to 8 paged by your stance or form, as the game pages
 --  its own Bar 1 (Saneroki, 2026-11-09: "this makes the bar into a paged bar
 --  (like the first one, bar one native) or activate the stance / forms specific

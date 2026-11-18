@@ -1,4 +1,4 @@
-"""Forever's and Retail's interface side by side: lookup tables of where the two games differ, for making Sane UI
+"""Forever's and Retail's interface side by side: lookup tables of where the two games differ, for making SaneUI
 work in both (Doc/guides/blizzard-updates.md, *Forever and Retail*). Each export is read as its own client loads it.
 
   symbols.tsv      every symbol the two exports do not have alike: id, kind, how it differs, where each has it, notes;
@@ -302,5 +302,5 @@ def readme(forever, retail, symbol_rows, file_rows, addon_rows, art_rows, folder
               "- `dev/tools/blizzard show <name> --retail`: one symbol in both games, with the diff of its code.",
               "- `grep '^AddOns/Blizzard_WorldMap/' files.tsv`, `grep -i 'Blizzard_WorldMap' addons.tsv`.",
               "- `grep -i 'interface/worldmap/' art.tsv`: pictures; a picture not listed is the same in both.",
-              "- `uses.md`: what of Sane UI's own uses differs in Retail (`dev/tools/blizzard check --retail`).", ""]
+              "- `uses.md`: what of SaneUI's own uses differs in Retail (`dev/tools/blizzard check --retail`).", ""]
     return lines

@@ -3,7 +3,7 @@
 ## Notes: Your guild in one window, on Social's full screen (or a window of its own while Social is off): the roster, everybody's gear, quests and runs, loot, professions, the raid's plan and the officers' tools. What members share with the guild is kept on this computer only, per guild; each kind behind a switch. The guild key opens it.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\Icons\INV_Epicguildtabard

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter - Row
+--  SaneUI - Combat - Meter - Row
 --  One character on the meter: a line with their class's icon, level, item level
 --  and name, and under it a bar for each thing shown, left to right, in its own
 --  colour, its name in it and its numbers at its right end. A bar at 0 is not drawn

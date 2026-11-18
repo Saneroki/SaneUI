@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Found
+--  SaneUI - Core - Data - Found
 --  The discoveries (Doc/ideas/Data.md, *Discoveries and notices*): every change the game's own data took in play, in one
 --  short list, and the one chat line that tells of them. The database tells, no module prints anything about data.
 --

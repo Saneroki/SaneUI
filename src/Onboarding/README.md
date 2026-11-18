@@ -1,10 +1,10 @@
-# Sane UI: Onboarding
+# SaneUI: Onboarding
 
 ## TL;DR
 
-The setup of a Sane UI addon, step by step: one window that walks you through what a module shows, a step at a time,
+The setup of a SaneUI addon, step by step: one window that walks you through what a module shows, a step at a time,
 each step with its own purpose, its words, the switches it is about and a sample that shows each choice at once. It
-comes with Sane UI (Core's download) and is read only when a setup opens. Each module keeps its own words and sample;
+comes with SaneUI (Core's download) and is read only when a setup opens. Each module keeps its own words and sample;
 this addon only draws them. Combat's setup holds the nameplates' (`src/Combat/Setup.lua`; the nameplates' setup was the
 first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 
@@ -14,9 +14,9 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   setups still to go through open in one window: those of the modules that are on and that this account has not
   gone through yet, or that changed a lot since. **The first page** lists them: please go through them to configure
   your addons to your needs; where they are found again (`/sane setup`, the addon settings); a row for each, its
-  name, its steps and *Choose defaults*. Beside them the plain Sane UI logo, and under it Sane UI's windows and the
-  game's own, each only where an addon that is on has it: the small button with the circling arrows (in a Sane UI
-  window's title bar: the game's classic window instead; on the game's window: Sane UI's back); the red buttons
+  name, its steps and *Choose defaults*. Beside them the plain SaneUI logo, and under it SaneUI's windows and the
+  game's own, each only where an addon that is on has it: the small button with the circling arrows (in a SaneUI
+  window's title bar: the game's classic window instead; on the game's window: SaneUI's back); the red buttons
   beside a full screen window's X (its own window without the full screen, and back onto the full screen); and the
   dropdown *Classic windows* that full screen has, which chooses which one is the default, and works here too.
   Navigation, Tooltips and Combat have none of the buttons (Navigation's full map has the dropdown; Combat's parts,
@@ -26,12 +26,12 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   comes back to the first page. A setup is gone through once its last step is done; closed before that, it opens
   again at the next login, at the step where it was left, the others after it.
 - **Choose defaults**, on each row of the first page and in the row under a setup's step beside *Back* (only while a
-  setup is not gone through): that addon's switches of its setup go back to Sane UI's defaults (the game's key
+  setup is not gone through): that addon's switches of its setup go back to SaneUI's defaults (the game's key
   bindings stay), and its setup no longer opens by itself until its module changes it a lot; in a setup the run goes
   on to the next. Where some of those switches were already changed, the game's yes or no asks first. The button on
   its options page still opens it.
 - **Open it again** with the button *Set up step by step* at the top of the module's options page (Esc > Options >
-  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup combat`; other words a setup takes open it at a
+  AddOns > SaneUI > the module), or `/sane setup <module>` (`/sane setup combat`; other words a setup takes open it at a
   step of theirs: `/sane setup nameplates`, Combat's at the nameplates). **`/sane setup` alone** starts
   the whole onboarding again: its first page with every addon's setup, gone through before or not, and *Start* goes
   through each from its first step (what was kept of each changes only as it is done again; closed early, nothing
@@ -51,7 +51,7 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 - **Edit Mode** opened while it shows (a step's button for it, as Combat's *Place and size in Edit Mode*, or the game's
   menu): the window steps aside until Edit Mode closes, then comes back at the same step, its sample drawn anew
   (Saneroki, 2026-11-18: "During the edit mode the setup window is temporarily hiden until you exit edit mode again").
-- **Switched off** in the addon list (under Sane UI), no setup opens; `/sane setup` says where to switch it on.
+- **Switched off** in the addon list (under SaneUI), no setup opens; `/sane setup` says where to switch it on.
 
 ## Technical details
 
@@ -111,8 +111,8 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 - **The first page** (Saneroki, 2026-11-18: "a very first page where all the onboardings that still need to go through
   is listed"; "On the first page it says that please go through this to configure your addons to your needs. The
   configure steps are found underer /sane setup or in the addon settings"): `Core.Onboarding.Start` opens it
-  (`Window.First`, through `ns.First`), the run's setups from `Core.Onboarding.Run()`. On the stage the plain Sane UI
-  logo (Saneroki, 2026-11-18: "use a plain Sane UI logo instead of the Core banner"; `Window.LOGO`, this addon's
+  (`Window.First`, through `ns.First`), the run's setups from `Core.Onboarding.Run()`. On the stage the plain SaneUI
+  logo (Saneroki, 2026-11-18: "use a plain SaneUI logo instead of the Core banner"; `Window.LOGO`, this addon's
   `Art/logo.blp`, drawn 300 x 100 by `dev/tools/logo-art saneui` and `dev/tools/art`) and under it, "very clearly"
   ("show very clearly that the small button with the circle arrow means to show the classic windows instead and also
   in fullscreen you have the dropdown selectors to choose which one is the default one"; then "show that the red arrow
@@ -176,7 +176,7 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   the note at each step's foot ("during onboarding say that you can start this again in the addon settings"). Then
   *Skip setup* ("Add a Skip"), the same day *Choose defaults* in its place ("instead of skip it says Choose
   Defaults"), and the run's first page that lists its setups ("a very first page where all the onboardings that
-  still need to go through is listed"); on it the plain Sane UI logo, and the classic window's button and the full
+  still need to go through is listed"); on it the plain SaneUI logo, and the classic window's button and the full
   screen's dropdown *Classic windows*, shown and said ("show very clearly"); then the dropdown working, the full
   screen's red buttons shown, and each only where an addon that is on has it.
 - 2026-11-18 — The key boxes hear the key again (Saneroki: "the configure keybinds don't work. When I click it it says

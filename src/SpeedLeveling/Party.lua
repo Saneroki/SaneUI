@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Party
+--  SaneUI - Speed Leveling - Party
 --  The party on one guide, a step at a time (Saneroki, 2026-11-05: "I play on 2
 --  characters and the order in which they choose the next quest is a little
 --  random. Can you make sure that the 2 characters in the party are synced with

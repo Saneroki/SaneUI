@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Quiet
+--  SaneUI - Lore - Quiet
 --  The game's interface out of sight while you talk (Saneroki, 2026-10-28):
 --  the whole of it (UIParent) fades out as the talk comes and back in when it
 --  ends, at once when a fight begins. Nothing of the game's is hidden: its
@@ -16,7 +16,7 @@ local _, ns = ...
 --      your bags are full, choose a reward);
 --    - the tooltips (GameTooltip and its two comparisons), only while one shows
 --      for a part of the talk (Quiet.Tips): the clear frames under the mouse
---      show none. Sane UI's tooltip panels follow their tooltip.
+--      show none. SaneUI's tooltip panels follow their tooltip.
 --  The clear frames still take the mouse; the talk lies over them where it
 --  stands.
 --

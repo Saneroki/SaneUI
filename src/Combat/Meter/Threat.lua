@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter - Threat
+--  SaneUI - Combat - Meter - Threat
 --  The one thing of the meter the game keeps no record of. Each look in a fight
 --  every member's threat on the mob you are fighting is asked
 --  (UnitDetailedThreatSituation): its share, how close to taking aggro, and its

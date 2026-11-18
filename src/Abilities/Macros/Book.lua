@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Book
+--  SaneUI - Abilities - Macros - Book
 --  Your macros, in plain data; nothing here knows a frame.
 --
 --  A macro (the account's: Core.Store):

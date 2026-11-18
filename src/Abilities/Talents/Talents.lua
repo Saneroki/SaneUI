@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents
+--  SaneUI - Abilities - Talents
 --  Our own talents window, a window on the full screen (Board.lua: the
 --  part talents), that looks and works as the game's own talents window in
 --  this client: the Talents tab of the game's PlayerSpellsFrame

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Cells
+--  SaneUI - Inventory - Bags - Cells
 --  The item buttons of the bag window: the game's own
 --  (ContainerFrameItemButtonTemplate, Blizzard_UIPanels_Game's
 --  ContainerFrame), so its click, drag, tooltip, the splitting of a stack,

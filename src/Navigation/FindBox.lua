@@ -1,14 +1,14 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - FindBox
+--  SaneUI - Navigation - FindBox
 --  The full map's search (Saneroki, 2026-11-15: "a big searchfield in the title bar up
 --  there where you can search for stuff ... and it will show it to you or put a pin on the
 --  map"): a large field in the middle of the full map's title bar, and under it the list of
 --  what it finds (Find.lua reads the words and knows the world). Only while the map fills
 --  the screen.
 --
---      the field   a dark plate with round ends and the gold trim (Core's skin, as Sane UI's
+--      the field   a dark plate with round ends and the gold trim (Core's skin, as SaneUI's
 --                  panels), the game's magnifier at its left, the words in the game's font a
 --                  size up, its own words while empty; the game's clear mark at its right
 --                  while it holds words; a click into it, or /sane map find <words>
@@ -1071,7 +1071,7 @@ function FindBox.Search(text)
     if text and text ~= "" then Run() end
 end
 
--- The key Search the map (the game's key bindings, Sane UI): the full map, the cursor in its field.
+-- The key Search the map (the game's key bindings, SaneUI): the full map, the cursor in its field.
 BINDING_NAME_SANEUI_MAP_FIND = "Search the map"
 function FindBox.Key()
     if ns.off then return end

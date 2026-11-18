@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Editor
+--  SaneUI - Abilities - Macros - Editor
 --  Sane Macros, in the game's macro window's stead (/macro, the game menu, /sane
 --  macros, its key): on the left your macros, and under them the game's own,
 --  marked W (Saneroki, 2026-11-03), as squares of their pictures with their names
@@ -562,7 +562,7 @@ local function GameMacros(line)
 end
 
 -- The game's own macro window (the button Game macros, a game's macro clicked), with that macro chosen there: ours
--- goes, the full screen too, and the game's comes (window:Native, Holder.lua). Its button Sane UI brings ours back.
+-- goes, the full screen too, and the game's comes (window:Native, Holder.lua). Its button SaneUI brings ours back.
 function Editor.OpenGame(index)
     if not window then return end
     if onBoard then ns.Screen.Back() end

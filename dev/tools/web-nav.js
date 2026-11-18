@@ -1,4 +1,4 @@
-// The tools' pages menu (dev/tools/web-pages): a ☰ button on every tool page of Sane UI that opens the list of
+// The tools' pages menu (dev/tools/web-pages): a ☰ button on every tool page of SaneUI that opens the list of
 // them all, with a dot for whether a page is ready, so one page leads to the others. The server sends this file as
 // /web-nav.js with the list filled in and puts it into every HTML page it sends.
 // It also asks the browser for its dark controls and scrollbars, as the pages are dark.
@@ -43,7 +43,7 @@
   <button class="open" title="Every tool page (Alt+M)" aria-label="Every tool page"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
   <div class="layer"><div class="scrim"></div>
     <aside class="drawer" role="dialog" aria-label="Every tool page">
-      <div class="head"><b>Sane UI <span>pages</span></b><button title="Close (Esc)" aria-label="Close">×</button></div>
+      <div class="head"><b>SaneUI <span>pages</span></b><button title="Close (Esc)" aria-label="Close">×</button></div>
       <nav></nav>
     </aside></div>`;
 

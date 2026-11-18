@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Teleports
+--  SaneUI - Core - Data - Teleports
 --  Where the teleports of Core's set Travel bring one (its kind teleport: a mage's or a druid's spell, an engineer's
 --  transporter, the Crumbling Hearthstone), learnt in play: a watcher of Core's (Doc/guides/data.md, *Learned*).
 --  The game's tables hold no place for them (the server's own), so where a teleport brought the player is its place:

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Bubble
+--  SaneUI - Social - Bubble
 --  One message in the window: measured (Measure), drawn (Init), lit where
 --  words of it are picked to copy (Mark, Select.lua) and taken out of sight
 --  when the list's top edge cuts it (Cut). How much of it is seen is the

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Foot
+--  SaneUI - Inventory - Bags - Foot
 --  The bag window's foot, a dark band at its bottom:
 --      currencies   at the left, those the player watches in the backpack
 --                   (the game's C_CurrencyInfo.GetBackpackCurrencyInfo), icon

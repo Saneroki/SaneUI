@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Gates
+--  SaneUI - Navigation - Gates
 --  The coarse layer over the walking data (Core's set Walking, its field gates,
 --  made by dev/tools/walk-gates from the tiles' blocks): per terrain tile its
 --  gates, the stretches of its borders where one walks across into the next

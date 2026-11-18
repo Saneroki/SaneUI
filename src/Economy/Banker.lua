@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Economy - Banker
+--  SaneUI - Economy - Banker
 --  Send to banker: a tick on the game's Send Mail tab, right of the window's
 --  tabs (Saneroki, 2026-11-11; in the place of the tab Banker of 2026-11-07):
 --
@@ -24,7 +24,7 @@ local _, ns = ...
 --  bags' category Trade Goods), Recipe and Profession (its category
 --  Professions: recipes, patterns, plans; Saneroki, 2026-11-09, again on
 --  2026-11-11: "Yes, send them"), and Forever's crafting orders, told by the
---  game's English names (Sane UI's clients are English): "Waylaid Crate",
+--  game's English names (SaneUI's clients are English): "Waylaid Crate",
 --  "Waylaid Crate: Journeyman Ore", "Waylaid Supplies: Copper Bars", "Sealed
 --  Apprentice's Writ", "Craftsman's Writ: Wizardweave Turban"; never what is
 --  bound or locked, never a quest item.

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Window
+--  SaneUI - Guild - Window
 --  Where the guild window's page (Page.lua) stands. With Social on (and the
 --  switch On Social's Full Screen), on Social's full screen: offered to its
 --  board as its guild window (Core.Board.Offer, the key guild), in place of the

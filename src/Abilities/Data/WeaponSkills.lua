@@ -2,7 +2,7 @@ local _, ns = ...
 local D = ns.Data
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Weapon skills
+--  SaneUI - Abilities - Weapon skills
 --  The weapon skills a class can learn from a weapon master, as the spell that
 --  teaches each one. They are no class spells: the class trainer does not have
 --  them, and the spellbook shows them in its General tab.

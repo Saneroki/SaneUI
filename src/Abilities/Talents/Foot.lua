@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Foot
+--  SaneUI - Abilities - Talents - Foot
 --  At the foot of our talent trees what the game's class talents frame has
 --  there (Camelot: ClassTalents/Blizzard_ClassTalentsFrame.xml: ApplyButton,
 --  ResetButton, UndoButton; their states as the shared Blizzard_Class-

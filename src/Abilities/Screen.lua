@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Screen
+--  SaneUI - Abilities - Screen
 --  The module's window, one of Core's (kind screen): docked in the screen's
 --  bottom middle, empty and see-through while small (nothing in it takes the
 --  mouse; in Edit Mode it shows its box, to be put elsewhere). A left click on
@@ -50,7 +50,7 @@ end
 -- The game's own spellbook and talents (one window of the game's, PlayerSpellsFrame, loaded on demand), in Core's
 -- dropdown Classic windows: the full screen goes back and what opens the game's is said (our code opens none of
 -- the game's panels: its OnShow sets the action bars' grids): its key, or, while our keys are on the game's
--- (Keys.lua), its button in the micro menu. On it the button Sane UI: ours, filling the screen with our spellbook
+-- (Keys.lua), its button in the micro menu. On it the button SaneUI: ours, filling the screen with our spellbook
 -- or talents on it (Core's Classic.lua). Only those of ours this game has (Board.Present).
 local SPELLBOOK, TALENTS = Core.Word("SPELLBOOK", "Spellbook"), Core.Word("TALENTS", "Talents")
 local function Running() return not ns.off end

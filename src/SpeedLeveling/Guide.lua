@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Guide
---  The guide shown and followed: one of the guides kept, run by Sane UI itself
+--  SaneUI - Speed Leveling - Guide
+--  The guide shown and followed: one of the guides kept, run by SaneUI itself
 --  (Run.lua), whether pasted as text or bought and opened for your account
 --  (Unlock.lua) (Saneroki, 2026-10-25: Speed Leveling stands on its own; the
---  leveling guide Sane UI knows is needed for nothing). One picture of it for
+--  leveling guide SaneUI knows is needed for nothing). One picture of it for
 --  the view, the player's ways through it, and what its steps at hand want for
 --  the key (Wanted.lua, Key.lua) and for the quest givers (Quests.lua).
 --
@@ -48,7 +48,7 @@ local _, ns = ...
 --  guide it follows and where it is in each.
 --
 --  Guide packs (Saneroki, 2026-10-26: the guides that come for each game, there
---  to choose without a paste): an addon of Sane UI's for one game, made on this
+--  to choose without a paste): an addon of SaneUI's for one game, made on this
 --  computer, its TOC "## X-SaneUI-Guides: 1", "## X-SaneUI-Games: <game>" and
 --  "## LoadOnDemand: 1". Loaded at the start, it hands its guides over:
 --  SaneUI.SpeedLeveling.TakeGuides(addon, { head }), each head Format.Head's
@@ -582,7 +582,7 @@ function Guide.Take(addon, guides)
 end
 ns.TakeGuides = ns.Guard(Guide.Take) -- what a pack calls (SaneUI.SpeedLeveling.TakeGuides)
 
--- The guide packs of this game (Sane UI's addons whose TOC says X-SaneUI-Guides), switched on for this character,
+-- The guide packs of this game (SaneUI's addons whose TOC says X-SaneUI-Guides), switched on for this character,
 -- loaded: each hands its guides to Guide.Take as it loads.
 function Guide.LoadPacks()
     local api = rawget(_G, "C_AddOns")

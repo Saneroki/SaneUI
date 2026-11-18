@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Switches
+--  SaneUI - Core - Switches
 --  Quick switches the modules offer for a view that gathers them (Saneroki,
 --  2026-10-26: Speed Leveling switched on or off from the minimap's satchel). A
 --  module offers a switch; a view (Navigation's satchel)

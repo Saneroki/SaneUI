@@ -1,8 +1,8 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Offer
---  The spells still to learn in a spellbook of Sane UI's own, through Core
+--  SaneUI - Abilities - Offer
+--  The spells still to learn in a spellbook of SaneUI's own, through Core
 --  (Core.Spellbook; Saneroki, 2026-11-06: the full screen's spellbook (Spellbook/)
 --  shows them, as the game's book does here). What goes there, as in the game's
 --  book (Book.lua):

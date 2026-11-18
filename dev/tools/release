@@ -8,7 +8,7 @@ version reaches a stage as a tag on main's committed state, <Module>/<version>-<
 Core has no stage (every module needs it), nor have its data holders (Data: Auction House, Data: Auction Scans),
 both from main's newest commit.
 
-Each module is a CurseForge project of its own, and so is Core (Sane UI alone; the data holders go in Economy's,
+Each module is a CurseForge project of its own, and so is Core (SaneUI alone; the data holders go in Economy's,
 the module that uses them, so a player without it never has Core scan the auction house): a player takes
 the modules they like, and the CurseForge app brings Core with each, as a module's upload names Core's project
 its required dependency (Saneroki, 2026-11-15: "for now I want to release Maps", alone).
@@ -18,7 +18,7 @@ higher in a zip of its own: a newer version of a lower stage is left out, a modu
 stays out. They are built from git's copies only, never the working tree: main's newest commit tested whole, each
 older version of a module tested with today's Core (its own tests of then). They are Forever's (the one game
 supported for the public): each TOC names Forever's interface number alone, and a module's TOC the Core it was
-tested with (X-SaneUI-Core: Core tells a player whose Sane UI is older). They land in BUILD/packages, the addon's
+tested with (X-SaneUI-Core: Core tells a player whose SaneUI is older). They land in BUILD/packages, the addon's
 folder at the top of each zip (Economy's with the data holders beside it).
 
 Publishing uploads what is new in the channel, Core first: Core when its code or its sets (Forever's set files,
@@ -76,7 +76,7 @@ ROOT = Path(__file__).resolve().parents[2]
 STAGES = ("dev", "alpha", "beta", "release")   # lowest first
 CHANNELS = STAGES[1:]
 CORE = ("Core", "Onboarding", "AuctionData", "AuctionScans")  # no stage, from main's newest commit
-# Core's project: Sane UI and its setups' window, the addon Onboarding (load on demand), always shipped together
+# Core's project: SaneUI and its setups' window, the addon Onboarding (load on demand), always shipped together
 # (Saneroki, 2026-11-16: "both onboarding and core always ships together and lives in the same curseforge project"):
 # a change to either makes a new SaneUI Core.
 CORE_PROJECT = ("Core", "Onboarding")
@@ -342,7 +342,7 @@ def promote(module, stage, wanted=None, dry=False, test=True, root=ROOT, say=pri
             extract(commit, copy, root=root)
             say("Testing it ...")
             run_tests(copy, [module], say)
-    git("tag", "-a", tag, "-m", f"Sane UI's {module} {version}, {stage}", commit, root=root)
+    git("tag", "-a", tag, "-m", f"SaneUI's {module} {version}, {stage}", commit, root=root)
     say(f"Tagged {tag}. Not pushed: git push origin {tag}")
     return tag
 
@@ -651,7 +651,7 @@ def due(channel, only=None, core_wanted=None, root=ROOT):
     core = core_version(channel, found["commit"], core_wanted, root)
     items = []
     if core["new"]:
-        items.append({"folder": "Core", "title": toc_field(found["commit"], "Core", "SaneUI", "Title", root) or "Sane UI",
+        items.append({"folder": "Core", "title": toc_field(found["commit"], "Core", "SaneUI", "Title", root) or "SaneUI",
                       "version": core["version"], "commit": found["commit"]})
     names = addons(found["commit"], root)
     for module, pick in sorted(found["modules"].items()):
@@ -807,7 +807,7 @@ def publish(channel, only=None, core_wanted=None, dry=False, yes=False, root=ROO
     result = package(channel, send, core_wanted, dry, root, say=say, core=core_new)
     release = result["core_release"]
     # (folder, title, version, zip, the commit its tag goes on)
-    going = ([("Core", "Sane UI", release["version"], release["zip"], result["commit"])] if release["zip"] else []) + [
+    going = ([("Core", "SaneUI", release["version"], release["zip"], result["commit"])] if release["zip"] else []) + [
         (module, pick["title"], pick["version"], pick["zip"], pick["commit"])
         for module, pick in sorted(result["modules"].items()) if pick["zip"]]
     words, missing = {}, []

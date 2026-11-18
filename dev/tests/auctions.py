@@ -55,7 +55,7 @@ with tempfile.TemporaryDirectory() as temporary:
     check((addon / "Account2.lua").read_text(encoding="utf-8") == "-- three\n" and not (addon / "Account3.lua").exists(), "the third account's file, as the second link")
     (saved[1] / tool.SAVED).write_text("-- two\n", encoding="utf-8")
     check(tool.link(folder) == (3, 0, True) and (saved[1] / tool.SAVED).read_text(encoding="utf-8") == "-- two\n", "made again: the accounts' own files never touched")
-    check(tool.link(Path(temporary) / "_nothing_") is None, "a game folder without Sane UI: nothing")
+    check(tool.link(Path(temporary) / "_nothing_") is None, "a game folder without SaneUI: nothing")
 
 if failed:
     print("Auction database, FAILED:", *failed, sep="\n  ")

@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - RareTracker
+--  SaneUI - Navigation - RareTracker
 --  The Sane Rare tracker: a rare, a treasure or an event near you, told the
 --  moment the game shows it, with the game's war horn and a notice at the
 --  screen's right edge under the minimap (Saneroki, 2026-11-11), in the look of
---  what Sane UI tells over the world: outlined words on a faint dark shade whose
+--  what SaneUI tells over the world: outlined words on a faint dark shade whose
 --  sides fade out, the right one ending at the screen's edge.
 --
 --      found by     the game's marks near you (its vignettes, those it puts on the minimap: rares, treasures,

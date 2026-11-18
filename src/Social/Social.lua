@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social
+--  SaneUI - Social
 --  The module's own table (ns in all its files), the game's chat events and
 --  the command.
 --
@@ -50,7 +50,7 @@ ns.TEXT = {
     stopped = "the chat window is closed until the next /reload; the game's own chat is back.",
     reset = "the chat window is back at its first place and size.",
     about = "shows or hides the chat window (/sane social reset: first place and size)",
-    binding = "Show or hide the chat window", -- its key, in the game's key bindings under Sane UI (Bindings.xml)
+    binding = "Show or hide the chat window", -- its key, in the game's key bindings under SaneUI (Bindings.xml)
     unread = "a chat message could not be read",
     solid = "Solid colour", -- what the bubbles stand on, the first of the choices (Core.Skin.Choices)
     -- The dropdown Classic windows while the window fills the screen: the game's own windows it stands for.
@@ -102,7 +102,7 @@ ns.TEXT = {
     noGroupsFound = "No group found.",
     finderOff = "The group finder is not open to you here.",
     finderLocked = "Paused in chat lockdown", -- the group finder's line while the game hides the listings
-    nativeChat = "the chat window is off, the game's own chat is back (its button Sane UI, /sane social, or the switch Chat window, brings it again).",
+    nativeChat = "the chat window is off, the game's own chat is back (its button SaneUI, /sane social, or the switch Chat window, brings it again).",
     -- The conversations' panel of the full screen (Conversations.lua, Talks.lua).
     talks = "Conversations",
     talksCount = "Conversations (%d)",
@@ -418,7 +418,7 @@ function ns.OpenFinder(tab)
     if tab and show then show(tab) elseif toggle then toggle() end
 end
 
--- The button Sane UI on the game's friends list and group finder (Core's Classic.lua): ours, filling the
+-- The button SaneUI on the game's friends list and group finder (Core's Classic.lua): ours, filling the
 -- screen. The game's chat has its own (ns.NATIVE).
 local function Ours() Choose(true) end
 local function Running() return not ns.off end
@@ -432,7 +432,7 @@ ns.CLASSIC = {
       ready = Running },
 }
 -- Core's buttons while the window stands free or in the middle of the screen: the game's own window is
--- its chat, and closing ours puts it away the same way. The button back to ours (Sane UI) goes onto the
+-- its chat, and closing ours puts it away the same way. The button back to ours (SaneUI) goes onto the
 -- game's chat, in the strip of buttons left of it (ChatFrame1ButtonFrame), just above its chat menu
 -- button: it fades with them, as the game's own. There only while ours is away (Window.lua, Back).
 local function Strip() return rawget(_G, "ChatFrame1ButtonFrame") end

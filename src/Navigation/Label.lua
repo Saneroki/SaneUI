@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Label
+--  SaneUI - Navigation - Label
 --  What lights up under the mouse (Art.Light), named at the top of the full map,
 --  under its bar, as Blizzard's map names it (AreaLabelDataProvider.lua): the
 --  zone's name in the game's map font, its levels after it in the colour of how

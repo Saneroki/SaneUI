@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Raid
+--  SaneUI - Social - Contacts - Raid
 --  The raid, as the game's tab Raid of its friends list (Blizzard_RaidFrame,
 --  with the groups of Blizzard_RaidUI). Not in a raid: what a raid is, and
 --  Convert to Raid for the leader of a party. In a raid: its eight groups one

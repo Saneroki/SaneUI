@@ -267,7 +267,7 @@ end
 Frames(3)
 check(#blocks == 0 and Core.errors["data job wire: inbox"] == nil, "parts numbered NaN or 2.5 are dropped, without an error")
 
--- Another addon's prefix (one Sane UI knows, Core.Neighbours): heard in its own words, sent through the same queue.
+-- Another addon's prefix (one SaneUI knows, Core.Neighbours): heard in its own words, sent through the same queue.
 local others = {}
 check(Wire.Hear("OtherMaps", function(sender, text, channel) others[#others + 1] = { sender = sender, text = text, channel = channel } end)
     and C_ChatInfo.registered == "OtherMaps" and Wire.Hear(Wire.PREFIX, function() end) == false,
@@ -398,7 +398,7 @@ for _, message in ipairs(sent) do
     if message.channel == "WHISPER" and message.target == "Mel Stone" and message.text == "G1\tf\ta\tcard" then asked = true end
 end
 check(asked, "a member that says it has a card we lack is asked for it, by a whisper")
-check(Guild.Peers()["Mel Stone"] and Guild.Peers()["Mel Stone"].version == "9.9", "and is known to run Sane UI, with its version")
+check(Guild.Peers()["Mel Stone"] and Guild.Peers()["Mel Stone"].version == "9.9", "and is known to run SaneUI, with its version")
 -- Asked ourselves: we answer the one who asked with our own, once a minute at most however often it asks.
 local function Given(name)
     local count = 0

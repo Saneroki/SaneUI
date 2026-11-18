@@ -1,5 +1,5 @@
 """One export of Blizzard's interface code (as the game's exportInterfaceFiles code writes it), read as this client
-loads it: what it gives every addon, as symbols with an id, a signature and a hash. Sane UI is built on the newest
+loads it: what it gives every addon, as symbols with an id, a signature and a hash. SaneUI is built on the newest
 export (newest(): Forever's highest build of the exports' folder this computer's settings name), never on references/.
 
   lua:<chain>        what the Lua files define at their top level: Name, A.B (functions, tables, values), A:B
@@ -135,7 +135,7 @@ def locate(path):
 
 
 def from_git(revision, root, into):
-    """references/BlizzardInterfaceCode as the commit revision holds it (the in-game export Sane UI was first built
+    """references/BlizzardInterfaceCode as the commit revision holds it (the in-game export SaneUI was first built
     on), unpacked into the folder into: only to compare with."""
     archive = subprocess.run(["git", "-C", str(root), "archive", revision, "references/BlizzardInterfaceCode"],
                              capture_output=True, check=True).stdout

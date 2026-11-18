@@ -1,12 +1,12 @@
 """A game's patch: the new build's export of Blizzard's interface against the one before it, written as our own
-patch notes, with every change in tables, what of it reaches Sane UI, and the brief of the session that makes Sane
-UI comply (Doc/guides/blizzard-updates.md, *After a patch*).
+patch notes, with every change in tables, what of it reaches SaneUI, and the brief of the session that makes
+SaneUI comply (Doc/guides/blizzard-updates.md, *After a patch*).
 
   notes.md          the patch notes: what Blizzard changed in the interface, kind by kind, in words
   symbols.tsv, files.tsv, addons.tsv, art.tsv, art-folders.tsv
                     every change, as games.py writes them (the sides old and new)
-  todo.md, todo.json  what of it reaches Sane UI: broken, deprecated, changed, review, housekeeping (compare.py)
-  session.md        the brief of the session that fixes Sane UI: its steps and the todo list's head
+  todo.md, todo.json  what of it reaches SaneUI: broken, deprecated, changed, review, housekeeping (compare.py)
+  session.md        the brief of the session that fixes SaneUI: its steps and the todo list's head
 """
 import datetime
 from collections import Counter, defaultdict
@@ -73,7 +73,7 @@ def notes(game, old, new, symbol_rows, file_rows, addon_rows, art_rows, folders,
     lines = [f"# Patch notes: {TITLE.get(game, game)} {shown(old)} → {shown(new)}", "",
              f"Blizzard's interface code and art of {TITLE.get(game, game)}, build {shown(old)} against {shown(new)}, "
              f"each read as its client loads it. Made {datetime.date.today().isoformat()} by "
-             "`dev/tools/blizzard patch`. Every change is in the tables beside this file; what of it reaches Sane UI "
+             "`dev/tools/blizzard patch`. Every change is in the tables beside this file; what of it reaches SaneUI "
              "is in `todo.md`.", "",
              f"**In short:** {count['api', 'new-only']} new API functions, {count['api', 'old-only']} gone, "
              f"{count['api', 'calls-differ']} called differently; {count['event', 'new-only']} new events, "
@@ -128,15 +128,15 @@ def notes(game, old, new, symbol_rows, file_rows, addon_rows, art_rows, folders,
                               if sum(c.values()) > c["same"]])
 
     sections = analysis.by_section()
-    lines += ["", "## What it means for Sane UI", "",
+    lines += ["", "## What it means for SaneUI", "",
               ", ".join(f"{len(sections[s])} {s}" for s in compare.SECTIONS) + ": `todo.md`, and the session that "
               "fixes it: `session.md`."]
     return lines
 
 
 def session(game, old, new, analysis, folder, card, lookup):
-    """The brief of the session that makes Sane UI comply with the new build. It names no folder of this computer
-    (the reports' folder is private, and no file of Sane UI names it): the patch's folder and the lookup by their
+    """The brief of the session that makes SaneUI comply with the new build. It names no folder of this computer
+    (the reports' folder is private, and no file of SaneUI names it): the patch's folder and the lookup by their
     names under the reports' folder, the exports by the tools that read them."""
     title = TITLE.get(game, game)
     other = "Retail" if game == "forever" else "Forever"
@@ -147,12 +147,12 @@ def session(game, old, new, analysis, folder, card, lookup):
             "two newest exports' code folders (`dev/tools/blizzard where` prints the newest; the one before it stands "
             "beside it).")
     where = (f"`{Path(lookup).name}` in the reports' folder, `symbols.tsv`; " if lookup else "")
-    lines = [f"# Make Sane UI comply with {title} {shown(new)}", "",
+    lines = [f"# Make SaneUI comply with {title} {shown(new)}", "",
              f"{title} was patched from {shown(old)} to {shown(new)}. Blizzard's interface code and art of the new build "
              "are exported, the build before it beside them (`dev/tools/blizzard where` prints the folders, the reports' "
              f"folder among them). What changed: `notes.md` in the patch's folder, `patches/{Path(folder).name}` in the reports' "
-             "folder; what of it reaches Sane UI: `todo.md` there.", "",
-             f"**Your task:** make Sane UI work with {title} {shown(new)}, and keep it working in {other}.", "",
+             "folder; what of it reaches SaneUI: `todo.md` there.", "",
+             f"**Your task:** make SaneUI work with {title} {shown(new)}, and keep it working in {other}.", "",
              "1. Read `CLAUDE.md`, `.claude/rules/code.md`, `Doc/guides/blizzard-updates.md` (*After a patch*) and "
              "`Doc/guides/addon-standards.md` (*Forever and Retail*).",
              f"2. The board's card #{card} is this task: `saneui board start {card}`." if card else
@@ -178,8 +178,8 @@ def session(game, old, new, analysis, folder, card, lookup):
             count += 1
     total = sum(len(sections[s]) for s in compare.SECTIONS)
     if not count:
-        lines.append("Nothing Sane UI uses broke or is called differently: work the review and housekeeping in "
-                     "`todo.md`." if total else "Nothing of the patch reaches Sane UI.")
+        lines.append("Nothing SaneUI uses broke or is called differently: work the review and housekeeping in "
+                     "`todo.md`." if total else "Nothing of the patch reaches SaneUI.")
     return lines
 
 

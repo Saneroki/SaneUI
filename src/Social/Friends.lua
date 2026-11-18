@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Friends
+--  SaneUI - Social - Friends
 --  The friends list's panel of the full screen (Board.lua), at its right:
 --  everything the game's friends list (Blizzard_FriendsFrame, its Camelot copy)
 --  holds, in one panel, so that its window is not needed.

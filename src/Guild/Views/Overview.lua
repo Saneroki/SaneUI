@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Views - Overview
+--  SaneUI - Guild - Views - Overview
 --  The guild at a glance, in three columns (Layout.Overview; narrow, the right
 --  one folds under the left): at the left the quest requests over the planned
 --  runs; in the middle the guild's news (who joined, left, went up or down a

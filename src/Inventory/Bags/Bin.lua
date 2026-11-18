@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Bin
+--  SaneUI - Inventory - Bags - Bin
 --  The waste bin's question (Saneroki, 2026-11-15: "When you drag an item
 --  over the delete icon it should be default ask if you want to delete the
 --  item or not and inside the popup window it has another 3rd button with

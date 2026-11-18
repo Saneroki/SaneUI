@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Tally
+--  SaneUI - Core - Data - Tally
 --  What play counts rather than tells (Doc/guides/data.md, *Counted in play*): how often a creature, a node or a
 --  fishing water gave each item, and where things were seen, a few yards off. One loot or one sighting is no fact;
 --  the harvest (dev/tools/data harvest) adds every player's counts together, and only what enough of them agree on

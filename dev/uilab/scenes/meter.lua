@@ -1,5 +1,5 @@
 -- Threat and damage meter: Core and the module Combat from their TOCs, a made-up raid over the world, a panel beside it to pull, end fights and change the group
--- The game's meter, the threat and the group stand in here, so everything of the window itself is Sane UI's real code:
+-- The game's meter, the threat and the group stand in here, so everything of the window itself is SaneUI's real code:
 -- the mouse on it shows the buttons, the first line drags it, its corner sizes it, the wheel scrolls, the flyouts tick.
 -- The panel beside it: Pull and End fight, the group's size, the window to the other half of the screen. In the
 -- console: LabPull(), LabEnd(), LabGroup(25), LabHalf(), LabMeter is the module's Meter table. It begins in a fight: End

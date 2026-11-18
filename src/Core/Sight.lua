@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sight
+--  SaneUI - Core - Sight
 --  The herbs and ore in sight right now, between the module that finds them on
 --  the game's minimap and one that leads the player (Saneroki, 2026-10-31: the
 --  guide's detours go by Navigation's Found), so neither needs the other. With

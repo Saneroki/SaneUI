@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Recent
+--  SaneUI - Inventory - Bags - Recent
 --  What came into the bags lately, for the category Recent: an item whose
 --  count in the bags and on the character together went up, newest first, at
 --  most Recent.MOST, until the next /reload (nothing is kept). Putting gear

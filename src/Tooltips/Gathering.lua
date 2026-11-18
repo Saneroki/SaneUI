@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Gathering
+--  SaneUI - Tooltips - Gathering
 --  How likely gathering a herb or an ore raises your skill, in the game's
 --  colours of difficulty: on the tooltip of the herb or the vein itself
 --  (Kinds/Object.lua), and on what it gives (Kinds/Item.lua). From Core's

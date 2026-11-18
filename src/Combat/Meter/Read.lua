@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Meter - Read
+--  SaneUI - Combat - Meter - Read
 --  What the meter shows, as the game tells it: who is in the group, and the numbers
 --  of a fight from the game's own damage meter (C_DamageMeter, in both games). The
 --  combat log is closed to addons, so that is the only way to these numbers.

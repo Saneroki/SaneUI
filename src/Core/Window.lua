@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Window
+--  SaneUI - Core - Window
 --  Moving and sizing a window, for every module, in two layers.
 --
 --  The parts, for a window that is not ours to keep (the game's spellbook):
@@ -35,7 +35,7 @@ local Core = SaneUI.Core
 --  a drag docks only in the middle of the screen. Every window that fills the
 --  screen has the bar at its top, the window's full screen view's own; in Edit
 --  Mode the buttons are not there. Full, two more stand left of the others: the
---  game's cog, Sane UI's options over the full screen (Settings/Screen.lua), and
+--  game's cog, SaneUI's options over the full screen (Settings/Screen.lua), and
 --  a question mark, the full screen's tour (help: without, it does nothing yet).
 --
 --  What a window was left as is kept with its place: whether it filled the
@@ -109,7 +109,7 @@ local Core = SaneUI.Core
 --                                       -- stands for: full, it lists them in the dropdown Classic windows;
 --                                       -- one chosen, it goes back to its zone and show() brings the game's;
 --                                       -- with checked() and back(): a kept choice, ticked (Edge.lua);
---                                       -- with frame: the game's window gets the button Sane UI (Classic.lua)
+--                                       -- with frame: the game's window gets the button SaneUI (Classic.lua)
 --          filled = function(full, width, height) end, -- it has begun to fill the screen (true) or to go
 --                                       -- back (false), to that size
 --          moving = function(share) end, -- with edge: what it holds goes with the motion, in sight, placed at
@@ -176,10 +176,10 @@ Window.BOX, Window.BOX_INSET = 20, 6 -- the search box's height; its room from w
 Window.CASCADE = Window.BAR -- a window that cannot stand where it was left stands that far down and right of it
 Window.TEXT = {
     classic = "Classic window", classicTip = "The game's own window instead of this one.",
-    sane = "Sane UI window", saneTip = "Sane UI's window instead of the game's.",
+    sane = "SaneUI window", saneTip = "SaneUI's window instead of the game's.",
     search = Core.Word("SEARCH", "Search"),
     settings = Core.Word("SETTINGS_TITLE", "Options"),
-    settingsTip = "Sane UI's options over this full screen: General, Appearance and each module's page. Click again to go back.",
+    settingsTip = "SaneUI's options over this full screen: General, Appearance and each module's page. Click again to go back.",
     help = Core.Word("HELP_LABEL", "Help"), helpTip = "A tour of this full screen: what it shows and how it works. Not ready yet.",
 }
 Window.SETTINGS = "questlog-icon-setting" -- the game's cog (its quest log's settings)
@@ -1171,7 +1171,7 @@ function Window.CloseOf(game)
     return close
 end
 
--- The button Sane UI on a game's window (game): beside its close button, or left of the button that sizes it
+-- The button SaneUI on a game's window (game): beside its close button, or left of the button that sizes it
 -- where it has one (the game's spellbook, its map), else at its top right; anchor(button) puts it elsewhere.
 -- Nothing is written into the game's frame. secure: the game's window is one of its panels, which our code
 -- may neither show nor hide (Doc/guides/addon-standards.md, *Known traps*): the button is a secure one
@@ -1387,7 +1387,7 @@ function Window.New(frame, options)
     if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end
     Core.Safe("window", window.Attach, window)
-    Core.Safe("window", Core.Classic.Attach, window) -- the button Sane UI on the game's windows it stands for
+    Core.Safe("window", Core.Classic.Attach, window) -- the button SaneUI on the game's windows it stands for
     if options.native and options.native.hold then window.holder = Core.Holder.Take(window) end
     -- Esc closes a window made with escape = "close" while it is shown, as the game closes its panels
     -- (Core.Escape): full as it is. A module that closes it later (the talk ends on the game's side

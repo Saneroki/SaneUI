@@ -1,11 +1,11 @@
-# Sane UI: Sync (part of Core)
+# SaneUI: Sync (part of Core)
 
 **Status:** written and tested offline · **Since:** 2026-10-14 · **Addon:** `SaneUI` (Core), folder `src/Core/Sync/`
 
 ## TL;DR
 The game keeps much of what you set for each character alone: the options you chose on its pages, the Edit
 Mode layout in use, the chat windows, the channels you joined, the map filters, the tutorials you have seen.
-A new character starts without them. Sync keeps them with Sane UI's settings instead, laid out as the game's
+A new character starts without them. Sync keeps them with SaneUI's settings instead, laid out as the game's
 own options are, in the profile in use: they are the same on all your characters that use one profile. While the
 profiles are off (a fresh install) Sync does nothing at all: it writes nothing and gives no defaults; turning them
 on, the profile *Accountwide* takes the game's settings as they are that moment, nothing written into the game; turning
@@ -14,7 +14,7 @@ game's default CVars back. (Joining or leaving
 the game's own chat channels on every character is the Social module's.)
 
 ## How to use
-- **Its checkboxes are on the page *Profiles*** of the game's options (Esc > Options > AddOns > Sane UI >
+- **Its checkboxes are on the page *Profiles*** of the game's options (Esc > Options > AddOns > SaneUI >
   Profiles), in the tab *Game settings*; Sync has no page of its own.
 - **Game settings:** a box for each of the game's groups of
   options pages, with a checkbox for each of its pages, named as the game names them; then a box for what is
@@ -45,10 +45,10 @@ the game's own chat channels on every character is the Social module's.)
   offered, no part given its defaults, no CVar of ours kept by name. **Turned off**, the parts are read into the
   profile left once more and the game's settings stay as they are (no `ToDefaults`).
 - **Addons** (`Addons.lua`): which addons are switched on, in the box *Elsewhere in the game*. Written where the
-  profile differs, for this character (`C_AddOns`), with the reload offered; never Sane UI itself, nor one this
+  profile differs, for this character (`C_AddOns`), with the reload offered; never SaneUI itself, nor one this
   client lacks. One switched on the character screen since this character's last logout is the player's word: the
   login takes it into the profile instead of switching it back (`Sync.Outside`, Saneroki, 2026-11-10).
-- **Key bindings** (`Keys.lua`, Saneroki, 2026-10-30): every key of the game's list by command, Sane UI's and other
+- **Key bindings** (`Keys.lua`, Saneroki, 2026-10-30): every key of the game's list by command, SaneUI's and other
   addons' too, written where they differ and saved in the game's binding set in use. A command this client does not
   list now keeps its keys in the profile. Turning to *Character specific*: the game's default keys (`part.Default`).
 - **Edit Mode layouts** (`Layout.lua`): which one is in use and the layout itself, as the game's own text of it; a
@@ -58,7 +58,7 @@ the game's own chat channels on every character is the Social module's.)
   on no page (it was the character's alone before), not what a character tracks or last chose, nor this computer's.
 - **Single CVars:** in the tab *CVars*, tick any CVar to keep it the same way.
 - **Not keeping any:** untick every part (and no CVar ticked in the tab *CVars*): the game's settings stay as
-  they are, each character with its own. Sync is part of Sane UI, so it is not in the addon list.
+  they are, each character with its own. Sync is part of SaneUI, so it is not in the addon list.
 
 ## Technical details
 - **Part of Core,** not a module: its files are in Core's TOC and share `Core.Sync` (no `SaneUI.Sync`). Its
@@ -105,7 +105,7 @@ the game's own chat channels on every character is the Social module's.)
     (a flag, a modifier key) keeps what was kept. Data of a shape this version does not know is skipped:
     each value is checked for its kind first, so a chat window's switch, colour or place of an older shape,
     or a shorter list of the action bars, leaves that setting as the game has it.
-- **Read** (`Sync.Capture`, given to `Core.Options` as its capture): Core calls it before Sane UI's settings
+- **Read** (`Sync.Capture`, given to `Core.Options` as its capture): Core calls it before SaneUI's settings
   are copied or saved anywhere: a new profile made, another one used, the logout. Kept parts are read from
   the game; the others are dropped. Nothing is read before this session wrote the settings into the game,
   so a character that leaves before then does not spread its own; but for **the profiles turned on**
@@ -128,7 +128,7 @@ the game's own chat channels on every character is the Social module's.)
   newer word and is passed over (an old character-screen change, seen late on a second character, does not undo a
   change made in the game since).
   Never in a fight: then at `PLAYER_REGEN_ENABLED`. Only in the game they were read in (`from`: `forever` or
-  `retail`; those kept before Sane UI served two games are Forever's): each game has options, CVars, layouts and
+  `retail`; those kept before SaneUI served two games are Forever's): each game has options, CVars, layouts and
   chat windows of its own, so another game's (a game folder's saved settings copied into the other's) are neither
   written nor handed out (`Sync.Taken`), and this game's take their place at the next reading. Your own channels are joined before the chat windows are
   written (a join puts a channel into the first window). One reload dialog per writing (`Sync.OfferReload`,
@@ -195,7 +195,7 @@ the game's own chat channels on every character is the Social module's.)
   - The settings of Core's sound profiles (`Audio.lua`): the five sounds' switches and volumes (`Sound_EnableAllSound`,
     `Sound_MasterVolume`, ... `Sound_AmbienceVolume`). The profiles keep them per game account and set them at each
     login; a profile's Sync writing them 2 seconds later would undo that. `Sync.Leave(name)` hands a CVar to another
-    part of Sane UI: no part of Sync, nor a CVar kept by name, reads or writes it (`ReadCVars`, `Sync.SetCVar`). The
+    part of SaneUI: no part of Sync, nor a CVar kept by name, reads or writes it (`ReadCVars`, `Sync.SetCVar`). The
     other sound settings (reverb, sound in the background, ...) stay in the part Audio.
   - Water detail (`waterDetail`, `RAIDWaterDetail`) and the game's Liquid Detail that sets it (`graphicsLiquidDetail`,
     `raidGraphicsLiquidDetail`): water 3 crashed Forever's client in the Ruins of Lordaeron the moment Sync wrote it
@@ -251,5 +251,5 @@ the game's own chat channels on every character is the Social module's.)
   settings keep their place and name. Sync is no module, so it gets no page.
 - 2026-10-14 — The game's channels (join, leave) moved to the Chat module; the tab *Chat channels* is gone.
 - 2026-10-14 — Every part ticked at first. The tab is called *Accountwide*.
-- 2026-10-14 — First version: the game's per-character settings kept with Sane UI's settings (account,
+- 2026-10-14 — First version: the game's per-character settings kept with SaneUI's settings (account,
   character's own, profiles); the game's chat channels joined or left on every character.

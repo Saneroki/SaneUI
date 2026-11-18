@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Finder
+--  SaneUI - Social - Contacts - Finder
 --  The group finder, a tab of the friends list's panel (Friends.lua), as the
 --  game's own browse view (Blizzard_GroupFinder_VanillaStyle, the finder of
 --  this client): a line with the category to look in and a refresh button,

@@ -1,9 +1,9 @@
-# Sane UI: Navigation
+# SaneUI: Navigation
 
 **Status:** the minimap and the map in one window, with pins (the game's and Core's data), the quest log, the bar over the full map and routes to the map pin on foot, by flight, by boat and zeppelin, by the Deeprun Tram, by lift, through portals and by the teleports a character has (the hearthstone told in the chat where it is quicker), on foot coloured by how dangerous they are, through waypoints dragged on the full map; the leveling guide comes later · **Since:** 2026-10-18 · **Addon:** `SaneUI_Navigation` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
-Sane UI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
+SaneUI's minimap and world map are one window. Small, in the screen's top right corner, it is the minimap;
 move the mouse into that corner (or click there, or press a key) and it fills the screen as the map; a setup, step
 by step, shows how the first time (`/sane setup navigation`). Both are the same map, drawn and handled
 the same way, only larger, as the chat window is the same chat when it fills the screen. Each keeps its own
@@ -27,14 +27,14 @@ and shows them on the map or puts the map pin there. The plan is in
   (move away from it first), Esc or the close button on its title bar brings it back. On the way the map grows and
   zooms with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane
   map`, and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
-  The key **Sane UI's map** (the game's key bindings, under Sane UI; the setup's page *Or a key*) does the same; once
+  The key **SaneUI's map** (the game's key bindings, under SaneUI; the setup's page *Or a key*) does the same; once
   it has a key, the game's map key (M) opens the game's own map again (Saneroki, 2026-11-18: "Give them options to put
   keybinds to open either the native map or our map"), and every other way still opens ours. The corner, its click
   and the keys all work together. Moved in Edit Mode, the map takes its hot corner along: docked in another corner,
   that corner; along an edge, that edge; away from the edges, none (a key opens it).
 - **The setup, step by step** (Saneroki, 2026-11-18: "make a onboarding window for the navigation module"): the
-  window of Sane UI's setups (the addon Onboarding), six pages: *Your map* (the minimap is the map), *Into the
-  corner* (the mouse into it, or a left click in it), *Or a key* (Sane UI's map, the game's map, the map's search;
+  window of SaneUI's setups (the addon Onboarding), six pages: *Your map* (the minimap is the map), *Into the
+  corner* (the mouse into it, or a left click in it), *Or a key* (SaneUI's map, the game's map, the map's search;
   all of them together), *Move it in Edit Mode* (the hot corner goes with the map), *The quest log* (a click opens a
   quest, a double click puts a route to it) and *On the map* (a double click puts the map pin and a route there, a
   right click often offers more). On the corner's page and Edit Mode's a **very big arrow** on the screen, the game's
@@ -149,7 +149,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   coin or a yellow dot: those are the game's for what its own minimap finds, Saneroki, 2026-11-16), entrances, the docks of the boats (a boat) and zeppelins (an airship) with where they go, where
   herbs and ore grow (*Possible herbs*, *Possible ore*), books (an open book: those the librarians ask for, the book's
   name in the tooltip): as far as the data holds them; a place
-  the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in Sane UI's tooltips a
+  the game has not confirmed ends its tooltip with *! Unconfirmed Data !* (the marks red; in SaneUI's tooltips a
   quiet grey note at the bottom), and a red ! before the name of each thing in it that is not confirmed (the pin's
   own thing, a quest it offers, each of a gathered pin's), until the game confirms it in play: you or somebody of your guild or group sees
   the NPC at its place, talks to it, opens the mailbox there (Core's watchers), and the note goes. A tooltip says what it is: an NPC by what it is, never by its own name (Saneroki,
@@ -194,7 +194,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   the window stands in the screen's lower half; in sight with the face): a click opens a page beside the map, in
   large cells easy to hit.
   Beside its X the button with the circling arrows, *Classic minimap*: the game's own minimap instead of this one
-  (the switch *Show the game's minimap*), and the same button on the game's minimap, *Sane UI window*, brings this
+  (the switch *Show the game's minimap*), and the same button on the game's minimap, *SaneUI window*, brings this
   one back, so the two go back and forth:
   - **the zone you are in** (its title, with the subzone, as big as the numbers under it and centred, without a
     rule, in the colour the game's minimap gives it: friendly, hostile, contested, a sanctuary; a long one comes out
@@ -204,16 +204,16 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
     game's **Calendar**, **Clock** (its alarm and settings; while the alarm sounds a
     click stops it) and **Stopwatch** (on the screen), each ticked while open. The calendar opens out of a fight
     only, as the game opens it only so for an addon;
-  - **Sane UI:** first the line **Sound:** with the sound profile in use in a dropdown and a cogwheel beside it
+  - **SaneUI:** first the line **Sound:** with the sound profile in use in a dropdown and a cogwheel beside it
     (Core's sound profiles: each game account keeps its own and sets its last one again at each login). The
     dropdown lists the profiles, the one in use first; choosing one sets it at once. **Disabled**, first of the
-    others and in use at first, is no profile: Sane UI leaves the game's sounds as they are (its tooltip says so). *(changed)* after its name:
+    others and in use at first, is no profile: SaneUI leaves the game's sounds as they are (its tooltip says so). *(changed)* after its name:
     the game's sound settings differ from it now. The cogwheel opens a menu with the game's sound settings: a
     checkbox and a slider for each of *All sound*, *Music*, *SFX*, *Dialogue* and *Ambience*, working at once (the
     profile keeps them only when saved), then **Save** (the settings now into the profile), **Load** (the profile
     set again), **New** (a profile of the settings now, its name asked) and **Delete** (the profile in use, asked
     first; Disabled in use then). While Disabled is in use the menu's title is *Sound settings*, and Save, Load and
-    Delete are greyed out. Then the quick switches Sane UI's modules offer (`Core.Offer`): *Speed Leveling*, the
+    Delete are greyed out. Then the quick switches SaneUI's modules offer (`Core.Offer`): *Speed Leveling*, the
     same as the box at the foot of the bags; on is ticked, off is faint;
   - **AddOns:** the buttons other addons put round the game's minimap, gathered here (with our window as the
     minimap they would otherwise stand on our map only now and then, or nowhere), each its picture round, without
@@ -292,7 +292,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   in the pin filter or the satchel (off at first: no blue area and no white ring there), in place of the game's
   minimap's own (theirs too where its own ground shows: in a dungeon, in Retail).
 - **Quest objectives:** where your quests' open objectives really are, not only their area: of each quest in your log
-  that Sane UI's data holds, a pin at every spawn it knows of what is asked: the quest log's sword on a creature to
+  that SaneUI's data holds, a pin at every spawn it knows of what is asked: the quest log's sword on a creature to
   kill, its sack on what gives an item to loot and on an object to use, the game's speech bubble on someone to speak
   to. They stand without a glow; **with the mouse on a quest in the quest log its pins glow a little**, its own mark
   too where it has one, so you see which pins are whose. Where they stand, the quest has no mark of its own: the ?
@@ -359,7 +359,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   click puts the map pin there.
   They stay until the next `/reload`.
 - **The search** (Saneroki, 2026-11-15): the large field in the middle of the full map's title bar. Click into it (or
-  press the key *Search the map*, Sane UI's section of the game's key bindings, or type `/sane map find <words>`) and
+  press the key *Search the map*, SaneUI's section of the game's key bindings, or type `/sane map find <words>`) and
   type; a moment after the last key the finds stand under it, in groups (NPCs, places, items, quests, zones and
   dungeons, guild, group and friends, what trainers teach), each with its picture, its name (the letters you typed in
   gold), what it is and where (its zone, its levels) and at the right how far it is and an arrow the way to it from
@@ -466,11 +466,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
     markers and drawings, and whoever gets it is asked (who shares which sketch, how many markers and drawings) and
     keeps it as a sketch of its own, from you; shared again (after changes), it replaces their copy.
   - **With a dungeon map addon's players** (Forever; Saneroki, 2026-11-16: "Yes, build it"; "make the map sharing as
-    compatible as possible"): Sane UI also speaks the way of sharing map drawings of a dungeon map addon it knows, so
+    compatible as possible"): SaneUI also speaks the way of sharing map drawings of a dungeon map addon it knows, so
     its players and ours share both ways, whether that addon is installed or not. Its drawings shared in your group,
     guild or by whisper come as a sketch of ours does (the card names the addon they came with, and how many lay on
-    maps Sane UI has no match for); a sketch or markers you share go in its format too, on the same channel, so its
-    players get them as its own shares (and Sane UI's take only our copy). **Paste from ...** in the Sketches menu
+    maps SaneUI has no match for); a sketch or markers you share go in its format too, on the same channel, so its
+    players get them as its own shares (and SaneUI's take only our copy). **Paste from ...** in the Sketches menu
     takes a drawing copied from it (its Export, or its Backup for all of them): each kept at once as a sketch, pasted
     again it replaces that copy. Its dungeon maps are ours where both draw the game's map art; Ruins of Lordaeron is
     fitted through the game's terrain; its maps of pictures of its own (Excavation Site, City of Dalaran, its Wailing
@@ -534,7 +534,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   dungeons) shows its ground in every view. Where the data knows them, each boss as its own 3D model where it stands
   (the game's model of the boss's look; the game's boss mark only where it has no look, or its model would reach
   past the view's edge). Its tooltip is a creature's: its name in a foe's red, under it the dungeon and *Boss*, its
-  model in the portrait's place with the boss's dragon and *??* for its level (in Sane UI's tooltips); then the
+  model in the portrait's place with the boss's dragon and *??* for its level (in SaneUI's tooltips); then the
   sections *Abilities* and *Loot*, each with its icon and name as the game has them (an item in its quality's
   colour; at most ten of each, then how many more; a red ! between the icon and the name of each one not yet
   confirmed), and *! Unconfirmed Data !* while any of them is not yet confirmed by the game (a boss's loot is confirmed by looting it after the kill, its abilities by seeing them cast,
@@ -674,11 +674,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   says which key). Either way the
   hot corner at the top right (a left click there, as *Hotcorner requires leftclick* says) still fills the screen
   with our map. The game's key to show or hide the minimap (in its key bindings) shows or hides our window. The
-  game's map has the button *Sane UI* beside its close button, and the game's minimap one at its top right:
+  game's map has the button *SaneUI* beside its close button, and the game's minimap one at its top right:
   ours is the one again (unticked), the map filling the screen.
 - **Size the small window** by its corner away from the screen's edges (at first the lower left): with the mouse
   on the map the game's grip shows there; drag it. The size is kept. **Move and size it** in Edit Mode too, like
-  every Sane UI window; the section *Expand window* on the page: whether the corner fills the screen, the
+  every SaneUI window; the section *Expand window* on the page: whether the corner fills the screen, the
   animation, the background.
 - `/sane map reset`: the window's first place and size.
 - `/sane nodes`: what finding herbs and ore on the minimap sees now, step by step: the game's calls, our frame over
@@ -884,7 +884,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   bigger model by zooming the map"; turned `Dungeons.FACING`), one lower on
   the screen in front (`Dungeons.SPREAD` levels, all under the bar), hidden while it would reach past the view's
   edge (models are not cut there), let go (`ClearModel`) when the view closes; the mark's icon and mouse only while
-  no model stands on it. A boss's tooltip (`BossTip`) is drawn as a creature's by Sane UI's tooltips
+  no model stands on it. A boss's tooltip (`BossTip`) is drawn as a creature's by SaneUI's tooltips
   (`Core.TipLook`: its `display`, the `boss` dragon, `??`): its name (`Dungeons.FOE`), the dungeon (the set
   *Dungeons*' name of its encounter's instance) and *Boss*; each list headed by `Core.TipSection`; it lists the
   set *Bosses*' `abilities` and `loot` (`Listed`, at most `Dungeons.LINES` each; a set of their own, apart from the
@@ -1168,7 +1168,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   spread, between `Farms.SMALL` and `Farms.LARGE`), the cells round it spent; then the next, while a cell holds
   `Farms.LEAST` of the hottest's heat and `Farms.FEW` spawns, `Farms.MOST` places at most. A dungeon's map (the game's
   map type) is one place, after those outside. Kept per thing (and zone) until Core's data changes. The glow: Art's
-  `mark-soft` in Sane UI's gold, added, `Canvas.Put` over the place's square in yards, alpha `Farms.ALPHA` by heat; the
+  `mark-soft` in SaneUI's gold, added, `Canvas.Put` over the place's square in yards, alpha `Farms.ALPHA` by heat; the
   full map alone. Each place's pin (Find's kind `find`, `Find.MARKER` large, the item's picture in the found ring).
   `Find.Farms` draws a thing's places (the field does at once when an answer has them), `Find.Show` of a place looks
   at it, of an item draws its places and pins only its vendors and quests. A typed word in no find's words (Find's
@@ -1221,7 +1221,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   their shape; our field `Exchange.MARK` in each) are sent by `Plans.Share` and `Markers.Send` on the same channel
   (`Exchange.Send`, its parts on its prefix by `Core.Wire.Say`, at most `Exchange.MOST_PARTS`), and heard
   (`Core.Wire.Hear`, `Exchange.Heard`: its parts per sender and number, `Exchange.GATHERING` at once, dropped after its
-  own time; one with our field left, a Sane UI share came too). A group the game's group finder made shares on its
+  own time; one with our field left, a SaneUI share came too). A group the game's group finder made shares on its
   own channel (`Markers.Group`: `INSTANCE_CHAT`).
 - **The field** (`FindBox.lua`): built on the title bar of Core's window once it fills the screen (`Window.lua`'s
   docked hook, `FindBox.SetShown`), in the middle of the room the bar's controls leave (`TopBar.Gap`, laid anew when it
@@ -1262,7 +1262,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 - **Other addons' buttons** (`Strays.lua`, no frames but a hidden one to keep them in): while our window is the
   minimap, a frame hanging on `Minimap`, `MinimapBackdrop`, `MinimapCluster` or its `MinimapContainer` that has a
   name of its own whose global an addon set (`issecurevariable(name)` says not secure, and which addon; the game's
-  own are secure, Sane UI's left), no larger than `Strays.LARGEST` (64) each way, taking the mouse and not
+  own are secure, SaneUI's left), no larger than `Strays.LARGEST` (64) each way, taking the mouse and not
   protected, its name not ending in a number (one of a pool: an addon's marks of places in the world on the
   minimap, its quests', many at once, are no buttons and stay there; Saneroki, 2026-11-10), is held: its parent,
   points, scale, strata and level kept, and whether its addon fixed its strata and level, the clicks the cluster's
@@ -1300,7 +1300,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   its title, the game's X; left of the X, at its level, `Satchel.swap`: Core's `Window.Swap`, whose click closes the page and
   sets `nativeMinimap`, as the dropdown *Classic windows* does), beside the window toward the screen's middle, a scroll frame in it no higher than
   `Satchel.ROOM` of the screen. Its sections, each a title over the thin golden line (the zone's: none, `Title`) and a grid
-  of `Satchel.COLUMNS` cells, a section with no cells left out: *Sane UI* (first the sound line, `AudioLine.Place`,
+  of `Satchel.COLUMNS` cells, a section with no cells left out: *SaneUI* (first the sound line, `AudioLine.Place`,
   while the client has the game's sound settings, `AudioLine.Offered`; then `Core.Switches`, the modules' quick switches as offered; a
   click its module's `Click` with the mouse button and the cell; filled anew when `Core.OnSwitches` tells a change),
   *AddOns* (`Strays.List`, A to Z), *Pins* (`ns.KINDS` offered here but the section `ns.TRACKING`, in the
@@ -1602,7 +1602,7 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   (`RepairUIPanelState`). In a fight the game's map stays open as the game's (hidden by our code then, its
   `OnHide` would run as ours in the fight). To see it in the game: `/console taintLog 1`, `/reload`, a click on a
   quest in the objective tracker (our map opens), then C (the character sheet): `Logs/taint.log` has no line of
-  Sane UI's for it.
+  SaneUI's for it.
 - **The setup** (`Setup.lua`): the module's own steps, words and boards handed to Core (`Core.Onboarding.Add`,
   title *Map*); the window, its controls and keys are the addon Onboarding's (`src/Onboarding/README.md`). The hot
   corner's page words the Edge section's switch `expandClick` as two round buttons (a step's own entry `{ key, text,
@@ -1673,8 +1673,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 
 | File | What it holds |
 |---|---|
-| `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
-| `Art/banner.blp`, `Art/icon.blp` | The module's logo (a compass rose; *Navigation* on its banner): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/maps-banner.png` and `maps-icon.png` |
+| `SaneUI_Navigation.toc` | The addon: needs Core (`SaneUI`), stands under SaneUI in the addon list |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (a compass rose; *Navigation* on its banner): one of SaneUI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of SaneUI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/maps-banner.png` and `maps-icon.png` |
 | `Navigation.lua` | The module's table (`ns`), its texts and settings, `/sane map`, `GiveBack` |
 | `Camera.Retail.lua` | Retail's camera: one map at a time from the game's map tree (into a map, out to the one over it, the wheel within it, its art's layer), following onto the map the player is on; Retail's two answers of the map tree (`Coords.PlaneOf`, `Coords.Box`). Read in Retail alone |
 | `Coords.lua` | Map, world and plane; a map's box; the map tree, the planes (the continents, and a map of its own on the world map) and the links between them, the top of the tree and the continents beside the world map (Retail's); the terrain's grid; the player's place. No frames |
@@ -1714,10 +1714,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Found.lua` | The herbs and ore the game's minimap shows: found by asking its tooltip at points of it, kept in yards, drawn over it in their pictures, each a button (tooltip; a click: a ping there, a double click: the map pin there); what is found goes to `Core.Sight` for the guide's detours; `/sane nodes`. Forever from build 70862 (`Found.SILENT`): found under the real mouse alone, on the spawn of Core's nearest it. Where herbs and ore can be: Core's spawns around you, half opaque, under the game's minimap's dots (`Found.Draws`) |
 | `Sparkles.lua` | Gold sparkles on the plate of the herb or ore the interact key would gather; the game's interact key settings set and put back |
 | `Glints.lua` | Far herbs and ore: the found ones beyond the sparkles' reach marked on the screen in their direction (their picture in the leather ring, turned so its point shows the way to them, their yards), through a camera taken to be behind you; those outside the view at the screen's edge |
-| `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of Sane UI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
+| `Art/mark-pointed.blp`, `Art/mark-round.blp` | The leather ring with its point (the far herbs and ore) and round (the minimap's found ones): original art of SaneUI, from the render Saneroki picked (`assets/interface/far-marks/leather-ring.png`), made by `dev/tools/mark-art` (`assets/FarMarks/`) and `dev/tools/art` |
 | `Art/mark-soft.blp` | The soft round mask of a herb's or ore's picture where it can be (Found.lua, PinView.lua): white, whole within half its radius and falling smoothly to clear at its edge, drawn by `dev/tools/mark-art --soft` (`assets/FarMarks/soft-mask.png`), made by `dev/tools/art FarMarks-soft` |
 | `Strays.lua` | Other addons' buttons from round the game's minimap held for the satchel, and the addons of the game's addon compartment; given back with the minimap (no frames but a hidden one) |
-| `Satchel.lua` | The small map's face under the mouse (the time at its top, the zone at its bottom, the satchel's button) and the satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; Sane UI's sound line and quick switches, the addons' buttons, the pins, and the tracking (the pin filter's section Tracking and the game's tracking spells), in the kit's bronze |
+| `Satchel.lua` | The small map's face under the mouse (the time at its top, the zone at its bottom, the satchel's button) and the satchel: its button on the small map and its page: the zone with the times, frame rate, latency, mail and the game's calendar, clock and stopwatch; SaneUI's sound line and quick switches, the addons' buttons, the pins, and the tracking (the pin filter's section Tracking and the game's tracking spells), in the kit's bronze |
 | `AudioLine.lua` | The satchel's sound line: Core's sound profile in use in a dropdown, a cogwheel with the game's five sounds (checkbox and slider) and the profile's Save, Load, New and Delete |
 | `Native.lua` | The game's map kept closed, but while it shows its quest log and the game's quest log is chosen (Classic windows); its keys |
 | `QuestLog.lua` | The quest log, a window of its own over the full map; pinned, on the screen while the map is small too, in place of the game's quest tracker; sorted by proximity, level, zone or type |
@@ -1727,13 +1727,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 | `Find.lua` | What the full map's search finds and where: Core's NPCs, objects, places, items and their sources, quests, what trainers teach; the game's zones, dungeons, flight points, log, guild, group, friends, corpse; the words typed read (nearest, who sells, in a zone, levels, not, or); the finds ranked and measured; their pins (kind `find`). No frames |
 | `Plans.lua` | Your plans (*sketches* to players): markers and drawings grouped, the active one, shown or hidden, undo and clear, a plan shared in parts and kept whole (no frames) |
 | `Draw.lua` | Your drawings drawn on the map (the canvas' layer `sketch`) and on a dungeon's floor, the palette's tools at work (pen, line, arrow, circle, eraser, marker), your markers on a floor |
-| `Exchange.lua` | Sketches shared both ways with a dungeon map addon Sane UI knows, in its own way of sharing (Core's words for it): its share strings written and read, its drawings as ours and ours as its, its shares heard, ours sent in its format too; **Paste from ...** in the Sketches menu (no frames) |
+| `Exchange.lua` | Sketches shared both ways with a dungeon map addon SaneUI knows, in its own way of sharing (Core's words for it): its share strings written and read, its drawings as ours and ours as its, its shares heard, ours sent in its format too; **Paste from ...** in the Sketches menu (no frames) |
 | `DrawBar.lua` | The dropdown Sketches on the full map's bar (each sketch shown or hidden, its own menu) and the palette: the tools, the colours, the widths, the plan's dropdown and its menus, Undo and Clear |
 | `Markers.lua` | Your own markers: put with Alt and a click, kept for the account; their pins (kind `mark`) and their card (a small window in the kit's bronze: reading and editing, Move, the map pin, Delete) |
 | `Whereabouts.lua` | Where your guild's members stand: asked of their SaneUI on Core's wire (kind `H`) while the map's search shows them, answered by a whisper while *Where I am, for my guild's map search* is on; kept a few seconds in memory alone (no frames) |
 | `Farms.lua` | Where to farm a thing: the places thickest with what gives it (its creatures by their chance, its nodes), clustered from Core's spawns on a grid of cells; their soft gold glow on the full map (the canvas' layer `farms`) |
 | `FindBox.lua` | The search's field in the middle of the full map's title bar and the finds' list under it: groups, rows (picture, name, what and where, how far, the arrow), the keys, the menu, the tooltips, the words searched before; the key *Search the map* |
-| `Bindings.xml` | The keys *Sane UI's map* (full screen and back; once bound, the game's map key opens the game's map) and *Search the map* (the full map, the cursor in its search), in Sane UI's section of the game's key bindings |
+| `Bindings.xml` | The keys *SaneUI's map* (full screen and back; once bound, the game's map key opens the game's map) and *Search the map* (the full map, the cursor in its search), in SaneUI's section of the game's key bindings |
 | `Window.lua` | Core's window: the top right corner, the full screen, the two cameras, the view buttons |
 | `Setup.lua` | The setup, step by step: its six pages' words, switches and keys, their boards, the big arrow into the hot corner (the window is the addon Onboarding's) |
 | `Art/Terrain/*.blp` | The terrain's overview: the game's minimap textures, smaller, the water cut away, made by `dev/tools/terrain-art` from the game's files |
@@ -1855,7 +1855,7 @@ Tests: `dev/tests/navigation.lua`.
   double click (`ns.TEXT.pinDouble`).
 - **2026-11-16, Disabled in the sound line:** Saneroki: "a preset called disabled that just don't interfere with the
   audio at all ... that should be the default". Core's sound profiles start on Disabled (`Core.Audio.NONE`); the line
-  names it, its tooltip says Sane UI leaves the game's sounds alone, and the cogwheel greys out Save, Load and Delete
+  names it, its tooltip says SaneUI leaves the game's sounds alone, and the cogwheel greys out Save, Load and Delete
   while it is in use. The top right corner fills the screen at a left click now (Core's *Hotcorner requires leftclick*,
   on at first in every module).
 - **2026-11-16, zoomed out too far, the small map comes back in as you walk:** Saneroki: "If you are zoomed out to
@@ -2154,7 +2154,7 @@ Tests: `dev/tests/navigation.lua`.
   showed anywhere until *Failed*. His word: "The timer should always show even when the quest tracker / log is hidden.
   Because I like things hidden unless moused over. But i need to know when i have a timer". Now a strip at the log's
   top counts each down, in sight while the log rests, is folded or switched off.
-- **2026-11-06, a button made at the login in the satchel:** Saneroki found no button of the guild addon Sane UI knows
+- **2026-11-06, a button made at the login in the satchel:** Saneroki found no button of the guild addon SaneUI knows
   in the satchel. That addon makes its button only at the login, and another addon of his gathers minimap buttons
   into a bar of its own a second after the login; the satchel looked again only after three seconds (its 2 seconds
   went through a second's wait), so that bar had it first and it was no longer on the minimap. Now the satchel also
@@ -2183,7 +2183,7 @@ Tests: `dev/tests/navigation.lua`.
 - **2026-11-04, sound profiles in the satchel:** Saneroki plays two clients of one installation at once and
   wants to hear one, the other or neither, the recording keeping the chosen one's sound. The game keeps its sound
   settings in one file for both, so the profiles are Core's, per game account, the last one set again at each
-  login (`Core.Audio`); the satchel's section *Sane UI* starts with their line, `Sound: <profile> <cogwheel>`
+  login (`Core.Audio`); the satchel's section *SaneUI* starts with their line, `Sound: <profile> <cogwheel>`
   (`AudioLine.lua`), as asked: the profile in use first, the cogwheel with the game's five sounds and Save,
   Load, New and Delete.
 - **2026-11-02, pins at the exact spawns of your quests' objectives:** Saneroki wanted the places themselves on the
@@ -2215,7 +2215,7 @@ Tests: `dev/tests/navigation.lua`.
   every 7 yards you move (the setting *Finders in turn*, in yards, was seconds), Find Fish among them (the pin
   filter's new *Found fishing pools*), only those you know; and alive again after dying, the finder wanted comes
   back on by itself (`Nodes.lua`: `PLAYER_ALIVE`, `PLAYER_UNGHOST`).
-- **2026-10-26, the satchel's switches:** as Saneroki asked, the satchel has a section *Sane UI* with the modules'
+- **2026-10-26, the satchel's switches:** as Saneroki asked, the satchel has a section *SaneUI* with the modules'
   quick switches (Speed Leveling's guide on, paused or off), the latency home and to the world on one line, and no
   *AddOns* section while no other addon has a button for it.
 - **2026-10-25, the satchel and the middle click:** as Saneroki asked, a middle click brings the map back onto you,
@@ -2281,7 +2281,7 @@ Tests: `dev/tests/navigation.lua`.
   click, and a pin's tooltip says no words twice (Saneroki).
 - **2026-10-23, tooltips by role; bosses as creatures:** as Saneroki asked, an NPC's pin is named by what it is
   (*Bowyer*, *Warrior Trainer*, *Quest giver*), not by its name; *! Unconfirmed Data !* in place of the old sentence,
-  a divider in Sane UI's tooltips; a boss's tooltip is a creature's (its model, the boss's dragon, *??*), its abilities
+  a divider in SaneUI's tooltips; a boss's tooltip is a creature's (its model, the boss's dragon, *??*), its abilities
   and loot sections of their own; an item's details with Alt: *Uncollected*, its effects, then its stats.
 - **2026-10-22, no ride straight back:** 5 of 200 routes between NPCs rode a lift up and straight down again (the
   Undercity's, Gnomeregan's), only so that a walk could follow a walk: a place reached on foot lets no walk go on,
@@ -2394,7 +2394,7 @@ Tests: `dev/tests/navigation.lua`.
 - **2026-10-21, the game's map hidden, never closed; instances:** a map the game opened is hidden by its own `Hide`,
   not the game's panel functions (which left the character sheet to open as ours); the game's map chosen in
   *Classic windows* opens by its key. In an instance the small window shows the game's minimap with its own ground.
-  The button *Sane UI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
+  The button *SaneUI* only on the game's own minimap and map; dungeon lists kept, boss models under the bar, a
   right click back to the map it was opened from; the canvas asks for the zone a few times a second, places only
   the pins on what the game tells, and lays nothing out on the window's way.
 - **2026-10-30, one switch:** no pin and no close button on the quest log: the button *Quest Log* on the full map's bar turns it on

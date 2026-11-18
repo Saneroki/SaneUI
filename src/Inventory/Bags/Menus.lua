@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Menus
+--  SaneUI - Inventory - Bags - Menus
 --  What the player chooses about the bag window's items and categories (kept
 --  by Categories.lua), by the game's menus (MenuUtil), by letting items go
 --  over a category and by the game's dialogs:

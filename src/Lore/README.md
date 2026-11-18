@@ -1,4 +1,4 @@
-# Sane UI: Lore
+# SaneUI: Lore
 
 **Status:** built: talks with NPCs as a scene (gossip, a quest giver's greeting, a quest offered, in progress and handed in), see-through over the world, the interface out of sight meanwhile, a quest's rewards read for you · **Since:** 2026-10-28 · **Addon:** `SaneUI_Lore` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
@@ -16,8 +16,8 @@ Space goes on. An NPC that has only its service for you (a vendor, a flight mast
 no talk; Shift shows the talk. A fight ends the talk; the game's own windows are back whenever Lore steps aside or fails.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Lore* under *Sane UI* in the game's addon list (the game needs a
-  restart when it was not in the list before). Its options: Esc > Options > AddOns > Sane UI > Lore.
+- **Switch it on or off:** tick or untick *Lore* under *SaneUI* in the game's addon list (the game needs a
+  restart when it was not in the list before). Its options: Esc > Options > AddOns > SaneUI > Lore.
 - **Talk to an NPC** as always (a right click, the interact key, Speed Leveling's key). The talk appears:
   - **the face** at the left: the NPC's own model, talking while a paragraph is new; something with no face (a
     board, a book) shows the game's quest book;
@@ -151,7 +151,7 @@ no talk; Shift shows the talk. A fight ends the talk; the game's own windows are
   game's runs from our code. Kept in sight by `SetIgnoreParentAlpha(true)` for that time (what each did before
   noted and put back): the talk's frame (always), `StaticPopup1`–`4`, `UIErrorsFrame`; `GameTooltip`,
   `ShoppingTooltip1` and `2` only while the mouse is on one of the talk's rewards, so the clear frames under the
-  mouse show no tooltip. Sane UI's tooltip panels (Tooltips) follow their tooltip's setting. The clear frames still
+  mouse show no tooltip. SaneUI's tooltip panels (Tooltips) follow their tooltip's setting. The clear frames still
   take the mouse where the talk does not lie over them.
 - **Straight to the service** (`Service.lua`): Talk's `GOSSIP_SHOW` asks `Service.Take` first. An option's kind is
   the game's own icon of it (`option.icon`, `Interface\GossipFrame\*GossipIcon`): vendor, taxi, trainer, banker,

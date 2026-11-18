@@ -1,8 +1,8 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Relay
---  Auction prices shared with the guild and the group (Doc/ideas/Data.md, *Scans*): when a member's Sane UI keeps a full
+--  SaneUI - Core - Data - Relay
+--  Auction prices shared with the guild and the group (Doc/ideas/Data.md, *Scans*): when a member's SaneUI keeps a full
 --  scan, every other member's prices move too, at once and by themselves. So do those of this player's other accounts
 --  running in the same guild or group, who are members like any other. The way of it:
 --
@@ -268,7 +268,7 @@ end)
 Relay.TEXT = {
     heard = "auction prices told by your guild and group since the login: %d, the last from a scan at %s.",
     shared = "members' auction prices: %d standing, %d waiting for a second sender, %d senders not heard.",
-    forgotten = "Sane UI forgot the auction prices your guild and group sent. Your own stand as they were.",
+    forgotten = "SaneUI forgot the auction prices your guild and group sent. Your own stand as they were.",
 }
 Data.reports[#Data.reports + 1] = function()
     if Relay.heard.at then Core.Print(Relay.TEXT.heard:format(Relay.heard.items, Core.ClockAt(Relay.heard.at))) end

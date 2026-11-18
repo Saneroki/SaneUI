@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Camera
+--  SaneUI - Navigation - Camera
 --  Where a view looks. Each view has its own (the small window and the full
 --  screen keep their own zoom and place). Knows no frames: the canvas gives it
 --  the mouse's moves in its units, x to the right and y up, and draws what it

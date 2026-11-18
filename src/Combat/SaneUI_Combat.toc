@@ -1,9 +1,9 @@
 ## Interface: 16001, 120105
 ## Title: Combat
-## Notes: Sane UI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them, your cast and breath part of your frame; one frame for your party and raid, up to forty, sized in Edit Mode; your marks of auras and their icons where you track them; rings around the mouse for your global cooldown and cast; a threat and damage meter of your group; frames out of sight at rest.
+## Notes: SaneUI's frames for the fight, being built. Your frame, your target's and your focus's in a nameplate's look, their targets and your pet under them, your cast and breath part of your frame; one frame for your party and raid, up to forty, sized in Edit Mode; your marks of auras and their icons where you track them; rings around the mouse for your global cooldown and cast; a threat and damage meter of your group; frames out of sight at rest.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\AddOns\SaneUI_Combat\Art\icon

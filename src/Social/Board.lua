@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Board
+--  SaneUI - Social - Board
 --  The full screen's windows, while the window stands full: on Core's board
 --  (Core.Board), so they share the screen as you arrange them, in layouts
 --  behind tabs in the full window's title bar (drag a window's head to move
@@ -27,7 +27,7 @@ local _, ns = ...
 --  Default makes a layout of them), laid out for the screen as it is until
 --  you change it. A layout without the conversations has no chat in it.
 --
---  A panel is Core's (Board.lua: a plate in Sane UI's look, a head with its
+--  A panel is Core's (Board.lua: a plate in SaneUI's look, a head with its
 --  title at the left, its buttons and the X at its right, its body under the
 --  head); what is in it is its part's. A part listens to the game only while
 --  its panel is shown (Part.Show). A part runs apart from the chat (ns.Safe):

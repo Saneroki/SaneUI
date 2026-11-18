@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Talks
+--  SaneUI - Social - Talks
 --  The conversations: every whisper, and the chat of each group you are in,
 --  each in a conversation of its own, apart from the chat's log (Log.lua). One
 --  for each player whispered with (a Battle.net friend by their BattleTag),

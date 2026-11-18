@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Glints
+--  SaneUI - Navigation - Glints
 --  The herbs and ore the minimap found (Found.lua) marked on the screen however
 --  far they are: the picture of what each gives, round in a ring of stitched
 --  leather that runs out into a point the way to it (up: ahead, right: to your
@@ -11,7 +11,7 @@ local _, ns = ...
 --  Far herbs and ore on the screen.
 --
 --  Placed roughly, on purpose: the game tells no addon where its camera looks.
---  Sane UI takes it as it usually is: behind you as far as its zoom
+--  SaneUI takes it as it usually is: behind you as far as its zoom
 --  (GetCameraZoom), looking the way you face (GetPlayerFacing), tilted down a
 --  little (Glints.PITCH), through the angle of the game's setting cameraFov
 --  (taken as the angle across a 16:9 screen, the height's angle kept on other
@@ -65,7 +65,7 @@ local stale = false -- the camera turned away from your facing, not yet behind y
 local settling = 0  -- seconds moved since
 
 -------------------------------------------------------------------------------
---  The camera Sane UI takes
+--  The camera SaneUI takes
 -------------------------------------------------------------------------------
 -- The screen's scale for the camera: UIParent units per unit of the view's tangent, from the height's angle.
 local function Scale(height)

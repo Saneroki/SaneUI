@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Demo
+--  SaneUI - Core - Demo
 --  /sane window: a small window to try what Core gives every window, a panel
 --  (Window.KINDS). Its title bar moves it (let go in the middle of the screen,
 --  it docks there) and has the buttons of a panel, with one of the module's own
@@ -21,7 +21,7 @@ local OPEN_WIDTH, OPEN_HEIGHT = 380, 250
 local INSET = 14                       -- what a view holds, from its sides and bottom
 local MOST, STEP, AHEAD = 100, 15, 25  -- the bar: its whole, one Add, the part still to come
 local TEXT = {
-    title = "Sane UI window",
+    title = "SaneUI window",
     window = "Window",
     bar = "Bar",
     help = "Rest the mouse on me and I open; take it away and I close a moment later, unless Keep open is ticked.\n\n"
@@ -34,7 +34,7 @@ local TEXT = {
     again = "Start again",
     againTip = "The bar back to nothing.",
     number = "%d / %d",
-    about = "a window to try Sane UI's windows with: rest the mouse on it, dock it in Edit Mode, fill the screen from its edge (/sane window reset; reset all: every window of Sane UI)",
+    about = "a window to try SaneUI's windows with: rest the mouse on it, dock it in Edit Mode, fill the screen from its edge (/sane window reset; reset all: every window of SaneUI)",
     resetAll = "every window is back at its first place and size.",
 }
 

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Coords
+--  SaneUI - Navigation - Coords
 --  The spaces the map is drawn in, the map tree, and the one place that turns
 --  one space into another. Knows no frames.
 --

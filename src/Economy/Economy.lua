@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Economy
+--  SaneUI - Economy
 --  The module's own table (ns in all its files), its words, its sizes, its
 --  settings, and how it stands down.
 --

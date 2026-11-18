@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Bank
+--  SaneUI - Inventory - Bags - Bank
 --  The bank: a window of its own on the module's full screen (Board.lua, the
 --  key "bank"), there while the character is at a banker (its part's
 --  Present): the tabs of each bank the game lets the player see

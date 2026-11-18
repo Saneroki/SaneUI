@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Aura
+--  SaneUI - Tooltips - Kinds - Aura
 --  The tooltip of a buff or a debuff:
 --
 --      POWER WORD: FORTITUDE           [icon]

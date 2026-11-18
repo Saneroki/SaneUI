@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Spellbook
+--  SaneUI - Core - Spellbook
 --  What a spellbook shows beyond the game's own spells, between the module that
 --  knows it and the one whose book shows it (Saneroki, 2026-11-06: Abilities'
 --  spells still to learn, its weapon skills, its Home page and its reservations

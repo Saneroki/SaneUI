@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities
+--  SaneUI - Abilities
 --  The module's own table (ns in all its files), the action slots, its saved
 --  settings, the update pipeline and its commands (/sane abilities).
 --
@@ -35,7 +35,7 @@ local ADDON, ns = ...
 --  bottom middle (Screen.lua), filling the screen at a left click on the middle half of the bottom edge, and on
 --  Core's board there (Board.lua) our own spellbook (Spellbook/) and talents (Talents/), made after WoW: Forever's,
 --  or in Retail the game's own window of both (GameWindow.lua, ns.Serves); the trainer's window at a trainer
---  (Trainer.lua); a talent planner Sane UI knows; the action bars as windows (BarsWindow.lua); Sane Macros
+--  (Trainer.lua); a talent planner SaneUI knows; the action bars as windows (BarsWindow.lua); Sane Macros
 --  (Macros/); the aura history (AuraHistory.lua). Your spellbook and talents keys open ours (Keys.lua). The game's
 --  action bars clean and out of sight at rest (ActionBars.lua), its experience and stance bars gone, its menu bar
 --  on mouseover (GameBars.lua). The menu of an aura or a spell (your marks of it, Add tracking) is Combat's, through
@@ -265,7 +265,7 @@ ns.TEXT = {
     historyCast = "Your cast in a fight",
     historyCastShared = "Cast in a fight",
     historyShare = "Share casts in a fight with your group",
-    historyShareTip = "After each fight your casts of buffs and debuffs in it go to the Sane UI of your party or raid, and theirs come into your aura history, with whom and when: in a fight the game keeps them from addons, but each player's own casts not. Nothing is sent in a fight. Off: yours are not sent and theirs not taken.",
+    historyShareTip = "After each fight your casts of buffs and debuffs in it go to the SaneUI of your party or raid, and theirs come into your aura history, with whom and when: in a fight the game keeps them from addons, but each player's own casts not. Nothing is sent in a fight. Off: yours are not sent and theirs not taken.",
     historyWhat_damage = "Damage in a fight",
     historyWhat_healing = "Healing in a fight",
     historyWhat_taken = "Hit your group",
@@ -298,8 +298,8 @@ end
 -- The module's switches: on its page in the options (Core's) and in the spellbook's own menu (Book/Menu.lua).
 -- Two sections: the book itself, with the four switches under the one they all need, then the action bars.
 local OPTIONS = {
-    { key = "book", default = true, text = "Sane UI lays out the spellbook pages",
-      header = "Spellbook", headerTip = "The game's spellbook, laid out by Sane UI.",
+    { key = "book", default = true, text = "SaneUI lays out the spellbook pages",
+      header = "Spellbook", headerTip = "The game's spellbook, laid out by SaneUI.",
       tip = "Needed in the game's spellbook for the grey spells, the Home page, compact pages and moving or resizing; the full screen's spellbook shows the grey spells and Home without it. Off: the game draws its pages itself after /reload, a way out if they ever look wrong." },
     { key = "showHidden", default = true, text = "Show unlearned spells", parent = "book",
       tip = "The spells you have not learned yet are listed in grey, in the tab they will be in. Drag one onto an action bar button to reserve that button for it." },

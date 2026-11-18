@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Art
+--  SaneUI - Guild - Art
 --  The module's pictures, by name. Its own are still to be drawn
 --  (Doc/ideas/Guild.md, *Pictures*; the sketches: dev/imagegen/sets/guild/):
 --  until then each name stands for a placeholder of the game's own art. A view

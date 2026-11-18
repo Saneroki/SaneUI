@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Alts - Items
+--  SaneUI - Inventory - Alts - Items
 --  What the chosen character has, as last seen (Snapshot.lua), made into what
 --  the bags draw with, so that it looks and behaves as they do: an item as a
 --  record of the bags' kind (Items.Record), a place as a section for the bags'

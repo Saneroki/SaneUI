@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Alts - Roster
+--  SaneUI - Inventory - Alts - Roster
 --  Whose things the window shows: a dropdown on its title line (Snapshot.
 --  Characters; Saneroki, 2026-10-30: a column saved for the items), its word
 --  the chosen one's name in its class's colour. In its menu each character by

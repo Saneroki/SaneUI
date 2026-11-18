@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Live
+--  SaneUI - Tooltips - Live
 --  The parts of a panel that change while it is shown and are therefore not
 --  drawn from the model but kept up to date here: a unit's health and power,
 --  whom it targets, its buffs and debuffs, and a buff's running time.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""saneui: every script of Sane UI under one command, by a name that says what it does (README.md, *Building*).
+"""saneui: every script of SaneUI under one command, by a name that says what it does (README.md, *Building*).
 
   saneui                          the commands, by group
   saneui <command> [args ...]     runs one: saneui installdev, saneui showerrors, saneui board list
@@ -40,7 +40,7 @@ GROUPS = {
         "makechangelog": (["dev/tools/release", "changelog"], "draft changelog parts for a channel's uploads, to rewrite",
                           None),
         "installed": (["@installed"], "which build the game has: dev or release, its version", 'which build the game has'),
-        "freshinstall": (["dev/tools/fresh-install", "start"], "a new player's first Sane UI in both games: your WTF and "
+        "freshinstall": (["dev/tools/fresh-install", "start"], "a new player's first SaneUI in both games: your WTF and "
                          "Interface set aside, the game's own settings kept, no other addon (freshinstall navigation "
                          "inventory: those and Core alone; a .zip named: a package)",
                          "a new player's fresh install"),
@@ -70,7 +70,7 @@ GROUPS = {
         "makeimages": (["dev/tools/imagegen"], "a list of prompts through ComfyUI", 'prompts through ComfyUI'),
         "linkprivate": (["dev/tools/private-folder", "link"], "the common folder assets/generated into the private folder (where, check)",
                         None),
-        "makecomfyapps": (["dev/tools/comfy-library"], "Sane UI's workflows and recipes as ComfyUI templates and apps",
+        "makecomfyapps": (["dev/tools/comfy-library"], "SaneUI's workflows and recipes as ComfyUI templates and apps",
                           None),
         "makeart": (["dev/tools/art"], "the game's textures from the drawings", None),
         "makegameart": (["dev/tools/game-art", "make"], "the game's own interface art cut out, numbered, on one page",
@@ -81,7 +81,7 @@ GROUPS = {
                         "the numbered game art in the browser, to mark what to use", "game art, numbered"),
         "measureart": (["dev/tools/art-measure"], "how sharp the game draws a picture", None),
         "makeflipbook": (["dev/tools/flipbook"], "a clip's frames as a flipbook", None),
-        "makelogos": (["dev/tools/logo-art"], "Sane UI's logos: Core's and each module's badge, avatar, banner",
+        "makelogos": (["dev/tools/logo-art"], "SaneUI's logos: Core's and each module's badge, avatar, banner",
                       None),
         "makeshapes": (["dev/tools/shape-art"], "the masks of Core's round shapes", None),
         "makesmiley": (["dev/tools/smiley-art"], "Social's smiley", None),
@@ -101,7 +101,7 @@ GROUPS = {
                      "game's, overlaid or side by side", "finished maps compared"),
         "webpages": (["dev/tools/web-pages"], "every tool's web page, one server on one port: which are ready",
                      "tools' web pages"),
-        "showuilab": (["dev/tools/web-pages", "open", "lab"], "the interface lab: Sane UI's Lua drawn in the browser with a fake "
+        "showuilab": (["dev/tools/web-pages", "open", "lab"], "the interface lab: SaneUI's Lua drawn in the browser with a fake "
                       "server", "interface lab: Lua in browser"),
         "checkuilab": (["dev/tools/ui-lab", "check"], "a scene of the interface lab run without the page, its log", None),
     },
@@ -119,7 +119,7 @@ GROUPS = {
         "compareblizzard": (["dev/tools/blizzard"], "a new game build's interface code against ours", None),
         "readpatch": (["dev/tools/blizzard", "patch"], "after a game patch: its interface exported, our patch notes, "
                       "the todo list and the brief of the fixing session (forever, retail)", "after a patch: patch notes"),
-        "fixpatch": (["dev/tools/blizzard", "fix"], "the session that makes Sane UI comply with the newest patch "
+        "fixpatch": (["dev/tools/blizzard", "fix"], "the session that makes SaneUI comply with the newest patch "
                      "(--print: the prompt only)", "the patch's fixing session"),
         "patchday": (["dev/tools/patchday"], "a new game build beyond its interface: the client's tables, the world, the "
                      "patch notes, the map's repaint (the skill /patchday)", None),
@@ -166,7 +166,7 @@ def installed():
     for game, folder in (("Forever", GAME), ("Retail", RETAIL)):
         toc = folder / "Interface" / "AddOns" / "SaneUI" / "SaneUI.toc"
         if not toc.is_file():
-            print(f"No Sane UI in {game}'s game ({folder / 'Interface' / 'AddOns'}).")
+            print(f"No SaneUI in {game}'s game ({folder / 'Interface' / 'AddOns'}).")
             missing = True
             continue
         fields = {}
@@ -175,7 +175,7 @@ def installed():
                 key, value = line[3:].split(":", 1)
                 fields[key.strip()] = value.strip()
         build = fields.get("X-SaneUI-Build", "dev (built before builds were marked)")
-        print(f"In {game}'s game ({folder.name}): Sane UI {fields.get('Version', '?')}, {build}.")
+        print(f"In {game}'s game ({folder.name}): SaneUI {fields.get('Version', '?')}, {build}.")
         if (folder / "SaneUI-FreshInstall").is_dir():   # dev/tools/fresh-install's HOLD
             print(f"  A fresh-install test is on in {game}'s game: saneui myinstall puts your own setup back.")
     return 1 if missing else 0
@@ -193,7 +193,7 @@ def overview():
 
 
 def card():
-    """The Konsole greeting's Sane UI block (fish_greeting.fish draws it): a line each, side (L or R), kind (h a
+    """The Konsole greeting's SaneUI block (fish_greeting.fish draws it): a line each, side (L or R), kind (h a
     group's name, r a command and its words, b a gap), text. The first group stands left, the others right."""
     lines = [("L", "h", "Commands"), ("L", "r", "saneui\tevery command, by group"),
              ("L", "r", "start/stop <name>\tpause · resume · status"), ("L", "b", "")]

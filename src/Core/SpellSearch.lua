@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - SpellSearch
---  The search over every spell Sane UI knows (Core's for every module since
+--  SaneUI - Core - SpellSearch
+--  The search over every spell SaneUI knows (Core's for every module since
 --  2026-11-18, when the full screen went to Abilities: Combat's aura lists and
 --  reminders ask it for auras, Abilities' Sane Macros for any spell), in
 --  groups: each class's auras (the spells of its class lines that put an aura

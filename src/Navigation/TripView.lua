@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - TripView
+--  SaneUI - Navigation - TripView
 --  The overlay of a trip, centred high up the screen, the words over its line
 --  TripView.HIGHER over a toast's height (Core.TOAST_TOP; Saneroki, 2026-11-11):
 --  a fine golden

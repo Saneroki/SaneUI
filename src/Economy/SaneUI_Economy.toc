@@ -3,7 +3,7 @@
 ## Notes: A tab Deals on the game's auction house window, open first: what is cheap right now and worth buying to sell on, and what of yours, on any character, is worth selling right now, each a click away; and how much gold you have on sale, in the window's corner. From the prices your full scans gather. And a tab Banker on the mail window, open first: your banker's name remembered, and every trade good and reagent in your bags sent to it with one Send.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\AddOns\SaneUI_Economy\Art\icon

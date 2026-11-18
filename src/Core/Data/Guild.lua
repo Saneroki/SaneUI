@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Guild
+--  SaneUI - Core - Data - Guild
 --  The guild's records (CLAUDE.md, *Game facts, not people*: people information, built locally for each user,
 --  never shipped; Doc/ideas/Guild.md, *The data*): the game's roster as it is now, its history (who joined,
 --  left, went up or down a rank, reached a level) and every member's records, each of a kind (card: who the
@@ -26,7 +26,7 @@ local Core = SaneUI.Core
 --      Guild.Publish(kind, text)     this character's record of that kind changed: kept, and sent while allowed
 --      Guild.Allow(kind, on)         whether this character sends its records of that kind (the module's switch)
 --      Guild.Card()                  this character's card, read from the game now
---      Guild.Peers()                 [key] = { seen, version }: who in the guild runs Sane UI, as heard
+--      Guild.Peers()                 [key] = { seen, version }: who in the guild runs SaneUI, as heard
 --      Guild.Rights()                what the player may do in the guild: invite, remove, promote, demote, notes,
 --                                    officerNotes, viewOfficerNotes, motd, info, officer
 --      Guild.Sync()                  ask the guild for what is newer (once a minute at most), and the game for

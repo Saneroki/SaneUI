@@ -1,9 +1,9 @@
 local Config = SaneUI.Core.Config -- Settings.lua
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Settings - Save
+--  SaneUI - Core - Settings - Save
 --  The save window (Saneroki, 2026-11-09): after a change in a menu (the game's
---  options, Edit Mode, the addon list, Sane UI's options over a full screen;
+--  options, Edit Mode, the addon list, SaneUI's options over a full screen;
 --  Core/Unsaved.lua) it stands beside the menu, while the menu can still be
 --  used, and stays until Yes or No, the menu closed too (no close button, Esc
 --  leaves it). It lists what changed since the last save and, under Save to,

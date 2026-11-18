@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""A new player's first Sane UI tried in the real game, then the developer's own setup back (Saneroki, 2026-11-15:
+"""A new player's first SaneUI tried in the real game, then the developer's own setup back (Saneroki, 2026-11-15:
 "a workflow where I can quickly test out a fresh install of my addon ... Like if someone has already played wow
 before and now installs saneUI ... and then quickly switch back to my own configured personalised setup").
 
 saneui freshinstall sets each game folder's WTF and Interface aside, whole, into <game>/SaneUI-FreshInstall/ (a
 rename on the same disk: instant, nothing in them copied or changed), and gives the game what a player who has
-played before and installs Sane UI now has:
+played before and installs SaneUI now has:
 
   - WTF: the game's own files of every account and character as they are (Config.wtf: the window, graphics, the
     login; the copies of what Blizzard keeps on its servers: settings, key bindings, macros, Edit Mode layouts, chat),
     but no addon's saved files (Blizzard's own, Blizzard_*.lua, stay), no addon lists (AddOns.txt: the game turns a
-    new addon on) and none of Sane UI's keys among the key bindings;
-  - Interface/AddOns: Sane UI's addons alone, as the game has them installed now (saneui installdev), or the zips
+    new addon on) and none of SaneUI's keys among the key bindings;
+  - Interface/AddOns: SaneUI's addons alone, as the game has them installed now (saneui installdev), or the zips
     named instead (a channel's packages from saneui makepackage: what a player downloads). Modules named
     (saneui freshinstall navigation inventory) bring only themselves, Core (every module's dependency), whatever
     else their TOCs name as one, and what their download carries beside them (Economy: the auction data's two
@@ -66,7 +66,7 @@ SYNC = ("synchronizeConfig", "synchronizeBindings", "synchronizeChatFrames")
 SYNC_LINE = re.compile(rb"^SET (" + b"|".join(name.encode() for name in SYNC) + rb") ", re.I)
 # The addons an addon's TOC needs loaded first.
 DEPENDS = re.compile(r"^## (?:Dependencies|RequiredDeps|Dep[A-Za-z0-9]*):\s*(.+?)\s*$", re.M | re.I)
-# Sane UI's keys in the game's key bindings: the actions of its Bindings.xml (SANEUI_...), clicks on its buttons.
+# SaneUI's keys in the game's key bindings: the actions of its Bindings.xml (SANEUI_...), clicks on its buttons.
 OUR_KEY = re.compile(rb"^bind \S+ (SANEUI_|CLICK SaneUI)")
 # The game's copies of what Blizzard keeps on its servers (the files the client syncs), in plain words.
 KEPT = {"config-cache.wtf": "settings", "bindings-cache.wtf": "key bindings", "click-bindings-cache.txt": "click bindings",
@@ -76,7 +76,7 @@ KEPT = {"config-cache.wtf": "settings", "bindings-cache.wtf": "key bindings", "c
         "tts-cache-account.txt": "text to speech", "tts-cache-character.txt": "text to speech"}
 NOTE = ("This {what} is a fresh-install test's (saneui freshinstall): saneui myinstall deletes it and puts yours back\n"
         "from ../SaneUI-FreshInstall/.\n")
-README = ("Your own WTF and Interface, set aside by saneui freshinstall while a fresh install of Sane UI is tried.\n"
+README = ("Your own WTF and Interface, set aside by saneui freshinstall while a fresh install of SaneUI is tried.\n"
           "saneui myinstall puts them back where they stood (quit the game first). Do not delete this folder.\n")
 
 
@@ -109,13 +109,13 @@ def running(folder):
 
 
 def ours():
-    """Sane UI's addons, one per TOC in src/ (the build's folders); tool-made ones (the auction database's links)
+    """SaneUI's addons, one per TOC in src/ (the build's folders); tool-made ones (the auction database's links)
     are not among them."""
     return sorted(toc.stem for toc in (ROOT / "src").glob("*/*.toc"))
 
 
 def modules():
-    """Sane UI's modules by the word a command takes for each, its folder in src/ in small letters: {navigation:
+    """SaneUI's modules by the word a command takes for each, its folder in src/ in small letters: {navigation:
     ("Navigation", "SaneUI_Navigation")}; core (and saneui) for Core alone."""
     found = {toc.parent.name.lower(): (toc.parent.name, toc.stem) for toc in (ROOT / "src").glob("*/*.toc")}
     if "core" in found:
@@ -150,7 +150,7 @@ def core_project():
 
 def wanted(words):
     """The addons the modules named want: Core, each module, what its download carries (their own dependencies
-    are added from their TOCs by plan_addons). None when none is named: all of Sane UI's."""
+    are added from their TOCs by plan_addons). None when none is named: all of SaneUI's."""
     if not words:
         return None
     known, carry, picked = modules(), carried(), {"SaneUI"}
@@ -204,14 +204,14 @@ def sync_off(raw):
 
 
 def without_our_keys(raw):
-    """The key bindings without Sane UI's keys, and how many there were."""
+    """The key bindings without SaneUI's keys, and how many there were."""
     rows, end = lines(raw)
     left = [row for row in rows if not OUR_KEY.match(row)]
     return (end.join(left) + end if left else b""), len(rows) - len(left)
 
 
 def plan_wtf(real):
-    """What the test's WTF takes of the real one: (files taken, files left out, Sane UI's keys taken out)."""
+    """What the test's WTF takes of the real one: (files taken, files left out, SaneUI's keys taken out)."""
     take, left, keys = [], 0, 0
     for path in sorted(real.rglob("*")):
         if path.is_dir() or path.is_symlink():
@@ -276,7 +276,7 @@ def copy_tree(source, target):
 
 
 def source_addons(real_interface, zips):
-    """What the test can take, {addon: its TOC's text}: the zips' addons, or Sane UI's as the game has them now."""
+    """What the test can take, {addon: its TOC's text}: the zips' addons, or SaneUI's as the game has them now."""
     found = {}
     for path in zips:
         tops = check_zip(path)
@@ -311,7 +311,7 @@ def plan_addons(real_interface, zips, want=None):
 
 
 def fresh_interface(real, test, zips, want=None):
-    """The test's Interface: AddOns with Sane UI alone (the modules wanted, Core and what they need)."""
+    """The test's Interface: AddOns with SaneUI alone (the modules wanted, Core and what they need)."""
     test.mkdir()
     (test / MARK).write_text(NOTE.format(what="Interface"), encoding="utf-8")
     addons = test / "AddOns"
@@ -364,7 +364,7 @@ def refusals(start, zips=()):
         if start and not (folder / "WTF").is_dir():
             found.append(f"{game}'s game has no WTF folder: start it once first ({folder})")
         if start and not zips and not (folder / "Interface" / "AddOns" / "SaneUI").is_dir():
-            found.append(f"Sane UI is not installed in {game}'s game: saneui installdev first")
+            found.append(f"SaneUI is not installed in {game}'s game: saneui installdev first")
         if not start and hold.is_dir():
             state = state_of(folder)
             for name in FOLDERS:
@@ -403,15 +403,15 @@ def start_game(game, folder, zips, say, want=None):
     state["start"] = kept(folder / "WTF")
     write_state(folder, state)
     say(f"{game}: yours set aside in {hold.name}/. The test's WTF: {files} of the game's own files ({left} addon "
-        f"files left out{f', {keys} of Sane UI keys taken off' if keys else ''}); its AddOns: {', '.join(addons)}.")
+        f"files left out{f', {keys} of SaneUI keys taken off' if keys else ''}); its AddOns: {', '.join(addons)}.")
     if lacking(game, want, addons, zips):
         say(lacking(game, want, addons, zips))
     if "SaneUI" not in addons:
-        say(f"{game}: no Sane UI (Core) among them: its modules do not load without it.")
+        say(f"{game}: no SaneUI (Core) among them: its modules do not load without it.")
 
 
 def start(zips, dry, say=print, words=()):
-    """The test on, in both games: Sane UI's addons as installed or the zips', all or the modules named (words)."""
+    """The test on, in both games: SaneUI's addons as installed or the zips', all or the modules named (words)."""
     zips = [Path(path).resolve() for path in zips]
     want = wanted(words)
     found = refusals(True, zips)
@@ -432,7 +432,7 @@ def start(zips, dry, say=print, words=()):
             files, left, keys = plan_wtf(folder / "WTF")
             addons = plan_addons(folder / "Interface", zips, want)
             say(f"{game}: would set WTF and Interface aside in {folder / HOLD}. The test's WTF: {len(files)} of the "
-                f"game's own files ({left} addon files left out, {keys} Sane UI keys taken off); its AddOns: "
+                f"game's own files ({left} addon files left out, {keys} SaneUI keys taken off); its AddOns: "
                 f"{', '.join(addons)}.")
             if lacking(game, want, addons, zips):
                 say(lacking(game, want, addons, zips))
@@ -444,7 +444,7 @@ def start(zips, dry, say=print, words=()):
         say(f"Stopped ({error!r}); putting back what was set aside.")
         restore(False, say, rollback=True)
         raise
-    say("Start the game: your accounts and characters, the game's own settings, Sane UI as a new player gets it, no other "
+    say("Start the game: your accounts and characters, the game's own settings, SaneUI as a new player gets it, no other "
         "addon. Afterwards quit the game and run saneui myinstall: yours come back as they were.")
     if zips:
         say("The zips' TOCs name Forever's interface number alone: in Retail's game list they stand as out of date.")
@@ -510,7 +510,7 @@ def status(say=print):
         if hold.is_dir():
             state = state_of(folder)
             source = state.get("from", "installed")
-            source = "Sane UI as installed" if source == "installed" else "the zips " + ", ".join(Path(p).name for p in source)
+            source = "SaneUI as installed" if source == "installed" else "the zips " + ", ".join(Path(p).name for p in source)
             if state.get("modules", "all") != "all":
                 source += ": " + ", ".join(state["modules"])
             say(f"{game}: a fresh-install test since {state.get('started', '?')} ({source}); yours in {hold} "
@@ -523,10 +523,10 @@ def main(argv=None):
     manual = {"description": __doc__, "formatter_class": argparse.RawDescriptionHelpFormatter}
     parser = argparse.ArgumentParser(prog="fresh-install", **manual)
     commands = parser.add_subparsers(dest="command", required=True)
-    begin = commands.add_parser("start", help="a new player's first Sane UI: your WTF and Interface set aside", **manual)
+    begin = commands.add_parser("start", help="a new player's first SaneUI: your WTF and Interface set aside", **manual)
     begin.add_argument("names", nargs="*", metavar="MODULE|FILE.zip",
                        help="only these modules (navigation inventory), with Core and what they need; zips to install "
-                            "(BUILD/packages/*.zip) instead of the installed build; none: all of Sane UI as installed")
+                            "(BUILD/packages/*.zip) instead of the installed build; none: all of SaneUI as installed")
     begin.add_argument("--zip", nargs="+", default=[], metavar="FILE", help="zips to install, as when named")
     begin.add_argument("--dry", action="store_true", help="say what would be done; change nothing")
     end = commands.add_parser("restore", help="your own WTF and Interface back, the test's deleted", **manual)

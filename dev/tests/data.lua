@@ -721,7 +721,7 @@ W.printed = {}
 check(Data.Add(1, "Beta", Header("forever-beta")) == nil and select(2, Data.Set("Beta"):State()):find("made for forever%-beta")
     and Data.Add(1, "BetaToo", Header("forever-beta")) == nil and StateOf("BetaToo") == "refused"
     and #W.printed == 1 and printedMatch("problem in data: game") and not Core.errors["data: Beta"]
-    and Core.errors["data: game"].text:find("Sane UI's data is not used: made for forever%-beta"),
+    and Core.errors["data: game"].text:find("SaneUI's data is not used: made for forever%-beta"),
     "set files of another game version (a copy made for another game folder): nil, refused, said once for them all")
 check(Data.Add(1, "Odd", Header("forever", { "wobbly" })) == nil and select(2, Data.Set("Odd"):State()):find("cannot be read"),
     "a set file with a type the codec does not know: nil, refused")
@@ -769,7 +769,7 @@ SlashCmdList.SANEUI("data")
 check(printedMatch("data of forever, build 70245 %(project 18; beta: no; test: no%); players by first name and surname %(regional names: yes%)%."),
     "/sane data: the game version, build and answers, and how players are named")
 check(printedMatch("sets: .*Folk %x+ %(build 65100%), Gear " .. Gear.hash .. " %(build 65100%)"), "the sets there, with their hashes and builds")
-check(printedMatch("Labels %x+, ") and printedMatch("Newer %(not used: of format 2") and printedMatch("Broken %(missing: Sane UI holds no set Broken%)"),
+check(printedMatch("Labels %x+, ") and printedMatch("Newer %(not used: of format 2") and printedMatch("Broken %(missing: SaneUI holds no set Broken%)"),
     "no build for a set the game never changed; the sets not used or missing, and why")
 check(printedMatch("jobs running: none%."), "and the scheduler's jobs")
 Steps.Run("held", Worker(10, 1, { n = 0 }))
@@ -787,13 +787,13 @@ SlashCmdList.SANEUI("data show Gear 100")
 SlashCmdList.SANEUI("data show Labels with space")
 SlashCmdList.SANEUI("data show Gear 999")
 SlashCmdList.SANEUI("data show")
-check(printedMatch("^|c%x+Sane UI:|r   1%.60%.0: sell 120 %-> 110%.$") and printedMatch("1%.60%.2: rare empty %-> true%.")
+check(printedMatch("^|c%x+SaneUI:|r   1%.60%.0: sell 120 %-> 110%.$") and printedMatch("1%.60%.2: rare empty %-> true%.")
     and printedMatch("1%.60%.0: stats { agi = 2, sta = 3 } %-> { agi = 1, sta = 3 }%."), "/sane data show: what changed, by patch")
 check(printedMatch("Gear 100: { from = { 1, 2 }, name = Plain Gloves,") and printedMatch("Labels with space: { label = SPACED, since = 0 }%.")
     and printedMatch("Gear has no 999%.") and printedMatch("/sane data show <set> <key>"), "/sane data show prints an entry")
 W.printed = {}
 SlashCmdList.SANEUI("data show Nowhere 1")
-check(printedMatch("Nowhere is missing %(Sane UI holds no set Nowhere%)%.$"), "a set Core does not hold")
+check(printedMatch("Nowhere is missing %(SaneUI holds no set Nowhere%)%.$"), "a set Core does not hold")
 Data.frozen = false
 
 -------------------------------------------------------------------------------

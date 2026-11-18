@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Upgrade
+--  SaneUI - Core - Upgrade
 --  Whether an item would make the character better (Saneroki, 2026-10-29: a
 --  green arrow on it, and Loot's switch Always show upgrades; 2026-10-30: the
 --  arrow on the items in the bags too, Speed Leveling's rewards): gear the

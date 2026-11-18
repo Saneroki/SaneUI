@@ -1,12 +1,12 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Icons
+--  SaneUI - Speed Leveling - Icons
 --  What the guide's steps at hand want used and found, as icons only, in a row
 --  past the guide's head (Saneroki, 2026-10-25): first the items to use (the
 --  Hearthstone while a step hearths, the steps' items, the game's own quest
 --  items of the quests in your log), then the NPCs and the creatures to
---  target. Each in Sane UI's round leather ring: an item its picture, its
+--  target. Each in SaneUI's round leather ring: an item its picture, its
 --  cooldown and how many you carry; a target the game's picture of talking or
 --  fighting, its portrait once you have seen it (its nameplate, your target).
 --  A click uses the item, or targets the name and puts the skull on it while
@@ -16,7 +16,7 @@ local _, ns = ...
 --  use, or one with a use of its own (the game's quest items have one); never
 --  the gear or the loot a step only mentions.
 --
---  Sane UI's own secure buttons (the game's SecureActionButtonTemplate): what
+--  SaneUI's own secure buttons (the game's SecureActionButtonTemplate): what
 --  each does and whether it is there is set out of a fight only; in one the
 --  row stays as it was and follows once it is over. It is placed by the screen
 --  where the guide's head ends, not hung on the guide, whose height changes in a

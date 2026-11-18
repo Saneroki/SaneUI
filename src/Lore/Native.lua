@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Native
+--  SaneUI - Lore - Native
 --  The game's gossip window and quest window, held out of sight while ours
 --  shows the talk (the holder's way, Doc/guides/windows.md, section 7). While
 --  closed, each has a hidden frame of ours as its parent (Core.Lend: noted and

@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild
+--  SaneUI - Guild
 --  The module's own table (ns in all its files), its words, its settings, how
 --  it starts and how it stands down.
 --
@@ -108,7 +108,7 @@ ns.TEXT = {
     noteAsk = "The note of %s:",
     officerNoteAsk = "The officer's note of %s:",
     memberHistory = Core.Word("HISTORY", "History"),
-    noHistory = "Nothing noted since Sane UI first read the roster.",
+    noHistory = "Nothing noted since SaneUI first read the roster.",
     joinedOn = "In the guild since %s",
     pickMember = "Choose a member in the list.",
     inFight = "Not in a fight: the game does not let addons do that now.",
@@ -118,7 +118,7 @@ ns.TEXT = {
     slotsWorn = "%d of %d slots worn",
     sharedAgo = "Shared %s · not live",
     ownLive = "Your own, live",
-    noCard = "Nothing shared yet: this member's gear comes once they run Sane UI with sharing on.",
+    noCard = "Nothing shared yet: this member's gear comes once they run SaneUI with sharing on.",
     pickCharacter = "Choose a character in the list.",
     -- Views still to come (Later.lua)
     later = "%s comes in a later step of the guild window.",
@@ -136,7 +136,7 @@ local OPTIONS = {
     { key = "keys", default = true, text = "The Guild Key Opens It",
       tip = "Your guild key opens this window instead of the game's. The game's micro menu button still opens the game's own." },
     { key = "shareCard", default = true, text = "Share My Gear and Professions",
-      tip = "Your guild sees who your characters are, what they wear and their professions, in its Sane UI. Nothing goes to anybody outside your guild, and nothing into the data Sane UI ships.",
+      tip = "Your guild sees who your characters are, what they wear and their professions, in its SaneUI. Nothing goes to anybody outside your guild, and nothing into the data SaneUI ships.",
       header = "Sharing with the Guild" },
 }
 

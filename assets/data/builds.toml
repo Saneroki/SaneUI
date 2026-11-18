@@ -11,7 +11,7 @@
 
 [forever-ptr]
 
-# Retail (Saneroki, 2026-10-25): Sane UI runs there too; its data comes later.
+# Retail (Saneroki, 2026-10-25): SaneUI runs there too; its data comes later.
 [retail]
 70688 = { patch = "12.1.5", day = "2026-11-01" }
 70783 = { patch = "12.1.5", day = "2026-11-15" }

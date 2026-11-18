@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Slots
+--  SaneUI - Inventory - Sheet - Slots
 --  The equipment slots of our character sheet, in the doll's columns
 --  (Doll.lua): eight down the left, what is worn from the head to the
 --  hands, eight down the right, the necklace, rings and trinkets

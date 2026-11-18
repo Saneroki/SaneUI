@@ -2371,7 +2371,7 @@ do
     check(opened == 1, "(not while it is open)")
     local found = false
     for _, name in ipairs(ns.CLASSIC[3].frame) do found = found or name == "PVEFrame" end
-    check(found, "Retail's finder gets the button Sane UI too")
+    check(found, "Retail's finder gets the button SaneUI too")
     local unblocked
     rawset(_G, "BNSetBlocked", function(id, on) unblocked = id .. " " .. tostring(on) end)
     ns.Contacts.Blocker()(7, false)
@@ -3198,7 +3198,7 @@ do
     do
     local friendsButton = Core.Classic.Button(FriendsFrame)
     check(friendsButton and friendsButton:IsShown() and friendsButton._parent == FriendsFrame,
-        "the game's friends list has the button Sane UI")
+        "the game's friends list has the button SaneUI")
     W.Wait(1)
     friendsButton:GetScript("OnClick")(friendsButton)
     local socialEdge
@@ -3218,7 +3218,7 @@ do
         if widget._parent == nativeStrip and widget._kind == "Button" and widget ~= nativeMenu then sane = widget end
     end
     check(sane and sane:IsShown() and sane._points[1][2] == nativeMenu and sane._points[1][3] == "TOP",
-        "the game's chat has a button Sane UI, just above its chat menu button")
+        "the game's chat has a button SaneUI, just above its chat menu button")
     sane:GetScript("OnClick")(sane)
     check(window:IsShown() and options.window == true and not sane:IsShown(),
         "it brings our window back (the switch Chat window on), and goes while ours is there")
@@ -3233,7 +3233,7 @@ do
     for name, category, body in xml:gmatch('<Binding name="([%w_]+)" category="([%w_]+)">(.-)</Binding>') do
         keys = keys + 1
         check(category == "BINDING_HEADER_SANEUI" and type(_G[category]) == "string" and type(_G["BINDING_NAME_" .. name]) == "string",
-            "Social's key is in Sane UI's section of the game's key bindings, named in the game's way")
+            "Social's key is in SaneUI's section of the game's key bindings, named in the game's way")
         local press = assert(loadstring(body))
         press()
         check(not window:IsShown() and options.window == false and native:IsShown(), "pressed, it puts our window away as /sane social does")

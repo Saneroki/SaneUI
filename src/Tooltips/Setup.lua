@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Setup
+--  SaneUI - Tooltips - Setup
 --  The tooltips' setup (Saneroki, 2026-11-18: "a very simple onboarding for
 --  the Tooltip window where we basically only have Show tooltip while x held,
 --  Show at mouse cursor yes / no, 3d model yes / no, opacity slider with a

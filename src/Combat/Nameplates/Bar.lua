@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates - Bar
+--  SaneUI - Combat - Nameplates - Bar
 --  The health bar of our dress on a plate: a rectangle round at its corners,
 --  as large as the game's own health bar under it (the game's nameplate size
 --  and style), framed by one thin border, with the unit's power as a thin

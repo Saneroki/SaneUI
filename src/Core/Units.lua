@@ -1,11 +1,11 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Units
+--  SaneUI - Core - Units
 --  Distances and the time of day as the setting Units says (Saneroki,
 --  2026-10-30): Metric at first, meters and 24 hours (27 m, 23:59); Imperial,
 --  yards and 12 hours (30 yd, 11:59 PM). The game counts in yards, so all of
---  Sane UI keeps yards; only what a player reads comes through here.
+--  SaneUI keeps yards; only what a player reads comes through here.
 --
 --      Core.Metric()               whether the setting is Metric
 --      Core.Distance(yards)        "27 m" or "30 yd"

@@ -273,7 +273,7 @@ check(tl[1] == "CENTER" and tl[3] == "BOTTOMLEFT" and near(tl[4], 13) and near(t
 local middle = plate.fills[3]
 check(middle._texture == Core.Skin.TILE.file and middle._wrap == "REPEAT" and near(middle._coords[1], 0) and near(middle._coords[2], 380 / 32)
     and near(middle._coords[3], 13 / 32) and near(middle._coords[4], 247 / 32) and plate.trims[1]._vertex[1] == Core.GOLD[1],
-    "the fill is the tile of the game's dark dialogs, each piece showing the tile where it lies so the pieces meet without a seam; the trim Sane UI's")
+    "the fill is the tile of the game's dark dialogs, each piece showing the tile where it lies so the pieces meet without a seam; the trim SaneUI's")
 
 -- Docked
 bar:GetScript("OnDragStart")(bar)
@@ -449,7 +449,7 @@ do
     Core.general.animations = false
     fade:To(0.5, 1)
     slide:From(0, 20)
-    check(not fading.playing and region._alpha == 0.5 and not sliding.playing, "with Sane UI's animations off nothing moves: it is there at once")
+    check(not fading.playing and region._alpha == 0.5 and not sliding.playing, "with SaneUI's animations off nothing moves: it is there at once")
     Core.general.animations = true
     region:Hide()
     fade:To(0.25, 1)
@@ -716,7 +716,7 @@ check(wide._strata == "HIGH" and wide._level == 500 and wide._clamped == false a
 check(wide._mouse == true and wide._wheel == true, "it takes the mouse and its wheel: what is behind it cannot be clicked, nor the camera turned or zoomed")
 check(middle._texture == "Interface\\Buttons\\WHITE8X8" and middle._vertex[1] == 0 and middle._vertex[2] == 0 and middle._vertex[3] == 0
     and middle._gradient == nil and back.trims[1]._vertex[1] == Core.GOLD[1],
-    "without settings of its own its background is solid black, its trim Sane UI's bronze")
+    "without settings of its own its background is solid black, its trim SaneUI's bronze")
 local out, come = list._groups[1], list._groups[2]
 check(out.playing and not come.playing, "what it holds fades out")
 check(round(back, 0, 13, 0, 13), "at first its corners away from the screen's edge are as round as the window's at rest")
@@ -741,7 +741,7 @@ check(wideBar and wideBar:IsShown() and wideBar._points[1][1] == "TOPLEFT" and w
     "full, a window without a title bar of its own has one at its top: its buttons there, full screen offering the way back")
 check(wideWindow.settings:IsShown() and wideWindow.help:IsShown() and wideWindow.settings.picture._atlas == Window.SETTINGS
     and wideWindow.help.picture._text == "?" and wideWindow.buttons.first == wideWindow.help,
-    "and, left of them, the game's cog (Sane UI's options over the full screen) and the question mark (its tour)")
+    "and, left of them, the game's cog (SaneUI's options over the full screen) and the question mark (its tour)")
 check(menu and menu:IsShown() and menu._override == Edge.CLASSIC and menu._parent == wide and menu._points[1][1] == "RIGHT"
     and menu._points[1][2] == wideWindow.buttons.first and #menu._items == 2 and menu._items[1].text == "Friends list",
     "and the dropdown Classic windows in the title bar, left of the buttons, with the game's windows it stands for")
@@ -1354,7 +1354,7 @@ local stand = SaneUIEscape
 local ours = 0
 for _, name in ipairs(UISpecialFrames) do if name:find("^SaneUI") then ours = ours + 1 end end
 check(stand and stand:IsShown() and ours == 1,
-    "shown, a window Esc closes has the stand-in of ours shown, the one frame Sane UI puts into the game's list of what Esc closes")
+    "shown, a window Esc closes has the stand-in of ours shown, the one frame SaneUI puts into the game's list of what Esc closes")
 stand:Hide()
 check(talkClosed == 1 and not talked:IsShown(), "Esc: it closes, as its module says")
 W.Wait(0.1)
@@ -1932,11 +1932,11 @@ do
     check(W.DemoPlace().x == 100, "(moved)")
     SlashCmdList.SANEUI("window reset all")
     check(W.DemoPlace() == nil and demo._points[1][1] == "CENTER" and W.printed[1]:find("first place"),
-        "/sane window reset all puts every window of Sane UI at its first place and size")
+        "/sane window reset all puts every window of SaneUI at its first place and size")
     check(next(Core.errors) == nil, "nothing went wrong on the way")
 end
 
--- Sane UI's keys -----------------------------------------------------------------------------------
+-- SaneUI's keys -----------------------------------------------------------------------------------
 do
     local file = assert(io.open(root .. "/src/Core/Bindings.xml", "r"))
     local xml = file:read("*a")
@@ -1945,12 +1945,12 @@ do
     for name, category, body in xml:gmatch('<Binding name="([%w_]+)" category="([%w_]+)">(.-)</Binding>') do
         keys = keys + 1
         check(category == "BINDING_HEADER_SANEUI" and type(_G[category]) == "string" and type(_G["BINDING_NAME_" .. name]) == "string",
-            "a key of Sane UI's is in its section of the game's key bindings, named in the game's way: " .. name)
+            "a key of SaneUI's is in its section of the game's key bindings, named in the game's way: " .. name)
         W.options.opened = nil
         assert(loadstring(body))()
         check(W.options.opened ~= nil, "and what it runs does what it says: " .. name)
     end
-    check(keys == 1 and BINDING_HEADER_SANEUI == "Sane UI", "Core has one key: the options")
+    check(keys == 1 and BINDING_HEADER_SANEUI == "SaneUI", "Core has one key: the options")
 end
 
 -- A plate of one radius that follows its frame (a chat's bubble), and a round icon ----------------
@@ -2046,7 +2046,7 @@ do
     local button = Core.Classic.Button(gameMap)
     check(button and button:IsShown() and button._points[1][2] == gameMap.CloseButton and button._parent == UIParent
         and button._attributes.type == "click" and button._attributes.clickbutton == gameMap.CloseButton,
-        "the game's panel has the button Sane UI beside its close button: a secure one on UIParent that clicks that close button")
+        "the game's panel has the button SaneUI beside its close button: a secure one on UIParent that clicks that close button")
     check(button._attributes.useOnKeyDown == false,
         "on its release, as it is registered, whatever the game's key-down setting says (else it would click nothing)")
     W.Wait(1)

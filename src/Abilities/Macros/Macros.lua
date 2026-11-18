@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros
+--  SaneUI - Abilities - Macros
 --  Sane Macros, a part of Abilities: in the game's macro window's stead, on the
 --  full screen beside the action bars. A macro is a list of steps, as long as you
 --  like; one step is what a normal macro is. There are no macro slots to run out
---  of: a macro lives in Sane UI's saved settings, for the whole account, and
+--  of: a macro lives in SaneUI's saved settings, for the whole account, and
 --  reaches the game by a key or a bar button of the character.
 --    Conditions.lua  the game's macro conditions in plain words, explained
 --    Book.lua        your macros and steps, and each character's keys and places
@@ -50,7 +50,7 @@ Macros.TEXT = {
     newFrom = "From the game's macros",
     newFromNone = "The game has no macros here.",
     gameWindow = "Game macros",
-    gameWindowTip = "Opens the game's own macro window. The button Sane UI on it brings Sane Macros back.",
+    gameWindowTip = "Opens the game's own macro window. The button SaneUI on it brings Sane Macros back.",
     gameMark = "W",
     gameMacros = "The game's macros",
     lineTip = "Click: choose it. Right click: whose it is. Drag it onto a button of your action bars to place it there.",

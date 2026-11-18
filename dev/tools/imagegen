@@ -21,7 +21,7 @@ The list of prompts is a text file, one line each:
 
 workflow, set, count, seed, out, fps and flatten hold for the whole list (the last one counts; set adds
 up). before, style and ref hold for the prompts after them: a new line replaces it, an empty one ends
-it. The options on the command line win over the list. Paths are from the current folder (Sane UI's).
+it. The options on the command line win over the list. Paths are from the current folder (SaneUI's).
 Reference pictures: PNG, JPG, or the game's BLP (turned into PNG; needs Pillow, as flatten does).
 
 The workflow is a ComfyUI graph in its API form (menu Workflow > Export (API)): a path to the .json, or
@@ -565,7 +565,7 @@ def contact(out, shown):
 # --- Main ----------------------------------------------------------------------------------------
 
 def library():
-    """ComfyUI's templates and apps of Sane UI made anew when a workflow or recipe changed (dev/tools/comfy-library)."""
+    """ComfyUI's templates and apps of SaneUI made anew when a workflow or recipe changed (dev/tools/comfy-library)."""
     import subprocess
     try:
         subprocess.run([str(ROOT / "dev" / "tools" / "comfy-library"), "--if-changed"], timeout=120, check=False)

@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Audio
+--  SaneUI - Core - Audio
 --  Sound profiles (Saneroki, 2026-11-04): the game's five sounds, each on or
 --  off with its volume (All sound, Music, SFX, Dialogue, Ambience), kept under
 --  a name; choosing a profile sets it at once. The game keeps these settings in
@@ -18,7 +18,7 @@ local Core = SaneUI.Core
 --  interfere with the audio at all. It doesn't overwrite or change anything and
 --  that should be the default. Only when users interact with the sound presets
 --  it will have a effect."): first in the list, always there, no profile of
---  sounds. While it is in use Sane UI sets none of the game's sounds, at a login
+--  sounds. While it is in use SaneUI sets none of the game's sounds, at a login
 --  neither: they stay as the game and the player have them. Every account starts
 --  on it; only a profile the player chooses (or makes with New) sets anything.
 --

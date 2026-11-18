@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Contents
+--  SaneUI - Inventory - Bags - Contents
 --  What the player's bags hold, as the game tells it, without a frame: the
 --  containers (the backpack, the bags, the reagent bag, the keyring; the
 --  bank's tabs while the bank is open), what is in each slot, the free slots

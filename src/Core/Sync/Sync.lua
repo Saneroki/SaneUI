@@ -1,13 +1,13 @@
 local ADDON = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Sync
+--  SaneUI - Core - Sync
 --  The game keeps much of what a player sets for each character alone. Sync
---  keeps it with Sane UI's settings instead, in the profile in use
+--  keeps it with SaneUI's settings instead, in the profile in use
 --  (Core/Profiles.lua): every character that uses a profile has the game's
 --  settings of that profile, the same for all of them. On Character specific
 --  Sync does nothing: the game keeps its settings for each character, as it does
---  without Sane UI; turning to it, they go back to the game's defaults (Sync.Moved).
+--  without SaneUI; turning to it, they go back to the game's defaults (Sync.Moved).
 --  While the profiles are off (a fresh install) Sync does nothing at all: it
 --  writes nothing, gives no defaults, and turning them off leaves the game's
 --  settings as they are. Turned on, the profile Accountwide takes the game's as
@@ -19,7 +19,7 @@ local ADDON = ...
 --  its pages (Edit Mode layout, chat windows, own channels, what it keeps per
 --  character, the addons switched on, the key bindings). Each part has a checkbox in the tab Game settings of the page
 --  Profiles (Settings/Synced.lua), ticked at first. A ticked part is read from
---  the game whenever Sane UI's settings are saved (Core's capture: a new
+--  the game whenever SaneUI's settings are saved (Core's capture: a new
 --  profile, another one used, the logout) and written back into the game when a
 --  character is in the world (a moment after it entered, never in a fight) and
 --  when another profile came into use. Nothing is read before it was written
@@ -215,7 +215,7 @@ local function On()
 end
 
 -- Reads the kept parts into the settings in use; what is not kept, or no part of this version, is
--- dropped. Core calls it before Sane UI's settings are saved anywhere. Not while a writing waits for
+-- dropped. Core calls it before SaneUI's settings are saved anywhere. Not while a writing waits for
 -- a fight to end: the game still holds the old settings then (a profile just loaded would be lost).
 -- The server's clock, whole seconds (0 when the game cannot say).
 local function Now()
@@ -485,7 +485,7 @@ end
 --      taken   [part id] = what the part read last
 --      named   [CVar] = its value: single CVars kept by name
 --      dropped [CVar] = true: one the player unticked, which the presets pass over (Sync.Keep)
---      from    the game taken and named were read in ("forever", "retail"; Ours): those kept before Sane UI
+--      from    the game taken and named were read in ("forever", "retail"; Ours): those kept before SaneUI
 --              served two games are Forever's
 --      stamps  [part id] = { [key] = the server's time it last changed in the profile }: of a part with Outside
 Core.Options(Sync.name, {

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Master
+--  SaneUI - Loot - Master
 --  While you are your group's master looter, a thing of the group's quality
 --  or better is yours to give, not to take: a click on its line opens a menu
 --  beside it (the game's menu, MenuUtil) with the thing's name, everybody the

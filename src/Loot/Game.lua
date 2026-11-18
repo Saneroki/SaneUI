@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Game
+--  SaneUI - Loot - Game
 --  The game's own parts this module stands in for, kept out of the way while
 --  ours are chosen, and given back (Doc/guides/windows.md, Taint and the game's
 --  own windows: nothing of Blizzard's is written, no function replaced):

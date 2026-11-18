@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Rewards
+--  SaneUI - Lore - Rewards
 --  A quest's rewards as the NPC offers them (the quest window's own calls),
 --  each item read for you, so that its line says it without its tooltip
 --  (Saneroki, 2026-10-28):

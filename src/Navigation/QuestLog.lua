@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - QuestLog
+--  SaneUI - Navigation - QuestLog
 --  The quest log, a window of its own over the full map and on the screen alone (on
 --  or off by the full map's bar's button, TopBar.lua). Our own
 --  list (the game's belongs to its map window, which stays closed), read from

@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Scan
+--  SaneUI - Core - Data - Scan
 --  The full scan of the auction house (Doc/ideas/Economy.md, *The full scan*). While the auction house is
 --  open the whole house is asked for by itself, at once and then every Scan.INTERVAL seconds, and what it
 --  lists goes into the history in the saved variable SaneUIData_Market, in a file of its own apart from the

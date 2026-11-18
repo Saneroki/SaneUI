@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Fees
+--  SaneUI - Core - Data - Fees
 --  What the auction house takes, and what that leaves: the one place these are reckoned, for every view (Doc/guides/data.md,
 --  *Fees*). Added to the series Prices. The numbers are the game's own (the client's table AuctionHouse, its duration words):
 --

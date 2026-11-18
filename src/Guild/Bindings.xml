@@ -1,5 +1,5 @@
 <Bindings>
-	<!-- Guild's key, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua; its words
+	<!-- Guild's key, in the game's key bindings under SaneUI (BINDING_HEADER_SANEUI, Core's Bindings.lua; its words
 	     in Keys.lua); the game reads this file from the addon's folder by itself. Keys.lua also puts it on the keys of
 	     the game's own guild window (override bindings). -->
 	<Binding name="SANEUI_GUILD_TOGGLE" category="BINDING_HEADER_SANEUI">

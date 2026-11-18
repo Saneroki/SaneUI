@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Views - Equipment
+--  SaneUI - Guild - Views - Equipment
 --  Everybody's gear (Guild › Equipment). At the left the characters: every
 --  member, those who share their gear with their item level, sorted by it
 --  (a click on a column's head sorts by another), searched by name. At the

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Host
+--  SaneUI - Tooltips - Host
 --  The game's own tooltip, with a panel in front of it. The game keeps doing
 --  everything with it (it places it, fills it, hides it, fades it) and other
 --  addons keep reading it; this file only keeps it out of sight while its

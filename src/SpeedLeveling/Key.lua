@@ -1,8 +1,8 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Key
---  The key (Bindings.xml: in the game's key bindings under Sane UI) and what
+--  SaneUI - Speed Leveling - Key
+--  The key (Bindings.xml: in the game's key bindings under SaneUI) and what
 --  one press of it does. An addon may target, mark, attack and interact only by
 --  the game's secure ways and on a key press, so the choice is made by those,
 --  in a fight too. What is due first (Saneroki, 2026-10-25: loot, then the

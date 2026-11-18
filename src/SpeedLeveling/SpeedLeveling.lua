@@ -1,14 +1,14 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling
+--  SaneUI - Speed Leveling
 --  The module's own table (ns in all its files), its words, its settings, and
 --  how it stands down.
 --
 --  An addon of its own (SaneUI_SpeedLeveling): it needs Core and nothing else,
 --  and is switched on and off in the game's addon list.
 --
---  One key for questing (Esc > Options > Keybindings, under Sane UI), pressed
+--  One key for questing (Esc > Options > Keybindings, under SaneUI), pressed
 --  again and again: it opens the loot of the corpse beside you, talks to the
 --  quest giver in front of you, picks up what your quests want in front of
 --  you, attacks your foe, else finds what your quests and your guide want
@@ -16,7 +16,7 @@ local ADDON, ns = ...
 --  says so, and uses a quest item when nothing wanted is around. At a quest
 --  giver the guide's quests are taken and handed in. And your leveling guide
 --  over the world, its steps at hand and the next ones (Saneroki, 2026-10-25),
---  run by Sane UI itself: guides pasted as text, and the guides you bought,
+--  run by SaneUI itself: guides pasted as text, and the guides you bought,
 --  opened for your account. Nothing of another addon is needed.
 --    Unlock.lua  the import string of bought guides, opened for your account
 --    Format.lua  a guide written as text, read into our own shape
@@ -36,7 +36,7 @@ local ADDON, ns = ...
 --    Quests.lua  what a quest giver does for your guide, a talk that is done closed
 --    Errands.lua what would hold you up: all loot taken, the game's questions
 --                on equipping and destroying answered, new upgrades put on
---    Rolls.lua   group rolls decided with the other Sane UI of your group
+--    Rolls.lua   group rolls decided with the other SaneUI of your group
 --    Steps.lua   the guide over the world
 --    Arrow.lua   the way to the guide's place, a part of its own
 --    Icons.lua   the items to use and the names to target, past the guide's head
@@ -48,8 +48,8 @@ Core.NewModule(ADDON, "SpeedLeveling", ns)
 
 ns.TEXT = {
     binding = "Loot, talk, pick up, attack, find and mark, use",
-    hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under Sane UI: Loot, talk, pick up, attack, find and mark, use.",
-    keyFirst = "Speed Leveling's key is %s: loot, talk, pick up, attack, find and mark, use. Change it in Esc > Options > Keybindings, under Sane UI.",
+    hint = "Speed Leveling's key has no key on this account (the game keeps key bindings per account): give it one in Esc > Options > Keybindings, under SaneUI: Loot, talk, pick up, attack, find and mark, use.",
+    keyFirst = "Speed Leveling's key is %s: loot, talk, pick up, attack, find and mark, use. Change it in Esc > Options > Keybindings, under SaneUI.",
     -- /sane key: what the key sees now (Key.Check).
     keyCommand = "what Speed Leveling's key sees now: what it would do, what is in front of you, your target",
     keyNone = "Speed Leveling's key is not made yet.",
@@ -60,7 +60,7 @@ ns.TEXT = {
     keyWalk ="Click-to-Move %s (lent by the key: %s); the guide %s.",
     keyUnit = "%s, a %s, %s",
     keyNobody = "nothing",
-    keyNoKey = "none (Esc > Options > Keybindings, under Sane UI)",
+    keyNoKey = "none (Esc > Options > Keybindings, under SaneUI)",
     objects = "Quest objects",
     objectsTip = "A thing of the world your quests or your guide want, in front of you, is picked up, opened or used, as a right click on it does: a quest's chest or plant, what an item to loot comes from, the board a quest is handed in to. The game's interact key finds it and is switched on for it.",
     loot = "Loot first",
@@ -119,7 +119,7 @@ ns.TEXT = {
     followOff = "Off",
     paused = "Paused. Click here to go on with the guide.",
     party = "Together with the party",
-    partyTip = "In a group, those of you who follow the same guide follow it as one: the same steps by the same numbers for each of you, every step of any of your classes, and the quests the guide gives only some classes, while others see to their own, for all of you. What only one class does (its trainer, its class quests) only that one does: the others go past it, faint in the list, to the next step you share and wait there. Whoever is through with a step first waits on it, its targets still wanted, until the others are through with it too, and then all of you go on together; one busy with its class quests is waited for as well. Your company is remembered for this character while the others are offline. Only members with Sane UI who follow that guide count. A right click on the step you wait on goes on without them.",
+    partyTip = "In a group, those of you who follow the same guide follow it as one: the same steps by the same numbers for each of you, every step of any of your classes, and the quests the guide gives only some classes, while others see to their own, for all of you. What only one class does (its trainer, its class quests) only that one does: the others go past it, faint in the list, to the next step you share and wait there. Whoever is through with a step first waits on it, its targets still wanted, until the others are through with it too, and then all of you go on together; one busy with its class quests is waited for as well. Your company is remembered for this character while the others are offline. Only members with SaneUI who follow that guide count. A right click on the step you wait on goes on without them.",
     waitFor = "Waiting for %s",
     onChain = "%s (class quests)",
     theirs = "%s: %s",
@@ -128,7 +128,7 @@ ns.TEXT = {
     showGuide = "Show the guide",
     showGuideTip = "The guide's steps straight on the world, where Edit Mode puts them, or where you drag them: a right click on the zone unlocks it. Only the steps show: the mouse on them brings the zone, how far you are and the icons. In the upper half of the screen the guide grows down from its top, these under the steps; in the lower half up from its bottom, these over them. A click on a step at hand pauses it: it stays, faint, and the guide, its arrow, map pin and key go on with the next step; a click on it again takes it up and goes to it. A right click skips it. A middle click on the guide opens its settings: Your guide, the guide's switches, and all settings. With no guide followed, Select a guide and its button choose one. The wheel over the guide shows the list of its steps in their place, your step in the middle, and scrolls it from the guide's first step to its last; the red cross, or 10 seconds without the mouse on it, brings the steps back; a double click on a listed step goes to it, a right click offers to; a right click on the zone chooses the guide to follow.",
     gather = "Professions along the way",
-    gatherTip = "Your professions level up where your guide takes you anyway. Mining and Herbalism: a step where the guide passes the most nodes in a zone, a check before it leaves that zone, and a step with the map pin on a herb or ore the minimap shows close enough to your way, for as long as the steps ahead still want more. Tailoring and First Aid: after killing humanoids, a step to kill on for their cloth while they are worth the experience. Crafts and the rest: a step before a harder zone. All from Sane UI's data of the world (WoW: Forever). A right click on a step skips it; the others are for the professions you have.",
+    gatherTip = "Your professions level up where your guide takes you anyway. Mining and Herbalism: a step where the guide passes the most nodes in a zone, a check before it leaves that zone, and a step with the map pin on a herb or ore the minimap shows close enough to your way, for as long as the steps ahead still want more. Tailoring and First Aid: after killing humanoids, a step to kill on for their cloth while they are worth the experience. Crafts and the rest: a step before a harder zone. All from SaneUI's data of the world (WoW: Forever). A right click on a step skips it; the others are for the professions you have.",
     raiseSkill = "Level %s to %d",
     skillBefore = "Before %s",
     skillHere = "Around here",

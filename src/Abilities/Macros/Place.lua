@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Place
+--  SaneUI - Abilities - Macros - Place
 --  Choosing a bar button with the mouse: for a moment an unseen square lies over
 --  every button of every bar that shows, also over the empty ones and bars at
 --  rest, so a click there casts nothing; the one clicked, or under the mouse when

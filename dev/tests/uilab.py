@@ -1,7 +1,7 @@
 """The interface lab (dev/tools/ui-lab, Doc/guides/ui-lab.md): every scene runs without an error for two seconds and
 draws something, and a few of the lab's rules hold: anchors resolve as the game resolves them, an unknown event is an
 error, a script the kind does not have is an error, what the game has but the lab does not do is told. The XML reader
-on a file of the test's own (dev/tests/uilab/), Blizzard's templates, and Sane UI's Core from its TOC with its window.
+on a file of the test's own (dev/tests/uilab/), Blizzard's templates, and SaneUI's Core from its TOC with its window.
 The page's calls: a font only from the fonts' places, a texture with its mark and 304 to it; a host that answers nothing
 killed after its time, and started anew by the next call.
 Needs the newest export of Blizzard's interface (dev/tools/blizzard where); without it, it says so and passes."""

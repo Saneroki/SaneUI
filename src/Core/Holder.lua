@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Holder
+--  SaneUI - Core - Holder
 --  Ours or the game's, never both (Saneroki, 2026-10-16; Doc/guides/windows.md,
 --  section 7, The holder). A window of ours that stands for one of the game's
 --  (native = { frame, hold = true }) keeps the game's out of sight while ours is
@@ -21,7 +21,7 @@ local Core = SaneUI.Core
 --  as if it had just opened). With native.unseen (a window whose OnShow must not
 --  run from ours: the spellbook's sets the action bars' protected grids) it is
 --  closed unseen first, and opens at its next asking.
---  To ours (window:Native(false): the Sane UI button on the game's window, while
+--  To ours (window:Native(false): the SaneUI button on the game's window, while
 --  that is in sight): the game's is not hidden (its OnHide would end a talk) but
 --  made tiny and clear, its buttons shrunk to a point that takes no click, until
 --  the game closes it; then it is held again. Ours opens at once.

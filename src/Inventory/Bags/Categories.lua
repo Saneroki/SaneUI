@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Categories
+--  SaneUI - Inventory - Bags - Categories
 --  The categories the bag window sorts its items into, without a frame: the
 --  built-in ones (their rules fixed here), the player's own, the groups of
 --  categories, and what the player chose for single items.

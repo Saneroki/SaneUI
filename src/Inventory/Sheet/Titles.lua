@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Titles
+--  SaneUI - Inventory - Sheet - Titles
 --  The titles, a window of its own on the module's board (the key "titles",
 --  Board.lua), as the game's sheet lists them (Camelot's TitleManagerPane): None first, then every title you know by
 --  name, in lines (a light stripe on every other one, the game's tick and a

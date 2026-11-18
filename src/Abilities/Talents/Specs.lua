@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Specs
+--  SaneUI - Abilities - Talents - Specs
 --  Your primary and secondary specialization, as the game's class talents
 --  frame offers them in this client (Camelot: ClassTalents/Blizzard_Class-
 --  TalentsFrame.xml, its TabSystem with ClassTalentsFrameTabTemplate and

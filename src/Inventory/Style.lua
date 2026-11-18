@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Style
+--  SaneUI - Inventory - Style
 --  What the module's windows draw with, in the kit's look (Core.Look,
 --  Doc/guides/interface-style.md, The kit): the game's own Friz Quadrata in
 --  its own colours on Forever's dark bronze (white words, gold heads, grey

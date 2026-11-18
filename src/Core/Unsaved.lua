@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Unsaved
+--  SaneUI - Core - Unsaved
 --  Changes made in the menus, kept or taken back (Saneroki, 2026-11-09). A
 --  change counts at once, as it always has; the save window (Settings/Save.lua)
 --  then asks whether to keep it, beside the menu, and stays until it is answered:
@@ -10,9 +10,9 @@ local Core = SaneUI.Core
 --            in use gets them back as they were
 --      No    every change since the last save taken back (also the page
 --            Profiles' Load last settings)
---  The menus that count: the game's options (Sane UI's pages in its AddOns tab,
+--  The menus that count: the game's options (SaneUI's pages in its AddOns tab,
 --  the game's own pages, its key bindings, the CVar list), Edit Mode, the game's
---  addon list, and Sane UI's options over a full screen. What the profiles keep
+--  addon list, and SaneUI's options over a full screen. What the profiles keep
 --  of the game's settings is Sync's (as far as the tab Game settings ticks it).
 --
 --  The last save is a copy of every module's settings, taken when a menu opens

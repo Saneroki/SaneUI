@@ -71,7 +71,7 @@ with tempfile.TemporaryDirectory() as temporary:
     subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
     subprocess.run(["git", "-C", str(repo), "config", "core.hooksPath", "/dev/null"], check=True)
     write("LICENSE", "the licence\n")
-    write("Doc/changelog.txt", "Sane UI: what is new\n\n0.3.1 (2026-11-15)\n------------------\n- New.\n\n"
+    write("Doc/changelog.txt", "SaneUI: what is new\n\n0.3.1 (2026-11-15)\n------------------\n- New.\n\n"
           "0.3.0 (2026-10-14)\n------------------\n- Old.\n")
     write("src/Core/SaneUI.toc", TOC.format(title="SaneUI", extra=""))
     write("src/Core/SaneUI.lua", "-- core 1\n")
@@ -98,7 +98,7 @@ with tempfile.TemporaryDirectory() as temporary:
     first = tool.plan("alpha", root=repo)
     check(first["modules"] == {} and first["left"] == ["Navigation", "RetailOnly", "SpeedLeveling"],
           "nothing promoted: every module left out, all are dev")
-    check(first["core"] == ["Core", "Onboarding"], "Core's project: Sane UI and its setups' window, its data holders not in it")
+    check(first["core"] == ["Core", "Onboarding"], "Core's project: SaneUI and its setups' window, its data holders not in it")
     check(tool.CARRIED == {"Economy": ("AuctionData", "AuctionScans")}, "the auction data's files go with Economy alone")
     check(refused(lambda: tool.plan("dev", root=repo)) is not None, "dev is no channel")
 
@@ -141,7 +141,7 @@ with tempfile.TemporaryDirectory() as temporary:
     with zipfile.ZipFile(core_zip) as box:
         names = set(box.namelist())
         check({n.split("/")[0] for n in names} == {"SaneUI", "SaneUI_Onboarding"},
-              "Core's zip: Sane UI and Onboarding, always together (no auction data: no scans)")
+              "Core's zip: SaneUI and Onboarding, always together (no auction data: no scans)")
         onboarding_toc = box.read("SaneUI_Onboarding/SaneUI_Onboarding.toc").decode()
         check("## Version: 0.3.1\n" in onboarding_toc and "## LoadOnDemand: 1" in onboarding_toc,
               "Onboarding with Core's version, still loaded on demand")
@@ -199,7 +199,7 @@ with tempfile.TemporaryDirectory() as temporary:
           "a Git LFS pointer in place of art: no package")
 
     # The changelogs: each project's own on CurseForge, a part per version; never the suite's Doc/changelog.txt.
-    write("Doc/changelog.txt", "Sane UI: what is new\n\nNavigation 0.3.1 (2026-11-16)\n---\n- The suite's words.\n")
+    write("Doc/changelog.txt", "SaneUI: what is new\n\nNavigation 0.3.1 (2026-11-16)\n---\n- The suite's words.\n")
     write("Doc/curseforge/changelogs/Navigation.md", "# SaneUI Navigation: changelog\n\nIntro.\n\n## 0.3.1 (2026-11-16)\n\n- The map.\n\n## 0.3.0 (2026-10-14)\n\n- Older.\n")
     write("Doc/curseforge/changelogs/Core.md", "# SaneUI Core: changelog\n\n## 0.4.0 (2026-11-20)\n\n## 0.3.1 (2026-11-16)\n\n- Core.\n"
           "- Ends at 1.2.3 (not a heading).\n")
@@ -215,11 +215,11 @@ with tempfile.TemporaryDirectory() as temporary:
     check(meta == {"changelog": "words", "changelogType": "markdown", "displayName": "SaneUI Navigation 0.3.1 (beta)", "gameVersions": [7],
                    "releaseType": "beta", "relations": {"projects": [{"slug": "sane-ui", "type": "requiredDependency"}]}},
           "a module's upload: the channel its release type, Core's project its required dependency")
-    check("relations" not in tool.metadata("Sane UI", "0.3.1", "release", [7], "w") and
-          tool.metadata("Sane UI", "0.3.1", "release", [7], "w")["displayName"] == "Sane UI 0.3.1", "Core's upload names none")
+    check("relations" not in tool.metadata("SaneUI", "0.3.1", "release", [7], "w") and
+          tool.metadata("SaneUI", "0.3.1", "release", [7], "w")["displayName"] == "SaneUI 0.3.1", "Core's upload names none")
     check(tool.project_name("Navigation", "Navigation", {"Navigation": {"id": 2, "name": "SaneUI Navigation"}}) == "SaneUI Navigation"
-          and tool.project_name("Loot", "Loot", {}) == "SaneUI Loot" and tool.project_name("Core", "Sane UI", {}) == "SaneUI Core",
-          "a project's name: the config's, else Sane UI and the title")
+          and tool.project_name("Loot", "Loot", {}) == "SaneUI Loot" and tool.project_name("Core", "SaneUI", {}) == "SaneUI Core",
+          "a project's name: the config's, else SaneUI and the title")
     check(tool.game_version_ids(["1.60.1", 12], [{"id": 5, "name": "1.60.1"}, {"id": 12, "name": "x"}]) == [5, 12],
           "game versions by name or id")
     check("no game version" in (refused(lambda: tool.game_version_ids(["2.0"], [{"id": 5, "name": "1.60.1"}])) or ""),

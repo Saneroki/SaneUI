@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Codec
+--  SaneUI - Core - Codec
 --  A row of a data set into a record, and a record Core learned in play back into one (Doc/guides/data.md,
 --  *A row*, *Learned*). A row is one string: its build, its
 --  day, then the fields in the order the set's header names them, a tab between them; inside a field,

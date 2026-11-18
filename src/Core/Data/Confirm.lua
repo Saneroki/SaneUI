@@ -1,9 +1,9 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Confirm
+--  SaneUI - Core - Data - Confirm
 --  What the game confirmed in play of the facts our data has not had confirmed yet (Doc/guides/data.md,
---  *Verified*), and sharing it, and what Core learned in play, with the Sane UI of the guild, the party and the raid.
+--  *Verified*), and sharing it, and what Core learned in play, with the SaneUI of the guild, the party and the raid.
 --
 --      Data.Confirm("Places", 412)              Core's watchers (Watchers.lua): the game agrees with the entry
 --      Data.Confirm("Bosses", 1144, "l17076")   ... with a part of it: a boss's item ("l" and its ID), its ability ("a"
@@ -28,7 +28,7 @@ local Core = SaneUI.Core
 --  what members told never stands in for the game's word here.
 --
 --  Shared (the wire's kind V: set, key, parts; learned rows as a block of kind L) with the guild and with the party or
---  raid, whoever there has Sane UI: what one player confirms, the others take (an entry or a part they have unverified;
+--  raid, whoever there has SaneUI: what one player confirms, the others take (an entry or a part they have unverified;
 --  a boss's item or ability only where the game knows that item or spell). Sent slowly, Confirm.GAP seconds apart, and
 --  never in a fight, while the game restricts addons, or inside an instance: what is found there waits in the outbox
 --  (kept in the saved file, at most Confirm.OUTBOX) and goes once the player is out and has somebody to tell.

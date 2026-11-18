@@ -127,7 +127,7 @@ def build_of(folder):
     info = dict(line.split("\t", 1) for line in (folder / "build.txt").read_text(encoding="utf-8").splitlines() if "\t" in line)
     game = GAMES.get(info.get("product"))
     if not game:
-        sys.exit(f"{folder}/build.txt names no product Sane UI knows ({info.get('product')})")
+        sys.exit(f"{folder}/build.txt names no product SaneUI knows ({info.get('product')})")
     return game, int(info["version"].rsplit(".", 1)[1])
 
 

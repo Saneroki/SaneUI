@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book data
+--  SaneUI - Abilities - Book data
 --  What the spellbook holds, as the game's own book gathers it in this client
 --  (Blizzard_PlayerSpells, Camelot/SpellBook/Blizzard_SpellBookFrame.lua
 --  CreateCategoryMixins, SpellBook/Blizzard_SpellBookCategory.lua):

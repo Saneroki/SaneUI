@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates - Plate
+--  SaneUI - Combat - Nameplates - Plate
 --  Our dress on each plate the game shows: a frame of ours on the game's plate
 --  (so it follows the plate's place, scale and fading), centred on the game's
 --  health bar row (HealthBarsContainer), as high as the line inside it needs

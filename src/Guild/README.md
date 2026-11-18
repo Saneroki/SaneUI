@@ -1,4 +1,4 @@
-# Sane UI: Guild
+# SaneUI: Guild
 
 **Status:** first views · **Since:** 2026-10-20 · **Addon:** `SaneUI_Guild` · **Plan:** [Doc/ideas/Guild.md](../../Doc/ideas/Guild.md)
 
@@ -11,7 +11,7 @@ what they wear, their professions) is kept on this computer only, per guild, and
 is on. The other views say they come later.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Guild* under *Sane UI* in the game's addon list. A new addon: the game
+- **Switch it on or off:** tick or untick *Guild* under *SaneUI* in the game's addon list. A new addon: the game
   must be restarted once.
 - **Open it:** your guild key (the game's, J by default), or `/sane guild`. With Social on, it opens Social's full
   screen with the guild window in it (in the layout chosen; if that layout lacks it, it is put in beside the largest
@@ -29,7 +29,7 @@ is on. The other views say they come later.
   *Officers* (*Mains and Alts*, *Promotions*, *Notices*; only for the guild's officers). The tab and view last chosen
   are kept.
 - **Overview:** at the left the quest requests over the planned runs (to come); in the middle the guild's news (who
-  joined, left, was promoted or demoted, reached a level, as noted since Sane UI first read the roster) over the
+  joined, left, was promoted or demoted, reached a level, as noted since SaneUI first read the roster) over the
   guild's chat since you logged in, with a line to write in it (Enter sends); at the right who is where (the
   members online by zone, the zone with most first, their class icons), what members offer the guild (to come),
   and the race to the highest level: the first three on a podium, the next seven under it. On a narrow screen the
@@ -39,7 +39,7 @@ is on. The other views say they come later.
   name over class and rank, level, rank, zone (*here* where you are), note, when last online; online and offline
   under rows that fold them (a click). A click on a column's head sorts by it, again the other way, a third time
   back to online first by rank. The search box finds every word in name, notes, zone and rank. Click a member: at
-  the right its name, level, class, where it is, since when in the guild (for those who joined after Sane UI first
+  the right its name, level, class, where it is, since when in the guild (for those who joined after SaneUI first
   read the roster), its rank with *-* and *+* (demote and promote, where your rank may: the next rank down and up are
   named under them), its note and the officer's note (click to change, where your rank may), its last four events in
   the guild, *Whisper* and *Invite*. A right click on a member: *Whisper*, *Invite*.
@@ -51,10 +51,10 @@ is on. The other views say they come later.
   you stand; another member's gear is dressed on your own figure, as in the game's dressing room (this client cannot
   show another's race). A member that shares nothing yet says so.
 - **Sharing** (options page *Guild*, section *Sharing with the Guild*): *Share My Gear and Professions* (on): your
-  guild's Sane UI sees who your characters are, what they wear and their professions. Nothing goes to anybody outside
-  your guild, and nothing into the data Sane UI ships. Off: nothing of it is sent, and nobody who asks gets it.
+  guild's SaneUI sees who your characters are, what they wear and their professions. Nothing goes to anybody outside
+  your guild, and nothing into the data SaneUI ships. Off: nothing of it is sent, and nobody who asks gets it.
 - **Settings:** *On Social's Full Screen* (on), *The Guild Key Opens It* (on), *Share My Gear and Professions* (on).
-- **Keys:** in the game's key bindings, section *Sane UI*: *Open or close the guild window*. The guild key itself
+- **Keys:** in the game's key bindings, section *SaneUI*: *Open or close the guild window*. The guild key itself
   runs it while *The Guild Key Opens It* is on and you are in a guild; outside one it opens the game's own window,
   where a guild is found.
 

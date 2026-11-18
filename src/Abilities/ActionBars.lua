@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - ActionBars
+--  SaneUI - Abilities - ActionBars
 --  The game's action bars, clean: no border, decoration or background of
 --  theirs left, only the buttons that hold something, each its icon alone,
 --  square, cut free of the edge its picture is drawn with.

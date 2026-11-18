@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Run
+--  SaneUI - Speed Leveling - Run
 --  Runs a guide read from text (Format.lua) for the character played (Saneroki,
 --  2026-10-25: our own engine, needing no other addon): where in it you are,
 --  which steps are at hand, and which of their lines are done, as the game tells

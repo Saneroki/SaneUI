@@ -1,16 +1,16 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Audio line
+--  SaneUI - Navigation - Audio line
 --  The satchel's line of Core's sound profiles (Core.Audio; Saneroki,
---  2026-11-04), first in its section Sane UI:
+--  2026-11-04), first in its section SaneUI:
 --
 --      Sound:  [ Music off           v ]  [cogwheel]
 --
 --  The dropdown names the profile in use, "(changed)" after it while the game's
 --  sound settings differ from it, and lists the profiles, the one in use first:
 --  choosing one sets it at once. Disabled, every account's at first, is no
---  profile: Sane UI leaves the game's sounds alone (Core.Audio.NONE; Saneroki,
+--  profile: SaneUI leaves the game's sounds alone (Core.Audio.NONE; Saneroki,
 --  2026-11-16). The cogwheel opens the game's menu under it
 --  with the game's sound settings now: a checkbox and a slider for each of All
 --  sound, Music, SFX, Dialogue and Ambience, set as they are clicked or moved
@@ -45,7 +45,7 @@ AudioLine.TEXT = {
     changed = "(changed)",
     profileTip = "The sound profile in use. A click lists them: choosing one sets it.",
     changedTip = "The game's sound settings differ from it now: Save or Load in the cogwheel's menu.",
-    disabledTip = "Sane UI leaves the game's sound settings as they are. Choose a profile to have it set them, here and at each login.",
+    disabledTip = "SaneUI leaves the game's sound settings as they are. Choose a profile to have it set them, here and at each login.",
     settings = "Sound settings",
     settingsTip = "The game's sounds now, and Save, Load, New and Delete for the profile in use.",
     save = "Save",

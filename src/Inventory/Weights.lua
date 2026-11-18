@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Weights
+--  SaneUI - Inventory - Weights
 --  What each stat is worth to a character, by class and specialization
 --  (Saneroki, 2026-10-30): so that "an upgrade" means better for the one who
 --  plays it, not only a higher item level. Core.Upgrade asks for them

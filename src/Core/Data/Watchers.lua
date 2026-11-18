@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Watchers
+--  SaneUI - Core - Data - Watchers
 --  Core's watchers that confirm what our data has not had confirmed yet (Data.Confirm, Confirm.lua), and learn what
 --  play shows that the data lacks (Data.Learn): Doc/guides/data.md, *Verified*. Each only looks and compares; nothing
 --  is asked of the game in a fight or while it restricts addons, and a value it hides is passed over.

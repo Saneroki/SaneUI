@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - List
+--  SaneUI - Inventory - Sheet - List
 --  The scrolling list a tab of the sheet shows over the left pane, in the
 --  game's look (its tabs' lists: WowScrollBoxList, MinimalScrollBar, the
 --  game's long lines at its top and bottom). Its rows are plain buttons the

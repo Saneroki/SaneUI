@@ -121,10 +121,10 @@ check(parts.list:IsShown() and parts.rows[1]:IsShown() and parts.rows[1].label._
     "a row for each setup to go through: its name, its steps, Choose defaults")
 check(parts.count._text == ons.TEXT.oneLeft and parts.forward._text:find(ons.TEXT.start, 1, true)
     and parts.back:IsEnabled() == false and not parts.defaults:IsShown() and parts.logo:IsVisible(),
-    "under them: how many are left and Start; Sane UI's logo on the stage")
+    "under them: how many are left and Start; SaneUI's logo on the stage")
 local explained = parts.explained
 check(parts.logo._texture == ons.Window.LOGO and ons.Window.LOGO:find("SaneUI_Onboarding", 1, true),
-    "the plain Sane UI logo, the Onboarding addon's own (not Core's banner)")
+    "the plain SaneUI logo, the Onboarding addon's own (not Core's banner)")
 check(not explained.head:IsShown() and not explained.swap:IsShown() and not explained.own:IsShown()
     and not explained.menu:IsShown() and not explained.menuText:IsShown(),
     "no module that is on has a classic window's button, a full screen's red buttons or kept choices: none of them")
@@ -167,7 +167,7 @@ check(explained.menu:IsShown() and explained.menu._kind == "DropdownButton" and 
 check(explained.own._points[1][5] < explained.swap._points[1][5] * explained.swap:GetScale()
     and explained.menu._points[1][5] < explained.back._points[1][5] * explained.back:GetScale(),
     "one under another")
--- The dropdown works: its menu the kept choices, a tick each; chosen, the game's kept, again, Sane UI's.
+-- The dropdown works: its menu the kept choices, a tick each; chosen, the game's kept, again, SaneUI's.
 local menu = { titles = {}, boxes = {} }
 function menu:CreateTitle(text) self.titles[#self.titles + 1] = text end
 function menu:CreateCheckbox(text, ticked, chosen)
@@ -180,7 +180,7 @@ menu.boxes[1].chosen()
 check(hearth.left and menu.boxes[1].ticked() == true and hearth.chosen[1] == "show", "ticked: the game's own kept")
 menu.boxes[1].chosen()
 check(not hearth.left and menu.boxes[1].ticked() == false and hearth.chosen[2] == "back" and #hearth.chosen == 2,
-    "ticked again: Sane UI's again; nothing else opened")
+    "ticked again: SaneUI's again; nothing else opened")
 Core.Window.All = All
 window.Close()
 Onboarding.Start(true)

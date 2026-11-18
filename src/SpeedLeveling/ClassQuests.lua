@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Class quests
+--  SaneUI - Speed Leveling - Class quests
 --  Your class's quest chains over your guide (Saneroki, 2026-10-31): Bear Form
 --  at 10, Aquatic Form at 16, a warlock's pets, a shaman's totems, each race's
 --  own way to them. The guide knows who plays: when your level reaches a chain

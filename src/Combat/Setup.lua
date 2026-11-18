@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Setup
+--  SaneUI - Combat - Setup
 --  Combat's setup, step by step (Saneroki, 2026-11-18: "We need a onboarding
 --  for our combat module that integrates the nameplates module now"): its
 --  words and samples, handed to Core (Core.Onboarding.Add); the window is the
@@ -73,7 +73,7 @@ local T = Guide.TEXT
 local OWN = {
     { key = "parts", title = "Set up Combat",
       text = Lines({ "Combat", "your unit frames, your party and raid, the nameplates and the auras you track." },
-          { "Ours or the game's", "untick a part to keep the game's own, as before Sane UI." },
+          { "Ours or the game's", "untick a part to keep the game's own, as before SaneUI." },
           { "At the left", "a sample shows each choice at once." },
           { "Every choice", "counts at once. Close at any time: it stays." }),
       settings = { "units", "group", "plates", "reminders" } },

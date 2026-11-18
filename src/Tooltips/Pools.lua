@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Pools
+--  SaneUI - Tooltips - Pools
 --  The parts a panel is drawn with (Panel.lua): texts, thin lines, small
 --  pictures and the strokes of a graph. Each kind is a pool of the panel's own (Core.Pool): a
 --  list of the parts made so far, and how many of them the draw has taken

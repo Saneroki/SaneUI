@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Reminders
+--  SaneUI - Combat - Reminders
 --  A reminder watches one buff or debuff, by its name (so any rank of it), on
 --  the units it watches (you, your target, your focus, a member of your party
 --  or raid, a role, everyone: any of them at once), and puts its icon on a

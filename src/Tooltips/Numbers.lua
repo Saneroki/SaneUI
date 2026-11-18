@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Numbers
+--  SaneUI - Tooltips - Numbers
 --  Figures a tooltip leaves out that follow from what the game does say:
 --
 --  - a spell: what it does on average, per second, per point of what it

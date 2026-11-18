@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Skills
+--  SaneUI - Inventory - Sheet - Skills
 --  The sheet's skills tab, as the game's sheet has it (Camelot's SkillsFrame),
 --  ours: over the left pane your skill lines (C_SkillInfo) in the game's looks
 --  (Rows.lua): a header (a click folds or unfolds it), a sub-header with its

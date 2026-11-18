@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Tree
+--  SaneUI - Abilities - Talents - Tree
 --  The talent frame itself: the game's shared talent frame (Blizzard_Shared-
 --  TalentUI: TalentFrameBaseTemplate with its mixin, TalentFrameBaseMixin)
 --  with the class talents' layer over it, as the game's ClassTalentsFrame-

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Layout
+--  SaneUI - Inventory - Bags - Layout
 --  Where the blocks of a view (Views.lua) go, as plain numbers, in one of
 --  three looks: no frame here, the window (Bags.lua) puts its buttons and
 --  lines where these say.

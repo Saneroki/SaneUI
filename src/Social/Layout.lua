@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Layout
+--  SaneUI - Social - Layout
 --  Every size and distance of the chat window, and what follows from the
 --  window's width. Plain numbers in, plain numbers out: knows no frames.
 --

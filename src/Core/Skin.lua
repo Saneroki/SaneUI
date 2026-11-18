@@ -1,10 +1,10 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Skin
+--  SaneUI - Core - Skin
 --  A window's background and border: the dark tile the game's own dialogs
 --  stand on (BACKDROP_DARK_DIALOG_32_32's background, repeated every 32 units
---  as the game repeats it), and a thin trim in Sane UI's colour (Core.GOLD), on
+--  as the game repeats it), and a thin trim in SaneUI's colour (Core.GOLD), on
 --  a plate with round corners (Shape.lua) as round as the window's settings say
 --  (Corner radius; without settings, Shape's own).
 --

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Texts
+--  SaneUI - Tooltips - Texts
 --  The module's own words, and the words of the game it has to know.
 --
 --  A panel sorts a tooltip's lines, and some lines can only be known by what

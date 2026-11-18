@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Conditions
+--  SaneUI - Abilities - Macros - Conditions
 --  The game's macro conditions in plain words. The game judges them: Sane Macros
 --  only writes them, as the words between a macro's square brackets. Each entry
 --  says what it means, and its opposite (the game's word with "no" before it).

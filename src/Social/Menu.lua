@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Menu
+--  SaneUI - Social - Menu
 --  The list behind the chat's name in the line to write in (and the window's
 --  chat button), in columns: the chats you can write in right now, the one you
 --  write in marked (Channels.lua); everything the window can show, each with a

@@ -1,9 +1,9 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Stats
+--  SaneUI - Core - Stats
 --  The stats as players write them (Saneroki, 2026-10-30): Str, Stam, Crit, in
---  every view of Sane UI. The one place those words are kept; a stat the game
+--  every view of SaneUI. The one place those words are kept; a stat the game
 --  words differently one day stays long until it is added here.
 --
 --      Core.StatWord("Strength")     -> "Str"; a word that is no stat as it came

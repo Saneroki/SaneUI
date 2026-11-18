@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Sparkles
+--  SaneUI - Navigation - Sparkles
 --  Gold sparkles in the world on the herb or ore near you: the one the game
 --  picks as what your interact key would use (its "soft interact" target). The
 --  setting Sparkles on herbs and ore.

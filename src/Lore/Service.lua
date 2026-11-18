@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Lore - Service
+--  SaneUI - Lore - Service
 --  Straight to what an NPC is there for (Saneroki, 2026-11-06: past the
 --  gossip of "I need a ride" and "Show me your wares", Shift for the choices):
 --  a vendor's goods, a flight master's map, a trainer's lessons, the bank, the

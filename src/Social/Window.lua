@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Window
+--  SaneUI - Social - Window
 --  The window: the list of messages, a window of Core's of the kind screen
 --  (Core.Window.KINDS: on the screen all the time, docked at first in the lower
 --  left corner, no title bar while small). Moving, sizing (only in Blizzard's

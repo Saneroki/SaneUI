@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Window
+--  SaneUI - Inventory - Window
 --  The module's window, one of Core's (kind screen): docked in the screen's
 --  bottom right corner at first, empty and see-through while small (nothing in
 --  it takes the mouse; in Edit Mode it shows its box, to be docked elsewhere).
@@ -46,7 +46,7 @@ local function Search(text)
     ns.Board.Search(text)
 end
 
--- The game's own character sheet and bags, in Core's dropdown Classic windows; on them the button Sane UI: ours,
+-- The game's own character sheet and bags, in Core's dropdown Classic windows; on them the button SaneUI: ours,
 -- filling the screen (Core's Classic.lua). Our code never opens the game's character sheet (README, *Never the
 -- game's panels*): its key is said instead. The bags are no panel: they open and close by our code; chosen, they
 -- show (Keys.GameBags: else they stand hidden while the bag keys open ours).
@@ -61,7 +61,7 @@ local function CloseBags()
     if close then close() end
     ns.Keys.GameBags(false)
 end
--- The button Sane UI is there only while ours can come: the module running, Can expand to fullscreen on.
+-- The button SaneUI is there only while ours can come: the module running, Can expand to fullscreen on.
 local function Running() return not ns.off and (ns.options or {}).expand ~= false end
 local CLASSIC = {
     { text = CHARACTER, show = function() Core.Classic.Press(CHARACTER, "TOGGLECHARACTER0") end,

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Walk
+--  SaneUI - Navigation - Walk
 --  Where a player can walk: Core's set Walking, made from the game's own files
 --  by dev/tools/walk-data. Per terrain tile a block: its floors joined into rectangles, each with
 --  its height, its kind (the ground, water, a building's floor), its region (all a player can walk

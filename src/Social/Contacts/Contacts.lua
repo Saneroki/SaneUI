@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts
+--  SaneUI - Social - Contacts
 --  What the lists of the friends list's panel (Friends.lua) share: the game's
 --  colours and status icons of its friends list, a status read, how long ago
 --  something was, the filter by status, a whisper, a player's name to add,

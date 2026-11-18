@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Economy - Deals
+--  SaneUI - Economy - Deals
 --  What is worth buying and what worth selling right now, as two plain lists.
 --  No frames: Tab.lua draws them, the tests feed them made-up prices.
 --

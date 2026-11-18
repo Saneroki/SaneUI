@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Onboarding
+--  SaneUI - Core - Onboarding
 --  What each module hands in for its setup, step by step, and opening it.
 --  The window is an addon of its own, SaneUI_Onboarding (src/Onboarding),
 --  loaded on demand and shipped with Core (Saneroki, 2026-11-16: "both
@@ -75,10 +75,10 @@ Onboarding.WAIT = 4             -- seconds after the loading screen before a set
 Onboarding.TEXT = {
     command = "a module's setup, step by step: what it shows and how you want it (/sane setup combat)",
     later = "the setup opens after the fight.",
-    missing = "the setup needs the addon Onboarding: tick it under Sane UI in the addon list.",
+    missing = "the setup needs the addon Onboarding: tick it under SaneUI in the addon list.",
     none = "no module that is on has a setup yet.",
     unknown = "no setup called %s. Setups: %s.",
-    defaults = "%s: set the choices of its setup back to Sane UI's defaults?",
+    defaults = "%s: set the choices of its setup back to SaneUI's defaults?",
     defaultsYes = "Choose defaults",
 }
 

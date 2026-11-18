@@ -1,9 +1,9 @@
 ## Interface: 16001, 120105
 ## Title: Speed Leveling
-## Notes: One key for questing, pressed again and again: it loots the corpse beside you, talks to the quest giver in front of you, picks up what your quests want, attacks your foe, or finds and marks what your quests and your guide want around you; it hearths when your guide says so, and uses a quest item when nothing is around. At a quest giver it takes and hands in your guide's quests. Shows your leveling guide's steps over the world, run by Sane UI itself. Give it a key in the game's key bindings, under Sane UI.
+## Notes: One key for questing, pressed again and again: it loots the corpse beside you, talks to the quest giver in front of you, picks up what your quests want, attacks your foe, or finds and marks what your quests and your guide want around you; it hearths when your guide says so, and uses a quest item when nothing is around. At a quest giver it takes and hands in your guide's quests. Shows your leveling guide's steps over the world, run by SaneUI itself. Give it a key in the game's key bindings, under SaneUI.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\Icons\Ability_Hunter_MarkedForDeath
@@ -41,7 +41,7 @@ Rewards.lua
 Quests.lua
 # What would hold you up on the way: all loot taken, the game's questions answered, upgrades put on
 Errands.lua
-# Group rolls decided with the Sane UI of the other characters in your group
+# Group rolls decided with the SaneUI of the other characters in your group
 Rolls.lua
 # The guide over the world, its arrow, its icons to use and to target, the game's map pin on its place, and the
 # window of the guides kept

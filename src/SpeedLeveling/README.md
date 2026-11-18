@@ -1,9 +1,9 @@
-# Sane UI: Speed Leveling
+# SaneUI: Speed Leveling
 
 **Status:** built · **Since:** 2026-10-25 · **Addon:** `SaneUI_SpeedLeveling` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
-One key for questing, pressed again and again, and your leveling guide over the world, run by Sane UI itself. It
+One key for questing, pressed again and again, and your leveling guide over the world, run by SaneUI itself. It
 needs no other addon: it reads leveling guides written as text (the guides that come for each game in its guide
 pack, the guides you bought, opened for your own account, and guides you paste) and runs them with an engine of its
 own. A right click on the guide's zone chooses the one to follow; with none followed, *Select a guide* and its button.
@@ -15,7 +15,7 @@ classes, a class's own steps only for it, and whoever is through with a step fir
 Each press of the key does the first of these that is due (the order the game's own gamepad interact button keeps):
 
 1. **Loot:** a corpse with loot beside you is opened, as a right click does. What is taken is up to the game's loot
-   window, or Sane UI's Loot module where it is switched on (its rules may take some of it at once; *Take all loot*
+   window, or SaneUI's Loot module where it is switched on (its rules may take some of it at once; *Take all loot*
    sets it to everything). A corpse away from you the key runs you to first (*Walk to corpses*).
 2. **Fight in a fight:** your target is a living foe and you are in a fight: it gets a skull and is attacked.
 3. **Use the step's item on your target:** out of a fight, your target is the one a step's item is used on, as the
@@ -39,13 +39,13 @@ So: kill, press to loot, press to find the next one, press to attack; press to f
 it and take its quests; walk over the quest's plant, press to pick it; press on the corpse to use the step's item.
 The game lets no addon walk you to a place on the map: only to a target, by its own Click-to-Move.
 
-**Independent (Saneroki, 2026-10-25).** The leveling guide Sane UI knows is needed for nothing: Sane UI reads only
+**Independent (Saneroki, 2026-10-25).** The leveling guide SaneUI knows is needed for nothing: SaneUI reads only
 the words of its text format and the recipe its bought guides are locked by (`Core.Neighbours.Format`,
 `Core.Neighbours.Lock`, copies — nothing of the addon is called at runtime), and runs the guides itself.
 
 ## How to use
 - **Its key:** on the profile *Speedleveling*, where it has none it gets E, once, in place of the game's Strafe Right, and
-  the chat says so. The other profiles have key bindings of their own, without it. Change it in Esc > Options > Keybindings, under *Sane UI*: *Loot, talk, pick up, attack, find and mark,
+  the chat says so. The other profiles have key bindings of their own, without it. Change it in Esc > Options > Keybindings, under *SaneUI*: *Loot, talk, pick up, attack, find and mark,
   use*. Taken off again, it stays off, and the module says so in chat at every login. The game keeps key
   bindings per account: on a new account give it one again (a key there may still be bound to a button that is gone,
   and then does nothing). `/sane key` shows the keys it has.
@@ -61,13 +61,13 @@ the words of its text format and the recipe its bought guides are locked by (`Co
   Paste the **import string** of the guides you bought into the line at the top — it is opened for the account you
   are playing, and no other — or paste a guide's **text** into the box below and press *Read*.
 - **Pause it, or switch it off:** *Your guide* on the options page.
-- **Switch it on or off:** tick or untick *Speed Leveling* under *Sane UI* in the game's addon list.
+- **Switch it on or off:** tick or untick *Speed Leveling* under *SaneUI* in the game's addon list.
 - **On or off:** the box *Speed Leveling* at the foot of the bags and the switch of that name in the minimap's satchel
   (Saneroki, 2026-10-30) are one and the same: off, nothing of the guide is to be seen, whatever *Your guide* says (`Guide.State`). Each is the profile: ticked, this
   character uses *Speedleveling*; unticked, it goes back to the profile it used before, *Accountwide* if it had no other.
   Every switch below is off at first and on in *Speedleveling* alone (Core's `Presets.lua`), so a switch ticked in another
   profile works there by itself; with none on, all of the module rests: the key does nothing, the guide is hidden.
-- **Its page** in Sane UI's options, *Speed Leveling*:
+- **Its page** in SaneUI's options, *Speed Leveling*:
 
 | Setting | In *Speedleveling* | What it does |
 | --- | --- | --- |
@@ -131,21 +131,21 @@ Speed Leveling keeps the guides you add for the account (`Core.Store`, each pack
 for each character which guide it follows and where it is in each (`Core.Character`). A guide comes from one of three
 places, all read by our own reader (`Format.lua`) and run by our own engine (`Run.lua`):
 
-- **The guides you bought** (`Unlock.lua`): a bought guide of the leveling guide Sane UI knows comes as an import
-  string that is locked to the buyer's account. Sane UI opens it with the BattleTag of the account you are playing
+- **The guides you bought** (`Unlock.lua`): a bought guide of the leveling guide SaneUI knows comes as an import
+  string that is locked to the buyer's account. SaneUI opens it with the BattleTag of the account you are playing
   and no other (the key is made from the tag in memory and never kept; base64 and zlib are the game's own,
   `C_EncodingUtil`), and a string bought for another account stays shut. The work runs in steps over frames
   (`Core.Steps`), so a string of megabytes does not hold the game up.
 - **The guides that come for each game** (Saneroki, 2026-10-26): a guide pack, an addon of its own for one game
-  (*Guides: Forever*, `SaneUI_GuidesForever`; *Guides: Retail*, `SaneUI_GuidesRetail`), made apart from Sane UI's
-  code and put into the game (no guide's text is in Sane UI's repository). Its TOC says `## X-SaneUI-Guides: 1`,
+  (*Guides: Forever*, `SaneUI_GuidesForever`; *Guides: Retail*, `SaneUI_GuidesRetail`), made apart from SaneUI's
+  code and put into the game (no guide's text is in SaneUI's repository). Its TOC says `## X-SaneUI-Guides: 1`,
   its game (`## X-SaneUI-Games`) and `## LoadOnDemand: 1`; Speed Leveling loads the one for the game at the start
   (`Guide.LoadPacks`), and the pack hands over each guide's head and its text, zlib-packed in base64
   (`SaneUI.SpeedLeveling.TakeGuides`). They are not kept: the pack holds them. A guide you add under the same group
   and name goes before the pack's; a new character takes the first default guide of those you added, then of the
   pack in its own order. `dev/build` leaves a guide pack in the game. A pack may hold guides you bought as well
   (marked bought, for that game only), put there on this computer so they need no paste (Saneroki, 2026-10-29).
-- **A guide pasted as text** (`Format.lua`): written in the text format the leveling guide Sane UI knows uses (its
+- **A guide pasted as text** (`Format.lua`): written in the text format the leveling guide SaneUI knows uses (its
   words for commands, step marks, colours and game tags are Core's to know, `Core.Neighbours.Format`; everything else
   is ours). A head (name, group, the guides after it, who starts with it, which games it is for; a part of a longer
   way, reached only as another guide's next, is not listed; a divider of a list is no guide), then steps, each with
@@ -216,7 +216,7 @@ A part of its own (`Arrow.lua`), placed in Edit Mode apart from the guide, at fi
 (`Core.TOAST_TOP`), out of sight while it shows (`Core.TopTaken`); the toast of a new level stands right of it and the
 arrow stays in sight (Saneroki, 2026-11-04). Shown while the guide is and has a place to go to:
 
-- **Sane UI's leather ring that runs out into a point** (the far herbs' mark, `Art/mark-pointed`), turned the way to
+- **SaneUI's leather ring that runs out into a point** (the far herbs' mark, `Art/mark-pointed`), turned the way to
   the place (up: ahead), a step every 0.05 s.
 - **Straight at the place, as the crow flies** (Saneroki, 2026-11-07: "back to where it points towards the end goal
   instead of following the route"): the ring turns to the guide's place and the yards are the straight line to it,
@@ -305,10 +305,10 @@ Without Core's data (Retail, for now) none are woven.
 ### The icons
 Past the guide's head, a row of icons only (`Icons.lua`): first the items the steps want used (the Hearthstone while a
 step hearths, the steps' items, the game's own quest items of your quests — only what can actually be used, never the
-gear or the loot a step merely mentions), then the NPCs and the creatures to target, eight at most. Each in Sane UI's
+gear or the loot a step merely mentions), then the NPCs and the creatures to target, eight at most. Each in SaneUI's
 round leather ring (`Art/mark-round`): an item its picture, cooldown and count; a target the game's speech bubble or
 sword, its portrait once you have seen it (its nameplate, your target). A click uses the item, or targets the name
-(with the skull while *Skull on what is found* is on); the mouse on one says what it is. They are Sane UI's own secure
+(with the skull while *Skull on what is found* is on); the mouse on one says what it is. They are SaneUI's own secure
 buttons: set out of a fight only (in one the row stays as it was and follows once it is over), placed by the screen
 where the guide's head ends. They show with the mouse on the guide, by how see-through they are: that alone the game lets
 change in a fight. Out of sight they are out of the mouse's way, a click there reaches the world; a fight begins with
@@ -544,7 +544,7 @@ choice is made by those, in a fight too (`Key.lua`):
 | `Steps.lua` | The guide over the world: drawn from the picture, its clicks, its menus (the guides, its settings), its card with no guide |
 | `Arrow.lua` | The arrow, a part of its own: where it points, what to do there, its words |
 | `Pin.lua` | The game's map pin on the guide's place |
-| `Icons.lua` | The icons past the guide's head: items to use and names to target, Sane UI's own secure buttons |
+| `Icons.lua` | The icons past the guide's head: items to use and names to target, SaneUI's own secure buttons |
 | `Guides.lua` | The window of the guides: the list by group, the import line, the box to paste into, *Read* |
 | `Bindings.xml` | The key in the game's key bindings |
 

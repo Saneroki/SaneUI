@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - PriceGraph
+--  SaneUI - Tooltips - PriceGraph
 --  How an item's price went at the auction house, at the end of its Gold section
 --  while Alt is held (Kinds/Gold.lua asks for the row, Panel.lua gives it a place):
 --

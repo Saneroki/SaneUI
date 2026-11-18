@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Canvas
+--  SaneUI - Navigation - Canvas
 --  The frame the map is drawn in, the same for both views (Window.lua gives it
 --  the camera of the view that shows): its layers, the player's place, the
 --  mouse.

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Alts - Snapshot
+--  SaneUI - Inventory - Alts - Snapshot
 --  What the window of the other characters shows, without a frame: the
 --  account's characters as Core's data framework keeps them (Core.Data,
 --  Characters.lua; read only, never written), what each has where, and what

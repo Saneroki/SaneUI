@@ -6,7 +6,7 @@ boss), the points as lists, "(was X)" after what changed (Doc/guides/blizzard-up
    "official": [{"title": "...", "url": "..."}],            Blizzard's pages this was compared with; [] when it has none
    "sections": [{"name": "Classes", "points": [...],
                  "groups": [{"name": "Mage", "points": [...], "groups": [{"name": "Frost", "points": [...]}]}]}],
-   "sane": ["what changed in Sane UI for this build", ...]}
+   "sane": ["what changed in SaneUI for this build", ...]}
 
   a point   {"text": "...", "was": "25", "origin": "both", "extra": ["what we found beyond Blizzard's line"],
              "note": "our remark", "link": "the section of Blizzard's page"}
@@ -196,7 +196,7 @@ def has_points(block):
 def markdown(notes):
     """patchnotes.md: the same notes as text."""
     lines = [f"# {title_of(notes)}", "", f"Build {notes['from']} to {notes['build']}, {spelled(notes['day'])}.",
-             "Sane UI's own notes, read from the game client and compared with Blizzard's published notes.", ""]
+             "SaneUI's own notes, read from the game client and compared with Blizzard's published notes.", ""]
     if notes.get("official"):
         lines += ["Blizzard's pages:"] + [f"- [{p['title']}]({p['url']})" for p in notes["official"]] + [""]
     elif notes.get("crosschecked"):
@@ -205,7 +205,7 @@ def markdown(notes):
         if has_points(section):
             lines += [f"## {section['name']}", ""] + block_lines(section, 3) + [""]
     if notes.get("sane"):
-        lines += ["## Sane UI", ""] + [f"- {line}" for line in notes["sane"]] + [""]
+        lines += ["## SaneUI", ""] + [f"- {line}" for line in notes["sane"]] + [""]
     return "\n".join(lines)
 
 
@@ -387,21 +387,21 @@ def body_html(notes, facts=None):
     sections = [s for s in notes["sections"] if has_points(s)]
     links = [(s["name"], slug(s["name"])) for s in sections]
     if notes.get("sane"):
-        links.append(("Sane UI", "sane-ui"))
+        links.append(("SaneUI", "sane-ui"))
     bar = "".join(f'<a href="#{anchor}">{e(name)}</a>' for name, anchor in links)
     body = "".join(f'<details class="section" id="{slug(s["name"])}"><summary><h2>{e(s["name"])}</h2>'
                    f'<span class="count">{counted(s)}</span></summary>{block_html(s, 0)}</details>' for s in sections)
     sane = ""
     if notes.get("sane"):
         lines = "".join(f"<li>{e(line)}</li>" for line in notes["sane"])
-        sane = (f'<details class="section sane" id="sane-ui"><summary><h2>Sane UI</h2>'
+        sane = (f'<details class="section sane" id="sane-ui"><summary><h2>SaneUI</h2>'
                 f'<span class="count">{len(notes["sane"])}</span></summary><ul class="points">{lines}</ul></details>')
-    return (f'<div class="page"><header><p class="eyebrow">Sane UI patch notes</p><h1>{e(GAMES[notes["game"]])} {e(notes["patch"])}</h1>'
+    return (f'<div class="page"><header><p class="eyebrow">SaneUI patch notes</p><h1>{e(GAMES[notes["game"]])} {e(notes["patch"])}</h1>'
             f'<p class="builds">Build {e(notes["from"])} to {e(notes["build"])} &middot; {e(spelled(notes["day"]))}</p>'
             f'{official}<ul class="legend">{legend}</ul></header>'
             f'<nav class="bar" aria-label="Sections">{bar}<button id="toggle-all" type="button" aria-pressed="false">Expand all</button></nav>'
             f"<main>{body}{sane}{every_change(facts)}</main>"
-            '<p class="foot">Made by Sane UI from the game client. Not an official Blizzard page.</p></div>'
+            '<p class="foot">Made by SaneUI from the game client. Not an official Blizzard page.</p></div>'
             f"<script>{SCRIPT}</script>")
 
 

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Book layout
+--  SaneUI - Abilities - Book layout
 --  Where each entry of the spellbook stands: which view (a page of the book),
 --  which row and column, and where that is. Lists in, lists out: nothing here
 --  touches a frame.

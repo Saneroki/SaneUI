@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Satchel
+--  SaneUI - Navigation - Satchel
 --  One button on the small map, in its lower corner at the screen's edge (the
 --  window's grip has the corner away from it; the upper one where the window
 --  stands in the screen's lower half): a leather satchel in the leather ring of
@@ -21,9 +21,9 @@ local _, ns = ...
 --                its own code: out of a fight only), Clock (the game's clock window: its alarm
 --                and settings; while the alarm sounds, a click stops it) and Stopwatch (the
 --                game's, on the screen), each ticked while open (Saneroki, 2026-10-25)
---      Sane UI   first the line of Core's sound profiles (AudioLine.lua; Saneroki, 2026-11-04):
+--      SaneUI   first the line of Core's sound profiles (AudioLine.lua; Saneroki, 2026-11-04):
 --                Sound, the profile in use in a dropdown, a cogwheel with the game's sound
---                settings; then the quick switches Sane UI's modules offer (Core.Switches;
+--                settings; then the quick switches SaneUI's modules offer (Core.Switches;
 --                Saneroki, 2026-10-26): Speed Leveling on or off. A click is the module's own
 --      AddOns    only while there are any (Saneroki, 2026-10-26): the buttons other addons hang round the minimap and the addons
 --                the game's addon compartment lists (Strays.lua), each over its
@@ -51,7 +51,7 @@ local _, ns = ...
 --  Beside its X, the button with the circling arrows that the game's minimap has
 --  too (Core's Window.Swap; Saneroki, 2026-11-10: "so we have a toggle so we
 --  can go back and forth"): the game's own minimap instead of ours (the switch
---  Show the game's minimap), and its button Sane UI window brings ours back.
+--  Show the game's minimap), and its button SaneUI window brings ours back.
 --
 --  A cell switched on shows its picture whole with the game's tick, one switched
 --  off faint and grey. Closed the first time the mouse leaves the page (Saneroki,
@@ -130,7 +130,7 @@ Satchel.TEXT = {
     framerate = "FPS",
     latency = "Ping (ms)",
     homeWorld = "%d ms home, %d world", -- home and world on one line (Saneroki, 2026-10-26): the box's tooltip now
-    switches = "Sane UI",
+    switches = "SaneUI",
     dayTime = "Time of day",
     day = "Day",
     night = "Night",
@@ -259,7 +259,7 @@ local function Tools()
     end
     return list
 end
--- The quick switches Sane UI's modules offer (Core.Switches): Speed Leveling on or off.
+-- The quick switches SaneUI's modules offer (Core.Switches): Speed Leveling on or off.
 local function Switches()
     local list = {}
     for _, switch in ipairs(Core.Switches()) do
@@ -765,7 +765,7 @@ end
 function Satchel.Fill()
     if not panel or not panel:IsShown() then return end
     -- Each: its title, what it holds, the line while it holds nothing, its pictures' size and its rows' height; the
-    -- zone's its colour, its boxes and its lines too; Sane UI's the sound line first.
+    -- zone's its colour, its boxes and its lines too; SaneUI's the sound line first.
     local zone, colour = Zone()
     local sections = {
         { zone, Tools(), nil, Satchel.ICON, Satchel.CELL[2], colour = colour, figures = Figures(), lines = Lines() },

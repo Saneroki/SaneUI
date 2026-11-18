@@ -1,9 +1,9 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Neighbours
---  The other addons Sane UI knows, and adapts to when they are installed
---  (Saneroki, 2026-10-20: the known addons). This is the one file of Sane UI
+--  SaneUI - Core - Neighbours
+--  The other addons SaneUI knows, and adapts to when they are installed
+--  (Saneroki, 2026-10-20: the known addons). This is the one file of SaneUI
 --  that names them: each is described here by what a module needs of it, its
 --  folder and its window with the ways to open and close it. A module asks for
 --  one by its key and never names the addon itself; the answer is nil while
@@ -22,7 +22,7 @@ local Core = SaneUI.Core
 --      planner:Open(), planner:Close()  -- by its own functions
 --      planner:Follow(fn)               -- fn() after each opening of it, whatever opened it
 --
---  A leveling guide is not adapted to at runtime: Sane UI only reads the words
+--  A leveling guide is not adapted to at runtime: SaneUI only reads the words
 --  of its text format, so Speed Leveling can run guides written in it with an
 --  engine of its own (Saneroki, 2026-10-25). The words are given as copies, so
 --  nothing of the addon is kept or called:
@@ -37,7 +37,7 @@ local Core = SaneUI.Core
 --
 --      local lock = Core.Neighbours.Lock("guide")     -- a copy: { account, tag, width, taps, mark, close, version }
 --
---  A dungeon map addon is not adapted to either: Sane UI only speaks its way of
+--  A dungeon map addon is not adapted to either: SaneUI only speaks its way of
 --  sharing map drawings, so Navigation's sketches go both ways with its players
 --  (Saneroki, 2026-11-16): its share strings pasted, its shares heard on its own
 --  addon messages, ours sent in its format as well. The words of that format,
@@ -54,13 +54,13 @@ Neighbours.KNOWN = {
     -- first time it opens; its table's UI opens (Show) and closes (Hide) it.
     talents = { addon = "TalentsForeverBook", title = "Talents Forever", window = "TalentsForeverBookFrame",
                 api = "TalentsForeverBook", open = "Show", close = "Hide" },
-    -- A leveling guide whose text format Sane UI reads (Saneroki, 2026-10-25): Speed Leveling runs guides written
+    -- A leveling guide whose text format SaneUI reads (Saneroki, 2026-10-25): Speed Leveling runs guides written
     -- in it (the guides you bought, opened for your own account, and guides pasted as text) with an engine of its
     -- own, needing nothing of the addon at runtime. Named here only to read its format: each command word and step
-    -- mark by a word of ours, the marks of game modes Sane UI's games do not play, the game tags that say which games
+    -- mark by a word of ours, the marks of game modes SaneUI's games do not play, the game tags that say which games
     -- a guide is for, the colour words its texts give names, and the recipe its bought guides are locked by (lock).
     guide = {
-              -- Its text format: each command word and step mark by ours, the marks of game modes Sane UI's games do
+              -- Its text format: each command word and step mark by ours, the marks of game modes SaneUI's games do
               -- not play, and its colour words by our kinds.
               commands = { accept = "take", daily = "take", acceptmultiple = "take", turnin = "handin",
                            dailyturnin = "handin", turninmultiple = "handin", complete = "goal", collect = "carry",

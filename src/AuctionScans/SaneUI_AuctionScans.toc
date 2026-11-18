@@ -1,9 +1,9 @@
 ## Interface: 16001, 120105
 ## Title: Data: Auction Scans
-## Notes: Every full scan of the auction house, every auction in it, in a file of its own. Sane UI loads it when you open the auction house, so a login never has to read it. Switched off, the scans' prices are still kept, but not each auction.
+## Notes: Every full scan of the auction house, every auction in it, in a file of its own. SaneUI loads it when you open the auction house, so a login never has to read it. Switched off, the scans' prices are still kept, but not each auction.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## LoadOnDemand: 1

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - GroupFace
+--  SaneUI - Combat - Units - GroupFace
 --  What one member of your party or raid looks like: a nameplate's bar, a bit
 --  shorter and taller, one height whatever it shows:
 --    left    the raid marker, then the name, with as much room as the frame has

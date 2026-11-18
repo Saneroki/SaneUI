@@ -3,7 +3,7 @@
 ## Notes: Draws the game's tooltips anew: items, spells, players and creatures (health, power, target, buffs), buffs and quests, each in a tidy panel in its own colour. Shows what an item brings in, with advice on what to do with it for gold. Can anchor tooltips to the mouse cursor. Switched off, the tooltips are the game's own again.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\AddOns\SaneUI_Tooltips\Art\icon

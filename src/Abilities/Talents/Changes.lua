@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Talents - Changes
+--  SaneUI - Abilities - Talents - Changes
 --  Buying, refunding, applying, undoing and resetting talents, as the game's
 --  class talents frame does them (the shared ClassTalents/Blizzard_Class-
 --  TalentsFrame.lua over Blizzard_SharedTalentFrame.lua's TalentFrameBaseMixin;

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Contacts - Account
+--  SaneUI - Social - Contacts - Account
 --  The head of the friends list's panel: you on Battle.net, as the game's
 --  friends list shows you at its top. At the left the status you are seen in
 --  (Available, Away, Busy: the game's dropdown with its status icons), then

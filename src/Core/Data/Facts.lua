@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Facts
+--  SaneUI - Core - Data - Facts
 --  What the game shows of creatures, spells, vendors and items as the player meets them, compared with the sets
 --  (Data.Check, Doc/guides/data.md, *Checked in play*): what agrees confirmed, what differs or is missing learned.
 --

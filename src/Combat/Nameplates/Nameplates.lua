@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates
+--  SaneUI - Combat - Nameplates
 --  The nameplates, a part of Combat (Saneroki, 2026-11-18: "I want a combat module that has the unit
 --  frames, party frames, Nameplates and the edit aura tracking functionality in it"; an addon of its own,
 --  SaneUI_Nameplates, until then): their words and switches, added to Combat's (Combat.lua; Settings.lua
@@ -63,7 +63,7 @@ local WORDS = {
     level = "Level",
     levelTip = "Inside the bar, first: the unit's level, in the game's colour for how hard it is for you (a skull where it is too high to tell).",
     gear = "Item level",
-    gearTip = "Inside a player's bar, after the level: their item level (\"i32\"), the average level of the gear they wear, once the game has let Sane UI inspect them (out of a fight, near enough).",
+    gearTip = "Inside a player's bar, after the level: their item level (\"i32\"), the average level of the gear they wear, once the game has let SaneUI inspect them (out of a fight, near enough).",
     health = "Health",
     healthTip = "At the bar's right end: how much health the unit has, short (850, 1.2k, 1.32m).",
     percent = "Health in percent",

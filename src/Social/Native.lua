@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Native
+--  SaneUI - Social - Native
 --  The game's own chat: out of sight while our window is open (Hide), and
 --  back exactly as it was when it is not (Show).
 --

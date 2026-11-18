@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Join: the game's own chat channels, the same on every
+--  SaneUI - Social - Join: the game's own chat channels, the same on every
 --  character. A channel of the game (General, Trade, ..., as the game names it,
 --  in its language) may carry a wish, kept in the setting presence and set by
 --  its tick in the list on the chat's name (Flip, In):

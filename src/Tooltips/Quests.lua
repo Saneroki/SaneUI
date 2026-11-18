@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Quests
+--  SaneUI - Tooltips - Quests
 --  The quest part of a creature's and an item's panel, from Core's data (the
 --  sets Quests and Drops, Doc/guides/data.md) and your quest log.
 --

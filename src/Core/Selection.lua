@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Selection
+--  SaneUI - Core - Selection
 --  A window chosen in Blizzard's Edit Mode, as the game's own frames are: a
 --  click on its box there selects it (the box in Edit Mode's selected look), and
 --  a small dialog of Core's in the look of Edit Mode's own (the game's

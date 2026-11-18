@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Find
+--  SaneUI - Navigation - Find
 --  What the full map's search finds in the world (Saneroki, 2026-11-15): FindBox.lua is the
 --  field in the title bar and its list; this file reads what was typed, knows what there is
 --  to find and where each thing stands. No frames.

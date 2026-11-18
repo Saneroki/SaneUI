@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Quests
+--  SaneUI - Speed Leveling - Quests
 --  What a quest giver does for your guide (Saneroki, 2026-10-25: one press at
 --  the quest giver, and the guide's quests are taken and handed in): while you
 --  talk to an NPC, the quests the steps at hand take are accepted (those of the

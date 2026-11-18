@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """The private work folder's place, and the common folder every tool and web page uses to reach what is kept
-there: Sane UI's test and concept pictures and render runs (CLAUDE.md, *Where pictures go*).
+there: SaneUI's test and concept pictures and render runs (CLAUDE.md, *Where pictures go*).
 
   assets/generated/   a link to the private folder's generated/: every candidate, try, contact sheet and render
                       run, the picks nothing reads any more (picks/), the web pages' pictures. Tools and pages

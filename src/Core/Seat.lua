@@ -1,9 +1,9 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Seat
---  A window that is not ours (the game's spellbook, the window of an addon Sane
---  UI knows: Neighbours.lua) seated in a room of the screen while one of our
+--  SaneUI - Core - Seat
+--  A window that is not ours (the game's spellbook, the window of an addon
+--  SaneUI knows: Neighbours.lua) seated in a room of the screen while one of our
 --  windows stands full there: in the room's middle, as large as fits and never
 --  larger than it is itself. Only its place, scale and layer are lent
 --  (Core.Lend) and given back exactly. Its parent stays its own, so our code

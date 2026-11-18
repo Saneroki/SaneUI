@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Planner
+--  SaneUI - Navigation - Planner
 --  The way to the game's map pin, drawn as the golden line (Route.lua), always
 --  (no switch since 2026-11-15: Pins.ALWAYS). Knows no frames.
 --

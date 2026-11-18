@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Art
+--  SaneUI - Navigation - Art
 --  The map drawn by hand: Blizzard's zone maps made one map of the whole world,
 --  both continents and Zephras Isle at every zoom (the view Parchment), from the
 --  bottom up:

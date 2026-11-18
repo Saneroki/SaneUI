@@ -3,7 +3,7 @@
 ## Notes: Talks with NPCs as a scene: the NPC's face and words see-through over the world, a paragraph at a time, your answers beside them, the NPC's services (the hearthstone, a vendor, a trainer, flights) as big pictures over them, the rest of the interface out of sight while you talk (its tooltips still there). A quest's rewards say what each item is (cloth, leather, mail, plate, a weapon), whether you can use it, what a vendor pays for it and what it changes against what you wear. Space goes on.
 ## Author: Saneroki
 ## Version: 0.3.0
-## Category: Sane UI
+## Category: SaneUI
 ## Group: SaneUI
 ## Dependencies: SaneUI
 ## IconTexture: Interface\Icons\INV_Misc_Book_11

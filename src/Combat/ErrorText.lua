@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - ErrorText
+--  SaneUI - Combat - ErrorText
 --  The game's red error text at the top of the screen ("Spell is not ready yet",
 --  "Not enough rage") and its sound, off by the switch Hide the red error text. No
 --  setting of the game does this. The frame that shows the text hears one event

@@ -1,5 +1,5 @@
 -- A small stand-in for the WoW client, so the addon's logic can run under plain Lua 5.1.
--- It models only what Sane UI touches: action slots, the cursor, the spellbook, bags,
+-- It models only what SaneUI touches: action slots, the cursor, the spellbook, bags,
 -- timers, events, the options and "frames" that accept any widget call.
 -- Used by the tests next to it (core.lua, spellbook.lua, tooltips.lua, social.lua). Not part of the addon.
 --
@@ -46,7 +46,7 @@ W.macros = {}             -- [name] = index
 W.trainer = nil           -- rows of the open trainer window: { name, kind, icon, level, sub, category, id, cost }
 W.trainerFilter = { available = true, unavailable = true, used = false }
 W.traits = {}             -- spell IDs of the class talent tree
-W.cvars = { scriptErrors = "1" } -- the game shows Lua errors: those Sane UI catches at a door go to CallErrorHandler too
+W.cvars = { scriptErrors = "1" } -- the game shows Lua errors: those SaneUI catches at a door go to CallErrorHandler too
 W.level = 1
 W.printed = {}
 W.frames = {}
@@ -762,7 +762,7 @@ function W.Install(env)
         if template and W.templates[template] then W.templates[template](widget) end
         return widget
     end
-    -- A font object of the addon's own, by its name (Sane UI's Kalam): a global, as the game makes it.
+    -- A font object of the addon's own, by its name (SaneUI's Kalam): a global, as the game makes it.
     env.CreateFont = function(name)
         local font = NewWidget("Font", name)
         if name then env[name] = font end

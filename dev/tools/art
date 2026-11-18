@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Makes the game's textures from the pictures drawn for Sane UI (large PNGs in assets/).
+"""Makes the game's textures from the pictures drawn for SaneUI (large PNGs in assets/).
 
 How and why, with the measurements behind every number: Doc/guides/images.md. In short:
 
@@ -76,7 +76,7 @@ PICTURES = [
       for part in ("banner", "icon")],
     # Onboarding has no options page, so no banner in the game: only its icon (its banner is for CurseForge).
     ("Logos/onboarding-icon.png", "Logo-onboarding-icon", "icon", "Onboarding", "icon.blp"),
-    # The plain Sane UI logo (dev/tools/logo-art saneui): on the setups' first page (src/Onboarding/Window.lua).
+    # The plain SaneUI logo (dev/tools/logo-art saneui): on the setups' first page (src/Onboarding/Window.lua).
     ("Logos/saneui-banner.png", "Logo-saneui-banner", "banner", "Onboarding", "logo.blp"),
     ("SaneSpellbook-banner.png", "SaneSpellbook-banner", "banner", None),  # not shipped: Abilities has no banner
     ("SaneChat-ban*.png", "SaneChat-banner", "banner", None),  # came as "banenr"; not shipped: Social's is its logo's

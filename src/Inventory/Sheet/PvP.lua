@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - PvP
+--  SaneUI - Inventory - Sheet - PvP
 --  The sheet's PvP tab, as the game's sheet has it (Camelot's PVPRankFrame),
 --  ours: the season's rank, kept by the game as the renown of its PvP rank
 --  (C_MajorFactions, PvP.FACTION). Over the left pane: the season, your rank's

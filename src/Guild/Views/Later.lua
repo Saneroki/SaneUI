@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Guild - Views - Later
+--  SaneUI - Guild - Views - Later
 --  A view still to come (Doc/ideas/Guild.md, *Build order*): its tab is there
 --  so the window has its whole shape, and it says what it will hold.
 -------------------------------------------------------------------------------

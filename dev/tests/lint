@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Checks of the addons' files that need no game and no test: the mistakes the game only shows at login.
 
-Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
+SaneUI is one addon per folder in src: SaneUI (Core) and one for each module.
 
   1. Each folder has one TOC. Every file it lists is there (spelled the same, capitals too), and
      every Lua and XML file in the folder is listed, or the game would silently not load it.
   2. The TOCs agree: same game version and addon version, and every module depends on SaneUI and
      is grouped under it, or the game would read it before Core or list it apart.
   3. Every Lua file parses (the game's Lua is 5.1).
-  4. No file writes a global that is not Sane UI's own: all addons share one set of globals,
+  4. No file writes a global that is not SaneUI's own: all addons share one set of globals,
      and a stray one (a forgotten "local") can break another addon or the game's own code. And no file reads a
      name as a global where a local of that name is made further down in the same function (or the file): the
      local does not stand yet, so the game finds nil there (a frame's script calling a local function written
@@ -18,7 +18,7 @@ Sane UI is one addon per folder in src: SaneUI (Core) and one for each module.
   5. Core's data sets (Doc/guides/data.md), compiled from the master for every game version into a scratch
      copy of Core's TOC: every set file listed at its end, their Lua parses and writes no global; and Core's
      TOC declares every saved variable of the data (Data.SAVED in Data/Data.lua) as SaneUIData_<Name>.
-  6. Every function Sane UI gives the game to call later, in Core and in every module, is behind a guard
+  6. Every function SaneUI gives the game to call later, in Core and in every module, is behind a guard
      (Doc/guides/addon-standards.md, section 10): a frame's script, a hook, a timer; a menu's function (its
      lines, a dropdown's menu, its words for the choice, whether it is at its default and its reset, a line's
      tooltip); a list's rows (made, measured, drawn); a row of the game's options (shown, usable) and a
@@ -119,7 +119,7 @@ def check_addon(folder):
         if MAIN not in re.split(r"\s*,\s*", fields.get("Dependencies", "")):
             problems.append(f"{name}: no '## Dependencies: {MAIN}', so the game may read it before Core")
         if fields.get("Group") != MAIN:
-            problems.append(f"{name}: no '## Group: {MAIN}', so the addon list may not show it under Sane UI")
+            problems.append(f"{name}: no '## Group: {MAIN}', so the addon list may not show it under SaneUI")
     return fields, len(listed)
 
 
@@ -434,7 +434,7 @@ def guarded(arg, names, steps=STEPS):
 
 
 def check_guards(folders):
-    """Every function Sane UI gives the game to call later is behind a guard (addon-standards, section 10).
+    """Every function SaneUI gives the game to call later is behind a guard (addon-standards, section 10).
     Returns how many are marked: as intended exceptions (bare), as guarded where the lint cannot follow."""
     marks = {"bare": 0, "guarded": 0}
     for path in sorted(p for folder in folders for p in folder.rglob("*.lua")):

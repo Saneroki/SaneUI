@@ -160,7 +160,7 @@ W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
 local Core = SaneUI.Core
 
--- The leveling guide Sane UI knows is NOT installed: the module stands on its own. A guide of its own is pasted.
+-- The leveling guide SaneUI knows is NOT installed: the module stands on its own. A guide of its own is pasted.
 local known = Core.Neighbours.KNOWN.guide
 local records = {
     Quests = {
@@ -966,7 +966,7 @@ do
     Core.Upgrade, C_Container, C_NewItems, C_Item.EquipItemByName = upgrade, container, new, nil
 end
 
--- The icons above the guide are Sane UI's own secure buttons, which the game holds in a fight: what is wanted changes
+-- The icons above the guide are SaneUI's own secure buttons, which the game holds in a fight: what is wanted changes
 -- in one, the row keeps what it shows and follows once the fight is over.
 do
     local first, third = _G["SaneUISpeedLevelingIcon1"], _G["SaneUISpeedLevelingIcon3"]

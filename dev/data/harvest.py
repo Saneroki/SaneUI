@@ -3,7 +3,7 @@ files into staging for the import.
 
 Core keeps in SaneUIData_Learned[game] (in WTF/Account/<account>/SavedVariables/SaneUI.lua):
   learned[set][key]    a whole row of the set, as the game showed it (Data.Learn, or taken from a guild or group
-                       member's Sane UI): staged as the game's facts at the row's build and day
+                       member's SaneUI): staged as the game's facts at the row's build and day
   confirmed[set][key]  "day\\031build\\031parts": the game agreed with the entry ("*" the whole entry) or with parts of
                        it (a boss's item "l17076", its ability "a8269", a spawn point "p..."; a field the game told,
                        "name", or a member of one, "startNPCs=69": Check.lua): the whole entry staged as confirmed
@@ -211,7 +211,7 @@ def decode(master, schema, row):
 # The harvest -----------------------------------------------------------------------------------------------
 
 def saved_files(wow):
-    """[(game version, path)] of the saved files of Sane UI under a WoW folder (each of its game folders _*_)."""
+    """[(game version, path)] of the saved files of SaneUI under a WoW folder (each of its game folders _*_)."""
     out = []
     for folder in sorted(wow.glob("_*_")):
         game = compiler.product_game(folder)
@@ -223,7 +223,7 @@ def saved_files(wow):
 
 
 def sent_files(path):
-    """[(None, path)] of the saved files of Sane UI in a WTF folder, a game folder or one file a player sent: each
+    """[(None, path)] of the saved files of SaneUI in a WTF folder, a game folder or one file a player sent: each
     game version the file holds is taken (a file sent has no game folder to tell it)."""
     if path.is_file():
         return [(None, path)]

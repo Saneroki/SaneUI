@@ -17,10 +17,10 @@ before: This is an RGBA format image with transparency. It has an alpha channel 
 style: High fantasy concept art quality, a cinematic render with rich materials, compact and refined, neutral to every faction. Flat front view, no perspective, even light from the top left. No gems, no ornaments on the band, no text, no letters, no numbers, no watermark, no background.
 gold: a ring of polished, shaded gold metal with a soft rounded bevel, warm highlights and darker gold in its hollows, like the cast rim of a fine medallion
 
-style: Sane UI's adventurer's journal look: thin dark brown leather with a visible grain and neat saddle stitching, cream parchment with soft faint clouds, clean graphite pencil lines. High fantasy concept art quality, neutral to every faction. Flat front view, no perspective, even light from the top left. No text, no letters, no numbers, no watermark, no background.
+style: SaneUI's adventurer's journal look: thin dark brown leather with a visible grain and neat saddle stitching, cream parchment with soft faint clouds, clean graphite pencil lines. High fantasy concept art quality, neutral to every faction. Flat front view, no perspective, even light from the top left. No text, no letters, no numbers, no watermark, no background.
 leather: a ring of thin dark brown leather with a visible grain, neat saddle stitching running along its middle all the way round and up into the point
 parchment: a narrow band of cream parchment bent into the ring, its edges outlined in clean graphite pencil, the point folded from the same strip of paper
 
 # (the journal's leather words made the pencil ring leather: it has its own style)
-style: A drawing in graphite pencil only, as in Sane UI's adventurer's journal: loose, clean pencil lines and soft pencil shading, no colour, no leather, no paper behind it. High fantasy concept art quality. Flat front view, no perspective. No text, no letters, no numbers, no watermark, no background.
+style: A drawing in graphite pencil only, as in SaneUI's adventurer's journal: loose, clean pencil lines and soft pencil shading, no colour, no leather, no paper behind it. High fantasy concept art quality. Flat front view, no perspective. No text, no letters, no numbers, no watermark, no background.
 pencil: a ring drawn in loose, clean graphite pencil lines and nothing else: two outlines side by side with soft pencil shading between them, the point drawn the same way

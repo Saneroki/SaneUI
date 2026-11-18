@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Currency
+--  SaneUI - Inventory - Sheet - Currency
 --  The sheet's currency tab, as the game's sheet has it (Camelot's TokenFrame),
 --  ours: over the left pane your currencies (C_CurrencyInfo's list) in the
 --  game's looks: its headers (a click folds or unfolds them, Rows.lua), its

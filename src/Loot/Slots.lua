@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Loot - Slots
+--  SaneUI - Loot - Slots
 --  What the open loot holds, read from the game into plain lines: one for
 --  each of the game's slots, in its order (a slot taken is left out). The
 --  window draws them; the rules read them. Nothing here knows a frame.

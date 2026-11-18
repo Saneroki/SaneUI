@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Bar
+--  SaneUI - Combat - Units - Bar
 --  A unit frame's bars, in the look of a nameplate's (Nameplates/):
 --  one rectangle round at its corners, framed by one thin border, holding a
 --  stack of bars a screen pixel apart (the border's dark between them): the

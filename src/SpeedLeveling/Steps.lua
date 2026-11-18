@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Steps
+--  SaneUI - Speed Leveling - Steps
 --  The guide over the world (Saneroki, 2026-10-25): no window, words in
 --  Expressway with a thin dark outline straight on the game (Saneroki's pick of
 --  font for it). In sight only the steps (Saneroki, 2026-11-01):
@@ -462,7 +462,7 @@ function RowMenu(row)
     end))
 end
 
--- Speed Leveling's page in Sane UI's options; Sane UI's options where the game cannot open that page now (in a fight
+-- Speed Leveling's page in SaneUI's options; SaneUI's options where the game cannot open that page now (in a fight
 -- they open once it is over).
 local function Options()
     local category = Core.pages and Core.pages[ns.name]

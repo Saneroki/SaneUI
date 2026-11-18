@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
---  Sane UI - Core - Inspect
+--  SaneUI - Core - Inspect
 --  The item level and the talents of a player, for every view that shows them
 --  (a tooltip, a nameplate): Core.Inspect.Level(unit, guid), .Talents(unit,
 --  guid), and Core.Inspect.Watch(fn): fn(guid) when a player's answer came.

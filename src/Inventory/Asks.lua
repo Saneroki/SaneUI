@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Asks
+--  SaneUI - Inventory - Asks
 --  Equip and delete without asking (Saneroki, 2026-10-30; on at first, in every
 --  profile): the game's questions before gear binds to you or ends a refund, and
 --  before an item is destroyed, answered as its own Yes would.

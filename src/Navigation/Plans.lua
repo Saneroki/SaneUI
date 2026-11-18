@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Plans
+--  SaneUI - Navigation - Plans
 --  Your markers and drawings grouped in plans (Saneroki, 2026-11-15: "drop pins and draw on the map and save those
 --  drawings and map pins together so they can be shared or grouped together. This will be especially helpful in
 --  instance maps"): a plan holds markers (Markers.lua) and drawings (Draw.lua), on any map, a dungeon's floor too;
@@ -15,7 +15,7 @@ local _, ns = ...
 --      Plans.Add(drawing), Plans.Erase(drawing), Plans.Undo(), Plans.Clear(map)
 --      Plans.Share(plan, channel, target)  the whole plan to "RAID", "PARTY", "INSTANCE_CHAT", "GUILD" or "WHISPER"
 --                                  (to target, a player's name); how many blocks went. In the format of the dungeon
---                                  map addon Sane UI knows too (Exchange.lua), for its players there
+--                                  map addon SaneUI knows too (Exchange.lua), for its players there
 --      Plans.Read(sender, text)  a block heard: the share once all its parts are there (Markers asks about it)
 --      Plans.Keep(share)         a plan kept: one of the same origin replaced whole, else a new one
 --
@@ -41,7 +41,7 @@ ns.Plans = Plans
 Plans.KINDS = { pen = true, line = true, arrow = true, circle = true, route = true, text = true }
 Plans.ONE = { route = true, text = true } -- the kinds one point makes (a route's first stop, words)
 -- The colours to draw in, in the palette's order (the game's own where it has them: its gold, its raid warning's red,
--- its paladins' pink). Eight, each of the dungeon map addon Sane UI knows one of ours (Saneroki, 2026-11-16: "expand to
+-- its paladins' pink). Eight, each of the dungeon map addon SaneUI knows one of ours (Saneroki, 2026-11-16: "expand to
 -- 8 colours and 3 lines and other stuff so we are as compatible as possible with their map sharing").
 Plans.COLOURS = {
     { key = "gold", rgb = { 1, 0.82, 0 } }, { key = "red", rgb = { 1, 0.15, 0.1 } },
@@ -322,7 +322,7 @@ function Plans.Share(plan, channel, target)
         local text = #each > 0 and head .. "\030" .. table.concat(each, "\030") or head
         if Core.Wire.SendBlock(ns.Markers.KIND, text, channel, target) then sent = sent + 1 end
     end
-    -- and in the format of the dungeon map addon Sane UI knows, for its players on that channel (Exchange.lua)
+    -- and in the format of the dungeon map addon SaneUI knows, for its players on that channel (Exchange.lua)
     local exchange = ns.Exchange
     if sent > 0 and exchange and exchange.on then
         ns.Safe("exchange", exchange.Send, plan.name, markers, drawings, channel, target, origin)

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Reminders - Editor
+--  SaneUI - Combat - Reminders - Editor
 --  The reminder of the aura chosen in Edit tracked (Units/Lists.lua: /sane auras,
 --  /sane reminders, an aura's menu, a line's cog), under its list and the title
 --  Edit Tracked conditions (Saneroki, 2026-11-09), each setting taking effect

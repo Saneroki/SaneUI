@@ -2,7 +2,7 @@ local _, ns = ...
 if not SaneUI.Core.RETAIL then return end
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Camera.Retail
+--  SaneUI - Navigation - Camera.Retail
 --  Retail's map is the game's own map tree, one map at a time (Saneroki,
 --  2026-10-25), where WoW: Forever's is one world to roam with our own tiles:
 --  the map shown (camera.shown) fills the view whole; the wheel zooms in on it

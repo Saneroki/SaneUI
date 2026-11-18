@@ -1,5 +1,5 @@
 <Bindings>
-	<!-- Combat's keys, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua); the game
+	<!-- Combat's keys, in the game's key bindings under SaneUI (BINDING_HEADER_SANEUI, Core's Bindings.lua); the game
 	     reads this file from the addon's folder by itself. Look out for's button, clicked by the key as the mouse
 	     button "Key": the game focuses who it found (its words in Units/LookOut.lua). -->
 	<Binding name="CLICK SaneUILookOut:Key" category="BINDING_HEADER_SANEUI"/>

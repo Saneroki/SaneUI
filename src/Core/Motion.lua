@@ -1,8 +1,8 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Motion
---  How Sane UI's frames move from one size or place to another. A motion is a
+--  SaneUI - Core - Motion
+--  How SaneUI's frames move from one size or place to another. A motion is a
 --  length of time and one of the easing curves of Blizzard's own interface
 --  (EasingUtil, Blizzard_SharedXML): how much of the way a frame has gone after
 --  so much of the time. There are four:
@@ -10,8 +10,8 @@ local Core = SaneUI.Core
 --      Swing     0.45 s   a little past the mark, then back to it    (OutBack)
 --      Even      0.5 s    a gentle start and a gentle end            (InOutCubic)
 --      Instant            no motion: at the end at once
---  Glide is the general one at first, a switch on the page Appearance of Sane
---  UI's options (Core.general.motion, Saved.lua). A window may have a setting
+--  Glide is the general one at first, a switch on the page Appearance of
+--  SaneUI's options (Core.general.motion, Saved.lua). A window may have a setting
 --  of its own instead (Social's), with "Use global type" among its choices. A
 --  key nobody knows (an old saved one) means the general one.
 --
@@ -54,7 +54,7 @@ for _, kind in ipairs(Motion.KINDS) do byKey[kind.key] = kind end
 
 -- The kind a window moves by: its own setting (key), or the general one if it has none or names none.
 function Motion.Kind(key)
-    -- Animations switched off (Appearance): nothing of Sane UI's moves, whatever a window's own setting says.
+    -- Animations switched off (Appearance): nothing of SaneUI's moves, whatever a window's own setting says.
     if Core.general and Core.general.animations == false then return byKey.off end
     if not byKey[key] then key = Core.general and Core.general.motion end
     return byKey[key] or byKey[Motion.DEFAULT]
@@ -133,7 +133,7 @@ end
 --  messages sliding up to make room (Social): the game's own animations, an
 --  Alpha and a Translation, smoothed as the game smooths its own (SetSmoothing
 --  OUT: quick at first, settling), so the game moves them and no code of ours
---  runs on the way. With Sane UI's animations off (Core.general.animations), no
+--  runs on the way. With SaneUI's animations off (Core.general.animations), no
 --  time, or out of sight, each is where it goes at once.
 --
 --      local fade = Motion.Fade(region)

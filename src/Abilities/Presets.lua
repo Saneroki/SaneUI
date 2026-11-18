@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Presets
+--  SaneUI - Abilities - Presets
 --  A preset (called a "layout" on screen) is a saved copy of all your bars: for
 --  every slot the spell, item or macro that is there, real or reserved. Presets
 --  are kept per class and are shared by all your characters of that class.

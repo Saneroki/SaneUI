@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Views
+--  SaneUI - Inventory - Bags - Views
 --  What the bag window shows for the view chosen in its sidebar, as blocks,
 --  without a frame (Layout.lua lays them out):
 --      all        All Items: Pinned and Recent first (a pinned item only

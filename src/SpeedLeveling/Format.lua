@@ -1,11 +1,11 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Format
+--  SaneUI - Speed Leveling - Format
 --  Reads a leveling guide written as text into a guide of our own shape, for
 --  one character: what is not for its side, race, class or level is left out as
---  it is read, and a step for a game mode Sane UI's games do not play (hardcore,
---  a season) is dropped. The text is in the format the leveling guide Sane UI
+--  it is read, and a step for a game mode SaneUI's games do not play (hardcore,
+--  a season) is dropped. The text is in the format the leveling guide SaneUI
 --  knows uses, so guides written for it, and the guides you bought (Unlock.lua),
 --  can be read (Saneroki, 2026-10-25). That format's own words for its commands,
 --  step marks, colours and game tags are Core's to know (Core.Neighbours.Format):
@@ -583,7 +583,7 @@ function Format.Read(text, who)
                     elseif not step then
                         Head(guide, words.marks[mark], value)
                     elseif words.modes[mark] or Format.Dropped(mark, value, who) then
-                        -- A step for a game mode or a phase Sane UI's games do not play: out again, its name too.
+                        -- A step for a game mode or a phase SaneUI's games do not play: out again, its name too.
                         Drop(holders)
                     elseif keep then
                         Mark(guide, step, words.marks[mark], value)
@@ -628,7 +628,7 @@ function Format.Read(text, who)
                             problems[#problems + 1] = ("line %d: .%s could not be read"):format(number, command)
                             if said then step.lines[#step.lines + 1] = { what = "say", words = said } end
                         elseif said then
-                            -- A command Sane UI does not know: its words still stand.
+                            -- A command SaneUI does not know: its words still stand.
                             step.lines[#step.lines + 1] = { what = "say", words = said }
                         end
                     elseif others then
@@ -741,7 +741,7 @@ function Format.Together(guide, open)
     return guide
 end
 
--- Whether a step mark drops the step for the game played: a phase or an experience rate Sane UI's games are not at.
+-- Whether a step mark drops the step for the game played: a phase or an experience rate SaneUI's games are not at.
 -- Forever is at phase 6 and rate 1; a mark that rules those out drops the step.
 function Format.Dropped(mark, value, who)
     local ours = words and words.marks[mark]

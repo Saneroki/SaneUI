@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Errands
+--  SaneUI - Speed Leveling - Errands
 --  What would hold you up on the way, done for you (Saneroki, 2026-10-30), each
 --  with a switch of its own, on in the profile Speedleveling:
 --    Take all loot    the module Loot set to take everything at once (its

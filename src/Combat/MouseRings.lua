@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Mouse Rings
+--  SaneUI - Combat - Mouse Rings
 --  Two see-through rings around the mouse, there only while they run: the
 --  inner, thinner one the global cooldown, in white, the outer one your cast,
 --  in your class's colour, a bright line with a soft glow leading its sweep. A

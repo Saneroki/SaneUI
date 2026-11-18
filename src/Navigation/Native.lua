@@ -1,15 +1,15 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Native
+--  SaneUI - Navigation - Native
 --  The game's map kept closed while ours stands in for it, and given back.
 --
 --      the keys     the keys bound to the game's map, quest log and minimap open ours instead:
 --                   override bindings on a button of ours (SaneUINavigationKey), set out of combat
 --                   and again when the bindings change. The map's and the quest log's fill the screen
 --                   with our map and back; the minimap's shows or hides our window
---      our own key  Sane UI's map has a key of its own (SANEUI_MAP, in the game's key bindings under Sane
---                   UI; the setup's Keys, Setup.lua): once it has one, the game's map key is the game's
+--      our own key  SaneUI's map has a key of its own (SANEUI_MAP, in the game's key bindings under
+--                   SaneUI; the setup's Keys, Setup.lua): once it has one, the game's map key is the game's
 --                   again and opens the game's map (Saneroki, 2026-11-18: "Give them options to put
 --                   keybinds to open either the native map or our map"). The game's own binding opens it
 --                   (ToggleWorldMap, its secure code; our code never opens the game's panels): a hook after
@@ -44,7 +44,7 @@ ns.Native = Native
 Native.KEYS = { TOGGLEWORLDMAP = "map", TOGGLEQUESTLOG = "quests", TOGGLEMINIMAP = "minimap" }
 Native.BUTTON = "SaneUINavigationKey"
 Native.OWN = "SANEUI_MAP" -- our map's own key (Bindings.xml)
-BINDING_NAME_SANEUI_MAP = "Sane UI's map (full screen and back)"
+BINDING_NAME_SANEUI_MAP = "SaneUI's map (full screen and back)"
 local WAIT = "navigation: keys"
 
 local button, hooked

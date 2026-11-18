@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Characters
+--  SaneUI - Core - Data - Characters
 --  What each of the account's characters has, so that every character sees its alts' things
 --  (Doc/guides/data.md, *Characters*): who it is, its bags, its bank, what it wears, its gold. Kept in
 --  Core's saved variable SaneUIData_Characters, which ships nothing and is taken at every login; never
@@ -16,7 +16,7 @@ local Core = SaneUI.Core
 --      Data.Worn(key)        what one of them wears, slot by slot: { [1] = 16854, [16] = 2139, ... } by the
 --                            game's inventory slot IDs (the gear, the ammo, the bags' slots); nil: no such
 --                            character, not loaded yet, or its slots not read yet (it has not logged in since
---                            Sane UI keeps them)
+--                            SaneUI keeps them)
 --      Data.Count(item)    { total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }: where the account
 --                            has the item (the key "account": the account's own bank), or nil: none, or
 --                            not known yet

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Reminders - Plates
+--  SaneUI - Combat - Reminders - Plates
 --  The reminders shown on the nameplates (Reminders.PLATES among their
 --  places, the place Nameplates; Saneroki, 2026-11-07: "On those nameplates
 --  the trackers are shown directly underneath with no gaps"; on a bar or the

@@ -1,7 +1,7 @@
 local ADDON, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips
+--  SaneUI - Tooltips
 --  The module's own table (ns in all its files), its switches, and when a
 --  tooltip is drawn.
 --

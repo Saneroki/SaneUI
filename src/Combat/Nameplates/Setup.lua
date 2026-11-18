@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Nameplates - Setup
+--  SaneUI - Combat - Nameplates - Setup
 --  The nameplates' steps of Combat's setup (Saneroki, 2026-11-16: "a step by
 --  step window so the player goes through each step where it can see a fake
 --  nameplate in the window and see how it looks with their setting. Each page
@@ -94,7 +94,7 @@ local D40, D60 = Core.Distance(40), Core.Distance(60)
 -------------------------------------------------------------------------------
 Setup.STEPS = {
     { key = "intro", title = "Set up your nameplates",
-      text = Lines({ "Nameplates", "the bars over creatures and players near you, in Sane UI's dress." },
+      text = Lines({ "Nameplates", "the bars over creatures and players near you, in SaneUI's dress." },
           { "This setup", "sets them up to your liking, a page for each part." },
           { "At the left", "a sample plate shows each choice at once." },
           { "Every choice", "counts at once, on the plates around you too. Close at any time: it stays." }),
@@ -275,7 +275,7 @@ local DRAW = {}
 
 function DRAW.intro(board)
     local dress = Put(board, 1, Target(), "CENTER", Wide(board) / 2, 170)
-    Under(board, 1, dress, "A plate of Sane UI: your target, an elite casting at you.", 50)
+    Under(board, 1, dress, "A plate of SaneUI: your target, an elite casting at you.", 50)
 end
 
 function DRAW.size(board)

@@ -1,4 +1,4 @@
-# Sane UI: Social
+# SaneUI: Social
 
 **Status:** a prototype · **Since:** 2026-10-14 · **Addon:** `SaneUI_Social` (was `SaneUI_Chat` until 2026-10-16)
 
@@ -9,7 +9,7 @@ by its lower right corner; the bubbles wrap to whatever width you give it. While
 the game's chat: that one is out of sight, and you write in a line at the bottom of this window.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Social* under *Sane UI* in the game's addon list.
+- **Switch it on or off:** tick or untick *Social* under *SaneUI* in the game's addon list.
 - **Move and size,** as the game's own frames: only in Blizzard's Edit Mode (Esc > Edit Mode). There the
   window shows Edit Mode's blue box, with *Social* on it while the mouse is on it: drag the box to move
   it, the grip in its lower right corner to size it. Smallest size 180 × 130. Place and size are kept.
@@ -18,7 +18,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   snaps there (a tinted shape shows where). It then
   stays at that edge at any size; the grip moves to a corner that is not at the screen's edge. Drag it
   away to free it, or to the screen's middle to dock it there. At first it is docked in the lower left
-  corner (if another of Sane UI's windows is docked there, it stands beside it).
+  corner (if another of SaneUI's windows is docked there, it stands beside it).
 - **No title bar while small:** the small chat is see-through by design and has no title bar of Core's;
   it moves in Edit Mode only.
 - **Full screen title bar:** filling the screen, the window has Core's title bar at its top: *Social* with a
@@ -124,11 +124,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     panels go at once, the guild window with them, and the chat has the whole window.
 - **Classic windows:** full, the dropdown *Classic windows* in the top right corner offers the game's own
   windows instead: *Chat* puts this window away (the switch *Chat window* goes off) and the game's chat is
-  back; its button *Sane UI* (the game's square button with circling arrows, just above its chat menu
+  back; its button *SaneUI* (the game's square button with circling arrows, just above its chat menu
   button, left of the game's chat), `/sane social` or the switch brings this one again. *Friends list*: the window goes back to its
   place and the game's friends list opens (in a fight the game refuses that to an addon: a line says to use the
   game's own key). *Group finder*: the same for the game's group finder (in Retail its own). The game's friends
-  list (or its newer social window, where the game has that on) and group finder have the button *Sane UI* beside
+  list (or its newer social window, where the game has that on) and group finder have the button *SaneUI* beside
   their close button: it closes the game's window and this one fills the screen. The dropdown lists the other modules' game windows too, each under its module's name.
 - **Scroll:** mouse wheel, or the bar at the right, which is only there while you are scrolled up from
   the newest message. At the newest message the window follows new ones; scrolled up to read, it stays
@@ -165,7 +165,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **A message cut by the window's top edge is not shown** until it fits whole.
 - **The ring around a class icon** says what the speaker is to you: yellow a friend, green a guild
   member, purple somebody of your raid, blue of your party (the first that holds). White: a stranger.
-- **Settings** (Esc > Options > AddOns > Sane UI > Social), in two tabs:
+- **Settings** (Esc > Options > AddOns > SaneUI > Social), in two tabs:
   - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (off), *Save chat history* (on) with *Messages kept* (slider
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
     (on), *Channel joins and leaves* (off: somebody joined or left a channel, also the hidden channels addons
@@ -178,7 +178,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     | Line | At first |
     | --- | --- |
     | [x] Can expand to fullscreen (off: the screen edge does nothing; all below greyed out) | on |
-    | Animation type: Use global type (Sane UI > Appearance), Glide, Swing, Even, Instant | Use global type |
+    | Animation type: Use global type (SaneUI > Appearance), Glide, Swing, Even, Instant | Use global type |
     | Background opacity, slider 0 to 100 % (100: the game is hidden) | 50 % |
     | Background texture: Solid black, or one of the game's own, as for the bubbles: Marble, Rock, Slate, Iron, Night | Solid black |
     | Corner radius, slider 0 to 100 % of half the window's shorter side at its size (100: a square window is a circle); full, it is square | 10 % |
@@ -206,11 +206,11 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   join it, wherever the game offers it (a city's channels only in a city); untick it and you leave it, and it is left
   again whenever the game puts you in it. It acts a while after a character comes into the world, when the game
   changes its channels, and at once when you click. The game may refuse to let you leave one (Retail's Newcomer Chat,
-  for one): it says so in a line of its own, the tick comes back on, and Sane UI does not ask again until the next
+  for one): it says so in a line of its own, the tick comes back on, and SaneUI does not ask again until the next
   login or your next click on that tick.
   It works whether the window is open or not, and on every character (the settings of *Social* are account
   wide unless unticked in *Profiles > Game settings*).
-- **You start in no public channel.** On a character's first load Sane UI takes it out of every channel of the game
+- **You start in no public channel.** On a character's first load SaneUI takes it out of every channel of the game
   (General, Trade, Local Defense, Services, Looking For Group, Newcomer Chat, ...): each is left the first time the
   character is seen in it, so also a city's when it first comes to one. That happens once per channel and character,
   on every profile. Join one when you want it, with `/join Trade` or with its tick above: it stays, on that
@@ -239,7 +239,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   tooltip; a click does what it does in the game's chat (the item's window, Shift+click puts the link
   into the line you write in, a player's link opens the player's menu), but only where that opens none of
   the game's panels: a click with the dressing room's key (Ctrl), on a calendar event and the like does
-  nothing here (a panel of the game's opened by Sane UI's code can break the game's own panels until a
+  nothing here (a panel of the game's opened by SaneUI's code can break the game's own panels until a
   `/reload`).
 - **Short chat names:** above a message the chat is named by the first letter of each word of its
   name: G for Guild, P for Party, R for Raid, RW for Raid Warning, S for Say, T for a trade channel,
@@ -256,7 +256,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **The game's own chat is out of sight while this window is open** (its windows, tabs and buttons). The setting
   *Show the game's chat too* keeps it on show next to this window.
   `/sane social` (or `/sane chat`, its word from before) switches between the two: our window, or the game's chat as it was. So does a key
-  of your choice (Esc > Options > Keybindings, section *Sane UI*: *Show or hide the chat window*). The game's chat goes
+  of your choice (Esc > Options > Keybindings, section *SaneUI*: *Show or hide the chat window*). The game's chat goes
   on collecting every line meanwhile, so nothing is missing when it comes back.
 - **In a fight or a dungeon** the game may give addons no chat at all (*chat lockdown*). For that time
   the game's own chat is on show, whatever the setting; afterwards it goes out of sight again.
@@ -278,7 +278,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **If something goes wrong** the module closes its window, gives the game's chat back and says so
   once there, until the next `/reload`. `/sane errors` shows what it was. A single message that cannot
   be read is left out (and noted once); the window goes on. Should no chat be left to type in at all,
-  the game menu (Esc) has the button *AddOns*: untick *Social* under *Sane UI* there.
+  the game menu (Esc) has the button *AddOns*: untick *Social* under *SaneUI* there.
 
 ## Technical details
 - **The way of a message:** game event → `Log.Read` (what it says) → `Log.Add` (the list) → `Log.added`
@@ -349,7 +349,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Ours or the game's chat, one switch:** the setting *Chat window* (`options.window`) is the one place it
   is kept. Every way to change it sets it (`Choose`, `Core.Set`: an open options page follows): the button
   for the game's own window in the full window's title bar, its close button, *Chat* in *Classic windows*,
-  the button *Sane UI* on the game's chat, `/sane social`, the key (`Bindings.xml`: `ns.Toggle`). Its change
+  the button *SaneUI* on the game's chat, `/sane social`, the key (`Bindings.xml`: `ns.Toggle`). Its change
   goes to `Window.Follow`, which shows ours (through Core's `window:Open()`, full again if it was left so) or
   puts it away, and keeps Core's memory of the window (`place.native`) the same.
 - **The line to write in is the game's edit box** (`Input.lua`), only moved. An edit box of our own
@@ -784,7 +784,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | File | What it is |
 |---|---|
 | `SaneUI_Social.toc` | The addon `SaneUI_Social` |
-| `Art/banner.blp`, `Art/icon.blp` | The module's logo (speech bubbles): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/social-banner.png` and `social-icon.png` |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (speech bubbles): one of SaneUI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of SaneUI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/social-banner.png` and `social-icon.png` |
 | `Social.lua` | The module's table, its texts and switches (also the wishes for the game's channels), the events, `/sane social`, the fall-back |
 | `Log.lua` | What an event says; the list of messages. Knows no frames |
 | `Layout.lua` | Sizes, distances, fills; the arithmetic from the window's width. Knows no frames |
@@ -796,7 +796,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Input.lua` | The line to write in: the game's edit box in our window, at rest, given back |
 | `Menu.lua` | The list on the line's label: where to write, what the window shows, the game's channels on every character |
 | `Picker.lua` | The smiley beside the line and its list: raid marks to write, emotes to do |
-| `Art/smiley.blp` | The smiley (24 x 24). Original art of Sane UI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
+| `Art/smiley.blp` | The smiley (24 x 24). Original art of SaneUI (see the project's `LICENSE`), drawn by `dev/tools/smiley-art` into `assets/SaneSocial-Smiley.png`, made by `dev/tools/art`; the game has no smiley of its own |
 | `Join.lua` | The game's chat channels, the same on every character as wished. Knows no frames |
 | `Board.lua` | The full screen's windows on Core's board, its first layout, the guild window held in its panel, the search to all; the list, row and buttons the friends list's tabs share |
 | `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
@@ -814,7 +814,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Contacts/Quick.lua` | Quick Join (`C_SocialQueue`): the groups of your friends and guild you may ask to join |
 | `Contacts/Finder.lua` | The group finder, the friends list's last tab, as the game's browse view (`C_LFGList`); searches only on a click, paused in chat lockdown; WoW: Forever only |
 | `Window.lua` | The window: moved, sized, scrolled, kept |
-| `Bindings.xml` | Its key in the game's key bindings (section *Sane UI*, Core's): the chat window shown or hidden |
+| `Bindings.xml` | Its key in the game's key bindings (section *SaneUI*, Core's): the chat window shown or hidden |
 
 ## Not there yet
 Tabs of chat views in the small window (`Doc/ideas/Social.md`), messages of one speaker in a row drawn as
@@ -834,7 +834,7 @@ style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.
   name in columns, open until a click outside it or on its button (Saneroki).
 - 2026-10-25 — Retail: the tab *Group Finder* and its switch stand down (Retail's finder is its own), *Group finder*
   in *Classic windows* opens Retail's, invites are blocked by Retail's own function, *Extend Raid Lock* as Retail's
-  raid info offers it; the button *Sane UI* also on the game's newer social window.
+  raid info offers it; the button *SaneUI* also on the game's newer social window.
 - 2026-10-20 — Recent Allies asks the game for them no more (an addon may not); it waits until the game has read them.
 - 2026-10-20 — Every group you join a conversation of its own, named by the others in it, ended when you leave
   (by the group's GUID; Saneroki).
@@ -882,7 +882,7 @@ style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.
 - 2026-10-17 — The game's chat channels moved from the page *Social* into the list on the chat's name
   (*On every character*: *The game decides*, *Always in it*, *Never in it*), listed from the game, joined only
   where the game offers them; their wishes are the setting `presence` (the earlier switches are not read).
-- 2026-10-16 — The button *Sane UI* on the game's chat (Core's `Attach`, placed by `ns.NATIVE.anchor` above
+- 2026-10-16 — The button *SaneUI* on the game's chat (Core's `Attach`, placed by `ns.NATIVE.anchor` above
   `ChatFrameMenuButton` in `ChatFrame1ButtonFrame`), there only while our window is away (`Back` in
   `Window.lua`); off at login, the window is made out of sight for it (`Window.Away`). The small window's bar
   lost its title *Social* (Saneroki).

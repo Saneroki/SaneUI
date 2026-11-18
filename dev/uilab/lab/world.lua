@@ -1,7 +1,7 @@
 -- The fake server: what the game would hear from the server, from a world file (dev/uilab/worlds/): the player,
 -- their group and guild, chat, items, money, stats, zone. Units, the guild roster, chat messages and items are
 -- answered by the game's own functions, as the game answers them; chat and other events come at the times the
--- world says, or when the page sends them. Items and spells are the game's own, read from Sane UI's data master.
+-- world says, or when the page sends them. Items and spells are the game's own, read from SaneUI's data master.
 return function(Lab)
     local S = Lab.S
     local G = Lab.G

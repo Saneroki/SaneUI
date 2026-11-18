@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Form bar
+--  SaneUI - Abilities - Form bar
 --  A druid's Action Bar 6 swaps with the form (Saneroki, 2026-11-06): the same
 --  keys cast a bear's spells in Bear Form and a cat's in Cat Form. Bar 6 as a
 --  human and in Moonkin Form, Bar 9 in Bear Form, Bar 10 in Cat, Aquatic and

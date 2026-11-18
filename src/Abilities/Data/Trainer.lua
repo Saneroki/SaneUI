@@ -1,10 +1,10 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Trainer data
+--  SaneUI - Abilities - Trainer data
 --  The spells a class learns at its trainer, rank by rank, with the level and
 --  the price of each. The game tells an addon only what you know already, so
---  Sane UI carries the rest itself: one file per class in Classes/, and the
+--  SaneUI carries the rest itself: one file per class in Classes/, and the
 --  spells that quests give (QuestSpells.lua).
 --
 --  A class file hands over two tables.

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Combat - Units - Lists
+--  SaneUI - Combat - Units - Lists
 --  Your marks of auras, kept in the module's settings by the spell's number with
 --  its name, in two sides. How it looks:
 --      Important      on the unit frames shown in front of the rest, whoever cast

@@ -1,4 +1,4 @@
-# Sane UI: Loot
+# SaneUI: Loot
 
 **Status:** built: the loot window (a line a thing, a bar drawn as the nameplates draw theirs, in its quality's colour, the game's green arrow on an upgrade, an A to take it at once from now on, Link and Close at its foot as bare words), things taken at once by your own switches as soon as the loot is ready (coins, currencies, quest items and junk at first), your word on each item and a list of them in the options, a master looter's menu, a page that finds room when your bags are full, a line of the same make for each of your group's rolls, with the game's icons, the seconds left, who chose what and who got the thing, a feed of what you and your group receive · **Since:** 2026-10-28 · **Addon:** `SaneUI_Loot` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
@@ -16,8 +16,8 @@ fades until the roll is over, then shows for a few seconds who got the thing. Wh
 rises over the world, also what was taken at once: that is how you see what you looted. When it fails, the game's own loot window, its Auto Loot and its roll frames are back.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Loot* under *Sane UI* in the game's addon list (the game needs a restart
-  when it was not in the list before). Its options: Esc > Options > AddOns > Sane UI > *Loot*, in four tabs: *Loot
+- **Switch it on or off:** tick or untick *Loot* under *SaneUI* in the game's addon list (the game needs a restart
+  when it was not in the list before). Its options: Esc > Options > AddOns > SaneUI > *Loot*, in four tabs: *Loot
   window*, *Taken at once*, *Rolls and feed*, *Your items*.
 - **The loot window** opens where the mouse is, its first line's picture under it (*At the mouse*; off: where you
   placed it in Edit Mode). No window round it: a line a thing, each a bar drawn as the nameplates draw theirs: the
@@ -42,7 +42,7 @@ rises over the world, also what was taken at once: that is how you see what you 
   - **The A** (or **Alt-click**): the thing is taken at once wherever it drops from now on (the A turns gold), and is
     taken now; on the list, the A takes it off. `/sane loot list` names the items you gave a word on.
   - **Link** puts the links of the loot's things into the chat box (into the one you are writing in, else it opens
-    one): Enter sends them where you write. Sane UI sends nothing itself.
+    one): Enter sends them where you write. SaneUI sends nothing itself.
   - A thing that is not yours to take now (locked to a roll) is faint; its tooltip says so.
   - **Close** or Esc closes it, and the loot with it. Everything taken, it closes by itself.
   - Many lines scroll with the mouse wheel.
@@ -59,7 +59,7 @@ rises over the world, also what was taken at once: that is how you see what you 
   Speed Leveling's switch *Take all loot* sets *Everything* on and *Always show upgrades* off, once, as its *Equip
   upgrades* puts those on; the switches of kinds stand on their own beside it. What is taken at once shows no line in
   the window: it rises in the feed.
-- **The game's own Auto Loot** (Esc > Options > Controls) is off while Sane UI's loot window is on, so the switches
+- **The game's own Auto Loot** (Esc > Options > Controls) is off while SaneUI's loot window is on, so the switches
   decide; it is set back as it was when the window is switched off. Held Shift while looting still takes everything,
   as the game has it; the window then shows only what is left a moment later (bags full, a thing locked to a roll).
 - **Your items** (tab of the options): the things you met in loot of late (the newest first) and those you gave a
@@ -75,7 +75,7 @@ rises over the world, also what was taken at once: that is how you see what you 
   the right what a vendor pays for all of it. The small dark **<** and **>** go through the next cheapest ("2 of 9").
   Click it (or drag it) to pick it up, then drop it on the world: the game asks before it is gone. Never offered: what
   a vendor will not take, a quest's things, epics and better. They go once there is room.
-- **Group rolls** (*Sane UI's roll cards*, on): when your group rolls for a thing, one line of the loot window on the
+- **Group rolls** (*SaneUI's roll cards*, on): when your group rolls for a thing, one line of the loot window on the
   world, no paper and no frame.
   - **The bar** in the thing's quality colour, its picture at the bar's end, how many on it, its name: while the time
     runs in the middle of the bar's part over the time, then in the middle of the bar. No A, and no line under the name:
@@ -181,7 +181,7 @@ rises over the world, also what was taken at once: that is how you see what you 
   `Row.OFF_WHITE` for the words; only they take the mouse. Free room only in bags for any thing (`C_Container.GetContainerNumFreeSlots`, its
   family 0); the bags' things from `C_Container.GetContainerItemInfo` and `GetContainerItemQuestInfo`, the vendor
   price from `C_Item.GetItemInfo`; `Full.Rank` the cheapest stack first. A click picks the thing up
-  (`C_Container.PickupContainerItem`, nothing while the cursor holds a thing); Sane UI destroys nothing:
+  (`C_Container.PickupContainerItem`, nothing while the cursor holds a thing); SaneUI destroys nothing:
   `DeleteCursorItem` has restrictions, and the game's own drop asks first. `BAG_UPDATE_DELAYED` looks again.
 - **Roll cards** (`Rolls.lua`): `START_LOOT_ROLL` (rollID, time), `CANCEL_LOOT_ROLL`, `CANCEL_ALL_LOOT_ROLLS`;
   `GetLootRollItemInfo` (what may be chosen, the reasons `LOOT_ROLL_INELIGIBLE_REASON<n>`), `GetLootRollItemLink`,

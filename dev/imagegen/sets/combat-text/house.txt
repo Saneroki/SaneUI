@@ -1,4 +1,4 @@
-# Combat text, round 2: each drawing from words, in the pencil-icon style of Sane UI's journal, image 1 the decided
+# Combat text, round 2: each drawing from words, in the pencil-icon style of SaneUI's journal, image 1 the decided
 # pencil icons of the bags' sidebar (assets/interface/categories/, laid out as a sheet by the session: refs/house-icons.png)
 # as the style alone. The immunity is the bubble alone: code writes the "i" into it in Kalam Bold.
 #   dev/tools/imagegen dev/imagegen/sets/combat-text/house.txt

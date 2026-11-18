@@ -1,6 +1,6 @@
-# Sane UI: Abilities
+# SaneUI: Abilities
 
-**Status:** working; since 2026-11-18 also the full screen at the bottom middle with our own spellbook and talents, the trainer's window, Sane Macros, the action bars and the aura history (Combat's until then) · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a Sane UI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever and Retail (interface 16001, 120105; in Retail the reservations and layouts, see *In Retail*)
+**Status:** working; since 2026-11-18 also the full screen at the bottom middle with our own spellbook and talents, the trainer's window, Sane Macros, the action bars and the aura history (Combat's until then) · **Since:** 2026-10-08 (as the addon *Actionbar Organizer*), a SaneUI module since 2026-10-14 · **Addon:** `SaneUI_Abilities` · **Game:** WoW: Forever and Retail (interface 16001, 120105; in Retail the reservations and layouts, see *In Retail*)
 
 ## TL;DR
 The module for your spells and abilities (it was called *Spellbook*; it will do more than the spellbook).
@@ -22,13 +22,13 @@ for the fullscreen windows are part of the SaneUI abilities part"): docked in th
 the middle half of the bottom edge, or press your spellbook or talents key, and it fills the screen with our own
 spellbook and talents windows, which look and work as the game's, on Core's board that you arrange; click there again,
 press the key again, or Esc, and it goes back. On it too: the trainer's window at a trainer, Sane Macros (macros and
-sequences in the game's macro window's stead), the action bars as windows, a talent planner Sane UI knows, and the aura
+sequences in the game's macro window's stead), the action bars as windows, a talent planner SaneUI knows, and the aura
 history (the buffs and debuffs seen on whoever you can attack; their menu, your marks of an aura, is Combat's, through
 Core). The game's action bars are clean, only the buttons that hold something, out of sight at rest; its experience and
 stance bars are gone, its menu bar shows only while the mouse is on it. In Retail the full screen holds the game's own
 spellbook and talents window.
 ## How to use
-- **Switch it on or off:** tick or untick *Abilities* under *Sane UI* in the game's addon list.
+- **Switch it on or off:** tick or untick *Abilities* under *SaneUI* in the game's addon list.
   Switched off, the game's spellbook is the game's own again; your reservations and settings are kept
   for when you switch it back on.
 - **Open the spellbook (P).** It opens on **Home**, the tab with the hearthstone in front of the
@@ -71,7 +71,7 @@ spellbook and talents window.
   - *Action bar layouts*: save all your bars under a name, load them again later (per class).
 
   The switches are also in the game's options:
-  Esc > Options > AddOns > Sane UI > Abilities, or `/sane options`.
+  Esc > Options > AddOns > SaneUI > Abilities, or `/sane options`.
 - **Reserve a button:** drag a grey spell onto any button of action bars 1–8, on whichever page Bar 1 shows. A gold frame shows the
   button you are over. What was on that button is on your cursor afterwards, as when you swap two buttons.
 - **Move a reservation:** drag the grey icon on the action bar to another button, the way you move a
@@ -131,7 +131,7 @@ spellbook and talents window.
   page* is on. The full screen's search finds the grey spells too, each in its tab. Beside the page buttons the checkbox
   *Show unlearned spells*; in its settings menu (the arrow at its top right) the module's lines under the book's own:
   the same as in the game's book, without *Compact spellbook pages* and *Move and resize the spellbook*, which are the
-  game's book's. These need neither the switch *Sane UI lays out the spellbook pages* nor the game's book opened once.
+  game's book's. These need neither the switch *SaneUI lays out the spellbook pages* nor the game's book opened once.
 - **Link a spell in chat:** Shift-click it (grey ones too).
 - **Visit your class trainer once.** Not needed for the list, but his window says which spellbook tab
   each spell belongs to. Until then a few new spells sit under *Other spells to learn* in the first class tab.
@@ -155,12 +155,12 @@ spellbook and talents window.
 ### The full screen
 - **The full screen:** left-click the bottom edge of the screen anywhere in its middle half
   (a quarter of the screen's width either side of the middle). Click there again, or press Esc, to go back.
-  Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Abilities > Expand window*); with
+  Not in Edit Mode, and not with *Can expand to fullscreen* off (*SaneUI > Abilities > Expand window*); with
   *Hotcorner requires leftclick* off there, the mouse pushed against the edge is enough.
 - **Your keys:** the keys you gave the game's spellbook (P), pet spellbook and talents (N) open the full
   screen with that window on it (the pet's: the spellbook at the pet's tab; without a pet, as the game's, it does
   nothing), and close it again, as they do the game's windows. Your key bindings stay as they are; *Your spellbook and talents keys open ours* off,
-  they open the game's own windows again. In the game's key bindings, under *Sane UI*, Abilities' own keys for
+  they open the game's own windows again. In the game's key bindings, under *SaneUI*, Abilities' own keys for
   the same, to put on other keys.
 - **The spellbook:** the game's book, at its size and in its art, scaled to fit its window: both pages where
   the window is wide enough, one page where not (the game's book minimized).
@@ -194,10 +194,10 @@ spellbook and talents window.
   specialization or all). The tabs *Primary* and *Secondary* show either specialization; the inactive one is
   only to look at, with **Activate** to switch. Not in a fight. The full screen's search box marks the talents
   it finds. Before your first talent point it says from which level.
-- **The talent planner:** with a talent planner Sane UI knows installed, the dropdown *Windows* has it: ticked,
+- **The talent planner:** with a talent planner SaneUI knows installed, the dropdown *Windows* has it: ticked,
   it gets a window of its own on the board, opens with it and closes when it goes. Opened any way of its own
   while its window is on the layout, it brings the full screen.
-- **Arranging them:** as on every board of Sane UI's. Drag a window's head onto another to swap them or put it
+- **Arranging them:** as on every board of SaneUI's. Drag a window's head onto another to swap them or put it
   above, below or beside it; drag the gap between them to share the room anew; the X takes a window off, the
   dropdown *Windows* puts it back. Layouts are tabs after the title: *+* makes one, a right click renames it,
   resets the first or deletes another.
@@ -226,7 +226,7 @@ spellbook and talents window.
   screen goes back, unless it was open already before. *Full Screen at Trainers* switches it off.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Spellbook* and *Talents*: the
   full screen goes back and what opens the game's is said: its key, or, while your keys open ours, its button
-  in the micro menu (our code does not open the game's spellbook). The game's spellbook has the button *Sane UI*
+  in the micro menu (our code does not open the game's spellbook). The game's spellbook has the button *SaneUI*
   left of its sizing button: the game's closes and this full screen comes, with our spellbook or talents.
 - **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
   decoration or background: no frame, end caps or dividers on the bars, no frame or slot on a button. The main
@@ -269,16 +269,16 @@ spellbook and talents window.
     whom on (the fight's foe where the game names none), the fight's name under the time, no duration. Swings and
     your own casts logged already stay out. The game's meter fills while Combat's meter is on (it keeps the game's
     switched on).
-  - *Cast in a fight*: the casts the Sane UI of each member of your party or raid sends after the fight, of buffs
+  - *Cast in a fight*: the casts the SaneUI of each member of your party or raid sends after the fight, of buffs
     and debuffs, with whom and when (Saneroki, 2026-11-11: "Can we use the guild and party sharing to get the spells
     and information from other party members combat?"); one that is an aura seen already marks that line. Only from
-    members who run Sane UI, after the fight, never in it. *Share casts in a fight with your group* (page Abilities,
+    members who run SaneUI, after the fight, never in it. *Share casts in a fight with your group* (page Abilities,
     section *Aura history*, on at first): off, yours are not sent and theirs not taken.
   An aura that came and went inside a fight and did no damage or healing, nor was dispelled (Sunder Armor, a shout,
   a boss's enrage), is not seen; Edit tracked's search finds it to mark.
 
 ## Technical details
-- **Part of Sane UI, and an addon of its own** (`SaneUI_Abilities.toc`: `## Dependencies: SaneUI`,
+- **Part of SaneUI, and an addon of its own** (`SaneUI_Abilities.toc`: `## Dependencies: SaneUI`,
   `## Group: SaneUI`). The module is made with `Core.NewModule(ADDON, "Abilities", ns)` in `Abilities.lua`;
   `ns` in every file is that table, the one the game hands every file of this addon. Chat lines, game
   events, error catching and the saved settings come from Core. It needs no other module: the Settings
@@ -636,13 +636,13 @@ spellbook and talents window.
   as the Camelot window has them not: loadouts, starter builds, hero talents, inspecting; also the node sheen,
   the purchase effects and the action bars' marks (they write the game's bars).
 - **The keys** (`Keys.lua`, `Bindings.xml`): Abilities' keys `SANEUI_ABILITIES_SPELLBOOK`, `_PETBOOK`, `_TALENTS`
-  (Sane UI's section in the game's key bindings) run `Keys.Press` (`Screen.Toggle`; the pet book's only while
+  (SaneUI's section in the game's key bindings) run `Keys.Press` (`Screen.Toggle`; the pet book's only while
   `BookData.HasPet()`, as the game's key opens its book only at the pet's tab). `SetOverrideBinding` on a
   frame of ours puts them on the keys of `TOGGLESPELLBOOK`, `TOGGLEPETBOOK`, `TOGGLETALENTS`
   (`GetBindingKey`): at the login, on `UPDATE_BINDINGS` when those actions' keys changed, cleared
   (`ClearOverrideBindings`) with the switch `keys` off and at standing down; out of a fight only (else after it,
   `Core.AfterCombat`).
-- **The planner** (`Board.lua`; Core's `Neighbours.lua`, the one file that names the addons Sane UI knows): the
+- **The planner** (`Board.lua`; Core's `Neighbours.lua`, the one file that names the addons SaneUI knows): the
   part `planner`, present while `Core.Neighbours.Window("talents")` gives a handle. Its panel shown, the planner
   is opened by its own function and seated in the body (Core's `Seat.lua`: only its place, scale and layer lent),
   a frame later (`Core.Later`); the panel hidden, given back and closed. Its opening followed once, from the
@@ -804,7 +804,7 @@ spellbook and talents window.
 | `Book/Window.lua` | Moving the spellbook, giving it a size, keeping both |
 | `Book/Menu.lua` | The module's lines in the spellbook's options menu |
 | `Book/Offer.lua` | The spells still to learn, Home and the menu's lines for the full screen's spellbook (`Spellbook/`), through Core (`Core.Spellbook`) |
-| `Bindings.xml` | The module's keys in the game's key bindings, under Sane UI: the full screen's spellbook, pet book and talents, Sane Macros (the game reads it by itself) |
+| `Bindings.xml` | The module's keys in the game's key bindings, under SaneUI: the full screen's spellbook, pet book and talents, Sane Macros (the game reads it by itself) |
 | `Screen.lua` | Its window: docked at the bottom middle, filling the screen from the bottom edge's middle half; full, Core's board; the game's windows in *Classic windows* |
 | `Board.lua` | The full screen's windows on Core's board, each a part that registers itself; the talent planner's |
 | `Spellbook/Layout.lua` | Where each entry stands on the pages, by the game's rules |
@@ -899,7 +899,7 @@ spellbook and talents window.
   are gone: the spellbook and Home show what is to come.
 - 2026-10-14 — 0.2.0: an addon of its own (`SaneUI_Spellbook`), switched on and off in the addon list.
   Its switches have a page of their own in the options.
-- 2026-10-14 — Became the Spellbook module of Sane UI (0.1.0): `/abo` is `/sane spellbook`, settings live
+- 2026-10-14 — Became the Spellbook module of SaneUI (0.1.0): `/abo` is `/sane spellbook`, settings live
   in `SaneUIDB`, the switches are also on the game's options page.
 - 2026-10-13 — Actionbar Organizer 0.3.0: lives in the game's own spellbook (grey entries, drag to a bar,
   options in the spellbook's menu); the planner window is gone; a training list built in; bars 5–8.

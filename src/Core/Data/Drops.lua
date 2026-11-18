@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Drops
+--  SaneUI - Core - Data - Drops
 --  How often things come (Doc/guides/data.md, *Drop rates*): what a creature, a node or a fishing water gives, for every
 --  view. The set Drops is what shipped; over it what this account counted in play (Tally.lua), every build kept, and what
 --  the guild's and the group's members counted (Bundle.lua). A key is "npc:<id>", "object:<id>" or "zone:<map>".

@@ -1,14 +1,14 @@
-# Sane UI: Data: Auction House
+# SaneUI: Data: Auction House
 
 ## TL;DR
 
-The file that holds the auction house's current prices and daily history, apart from Sane UI's settings. It has no code
-and no options: Core fills and reads it. Every scan whole has a file of its own, *Data: Auction Scans*. Switched off in the game's addon list, Sane UI neither scans the auction house nor
+The file that holds the auction house's current prices and daily history, apart from SaneUI's settings. It has no code
+and no options: Core fills and reads it. Every scan whole has a file of its own, *Data: Auction Scans*. Switched off in the game's addon list, SaneUI neither scans the auction house nor
 shows its prices.
 
 ## How to use
 
-Nothing to do: the game loads it with Sane UI, in the loading screen. The file is
+Nothing to do: the game loads it with SaneUI, in the loading screen. The file is
 `WTF/Account/<account>/SavedVariables/SaneUI_AuctionData.lua`, and it grows with every scan, so a login and a `/reload`
 take longer as it grows.
 

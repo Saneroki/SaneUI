@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - DockWatch
+--  SaneUI - Navigation - DockWatch
 --  At a dock of a boat or a zeppelin, or a station of the tram: each that stops
 --  there, where it goes, and when it comes and leaves, once a ride taught its
 --  times on this realm (Core's Data.Ships, Data.Trips), worked out anew from the

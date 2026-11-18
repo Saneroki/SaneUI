@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Bags - Split
+--  SaneUI - Inventory - Bags - Split
 --  Splitting a stack: Shift and a click on a stack opens this little dialog
 --  in place of the game's (always in the views that show no empty slots:
 --  there the game's split would have nowhere to go; in the others when the

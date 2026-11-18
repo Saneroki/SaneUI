@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Drag
+--  SaneUI - Abilities - Drag
 --  Carrying a spell you do not have from the spellbook to a real action bar.
 --
 --  The game's own cursor refuses a spell you do not know, so the addon carries

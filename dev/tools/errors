@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shows what went wrong in the game: the error log Sane UI keeps (Core.log).
+# Shows what went wrong in the game: the error log SaneUI keeps (Core.log).
 #
 # An addon cannot write a file of its own. The one file it has is its saved settings, which the
 # game writes at a /reload and when you log out:
@@ -9,7 +9,7 @@
 #
 # So after an error in the game: /reload (or log out), then run this. It reads the game folder
 # played last: of Forever's _forever_ and Retail's _retail_, the one whose saved settings of
-# Sane UI were written last (WOW_FOREVER names one instead).
+# SaneUI were written last (WOW_FOREVER names one instead).
 #
 # Usage:  dev/tools/errors          the newest 10 entries, each with the place it happened
 #         dev/tools/errors 30       the newest 30
@@ -40,7 +40,7 @@ local file, want = arg[1], arg[2]
 dofile(file)
 local log = type(SaneUIDB) == "table" and SaneUIDB.log
 if type(log) ~= "table" or #log == 0 then
-    -- A version of Sane UI before the log only kept the last problem of each kind.
+    -- A version of SaneUI before the log only kept the last problem of each kind.
     local errors = type(SaneUIDB) == "table" and SaneUIDB.errors or {}
     local any = false
     for label, problem in pairs(errors) do
@@ -55,11 +55,11 @@ local count = (want == "all" or short) and #log or tonumber(want) or 10
 for index = math.max(1, #log - count + 1), #log do
     local entry = log[index]
     local text = tostring(entry.text)
-    print(("%s%s  %s  (%dx, Sane UI %s, game build %s)"):format(short and "" or "\n", entry.when or "?", entry.label or "?",
+    print(("%s%s  %s  (%dx, SaneUI %s, game build %s)"):format(short and "" or "\n", entry.when or "?", entry.label or "?",
         entry.count or 1, entry.version or "?", entry.build or "?"))
     print(short and ("    " .. text:match("^[^\n]*")) or text)
 end
 print(("\n%d of %d entries."):format(math.min(count, #log), #log))
 LUA
 done
-[ "$found" = 1 ] || { echo "No saved settings of Sane UI found under $wow/WTF. Set WOW_FOREVER to the game's folder (_forever_; Retail's is _retail_)." >&2; exit 1; }
+[ "$found" = 1 ] || { echo "No saved settings of SaneUI found under $wow/WTF. Set WOW_FOREVER to the game's folder (_forever_; Retail's is _retail_)." >&2; exit 1; }

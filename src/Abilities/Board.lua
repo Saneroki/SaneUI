@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Board
+--  SaneUI - Abilities - Board
 --  The full screen's windows, while the window stands full: on Core's board
 --  (Core.Board), so they share the screen as you arrange them, in layouts
 --  behind tabs in the full window's title bar (drag a window's head to move
@@ -13,7 +13,7 @@ local _, ns = ...
 --                 both, seated in its panel (GameWindow.lua)
 --      trainer    the game's trainer window, seated in its panel while it is open
 --      profession the game's Profession window, likewise (Trainer.lua)
---      planner    the window of a talent planner Sane UI knows (Core.Neighbours),
+--      planner    the window of a talent planner SaneUI knows (Core.Neighbours),
 --                 while that addon is installed: seated in its panel (Core.Seat:
 --                 its place, scale and layer lent), opened with its panel and
 --                 closed when the panel goes
@@ -30,7 +30,7 @@ local _, ns = ...
 --  down the right. At a trainer the full screen comes with a layout of its own
 --  for that talk (Trainer.lua: Core's board's occasions, Board.Occasion).
 --
---  A panel is Core's (a plate in Sane UI's look, a head with its title and the
+--  A panel is Core's (a plate in SaneUI's look, a head with its title and the
 --  X, the body under it); what is in it is its part's. A part runs apart from
 --  the rest (ns.Safe): one that fails is noted and the others go on.
 --

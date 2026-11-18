@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Steps
+--  SaneUI - Core - Steps
 --  One scheduler for the long work of Core's data framework: a walk over a set, later the
 --  auction scan's reading, shared data taken in, the characters, the crawl; of Core's other long work
 --  (Sync's finding of the game's CVars); and of the modules' (Navigation's route plans). A job is a coroutine that does a piece of work, then asks

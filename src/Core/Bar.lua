@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Bar
+--  SaneUI - Core - Bar
 --  A progress bar for any module (a reputation, a quest's count, a skill:
 --  anything with a value and a most), drawn with the art of the game's own
 --  experience bar (Blizzard_StatusTrackingBar): its dark background, its fill,

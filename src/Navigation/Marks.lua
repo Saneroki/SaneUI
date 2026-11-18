@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Navigation - Marks
+--  SaneUI - Navigation - Marks
 --  What stands over the map, over the game's minimap too where it lies over ours (Hybrid.lua):
 --
 --      the player's arrow   Blizzard's world map arrow (UI-WorldMapArrow), turned to the facing; on

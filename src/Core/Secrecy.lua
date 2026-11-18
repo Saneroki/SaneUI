@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Secrecy
+--  SaneUI - Core - Secrecy
 --  Which spells the game hides from addons, asked of the game itself, for the
 --  developer's lists (saneui showsecrets; Saneroki, 2026-11-11: "a list of
 --  spells that are invisible or secret to the addon? And a list which are

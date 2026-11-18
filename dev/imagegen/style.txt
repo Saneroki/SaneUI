@@ -1,4 +1,4 @@
-# Sane UI's house style: the look every interface picture of Sane UI shares, in words, made from
+# SaneUI's house style: the look every interface picture of SaneUI shares, in words, made from
 # Doc/guides/interface-style.md (Saneroki, 2026-10-21; the guide wins where they differ). Every recipe that makes
 # interface art includes it, so all sets say the same. Its picture is the anchor, assets/Concept art/UI style/
 # edges-and-buttons.png: the recipes give it as image 1 where no picture of the set is there yet.

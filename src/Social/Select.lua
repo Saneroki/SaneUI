@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Social - Select
+--  SaneUI - Social - Select
 --  Words picked out of the messages on the full screen, to copy with Ctrl+C:
 --  press the mouse on the text of a bubble, drag over as many messages as you
 --  like (yours and everybody else's; the wheel scrolls on meanwhile), let go.

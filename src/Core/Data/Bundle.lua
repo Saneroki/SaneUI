@@ -1,7 +1,7 @@
 local Core = SaneUI.Core
 
 -------------------------------------------------------------------------------
---  Sane UI - Core - Data - Bundle
+--  SaneUI - Core - Data - Bundle
 --  Counts and discoveries shared with the guild and the group (Doc/ideas/Data.md, *Bundles*): every 15 minutes each member
 --  that counted something tells what it counted and what it discovered, in one bundle, so that every player's loot adds
 --  to the chances and a new quest reaches those who have not met it. An account that counted nothing says nothing.

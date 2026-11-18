@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Speed Leveling - Detours
+--  SaneUI - Speed Leveling - Detours
 --  A herb or ore that stands near your way right now (Saneroki, 2026-10-31). The
 --  guide's steps of Gathering.lua say where levelling costs least; between them,
 --  whatever the game's minimap really shows (Core.Sight: Navigation's Found) is

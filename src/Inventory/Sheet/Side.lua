@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Inventory - Sheet - Side
+--  SaneUI - Inventory - Sheet - Side
 --  The pane over the sheet's right that tells of what is chosen on a tab, as
 --  the game's sheet has it (CharacterFrameSidePaneTemplate), ours: a title and
 --  a subtitle in its middle, the game's line under them, a description, rows

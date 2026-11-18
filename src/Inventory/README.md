@@ -1,25 +1,25 @@
-# Sane UI: Inventory
+# SaneUI: Inventory
 
 **Status:** its window and full screen built; the character sheet built, its parts windows of their own (the paper doll; the stats; gear sets; titles; reputation, skills, PvP, currency, statistics); the bags built, with pins, the player's own groups and junk marks; the other characters' things in the bags' window · **Since:** 2026-10-20 · **Addon:** `SaneUI_Inventory` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105; in Retail the skills and PvP windows, resistances, pet stats, the ranged and ammo slots and the keyring stand down)
 
 ## TL;DR
 The module for what you carry and wear. Left-click the screen's bottom right corner and the screen
-fills with the module's windows: your character sheet, your bags (and in them your other characters' things), Sane UI's
+fills with the module's windows: your character sheet, your bags (and in them your other characters' things), SaneUI's
 own, arranged as you like. Click there again, or press Esc, and they go. Your bag keys open it too, with
 your bags on it, and the game's bags stay closed. The game's own character sheet stays as it is, and its key
 opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 
 ## How to use
-- **Switch it on or off:** tick or untick *Inventory* under *Sane UI* in the game's addon list.
+- **Switch it on or off:** tick or untick *Inventory* under *SaneUI* in the game's addon list.
 - **The full screen:** left-click all the way in the bottom right corner. Click there again, or press
-  Esc, to go back. Not in Edit Mode, and not with *Can expand to fullscreen* off (*Sane UI > Inventory >
+  Esc, to go back. Not in Edit Mode, and not with *Can expand to fullscreen* off (*SaneUI > Inventory >
   Expand window*); with *Hotcorner requires leftclick* off there, the mouse pushed into the corner is enough. In
   Edit Mode the window can be docked in another corner; the hot corner goes with it.
 - **Your bag keys** (the backpack's, *Open All Bags*, each bag's, the reagent bag's, whatever keys you gave them)
   open the full screen with your bags on it; pressed again, it goes back. The game's bag bar is gone from the
   screen, Edit Mode included. The game's own bags stay closed meanwhile (at a vendor or the bank too); the dropdown *Classic windows*
-  still opens them, until you close them. Sane UI's key *Open the bags on Inventory's full screen* is in the
-  game's key bindings under Sane UI. *Sane UI > Inventory > Bags > Bag Keys Open Our Bags* switches it off; with
+  still opens them, until you close them. SaneUI's key *Open the bags on Inventory's full screen* is in the
+  game's key bindings under SaneUI. *SaneUI > Inventory > Bags > Bag Keys Open Our Bags* switches it off; with
   *Can expand to fullscreen* off the full screen never comes, so your bag keys and bags are the game's then too, and
   so they are while Edit Mode is open.
 - **A window of its own:** beside each window's X on the full screen, the game's minimize button makes that window
@@ -29,16 +29,16 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   again. On the full screen the corners size a window too, as the mouse goes.
 - **The game's own windows:** the full screen's dropdown *Classic windows* has *Character* (the full screen
   goes back and the game's key for its character sheet is said: our code never opens it) and *Bags* (the
-  game's bags open). The game's character sheet and bags have the button *Sane UI* beside their close button:
+  game's bags open). The game's character sheet and bags have the button *SaneUI* beside their close button:
   the game's closes and this full screen comes (not with *Can expand to fullscreen* off).
-- **Arranging the windows:** as on every Sane UI full screen (Core's board): drag a window's head to move it,
+- **Arranging the windows:** as on every SaneUI full screen (Core's board): drag a window's head to move it,
   the gap between two to share their room anew, its X to take it off; the dropdown *Windows* adds one; layouts
   behind tabs in the title bar. Right of those tabs, a tab with an icon for each window (your portrait for the
   character, the game's icons for the others: the sheet's tabs', a bag), lit while the
   window is on the screen: a click puts it there or takes it off.
-- **The character sheet**, Sane UI's own, in windows of their own that you move and size on the full screen like
+- **The character sheet**, SaneUI's own, in windows of their own that you move and size on the full screen like
   every other (the dropdown *Windows* adds the ones that are not there; at first the character and the stats):
-  - *Character*: Sane UI's own doll in the kit's look (`Doc/guides/interface-style.md`, *The kit*: the game's
+  - *Character*: SaneUI's own doll in the kit's look (`Doc/guides/interface-style.md`, *The kit*: the game's
     character window): your model in the middle, from under your level down to the ground if you are
     full-grown, every race at the same scale (a gnome stands as small as it is; drag it with the left button to
     turn it, the wheel zooms in on its head; left alone for ten seconds it goes back to how it stood), your name and level above it, your gear in the game's two columns of Forever's gear slots beside it
@@ -204,7 +204,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   When the vendor or the bank closes, the full screen goes back, unless it was open already before. Pushing the
   corner or Esc closes the full screen as always (Esc closes the vendor's window with it). At a mailbox likewise
   (the tab *Mail*): the game's mail window on the left, with Economy's tab *Banker* on it as always, a letter you open
-  beside it, your bags on the right. *Sane UI > Inventory > Full Screen at Vendors, the Bank and Mail* switches it off.
+  beside it, your bags on the right. *SaneUI > Inventory > Full Screen at Vendors, the Bank and Mail* switches it off.
 - **Your alts**, in your bags' own window (Saneroki, 2026-11-15: the window as it was before the alts came into it,
   with the dropdown and the search added): the dropdown after *Bags* on its title line chooses whose things it shows
   (you: your bags as they are; anyone else: their things as last seen). It lists the account's characters (you first,
@@ -222,7 +222,7 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
   item. The search box finds an item across them all, by its name or its number: each character says how many it has
   in the dropdown, the window lists only what was found, *Found elsewhere* who else has it. The window opens with your
   bags. A character's things are as Core last read them while it was logged in; its bank, while it had it open.
-- **Settings:** *Sane UI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
+- **Settings:** *SaneUI > Inventory*: the section *Expand window* (whether it fills the screen, its kind of
   motion, the background's opacity and texture), *Window corners*, and *Bags*: *Open With*, *Show Pinned Items*,
   *Pinned in One Bag and Each Bag*, *Show Recent Items*, *Recent in One Bag and Each Bag*, *Show Add Category*, *Merge Stacks*, *Junk Marker* (off: no Junk, grey items stay in their
   categories), *Stack Splitter Everywhere*, *Show Item Level*, *Show BoE*, *Show Set Name*, *Coin
@@ -264,8 +264,8 @@ login has no last line, until the game has said your time.
   windows (`ContainerFrameCombinedBags`, `ContainerFrame1` to `NUM_CONTAINER_FRAMES`) lent to a hidden frame of
   ours (`Core.Lend`'s `SetParent`): the game opens and closes them as always, unseen; Classic windows' *Bags*
   (`Window.lua`) gives them back (`Keys.GameBags(true)`) until a hook after their `OnHide` finds none shown. The
-  setting `bagKeys` and `expand` off (the full screen never comes: `Keys.Taken`, `Keys.Apply`; then no button *Sane
-  UI* either, the Classic entries' `ready`), Edit Mode while open (`Core.EditMode.Watch`), standing down
+  setting `bagKeys` and `expand` off (the full screen never comes: `Keys.Taken`, `Keys.Apply`; then no button
+  *SaneUI* either, the Classic entries' `ready`), Edit Mode while open (`Core.EditMode.Watch`), standing down
   (`Keys.Leave`) give everything back; a key pressed while the full screen cannot come wishes for nothing later.
 - **The board** (`Board.lua`): Core's (`Core.Board`), the module's windows in the order `Board.ORDER`
   (`character`, `stats`, `reputation`, `skills`, `pvp`, `currency`, `statistics`, `vendor`, `mail`, `letter`, `bags`, `bank`). Each window is a part in files of its own, listed after `Board.lua` in the TOC,
@@ -800,8 +800,8 @@ classes' gains can be held against each other; `early` for a character without a
 
 | File | What it holds |
 |---|---|
-| `SaneUI_Inventory.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
-| `Art/banner.blp`, `Art/icon.blp` | The module's logo (a chest): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/inventory-banner.png` and `inventory-icon.png` |
+| `SaneUI_Inventory.toc` | The addon: needs Core (`SaneUI`), stands under SaneUI in the addon list |
+| `Art/banner.blp`, `Art/icon.blp` | The module's logo (a chest): one of SaneUI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of SaneUI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/inventory-banner.png` and `inventory-icon.png` |
 | `Inventory.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (Core's *Expand window* and *Window corners*), `GiveBack`, the start |
 | `Keys.lua` | The bag keys open the full screen with the bags; the game's bag windows and bag bar kept unseen |
 | `Bindings.xml` | Inventory's key in the game's key bindings |

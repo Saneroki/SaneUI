@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Aura history
+--  SaneUI - Abilities - Aura history
 --  A window of the full screen (Board.lua: the part "history", added from the
 --  dropdown Windows or by /sane aurahistory): the buffs and debuffs seen on
 --  whoever you can attack, newest on top. Core keeps them (Core.AuraLog): in a
@@ -23,7 +23,7 @@ local _, ns = ...
 --  once a fight is over the spells the game's own meter holds of it (each
 --  member's damage, healing, damage taken, dispels, interrupts: Damage in a
 --  fight, ...), whom from and whom on, the fight's name under the time. And the
---  casts the Sane UI of your party or raid sends after each fight (Cast in a
+--  casts the SaneUI of your party or raid sends after each fight (Cast in a
 --  fight, from that member), while Share casts in a fight with your group is on
 --  (Core.AuraLog.Share). Their icons work as the others', the spell's tooltip.
 --  Over the list the dropdown of what to show (all, buffs, debuffs, on bosses,

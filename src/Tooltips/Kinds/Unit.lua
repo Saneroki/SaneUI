@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Tooltips - Kinds - Unit
+--  SaneUI - Tooltips - Kinds - Unit
 --  The tooltip of a player or a creature:
 --
 --      SOMNIFERIE                    [portrait]   the name: a player's in the colour of the

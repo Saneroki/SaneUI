@@ -2,7 +2,7 @@ local _, ns = ...
 local Macros = ns.Macros
 
 -------------------------------------------------------------------------------
---  Sane UI - Abilities - Macros - Write
+--  SaneUI - Abilities - Macros - Write
 --  A macro written out into what one press may do: a list of turns, each with
 --  its macro line and the condition that lets it run. Plain text, nothing here
 --  knows a frame, and only out of a fight does it reach a button (Press.lua).
