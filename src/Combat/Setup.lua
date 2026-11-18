@@ -14,8 +14,7 @@ local _, ns = ...
 --    parts    which parts are ours: unit frames, party and raid frames,
 --             nameplates, aura tracking ("people can for example choose to
 --             use our party and unit frames but disable our nameplates")
---    units    your frame, your target's, your focus's, your pet; how large,
---             out of sight at rest
+--    units    your frame, your target's, your focus's, your pet; how large
 --    party    the party and raid frames: a preview of 5, 10, 20 and 40, going
 --             through them a few seconds each, a click on a number holds it
 --             ("previews of the party with 5, 10, 20 and 40 people in it where
@@ -28,6 +27,13 @@ local _, ns = ...
 --             (Units/Group.lua, Group.Cycle)
 --    then the nameplates' steps (Nameplates/Setup.lua), each headed Nameplates
 --    tracking aura tracking: your marks of auras, the icons you track
+--    sight    when your frame, your target's and your focus's show, late in
+--             the setup (Saneroki, 2026-11-18: "those hide / show checkboxes
+--             are something later in the setup windows, not in the
+--             beginning"): each always in sight at first; Show only on
+--             mouseover, and under it Always show in combat and in a group
+--             (ns.FRAME_SHOWS, the same ticks as in its Edit Mode dialog); its
+--             sample faint while the mouse would have to bring it
 --  A step of a part switched off says so, and its sample is faint.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
@@ -41,6 +47,7 @@ Guide.SIZE = 13         -- the boards' words (Look.SetFont)
 Guide.FAINT = 0.35      -- a sample of a part that is the game's now
 Guide.ROW = 30          -- a unit frame's sample: its height, and the gap under it
 Guide.UNIT = 240        -- its width
+Guide.RESTING = 0.3     -- a frame's sample while it shows only on mouseover
 
 -- Words in the game's gold, then the rest: one line each, so a step reads at a glance.
 local function Lines(...)
@@ -64,6 +71,11 @@ Guide.TEXT = {
     target = "Your target",
     focus = "Your focus",
     pet = "Your pet",
+    mouseover = "%s: show only on mouseover",
+    always = "always in sight",
+    onMouse = "on mouseover",
+    inFight = "in combat",
+    inGroup = "in a group",
 }
 local T = Guide.TEXT
 
@@ -81,9 +93,8 @@ local OWN = {
       text = Lines({ "Your frame", "your level and health; your target's and your focus's with their names." },
           { "Under them", "your pet, and whom your target and your focus target." },
           { "Over the bar", "the cast; your breath under water over your own." },
-          { "At rest", "out of sight until something goes on: the mouse, a fight, your health." },
           { "Edit Mode", "places each of them." }),
-      settings = { "unitPlayer", "unitTarget", "unitFocus", "unitPet", "unitSize", "unitRest" } },
+      settings = { "unitPlayer", "unitTarget", "unitFocus", "unitPet", "unitSize" } },
     { key = "party", title = "Party and raid frames",
       text = Lines({ "One frame", "for your party and your raid, up to forty, in place of the game's two." },
           { "5, 10, 20, 40", "the sample goes through them: click a number to hold it." },
@@ -98,10 +109,25 @@ local OWN = {
           { "Track it", "and its icon shows on a bar of its own, the health bars or the nameplates." },
           { "Edit tracked", "every aura's marks and tracking in one window: /sane auras." }),
       settings = { "buffList", "unitAuras", "groupBuffs" } },
+    { key = "sight", title = "When your frames show",
+      text = Lines({ "Always in sight", "at first: your frame, your target's and your focus's." },
+          { "Only on mouseover", "out of sight until the mouse is on it." },
+          { "Under it", "in sight anyway in combat, or in a group." }),
+      settings = {} }, -- each frame's three, below
 }
+-- Each frame's three (Combat.lua, ns.FRAME_SHOWS): Show only on mouseover with its name, the two under it.
+Guide.SIGHT = { { option = "unitPlayer", name = T.you }, { option = "unitTarget", name = T.target },
+                { option = "unitFocus", name = T.focus } }
+for _, frame in ipairs(Guide.SIGHT) do
+    local list = OWN[#OWN].settings
+    list[#list + 1] = { key = frame.option .. "Mouseover", text = T.mouseover:format(frame.name),
+                        tip = ns.TEXT.showMouseoverTip }
+    list[#list + 1] = { key = frame.option .. "Fight", text = ns.TEXT.showFight, tip = ns.TEXT.showFightTip }
+    list[#list + 1] = { key = frame.option .. "Group", text = ns.TEXT.showGroup, tip = ns.TEXT.showGroupTip }
+end
 
 -- Which part a step is of: its sample faint while that part is the game's.
-local PART = { units = "units", party = "group", tracking = "reminders" }
+local PART = { units = "units", party = "group", tracking = "reminders", sight = "units" }
 
 -- Combat's own steps and the nameplates' (all but their intro: the first step here says what this is), in order.
 Guide.STEPS = {}
@@ -270,6 +296,28 @@ function DRAW.units(board)
     Unit(board, 3, { name = names.first[2] .. " " .. names.last[3], health = 1, most = 3100, class = "PRIEST", mana = 0.7,
                      icons = {} }, T.focus)
     Unit(board, 4, { name = names.pets[1], health = 0.9, most = 900, icons = {} }, T.pet)
+end
+
+-- When a frame shows, in words: "always in sight", or "on mouseover, in combat, in a group".
+function Guide.Sight(option)
+    local options = ns.options
+    if options[option .. "Mouseover"] ~= true then return T.always end
+    local words = { T.onMouse }
+    if options[option .. "Fight"] ~= false then words[#words + 1] = T.inFight end
+    if options[option .. "Group"] ~= false then words[#words + 1] = T.inGroup end
+    return table.concat(words, ", ")
+end
+
+-- Your three frames, each faint while only the mouse would bring it, its name and when it shows beside it.
+function DRAW.sight(board)
+    DRAW.units(board)
+    for index, frame in ipairs(Guide.SIGHT) do
+        local face, line = board.units[index], Words(board, index)
+        face:SetAlpha(ns.options[frame.option .. "Mouseover"] == true and Guide.RESTING or 1)
+        line:SetText(frame.name .. "\n|cffb0b0b0" .. Guide.Sight(frame.option) .. "|r")
+    end
+    if board.units[4] then board.units[4]:Hide() end -- the pet goes with your frame: not one of the three
+    Words(board, 4):SetText("")
 end
 
 -- The step's board on the stage, the others out of sight (the nameplates' too, Nameplates/Setup.lua, which draws

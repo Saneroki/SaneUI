@@ -260,6 +260,10 @@ functions and the way it works.
   grip; the screen's edge does nothing then. *Done 2026-10-16* (Core's `EditMode.lua`, `Window.lua`).
   Outside Edit Mode only a window with a title bar moves, by that bar (*Title bars* above; Saneroki,
   2026-10-16), and nothing is sized. Still to do: the layouts, Save and Revert (below).
+- **The blue boxes only under the mouse** (Saneroki, 2026-11-18; built): "In edit mode, right now everythng is always
+  highlighted with a blue box around it. Can you only show that blue box while you mouseover it so you can see how
+  your interface looks like without the blue boxes that are edit mode only." Every box's blue frame, ours and the game's
+  frames', is out of sight until the mouse is on it; the one chosen keeps its yellow frame (`EditMode.lua`, `Window.lua`).
 - **Kept in Edit Mode's layouts.** Edit Mode's profile system (its layouts: *Modern*, *Classic* and the
   player's own, for the account or one character) keeps the size and place of every SaneUI window too.
   Each layout has its own window places; switching the layout moves our windows along with Blizzard's

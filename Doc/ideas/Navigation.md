@@ -313,7 +313,9 @@ When the window fills the screen:
 - **On the screen alone at rest out of sight** (Saneroki, 2026-11-01; built): "the same for the Questlog as option which
   also can be turned on by default": as the unit frames and action bars (`Doc/ideas/Combat.md`, `Core.Rest`). Over the
   full map it stays, opened to be seen. *In a group too* under it (2026-11-07; built), off by default: at rest in a
-  party or raid as well.
+  party or raid as well. Since 2026-11-18 (built): always in sight at first; *Show only on mouseover*, under it *Always
+  show in combat* and *Always show in a group*, on the setup's quest log page (late in it) and in its Edit Mode dialog,
+  as your unit frames (`Doc/ideas/Combat.md`).
 - **Quest timers always in sight (Saneroki, 2026-11-06; built):** a timed quest's time left, counted down: "The timer
   should always show even when the quest tracker / log is hidden. Because I like things hidden unless moused over. But
   i need to know when i have a timer". A strip at the top of the log, over the list, a line a quest (`2:05  Wolves
@@ -424,8 +426,8 @@ When the window fills the screen:
 - **Ready for the first release (Saneroki, 2026-11-15; built):** "Route to the map pin and minimap dots should not
   be part of the dropdown menu": both always show (`Pins.ALWAYS`). At first off: the quest offers, low-level quests,
   quests for later, done quests, the quest areas (map and minimap), rares, treasures, possible herbs and ore;
-  every other kind on at 100%, the books too ("Books should be ticked on by default"); *Hide the quest log at rest*
-  off. The button Dungeons left of the zone dropdown on the full map's bar. The game's quest
+  every other kind on at 100%, the books too ("Books should be ticked on by default"); the quest log always in
+  sight (*Show only on mouseover* off). The button Dungeons left of the zone dropdown on the full map's bar. The game's quest
   log a kept choice of *Classic windows* ("so you can still see the native questlog even when you use our addon").
   The quest log's scroll bar at the side it is docked at, in both looks. **Pins and tracking** ("I don't understand
   whats the difference between tracking and pins ... trainers and auctioneer and flightmaster etc are not tracking

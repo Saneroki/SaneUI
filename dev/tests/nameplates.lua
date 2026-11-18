@@ -2061,7 +2061,7 @@ do
     local guide = Core.Onboarding.Guide(ns.name)
     local keys = {}
     for index, step in ipairs(guide.steps) do keys[index] = step.key end
-    check(table.concat(keys, " ") == "parts units party size seen which danger border line bar cast auras timers look tracking",
+    check(table.concat(keys, " ") == "parts units party size seen which danger border line bar cast auras timers look tracking sight",
         "Combat's steps, the nameplates' in Saneroki's order (2026-11-16) among them, the first page saying what this is: "
         .. table.concat(keys, " "))
     check(guide.steps[4].title == "Nameplates: Size" and guide.aliases.nameplates == "size",
@@ -2079,7 +2079,7 @@ do
                 named = named and type(key.text) == "string" and type(key.command) == "string"
             elseif type(key) == "table" then -- a switch the step shows its own way (the places round a small bar)
                 local option = Core.Described(ns.name, key.key)
-                named = named and option ~= nil and type(option.text) == "string"
+                named = named and option ~= nil and type(key.text or option.text) == "string"
             else
                 local option = Core.Described(ns.name, key)
                 named = named and option ~= nil and type(option.text) == "string"
@@ -2111,6 +2111,29 @@ do
     Draw("look")
     check(not ns.Guide.Board("parts"):IsShown() and not Setup.Board("size"):IsShown() and Setup.Board("look"):IsShown(),
         "only the step's own board shows")
+
+    -- When your frames show, last (Saneroki, 2026-11-18): each always in sight at first, its three ticks. A function
+    -- of its own: no more locals in the main chunk.
+    ;(function()
+    local sight = guide.steps[#guide.steps]
+    check(#sight.settings == 9 and sight.settings[1].key == "unitPlayerMouseover"
+        and sight.settings[1].text == ns.Guide.TEXT.mouseover:format(ns.Guide.TEXT.you)
+        and sight.settings[5].key == "unitTargetFight" and sight.settings[9].key == "unitFocusGroup"
+        and Core.Described(ns.name, "unitFocusGroup").parent == "unitFocusMouseover",
+        "the last step: your frame's, your target's and your focus's Show only on mouseover, each with the two under it")
+    Draw("sight")
+    local board = ns.Guide.Board("sight")
+    check(board.units[1]:GetAlpha() == 1 and board.words[1]:GetText():find(ns.Guide.TEXT.always, 1, true)
+        and not board.units[4]:IsShown(), "at first each sample solid, always in sight; no pet")
+    Core.Set(ns.name, "unitTargetMouseover", true)
+    Core.Set(ns.name, "unitTargetGroup", false)
+    Draw("sight")
+    check(board.units[2]:GetAlpha() == ns.Guide.RESTING and board.units[1]:GetAlpha() == 1
+        and board.words[2]:GetText():find("on mouseover, in combat", 1, true) and not board.words[2]:GetText():find("group", 1, true),
+        "your target's only on mouseover: its sample faint, its words say when it shows")
+    Core.Set(ns.name, "unitTargetMouseover", false)
+    Core.Set(ns.name, "unitTargetGroup", true)
+    end)()
 
     -- Size: by distance, as much as the setting says.
     local Full = ns.Scale.Full

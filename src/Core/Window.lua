@@ -13,7 +13,8 @@ local Core = SaneUI.Core
 --
 --  The whole, for a window of our own. Every window is arranged in Blizzard's
 --  Edit Mode (EditMode.lua): a box in Edit Mode's own look lies over it there
---  (window.box: Edit Mode's art, the window's title with the mouse on it), it is
+--  (window.box: Edit Mode's art and the window's title, both seen only with the
+--  mouse on it, its art while it is chosen too: EditMode.lua), it is
 --  dragged by that box and docks where it is let go, and a sizable one has its
 --  grip in a corner; one that fills the screen when Edit Mode opens is back in
 --  its zone at once. Sizing is only there, but for a window with grip = "hover"
@@ -710,7 +711,16 @@ local function Sized(window)
     if Core.Selection then Core.Selection.Moved(window) end
 end
 
--- The box over the window in Edit Mode, made when Edit Mode first opens: Edit Mode's blue frame, a
+-- Its blue frame in sight only while the mouse is on it (Saneroki, 2026-11-18: "only show that blue box while you
+-- mouseover it"; EditMode.lua), its yellow one while it is chosen; unlocked outside Edit Mode, always, the one sign
+-- that it can be dragged.
+local function Seen(window)
+    local box = window.box
+    if not box then return end
+    Core.EditMode.Seen(box, box.over or box.chosen or (window.unlocked and not Core.EditMode.active) or false)
+end
+
+-- The box over the window in Edit Mode, made when Edit Mode first opens: Edit Mode's blue frame (Seen), a
 -- brighter copy and the window's title while the mouse is on it, and the handle it is dragged by.
 -- Without the game's nine-slice code the box is still there to drag, only not to see.
 local function Box(window)
@@ -736,10 +746,14 @@ local function Box(window)
     title:Hide()
     box.title = title
     box:SetScript("OnEnter", Core.Guard("window", function()
+        box.over = true
+        Seen(window)
         hover:Show()
         title:Show()
     end))
     box:SetScript("OnLeave", Core.Guard("window", function()
+        box.over = false
+        Seen(window)
         hover:Hide()
         title:Hide()
     end))
@@ -761,6 +775,7 @@ local function Box(window)
         stopped = function() Moved(window) end,
     })
     window.box = box
+    Seen(window)
     return box
 end
 
@@ -1064,6 +1079,8 @@ end
 function methods:Selected(on)
     local box, nineSlice = self.box, rawget(_G, "NineSliceUtil")
     if box and nineSlice then Core.Safe("Edit Mode", nineSlice.ApplyLayout, box, SELECTION, on and SELECTED or HIGHLIGHT) end
+    if box then box.chosen = on and true or false end
+    Seen(self)
 end
 
 -- Its name anew: on its title bar, and on its box in Edit Mode.
@@ -1230,6 +1247,7 @@ local function Edit(window, on)
     if not on and window.sizing then Sized(window) end
     local box = on and Box(window) or window.box
     if box then box:SetShown(on) end
+    Seen(window)
     if window.grip then
         window.grip:SetShown(on)
         if on then window.grip:SetAlpha(1) else Grip(window) end

@@ -161,8 +161,9 @@ Sunder Armor), as you choose, nothing fixed.
   cast, your breath and your fatigue, and as a druid both your powers, mana and energy.
 - **Settings:** *SaneUI > Combat*: the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
-  focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
-  rest* with *In a group too* under it, *Auras on the frames*); *Quest marks on nameplates*. The action bars' switches,
+  focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Auras on the frames*);
+  *Quest marks on nameplates*. When each of your frame, your target's and your focus's shows is chosen in its Edit
+  Mode dialog and the setup's last step (below), always in sight at first. The action bars' switches,
   your keys and the full screen's sections are Abilities' (*SaneUI > Abilities*).
 - **In Retail:** all of it works as in Forever (Retail's names have no surname: a player's name alone).
 
@@ -403,7 +404,7 @@ Sunder Armor), as you choose, nothing fixed.
 - **The red error text** (`ErrorText.lua`). No CVar does this. `UIErrorsFrame` hears `UI_ERROR_MESSAGE`; the game's own `/uierrorsoff`
   stops that and mutes every sound effect (`Sound_EnableSFX`). Here the event alone, given back at standing down.
 - **Each frame's choices and preview in Edit Mode** (`Units.lua`, `Text.lua`, Saneroki 2026-11-18): `ns.FRAME_SHOWS`
-  (`Combat.lua`) lists them: *Width* and the pieces, each a key per frame (its setting and the suffix: `unitTargetLevel`,
+  (`Combat.lua`) lists them: *Width*, the pieces and when it shows (*Out of sight at rest*, below), each a key per frame (its setting and the suffix: `unitTargetLevel`,
   `unitPlayerWidth`), none with a control on the options page. `Settings(kind)` makes the frame's window's dialog rows
   from it (Core's `Selection.lua`: a slider, ticks, the level's top under the level); `Kind` sizes the button
   (`SetWidth`, out of a fight) and gives the face what it shows (`face.show`, `Shows(kind)`). `Text.lua` reads it
@@ -591,10 +592,15 @@ Sunder Armor), as you choose, nothing fixed.
   (`NAME_PLATE_UNIT_REMOVED`, a new target, the roster drop it). Its events hear only while something is watched.
   Kept per character (`Core.Character(ns.name).lookOut`, the text). Standing down: alpha 0 at once, off after the
   fight (`LookOut.GiveBack`, from `Units.GiveBack`).
-- **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01; settings `unitRest`, `barsRest`, on at first; under
-  them `unitRestGroup`, `barsRestGroup`, off at first: at rest in a group too, `rest:InGroup`, 2026-11-07): what
-  shows when, and why your health is told from its changes, stands in `src/Core/Rest.lua`. Your frames are a set each
-  (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
+- **Out of sight at rest** (`Core.Rest`, Saneroki 2026-11-01): what shows when, and why your health is told from its
+  changes, stands in `src/Core/Rest.lua`. Your frames each by their own three (Saneroki, 2026-11-18: "the default is
+  set to always visible and that there are options for the questlog, focus target, player and target unit frames to
+  be show only on mouseover, show always during combat, always show in party"), the last of `ns.FRAME_SHOWS`, so in
+  each frame's Edit Mode dialog and in the setup's last step (`Setup.lua`, `sight`): *Show only on mouseover*
+  (`unitPlayerMouseover`, off at first: always in sight; `rest:Switch`), under it *Always show in combat*
+  (`unitPlayerFight`, on: `rest:Fight`) and *Always show in a group* (`unitPlayerGroup`, on: `rest:InGroup` the other
+  way round), the same for `unitTarget…` and `unitFocus…`; none on the options page. The action bars keep
+  `barsRest` (on at first) and `barsRestGroup` (Abilities). Your frames are a set each (`Units.lua`, `kind.rest`): the mouse on a frame, its row or its aura icons shows that frame alone, and a cast
   or a timer on it does too (`Running`; `Bar.Fit` looks again as they come and go), since nothing else shows them and
   you need your breath under water. The action bars are one set (`ActionBars.lua`): `Bars.BARS`, each hot, each of
   their buttons a door, so the mouse on one shows them all; what stands beside a bar out of its layout (a child marked

@@ -10,9 +10,12 @@ local ns = Lab.Addon("SaneUI_Navigation")
 Core.NewModule("SaneUI_Navigation", "Navigation", ns)
 Lab.TOC("src/Onboarding/SaneUI_Onboarding.toc")
 
--- The switches the setup shows: the section Expand window, as Navigation has it.
+-- The switches the setup shows: the section Expand window, as Navigation has it, and when the quest log shows.
 local OPTIONS = {}
 Core.Edge.Options(OPTIONS, 1)
+OPTIONS[#OPTIONS + 1] = { key = "questLogMouseover", default = false }
+OPTIONS[#OPTIONS + 1] = { key = "questLogFight", default = true, parent = "questLogMouseover" }
+OPTIONS[#OPTIONS + 1] = { key = "questLogGroup", default = true, parent = "questLogMouseover" }
 Core.Options("Navigation", OPTIONS)
 
 -- What Setup.lua reads of the rest of Navigation.

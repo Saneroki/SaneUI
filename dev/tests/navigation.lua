@@ -2791,9 +2791,10 @@ end
     for _, kind in ipairs(ns.KINDS) do
         if (first[kind[1]] and true or false) == (off[kind[1]] or false) then right = false end
     end
-    check(right and first.book and Core.Described(ns.name, "questLogRest").default == false,
+    check(right and first.book and Core.Described(ns.name, "questLogMouseover").default == false
+        and Core.Described(ns.name, "questLogFight").default == true and Core.Described(ns.name, "questLogGroup").default == true,
         "the pin filter at first: offers, low, later, done, quest areas, rares, treasures, possible herbs and ore off, "
-        .. "the rest on at 100% (books too); Hide the quest log at rest off")
+        .. "the rest on at 100% (books too); the quest log always in sight (Show only on mouseover off, under it on)")
     local before = {}
     for _, kind in ipairs(ns.KINDS) do before[kind[1]] = true end
     before.done, before.minimapArea, before.book = nil, nil, nil
@@ -4720,21 +4721,29 @@ end)()
         -- At rest out of sight (Core.Rest), on the screen alone; the rest of what that does: window.lua.
         local general, animations = Core.general, Core.general.animations
         general.animations = false
-        Core.Set(ns.name, "questLogRest", false)
-        check(log.frame._alpha == 1, "Hide the quest log at rest off: always in sight")
-        Core.Set(ns.name, "questLogRest", true)
-        check(log.frame._alpha == 0 and log.frame._shown, "on: out of sight at rest, shown still, so it can be seen again")
+        check(log.frame._alpha == 1 and not ns.QuestLog.Rest():Resting(), "at first always in sight")
+        Core.Set(ns.name, "questLogMouseover", true)
+        check(log.frame._alpha == 0 and log.frame._shown, "Show only on mouseover: out of sight at rest, shown still, so it can be seen again")
         W.Combat(true)
         check(log.frame._alpha == 1, "in a fight in sight")
         W.Combat(false)
         check(log.frame._alpha == 0, "after it out of sight")
+        Core.Set(ns.name, "questLogFight", false)
+        W.Combat(true)
+        check(log.frame._alpha == 0, "Always show in combat off: out of sight in a fight too")
+        W.Combat(false)
+        Core.Set(ns.name, "questLogFight", true)
         IsInGroup = function() return true end
         W.Fire("GROUP_ROSTER_UPDATE")
         check(log.frame._alpha == 1, "in a group in sight")
-        Core.Set(ns.name, "questLogRestGroup", true)
-        check(log.frame._alpha == 0, "In a group too: out of sight in a group as well")
-        Core.Set(ns.name, "questLogRestGroup", false)
-        check(log.frame._alpha == 1, "off again: in sight in a group")
+        Core.Set(ns.name, "questLogGroup", false)
+        check(log.frame._alpha == 0, "Always show in a group off: out of sight in a group as well")
+        Core.Set(ns.name, "questLogGroup", true)
+        check(log.frame._alpha == 1, "on again: in sight in a group")
+        local dialog = log.options.settings
+        check(#dialog == 3 and dialog[1].key == "questLogMouseover" and dialog[2].parent == "questLogMouseover"
+            and dialog[3].key == "questLogGroup" and log.options.get("questLogFight") == true,
+            "the three in the quest log's Edit Mode dialog, the two under Show only on mouseover")
         IsInGroup = function() return false end
         W.Fire("GROUP_ROSTER_UPDATE")
         check(log.frame._alpha == 0, "alone out of sight")
@@ -4930,8 +4939,8 @@ end)()
     W.SmallAndBack(function()
         local general, animations = Core.general, Core.general.animations
         general.animations = false
-        Core.Set(ns.name, "questLogRest", false)
-        Core.Set(ns.name, "questLogRest", true)
+        Core.Set(ns.name, "questLogMouseover", false)
+        Core.Set(ns.name, "questLogMouseover", true)
         check(log.frame._alpha == 0 and strip._shown and strip._alpha ~= 0 and strip._strata == "LOW",
             "the log at rest out of sight on the screen alone: its timers in sight")
         general.animations = animations
@@ -10975,11 +10984,15 @@ end)()
                 named = named and type(entry.text) == "string"
             else
                 local option = Core.Described(ns.name, type(entry) == "table" and entry.key or entry)
-                named = named and option ~= nil and type(option.text) == "string"
+                named = named and option ~= nil and type(type(entry) == "table" and entry.text or option.text) == "string"
             end
         end
     end
     check(short and named, "each page a few short lines starting with gold words; its switches the module's, keys named")
+    local sight = guide.steps[5].settings
+    check(#sight == 3 and sight[1].key == "questLogMouseover" and sight[1].text == Setup.TEXT.questMouseover
+        and Core.Described(ns.name, sight[2].key).parent == "questLogMouseover" and sight[3].key == "questLogGroup",
+        "late, on the quest log's page: when it shows on the screen, Show only on mouseover and the two under it")
     local corner = guide.steps[2].settings[1]
     check(corner.key == "expandClick" and corner.choices[1][1] == false and corner.choices[2][1] == true,
         "the hot corner: the mouse into it, or a left click in it (the switch Hotcorner requires leftclick)")

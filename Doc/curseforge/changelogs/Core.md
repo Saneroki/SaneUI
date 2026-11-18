@@ -3,6 +3,13 @@
 What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.4 (2026-11-18)
+
+DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.
+
+- Edit Mode shows its blue boxes only under the mouse, on SaneUI's frames and the game's alike, so you see your
+  interface as it looks; the frame you picked keeps its yellow box.
+
 ## 0.3.3 (2026-11-18)
 
 - The auction house's full scan line has a pause and resume button and an X: pause the scans (they stay paused on

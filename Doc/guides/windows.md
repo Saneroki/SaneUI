@@ -193,7 +193,9 @@ matters; out of one it runs, but what it writes is tainted for Blizzard's own co
 - **Nothing of Blizzard's is written:** no global, no field, no function replaced (`ToggleFriendsFrame`,
   `SocialUIControl`, `DISALLOW_FRAME_TOGGLING`, a micro menu button's `OnClick`), no flag of Edit Mode's
   (`SetHasActiveChanges`). Only hooks after (`hooksecurefunc`, `HookScript`) and the event registry's
-  callbacks; their code changes nothing of Blizzard's either.
+  callbacks; their code changes nothing of Blizzard's either. The one look changed: the alpha of the art of
+  Edit Mode's boxes on the game's frames, seen only under the mouse (`EditMode.lua`, Saneroki 2026-11-18), a
+  texture's alpha, which carries no taint and which Blizzard's code never reads.
 - **Blizzard's panels are not shown or hidden by our code where it can be avoided.** `ShowUIPanel`,
   `HideUIPanel`, `ToggleFrame` and every `Toggle…` that ends in them refuse an addon in a fight
   ("Interface action failed because of an AddOn"). Out of one they run the panel's `OnShow` and `OnHide`

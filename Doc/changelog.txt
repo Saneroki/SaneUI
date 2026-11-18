@@ -7,6 +7,14 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+SaneUI 0.3.4 (2026-11-18)
+--------------------------
+- Edit Mode shows its blue boxes only under the mouse, on
+  SaneUI's frames and the game's alike, so you see your
+  interface as it looks; the frame you picked keeps its
+  yellow box.
+
+
 Combat 0.3.3 (2026-11-18)
 -------------------------
 - Your unit frames in Edit Mode: click a frame for its width
@@ -15,6 +23,10 @@ Combat 0.3.3 (2026-11-18)
   is open every frame shows a preview: your target and its
   target, your focus, your pet, breath, fatigue, and both of
   a druid's powers.
+- Your frame, your target's and your focus's are always in
+  sight at first. Each can show only on mouseover, still in
+  sight in combat and in a group if you like: the setup's
+  last step, or the frame's own box in Edit Mode.
 
 
 Combat 0.3.2 (2026-11-18)
@@ -94,6 +106,10 @@ Navigation 0.3.5 (2026-11-16)
   Classic windows and the game's tracker shows there instead
   of ours; untick it, ours again. Edit Mode shows only that
   one to place.
+- The quest log on the screen is always in sight at first; it
+  can show only on mouseover, still in sight in combat and in
+  a group if you like: on the setup's quest log page, or its
+  box in Edit Mode.
 
 
 Navigation 0.3.4 (2026-11-16)

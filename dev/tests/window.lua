@@ -240,10 +240,13 @@ for _, widget in ipairs(W.frames) do
     if widget._parent == bar and widget._kind == "FontString" then title = widget end
 end
 check(not hover:IsShown() and not title:IsShown() and title._text == "Test window", "the window's title waits for the mouse")
+check(bar.Center._alpha == 0 and bar.TopLeftCorner._alpha == 0 and bar.RightEdge._alpha == 0 and bar:IsShown(),
+    "its blue frame out of sight until the mouse is on it: the window as it looks, the box still there to take the mouse")
 bar:GetScript("OnEnter")(bar)
-check(hover:IsShown() and title:IsShown() and hover._alpha == 0.4, "with the mouse on the box it is brighter, with the window's title")
+check(hover:IsShown() and title:IsShown() and hover._alpha == 0.4 and bar.Center._alpha == 1 and bar.TopLeftCorner._alpha == 1,
+    "with the mouse on the box its blue frame, brighter, with the window's title")
 bar:GetScript("OnLeave")(bar)
-check(not hover:IsShown() and not title:IsShown(), "and as before when the mouse has left")
+check(not hover:IsShown() and not title:IsShown() and bar.Center._alpha == 0, "and out of sight when the mouse has left")
 
 -- Dragged about
 local ghost, watcher
@@ -1409,6 +1412,39 @@ check(Core.EditMode.active and talkWindow.box:IsShown(), "and come back with the
 EventRegistry:TriggerEvent("EditMode.Exit")
 check(not Core.EditMode.active and not talkWindow.box:IsShown(), "Edit Mode closed, they are gone")
 
+-- The game's own frames' boxes: their blue frame too only under the mouse (EditMode.lua), the one chosen in sight
+do
+    local system = CreateFrame("Frame", nil, UIParent)
+    local selection = CreateFrame("Frame", nil, system)
+    system.Selection = selection
+    NineSliceUtil.ApplyLayout(selection, { Center = true, TopEdge = true, BottomLeftCorner = true }, "editmode-actionbar-highlight")
+    function selection:ShowHighlighted() self.isSelected = false end
+    function selection:ShowSelected() self.isSelected = true end
+    function selection:ShowEditInstructions(shown) self.instructionsShown = shown end
+    manager.registeredSystemFrames = { system }
+    local function Art() return selection.Center._alpha, selection.TopEdge._alpha, selection.BottomLeftCorner._alpha end
+    check(Art() ~= 0, "before Edit Mode opens nothing of the game's box is touched")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    selection:ShowHighlighted()
+    local center, edge, corner = Art()
+    check(center == 0 and edge == 0 and corner == 0, "Edit Mode open: a frame of the game's without its blue frame")
+    selection:ShowEditInstructions(true)
+    check(Art() == 1 and select(3, Art()) == 1, "the mouse on its box: its blue frame")
+    selection:ShowEditInstructions(false)
+    check(Art() == 0, "the mouse gone: gone")
+    selection:ShowSelected()
+    check(Art() == 1, "chosen: its yellow frame stays in sight")
+    selection:ShowHighlighted()
+    check(Art() == 0, "another chosen: out of sight again")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    selection:ShowEditInstructions(true)
+    selection:ShowEditInstructions(false)
+    check(Art() == 0, "opened again: hooked once, followed as before")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    manager.registeredSystemFrames = nil
+end
+
 -- Chosen in Edit Mode: its box in the selected look, and a small dialog of Core's; free, it snaps to Edit
 -- Mode's grid while the game snaps
 do
@@ -1437,6 +1473,8 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == UIParent and widget._strata == "DIALOG" and rawget(widget, "reset") then panel = widget end
     end
+    check(pickedBox.Center._alpha == 1 and talkWindow.box.Center._alpha == 0,
+        "the one chosen keeps its yellow frame in sight, the others only under the mouse")
     check(dialog and pickedBox.Center._atlas == "editmode-actionbar-selected" and panel and panel:IsShown()
         and panel.title._text == "Auction House" and not panel.reset:IsEnabled() and panel._level == 200,
         "a click on its box in Edit Mode chooses it: the box in Edit Mode's selected look, a dialog of Core's that names it; at its first place, nothing to reset")
@@ -1465,6 +1503,7 @@ do
     check(selection.window == talkWindow and pickedBox.Center._atlas == "editmode-actionbar-highlight"
         and talkWindow.box.Center._atlas == "editmode-actionbar-selected" and panel.title._text == "Vendor",
         "another chosen, the first is not any more")
+    check(pickedBox.Center._alpha == 0 and talkWindow.box.Center._alpha == 1, "its yellow frame goes to the one chosen now")
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(not panel:IsShown() and selection.window == nil and talkWindow.box.Center._atlas == "editmode-actionbar-highlight",
         "Edit Mode closed, nothing is chosen and the dialog is gone")

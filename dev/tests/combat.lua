@@ -1656,6 +1656,10 @@ do
         and targetWindow.options.settings[1].key == "unitTargetWidth" and targetWindow.options.settings[3].parent == "unitTargetLevel"
         and targetWindow.options.settings[3].text == ns.TEXT.showLevelMax:format(ns.UnitText.MaxLevel()),
         "your target's dialog: its width, then a tick for each piece, the top level's under the level")
+    local rows = targetWindow.options.settings
+    check(rows[#rows - 2].key == "unitTargetMouseover" and rows[#rows - 1].parent == "unitTargetMouseover"
+        and rows[#rows].key == "unitTargetGroup" and rows[#rows].text == ns.TEXT.showGroup and rows[#rows].check,
+        "last when it shows: Show only on mouseover, under it Always show in combat and in a group")
     targetWindow.options.set("unitTargetWidth", 300)
     check(target._width == 300 and focus._width == 240, "a frame's width its own")
     targetWindow.options.set("unitTargetPercent", false)
@@ -2647,9 +2651,12 @@ do
     local bars, you, foe = ab.ActionBars.Rest(), ns.Units.KINDS[1], ns.Units.KINDS[2]
     local health, power, most = units.player.health, units.player.power, units.player.powerMost
     units.player.health, units.player.power, units.player.powerMost = units.player.most, 0, 100 -- a warrior at rest
-    Core.Set(ns.name, "unitRest", false)
-    check(you.button._alpha == 1 and foe.button._alpha == 1 and not you.rest:Resting(), "Hide the unit frames at rest off: always in sight")
-    Core.Set(ns.name, "unitRest", true)
+    check(you.button._alpha == 1 and foe.button._alpha == 1 and not you.rest:Resting() and not foe.rest:Resting(),
+        "your frames at first always in sight: Show only on mouseover off")
+    check(Core.Described(ns.name, "unitPlayerMouseover").default == false and Core.Described(ns.name, "unitFocusFight").default == true
+        and Core.Described(ns.name, "unitTargetGroup").default == true and Core.Described(ns.name, "unitTargetGroup").parent == "unitTargetMouseover",
+        "each frame's three: Show only on mouseover off, Always show in combat and in a group on, under it")
+    for _, kind in ipairs(ns.Units.KINDS) do Core.Set(ns.name, kind.option .. "Mouseover", true) end
     Core.Set(ab.name, "barsRest", false)
     check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and not bars:Resting(), "Hide the action bars at rest off: always in sight")
     Core.Set(ab.name, "barsRest", true)
@@ -2671,16 +2678,30 @@ do
     check(Seen(), "in a fight all in sight")
     W.Combat(false)
     check(Rested(), "after it out of sight")
+    Core.Set(ns.name, "unitPlayerFight", false)
+    W.Combat(true)
+    check(you.button._alpha == 0 and foe.button._alpha == 1 and MainActionBar._alpha == 1,
+        "Always show in combat off for your frame: it alone rests in a fight")
+    units.player.power = 30
+    W.Fire("UNIT_POWER_UPDATE", "player")
+    check(you.button._alpha == 0, "and after it while your resource is not full")
+    units.player.power = 0
+    W.Combat(false)
+    Core.Set(ns.name, "unitPlayerFight", true)
+    check(Rested(), "on again, after the fight: all at rest")
     local grouped = IsInGroup
     IsInGroup = function() return true end
     W.Fire("GROUP_ROSTER_UPDATE")
     check(Seen(), "in a group all in sight")
-    Core.Set(ns.name, "unitRestGroup", true)
-    check(you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 1,
-        "In a group too under Hide the unit frames at rest: the frames rest in a group, the bars not")
+    Core.Set(ns.name, "unitPlayerGroup", false)
+    check(you.button._alpha == 0 and foe.button._alpha == 1 and MainActionBar._alpha == 1,
+        "Always show in a group off for your frame: it alone rests in a group")
+    Core.Set(ns.name, "unitTargetGroup", false)
+    check(you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 1, "your target's too: the bars not")
     Core.Set(ab.name, "barsRestGroup", true)
     check(Rested(), "and under Hide the action bars at rest: the bars too")
-    Core.Set(ns.name, "unitRestGroup", false)
+    Core.Set(ns.name, "unitPlayerGroup", true)
+    Core.Set(ns.name, "unitTargetGroup", true)
     Core.Set(ab.name, "barsRestGroup", false)
     check(Seen(), "both off again: all in sight in a group")
     IsInGroup = grouped

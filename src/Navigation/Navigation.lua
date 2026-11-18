@@ -51,10 +51,6 @@ ns.TEXT = {
     nativeMinimapTip = "The game's own minimap in the top right corner instead of this map's small window; a left click in that corner still fills the screen with this map. Off: its live dots (players, tracked herbs and ore, quest areas) show on this map while it follows you, and the game's minimap is out of sight.",
     nativeMap = "Show the game's map",
     nativeMapTip = "The game's own map and quest log open as before: its key, the quest log's button, a click on a quest; a left click in the top right corner still fills the screen with this map. Off: all of them open this map.",
-    questLogRest = "Hide the quest log at rest",
-    questLogRestTip = "The quest log on the screen alone is out of sight while nothing goes on. It shows while the mouse is on it, while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too) and in Edit Mode. Out of sight its words, title bar and items still take the mouse. Over the full map it always shows. Off: always in sight.",
-    questLogRestGroup = "In a group too",
-    questLogRestGroupTip = "The quest log on the screen rests out of sight in a party or raid as well: there too only the mouse, your health or your resource, a fight and Edit Mode bring it. Off: always in sight in a group.",
     pins = "Pins on the map",
     pinsTip = "What the map shows on it, small and full screen: the same as the pin filter on the full map's bar and the satchel on the small map (its Pins and its Tracking). Possible herbs and ore: where they grow. Found herbs and ore: those the game's minimap shows now, each in its own picture (grey while your skill is too low); each switches Find Herbs or Find Minerals on and off. Found fishing pools: switches Find Fish on and off (the game's minimap dots show the pools). Your finders come back on by themselves once you are alive again after dying. Books and treasures only full screen; services on the small map only near you. Always there, with no switch: what the game's minimap shows around you (players, tracked herbs and ore), on the full map too, and the golden line from you to the game's map pin (a double click on the map or a pin), around what cannot be walked, with the flights you know where they are quicker; on foot orange where enemies a few levels above you spawn near it, red where they are far above you. Drag it on the full map to put a waypoint there: the line goes there first, then on to the pin.",
     markerShares = "Markers and map pins others share",
@@ -274,10 +270,13 @@ local OPTIONS = {
     { key = "nativeMap", default = false, text = ns.TEXT.nativeMap, tip = ns.TEXT.nativeMapTip },
     -- The game's own quest log, chosen in the dropdown Classic windows (Window.lua): no control on the options page.
     { key = "nativeQuestLog", default = false },
-    -- Off at first (Saneroki, 2026-11-15: "Hide the quest log at rest should be ticked off as well").
-    { key = "questLogRest", default = false, text = ns.TEXT.questLogRest, tip = ns.TEXT.questLogRestTip },
-    { key = "questLogRestGroup", default = false, text = ns.TEXT.questLogRestGroup, tip = ns.TEXT.questLogRestGroupTip,
-      parent = "questLogRest" },
+    -- When the quest log on the screen shows: always at first (Saneroki, 2026-11-15: "Hide the quest log at rest
+    -- should be ticked off as well"; 2026-11-18: "the default is set to always visible"); Show only on mouseover, and
+    -- under it Always show in combat and in a group (on), chosen in its Edit Mode dialog (QuestLog.lua) and the setup
+    -- (Setup.lua), each with its own words there; no control here.
+    { key = "questLogMouseover", default = false },
+    { key = "questLogFight", default = true, parent = "questLogMouseover" },
+    { key = "questLogGroup", default = true, parent = "questLogMouseover" },
     SPARKLES, GLINTS, TURNS,
     { key = "rareTracker", default = true, text = ns.TEXT.rareOn, tip = ns.TEXT.rareOnTip, header = ns.TEXT.rareTracker },
     { key = "rareKinds", default = { rare = true, treasure = true, book = true, event = true }, multi = true,
@@ -335,7 +334,9 @@ Core.Options(ns.name, OPTIONS, { version = 6, upgrade = Upgrade, changed = funct
         ns.Guarded(ns.QuestLog.Chosen) -- ours or the game's quest tracker on the screen
         return ns.Guarded(ns.Native.Update)
     end
-    if key:match("^questLogRest") then return ns.Guarded(ns.QuestLog.Rested) end
+    if key == "questLogMouseover" or key == "questLogFight" or key == "questLogGroup" then
+        return ns.Guarded(ns.QuestLog.Rested)
+    end
     if key == "dockTimes" then return ns.Guarded(ns.DockWatch.Update) end
     if key == "tripView" then return ns.Guarded(ns.TripView.Update) end
     if key == "nodeSparkles" then return ns.Guarded(ns.Sparkles.Settings) end

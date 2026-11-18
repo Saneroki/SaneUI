@@ -64,13 +64,15 @@ local _, ns = ...
 --  bars and timers hear nothing while ours stand in for them (Core.Lend's
 --  SetDeaf): the game shows and lays those out itself.
 --
---  Out of sight at rest (Core.Rest, the setting Hide the unit frames at rest;
---  Saneroki, 2026-11-01): each frame goes by its alpha, its button still taking
---  the mouse, so the mouse on a frame, its row or its auras shows that frame
---  alone; a cast or a timer running on it shows it too (the game's own bars for
---  those are gone, and you need your breath under water). A fight, your health
---  and your resource show them all, and a group unless In a group too is on
---  (Saneroki, 2026-11-07).
+--  Out of sight at rest (Core.Rest; Saneroki, 2026-11-01), each frame by its
+--  own three (Saneroki, 2026-11-18): Show only on mouseover (off at first:
+--  always in sight), and under it Always show in combat and Always show in a
+--  group (on at first). Chosen in its Edit Mode dialog and the setup. Each
+--  frame goes by its alpha, its button still taking the mouse, so the mouse on
+--  a frame, its row or its auras shows that frame alone; a cast or a timer
+--  running on it shows it too (the game's own bars for those are gone, and you
+--  need your breath under water). In combat: a fight, your health and your
+--  resource not full, death.
 --
 --  Secure frames are made, shown, moved, sized and given back out of a fight
 --  only: what is asked for in one waits for its end (Core.AfterCombat). Off
@@ -670,8 +672,10 @@ local function Kind(kind)
     Rowed(button.face)
     Fit(button.face)
     Fill(button.face)
-    kind.rest:InGroup(ns.options.unitRestGroup == true)
-    kind.rest:Switch(ns.options.unitRest ~= false)
+    local options, key = ns.options, kind.option -- when it shows: its own three (Combat.lua, ns.FRAME_SHOWS)
+    kind.rest:InGroup(options[key .. "Group"] == false)
+    kind.rest:Fight(options[key .. "Fight"] ~= false)
+    kind.rest:Switch(options[key .. "Mouseover"] == true)
 end
 
 -- Core's marks on a face as the settings say.

@@ -74,9 +74,10 @@ local _, ns = ...
 --                           closer to the screen's edge; clicked through but its title bar, its words and its
 --                           items; the objectives done left out, the
 --                           headers without their fold marks
---  On the screen alone it rests out of sight (Core.Rest, the setting Hide the quest log at rest; Saneroki, 2026-11-01):
---  it shows with the mouse on its words, title bar or items, and as your unit frames and action bars do while something
---  goes on. Its items' tray goes with it. With In a group too it rests in a group as well (Saneroki, 2026-11-07).
+--  On the screen alone it may rest out of sight (Core.Rest; Saneroki, 2026-11-01): Show only on mouseover, off at first
+--  (always in sight), and under it Always show in combat and Always show in a group, on (Saneroki, 2026-11-18), in its
+--  Edit Mode dialog and the setup's step. Out of sight it shows with the mouse on its words, title bar or items; its
+--  items' tray goes with it.
 --  On the screen it is ours or the game's quest tracker, never both (Saneroki, 2026-11-18: "make sure that you either
 --  see ours or the native one, depending on what you selected in the classic windows"): with the game's quest log
 --  chosen (the quest log ticked in the dropdown Classic windows, or Show the game's map) the game's tracker and not
@@ -131,6 +132,10 @@ QuestLog.TEXT = {
               type = Core.Word("TYPE", "Type") },
     sorted = "Sorted by %s",
     sortNext = "A click sorts them by %s.",
+    -- When it shows on the screen, in its Edit Mode dialog (the setup's quest log page words them its own way).
+    mouseover = "Show only on mouseover",
+    fight = "Always show in combat",
+    group = "Always show in a group",
     fold = "A click beside these words hides the list.",
     unfold = "A click beside these words shows the list.",
     normal = "Normal", -- the type of a quest the game gives no tag
@@ -1583,6 +1588,12 @@ function QuestLog.Build()
         barClick = function() ns.Guarded(QuestLog.Fold, not QuestLog.Folded()) end,
         bare = function() return true end, -- no buttons: the full map's bar has its switch
         usable = function() return not InCombatLockdown() end, -- its items cannot follow it in a fight
+        -- When it shows on the screen, in its Edit Mode dialog (Core's Selection.lua): its three switches.
+        settings = { { key = "questLogMouseover", text = QuestLog.TEXT.mouseover, check = true },
+                     { key = "questLogFight", text = QuestLog.TEXT.fight, check = true, parent = "questLogMouseover" },
+                     { key = "questLogGroup", text = QuestLog.TEXT.group, check = true, parent = "questLogMouseover" } },
+        get = function(key) return (ns.options or {})[key] end,
+        set = function(key, value) Core.Set(ns.name, key, value) end,
         lifted = function() ns.Guarded(Lifted) end,
         docked = function() ns.Guarded(Sided) end,
     })
@@ -1681,8 +1692,10 @@ end
 -- At rest out of sight, as the setting says: only on the screen alone, over the full map it is opened to be seen.
 function QuestLog.Rested()
     if not rest then return end
-    rest:InGroup((ns.options or {}).questLogRestGroup == true)
-    rest:Switch(not ns.off and not full and (ns.options or {}).questLogRest ~= false)
+    local options = ns.options or {}
+    rest:InGroup(options.questLogGroup == false)
+    rest:Fight(options.questLogFight ~= false)
+    rest:Switch(not ns.off and not full and options.questLogMouseover == true)
 end
 
 -- Core's title bar comes with the first look: the mouse on it, or on the words in it, brings the log into sight.

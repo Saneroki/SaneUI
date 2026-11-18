@@ -136,6 +136,13 @@ Decided (Saneroki, 2026-10-16):
   rage and combo points rest empty. Having a target shows nothing: it is not on the list, and the plate shows it.
   **In a group too** (Saneroki, 2026-11-07; built): "I have no way to autohide then while i don't hover over them in
   party." Under each of the three switches its own, off by default (`rest:InGroup`): a group then counts for nothing.
+  **Always visible at first, each frame its own** (Saneroki, 2026-11-18; built): "During the setup, we need to make
+  sure that the default is set to always visible and that there are options for the questlog, focus target, player and
+  target unit frames to be show only on mouseover, show always during combat, always show in part[y]. But those hide /
+  show checkboxes are something later in the setup windows, not in the beginning." So your frame, your target's and
+  your focus's each have *Show only on mouseover* (off), and under it *Always show in combat* and *Always show in a
+  group* (on): the setup's last step and each frame's Edit Mode dialog (`rest:Fight` in Core). The action bars kept
+  theirs, on at first: not named.
 - **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
   mouseover (`GameBars.lua`). Around the mouse, only while they run, rings for the global cooldown and your cast, centred on
   the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). SaneUI's own experience and stance bars are still to come; the game's stance keys and

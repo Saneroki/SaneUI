@@ -26,7 +26,12 @@ local _, ns = ...
 --    move     Edit Mode moves the map, and its hot corner with it; the big
 --             arrow shows where it is now
 --    quests   the quest log: a click opens a quest, a double click puts a
---             route to it
+--             route to it; when it shows on the screen, late in the setup
+--             (Saneroki, 2026-11-18: "those hide / show checkboxes are
+--             something later in the setup windows, not in the beginning"):
+--             always at first, Show only on mouseover and under it Always show
+--             in combat and in a group; its sample faint while only the mouse
+--             would bring it
 --    map      on the map: a double click puts the pin there with a route to
 --             it, a right click often offers more; the wheel zooms
 --
@@ -68,6 +73,7 @@ Setup.PIN = "Waypoint-MapPin-Tracked"
 Setup.MOUSE = { left = "newplayertutorial-icon-mouse-leftbutton", right = "newplayertutorial-icon-mouse-rightbutton" }
 Setup.GROUND = { 0.16, 0.21, 0.13 } -- a drawn map's land
 Setup.WORLD = { 0.05, 0.05, 0.06 }  -- a drawn screen's world around it
+Setup.RESTING = 0.3 -- the drawn quest log while it shows only on mouseover
 -- Which way the arrow points (degrees, counterclockwise from the right) for the corner or the side the spot is at.
 Setup.ANGLES = { TOPRIGHT = 45, TOPLEFT = 135, BOTTOMLEFT = 225, BOTTOMRIGHT = 315,
                  right = 0, top = 90, left = 180, bottom = 270 }
@@ -90,6 +96,12 @@ Setup.TEXT = {
     cornerHover = "When the mouse goes into it",
     cornerClick = "With a left click in it",
     cornerTip = "The mouse in the screen's corner where the map stands fills the screen with the map, and brings it back. With a left click: only when you click there, so nothing opens by mistake.",
+    questMouseover = "The quest log: show only on mouseover",
+    questMouseoverTip = "The quest log on the screen alone is out of sight until the mouse is on it: its words, title bar or items, which still take the mouse. Edit Mode shows it too; over the full map it always shows. Off: always in sight.",
+    questFight = "Always show in combat",
+    questFightTip = "In sight in a fight, and after it while your health or your resource is not full (rage and combo points: while you have any), and while you are dead.",
+    questGroup = "Always show in a group",
+    questGroupTip = "In sight in a party or raid.",
 }
 
 local function Hued(colour, words)
@@ -142,8 +154,11 @@ Setup.STEPS = {
     { key = "quests", title = "The quest log",
       text = Lines({ "A click", "on a quest opens it: its objectives under it." },
           { "A double click", "puts the map pin on it: a golden line leads you there." },
-          { "A right click", "its menu: its text, the map at it, share, abandon." }),
-      settings = {} },
+          { "A right click", "its menu: its text, the map at it, share, abandon." },
+          { "On the screen", "always in sight at first, or only on mouseover." }),
+      settings = { { key = "questLogMouseover", text = Setup.TEXT.questMouseover, tip = Setup.TEXT.questMouseoverTip },
+                   { key = "questLogFight", text = Setup.TEXT.questFight, tip = Setup.TEXT.questFightTip },
+                   { key = "questLogGroup", text = Setup.TEXT.questGroup, tip = Setup.TEXT.questGroupTip } } },
     { key = "map", title = "On the map",
       text = Lines({ "A double click", "anywhere: the map pin there, and the way to it." },
           { "A right click", "often offers more: on a pin, a marker, the map pin." },
@@ -545,6 +560,7 @@ function DRAW.quests(board)
     log:ClearAllPoints()
     log:SetSize(330, 190)
     log:SetPoint("TOP", board, "TOP", 0, -30)
+    log:SetAlpha(ns.options.questLogMouseover == true and Setup.RESTING or 1) -- faint: only the mouse brings it
     local zone = Core.Plain(Core.Ask(rawget(_G, "GetZoneText")))
     local rows = {
         { Hued(type(zone) == "string" and zone ~= "" and zone or "Your zone"), 0 },

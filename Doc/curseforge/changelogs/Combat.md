@@ -11,6 +11,8 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
   marker, item level, name, health, health in percent, your resource's current, maximum and percent), each frame
   its own. While Edit Mode is open, every frame shows a preview: your target and its target, your focus, your pet,
   your breath and fatigue, and as a druid both your powers.
+- Your frame, your target's and your focus's are always in sight at first. Each can show only on mouseover, and
+  still show in combat and in a group if you like: the setup's last step, or the frame's own box in Edit Mode.
 
 ## 0.3.2 (2026-11-18)
 

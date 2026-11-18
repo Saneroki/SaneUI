@@ -96,10 +96,6 @@ ns.TEXT = {
     lookOutKey = "Focus who you look out for",
     unitSize = "Unit frame size",
     unitSizeTip = "How large the three frames and their rows are.",
-    unitRest = "Hide the unit frames at rest",
-    unitRestTip = "Your frame, your target's and your focus's are out of sight while nothing goes on. Each shows while the mouse is on its place or while it has a cast or a timer to show, and they all show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too) and in Edit Mode. Out of sight they still take the mouse. Off: always in sight.",
-    unitRestGroup = "In a group too",
-    unitRestGroupTip = "Your frame, your target's and your focus's rest out of sight in a party or raid as well: there too only the mouse, a cast or a timer, your health or your resource, a fight and Edit Mode bring them. The party and raid frames stay as they are. Off: always in sight in a group.",
     unitAuras = "Auras on the frames",
     unitAurasTip = "The auras that matter most above a frame: four buffs on its left, crowd control in its middle, debuffs on its right (on a foe yours). Those you mark Important come first, with the game's golden animated outline, and those you mark Prioritize on unit frames come first without one; those you mark Unimportant or Hide from unit frames never show. Click an icon (out of a fight) to mark it, or to open Edit tracked (/sane auras).",
     auraImportant = "Important",
@@ -170,6 +166,13 @@ ns.TEXT = {
     showPowerNow = "Resource: current",
     showPowerMost = "Resource: maximum",
     showPowerPercent = "Resource: percent",
+    -- When it shows (Saneroki, 2026-11-18): there and in the setup's step (Setup.lua), always in sight at first.
+    showMouseover = "Show only on mouseover",
+    showMouseoverTip = "Out of sight until the mouse is on it: on its place, its row or its auras. A cast or a timer on it shows it too, and Edit Mode. Out of sight it still takes the mouse. Off: always in sight.",
+    showFight = "Always show in combat",
+    showFightTip = "In sight in a fight, and after it while your health or your resource is not full (rage and combo points: while you have any), and while you are dead.",
+    showGroup = "Always show in a group",
+    showGroupTip = "In sight in a party or raid.",
     hideErrors = "Hide the red error text",
     hideErrorsTip = "The game's red line at the top of the screen, like Spell is not ready yet or Not enough rage, and its sound. Yellow lines, like a quest's progress, stay.",
     mouseRings = "Rings around the mouse",
@@ -268,13 +271,12 @@ ns.OPTIONS = {
     { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip, parent = "units" },
     { key = "unitLookOut", default = true, text = ns.TEXT.unitLookOut, tip = ns.TEXT.unitLookOutTip, parent = "unitFocus" },
     { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip, parent = "units" },
-    { key = "unitRest", default = true, text = ns.TEXT.unitRest, tip = ns.TEXT.unitRestTip, parent = "units" },
-    { key = "unitRestGroup", default = false, text = ns.TEXT.unitRestGroup, tip = ns.TEXT.unitRestGroupTip, parent = "unitRest" },
     { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip, parent = "units" },
     { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip, parent = "units" },
     { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip, parent = "units" },
     { key = "unitDispel", default = true, text = ns.TEXT.unitDispel, tip = ns.TEXT.unitDispelTip, parent = "units" },
-    -- Each frame's width and what it shows: chosen in Edit Mode's dialog (Units/Units.lua), added below.
+    -- Each frame's width, what it shows and when: chosen in Edit Mode's dialog (Units/Units.lua) and the setup, added
+    -- below.
     { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
     { key = "auraBlack", default = {} }, -- those never shown
     { key = "auraHidden", default = {} }, -- those out of sight in the game's list (Units/BuffList.lua)
@@ -339,7 +341,10 @@ end
 -- of the unit frames and where you can define in edit mode what each frame includes"; each frame its own): a key per
 -- frame of each (its setting and the suffix: unitTargetLevel), chosen in Edit Mode's dialog of that frame, no control on
 -- the options page. At first as before: level, marker, name (none on your own), health and its share, each power now
--- and its share; no item level, the level shown at the top too, 240 wide.
+-- and its share; no item level, the level shown at the top too, 240 wide. Last when it shows (Saneroki, 2026-11-18:
+-- "the default is set to always visible and that there are options for the questlog, focus target, player and target
+-- unit frames to be show only on mouseover, show always during combat, always show in party"), in the setup's step
+-- too: Show only on mouseover off, so always in sight; under it Always show in combat and in a group, on.
 ns.FRAME_SHOWS = {
     { suffix = "Width", text = ns.TEXT.frameWidth, default = 240, min = 120, max = 480, step = 10 },
     { suffix = "Level", show = "level", text = ns.TEXT.showLevel, default = true },
@@ -352,12 +357,16 @@ ns.FRAME_SHOWS = {
     { suffix = "PowerNow", show = "powerNow", text = ns.TEXT.showPowerNow, default = true },
     { suffix = "PowerMost", show = "powerMost", text = ns.TEXT.showPowerMost, default = false },
     { suffix = "PowerPercent", show = "powerPercent", text = ns.TEXT.showPowerPercent, default = true },
+    { suffix = "Mouseover", text = ns.TEXT.showMouseover, default = false },
+    { suffix = "Fight", text = ns.TEXT.showFight, default = true, under = "Mouseover" },
+    { suffix = "Group", text = ns.TEXT.showGroup, default = true, under = "Mouseover" },
 }
 for _, frame in ipairs({ "unitPlayer", "unitTarget", "unitFocus" }) do
     for _, entry in ipairs(ns.FRAME_SHOWS) do
         local default = entry.default
         if frame == "unitPlayer" and entry.suffix == "Name" then default = false end -- your own frame names nobody
-        ns.OPTIONS[#ns.OPTIONS + 1] = { key = frame .. entry.suffix, default = default, min = entry.min, max = entry.max }
+        ns.OPTIONS[#ns.OPTIONS + 1] = { key = frame .. entry.suffix, default = default, min = entry.min, max = entry.max,
+                                        parent = entry.under and frame .. entry.under or nil }
     end
 end
 
