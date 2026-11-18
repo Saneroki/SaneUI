@@ -1433,6 +1433,9 @@ do
     check(PlayerFrame.PlayerFrameContainer._alpha == 0 and PlayerFrame.PlayerFrameContent._alpha == 0
         and PlayerFrame._mouse == false and PlayerFrame._parent == UIParent,
         "the game's own frame out of sight and takes no clicks; it stays where it is, with what hangs on it")
+    check(PlayerFrame.Selection._alpha == 0 and PlayerFrame.Selection._mouse == false
+        and PlayerFrame.Selection._parent == PlayerFrame,
+        "its box in Edit Mode unseen and taking no click (it ignores the frame's alpha): ours is placed instead")
     check(TargetFrame._parent ~= UIParent and TargetFrame._parent == FocusFrame._parent and not TargetFrame._parent._shown,
         "the game's target and focus frames stand in a hidden frame of ours")
 
@@ -1584,14 +1587,16 @@ do
     Core.Set(ns.name, "unitFocus", true)
     check(watched[focus] and FocusFrame._parent ~= UIParent, "on again: ours, the game's away")
     Core.Set(ns.name, "unitPlayer", false)
-    check(PlayerFrame.PlayerFrameContainer._alpha == 1 and PlayerFrame._mouse == true and not player._shown,
-        "Your frame off: the game's own frame as it was")
+    check(PlayerFrame.PlayerFrameContainer._alpha == 1 and PlayerFrame._mouse == true and not player._shown
+        and PlayerFrame.Selection._alpha == 1 and PlayerFrame.Selection._mouse == true,
+        "Your frame off: the game's own frame as it was, its box in Edit Mode too")
     Core.Set(ns.name, "unitPlayer", true)
     player:Show() -- the game's unit watch: you are there
     -- Your pet: a row under your frame; the game's pet frame by its alpha and clicks (its layout re-parents it).
     local pet = player.face.rowButton
     check(pet:GetAttribute("unit") == "pet" and watched[pet] and PetFrame._alpha == 0 and PetFrame._mouse == false
-        and PetFrame._parent == PlayerFrame, "your pet's row under your frame, the game's pet frame out of sight")
+        and PetFrame._parent == PlayerFrame and PetFrame.Selection._alpha == 0 and PetFrame.Selection._mouse == false,
+        "your pet's row under your frame, the game's pet frame out of sight, its box in Edit Mode too")
     check(not PlayerFrame.PlayerFrameContent.HealthBar._motion and not PetFrameHappiness._mouse and not PetFrameHappiness._motion,
         "what lies under the game's frames takes no mouse either: nothing of them stands in the way")
     units.pet = { name = "Wolf", health = 80, most = 100, powerType = 2, powerToken = "FOCUS", power = 50, powerMost = 100 }
@@ -1617,7 +1622,8 @@ do
     end
     Core.Set(ns.name, "unitPet", false)
     check(not watched[pet] and not pet._shown and PetFrame._alpha == 1 and PetFrame._mouse == true
-        and not player.face.rowShown, "Your pet off: no row, the game's pet frame back")
+        and PetFrame.Selection._alpha == 1 and PetFrame.Selection._mouse == true
+        and not player.face.rowShown, "Your pet off: no row, the game's pet frame back, its box in Edit Mode too")
     Core.Set(ns.name, "unitPet", true)
     check(watched[pet] and PetFrame._alpha == 0, "on again")
     Core.Set(ns.name, "unitTargetTarget", false)

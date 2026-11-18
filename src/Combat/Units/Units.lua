@@ -46,7 +46,10 @@ local _, ns = ...
 --  its layout puts back under its own parent, by its alpha and its clicks too.
 --  What lies under those takes the mouse no more either (Unmouse): a frame at
 --  alpha 0 still does, and the game's health and power bars would hold it off
---  the world. The game's cast bars and timers hear nothing while ours stand in
+--  the world. Your own frame's and the pet frame's boxes in Edit Mode too: they
+--  ignore their frame's alpha, so they would stand there to be placed for
+--  nothing (Unbox); ours are placed instead. The game's own frame stays where
+--  it was, and with it what hangs on it. The game's cast bars and timers hear nothing while ours stand in
 --  for them (Core.Lend's SetDeaf): the game shows and lays those out itself.
 --
 --  Out of sight at rest (Core.Rest, the setting Hide the unit frames at rest;
@@ -344,9 +347,18 @@ local function Unmouse(frame, Lend)
     for _, child in ipairs({ frame:GetChildren() }) do Unmouse(child, Lend) end
 end
 
+-- A frame's box in Edit Mode (its Selection, EditModeSystemSelectionBaseTemplate) unseen and taking no click: it
+-- ignores its frame's alpha, so it would stand there to be placed for nothing. Ours is placed there instead.
+local function Unbox(game, Lend)
+    local selection = rawget(game, "Selection")
+    if type(selection) ~= "table" or not selection.SetAlpha then return end
+    Lend(selection, "SetAlpha", 0)
+    Unmouse(selection, Lend)
+end
+
 -- The game's frame out of sight (kind.away): "parts" your own frame's picture, bars and texts and its clicks;
 -- "parent" your target's or focus's whole, in our hidden frame; "fade" the pet's by its alpha and its clicks; "deaf"
--- a bar of the game's by the events it no longer hears.
+-- a bar of the game's by the events it no longer hears. With "parts" and "fade" its box in Edit Mode too (Unbox).
 local function Away(kind)
     local game = kind.game and rawget(_G, kind.game)
     if kind.lends or type(game) ~= "table" then return end
@@ -367,8 +379,10 @@ local function Away(kind)
             end
         end
         Lend(game, "SetMouse", false)
+        Unbox(game, Lend)
     else
         Lend(game, "SetAlpha", 0)
+        Unbox(game, Lend)
         Unmouse(game, Lend)
     end
 end

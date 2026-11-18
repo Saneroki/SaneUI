@@ -210,7 +210,8 @@ Sunder Armor), as you choose, nothing fixed.
   - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
     target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
     pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems and a class's
-    resource bar stay where it was, moved in Edit Mode by the game's box *Player Frame*.
+    resource bar stay where it was. Edit Mode shows only ours to place: the game's boxes *Player Frame* and
+    *Pet Frame* are gone while ours stand in for them (Saneroki, 2026-11-18).
 - **Action bars:** the game's bars, placed and set up in its Edit Mode as always, without any border,
   decoration or background: no frame, end caps or dividers on the bars, no frame or slot on a button. The main
   bar's page number and its arrows stay, to see and change which bar shows. Only the buttons that hold something show, each its square icon alone; the mouse over one, a press and
@@ -765,7 +766,10 @@ Sunder Armor), as you choose, nothing fixed.
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
     children `TotemFrame` and the class bars stay the game's; `PetFrame` (which the game's layout re-parents) alpha 0
-    and its mouse off while the pet's row is on. `PlayerCastingBarFrame`, `OverlayPlayerCastingBarFrame` and
+    and its mouse off while the pet's row is on. Of both their box in Edit Mode (`Selection`, which ignores its
+    frame's alpha) alpha 0 and its mouse off too (`Unbox`); the game's frame stays in sight for what hangs on it, so
+    Edit Mode's magnets still take its place (`EditModeSystemMixin:UpdateMagnetismRegistration`).
+    `PlayerCastingBarFrame`, `OverlayPlayerCastingBarFrame` and
     `MirrorTimerContainer` go deaf (`SetDeaf`: `Cast.GAME`, `Timers.EVENTS`) while ours stand in, each event noted with
     its unit and registered again as it was: they are not hidden or moved, because the cast bar is a managed frame
     (its `OnHide` would run the bottom layout in our taint, the game sets its alpha and parent anew itself). The overlay

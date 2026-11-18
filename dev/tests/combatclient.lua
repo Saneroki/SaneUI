@@ -291,6 +291,11 @@ function Client.Install(W)
     PetFrame._mouse = true
     PetFrameHappiness = W.NewWidget("Frame", "PetFrameHappiness", PetFrame)
     PetFrameHappiness._mouse, PetFrameHappiness._motion = true, true
+    -- Both are systems of Edit Mode's: their box there (Selection) takes clicks and ignores its frame's alpha.
+    for _, game in ipairs({ PlayerFrame, PetFrame }) do
+        game.Selection = W.NewWidget("Frame", nil, game)
+        game.Selection._mouse, game.Selection._motion = true, true
+    end
     -- The game's bars that go (GameBars.lua), the menu bar with a button of it.
     StatusTrackingBarManager = W.NewWidget("Frame", "StatusTrackingBarManager", UIParent)
     StanceBar = W.NewWidget("Frame", "StanceBar", UIParent)
