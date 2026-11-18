@@ -17,7 +17,8 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 
 ## Description
 
-The editor set to *Markdown* when the project is made.
+The editor set to *Markdown* when the project is made. Changed on 2026-11-18: *SaneUI Tooltips* and *SaneUI
+Combat* in *SaneUI addons*, to be put in on CurseForge; each module that goes up gets its line there.
 
 ```markdown
 **SaneUI Core** is what every SaneUI addon shares. SaneUI is a set of interface addons for
@@ -44,6 +45,8 @@ On its own, Core changes nothing you can see on your screen. It gives the SaneUI
 ## SaneUI addons
 
 - **SaneUI Navigation:** your minimap and world map in one window.
+- **SaneUI Tooltips:** the game's tooltips as tidy panels, with quests, professions and gold for every item.
+- **SaneUI Combat:** unit frames, party and raid frames and nameplates in one clean look.
 - More are on the way.
 
 ## Feedback and bug reports
