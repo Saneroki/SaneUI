@@ -1,4 +1,4 @@
--- Runs the Combat module's aura lists window (src/Combat/Units/Lists.lua) and its search (Units/AuraSearch.lua) against
+-- Runs the Combat module's aura lists window (src/Combat/Units/Lists.lua) and its search (Core's SpellSearch.lua) against
 -- the stand-in client (wowstub.lua) and small sets of Core's written here: one long list with a tick per mark and the X
 -- in front, a spell kept with no tick until its X, the ticks of a side taking each other's place, a search over every
 -- class's auras, the enemies' and the items' in groups, the best first, ranks of a name once, spells without an aura
@@ -251,10 +251,10 @@ if not RETAIL then
     local wrath = false
     Type("wrath")
     for _, line in ipairs(Suggested()) do wrath = wrath or line.text == "Wrath" end
-    check(not wrath and Suggested()[1].text == TEXT.searchNothing, "a spell that puts no aura on: not found")
+    check(not wrath and Suggested()[1].text == SaneUI.Core.SpellSearch.TEXT.searchNothing, "a spell that puts no aura on: not found")
     Type("drink")
     found = Suggested()
-    check(found[1].text == TEXT.searchItems and found[2].entry.name == "Drink" and not found[3], "the items' auras, a name once")
+    check(found[1].text == SaneUI.Core.SpellSearch.TEXT.searchItems and found[2].entry.name == "Drink" and not found[3], "the items' auras, a name once")
     Type("rgw")
     found = Suggested()
     check(found[2] and found[2].entry and found[2].entry.name == "Regrowth", "forgiving: letters of it in their order")
@@ -303,16 +303,16 @@ end
 -- A spell's number: that spell first, whatever the sets.
 Type("1459")
 local found = Suggested()
-check(found[1].text == TEXT.searchNumber and found[2].entry.id == 1459, "a spell's number: that spell, first")
+check(found[1].text == SaneUI.Core.SpellSearch.TEXT.searchNumber and found[2].entry.id == 1459, "a spell's number: that spell, first")
 -- Escape: the box empty, no suggestions.
 box._scripts.OnEscapePressed(box)
 check(box:GetText() == "" and not finder._shown, "Escape: nothing typed, nothing suggested")
 if RETAIL then
     Type("rejuvenation")
     found = Suggested()
-    check(found[1].text == TEXT.searchYours and found[2].entry.id == 774, "without the sets: a spell of your own by its name")
+    check(found[1].text == SaneUI.Core.SpellSearch.TEXT.searchYours and found[2].entry.id == 774, "without the sets: a spell of your own by its name")
     Type("renew")
-    check(Suggested()[1].text == TEXT.searchNothing, "and no other")
+    check(Suggested()[1].text == SaneUI.Core.SpellSearch.TEXT.searchNothing, "and no other")
 end
 -- Closed while a search waits: nothing happens.
 box:SetText("re")

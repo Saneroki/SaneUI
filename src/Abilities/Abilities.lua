@@ -29,6 +29,17 @@ local ADDON, ns = ...
 --  Action Bar 1 keeps the page you chose (Bar1.lua) and the buttons of every action bar
 --  touch (Spacing.lua), in both games. A druid's Action Bar 6 swaps with its form (FormBar.lua); any of
 --  Bars 2 to 8 may be paged by stance or form as Bar 1 is in the game (PagedBars.lua).
+--
+--  The full screen (Saneroki, 2026-11-18: "The macro editor, spellbook and other parts that are more for the
+--  fullscreen windows are part of the SaneUI abilities part"; Combat's until then): the window docked at the
+--  bottom middle (Screen.lua), filling the screen at a left click on the middle half of the bottom edge, and on
+--  Core's board there (Board.lua) our own spellbook (Spellbook/) and talents (Talents/), made after WoW: Forever's,
+--  or in Retail the game's own window of both (GameWindow.lua, ns.Serves); the trainer's window at a trainer
+--  (Trainer.lua); a talent planner Sane UI knows; the action bars as windows (BarsWindow.lua); Sane Macros
+--  (Macros/); the aura history (AuraHistory.lua). Your spellbook and talents keys open ours (Keys.lua). The game's
+--  action bars clean and out of sight at rest (ActionBars.lua), its experience and stance bars gone, its menu bar
+--  on mouseover (GameBars.lua). The menu of an aura or a spell (your marks of it, Add tracking) is Combat's, through
+--  Core (Core.AuraMarks).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Abilities", ns)
@@ -174,15 +185,122 @@ ns.TEXT = {
     allRanksTip = "With unlearned spells shown: one grey icon for every rank you have not trained yet, instead of one per ability.",
     layoutsMenu = "Action bar layouts", saveAs = "Save the current layout as...", load = "Load",
     saveOver = "Save the current layout over it", delete = "Delete",
+    -- The full screen at the bottom middle (Screen.lua) and its windows on Core's board (Board.lua): our own spellbook
+    -- (Spellbook/) and talents (Talents/), the trainer's, Sane Macros (Macros/), the action bars, the aura history.
+    title = "Abilities",
+    talents = Core.Word("TALENTS", "Talents"),
+    spellbook = Core.Word("SPELLBOOK", "Spellbook"),
+    planner = "Talent planner",
+    barsWindow = "Action bars",
+    sideBarsWindow = "Side bars",
+    book = "Spellbook and talents",
+    -- The panel of the game's own window while it is closed (GameWindow.lua).
+    gameClick = "Click here or press %s to open it here.",
+    gameClickNoKey = "Click here to open it here.",
+    gameFight = "Press %s to open it here. A click here works again after the fight.",
+    gameFightNoKey = "A click here opens it again after the fight.",
+    gameNotYet = "Not available yet.",
+    -- The full screen at a trainer (Trainer.lua).
+    trainer = "Trainer",
+    profession = Core.Word("TRADE_SKILLS", "Professions"),
+    professionTrainer = "Profession Trainer",
+    trainers = "Full Screen at Trainers",
+    trainersTip = "At a trainer the full screen comes with the trainer's window on the left and your spellbook on the right; at a profession trainer with your Profession window on the right, opened for what that trainer teaches once you know it. Each is a layout of its own behind its tab, kept as you arrange it, and the full screen goes back when the talk ends.",
+    keys = "Your spellbook and talents keys open ours",
+    keysTip = "The keys you gave the game's spellbook, pet spellbook and talents open our own windows on the full screen, and close them again. Off: they open the game's own windows, as before. Your key bindings stay as they are either way.",
+    actionBars = "Action bars",
+    cleanBars = "Clean action bars",
+    cleanBarsTip = "The game's action bars without their borders, decorations and backgrounds: only the buttons that hold something, each its icon alone. Empty buttons show while you drag something onto the bars, and in Edit Mode. Off: the game's own look.",
+    macros = "Sane Macros",
+    macroChecks = "Check macros",
+    macroChecksTip = "Looks over your macros when they change, and when you learn something new while the window is open, and marks what would not work.",
+    macroDim = "Dim what cannot be used",
+    macroDimTip = "A macro on a bar button is dimmed while its next step cannot be used, as the game does.",
+    macroKey = "Show the key on the button",
+    macroKeyTip = "A macro on a bar button shows that button's key.",
+    macroName = "Show the macro's name on the button",
+    macroNameTip = "A macro on a bar button shows its name along the button's bottom, as the game shows a macro's name.",
+    barsRest = "Hide the action bars at rest",
+    barsRestTip = "The game's action bars are out of sight while nothing goes on. The mouse on any of them shows them all, and they show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too), in a vehicle, while something is dragged onto them, while you set your keys and in Edit Mode. Out of sight they still take the mouse, and their keys work. Off: always in sight.",
+    barsRestGroup = "In a group too",
+    barsRestGroupTip = "The game's action bars rest out of sight in a party or raid as well: there too only the mouse, your health or your resource, a fight, a vehicle, a drag, setting your keys and Edit Mode bring them. Their keys work all the same. Off: always in sight in a group.",
+    hideTracking = "Hide the game's experience and reputation bars",
+    hideTrackingTip = "The game's experience and reputation bars are gone from the screen. Off: the game's own.",
+    hideStance = "Hide the game's stance bar",
+    hideStanceTip = "The game's stance, form and aura buttons are gone from the screen. Their keys and your action bars still change them. Off: the game's own.",
+    menuHover = "Menu bar on mouseover",
+    menuHoverTip = "The game's menu bar is out of sight, and shows while the mouse is on it; in Edit Mode it always shows. Off: always in sight.",
+    -- The aura history, a window of the full screen (AuraHistory.lua).
+    historyTitle = "Aura history",
+    historyTip = "The buffs and debuffs seen on whoever you can attack, newest on top. Point at an icon for its tooltip, click it to mark it or to add tracking, as the buffs on your unit frames. In a fight the game keeps the auras of others from addons: what is still on comes in once the fight is over, with the time it came; your own casts of an aura come in as you cast them, and after each fight the spells of the game's damage meter: your group's damage, healing, damage taken, dispels and interrupts.",
+    historyShow_all = "All auras",
+    historyShow_buffs = "Buffs",
+    historyShow_debuffs = "Debuffs",
+    historyShow_bosses = "On bosses",
+    historyShow_fights = "From fights",
+    historyClear = "Clear history",
+    historyClearAsk = "Clear the aura history?",
+    historyCount = "%d auras",
+    historyEmpty = "None yet. Target an enemy, or look at its nameplate, and its buffs and debuffs come here.",
+    historyNoneFound = "None of these.",
+    historyColumn_name = "Aura",
+    historyColumn_on = "On",
+    historyColumn_removable = "Removable",
+    historyColumn_cast = "Its cast",
+    historyColumn_came = "Came",
+    historyColumn_lasts = "Duration",
+    historyBuff = "Buff",
+    historyDebuff = "Debuff",
+    historyStacks = "%d stacks",
+    historyFrom = "from %s",
+    historyNobody = "Unknown",
+    historySteal = "Stealable",
+    historyNone = "-",
+    historyInterruptible = "Interruptible",
+    historyLocked = "Not interruptible",
+    historyInstant = "Instant",
+    historyLasting = "No limit",
+    historyOn = "On now",
+    historyStayed = "stayed %s",
+    historyCast = "Your cast in a fight",
+    historyCastShared = "Cast in a fight",
+    historyShare = "Share casts in a fight with your group",
+    historyShareTip = "After each fight your casts of buffs and debuffs in it go to the Sane UI of your party or raid, and theirs come into your aura history, with whom and when: in a fight the game keeps them from addons, but each player's own casts not. Nothing is sent in a fight. Off: yours are not sent and theirs not taken.",
+    historyWhat_damage = "Damage in a fight",
+    historyWhat_healing = "Healing in a fight",
+    historyWhat_taken = "Hit your group",
+    historyWhat_dispel = "Dispel in a fight",
+    historyWhat_interrupt = "Interrupt in a fight",
+    historyMore = "+%d",
+    historyFight = "fight: %s",
 }
 local TEXT = ns.TEXT
+
+-- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
+-- and Retail*): the book after its book, whose art is that game's and which holds the spells of its flyouts loose
+-- (C_SpellBook.IsSpellBookItemLooseFlyoutMember), the talents after its talents of two specializations, each with a
+-- config of its own (C_SpecializationInfo.GetCombatConfigIDForSpecGroup). In a game without that (Retail) ours is
+-- not there and the game's own stays: no window of it on the full screen, its key the game's (Board.Present); with
+-- neither, the full screen holds the game's own window (GameWindow.lua).
+local NEEDS = {
+    spellbook = { "C_SpellBook", "IsSpellBookItemLooseFlyoutMember" },
+    talents = { "C_SpecializationInfo", "GetCombatConfigIDForSpecGroup" },
+}
+
+-- Whether our window of that key ("spellbook", "talents") serves this game; without a key: either of them.
+function ns.Serves(key)
+    if key == nil then return ns.Serves("spellbook") or ns.Serves("talents") end
+    local need = NEEDS[key]
+    local api = need and rawget(_G, need[1])
+    return type(api) == "table" and type(api[need[2]]) == "function"
+end
 
 -- The module's switches: on its page in the options (Core's) and in the spellbook's own menu (Book/Menu.lua).
 -- Two sections: the book itself, with the four switches under the one they all need, then the action bars.
 local OPTIONS = {
     { key = "book", default = true, text = "Sane UI lays out the spellbook pages",
       header = "Spellbook", headerTip = "The game's spellbook, laid out by Sane UI.",
-      tip = "Needed in the game's spellbook for the grey spells, the Home page, compact pages and moving or resizing; Combat's spellbook on its full screen shows the grey spells and Home without it. Off: the game draws its pages itself after /reload, a way out if they ever look wrong." },
+      tip = "Needed in the game's spellbook for the grey spells, the Home page, compact pages and moving or resizing; the full screen's spellbook shows the grey spells and Home without it. Off: the game draws its pages itself after /reload, a way out if they ever look wrong." },
     { key = "showHidden", default = true, text = "Show unlearned spells", parent = "book",
       tip = "The spells you have not learned yet are listed in grey, in the tab they will be in. Drag one onto an action bar button to reserve that button for it." },
     { key = "home", default = true, text = "Open the spellbook on its Home page", parent = "book",
@@ -202,6 +320,20 @@ local OPTIONS = {
       tip = "The game puts another row of buttons on Action Bar 1 in a stance, a form or stealth. On: the bar stays on its page, in a fight too, and only its arrows or your page keys change it. In a vehicle the game's own bar still takes its place." },
     { key = "tightBars", default = true, text = "Action bar buttons touch",
       tip = "No space between the buttons of your action bars, side by side or between the rows of a bar: the icons stand directly against each other. Bars snapped together in Edit Mode touch as well. Edit Mode's Icon Padding has no effect while this is on. It changes after the fight if you are in one." },
+    { key = "cleanBars", default = true, text = TEXT.cleanBars, tip = TEXT.cleanBarsTip },
+    { key = "barsRest", default = true, text = TEXT.barsRest, tip = TEXT.barsRestTip },
+    { key = "barsRestGroup", default = false, text = TEXT.barsRestGroup, tip = TEXT.barsRestGroupTip, parent = "barsRest" },
+    { key = "hideTracking", default = true, text = TEXT.hideTracking, tip = TEXT.hideTrackingTip },
+    { key = "hideStance", default = true, text = TEXT.hideStance, tip = TEXT.hideStanceTip },
+    { key = "menuHover", default = true, text = TEXT.menuHover, tip = TEXT.menuHoverTip },
+    -- The full screen and its windows (Screen.lua, Board.lua): your keys open ours, a trainer comes with its layout.
+    { key = "keys", default = true, text = TEXT.keys, header = TEXT.book, tip = TEXT.keysTip },
+    { key = "trainers", default = true, text = TEXT.trainers, tip = TEXT.trainersTip },
+    { key = "macroChecks", default = true, text = TEXT.macroChecks, header = TEXT.macros, tip = TEXT.macroChecksTip },
+    { key = "macroDim", default = true, text = TEXT.macroDim, tip = TEXT.macroDimTip },
+    { key = "macroKey", default = true, text = TEXT.macroKey, tip = TEXT.macroKeyTip },
+    { key = "macroName", default = true, text = TEXT.macroName, tip = TEXT.macroNameTip },
+    { key = "auraShare", default = true, text = TEXT.historyShare, tip = TEXT.historyShareTip, header = TEXT.historyTitle },
 }
 
 -- The spellbook's switches (the first five) and the ranks are Forever's: in Retail they are kept with the settings,
@@ -220,6 +352,21 @@ local function PagesChanged(on)
     if Core.AskReload then Core.AskReload({ TEXT.pagesReload }) end
 end
 
+-- Your keys open ours only where ours are (ns.Serves): elsewhere (Retail) the switch is not there, and the trainers'
+-- switch heads the section.
+if not ns.Serves() then
+    for index, option in ipairs(OPTIONS) do
+        if option.key == "keys" then
+            table.remove(OPTIONS, index)
+            OPTIONS[index].header = TEXT.book
+            break
+        end
+    end
+end
+-- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua), first:
+-- Core's window takes the section in by itself.
+Core.Edge.Options(OPTIONS, 1)
+
 Core.Options(ns.name, OPTIONS, function(key, value)
     if key == "book" then
         PagesChanged(value)
@@ -227,6 +374,16 @@ Core.Options(ns.name, OPTIONS, function(key, value)
         ns.Bar1.Apply()
     elseif key == "tightBars" then
         ns.Spacing.Apply()
+    elseif key == "keys" then
+        ns.Guarded(ns.Keys.Bind)
+    elseif key == "cleanBars" or key:match("^barsRest") then
+        ns.Guarded(ns.ActionBars.Apply)
+    elseif key:find("^macro") then
+        ns.Macros.Changed(key)
+    elseif key == "hideTracking" or key == "hideStance" or key == "menuHover" then
+        ns.Guarded(ns.GameBars.Apply)
+    elseif key == "auraShare" then
+        ns.Guarded(ns.AuraHistory.Apply)
     else
         ns.Fire("REFRESH")
     end
@@ -421,6 +578,8 @@ function ns.OnLoad()
     Table(db, "trainer")                -- per class: what was read at the class trainer
     Table(db, "pageNames")              -- per class: names of Bar 1's form rows
     ns.DB = db
+    ns.store = db                       -- the full screen's window and board, as Core keeps them (Screen.lua, Board.lua)
+    if ns.Macros then ns.Macros.Load() end -- each part in files of its own (a test may load the module without some)
 end
 
 -- A reservation is { kind = "spell" | "item" | "macro", id, name, icon } on an action slot.
@@ -461,6 +620,19 @@ function ns.OnLogin()
     ns.FormBar.Apply()
     ns.PagedBars.Apply()
     ns.Spacing.Apply()
+    -- The full screen at the bottom middle and its windows, your keys, the action bars' look, Sane Macros: each part
+    -- in files of its own (a test may load the module without some).
+    if ns.Screen then
+        ns.Screen.Build()
+        ns.Board.Follow()
+        ns.GameWindow.Start()
+        ns.Trainer.Start()
+        ns.Keys.Start()
+    end
+    if ns.ActionBars then ns.ActionBars.Start() end
+    if ns.GameBars then ns.GameBars.Start() end
+    if ns.AuraHistory then ns.AuraHistory.Start() end
+    if ns.Macros then ns.Macros.Start() end
 
     local function scan() ns.QueueUpdate(true) end
     local function update() ns.QueueUpdate(false) end
@@ -524,18 +696,28 @@ end)
 -- filter is put back, Bars 1 and 6 follow the game again and the buttons go back to their places on the bars. The
 -- reservations stay saved for the next session.
 -- Each step on its own, the quick ones first, so one that fails keeps none of the others.
-ns.GIVEN_BACK = "the game's own spellbook and buttons are back"
+ns.GIVEN_BACK = "the game's own spellbook and buttons are back; the bottom edge no longer fills the screen; " .. (ns.Serves()
+    and "your talents and spellbook keys open the game's own again; " or "")
+    .. "the game's action, experience, stance and menu bars and its macro window are back"
 function ns.GiveBack()
     if ns.Ghosts then ns.Safe("giving back", ns.Ghosts.Hide) end
     if ns.Drag then ns.Safe("giving back", ns.Drag.Cancel) end
     if ns.Sources then ns.Safe("giving back", ns.Sources.TrainerClosed) end
     if ns.Book then ns.Safe("giving back", ns.Book.StandDown, TEXT.why.problem) end
-    -- Combat's spellbook shows the game's spells alone again (Book/Offer.lua: no offer while the module is off).
+    -- The full screen's spellbook shows the game's spells alone again (Book/Offer.lua: no offer while the module is off).
     if Core.Spellbook then ns.Safe("giving back", Core.Spellbook.Changed) end
     if ns.Bar1 then ns.Safe("giving back", ns.Bar1.Apply) end
     if ns.FormBar then ns.Safe("giving back", ns.FormBar.Apply) end
     if ns.PagedBars then ns.Safe("giving back", ns.PagedBars.Apply) end
     if ns.Spacing then ns.Safe("giving back", ns.Spacing.Apply) end
+    -- The game's keys open the game's windows again first (ours do nothing now), every window on the full screen gives
+    -- back what it lent, and the window goes.
+    if ns.Keys then ns.Safe("keys", ns.Keys.Leave) end
+    if ns.Board then ns.Safe("board", ns.Board.Leave) end
+    if ns.Screen then ns.Safe("window", ns.Screen.Hide) end
+    if ns.ActionBars then ns.Safe("action bars", ns.ActionBars.GiveBack) end
+    if ns.GameBars then ns.Safe("game bars", ns.GameBars.GiveBack) end
+    if ns.Macros then ns.Macros.GiveBack() end
 end
 
 -------------------------------------------------------------------------------
@@ -668,3 +850,5 @@ Core.Command("abilities", Core.FOREVER and TEXT.about or TEXT.aboutRetail, funct
         for _, line in ipairs(Core.FOREVER and TEXT.help or TEXT.helpRetail) do ns.Print(line) end
     end
 end, "ab", "spellbook", "sb") -- its old name, and the old short word, still work
+Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
+Core.Command("aurahistory", "the aura history on the full screen: the buffs and debuffs seen on enemies", function() ns.Guarded(ns.AuraHistory.Open) end)

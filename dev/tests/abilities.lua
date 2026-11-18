@@ -1257,8 +1257,10 @@ local page = W.options.pages[5]
 local function box(text)
     for _, item in ipairs(page.items) do if item.setting and item.setting.name == text then return item.setting end end
 end
-check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 12
-    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its ten switches under two headers")
+-- The full screen's sections first (Expand window, Window corners), then the spellbook and the action bars, the full
+-- screen's trainers (the keys' switch only where our spellbook is: not in this stand-in client), Sane Macros, the aura history.
+check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "Sane UI" and #page.items == 36
+    and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under Sane UI, called Abilities, with its switches under seven headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)
 check(ns.options.showHidden == false and ghostCount() == 0 and line("Show unlearned spells").checked() == false, "ticked there, the spellbook follows, and so does its menu")

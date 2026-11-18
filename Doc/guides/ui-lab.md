@@ -111,7 +111,7 @@ prints its log.
   `setup-nameplates` (Core, Nameplates and Onboarding from their TOCs: Nameplates' setup window at *Spells on it*, its
   sample plates drawn by the module's own code, the game's plates not in the lab; `LabStep(4)` goes to a page,
   `LabSet("controlPlace", "bottom")` changes a switch as the window's controls do, `LabSetup()` opens it again),
-  `auralists` (Core and Combat from their TOCs with Core's built spell sets, `BUILD/SaneUI/Sets`: the aura lists' window with marks and a search typed; `LabSearch("rejuv")` in the console), `combat-full` (Core and Combat from their TOCs: Combat's full screen with Sane Macros and the action bars as windows, the bars
+  `auralists` (Core and Combat from their TOCs with Core's built spell sets, `BUILD/SaneUI/Sets`: the aura lists' window with marks and a search typed; `LabSearch("rejuv")` in the console), `abilities-full` (Core and Abilities from their TOCs: Abilities' full screen with Sane Macros and the action bars as windows, the bars
   standing in; `LabMacros`, `LabBars.Full()`), `basics` (plain widgets), `inventory` (Core
   and Inventory from their TOCs, the full screen with the character, the stats, the bags and the alts, the stats
   filled by the game's own character sheet files; the module is `LabInventory` in the console), `xml-templates` (a window from the

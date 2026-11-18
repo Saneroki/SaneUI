@@ -1,4 +1,4 @@
--- Runs Core's aura log (src/Core/AuraLog.lua) and the Combat module's aura history (src/Combat/AuraHistory.lua) against
+-- Runs Core's aura log (src/Core/AuraLog.lua) and the Abilities module's aura history (src/Abilities/AuraHistory.lua) against
 -- the stand-in client (wowstub.lua): the buffs and debuffs seen on whoever you can attack, never a friend; when each
 -- came, on whom, from whom, its duration, dispel type and stacks; whether the cast that gave it could be interrupted; an
 -- aura gone; a fight in which the game hides the auras (W.Secret): nothing hidden kept or compared, nothing closed, a
@@ -138,12 +138,15 @@ if RETAIL then W.Play("retail") end
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+-- The history is on Abilities' full screen; the menu of its auras is Combat's (your marks), through Core.
+local ns = W.LoadAddon(root, "Abilities", "SaneUI_Abilities")
+local combat = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+W.Fire("ADDON_LOADED", "SaneUI_Abilities")
 W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
-check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
+check(SaneUI.Abilities == ns and not ns.off and not combat.off, "the modules are made and started")
 local Log, History, TEXT = Core.AuraLog, ns.AuraHistory, ns.TEXT
-check(Log and History and #Log.Entries() == 0, "Core keeps the log, Combat shows it; nothing in it yet")
+check(Log and History and #Log.Entries() == 0, "Core keeps the log, Abilities shows it; nothing in it yet")
 
 local function Find(name, on)
     for _, entry in ipairs(Log.Entries()) do
@@ -407,7 +410,7 @@ Log.Heard(brisa, ("772\t%d\tHogger"):format(server - 3), "WHISPER")
 check(#Log.Entries() == before + 1, "heard twice, one entry; a whisper not taken")
 
 -- The switch Share casts in a fight with your group: off, nothing sent nor taken.
-Core.Set("Combat", "auraShare", false)
+Core.Set("Abilities", "auraShare", false)
 Log.Heard(brisa, ("1715\t%d\tHogger"):format(server - 30), "PARTY")
 check(#Log.Entries() == before + 1, "off: a member's casts not taken")
 W.Combat(true)
@@ -418,7 +421,7 @@ secret = false
 W.Combat(false)
 W.Wait(Log.AFTER + 0.1)
 check(#sent == 1, "and yours not sent")
-Core.Set("Combat", "auraShare", true)
+Core.Set("Abilities", "auraShare", true)
 Core.Wire.SendBlock, IsInGroup = sendBlock, function() return false end
 
 -------------------------------------------------------------------------------

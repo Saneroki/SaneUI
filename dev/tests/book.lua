@@ -1,4 +1,4 @@
--- Runs Combat's own spellbook (src/Combat/Book/) against the stand-in client (wowstub.lua): the game's rules for
+-- Runs Abilities' own spellbook on its full screen (src/Abilities/Spellbook/) against the stand-in client (wowstub.lua): the game's rules for
 -- where each entry stands on the pages (Layout.lua), the tabs and what each shows as the game's book filters it,
 -- the search (Data.lua), the book's pages, tabs, paging and settings (Book.lua), an entry as the game draws it
 -- (Item.lua), and the game's secure buttons that cast out of a fight only (Casts.lua). The look can only be
@@ -127,11 +127,17 @@ GetBindingKey = function(action) return action == "TOGGLESPELLBOOK" and "P" or n
 
 W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+-- The spellbook is Abilities' (its full screen); the menu of a spell's aura and its reminder are Combat's, through Core.
+local ns = W.LoadAddon(root, "Abilities", "SaneUI_Abilities")
+local combat = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+W.Fire("ADDON_LOADED", "SaneUI_Abilities")
 W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
 local Core = SaneUI.Core
-local Layout, Data, Item, Casts, Book = ns.BookLayout, ns.BookData, ns.BookItem, ns.BookCasts, ns.Book
+local Layout, Data, Item, Casts, Book = ns.SpellbookLayout, ns.SpellbookData, ns.SpellbookItem, ns.SpellbookCasts, ns.Spellbook
+-- The book alone first: what Abilities' own Book/Offer.lua serves it (the grey spells, Home) is tried with an offer of
+-- the test's own further down.
+Core.Spellbook.Serve(nil, nil)
 
 -------------------------------------------------------------------------------
 --  The game's rules for the pages
@@ -288,7 +294,7 @@ W.menus = {}
 covers[1]._scripts.PostClick(covers[1], "LeftButton")
 check(W.menus[1] == nil, "a left click casts, no menu")
 covers[1]._scripts.PostClick(covers[1], "RightButton")
-check(W.menus[1] and W.menus[1][8].text == ns.TEXT.trackAdd, "a right click casts nothing and opens the spell's menu")
+check(W.menus[1] and W.menus[1][8].text == combat.TEXT.trackAdd, "a right click casts nothing and opens the spell's menu")
 local spellsCovered = { [covers[1]._attributes.spell] = true, [covers[2]._attributes.spell] = true }
 check(spellsCovered[205] and spellsCovered[122], "each casts its spell by its ID (the rank it is)")
 -- The game locks the secure buttons only after PLAYER_REGEN_DISABLED's handlers ran (the buttons' last chance to
@@ -306,30 +312,30 @@ nova.Button:GetScript("OnClick")(nova.Button, "LeftButton")
 check(W.errors[1] == Item.TEXT.fight, "a click in a fight says the book casts again after it")
 W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
-check(W.menus[1] and W.menus[1][1].title == "Frost Nova" and W.menus[1][2].text == ns.TEXT.auraImportant
-    and W.menus[1][8].text == ns.TEXT.trackAdd, "a right click opens the spell's menu, in a fight too: the book knows its spells")
+check(W.menus[1] and W.menus[1][1].title == "Frost Nova" and W.menus[1][2].text == combat.TEXT.auraImportant
+    and W.menus[1][8].text == combat.TEXT.trackAdd, "a right click opens the spell's menu, in a fight too: the book knows its spells")
 W.menus[1][2].fn()
-check(ns.options.auraWhite[nova.info.spellID] == "Frost Nova", "and marks it there")
+check(combat.options.auraWhite[nova.info.spellID] == "Frost Nova", "and marks it there")
 W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][2].fn()
-check(next(ns.options.auraWhite) == nil, "the tick off again")
+check(next(combat.options.auraWhite) == nil, "the tick off again")
 W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][8].fn()
-local made = ns.Reminders.List()[1]
-check(made and made.name == "Frost Nova" and not made.harmful and made.missing and made.places[1] == ns.Reminders.Bars()[1] and #made.places == 1,
+local made = combat.Reminders.List()[1]
+check(made and made.name == "Frost Nova" and not made.harmful and made.missing and made.places[1] == combat.Reminders.Bars()[1] and #made.places == 1,
     "Add tracking: on the first aura bar, a buff, while it is missing")
-ns.Reminders.Take(made)
+combat.Reminders.Take(made)
 C_Spell.IsSpellHarmful = function() return true end
 W.menus = {}
 nova.Button:GetScript("OnClick")(nova.Button, "RightButton")
 W.menus[1][8].fn()
-made = ns.Reminders.List()[1]
-check(made.harmful and #made.units == 1 and made.units[1] == "target" and made.places[1] == ns.Reminders.Bars()[1] and made.missing and not made.active,
+made = combat.Reminders.List()[1]
+check(made.harmful and #made.units == 1 and made.units[1] == "target" and made.places[1] == combat.Reminders.Bars()[1] and made.missing and not made.active,
     "a spell that hurts: a debuff on your target, shown on the bar while it is missing")
-ns.Reminders.Take(made)
-ns.ReminderEditor.Hide()
+combat.Reminders.Take(made)
+combat.ReminderEditor.Hide()
 C_Spell.IsSpellHarmful = nil
 nova.Button:GetScript("OnDragStart")(nova.Button)
 check(picked and picked[1] == 5 and picked[2] == 0, "a drag still picks the spell up, for an action bar")
@@ -347,10 +353,10 @@ local function Problems()
 end
 local problems = Problems()
 Part.Leave()
-check(#Covers() == 0 and covers[1]:IsProtected() and Core.Owed("Combat: spellbook casts") and Problems() == problems,
+check(#Covers() == 0 and covers[1]:IsProtected() and Core.Owed("Abilities: spellbook casts") and Problems() == problems,
     "left in a fight: the secure buttons' clearing waits for its end, none of the game's locked ones touched")
 W.Combat(false) -- the lock lifted, then PLAYER_REGEN_ENABLED: the game's order, the stand-in's too
-check(not Core.Owed("Combat: spellbook casts") and Problems() == problems, "the fight over: cleared then, no error kept")
+check(not Core.Owed("Abilities: spellbook casts") and Problems() == problems, "the fight over: cleared then, no error kept")
 Part.Show(true)
 W.Wait(0)
 check(#Covers() == 2, "shown again, the fight over: the secure buttons are back over the page")
@@ -455,7 +461,7 @@ local function Top(widget) -- the window a widget is in: its ancestor right unde
     while widget._parent and widget._parent ~= UIParent do widget = widget._parent end
     return widget
 end
-local auraWindow = ns.ReminderEditor.panel and Top(ns.ReminderEditor.panel) -- Edit tracked, opened by Add tracking above
+local auraWindow = combat.ReminderEditor.panel and Top(combat.ReminderEditor.panel) -- Edit tracked, opened by Add tracking above
 for _, widget in ipairs(W.frames) do
     if widget._template == "UICheckButtonTemplate" and Top(widget) ~= auraWindow then toggle = widget end
     if widget._template == "UIPanelArrowDropdownButtonTemplate" then dropdown = widget end
@@ -489,7 +495,7 @@ W.Wait(0)
 check(#Shown(futures) == 0 and #Tabs() == 3 and Book.Chosen() == "line2", "the offer gone: drawn anew, the game's spells alone")
 Part.Show(false)
 
--- In Retail, whose book is not the one ours is made after (its art, no flyouts' spells loose in it: Combat.lua,
+-- In Retail, whose book is not the one ours is made after (its art, no flyouts' spells loose in it: Abilities.lua,
 -- ns.Serves): ours is not there, the game's spellbook stays.
 W.Play("retail")
 check(not Part.Present() and not ns.Board.Present("spellbook"), "in Retail our spellbook is not there: the game's stays")

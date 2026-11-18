@@ -90,7 +90,7 @@ SET_SOURCES = ("assets/data", "dev/data", "dev/tools/data")
 SETS_MADE = {}  # {the git objects of SET_SOURCES: the fingerprint of the set files they make}, so each compiles once
 # The tests of each module (dev/tests/<name>.lua), run for an older version of it with today's Core.
 TESTS = {
-    "Abilities": ["abilities"], "Combat": ["combat", "book", "meter", "talents", "reminders", "auralists", "macros"],
+    "Abilities": ["abilities", "book", "talents", "macros", "aurahistory"], "Combat": ["combat", "meter", "reminders", "auralists"],
     "Economy": ["economy"], "Guild": ["guild"], "Inventory": ["inventory", "sheet", "bags"], "Loot": ["loot"],
     "Lore": ["lore"], "Nameplates": ["nameplates"], "Navigation": ["navigation"], "Social": ["social"],
     "SpeedLeveling": ["speedleveling", "speedguide", "classquests"], "Tooltips": ["tooltips"],

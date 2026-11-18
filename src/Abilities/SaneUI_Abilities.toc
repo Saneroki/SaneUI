@@ -1,6 +1,6 @@
 ## Interface: 16001, 120105
 ## Title: Abilities
-## Notes: Sane UI's spellbook. The spells you have not learned yet are in your spellbook, in grey, and a Home page says what you can learn now. Drag a grey spell onto an action bar button and the button is reserved until you learn the spell. Type /sane abilities.
+## Notes: Sane UI's spells and abilities. Docked at the screen's bottom middle: click the middle of the bottom edge, or press your spellbook or talents key, and our own spellbook, talents, Sane Macros and the action bars fill the screen; Esc and they go back. The spells you have not learned yet are in your spellbook, in grey, and a Home page says what you can learn now. Drag a grey spell onto an action bar button and the button is reserved until you learn the spell. The game's action bars clean, out of sight at rest. Type /sane abilities.
 ## Author: Saneroki
 ## Version: 0.3.0
 ## Category: Sane UI
@@ -51,5 +51,85 @@ Book\Book.lua
 Book\Home.lua
 Book\Window.lua
 Book\Menu.lua
-# The spells still to learn, the Home page and the menu's lines for a spellbook of Sane UI's own (Combat's), through Core
+# The spells still to learn, the Home page and the menu's lines for a spellbook of Sane UI's own (the full screen's, Spellbook/), through Core
 Book\Offer.lua
+
+# The full screen at the bottom middle and its windows (Combat's until 2026-11-18)
+# Its window: docked at the bottom middle, filling the screen from the middle half of the bottom edge
+Screen.lua
+# The full screen's windows on Core's board: each registers itself (Board.Part); the talent planner seated
+Board.lua
+# Talents: our own window of your talents, as the game's (Talents/)
+# The part on the board: the game's shared talent frame loaded, fitted into its panel, its words
+Talents\Talents.lua
+# The nodes: the game's shared node buttons with the class talents' glow, tooltip and sounds; the arrows
+Talents\Nodes.lua
+# What the trees stand on: the class's picture, its clouds and lights, the frame and dividers, the commit's flash
+Talents\Art.lua
+# Each tree's head with the points spent in it, and the unspent points
+Talents\Headers.lua
+# The primary and secondary specialization: the game's tabs, Active or Activate
+Talents\Specs.lua
+# Apply Changes, Undo and the Reset menu at the foot
+Talents\Foot.lua
+# The commit's and the switch's cast over the trees, on a cast bar of ours from the game's template
+Talents\Commit.lua
+# Buying, refunding, applying, undoing and resetting, where the game allows it
+Talents\Changes.lua
+# The frame: the game's shared talent frame with the class layer over it, its events while shown
+Talents\Tree.lua
+# Spellbook: our own window of your spells, as the game's (Spellbook/; the game's own book's extras are Book/)
+# Where each entry stands on the pages, by the game's rules (lists in, lists out)
+Spellbook\Layout.lua
+# What the book holds: the game's tabs, their spells as its book shows them, the search
+Spellbook\Data.lua
+# One entry, as the game's: its icon and frame, name, rank, cooldown, the glow of a spell on no bar
+Spellbook\Item.lua
+# The game's secure buttons over the icons, which cast out of a fight
+Spellbook\Casts.lua
+# The book itself: its pages, tabs, the game's paging controls and settings
+Spellbook\Book.lua
+# The game's own spellbook and talents on the full screen, in a game where ours are not
+GameWindow.lua
+# The full screen at a trainer: the game's trainer window beside the spellbook, or beside the Profession window
+Trainer.lua
+# Your spellbook, pet book and talents keys opening ours (the game's override bindings; our keys: Bindings.xml)
+Keys.lua
+# The aura history on the full screen: the buffs and debuffs seen on whoever you can attack (Core.AuraLog)
+AuraHistory.lua
+# The game's action bars clean: only the buttons that hold something, each its icon alone
+ActionBars.lua
+# The action bars as a window of the full screen, so that nothing lies over them
+BarsWindow.lua
+# Sane Macros: macros and sequences, in the game's macro window's stead, on the full screen
+Macros\Macros.lua
+# The game's macro conditions in plain words, each with its explanation
+Macros\Conditions.lua
+# Your macros and steps: what is saved, for the account, and each character's keys and bar buttons
+Macros\Book.lua
+# A macro written out into what one press may do: its lines, conditions and turns
+Macros\Write.lua
+# The checks: what would not work as it stands, flagged on the step
+Macros\Check.lua
+# The secure button of a macro and the snippet that runs on each press
+Macros\Press.lua
+# Our button lying over a bar button, the look a macro has there
+Macros\Face.lua
+# How a press reaches a macro: keys, and bar buttons by page
+Macros\Reach.lua
+# Choosing a bar button with the mouse
+Macros\Place.lua
+# The list of conditions behind the + button, for a step and for macro text
+Macros\Picker.lua
+# The list of a macro's steps, and dragging them
+Macros\Steps.lua
+# The chosen step's settings
+Macros\Detail.lua
+# The picture window: every icon of the game's (Core's set Icons) by group, searched
+Macros\Icons.lua
+# The spell window: your spells, your spellbook's tabs and every class's, searched; the fly-out under a step's name
+Macros\Spells.lua
+# Sane Macros on the full screen, and its own window
+Macros\Editor.lua
+# The game's experience and stance bars out of sight, its menu bar on mouseover
+GameBars.lua

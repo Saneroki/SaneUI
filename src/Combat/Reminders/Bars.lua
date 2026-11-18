@@ -40,7 +40,7 @@ end
 
 local function Entered(icon)
     local reminder = icon.reminder
-    if reminder then ns.AuraSearch.Tip(icon, reminder.id, reminder.name) end
+    if reminder then Core.SpellSearch.Tip(icon, reminder.id, reminder.name) end
 end
 
 local function Left(icon)

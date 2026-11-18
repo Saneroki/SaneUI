@@ -4,7 +4,8 @@ local _, ns = ...
 --  Sane UI - Combat - Meter
 --  The threat and damage meter, a window of Core's on the screen, its place and size
 --  kept; at first right of the quest log's first place at the very top of the screen.
---  Never on or over Combat's full screen: out of sight while that is up (Cover).
+--  Never on or over a full screen (Abilities', the map's, any): out of sight while one is up (Cover, Core's
+--  Edge.Watch).
 --
 --  The list of your party or raid, you on top (Row.lua), as many as fit whole: the mouse
 --  wheel over the window takes the others a character at a time under your own line,
@@ -462,7 +463,8 @@ function Meter.Build()
     Core.EditMode.Watch(ns.Guard(Meter.Apply))
     if InCombatLockdown() then ns.MeterFights.Began() end -- a /reload in a fight
     Meter.Apply()
-    Meter.Cover(ns.Window.Full())
+    Core.Edge.Watch(ns.Guard(Meter.Cover))
+    Meter.Cover(Core.Edge.AnyFull())
 end
 
 local function Began()

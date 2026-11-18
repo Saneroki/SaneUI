@@ -8,7 +8,7 @@ local _, ns = ...
 --  Menu.ModifyMenu is the game's own door for this: an addon may append lines
 --  to a menu without its code mixing with the game's lines above them. The
 --  same lines go into another book's menu through Core (ns.BookMenu, Offer.lua:
---  Combat's spellbook), there without the two that are the game's book's alone.
+--  the full screen's, Spellbook/), there without the two that are the game's book's alone.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local TEXT = ns.TEXT
@@ -77,7 +77,7 @@ local function Layouts(root)
     end
 end
 
--- The book's own lines, and the divider under them. own: a book of Sane UI's (Combat's), whose pages are
+-- The book's own lines, and the divider under them. own: a book of Sane UI's (the full screen's), whose pages are
 -- always ours: no line waits for the game's pages, and compact pages and moving are the game's book's.
 local function BookLines(root, own)
     local wait = not own and PagesOurs or nil

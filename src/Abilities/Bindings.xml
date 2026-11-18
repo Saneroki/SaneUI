@@ -1,0 +1,17 @@
+<Bindings>
+	<!-- Abilities' keys, in the game's key bindings under Sane UI (BINDING_HEADER_SANEUI, Core's Bindings.lua; their
+	     words in Keys.lua); the game reads this file from the addon's folder by itself. Keys.lua also
+	     puts the first three on the keys of the game's own spellbook, pet book and talents (override bindings). -->
+	<Binding name="SANEUI_ABILITIES_SPELLBOOK" category="BINDING_HEADER_SANEUI">
+		SaneUI.Abilities.Safe("keys", SaneUI.Abilities.Keys.Press, "spellbook")
+	</Binding>
+	<Binding name="SANEUI_ABILITIES_PETBOOK" category="BINDING_HEADER_SANEUI">
+		SaneUI.Abilities.Safe("keys", SaneUI.Abilities.Keys.Press, "pet")
+	</Binding>
+	<Binding name="SANEUI_ABILITIES_TALENTS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Abilities.Safe("keys", SaneUI.Abilities.Keys.Press, "talents")
+	</Binding>
+	<Binding name="SANEUI_ABILITIES_MACROS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Abilities.Safe("keys", SaneUI.Abilities.Macros.Editor.Toggle)
+	</Binding>
+</Bindings>

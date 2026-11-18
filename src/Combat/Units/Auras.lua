@@ -42,7 +42,7 @@ Auras.GAP = 2   -- from the frame
 function Auras.Line(most)
     return most * Auras.SIZE + 1
 end
-Auras.CROP = { 0.08, 0.92, 0.08, 0.92 } -- an icon's picture without the edge it is drawn with
+Auras.CROP = SaneUI.Core.AuraMarks.CROP -- an icon's picture without the edge it is drawn with
 -- The kinds: how many at most (of each list too), their place on the frame's roof, the corner they grow from inside their
 -- container and which way, their
 -- filters on a foe and a friend, the order the game gives them, and whether the lists act on them (listed: the filter
@@ -92,25 +92,8 @@ local function Holds(container, key, spells)
     container:SetAuraGroupEnabled(key, spells ~= nil)
 end
 
--- What an icon is made of, on a frame of the game's or ours: the picture cropped square, the swipe darkening the time gone
--- (it alone tells the time: no numbers), the stack count over it.
-function Auras.Paint(frame)
-    local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints(frame)
-    icon:SetTexCoord(Auras.CROP[1], Auras.CROP[2], Auras.CROP[3], Auras.CROP[4])
-    local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
-    cooldown:SetAllPoints(icon)
-    cooldown:SetReverse(true)
-    cooldown:SetSwipeColor(0, 0, 0, 0.5)
-    local top = CreateFrame("Frame", nil, frame)
-    top:SetAllPoints(frame)
-    top:SetFrameLevel(cooldown:GetFrameLevel() + 1)
-    local count = top:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-    count:SetJustifyH("RIGHT")
-    count:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
-    cooldown:SetHideCountdownNumbers(true) -- the darkening alone tells the time
-    return { picture = icon, cooldown = cooldown, top = top, count = count }
-end
+-- What an icon is made of, on a frame of the game's or ours: Core's (AuraMarks.lua), as Abilities' aura history has it.
+Auras.Paint = SaneUI.Core.AuraMarks.Paint
 
 -- One of the game's icons, in a frame its container makes (once per frame; the container keeps them); in the group of your
 -- important ones the game's outline (BuffList.lua), so it needs no telling which an icon is in a fight. No script of ours

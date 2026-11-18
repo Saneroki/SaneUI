@@ -55,6 +55,9 @@ local Core = SaneUI.Core
 --  at rest in its zone (full, or on its way back); it is neither moved nor
 --  sized then, and its grip is out of sight. edge:Spot(): the strip or the
 --  corner's square in sight now (Navigation's setup points its arrow there).
+--  Edge.AnyFull(): some window fills the screen now or is on its way there;
+--  Edge.Watch(fn): fn(full) each time one begins to fill it or to go back
+--  (Combat's meter, never on a full screen).
 --
 --  The motion: size and place go from where the window is at that moment to
 --  the whole screen, or back to its zone, as its kind of motion says (Swing
@@ -135,6 +138,25 @@ end
 
 local sections = {} -- [a module's list of switches] = true: it holds the section
 local edges = setmetatable({}, { __mode = "k" }) -- every window's edge (Edge.New)
+local fullWatchers = {} -- Edge.Watch: told whenever some window begins to fill the screen or to go back
+
+-- Whether some window fills the screen now or is on its way there (Combat's meter is never on a full screen).
+function Edge.AnyFull()
+    for edge in pairs(edges) do
+        if edge.full and edge.frame:IsShown() then return true end
+    end
+    return false
+end
+
+-- fn(full) whenever a window begins to fill the screen or to go back: full is Edge.AnyFull() then.
+function Edge.Watch(fn)
+    fullWatchers[#fullWatchers + 1] = fn
+end
+
+local function Told()
+    local full = Edge.AnyFull()
+    for _, fn in ipairs(fullWatchers) do Core.Safe("full screen", fn, full) end
+end
 
 -- Puts the section Expand window into a module's switches (Core.Options) at that place of its list,
 -- in that tab of its page. A window reads them by its option edge = the module's settings. under: switches
@@ -457,6 +479,7 @@ function methods:Fill(on)
     self.kind = Core.Motion.Kind(window.options.motion and Core.Safe("full screen", window.options.motion) or self.settings.motion)
     Content(self, false)
     if window.options.filled then Core.Safe("full screen", window.options.filled, on, to[3], to[4]) end
+    Told()
     self.clock = self.clock or Core.Motion.Clock(frame, function(progress) Step(self, progress) end,
         function(problem) Failed(self, problem) end)
     self.clock:Run(self.kind.time)
@@ -518,6 +541,7 @@ end
 function methods:Stop()
     if not self.away then return end
     local frame, window = self.frame, self.window
+    local was = self.full
     self.away, self.full = false, false
     Escape(self, false)
     Menu(self, false)
@@ -543,6 +567,7 @@ function methods:Stop()
         window.grip:EnableMouse(true)
     end
     Content(self, nil)
+    if was then Told() end -- stopped while full (hidden at once): no motion back told it
 end
 
 -- If it may fill the screen (the section's first switch): docked along a screen edge, the window's

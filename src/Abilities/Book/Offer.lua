@@ -3,7 +3,7 @@ local _, ns = ...
 -------------------------------------------------------------------------------
 --  Sane UI - Abilities - Offer
 --  The spells still to learn in a spellbook of Sane UI's own, through Core
---  (Core.Spellbook; Saneroki, 2026-11-06: Combat's spellbook on its full screen
+--  (Core.Spellbook; Saneroki, 2026-11-06: the full screen's spellbook (Spellbook/)
 --  shows them, as the game's book does here). What goes there, as in the game's
 --  book (Book.lua):
 --    - each tab its grey entries after its own spells, what you can learn now

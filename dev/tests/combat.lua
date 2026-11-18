@@ -116,7 +116,7 @@ W.templates.PagingControlsHorizontalTemplate = function(controls)
     function controls:SetMaxPages(count) self.maxPages = math.max(count, 1) end
     function controls:UpdateControls() end
 end
--- WoW: Forever's spellbook and talents, which ours are made after (Combat.lua, ns.Serves): the spells of its flyouts
+-- WoW: Forever's spellbook and talents, which ours are made after (Combat.lua, ab.Serves): the spells of its flyouts
 -- loose in its book, its two specializations each with a talent config of its own. Retail lacks both (W.Play).
 C_SpellBook.IsSpellBookItemLooseFlyoutMember = function() return false end
 C_SpecializationInfo = { GetCombatConfigIDForSpecGroup = function(group) return 100 + group end }
@@ -144,44 +144,51 @@ RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
+-- Abilities too, whose since 2026-11-18 the full screen at the bottom middle, its board, your keys, the action bars are.
 local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+local ab = W.LoadAddon(root, "Abilities", "SaneUI_Abilities")
 W.Fire("ADDON_LOADED", "SaneUI_Combat")
+W.Fire("ADDON_LOADED", "SaneUI_Abilities")
 W.Fire("PLAYER_LOGIN")
-check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
-local Board, Edge = ns.Board, Core.Edge
+check(SaneUI.Combat == ns and not ns.off and SaneUI.Abilities == ab and not ab.off, "the modules are made and started")
+local Board, Edge = ab.Board, Core.Edge
+-- The book shows the game's spells alone here: what Abilities' own Book/Offer.lua adds to it is tried in book.lua.
+Core.Spellbook.Serve(nil, nil)
 
 -------------------------------------------------------------------------------
 --  In Retail: neither our spellbook nor our talents, so the game's own window on the full screen and the game's keys
 --  its own; the quest marks
 -------------------------------------------------------------------------------
 if RETAIL then
-    check(Core.RETAIL and not ns.Serves() and not Board.Present("spellbook") and not Board.Present("talents")
+    check(Core.RETAIL and not ab.Serves() and not Board.Present("spellbook") and not Board.Present("talents")
         and Board.Present("game"), "Retail has not the spellbook and talents ours are made after: neither of ours is there, the game's own window is")
     check(ns.MouseRings.SPELL == 61304 and ns.MouseRings.holder and ns.MouseRings.holder:IsEventRegistered("SPELL_UPDATE_COOLDOWN"),
         "the rings around the mouse stand in Retail too, on that game's own spell for the global cooldown")
-    check(next(W.overrides) == nil and not ns.Keys.Taken() and not ns.Keys.Taken("TOGGLETALENTS"),
+    check(next(W.overrides) == nil and not ab.Keys.Taken() and not ab.Keys.Taken("TOGGLETALENTS"),
         "no key of the game's runs ours: its spellbook and talents keys open its own windows")
-    ns.Keys.Press("spellbook")
-    ns.Keys.Press("talents")
-    check(not ns.off and not ns.Window.Full(), "our own keys (in the game's key bindings) do nothing, and nothing fails")
-    local listed = {}
+    ab.Keys.Press("spellbook")
+    ab.Keys.Press("talents")
+    check(not ns.off and not ab.Screen.Full(), "our own keys (in the game's key bindings) do nothing, and nothing fails")
+    local listed, abilities = {}, {}
     for _, option in ipairs(Core.described[ns.name].list) do listed[option.key] = true end
-    check(listed.questMarks and listed.unitPlayer and listed.unitSize and listed.cleanBars and not listed.keys
-        and listed.expand, "its settings: the unit frames, the action bars, the quest marks and the full screen's")
+    for _, option in ipairs(Core.described[ab.name].list) do abilities[option.key] = true end
+    check(listed.questMarks and listed.unitPlayer and listed.unitSize and not listed.cleanBars and not listed.expand
+        and abilities.cleanBars and abilities.expand and abilities.trainers and not abilities.keys,
+        "the settings: Combat's the unit frames and the quest marks, Abilities' the action bars and the full screen's, no keys")
 
     -- The full screen, as in Forever, around the game's own window: seated in a panel, opened by the game only.
-    local handle, layouts = ns.Window.handle, Board.layouts
+    local handle, layouts = ab.Screen.handle, Board.layouts
     local frame, strip, inside = handle.frame, handle.edge.strips.bottom, handle.inside
-    check(handle.zone == "BOTTOM" and strip and strip:IsShown() and strip._width == 1920 * ns.Window.STRIP,
+    check(handle.zone == "BOTTOM" and strip and strip:IsShown() and strip._width == 1920 * ab.Screen.STRIP,
         "its window is at the bottom middle, and the middle half of the bottom edge fills the screen")
     local first, windows = layouts.options.default(), layouts.options.windows()
     check(first and first.split == "x" and first.parts[1].key == "game" and first.parts[2].split == "y"
         and first.parts[2].parts[1].key == "macros" and first.parts[2].parts[2].key == "bars" and #windows == 4
-        and windows[1].key == "game" and windows[1].title == ns.TEXT.book and windows[2].key == "macros"
+        and windows[1].key == "game" and windows[1].title == ab.TEXT.book and windows[2].key == "macros"
         and windows[3].key == "history" and windows[4].key == "bars"
         and Core.Classic.List(handle) == nil,
         "its windows are the game's own of both, Sane Macros, the aura history and the action bars; no Classic windows of Combat's")
-    frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+    frame._left, frame._bottom = (1920 - ab.Screen.WIDTH) / 2, 0
     inside._left, inside._bottom, inside._height = 0, 0, 1080 - Core.Window.FULL_BAR
     inside._strata, inside._level = "HIGH", 501
     GetBindingKey = function(action) return action == "TOGGLETALENTS" and "N" or nil end
@@ -205,7 +212,7 @@ if RETAIL then
     local function Back()
         frame._group:Run(1)
         handle:Place()
-        frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+        frame._left, frame._bottom = (1920 - ab.Screen.WIDTH) / 2, 0
     end
     -- Opened by the game, as its own code does it (its key, its micro menu button): its OnShow tells the game's registry.
     local function Opens()
@@ -223,22 +230,22 @@ if RETAIL then
     check(handle.edge.full, "a left click at the bottom edge fills the screen")
     Stand()
     local panel = layouts.panels.game
-    check(layouts.standing and panel and panel:IsShown() and panel.title._text == ns.TEXT.book, "standing, the board holds its panel")
+    check(layouts.standing and panel and panel:IsShown() and panel.title._text == ab.TEXT.book, "standing, the board holds its panel")
     -- Its body where the board put it (the stand-in knows no anchors).
     panel.body._left, panel.body._bottom, panel.body._width, panel.body._height = 100, 100, 800, 500
     panel.body._strata, panel.body._level = "HIGH", 510
-    ns.Window.Reboard()
+    ab.Screen.Reboard()
     W.Wait(0)
     local click = Click()
-    check(not game:IsShown() and panel.hint._shown and panel.hint._text == ns.TEXT.gameClick:format("N"),
+    check(not game:IsShown() and panel.hint._shown and panel.hint._text == ab.TEXT.gameClick:format("N"),
         "our code leaves the game's window closed, and the panel says what opens it")
     check(click and click._shown and click._parent == UIParent and click:GetAttribute("type") == "click"
-        and click._strata == "HIGH" and click._level == 510 + ns.GameWindow.LEVEL and click._points[1][1] == "TOPLEFT"
+        and click._strata == "HIGH" and click._level == 510 + ab.GameWindow.LEVEL and click._points[1][1] == "TOPLEFT"
         and click._points[1][2] == UIParent and click._width == 800 and click._height == 500,
         "over its body, on UIParent and not in our window, a secure click on the game's own micro menu button")
     Opens()
     check(Core.Lent(game) and near(game._scale, math.min(800 / 1618, 500 / 883)) and game._parent == UIParent
-        and game._strata == "HIGH" and game._level == 510 + ns.GameWindow.LEVEL and not panel.hint._shown and not click._shown,
+        and game._strata == "HIGH" and game._level == 510 + ab.GameWindow.LEVEL and not panel.hint._shown and not click._shown,
         "opened by the game, it is seated in the panel at the scale that fits, and the click and the words go")
     game:Hide()
     check(not Core.Lent(game) and not handle.edge.full, "closed by the game (its key, its X): given back, and the full screen goes back with it")
@@ -263,7 +270,7 @@ if RETAIL then
     W.Wait(0)
     W.Combat(true)
     W.Wait(0)
-    check(not click._shown and panel.hint._text == ns.TEXT.gameFight:format("N"), "in a fight the click is gone and the panel says the key")
+    check(not click._shown and panel.hint._text == ab.TEXT.gameFight:format("N"), "in a fight the click is gone and the panel says the key")
     Opens()
     check(Core.Lent(game), "the game's key opens it in a fight too, and it is seated")
     game:Hide()
@@ -273,20 +280,20 @@ if RETAIL then
     W.Wait(0)
     W.Combat(false)
     W.Wait(0)
-    check(click._shown and panel.hint._text == ns.TEXT.gameClick:format("N"), "after it the click is back")
+    check(click._shown and panel.hint._text == ab.TEXT.gameClick:format("N"), "after it the click is back")
     micro._enabled = false
     micro.IsEnabled = function() return false end
-    ns.Window.Reboard()
+    ab.Screen.Reboard()
     W.Wait(0)
-    check(not click._shown and panel.hint._text == ns.TEXT.gameNotYet, "with its micro menu button off the game has it closed to you: no click")
+    check(not click._shown and panel.hint._text == ab.TEXT.gameNotYet, "with its micro menu button off the game has it closed to you: no click")
     micro.IsEnabled = function() return true end
-    ns.Window.Reboard()
+    ab.Screen.Reboard()
     W.Wait(0)
     check(click._shown, "and back once the game gives it")
 
     local player = ns.Units.KINDS[1].button
     check(player and watched[player] and player.face.level._text == "20" and PlayerFrame._mouse == false
-        and TargetFrame._parent ~= UIParent and ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 0,
+        and TargetFrame._parent ~= UIParent and ab.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 0,
         "the unit frames and the clean action bars, as in Forever")
     Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
     local plate = W.NewWidget("Frame", nil, UIParent)
@@ -302,8 +309,10 @@ if RETAIL then
     Opens()
     check(Core.Lent(game), "(the game's window seated as the module stands down)")
     ns.StandDown("a test")
-    check(ns.off and not mark._shown
-        and ns.GIVEN_BACK == "the bottom edge no longer fills the screen; no quest marks beside nameplates; the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no aura icons or bars",
+    ab.StandDown("a test")
+    check(ns.off and ab.off and not mark._shown
+        and ns.GIVEN_BACK == "the game's own unit, party and raid frames and damage meter are back, no quest marks beside nameplates, no aura icons or bars, no rings around the mouse"
+        and ab.GIVEN_BACK == "the game's own spellbook and buttons are back; the bottom edge no longer fills the screen; the game's action, experience, stance and menu bars and its macro window are back",
         "standing down: the quest marks go, and what is told says so")
     check(not Core.Lent(game) and game:IsShown() and not click._shown and not frame._shown,
         "the game's window given back, open, the click and the window gone")
@@ -1067,14 +1076,14 @@ end
 -------------------------------------------------------------------------------
 --  The window, docked at the bottom middle
 -------------------------------------------------------------------------------
-local handle = ns.Window.handle
+local handle = ab.Screen.handle
 local frame = handle.frame
-check(handle.zone == "BOTTOM" and frame._width == ns.Window.WIDTH and not frame._mouse,
+check(handle.zone == "BOTTOM" and frame._width == ab.Screen.WIDTH and not frame._mouse,
     "its window is docked at the bottom middle at first, and takes no click while small")
-frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+frame._left, frame._bottom = (1920 - ab.Screen.WIDTH) / 2, 0
 local strip = handle.edge.strips.bottom
 check(strip and strip:IsShown() and strip._points[1][1] == "BOTTOM" and strip._points[1][2] == UIParent
-    and strip._width == 1920 * ns.Window.STRIP and near(strip._height, 2 * 768 / 2160) and strip._strata == "DIALOG",
+    and strip._width == 1920 * ab.Screen.STRIP and near(strip._height, 2 * 768 / 2160) and strip._strata == "DIALOG",
     "the strip that fills the screen is the middle half of the screen's bottom edge, however wide the window is")
 UIParent._width = 1600
 W.Fire("DISPLAY_SIZE_CHANGED")
@@ -1108,7 +1117,7 @@ end
 local function Back()
     frame._group:Run(1)
     handle:Place()
-    frame._left, frame._bottom = (1920 - ns.Window.WIDTH) / 2, 0
+    frame._left, frame._bottom = (1920 - ab.Screen.WIDTH) / 2, 0
 end
 -- A panel's body (a rect of the board), as a window seated there has it.
 local function Body(rect)
@@ -1133,27 +1142,27 @@ local hasTalents = Board.Present("talents")
 check(layouts.standing and layouts:Has("spellbook") and book and book:IsShown()
     and (not hasTalents or (layouts:Has("talents") and talents and talents:IsShown())),
     "standing, Core's board holds our own talents and spellbook")
-check(book.title._text == ns.TEXT.spellbook and (not hasTalents or talents.title._text == ns.TEXT.talents),
+check(book.title._text == ab.TEXT.spellbook and (not hasTalents or talents.title._text == ab.TEXT.talents),
     "each panel is headed with its name")
 if hasTalents then
     local rects = layouts.rects
     check(rects.talents[1] == pad and rects.spellbook[1] == 2 * pad + rects.talents[3]
-        and math.abs(rects.talents[3] / rects.spellbook[3] - 1218 / ns.Book.WIDE) < 0.01,
+        and math.abs(rects.talents[3] / rects.spellbook[3] - 1218 / ab.Spellbook.WIDE) < 0.01,
         "the first layout: the talents at the left, the spellbook beside them, each as wide as its share of the game's sizes")
     check(rects.macros and rects.macros[1] == 3 * pad + rects.talents[3] + rects.spellbook[3]
-        and rects.macros[1] + rects.macros[3] == 1920 - pad and math.abs(rects.macros[3] - ns.Macros.Editor.LEAST[1]) < 40,
+        and rects.macros[1] + rects.macros[3] == 1920 - pad and math.abs(rects.macros[3] - ab.Macros.Editor.LEAST[1]) < 40,
         "Sane Macros at the right, as wide as it needs")
     check(rects.bars and rects.bars[1] == rects.macros[1] and rects.bars[3] == rects.macros[3]
         and rects.bars[2] >= rects.macros[2] + rects.macros[4] and rects.bars[2] + rects.bars[4] == top - pad,
         "the action bars are a window under Sane Macros, as wide as it (Saneroki, 2026-11-04)")
-    check(rects.talents[2] + rects.talents[4] == top - pad and rects.macros[4] >= ns.Macros.Editor.LEAST[2],
+    check(rects.talents[2] + rects.talents[4] == top - pad and rects.macros[4] >= ab.Macros.Editor.LEAST[2],
         "the talents and the spellbook reach the foot, Sane Macros keeps its least height")
 end
-check(layouts.panels.bars and layouts.panels.bars:IsShown() and layouts.panels.bars.title._text == ns.TEXT.barsWindow,
+check(layouts.panels.bars and layouts.panels.bars:IsShown() and layouts.panels.bars.title._text == ab.TEXT.barsWindow,
       "with its own panel")
 do
     -- How the bars stand in their panel: the wide ones in lines, the tall ones side by side at the right.
-    local Room = ns.BarsWindow
+    local Room = ab.BarsWindow
     local gap = Room.GAP
     local wide = { { width = 500, height = 40 }, { width = 500, height = 40 }, { width = 500, height = 40 } }
     local high, fits = Room.Flow(wide, 1100, 1)
@@ -1246,46 +1255,46 @@ Back()
 -------------------------------------------------------------------------------
 local owner
 for each, bindings in pairs(W.overrides) do if bindings.P then owner = each end end
-check(owner and W.overrides[owner].P == ns.Keys.COMMANDS.spellbook and ns.Keys.Taken(),
+check(owner and W.overrides[owner].P == ab.Keys.COMMANDS.spellbook and ab.Keys.Taken(),
     "at the login, the key of the game's spellbook (P) runs our own key")
-ns.Keys.Press("spellbook")
+ab.Keys.Press("spellbook")
 check(handle.edge.full, "pressed: the full screen comes")
 Stand()
 check(layouts:Has("spellbook"), "with the spellbook on it")
-ns.Keys.Press("spellbook")
+ab.Keys.Press("spellbook")
 check(not handle.edge.full, "pressed again: back to its size, as the game's key toggles its window")
 Back()
-Core.Set(ns.name, "keys", false)
-check(W.overrides[owner] == nil and not ns.Keys.Taken(), "the switch off: the game's keys open the game's windows")
-Core.Set(ns.name, "keys", true)
-check(W.overrides[owner] and W.overrides[owner].P == ns.Keys.COMMANDS.spellbook, "on again: ours")
-ns.Keys.Press("pet")
+Core.Set(ab.name, "keys", false)
+check(W.overrides[owner] == nil and not ab.Keys.Taken(), "the switch off: the game's keys open the game's windows")
+Core.Set(ab.name, "keys", true)
+check(W.overrides[owner] and W.overrides[owner].P == ab.Keys.COMMANDS.spellbook, "on again: ours")
+ab.Keys.Press("pet")
 check(not handle.edge.full, "without a pet's spellbook the pet book's key does nothing, as the game's")
 -- A key while the screen may not fill (Edit Mode): what it asked for does not wait for a full screen that comes
 -- another way.
 C_SpellBook.HasPetSpells = function() return 1 end -- a pet with its spellbook from here on
 PetHasSpellbook = function() return true end
 Core.EditMode.active = true
-ns.Keys.Press("pet")
+ab.Keys.Press("pet")
 Core.EditMode.active = false
 check(not handle.edge.full, "in Edit Mode a key fills no screen")
 Push()
 Stand()
-check(handle.edge.full and ns.Book.Chosen() == "line1", "the next full screen comes as it is: the book not at the pet's tab")
+check(handle.edge.full and ab.Spellbook.Chosen() == "line1", "the next full screen comes as it is: the book not at the pet's tab")
 -- The full screen's search box: what is typed reaches its windows (the book shows what it finds).
 local box = handle.bar.box
 handle.bar.find:GetScript("OnClick")(handle.bar.find) -- the search opened over the title bar
 box:SetText("frost")
 box:GetScript("OnTextChanged")(box)
-check(Board.layouts.search == "frost" and ns.Book.Chosen() == nil, "what is typed into the full screen's search box reaches its windows")
+check(Board.layouts.search == "frost" and ab.Spellbook.Chosen() == nil, "what is typed into the full screen's search box reaches its windows")
 -- The pet book's key: the book at the pet's tab, the search left and its box emptied, the screen staying full
 -- where it showed another; pressed again at the pet's tab, back to its size.
-ns.Keys.Press("pet")
+ab.Keys.Press("pet")
 box:GetScript("OnTextChanged")(box) -- the game's box tells its change by itself
-check(handle.edge.full and ns.Book.Chosen() == "pet" and box:GetText() == "" and Board.layouts.search == "",
+check(handle.edge.full and ab.Spellbook.Chosen() == "pet" and box:GetText() == "" and Board.layouts.search == "",
     "the pet book's key: the book at the pet's tab, the search box emptied")
 check(not box:IsShown() and handle.bar.find:IsShown(), "and closed as Esc closes it: the title and the layouts' tabs back")
-ns.Keys.Press("pet")
+ab.Keys.Press("pet")
 check(not handle.edge.full, "pressed again there: back to its size, as the game's key toggles its window")
 Back()
 
@@ -1321,11 +1330,11 @@ Stand()
 layouts:Toggle("planner") -- the dropdown Windows ticks it: on the layout
 W.Wait(0)
 local plannerPanel = layouts.panels.planner
-check(layouts:Has("planner") and plannerPanel and plannerPanel:IsShown() and plannerPanel.title._text == ns.TEXT.planner,
+check(layouts:Has("planner") and plannerPanel and plannerPanel:IsShown() and plannerPanel.title._text == ab.TEXT.planner,
     "ticked in the dropdown, the planner gets a panel of its own")
 -- Its body where the board put it (the stand-in knows no anchors); laid out again, the planner is seated a frame later.
 plannerPanel.body._left, plannerPanel.body._bottom, plannerPanel.body._width, plannerPanel.body._height = 100, 100, 800, 500
-ns.Window.Reboard()
+ab.Screen.Reboard()
 W.Wait(0)
 check(opens >= 1 and planner and planner:IsShown() and Core.Lent(planner), "its panel shown, the planner opens and is seated in it")
 Push()
@@ -2370,13 +2379,13 @@ do
     local bar = MainActionBar
     local full, empty = bar.actionButtons[1], bar.actionButtons[2]
     local arrow = bar.ActionBarPageNumber.UpButton
-    check(ns.ActionBars.Clean() and bar.BorderArt._alpha == 0 and bar.EndCaps._alpha == 0 and divider._alpha == 0,
+    check(ab.ActionBars.Clean() and bar.BorderArt._alpha == 0 and bar.EndCaps._alpha == 0 and divider._alpha == 0,
         "the bar's frame, end caps and dividers out of sight")
     check(bar.ActionBarPageNumber._alpha == 1 and arrow._mouse == true,
         "its page number and arrows stay: which bar shows, and the clicks to change it")
     check(full.NormalTexture._alpha == 0 and full.SlotArt._alpha == 0 and full.SlotBackground._alpha == 0
         and full.Border._alpha == 0, "a button's frame, slot, background and border out of sight")
-    check(not full.icon._masks[full.IconMask] and full.icon._coords[1] == ns.ActionBars.CROP[1]
+    check(not full.icon._masks[full.IconMask] and full.icon._coords[1] == ab.ActionBars.CROP[1]
         and full.cooldown._points[1][2] == full.icon and full.cooldown._points[1][4] == 0,
         "its icon square and cropped, the cooldown over all of it")
     check(full:GetHighlightTexture()._colour and full:GetHighlightTexture()._blend == "ADD"
@@ -2388,20 +2397,20 @@ do
     function icon:GetVertexColor() return unpack(self._vertex or { 1, 1, 1 }) end
     icon:SetVertexColor(0.4, 0.4, 0.4) -- the game's grey: it cannot be used now
     full:UpdateUsable()
-    check(ns.ActionBars.Seated() and icon._vertex[1] == 1 and icon._vertex[3] == 1,
+    check(ab.ActionBars.Seated() and icon._vertex[1] == 1 and icon._vertex[3] == 1,
           "on the full screen an icon the game greys shows at full brightness, after each of the game's updates")
-    ns.ActionBars.Seated(false)
+    ab.ActionBars.Seated(false)
     check(icon._vertex[1] == 0.4 and icon._vertex[3] == 0.4, "off it, the game's grey again")
     icon:SetVertexColor(0.5, 0.5, 1) -- the game's blue: too little mana
-    ns.ActionBars.Seated(true)
+    ab.ActionBars.Seated(true)
     check(icon._vertex[1] == 1 and icon._vertex[2] == 1, "the game's blue too, as soon as the bars are there")
-    ns.ActionBars.Seated(false)
-    check(icon._vertex[1] == 0.5 and icon._vertex[3] == 1 and not ns.ActionBars.Seated(), "and given back")
+    ab.ActionBars.Seated(false)
+    check(icon._vertex[1] == 0.5 and icon._vertex[3] == 1 and not ab.ActionBars.Seated(), "and given back")
     check(full._alpha == 1 and empty._alpha == 0, "a button that holds something shows; an empty one does not")
     W.Fire("ACTIONBAR_SHOWGRID")
     local slot
     for _, widget in ipairs(W.frames) do
-        if widget._parent == empty and widget._colour and widget._colour[4] == ns.ActionBars.SLOT[4] then slot = widget end
+        if widget._parent == empty and widget._colour and widget._colour[4] == ab.ActionBars.SLOT[4] then slot = widget end
     end
     check(empty._alpha == 1 and slot and slot._shown, "while something is dragged, the empty one shows as a dark square")
     W.Fire("ACTIONBAR_HIDEGRID")
@@ -2411,13 +2420,13 @@ do
     check(empty._alpha == 1, "given an action, it shows (after the game's own update)")
     W.actions[2] = nil
     empty:Update()
-    Core.Set(ns.name, "cleanBars", false)
-    check(not ns.ActionBars.Clean() and bar.BorderArt._alpha == 1 and arrow._mouse == true and divider._alpha == 1
+    Core.Set(ab.name, "cleanBars", false)
+    check(not ab.ActionBars.Clean() and bar.BorderArt._alpha == 1 and arrow._mouse == true and divider._alpha == 1
         and full.NormalTexture._alpha == 1 and full.icon._masks[full.IconMask] and full.icon._coords[2] == 1
         and full:GetHighlightTexture()._texture == "highlight" and full.cooldown._points[1][4] == 3 and empty._alpha == 1,
         "Clean action bars off: everything as the game had it")
-    Core.Set(ns.name, "cleanBars", true)
-    check(ns.ActionBars.Clean() and full.NormalTexture._alpha == 0 and empty._alpha == 0, "on again: clean")
+    Core.Set(ab.name, "cleanBars", true)
+    check(ab.ActionBars.Clean() and full.NormalTexture._alpha == 0 and empty._alpha == 0, "on again: clean")
 end
 
 -------------------------------------------------------------------------------
@@ -2427,12 +2436,12 @@ do
     local box = StanceBar._parent
     check(box ~= UIParent and not box._shown and StatusTrackingBarManager._parent == box and not StanceBar:IsVisible()
         and not StatusTrackingBarManager:IsVisible(), "the game's experience and stance bars stand in a hidden frame")
-    Core.Set(ns.name, "hideTracking", false)
+    Core.Set(ab.name, "hideTracking", false)
     check(StatusTrackingBarManager._parent == UIParent and StanceBar._parent == box, "its switch off: the experience bar alone is back")
-    Core.Set(ns.name, "hideTracking", true)
-    Core.Set(ns.name, "hideStance", false)
+    Core.Set(ab.name, "hideTracking", true)
+    Core.Set(ab.name, "hideStance", false)
     check(StanceBar._parent == UIParent and StatusTrackingBarManager._parent == box, "and the stance bar's its own")
-    Core.Set(ns.name, "hideStance", true)
+    Core.Set(ab.name, "hideStance", true)
     check(StanceBar._parent == box, "on again: gone again")
 
     local general = Core.general
@@ -2454,12 +2463,12 @@ do
     MicroMenu._mouseOver = false
     Leave()
     check(MicroMenu._alpha == 0, "the mouse off it: out of sight again")
-    Core.Set(ns.name, "menuHover", false)
+    Core.Set(ab.name, "menuHover", false)
     check(MicroMenu._alpha == 1, "its switch off: always in sight")
     button:GetScript("OnEnter")(button)
     Leave()
     check(MicroMenu._alpha == 1, "and the mouse changes nothing then")
-    Core.Set(ns.name, "menuHover", true)
+    Core.Set(ab.name, "menuHover", true)
     check(MicroMenu._alpha == 0, "on again")
 
     -- Its alert of unopened collection items: closed once, it stays out of sight until more come.
@@ -2468,11 +2477,11 @@ do
         MainMenuMicroButton_ShowAlert(CollectionsMicroButton, count > 1 and COLLECTION_UNOPENED_PLURAL or COLLECTION_UNOPENED_SINGULAR)
         return W.alert
     end
-    ns.store.unopened = nil
+    ab.store.unopened = nil
     local alert = Alert(2)
     check(alert._alpha == 1 and alert._mouse ~= false, "the game's alert shows as ever while it was never closed")
     alert:Acknowledge()
-    check(ns.store.unopened and ns.store.unopened.mounts == 2 and ns.store.unopened.pets == 0, "closed: the counts waiting are kept")
+    check(ab.store.unopened and ab.store.unopened.mounts == 2 and ab.store.unopened.pets == 0, "closed: the counts waiting are kept")
     alert = Alert(2)
     check(alert._alpha == 0 and alert._mouse == false and alert.CloseButton._mouse == false,
         "at the next login it is out of sight, the mouse goes through it")
@@ -2484,25 +2493,25 @@ do
     C_MountJournal.ClearFanfare()
     C_MountJournal.ClearFanfare()
     C_MountJournal.ClearFanfare()
-    check(ns.store.unopened.mounts == 0, "each one opened lowers the counts kept")
+    check(ab.store.unopened.mounts == 0, "each one opened lowers the counts kept")
     check(Alert(1)._alpha == 1, "so a new one is told")
     local other = W.alert
     MainMenuMicroButton_ShowAlert(MicroMenu.Button, COLLECTION_UNOPENED_SINGULAR)
     check(W.alert._alpha == 1, "another button's alert is left alone")
     W.alert:Hide()
     other:Hide()
-    W.fanfare.mounts, ns.store.unopened = 0, nil
+    W.fanfare.mounts, ab.store.unopened = 0, nil
 
     -- Out of sight at rest (Core.Rest): your frames and the game's action bars. The rest of what it does: window.lua.
-    local bars, you, foe = ns.ActionBars.Rest(), ns.Units.KINDS[1], ns.Units.KINDS[2]
+    local bars, you, foe = ab.ActionBars.Rest(), ns.Units.KINDS[1], ns.Units.KINDS[2]
     local health, power, most = units.player.health, units.player.power, units.player.powerMost
     units.player.health, units.player.power, units.player.powerMost = units.player.most, 0, 100 -- a warrior at rest
     Core.Set(ns.name, "unitRest", false)
     check(you.button._alpha == 1 and foe.button._alpha == 1 and not you.rest:Resting(), "Hide the unit frames at rest off: always in sight")
     Core.Set(ns.name, "unitRest", true)
-    Core.Set(ns.name, "barsRest", false)
+    Core.Set(ab.name, "barsRest", false)
     check(MainActionBar._alpha == 1 and StanceBar._alpha == 1 and not bars:Resting(), "Hide the action bars at rest off: always in sight")
-    Core.Set(ns.name, "barsRest", true)
+    Core.Set(ab.name, "barsRest", true)
     local function Rested()
         return you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 0 and StanceBar._alpha == 0
     end
@@ -2528,10 +2537,10 @@ do
     Core.Set(ns.name, "unitRestGroup", true)
     check(you.button._alpha == 0 and foe.button._alpha == 0 and MainActionBar._alpha == 1,
         "In a group too under Hide the unit frames at rest: the frames rest in a group, the bars not")
-    Core.Set(ns.name, "barsRestGroup", true)
+    Core.Set(ab.name, "barsRestGroup", true)
     check(Rested(), "and under Hide the action bars at rest: the bars too")
     Core.Set(ns.name, "unitRestGroup", false)
-    Core.Set(ns.name, "barsRestGroup", false)
+    Core.Set(ab.name, "barsRestGroup", false)
     check(Seen(), "both off again: all in sight in a group")
     IsInGroup = grouped
     W.Fire("GROUP_ROSTER_UPDATE")
@@ -2633,17 +2642,17 @@ do
 end
 
 -------------------------------------------------------------------------------
---  A window of ours this game has not (Combat.lua, ns.Serves): it alone is not there
+--  A window of ours this game has not (Combat.lua, ab.Serves): it alone is not there
 -------------------------------------------------------------------------------
 do
     local configs, keyOf = C_SpecializationInfo.GetCombatConfigIDForSpecGroup, GetBindingKey
     C_SpecializationInfo.GetCombatConfigIDForSpecGroup = nil -- talents not of two specializations, as Retail's
     GetBindingKey = function(action) return ({ TOGGLESPELLBOOK = "P", TOGGLETALENTS = "N" })[action] end
-    ns.Keys.Bind()
-    check(not Board.Present("talents") and Board.Present("spellbook") and ns.Serves(),
+    ab.Keys.Bind()
+    check(not Board.Present("talents") and Board.Present("spellbook") and ab.Serves(),
         "without the talents ours are made after, our talents are not there; our spellbook is")
-    check(W.overrides[owner].P == ns.Keys.COMMANDS.spellbook and W.overrides[owner].N == nil
-        and ns.Keys.Taken("TOGGLESPELLBOOK") and not ns.Keys.Taken("TOGGLETALENTS"),
+    check(W.overrides[owner].P == ab.Keys.COMMANDS.spellbook and W.overrides[owner].N == nil
+        and ab.Keys.Taken("TOGGLESPELLBOOK") and not ab.Keys.Taken("TOGGLETALENTS"),
         "the talents key opens the game's talents; the spellbook's key ours")
     local entries = Core.Classic.List(handle)
     check(#entries == 1 and entries[1].window == "spellbook", "Classic windows: the game's spellbook, not its talents")
@@ -2653,19 +2662,19 @@ do
         and first.parts[2].parts[2].key == "bars" and listed.spellbook and listed.bars and not listed.talents,
         "the first layout is the spellbook and Sane Macros over the action bars, and the dropdown Windows has no talents")
     W.Play("retail")
-    ns.Keys.Bind()
-    check(not ns.Serves() and W.overrides[owner] == nil and not ns.Keys.Taken() and Core.Classic.List(handle) == nil,
+    ab.Keys.Bind()
+    check(not ab.Serves() and W.overrides[owner] == nil and not ab.Keys.Taken() and Core.Classic.List(handle) == nil,
         "with neither (Retail): no key of the game's runs ours, and no Classic windows of Combat's")
     W.Play("forever")
     C_SpecializationInfo.GetCombatConfigIDForSpecGroup, GetBindingKey = configs, keyOf
-    ns.Keys.Bind()
-    check(Board.Present("talents") and W.overrides[owner].P == ns.Keys.COMMANDS.spellbook, "back in Forever: both ours again")
+    ab.Keys.Bind()
+    check(Board.Present("talents") and W.overrides[owner].P == ab.Keys.COMMANDS.spellbook, "back in Forever: both ours again")
 end
 
 -------------------------------------------------------------------------------
 --  Standing down
 -------------------------------------------------------------------------------
-ns.Window.Reboard()
+ab.Screen.Reboard()
 W.Wait(0)
 check(Core.Lent(planner), "seated before the module fails")
 -- The rings around the mouse: out only while they run, around the cursor's picture, not its tip.
@@ -2884,7 +2893,7 @@ end
     end
     -- A panel's body where the board put it (the stand-in knows no anchors), its window seated there anew.
     local function Placed(key, part)
-        local room, body = In(key), ns.Board.Panel(key).body
+        local room, body = In(key), ab.Board.Panel(key).body
         body._left, body._bottom, body._width, body._height = room[1], top - room[2] - room[4], room[3], room[4]
         part.Size()
         W.Wait(0)
@@ -2903,7 +2912,7 @@ end
         and rects.trainer[1] < rects.spellbook[1], "a class trainer: the full screen comes, its window on the left, the spellbook on the right")
     check(rects.trainer[3] >= 338 and rects.trainer[3] < 338 + 3 * pad and #opened == 0,
         "the trainer's panel as wide as its window; no Profession window asked for")
-    check(Seated(trainer, Placed("trainer", ns.Trainer.seated), 338, 424), "the game's trainer window seated in its panel")
+    check(Seated(trainer, Placed("trainer", ab.Trainer.seated), 338, 424), "the game's trainer window seated in its panel")
     check(layouts.strip.tabs[1].talk == "trainer" and layouts.strip.tabs[1].Text._text == "Trainer", "the talk's tab first")
     trainer:Hide()
     Stand()
@@ -2920,7 +2929,7 @@ end
         "a profession trainer: the Profession window of what it teaches, asked of the server")
     check(layouts:Talking() == "profession" and rects.trainer and rects.profession and not rects.spellbook
         and rects.trainer[1] < rects.profession[1], "the trainer's window on the left, the Profession window on the right")
-    check(Seated(professions, Placed("profession", ns.Trainer.profession), 750, 594), "the Profession window seated in its panel")
+    check(Seated(professions, Placed("profession", ab.Trainer.profession), 750, 594), "the Profession window seated in its panel")
     trainer:Hide()
     Stand()
     check(closed == 1 and not professions:IsShown() and not Core.Lent(professions) and not handle.edge.full,
@@ -2946,28 +2955,30 @@ end
     Stand()
     Back()
 
-    Core.Set(ns.name, "trainers", false)
+    Core.Set(ab.name, "trainers", false)
     trainer:Show()
     Stand()
     check(not handle.edge.full and layouts.occasion == nil, "Full Screen at Trainers off: the trainer's window as the game has it")
     trainer:Hide()
-    Core.Set(ns.name, "trainers", true)
+    Core.Set(ab.name, "trainers", true)
     IsTradeskillTrainer, GetNumTrainerServices, GetTrainerServiceSkillLine, GetProfessions, GetProfessionInfo = nil, nil, nil, nil, nil
     C_SpellBook.GetSpellBookItemInfo, C_TradeSkillUI = book, nil
 end)()
 
--- A step of the giving back fails (here the board's own): the others give back all the same, the keys first.
+-- A step of the giving back fails (here the board's own): the others give back all the same, the keys first. Both
+-- modules stand down: Abilities' full screen, keys and bars, Combat's frames.
 Board.layouts.Hide = function() error("the board failed") end
+ab.StandDown("a test")
 ns.StandDown("a test")
-check(ns.off and not Core.Lent(planner) and not frame:IsShown(),
+check(ns.off and ab.off and not Core.Lent(planner) and not frame:IsShown(),
     "standing down, all is given back and the window goes, though a step of it failed")
 check(W.overrides[owner] == nil, "and the game's keys open the game's windows again")
 check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not watched[unitButtons.target]
     and PlayerFrame._mouse == true and PlayerFrame.PlayerFrameContent._alpha == 1 and FocusFrame._parent == UIParent
     and PlayerCastingBarFrame:IsEventRegistered("UNIT_SPELLCAST_START") and MirrorTimerContainer:IsEventRegistered("MIRROR_TIMER_START"),
     "our unit frames gone, the game's back, its cast bar and timers hearing again")
-check(not ns.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1
-    and not ns.ActionBars.Rest().on and MainActionBar._alpha == 1,
+check(not ab.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1
+    and not ab.ActionBars.Rest().on and MainActionBar._alpha == 1,
     "the action bars as the game has them, in sight")
 check(StatusTrackingBarManager._parent == UIParent and StanceBar._parent == UIParent and MicroMenu._alpha == 1,
     "its experience, stance and menu bars too")

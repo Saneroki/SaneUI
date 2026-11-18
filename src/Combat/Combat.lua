@@ -39,26 +39,6 @@ Core.NewModule(ADDON, "Combat", ns)
 -- Every word the module shows; the game's own where it has one.
 ns.TEXT = {
     title = "Combat",
-    talents = Core.Word("TALENTS", "Talents"),
-    spellbook = Core.Word("SPELLBOOK", "Spellbook"),
-    planner = "Talent planner",
-    barsWindow = "Action bars",
-    sideBarsWindow = "Side bars",
-    book = "Spellbook and talents",
-    -- The panel of the game's own window while it is closed (GameWindow.lua).
-    gameClick = "Click here or press %s to open it here.",
-    gameClickNoKey = "Click here to open it here.",
-    gameFight = "Press %s to open it here. A click here works again after the fight.",
-    gameFightNoKey = "A click here opens it again after the fight.",
-    gameNotYet = "Not available yet.",
-    -- The full screen at a trainer (Trainer.lua).
-    trainer = "Trainer",
-    profession = Core.Word("TRADE_SKILLS", "Professions"),
-    professionTrainer = "Profession Trainer",
-    trainers = "Full Screen at Trainers",
-    trainersTip = "At a trainer the full screen comes with the trainer's window on the left and your spellbook on the right; at a profession trainer with your Profession window on the right, opened for what that trainer teaches once you know it. Each is a layout of its own behind its tab, kept as you arrange it, and the full screen goes back when the talk ends.",
-    keys = "Your spellbook and talents keys open ours",
-    keysTip = "The keys you gave the game's spellbook, pet spellbook and talents open our own windows on Combat's full screen, and close them again. Off: they open the game's own windows, as before. Your key bindings stay as they are either way.",
     nameplates = "Nameplates",
     questMarks = "Quest marks on nameplates",
     questMarksTip = "A creature that belongs to a quest in your log shows a small mark beside its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count still open. As the game says it in the creature's tooltip.",
@@ -122,13 +102,6 @@ ns.TEXT = {
     listsAdded = "%s is on the list: tick what it should be.",
     listsThere = "%s is on the list already.",
     listsGone = "%s is off the list and every mark.",
-    searchEnemies = "Enemies",
-    searchItems = "Food, potions, items and the world",
-    searchNumber = "By its number",
-    searchYours = "Your spells",
-    searchMore = "%s (%d)",
-    searchReading = "Reading every class's spells...",
-    searchNothing = "Nothing found.",
     listsRule = "On the unit frames the game lets these act on the buffs of you, your group and friendly units, and on the debuffs of foes; on the rest it decides itself.",
     unitBarrier = "Barriers",
     unitBarrierTip = "What absorbs damage on a unit, in the game's shield art on its health bar: after the health while it fits, against the bar's right end when it does not. On your unit frames and your party and raid frames.",
@@ -168,30 +141,8 @@ ns.TEXT = {
     samples = { player = "You", target = Core.Word("TARGET", "Target"), focus = Core.Word("FOCUS", "Focus"),
                 targettarget = "Target's target", focustarget = "Focus's target", pet = Core.Word("PET", "Pet"),
                 cast = "Cast bar", breath = Core.Word("BREATH_LABEL", "Breath") },
-    actionBars = "Action bars",
-    cleanBars = "Clean action bars",
-    cleanBarsTip = "The game's action bars without their borders, decorations and backgrounds: only the buttons that hold something, each its icon alone. Empty buttons show while you drag something onto the bars, and in Edit Mode. Off: the game's own look.",
-    macros = "Sane Macros",
-    macroChecks = "Check macros",
-    macroChecksTip = "Looks over your macros when they change, and when you learn something new while the window is open, and marks what would not work.",
-    macroDim = "Dim what cannot be used",
-    macroDimTip = "A macro on a bar button is dimmed while its next step cannot be used, as the game does.",
-    macroKey = "Show the key on the button",
-    macroKeyTip = "A macro on a bar button shows that button's key.",
-    macroName = "Show the macro's name on the button",
-    macroNameTip = "A macro on a bar button shows its name along the button's bottom, as the game shows a macro's name.",
     hideErrors = "Hide the red error text",
     hideErrorsTip = "The game's red line at the top of the screen, like Spell is not ready yet or Not enough rage, and its sound. Yellow lines, like a quest's progress, stay.",
-    barsRest = "Hide the action bars at rest",
-    barsRestTip = "The game's action bars are out of sight while nothing goes on. The mouse on any of them shows them all, and they show while your health or your resource is not full (rage and combo points: while you have any), in a fight, in a group (unless In a group too), in a vehicle, while something is dragged onto them, while you set your keys and in Edit Mode. Out of sight they still take the mouse, and their keys work. Off: always in sight.",
-    barsRestGroup = "In a group too",
-    barsRestGroupTip = "The game's action bars rest out of sight in a party or raid as well: there too only the mouse, your health or your resource, a fight, a vehicle, a drag, setting your keys and Edit Mode bring them. Their keys work all the same. Off: always in sight in a group.",
-    hideTracking = "Hide the game's experience and reputation bars",
-    hideTrackingTip = "The game's experience and reputation bars are gone from the screen. Off: the game's own.",
-    hideStance = "Hide the game's stance bar",
-    hideStanceTip = "The game's stance, form and aura buttons are gone from the screen. Their keys and your action bars still change them. Off: the game's own.",
-    menuHover = "Menu bar on mouseover",
-    menuHoverTip = "The game's menu bar is out of sight, and shows while the mouse is on it; in Edit Mode it always shows. Off: always in sight.",
     mouseRings = "Rings around the mouse",
     mouseRingsTip = "See-through rings around the mouse only while something runs, gone when it is over. They stand around the whole picture of the cursor, start and end at its tip, and grow with the game's Cursor Size.",
     mouseCooldown = "Global cooldown",
@@ -262,74 +213,10 @@ ns.TEXT = {
     listsCopy = "Track it once more: a copy of this line under it, with its own place and conditions.",
     listsCopied = "%s is tracked once more: set its place and conditions below.",
     listsCopyGone = "That tracking of %s is deleted; the others stay.",
-    -- The aura history, a window of the full screen (AuraHistory.lua).
-    historyTitle = "Aura history",
-    historyTip = "The buffs and debuffs seen on whoever you can attack, newest on top. Point at an icon for its tooltip, click it to mark it or to add tracking, as the buffs on your unit frames. In a fight the game keeps the auras of others from addons: what is still on comes in once the fight is over, with the time it came; your own casts of an aura come in as you cast them, and after each fight the spells of the game's damage meter: your group's damage, healing, damage taken, dispels and interrupts.",
-    historyShow_all = "All auras",
-    historyShow_buffs = "Buffs",
-    historyShow_debuffs = "Debuffs",
-    historyShow_bosses = "On bosses",
-    historyShow_fights = "From fights",
-    historyClear = "Clear history",
-    historyClearAsk = "Clear the aura history?",
-    historyCount = "%d auras",
-    historyEmpty = "None yet. Target an enemy, or look at its nameplate, and its buffs and debuffs come here.",
-    historyNoneFound = "None of these.",
-    historyColumn_name = "Aura",
-    historyColumn_on = "On",
-    historyColumn_removable = "Removable",
-    historyColumn_cast = "Its cast",
-    historyColumn_came = "Came",
-    historyColumn_lasts = "Duration",
-    historyBuff = "Buff",
-    historyDebuff = "Debuff",
-    historyStacks = "%d stacks",
-    historyFrom = "from %s",
-    historyNobody = "Unknown",
-    historySteal = "Stealable",
-    historyNone = "-",
-    historyInterruptible = "Interruptible",
-    historyLocked = "Not interruptible",
-    historyInstant = "Instant",
-    historyLasting = "No limit",
-    historyOn = "On now",
-    historyStayed = "stayed %s",
-    historyCast = "Your cast in a fight",
-    historyCastShared = "Cast in a fight",
-    historyShare = "Share casts in a fight with your group",
-    historyShareTip = "After each fight your casts of buffs and debuffs in it go to the Sane UI of your party or raid, and theirs come into your aura history, with whom and when: in a fight the game keeps them from addons, but each player's own casts not. Nothing is sent in a fight. Off: yours are not sent and theirs not taken.",
-    historyWhat_damage = "Damage in a fight",
-    historyWhat_healing = "Healing in a fight",
-    historyWhat_taken = "Hit your group",
-    historyWhat_dispel = "Dispel in a fight",
-    historyWhat_interrupt = "Interrupt in a fight",
-    historyMore = "+%d",
-    historyFight = "fight: %s",
 }
-
--- Our own spellbook and talents are made after the game's in WoW: Forever (Doc/guides/addon-standards.md, *Forever
--- and Retail*): the book after its book, whose art is that game's and which holds the spells of its flyouts loose
--- (C_SpellBook.IsSpellBookItemLooseFlyoutMember), the talents after its talents of two specializations, each with a
--- config of its own (C_SpecializationInfo.GetCombatConfigIDForSpecGroup). In a game without that (Retail) ours is
--- not there and the game's own stays: no window of it on the full screen, its key the game's (Board.Present); with
--- neither, the full screen holds the game's own window (GameWindow.lua).
-local NEEDS = {
-    spellbook = { "C_SpellBook", "IsSpellBookItemLooseFlyoutMember" },
-    talents = { "C_SpecializationInfo", "GetCombatConfigIDForSpecGroup" },
-}
-
--- Whether our window of that key ("spellbook", "talents") serves this game; without a key: either of them.
-function ns.Serves(key)
-    if key == nil then return ns.Serves("spellbook") or ns.Serves("talents") end
-    local need = NEEDS[key]
-    local api = need and rawget(_G, need[1])
-    return type(api) == "table" and type(api[need[2]]) == "function"
-end
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the bottom edge no longer fills the screen; " .. (ns.Serves()
-    and "your talents and spellbook keys open the game's own again; "
-    or "no quest marks beside nameplates; ") .. "the game's own unit, party and raid frames, action, experience, stance and menu bars and damage meter are back, no aura icons or bars"
+ns.GIVEN_BACK = "the game's own unit, party and raid frames and damage meter are back, no quest marks beside nameplates, no aura icons or bars, no rings around the mouse"
 
 local OPTIONS = {
     { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
@@ -364,17 +251,7 @@ local OPTIONS = {
     { key = "groupHeight", default = 140, min = 30, max = 800 },
     { key = "groupUnitWidth", default = 240, min = 40, max = 400 },
     { key = "groupPreview", default = 5, min = 0, max = 40 },
-    { key = "cleanBars", default = true, text = ns.TEXT.cleanBars, header = ns.TEXT.actionBars, tip = ns.TEXT.cleanBarsTip },
-    { key = "barsRest", default = true, text = ns.TEXT.barsRest, tip = ns.TEXT.barsRestTip },
-    { key = "barsRestGroup", default = false, text = ns.TEXT.barsRestGroup, tip = ns.TEXT.barsRestGroupTip, parent = "barsRest" },
     { key = "hideErrors", default = true, text = ns.TEXT.hideErrors, tip = ns.TEXT.hideErrorsTip },
-    { key = "macroChecks", default = true, text = ns.TEXT.macroChecks, header = ns.TEXT.macros, tip = ns.TEXT.macroChecksTip },
-    { key = "macroDim", default = true, text = ns.TEXT.macroDim, tip = ns.TEXT.macroDimTip },
-    { key = "macroKey", default = true, text = ns.TEXT.macroKey, tip = ns.TEXT.macroKeyTip },
-    { key = "macroName", default = true, text = ns.TEXT.macroName, tip = ns.TEXT.macroNameTip },
-    { key = "hideTracking", default = true, text = ns.TEXT.hideTracking, tip = ns.TEXT.hideTrackingTip },
-    { key = "hideStance", default = true, text = ns.TEXT.hideStance, tip = ns.TEXT.hideStanceTip },
-    { key = "menuHover", default = true, text = ns.TEXT.menuHover, tip = ns.TEXT.menuHoverTip },
     { key = "questMarks", default = true, text = ns.TEXT.questMarks, header = ns.TEXT.nameplates, tip = ns.TEXT.questMarksTip },
     { key = "mouseCooldown", default = true, text = ns.TEXT.mouseCooldown, tip = ns.TEXT.mouseCooldownTip,
       header = ns.TEXT.mouseRings, headerTip = ns.TEXT.mouseRingsTip },
@@ -395,59 +272,37 @@ local OPTIONS = {
     { key = "buffList", default = true, text = ns.TEXT.buffListOn, tip = ns.TEXT.buffListTip, header = ns.TEXT.buffList },
     { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
     { key = "aurasOpen", text = ns.TEXT.aurasOpen, tip = ns.TEXT.aurasOpenTip, button = function() ns.Guarded(ns.AuraLists.Open) end },
-    { key = "auraShare", default = true, text = ns.TEXT.historyShare, tip = ns.TEXT.historyShareTip, header = ns.TEXT.historyTitle },
 }
-table.insert(OPTIONS, 1, { key = "trainers", default = true, text = ns.TEXT.trainers, header = ns.TEXT.book, tip = ns.TEXT.trainersTip })
-if ns.Serves() then
-    OPTIONS[1].header = nil -- under the keys' head
-    table.insert(OPTIONS, 1, { key = "keys", default = true, text = ns.TEXT.keys, header = ns.TEXT.book, tip = ns.TEXT.keysTip })
-end
--- The sections Expand window and Window corners, as Core has them for every window (Edge.lua, Shape.lua).
-Core.Edge.Options(OPTIONS, 1)
--- Core's window takes the section in by itself (Edge.lua); the keys bound anew, the quest marks looked at again,
--- the unit frames and action bars as the settings say.
+-- The unit frames, the quest marks, the rings and the rest as the settings say.
 Core.Options(ns.name, OPTIONS, { changed = function(key)
-    if key == "keys" then ns.Guarded(ns.Keys.Bind) end
     if key == "questMarks" then ns.Guarded(ns.QuestMarks.Update) end
     if key:match("^unit") then ns.Guarded(ns.Units.Apply) end
     if key:match("^group") or key == "unitBarrier" or key == "unitLost" or key == "unitDispel" then
         ns.Guarded(ns.Group.Apply)
     end
-    if key == "cleanBars" or key:match("^barsRest") then ns.Guarded(ns.ActionBars.Apply) end
     if key == "hideErrors" then ns.Guarded(ns.ErrorText.Apply) end
-    if key:find("^macro") then ns.Macros.Changed(key) end
-    if key == "hideTracking" or key == "hideStance" or key == "menuHover" then ns.Guarded(ns.GameBars.Apply) end
     if key:match("^mouse") then ns.Safe("mouse rings", ns.MouseRings.Apply) end
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
     if key == "buffList" then ns.Guarded(ns.BuffList.Style) end
     if key == "reminders" or key == "groupBuffs" then ns.Guarded(ns.Reminders.Apply) end
-    if key == "auraShare" then ns.Guarded(ns.AuraHistory.Apply) end
 end })
 
--- Standing down, the game's keys open the game's windows again first (ours do nothing now), every window on the
--- full screen gives back what it lent, and the window goes: each step by itself, so one that fails keeps none of
+-- Standing down, every part gives back what it stands in for: each step by itself, so one that fails keeps none of
 -- the others from giving back.
 function ns.GiveBack()
-    ns.Safe("keys", ns.Keys.Leave)
-    ns.Safe("board", ns.Board.Leave)
-    ns.Safe("window", ns.Window.Hide)
     ns.Safe("quest marks", ns.QuestMarks.Hide)
     ns.Safe("unit frames", ns.Units.GiveBack)
     ns.Safe("group frames", ns.Group.GiveBack)
     ns.Safe("aura lists", ns.AuraLists.Hide)
-    ns.Safe("action bars", ns.ActionBars.GiveBack)
     ns.Safe("error text", ns.ErrorText.GiveBack)
-    ns.Safe("game bars", ns.GameBars.GiveBack)
     ns.Safe("mouse rings", ns.MouseRings.Hide)
     ns.Safe("meter", ns.Meter.GiveBack)
     ns.Safe("reminders", ns.Reminders.GiveBack)
     ns.Safe("buff list", ns.BuffList.Style)
-    ns.Macros.GiveBack()
 end
 
 function ns.OnLoad()
     ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
-    ns.Macros.Load()
 end
 
 Core.Command("auras", "Edit tracked: every aura's marks and where its icon shows (/sane auras rejuv searches)", function(rest)
@@ -455,26 +310,15 @@ Core.Command("auras", "Edit tracked: every aura's marks and where its icon shows
     ns.Guarded(ns.AuraLists.Toggle)
 end)
 Core.Command("meter", "the threat and damage meter on or off", function() ns.Guarded(ns.Meter.Toggle) end)
-Core.Command("macros", "Sane Macros, your macros and sequences", function() ns.Guarded(ns.Macros.Editor.Toggle) end, "macro")
 Core.Command("reminders", "Edit tracked, for the buffs and debuffs shown on aura bars, health bars and nameplates", function() ns.Guarded(ns.AuraLists.Toggle) end)
-Core.Command("aurahistory", "the aura history on Combat's full screen: the buffs and debuffs seen on enemies", function() ns.Guarded(ns.AuraHistory.Open) end)
 
 function ns.OnLogin()
-    ns.Window.Build()
-    ns.Board.Follow()
-    ns.GameWindow.Start()
-    ns.Trainer.Start()
-    ns.Keys.Start()
     ns.QuestMarks.Start()
     ns.Units.Start()
     ns.Group.Start()
-    ns.ActionBars.Start()
     ns.ErrorText.Apply()
-    ns.GameBars.Start()
     ns.Safe("mouse rings", ns.MouseRings.Apply)
     ns.Meter.Build()
     ns.BuffList.Start()
     ns.Reminders.Start()
-    ns.AuraHistory.Start()
-    ns.Macros.Start()
 end

@@ -1,4 +1,4 @@
--- Runs Sane Macros, a part of the Combat module, against the stand-in client (wowstub.lua): macros and steps kept and cleaned, a macro written
+-- Runs Sane Macros, a part of the Abilities module, against the stand-in client (wowstub.lua): macros and steps kept and cleaned, a macro written
 -- out into its lines, conditions and turns, the checks, the snippet that runs on a press (a turn a press, conditions that
 -- skip in that press, the top of the list, nothing true, a bar button on the same hub, a fight), keys and bar buttons by
 -- page and by the row a druid's Bar 6 shows, the window with its + list, a game's macro taken over, Retail's path, and standing down.
@@ -267,11 +267,11 @@ GameTooltip_SetTitle, GameTooltip_AddNormalLine = function() end, function() end
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+local ns = W.LoadAddon(root, "Abilities", "SaneUI_Abilities")
 -- What the saved files may hold: rubbish among a good macro.
 local store = Core.Store("Macros")
 store.macros = { "rubbish", { id = 5, name = 7, steps = { { kind = "nothing" }, { kind = "spell", what = "Slam", often = 99, unit = "focus", when = { 3, { word = "harm" }, { word = "once", no = true } } } } } }
-W.Fire("ADDON_LOADED", "SaneUI_Combat")
+W.Fire("ADDON_LOADED", "SaneUI_Abilities")
 W.Fire("PLAYER_LOGIN")
 W.Fire("PLAYER_ENTERING_WORLD")
 local Macros = ns.Macros
@@ -791,8 +791,8 @@ W.Combat(false)
 -------------------------------------------------------------------------------
 for _, macro in ipairs({ unpack(Book.All()) }) do Book.Delete(macro) end
 -- The full screen cannot come here: the window of its own.
-local open, full = ns.Window.Open, ns.Window.Full
-ns.Window.Open, ns.Window.Full = function() end, function() return false end
+local open, full = ns.Screen.Open, ns.Screen.Full
+ns.Screen.Open, ns.Screen.Full = function() end, function() return false end
 Editor.Toggle()
 local inner = Book.New("First")
 Editor.Choose(inner)
@@ -905,10 +905,10 @@ check((Macros.Conditions.Words({ word = "combat", no = true })) == "Out of a fig
 check((Macros.Conditions.Words({ word = "stance", value = "2" })):find(": 2", 1, true), "a value shows")
 check((Macros.Conditions.Words({ word = "odd" })) == "odd", "a word not in the list shows as it is")
 
--- On Combat's full screen: the same page, in the panel's body, and no window of its own.
+-- On Abilities' full screen: the same page, in the panel's body, and no window of its own.
 local spec
 for _, each in ipairs(ns.Board.layouts.options.windows()) do if each.key == "macros" then spec = each end end
-check(spec and spec.title == TEXT.title and spec.least[1] >= 700 and spec.icon, "a window of Combat's board")
+check(spec and spec.title == TEXT.title and spec.least[1] >= 700 and spec.icon, "a window of Abilities' board")
 Editor.Toggle()
 check(not Editor.Shown(), "the window of its own closed")
 local panel = W.NewWidget("Frame", nil, UIParent)
@@ -919,19 +919,19 @@ spec.show(panel, true)
 check(Editor.Page():GetParent() == panel.body, "the page goes into the panel")
 spec.size(panel, 760, 600)
 Editor.Choose(inner)
-local back = ns.Window.Back
+local back = ns.Screen.Back
 local wentBack = false
-ns.Window.Back = function() wentBack = true end
+ns.Screen.Back = function() wentBack = true end
 Editor.Toggle()
 check(wentBack, "its key takes the full screen back while it stands there")
-ns.Window.Back = back
+ns.Screen.Back = back
 spec.show(panel, false)
-ns.Window.Full = function() return true end
-ns.Window.Open = function(key) panel.opened = key end
+ns.Screen.Full = function() return true end
+ns.Screen.Open = function(key) panel.opened = key end
 Editor.Toggle()
 check(panel.opened == "macros" and not Editor.Shown(), "opened, it goes to the full screen where that can come")
-ns.Window.Full = function() return false end
-ns.Window.Open = function() end
+ns.Screen.Full = function() return false end
+ns.Screen.Open = function() end
 
 -- Dragging a macro from the list: the same squares, the macro chosen first.
 local dragged = Book.New("Dragged")

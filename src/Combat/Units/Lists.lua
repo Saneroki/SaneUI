@@ -36,7 +36,7 @@ local _, ns = ...
 --  reminder's settings and its marks for the unit frames, under the title Edit
 --  Tracked conditions (Reminders/Editor.lua). Over it a
 --  search box: as you type, suggestions under it in groups, each class's auras,
---  the enemies', the items' (AuraSearch.lua); a click on one, or Enter for the
+--  the enemies', the items' (Core's SpellSearch.lua); a click on one, or Enter for the
 --  first, puts it on the list, lit and chosen, to tick. At the foot, what the
 --  game lets the marks do.
 -------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ local function List(which)
     return ns.options[key]
 end
 
-local Icon = ns.AuraSearch.Icon
+local Icon = Core.SpellSearch.Icon
 
 -- Every spell on the window's list, a mark or a reminder, by name: a line ({ id, name, reminder }) for each of its
 -- reminders in the order made, one without where it has none. by: a name's first line.
@@ -259,7 +259,7 @@ function Lists.Menu(owner, spell)
     end))
 end
 
-local Tip = ns.AuraSearch.Tip
+local Tip = Core.SpellSearch.Tip
 
 -------------------------------------------------------------------------------
 --  Choosing, the search
@@ -519,7 +519,7 @@ local function Build()
     local settings = ns.ReminderEditor.Build(inside)
     settings:SetPoint("TOPLEFT", scroll, "BOTTOMLEFT", 0, -8)
     settings:SetPoint("RIGHT", inside, "RIGHT", -I, 0)
-    finder = ns.AuraSearch.Box(inside, I, -I, { words = ns.TEXT.listsInput, width = Lists.SEARCH, pick = Pick,
+    finder = Core.SpellSearch.Box(inside, I, -I, { words = ns.TEXT.listsInput, width = Lists.SEARCH, pick = Pick,
                                                label = "aura lists" })
     frame:HookScript("OnShow", ns.Guard(Fill))
     frame:HookScript("OnHide", ns.Guard(function() finder:Clear() end))
@@ -548,3 +548,6 @@ end
 function Lists.Hide()
     if frame then frame:Hide() end
 end
+
+-- The menu, for Abilities' spellbook and aura history (Core's AuraMarks.lua): there while the module stands.
+Core.AuraMarks.Serve(ns, Lists.Menu)

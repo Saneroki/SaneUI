@@ -1,4 +1,4 @@
--- Runs Combat's own talents window (src/Combat/Talents/) against the stand-in client (wowstub.lua): the part on the
+-- Runs Abilities' own talents window on its full screen (src/Abilities/Talents/) against the stand-in client (wowstub.lua): the part on the
 -- module's board, built on a stand-in of the game's shared talent frame (its mixin as small as the window needs, the
 -- node buttons, tabs, red and round buttons, cast bar), fitted and centred in its panel, the three trees' heads with
 -- their points and the unspent points, the nodes' templates and the class's glow, buying and refunding through the
@@ -206,7 +206,7 @@ C_SpecializationInfo = {
     GetSpecializationInfo = function() return 1482 end,
 }
 GetNumSpecGroups = function() return groups2 end
--- Forever's spellbook, which our own is made after (Combat.lua, ns.Serves): the first layout holds both.
+-- Forever's spellbook, which our own is made after (Abilities.lua, ns.Serves): the first layout holds both.
 C_SpellBook.IsSpellBookItemLooseFlyoutMember = function() return false end
 
 -------------------------------------------------------------------------------
@@ -560,10 +560,10 @@ GAME_TOOLTIP_BACKDROP_STYLE_CLASS_TALENT = { style = "class talents" }
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
-W.Fire("ADDON_LOADED", "SaneUI_Combat")
+local ns = W.LoadAddon(root, "Abilities", "SaneUI_Abilities")
+W.Fire("ADDON_LOADED", "SaneUI_Abilities")
 W.Fire("PLAYER_LOGIN")
-check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
+check(SaneUI.Abilities == ns and not ns.off, "the module is made and started")
 local Talents, Tree = ns.Talents, ns.TalentsTree
 
 -------------------------------------------------------------------------------
@@ -843,7 +843,7 @@ calls = {}
 buttons[2]:GetScript("OnClick")(buttons[2], "LeftButton")
 check(#calls == 0, "and its nodes do nothing")
 
--- In Retail, whose talents are not those of two specializations ours are made after (Combat.lua, ns.Serves): ours
+-- In Retail, whose talents are not those of two specializations ours are made after (Abilities.lua, ns.Serves): ours
 -- are not there, the game's talents stay (nor is our spellbook: the first layout is the game's own window).
 W.Play("retail")
 check(not Talents.Present() and not ns.Board.Present("talents") and ns.Board.layouts.options.default().parts[1].key == "game",

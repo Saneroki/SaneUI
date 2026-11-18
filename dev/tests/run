@@ -10,14 +10,14 @@
 #   inventory.lua   the Inventory module: its window in the corner, its full screen, the character sheet's paper doll and stats
 #   sheet.lua       the Inventory module's character sheet: its side tabs and the tabs behind them
 #   bags.lua        the Inventory module's bags: what they hold, the views, the game's item buttons, the bank, the foot
-#   combat.lua      the Combat module: its window at the bottom middle, its board, your keys, the talent planner
-#   book.lua        the Combat module's own spellbook: its pages, tabs, entries, the casts out of a fight
-#   talents.lua     the Combat module's own talents: the game's shared talent frame, its class layer, changes
+#   combat.lua      the Combat module: the quest marks, the unit frames, the party and raid frames; with Abilities beside it, its window at the bottom middle, its board, your keys, the talent planner, the action bars
+#   book.lua        the Abilities module's own spellbook on its full screen: its pages, tabs, entries, the casts out of a fight
+#   talents.lua     the Abilities module's own talents: the game's shared talent frame, its class layer, changes
 #   meter.lua       the Combat module's threat and damage meter: its place, the list, the bars, pages, saved fights, threat,
 #                   and a fight with the numbers hidden by the game
 #   reminders.lua   the Combat module's reminders: the right click on auras, the bars, what shows when, a fight with hidden auras
 #   auralists.lua   the Combat module's aura lists: one list with a tick per mark, the search over every class's, the enemies' and the items' auras
-#   aurahistory.lua Core's aura log and Combat's aura history: the auras seen on enemies, a fight with hidden auras, the window
+#   aurahistory.lua Core's aura log and Abilities' aura history: the auras seen on enemies, a fight with hidden auras, the window
 #   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
 #   onboarding.lua  Core's setups, step by step, and the addon Onboarding: its window read on demand, steps, controls
 #   loot.lua        the Loot module: its window and rules, the master looter's menu, full bags, roll cards, the feed
@@ -32,7 +32,7 @@
 #                   the account, the steps at hand, the view over the world, the arrow and the icons
 #   lore.lua        the Lore module: talks as a scene, the game's talk windows held, the rewards read for you,
 #                   the interface faded out with its tooltips kept, Space going on
-#   macros.lua      Combat's Sane Macros: macros and steps, a macro written out, the checks, the press and its snippet, keys and
+#   macros.lua      Abilities' Sane Macros: macros and steps, a macro written out, the checks, the press and its snippet, keys and
 #                   bar buttons, its panel and window, standing down
 #   guild.lua       Core's wire and the guild's records, and the Guild module: its window on Social's board, its page, views, key
 #   sync.lua        Core's Sync: the game's own settings kept with Sane UI's

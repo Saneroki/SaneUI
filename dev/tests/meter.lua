@@ -208,8 +208,11 @@ if RETAIL then W.Play("retail") end
 W.LoadCore(root)
 local Core = SaneUI.Core
 W.Fire("ADDON_LOADED", "SaneUI")
+-- Abilities too: its full screen at the bottom middle, which the meter is never over (any other full screen likewise).
 local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+local abilities = W.LoadAddon(root, "Abilities", "SaneUI_Abilities")
 W.Fire("ADDON_LOADED", "SaneUI_Combat")
+W.Fire("ADDON_LOADED", "SaneUI_Abilities")
 W.Fire("PLAYER_LOGIN")
 check(SaneUI.Combat == ns and not ns.off, "the module is made and started")
 
@@ -638,19 +641,21 @@ Set("meterHideAlone", false)
 -------------------------------------------------------------------------------
 --  Never on or over the full screen; on or off, standing down
 -------------------------------------------------------------------------------
-local screen = ns.Window.handle -- Combat's window, whose full screen it is
+local screen = abilities.Screen.handle -- Abilities' window, whose full screen it is (Core's Edge tells of every one)
 check(screen.options.buttons == nil, "no button of the meter on the full screen's bar")
 check(frame:IsShown() and frame:GetFrameStrata() == "LOW", "on the screen, in the layer of the quest log")
 local _, _, _, placeX, placeY = frame:GetPoint(1)
-screen.options.filled(true) -- Core's Edge tells it as the full screen begins to fill
-check(not frame:IsShown(), "as Combat's full screen begins to fill, the meter is gone, mouse and all")
+check(not Core.Edge.AnyFull(), "no full screen yet")
+screen.frame._left, screen.frame._bottom = 760, 0 -- where it stands docked (this stand-in places nothing itself)
+screen.edge:Fill(true) -- Core's Edge tells it as the full screen begins to fill
+check(Core.Edge.AnyFull() and not frame:IsShown(), "as a full screen begins to fill, the meter is gone, mouse and all")
 Fights.Load(record)
 W.Combat(true)
 check(not frame:IsShown(), "neither a fight nor a saved fight brings it over the full screen")
 W.Combat(false)
 W.Wait(0)
 Fights.Unload()
-screen.options.filled(false)
+screen.edge:Fill(false)
 local _, _, _, backX, backY = frame:GetPoint(1)
 check(frame:IsShown() and block._shown and backX == placeX and backY == placeY, "the full screen on its way back: there again, at its place")
 

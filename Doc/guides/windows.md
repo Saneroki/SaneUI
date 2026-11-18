@@ -267,8 +267,8 @@ planner Sane UI knows). The rules:
 - **Going back** from the full screen gives it back to its place, open: our code does not close the game's
   window. Esc closes it with the full screen.
 - **Where it stands today:** the game's window of talents and spellbook in Combat's panel in Retail, where ours are
-  not (`src/Combat/GameWindow.lua`, with that secure button over the closed panel), the game's action bars in Combat's panels
-  (`src/Combat/BarsWindow.lua`), Social's guild window, a talent planner, the game's vendor and mail windows (and
+  not (`src/Abilities/GameWindow.lua`, with that secure button over the closed panel), the game's action bars in Abilities' panels
+  (`src/Abilities/BarsWindow.lua`), Social's guild window, a talent planner, the game's vendor and mail windows (and
   a letter's) on Inventory's full screen and its trainer and Profession windows on Combat's (`Core.Seat.Part`: a board's part made of a game's
   window, there while it is open, its `OnShow` and `OnHide` followed; Saneroki, 2026-11-09).
 
