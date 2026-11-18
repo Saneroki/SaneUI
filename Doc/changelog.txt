@@ -149,7 +149,7 @@ SaneUI 0.3.3 (2026-11-18)
 - An old SaneUI_Nameplates folder stays off, and SaneUI says
   once to delete it: the nameplates are part of SaneUI Combat.
 
-Navigation 0.3.5 (2026-11-16)
+Navigation 0.3.5 (2026-11-18)
 -----------------------------
 - A setup, step by step: how to open the map (the corner,
   its click, a key, on one page with the keys of SaneUI's map
@@ -175,11 +175,13 @@ Navigation 0.3.5 (2026-11-16)
 - Working out a route no longer makes the game stutter: the
   work is spread over the frames, and the first route after
   logging in needs a fifth less of it.
-- The quest log on the screen starts under the minimap, where
-  the game's quest tracker stands. Tick the quest log in
-  Classic windows and the game's tracker shows there instead
-  of ours; untick it, ours again. Edit Mode shows only that
-  one to place.
+- The quest log on the screen starts in the screen's top left
+  corner, the small map a little larger at the top right.
+  Tick the quest log in Classic windows and the game's quest
+  tracker shows instead of ours; untick it, ours again.
+- Sketches: eight colours, three widths and four sizes of
+  words; sketches shared by players of another map drawing
+  addon arrive as sketches of yours, and yours reach them.
 - The quest log on the screen is always in sight at first; it
   can show only on mouseover, still in sight in combat and in
   a group if you like: on the setup's quest log page, or its

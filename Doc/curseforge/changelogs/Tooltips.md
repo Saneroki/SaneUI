@@ -3,6 +3,11 @@
 What changed in each version of SaneUI Tooltips, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.3 (2026-11-18)
+
+- SaneUI is written as one word: Tooltips stands under *SaneUI* in the game's addon list, beside SaneUI Core and the
+  other SaneUI addons, no longer in a group of its own.
+
 ## 0.3.2 (2026-11-18)
 
 - A short setup, the first time (again with `/sane setup tooltips` or *Set up step by step* on the options

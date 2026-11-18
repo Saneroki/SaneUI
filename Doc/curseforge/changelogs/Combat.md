@@ -5,8 +5,6 @@ What changed in each version of SaneUI Combat (SaneUI Nameplates until 2026-11-1
 
 ## 0.3.3 (2026-11-18)
 
-DRAFT: rewrite these lines for players (short, the bigger changes), then delete this line.
-
 - Your unit frames in Edit Mode: click a frame for its width and what it shows (level, the level hidden at 60, raid
   marker, item level, name, health, health in percent, your resource's current, maximum and percent), each frame
   its own. While Edit Mode is open, every frame shows a preview: your target and its target, your focus, your pet,
@@ -19,6 +17,10 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - The setup's unit frame pages show your frames as they really look, each with the row under it.
 - New places at first: your frame in the middle over the action bars, your focus left of it, your target right; the
   party and raid frame in the lower right corner, 680 × 185.
+- The game's totems and its class resource bar follow your frame, right under it and as large as it, and move with it
+  in Edit Mode; Edit Mode no longer shows the game's *Player Frame* and *Pet Frame* while ours stand in for them.
+- SaneUI is written as one word: Combat stands under *SaneUI* in the game's addon list, beside the other SaneUI
+  addons.
 
 ## 0.3.2 (2026-11-18)
 
