@@ -1466,6 +1466,17 @@ function Board.New(window, options)
     return board
 end
 
+-- Whether some board has a window that can be one of its own (the button beside its X: not apart = false, not fit):
+-- Onboarding's first page shows that button only then.
+function Board.Apart()
+    for _, board in pairs(boards) do
+        for _, spec in ipairs(Specs(board)) do
+            if spec.apart ~= false and not spec.fit then return true end
+        end
+    end
+    return false
+end
+
 -- What a board is offered changed, or what a window offered to it wants: one that stands lays out anew.
 function Board.Told(label)
     local board = boards[label]

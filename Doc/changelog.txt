@@ -27,10 +27,11 @@ Sane UI 0.3.3 (2026-11-17)
   after another. Each is remembered once you finish it; one
   closed early comes back where you left it. Choose defaults
   keeps an addon as Sane UI sets it up. After a big change an
-  addon can ask you through its setup again. The first page
-  also shows the button that swaps a Sane UI window for the
-  game's classic one, and the full screen's Classic windows
-  dropdown that picks which one opens by default.
+  addon can ask you through its setup again. Where your
+  addons have them, the first page also shows the button that
+  swaps a Sane UI window for the game's classic one, the red
+  buttons that take a window off the full screen and back,
+  and the Classic windows dropdown, which works there too.
 
 Navigation 0.3.5 (2026-11-16)
 -----------------------------

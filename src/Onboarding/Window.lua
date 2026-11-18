@@ -10,11 +10,13 @@ local _, ns = ...
 --  The run's first page (Saneroki, 2026-11-18: "a very first page where all
 --  the onboardings that still need to go through is listed"): on the stage
 --  the plain Sane UI logo ("use a plain Sane UI logo instead of the Core
---  banner") and under it, very clearly, Sane UI's windows and the game's own:
---  the button with the circling arrows itself (Core's Window.Swap), larger,
---  "means to show the classic windows instead", and the dropdown Classic
---  windows itself as full screen has it, "to choose which one is the default
---  one" (a picture: it opens nothing here); at the right why and where ("please go through this to
+--  banner") and under it, very clearly, Sane UI's windows and the game's own,
+--  each only where a window of a module that is on has it (Window.Has): the
+--  button with the circling arrows itself (Core's Window.Swap), larger,
+--  "means to show the classic windows instead"; the red buttons beside a full
+--  screen window's X, "will detatch windows from fullscreen or not"; and the
+--  dropdown Classic windows itself as full screen has it, "to choose which
+--  one is the default one", working (its kept choices, Core.Classic); at the right why and where ("please go through this to
 --  configure your addons to your needs. The configure steps are found under
 --  /sane setup or in the addon settings") and a row for each setup of the run,
 --  its name, its steps and Choose defaults (done: Defaults chosen, or Set
@@ -77,6 +79,7 @@ Window.LOGO_RIGHT = 0.75 -- its box fills the file's left 768 of 1024 texels
 Window.SWAP_SCALE = 1.75 -- the button with the circling arrows on the first page: its 24 units, larger
 Window.EXPLAIN = 15  -- the words beside it and under the dropdown
 Window.EXPLAIN_HEAD = 18 -- their head
+Window.EXPLAIN_ROW = 62 -- a button's row there, with its words beside it
 
 local frame, look, stage, side, title, words, count, back, forward, progress, note, defaults
 local list, logo  -- the first page's rows' holder and the logo on its stage
@@ -206,6 +209,7 @@ function Window.Go(index)
 end
 
 local Row -- a setup's row on the first page (below)
+local Lay -- the first page's explanations, those that apply (below)
 
 -- The run's setups in a row each: its name, its steps, Choose defaults (done: Defaults chosen or Set up, faint).
 -- What is left to go through: the count under them, Start or Done.
@@ -247,6 +251,7 @@ local function FirstPage()
     end
     StageOf("*first") -- the modules' samples out of sight
     logo:Show()
+    Lay()
     list:ClearAllPoints()
     list:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 0, -18)
     list:SetPoint("TOPRIGHT", words, "BOTTOMRIGHT", 0, -18)
@@ -356,39 +361,115 @@ local function Explain(holder, size, colour)
     return text
 end
 
--- Under the logo, very clearly: the button with the circling arrows (Core's own, larger) and the words beside it,
--- then the dropdown Classic windows as full screen has it (WowStyle1DropdownTemplate, a picture here: it takes no
--- mouse) and the words under it. Without that template (another client) the words alone.
+-- What the windows of the modules that are on have (Saneroki, 2026-11-18: "some addons like the navigation, tooltip
+-- and nameplate doesn't have those buttons in it so if only those addons are part of the onboarding then it should
+-- not show those because that would cause confusion. On addons that do have those icons should show them"): the
+-- button with the circling arrows (a window with native: Social's chat), the button that makes a full screen's
+-- window one of its own (a board with a window that can stand alone: Social's, Inventory's, Combat's), the
+-- dropdown's kept choices (Navigation's minimap, map and quest log too).
+function Window.Has()
+    local has = { swap = false, own = false, kept = false }
+    for _, window in ipairs(Core.Window and Core.Window.All and Core.Window.All() or {}) do
+        if type(window.options) == "table" and window.options.native then has.swap = true end
+    end
+    has.own = Core.Board and Core.Board.Apart and Core.Board.Apart() == true or false
+    has.kept = Core.Classic and Core.Classic.Kept and #Core.Classic.Kept() > 0 or false
+    return has
+end
+
+-- A red button of the full screen's as Core's board draws it (RedButton-Condense: its own window; -Expand: back onto
+-- the full screen), larger, its tip Core's: a picture with a tooltip, it does nothing here.
+local function Red(holder, atlas, tip, tipText)
+    local button = CreateFrame("Button", nil, holder)
+    button:SetSize(24, 24)
+    local normal = button:CreateTexture(nil, "ARTWORK")
+    Look.Atlas(normal, atlas)
+    normal:SetAllPoints()
+    button:SetNormalTexture(normal)
+    local lit = button:CreateTexture(nil, "HIGHLIGHT")
+    Look.Atlas(lit, "RedButton-Highlight")
+    lit:SetBlendMode("ADD")
+    lit:SetAllPoints()
+    button:SetScale(Window.SWAP_SCALE)
+    Core.Tip(button, tip, tipText)
+    button.normal = normal
+    return button
+end
+
+-- Under the logo, very clearly, each where it applies (Lay): the button with the circling arrows (Core's own, larger)
+-- and what it does; the red buttons beside a full screen window's X and what they do; the dropdown Classic windows
+-- as full screen has it, working (Saneroki, 2026-11-18: "make the dropdown on the first page actually work": the kept
+-- choices, Core.Classic.KeptMenu), and what it chooses. Without the dropdown's template (another client) its words
+-- alone.
 local function Explained(holder)
     local parts = {}
     local head = Explain(holder, Window.EXPLAIN_HEAD, Look.GOLD)
-    head:SetPoint("TOPLEFT", holder, "TOPLEFT", 24, -168)
-    head:SetPoint("TOPRIGHT", holder, "TOPRIGHT", -24, -168)
+    head:SetPoint("TOPLEFT", holder, "TOPLEFT", 24, -150)
+    head:SetPoint("TOPRIGHT", holder, "TOPRIGHT", -24, -150)
     head:SetText(ns.TEXT.windows)
-    local scale = Window.SWAP_SCALE
-    local swap = Core.Window.Swap(holder, Core.Window.TEXT.classic, Core.Window.TEXT.classicTip, function() end)
-    swap:SetScale(scale)
-    swap:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 2 / scale, -16 / scale)
-    local beside = Explain(holder, Window.EXPLAIN, Look.INK)
-    beside:SetPoint("TOPLEFT", head, "BOTTOMLEFT", Core.Window.BUTTON * scale + 18, -14)
-    beside:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", 0, -14)
-    beside:SetText(ns.TEXT.swap)
+    parts.head = head
+    parts.swap = Core.Window.Swap(holder, Core.Window.TEXT.classic, Core.Window.TEXT.classicTip, function() end)
+    parts.swap:SetScale(Window.SWAP_SCALE)
+    parts.swapText = Explain(holder, Window.EXPLAIN, Look.INK)
+    parts.swapText:SetText(ns.TEXT.swap)
+    local board = Core.Board.TEXT
+    parts.own = Red(holder, "RedButton-Condense", board.own, board.ownTip)
+    parts.ownText = Explain(holder, Window.EXPLAIN, Look.INK)
+    parts.ownText:SetText(ns.TEXT.alone)
+    parts.back = Red(holder, "RedButton-Expand", board.back, board.backTip)
+    parts.backText = Explain(holder, Window.EXPLAIN, Look.INK)
+    parts.backText:SetText(ns.TEXT.onto)
     local made, menu = pcall(CreateFrame, "DropdownButton", nil, holder, "WowStyle1DropdownTemplate")
-    local under = Explain(holder, Window.EXPLAIN, Look.INK)
     if made and menu then
         menu:SetWidth(Core.Edge.MENU_WIDTH)
-        menu:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -100)
         if menu.OverrideText then menu:OverrideText(Core.Edge.CLASSIC) end
-        menu:EnableMouse(false)
-        under:SetPoint("TOPLEFT", menu, "BOTTOMLEFT", 2, -10)
+        if menu.SetupMenu then menu:SetupMenu(ns.Guard(function(_, root) Core.Classic.KeptMenu(root) end)) end
         parts.menu = menu
-    else
-        under:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -100)
     end
-    under:SetWidth(Window.STAGE - 2 * 24 - 2) -- a width, not a right anchor: that would pull its middle to the stage's
-    under:SetText(ns.TEXT.classic)
-    parts.head, parts.swap, parts.beside, parts.under = head, swap, beside, under
+    parts.menuText = Explain(holder, Window.EXPLAIN, Look.INK)
+    parts.menuText:SetWidth(Window.STAGE - 2 * 24 - 2) -- a width, not a right anchor: that would pull its middle down
+    parts.menuText:SetText(ns.TEXT.classic)
+    for _, part in pairs(parts) do part:Hide() end
     return parts
+end
+
+-- The explanations that apply (Window.Has), one under another under their head; none: not the head either.
+function Lay()
+    local parts, has = explained, Window.Has()
+    for _, part in pairs(parts) do part:Hide() end
+    if not (has.swap or has.own or has.kept) then return has end
+    local head, scale, y = parts.head, Window.SWAP_SCALE, 14
+    head:Show()
+    local beside = 24 * scale + 18 -- the words right of a button
+    local function Row(button, text, height)
+        button:ClearAllPoints()
+        button:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 2 / scale, -y / scale)
+        text:ClearAllPoints()
+        text:SetPoint("TOPLEFT", head, "BOTTOMLEFT", beside, -(y - 2))
+        text:SetPoint("TOPRIGHT", head, "BOTTOMRIGHT", 0, -(y - 2))
+        button:Show()
+        text:Show()
+        y = y + height
+    end
+    if has.swap then Row(parts.swap, parts.swapText, Window.EXPLAIN_ROW) end
+    if has.own then
+        Row(parts.own, parts.ownText, Window.EXPLAIN_ROW - 12)
+        Row(parts.back, parts.backText, Window.EXPLAIN_ROW - 12)
+    end
+    if has.kept then
+        local text = parts.menuText
+        text:ClearAllPoints()
+        if parts.menu then
+            parts.menu:ClearAllPoints()
+            parts.menu:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -y)
+            parts.menu:Show()
+            text:SetPoint("TOPLEFT", parts.menu, "BOTTOMLEFT", 2, -10)
+        else
+            text:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, -y)
+        end
+        text:Show()
+    end
+    return has
 end
 
 -- The loading screen's bar (Look.Headline) with its fill as far as the steps have come and the count in its middle.

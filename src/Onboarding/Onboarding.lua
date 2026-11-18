@@ -54,7 +54,10 @@ ns.TEXT = {
     -- selectors to choose which one is the default one").
     windows = "Sane UI's windows and the game's own",
     swap = "This button in a Sane UI window's title bar shows the game's classic window instead. The same button on the game's window brings Sane UI's back.",
-    classic = "In full screen, the dropdown Classic windows at the top right chooses which one is the default: ticked, the game's classic window opens instead of Sane UI's; unticked, Sane UI's again.",
+    classic = "In full screen, the dropdown Classic windows at the top right chooses which one is the default: ticked, the game's classic window opens instead of Sane UI's; unticked, Sane UI's again. You can choose here too.",
+    -- (Saneroki, 2026-11-18: "show that the red arrow up / down button will detatch windows from fullscreen or not")
+    alone = "On a full screen, beside a window's X: makes it a window of its own, without the full screen. Its key then opens it alone.",
+    onto = "On a window of its own: back onto the full screen, and its key opens that again.",
     -- The note under each step: where to start it again; for one not gone through yet, that it comes back.
     again = "Start this setup again any time: Esc > Options > AddOns > Sane UI > %s, Set up step by step.",
     againTyped = "Start this setup again any time: /sane setup %s.",

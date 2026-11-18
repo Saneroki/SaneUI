@@ -125,11 +125,68 @@ check(parts.count._text == ons.TEXT.oneLeft and parts.forward._text:find(ons.TEX
 local explained = parts.explained
 check(parts.logo._texture == ons.Window.LOGO and ons.Window.LOGO:find("SaneUI_Onboarding", 1, true),
     "the plain Sane UI logo, the Onboarding addon's own (not Core's banner)")
-check(explained.swap and explained.swap.picture._texture == "Interface\\Buttons\\UI-RefreshButton"
-    and explained.swap:GetScale() == ons.Window.SWAP_SCALE and explained.beside._text == ons.TEXT.swap,
-    "under it the button with the circling arrows itself, larger, and what it does")
-check(explained.menu and explained.menu._kind == "DropdownButton" and explained.under._text == ons.TEXT.classic,
-    "and the dropdown Classic windows as full screen has it, with what it chooses")
+check(not explained.head:IsShown() and not explained.swap:IsShown() and not explained.own:IsShown()
+    and not explained.menu:IsShown() and not explained.menuText:IsShown(),
+    "no module that is on has a classic window's button, a full screen's red buttons or kept choices: none of them")
+
+-- A module that has them (Saneroki: "On addons that do have those icons should show them on the onboarding"): a
+-- window with the button with the circling arrows and two kept choices, and a full screen whose window can stand alone.
+local hearth = { left = false, chosen = {} }
+local HEARTH = {
+    { text = "The game's fire", checked = function() return hearth.left end,
+      show = function() hearth.left = true; hearth.chosen[#hearth.chosen + 1] = "show" end,
+      back = function() hearth.left = false; hearth.chosen[#hearth.chosen + 1] = "back" end },
+    { text = "Open the kettle", show = function() hearth.chosen[#hearth.chosen + 1] = "kettle" end } } -- no kept choice
+local fakeWindow = { options = { title = "Hearth", native = { show = function() end }, classic = HEARTH },
+                     frame = CreateFrame("Frame") }
+local All = Core.Window.All
+Core.Window.All = function() local all = All() all[#all + 1] = fakeWindow return all end
+check(Core.Board.Apart() == false, "no full screen yet: no window can stand alone")
+Core.Board.New(fakeWindow, { label = "Hearth", windows = function()
+    return { { key = "logs", title = "Logs", apart = false }, { key = "pot", title = "Pot" } } end })
+check(Core.Board.Apart() == true, "a full screen with a window that can stand alone (apart = false and fit cannot)")
+local kept = Core.Classic.Kept()
+check(#kept == 1 and kept[1].window == fakeWindow and #kept[1].entries == 1 and kept[1].entries[1] == HEARTH[1],
+    "the kept choices: an entry with checked, not the one that only opens the game's window")
+window.Close()
+Onboarding.Start(true)
+parts = window.Parts()
+explained = parts.explained
+local has = ons.Window.Has()
+check(has.swap and has.own and has.kept and explained.head:IsShown() and explained.head._text == ons.TEXT.windows,
+    "now they show, under their head")
+check(explained.swap:IsShown() and explained.swap.picture._texture == "Interface\\Buttons\\UI-RefreshButton"
+    and explained.swap:GetScale() == ons.Window.SWAP_SCALE and explained.swapText._text == ons.TEXT.swap,
+    "the button with the circling arrows itself, larger, and what it does")
+check(explained.own:IsShown() and explained.back:IsShown() and explained.ownText._text == ons.TEXT.alone
+    and explained.backText._text == ons.TEXT.onto and explained.own:GetScale() == ons.Window.SWAP_SCALE
+    and parts.back:GetText():find(ons.TEXT.back, 1, true) and not parts.back:GetText():find("onto", 1, true),
+    "the red buttons beside a full screen window's X: its own window, and back onto the full screen")
+check(explained.menu:IsShown() and explained.menu._kind == "DropdownButton" and explained.menuText._text == ons.TEXT.classic,
+    "the dropdown Classic windows, with what it chooses")
+check(explained.own._points[1][5] < explained.swap._points[1][5] * explained.swap:GetScale()
+    and explained.menu._points[1][5] < explained.back._points[1][5] * explained.back:GetScale(),
+    "one under another")
+-- The dropdown works: its menu the kept choices, a tick each; chosen, the game's kept, again, Sane UI's.
+local menu = { titles = {}, boxes = {} }
+function menu:CreateTitle(text) self.titles[#self.titles + 1] = text end
+function menu:CreateCheckbox(text, ticked, chosen)
+    self.boxes[#self.boxes + 1] = { text = text, ticked = ticked, chosen = chosen }
+end
+Core.Classic.KeptMenu(menu)
+check(menu.titles[1] == "Hearth" and #menu.boxes == 1 and menu.boxes[1].text == "The game's fire"
+    and menu.boxes[1].ticked() == false, "its menu: the window's name, a tick for its kept choice, not ticked")
+menu.boxes[1].chosen()
+check(hearth.left and menu.boxes[1].ticked() == true and hearth.chosen[1] == "show", "ticked: the game's own kept")
+menu.boxes[1].chosen()
+check(not hearth.left and menu.boxes[1].ticked() == false and hearth.chosen[2] == "back" and #hearth.chosen == 2,
+    "ticked again: Sane UI's again; nothing else opened")
+Core.Window.All = All
+window.Close()
+Onboarding.Start(true)
+parts = window.Parts()
+check(parts.explained.head:IsShown() and parts.explained.own:IsShown() and not parts.explained.swap:IsShown()
+    and not parts.explained.menu:IsShown(), "that window gone, its full screen left: only the red buttons")
 check(store.done.Garden == nil and store.left.Garden == nil, "nothing kept yet")
 parts.forward._scripts.OnClick(parts.forward)
 parts = window.Parts()

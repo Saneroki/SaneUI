@@ -11,6 +11,8 @@ local Core = SaneUI.Core
 --    - the button Sane UI on each of those game windows, beside its close
 --      button: the game's window goes and ours comes instead (filling the
 --      screen where the entry says so); a kept choice is ours again.
+--    - the kept choices alone (Kept, Keep, KeptMenu): the dropdown on
+--      Onboarding's first page switches them, nothing filled or closed.
 --
 --  Our code neither shows nor hides the game's panels (the friends list, the
 --  map, the spellbook, the character sheet) where that was not tried in the
@@ -88,6 +90,45 @@ function Classic.Pick(edge, window, entry)
     if window.edge and window.edge ~= edge then window.edge:Fill(false) end
     Core.Safe("classic window", entry.show)
     Classic.Attach(window)
+end
+
+-- The kept choices of every window (an entry with checked: the game's own window or Sane UI's, kept), each window's
+-- with it: { { window = window, entries = { entry, ... } }, ... }; empty without any.
+function Classic.Kept()
+    local kept = {}
+    for _, window in ipairs(Classic.Windows()) do
+        local entries = {}
+        for _, entry in ipairs(Classic.List(window) or {}) do
+            if entry.checked then entries[#entries + 1] = entry end
+        end
+        if #entries > 0 then kept[#kept + 1] = { window = window, entries = entries } end
+    end
+    return kept
+end
+
+-- A kept choice switched from elsewhere than a full window (Onboarding's first page, Saneroki, 2026-11-18: "make the
+-- dropdown on the first page actually work"): ticked, ours is the one again; else the game's is kept (its show),
+-- nothing filled or closed, and the game's window has its button.
+function Classic.Keep(window, entry)
+    if Classic.Ticked(entry) then
+        if entry.back then Core.Safe("classic window", entry.back) end
+        return
+    end
+    Core.Safe("classic window", entry.show)
+    Classic.Attach(window)
+end
+
+-- The kept choices as the game's menu (a dropdown's SetupMenu): each window's under its name, a tick each, ticked
+-- while the game's own is the one kept (Classic.Keep).
+function Classic.KeptMenu(root)
+    for _, kept in ipairs(Classic.Kept()) do
+        local window = kept.window
+        if window.options.title then root:CreateTitle(window.options.title) end
+        for _, entry in ipairs(kept.entries) do
+            root:CreateCheckbox(entry.text, Core.Guard("classic window", function() return Classic.Ticked(entry) end),
+                Core.Guard("classic window", function() Classic.Keep(window, entry) end))
+        end
+    end
 end
 
 -- The dropdown's list: each window's entries under its name.

@@ -85,7 +85,12 @@ own purpose."
   Sane UI logo instead of the Core banner and show very clearly that the small button with the circle arrow means to
   show the classic windows instead and also in fullscreen you have the dropdown selectors to choose which one is the
   default one": the plain logo (`dev/tools/logo-art saneui`), and under it the button itself and the dropdown
-  *Classic windows* itself, each with what it does.
+  *Classic windows* itself, each with what it does. Then: "make the dropdown on the first page actually work and also
+  show that the red arrow up / down button will detatch windows from fullscreen or not. The problem is that some
+  addons like the navigation, tooltip and nameplate doesn't have those buttons in it so if only those addons are part
+  of the onboarding then it should not show those because that would cause confusion. On addons that do have those
+  icons should show them on the onboarding." So the dropdown switches the kept choices (`Core.Classic.KeptMenu`), the
+  red buttons are shown and said, and each part only where a window of an addon that is on has it.
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.
