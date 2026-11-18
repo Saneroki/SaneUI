@@ -14,8 +14,10 @@ local Core = SaneUI.Core
 --      Core.Onboarding.Open(name, step)  -- its window at that step (the first); after the fight in one
 --      Core.Onboarding.Guide(name)       -- the setup a module handed in; nil for none
 --      Core.Onboarding.Names()           -- the modules that handed one in, in that order
---      Core.Onboarding.Done(name)        -- whether this account went through it (or skipped it) as it is now
+--      Core.Onboarding.Done(name)        -- whether this account went through it (or chose its defaults) as it is now
 --      Core.Onboarding.Due()             -- the setups still to go through, in their order
+--      Core.Onboarding.Start()           -- the run: its first page, then those still to go through
+--      Core.Onboarding.Defaults(name, after) -- a setup's switches back to their defaults, kept as done
 --      /sane setup <module>              -- the same, typed; /sane setup alone: those still to go through
 --
 --  All setups together (Saneroki, 2026-11-18: "it should remember which
@@ -23,23 +25,27 @@ local Core = SaneUI.Core
 --  gone through"): a few seconds after the login (Onboarding.WAIT), out of a
 --  fight, after the game's own What's new, the setups of the modules that are
 --  on and not gone through yet open one after another in one window, the run
---  (Navigation's, then Tooltips' when both are new; "setup 1 of 2"). A setup
---  is gone through once its last step is done; closed before that it stays to
---  go through and opens again at the next login, at the step where it was
---  left, the others after it. Skipped (Saneroki, 2026-11-18: "Add a Skip"), it
---  no longer opens by itself, as if gone through, and the run goes on to the
---  next. Kept in the module Onboarding's store, for the account and outside
+--  (Navigation's, then Tooltips' when both are new; "setup 1 of 2"), after a
+--  first page that lists them (Saneroki, 2026-11-18: "a very first page where
+--  all the onboardings that still need to go through is listed"). A setup is
+--  gone through once its last step is done; closed before that it stays to go
+--  through and opens again at the next login, at the step where it was left,
+--  the others after it. Choose defaults, on the first page's rows and in each
+--  setup (Saneroki, 2026-11-18: "instead of skip it says Choose Defaults on
+--  each of the onboardings"), sets the setup's switches back to their defaults
+--  (asked first where some differ) and keeps it as done: it no longer opens by
+--  itself. Kept in the module Onboarding's store, for the account and outside
 --  the profiles (SaneUIDB.modules.Onboarding: done[name] = { version, day,
---  skipped }, left[name] = the step): a profile loaded never brings one back
+--  defaults }, left[name] = the step): a profile loaded never brings one back
 --  by itself; /sane setup and the button Set up step by step on the module's
 --  options page (key setup, the window's words point there) do.
 --
 --  Its version (Saneroki, 2026-11-18: "a way to invalidate the old settings
 --  so when we make big changes the user can go through the onboarding again
 --  to setup its new settings"): a module that changes its setup a lot raises
---  the guide's version, and every account that went through (or skipped) an
---  older one goes through it again at its next login, told what changed
---  (changed). The settings the player chose stay: the setup shows the values
+--  the guide's version, and every account that went through (or chose the
+--  defaults of) an older one goes through it again at its next login, told
+--  what changed (changed). The settings the player chose stay: the setup shows the values
 --  in use.
 --
 --  A guide:
@@ -69,6 +75,8 @@ Onboarding.TEXT = {
     none = "no module that is on has a setup yet.",
     list = "setups: %s. Type /sane setup and its name.",
     unknown = "no setup called %s. Setups: %s.",
+    defaults = "%s: set the choices of its setup back to Sane UI's defaults?",
+    defaultsYes = "Choose defaults",
 }
 
 local guides, order = {}, {} -- [module name] = its guide; the names in the order they came
@@ -120,22 +128,22 @@ local function Records()
     return store
 end
 
--- Whether this account went through a module's setup as it is now (its version, or a newer one), or skipped it: it
--- no longer opens by itself.
+-- Whether this account went through a module's setup as it is now (its version, or a newer one), or chose its
+-- defaults: it no longer opens by itself.
 function Onboarding.Done(name)
     local record = Records().done[name]
     return type(record) == "table" and (tonumber(record.version) or 0) >= Version(name)
 end
 
--- Whether it went through (or skipped) an older version of it: the setup changed since (the window says what,
--- guide.changed).
+-- Whether it went through an older version of it (or chose its defaults): the setup changed since (the window says
+-- what, guide.changed).
 function Onboarding.Changed(name)
     return type(Records().done[name]) == "table" and not Onboarding.Done(name)
 end
 
--- Whether it skipped the setup as it is now, and has not gone through it since.
-function Onboarding.Skipped(name)
-    return Onboarding.Done(name) and Records().done[name].skipped == true
+-- Whether it chose the defaults of the setup as it is now, and has not gone through it since.
+function Onboarding.Defaulted(name)
+    return Onboarding.Done(name) and Records().done[name].defaults == true
 end
 
 -- Whether a module's setup has something to show: usable, with steps.
@@ -186,7 +194,8 @@ local function Load()
     return loaded == true
 end
 
--- The window on a module's setup. Out of a fight (Go waits for its end). Whether it shows.
+-- The window on a module's setup (name nil: the run's first page). Out of a fight (Go waits for its end). Whether
+-- it shows.
 local function Show(name, step, quiet)
     if not Load() then
         if not quiet then Core.Print(Onboarding.TEXT.missing) end
@@ -194,12 +203,13 @@ local function Show(name, step, quiet)
     end
     local window = rawget(SaneUI, "Onboarding")
     if type(window) ~= "table" or window.off or type(window.Show) ~= "function" then return false end
+    if name == nil then return type(window.First) == "function" and window.First() == true end
     return window.Show(name, step) == true
 end
 
--- quiet: opened by itself (the run), so nothing is said if it cannot be.
+-- quiet: opened by itself (the run), so nothing is said if it cannot be. name nil: the run's first page.
 local function Go(name, step, quiet)
-    if not Usable(name) then return false end
+    if name ~= nil and not Usable(name) then return false end
     if not Core.AfterCombat("onboarding", Show, name, step, quiet) and not quiet then Core.Print(Onboarding.TEXT.later) end
     return true
 end
@@ -210,24 +220,97 @@ function Onboarding.Open(name, step, quiet)
     return Go(name, step, quiet)
 end
 
--- The setups still to go through, one after another in one window, each at the step where it was left.
+-- The setups still to go through, one after another in one window: first the page that lists them, then each at
+-- the step where it was left.
 function Onboarding.Start(quiet)
     local due = Onboarding.Due()
     if #due == 0 then return false end
     run = due
-    return Go(due[1], Records().left[due[1]], quiet)
+    return Go(nil, nil, quiet)
 end
 
--- The window tells Core a setup was gone through to its end, or skipped (skipped): kept with its version, and the run
--- goes on to the next one in the same window. Whether one follows (the window closes otherwise).
-function Onboarding.Finished(name, skipped)
+-- The setups of the run, in their order (gone through or not); nil out of a run.
+function Onboarding.Run()
+    if not run then return nil end
+    local names = {}
+    for index, name in ipairs(run) do names[index] = name end
+    return names
+end
+
+-- On from the run's first page: the first setup of the run still to go through, at the step where it was left.
+-- Whether one shows (none left: false).
+function Onboarding.Continue()
+    for _, name in ipairs(run or {}) do
+        if Showable(name) and not Onboarding.Done(name) then return Go(name, Records().left[name], true) end
+    end
+    return false
+end
+
+-- Kept as gone through (or its defaults chosen, defaults), with its version and the day.
+local function Mark(name, defaults)
+    local store = Records()
+    store.done[name] = { version = Version(name), day = date("%Y-%m-%d"), defaults = defaults and true or nil }
+    store.left[name] = nil
+end
+
+-- The window tells Core a setup was gone through to its end: kept with its version, and the run goes on to the next
+-- one in the same window. Whether one follows (the window closes otherwise).
+function Onboarding.Finished(name)
     if not guides[name] then return false end
     local following = Onboarding.Following(name)
-    local store = Records()
-    store.done[name] = { version = Version(name), day = date("%Y-%m-%d"), skipped = skipped and true or nil }
-    store.left[name] = nil
+    Mark(name)
     if not following then return false end
     return Go(following, Records().left[following], true)
+end
+
+-- Whether two values are the same (tables by their contents).
+local function Same(one, other)
+    if type(one) ~= "table" or type(other) ~= "table" then return one == other end
+    for key, value in pairs(one) do
+        if not Same(value, other[key]) then return false end
+    end
+    for key in pairs(other) do
+        if one[key] == nil then return false end
+    end
+    return true
+end
+
+-- The module's switches a setup shows (its steps' settings: a key, or a step's own wording of one; keys of the game's
+-- key bindings are not among them).
+local function Switches(name)
+    local keys = {}
+    for _, step in ipairs(guides[name] and guides[name].steps or {}) do
+        for _, entry in ipairs(type(step.settings) == "table" and step.settings or {}) do
+            local key = type(entry) == "string" and entry or type(entry) == "table" and type(entry.key) == "string"
+                and entry.key
+            if key then keys[key] = true end
+        end
+    end
+    return keys
+end
+
+-- Choose defaults (Saneroki, 2026-11-18: "instead of skip it says Choose Defaults on each of the onboardings"): the
+-- setup's switches back to their defaults (Core.Reset; the game's key bindings stay), kept as done with its defaults
+-- chosen, then after(). Where some of them differ from their defaults (chosen before, a setup of a new version), the
+-- game's yes or no asks first; no: nothing changes. Whether it was done at once.
+function Onboarding.Defaults(name, after)
+    if not guides[name] then return false end
+    local keys, options, differ = Switches(name), Core.Settings(name) or {}, false
+    for key in pairs(keys) do
+        local option = Core.Described(name, key)
+        if option and option.default ~= nil and not Same(options[key], option.default) then differ = true end
+    end
+    local function Chosen()
+        Core.Reset(name, function(option) return keys[option.key] == true end)
+        Mark(name, true)
+        if type(after) == "function" then Core.Safe("onboarding", after) end
+    end
+    if not differ then
+        Chosen()
+        return true
+    end
+    Core.Confirm(Onboarding.TEXT.defaults, guides[name].title or name, Chosen, false, Onboarding.TEXT.defaultsYes)
+    return false
 end
 
 -- The run, a few seconds after the first loading screen; again a little later while the game's own What's new is

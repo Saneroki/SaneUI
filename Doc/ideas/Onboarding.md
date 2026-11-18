@@ -75,8 +75,13 @@ own purpose."
   *Set up step by step*; else `/sane setup <module>`), so the setups' own *Later* lines went. "And we need a way to
   invalidate the old settings so when we make big changes the user can go through the onboarding again to setup its
   new settings": a guide's `version`, raised by its module after a big change, and `changed`, what changed, said in
-  gold on its first step; the settings chosen stay. Then "Add a Skip": *Skip setup* beside *Back* while a setup is not
-  gone through; skipped, it no longer opens by itself until a new version (`done[name].skipped`), and the run goes on.
+  gold on its first step; the settings chosen stay. Then "Add a Skip", and the same day: "Can we have a very first page
+  where all the onboardings that still need to go through is listed and instead of skip it says Choose Defaults on
+  each of the onboardings. On the first page it says that please go through this to configure your addons to your
+  needs. The configure steps are found underer /sane setup or in the addon settings." So the run opens on a first
+  page (Sane UI's logo, those words, a row per setup with *Choose defaults*, *Start*), and *Choose defaults* stands
+  beside *Back* in each setup: its switches back to their defaults (asked first where some were changed; key bindings
+  stay), kept as done (`done[name].defaults`), so it no longer opens by itself until a new version.
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.

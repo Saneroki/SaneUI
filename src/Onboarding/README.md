@@ -10,13 +10,18 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 ## How to use
 
 - **All setups together:** a few seconds after the login (after the game's own What's new, never in a fight) the
-  setups still to go through open one after another in one window: those of the modules that are on and that this
-  account has not gone through yet, or that changed a lot since (*Navigation: setup 1 of 3*). The last step of one
-  says *Next setup*, and the next one follows in the same window. A setup is gone through once its last step is done;
-  closed before that, it opens again at the next login, at the step where it was left, the others after it.
-- **Skip setup**, in the row under the step beside *Back* (only while a setup is not gone through): it no longer opens
-  by itself, until its module changes it a lot; in a run the next setup follows. What was chosen so far stays, and the
-  button on its options page still opens it.
+  setups still to go through open in one window: those of the modules that are on and that this account has not
+  gone through yet, or that changed a lot since. **The first page** lists them, Sane UI's logo beside: please go
+  through them to configure your addons to your needs; where they are found again (`/sane setup`, the addon
+  settings); a row for each, its name, its steps and *Choose defaults*. *Start* opens the first, and they follow one
+  after another (*Navigation: setup 1 of 3*; *Next setup* on the last step of one); *Back* on a setup's first step
+  comes back to the first page. A setup is gone through once its last step is done; closed before that, it opens
+  again at the next login, at the step where it was left, the others after it.
+- **Choose defaults**, on each row of the first page and in the row under a setup's step beside *Back* (only while a
+  setup is not gone through): that addon's switches of its setup go back to Sane UI's defaults (the game's key
+  bindings stay), and its setup no longer opens by itself until its module changes it a lot; in a setup the run goes
+  on to the next. Where some of those switches were already changed, the game's yes or no asks first. The button on
+  its options page still opens it.
 - **Open it again** with the button *Set up step by step* at the top of the module's options page (Esc > Options >
   AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`; `/sane setup` alone: those still
   to go through, else the only one there, else the list of them). A faint note at the foot of every step says where,
@@ -82,12 +87,24 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   `SaneUIDB.modules.Onboarding` for the account, outside the profiles: `done[name] = { version, day }`, `left[name] =
   step`; the store of before (`shown[name]`, the day a setup first opened) is read as gone through at version 1.
   Opened by hand (`Open`), a setup shows alone, with no run.
-- **Skip setup** (Saneroki, 2026-11-18: "Add a Skip"): words alone in the colours of Forever's top bar (`Look.NAV`, lit
-  `Look.NAV_LIT` under the mouse; red is for what matters, and *Back* and *Next* stand beside it), between the
-  progress bar and *Back*, shown while the setup is not gone through (`Core.Onboarding.Done`), the bar reaching to it.
-  A click: `Finished(name, true)`, kept as `done[name] = { version, day, skipped = true }` (`Core.Onboarding.Skipped`),
-  so it counts as gone through for the run and the login, until a new `version`; the run's next setup shows, else the
-  window closes.
+- **The first page** (Saneroki, 2026-11-18: "a very first page where all the onboardings that still need to go through
+  is listed"; "On the first page it says that please go through this to configure your addons to your needs. The
+  configure steps are found underer /sane setup or in the addon settings"): `Core.Onboarding.Start` opens it
+  (`Window.First`, through `ns.First`), the run's setups from `Core.Onboarding.Run()`: Sane UI's logo on the stage
+  (Core's banner, `Window.LOGO`), the words, a row each (`Window.ROW`: the setup's title in gold, its steps faint,
+  *Choose defaults* at its right; done: *Defaults chosen* or *Set up*, faint), made when first needed; under them how
+  many are left and *Start* (none left: *Done*), which shows the first still to go through (`Core.Onboarding.Continue`).
+  *Back* on the first step of a run's setup comes back to it.
+- **Choose defaults** (Saneroki, 2026-11-18: "Add a Skip", then "instead of skip it says Choose Defaults on each of the
+  onboardings"): words alone in the colours of Forever's top bar (`Look.NAV`, lit `Look.NAV_LIT` under the mouse; red
+  is for what matters, and *Back* and *Next* stand beside it), on each row of the first page and between the progress
+  bar and *Back* while a setup is not gone through (`Core.Onboarding.Done`), the bar reaching to it.
+  `Core.Onboarding.Defaults(name, after)`: the setup's switches (its steps' keys; not the game's key bindings) back to
+  their defaults (`Core.Reset`), kept as `done[name] = { version, day, defaults = true }`
+  (`Core.Onboarding.Defaulted`), so it counts as gone through for the run and the login until a new `version`; where
+  one of them differs from its default, the game's yes or no asks first (`Core.Confirm`; no: nothing changes). Then,
+  in a setup, the run's first setup still to go through shows (`Continue`), else the window closes; on the first page
+  its rows show anew.
 - **A setup changed a lot:** its module raises the guide's `version` (1 when it has none) and may say what changed
   (`changed`); every account that went through an older version goes through it again at its next login, the first
   step saying what changed in gold (*Changed since you last went through it: ...*). The settings chosen stay.
@@ -111,7 +128,9 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   and as gone through at its end; a setup's `version` to have everyone go through it again after a big change
   ("a way to invalidate the old settings so when we make big changes the user can go through the onboarding again");
   the note at each step's foot ("during onboarding say that you can start this again in the addon settings"). Then
-  *Skip setup* ("Add a Skip"): a setup skipped no longer opens by itself until a new version.
+  *Skip setup* ("Add a Skip"), the same day *Choose defaults* in its place ("instead of skip it says Choose
+  Defaults"), and the run's first page that lists its setups ("a very first page where all the onboardings that
+  still need to go through is listed").
 - 2026-11-18 — The key boxes hear the key again (Saneroki: "the configure keybinds don't work. When I click it it says
   press a key but it doesn't register any keypresses. I want it to work with the modifier keys as well so that
   someone could press like alt shift v"): each box had its `OnKeyDown` from the start, which in the game takes the

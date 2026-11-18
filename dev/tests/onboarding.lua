@@ -3,7 +3,8 @@
 -- a setup opens (load on demand), by itself the first time (after the game's What's new, out of a fight, once), by
 -- /sane setup and after a fight; the steps, their words and controls made from the module's own switches, set
 -- through Core; Back, Next and Done; the module's sample drawn anew after each change; a setup kept where it was
--- left and as gone through with its version; all setups to go through one after another (the run), a version raised.
+-- left and as gone through with its version; all setups to go through one after another (the run) after its first
+-- page, a version raised, Choose defaults.
 -- Nameplates' own setup (its steps and sample plates) is tested in dev/tests/nameplates.lua.
 -- Usage, from the project folder:  lua5.1 dev/tests/onboarding.lua
 
@@ -109,20 +110,37 @@ W.Wait(Onboarding.WAIT + 1)
 check(read == 0, "the game's What's new is open: the setup waits")
 SplashFrame:Hide()
 W.Wait(Onboarding.WAIT + 1)
-check(read == 1 and ons and ons.Window.Frame():IsShown(), "then the window is read and shows the module's setup")
+check(read == 1 and ons and ons.Window.Frame():IsShown(), "then the window is read and shows the run's first page")
 local store = Core.Store("Onboarding")
-check(store.done.Garden == nil and store.left.Garden == 1, "not gone through yet: kept where it was left, for the account")
-check(not Onboarding.Done("Garden") and Onboarding.Due()[1] == "Garden", "still to go through")
 local window = ons.Window
 local parts = window.Parts()
+check(parts.first and parts.head._text == ons.TEXT.firstHead and parts.title._text == ons.TEXT.firstTitle
+    and parts.words._text == ons.TEXT.firstText, "the first page: please go through them, and where they are found again")
+check(parts.list:IsShown() and parts.rows[1]:IsShown() and parts.rows[1].label._text == "Garden"
+    and parts.rows[1].steps._text == "4 steps" and parts.rows[1].button:IsShown() and not parts.rows[1].state:IsShown(),
+    "a row for each setup to go through: its name, its steps, Choose defaults")
+check(parts.count._text == ons.TEXT.oneLeft and parts.forward._text:find(ons.TEXT.start, 1, true)
+    and parts.back:IsEnabled() == false and not parts.defaults:IsShown() and parts.logo:IsVisible(),
+    "under them: how many are left and Start; Sane UI's logo on the stage")
+check(store.done.Garden == nil and store.left.Garden == nil, "nothing kept yet")
+parts.forward._scripts.OnClick(parts.forward)
+parts = window.Parts()
+check(not parts.first and not parts.list:IsShown() and not parts.logo:IsVisible(), "Start: the setup, the first page gone")
+check(store.done.Garden == nil and store.left.Garden == 1, "not gone through yet: kept where it was left, for the account")
+check(not Onboarding.Done("Garden") and Onboarding.Due()[1] == "Garden", "still to go through")
 check(parts.head._text == "Garden: setup", "a run of one: no count in the head")
-check(parts.skip:IsShown(), "Skip setup, for a setup not gone through yet")
+check(parts.defaults:IsShown(), "Choose defaults, for a setup not gone through yet")
 check(parts.note._text:find(ons.TEXT.unfinished, 1, true)
     and parts.note._text:find(ons.TEXT.again:format("Garden"), 1, true),
     "the note: closed before its end it comes back; where to start it again (the options page's button)")
 check(parts.title._text == "The beds" and parts.words._text == "What grows.", "the first step: its head and words")
 check(parts.count._text == "Step 1 of 4", "Step 1 of 4")
-check(parts.back:IsEnabled() == false, "no Back on the first step")
+check(parts.back:IsEnabled() ~= false, "Back on the first step of a run's setup")
+parts.back._scripts.OnClick(parts.back)
+check(window.Parts().first and window.Parts().rows[1].label._text == "Garden", "Back: the first page again")
+window.Parts().forward._scripts.OnClick(window.Parts().forward)
+parts = window.Parts()
+check(parts.title._text == "The beds", "and Start: the setup where it was left")
 check(drawn[#drawn].key == "beds" and drawn[#drawn].index == 1 and drawn[#drawn].stage ~= nil, "the module drew its sample")
 check(drawn[#drawn].stage == parts.own.Garden and parts.own.Garden:GetParent() == parts.stage and parts.own.Garden:IsShown(),
     "into a frame of its own over the stage: what another module drew never shows under it")
@@ -252,8 +270,9 @@ check(options.path == "stone" and options.flowers == false, "the choices are the
 -- Asked for again: /sane setup (the only one there: its name not needed), at the first step; in a fight, after it.
 SlashCmdList.SANEUI("setup")
 check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 4", "/sane setup opens it again, at the start")
-check(not window.Parts().note._text:find(ons.TEXT.unfinished, 1, true) and not window.Parts().skip:IsShown(),
-    "gone through: the note no longer says it comes back, and no Skip")
+check(not window.Parts().note._text:find(ons.TEXT.unfinished, 1, true) and not window.Parts().defaults:IsShown(),
+    "gone through: the note no longer says it comes back, and no Choose defaults")
+check(window.Parts().back:IsEnabled() == false, "opened by hand: no Back on the first step")
 window.Parts().forward._scripts.OnClick(window.Parts().forward)
 check(store.left.Garden == nil, "a setup gone through keeps no step")
 window.Close()
@@ -297,7 +316,18 @@ W.Fire("ADDON_LOADED", "SaneUI_Orchard")
 W.Fire("ADDON_LOADED", "SaneUI_Shed")
 local due = Onboarding.Due()
 check(#due == 2 and due[1] == "Orchard" and due[2] == "Shed", "still to go through: the two new ones, in their order")
+-- The run's first page, then Start: its first setup still to go through.
+local function Started()
+    if not Onboarding.Start(true) or not window.Parts().first then return false end
+    window.Parts().forward._scripts.OnClick(window.Parts().forward)
+    return true
+end
 check(Onboarding.Start(true) and window.Frame():IsShown(), "the next login's run opens")
+parts = window.Parts()
+check(parts.first and parts.rows[1].label._text == "Orchard" and parts.rows[1].steps._text == "2 steps"
+    and parts.rows[2].label._text == "Shed" and parts.rows[2].steps._text == "1 step"
+    and parts.count._text == ons.TEXT.left:format(2), "its first page: both, in their order")
+parts.forward._scripts.OnClick(parts.forward)
 parts = window.Parts()
 check(parts.head._text == "Orchard: setup 1 of 2" and parts.count._text == "Step 1 of 2", "the first of two: its head counts")
 parts.forward._scripts.OnClick(parts.forward)
@@ -307,7 +337,7 @@ check(parts.forward._text:find(ons.TEXT.nextSetup, 1, true) and parts.note._text
 window.Close()
 check(store.left.Orchard == 2 and not Onboarding.Done("Orchard") and not Onboarding.Done("Shed"),
     "closed before its end: kept where it was left, both still to go through")
-check(Onboarding.Start(true) and window.Parts().head._text == "Orchard: setup 1 of 2"
+check(Started() and window.Parts().head._text == "Orchard: setup 1 of 2"
     and window.Parts().count._text == "Step 2 of 2", "the login after: it opens again where it was left")
 parts = window.Parts()
 parts.forward._scripts.OnClick(parts.forward)
@@ -330,7 +360,7 @@ Core.Set("Orchard", "pears", false)
 ORCHARD.version, ORCHARD.changed = 2, "plums too."
 check(not Onboarding.Done("Orchard") and Onboarding.Changed("Orchard") and Onboarding.Due()[1] == "Orchard",
     "a new version: to go through again")
-check(Onboarding.Start(true) and window.Parts().head._text == "Orchard: setup", "the login after: alone in its run")
+check(Started() and window.Parts().head._text == "Orchard: setup", "the login after: alone in its run")
 parts = window.Parts()
 check(parts.words._text:find(ons.TEXT.changed:format("plums too."), 1, true) and parts.words._text:find("Red.", 1, true),
     "its first step says what changed, then its own words")
@@ -341,7 +371,7 @@ window.Parts().forward._scripts.OnClick(window.Parts().forward)
 check(Onboarding.Done("Orchard") and store.done.Orchard.version == 2 and not Onboarding.Changed("Orchard"),
     "gone through again: kept at the new version")
 ORCHARD.version, ORCHARD.changed = 3, nil
-Onboarding.Start(true)
+Started()
 check(window.Parts().words._text:find(ons.TEXT.changedAny, 1, true), "a new version without its words: said plainly")
 window.Close()
 
@@ -354,43 +384,71 @@ check(parts.head._text == "Shed: setup" and parts.forward._text == ons.TEXT.done
 parts.forward._scripts.OnClick(parts.forward)
 check(not window.Frame():IsShown() and Onboarding.Done("Shed") and not Onboarding.Done("Orchard"), "only that one gone through")
 SlashCmdList.SANEUI("setup")
-check(window.Frame():IsShown() and window.Parts().head._text == "Orchard: setup", "/sane setup alone: those still to go through")
+check(window.Frame():IsShown() and window.Parts().first and window.Parts().rows[1].label._text == "Orchard"
+    and not window.Parts().rows[2]:IsShown(), "/sane setup alone: the first page of those still to go through")
 window.Close()
 
--- Skip setup (Saneroki: "Add a Skip"): a setup not gone through yet no longer opens by itself, kept as if gone
--- through with its version; in a run the next one follows. Skipped, opened by hand: no Skip. A new version brings it
--- back; gone through after all, it is no longer skipped.
+-- Choose defaults (Saneroki: "instead of skip it says Choose Defaults on each of the onboardings"): on the first
+-- page's rows and in each setup. The setup's switches back to their defaults, kept as done with its version: it no
+-- longer opens by itself. Where some differ from their defaults the game's yes or no asks first. Opened by hand: no
+-- Choose defaults. A new version brings it back; gone through after all, its defaults are no longer chosen.
+local asked
+StaticPopupDialogs = { GENERIC_CONFIRMATION = {} }
+StaticPopup_Show = function(which, _, _, data) asked = which == "GENERIC_CONFIRMATION" and data or nil; return {} end
 SHED.version = 2
+Core.Set("Shed", "tools", true)
 due = Onboarding.Due()
 check(#due == 2 and due[1] == "Orchard" and due[2] == "Shed", "both to go through")
 Onboarding.Start(true)
 parts = window.Parts()
-check(parts.skip:IsShown() and parts.head._text == "Orchard: setup 1 of 2", "the run's first: Skip setup")
-parts.skip._scripts.OnClick(parts.skip)
+local shedRow = parts.rows[2]
+check(parts.first and shedRow.label._text == "Shed" and shedRow.button:IsShown(), "the first page: Choose defaults on each row")
+shedRow.button._scripts.OnClick(shedRow.button)
 parts = window.Parts()
-check(Onboarding.Skipped("Orchard") and Onboarding.Done("Orchard") and store.done.Orchard.skipped == true
-    and store.done.Orchard.version == 3 and store.left.Orchard == nil, "skipped: kept with its version, as if gone through")
-check(window.Frame():IsShown() and parts.head._text == "Shed: setup 2 of 2", "the run goes on to the next")
-parts.skip._scripts.OnClick(parts.skip)
-check(not window.Frame():IsShown() and Onboarding.Skipped("Shed") and #Onboarding.Due() == 0 and not Onboarding.Start(true),
-    "the run's last skipped: the window closes, nothing left to go through")
+check(asked == nil and Onboarding.Defaulted("Shed") and Onboarding.Done("Shed") and store.done.Shed.defaults == true
+    and store.done.Shed.version == 2, "Shed already as its defaults: chosen at once, kept with its version")
+check(parts.first and not shedRow.button:IsShown() and shedRow.state:IsShown()
+    and shedRow.state._text == ons.TEXT.defaultsChosen and parts.count._text == ons.TEXT.oneLeft,
+    "its row says so; one left")
+parts.forward._scripts.OnClick(parts.forward)
+parts = window.Parts()
+check(parts.head._text == "Orchard: setup 1 of 2" and parts.defaults:IsShown(), "Start: Orchard, Choose defaults under it")
+check(Core.Settings("Orchard").pears == false, "a pear tree chosen away before")
+parts.defaults._scripts.OnClick(parts.defaults)
+check(asked and asked.text_arg1 == "Orchard" and window.Frame():IsShown() and not Onboarding.Done("Orchard")
+    and Core.Settings("Orchard").pears == false, "a choice differs from its default: asked first, nothing changed yet")
+asked.callback()
+check(Core.Settings("Orchard").pears == true and Onboarding.Defaulted("Orchard") and store.done.Orchard.version == 3
+    and store.left.Orchard == nil, "yes: back to its defaults, kept as done")
+check(not window.Frame():IsShown() and #Onboarding.Due() == 0 and not Onboarding.Start(true),
+    "nothing left: the window closes, no run")
 Onboarding.Open("Orchard")
 parts = window.Parts()
-check(window.Frame():IsShown() and not parts.skip:IsShown() and not parts.note._text:find(ons.TEXT.unfinished, 1, true),
-    "skipped, opened by hand: no Skip, and it does not come back")
+check(window.Frame():IsShown() and not parts.defaults:IsShown() and not parts.note._text:find(ons.TEXT.unfinished, 1, true),
+    "defaults chosen, opened by hand: no Choose defaults, and it does not come back")
 window.Close()
-check(Onboarding.Skipped("Orchard"), "closed: still skipped")
+check(Onboarding.Defaulted("Orchard"), "closed: its defaults still chosen")
 ORCHARD.version = 4
-check(Onboarding.Due()[1] == "Orchard" and Onboarding.Changed("Orchard") and not Onboarding.Skipped("Orchard"),
-    "a new version: a skipped setup to go through again")
-Onboarding.Start(true)
-check(window.Parts().words._text:find(ons.TEXT.changedAny, 1, true) and window.Parts().skip:IsShown(),
-    "told it changed since it was last seen, Skip there again")
+check(Onboarding.Due()[1] == "Orchard" and Onboarding.Changed("Orchard") and not Onboarding.Defaulted("Orchard"),
+    "a new version: to go through again")
+Started()
+check(window.Parts().words._text:find(ons.TEXT.changedAny, 1, true) and window.Parts().defaults:IsShown(),
+    "told it changed since it was last seen, Choose defaults there again")
 window.Close()
 Onboarding.Open("Shed")
 window.Parts().forward._scripts.OnClick(window.Parts().forward)
-check(Onboarding.Done("Shed") and not Onboarding.Skipped("Shed") and store.done.Shed.skipped == nil,
-    "gone through after all: no longer skipped")
+check(Onboarding.Done("Shed") and not Onboarding.Defaulted("Shed") and store.done.Shed.defaults == nil,
+    "gone through after all: its defaults no longer chosen")
+-- The game's key bindings stay: Garden's switches back to their defaults, its key kept; no: nothing changes.
+bound.H = "SANEUI_GARDEN_WATER"
+asked = nil
+Onboarding.Defaults("Garden")
+check(asked and Core.Settings("Garden").path == "stone", "Garden's choices differ: asked")
+asked = nil
+Onboarding.Defaults("Garden")
+asked.callback()
+check(Core.Settings("Garden").path == "gravel" and Core.Settings("Garden").flowers == true
+    and bound.H == "SANEUI_GARDEN_WATER", "yes: its switches back to their defaults, the key binding kept")
 
 -- The store of before (shown: the day a setup first opened) counts as gone through, at version 1.
 SHED.version = nil

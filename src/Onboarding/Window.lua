@@ -7,6 +7,15 @@ local _, ns = ...
 --  closed by its X or Esc. It never blocks the game: the world goes on behind
 --  it and the module's plates follow each change at once.
 --
+--  The run's first page (Saneroki, 2026-11-18: "a very first page where all
+--  the onboardings that still need to go through is listed"): Sane UI's logo
+--  on the stage; at the right why and where ("please go through this to
+--  configure your addons to your needs. The configure steps are found under
+--  /sane setup or in the addon settings") and a row for each setup of the run,
+--  its name, its steps and Choose defaults (done: Defaults chosen, or Set
+--  up); under them Start, to the first setup still to go through. Back on a
+--  setup's first step comes back to it.
+--
 --    left    the stage: a grey box (Look.Box) on the window's plate, solid,
 --            the module draws its sample into (the guide's Stage; each
 --            module into a frame of its own over it, the others' hidden),
@@ -25,9 +34,11 @@ local _, ns = ...
 --            buttons Back and Next (Done on the last step; Next setup there
 --            while the run has one more), red with the game's arrows, as
 --            Forever's own steps of the character creation have them; before
---            them, for a setup not gone through yet, Skip setup in the words
---            of Forever's top bar (Saneroki, 2026-11-18: "Add a Skip"): it no
---            longer opens by itself, and the run goes on to the next
+--            them, for a setup not gone through yet, Choose defaults in the
+--            words of Forever's top bar (Saneroki, 2026-11-18: "Add a Skip",
+--            then "instead of skip it says Choose Defaults"): the setup's
+--            switches to their defaults, it no longer opens by itself, and the
+--            run goes on to the next
 --
 --  Changes are made as they are clicked (Core.Set), so closing the window at
 --  any step keeps what was chosen; nothing to save or undo here. Each step
@@ -52,10 +63,17 @@ Window.BAR = 28      -- the loading screen's bar's height
 Window.FILL = "Interface\\Glues\\LoadingBar\\Loading-BarFill" -- its fill
 Window.FILL_IN = { 0.9, 0.3 } -- the fill this far in from the bar's ends and edges, shares of its height
 Window.NOTE = 12     -- the faint note at the step's foot (every setup's steps leave it room: over 100 units)
-Window.SKIP = 14     -- Skip setup's words
+Window.WORDS = 14    -- a button of words alone (Choose defaults)
+Window.ROW = 34      -- a setup's row on the first page
+Window.NAME = 16     -- its name's size
+Window.LOGO = "Interface\\AddOns\\SaneUI\\Art\\banner" -- Sane UI's logo on the first page (Core's banner, 3 : 1)
+Window.LOGO_RIGHT = 0.75 -- the banner's box fills its file's left 768 of 1024 texels (Settings.lua: BANNER_RIGHT)
 
-local frame, look, stage, side, title, words, count, back, forward, progress, note, skip
-local current   -- { name, guide, index } while a setup shows
+local frame, look, stage, side, title, words, count, back, forward, progress, note, defaults
+local list, logo  -- the first page's rows' holder and the logo on its stage
+local rows = {}   -- the first page's rows, made when first needed
+local first       -- true while the run's first page shows
+local current     -- { name, guide, index } while a setup shows
 local made = {} -- [module name] = { [step index] = its controls' frame }, made the first time each shows
 local own = {}  -- [module name] = its own frame over the stage, which it draws into; the other modules' hidden
 
@@ -88,7 +106,7 @@ end
 
 -- The sample drawn anew by the module and the step's controls showing the values in use.
 function Window.Changed()
-    if not current then return end
+    if first or not current then return end
     local index = current.index
     local holder = made[current.name] and made[current.name][index]
     if holder then ns.Controls.Refresh(holder, current.name) end
@@ -140,6 +158,9 @@ end
 -- To a step: its head, words and controls, the count and the buttons; told to Core (where it was left).
 function Window.Go(index)
     if not current then return end
+    first = false
+    list:Hide()
+    StageOf(current.name) -- the first page's logo out of sight, whether the module draws a sample or not
     local steps = current.guide.steps
     index = math.max(1, math.min(tonumber(index) or 1, #steps))
     current.index = index
@@ -162,22 +183,90 @@ function Window.Go(index)
     holder:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 0, -16)
     holder:Show()
     count:SetText(ns.TEXT.step:format(index, #steps))
-    -- Skip for a setup not gone through yet (nor skipped); the bar reaches to it, else to Back.
-    local skippable = not Core.Onboarding.Done(current.name)
-    skip:SetShown(skippable)
-    progress:SetPoint("RIGHT", skippable and skip or back, "LEFT", -16, 0)
+    -- Choose defaults for a setup not gone through yet (nor its defaults chosen); the bar reaches to it, else to Back.
+    local open = not Core.Onboarding.Done(current.name)
+    defaults:SetShown(open)
+    progress:SetPoint("RIGHT", open and defaults or back, "LEFT", -16, 0)
     progress:Share(index / #steps)
-    back:SetEnabled(index > 1)
+    back:SetEnabled(index > 1 or Core.Onboarding.Run() ~= nil) -- the first step of a run's setup: to its first page
     local last = index == #steps
     forward:SetText(last and not Core.Onboarding.Following(current.name) and ns.TEXT.done
         or Arrowed(last and ns.TEXT.nextSetup or ns.TEXT.next, Window.ARROWS.next))
     Window.Changed()
 end
 
--- Back or on; past the last step the setup is gone through (Core keeps it) and the run's next one shows here.
+local Row -- a setup's row on the first page (below)
+
+-- The run's setups in a row each: its name, its steps, Choose defaults (done: Defaults chosen or Set up, faint).
+-- What is left to go through: the count under them, Start or Done.
+local function Listed()
+    local names, y, left = Core.Onboarding.Run() or {}, 0, 0
+    for index, name in ipairs(names) do
+        local row, guide = rows[index] or Row(index), Core.Onboarding.Guide(name)
+        row.name = name
+        row.label:SetText(guide and guide.title or name)
+        local steps = guide and #guide.steps or 0
+        row.steps:SetText(steps == 1 and ns.TEXT.oneStep or ns.TEXT.steps:format(steps))
+        local done = Core.Onboarding.Done(name)
+        if not done then left = left + 1 end
+        row.button:SetShown(not done)
+        row.state:SetShown(done)
+        row.state:SetText(Core.Onboarding.Defaulted(name) and ns.TEXT.defaultsChosen or ns.TEXT.goneThrough)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", list, "TOPLEFT", 0, -y)
+        row:SetPoint("TOPRIGHT", list, "TOPRIGHT", 0, -y)
+        row:Show()
+        y = y + Window.ROW
+    end
+    for index = #names + 1, #rows do rows[index]:Hide() end
+    count:SetText(left == 0 and ns.TEXT.noneLeft or left == 1 and ns.TEXT.oneLeft or ns.TEXT.left:format(left))
+    forward:SetText(left == 0 and ns.TEXT.done or Arrowed(ns.TEXT.start, Window.ARROWS.next))
+    return left
+end
+
+-- The run's first page.
+local function FirstPage()
+    first = true
+    current = nil
+    look.title:SetText(ns.TEXT.firstHead)
+    title:SetText(ns.TEXT.firstTitle)
+    words:SetText(ns.TEXT.firstText)
+    note:SetText("")
+    for _, holders in pairs(made) do
+        for _, holder in pairs(holders) do holder:Hide() end
+    end
+    StageOf("*first") -- the modules' samples out of sight
+    logo:Show()
+    list:ClearAllPoints()
+    list:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 0, -18)
+    list:SetPoint("TOPRIGHT", words, "BOTTOMRIGHT", 0, -18)
+    list:Show()
+    defaults:Hide()
+    progress:SetPoint("RIGHT", back, "LEFT", -16, 0)
+    progress:Share(0)
+    back:SetEnabled(false)
+    Listed()
+end
+
+-- Back or on; past the last step the setup is gone through (Core keeps it) and the run's next one shows here. On the
+-- first page: Start, the first setup still to go through (none left: the window closes); Back from a run's setup's
+-- first step: the first page.
 local function Turn(by)
+    if first then
+        if by < 0 then return end
+        Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+        if not Core.Onboarding.Continue() then Window.Close() end
+        return
+    end
     if not current then return end
     local index = current.index + by
+    if index < 1 then
+        if Core.Onboarding.Run() then
+            Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
+            FirstPage()
+        end
+        return
+    end
     if index > #current.guide.steps then
         if Core.Onboarding.Finished(current.name) then return Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON") end
         return Window.Close()
@@ -186,21 +275,24 @@ local function Turn(by)
     Window.Go(index)
 end
 
--- Skipped: kept as if gone through (Core), the run's next setup here, else the window closes.
-local function Skip()
+-- Choose defaults in a setup: its switches back to their defaults (Core asks first where some differ), kept as done;
+-- the run's first setup still to go through here, else the window closes.
+local function Defaults()
     if not current then return end
     Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF")
-    if not Core.Onboarding.Finished(current.name, true) then Window.Close() end
+    Core.Onboarding.Defaults(current.name, function()
+        if not Core.Onboarding.Continue() then Window.Close() end
+    end)
 end
 
--- Skip setup: words alone in the colours of Forever's top bar (Look.NAV, lit under the mouse), not a red button:
--- red is for what matters (Back and Next stand beside it).
-local function SkipButton(content)
-    local button = CreateFrame("Button", nil, content)
+-- A button of words alone in the colours of Forever's top bar (Look.NAV, lit under the mouse), not a red one: red is
+-- for what matters (Back and Next stand beside it). Its tooltip: the words and tip.
+local function WordsButton(parent, text, tip, click)
+    local button = CreateFrame("Button", nil, parent)
     local label = button:CreateFontString(nil, "ARTWORK")
-    Look.SetFont(label, Window.SKIP, false, Look.NAV)
+    Look.SetFont(label, Window.WORDS, false, Look.NAV)
     label:SetPoint("CENTER", button, "CENTER", 0, 0)
-    label:SetText(ns.TEXT.skip)
+    label:SetText(text)
     local width = label:GetStringWidth()
     button:SetSize(math.max(type(width) == "number" and width or 0, 60) + 12, Window.BUTTON[2])
     local function Lit(lit)
@@ -209,10 +301,38 @@ local function SkipButton(content)
     end
     button:SetScript("OnEnter", ns.Guard(function() Lit(true) end))
     button:SetScript("OnLeave", ns.Guard(function() Lit(false) end))
-    button:SetScript("OnClick", ns.Guard(Skip))
-    Core.Tip(button, ns.TEXT.skip, ns.TEXT.skipTip)
+    button:SetScript("OnClick", ns.Guard(click))
+    Core.Tip(button, text, tip)
     button.label = label
     return button
+end
+
+-- A setup's row on the first page: its name, its steps faint, Choose defaults at its right (done: the state, faint).
+function Row(index)
+    local row = CreateFrame("Frame", nil, list)
+    row:SetHeight(Window.ROW)
+    row.label = row:CreateFontString(nil, "ARTWORK")
+    Look.SetFont(row.label, Window.NAME, false, Look.GOLD)
+    row.label:SetPoint("LEFT", row, "LEFT", 2, 0)
+    row.label:SetJustifyH("LEFT")
+    row.steps = row:CreateFontString(nil, "ARTWORK")
+    Look.SetFont(row.steps, Window.NOTE, false, Look.FAINT)
+    row.steps:SetPoint("LEFT", row.label, "RIGHT", 10, -1)
+    row.button = WordsButton(row, ns.TEXT.defaults, ns.TEXT.defaultsTip, function()
+        if not row.name then return end
+        Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF")
+        Core.Onboarding.Defaults(row.name, function() if first then Listed() end end)
+    end)
+    row.button:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+    row.state = row:CreateFontString(nil, "ARTWORK")
+    Look.SetFont(row.state, Window.NOTE, false, Look.FAINT)
+    row.state:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+    local line = Look.Rule(row)
+    line:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
+    line:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", 0, 0)
+    line:SetAlpha(0.35)
+    rows[index] = row
+    return row
 end
 
 -- The loading screen's bar (Look.Headline) with its fill as far as the steps have come and the count in its middle.
@@ -284,6 +404,17 @@ local function Build()
     note:SetJustifyV("BOTTOM")
     note:SetWordWrap(true)
     note:SetSpacing(2)
+    -- The first page: its rows under its words, Sane UI's logo on the stage.
+    list = CreateFrame("Frame", nil, side)
+    list:SetHeight(1)
+    list:Hide()
+    local holder = StageOf("*first")
+    logo = holder:CreateTexture(nil, "ARTWORK")
+    logo:SetTexture(Window.LOGO)
+    logo:SetTexCoord(0, Window.LOGO_RIGHT, 0, 1)
+    logo:SetSize(Window.STAGE - 40, (Window.STAGE - 40) / 3)
+    logo:SetPoint("CENTER", holder, "CENTER", 0, 20)
+    holder:Hide()
     -- Under them: the thin golden line, the count, Back and Next.
     local rule = Look.Rule(content)
     rule:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, Window.FOOT - 6)
@@ -294,8 +425,8 @@ local function Build()
     back = Look.Red(content, Arrowed(ns.TEXT.back, Window.ARROWS.back, true), Window.BUTTON[1], Window.BUTTON[2])
     back:SetPoint("RIGHT", forward, "LEFT", -10, 0)
     back:SetScript("OnClick", ns.Guard(function() Turn(-1) end))
-    skip = SkipButton(content)
-    skip:SetPoint("RIGHT", back, "LEFT", -10, 0)
+    defaults = WordsButton(content, ns.TEXT.defaults, ns.TEXT.defaultsTip, Defaults)
+    defaults:SetPoint("RIGHT", back, "LEFT", -10, 0)
     progress = Progress(content)
     progress:SetPoint("LEFT", content, "BOTTOMLEFT", 0, 2 + Window.BUTTON[2] / 2)
     progress:SetPoint("RIGHT", back, "LEFT", -16, 0)
@@ -322,9 +453,22 @@ function Window.Show(name, guide, index)
     return true
 end
 
+-- The window on the run's first page. True once it shows.
+function Window.First()
+    if not frame then Build() end
+    if not frame:IsShown() then
+        frame:Show()
+        Core.Sound("IG_MAINMENU_OPEN")
+    end
+    frame:Raise()
+    FirstPage()
+    return true
+end
+
 -- For the tests.
 function Window.Frame() return frame end
 function Window.Parts()
     return { stage = stage, title = title, words = words, count = count, back = back, forward = forward, made = made,
-             current = current, progress = progress, own = own, note = note, head = look and look.title, skip = skip }
+             current = current, progress = progress, own = own, note = note, head = look and look.title,
+             defaults = defaults, list = list, rows = rows, logo = logo, first = first }
 end

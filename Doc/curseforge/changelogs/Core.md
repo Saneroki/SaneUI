@@ -9,10 +9,11 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   your account, after a logout too, until you resume) or cancel the one running, nothing of it kept.
 - The setups' key boxes take your key again: click a box, then press the key, with Shift, Ctrl or Alt held if you
   like (Alt-Shift-V), or a mouse button past the two main ones.
-- The setups of several Sane UI addons come one after another in one window a few seconds after the login. Each is
-  remembered once you reach its end; one closed early comes back at your next login where you left it, *Skip setup*
-  keeps one from opening by itself, and every step says where to start it again. After a big change an addon can ask
-  you through its setup again; your settings stay.
+- The setups of several Sane UI addons come together in one window a few seconds after the login: a first page lists
+  them, then they follow one after another. Each is remembered once you reach its end; one closed early comes back at
+  your next login where you left it, and every step says where to start it again. *Choose defaults*, on the first
+  page and in each setup, keeps an addon as Sane UI sets it up instead. After a big change an addon can ask you
+  through its setup again; your settings stay.
 
 ## 0.3.2 (2026-11-15)
 
