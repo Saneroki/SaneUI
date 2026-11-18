@@ -131,7 +131,8 @@ end
 -- end), cost (the rest of the way, straight) }; nil when none is near enough. Those under the end, and those within
 -- Search.NEAR yards of it at Search.STRAIGHT times their way to it: the end's own floor may be missing from the data
 -- where another lies over it (Ironforge's city under its mountain), and the walk to the one over it is the long way.
--- With a level (the heights a lift's end's floors lie between), only those at its heights: none such, none.
+-- With a level (the heights a lift's end's floors lie between), only those at its heights: none such, none. Second,
+-- where it looked for the nearest floor of each region: whether any floor at all lies within Search.FAR yards.
 local function Goals(continent, u, v, regions, level)
     local goals, any = {}, false
     Walk.Around(continent, u, v, Search.NEAR, function(tile, index, nu, nv, gap)
@@ -142,13 +143,12 @@ local function Goals(continent, u, v, regions, level)
     end)
     if any then return goals end
     if level then return nil end
-    for region in pairs(regions) do
-        local tile, index, nu, nv = Walk.Nearest(continent, u, v, Search.FAR, region)
-        if tile then
-            goals[Id(tile, index)], any = { tile, index, nu, nv, sqrt((nu - u) ^ 2 + (nv - v) ^ 2) * Search.STRAIGHT }, true
-        end
+    local nearest, seen = Walk.NearestOf(continent, u, v, Search.FAR, regions)
+    for _, near in pairs(nearest) do
+        local tile, index, nu, nv = near[1], near[2], near[3], near[4]
+        goals[Id(tile, index)], any = { tile, index, nu, nv, sqrt((nu - u) ^ 2 + (nv - v) ^ 2) * Search.STRAIGHT }, true
     end
-    return any and goals or nil
+    return any and goals or nil, seen
 end
 
 -- Where the way from a point (fu, fv) to the walk's end (eu, ev) crosses an opening (au, av to bu, bv: a
@@ -546,9 +546,13 @@ local function Prepare(continent, u1, v1, u2, v2, start, level)
     if #sources == 0 then return nil, "off" end
     local regions = {}
     for _, source in ipairs(sources) do regions[source[1].region[source[2]]] = true end
-    local goals = Goals(continent, u2, v2, regions, level)
-    -- None of the start's regions near the end: no way, where the end has floors at all near it.
-    if not goals then return nil, not Walk.Nearest(continent, u2, v2, Search.FAR) and "off" or nil end
+    local goals, seen = Goals(continent, u2, v2, regions, level)
+    -- None of the start's regions near the end: no way, where the end has floors at all near it (seen: as Goals
+    -- found looking for the nearest of each region).
+    if not goals then
+        if seen == nil then seen = Walk.Nearest(continent, u2, v2, Search.FAR) ~= nil end
+        return nil, not seen and "off" or nil
+    end
     return sources, own, goals
 end
 

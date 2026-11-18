@@ -167,6 +167,7 @@ function Gates.Tile(key)
     clock, kept = clock + 1, kept + 1
     stamps[key] = clock
     Trim()
+    Core.Steps.Check() -- (read: in a route's plan the frame may be given back, card #574)
     return gates
 end
 
@@ -216,7 +217,8 @@ function Gates.Down(foot, ride, water)
 end
 
 -- Each rectangle's part on a walking tile: the rectangles one can walk between on the tile (its openings and hops),
--- numbered by the lowest of their surfaces (as dev/tools/walk-gates numbers them). Worked out once a tile.
+-- numbered by the lowest of their surfaces (as dev/tools/walk-gates numbers them). Worked out once a tile; in a route's
+-- plan the frame may be given back every Walk.PIECE rectangles (the tile has them once all are, card #574).
 function Gates.Parts(tile)
     local parts = tile.parts
     if parts then return parts end
@@ -232,6 +234,7 @@ function Gates.Parts(tile)
         return root
     end
     for index = 1, tile.count do
+        if index % Walk.PIECE == 0 then Core.Steps.Check() end
         local list, a, leaps = opens[index], surface[index], Walk.Drops(tile, index)
         for n = 1, #list + #leaps do
             local o = n <= #list and list[n] or leaps[n - #list]
@@ -242,6 +245,7 @@ function Gates.Parts(tile)
             end
         end
     end
+    if tile.parts then return tile.parts end -- made meanwhile by what asked while this one waited
     parts = {}
     for index = 1, tile.count do parts[index] = Find(surface[index]) end
     tile.parts = parts
@@ -249,7 +253,8 @@ function Gates.Parts(tile)
 end
 
 -- The rectangles of a walking tile with an opening across one of its sides, flat: index, first, last (samples along
--- the side; an opening along a rectangle's whole edge, that edge). Worked out once a tile and side.
+-- the side; an opening along a rectangle's whole edge, that edge). Worked out once a tile and side (the frame may be
+-- given back as for Gates.Parts).
 function Gates.Edges(tile, side)
     tile.edges = tile.edges or {}
     local list = tile.edges[side]
@@ -257,6 +262,7 @@ function Gates.Edges(tile, side)
     list = {}
     local r, all = tile.rects, tile.opens or Walk.Links(tile)
     for index = 1, tile.count do
+        if index % Walk.PIECE == 0 then Core.Steps.Check() end
         local opens = all[index]
         for n = 1, #opens do
             local o = opens[n]
@@ -274,6 +280,7 @@ function Gates.Edges(tile, side)
             end
         end
     end
+    if tile.edges[side] then return tile.edges[side] end -- made meanwhile
     tile.edges[side] = list
     return list
 end

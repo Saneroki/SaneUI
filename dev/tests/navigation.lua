@@ -779,6 +779,12 @@ local walkBlocks = {
                { 0, 0, 0 }, { 0, 1, 0, 255, 5, 20,   2, 1, 0, 7, 0, 60 }, {} },
     [2784] = { 3, { 1, 1, 31,   1, 1, 31 }, { 0, 0, 128, 256, 40,   128, 0, 128, 256, 52 }, { 0, 0 }, {},
                { 0, 1, 0, 255, 5, 3,   1, 3, 0, 255, 0, -3 } },
+    -- A line of rectangles beginning on column 10 (D, C, A, B: rows 48, 44, 0 and 40; A 40 samples long) and E ending on
+    -- it (rows 36 to 45), F under E; G a surface (region 51) of its own (card #574's openings, cells and nearest).
+    [3000] = { 3, { 6, 1, 50,   1, 1, 51 },
+               { 10, 48, 6, 50, 40,   10, 44, 6, 4, 40,   0, 36, 10, 10, 40,   10, 0, 6, 40, 40,   10, 40, 6, 4, 40,
+                 2, 46, 4, 6, 40,   100, 100, 4, 4, 40 },
+               { 0, 0, 0, 0, 0, 0, 0 }, {}, {} },
 }
 -- Their gates (dev/tools/walk-gates' field): one along each border between two of them; through 2593 by its door 718
 -- yards from its west gate's middle to its east one's, across 2594 533. 2600's way between its two gates 400 yards,
@@ -798,7 +804,8 @@ Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links",
     .. 'R[2340] = "70245\t\t0\t\tblock:2340"\n'
     .. 'R[2592] = "70245\t\t0\t2593\tblock:2592\tgates:2592"\nR[2593] = "70245\t\t0\t2592\0302594\tblock:2593\tgates:2593"\n'
     .. 'R[2594] = "70245\t\t0\t2593\0302595\tblock:2594\tgates:2594"\nR[2595] = "70245\t\t0\t2594\tblock:2595\tgates:2595"\n'
-    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\nR[2720] = "70245\t\t0\t\tblock:2720"\nR[2784] = "70245\t\t0\t\tblock:2784"\n')
+    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\nR[2720] = "70245\t\t0\t\tblock:2720"\nR[2784] = "70245\t\t0\t\tblock:2784"\n'
+    .. 'R[3000] = "70245\t\t0\t\tblock:3000"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text)
@@ -5882,6 +5889,60 @@ end)()
         "over the hop both ways: up at its climb's price, down at its yards alone")
     local parts = ns.Gates.Parts(tile)
     check(parts[1] == parts[2], "a hop joins two surfaces into one part, as an opening does")
+end)()
+-- A tile's openings, cells and nearest floors (tile 3000, card #574): each rectangle against the rectangles of its
+-- line in the order of their indexes, a long one beginning far before it too; made in pieces, the tile given them only
+-- once all are made; the looks round a place by the cells as if all were looked at; the nearest of each region in one.
+;(function()
+    local tile = Walk.Tile(3000)
+    local check0, piece = Core.Steps.Check, Walk.PIECE
+    local looks, bare, inner = 0, true, nil
+    Walk.PIECE = 2
+    Core.Steps.Check = function()
+        looks = looks + 1
+        bare = bare and (inner ~= nil or tile.opens == nil) -- (till the other asker's are made)
+        if looks == 3 then inner = Walk.Links(tile) end -- another asker meanwhile: makes its own
+    end
+    local opens = Walk.Links(tile)
+    Core.Steps.Check, Walk.PIECE = check0, piece
+    local function Text(list)
+        local parts = {}
+        for _, o in ipairs(list) do parts[#parts + 1] = table.concat({ o[1], o[2], o[3], o[4], o[5] }, ",") end
+        return table.concat(parts, " ")
+    end
+    local want = { "0,10,15,0,2", "2,10,15,0,1 3,44,45,0,3 0,10,15,0,5", "1,44,45,0,2 1,36,39,0,4 1,40,43,0,5 2,2,5,0,6",
+                   "3,36,39,0,3 2,10,15,0,5", "3,40,43,0,3 0,10,15,0,4 2,10,15,0,2", "0,2,5,0,3", "" }
+    local same = #opens == 7
+    for index = 1, 7 do same = same and Text(opens[index]) == want[index] end
+    check(same, "a tile's openings: each rectangle's line looked at by where its rectangles begin, a long one from rows before, made in their indexes' order")
+    check(looks > 3 and bare and inner == opens and tile.opens == opens,
+        "made in pieces: the tile has none till all are made; one asked for meanwhile is made whole and kept")
+    local top, left = -14 * Coords.TILE, 24 * Coords.TILE
+    local all = true
+    for _, at in ipairs({ { 5, 40 }, { 12, 20 }, { 12, 41 }, { 3, 47 }, { 101, 101 }, { 50, 50 } }) do
+        local u, v = left + (at[1] + 0.5) * s, top - (at[2] + 0.5) * s
+        local under, brute = Walk.Under(1415, u, v), {}
+        for index = 1, tile.count do if Walk.Inside(tile, index, u, v) then brute[#brute + 1] = index end end
+        local a, b = {}, {}
+        for _, f in ipairs(under) do a[#a + 1] = f[2] end
+        for k = #brute, 1, -1 do b[#b + 1] = brute[k] end
+        all = all and table.concat(a, ",") == table.concat(b, ",")
+    end
+    check(all, "the floors under a place by its cell: those under it, in the order looking at all gives")
+    local u, v = left + 9.5 * s, top - 42 * s
+    local near, far = {}, {}
+    Walk.Around(1415, u, v, 12, function(_, index, _, _, gap) near[#near + 1] = index .. ":" .. ("%.3f"):format(gap) end)
+    Walk.Around(1415, u, v, 400, function(_, index, _, _, gap)
+        if gap <= 12 then far[#far + 1] = index .. ":" .. ("%.3f"):format(gap) end
+    end)
+    check(#near >= 4 and table.concat(near, " ") == table.concat(far, " "),
+        "a look round a place by its cells: the rectangles and order of a look at all")
+    local found, any = Walk.NearestOf(1415, u, v, 500, { [50] = true, [51] = true, [52] = true })
+    local t50, i50 = Walk.Nearest(1415, u, v, 500, 50)
+    local t51, i51 = Walk.Nearest(1415, u, v, 500, 51)
+    check(any and found[50] and found[50][1] == t50 and found[50][2] == i50 and found[51] and found[51][2] == i51 and t51
+        and not found[52] and select(2, Walk.NearestOf(1415, left + 200 * s, top - 250 * s, 5, { [50] = true })) == false,
+        "the nearest floor of each region in one look, as one look for each; none within reach told")
 end)()
 -- The journey: the pin far away (Elwynn's south west, 1750 yards), a flight point near the player and one near
 -- the pin, both known: walk, fly, walk.

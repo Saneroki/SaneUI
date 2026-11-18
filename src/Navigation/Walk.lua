@@ -18,6 +18,7 @@ local _, ns = ...
 --      Walk.Under(continent, u, v)   the rectangles under a point of a continent's plane
 --      Walk.Around(continent, u, v, reach, fn)   each rectangle within reach yards of a point
 --      Walk.Nearest(continent, u, v, reach, region, kind)  the nearest rectangle within reach yards
+--      Walk.NearestOf(continent, u, v, reach, regions)   the nearest of each of several regions, in one look
 --      Walk.Regions(continent, u, v, reach)   the regions of the floors under a point and around it
 --      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
 --      Walk.Drops(tile, index), Walk.Drop(tile, index, n)   its drops (one way down off a ledge or a cliff) and hops
@@ -59,6 +60,8 @@ Walk.FALL = 54                     -- yards: the highest drop a walk takes (49 m
 Walk.SIDE = 256                    -- samples along a tile's side
 Walk.SAMPLE = Coords.TILE / Walk.SIDE
 Walk.KEEP = 48                     -- tiles kept unpacked: the one asked for longest ago let go
+Walk.PIECE = 256                   -- rectangles of a tile's openings made between two looks at the frame's time
+Walk.CELL = 16                     -- samples a side of the cells a tile's rectangles are filed in, for the looks round a place
 Walk.LAND, Walk.WATER, Walk.BUILT = 1, 2, 3 -- a floor's kind: the ground, a water's surface, a building's floor
 Walk.FOLLOW = 64                   -- rectangles looked at, at most, for the floor a walker has come to
 Walk.STRIDE = 30                   -- yards from the walker those may lie
@@ -103,10 +106,57 @@ local function Open(list, side, first, last, where, index)
     list[#list + 1] = { side, first, last, where, index }
 end
 
+-- The rectangles of a surface that begin on one line of its tile (a column: at 2, along their rows; a row: at 1,
+-- along their columns), in the order of where they begin along it, with the longest's length (Along).
+local function Line(rects, list, at)
+    table.sort(list, function(a, b) return rects[(a - 1) * 5 + at] < rects[(b - 1) * 5 + at] end)
+    local starts, longest = {}, 0
+    for k, index in ipairs(list) do
+        local base = (index - 1) * 5
+        starts[k] = rects[base + at]
+        if rects[base + at + 2] > longest then longest = rects[base + at + 2] end
+    end
+    list.starts, list.longest = starts, longest
+end
+
+-- Of a line's rectangles (Line) those that share some of low to high (samples, high past the end) along it, into
+-- found, in the order of their indexes; how many. Only those that begin within the longest's length before low are
+-- looked at, found by halving (2026-11-18: every rectangle of the line looked at took a large tile 30 to 90 ms, in one
+-- frame: card #574).
+local found = {}
+local function Along(rects, list, at, low, high)
+    local starts = list.starts
+    local from, lo, hi = low - list.longest, 1, #starts + 1
+    while lo < hi do
+        local middle = math.floor((lo + hi) / 2)
+        if starts[middle] > from then hi = middle else lo = middle + 1 end
+    end
+    local count = 0
+    for k = lo, #starts do
+        local start = starts[k]
+        if start >= high then break end
+        local index = list[k]
+        if start + rects[(index - 1) * 5 + at + 2] > low then
+            count = count + 1
+            found[count] = index
+        end
+    end
+    for k = 2, count do
+        local index, j = found[k], k - 1
+        while j >= 1 and found[j] > index do
+            found[j + 1] = found[j]
+            j = j - 1
+        end
+        found[j + 1] = index
+    end
+    return count
+end
+
 -- The openings of two rectangles of one surface that touch: along all their shared edge (dev/tools/walk-data
--- keeps any two neighbouring samples of a surface one way).
-local function Touching(tile, first, last)
-    local rects, opens = tile.rects, tile.opens
+-- keeps any two neighbouring samples of a surface one way). Made in the order of the rectangles, each one's east
+-- neighbours, then its south ones, by their indexes; the frame given back every Walk.PIECE rectangles.
+local function Touching(tile, opens, first, last)
+    local rects = tile.rects
     local byWest, byNorth = {}, {}
     for index = first, last do
         local base = (index - 1) * 5
@@ -116,24 +166,27 @@ local function Touching(tile, first, last)
         byNorth[row] = byNorth[row] or {}
         table.insert(byNorth[row], index)
     end
+    for _, list in pairs(byWest) do Line(rects, list, 2) end
+    for _, list in pairs(byNorth) do Line(rects, list, 1) end
     for index = first, last do
+        if index % Walk.PIECE == 0 then Core.Steps.Check() end
         local base = (index - 1) * 5
         local column, row, width, height = rects[base + 1], rects[base + 2], rects[base + 3], rects[base + 4]
-        for _, other in ipairs(byWest[column + width] or {}) do
+        local east = byWest[column + width]
+        for k = 1, east and Along(rects, east, 2, row, row + height) or 0 do
+            local other = found[k]
             local o = (other - 1) * 5
             local a, b = math.max(row, rects[o + 2]), math.min(row + height, rects[o + 2] + rects[o + 4]) - 1
-            if a <= b then
-                Open(opens[index], 1, a, b, 0, other)
-                Open(opens[other], 3, a, b, 0, index)
-            end
+            Open(opens[index], 1, a, b, 0, other)
+            Open(opens[other], 3, a, b, 0, index)
         end
-        for _, other in ipairs(byNorth[row + height] or {}) do
+        local south = byNorth[row + height]
+        for k = 1, south and Along(rects, south, 1, column, column + width) or 0 do
+            local other = found[k]
             local o = (other - 1) * 5
             local a, b = math.max(column, rects[o + 1]), math.min(column + width, rects[o + 1] + rects[o + 3]) - 1
-            if a <= b then
-                Open(opens[index], 2, a, b, 0, other)
-                Open(opens[other], 0, a, b, 0, index)
-            end
+            Open(opens[index], 2, a, b, 0, other)
+            Open(opens[other], 0, a, b, 0, index)
         end
     end
 end
@@ -159,38 +212,37 @@ end
 -- A tile's openings (tile.opens[index]: a rectangle's), worked out the first time they are needed: those of one
 -- surface that touch (Touching), and those the block writes, once on their tile, with their other way. Its drops and
 -- hops too (tile.drops[index]: { side, first, last, where, index, height } each, a hop's with its rise and true
--- after it; only of the rectangles that have any).
+-- after it; only of the rectangles that have any). In a job of Core's scheduler (a route's plan) the frame is given
+-- back every Walk.PIECE rectangles (card #574: a large tile's took 30 to 130 ms, the collector's steps with them, in
+-- one frame): the tile has them only once all are made, so what asks meanwhile (the line followed, another plan)
+-- makes its own.
 function Walk.Links(tile)
-    local opens = tile.opens
-    if opens then return opens end
-    opens = {}
-    tile.opens = opens
-    local drops, falls = {}, tile.falls
-    tile.drops = drops
+    if tile.opens then return tile.opens end
+    local falls, leaps, links = tile.falls, tile.leaps, tile.links
+    local opens, drops = {}, {}
     for at = 1, #falls, 6 do
         local rect, target = falls[at] + 1, falls[at + 4]
         drops[rect] = drops[rect] or {}
         table.insert(drops[rect], { falls[at + 1], falls[at + 2], falls[at + 3], target % 5, math.floor(target / 5) + 1,
                                     falls[at + 5] })
     end
-    local leaps = tile.leaps
     for at = 1, #leaps, 6 do
         local rect, target = leaps[at] + 1, leaps[at + 4]
         drops[rect] = drops[rect] or {}
         table.insert(drops[rect], { leaps[at + 1], leaps[at + 2], leaps[at + 3], target % 5, math.floor(target / 5) + 1,
                                     leaps[at + 5], true })
     end
-    tile.falls, tile.leaps = nil, nil
     for index = 1, tile.count do opens[index] = {} end
     local surface, first = tile.surface, 1
     for index = 1, tile.count do
         if index == tile.count or surface[index + 1] ~= surface[index] then
-            Touching(tile, first, index)
+            Touching(tile, opens, first, index)
             first = index + 1
         end
     end
-    local links, at = tile.links, 1
+    local at = 1
     for rect = 1, tile.count do
+        if rect % Walk.PIECE == 0 then Core.Steps.Check() end
         local stop = at + links[at]
         at = at + 1
         while at <= stop do
@@ -215,7 +267,9 @@ function Walk.Links(tile)
             end
         end
     end
-    tile.links = nil
+    if tile.opens then return tile.opens end -- made meanwhile by what asked while this one waited
+    tile.opens, tile.drops = opens, drops
+    tile.falls, tile.leaps, tile.links = nil, nil, nil
     return opens
 end
 
@@ -293,16 +347,47 @@ function Walk.Key(continent, u, v)
     return Coords.TileKey(box.continent, column, row)
 end
 
+-- A tile's rectangles filed by the cells of Walk.CELL samples a side they overlap: cells[row * the cells a side +
+-- column + 1] = their indexes, in order; made the first time a place on the tile is looked up (card #574: a look
+-- round a point went through every rectangle of up to 9 tiles, some 135,000, and the first plan makes dozens).
+local function Cells(tile)
+    local cells = tile.cells
+    if cells then return cells end
+    cells = {}
+    local r, size = tile.rects, Walk.CELL
+    local across = Walk.SIDE / size
+    for index = 1, tile.count do
+        local base = (index - 1) * 5
+        local column, row, width, height = r[base + 1], r[base + 2], r[base + 3], r[base + 4]
+        for cr = math.floor(row / size), math.floor((row + height - 1) / size) do
+            for cc = math.floor(column / size), math.floor((column + width - 1) / size) do
+                local cell = cr * across + cc + 1
+                local list = cells[cell]
+                if not list then
+                    list = {}
+                    cells[cell] = list
+                end
+                list[#list + 1] = index
+            end
+        end
+    end
+    tile.cells = cells
+    return cells
+end
+
+local NONE = {}
+
 -- The rectangles under a point: { { tile, index }, ... }, the ones on foot (the ground, a building's floor) first.
 function Walk.Under(continent, u, v)
     local found = {}
     local key = Walk.Key(continent, u, v)
     local tile = key and Walk.Tile(key)
     if not tile then return found end
-    local s = Walk.SAMPLE
+    local s, size = Walk.SAMPLE, Walk.CELL
     local column, row = math.floor((u - tile.left) / s), math.floor((tile.top - v) / s)
+    if column < 0 or row < 0 or column >= Walk.SIDE or row >= Walk.SIDE then return found end
     local r = tile.rects
-    for index = 1, tile.count do
+    for _, index in ipairs(Cells(tile)[math.floor(row / size) * (Walk.SIDE / size) + math.floor(column / size) + 1] or NONE) do
         local base = (index - 1) * 5
         local c, w = r[base + 1], r[base + 3]
         if column >= c and column < c + w then
@@ -315,8 +400,37 @@ function Walk.Under(continent, u, v)
     return found
 end
 
+-- The rectangles of a tile that may lie within reach yards of a point, by their cells (Cells), in order; nil where
+-- that comes into half its cells or more (then all are looked at, as fast).
+local function Within(tile, u, v, reach)
+    local s, size, last = Walk.SAMPLE, Walk.CELL, Walk.SIDE - 1
+    local across = Walk.SIDE / size
+    local c0 = math.max(0, math.floor((u - reach - tile.left) / s) - 1)
+    local c1 = math.min(last, math.floor((u + reach - tile.left) / s) + 1)
+    local r0 = math.max(0, math.floor((tile.top - v - reach) / s) - 1)
+    local r1 = math.min(last, math.floor((tile.top - v + reach) / s) + 1)
+    if c0 > c1 or r0 > r1 then return NONE end
+    local cc0, cc1, cr0, cr1 = math.floor(c0 / size), math.floor(c1 / size), math.floor(r0 / size), math.floor(r1 / size)
+    if (cc1 - cc0 + 1) * (cr1 - cr0 + 1) * 2 >= across * across then return nil end
+    local cells, r, list = Cells(tile), tile.rects, {}
+    for cr = cr0, cr1 do
+        for cc = cc0, cc1 do
+            for _, index in ipairs(cells[cr * across + cc + 1] or NONE) do
+                -- once, from the first of these cells it lies in
+                local base = (index - 1) * 5
+                if math.max(cc0, math.floor(r[base + 1] / size)) == cc and math.max(cr0, math.floor(r[base + 2] / size)) == cr then
+                    list[#list + 1] = index
+                end
+            end
+        end
+    end
+    table.sort(list)
+    return list
+end
+
 -- Each rectangle within reach yards of a point (on its tile and the tiles around it that reach comes into):
--- fn(tile, index, nu, nv, gap), its nearest point to it and how far that is (0: under it). False from fn stops.
+-- fn(tile, index, nu, nv, gap), its nearest point to it and how far that is (0: under it). False from fn stops. In a
+-- job of Core's scheduler the frame may be given back after each tile (a large one's rectangles took some 6 ms).
 function Walk.Around(continent, u, v, reach, fn)
     local key = Walk.Key(continent, u, v)
     if not key then return end
@@ -330,12 +444,15 @@ function Walk.Around(continent, u, v, reach, fn)
             local inside = column + dc >= 0 and column + dc < Coords.GRID and row + dr >= 0 and row + dr < Coords.GRID
             local tile = inside and (nu - u) ^ 2 + (nv - v) ^ 2 <= most and Walk.Tile(key + dr * 64 + dc)
             if tile then
-                for index = 1, tile.count do
+                local list = Within(tile, u, v, reach)
+                for k = 1, list and #list or tile.count do
+                    local index = list and list[k] or k
                     local l, r, t, b = Walk.Box(tile, index)
                     local pu, pv = math.max(l, math.min(r, u)), math.max(b, math.min(t, v))
                     local gap = (pu - u) ^ 2 + (pv - v) ^ 2
                     if gap <= most and fn(tile, index, pu, pv, math.sqrt(gap)) == false then return end
                 end
+                Core.Steps.Check()
             end
         end
     end
@@ -354,6 +471,21 @@ function Walk.Nearest(continent, u, v, reach, region, kind)
     end)
     if not best then return nil end
     return bestTile, bestIndex, bu, bv
+end
+
+-- Of each of several regions ({ [region] = true }) the nearest rectangle within reach yards of a point, in one look
+-- round it (Walk.Nearest's for each, card #574): { [region] = { tile, index, nu, nv } }; and whether any rectangle of
+-- any region lies within reach.
+function Walk.NearestOf(continent, u, v, reach, regions)
+    local found, best, any = {}, {}, false
+    Walk.Around(continent, u, v, reach, function(tile, index, nu, nv, gap)
+        any = true
+        local region = tile.region[index]
+        if regions[region] and (not best[region] or gap < best[region]) then
+            best[region], found[region] = gap, { tile, index, nu, nv }
+        end
+    end)
+    return found, any
 end
 
 -- The regions of the floors under a point and within reach yards of it: { [region] = true }, nil when there are none

@@ -803,6 +803,12 @@ local function Journey(start, goal, measured, cut, home)
     end
     -- Each end of a lift at its landing (with walking data, only a lift both of whose ends lie on one).
     for _, lift in ipairs(Lifts.All()) do
+        -- (the first plan finds each end's landing: the frame may be given back after each lift, card #574)
+        if useData and (lift[1].landed == nil or lift[2].landed == nil) then
+            Lifts.Landed(lift[1])
+            Lifts.Landed(lift[2])
+            Core.Steps.Check()
+        end
         if not useData or (Lifts.Landed(lift[1]) and Lifts.Landed(lift[2])) then
             for _, point in ipairs(lift) do
                 places[point.name] = { map = point.map, u = point.pu or point.u, v = point.pv or point.v, z = point.z,
@@ -813,7 +819,9 @@ local function Journey(start, goal, measured, cut, home)
     -- Each portal's two ends (with walking data, only one both of whose ends lie on a floor): its trigger, and where
     -- it brings one, each on its floor there.
     for _, portal in ipairs(Portals()) do
+        local fresh = useData and portal.ends == nil
         local ends = useData and Ends(portal)
+        if fresh then Core.Steps.Check() end -- (its floors found: the frame may be given back, card #574)
         if not useData or ends then
             local name = "portal:" .. portal.key
             places[name .. ":in"] = { map = portal.map, u = portal.u, v = portal.v, z = ends and ends[1].z or portal.z,

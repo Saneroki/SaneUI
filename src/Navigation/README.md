@@ -1365,10 +1365,15 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   and region, and the openings into its neighbours. Unpacked when first needed, the `Walk.KEEP` asked for last kept
   (in a job of Core's scheduler an unpacking may end the job's frame); its openings only the first time a search or
   the floor's following needs them (`Walk.Links`: looking up the floors at a place needs none, and they take most of
-  an unpacking's time and memory): those of two rectangles of one surface that touch worked out from the rectangles,
-  written ones once on their tile with their other way (each opening lies on the facing sides of its two rectangles
-  and holds both ways, as `dev/tools/walk-data` makes them). `Under`,
-  `Around`, `Nearest`, `Regions`, `Opening`, `Openings`, `Portal`, `Gap`. Floors lie one over the other, and the game
+  an unpacking's time and memory): those of two rectangles of one surface that touch worked out from the rectangles
+  (each against only those of its line that begin within the longest's length before it: `Line`, `Along`), written
+  ones once on their tile with their other way (each opening lies on the facing sides of its two rectangles and holds
+  both ways, as `dev/tools/walk-data` makes them); in a job made in pieces, the frame given back every `Walk.PIECE`
+  rectangles, the tile given them only once all are made (what asks meanwhile makes its own). `Under` and `Around`
+  look only at the rectangles filed in the cells of `Walk.CELL` samples a side that the place and its reach come into
+  (`Cells`, made the first time a place on the tile is looked up; `Within`: all where the reach comes into half the
+  cells or more), in their order, as if all were looked at; `Around` may end a job's frame after each tile. `Nearest`,
+  `NearestOf` (the nearest of several regions in one look), `Regions`, `Opening`, `Openings`, `Portal`, `Gap`. Floors lie one over the other, and the game
   tells no height of the player (`UnitPosition`'s is always 0): the floor a walker stands on is followed from the
   rectangle they stood on through the openings nearest the way they went (`Walk.Follow`: a cave's mouth, not the path
   up the hill over it), and chosen where it cannot be (`Walk.Floor`): near the height they had (within `Walk.RISE`),
@@ -1390,8 +1395,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   foot and the one a rider takes instead, where the one on foot swims, the cheaper). And the ways down a drop, one way
   (`gates.falls`, `gates.landed`, `Gates.Down`): from a gate to another of the tile (of its part or another) down its
   drops, where that saves 10 yards or more on the walk or the walk has none. Unpacked when first needed (some 16 KB a tile), the
-  `Gates.KEEP` asked for last kept; a tile's layer made from another block than the one the game holds (another number
-  of rectangles) is passed over there.
+  `Gates.KEEP` asked for last kept (in a job an unpacking may end the job's frame); a tile's layer made from another block than the one the game holds (another number
+  of rectangles) is passed over there. A walking tile's parts and the rectangles with an opening across one of its sides
+  (`Gates.Parts`, `Gates.Edges`) in a job in pieces, as its openings.
 - **Search** (`Search.lua`, no frames): a walk between two points: A* over the rectangles through their openings
   and down their drops, one way (`Walk.FALL` high at most: to where the line crosses the way off, across to where it
   lands, each yard fallen `Search.DROP` yards more, so of two ways about as long the smaller fall; into another tile
@@ -1409,8 +1415,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   stands on its lowest floor rather than on the mountain over it; none: the nearest within `Search.REACH`, else
   within `Search.FAR`, a gap in the walking data), to any
   floor of the regions it starts in under the end or within `Search.NEAR` yards of it (its own floor may be missing
-  there: Ironforge's city under its mountain), else the nearest within `Search.FAR` (a tower, a plateau no lift
-  reaches). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
+  there: Ironforge's city under its mountain), else the nearest of each such region within `Search.FAR` (a tower, a
+  plateau no lift reaches; all in one look, `Walk.NearestOf`). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
   so the line runs from the start to the end itself; the search tells those yards at the end, and `"off"` where no
   floor lies near the start or the end at all (nothing to search). Then the line pulled straight through the openings (a funnel,
   each opening drawn in from its ends); the heap keeps each node's f as it was put in. In two steps over the coarse
@@ -1747,6 +1753,15 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, routes worked out without stutters:** asked how long a route takes in the worst situations, Saneroki
+  had the stutters fixed: 452 of 500 random routes had a piece the game ran in one frame of over 16.7 ms (up to 130).
+  A tile's openings each rectangle against only those of its line that begin within the longest's length before it
+  (`Line`, `Along`), made in pieces in a job (`Walk.PIECE`), the tile given them once all are made; a tile's floors
+  filed in cells (`Walk.CELL`, `Cells`, `Within`) for `Walk.Under` and `Walk.Around`; the nearest floor of each region
+  in one look (`Walk.NearestOf`, `Goals`); the coarse layer's tile, parts and edges, the first plan's landings and the
+  lifts' rings with the frame given back between them. The same routes; the largest piece a median 3.6 ms (30), 3 of
+  500 routes over 16.7 ms; the first route after a login a fifth less work; a route shows a little later, kept to the
+  scheduler's share (a median 0.7 s at 60 fps, 0.4). Card #574.
 - **2026-11-18, guild members where they are, when searched:** Saneroki: "Guild members exact placement on the map
   should not be default but should be visible when someone searches for that guild member in the map searchbar, so
   for example if someone writes "Guild" in the search bar all the guild members precise location is shown on the map

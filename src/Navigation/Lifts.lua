@@ -139,6 +139,7 @@ end
 local function Ring(lift, level)
     local on, under = 0, 0
     for step = 0, 15 do
+        Core.Steps.Check() -- (each point's floors looked up on a whole tile: the frame may be given back, card #574)
         local angle = step * math.pi / 8
         local low, high
         local u, v = lift.u + Lifts.RING * math.cos(angle), lift.v + Lifts.RING * math.sin(angle)
