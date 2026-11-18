@@ -2457,6 +2457,90 @@ do
         Prices.Changed()
     end
 
+    -- The auction addons SaneUI knows (Core.Neighbours.Prices): their books count where SaneUI saw nothing newer
+    do
+        local home, now, today = saved(), GetServerTime(), Today()
+        local book, scan = Core.Neighbours.KNOWN.auctionPrices, Core.Neighbours.KNOWN.auctionScan
+        local zero = 1577836800 -- the client's midnight its day 0 began, by the stand-in clock
+        local clock = rawget(_G, "time")
+        rawset(_G, "time", function(at) return at and zero or GetServerTime() end)
+        local day = math.floor((now - zero) / 86400)
+        local function Day(back) return tostring(day - back) end
+        local function Entry(newest, highs, lows, offered)
+            return { [book.newest] = newest, [book.high] = highs, [book.low] = lows or {}, [book.offered] = offered or {} }
+        end
+        local realm = {
+            ["4243"] = Entry(480, { [Day(2)] = 520, [Day(0)] = 500 }, { [Day(0)] = 470 }, { [Day(0)] = 12 }),
+            ["4245"] = Entry(300, { [Day(3)] = 300 }),
+            ["g:50:60"] = Entry(870, { [Day(1)] = 870 }), ["50"] = Entry(999, { [Day(1)] = 999 }),
+            ["p:41"] = Entry(650, { [Day(1)] = 650 }),
+            ["10"] = Entry(5, { [Day(9)] = 5 }),
+            ["4248"] = { [book.newest] = "much", [book.high] = 7 },
+        }
+        rawset(_G, book.saved, { Stub = realm, ["Some Realm"] = "packed" })
+        local items = {
+            [4244] = { [scan.low] = 455.4, [scan.units] = 7, [scan.at] = now - 3600, [scan.days] = { [today - 1] = 460.2 } },
+            [4245] = { [scan.low] = 280, [scan.units] = 3, [scan.at] = now - 3600 },
+            [4247] = { [scan.low] = 210, [scan.units] = 2, [scan.at] = now - 60, [scan.days] = { [today - 2] = 100, [today - 1] = 200 } },
+        }
+        rawset(_G, scan.saved, { [scan.part] = { [scan.realm:format("Stub Realm", "Alliance")] = { [scan.items] = items } } })
+        check(Prices:Low(4243) == nil and Prices:Low(4244) == nil, "(their books count only while their addons are loaded)")
+        local own = { Prices:Last(10) }
+        W.loaded[book.addon], W.loaded[scan.addon] = true, true
+        Prices.Changed()
+
+        local low, market, units, auctions, sellers, at = Prices:Last(4243)
+        check(low == 480 and market == 0 and units == 12 and auctions == 0 and sellers == 0 and at == zero + day * 86400 and Prices:Low(4243) == 480,
+            "a thing no scan of SaneUI's saw: an auction addon's newest price, on offer that day, at that day's start")
+        low, _, units, _, _, at = Prices:Last(4244)
+        check(low == 455 and units == 7 and at == now - 3600, "another's: its last scan's lowest, in whole copper, how many and when")
+        check(Prices:Low(4245) == 280, "two of them: the newer")
+        check(Prices:Low(10) == own[1] and select(2, Prices:Last(10)) == own[2] and own[2] > 0 and select(6, Prices:Last(10)) == own[6],
+            "SaneUI's own point where it is newer, its market with it")
+        check(Prices:Low("|Hitem:50:0:0:0:0:0:-7:0:60|h[x]|h") == 870 and Prices:Low(50) == 999,
+            "gear: the book of its level where its link names one, else its item's")
+        check(Prices:Low("|Hbattlepet:41:1:3:0:0:0:0|h[z]|h") == 650, "a pet by its species")
+        check(Prices:Last(4248) == nil and Prices:Last(9999) == nil, "an entry of a shape not known, and none, are no price")
+        Prices.See("4246", 300)
+        items[4246] = { [scan.low] = 250, [scan.units] = 1, [scan.at] = now - 60 }
+        check(Prices:Low(4246) == 300, "what the game lists now beats an older scan of theirs")
+        items[4246][scan.at] = now + 60
+        check(Prices:Low(4246) == 250, "and a later scan of theirs beats it")
+
+        local function Points(item)
+            local list = {}
+            for index, point in ipairs(Prices:Range(item)) do list[index] = point.low .. "/" .. point.market end
+            return table.concat(list, " ")
+        end
+        check(Points(4243) == "520/0 470/0", "their days make a range where SaneUI has none, each day's lowest: " .. Points(4243))
+        check(Prices:Range(4243)[1].at == zero + (day - 2 + 0.5) * 86400, "a day of theirs in the middle of the day")
+        home.days[today - 2] = "4247=900,950,1,1,1;"
+        Prices.Changed()
+        check(Points(4247) == "900/950 200/0 210/0",
+            "a day SaneUI has stays its own, theirs fill the rest, their newest point last: " .. Points(4247))
+        check(Points(4244):find("^460/0"), "the days of a scan of theirs, in whole copper")
+
+        local side = UnitFactionGroup
+        UnitFactionGroup = function() return "Horde" end
+        local other = Prices.House("npc")
+        UnitFactionGroup = side
+        check(Prices.Within(other, function() return Prices:Low(4243) end) == nil and #Prices.Within(other, Prices.Range, Prices, 4243) == 0,
+            "their books count for the house of your side alone")
+        SaneUIData_Market.forever.houses["eu/1234/horde"] = nil
+
+        rawset(_G, book.saved, { Stub = "packed" })
+        check(Prices:Low(4243) == nil and Prices:Low(4244) == 455, "a book still packed is none; the other one's stands")
+        rawset(_G, scan.saved, { [scan.part] = "changed" })
+        check(Prices:Low(4244) == nil, "nor a book of a shape not known")
+        Prices.See("4246")
+        home.days[today - 2] = nil
+        rawset(_G, book.saved, nil)
+        rawset(_G, scan.saved, nil)
+        W.loaded[book.addon], W.loaded[scan.addon] = nil, nil
+        rawset(_G, "time", clock)
+        Prices.Changed()
+    end
+
     -- Every account's file through its link: joined, the global left clear for this account's own, which is read after them
     do
         local Prices = Data.Series("Prices")

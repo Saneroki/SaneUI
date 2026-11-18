@@ -41,7 +41,7 @@ end (`dev/build`, from `assets/data/`).
 | `Icons.lua` | The icon chooser (`Core.Icons.Open`/`Close`/`Shown`): the game's icons by group, searched; a caller's chosen icon, its clear button and tick; the macros' picture window and Inventory's own categories |
 | `Expand.lua` | A window that opens while the mouse rests on it: `Core.Expand.New`, `DWELL` 0.2, `LINGER` 0.5, `STEP` 0.1, `MARGIN` 4; `expand:Open`/`Close`/`Stay` |
 | `Bar.lua` | A progress bar in the game's experience bar art: `Core.Bar.New(parent, options)`, `ART`, `CURVE` |
-| `Neighbours.lua` | The known addons, the one file that names them: `Core.Neighbours.KNOWN`, `Window(key)`, `Format`, `Lock` |
+| `Neighbours.lua` | The known addons, the one file that names them: `Core.Neighbours.KNOWN`, `Window(key)`, `Format`, `Lock`, `Sketches`, `Prices` (the known auction addons' price books, read by `Data/Prices.lua`) |
 | `Switches.lua` | Quick switches the modules offer: `Core.Offer(key, switch)`, `Switches()`, `OnSwitches(fn)`, `SwitchChanged` |
 | `Ways.lua` | The way to a place, between a leader and a finder: `Core.Ways.Serve`/`Aim`/`Ahead` (Navigation serves; nobody asks since Speed Leveling's arrow points straight again, 2026-11-07); the map's search for another module: `Lookout`/`CanLook`/`Look` (Navigation's FindBox serves, Social's *Show on map* asks) |
 | `Sight.lua` | Herbs and ore in sight now: `Core.Sight.Serve`/`Nodes` (Navigation's Found, for Speed Leveling's detours) |

@@ -288,6 +288,7 @@ W.Load(root, "SaneUI", "Core/Profiles", {})
 W.Load(root, "SaneUI", "Core/Fuzzy", {})
 W.Load(root, "SaneUI", "Core/Look", {})       -- the kit's parts, for the setup's words (Setup.lua)
 W.Load(root, "SaneUI", "Core/Onboarding", {}) -- where the module hands in its setup
+W.Load(root, "SaneUI", "Core/Neighbours", {}) -- the other addons SaneUI knows: auction addons' prices count in Core's
 for _, file in ipairs({ "Steps", "Codec", "Data", "Tally", "Drops", "Rhythm", "Prices", "Fees", "Characters" }) do W.Load(root, "SaneUI", "Core/Data/" .. file, {}) end
 W.Load(root, "SaneUI", "Core/People", {}) -- aliases and notes of players
 W.Load(root, "SaneUI", "Core/Inspect", {}) -- a player's item level and talents, paced inspections
@@ -1802,6 +1803,22 @@ local disenchant
 for index = 1, count(panel) do if row(panel, index).left == "Disenchant" then disenchant = index end end
 check(disenchant and row(panel, disenchant).right == "no prices seen" and row(panel, disenchant - 1).left == "Vendor",
     "an uncommon weapon: under Gold, after the vendor's price, Disenchant; without the materials' prices seen, it says so")
+do -- the materials' prices from an auction addon SaneUI knows alone (Core.Neighbours.Prices): the same value
+    local known = Core.Neighbours.KNOWN.auctionScan
+    local seen = GetServerTime() - 60
+    W.loaded[known.addon] = true
+    rawset(_G, known.saved, { [known.part] = { [known.realm:format(GetRealmName(), UnitFactionGroup("player"))] = { [known.items] = {
+        [10938] = { [known.low] = 100, [known.units] = 5, [known.at] = seen },
+        [10940] = { [known.low] = 40, [known.units] = 5, [known.at] = seen } } } } })
+    Prices.Changed()
+    tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+    check(row(panel, disenchant).right == "125c", "the materials' prices kept by an auction addon SaneUI knows count as its own scans' would")
+    rawset(_G, known.saved, nil)
+    W.loaded[known.addon] = nil
+    Prices.Changed()
+    tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+    check(row(panel, disenchant).right == "no prices seen", "(gone with it)")
+end
 Prices.See("10938", 100)
 Prices.See("10940", 40)
 tip:Fill({ type = TYPE.Item, id = 7001 }, blade)

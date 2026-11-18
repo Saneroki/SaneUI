@@ -3,6 +3,12 @@
 What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.6 (2026-11-18)
+
+- Scanned the auction house with another addon? The prices of the two auction addons SaneUI knows count too: the
+  tooltips' gold section, its advice and the price graph use them wherever SaneUI's own scans saw an item earlier or
+  never, also with *Data: Auction House* switched off.
+
 ## 0.3.5 (2026-11-18)
 
 - The setups' first page has a *Place and size in Edit Mode* button, so you can place and size your frames, SaneUI's

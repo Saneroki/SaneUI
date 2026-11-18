@@ -984,6 +984,18 @@ Prices:OnChange(fn)   -- fn() on the next frame after prices changed
   held until a scan is kept (64 items a house), so what the game lists moves only the newest point.
 - **The database** holds no auction data yet: what the harvest makes of the scans comes in behind this same door. What all
   accounts hold together comes in here already (*Across accounts*).
+- **Other addons' scans (Saneroki, 2026-11-18):** the gold section and the graph work whichever addon scans the auction house,
+  so the price books of the two auction addons SaneUI knows count too (`Core.Neighbours.Prices`, their names and formats in
+  `Neighbours.lua` alone; read only, nothing of them called). For the house of your side, the newest point is theirs where they
+  saw a thing later than SaneUI did (`Last`: low, how many were on offer, when; market, auctions and sellers 0; a link of a
+  kind SaneUI never saw takes theirs of its own kind over SaneUI's cheapest kind), and their days fill a range where SaneUI has
+  none (`Range`: each day's lowest of theirs, market 0). Their books are per realm, or realm and side, whichever house was
+  scanned, so they count for no other house (`Within`, the trip to the other house). The forecast (`Outlook`), the offers
+  (`Under`) and the scan's keys (`Scanned`) stay SaneUI's own: they keep no hours, offers or scans. SaneUI's own scan reads
+  their full scans and searches anyway (*The full auction scan*): their books add what they scanned before SaneUI was there,
+  and everything while the auction data is switched off (the addon *Data: Auction House*), when the house read is one with
+  nothing saved. Their histories are taken apart anew when the auction house closes. Nothing of theirs goes into SaneUI's
+  saved files, the database or the harvest.
 
 ### Across accounts *(Saneroki, 2026-10-30)*
 

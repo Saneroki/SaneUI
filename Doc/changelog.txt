@@ -7,6 +7,15 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+SaneUI 0.3.6 (2026-11-18)
+--------------------------
+- Auction prices from another auction addon: if you scan the
+  auction house with one of the two auction addons SaneUI
+  knows, the tooltips' gold section, its advice and the price
+  graph use its prices too, wherever SaneUI's own scans saw
+  the item earlier or never.
+
+
 SaneUI 0.3.5 (2026-11-18)
 --------------------------
 - The setups' first page has a button that opens Edit Mode,

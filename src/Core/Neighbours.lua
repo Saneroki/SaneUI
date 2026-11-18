@@ -44,6 +44,21 @@ local Core = SaneUI.Core
 --  its dungeons' keys and how its dungeon maps lie on ours are given as a copy:
 --
 --      local words = Core.Neighbours.Sketches("dungeonMaps")  -- nil for an addon whose drawings are not known
+--
+--  Two auction addons are read, not adapted to: where a player scans the auction house with one of them, what it
+--  keeps of prices counts in Core's Prices too, wherever SaneUI's own scans saw nothing newer (Saneroki, 2026-11-18).
+--  Only their saved tables are read; one of a shape not known (a newer copy changed it) counts as none:
+--
+--      for _, book in ipairs(Core.Neighbours.Prices()) do   -- the books of those loaded now; empty: none
+--          book.key, book.title
+--          local low, units, at = book:Last(item, level, species) -- its newest lowest price of a thing, per unit in copper,
+--                                                            -- how many were on offer and when (server time; a day's start
+--                                                            -- where it keeps only the day); nil: none
+--          book:Days(item, level, species, fn)              -- fn(at, low) for each day it kept, at the middle of the day
+--      end
+--
+--  item is the item's ID; level a piece of gear's item level, species a pet's (item: the pet cage), else nil. Their
+--  books are per realm or per realm and side, whichever house was scanned.
 -------------------------------------------------------------------------------
 local Neighbours = {}
 Core.Neighbours = Neighbours
@@ -228,6 +243,25 @@ Neighbours.KNOWN = {
             [318] = { floor = "329:2", key = "stratholme" },
             [2999] = { floor = "2999:1", key = "lordaeron", fit = { 1.74532, 0, -0.4065, 0, 1.01811, -0.02728 } },
         } },
+    -- Two auction addons whose prices count in Core's (Saneroki, 2026-11-18: the tooltips' gold section and graph work
+    -- "no matter which addon they use to scan the auctionhouse"). Read by src/Core/Data/Prices.lua through
+    -- Neighbours.Prices: only their saved tables, nothing of them called or written.
+    -- An auction addon's price book: its saved table's part per realm (by its region's ruleset where names are the
+    -- region's, else the first of its connected realms, older copies the realm, and the realm and side), each thing by
+    -- its key (the item's ID; gear past an item level, its ID and level; a pet by its species), holding the newest
+    -- lowest price per unit (newest), each day's lowest and highest lowest price (low, high) and the most on offer that
+    -- day (offered), the days numbered from first (the client's midnight).
+    auctionPrices = {
+        addon = "Auctionator", title = "Auctionator", saved = "AUCTIONATOR_PRICE_DATABASE",
+        newest = "m", low = "l", high = "h", offered = "a", gear = "g:%d:%d", pet = "p:%d",
+        first = { year = 2020, month = 1, day = 1, hour = 0 } },
+    -- The dungeon map addon's auction scan: its saved table's part (part) per realm and side ("<realm>-<side>"), each
+    -- item by its ID (items), holding the lowest price per unit of the last scan that saw it (a tenth of a copper
+    -- fine), how many of it were on offer then, when (the client's time) and the lowest price of each of its last days
+    -- (days since 1970).
+    auctionScan = {
+        addon = "FojjiCore", title = "FojjiCore", saved = "FojjiCoreDB", part = "auctions", realm = "%s-%s",
+        items = "items", low = "min", units = "n", at = "t", days = "days" },
 }
 
 local handles = {} -- [key] = the handle made for it
@@ -329,4 +363,190 @@ function Neighbours.Window(key)
         handles[key] = handle
     end
     return handle
+end
+
+-------------------------------------------------------------------------------
+--  Auction prices
+-------------------------------------------------------------------------------
+local DAY = 86400
+local PRICED = { "auctionPrices", "auctionScan" } -- the known addons whose prices count, in this order
+local realms        -- the names a book of this realm may stand under, once the game told the realm and side
+local firstDay = {} -- [key] = the time its day 0 began
+local books = {}    -- [key] = its handle
+local priced = {}   -- what Neighbours.Prices hands out, used again
+local book = {}     -- the methods of a handle
+
+-- One of their numbers, where it can stand for one: no other type, no NaN, none below 0 or past all measure.
+local function Count(value)
+    return type(value) == "number" and value == value and value >= 0 and value < math.huge and value or nil
+end
+
+-- A price of theirs in whole copper: a tenth of a copper rounded, never below one.
+local function Copper(value)
+    value = Count(value)
+    return value and value > 0 and math.max(1, math.floor(value + 0.5)) or nil
+end
+
+-- The names a book of this realm may stand under, the likeliest first: the region's ruleset where names are the region's,
+-- the first of its connected realms, the realm's own two names, and the realm and side.
+local function Realms()
+    if realms then return realms end
+    local Ask, list = Core.Ask, {}
+    local function Add(name)
+        if type(name) == "string" and name ~= "" then list[#list + 1] = name end
+    end
+    if Ask(rawget(_G, "RegionalUniqueNamesEnabled")) == true then Add(Ask(rawget(_G, "GetRegionalRulesetName"))) end
+    local complete = rawget(_G, "C_AutoComplete")
+    local connected = Ask(rawget(_G, "GetAutoCompleteRealms") or (complete and complete.GetAutoCompleteRealms))
+    if type(connected) == "table" then
+        local names = {}
+        for _, name in ipairs(connected) do
+            if type(name) == "string" then names[#names + 1] = name end
+        end
+        table.sort(names)
+        Add(names[1])
+    end
+    local normalized, name = Ask(rawget(_G, "GetNormalizedRealmName")), Ask(rawget(_G, "GetRealmName"))
+    local side = Ask(rawget(_G, "UnitFactionGroup"), "player")
+    Add(normalized)
+    Add(name)
+    if type(name) == "string" and type(side) == "string" then Add(name .. " " .. side) end
+    if type(normalized) == "string" and type(side) == "string" then realms = list end
+    return list
+end
+
+-- When the addon's day 0 began, by the client's clock; nil while the game cannot say.
+local function FirstDay(known)
+    if firstDay[known] == nil then
+        local first = known.first
+        firstDay[known] = Count(Core.Ask(rawget(_G, "time"), { year = first.year, month = first.month, day = first.day,
+            hour = first.hour })) or false
+    end
+    return firstDay[known] or nil
+end
+
+-- How each one's book is read: its part of this realm (part), a thing's entry there (entry), its newest point (last) and
+-- its days (days, into a list: at, low, at, low, ...).
+local WAYS = {
+    auctionPrices = {
+        part = function(known)
+            local all = rawget(_G, known.saved)
+            if type(all) ~= "table" then return nil end
+            for _, name in ipairs(Realms()) do
+                local part = all[name]
+                if type(part) == "table" then return part end -- the realm it reads now; the others stay packed
+            end
+        end,
+        entry = function(known, part, item, level, species)
+            local entry
+            if species then
+                entry = part[known.pet:format(species)]
+            else
+                entry = level and part[known.gear:format(item, level)]
+                if type(entry) ~= "table" then entry = part[tostring(item)] end
+            end
+            return type(entry) == "table" and entry or nil
+        end,
+        last = function(known, entry)
+            local newest, highs, first = Copper(entry[known.newest]), entry[known.high], FirstDay(known)
+            if not newest or type(highs) ~= "table" or not first then return nil end
+            local last, lastKey
+            for key in pairs(highs) do
+                local day = tonumber(key)
+                if day and (not last or day > last) then last, lastKey = day, key end
+            end
+            if not last then return nil end
+            local offered = entry[known.offered]
+            return newest, type(offered) == "table" and Count(offered[lastKey]) or nil, first + last * DAY
+        end,
+        days = function(known, entry, into)
+            local highs, lows, first = entry[known.high], entry[known.low], FirstDay(known)
+            if type(highs) ~= "table" or not first then return end
+            lows = type(lows) == "table" and lows or highs
+            for key, high in pairs(highs) do
+                local day, low = tonumber(key), Copper(lows[key]) or Copper(high)
+                if day and low then
+                    into[#into + 1] = first + (day + 0.5) * DAY
+                    into[#into + 1] = low
+                end
+            end
+        end,
+    },
+    auctionScan = {
+        part = function(known)
+            local saved = rawget(_G, known.saved)
+            local parts = type(saved) == "table" and saved[known.part]
+            local realm, side = Core.Ask(rawget(_G, "GetRealmName")), Core.Ask(rawget(_G, "UnitFactionGroup"), "player")
+            if type(parts) ~= "table" or type(realm) ~= "string" or type(side) ~= "string" then return nil end
+            local part = parts[known.realm:format(realm, side)]
+            local items = type(part) == "table" and part[known.items]
+            return type(items) == "table" and items or nil
+        end,
+        entry = function(_, part, item, _, species)
+            local entry = not species and part[item] -- by the item alone: a pet's cage tells no species
+            return type(entry) == "table" and entry or nil
+        end,
+        last = function(known, entry)
+            local low, at = Copper(entry[known.low]), Count(entry[known.at])
+            if not (low and at) then return nil end
+            return low, Count(entry[known.units]), at
+        end,
+        days = function(known, entry, into)
+            local list = entry[known.days]
+            if type(list) ~= "table" then return end
+            for day, low in pairs(list) do
+                day, low = Count(day), Copper(low)
+                if day and low then
+                    into[#into + 1] = (day + 0.5) * DAY
+                    into[#into + 1] = low
+                end
+            end
+        end,
+    },
+}
+
+local function Entry(handle, item, level, species)
+    local way = WAYS[handle.key]
+    local part = way.part(handle.known)
+    return part and way.entry(handle.known, part, item, level, species), way
+end
+
+local function Last(handle, item, level, species)
+    local entry, way = Entry(handle, item, level, species)
+    if entry then return way.last(handle.known, entry) end
+end
+
+local function Days(handle, item, level, species, into)
+    local entry, way = Entry(handle, item, level, species)
+    if entry then way.days(handle.known, entry, into) end
+end
+
+-- Behind pcall: a book of a shape not known (a newer copy of the addon changed it) has nothing.
+function book:Last(item, level, species)
+    local ok, low, units, at = pcall(Last, self, item, level, species)
+    if ok and low then return low, units, at end
+    return nil
+end
+
+function book:Days(item, level, species, fn)
+    local list = {}
+    if not pcall(Days, self, item, level, species, list) then return end
+    for index = 1, #list - 1, 2 do fn(list[index], list[index + 1]) end
+end
+
+-- The price books of the known auction addons loaded now, a list used again: read it at once.
+function Neighbours.Prices()
+    wipe(priced)
+    for _, key in ipairs(PRICED) do
+        local known = Neighbours.KNOWN[key]
+        if Loaded(known.addon) and type(rawget(_G, known.saved)) == "table" then
+            local handle = books[key]
+            if not handle then
+                handle = setmetatable({ key = key, title = known.title, known = known }, { __index = book })
+                books[key] = handle
+            end
+            priced[#priced + 1] = handle
+        end
+    end
+    return priced
 end

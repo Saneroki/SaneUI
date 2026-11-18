@@ -47,6 +47,13 @@ local Core = SaneUI.Core
 --  A range reads what is most current for each stretch of time, whichever holds it (History): the scans of today and
 --  yesterday (recent), a point a scan; the database's days, which took this account's in with all the others'; this account's
 --  own days it does not have; and last the item's newest point, which what the game lists right now moves on.
+--
+--  The auction addons SaneUI knows count too (Core.Neighbours.Prices; Saneroki, 2026-11-18: the gold section and the graph
+--  work whichever addon scans the auction house): for the house of your side, the newest point is theirs where they saw the
+--  thing later than SaneUI did (low, how many were on offer, when; no market, auctions or sellers), and their days fill a
+--  range where SaneUI has none of its own. They keep a book per realm, or realm and side, whichever house was scanned, so
+--  they count for no other house. With SaneUI's auction data switched off (the addon SaneUI_AuctionData), or before the
+--  game told your side, they are all there is (LONE), with what the game lists meanwhile.
 -------------------------------------------------------------------------------
 local Data = Core.Data
 local Rhythm = Data.Rhythm
@@ -71,6 +78,8 @@ local SAVED = "([^=;]+)=(%d+,%d+,%d+,%d+,%d+,%d+);"
 local FIELDS = "^(%d+),(%d+),(%d+),(%d+),(%d+),(%d+)$"
 local LOW_MARKET = "^(%d+),(%d+)"                    -- how a line of a day or a scan begins
 local NONE = {}
+local LONE = { days = {}, scans = {}, whole = {}, recent = {}, rhythm = {} } -- the house read while SaneUI keeps none: nothing
+                                                                            -- saved, the known auction addons' books, what the game lists
 
 local part             -- this game version's part of SaneUIData_Market
 local mine, opened     -- the house of your side, once asked for; the one open now
@@ -136,7 +145,16 @@ local function Current()
     if reading then return reading end
     if opened then return opened end
     mine = mine or Prices.House("player")
-    return mine
+    return mine or LONE
+end
+
+-- The price books of the auction addons SaneUI knows (Core.Neighbours.Prices), for the house of your side alone: theirs
+-- are per realm, or realm and side, whichever house was scanned. A list used again: read it at once.
+local function Others(house)
+    mine = mine or Prices.House("player")
+    if house ~= LONE and house ~= mine then return NONE end
+    local neighbours = Core.Neighbours
+    return neighbours and neighbours.Prices() or NONE
 end
 
 function Prices.Other()
@@ -207,6 +225,25 @@ local function KeyOf(itemKey)
 end
 
 Prices.KeyOf = KeyOf
+
+-- The key of a thing no scan saw, from its ID, link or key: its link's kind, else its ID.
+local function KeyFor(item)
+    if type(item) == "number" then return tostring(item) end
+    if type(item) ~= "string" then return nil end
+    if item:find("^%d+$") or item:find("^%d+:%d+:%-?%d+:%d+$") then return item end
+    local pet = item:find("battlepet:", 1, true) ~= nil
+    local id = tonumber(item:match("item:(%d+)")) or (pet and CAGE) or nil
+    if not id then return nil end
+    return (pet or Prices.Gear(id)) and Prices.LinkKey(item, id) or tostring(id)
+end
+
+-- The item, gear level and pet species a key names, for the auction addons' books: level and species nil where none.
+local function Named(key)
+    local item, level, species = key:match("^(%d+):(%d+):%-?%d+:(%d+)$")
+    if not item then return tonumber(key) end
+    level, species = tonumber(level), tonumber(species)
+    return tonumber(item), level > 0 and level or nil, species > 0 and species or nil
+end
 
 -------------------------------------------------------------------------------
 --  The points
@@ -350,11 +387,32 @@ local function Point(book, item)
     return best, bestKey
 end
 
+-- The known auction addons' newest point of a key where they saw it later than at (nil: never): low, units, at.
+local function Theirs(house, key, at)
+    local others = key and Others(house) or NONE
+    if not others[1] then return nil end
+    local item, level, species = Named(key)
+    if not item then return nil end
+    local low, units, best = nil, nil, at
+    for _, other in ipairs(others) do
+        local price, count, seen = other:Last(item, level, species)
+        if price and seen and (not best or seen > best) then low, units, best = price, count, seen end
+    end
+    return low, units, low and best
+end
+
 function Prices:Last(item)
+    if not item then return nil end
     local house = Current()
-    local point = house and item and Point(Book(house), item)
-    if point then return Fields(point) end
-    return nil
+    local point, key = Point(Book(house), item)
+    local low, market, units, auctions, sellers, at
+    if point then low, market, units, auctions, sellers, at = Fields(point) end
+    -- A link of a kind SaneUI never saw stands at the cheapest of the item's kinds, a guess: theirs of its own kind come first
+    local asked = KeyFor(item)
+    local guess = type(item) == "string" and key ~= nil and key ~= asked and item:find("|H", 1, true) ~= nil
+    local price, count, seen = Theirs(house, guess and asked or key or asked, not guess and at or nil)
+    if price then return price, 0, count or 0, 0, 0, seen end
+    return low, market, units, auctions, sellers, at
 end
 
 function Prices:Low(item)
@@ -523,6 +581,19 @@ local function History(house, book, key)
     Scans(shared.recent)
     Days(shared.days)
     Days(house.days)
+    -- The known auction addons' days where SaneUI has none: the lowest of theirs, no market
+    local others, theirs = Others(house), {}
+    local item, level, species
+    if others[1] then item, level, species = Named(key) end
+    local function Their(at, low)
+        local day = math.floor(at / DAY)
+        if not days[day] and (not theirs[day] or low < theirs[day].low) then theirs[day] = { at = at, low = low, market = 0 } end
+    end
+    for _, other in ipairs(item and others or NONE) do other:Days(item, level, species, Their) end
+    for _, point in pairs(theirs) do
+        count = count + 1
+        points[count] = point
+    end
     table.sort(points, Earlier)
     if book.held >= HISTORIES then book.history, book.held = {}, 0 end
     book.history[key], book.held = points, book.held + 1
@@ -531,10 +602,11 @@ end
 
 function Prices:Range(item, from, to)
     wipe(range)
+    if not item then return range end
     local house = Current()
-    local book = house and item and Book(house)
-    local point, key
-    if book then point, key = Point(book, item) end
+    local book = Book(house)
+    local _, key = Point(book, item)
+    if not key and Others(house)[1] then key = KeyFor(item) end
     if not key then return range end
     to = to or Now()
     local count, last = 0, 0
@@ -546,8 +618,8 @@ function Prices:Range(item, from, to)
         end
         last = each.at
     end
-    local low, market, _, _, _, at = Fields(point)
-    if at > last and at <= to and (not from or at >= from) then
+    local low, market, _, _, _, at = self:Last(item)
+    if at and at > last and at <= to and (not from or at >= from) then
         newest.at, newest.low, newest.market = at, low, market
         range[count + 1] = newest
     end
@@ -581,7 +653,7 @@ end
 
 -- The part of a house this account knows; nil for another.
 local function Known(key)
-    if Current() == nil or type(part.houses) ~= "table" then return nil end
+    if not part or Current() == LONE or type(part.houses) ~= "table" then return nil end
     local house = part.houses[key]
     return type(house) == "table" and keys[house] and house or nil
 end
@@ -872,6 +944,11 @@ end)
 Core.On("AUCTION_HOUSE_BROWSE_RESULTS_ADDED", function(added) Browsed(added, false) end)
 Core.On("COMMODITY_SEARCH_RESULTS_UPDATED", Commodity)
 Core.On("ITEM_SEARCH_RESULTS_UPDATED", Offers)
+
+-- The known auction addons write their books while the auction house is open: the histories taken apart are old.
+Core.On("AUCTION_HOUSE_CLOSED", function()
+    if Others(Current())[1] then Prices.Changed() end
+end)
 
 -- What the game listed since the last scan stays for the next login.
 Core.On("PLAYER_LOGOUT", function()
