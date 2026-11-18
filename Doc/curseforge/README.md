@@ -11,6 +11,7 @@ upload names its required dependency, so the CurseForge app installs Core with a
 | [Navigation.md](Navigation.md) | SaneUI Navigation (`SaneUI_Navigation`): the same, and its gallery |
 | [Tooltips.md](Tooltips.md) | SaneUI Tooltips (`SaneUI_Tooltips`): the same, and its gallery |
 | [Combat.md](Combat.md) | SaneUI Combat (`SaneUI_Combat`; the project *SaneUI Nameplates* until 2026-11-18, to be renamed): the same, and its gallery |
+| [Social.md](Social.md) | SaneUI Social (`SaneUI_Social`): the same, and its gallery; not made yet (Social is at the stage dev) |
 | [changelogs/](changelogs/) | Each project's own CurseForge changelog: `Core.md`, `Navigation.md` (a part per version, only that addon's changes) |
 
 The logos and banners are drawn by `saneui makelogos` (`dev/tools/logo-art`) into `assets/generated/logos/`:
