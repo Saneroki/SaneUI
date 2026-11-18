@@ -148,8 +148,9 @@ Sunder Armor), as you choose, nothing fixed.
   - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
     target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
     pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems and a class's
-    resource bar stay where it was. Edit Mode shows only ours to place: the game's boxes *Player Frame* and
-    *Pet Frame* are gone while ours stand in for them (Saneroki, 2026-11-18).
+    resource bar stay the game's and follow your frame, right under it (Saneroki, 2026-11-18). Edit Mode shows
+    only ours to place: the game's boxes *Player Frame* and *Pet Frame* are gone while ours stand in for them
+    (Saneroki, 2026-11-18), and the totems move with yours.
 - **Settings:** *Sane UI > Combat*: the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
@@ -523,11 +524,15 @@ Sunder Armor), as you choose, nothing fixed.
     at least `per`); Enter takes the first, Escape empties it; Up and Down light a find as the mouse would (its tooltip),
     round at the ends, and Enter takes the lit one (`Core.Fuzzy.Keys`); `opts.pick(entry)`. `Icon(id)`, `Tip(owner, id, name)`.
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
-    parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so its
-    children `TotemFrame` and the class bars stay the game's; `PetFrame` (which the game's layout re-parents) alpha 0
-    and its mouse off while the pet's row is on. Of both their box in Edit Mode (`Selection`, which ignores its
-    frame's alpha) alpha 0 and its mouse off too (`Unbox`); the game's frame stays in sight for what hangs on it, so
-    Edit Mode's magnets still take its place (`EditModeSystemMixin:UpdateMagnetismRegistration`).
+    parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so
+    `TotemFrame` and the class bars stay the game's: they lie in its `PlayerBottomManagedFrameContainer`, laid out by
+    the game, whose anchor alone is lent, its `TOP` to our button's `BOTTOM` (`Hang`, `Units.UNDER`); the game
+    anchors it to its own frame again (`PlayerFrame_ToPlayerArt` at each loading screen, `PlayerFrame_ToVehicleArt`):
+    a hook of its `SetPoint` puts it under ours again (`Moved`), after the fight where it is protected (the game's
+    `PetFrame` in it). `PetFrame` (which the game's layout re-parents) alpha 0 and its mouse off while the pet's row
+    is on. Of both their box in Edit Mode (`Selection`, which ignores its frame's alpha) alpha 0 and its mouse off too
+    (`Unbox`); the game's frame stays in sight, so Edit Mode's magnets still take its place
+    (`EditModeSystemMixin:UpdateMagnetismRegistration`).
     `PlayerCastingBarFrame`, `OverlayPlayerCastingBarFrame` and
     `MirrorTimerContainer` go deaf (`SetDeaf`: `Cast.GAME`, `Timers.EVENTS`) while ours stand in, each event noted with
     its unit and registered again as it was: they are not hidden or moved, because the cast bar is a managed frame

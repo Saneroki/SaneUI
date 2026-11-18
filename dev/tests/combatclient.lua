@@ -296,6 +296,12 @@ function Client.Install(W)
         game.Selection = W.NewWidget("Frame", nil, game)
         game.Selection._mouse, game.Selection._motion = true, true
     end
+    -- What hangs under the game's frame: the holder it lays its totems and a class's resource bar out in, anchored
+    -- under it, and the totems in it, which take clicks.
+    PlayerBottomManagedFrameContainer = W.NewWidget("Frame", "PlayerBottomManagedFrameContainer", PlayerFrame)
+    PlayerBottomManagedFrameContainer:SetPoint("TOP", PlayerFrame, "BOTTOM", 30, 25)
+    TotemFrame = W.NewWidget("Frame", "TotemFrame", PlayerBottomManagedFrameContainer)
+    TotemFrame._mouse = true
     -- The game's bars that go (GameBars.lua), the menu bar with a button of it.
     StatusTrackingBarManager = W.NewWidget("Frame", "StatusTrackingBarManager", UIParent)
     StanceBar = W.NewWidget("Frame", "StanceBar", UIParent)

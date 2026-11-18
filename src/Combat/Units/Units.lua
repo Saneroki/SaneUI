@@ -41,16 +41,18 @@ local _, ns = ...
 --  (Core.Lend: their parent given back exactly), and with them what hangs on
 --  them (their auras, cast bars and their own target's frames, Forever's combo
 --  points: on its nameplate there); of your own frame only its picture, bars
---  and texts (their alpha) and its clicks, so what hangs on it stays the
---  game's: the totems and a class's resource bar. The game's pet frame, which
---  its layout puts back under its own parent, by its alpha and its clicks too.
---  What lies under those takes the mouse no more either (Unmouse): a frame at
---  alpha 0 still does, and the game's health and power bars would hold it off
---  the world. Your own frame's and the pet frame's boxes in Edit Mode too: they
---  ignore their frame's alpha, so they would stand there to be placed for
---  nothing (Unbox); ours are placed instead. The game's own frame stays where
---  it was, and with it what hangs on it. The game's cast bars and timers hear nothing while ours stand in
---  for them (Core.Lend's SetDeaf): the game shows and lays those out itself.
+--  and texts (their alpha) and its clicks; what hangs under it stays the
+--  game's, the totems and a class's resource bar, and follows ours: their
+--  holder anchored under our frame (Hang; Saneroki, 2026-11-18). The game's pet
+--  frame, which its layout puts back under its own parent, by its alpha and
+--  its clicks too. What lies under those takes the mouse no more either
+--  (Unmouse): a frame at alpha 0 still does, and the game's health and power
+--  bars would hold it off the world. Your own frame's and the pet frame's
+--  boxes in Edit Mode too: they ignore their frame's alpha, so they would stand
+--  there to be placed for nothing (Unbox); ours are placed instead, and the
+--  totems with ours. The game's own frame stays where it was. The game's cast
+--  bars and timers hear nothing while ours stand in for them (Core.Lend's
+--  SetDeaf): the game shows and lays those out itself.
 --
 --  Out of sight at rest (Core.Rest, the setting Hide the unit frames at rest;
 --  Saneroki, 2026-11-01): each frame goes by its alpha, its button still taking
@@ -356,6 +358,37 @@ local function Unbox(game, Lend)
     Unmouse(selection, Lend)
 end
 
+-- What the game hangs under your own frame (its totems, a class's resource bar: each laid out by the game in its
+-- holder there, PlayerBottomManagedFrameContainer) under ours instead, by the holder's anchor alone; what it holds
+-- stays the game's, its clicks too. The game anchors it under its own frame again (PlayerFrame_ToPlayerArt at each
+-- loading screen, a vehicle's art): under ours again at once (Moved), or once the fight is over where the holder is
+-- protected then (with the game's pet frame in it).
+Units.UNDER = "PlayerBottomManagedFrameContainer"
+local under, beneath, hooked -- the holder's lend while ours stands in, our button it hangs under, its hook made
+
+local function Under(holder)
+    holder:ClearAllPoints()
+    holder:SetPoint("TOP", beneath, "BOTTOM", 0, 0)
+end
+
+local function Moved()
+    if not under then return end
+    local ok, _, relative = pcall(under.frame.GetPoint, under.frame, 1)
+    if ok and relative == beneath then return end -- ours, or already under ours
+    if not under:SetPoints(Under) then Core.AfterCombat("unit frame totems", Moved) end
+end
+
+local function Hang(kind, Lend)
+    local holder = rawget(_G, Units.UNDER)
+    if type(holder) ~= "table" or not holder.SetPoint or not kind.button then return end
+    beneath = kind.button
+    under = Lend(holder, "SetPoints", Under)
+    if not hooked then
+        hooked = true
+        hooksecurefunc(holder, "SetPoint", ns.Guard(Moved))
+    end
+end
+
 -- The game's frame out of sight (kind.away): "parts" your own frame's picture, bars and texts and its clicks;
 -- "parent" your target's or focus's whole, in our hidden frame; "fade" the pet's by its alpha and its clicks; "deaf"
 -- a bar of the game's by the events it no longer hears. With "parts" and "fade" its box in Edit Mode too (Unbox).
@@ -367,6 +400,7 @@ local function Away(kind)
         local lend = Core.Lend(frame)
         lend[change](lend, ...)
         kind.lends[#kind.lends + 1] = lend
+        return lend
     end
     if kind.away == "parent" then return Lend(game, "SetParent", box) end
     if kind.away == "deaf" then return Lend(game, "SetDeaf", kind.events) end
@@ -380,6 +414,7 @@ local function Away(kind)
         end
         Lend(game, "SetMouse", false)
         Unbox(game, Lend)
+        Hang(kind, Lend)
     else
         Lend(game, "SetAlpha", 0)
         Unbox(game, Lend)
@@ -391,6 +426,7 @@ end
 local function Back(kind)
     local lends = kind.lends
     kind.lends = nil
+    if kind.away == "parts" then under = nil end -- the holder no longer kept under ours, given back as it was
     for index = #(lends or {}), 1, -1 do ns.Safe("unit frames", lends[index].Return, lends[index]) end
 end
 

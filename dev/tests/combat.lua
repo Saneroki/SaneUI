@@ -1485,6 +1485,24 @@ do
     check(PlayerFrame.Selection._alpha == 0 and PlayerFrame.Selection._mouse == false
         and PlayerFrame.Selection._parent == PlayerFrame,
         "its box in Edit Mode unseen and taking no click (it ignores the frame's alpha): ours is placed instead")
+    do -- What hangs under the game's frame (its totems, a class's resource bar) follows ours: its holder under ours.
+        local holder = PlayerBottomManagedFrameContainer
+        local function Under()
+            local point, relative, other, x, y = holder:GetPoint(1)
+            return holder:GetNumPoints() == 1 and point == "TOP" and relative == player and other == "BOTTOM" and x == 0 and y == 0
+        end
+        check(Under() and holder._parent == PlayerFrame and TotemFrame._parent == holder and TotemFrame._mouse == true,
+            "the game's totems follow your frame, right under it: their holder anchored there, the totems the game's, taking clicks")
+        holder:SetPoint("TOP", PlayerFrame, "BOTTOM", 30, 25) -- the game at a loading screen (PlayerFrame_ToPlayerArt)
+        check(Under(), "the game anchors them under its own frame again: under yours again at once")
+        holder._protected = true -- the game's pet frame in it: protected, not to be moved by us in a fight
+        W.Combat(true)
+        W.AsGame(holder.SetPoint, holder, "TOP", PlayerFrame, "BOTTOM", 30, 15) -- a vehicle's art, in a fight
+        check(select(2, holder:GetPoint(1)) == PlayerFrame, "in a fight, where the holder is protected, the game's place stays")
+        W.Combat(false)
+        check(Under(), "under yours again once the fight is over")
+        holder._protected = nil
+    end
     check(TargetFrame._parent ~= UIParent and TargetFrame._parent == FocusFrame._parent and not TargetFrame._parent._shown,
         "the game's target and focus frames stand in a hidden frame of ours")
 
@@ -1639,7 +1657,17 @@ do
     check(PlayerFrame.PlayerFrameContainer._alpha == 1 and PlayerFrame._mouse == true and not player._shown
         and PlayerFrame.Selection._alpha == 1 and PlayerFrame.Selection._mouse == true,
         "Your frame off: the game's own frame as it was, its box in Edit Mode too")
+    do
+        local holder = PlayerBottomManagedFrameContainer
+        local point, relative, other, x, y = holder:GetPoint(1)
+        check(holder:GetNumPoints() == 1 and point == "TOP" and relative == PlayerFrame and other == "BOTTOM" and x == 30 and y == 25,
+            "and its totems under it again, where the game had them")
+        holder:SetPoint("TOP", PlayerFrame, "BOTTOM", 30, 15)
+        check(select(2, holder:GetPoint(1)) == PlayerFrame, "where the game puts them meanwhile, they stay")
+        holder:SetPoint("TOP", PlayerFrame, "BOTTOM", 30, 25)
+    end
     Core.Set(ns.name, "unitPlayer", true)
+    check(select(2, PlayerBottomManagedFrameContainer:GetPoint(1)) == player, "on again: under yours")
     player:Show() -- the game's unit watch: you are there
     -- Your pet: a row under your frame; the game's pet frame by its alpha and clicks (its layout re-parents it).
     local pet = player.face.rowButton
@@ -3055,6 +3083,7 @@ check(ns.off and ab.off and not Core.Lent(planner) and not frame:IsShown(),
 check(W.overrides[owner] == nil, "and the game's keys open the game's windows again")
 check(unitButtons.player._alpha == 0 and not unitButtons.player._shown and not watched[unitButtons.target]
     and PlayerFrame._mouse == true and PlayerFrame.PlayerFrameContent._alpha == 1 and FocusFrame._parent == UIParent
+    and select(2, PlayerBottomManagedFrameContainer:GetPoint(1)) == PlayerFrame
     and PlayerCastingBarFrame:IsEventRegistered("UNIT_SPELLCAST_START") and MirrorTimerContainer:IsEventRegistered("MIRROR_TIMER_START"),
     "our unit frames gone, the game's back, its cast bar and timers hearing again")
 check(not ab.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 1 and MainActionBar.actionButtons[2]._alpha == 1
