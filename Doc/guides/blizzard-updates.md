@@ -87,8 +87,9 @@ world. For a new build of Forever, with its client tables as CSV (hotfixes laid 
 3. The walking data only if the world moved (compare the terrain, the object files, the buildings and the models).
    `dev/tools/walk-data --maps <map> --processes 3`, one map at a time: a whole run holds more memory than a Claude
    session may. Each map's staging is taken in with `--apply --take`, then `dev/tools/walk-gates`. The tool refuses a
-   folder whose buildings lack their group files (`wmo/<file>_<part>.wmo`: 70755's and 70938's extractions, card
-   #562); where the world did not move, an earlier build's folder that has them makes the same data.
+   folder whose buildings lack their group files (`wmo/<file>_<part>.wmo`): 70755's and 70938's extractions took only
+   the large buildings' (card #562; every building's again since 2026-11-18). Where the world did not move, an earlier
+   build's complete folder makes the same data.
 
 The settings (`~/.config/saneui/blizzard.json`): `exports` (the exports' folder), `install` (the game's World
 of Warcraft folder; the same default as `dev/build`), `extract` (the command that exports a product's build
