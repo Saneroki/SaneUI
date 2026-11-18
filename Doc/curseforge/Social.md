@@ -1,12 +1,13 @@
 # SaneUI Social: the CurseForge project
 
 What goes into the project's fields on CurseForge (authors.curseforge.com). The file uploads come from
-`saneui publish` (`dev/tools/release`); their changelog will be this project's own,
-`changelogs/Social.md` (made by `saneui makechangelog` before the first upload).
+`saneui publish` (`dev/tools/release`); their changelog is this project's own,
+[changelogs/Social.md](changelogs/Social.md).
 
-**Not made yet (2026-11-18):** Social is at the stage dev, so `makepackage` and `publish` leave it out until
-Saneroki promotes it (`saneui promote Social alpha`). Then the project is made with the fields below, and its id
-goes into `~/.config/saneui/curseforge.json` under the key `Social`.
+**Made 2026-11-18:** *SaneUI Social*, id 1814483, slug `saneui-social`, with the fields below; in
+`~/.config/saneui/curseforge.json` its key is `Social`. Social promoted to alpha the same day (tag
+`Social/0.3.1-alpha`); its first upload: 0.3.1 alpha, 2026-11-18 (with SaneUI Core 0.3.4, file 9684944), file
+9684945.
 
 | Field | Value |
 | --- | --- |
@@ -17,7 +18,7 @@ goes into `~/.config/saneui/curseforge.json` under the key `Social`.
 | Avatar | `social-avatar.png` of `saneui makelogos` (400 x 400: two speech bubbles, the purple ring) |
 | Banner | `social-banner.png`, at the top of the description: after the project is made, uploaded under its Media (not featured) and put in by its address as the description's first line, `![SaneUI Social](<address>)` (README, *The API and the website*) |
 | Relations | SaneUI Core: Required Dependency (each upload sends it too) |
-| Release type | By the module's stage: dev today, so nothing goes up yet |
+| Release type | By the module's stage: alpha since 2026-11-18 |
 
 ## Description
 
