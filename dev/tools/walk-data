@@ -64,11 +64,12 @@ A hop is a way over a step or a short steep stretch between two floors on the gr
 "I can go over the right side of undercity from south to north by climbing up the mountain and then jump down the
 cliff"): a sample's middle lies between two of its cell's four triangles and the samples stand for the west and east
 ones alone, so a mountain's trail, zigzagging up over the north and south ones and steep a few yards at a time, falls
-apart into pockets. From every floor on the ground to the first floors on the ground within HOP samples along each
-side that the samples do not join (one beside it more than CLIMB higher or lower; one past a sample with no floor),
-where the game's triangles of the cells round both make a way with none steeper than STEEPEST and at most CROSSED
-steeper than SLOPE (hopped over), and no building or doodad stands there (its walls the triangles do not know). A hop
-joins regions as an opening does; on its own tile only.
+apart into pockets. From every floor on the ground to the floors on the ground beside it (HOP samples) that the
+samples do not join (more than CLIMB higher or lower), where the game's triangles of the cells round both make a way up
+from the lower to the higher with none steeper than STEEPEST and at most CROSSED steeper than SLOPE, crossed level or
+going down (CLIMBED: nobody walks up ground that steep), and no building or doodad stands there (its walls the
+triangles do not know). A hop joins regions as an opening does; on its own tile only. (Two samples and two steep
+triangles climbed on were "a little to loose": routes went up where one cannot, Saneroki, 2026-11-18.)
 
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
@@ -120,6 +121,7 @@ layer not made from the blocks as they are).
 Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N] [--memory GB] [--build N]
 """
 import base64
+import heapq
 import json
 import math
 import os
@@ -174,10 +176,12 @@ FALL = 70              # yards: the highest drop kept, more than a route takes (
                        # so another height is a dev/tools/walk-gates run and Walk.FALL alone, no run of this tool)
 RUN = 24               # samples a drop may cross before it lands (50 yards): steep ground falling away, or air
 BAND = 4               # yards: drops side by side off one rectangle into another are one while their heights lie within
-HOP = 2                # samples: two ground floors this near that the samples do not join (a step over CLIMB, steep
-                       # ground between) are one way, a hop, where the game's own triangles round them make a way
+HOP = 1                # samples: two ground floors this near that the samples do not join (a step over CLIMB) are one
+                       # way, a hop, where the game's own triangles round them make a way (Saneroki, 2026-11-18: 2, and
+                       # 2 steep triangles climbed on, were "a little to loose": routes went up where one cannot)
 STEEPEST = 60          # degrees: steeper ground no hop crosses (Saneroki's climb east of the Undercity crosses 57)
-CROSSED = 2            # triangles steeper than SLOPE a hop may cross (a walker hops over them, up or down)
+CROSSED = 1            # triangles steeper than SLOPE a hop may cross: level or going down, never climbing on it
+CLIMBED = 0.25         # yards a hop may climb on such a triangle (none: the triangles' middles stand for them roughly)
 # A square of the ground (outside buildings) may take this share of steep samples at its edges, by its side: the
 # edges of walkable ground, ragged at two yards, make no crowd of small rectangles.
 TAKEN = {2: 0.5, 4: 0.75, 8: 0.85, 16: 0.9, 32: 0.95}
@@ -250,7 +254,8 @@ def ground(path, waters, liquids):
                 break
     height = ART.ground(outer, inner)
     steep = steepness(outer, inner)
-    tri = np.where(hole[..., None], 90.0, triangles(outer, inner))
+    slopes, middles = triangles(outer, inner)
+    tri = (np.where(hole[..., None], 90.0, slopes), middles)
     hole = np.repeat(np.repeat(hole, ART.SAMPLES, 0), ART.SAMPLES, 1)
     water = np.full(height.shape, -np.inf, np.float32)
     closed = np.full(height.shape, -np.inf, np.float32)
@@ -291,7 +296,8 @@ def ground(path, waters, liquids):
 
 def triangles(outer, inner):
     """The slope in degrees of each of a cell's four triangles (cells x cells x 4: north, east, south, west), as the
-    game draws them meeting at the cell's inner height: what a hop is judged by (reach)."""
+    game draws them meeting at the cell's inner height, and the height of each one's middle: what a hop is judged by
+    (reach)."""
     side = TILE / (ART.CHUNKS * ART.CELLS)
     a, b, c, d, m = outer[:-1, :-1], outer[:-1, 1:], outer[1:, :-1], outer[1:, 1:], inner
 
@@ -303,8 +309,9 @@ def triangles(outer, inner):
 
     corners = (0, 0, a), (side, 0, b), (0, side, c), (side, side, d)
     middle = (side / 2, side / 2, m)
-    return np.stack([slope(corners[0], corners[1], middle), slope(corners[1], corners[3], middle),
-                     slope(corners[2], corners[3], middle), slope(corners[0], corners[2], middle)], axis=-1)
+    return (np.stack([slope(corners[0], corners[1], middle), slope(corners[1], corners[3], middle),
+                      slope(corners[2], corners[3], middle), slope(corners[0], corners[2], middle)], axis=-1),
+            np.stack([(a + b + m) / 3, (b + d + m) / 3, (c + d + m) / 3, (a + c + m) / 3], axis=-1))
 
 
 def steepness(outer, inner):
@@ -1311,44 +1318,47 @@ def touching(row, column):
 
 
 def reach(tri, p, q):
-    """Whether a walker gets from sample p to sample q over the game's own triangles (tri: triangles' slopes) of the
-    cells round both: none steeper than STEEPEST, at most CROSSED steeper than SLOPE (hopped over), the fewest such
-    first (a search of 0 and 1)."""
-    cells = tri.shape[0]
+    """Whether a walker gets up from sample p to sample q over the game's own triangles (tri: their slopes and their
+    middles' heights) of the cells round both: none steeper than STEEPEST, at most CROSSED steeper than SLOPE, and on
+    those no more than CLIMBED yards up (crossed level or going down: nobody walks up ground that steep); the least
+    climbed on them first (Dijkstra)."""
+    slopes, middles = tri
+    cells = slopes.shape[0]
     y0, y1 = max(min(p[0], q[0]) // ART.SAMPLES - 1, 0), min(max(p[0], q[0]) // ART.SAMPLES + 1, cells - 1)
     x0, x1 = max(min(p[1], q[1]) // ART.SAMPLES - 1, 0), min(max(p[1], q[1]) // ART.SAMPLES + 1, cells - 1)
     goal = set(touching(*q))
-    best, line = {}, deque()
+    best, heap = {}, []
     for t in touching(*p):
-        if tri[t] <= STEEPEST:
-            steep = int(tri[t] > SLOPE)
-            best[t] = steep
-            (line.appendleft if steep == 0 else line.append)((steep, t))
-    while line:
-        steep, t = line.popleft()
-        if steep > best.get(t, CROSSED + 1):
+        if slopes[t] <= STEEPEST:
+            steep = int(slopes[t] > SLOPE)
+            best[(t, steep)] = 0.0
+            heapq.heappush(heap, (0.0, steep, t))
+    while heap:
+        climbed, steep, t = heapq.heappop(heap)
+        if climbed > best.get((t, steep), math.inf):
             continue
         if t in goal:
             return True
         y, x, side = t
         for dy, dx, other in NEIGHBOURS[side]:
             u = (y + dy, x + dx, other)
-            if not (y0 <= u[0] <= y1 and x0 <= u[1] <= x1) or tri[u] > STEEPEST:
+            if not (y0 <= u[0] <= y1 and x0 <= u[1] <= x1) or slopes[u] > STEEPEST:
                 continue
-            more = steep + int(tri[u] > SLOPE)
-            if more <= CROSSED and more < best.get(u, CROSSED + 1):
-                best[u] = more
-                (line.appendleft if more == steep else line.append)((more, u))
+            more = steep + int(slopes[u] > SLOPE)
+            up = climbed + (max(0.0, float(middles[u] - middles[t])) if slopes[u] > SLOPE else 0.0)
+            if more <= CROSSED and up <= CLIMBED and up < best.get((u, more), math.inf):
+                best[(u, more)] = up
+                heapq.heappush(heap, (up, more, u))
     return False
 
 
 def hops(here, owner, tri, built):
     """The hops on a tile: from every floor on the ground to the first floors on the ground along each side within
     HOP samples that the samples do not join (one beside it more than CLIMB higher or lower; one past a sample with
-    no floor there one way with it), where the game's triangles round both make a way (reach): a mountain's trail
-    zigzags over triangles the samples split, steep a few yards at a time; a walker climbs it hopping up and comes
-    down it. None where a building or a doodad stands (built: its walls the triangles do not know). Both ways (each
-    found from either end). {rect: [(side, position along the side, rect hopped to, rise)]} on the tile."""
+    no floor there one way with it), where the game's triangles round both make a way up from the lower to the higher
+    (reach): a mountain's trail zigzags over triangles the samples split, a steep one crossed now and then. None where
+    a building or a doodad stands (built: its walls the triangles do not know). Both ways (each found from either end,
+    judged from its lower end alike). {rect: [(side, position along the side, rect hopped to, rise)]} on the tile."""
     columns = here[0]
     found = {}
     for (r, c, i), number in owner.items():
@@ -1365,8 +1375,9 @@ def hops(here, owner, tri, built):
                     continue  # steep ground or air between: on to the next sample
                 for j, (b, other_kind, _) in enumerate(there):
                     other = owner.get((nr, nc, j))
+                    low, high = ((r, c), (nr, nc)) if a <= b else ((nr, nc), (r, c))
                     if (other is None or other == number or other_kind != LAND or (k == 1 and abs(b - a) <= CLIMB)
-                            or not reach(tri, (r, c), (nr, nc))):
+                            or not reach(tri, low, high)):
                         continue
                     found.setdefault(number, []).append((side, c if side in (0, 2) else r, other, b - a))
                 break

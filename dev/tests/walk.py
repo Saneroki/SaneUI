@@ -713,40 +713,45 @@ check("the block's drops: off which rectangle, its side, its first and last samp
       "its height", data[4], [0, 1, 0, 63, 5, 20])
 
 # --- Hops ------------------------------------------------------------------------------------------
-# The game's triangles of a tile, made up: flat (10 degrees) but a band of cells (columns 50 and 51) of another slope.
-def mesh(band):
-    tri = np.full((SIDE // 2, SIDE // 2, 4), 10.0)
-    tri[:, 50:52, :] = band
-    return tri
+# The game's triangles of a tile, made up: their slopes (flat, 10 degrees, but a band of cells of another slope) and
+# their middles' heights (10 yards, or as given).
+def mesh(band, columns=(50, 51), heights=None):
+    slopes = np.full((SIDE // 2, SIDE // 2, 4), 10.0)
+    slopes[:, columns[0]:columns[-1] + 1, :] = band
+    return slopes, np.full((SIDE // 2, SIDE // 2, 4), 10.0) if heights is None else heights
 
 
 check("a sample's middle lies between two triangles of its cell: the north or south one and the west or east one",
       (walk.touching(0, 0), walk.touching(1, 1), walk.touching(5, 2)), (((0, 0, 0), (0, 0, 3)), ((0, 0, 2), (0, 0, 1)),
                                                                         ((2, 1, 2), (2, 1, 3))))
-check("a way over the triangles round two samples: walkable ones, none too steep, a few steep ones hopped over",
+check("a way over the triangles round two samples: over walkable ones; not through steep cells, nor too steep ones",
       [walk.reach(mesh(band), (40, 99), (40, 104)) for band in (30.0, 55.0, 65.0)], [True, False, False])
-hoppable = mesh(30.0)
-hoppable[:, 50, 1] = hoppable[:, 50, 3] = 55.0  # a cell's west and east triangles of 55 degrees, its north and south not
-check("across a cell over its west and east triangles, steep (two crossed: CROSSED), its north one between; over two "
-      "steep cells side by side two triangles at their meeting; through a whole steep cell (three), not",
-      (walk.reach(hoppable, (40, 99), (40, 104)), walk.reach(mesh(55.0), (40, 101), (40, 102)),
-       walk.reach(mesh(55.0), (40, 99), (40, 104))), (True, True, False))
-# A step of 3 yards between two fields (columns 0 to 127 at 10 yards, 128 to 255 at 13): too high for the samples to
-# join (CLIMB), a hop where the triangles between make a way, none where a building stands there or the step is sheer.
+one = mesh(30.0)
+one[0][:, 50, 1] = 55.0  # one steep triangle on the way (a cell's east one), crossed level
+two = mesh(30.0)
+two[0][:, 50, 1] = two[0][:, 50, 3] = 55.0  # two (its west and east ones): more than CROSSED
+rising = mesh(30.0, heights=np.full((SIDE // 2, SIDE // 2, 4), 10.0))
+rising[0][:, 50, 1] = 55.0
+rising[1][:, 50, 1] = 11.0  # the steep one rises a yard: climbed on
+check("one steep triangle crossed level, not two, nor one climbed on (nobody walks up ground that steep)",
+      [walk.reach(tri, (40, 99), (40, 104)) for tri in (one, two, rising)], [True, False, False])
 alone, found, specks, built = ground()
 alone[:, 128:] = 13.0
 level = alone.copy()
 rects, owner, here = fallen(alone, found, specks, built, level)
 west_field, east_field = owner[(5, 127, 0)], owner[(5, 128, 0)]
-tri = np.full((SIDE // 2, SIDE // 2, 4), 10.0)
-tri[:, 63:65, :] = 54.0
-tri[:, 64, :] = 20.0
+# The triangles at the step: the west field's last cell steep (54 degrees, its middles at 11.5 yards), the east field's
+# first walkable (20 degrees, 13 yards): up from the lower sample over the steep one level, the rest on walkable ones.
+heights = np.full((SIDE // 2, SIDE // 2, 4), 10.0)
+heights[:, 63, :], heights[:, 64:, :] = 11.5, 13.0
+tri = mesh(54.0, (63,), heights)
+tri[0][:, 64, :] = 20.0
 leaps = walk.hops(here, owner, tri, built)
 check("a step too high for the samples, a way over the game's triangles: a hop, both ways, with its rise",
       (sorted({(side, rects[target][0] >= 128, round(rise)) for list_ in leaps.values() for side, _, target, rise in list_}),
        sum(len(list_) for list_ in leaps.values())), ([(1, True, 3), (3, False, -3)], 2 * SIDE))
-tall = tri.copy()
-tall[:, 63:65, :] = 70.0
+tall = (tri[0].copy(), heights)
+tall[0][:, 63:65, :] = 70.0
 walled_off = built.copy()
 walled_off[:, 120:136] = True
 check("none over a sheer step, nor where a building stands", (walk.hops(here, owner, tall, built),

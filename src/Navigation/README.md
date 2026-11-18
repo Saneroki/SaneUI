@@ -1345,8 +1345,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   mountainside too steep to walk, with its height in whole yards (`Walk.Drops`, `Walk.Drop`; in the plane its way off
   and where it lands, `Walk.Fall`). A walk takes those up to `Walk.FALL` (54 yards, 49 metres: Saneroki measured a fall
   of 50 metres safe with `/sane falls`); the floor's following takes any (the walker fell); a straight walk none.
-  **Hops** (format 3, 2026-11-18): over a step or a short steep stretch of a mountain's trail between two floors on
-  the ground, both ways, with its rise: listed with the drops, marked (`Walk.Drop`'s seventh answer); a walk takes them
+  **Hops** (format 3, 2026-11-18): over a step of a mountain's trail between two neighbouring floors on the ground, a
+  steep triangle crossed level at most, both ways, with its rise: listed with the drops, marked (`Walk.Drop`'s seventh answer); a walk takes them
   at their yards and the climb's price, the coarse layer's parts and costs as openings.
 - **Gates** (`Gates.lua`, no frames): the walking data's coarse layer, the set *Walking*'s field `gates`, made by
   `dev/tools/walk-gates` from its blocks: per terrain tile its gates, where one walks across its border into the next
@@ -1713,6 +1713,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, hops tightened:** Saneroki: "it does work now but the getting up on a steep slope or jumping up is a
+  little to loose. There are areas where it thinks you can get up there but you can't". A hop now joins only a
+  sample's neighbours (not over a whole steep sample), crosses at most one triangle over 50 degrees, and gains no
+  height on it (crossed level or going down: nobody walks up ground that steep); the strictest rule that still climbs
+  the ridge east of the Undercity (418 hops on its tile, 1,558 before). Rebuilt again: 107,512 hops (401,238), 32.4 MB of blocks; the climb east of the Undercity as it was (998 yards); offline, as many walks off the data as with the drops alone, and Bodley's journey flies again.
 - **2026-11-18, hops: up a mountain's trail.** Saneroki: "it does not work. I know I can go over the right side of
   undercity from south to north by climbing up the mountain and then jump down the cliff but the route does not show
   that route." The ridge east of the Undercity's ruins was a region of its own (no walk up it in the walking data), so

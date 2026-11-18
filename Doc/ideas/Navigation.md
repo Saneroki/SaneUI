@@ -1862,12 +1862,21 @@ samples, *The ground as the game draws it*, below).
     sample's middle lies on the diagonal between two of its cell's four triangles and the samples stand for the west
     and east ones alone (the trail zigzags over the north and south ones), and the steep bits, a few yards wide, split
     it into pockets the samples cannot join (steps of 3 to 4 yards between neighbours).
-  - **Hops** (`dev/tools/walk-data`, format 3): from every floor on the ground to the first floors on the ground within
-    `HOP` (2) samples along each side that the samples do not join, where the triangles of the cells round both make a
-    way (a search over them: none steeper than `STEEPEST`, 60 degrees, at most `CROSSED`, 2, steeper than 50: hopped
-    over) and nothing built stands there (a building's walls the triangles do not know: Stormwind's basin stays shut).
-    Both ways, joining regions as openings do: the ridge is the main region's, and its drops are kept. On its own tile
-    only. Walkable triangles alone (no steep one) did not join it; one of up to 60 degrees did.
+  - **Hops** (`dev/tools/walk-data`, format 3): from every floor on the ground to the floors on the ground beside it
+    (`HOP`, 1 sample) that the samples do not join (more than 2.6 yards higher or lower), where the triangles of the
+    cells round both make a way up from the lower to the higher (a search over them: none steeper than `STEEPEST`, 60
+    degrees, at most `CROSSED`, 1, steeper than 50, crossed level or going down: no more than `CLIMBED`, a quarter of a
+    yard, climbed on it) and nothing built stands there (a building's walls the triangles do not know: Stormwind's
+    basin stays shut). Both ways, joining regions as openings do: the ridge is the main region's, and its drops are
+    kept. On its own tile only. Walkable triangles alone (no steep one) did not join it; one of up to 60 degrees did.
+  - **Tightened the same day.** Saneroki: "it does work now but the getting up on a steep slope or jumping up is a
+    little to loose. There are areas where it thinks you can get up there but you can't". The first rule took floors 2
+    samples apart (over a whole steep sample) and 2 steep triangles, climbing on them; on the ridge's tile it made 1,558
+    hops. The strictest rule that still climbs the ridge, measured on its tile: only a sample's neighbours, at most one
+    steep triangle, no height gained on it (the climb's steep triangle is crossed level): 418. Nobody walks up ground
+    over 50 degrees; a short steep bit is only crossed. Going down past such a step stays a drop. Rebuilt: 107,512 hops (401,238),
+    910,612 drops, 32.4 MB of blocks, the master 83.0 MB; the climb east of the Undercity as it was; offline (200
+    journeys) as many walks off the data as with the drops alone, a journey that walked over the mountains flies again.
   - **Taken:** `Walk.lua` lists them with the drops, marked; the search both ways at their yards and the climb's price;
     the coarse layer's parts and the costs between gates as openings (`dev/tools/walk-gates`, `Gates.Parts`); the
     floor's following.
