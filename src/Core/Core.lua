@@ -36,6 +36,8 @@ Core.GOLD = { 0.525, 0.439, 0.282 }
 -- SaneUI's Discord, by the server's own address (it never expires): on the page SaneUI (About.lua) and in the
 -- line told for a problem.
 Core.DISCORD = "https://discord.gg/saneui"
+-- SaneUI's code on GitHub, where bugs and ideas can be filed as issues too (the page SaneUI).
+Core.GITHUB = "https://github.com/Saneroki/SaneUI"
 local PREFIX = "|cff867048" .. Core.TITLE .. ":|r "
 
 function Core.Print(text)

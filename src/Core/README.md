@@ -274,7 +274,8 @@ but for a window to try those with (`/sane window`).
   `Tick(name, on)`, `Any()`, `Save()` (each path written into every other profile ticked, Sync's only into one
   of this game; the one in use unticked gets them back), `Undo()` (`Profiles.Put` with the last save's values:
   the modules told, Sync writing the game's; an Edit Mode layout takes its own text again, `Sync.ExactLayout`),
-  `Wait(words, fn, last)`, `Next()`, `Watch(fn)`, `Moved()` (another profile in use: a new last save),
+  `Wait(words, fn, last)`, `Settle()` (the settings as they are now the last save, nothing waiting: a change asked
+  and answered at once, *Reset all settings*), `Next()`, `Watch(fn)`, `Moved()` (another profile in use: a new last save),
   `Renamed(old, new)` (a profile's tick follows its new name; nil: deleted). At
   `PLAYER_LOGOUT`, after Profiles' capture: unanswered, the changes are saved as *Yes* saves them (Saneroki,
   2026-11-10), into every profile ticked; only the one in use, unticked, takes the last save's values, in the
@@ -724,6 +725,8 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-11-18 — `Core.GITHUB` (Core.lua): SaneUI's code on GitHub, a link on the page *SaneUI*. `Unsaved.Settle()` and
+  `Onboarding.Forget()` for *Reset all settings* there (`Settings/About.lua`, `About.StartOver`).
 - 2026-11-18 — `GameLayout.lua` (new, in Core's TOC after `Arrange.lua`): SaneUI's layout of the game's Edit Mode (Saneroki:
   "set those to permanent defaults as a 'SaneUI' edit mode layout"), his own arrangement in WoW: Forever (the action bars
   in four rows at the bottom middle, the minimap, chat, micro menu, buffs and the rest), `GameLayout.SYSTEMS` by the game's

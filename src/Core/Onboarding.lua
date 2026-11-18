@@ -19,6 +19,7 @@ local Core = SaneUI.Core
 --      Core.Onboarding.Start(quiet, all) -- the run: its first page, then those still to go through (all: every
 --                                         -- setup again, from its first step: /sane setup)
 --      Core.Onboarding.Defaults(name, after) -- a setup's switches back to their defaults, kept as done
+--      Core.Onboarding.Forget()          -- every setup back to not gone through (Reset all settings)
 --      /sane setup <module>              -- the same, typed; /sane setup alone: the whole onboarding again
 --                                         -- (Saneroki, 2026-11-18: "/sane setup does not restart the onboarding")
 --
@@ -274,6 +275,13 @@ function Onboarding.Continue()
         end
     end
     return false
+end
+
+-- Every setup back to not gone through, none left at a step (Reset all settings, Settings/About.lua): the next run
+-- shows them all again, and one closed before its end opens again at the next login.
+function Onboarding.Forget()
+    local store = Records()
+    store.done, store.left = {}, {}
 end
 
 -- Kept as gone through (or its defaults chosen, defaults), with its version and the day; passed in a run asked for

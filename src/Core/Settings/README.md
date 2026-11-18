@@ -111,9 +111,19 @@ it back.
   (`Core.AfterCombat("options", Config.Open)`: asked twice, it opens once).
 - **The pages, in this order** (`Config.Fill`):
   - *SaneUI* (`Core.pages.top`): the banner, then `About.lua`'s rows (the game's section headers and button
-    rows): *Community* (Discord, Website, GitHub: *Copy link* shows the address selected in the game's
-    `GENERIC_INPUT_BOX`; an address left empty in `About.LINKS` shows *Coming soon*, its button off) and
-    *Feedback* (*Report a bug*, *Suggest a feature*, *General feedback*: each opens the feedback window).
+    rows): *Setup* (*Reset all settings*, its button *Reset and set up*: `About.StartOver`, below),
+    *Community* (Discord, GitHub at `Core.GITHUB`: *Copy link* shows the address selected in the game's
+    `GENERIC_INPUT_BOX`; an address left empty in `About.LINKS` shows *Coming soon*, its button off; the row
+    *Website* went on 2026-11-18) and *Feedback* (*Report a bug*, *Suggest a feature*, *General feedback*:
+    each opens the feedback window). No donation request in the game (Blizzard's add-on policy, *addon-standards.md*
+    section 1; Saneroki, 2026-11-18: "just don't add it anywhere then").
+- **Reset all settings** (`About.StartOver`; Saneroki, 2026-11-18: "a button to reset all settings and restart the
+  /sane setup again"): asked first in the game's yes or no (`Core.Confirm`, its warning sign, *Reset*); changes the
+  save window still waits on are answered before it (`Core.Unsaved.Wait`). Then every setting of SaneUI's in use back
+  to its default (`Profiles.Reset`: every module's, switched on or not, Core's own and where the windows stand; the
+  profile in use, or the character's own while profiles are off; the game's settings and every module's store stay),
+  counted as saved at once (`Core.Unsaved.Settle`), every setup back to not gone through (`Core.Onboarding.Forget`),
+  and the whole setup from its first page (`Core.Onboarding.Start(false, true)`, as `/sane setup`).
     An addon can open no web page, copy nothing to the clipboard (`CopyToClipboard` is the game's own) and
     send nothing out of the game, so the player copies with Ctrl+C.
 - **The feedback window** (`About.lua`, `SaneUIFeedbackFrame`, made when first opened; also `/sane feedback`
@@ -301,7 +311,7 @@ it back.
 | `CVars.lua` | The tab *CVars* on the page *Profiles*: the list of the game's CVars |
 | `CVars.xml` | The list's frame, and one CVar's row in it |
 | `Data/CVarLabels.lua` | The names of the game's strings for the CVars its options show; made by `dev/tools/cvar-labels` |
-| `About.lua` | The page *SaneUI* under its banner: the links (`About.LINKS`), the feedback buttons, the feedback window and its report, `/sane feedback` |
+| `About.lua` | The page *SaneUI* under its banner: *Reset all settings* (`About.StartOver`), the links (`About.LINKS`), the feedback buttons, the feedback window and its report, `/sane feedback` |
 | `Banner.xml` | Our rows in the game's lists: the one a banner is drawn in (its height, the art's size and place), and the one to type into |
 
 SaneUI's banner, for the page *SaneUI*, is Core's: `assets/optimized/Core/Art/banner.blp` (original art of SaneUI, see
@@ -309,6 +319,7 @@ the project's `LICENSE`; made by `dev/tools/art` from `assets/SaneUI-banner.png`
 
 ## History
 
+- 2026-11-18 — The page *SaneUI*: *Setup* at its top with *Reset all settings* (every setting of SaneUI's in use back to its default, then the whole setup again; Saneroki: "a button to reset all settings and restart the /sane setup again"); GitHub's link filled in (`Core.GITHUB`), the row *Website* gone ("add the github link on the settings page there and remove the website row").
 - 2026-11-15 — The page *Profiles*: the switch *Share settings between characters* at its top, off on a fresh install (Saneroki: "the whole profiles should be disabled by default and can be activated in the settings or during the onboarding procedure"); off, the rest of the page gives way to a line saying why. The line on the profiles no longer calls Accountwide our recommended settings: it is made from the settings of the character that turned profiles on.
 - 2026-11-10 — A part unticked in *Game settings* unticks its CVars in the tab *CVars* too (Graphics: our recommended view distance, shadows and frame rate), and an untick there stays when the presets get a new version.
 - 2026-11-10 — A profile chosen while the window waits is the character's from its next login when a `/reload` or logout answers instead; a profile renamed keeps its tick under *Save to* (the one in use renamed lost it, and *Yes* took the changes back), one deleted loses it.

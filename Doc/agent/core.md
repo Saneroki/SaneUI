@@ -90,7 +90,7 @@ end (`dev/build`, from `assets/data/`).
 | `Settings/Screen.lua` | The options over a full screen (the title bar's cog): `Config.Screen`, `STRATA` DIALOG |
 | `Settings/Profiles.lua` | The page *Profiles*: `Config.BuildProfiles(page)` |
 | `Settings/Synced.lua` | Its tab *Game settings*: `Config.AccountTab` (a box per `Sync.GROUPS` entry) |
-| `Settings/About.lua` | The page *SaneUI*: `Config.About.LINKS`/`KINDS`/`ShowLink`/`Report`/`Open`/`Fill`; `/sane feedback` |
+| `Settings/About.lua` | The page *SaneUI*: *Reset all settings* (`Config.About.StartOver`), `LINKS` (Discord, GitHub)/`KINDS`/`ShowLink`/`Report`/`Open`/`Fill`; `/sane feedback` |
 | `Settings/Data/CVarLabels.lua` | The CVars' labels, by `dev/tools/cvar-labels` |
 | `Settings/CVars.lua`, `CVars.xml` | The tab *CVars*: `Config.CVarsTab`, `Config.CVars.All`/`Info`/`Shown`/`Set`/`Keep`; `SaneUISettingsCVarsTemplate`, `SaneUISettingsCVarRowTemplate` |
 | `Settings/Banner.xml` | Our list row templates: `SaneUISettingsBannerTemplate`, `SaneUISettingsEntryTemplate` (a box to type into) |

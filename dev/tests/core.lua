@@ -196,25 +196,23 @@ local banner = top.items[1]
 check(banner.template == "SaneUISettingsBannerTemplate" and banner.data.file == "Interface\\AddOns\\SaneUI\\Art\\banner",
     "its own page starts with SaneUI's banner")
 
--- Under it: the links and feedback (About.lua)
+-- Under it: SaneUI started over, the links and feedback (About.lua)
 local About = Config.About
 local names = {}
 for index = 2, #top.items do names[#names + 1] = top.items[index].header or top.items[index].name end
-check(table.concat(names, ",") == "Community,Discord,Website,GitHub,Feedback,Report a bug,Suggest a feature,General feedback",
-    "then Community with Discord, Website and GitHub, and Feedback with a bug, a feature and general feedback")
-local discord, website = top.items[3], top.items[4]
+check(table.concat(names, ",") == "Setup,Reset all settings,Community,Discord,GitHub,Feedback,Report a bug,Suggest a feature,General feedback",
+    "then Setup with Reset all settings, Community with Discord and GitHub, and Feedback with a bug, a feature and general feedback")
+local discord, github = top.items[5], top.items[6]
 check(discord.button == About.TEXT.open and About.LINKS[1].key == "discord" and About.LINKS[1].url ~= "",
     "Discord has its invite, to copy")
-check(website.button == "Coming soon" and website.tooltip == About.TEXT.soonTip, "a link without an address is not there yet")
-local link = About.LINKS[2]
-link.url = "the address"
+check(github.button == About.TEXT.open and About.LINKS[2].key == "github" and About.LINKS[2].url == Core.GITHUB
+    and Core.GITHUB:find("github.com/Saneroki/", 1, true), "GitHub has its address, to copy; no website row")
 W.popups = {}
-About.ShowLink(link)
+github.click()
 local popup = W.popups[1]
-check(popup and popup.which == "GENERIC_INPUT_BOX" and popup.box.text == link.url and popup.box.highlighted,
+check(popup and popup.which == "GENERIC_INPUT_BOX" and popup.box.text == Core.GITHUB and popup.box.highlighted,
     "a link is shown in the game's dialog, its address selected to copy")
-link.url = ""
-About.ShowLink(link)
+About.ShowLink({ name = "Later", url = "" })
 check(#W.popups == 1, "one without an address shows nothing")
 local bug, idea = About.KINDS[1], About.KINDS[2]
 Core.log[#Core.log + 1] = { when = "2026-10-16 12:00:00", label = "Test", text = "broke\nat line 1", count = 2 }
@@ -225,7 +223,7 @@ check(report:find("SaneUI Bug report: 1.2.3", 1, true) and report:find("Game 1.6
     "a bug report carries the versions, the class, what was written and the latest errors")
 check(not About.Report(idea, "More bars"):find("Latest errors", 1, true) and not report:find("Tester", 1, true),
     "an idea carries no errors, and no report names the character")
-local feedback = top.items[7]
+local feedback = top.items[8]
 feedback.click()
 local window = SaneUIFeedbackFrame
 check(window and window:IsShown() and window._title == "Report a bug" and window.Ask:GetText() == bug.ask,
@@ -2251,6 +2249,42 @@ do
         "a client without one of the sounds: the others alone, nothing fails")
     store.audio = nil
     W.cvarInfo, W.cvars = {}, {}
+end
+
+-- The page SaneUI's first row, Reset all settings (About.lua), checked last: it changes what the checks above set up.
+-- Every setting in use back to its default, every setup not gone through, and the whole setup from its first page
+-- (as /sane setup), asked first; changes the save window waits on are answered before it.
+do
+    local startOver = top.items[3]
+    check(top.items[2].header == "Setup" and startOver.button == About.TEXT.startOverButton and startOver.tooltip == About.TEXT.startOverTip,
+        "the page starts with Setup and its button Reset and set up")
+    Core.Set(Core.name, "chatData", true)
+    local setups = Core.Store(Core.Onboarding.STORE)
+    setups.done, setups.left = { Demo = { version = 1 } }, { Other = 2 }
+    local Start, started = Core.Onboarding.Start, nil
+    Core.Onboarding.Start = function(quiet, all) started = { quiet = quiet, all = all } return true end
+    W.popups = {}
+    startOver.click()
+    local ask = W.popups[1]
+    check(ask and ask.which == "GENERIC_CONFIRMATION" and ask.data.showAlert and ask.data.acceptText == About.TEXT.startOverYes
+        and Core.general.chatData == true and setups.done.Demo and not started, "Reset all settings asks first: nothing changes before the yes")
+    ask.data.callback()
+    check(Core.general.chatData == false and next(setups.done) == nil and next(setups.left) == nil,
+        "yes: every setting back to its default, and every setup back to not gone through")
+    check(started and started.all == true and not started.quiet and not Core.Unsaved.Pending(),
+        "then the whole setup from its first page, and the save window waits for nothing")
+    -- Changes waiting to be saved: the reset follows their answer.
+    Core.Set(Core.name, "chatData", true)
+    local Wait, waited = Core.Unsaved.Wait, nil
+    Core.Unsaved.Wait = function(_, fn) waited = fn return true end
+    started, W.popups = nil, {}
+    startOver.click()
+    W.popups[1].data.callback()
+    check(waited and Core.general.chatData == true and not started, "with changes waiting to be saved, the reset waits for their answer")
+    Core.Unsaved.Wait = Wait
+    waited()
+    check(Core.general.chatData == false and started and started.all == true, "and follows it")
+    Core.Onboarding.Start = Start
 end
 
 print = nil -- the stand-in's print; use the real one for the summary

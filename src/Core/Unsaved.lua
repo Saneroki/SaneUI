@@ -367,6 +367,15 @@ function Unsaved.Undo()
     return true
 end
 
+-- The settings as they are now are the last save, nothing waiting: for a change the player asked for and answered at
+-- once in the game's yes or no (Reset all settings, Settings/About.lua), made once nothing else waited (Wait), so the
+-- save window does not ask about it again and no other profile ticked takes it.
+function Unsaved.Settle()
+    before, changes, ticks = nil, nil, nil
+    if next(menus) then Mark() end
+    Tell()
+end
+
 -- A step that needs the answer first: true when it waits for it (fn runs once the changes are saved or taken back),
 -- false when nothing waits to be saved. words: what follows, for the save window. last: what of the step is done
 -- at a /reload or logout unanswered, which saves the changes as Yes does and so answers too (another profile: the

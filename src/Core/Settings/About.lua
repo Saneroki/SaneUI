@@ -1,7 +1,8 @@
 -------------------------------------------------------------------------------
 --  SaneUI - Core - Settings - About
---  The page "SaneUI" under its banner: where to find SaneUI (Discord, the
---  website, GitHub) and feedback (a bug, an idea, a note).
+--  The page "SaneUI" under its banner: SaneUI started over (every setting
+--  back to its default, then the setup again), where to find SaneUI (Discord,
+--  GitHub) and feedback (a bug, an idea, a note).
 --
 --  An addon can open no web page, copy nothing to the clipboard and send
 --  nothing out of the game. So a link is shown in the game's own dialog with
@@ -21,8 +22,7 @@ Config.About = About
 -- Where SaneUI can be found. An address left empty has its row, with the button off.
 About.LINKS = {
     { key = "discord", name = "Discord", url = Core.DISCORD, tip = "Talk with other players and the maker of SaneUI." },
-    { key = "website", name = "Website", url = "", tip = "News, guides and downloads." },
-    { key = "github", name = "GitHub", url = "", tip = "The code, and the place for bug reports and ideas (Issues)." },
+    { key = "github", name = "GitHub", url = Core.GITHUB, tip = "The code, and the place for bug reports and ideas (Issues)." },
 }
 
 -- The kinds of feedback, in the order of their buttons. `where`: where the made report is pasted, each
@@ -43,6 +43,13 @@ About.KINDS = {
 }
 
 local TEXT = {
+    setup = "Setup",
+    setupTip = "SaneUI from the start, as on a fresh install.",
+    startOver = "Reset all settings",
+    startOverButton = "Reset and set up",
+    startOverTip = "Every SaneUI setting in use back to its default and its windows back at their first places, then the setup from its first page. Asked first. The game's own settings stay, and so does what SaneUI keeps (map pins, conversations, guild records). The setup alone, without the reset: /sane setup.",
+    askStartOver = "Set every SaneUI setting back to its default and start the setup again?\n\nSaneUI's windows go back to their first places. The game's own settings, your map pins, conversations and the rest SaneUI keeps stay as they are.",
+    startOverYes = "Reset",
     community = "Community",
     feedback = "Feedback",
     open = "Copy link",
@@ -79,6 +86,27 @@ function About.ShowLink(link)
         if box.SetFocus then box:SetFocus() end
     end
     return dialog
+end
+
+-------------------------------------------------------------------------------
+--  Reset all settings (Saneroki, 2026-11-18: "a button to reset all settings
+--  and restart the /sane setup again")
+-------------------------------------------------------------------------------
+-- Every setting of SaneUI's in use back to its default (Profiles.Reset: every module's, switched on or not, Core's
+-- own and where the windows stand; the game's settings stay), counted as saved at once (Unsaved.Settle: asked
+-- already), every setup back to not gone through, then the whole setup from its first page, as /sane setup.
+local function StartOver()
+    Core.Profiles.Reset()
+    Core.Unsaved.Settle()
+    Core.Onboarding.Forget()
+    if not Core.Onboarding.Start(false, true) then Core.Print(Core.Onboarding.TEXT.none) end
+end
+
+-- Asked first in the game's yes or no; changes the save window still waits on are answered before it (Unsaved.Wait).
+function About.StartOver()
+    return Core.Confirm(TEXT.askStartOver, nil, function()
+        if not Core.Unsaved.Wait(TEXT.startOver, StartOver) then StartOver() end
+    end, true, TEXT.startOverYes)
 end
 
 -------------------------------------------------------------------------------
@@ -230,6 +258,9 @@ end
 -------------------------------------------------------------------------------
 function About.Fill(page)
     if not CreateSettingsButtonInitializer then return end
+    Settings.RegisterInitializer(page, CreateSettingsListSectionHeaderInitializer(TEXT.setup, TEXT.setupTip))
+    Settings.RegisterInitializer(page, CreateSettingsButtonInitializer(TEXT.startOver, TEXT.startOverButton,
+        function() Core.Safe("Settings: reset all", About.StartOver) end, TEXT.startOverTip, true))
     Settings.RegisterInitializer(page, CreateSettingsListSectionHeaderInitializer(TEXT.community))
     for _, link in ipairs(About.LINKS) do
         local url = Url(link)

@@ -152,6 +152,9 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   onboardings"): words alone in the colours of Forever's top bar (`Look.NAV`, lit `Look.NAV_LIT` under the mouse; red
   is for what matters, and *Back* and *Next* stand beside it), on each row of the first page and between the progress
   bar and *Back* while a setup is not gone through (`Core.Onboarding.Done`), the bar reaching to it.
+  `Core.Onboarding.Forget()` (*Reset all settings* on the page *SaneUI*, Core's `Settings/About.lua`): every setup
+  back to not gone through, none left at a step (`done`, `left` emptied), so the whole setup that follows shows them
+  all and one closed before its end opens again at the next login.
   `Core.Onboarding.Defaults(name, after)`: the setup's switches (its steps' keys; not the game's key bindings) back to
   their defaults (`Core.Reset`), kept as `done[name] = { version, day, defaults = true }`
   (`Core.Onboarding.Defaulted`), so it counts as gone through for the run and the login until a new `version`; where
