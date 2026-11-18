@@ -11,6 +11,35 @@
 
 # The module's own table, its words and settings. First: the other files will add to that table.
 Combat.lua
+# The nameplates' words and switches, added to Combat's; their start and their giving back (Nameplates/)
+Nameplates\Nameplates.lua
+# The module's switches handed to Core, every part's now in the list
+Settings.lua
+# The nameplates: the game's plates in our dress (the addon SaneUI_Nameplates until 2026-11-18)
+# The health bar: round at both ends, its border by rank, a ring on your target and focus, the power line, the glow
+Nameplates\Bar.lua
+# The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line
+Nameplates\Text.lua
+# Your debuffs above the bar, a foe's buffs left of it, crowd control right of it, in the game's own aura containers
+Nameplates\Auras.lua
+# The raid marker, in the line
+Nameplates\Marks.lua
+# Your combo points on the power line of your target's bar
+Nameplates\Resource.lua
+# Plates smaller far away: their own size at your feet, half at 40 yards, a quarter at 60
+Nameplates\Scale.lua
+# Your target out of reach of all your attacks: its border red
+Nameplates\Range.lua
+# A unit's cast, under its plate's bar: icon with the seconds left, the spell and its target
+Nameplates\Cast.lua
+# The combat text: what a unit takes rising over its plate, and over your character; drawings for misses, parries, blocks
+Nameplates\CombatText.lua
+# Our dress on each plate the game shows, laid over its health bar; the game's own bar, name, auras and marks out of sight under it
+Nameplates\Plate.lua
+# A made-up plate drawn by the plates' own code, for the setup: what the settings change shows on it at once
+Nameplates\Sample.lua
+# The setup, step by step: each step's words, the switches it is about and its sample plates (the window is the addon Onboarding's)
+Nameplates\Setup.lua
 # A mark beside a creature's nameplate while it belongs to an objective of your quests still to do
 QuestMarks.lua
 # Rings around the mouse for the global cooldown and your cast, only while they run
@@ -58,3 +87,6 @@ Meter\Fights.lua
 Meter\Row.lua
 Meter\Controls.lua
 Meter\Meter.lua
+# Combat's setup, step by step: the parts, the unit frames, the party and raid frames with their preview and
+# Edit Mode, the nameplates' steps, aura tracking (the window is the addon Onboarding's). Last: it draws every part
+Setup.lua

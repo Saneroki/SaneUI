@@ -7,6 +7,7 @@ local Core = SaneUI.Core
 --  The parts, for a window that is not ours to keep (the game's spellbook):
 --      Window.Mover(handle, frame, hooks)   drag the handle to move the frame
 --      Window.Sizer(frame, hooks)           a grip in a corner that sizes it
+--      Window.Edges(frame, hooks)           grips at its four corners and handles along its sides (option resize)
 --  They move and size, and tell when it is over. Nothing is written into the
 --  frame; where it stands is the caller's to keep.
 --
@@ -77,6 +78,11 @@ local Core = SaneUI.Core
 --                                       -- hidden); full, it is not made small first, so it opens full again.
 --                                       -- Without: Esc only brings a full window back to its size (Edge.lua)
 --          sizable = true,              -- a grip in Edit Mode (window.grip); its size is kept too
+--          resize = { sized = function(width, height, done) end, minWidth, minHeight, maxWidth, maxHeight },
+--                                       -- in Edit Mode a grip at each corner and a handle along each side
+--                                       -- (window.edges), dragged to size it as the mouse goes; its size is
+--                                       -- the module's (a window not sizable): sized tells it at every step
+--                                       -- (done: let go, the place kept)
 --          minWidth = 180, minHeight = 130,
 --          grip = "hover",              -- with sizable: the grip outside Edit Mode too, while the window
 --                                       -- rests in its zone, seen while the mouse is on it (window:Hover)
@@ -308,6 +314,83 @@ function Window.Sizer(frame, hooks)
         if hooks.tip then GameTooltip:Hide() end
     end))
     return grip
+end
+
+-- Grips at the four corners and handles along the four sides (options.resize; Saneroki, 2026-11-18: "has a dragable
+-- corner to resize it by draging corners or sides"): each sizes the frame from its own point as the game sizes a
+-- frame (StartSizing), the point across from it held where it is. hooks: usable(), started(point), stopped(), moved()
+-- at every step of the size; minWidth, minHeight, maxWidth, maxHeight. Returns them, out of sight.
+Window.SIDE = 8 -- how thick a side's handle is, along the window's inside
+local SIDES = { "TOP", "BOTTOM", "LEFT", "RIGHT" }
+local CORNERS = { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }
+function Window.Edges(frame, hooks)
+    local handles, sizing = {}, nil
+    local function Begin(point)
+        if sizing or (hooks.usable and not Core.Safe("window", hooks.usable)) then return end
+        -- The point across stays where it is: a side holds the side across, a corner the corner across.
+        local left, right, bottom, top = frame:GetLeft(), frame:GetRight(), frame:GetBottom(), frame:GetTop()
+        if not (left and bottom) then return end
+        local holdX = point:find("LEFT") and "RIGHT" or "LEFT"
+        local holdY = point:find("TOP") and "BOTTOM" or "TOP"
+        local x = holdX == "LEFT" and left or right
+        local y = holdY == "BOTTOM" and bottom or top
+        frame:ClearAllPoints()
+        frame:SetPoint(holdY .. holdX, UIParent, "BOTTOMLEFT", x, y)
+        frame:SetResizable(true)
+        if frame.SetResizeBounds then
+            frame:SetResizeBounds(hooks.minWidth or 1, hooks.minHeight or 1, hooks.maxWidth or UIParent:GetWidth(),
+                                  hooks.maxHeight or UIParent:GetHeight())
+        end
+        sizing = point
+        if hooks.started then Core.Safe("window", hooks.started, point) end
+        frame:StartSizing(point)
+    end
+    local function Finish()
+        if not sizing then return end
+        sizing = nil
+        frame:StopMovingOrSizing()
+        frame:SetUserPlaced(false)
+        if hooks.stopped then Core.Safe("window", hooks.stopped) end
+    end
+    local function Handle(point, corner)
+        local handle = CreateFrame("Button", nil, frame)
+        if corner then
+            handle:SetSize(16, 16)
+            handle:SetNormalTexture(GRIP .. "Up")
+            handle:SetHighlightTexture(GRIP .. "Highlight")
+            handle:SetPushedTexture(GRIP .. "Down")
+            handle.insetX, handle.insetY = 2, 2
+            Window.Corner(handle, point)
+        else
+            local across = point == "TOP" or point == "BOTTOM"
+            handle:SetPoint(point, frame, point, 0, 0)
+            if across then
+                handle:SetPoint("LEFT", frame, "LEFT", 16, 0)
+                handle:SetPoint("RIGHT", frame, "RIGHT", -16, 0)
+                handle:SetHeight(Window.SIDE)
+            else
+                handle:SetPoint("TOP", frame, "TOP", 0, -16)
+                handle:SetPoint("BOTTOM", frame, "BOTTOM", 0, 16)
+                handle:SetWidth(Window.SIDE)
+            end
+        end
+        handle.point = point
+        handle:SetScript("OnMouseDown", Core.Guard("window", function() Begin(point) end))
+        handle:SetScript("OnMouseUp", Core.Guard("window", Finish))
+        handle:SetScript("OnEnter", Core.Guard("window", function() SetCursor("UI_RESIZE_CURSOR") end))
+        handle:SetScript("OnLeave", Core.Guard("window", function() SetCursor(nil) end))
+        handle:Hide()
+        handles[#handles + 1] = handle
+        return handle
+    end
+    for _, point in ipairs(CORNERS) do Handle(point, true) end
+    for _, point in ipairs(SIDES) do Handle(point, false) end
+    frame:HookScript("OnSizeChanged", Core.Guard("window", function()
+        if sizing and hooks.moved then Core.Safe("window", hooks.moved) end
+    end))
+    handles.Finish = Finish
+    handles.Sizing = function() return sizing ~= nil end
+    return handles
 end
 
 -------------------------------------------------------------------------------
@@ -1151,6 +1234,10 @@ local function Edit(window, on)
         window.grip:SetShown(on)
         if on then window.grip:SetAlpha(1) else Grip(window) end
     end
+    if window.edges then
+        if not on then window.edges.Finish() end
+        for _, handle in ipairs(window.edges) do handle:SetShown(on) end
+    end
     window:Refresh()
 end
 
@@ -1265,6 +1352,26 @@ function Window.New(frame, options)
             window.grip:HookScript("OnLeave", seen)
         end
     end
+    local resize = options.resize
+    if type(resize) == "table" then
+        local function Told(done)
+            if resize.sized then Core.Safe("window", resize.sized, frame:GetWidth(), frame:GetHeight(), done) end
+        end
+        window.edges = Window.Edges(frame, {
+            minWidth = resize.minWidth, minHeight = resize.minHeight, maxWidth = resize.maxWidth, maxHeight = resize.maxHeight,
+            usable = function() return window.usable() end,
+            started = function() window.resizing = true end,
+            moved = function() Told(false) end,
+            -- Let go: the window keeps its place where it stands now (docked as it was), then the module takes the size.
+            stopped = function()
+                window.resizing = false
+                Keep(window, window.zone)
+                Told(true)
+                if Core.Selection then Core.Selection.Moved(window) end
+            end,
+        })
+        for _, handle in ipairs(window.edges) do handle:SetFrameLevel(frame:GetFrameLevel() + Window.BOX_LEVEL + 1) end
+    end
     windows[#windows + 1] = window
     -- Shown again in a zone another window holds now (it came first): it stands free this time.
     frame:HookScript("OnShow", Core.Guard("window", function()
@@ -1275,6 +1382,7 @@ function Window.New(frame, options)
     frame:HookScript("OnHide", Core.Guard("window", function()
         if window.moving then Moved(window) end
         if window.sizing then Sized(window) end
+        if window.edges then window.edges.Finish() end
     end))
     if options.tabs then Core.Safe("window", Window.Views, window) end
     if Core.EditMode.active then Edit(window, true) end

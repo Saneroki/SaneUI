@@ -17,6 +17,10 @@ local _, ns = ...
 --                       button past the two main ones (Esc: as it was); a
 --                       right click unbinds it (the game's own key
 --                       bindings, saved as its key binding window saves them)
+--    a command          a button with its words that runs one of the game's
+--                       slash commands ({ macro = "/editmode", command =
+--                       "EDITMODE", text, tip, done, missing }): Combat's
+--                       party and raid frames placed in Edit Mode (Command)
 --  A step may word one of the module's switches its own way: its entry
 --  { key = "expandClick", text, tip, choices = { { value, words }, ... },
 --  column = true } over the switch's description (a switch shown as round
@@ -68,6 +72,7 @@ Controls.TEXT = {
     keyTip = "Click, then press the key you want for it, with Shift, Ctrl or Alt if you like (Alt-Shift-V). "
         .. "Esc: keep it as it was. Right click: no key.",
     fight = "Keys can be changed out of a fight only.",
+    commandFight = "That opens after the fight.",
     taken = "%s no longer does: %s.",
 }
 
@@ -458,6 +463,97 @@ local function Key(host, entry, width)
     return row
 end
 
+-- A command of the game's ({ macro = "/editmode", command = "EDITMODE", text, tip, done = function() end, missing =
+-- words }): a button with its words. The game runs a slash command for an addon only from its secure button
+-- (SecureActionButtonTemplate, a macro of that text: Edit Mode opens as from the game's menu, nothing of ours in its
+-- way), so the button seen is a plain one, and over it, on UIParent in its place (as Abilities' spellbook covers its
+-- spells: a window of ours holding a protected frame could not be closed in a fight), the game's secure button takes
+-- the click: there while the row shows and out of a fight, gone as a fight begins (PLAYER_REGEN_DISABLED comes
+-- before the game locks it) and back after it, following the row while the window is dragged. done runs after the
+-- command (PostClick). Where the game knows no such command (no SLASH_<command>1), the click says missing instead.
+Controls.COMMAND = 260          -- the button's width at most
+Controls.COVER = "FULLSCREEN_DIALOG" -- the secure button's layer: over the setup's window
+local covers = {}               -- [row] = its secure button, made once
+local function Place(row)
+    local cover, button = covers[row], row.button
+    if not cover or InCombatLockdown() then return end
+    local left, top = button:GetLeft(), button:GetTop()
+    if not (left and top) or not row:IsVisible() then
+        cover:Hide()
+        return
+    end
+    local ratio = button:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    local width, height = button:GetWidth() * ratio, button:GetHeight() * ratio
+    local at = { left * ratio, top * ratio, width, height }
+    local was = cover.at
+    if not (was and was[1] == at[1] and was[2] == at[2] and was[3] == at[3] and was[4] == at[4]) then
+        cover.at = at
+        cover:ClearAllPoints()
+        cover:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", at[1], at[2])
+        cover:SetSize(width, height)
+    end
+    cover:Show()
+end
+local function Cover(row, entry)
+    local cover = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
+    cover:SetFrameStrata(Controls.COVER)
+    cover:RegisterForClicks("LeftButtonUp")
+    cover:SetAttribute("type", "macro")
+    cover:SetAttribute("macrotext", entry.macro)
+    cover:SetScript("PostClick", ns.Guard(function()
+        if entry.done then ns.Safe("command", entry.done) end
+    end))
+    cover:SetScript("OnEnter", ns.Guard(function()
+        row.button:LockHighlight()
+        GameTooltip:SetOwner(cover, "ANCHOR_RIGHT")
+        GameTooltip:SetText(entry.text)
+        if entry.tip then GameTooltip:AddLine(entry.tip, 1, 1, 1, true) end
+        GameTooltip:Show()
+    end))
+    cover:SetScript("OnLeave", ns.Guard(function()
+        row.button:UnlockHighlight()
+        GameTooltip:Hide()
+    end))
+    cover:Hide()
+    covers[row] = cover
+    return cover
+end
+local function Command(host, entry, width)
+    local row = CreateFrame("Frame", nil, host)
+    row:SetSize(width, Controls.TICK + 8)
+    local button = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+    button:SetSize(math.min(width, Controls.COMMAND), Controls.TICK + 2)
+    button:SetPoint("LEFT", row, "LEFT", 0, 0)
+    button:SetText(entry.text)
+    row.button = button
+    local known = type(entry.command) == "string" and rawget(_G, "SLASH_" .. entry.command .. "1") ~= nil
+    -- The plain button's own click: the command where the game has none for us (words), or in a fight.
+    button:SetScript("OnClick", ns.Guard(function()
+        if InCombatLockdown() then return Core.Print(Controls.TEXT.commandFight) end
+        if not known and entry.missing then Core.Print(entry.missing) end
+    end))
+    Core.Tip(button, entry.text, entry.tip)
+    if known and type(entry.macro) == "string" then
+        Cover(row, entry)
+        row:SetScript("OnShow", ns.Guard(function() Place(row) end))
+        row:SetScript("OnHide", ns.Guard(function()
+            if not InCombatLockdown() then covers[row]:Hide() end
+        end))
+        -- Follows the row while the window is dragged (only while it shows).
+        row:SetScript("OnUpdate", ns.Guard(function() Place(row) end))
+    end
+    function row.Refresh() end
+    return row
+end
+
+-- A fight begins: every secure button of ours away before the game locks it; back over its row after the fight.
+ns.On("PLAYER_REGEN_DISABLED", function()
+    for _, cover in pairs(covers) do cover:Hide() end
+end)
+ns.On("PLAYER_REGEN_ENABLED", function()
+    for row in pairs(covers) do Place(row) end
+end)
+
 -- One of the module's switches as a step words it ({ key, text, tip, choices, column }): its description with the
 -- step's fields over it; nil for a switch the module does not describe.
 local function Worded(name, entry)
@@ -495,7 +591,8 @@ function Controls.Build(parent, name, keys, width)
         -- A key ({ binding = "COMMAND", text, tip }), one of the module's switches by its key, or one the step words
         -- its own way ({ key = "...", text, choices }).
         local binding = type(key) == "table" and type(key.binding) == "string" and key
-        local option = not binding and (type(key) == "table" and Worded(name, key) or Core.Described(name, key))
+        local command = type(key) == "table" and type(key.macro) == "string" and key
+        local option = not (binding or command) and (type(key) == "table" and Worded(name, key) or Core.Described(name, key))
         local hidden = option and type(option.hidden) == "function" and ns.Safe("hidden", option.hidden, options)
         local inset = option and option.parent and Controls.UNDER or 0
         local row
@@ -503,6 +600,9 @@ function Controls.Build(parent, name, keys, width)
         if binding then
             row = Key(holder, binding, room)
             option = { key = binding.binding }
+        elseif command then
+            row = Command(holder, command, room)
+            option = { key = command.macro }
         else
             row = option and option.text and not hidden and Make(holder, name, option, room)
         end

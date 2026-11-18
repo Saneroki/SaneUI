@@ -18,7 +18,7 @@
 #   reminders.lua   the Combat module's reminders: the right click on auras, the bars, what shows when, a fight with hidden auras
 #   auralists.lua   the Combat module's aura lists: one list with a tick per mark, the search over every class's, the enemies' and the items' auras
 #   aurahistory.lua Core's aura log and Abilities' aura history: the auras seen on enemies, a fight with hidden auras, the window
-#   nameplates.lua  the Nameplates module: our dress on the game's plates, the bar, auras, marks, combo points
+#   nameplates.lua  the Combat module's nameplates: our dress on the game's plates, the bar, auras, marks, combo points, the setup
 #   onboarding.lua  Core's setups, step by step, and the addon Onboarding: its window read on demand, steps, controls
 #   loot.lua        the Loot module: its window and rules, the master looter's menu, full bags, roll cards, the feed
 #   economy.lua     the Economy module: what to buy and sell right now, the server asked item by item, a purchase and a post

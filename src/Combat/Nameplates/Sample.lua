@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Sample
+--  Sane UI - Combat - Nameplates - Sample
 --  A made-up plate for the setup (Setup.lua), drawn by the plates' own code:
 --  the dress as Plate.lua makes it (Bar.Make, Text.Make, Marks.Make,
 --  Cast.Make) on a frame of the setup window's, filled from a made-up unit

@@ -2,7 +2,7 @@ local _, ns = ...
 
 -------------------------------------------------------------------------------
 --  Sane UI - Combat - Units - Bar
---  A unit frame's bars, in the look of a nameplate's (the module Nameplates):
+--  A unit frame's bars, in the look of a nameplate's (Nameplates/):
 --  one rectangle round at its corners, framed by one thin border, holding a
 --  stack of bars a screen pixel apart (the border's dark between them): the
 --  unit's health, under it its power at half that height (your own druid's

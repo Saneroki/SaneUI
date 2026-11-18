@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - CombatText
+--  Sane UI - Combat - Nameplates - CombatText
 --  The combat text: what a unit takes (damage, heals, a miss, a parry, a
 --  block) rises and fades over it, in place of the numbers the game draws
 --  itself. Over each creature or player with a plate, and over your own

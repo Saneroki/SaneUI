@@ -153,8 +153,14 @@ Core.Options("Tabbed", {
 }, function(key) tabbed.told[#tabbed.told + 1] = key end)
 MinimalSliderWithSteppersMixin = { Label = { Right = 2 }, Event = { OnValueChanged = "OnValueChanged" } } -- (the game's slider)
 
+-- A module that is part of another now (the nameplates, Combat's since 2026-11-18): its old addon, left in the AddOns
+-- folder, stays off, never started, and is told once at the login so its folder goes.
+local oldPlates = Core.NewModule("SaneUI_Nameplates", "Nameplates", { OnLogin = function() steps[#steps + 1] = "old plates" end })
+check(oldPlates.off and oldPlates.elsewhere and oldPlates.retired == "Combat", "the old Nameplates addon: off from the start")
+W.printed = {}
 -- The game's own error window, where errors go that nothing of ours caught.
 W.Fire("PLAYER_LOGIN")
+check(printedMatch("SaneUI_Nameplates is part of Combat now"), "told once at the login: its folder to delete, Combat to switch on")
 check(steps[2] == "login" and #steps == 2, "a module is told when the character is there; one that could not start is not")
 -- The game's options window shows its AddOns tab only if an addon has a page the first time it opens.
 local function Empty()

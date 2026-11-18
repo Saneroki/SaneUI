@@ -3,4 +3,9 @@
 	     reads this file from the addon's folder by itself. Look out for's button, clicked by the key as the mouse
 	     button "Key": the game focuses who it found (its words in Units/LookOut.lua). -->
 	<Binding name="CLICK SaneUILookOut:Key" category="BINDING_HEADER_SANEUI"/>
+	<!-- The nameplates' key (its words in Nameplates/Nameplates.lua): its name as it was in the addon SaneUI_Nameplates,
+	     so a key given to it stays. -->
+	<Binding name="SANEUI_NAMEPLATES_STRANGERS" category="BINDING_HEADER_SANEUI">
+		SaneUI.Combat.Safe("keys", SaneUI.Combat.ToggleStrangers)
+	</Binding>
 </Bindings>

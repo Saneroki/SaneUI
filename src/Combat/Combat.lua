@@ -8,30 +8,36 @@ local ADDON, ns = ...
 --  An addon of its own (SaneUI_Combat): it needs Core and nothing else, and is
 --  switched on and off in the game's addon list.
 --
---  Everything about the fight will be here, each part in files of its own:
---  the unit frames (you, your target, its target, your focus, your pet), the
---  party and the raid, your buffs and debuffs, the nameplates, and what goes
---  with them (cast bars, totems, bosses). The plan is Doc/ideas/Combat.md.
---
---  Built so far: its window (Window.lua), docked in the screen's bottom middle
---  and filling the screen at a left click on the middle half of the bottom
---  edge; full, it holds on Core's board (Board.lua) your talents
---  (Talents/) and your spellbook (Book/), our own windows as the game's, and
---  the window of a talent planner Sane UI knows (Core.Neighbours). Beside a
---  creature's nameplate, a mark while it belongs to an objective still to do
---  (QuestMarks.lua). Around the mouse, while they run, rings for the global
---  cooldown and your cast (MouseRings.lua). Our own frames for you, your target and your focus in a
---  nameplate's look, in place of the game's (Units/); the game's action bars
---  clean, their buttons' icons alone, and out of sight at rest with those frames (ActionBars.lua, Units/, Core.Rest);
---  its experience and stance bars gone, its menu bar on
---  mouseover (GameBars.lua). One frame of ours for your party and raid in place of the
---  game's two (Units/Group.lua). The threat and damage meter, a window on the screen, never on the full screen
---  (Meter/). Reminders of buffs and debuffs on bars of their own (Reminders/). Each part falls back to the game's own when it fails
---  (Core's StandDown, GiveBack), and only reads what it shows: the game's live
---  data, and Core's data framework for anything kept (Doc/ideas/Data.md).
---  Our spellbook and talents are made after WoW: Forever's, so in Retail
---  neither is there (ns.Serves): its full screen holds the game's own window
---  there (GameWindow.lua).
+--  What the fight shows on the screen (Saneroki, 2026-11-18: "I want a combat
+--  module that has the unit frames, party frames, Nameplates and the edit aura
+--  tracking functionality in it"), each part in files of its own, each part
+--  ours or the game's by a switch of its own (Ours or the game's, the first
+--  section of its options, its setup's first step and Core's dropdown Classic
+--  windows: "people can for example choose to use our party and unit frames
+--  but disable our nameplates"):
+--    the unit frames      you, your target and your focus in a nameplate's
+--                         look, their targets and your pet in rows under
+--                         them (Units/), in place of the game's
+--    the party and raid   one frame of ours for both, in place of the game's
+--                         two (Units/Group.lua)
+--    the nameplates       the game's plates in our dress, the combat text
+--                         over them (Nameplates/, the addon SaneUI_Nameplates
+--                         until 2026-11-18)
+--    aura tracking        your marks of auras on the game's buff list and the
+--                         frames, Edit tracked, the aura icons on invisible
+--                         bars, on the health bars and under the plates
+--                         (Units/Lists.lua, Reminders/)
+--  and beside them: a mark beside a creature's nameplate while it belongs to
+--  an objective still to do (QuestMarks.lua), rings around the mouse for the
+--  global cooldown and your cast (MouseRings.lua), the threat and damage
+--  meter (Meter/), the red error text off (ErrorText.lua). Its setup, step by
+--  step (Setup.lua: the parts, the unit frames, the party and raid frames with
+--  their previews and Edit Mode, the nameplates' steps). What is for the full
+--  screen (our spellbook and talents, Sane Macros, the action bars, the aura
+--  history) is Abilities'. Each part falls back to the game's own when it
+--  fails (Core's StandDown, GiveBack), and only reads what it shows: the game's
+--  live data, and Core's data framework for anything kept. The plan is
+--  Doc/ideas/Combat.md.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 Core.NewModule(ADDON, "Combat", ns)
@@ -39,6 +45,17 @@ Core.NewModule(ADDON, "Combat", ns)
 -- Every word the module shows; the game's own where it has one.
 ns.TEXT = {
     title = "Combat",
+    setup = "Set up step by step",
+    setupTip = "A window that walks you through Combat a step at a time: which parts are ours, your unit frames, your party and raid frames with a preview of 5, 10, 20 and 40 and a place for them in Edit Mode, and every part of the nameplates, each with a sample that shows each choice at once. Also /sane setup combat.",
+    -- Ours or the game's (Saneroki, 2026-11-18): each part's switch, the first section.
+    parts = "Ours or the game's",
+    partsTip = "Which parts of the fight are Sane UI's. A part switched off is the game's own again, as it was before Sane UI; the others stay ours. The same choices stand in the dropdown Classic windows of a full screen.",
+    partUnits = "Unit frames",
+    partUnitsTip = "Your frame, your target's and your focus's in a nameplate's look, with your pet and their targets in rows under them, instead of the game's. Off: the game's own frames. Each frame has its own switch below.",
+    partPlates = "Nameplates",
+    partPlatesTip = "The game's nameplates in Sane UI's dress, and the combat text rising over them and over your character. Off: the game's own plates and combat text. Back on, they are ours after a /reload.",
+    partAuras = "Aura tracking",
+    partAurasTip = "Track an aura and its icon shows where and when you choose: on an invisible aura bar, on the health bars of your unit frames and your party and raid frames, or right under each nameplate (Edit tracked, /sane auras). Off: no aura icons and no aura bars.",
     nameplates = "Nameplates",
     questMarks = "Quest marks on nameplates",
     questMarksTip = "A creature that belongs to a quest in your log shows a small mark beside its nameplate while an objective of it is still to do: a sword to kill it, a sack to loot it, with the count still open. As the game says it in the creature's tooltip.",
@@ -216,36 +233,44 @@ ns.TEXT = {
 }
 
 -- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the game's own unit, party and raid frames and damage meter are back, no quest marks beside nameplates, no aura icons or bars, no rings around the mouse"
+ns.GIVEN_BACK = "the game's own unit, party and raid frames, nameplates and damage meter are back, no quest marks beside nameplates, no aura icons or bars, no rings around the mouse"
 
-local OPTIONS = {
-    { key = "unitPlayer", default = true, text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
+-- The module's switches; the nameplates add theirs (Nameplates/Nameplates.lua), Settings.lua hands them to Core.
+ns.OPTIONS = {
+    -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
+    { key = "setup", text = ns.TEXT.setup, tip = ns.TEXT.setupTip, button = function() Core.Onboarding.Open(ns.name) end },
+    -- Ours or the game's: each part, its switches below under it.
+    { key = "units", default = true, text = ns.TEXT.partUnits, tip = ns.TEXT.partUnitsTip, header = ns.TEXT.parts,
+      headerTip = ns.TEXT.partsTip },
+    { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip },
+    { key = "plates", default = true, reload = true, text = ns.TEXT.partPlates, tip = ns.TEXT.partPlatesTip },
+    { key = "reminders", default = true, text = ns.TEXT.partAuras, tip = ns.TEXT.partAurasTip },
+    { key = "unitPlayer", default = true, parent = "units", text = ns.TEXT.unitPlayer, tip = ns.TEXT.unitPlayerTip,
       header = ns.TEXT.units, headerTip = ns.TEXT.unitsTip },
-    { key = "unitCast", default = true, text = ns.TEXT.unitCast, tip = ns.TEXT.unitCastTip },
-    { key = "unitBreath", default = true, text = ns.TEXT.unitBreath, tip = ns.TEXT.unitBreathTip },
-    { key = "unitPet", default = true, text = ns.TEXT.unitPet, tip = ns.TEXT.unitPetTip },
-    { key = "unitTarget", default = true, text = ns.TEXT.unitTarget, tip = ns.TEXT.unitTargetTip },
-    { key = "unitTargetTarget", default = true, text = ns.TEXT.unitTargetTarget, tip = ns.TEXT.unitTargetTargetTip },
-    { key = "unitFocus", default = true, text = ns.TEXT.unitFocus, tip = ns.TEXT.unitFocusTip },
-    { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip },
+    { key = "unitCast", default = true, text = ns.TEXT.unitCast, tip = ns.TEXT.unitCastTip, parent = "units" },
+    { key = "unitBreath", default = true, text = ns.TEXT.unitBreath, tip = ns.TEXT.unitBreathTip, parent = "units" },
+    { key = "unitPet", default = true, text = ns.TEXT.unitPet, tip = ns.TEXT.unitPetTip, parent = "units" },
+    { key = "unitTarget", default = true, text = ns.TEXT.unitTarget, tip = ns.TEXT.unitTargetTip, parent = "units" },
+    { key = "unitTargetTarget", default = true, text = ns.TEXT.unitTargetTarget, tip = ns.TEXT.unitTargetTargetTip, parent = "units" },
+    { key = "unitFocus", default = true, text = ns.TEXT.unitFocus, tip = ns.TEXT.unitFocusTip, parent = "units" },
+    { key = "unitFocusTarget", default = true, text = ns.TEXT.unitFocusTarget, tip = ns.TEXT.unitFocusTargetTip, parent = "units" },
     { key = "unitLookOut", default = true, text = ns.TEXT.unitLookOut, tip = ns.TEXT.unitLookOutTip, parent = "unitFocus" },
-    { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip },
-    { key = "unitRest", default = true, text = ns.TEXT.unitRest, tip = ns.TEXT.unitRestTip },
+    { key = "unitSize", default = 100, min = 50, max = 200, step = 5, unit = "%", text = ns.TEXT.unitSize, tip = ns.TEXT.unitSizeTip, parent = "units" },
+    { key = "unitRest", default = true, text = ns.TEXT.unitRest, tip = ns.TEXT.unitRestTip, parent = "units" },
     { key = "unitRestGroup", default = false, text = ns.TEXT.unitRestGroup, tip = ns.TEXT.unitRestGroupTip, parent = "unitRest" },
-    { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip },
-    { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip },
-    { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip },
-    { key = "unitDispel", default = true, text = ns.TEXT.unitDispel, tip = ns.TEXT.unitDispelTip },
+    { key = "unitAuras", default = true, text = ns.TEXT.unitAuras, tip = ns.TEXT.unitAurasTip, parent = "units" },
+    { key = "unitBarrier", default = true, text = ns.TEXT.unitBarrier, tip = ns.TEXT.unitBarrierTip, parent = "units" },
+    { key = "unitLost", default = true, text = ns.TEXT.unitLost, tip = ns.TEXT.unitLostTip, parent = "units" },
+    { key = "unitDispel", default = true, text = ns.TEXT.unitDispel, tip = ns.TEXT.unitDispelTip, parent = "units" },
     { key = "auraWhite", default = {} }, -- the spells always shown on the unit frames: { [number] = name } (Units/Lists.lua)
     { key = "auraBlack", default = {} }, -- those never shown
     { key = "auraHidden", default = {} }, -- those out of sight in the game's list (Units/BuffList.lua)
     { key = "auraShow", default = {} }, -- first on the unit frames, nothing else about them changed
     { key = "auraHide", default = {} }, -- never on the unit frames, nothing else about them changed
     { key = "auraKept", default = {} }, -- every spell on the lists' window, with a mark or none, until its X
-    { key = "group", default = true, text = ns.TEXT.group, tip = ns.TEXT.groupTip, header = ns.TEXT.group },
-    { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip },
-    { key = "groupClass", default = true, text = ns.TEXT.groupClass, tip = ns.TEXT.groupClassTip },
-    { key = "groupBeside", default = true, text = ns.TEXT.groupBeside, tip = ns.TEXT.groupBesideTip },
+    { key = "groupBuffs", default = true, text = ns.TEXT.groupBuffs, tip = ns.TEXT.groupBuffsTip, header = ns.TEXT.group, parent = "group" },
+    { key = "groupClass", default = true, text = ns.TEXT.groupClass, tip = ns.TEXT.groupClassTip, parent = "group" },
+    { key = "groupBeside", default = true, text = ns.TEXT.groupBeside, tip = ns.TEXT.groupBesideTip, parent = "group" },
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
     { key = "groupWidth", default = 960, min = 100, max = 2000 },
     { key = "groupHeight", default = 140, min = 30, max = 800 },
@@ -270,11 +295,16 @@ local OPTIONS = {
     { key = "meterHover", default = true },
     { key = "meterOrder", default = "dps" },
     { key = "buffList", default = true, text = ns.TEXT.buffListOn, tip = ns.TEXT.buffListTip, header = ns.TEXT.buffList },
-    { key = "reminders", default = true, text = ns.TEXT.remindersOn, tip = ns.TEXT.remindersTip, header = ns.TEXT.reminders },
-    { key = "aurasOpen", text = ns.TEXT.aurasOpen, tip = ns.TEXT.aurasOpenTip, button = function() ns.Guarded(ns.AuraLists.Open) end },
+    { key = "aurasOpen", text = ns.TEXT.aurasOpen, header = ns.TEXT.reminders, tip = ns.TEXT.aurasOpenTip, button = function() ns.Guarded(ns.AuraLists.Open) end },
 }
--- The unit frames, the quest marks, the rings and the rest as the settings say.
-Core.Options(ns.name, OPTIONS, { changed = function(key)
+-- A switch changed (Settings.lua): the unit frames, the quest marks, the rings and the rest as the settings say; the
+-- nameplates' own to them. The switch Nameplates off: the plates are the game's at once (on again: a /reload).
+function ns.Changed(key, value)
+    if key == "plates" then
+        if value == false then ns.Safe("nameplates", ns.Nameplates.GiveBack) end
+        ns.Guarded(ns.QuestMarks.Update)
+    end
+    if ns.Nameplates.Owns(key) then ns.Nameplates.Changed(key, value) end
     if key == "questMarks" then ns.Guarded(ns.QuestMarks.Update) end
     if key:match("^unit") then ns.Guarded(ns.Units.Apply) end
     if key:match("^group") or key == "unitBarrier" or key == "unitLost" or key == "unitDispel" then
@@ -285,7 +315,26 @@ Core.Options(ns.name, OPTIONS, { changed = function(key)
     if key:match("^meter") then ns.Guarded(ns.Meter.Apply) end
     if key == "buffList" then ns.Guarded(ns.BuffList.Style) end
     if key == "reminders" or key == "groupBuffs" then ns.Guarded(ns.Reminders.Apply) end
-end })
+end
+
+-- Another profile's settings came in.
+function ns.Replaced()
+    ns.Nameplates.Replaced()
+end
+
+-- Ours or the game's in Core's dropdown Classic windows too (Saneroki, 2026-11-18: "The classic window dropdown will
+-- have options to select unit frames, nameplates, party frames as well"), and on Onboarding's first page: each part a
+-- tick, ticked while the game's own is the one kept; a pick sets the part's switch, the full screen stays as it is.
+local PARTS = { { key = "units", text = ns.TEXT.partUnits }, { key = "group", text = ns.TEXT.group },
+                { key = "plates", text = ns.TEXT.partPlates } }
+local classic = {}
+for index, part in ipairs(PARTS) do
+    classic[index] = { text = part.text, stay = true,
+        checked = function() return ns.options and ns.options[part.key] == false end,
+        show = function() Core.Set(ns.name, part.key, false) end,
+        back = function() Core.Set(ns.name, part.key, true) end }
+end
+Core.Classic.Add(ns.TEXT.title, function() return not ns.off and ns.options and classic or nil end)
 
 -- Standing down, every part gives back what it stands in for: each step by itself, so one that fails keeps none of
 -- the others from giving back.
@@ -299,6 +348,12 @@ function ns.GiveBack()
     ns.Safe("meter", ns.Meter.GiveBack)
     ns.Safe("reminders", ns.Reminders.GiveBack)
     ns.Safe("buff list", ns.BuffList.Style)
+    ns.Safe("nameplates", ns.Nameplates.GiveBack)
+end
+
+-- The game is about to write its settings: its nameplate and combat text CVars as they were before ours.
+function ns.OnLogout()
+    ns.Nameplates.Logout()
 end
 
 function ns.OnLoad()
@@ -313,6 +368,7 @@ Core.Command("meter", "the threat and damage meter on or off", function() ns.Gua
 Core.Command("reminders", "Edit tracked, for the buffs and debuffs shown on aura bars, health bars and nameplates", function() ns.Guarded(ns.AuraLists.Toggle) end)
 
 function ns.OnLogin()
+    if ns.options.plates ~= false then ns.Nameplates.Start() end
     ns.QuestMarks.Start()
     ns.Units.Start()
     ns.Group.Start()

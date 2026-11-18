@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Cast
+--  Sane UI - Combat - Nameplates - Cast
 --  A unit's cast, under its plate's bar, inside the plate's one outline (the
 --  border, the rank's line and the glow go around both while it shows,
 --  Bar.Outline): a bar as wide as the plate's and as high as it, with a

@@ -460,7 +460,8 @@ function LookOut.Apply()
         if each.unit == "focus" then kind = each end
     end
     local options = ns.options or {}
-    if ns.off or not kind or not kind.button or options.unitFocus == false or options.unitLookOut == false then
+    if ns.off or not kind or not kind.button or options.units == false or options.unitFocus == false
+        or options.unitLookOut == false then
         return Off()
     end
     if not spot then Make(kind.button) end

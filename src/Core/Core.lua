@@ -701,6 +701,14 @@ Core.On("ADDON_ACTION_FORBIDDEN", Blocked)
 -------------------------------------------------------------------------------
 Core.modules = {} -- in the order they were made, which is the order the game loaded their addons
 
+-- Modules that are part of another now, by their old name (Saneroki, 2026-11-18: "I want a combat module that has the
+-- unit frames, party frames, Nameplates and the edit aura tracking functionality in it"): the old addon, still in a
+-- player's AddOns folder, stays off (as module.elsewhere: never started, no options page) and is told once at the
+-- login, so its folder goes; its part runs in the module it is part of, never twice.
+Core.RETIRED = { Nameplates = { into = "Combat", addon = "SaneUI_Nameplates" } }
+Core.TEXT_RETIRED = "the addon %s is part of %s now: delete its folder %s from Interface\\AddOns and switch %s on in the addon list."
+local retired = {} -- the old addons that were loaded, told at the login
+
 -- Makes a module: a table of its own, found again as SaneUI.<name>, with the
 -- tools above and messages of its own (Listen and Fire) for its files to talk.
 -- addon is the folder its files are in: the module is started when that addon is loaded.
@@ -715,6 +723,10 @@ function Core.NewModule(addon, name, module)
     -- A module made for the other game only (its TOC's X-SaneUI-Games) is off here from the start, without a
     -- word: never started, its guards shut, no options page (module.elsewhere).
     if not Core.ServesGame(addon) then module.off, module.elsewhere = true, true end
+    if Core.RETIRED[name] then
+        module.off, module.elsewhere, module.retired = true, true, Core.RETIRED[name].into
+        retired[#retired + 1] = name
+    end
 
     -- As Core.Safe, the label under the module's name. The step runs first: the label's string is
     -- only made when it failed (Safe is used for what runs many times a second).
@@ -804,6 +816,14 @@ function Core.NewModule(addon, name, module)
     SaneUI[name] = module
     return module
 end
+
+-- An old addon of a retired module was loaded: said once, at the login, in chat.
+Core.On("PLAYER_LOGIN", function()
+    for _, name in ipairs(retired) do
+        local old = Core.RETIRED[name]
+        Core.Print(Core.TEXT_RETIRED:format(old.addon, old.into, old.addon, old.into))
+    end
+end)
 
 -- addon: only the modules of that addon; nil: all of them. A step that fails stands its module
 -- down. A module that stood down, in whichever step or at whichever door (its OnLoad, an error in
@@ -895,8 +915,10 @@ SlashCmdList.SANEUI = Core.Guard("/sane", function(text)
         return
     end
     local titles = {}
-    for index, module in ipairs(Core.modules) do
-        titles[index] = module.off and module.title .. " (stopped, see /sane errors)" or module.title
+    for _, module in ipairs(Core.modules) do
+        if not module.retired then -- an old addon of a module that is part of another now: not one of them
+            titles[#titles + 1] = module.off and module.title .. " (stopped, see /sane errors)" or module.title
+        end
     end
     Core.Print(("version %s. %s"):format(Core.VERSION, #titles > 0 and "Modules: " .. table.concat(titles, ", ") .. "."
         or "No module is switched on: tick them under " .. Core.TITLE .. " in the addon list."))

@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Resource
+--  Sane UI - Combat - Nameplates - Resource
 --  Your combo points in a row of their own under the health bar of the unit
 --  you have them on,
 --  inside the plate's one outline (Bar.Outline: the bar, this row, the cast

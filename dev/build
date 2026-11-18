@@ -243,8 +243,9 @@ into() {
         done
     fi
     # Our own old names (a module renamed or removed, the data packs now in Core): those folders are ours, and
-    # would load next to the new one (SaneUI_Atlas, the painted map, gone 2026-11-09).
-    for old in SaneUI_Chat SaneUI_Spellbook SaneUI_Macros SaneUI_Atlas $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
+    # would load next to the new one (SaneUI_Atlas, the painted map, gone 2026-11-09; SaneUI_Nameplates, part of
+    # Combat since 2026-11-18).
+    for old in SaneUI_Chat SaneUI_Spellbook SaneUI_Macros SaneUI_Atlas SaneUI_Nameplates $(cd "$addons" && ls -d SaneUI_Data_* 2>/dev/null); do
         if [ -d "$addons/$old" ] && [ -z "${source[$old]:-}" ]; then
             rm -rf "${addons:?}/$old"
             echo "Removed from the game, an old folder of ours: $addons/$old"

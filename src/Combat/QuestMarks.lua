@@ -7,8 +7,8 @@ local _, ns = ...
 --  tooltip data (Core.UnitQuest, src/Core/Objectives.lua): the game's sword where
 --  the objective names the creature (to kill), its sack otherwise (to loot), and
 --  left of it the count ("3/8") of the first objective still open. Nothing is
---  guessed: a creature the game says nothing about has no mark. While the module
---  Nameplates runs, it shows the same inside its own bar, and there is no mark.
+--  guessed: a creature the game says nothing about has no mark. While our
+--  nameplates dress the plates (Nameplates/), they show the same inside their own bar, and there is no mark.
 --
 --  A frame of ours on the plate, kept per plate while the game shows it
 --  (NAME_PLATE_UNIT_ADDED, _REMOVED), looked at again when the quest log changes
@@ -35,10 +35,10 @@ function QuestMarks.Read(unit)
     return Core.UnitQuest(unit)
 end
 
--- Whether the module Nameplates shows the quest inside its own bar: then no mark beside the plate.
+-- Whether our nameplates show the quest inside their own bar (Nameplates/: the switch Nameplates on, started): then no
+-- mark beside the plate.
 local function Dressed()
-    local plates = rawget(SaneUI, "Nameplates")
-    return type(plates) == "table" and not plates.off
+    return ns.Nameplates.Dressing()
 end
 
 local function Make(plate)

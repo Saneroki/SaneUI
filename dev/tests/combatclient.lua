@@ -1,4 +1,4 @@
--- What the Combat module's unit frames (Units/) and clean action bars (ActionBars.lua) need of the stand-in client
+-- What the Combat module's unit frames (Units/), its nameplates' start and Abilities' clean action bars need of the stand-in client
 -- (wowstub.lua), for every test that loads the module (combat.lua, book.lua, talents.lua): the game's widgets as
 -- they use them, its unit functions for the units a test names, its unit watch, the game's frames ours stand for,
 -- and its main action bar with two buttons (a test puts an action on one: W.actions).
@@ -391,6 +391,20 @@ function Client.Install(W)
     MainActionBar.ActionBarPageNumber.UpButton._mouse = true
     MainActionBar.HorizontalDividersPool = { EnumerateActive = function() return pairs({ [divider] = true }) end }
     MainActionBar.actionButtons = { GameButton(1), GameButton(2) }
+    -- The game's nameplates, for Combat's own (Nameplates/, started at the login): none shown, the CVars they read and
+    -- keep (dev/tests/nameplates.lua has the plates themselves).
+    C_NamePlate = { GetNamePlateForUnit = function() return nil end, GetNamePlates = function() return {} end,
+                    GetNamePlateSize = function() return 110, 45 end }
+    NamePlateSetupOptions = {}
+    for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", nameplateMaxScaleDistance = "10",
+                                 nameplateMinScaleDistance = "10", nameplateSelectedScale = "1.2", nameplateMaxDistance = "1000",
+                                 nameplateNotSelectedAlpha = "0.5", nameplateMinAlpha = "0.6",
+                                 floatingCombatTextCombatDamage_v2 = "1", floatingCombatTextCombatHealing_v2 = "1",
+                                 enableFloatingCombatText = "1", nameplateShowOnlyNameForFriendlyPlayerUnits = "1",
+                                 nameplateOverlapV = "1.1", nameplateOverlapH = "0.8", nameplateSize = "2",
+                                 nameplateSimplifiedTypes = "0", nameplateResourceOnTarget = "0" }) do
+        W.cvarInfo[name] = W.cvarInfo[name] or { default = default }
+    end
     return { units = units, Unit = Unit, watched = watched, Watch = Watch, divider = divider, UnitName = UnitName,
              UnitIsPlayer = UnitIsPlayer }
 end

@@ -295,6 +295,7 @@ if RETAIL then
     check(player and watched[player] and player.face.level._text == "20" and PlayerFrame._mouse == false
         and TargetFrame._parent ~= UIParent and ab.ActionBars.Clean() and MainActionBar.BorderArt._alpha == 0,
         "the unit frames and the clean action bars, as in Forever")
+    Core.Set(ns.name, "plates", false) -- the marks stand beside the game's own plates
     Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
     local plate = W.NewWidget("Frame", nil, UIParent)
     C_NamePlate = { GetNamePlateForUnit = function(unit) return unit == "nameplate1" and plate or nil end }
@@ -311,7 +312,7 @@ if RETAIL then
     ns.StandDown("a test")
     ab.StandDown("a test")
     check(ns.off and ab.off and not mark._shown
-        and ns.GIVEN_BACK == "the game's own unit, party and raid frames and damage meter are back, no quest marks beside nameplates, no aura icons or bars, no rings around the mouse"
+        and ns.GIVEN_BACK == "the game's own unit, party and raid frames, nameplates and damage meter are back, no quest marks beside nameplates, no aura icons or bars, no rings around the mouse"
         and ab.GIVEN_BACK == "the game's own spellbook and buttons are back; the bottom edge no longer fills the screen; the game's action, experience, stance and menu bars and its macro window are back",
         "standing down: the quest marks go, and what is told says so")
     check(not Core.Lent(game) and game:IsShown() and not click._shown and not frame._shown,
@@ -1018,8 +1019,43 @@ do
     end
     check(members == 5 and small > 0 and placed,
         "a party previewed: beside the members a foe they target and a pet, half as wide and high, as in the game")
+    -- From Combat's setup (Saneroki, 2026-11-18): the preview goes through 5, 10, 20 and 40, a few seconds each.
+    local function Shown()
+        local count = 0
+        for _, widget in ipairs(W.frames) do
+            if widget.marks and widget._parent == host and widget._shown and not widget.small then count = count + 1 end
+        end
+        return count
+    end
+    Group.Cycle(true)
+    check(select(2, Group.Cycling()) == 5 and Shown() == 5, "the setup's cycle: five first")
+    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
+    check(select(2, Group.Cycling()) == 10 and Shown() == 10, "then ten")
+    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
+    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
+    check(Shown() == 40, "then twenty, forty")
+    host._scripts.OnUpdate(host, Group.CYCLE_SECONDS + 0.01)
+    check(Shown() == 5 and ns.options.groupPreview == 5, "and five again; the setting Preview units untouched")
+    -- Its box dragged by a side (Core's resize): the preview follows as the mouse goes, the size kept once let go.
+    check(window.edges and #window.edges == 8 and window.edges[1]:IsShown(), "its box: a grip at each corner and side")
+    window.options.resize.sized(600, 100, false)
+    check(ns.options.groupWidth == 960 and faces[1]._height == 20, "dragged: the preview at the size in hand, the setting not yet")
+    window.options.resize.sized(600.4, 99.6, true)
+    check(ns.options.groupWidth == 600 and ns.options.groupHeight == 100, "let go: Max width and Max height, whole pixels")
+    Core.Set(ns.name, "groupWidth", 960)
+    Core.Set(ns.name, "groupHeight", 140)
     EventRegistry:TriggerEvent("EditMode.Exit")
     check(W.drivers[live] and W.drivers[live].values == Group.SHOWN and not host._shown, "after Edit Mode: the live frames again")
+    check(not Group.Cycling(), "and the setup's cycle over with it")
+    -- The setup's own sample: as many in a frame of its own, at the size the settings keep.
+    local sampleFrame = CreateFrame("Frame", nil, UIParent)
+    local sampleWidth, sampleHeight = Group.Sample(sampleFrame, 20)
+    local inSample = 0
+    for _, widget in ipairs(W.frames) do
+        if widget.marks and widget._parent == sampleFrame and widget._shown and not widget.small then inSample = inSample + 1 end
+    end
+    check(sampleWidth == 960 and sampleHeight == 140 and sampleFrame._width == 960 and inSample == 20,
+        "the setup's sample: twenty made-up members at the frame's size")
 
     -- A made-up druid: its mana along the bottom alone, as another druid shows one power; dead, none.
     do
@@ -1351,6 +1387,10 @@ Stand()
 local questMark -- a mark shown at the end, looked at again after standing down
 do
     local QuestMarks = ns.QuestMarks
+    -- The marks stand beside the game's own plates: our nameplates (on at first) show the quest inside their bar.
+    check(ns.Nameplates.Dressing(), "our nameplates are on at first")
+    Core.Set(ns.name, "plates", false)
+    check(not ns.Nameplates.Dressing(), "the switch Nameplates off: the game's own plates, at once")
     Enum.TooltipDataLineType = { QuestTitle = 17, QuestObjective = 8 }
     local plates, related, lines = {}, {}, {}
     C_NamePlate = { GetNamePlateForUnit = function(unit) return plates[unit] end }
@@ -2964,6 +3004,46 @@ end
     IsTradeskillTrainer, GetNumTrainerServices, GetTrainerServiceSkillLine, GetProfessions, GetProfessionInfo = nil, nil, nil, nil, nil
     C_SpellBook.GetSpellBookItemInfo, C_TradeSkillUI = book, nil
 end)()
+
+-------------------------------------------------------------------------------
+--  Ours or the game's (Saneroki, 2026-11-18): each part's switch, in Core's dropdown Classic windows too
+-------------------------------------------------------------------------------
+do
+    local options = Core.described[ns.name].list
+    check(options[1].key == "setup" and options[2].key == "units" and options[2].header == ns.TEXT.parts
+        and options[3].key == "group" and options[4].key == "plates" and options[4].reload and options[5].key == "reminders",
+        "the first section of Combat's page: the parts, each ours or the game's")
+    local parts
+    for _, window in ipairs(Core.Classic.Windows()) do
+        if window.part and window.options.title == ns.TEXT.title then parts = window end
+    end
+    local entries = parts and Core.Classic.List(parts)
+    check(entries and #entries == 3 and entries[1].text == ns.TEXT.partUnits and entries[2].text == ns.TEXT.group
+        and entries[3].text == ns.TEXT.partPlates, "Classic windows: Combat's unit frames, party and raid frames, nameplates")
+    check(not Core.Classic.Ticked(entries[1]) and not Core.Classic.Ticked(entries[2]) and Core.Classic.Ticked(entries[3]),
+        "ticked where the game's own is the one: the nameplates were switched off above")
+    local player = unitButtons.player
+    Core.Classic.Keep(parts, entries[1])
+    check(ns.options.units == false and Core.Classic.Ticked(entries[1]) and not watched[player] and PlayerFrame._mouse == true,
+        "ticked: the game's own unit frames, ours gone")
+    Core.Classic.Keep(parts, entries[1])
+    check(ns.options.units == true and watched[player] and PlayerFrame._mouse == false, "unticked: ours again")
+    -- From a full screen's dropdown: the switch alone, the full screen stays as it is.
+    Push()
+    Stand()
+    check(handle.edge.full, "(a full screen up)")
+    Core.Classic.Pick(handle.edge, parts, entries[2])
+    check(ns.options.group == false and handle.edge.full, "picked on a full screen: the game's party and raid frames, the full screen stays")
+    Core.Classic.Pick(handle.edge, parts, entries[2])
+    check(ns.options.group == true, "and ours again")
+    Back()
+    -- In the menu of Onboarding's first page: the kept choices, Combat's among them.
+    local kept = false
+    for _, each in ipairs(Core.Classic.Kept()) do
+        if each.window == parts and #each.entries == 3 then kept = true end
+    end
+    check(kept, "Combat's parts among the kept choices Onboarding's first page offers")
+end
 
 -- A step of the giving back fails (here the board's own): the others give back all the same, the keys first. Both
 -- modules stand down: Abilities' full screen, keys and bars, Combat's frames.

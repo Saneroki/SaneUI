@@ -376,6 +376,72 @@ check(grows.rounds[2].button:GetChecked() == true, "the one in use lit (Flowers 
 grows.rounds[1].button._scripts.OnClick(grows.rounds[1].button)
 check(options.flowers == true, "a click sets the switch")
 
+-- A command of the game's (Combat's Place and size in Edit Mode, Saneroki, 2026-11-18): a plain button, and over it on
+-- UIParent the game's secure button running its macro, there while the row shows and out of a fight; done after it.
+do
+    local methods = W.methods
+    methods.SetFrameStrata = methods.SetFrameStrata or function(self, strata) self._strata = strata end
+    methods.GetLeft = methods.GetLeft or function(self) return self._left end
+    methods.GetTop = methods.GetTop or function(self) return self._top end
+    methods.LockHighlight = methods.LockHighlight or function(self) self._lit = true end
+    methods.UnlockHighlight = methods.UnlockHighlight or function(self) self._lit = false end
+    local function Cover(macro)
+        for _, widget in ipairs(W.frames) do
+            if widget._template == "SecureActionButtonTemplate" and widget._attributes and widget._attributes.macrotext == macro then
+                return widget
+            end
+        end
+    end
+    local ran = 0
+    local missing = ons.Controls.Build(UIParent, "Garden", { { macro = "/somewhere", command = "SOMEWHERE", text = "Go",
+        missing = "Go by the game's menu." } }, 300)
+    W.printed = {}
+    missing.rows[1].button._scripts.OnClick(missing.rows[1].button)
+    check(not Cover("/somewhere") and printed("Go by the game's menu."), "a command the game does not know: words instead")
+    SLASH_EDITMODE1 = "/editmode"
+    local holder = ons.Controls.Build(UIParent, "Garden", { { macro = "/editmode", command = "EDITMODE",
+        text = "Place it in Edit Mode", tip = "Opens Edit Mode.", done = function() ran = ran + 1 end } }, 300)
+    local row, cover = holder.rows[1], Cover("/editmode")
+    check(row and row.button._template == "UIPanelButtonTemplate" and cover and cover._parent == UIParent
+        and cover._attributes.type == "macro" and cover._strata == ons.Controls.COVER and not cover:IsShown(),
+        "the button seen a plain one; the game's secure button on UIParent, out of sight until the row shows")
+    row.button._left, row.button._top = 500, 400
+    row._scripts.OnShow(row)
+    check(cover:IsShown() and cover._points[1][4] == 500 and cover._points[1][5] == 400, "the row shown: the secure button over it")
+    row.button._left = 520
+    row._scripts.OnUpdate(row, 0.016)
+    check(cover._points[1][4] == 520, "it follows the row as the window is dragged")
+    cover._scripts.PostClick(cover, "LeftButton")
+    check(ran == 1, "after the command: what the step wants done")
+    W.Fire("PLAYER_REGEN_DISABLED")
+    check(not cover:IsShown(), "a fight begins: gone before the game locks it")
+    W.Fire("PLAYER_REGEN_ENABLED")
+    check(cover:IsShown(), "back after it")
+    row._scripts.OnHide(row)
+    check(not cover:IsShown(), "the row hidden: so is the secure button")
+end
+
+-- Edit Mode opened while a setup shows (its command, or the game's menu): the window steps aside until it closes, then
+-- comes back at the same step.
+SlashCmdList.SANEUI("setup garden")
+window.Parts().forward._scripts.OnClick(window.Parts().forward)
+local at = window.Parts().count._text
+EventRegistry:TriggerEvent("EditMode.Enter")
+check(not window.Frame():IsShown(), "Edit Mode opens: the setup steps aside")
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(window.Frame():IsShown() and window.Parts().count._text == at, "Edit Mode closed: back at the same step")
+EventRegistry:TriggerEvent("EditMode.Enter")
+window.Close()
+EventRegistry:TriggerEvent("EditMode.Exit")
+check(not window.Frame():IsShown(), "closed meanwhile: it stays closed")
+
+-- Other words for a setup (Combat's /sane setup nameplates): that setup at the step the word names.
+Onboarding.Guide("Garden").aliases = { lawn = "path" }
+SlashCmdList.SANEUI("setup lawn")
+check(window.Frame():IsShown() and window.Parts().count._text == "Step 3 of 4", "/sane setup lawn: Garden, at its path")
+window.Close()
+Onboarding.Guide("Garden").aliases = nil
+
 -- All setups together: two more modules installed later, Orchard (two steps) and Shed (one, no button on its
 -- options page). At the next login they open one after another in one window, the run; Garden, gone through, not.
 local orchard = Core.NewModule("SaneUI_Orchard", "Orchard", {})

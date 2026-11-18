@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Text
+--  Sane UI - Combat - Nameplates - Text
 --  The line inside a plate's bar, left to right, each piece taking room only
 --  while it shows (Saneroki, 2026-11-16: the quest's icon inside the bar too):
 --    quest    the game's sword (to kill) or sack (to loot) and the count

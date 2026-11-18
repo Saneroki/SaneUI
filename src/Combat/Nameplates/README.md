@@ -1,6 +1,6 @@
-# Sane UI: Nameplates
+# Sane UI: Combat: Nameplates
 
-**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' and critters' plates hidden; smaller far away; combat text rising over them and over your character; at a setting the health bar only, or the spells only with a faint dot and an arrow over your target) · **Since:** 2026-10-20 · **Addon:** `SaneUI_Nameplates` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
+**Status:** built: the game's plates in Sane UI's dress (a round-cornered health bar with level, threat, name and health inside it, the unit's power along its bottom, your combo points in a row under the bar of the unit holding them, one border lit on your target and focus, a line behind it by rank, a red glow on aggro, your debuffs above, a foe's buffs left and crowd control right, the raid marker; strangers' and critters' plates hidden; smaller far away; combat text rising over them and over your character; at a setting the health bar only, or the spells only with a faint dot and an arrow over your target) · **Since:** 2026-10-20 · **Part of:** the module Combat (`SaneUI_Combat`, `src/Combat/Nameplates/`; the addon `SaneUI_Nameplates` until 2026-11-18) · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
 Starts from the game's own nameplates and keeps what they do well: their size and style (the game's
@@ -17,7 +17,8 @@ setting shows the health bar only (no auras), or the spells only (no bar, no nam
 the game's gold arrow over your target). When it fails, every plate is the game's own again.
 
 ## How to use
-- **Set it up step by step** (Saneroki, 2026-11-16): a window that goes through the plates a part at a time, twelve
+- **Set it up step by step** (Saneroki, 2026-11-16; since 2026-11-18 the pages of Combat's setup headed *Nameplates*,
+  `src/Combat/Setup.lua`): a window that goes through the plates a part at a time, eleven
   pages, each with its purpose, a few short lines that start with gold words, its switches, and sample plates at its
   left that show each choice at once. In Saneroki's order: what this is; size (and size by
   distance, how much); see-through (your target, creatures and foes, players you know, players you don't know,
@@ -31,8 +32,10 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   seconds left in the icons; what plates show. It opens by itself the first time the module is on; again by *Set up
   step by step* at the top of its options page, or `/sane setup nameplates`. The window is the addon *Onboarding*'s,
   which comes with Sane UI; the words and samples are this module's (`Setup.lua`, `Sample.lua`).
-- **Switch it on or off:** tick or untick *Nameplates* under *Sane UI* in the game's addon list (the game
-  needs a restart when it was not in the list before).
+- **Ours or the game's:** Combat's switch *Nameplates* (the first section of *Sane UI > Combat*, *Ours or the game's*;
+  the first step of Combat's setup; the dropdown *Classic windows* of a full screen): off, the plates and the combat
+  text are the game's own at once; on again, ours after a `/reload`. Combat switched off in the addon list takes them
+  with it.
 - **Which plates:** every plate the game shows with a health bar: creatures and players, foes and friends.
   A plate the game shows with widgets only stays the game's own; so do the plates the game keeps from addons (inside
   dungeons and raids every friendly plate, your group's too: there it gives addons neither the plate nor its unit, so
@@ -181,7 +184,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
   with that text's notes on entering a fight, low health, reputation and honor. The game's XP numbers over a kill are
   its own and stay. Only the game's settings the client has are switched (`C_CVar.GetCVarInfo`): where Retail's
   client lacks those for its numbers over units, those numbers stay as the game has them.
-- **Settings:** *Sane UI > Nameplates*: the button *Set up step by step*, *Plates show* (and under it *Dot where a plate is*), *Class colours*, *Quest progress*, *Level*, *Item level*, *Health*, *Health in percent*, *Raid markers*, *Your debuffs*, *Buffs on foes* and *Crowd control* (how many of each, and where), *Spell icon size*, *Time left in the icons* (its size, its transparency), *Power line*,
+- **Settings:** *Sane UI > Combat*, the section *Nameplates*: *Plates show* (and under it *Dot where a plate is*), *Class colours*, *Quest progress*, *Level*, *Item level*, *Health*, *Health in percent*, *Raid markers*, *Your debuffs*, *Buffs on foes* and *Crowd control* (how many of each, and where), *Spell icon size*, *Time left in the icons* (its size, its transparency), *Power line*,
   *Combo points under the bar*, *Out of reach: red border*, *Only players you know*, *Plates on critters*, *Size by distance* (and how much), *Cast bar* (and its height), *Nameplate size*, *Nameplate transparency*, *Your target's transparency*, and one each for players you know, players you don't know and critters; the section *Combat text* (*Over nameplates*, *Over your character*, *Heals*,
   *Drawings for what did no harm*, *Instead of the game's*). The plates' size, style and
   which plates show are the game's own settings (*Options > Gameplay > Nameplates*).
@@ -503,9 +506,8 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 
 | File | What it holds |
 |---|---|
-| `SaneUI_Nameplates.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
-| `Bindings.xml` | The key *Show or hide players you don't know* (`SANEUI_NAMEPLATES_STRANGERS`, `ns.ToggleStrangers`), in Sane UI's section of the game's key bindings; the game reads it from the folder by itself |
-| `Nameplates.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings, `GiveBack`, the start |
+| Combat's `Bindings.xml` | The key *Show or hide players you don't know* (`SANEUI_NAMEPLATES_STRANGERS`, its name as it was, `ns.ToggleStrangers`), in Sane UI's section of the game's key bindings |
+| `Nameplates.lua` | The nameplates' words and switches added to Combat's (`ns.TEXT`, `ns.OPTIONS`; Combat's `Settings.lua` hands them to Core), what a switch changes (`Nameplates.Changed`), `Nameplates.Start`, `GiveBack`, `Logout`, `Dressing` |
 | `Bar.lua` | The health bar: round at both ends, its border lit on your target and focus, the rank's line and the glow behind it, the power line |
 | `Text.lua` | The line inside the bar: quest, raid marker, level, item level, threat, name, health; the bar as wide as the line |
 | `Auras.lua` | Your debuffs, a foe's buffs and crowd control at eight places round the bar (top left, left and right at first), in the game's own aura containers |
@@ -516,7 +518,7 @@ the game's gold arrow over your target). When it fails, every plate is the game'
 | `Scale.lua` | Every plate's size by that distance alone, on a spring; the game's own scaling and fading off; how closely the game stacks plates |
 | `CombatText.lua` | The combat text: what a unit takes rising over its plate, and over your character, in the game's font; what did no harm the game's word |
 | `Sample.lua` | A made-up plate for the setup, drawn by the plates' own code (`Bar.Make`, `Text.Make`, `Marks.Make`, `Cast.Make`) and filled from a made-up unit through the same pieces a plate shows (`Text.ShowLevel`, `ShowName`, `ShowHealth` ...; `Bar.Border`, `Bar.Glow`), its auras the game's icons in the plates' look (`Auras.Look`), as many as the settings say, a cast running again and again, the combat text rising over it; its scripts fail softly (`ns.Gently`) |
-| `Setup.lua` | The setup, step by step: the nine steps' words and switches, each step's board of sample plates, handed to Core (`Core.Onboarding.Add`); the window is the addon Onboarding's |
+| `Setup.lua` | The nameplates' steps of Combat's setup: their words and switches, each step's board of sample plates (`Setup.Stage`); Combat's `Setup.lua` takes them and hands the whole to Core |
 | `Plate.lua` | Our dress on each plate the game shows, laid over its health bar; what clicks a plate (our bar alone); the game's own bar, name, auras and marks out of sight under it; strangers' and critters' plates hidden; `Plate.Foot`, the dress's frame right under its lowest row, for what another module shows right under a plate |
 
 ## Not there yet
@@ -524,6 +526,13 @@ The raid marker in our own style in place of the game's (Saneroki, 2026-10-21; `
 *To redesign*).
 
 ## History
+- **2026-11-18 (part of Combat):** the nameplates are Combat's (Saneroki: "I want a combat module that has the unit
+  frames, party frames, Nameplates and the edit aura tracking functionality in it [...] so people can for example choose
+  to use our party and unit frames but disable our nameplates"): `src/Combat/Nameplates/`, in Combat's TOC; their
+  switches on Combat's page (the section *Nameplates*), at their defaults there; Combat's switch *Nameplates* has them
+  ours or the game's (`Nameplates.Start`, `GiveBack`; on again after a `/reload`); their setup's steps in Combat's;
+  Combat's quest marks and reminders ask `Nameplates.Dressing()`. The old addon, left in a player's AddOns folder, stays
+  off and says once to delete it (Core's `Core.RETIRED`).
 - **2026-11-18 (places):** each kind of aura at one of eight places round the bar (Saneroki: "left, right, top left
   (above the healthbar but anchored to the left side over the healthbar), top right, top center, bottom left, bottom
   center, bottom right"): `Auras.PLACES`, `Auras.Layout` (kinds at different places sharing a row over or under the bar

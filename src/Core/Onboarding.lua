@@ -51,11 +51,13 @@ local Core = SaneUI.Core
 --  in use.
 --
 --  A guide:
---      { title = "Nameplates",            -- the window's title
+--      { title = "Combat",                -- the window's title
 --        steps = { step, ... },           -- in their order
 --        version = 2,                     -- raised after a big change (1 when it has none): gone through again
 --        changed = "...",                 -- what that change is, said on its first step to whoever went
 --                                         -- through an older version
+--        aliases = { nameplates = "size" }, -- other words /sane setup takes for it, each opening it at that step
+--                                         -- (Combat's: the nameplates were a module of their own until 2026-11-18)
 --        Stage = function(stage, step, index) end }
 --                                         -- draws the step's sample into stage (a frame of the window's),
 --                                         -- when the step shows and again after each change of a setting
@@ -71,7 +73,7 @@ Onboarding.ADDON = "SaneUI_Onboarding"
 Onboarding.STORE = "Onboarding" -- the module's name: its store is SaneUIDB.modules.Onboarding
 Onboarding.WAIT = 4             -- seconds after the loading screen before a setup opens by itself
 Onboarding.TEXT = {
-    command = "a module's setup, step by step: what it shows and how you want it (/sane setup nameplates)",
+    command = "a module's setup, step by step: what it shows and how you want it (/sane setup combat)",
     later = "the setup opens after the fight.",
     missing = "the setup needs the addon Onboarding: tick it under Sane UI in the addon list.",
     none = "no module that is on has a setup yet.",
@@ -351,11 +353,20 @@ Core.On("PLAYER_ENTERING_WORLD", function()
     begin()
 end)
 
--- A setup's name as typed ("nameplates", "Nameplates"): the module's name; nil for none.
+-- A setup's name as typed ("combat", "Combat"): the module's name, and the step a word of its aliases opens it at
+-- ("nameplates": Combat's at its first step of the nameplates); nil for none.
 local function Named(typed)
     typed = (typed or ""):lower()
     for _, name in ipairs(order) do
-        if name:lower() == typed or (guides[name].title or ""):lower() == typed then return name end
+        local guide = guides[name]
+        if name:lower() == typed or (guide.title or ""):lower() == typed then return name end
+        local key = type(guide.aliases) == "table" and guide.aliases[typed]
+        if key then
+            for index, step in ipairs(guide.steps) do
+                if step.key == key then return name, index end
+            end
+            return name
+        end
     end
     return nil
 end
@@ -370,9 +381,9 @@ Core.Command("setup", Onboarding.TEXT.command, function(rest)
     -- Alone: the whole onboarding again, its first page and every setup (Saneroki, 2026-11-18: "/sane setup does not
     -- restart the onboarding": it opened only those still to go through, and listed them once all were done).
     if rest == "" then return Onboarding.Start(false, true) end
-    local name = Named(rest)
+    local name, step = Named(rest)
     if not name or not Usable(name) then
         return Core.Print(Onboarding.TEXT.unknown:format(rest, table.concat(usable, ", ")))
     end
-    Onboarding.Open(name)
+    Onboarding.Open(name, step)
 end)

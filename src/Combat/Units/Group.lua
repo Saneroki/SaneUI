@@ -49,7 +49,15 @@ local _, ns = ...
 --  ready checks, aggro, the dead and the offline, a resurrection on its way, and
 --  your own slot first.
 --  They are rolled when their number changes, not as sizes change, so what you
---  look at holds still while you slide.
+--  look at holds still while you slide. Its box has a grip at each corner and a
+--  handle along each side (Core's window option resize; Saneroki, 2026-11-18:
+--  "a dragable corner to resize it by draging corners or sides"): dragged, the
+--  preview follows the size as the mouse goes, and let go, the size is its Max
+--  width and Max height. Opened from Combat's setup (Group.Cycle; Saneroki:
+--  "the preview cycles through 5, 10, 20 and 40 party members view"), the
+--  preview goes through 5, 10, 20 and 40 units, a few seconds each, until Edit
+--  Mode closes. The setup's own sample is the same layout in its stage
+--  (Group.Sample).
 --
 --  The game's party frame, raid container and the raid manager at the screen's
 --  edge stand in a hidden frame of ours while ours shows (Core.Lend), with their
@@ -77,8 +85,16 @@ Group.SETTINGS = {
 }
 
 local holder, window, live, preview, box -- the window, the live frames' parent, the preview's parent, the game's hidden frame
-local headers, samples, faces, lends = {}, {}, {}, nil -- the headers; the rolled previews; their faces; what is lent
-local beside, besideFaces, reading = nil, {}, nil -- the column beside a party, its buttons by slot; its preview's; the reads
+local headers, lends = {}, nil -- the headers; what is lent
+local beside, reading = nil, nil -- the column beside a party, its buttons by slot; the reads
+-- A preview: its parent, its rolled samples, their faces and those beside a party (by slot). Edit Mode's, and the
+-- setup's in its stage (Group.Sample), each its own.
+local function Pool(parent) return { parent = parent, samples = {}, faces = {}, besides = {} } end
+local pool                        -- Edit Mode's
+local dragged                     -- the size the box is being dragged to: { width, height }, while it is
+Group.CYCLE = { 5, 10, 20, 40 }    -- the units the preview goes through from Combat's setup
+Group.CYCLE_SECONDS = 2.5          -- each this long
+local cycling, cycle, cycled = false, 1, 0
 local built = false -- the headers have their buttons
 local holdCount = 0 -- ready checks ended: only the last one's result is taken away
 
@@ -93,6 +109,13 @@ end
 
 -- The limits as the settings say.
 local function Limits()
+    local options = ns.options
+    if dragged then return dragged[1], dragged[2], tonumber(options.groupUnitWidth) end
+    return tonumber(options.groupWidth), tonumber(options.groupHeight), tonumber(options.groupUnitWidth)
+end
+
+-- The limits the settings keep, whatever is being dragged (the setup's sample).
+function Group.Limits()
     local options = ns.options
     return tonumber(options.groupWidth), tonumber(options.groupHeight), tonumber(options.groupUnitWidth)
 end
@@ -319,8 +342,9 @@ local function RollBeside()
     return found
 end
 
--- That many samples, rolled anew only when their number changes.
-local function Rolled(count)
+-- That many samples of a preview, rolled anew only when their number changes.
+local function Rolled(pool, count)
+    local samples = pool.samples
     if #samples ~= count then
         local icons = ns.GroupReminders.Icons()
         wipe(samples)
@@ -333,13 +357,13 @@ local function Rolled(count)
     return samples
 end
 
--- The preview as the settings say; each unit in its place, as the headers would put it.
-local function Preview()
-    local count = math.min(tonumber(ns.options.groupPreview) or 0, Group.GROUPS * Group.PER_GROUP)
-    local width, height, unit = Limits()
+-- That many made-up units in a preview, at those limits, each in its place as the headers would put it.
+local function Lay(pool, count, width, height, unit)
+    local preview, faces, besideFaces = pool.parent, pool.faces, pool.besides
+    count = math.min(count, Group.GROUPS * Group.PER_GROUP)
     local aside = ns.options.groupBeside ~= false and count > 0 and count <= Group.PER_GROUP
     local wide, high = Group.Size(math.ceil(count / Group.PER_GROUP) + (aside and 0.5 or 0), width, height, unit)
-    for index, sample in ipairs(Rolled(count)) do
+    for index, sample in ipairs(Rolled(pool, count)) do
         sample.raid = count > Group.PER_GROUP
         local face = faces[index]
         if not face then
@@ -379,7 +403,35 @@ local function Preview()
     for index = count + 1, #besideFaces do
         for _, other in pairs(besideFaces[index]) do other:Hide() end
     end
+end
+
+-- Edit Mode's preview: as many units as the setting says, or going through 5, 10, 20 and 40 from the setup.
+local function Preview()
+    local count = cycling and Group.CYCLE[cycle] or tonumber(ns.options.groupPreview) or 0
+    pool = pool or Pool(preview)
+    Lay(pool, count, Limits())
     preview:Show()
+end
+
+-- The preview going through 5, 10, 20 and 40 units (on), from Combat's setup as it opens Edit Mode, or as the
+-- setting says again (off); it stops by itself when Edit Mode closes.
+function Group.Cycle(on)
+    cycling, cycle, cycled = on and true or false, 1, 0
+    if preview and preview:IsShown() then ns.Guarded(Preview) end
+end
+
+-- Whether it goes through them now, and how many it shows (for the tests).
+function Group.Cycling() return cycling, Group.CYCLE[cycle] end
+
+-- The setup's sample (Setup.lua): that many made-up units in frame, laid out as the party and raid frames are at the
+-- limits the settings keep; frame is made that large (the caller scales it to fit). Returns its width and height.
+local stages = setmetatable({}, { __mode = "k" })
+function Group.Sample(frame, count)
+    local width, height, unit = Group.Limits()
+    frame:SetSize(width, height)
+    stages[frame] = stages[frame] or Pool(frame)
+    Lay(stages[frame], count, width, height, unit)
+    return width, height
 end
 
 -- The window: as large as the limits; its settings in Edit Mode's dialog.
@@ -405,8 +457,33 @@ local function Build()
     window = Core.Window.New(holder, {
         store = ns.store, key = "groupPlace", title = ns.TEXT.group, first = Group.FIRST, settings = settings,
         get = function(key) return ns.options[key] end,
-        set = function(key, value) Core.Set(ns.name, key, value) end })
+        set = function(key, value) Core.Set(ns.name, key, value) end,
+        resize = { sized = function(width, height, done) ns.Guarded(Group.Dragged, width, height, done) end,
+                   minWidth = Group.SETTINGS[1].min, maxWidth = Group.SETTINGS[1].max,
+                   minHeight = Group.SETTINGS[2].min, maxHeight = Group.SETTINGS[2].max } })
     window:Place()
+    -- The preview's clock, from the setup: the next number of units every few seconds (only while it shows).
+    preview:SetScript("OnUpdate", ns.Guard(function(_, elapsed)
+        if not cycling then return end
+        cycled = cycled + elapsed
+        if cycled < Group.CYCLE_SECONDS then return end
+        cycled = 0
+        cycle = cycle % #Group.CYCLE + 1
+        Preview()
+    end))
+end
+
+-- Its box dragged by a corner or a side (Core's window, option resize): the preview follows the size as the mouse
+-- goes; let go (done), the size is its Max width and Max height, kept as whole pixels.
+function Group.Dragged(width, height, done)
+    if done then
+        dragged = nil
+        Core.Set(ns.name, "groupWidth", math.floor(width + 0.5))
+        Core.Set(ns.name, "groupHeight", math.floor(height + 0.5))
+        return Group.Apply()
+    end
+    dragged = { width, height }
+    if preview and preview:IsShown() then Preview() end
 end
 Group.FIRST = { point = "BOTTOMLEFT", x = 16, y = 340 }
 
@@ -515,7 +592,10 @@ function Group.Start()
     ns.On("READY_CHECK_FINISHED", ReadyEnded)
     ns.On("PARTY_LEADER_CHANGED", Core.Later(function() ns.Guarded(ns.GroupTools.Refresh) end))
     ns.On("UI_SCALE_CHANGED", Core.Later(Group.Apply))
-    Core.EditMode.Watch(ns.Guard(Group.Apply))
+    Core.EditMode.Watch(ns.Guard(function(on)
+        if not on then cycling, dragged = false, nil end -- the setup's cycle ends with Edit Mode
+        Group.Apply()
+    end))
     Group.Apply()
 end
 

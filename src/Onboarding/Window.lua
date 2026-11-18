@@ -111,6 +111,7 @@ local function Arrowed(text, arrow, before)
 end
 
 function Window.Close()
+    Window.away = false -- closed while Edit Mode held it away: it stays closed
     if frame and frame:IsShown() then
         frame:Hide()
         Core.Sound("IG_MAINMENU_CLOSE")
@@ -573,6 +574,20 @@ local function Build()
     count:SetPoint("CENTER", progress, "CENTER", 0, 1)
     frame:HookScript("OnShow", ns.Guard(function() Core.Escape(frame, Window.Close) end))
     frame:HookScript("OnHide", ns.Guard(function() Core.Escape(frame, nil) end))
+    -- Edit Mode opened while it shows (a step's button for it, or the game's menu): out of sight until Edit Mode
+    -- closes, then back at the same step, its sample drawn anew (Saneroki, 2026-11-18: "During the edit mode the
+    -- setup window is temporarily hiden until you exit edit mode again").
+    Core.EditMode.Watch(ns.Guard(function(on)
+        if on and frame:IsShown() then
+            Window.away = true
+            frame:Hide()
+        elseif not on and Window.away then
+            Window.away = false
+            frame:Show()
+            frame:Raise()
+            Window.Changed()
+        end
+    end))
 end
 
 -- The window on a module's setup at that step (the first). True once it shows.

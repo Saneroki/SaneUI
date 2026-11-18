@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Scale
+--  Sane UI - Combat - Nameplates - Scale
 --  Every plate's size: your target's always Scale.Full() (the setting
 --  Nameplate size); any other's by how far its unit is from your character
 --  and nothing else: full within ten yards, then down to half at forty yards

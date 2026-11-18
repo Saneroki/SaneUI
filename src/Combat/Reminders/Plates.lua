@@ -14,10 +14,10 @@ local _, ns = ...
 --  family (a shout) on your own party only; none on the dead; Plates.MOST on a
 --  plate at most, in the order made.
 --
---  Right under the plate: while the module Nameplates dresses it, under the
+--  Right under the plate: while our nameplates dress it (Nameplates/), under the
 --  lowest row of its dress (the bar, your combo points, a cast's bar while one
 --  shows: its Plate.Foot), on it, so the row grows, shrinks and fades with the
---  plate, and is out of sight with it while Nameplates shows the health bar
+--  plate, and is out of sight with it while our nameplates show the health bar
 --  only (its setting Plates show); else under the game's own health bar. A row of ours per plate, made
 --  when it first has something to show and kept (the game hands its plates out
 --  again), the plates followed from NAME_PLATE_UNIT_ADDED to _REMOVED, filled
@@ -38,7 +38,7 @@ local Reminders = ns.Reminders
 local Plates = {}
 ns.PlateReminders = Plates
 
-Plates.SIZE = 20 -- an icon, square: as big as the Nameplates module's auras above its bar
+Plates.SIZE = 20 -- an icon, square: as big as our nameplates' auras above their bar
 Plates.MOST = 6  -- icons on a plate at most
 
 local plates = {} -- [unit token] = its plate, while the game shows it
@@ -64,12 +64,10 @@ function Plates.Any()
     return false
 end
 
--- The module Nameplates' frame right under its dress on that plate, while it dresses it; else nil.
+-- The frame right under our nameplates' dress on that plate, while they dress it (Nameplates/); else nil.
 local function Foot(plate)
-    local module = rawget(SaneUI, "Nameplates")
-    local dress = type(module) == "table" and not module.off and type(module.Plate) == "table" and module.Plate.Foot
-    if type(dress) ~= "function" then return nil end
-    local foot = Core.Ask(dress, plate)
+    if not ns.Nameplates.Dressing() then return nil end
+    local foot = Core.Ask(ns.Plate.Foot, plate)
     return type(foot) == "table" and foot or nil
 end
 
@@ -81,7 +79,7 @@ local function Bar(plate)
     return type(frame) == "table" and frame or plate
 end
 
--- The row right under the plate: on the dress's foot where Nameplates dresses it (placed anew as soon as it does, or
+-- The row right under the plate: on the dress's foot where our nameplates dress it (placed anew as soon as it does, or
 -- stops), under the game's bar otherwise.
 local function Place(row, plate)
     local foot = Foot(plate)

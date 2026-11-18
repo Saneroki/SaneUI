@@ -5,7 +5,8 @@
 The setup of a Sane UI addon, step by step: one window that walks you through what a module shows, a step at a time,
 each step with its own purpose, its words, the switches it is about and a sample that shows each choice at once. It
 comes with Sane UI (Core's download) and is read only when a setup opens. Each module keeps its own words and sample;
-this addon only draws them. Nameplates has the first setup, Navigation the second (`src/Navigation/Setup.lua`).
+this addon only draws them. Combat's setup holds the nameplates' (`src/Combat/Setup.lua`; the nameplates' setup was the
+first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
 
 ## How to use
 
@@ -18,7 +19,8 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   window's title bar: the game's classic window instead; on the game's window: Sane UI's back); the red buttons
   beside a full screen window's X (its own window without the full screen, and back onto the full screen); and the
   dropdown *Classic windows* that full screen has, which chooses which one is the default, and works here too.
-  Navigation, Tooltips and Nameplates have none of the buttons (Navigation's full map has the dropdown). *Start*
+  Navigation, Tooltips and Combat have none of the buttons (Navigation's full map has the dropdown; Combat's parts,
+  ours or the game's, are kept choices in it). *Start*
   opens the first, and they follow one
   after another (*Navigation: setup 1 of 3*; *Next setup* on the last step of one); *Back* on a setup's first step
   comes back to the first page. A setup is gone through once its last step is done; closed before that, it opens
@@ -29,7 +31,8 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   on to the next. Where some of those switches were already changed, the game's yes or no asks first. The button on
   its options page still opens it.
 - **Open it again** with the button *Set up step by step* at the top of the module's options page (Esc > Options >
-  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`). **`/sane setup` alone** starts
+  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup combat`; other words a setup takes open it at a
+  step of theirs: `/sane setup nameplates`, Combat's at the nameplates). **`/sane setup` alone** starts
   the whole onboarding again: its first page with every addon's setup, gone through before or not, and *Start* goes
   through each from its first step (what was kept of each changes only as it is done again; closed early, nothing
   comes back at the next login that was not to go through before). A faint note at the foot of every step says where,
@@ -45,6 +48,9 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   character creation) go through the steps; *Done* on the last step closes it.
 - **Closing it** at any step (its X, Esc, Done) keeps what was chosen: there is nothing to save or undo. Drag its
   head to move it.
+- **Edit Mode** opened while it shows (a step's button for it, as Combat's *Place and size in Edit Mode*, or the game's
+  menu): the window steps aside until Edit Mode closes, then comes back at the same step, its sample drawn anew
+  (Saneroki, 2026-11-18: "During the edit mode the setup window is temporarily hiden until you exit edit mode again").
 - **Switched off** in the addon list (under Sane UI), no setup opens; `/sane setup` says where to switch it on.
 
 ## Technical details
@@ -73,7 +79,13 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   another with `column`; Navigation's hot corner; with `around = true`, choices that are places round a bar
   (`Controls.PLACES`: top left ... bottom right) as a small bar with a round button at each place, the choice's
   words its tooltip; with `beside = true`, at the right of the control before it, without words of its own, that one
-  narrower: Nameplates' places beside their counts), and set through `Core.Set`,
+  narrower: the nameplates' places beside their counts), or a command of the game's (`{ macro = "/editmode", command =
+  "EDITMODE", text, tip, done, missing }`: a plain `UIPanelButtonTemplate` button with its words, and over it on
+  `UIParent` in its place the game's `SecureActionButtonTemplate` of that macro text, so the game runs its own slash
+  command (Edit Mode opens as from its menu, nothing of ours in its way); there while the row shows and out of a fight,
+  gone at `PLAYER_REGEN_DISABLED`, before the game locks it, back after it; following the row while the window is
+  dragged (the row's `OnUpdate`); `done` after it (`PostClick`); without `SLASH_<command>1` the click says `missing`;
+  Combat's *Place and size in Edit Mode*), and set through `Core.Set`,
   as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it.
   Switches without words (kept values), buttons, colours, typed entries and multiple choices have no control in a
   step. A slider shown anew (`Refresh`) does not set its value again.
@@ -149,6 +161,10 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — A command of the game's as a step's control (`Controls.lua`, `Command`: the game's secure button runs
+  its `/editmode` over a plain one), the window out of sight while Edit Mode is open and back after it (`Window.lua`),
+  for Combat's setup, which holds the nameplates' now ("a onboarding for our combat module that integrates the
+  nameplates module now").
 - 2026-11-18 — `/sane setup` alone starts the whole onboarding again (Saneroki: "/sane setup does not restart the
   onboarding": it opened only the setups still to go through, and once all were done it listed them in chat): its
   first page with every setup of the addons that are on, each from its first step, *Choose defaults* on each.

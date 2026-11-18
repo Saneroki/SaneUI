@@ -39,6 +39,13 @@ local Core = SaneUI.Core
 --        anchor = function(button, frame) end, -- the button elsewhere than beside the close button
 --        ready = function() end }        -- the button is there only while true (the module runs)
 --  Two entries of one game window share its button, the first one's.
+--        stay = true }                   -- a kept choice picked in the dropdown changes only that: the full window
+--                                        -- stays as it is (a part of a module's, ours or the game's)
+--
+--  A module's own entries, of no window of its (Classic.Add; Saneroki,
+--  2026-11-18: "The classic window dropdown will have options to select unit
+--  frames, nameplates, party frames as well": Combat's parts, ours or the
+--  game's): listed under its title as a window's are, after the windows.
 -------------------------------------------------------------------------------
 local Classic = {}
 Core.Classic = Classic
@@ -55,12 +62,22 @@ function Classic.List(window)
     return type(list) == "table" and #list > 0 and list or nil
 end
 
--- Every window with entries, this one first, the others in the order they were made.
+-- A module's own entries under its title (a list, or a function giving it; nil or empty: none now), after every
+-- window's: a stand-in for a window, which only its title and entries have.
+local parts = {}
+function Classic.Add(title, entries)
+    parts[#parts + 1] = { options = { title = title, classic = entries }, part = true }
+end
+
+-- Every window with entries, this one first, the others in the order they were made; then the modules' own.
 function Classic.Windows(first)
     local found = {}
     if first and Classic.List(first) then found[1] = first end
     for _, window in ipairs(Core.Window.All()) do
         if window ~= first and Classic.List(window) then found[#found + 1] = window end
+    end
+    for _, part in ipairs(parts) do
+        if Classic.List(part) then found[#found + 1] = part end
     end
     return found
 end
@@ -82,6 +99,7 @@ end
 -- One chosen from the dropdown of a full window (edge): a kept choice ticked, ours again and the window stays
 -- as it is; else the full window goes back and the game's comes. Then the game's window has its button.
 function Classic.Pick(edge, window, entry)
+    if entry.stay then return Classic.Keep(window, entry) end
     if Classic.Ticked(entry) then
         if entry.back then Core.Safe("classic window", entry.back) end
         return

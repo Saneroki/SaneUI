@@ -3,12 +3,17 @@
 **Status:** quest marks beside nameplates; our own frames for you, your target and your focus in a nameplate's look, with their power bars, the auras that matter most and your aura lists, and rows under them for your target's and focus's targets and your pet (built); one frame for party and raid (built); rings around the mouse for the global cooldown and your cast (built); the threat and damage meter (built); aura icons and bars where you track them (built); in Retail all of it. Its window and full screen at the bottom middle (our spellbook, talents, Sane Macros, the action bars, the aura history) went to Abilities on 2026-11-18 · **Since:** 2026-10-16 · **Addon:** `SaneUI_Combat` · **Game:** WoW: Forever, Retail compatible (interface 16001, 120105)
 
 ## TL;DR
-The module for everything about the fight: your own frame, your target's (and its target's), your
-focus and your pet, the party and the raid, your buffs and debuffs, and what goes with them (cast bars,
-totems, bosses). Each part, once built, gives the game's own frame back when it fails. The plan is in
-`Doc/ideas/Combat.md`; the nameplates are a module of their own (`src/Nameplates/`). What is for the full screen
-(the window at the bottom middle, our spellbook and talents, Sane Macros, the action bars, the aura history) is
-Abilities' since 2026-11-18 (`src/Abilities/README.md`).
+The module for what the fight shows on the screen (Saneroki, 2026-11-18: "I want a combat module that has the unit
+frames, party frames, Nameplates and the edit aura tracking functionality in it"): your own frame, your target's (and
+its target's), your focus and your pet, the party and the raid, the nameplates, your buffs and debuffs and the auras
+you track, and what goes with them (cast bars, totems, bosses). Each of the four parts is ours or the game's by a
+switch of its own (*Ours or the game's*, the first section of its page, the first step of its setup, and the dropdown
+*Classic windows* of a full screen), so you can keep our party and unit frames and the game's nameplates, say. Each
+part, once built, gives the game's own frame back when it fails. Its setup walks you through it all, the party and
+raid frames with a preview of 5, 10, 20 and 40 and a button that places and sizes them in Edit Mode. The plan is in
+`Doc/ideas/Combat.md`; the nameplates have a README of their own (`Nameplates/README.md`; a module of their own
+until 2026-11-18). What is for the full screen (the window at the bottom middle, our spellbook and talents, Sane
+Macros, the action bars, the aura history) is Abilities' since 2026-11-18 (`src/Abilities/README.md`).
 
 Your frame, your target's and your focus's are ours, in the look of a nameplate and green (your target's and your
 focus's red while you can attack it): the level and raid marker on the left, then the name (none on your own), the
@@ -45,6 +50,19 @@ Sunder Armor), as you choose, nothing fixed.
 
 ## How to use
 - **Switch it on or off:** tick or untick *Combat* under *Sane UI* in the game's addon list.
+- **Ours or the game's** (Saneroki, 2026-11-18: "has the ability to choose which ones use ours and which one are not
+  using ours"): the first section of *Sane UI > Combat*: *Unit frames*, *Party and raid frames*, *Nameplates*, *Aura
+  tracking*, each on at first; one off is the game's own at once (the nameplates back on: after a `/reload`), its
+  switches below greyed out. The same three of the game's windows, *Unit frames*, *Party and raid frames* and
+  *Nameplates*, stand under *Combat* in the dropdown *Classic windows* of every full screen and on Onboarding's first
+  page: ticked, the game's own is the one; a pick changes only that, the full screen stays.
+- **Set it up step by step:** the button at the top of its page, or `/sane setup combat` (`/sane setup nameplates`
+  opens it at the nameplates' first page); the first time by itself. Its pages: the parts; your unit frames; the party
+  and raid frames, their sample going through 5, 10, 20 and 40 players a few seconds each (click a number to hold it),
+  and *Place and size in Edit Mode*: the game's own Edit Mode opens, the setup steps aside until you leave it, the
+  frame's box has a grip at each corner and a handle on each side to size it, and its preview goes through 5, 10, 20
+  and 40 meanwhile; then the nameplates' pages (`Nameplates/README.md`), last aura tracking. Each sample shows each
+  choice at once, faint while its part is the game's.
 - **The red error text:** the switch *Hide the red error text* (on at first): the game's red line at the top of the screen and
   its sound are gone, always. Yellow lines stay.
 - **Quest marks beside nameplates:** a creature that belongs to a quest in your log shows a small mark left of
@@ -170,7 +188,8 @@ Sunder Armor), as you choose, nothing fixed.
   *Make Everyone Assistant*, the raid markers on your target and on the ground (click one to set or take it off, the last clears them
   all), *Group menu* (the game's menu of you: converting to a raid or party, difficulty, and more), *Leave Group*. Who may use what is the
   game's rule. Esc or its close button closes it. *Restrict pings* and the game's filters for its own raid frames are not in it.
-- **Its sizes and preview:** in Edit Mode, click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
+- **Its sizes and preview:** in Edit Mode, drag a corner or a side of its box to size it as the mouse goes (Saneroki,
+  2026-11-18: "a dragable corner to resize it by draging corners or sides"), or click the frame. Core's dialog has its *Max width*, *Max height* and *Max unit width*,
   and a field *Preview units*: type a number and that many made-up units show, your own slot first, with random health, mana, raid
   markers, ready checks, aggro, the dead and offline, your auras' icons, a foe and a pet beside a party's members, barriers, lost health and dispels; they stay the same while you
   slide the sizes. A slot is a fifth of the max height high, whoever is there, so five fill the window even with three in the party. It is as
@@ -317,6 +336,36 @@ Sunder Armor), as you choose, nothing fixed.
     icon shows when its time would have been up.
 
 ## Technical details
+- **Ours or the game's** (`Combat.lua`, `Settings.lua`): the switches `units` (Units.lua's `Kind` wants it before a
+  frame's own; `LookOut.lua` too), `group`, `plates` (`reload`: off gives the plates back at once, `Nameplates.GiveBack`;
+  `Nameplates.Start` runs once a session, at the login while it is on) and `reminders`, the first section of
+  `ns.OPTIONS`; the frames' switches have `parent = "units"`, the group's `"group"`. The words and switches are
+  `ns.TEXT` and `ns.OPTIONS` of `Combat.lua`, the nameplates add theirs (`Nameplates/Nameplates.lua`, each key once:
+  an assertion), and `Settings.lua`, after them in the TOC, hands the list to Core: `changed` to `ns.Changed`, which
+  tells each part (`Nameplates.Owns(key)`: the nameplates' own), `replaced` to `ns.Replaced`. In Core's dropdown
+  *Classic windows*: `Core.Classic.Add(ns.TEXT.title, ...)` with three kept choices (`stay`: a pick sets the switch,
+  the full screen stays), none while the module is stood down.
+- **The nameplates** (`Nameplates/`, the addon `SaneUI_Nameplates` until 2026-11-18): their own README
+  (`Nameplates/README.md`). `ns.Nameplates.Dressing()` tells Combat's quest marks (`QuestMarks.lua`, no mark beside a
+  dressed plate) and its reminders under the plates (`Reminders/Plates.lua`, on the dress's `Plate.Foot`) whether our
+  dress is on. Their key keeps its name, `SANEUI_NAMEPLATES_STRANGERS` (Combat's `Bindings.xml`). Core keeps the old
+  addon off where it is still installed (`Core.RETIRED`), and the build takes its folder out of both games.
+- **The setup** (`Setup.lua`, `ns.Guide`, last in the TOC): `Guide.STEPS`, Combat's own (`parts`, `units`, `party`,
+  `tracking`) with the nameplates' (`ns.Setup.STEPS` but `intro`, each copied with its title headed *Nameplates*)
+  before `tracking`; `aliases = { nameplates = "size" }`. Its stage: the nameplates' boards (`ns.Setup.Stage`) and its
+  own (`DRAW`), faint (`Guide.FAINT`) while its part is the game's. The party's board: `Group.Sample(frame, count)`
+  scaled to fit, the numbers' tabs over it, its `OnUpdate` going through `Group.CYCLE` every `Group.CYCLE_SECONDS`
+  until a tab holds one. *Place and size in Edit Mode* is Onboarding's command control (`{ macro = "/editmode",
+  command = "EDITMODE", done }`): the game's secure button runs the game's own `/editmode`, then `done` starts
+  `Group.Cycle(true)`; Onboarding's window steps aside while Edit Mode is open. The unit frames' board: made-up faces
+  of the group frames (`GroupFace.Make`, `Sample`), the same look.
+- **The party and raid frames in Edit Mode, sized by the mouse** (`Units/Group.lua`): the window's option `resize`
+  (Core's `Window.Edges`: a grip at each corner, a handle along each side): `sized(width, height, done)` is
+  `Group.Dragged`: while dragged, `Limits()` gives the size in hand and the preview is laid out anew at each step;
+  let go, `groupWidth` and `groupHeight` (whole pixels) and the window keeps its place. The preview is a pool
+  (`Pool`: its parent, samples, faces, those beside a party) laid out by `Lay(pool, count, width, height, unit)`:
+  Edit Mode's, and one per frame for the setup (`Group.Sample`). `Group.Cycle(on)`: the count from `Group.CYCLE`,
+  the next every `Group.CYCLE_SECONDS` (the preview's `OnUpdate`), until Edit Mode closes.
 - **Mouse rings** (`MouseRings.lua`): a hidden holder at the `TOOLTIP` strata with two `Cooldown` widgets, their swipes Core's rings
   (`Shape.RING`, `RING_WIDE`) in `Rings.ALPHA`, both turned by `Rings.TURN` so they start and end on the line from their centre to the cursor's tip
   (the widget turns as a texture does, counter-clockwise). Above them a frame with the leading line and its glow, the game's cast bar spark twice, added
@@ -700,8 +749,11 @@ Sunder Armor), as you choose, nothing fixed.
 |---|---|
 | `SaneUI_Combat.toc` | The addon: needs Core (`SaneUI`), stands under Sane UI in the addon list |
 | `Art/banner.blp`, `Art/icon.blp` | The module's logo (crossed swords): one of Sane UI's family of logos (`dev/tools/logo-art`), its banner at the top of its options page, its icon in the addon list (the TOC's `IconTexture`). Original art of Sane UI (see the project's `LICENSE`), made by `dev/tools/art` from `assets/Logos/combat-banner.png` and `combat-icon.png` |
-| `Bindings.xml` | Combat's key in the game's key bindings, under Sane UI: *Focus who you look out for* (the game reads it by itself) |
-| `Combat.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its settings (the unit frames, the group frames, the quest marks, the rings, the meter, the reminders), `GiveBack`, the start |
+| `Bindings.xml` | Combat's keys in the game's key bindings, under Sane UI: *Focus who you look out for*, *Show or hide players you don't know* (the game reads it by itself) |
+| `Combat.lua` | The module's own table (`ns`), registered with Core (`Core.NewModule`); its words (`ns.TEXT`), its switches (`ns.OPTIONS`: *Ours or the game's*, the unit frames, the group frames, the quest marks, the rings, the meter, the reminders), what a change tells each part (`ns.Changed`), its parts in Core's *Classic windows*, `GiveBack`, the start |
+| `Nameplates/` | The nameplates: the game's plates in our dress, the combat text, their words, switches and setup steps ([their README](Nameplates/README.md)) |
+| `Settings.lua` | The module's switches handed to Core once every part added its own |
+| `Setup.lua` | Combat's setup, step by step: the parts, the unit frames, the party and raid frames (their preview of 5, 10, 20 and 40, Edit Mode), the nameplates' steps, aura tracking |
 | `QuestMarks.lua` | A mark beside a creature's nameplate while it belongs to an objective of your quests still to do |
 | `MouseRings.lua` | Rings around the mouse for the global cooldown and your cast, only while they run, centred on the cursor's picture |
 | `Units/Bar.lua` | A unit frame's bars in a nameplate's look: one round outline, its border, the rank's line, the glow; the green health bar (your target's and focus's red on a foe), the power bars under it (your druid's mana and form), the row |
@@ -732,6 +784,17 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-18:** the nameplates, the unit frames, the party and raid frames and aura tracking in one module, each ours
+  or the game's (Saneroki: "I want a combat module that has the unit frames, party frames, Nameplates and the edit aura
+  tracking functionality in it [...] so people can for example choose to use our party and unit frames but disable our
+  nameplates"): the nameplates in `Nameplates/` (the addon `SaneUI_Nameplates` until now), the section *Ours or the
+  game's* and its three in Core's *Classic windows* ("The classic window dropdown will have options to select unit
+  frames, nameplates, party frames as well"). Combat's setup ("a onboarding for our combat module that integrates the
+  nameplates module now"): the party and raid frames' sample through 5, 10, 20 and 40 ("previews of the party with 5,
+  10, 20 and 40 people in it where people can see where everything is") and *Place and size in Edit Mode* ("a button
+  during onboarding that enabled edit mode and lets the player place the party window and has a dragable cornber to
+  resize it by draging corners or sides and the preview cycles through 5, 10, 20 and 40 party members view. During the
+  edit mode the setup window is temporarily hiden until you exit edit mode again").
 - **2026-11-18:** what is for the full screen goes to Abilities (Saneroki: "The macro editor, spellbook and other parts
   that are more for the fullscreen windows are part of the SaneUI abilities part"): the window at the bottom middle, the
   board, our spellbook and talents, the trainer, the keys, the action bars, the game's other bars, Sane Macros and the

@@ -43,7 +43,11 @@ own purpose."
   `CORE` and `CORE_PROJECT`): the window in the bronze, the module's sample at its left, the step's head, words and
   controls at its right (the module's own switches, made from their descriptions and set through `Core.Set`),
   *Back* and *Next* in red with the game's arrows as Forever's character creation has them, *Step 2 of 9*.
-- **Nameplates' setup** (`src/Nameplates/Setup.lua`, `Sample.lua`): nine steps, each with its own purpose (what
+- **Combat's setup** (2026-11-18, `src/Combat/Setup.lua`): the parts, ours or the game's; the unit frames; the party
+  and raid frames, their sample through 5, 10, 20 and 40, and *Place and size in Edit Mode* (Onboarding's command
+  control runs the game's `/editmode`; the window steps aside until Edit Mode closes); the nameplates' steps; aura
+  tracking. `/sane setup nameplates` opens it at those (a guide's `aliases`).
+- **Nameplates' setup** (`src/Combat/Nameplates/Setup.lua`, `Sample.lua`; Combat's since 2026-11-18): nine steps, each with its own purpose (what
   plates show; what the bar says; the border; rank and danger; spells on it; casts and damage numbers; on the bar;
   which plates show; size and transparency), sample plates drawn by the plates' own code from made-up units. New
   settings for it: *Level*, *Health*, *Health in percent*, and how many debuffs, buffs and crowd controls show.

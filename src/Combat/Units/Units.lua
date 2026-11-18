@@ -438,7 +438,7 @@ end
 -- the size the setting Unit frame size says. Out of a fight.
 local function Kind(kind)
     local row = kind.row
-    local wanted = not ns.off and ns.options[kind.option] ~= false
+    local wanted = not ns.off and ns.options.units ~= false and ns.options[kind.option] ~= false -- the part, then the frame
     if not wanted then
         if kind.rest then kind.rest:Switch(false) end
         Unwatch(row.button)

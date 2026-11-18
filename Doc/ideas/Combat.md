@@ -9,8 +9,28 @@ nothing in it is built.
 Saneroki, 2026-10-16: **a module called Combat that handles everything about party, raid, buffs, unit frames,
 nameplates, pets** and what goes with them. It is one module (`SaneUI_Combat`), switched on and off by
 itself in the game's addon list like every other; each of its parts has its own files and its own switch.
-The nameplates became a module of their own (Saneroki, 2026-10-20: *Nameplates*, `src/Nameplates/README.md`);
-the notes on them below stay as what the game has.
+The nameplates became a module of their own (Saneroki, 2026-10-20: *Nameplates*), and are Combat's again since
+2026-11-18 (`src/Combat/Nameplates/README.md`); the notes on them below stay as what the game has.
+
+### The division (Saneroki, 2026-11-18)
+
+"I want a combat module that has the unit frames, party frames, Nameplates and the edit aura tracking functionality in
+it. So all of those we merge into one called SaneUI Combat and that has the ability to choose which ones use ours and
+which one are not using ours (disabled) so people can for example choose to use our party and unit frames but disable
+our nameplates." And: "The macro editor, spellbook and other parts that are more for the fullscreen windows are part of
+the SaneUI abilities part." Asked how the full screen splits, he chose the full screen whole to Abilities, the aura
+history with it; asked about the CurseForge project *SaneUI Nameplates* (0.3.1 alpha), "Rename it SaneUI Combat" (he
+promotes Combat when he decides). So:
+
+| Combat (`SaneUI_Combat`) | Abilities (`SaneUI_Abilities`) |
+| --- | --- |
+| Unit frames (you, target, focus, pet, their rows), party and raid frames, nameplates and the combat text, aura tracking (your marks, Edit tracked, the aura icons and bars), quest marks, rings around the mouse, the threat and damage meter, the red error text | The window at the bottom middle and its full screen: our spellbook and talents (the game's own window in Retail), the trainer's, a talent planner, Sane Macros, the action bars as windows, the aura history; your spellbook and talents keys; the game's action bars clean, its other bars; the spellbook's grey spells and reservations |
+
+Combat's four parts are each ours or the game's (the section *Ours or the game's*; three of them in Core's *Classic
+windows*: "The classic window dropdown will have options to select unit frames, nameplates, party frames as well").
+Its setup holds the nameplates' pages and the party and raid frames' preview of 5, 10, 20 and 40 with a button that
+places and sizes them in Edit Mode, the setup stepping aside meanwhile. What both modules need is Core's: the menu of
+an aura or a spell (`Core.AuraMarks`), the spell search (`Core.SpellSearch`).
 
 Decided (Saneroki, 2026-10-16):
 
@@ -154,7 +174,7 @@ Decided (Saneroki, 2026-10-16):
 | **Party** | Up to four others in your group, with their pets | `PartyFrame` (members `PartyFrame.MemberFrame1..4`), or `CompactPartyFrame` in raid style |
 | **Raid** | Up to forty, in groups, and the raid's tools (marks, ready check, leader) | `CompactRaidFrameContainer`, `CompactRaidFrameManager` (`Blizzard_CompactRaidFrames`); `ReadyCheckFrame` |
 | **Buffs** | Your own buffs and debuffs, your weapon enchants; the buffs shown on every other part | `BuffFrame`, `DebuffFrame`, `DeadlyDebuffFrame` (`Blizzard_BuffFrame`) |
-| **Nameplates** (the module *Nameplates* since 2026-10-20) | The plates over the heads of creatures and players | `NamePlateDriverFrame` and its plates (`Blizzard_NamePlates`) |
+| **Nameplates** (built; a module of its own 2026-10-20 to 2026-11-18) | The plates over the heads of creatures and players | `NamePlateDriverFrame` and its plates (`Blizzard_NamePlates`) |
 | **Cast bars** | Your casting (built 2026-10-30, as part of your frame), your target's and focus's, a nameplate's | `PlayerCastingBarFrame`, `TargetFrameSpellBar`, `FocusFrameSpellBar`, `PetCastingBarFrame` |
 | **Bosses** | The boss frames of an encounter | `BossTargetFrameContainer` (`Boss1..5TargetFrame`); this client has no arena frames |
 | **Class resources** | What a class counts beside its power: combo points, totems, ... | `ComboFrame` (on the target frame), `TotemFrame`; this client has no runes, shards or holy power bars |
@@ -285,7 +305,7 @@ system, and on demand (Saneroki, 2026-10-16); the rest is a proposal.
 4. **Buffs:** your own, at the top right as the game has them. Reminders of them built 2026-11-01 (`Reminders/`): the game's buff frames stay, a right click there and on a unit frame's icons makes one. On the party and raid frames built 2026-11-06 (`Reminders/Group.lua`, Saneroki: "manually instead of you doing something fixed"): a reminder's place *Party and raid frames*, on each member; the fixed buffs of your class gone. Aura bar 1 the place of a new one, and a place *Nameplates* built 2026-11-07 (`Reminders/Plates.lua`, Saneroki: "the trackers are shown directly underneath with no gaps on the nameplates"): on each plate's unit, a row right under the plate. *Watch on* several units at once built 2026-11-07 (Saneroki: "select multiple targets in its dropdown with checkboxes"): ticks for you, your target and your focus, one icon on its bar while any of them wants it. *Shows on* several places at once built 2026-11-07 (Saneroki: "make the shows on also multiple choice"): ticks for each bar, the health bars and the nameplates, the aura on each by the same settings. Built 2026-11-09 (Saneroki): *Watch on* also *Everyone*, *Tank*, *Healer*, *DPS*, *Party 1* to *4* and *Group 1* to *40* ("all party members Like Party 1 and also on Role Tank, Healer, DPS", "Group 1, 2 to 40"), counted on the bars and the frames' health bars; *Shows on* *Unit frames* and *Group frames* apart ("Add a Show on groupframes"); the conditions *Only in groups* ("groups are raids and party"), *Hide in rested areas* and *Ignore everywhere* (his pick: a pause); the columns *Hide from* and *Prioritize on unit frames* a cog, *Edit Tracked conditions*, the section under the list of that title holding their ticks (his pick); the aura bars' icons clickable out of a fight ("like the buffs in the aura view"). The group frames: every member's class resource and aggro, in a fight too ("show always the class resource and aggro").
 5. **Cast bars** (yours, your target's and your focus's built 2026-10-30, with your timers), **bosses**, **class resources**, **swing timers**, **threat.**
 6. **Combat text** and **raid warnings.**
-7. ~~**Nameplates**~~: a module of their own since 2026-10-20 (`src/Nameplates/`), built there.
+7. ~~**Nameplates**~~: built (a module of their own 2026-10-20 to 2026-11-18, Combat's `Nameplates/` since).
 
 Each step is built plain first, tried in the game, then given its look (`blizzard-design-principles.md`, 7).
 

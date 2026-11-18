@@ -2833,5 +2833,45 @@ end)()
     W.methods.SetFrameLevel, W.methods.GetFrameLevel = nil, function() return 1 end
 end)()
 
+-- Sized by its corners and sides in Edit Mode (option resize; Saneroki, 2026-11-18: "a dragable corner to resize it by
+-- draging corners or sides"): a grip at each corner, a handle along each side, each sizing from its own point with the
+-- one across held; the module told at every step and once let go, the place kept where it stands then.
+do
+    local frame = CreateFrame("Frame", nil, UIParent)
+    frame:SetSize(300, 100)
+    local told, store = {}, {}
+    local resized = Window.New(frame, { store = store, title = "Party", first = { point = "BOTTOMLEFT", x = 16, y = 340 },
+        resize = { sized = function(width, height, done) told[#told + 1] = { width, height, done } end,
+                   minWidth = 100, minHeight = 30, maxWidth = 2000, maxHeight = 800 } })
+    frame._left, frame._bottom = 16, 340
+    local edges = resized.edges
+    local function Shown()
+        local count = 0
+        for _, handle in ipairs(edges) do if handle:IsShown() then count = count + 1 end end
+        return count
+    end
+    check(edges and #edges == 8 and Shown() == 0 and not resized.grip, "eight handles, none in sight outside Edit Mode, no grip of sizable")
+    EventRegistry:TriggerEvent("EditMode.Enter")
+    check(Shown() == 8, "in Edit Mode: a grip at each corner and a handle along each side")
+    local by = {}
+    for _, handle in ipairs(edges) do by[handle.point] = handle end
+    check(by.TOPLEFT and by.BOTTOMRIGHT and by.TOP and by.LEFT._width == Window.SIDE and by.TOP._height == Window.SIDE
+        and by.TOPLEFT._width == 16 and by.TOPLEFT.corner == "TOPLEFT", "the corners the game's grip, the sides thin handles")
+    by.LEFT._scripts.OnMouseDown(by.LEFT)
+    check(frame._sizing == "LEFT" and frame._points[1][1] == "TOPRIGHT" and frame._points[1][4] == 316
+        and frame._bounds[1] == 100 and frame._bounds[4] == 800, "the left side sizes it from there, its right side held, within its bounds")
+    frame._width = 420
+    frame._scripts.OnSizeChanged(frame)
+    check(told[1] and told[1][1] == 420 and told[1][3] == false, "the module told of the size at every step")
+    frame._left = 316 - 420
+    by.LEFT._scripts.OnMouseUp(by.LEFT)
+    check(frame._sizing == nil and told[2] and told[2][1] == 420 and told[2][3] == true and store.place
+        and store.place.x == 316 - 420, "let go: the place kept where it stands, then the module takes the size")
+    by.TOPRIGHT._scripts.OnMouseDown(by.TOPRIGHT)
+    check(frame._sizing == "TOPRIGHT" and frame._points[1][1] == "BOTTOMLEFT", "a corner holds the corner across")
+    EventRegistry:TriggerEvent("EditMode.Exit")
+    check(frame._sizing == nil and Shown() == 0 and told[3] and told[3][3] == true, "Edit Mode closed while sizing: let go, the handles gone")
+end
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

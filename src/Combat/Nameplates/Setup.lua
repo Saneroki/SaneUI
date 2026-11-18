@@ -1,15 +1,16 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Setup
---  The nameplates' setup, step by step (Saneroki, 2026-11-16: "a step by step
---  window so the player goes through each step where it can see a fake
+--  Sane UI - Combat - Nameplates - Setup
+--  The nameplates' steps of Combat's setup (Saneroki, 2026-11-16: "a step by
+--  step window so the player goes through each step where it can see a fake
 --  nameplate in the window and see how it looks with their setting. Each page
 --  in the window groups together similar settings or information so each page
---  has its own purpose"). The module's own words and samples, handed to Core
---  (Core.Onboarding.Add); the window is the addon Onboarding's, read only when
---  it opens: by itself the first time the module is on, from the module's
---  options page (Set up step by step), or /sane setup nameplates.
+--  has its own purpose"; 2026-11-18: part of Combat's setup, "a onboarding for
+--  our combat module that integrates the nameplates module now"). Their words
+--  and samples; Combat's Setup.lua takes the steps (all but intro, Combat's
+--  own first step says what this is) and hands the whole to Core. /sane setup
+--  nameplates opens it at the first of them.
 --
 --  The steps, in Saneroki's order (2026-11-16), each a few short lines that
 --  start with a gold word ("A whole paragraph people will not read"), its
@@ -440,8 +441,5 @@ end
 -- For the tests: a step's board, once drawn.
 function Setup.Board(key) return boards[key] end
 
-Core.Onboarding.Add(ns.name, {
-    title = ns.TEXT.title,
-    steps = Setup.STEPS,
-    Stage = function(stage, step, index) ns.Safe("setup sample", Stage, stage, step, index) end,
-})
+-- Combat's setup (Setup.lua) draws each step of the nameplates' here; on its own steps these boards are out of sight.
+Setup.Stage = Stage

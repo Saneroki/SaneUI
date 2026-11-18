@@ -1,12 +1,12 @@
-local ADDON, ns = ...
+local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates
---  The module's own table (ns in all its files), its words, its settings, and
---  how it stands down.
---
---  An addon of its own (SaneUI_Nameplates): it needs Core and nothing else, and
---  is switched on and off in the game's addon list.
+--  Sane UI - Combat - Nameplates
+--  The nameplates, a part of Combat (Saneroki, 2026-11-18: "I want a combat module that has the unit
+--  frames, party frames, Nameplates and the edit aura tracking functionality in it"; an addon of its own,
+--  SaneUI_Nameplates, until then): their words and switches, added to Combat's (Combat.lua; Settings.lua
+--  hands them to Core), what a switch changes, the start and the giving back. Combat's switch Nameplates
+--  (plates, among Ours or the game's) has them ours or the game's.
 --
 --  It starts from the game's own nameplates and keeps them: their size (the
 --  game's settings), where they stand and stack, what clicks them, their cast
@@ -41,11 +41,12 @@ local ADDON, ns = ...
 --  Standing down, every plate is the game's own again (GiveBack).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
-Core.NewModule(ADDON, "Nameplates", ns)
+local Nameplates = {}
+ns.Nameplates = Nameplates
 
--- Every word the module shows; the game's own where it has one.
-ns.TEXT = {
-    title = "Nameplates",
+-- Every word of the nameplates; the game's own where it has one. Added to Combat's (ns.TEXT) below.
+local WORDS = {
+    platesTitle = "Nameplates",
     style = "Plates show",
     styleTip = "What every nameplate shows. Health bar and spells: the bar with its name and health, your debuffs above it, a foe's buffs left of it, crowd control right of it. Health bar only: the bar without those auras and without the tracked auras under it; its cast bar stays. Spells only: no bar and no name; the auras, the cast bar, the raid marker and your combo points where they stand, and a gold arrow over your target.",
     styleBoth = "Health bar and spells",
@@ -53,8 +54,6 @@ ns.TEXT = {
     styleSpells = "Spells only",
     dot = "Dot where a plate is",
     dotTip = "With Spells only: a small faint dot in the middle of each plate, in the colour its bar would have, so you see there is a plate while it shows no spells. On by itself when you choose Spells only.",
-    setup = "Set up step by step",
-    setupTip = "A window that walks you through every part of the nameplates, a step at a time, with a sample plate that shows each choice at once. Also /sane setup nameplates.",
     debuffs = "Your debuffs",
     debuffsTip = "Right above a nameplate's bar, from its left: at most this many of the debuffs and damage over time you put on that creature or player, with the time each has left; never more than fit over the bar. 0: none.",
     buffs = "Buffs on foes",
@@ -144,9 +143,10 @@ ns.TEXT = {
     strangersShown = "Players you don't know: their plates show",
     strangersHidden = "Players you don't know: their plates are hidden",
 }
-
--- What is told when the module stands down (Core's StandDown).
-ns.GIVEN_BACK = "the nameplates are the game's own again"
+for key, words in pairs(WORDS) do
+    assert(ns.TEXT[key] == nil, "Combat: two words called " .. key)
+    ns.TEXT[key] = words
+end
 
 -- What the plates show (the setting Plates show, Saneroki, 2026-11-09): "both" the bar and the auras around it,
 -- "bar" the health bar only, "spells" the spells only (no bar, no name).
@@ -162,11 +162,10 @@ for _, place in ipairs({ "topleft", "top", "topright", "left", "right", "bottoml
     ns.PLACES[#ns.PLACES + 1] = { place, ns.TEXT[place] }
 end
 
+-- The nameplates' switches, after Combat's own (ns.OPTIONS); Combat's setup button (Combat.lua) opens their steps too.
 local OPTIONS = {
-    -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
-    { key = "setup", text = ns.TEXT.setup, tip = ns.TEXT.setupTip,
-      button = function() Core.Onboarding.Open(ns.name) end },
-    { key = "style", default = "both", choices = ns.STYLES, text = ns.TEXT.style, tip = ns.TEXT.styleTip },
+    { key = "style", default = "both", choices = ns.STYLES, text = ns.TEXT.style, tip = ns.TEXT.styleTip,
+      header = ns.TEXT.platesTitle },
     { key = "dot", default = false, parent = "style", parentValue = "spells", text = ns.TEXT.dot, tip = ns.TEXT.dotTip },
     { key = "classColour", default = true, text = ns.TEXT.classColour, tip = ns.TEXT.classColourTip },
     { key = "quest", default = true, text = ns.TEXT.quest, tip = ns.TEXT.questTip },
@@ -222,6 +221,7 @@ local OPTIONS = {
     { key = "combatGame", default = true, text = ns.TEXT.combatGame, tip = ns.TEXT.combatGameTip },
     { key = "combatFoundCVars", default = {} }, -- the game's combat text CVars as they were before ours (CombatText.lua)
 }
+for _, option in ipairs(OPTIONS) do ns.OPTIONS[#ns.OPTIONS + 1] = option end
 -- What the plates show now (the setting Plates show): "both", "bar" or "spells".
 function ns.Style()
     return (ns.options or {}).style or "both"
@@ -256,28 +256,26 @@ local function Apply(key)
     end
 end
 
-Core.Options(ns.name, OPTIONS, {
-    -- 1: the switches Your debuffs, Buffs on foes and Crowd control became how many of each (none: 0).
-    version = 1,
-    upgrade = function(values, from)
-        if from < 1 then
-            for old, count in pairs({ debuffs = "debuffCount", buffs = "buffCount", control = "controlCount" }) do
-                if values[old] == false then values[count] = 0 end
-            end
-        end
-    end,
-    -- Plates show turned to Spells only: the dot where a plate is on with it (Saneroki, 2026-11-09: "automatically on
-    -- when the nameplate is changed into only Spells"), and off again by its own switch.
-    changed = function(key, value)
-        if key == "style" and value == "spells" then Core.Set(ns.name, "dot", true) end
-        Apply(key)
-    end,
-    -- Another profile's settings came in: everything done anew, as each switch would be; none set for another, so the
-    -- dot keeps the profile's own value.
-    replaced = function()
-        for _, key in ipairs({ "resource", "range", "distance", "combatText", "style" }) do Apply(key) end
-    end,
-})
+-- One of the nameplates' switches changed (Settings.lua tells it): Plates show turned to Spells only, the dot where a
+-- plate is on with it (Saneroki, 2026-11-09: "automatically on when the nameplate is changed into only Spells"), and
+-- off again by its own switch. Not while the part is the game's (Combat's switch Nameplates off).
+function Nameplates.Changed(key, value)
+    if not Nameplates.started then return end
+    if key == "style" and value == "spells" then Core.Set(ns.name, "dot", true) end
+    Apply(key)
+end
+
+-- Another profile's settings came in: everything done anew, as each switch would be; none set for another, so the
+-- dot keeps the profile's own value.
+function Nameplates.Replaced()
+    if not Nameplates.started then return end
+    for _, key in ipairs({ "resource", "range", "distance", "combatText", "style" }) do Apply(key) end
+end
+
+-- Whether a switch is the nameplates' (what Settings.lua sends here).
+local mine = {}
+for _, option in ipairs(OPTIONS) do mine[option.key] = true end
+function Nameplates.Owns(key) return mine[key] == true end
 
 -- The key Show or hide players you don't know (Bindings.xml): the setting Only players you know turned over, told as
 -- the game tells its own plates' keys (UIErrorsFrame, in yellow).
@@ -293,27 +291,36 @@ function ns.ToggleStrangers()
 end
 BINDING_NAME_SANEUI_NAMEPLATES_STRANGERS = ns.TEXT.strangersKey
 
--- Standing down: every plate the game's own again, ours out of sight, the game's scaling by distance.
-function ns.GiveBack()
-    ns.Safe("give back", ns.Scale.GiveBack)
-    ns.Safe("give back", ns.CombatText.GiveBack)
-    ns.Plate.GiveBack()
-end
-
-function ns.OnLoad()
-    ns.options = Core.Settings(ns.name)
+-- Standing down, or the switch Nameplates off: every plate the game's own again, ours out of sight, the game's scaling
+-- by distance and its combat text. Each step by itself.
+function Nameplates.GiveBack()
+    if not Nameplates.started then return end
+    Nameplates.started, Nameplates.given = false, true
+    ns.Safe("nameplates: give back", ns.Scale.GiveBack)
+    ns.Safe("nameplates: give back", ns.CombatText.GiveBack)
+    ns.Safe("nameplates: give back", ns.Plate.GiveBack)
 end
 
 -- The game is about to write its settings: its nameplate CVars as they were before ours (Scale.lua).
-function ns.OnLogout()
+function Nameplates.Logout()
+    if not Nameplates.started then return end
     ns.Safe("logout", ns.CombatText.Logout)
     ns.Safe("logout", ns.Scale.Logout)
 end
 
-function ns.OnLogin()
+-- At the login, with the switch Nameplates on (Combat.lua). Once a session: on again after it was given back, the
+-- plates are ours after a /reload (the switch asks for one).
+function Nameplates.Start()
+    if Nameplates.started or Nameplates.given then return end
+    Nameplates.started = true
     ns.Plate.Start()
     ns.Resource.Start()
     ns.Range.Start()
     ns.Scale.Start()
     ns.CombatText.Start()
+end
+
+-- Whether our dress is on the plates now: Combat's quest marks and its reminders under the plates ask it.
+function Nameplates.Dressing()
+    return Nameplates.started == true and not ns.off
 end

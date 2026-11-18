@@ -1,7 +1,7 @@
 local _, ns = ...
 
 -------------------------------------------------------------------------------
---  Sane UI - Nameplates - Marks
+--  Sane UI - Combat - Nameplates - Marks
 --  The raid marker, in the line right after the level (Text.lua), as on Sane
 --  UI's unit frames, as large as the line's icons; it shows only while there
 --  is one.

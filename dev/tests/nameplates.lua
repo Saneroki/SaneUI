@@ -1,4 +1,4 @@
--- Runs the Nameplates module against the stand-in client (wowstub.lua): our dress on the game's plates as the
+-- Runs Combat's nameplates (src/Combat/Nameplates/; the Nameplates module until 2026-11-18) against the stand-in client (wowstub.lua): our dress on the game's plates as the
 -- game shows and takes them back, the game's parts out of sight under it and back, a plate shown by name only,
 -- the bar's health (hidden values passed on untouched), colours, the border lit on your target and focus, the rank's
 -- line and the glow behind it, the power line, the line inside the bar and the bar's width from it, the raid marker,
@@ -11,6 +11,7 @@ local root = arg[0]:match("^(.*)/dev/tests/") or "."
 package.path = root .. "/dev/tests/?.lua;" .. package.path
 local W = require("wowstub")
 W.Install(_G)
+require("combatclient").Install(W) -- what the rest of Combat (its unit frames, the meter) needs of the client
 
 local passed = 0
 local function check(condition, what)
@@ -72,6 +73,12 @@ function Group:GetParent() return self._parent end
 function Group:Restart() self._playing = true end
 function Group:Stop() self._playing = false end
 function Group:Finish() self._playing = false; self._OnFinished(self) end
+function Group:Play() self._playing = true end
+function Group:IsPlaying() return self._playing == true end
+-- What the rest of Combat asks of a group beyond the numbers' (its fades, Core's motion): nothing to see here.
+setmetatable(Group, { __index = function(_, key)
+    if type(key) == "string" and not key:find("^_") then return function() end end
+end })
 function methods:CreateAnimationGroup() return setmetatable({ _parent = self }, Group) end
 CombatFeedbackText = { MISS = "Miss", DODGE = "Dodge", BLOCK = "Block" }
 
@@ -360,8 +367,9 @@ for name, default in pairs({ nameplateMinScale = "1", nameplateMaxScale = "1", n
 end
 W.LoadCore(root)
 W.Fire("ADDON_LOADED", "SaneUI")
-local ns = W.LoadAddon(root, "Nameplates", "SaneUI_Nameplates")
-W.Fire("ADDON_LOADED", "SaneUI_Nameplates")
+-- The nameplates are a part of Combat (Nameplates/, since 2026-11-18): the module whole, its switch Nameplates on.
+local ns = W.LoadAddon(root, "Combat", "SaneUI_Combat")
+W.Fire("ADDON_LOADED", "SaneUI_Combat")
 W.Fire("PLAYER_LOGIN")
 local Core = SaneUI.Core
 local Bar, Auras, Resource, Text, Scale = ns.Bar, ns.Auras, ns.Resource, ns.Text, ns.Scale
@@ -398,7 +406,7 @@ check(#wolfPlate._hit == 0, "the game made the plate not clickable (by name only
 wolfPlate.UnitFrame._byName = nil
 W.combat, wolfPlate._open = true, false
 wolfPlate.UnitFrame:UpdateHitTestArea(NamePlateSetupOptions)
-check(wolfPlate._hit[1] == dress and Core.errors["Nameplates: clicks"] == nil,
+check(wolfPlate._hit[1] == dress and Core.errors["Combat: clicks"] == nil,
     "in a fight too: right after the game's own code, the one time the game lets an addon")
 W.combat = false
 check(dress.health._barColor[1] == 1 and dress.health._barColor[2] == 0, "a creature that attacks on sight: red")
@@ -2046,14 +2054,18 @@ plates.nameplate4 = plates.nameplate2 -- the game hands the plate out again, for
 W.Fire("NAME_PLATE_UNIT_ADDED", "nameplate4")
 check(DressOf(plates.nameplate2) == friend and friend:IsShown() and friend.name._text == "Kobold", "a plate handed out again keeps its dress")
 
--- The setup, step by step (Setup.lua, Sample.lua): the module's own steps in Saneroki's order, each switch it names
--- one of its own with words, every step's sample plates drawn by the plates' own code as the settings in use say.
+-- The setup, step by step: Combat's (src/Combat/Setup.lua) with the nameplates' steps in it (Nameplates/Setup.lua,
+-- Sample.lua) in Saneroki's order, each switch it names one of its own with words, every step's sample plates drawn by
+-- the plates' own code as the settings in use say.
 do
     local guide = Core.Onboarding.Guide(ns.name)
     local keys = {}
     for index, step in ipairs(guide.steps) do keys[index] = step.key end
-    check(table.concat(keys, " ") == "intro size seen which danger border line bar cast auras timers look",
-        "the steps in Saneroki's order (2026-11-16), a first page saying what this is: " .. table.concat(keys, " "))
+    check(table.concat(keys, " ") == "parts units party size seen which danger border line bar cast auras timers look tracking",
+        "Combat's steps, the nameplates' in Saneroki's order (2026-11-16) among them, the first page saying what this is: "
+        .. table.concat(keys, " "))
+    check(guide.steps[4].title == "Nameplates: Size" and guide.aliases.nameplates == "size",
+        "the nameplates' steps headed so; /sane setup nameplates opens the first of them")
     local named, short = true, true
     for _, step in ipairs(guide.steps) do
         for line in (step.text .. "\n"):gmatch("([^\n]*)\n") do
@@ -2063,6 +2075,8 @@ do
         for _, key in ipairs(step.settings) do
             if type(key) == "table" and key.binding then
                 named = named and type(key.binding) == "string" and type(key.text) == "string"
+            elseif type(key) == "table" and key.macro then -- a command of the game's (Edit Mode)
+                named = named and type(key.text) == "string" and type(key.command) == "string"
             elseif type(key) == "table" then -- a switch the step shows its own way (the places round a small bar)
                 local option = Core.Described(ns.name, key.key)
                 named = named and option ~= nil and type(option.text) == "string"
@@ -2074,7 +2088,8 @@ do
     end
     check(short, "each step a few short lines, each starting with gold words, to be read at a glance")
     check(named, "each step names switches the module has, each with its words, and keys by their command")
-    local which = guide.steps[4].settings
+    local which
+    for _, step in ipairs(guide.steps) do if step.key == "which" then which = step.settings end end
     check(which[3].binding == "ALLNAMEPLATES" and which[4].binding == "FRIENDNAMEPLATES" and which[5].binding == "NAMEPLATES"
         and which[6].binding == "SANEUI_NAMEPLATES_STRANGERS", "Which plates show: the game's three keys for plates and ours")
     local Setup = ns.Setup
@@ -2086,12 +2101,16 @@ do
         return Setup.Board(key)
     end
     for _, step in ipairs(guide.steps) do
-        check(Draw(step.key) and Setup.Board(step.key):IsShown(), "the step " .. step.key .. " draws its board")
+        Draw(step.key)
+        local board = Setup.Board(step.key) or ns.Guide.Board(step.key)
+        check(board and board:IsShown(), "the step " .. step.key .. " draws its board")
     end
     local errors = 0
     for label in pairs(Core.errors) do if tostring(label):find("setup sample", 1, true) then errors = errors + 1 end end
     check(errors == 0, "every step's samples drawn without an error")
-    check(not Setup.Board("intro"):IsShown() and Setup.Board("look"):IsShown(), "only the step's own board shows")
+    Draw("look")
+    check(not ns.Guide.Board("parts"):IsShown() and not Setup.Board("size"):IsShown() and Setup.Board("look"):IsShown(),
+        "only the step's own board shows")
 
     -- Size: by distance, as much as the setting says.
     local Full = ns.Scale.Full
@@ -2129,7 +2148,7 @@ do
     ns.ToggleStrangers()
     check(ns.options.players == true and BINDING_NAME_SANEUI_NAMEPLATES_STRANGERS == ns.TEXT.strangersKey,
         "again: only those you know; the key's words in the game's key bindings")
-    local file = io.open(root .. "/src/Nameplates/Bindings.xml", "r")
+    local file = io.open(root .. "/src/Combat/Bindings.xml", "r")
     local xml = file and file:read("*a") or ""
     if file then file:close() end
     check(xml:find('name="SANEUI_NAMEPLATES_STRANGERS"', 1, true) and xml:find("ToggleStrangers", 1, true),
@@ -2267,10 +2286,6 @@ do
         "Spells only: no bar, no line, the gold arrow over your target")
     Core.Set(ns.name, "style", "both")
     Core.Set(ns.name, "dot", false)
-    -- The switches that were these counts: an older setting off is 0.
-    local values = { debuffs = false, buffs = true }
-    Core.described[ns.name].upgrade(values, 0)
-    check(values.debuffCount == 0 and values.buffCount == nil, "an older Your debuffs off: none of them")
 end
 
 -- Standing down while a step of ours fails (here the game's aura container, which a client update may change): the
@@ -2283,7 +2298,7 @@ ns.StandDown("a test")
 check(ns.off and not dress:IsShown() and not friend:IsShown() and Faded(plates.nameplate1, 1) and Faded(plates.nameplate2, 1)
     and plates.nameplate2.UnitFrame._alpha == 1, "standing down, every plate is the game's own again, though a step of ours failed")
 check(plates.nameplate1._hit[1] == "game", "what clicks it the game's own again")
-check(Core.errors["Nameplates: auras"] ~= nil, "the step that failed is noted")
+check(Core.errors["Combat: auras"] ~= nil, "the step that failed is noted")
 check(gameAuras.icons[1]:IsMouseEnabled() and gameAuras.icons[3]:IsMouseEnabled()
     and gameAuras.LossOfControlFrame.AuraItemFrame:IsMouseEnabled(), "the game's aura icons with the mouse again")
 gameAuras:RefreshList(1)

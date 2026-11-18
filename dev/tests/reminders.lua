@@ -649,6 +649,8 @@ end
 --  On the nameplates: right under each plate, side by side without a gap
 -------------------------------------------------------------------------------
 do
+    -- The game's own plates first: our nameplates (Combat's, on at first) dress them further down, by a stand-in.
+    Core.Set("Combat", "plates", false)
     local Plates = ns.PlateReminders
     local plates, guids = {}, { nameplate1 = "Creature-1", nameplate2 = "Player-2" }
     local canAttack, guid, same = UnitCanAttack, UnitGUID, UnitIsUnit
@@ -734,18 +736,21 @@ do
     W.Combat(false)
     Update()
     check(select(2, Under(wolf)) == 2, "after it, read again")
-    -- Dressed by the module Nameplates: right under its dress's lowest row, on it.
+    -- Dressed by our nameplates (Nameplates/, stood in for here): right under the dress's lowest row, on it.
     local foot = W.NewWidget("Frame", nil, friend)
-    rawset(SaneUI, "Nameplates", { Plate = { Foot = function(plate) return plate == friend and foot or nil end } })
+    local dressing, footOf = ns.Nameplates.Dressing, ns.Plate.Foot
+    local dressed = true
+    ns.Nameplates.Dressing = function() return dressed end
+    ns.Plate.Foot = function(plate) return plate == friend and foot or nil end
     Update()
     row, count = Under(foot)
     check(row and count == 1 and row._points[1][1] == "TOPLEFT" and row._points[1][2] == foot and row._points[1][4] == 0
         and row._points[1][5] == 0, "on a dressed plate: right under the dress, on its foot, no gap")
-    SaneUI.Nameplates.off = true
+    dressed = false -- the nameplates the game's (stood down, or the switch off)
     Update()
     row = Under(friend)
-    check(row and row._points[1][2] == friend.UnitFrame.HealthBarsContainer, "the module stood down: under the game's bar again")
-    rawset(SaneUI, "Nameplates", nil)
+    check(row and row._points[1][2] == friend.UnitFrame.HealthBarsContainer, "our nameplates the game's: under the game's bar again")
+    ns.Nameplates.Dressing, ns.Plate.Foot = dressing, footOf
     Core.Set("Combat", "reminders", false)
     check(not row:IsShown(), "off: none on the plates")
     Core.Set("Combat", "reminders", true)
