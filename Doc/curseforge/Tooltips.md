@@ -50,8 +50,8 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
 ## How to use
 
 - **Nothing to set up:** point at an item, a spell or a player.
-- **Hold Shift** to see a tooltip: that is how it starts. *Show tooltips* on the options page sets it to
-  *Always*, or to another key.
+- **Tooltips show at once**, as the game's do. *Show tooltips* on the options page, or the setup, keeps them
+  hidden until you hold Shift, Ctrl or Alt.
 - **Options:** Esc > Options > AddOns > Sane UI > Tooltips: when tooltips show, tooltips at the mouse cursor,
   text size, opacity, class colours, icons and 3D models.
 - Switched off, the tooltips are the game's own again.
@@ -68,8 +68,8 @@ game keeps working. `/sane errors` lists what went wrong.
 - Discord: https://discord.gg/saneui
 ```
 
-*Hold Shift* is how Tooltips starts today; when that default changes (card #506), that line of *How to use*
-changes with it.
+*Tooltips show at once* is how Tooltips starts (since 0.3.2, card #506); when that default changes, that line
+of *How to use* changes with it.
 
 ## Gallery
 

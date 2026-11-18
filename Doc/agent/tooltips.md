@@ -97,9 +97,9 @@ own `xpcall`: a failure is reported once and switches live values off, not the m
   Estimates are presentation, not combat decisions; client-hidden inputs give no calculated answer.
 - Six own TGA assets come from `dev/tools/tooltip-art` (including plaque); other art uses client paths.
 
-Saved: only its settings, in the profile in use (`Core.Options` with `version` 3 and `Upgrade`: 2 opacity 90 → 97 and
-`border` dropped, 3 `cursor` a choice); no store of its own (`Core.Store` unused).
-Options: `show="shift"` (always, or while Shift, Ctrl, Alt or Shift+Alt is held), `cursor="default"` (where the game
+Saved: only its settings, in the profile in use (`Core.Options` with `version` 4 and `Upgrade`: 2 opacity 90 → 97 and
+`border` dropped, 3 `cursor` a choice, 4 `show` shift → always); no store of its own (`Core.Store` unused).
+Options: `show="always"` (always, or while Shift, Ctrl, Alt or Shift+Alt is held), `cursor="default"` (where the game
 puts them | while a key is held | always), `classColors/icons/models=true` (`models`: "3D model in tooltips"; a model
 needs a picture, so `icons` too), `priceRange="1w"` (24h, 1w, 2w, 1m, All), `textSize=14 (10..20)`, `opacity=97 (30..100)`.
 `ns.options` = `Core.Settings(ns.name)`. Changes invalidate `panel.drawn`; redraw on subsequent tooltip work. Kept,

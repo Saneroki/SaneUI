@@ -35,7 +35,7 @@ only read.
 
   | Setting | At first | What it does |
   |---|---|---|
-  | *Show tooltips* | While Shift is held | A dropdown: *Always* (at once, as the game does), or only while Shift, Ctrl, Alt, or Shift and Alt are held. Until the key is held a tooltip is there but unseen; pressing it shows the tooltip at once, letting go hides it again. (Shift is also the game's key for comparing an item with what you wear; with Alt, the technical details show too.) |
+  | *Show tooltips* | Always | A dropdown: *Always* (at once, as the game does), or only while Shift, Ctrl, Alt, or Shift and Alt are held. Until the key is held a tooltip is there but unseen; pressing it shows the tooltip at once, letting go hides it again. (Shift is also the game's key for comparing an item with what you wear; with Alt, the technical details show too.) |
   | *Tooltips at the mouse cursor* | Default | A dropdown: *Default* (where the game puts them), while Shift, Ctrl or Alt is held, or *Always*. The tooltips that stand in the corner of the screen (creatures, players, things in the world, your action bars) follow the mouse instead. Pressing or letting go of the key moves a shown tooltip at once, to the mouse and back |
   | *Colour players by their class* | on | Off: a player's tooltip takes the colour the game gives the name |
   | *Show the icon of items and spells* | on | Off: no icon of an item, spell or buff, and no portrait for units: the level stands beside the name |
@@ -660,6 +660,9 @@ only read.
 | `Art/soft.tga` | The background's shape; made by `dev/tools/tooltip-art`, like the masks and `Art/plaque.tga` (the level's plaque) |
 
 ## History
+- 2026-11-18 — *Show tooltips* is *Always* at first (Saneroki: "make Always the default for show tooltips"): a new
+  player sees tooltips at once, as the game's; the setup and the options page still offer a key to hold. Settings
+  saved before keep their choice, but Shift, the old default, becomes *Always* (version 4 of the settings).
 - 2026-11-18 — The setup (Saneroki: "a very simple onboarding for the Tooltip window where we basically only have Show
   tooltip while x held, Show at mouse cursor yes / no, 3d model yes / no, opacity slider with a life preview"): one
   step in the addon Onboarding's window, your own character's tooltip as the sample, drawn by the panels' own code

@@ -24,6 +24,8 @@ Tooltips 0.3.2 (2026-11-18)
   when tooltips show, at the mouse or in the corner, the 3D
   model and how solid they are, with your own tooltip as a
   sample that shows each choice at once.
+- Tooltips show at once, as the game's do; holding Shift
+  for them is a choice in the setup and on the options page.
 
 Sane UI 0.3.3 (2026-11-18)
 --------------------------

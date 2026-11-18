@@ -323,12 +323,19 @@ local options = ns.options
 check(options == Core.Settings("Tooltips"), "the switches are the table Core keeps for the module")
 check(options.cursor == "always" and options.classColors == true and options.icons == true and options.textSize == 14 and options.opacity == 97,
     "its settings: the mouse off, class colours and icons on, the text 14 high, the background almost solid")
-check(options.show == "shift", "and tooltips shown while Shift is held (a saved value that is no choice of the option gets that)")
+check(options.show == "always", "and tooltips shown at once, as the game's (a saved value that is no choice of the option gets that)")
 check(Core.Described("Tooltips", "cursor").choices[1][1] == "default" and Core.Described("Tooltips", "cursor").default == "default",
     "the mouse option at first: the game's place; one saved as switched on (an older version) is Always now")
 options.cursor = "default"
 options.show = "always" -- shown at once, until the key is tried (below)
-check(options._version == 3, "the settings say which shape of them they are, with each copy")
+check(options._version == 4, "the settings say which shape of them they are, with each copy")
+;(function()
+    local upgrade = Core.described.Tooltips.upgrade
+    local older, chosen, newer = { show = "shift" }, { show = "ctrl" }, { show = "shift" }
+    upgrade(older, 3); upgrade(chosen, 3); upgrade(newer, 4)
+    check(older.show == "always" and chosen.show == "ctrl" and newer.show == "shift",
+        "settings of version 3 held Shift as the old default: Always now; another key stays, and Shift chosen since stays too")
+end)()
 check(#postCalls == 0, "nothing is asked of the game before the login")
 local tip = Tooltip("GameTooltip")
 GameTooltip = tip

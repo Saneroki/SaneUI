@@ -8,6 +8,8 @@ What changed in each version of SaneUI Tooltips, newest first: a version's part 
 - A short setup, the first time (again with `/sane setup tooltips` or *Set up step by step* on the options
   page): when tooltips show, at the mouse or in the corner, the 3D model, and how solid they are, with your own
   tooltip beside it showing each choice at once.
+- Tooltips show at once, as the game's do: holding Shift for them is now a choice of *Show tooltips*, no longer
+  how it starts.
 
 ## 0.3.1 (2026-11-16)
 
