@@ -415,8 +415,8 @@ When the window fills the screen:
   shown on the map but not by default normally." While the map's search shows members of your guild (a name, or
   *guild* for all), their SaneUI is asked where they stand, every few seconds, and those who tell it stand there on
   the full map in their class's colour; at other times nobody is asked and nothing is kept. Each player's own switch
-  (*Where I am, for my guild's map search*, on at first) lets its SaneUI answer; nothing told inside an instance or in
-  a fight. Members without SaneUI, or with the switch off, stay at their zone's middle.
+  (*Where I am, for my guild's map search*) lets its SaneUI answer, on at first for every new player (Saneroki,
+  2026-11-18: "Keep it on"); nothing told inside an instance or in a fight. Members without SaneUI, or with the switch off, stay at their zone's middle.
 - **Tooltips without the click (Saneroki, 2026-10-20):** a pin's tooltip does not say that a click puts the map pin
   there.
 - **The pin filter in sections (Saneroki, 2026-10-20):** the dropdown is laid out in titled sections and
