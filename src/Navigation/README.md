@@ -311,7 +311,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   without a background, a border or a line under its title, only the list over the game, clicked through but its
   title bar and its words. **Ours or the game's, never both:** with the game's quest log ticked in *Classic windows*
   (or *Show the game's map*) the game's quest tracker is back on the screen and ours leaves it (over the full map it
-  stays, as its button says); unticked, ours again.
+  stays, as its button says); unticked, ours again. **In Edit Mode** only that one is there to be placed: ours with its
+  box, the game's quest tracker and its box out of sight, or the other way round (Saneroki, 2026-11-18). The Sane Rare
+  tracker's notices, under the minimap too, draw over it while one shows.
   There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, off at first:
   Saneroki, 2026-11-15): it
   shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
@@ -1029,7 +1031,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   `nativeQuestLog` are off; either on (`QuestLog.Game`), the game's tracker stays and ours is not shown on the screen
   alone (`QuestLog.Lay`; the switches call `QuestLog.Chosen`), over the full map as its button says; it is a
   managed frame, which the game's frame manager reparents whenever an Edit Mode layout is applied, so a hook after its
-  `SetParent` puts it back at once. An objective's words made anew from the game's
+  `SetParent` puts it back at once. In Edit Mode too (Saneroki, 2026-11-18): only one quest log to place, so the game's
+  stays lent while ours is chosen (its box of Edit Mode, `Selection`, a child of it; Edit Mode's magnets take only
+  frames in sight), and with the game's chosen ours is hidden with Core's box over it. An objective's words made anew from the game's
   (`Objective`, `Asked`, `QuestLog.ASKS`). Sorted (`store.questLogSort`, by Core's `titleClick` on its
   title, `titleTip` its tip; the title `%d/%d <sorting>`): by `GetDistanceSqToQuest` (looked at again
   every `QuestLog.RESORT` seconds by a ticker while shown, drawn anew only once the order changed), by level, the
@@ -1066,7 +1070,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   `QuestLog.Refresh`, the log shown or not, as the game's own read them: Forever's Quest Timers panel
   `C_QuestLog.GetQuestTimers` (the seconds left), else, as Retail's tracker, `C_QuestLog.GetTimeAllowed` of each quest
   neither done nor failed; kept as the `GetTime` each runs out. Shown only while the game's tracker is lent away
-  (`lent`), so never beside the game's own (Edit Mode, *Show the game's map*, the module stood down). Counted down by a
+  (`lent`), so never beside the game's own (the game's quest log chosen, the module stood down; in Edit Mode they
+  stay with ours). Counted down by a
   ticker of `QuestLog.CLOCK` seconds while they show (`DockWatch.Clock`), the last `QuestLog.HURRY` in Failed's red;
   the line mirrored with the log (the time at the screen's edge).
   A quest's text from `GetQuestLogQuestText`, its rewards by the quest's ID (`GetQuestLogRewardXP`,
@@ -1726,7 +1731,11 @@ Tests: `dev/tests/navigation.lua`.
   edge under the minimap (`QuestLog.Small`, `BELOW`, `FOOT`; the minimap's bottom measured by `Window.Under`, which the
   Sane Rare tracker's notices use too), where the game's quest tracker stands. The game's quest log chosen (ticked in
   *Classic windows*, or *Show the game's map*): the game's quest tracker on the screen and ours gone from it; before,
-  ours still showed there and hid the game's (`QuestLog.Game`, `QuestLog.Chosen`).
+  ours still showed there and hid the game's (`QuestLog.Game`, `QuestLog.Chosen`). Then: "leave them [the rare
+  notices] there and make sure it draws over the Questlog" (they stand in the layer `HIGH`, the log on the screen alone
+  in `LOW`, now a test holds it); "When you are in edit mode, only one questlog that can be placed should be visible":
+  the game's quest tracker stays out of sight in Edit Mode too while ours is chosen (`QuestLog.Tracker` no longer gives
+  it back there), and ours is hidden with its box while the game's is.
 - **2026-11-18, hops tightened:** Saneroki: "it does work now but the getting up on a steep slope or jumping up is a
   little to loose. There are areas where it thinks you can get up there but you can't". A hop now joins only a
   sample's neighbours (not over a whole steep sample), crosses at most one triangle over 50 degrees, and gains no

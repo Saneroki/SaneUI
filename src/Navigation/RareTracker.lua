@@ -357,6 +357,8 @@ end
 
 local function Make()
     local notice = CreateFrame("Button", nil, UIParent)
+    -- Over the quest log on the screen alone, which stands under the minimap too (its layer LOW, its items with it):
+    -- a notice covers its top lines while it shows (Saneroki, 2026-11-18: "make sure it draws over the Questlog").
     notice:SetFrameStrata("HIGH")
     notice:SetSize(RareTracker.WIDTH, RareTracker.HEIGHT)
     -- In sight while a talk fades the interface out (Lore)

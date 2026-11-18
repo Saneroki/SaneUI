@@ -81,9 +81,9 @@ local _, ns = ...
 --  see ours or the native one, depending on what you selected in the classic windows"): with the game's quest log
 --  chosen (the quest log ticked in the dropdown Classic windows, or Show the game's map) the game's tracker and not
 --  ours on the screen alone (ours stays over the full map, its button says); else ours, the game's tracker out of sight
---  (lent to a hidden frame, Core.Lend: QuestLog.Tracker), the log shown or off, but in Edit Mode, where it is the
---  game's to place. Its quest timers with it: ours stand at the top of the log, over the list, in sight while one runs,
---  the log at rest, folded or off (The quest timers; Saneroki, 2026-11-06).
+--  (lent to a hidden frame, Core.Lend: QuestLog.Tracker), the log shown or off, in Edit Mode too: there only the
+--  one on the screen is to be placed (Saneroki, 2026-11-18). Its quest timers with it: ours stand at the top of the log,
+--  over the list, in sight while one runs, the log at rest, folded or off (The quest timers; Saneroki, 2026-11-06).
 --
 --  Only the game's quest API (C_QuestLog, the game's quest link and share), never
 --  the quest panels of the game's map: called from here they would taint its pins.
@@ -1300,9 +1300,10 @@ QuestLog.Game = Game
 -- Lent to a hidden frame of ours (Core.Lend; its own code goes on, unseen, its place among the game's frames kept), given back
 -- once the game's are chosen, or the module stands down. The tracker is a frame the game manages: each time a layout
 -- of Edit Mode is applied (the login, Edit Mode closing, a layout changed) its manager takes it back under its own
--- parent, whatever parent it has now. A hook after its SetParent puts it out of sight again at once. Not in Edit Mode:
--- there the tracker is the game's, to be seen and placed (its manager breaks it from its container as it is dragged,
--- and Reclaim would take it back at once); ours again as Edit Mode closes (Core.EditMode.Watch).
+-- parent, whatever parent it has now. A hook after its SetParent puts it out of sight again at once. In Edit Mode too
+-- (Saneroki, 2026-11-18: "When you are in edit mode, only one questlog that can be placed should be visible"): out of
+-- sight, its box of Edit Mode (its child) goes with it and Edit Mode snaps nothing to it (only to frames in sight), so
+-- ours is the one quest log placed there; with the game's chosen, ours is off the screen and its box with it (Lay).
 local function Reclaim(tracker)
     if not lent or tracker:GetParent() == away then return end
     if Core.Locked(tracker) then return Core.AfterCombat("quest tracker", Reclaim, tracker) end
@@ -1311,7 +1312,7 @@ end
 
 function QuestLog.Tracker()
     local tracker = rawget(_G, "ObjectiveTrackerFrame")
-    local hide = not ns.off and not Core.EditMode.active and not Game()
+    local hide = not ns.off and not Game()
     if hide and tracker and not lent then
         if not away then
             away = CreateFrame("Frame", nil, UIParent)
@@ -1327,7 +1328,6 @@ function QuestLog.Tracker()
     end
     Timed() -- where the game's tracker is back, its own timers show
 end
-Core.EditMode.Watch(ns.Guard(QuestLog.Tracker))
 
 -- The side the window stands at: the screen edge it is docked to, else the half of the screen its middle is in.
 local function Side()

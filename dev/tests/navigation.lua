@@ -4832,14 +4832,25 @@ end)()
     end)
     Core.Set(ns.name, "nativeQuestLog", false)
     check(log.frame._shown and ObjectiveTrackerFrame._parent ~= UIParent, "let go: ours alone again")
-    -- In Edit Mode the tracker is the game's, to be seen and placed; ours again as Edit Mode closes. (With the map
-    -- small: Edit Mode sends a window that fills the screen back to its corner.)
+    -- In Edit Mode only one quest log to place, the one on the screen (Saneroki, 2026-11-18: "When you are in edit mode,
+    -- only one questlog that can be placed should be visible"). (With the map small: Edit Mode sends a window that
+    -- fills the screen back to its corner.)
     W.SmallAndBack(function()
         EventRegistry:TriggerEvent("EditMode.Enter")
-        check(ObjectiveTrackerFrame._parent == UIParent, "Edit Mode: the game's quest tracker back, to be placed")
+        check(log.frame._shown and log.box and log.box._shown and ObjectiveTrackerFrame._parent ~= UIParent
+            and not ObjectiveTrackerFrame._parent._shown,
+            "Edit Mode, ours chosen: ours with its box to place it, the game's quest tracker (and its box) out of sight")
+        ObjectiveTrackerFrame:SetParent(UIParent)
+        check(ObjectiveTrackerFrame._parent ~= UIParent, "a layout applied in Edit Mode: out of sight again at once")
+        Core.Set(ns.name, "nativeQuestLog", true)
+        check(not log.frame._shown and ObjectiveTrackerFrame._parent == UIParent,
+            "the game's chosen: the game's quest tracker to place, ours and its box gone")
+        Core.Set(ns.name, "nativeQuestLog", false)
+        check(log.frame._shown and log.box._shown and ObjectiveTrackerFrame._parent ~= UIParent,
+            "and ours again")
         EventRegistry:TriggerEvent("EditMode.Exit")
-        check(ObjectiveTrackerFrame._parent ~= UIParent and not ObjectiveTrackerFrame._parent._shown,
-            "Edit Mode closed: out of sight again")
+        check(log.frame._shown and not log.box._shown and ObjectiveTrackerFrame._parent ~= UIParent
+            and not ObjectiveTrackerFrame._parent._shown, "Edit Mode closed: ours, the game's still out of sight")
     end)
     -- A click on the title bar beside its words folds the list away, and opens it again.
     do
@@ -4918,9 +4929,12 @@ end)()
             "the log at rest out of sight on the screen alone: its timers in sight")
         general.animations = animations
         EventRegistry:TriggerEvent("EditMode.Enter")
-        check(not strip._shown, "Edit Mode: the game's quest tracker back, with its own timers; ours gone")
+        check(strip._shown, "Edit Mode: the game's quest tracker stays away, ours the one to place: its timers stay")
         EventRegistry:TriggerEvent("EditMode.Exit")
-        check(strip._shown, "and back as it closes")
+        Core.Set(ns.name, "nativeQuestLog", true)
+        check(not strip._shown, "the game's quest log chosen: the game's quest tracker back, with its own timers; ours gone")
+        Core.Set(ns.name, "nativeQuestLog", false)
+        check(strip._shown, "and back as it is let go")
     end)
     local switch
     for _, widget in ipairs(W.frames) do if widget._text == ns.TopBar.TEXT.questLog then switch = widget end end
@@ -9314,6 +9328,22 @@ end)()
         and holder._points[1][5] == -(220 + RareTracker.BELOW) and notice._points[1][1] == "TOPRIGHT"
         and notice._points[1][2] == holder and notice._points[1][5] == 0,
         "at the screen's right edge under the minimap, the shade's fading edge ending at the screen's")
+    ;(function()
+        -- Over the quest log, which stands under the minimap too (Saneroki, 2026-11-18: "make sure it draws over the
+        -- Questlog"): a layer above the log's on the screen alone, its items' and its timers'.
+        local LAYERS = { BACKGROUND = 1, LOW = 2, MEDIUM = 3, HIGH = 4, DIALOG = 5 }
+        local log = ns.QuestLog.handle.frame
+        local tray
+        for _, widget in ipairs(W.frames) do
+            if widget._parent == UIParent and widget._kind == "Frame" and widget._strata == log._strata and widget ~= log
+                and widget._frameLevel == (log._frameLevel or 0) + ns.QuestLog.OVER then tray = widget end
+        end
+        W.SmallAndBack(function()
+            check(log._strata == "LOW" and LAYERS[notice._strata] > LAYERS[log._strata]
+                and (not tray or LAYERS[notice._strata] > LAYERS[tray._strata or "MEDIUM"]),
+                "the notice over the quest log on the screen alone, which stands under the minimap too")
+        end)
+    end)()
     check(asked == 70 and notice.model._creature == 70 and notice.model._shown and not notice.icon._shown,
         "the rare's own 3D model at its left, by its creature")
     check(played[#played][1] == RareTracker.SOUNDS.horn and played[#played][2] == "Master", "and the game's war horn")

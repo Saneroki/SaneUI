@@ -22,7 +22,8 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - Routes go down ledges and cliffs you land from alive (up to 50 m) and down mountainsides too steep to walk, never
   back up them: over the mountains instead of around.
 - The quest log on the screen starts under the minimap, where the game's quest tracker stands. Tick the quest log in
-  Classic windows and the game's tracker shows there instead of ours; untick it, ours again.
+  Classic windows and the game's tracker shows there instead of ours; untick it, ours again. Edit Mode shows only that
+  one to place.
 
 ## 0.3.4 (2026-11-16)
 
