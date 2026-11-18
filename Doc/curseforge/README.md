@@ -59,6 +59,12 @@ Image*; not featured, so the gallery under the description keeps the screenshots
 its address on media.forgecdn.net. The editor's own image button only writes `![alt text](url)`. Its *Discard
 changes* switches the editor to WYSIWYG: to drop an edit, leave the page without saving instead (2026-11-18).
 
+Every description ends with *SaneUI addons* before *Feedback and bug reports*: each SaneUI project by its link,
+`https://www.curseforge.com/wow/addons/<slug>` (the slugs in `~/.config/saneui/curseforge.json`), the same list
+in each (Core's without its first line). A new project gets its line in all of them, on the website too
+(2026-11-18). After a save and a reload the editor shows an older copy for some seconds: check a save on the
+project's public page.
+
 ## CurseForge's moderation policies
 
 From CurseForge's support article *Moderation Policies* (read 2026-11-15; it has no section of its own for

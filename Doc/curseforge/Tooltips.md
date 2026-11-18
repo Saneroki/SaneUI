@@ -18,8 +18,9 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 
 ## Description
 
-The editor set to *Markdown* when the project is made. Changed with 0.3.2 (2026-11-18): *How to use* has the
-setup and says tooltips show at once (no longer *Hold Shift*); put in on CurseForge the same day.
+The editor set to *Markdown* when the project is made. *SaneUI addons* (2026-11-18): every SaneUI project with its
+link, the same list in each description; put in on CurseForge the same day. Changed with 0.3.2 (2026-11-18): *How
+to use* has the setup and says tooltips show at once (no longer *Hold Shift*); put in on CurseForge the same day.
 
 ```markdown
 ![SaneUI Tooltips](https://media.forgecdn.net/attachments/2229/799/tooltips-banner-png.png)
@@ -67,6 +68,22 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
 SaneUI Tooltips is in alpha: it works, but it is still changing, and you may find bugs. If a part of it ever
 runs into an error, SaneUI gives that kind of tooltip back to the game until your next `/reload`, so your
 game keeps working. `/sane errors` lists what went wrong.
+
+## SaneUI addons
+
+Every SaneUI addon is a download of its own: take the ones you like.
+
+- **[SaneUI Core](https://www.curseforge.com/wow/addons/saneui-core):** the shared base of every SaneUI addon:
+  one options page, profiles and safe error handling. The CurseForge app installs it with any of them.
+- **[SaneUI Navigation](https://www.curseforge.com/wow/addons/saneui-navigation):** your minimap and world map
+  in one window.
+- **[SaneUI Tooltips](https://www.curseforge.com/wow/addons/saneui-tooltips):** the game's tooltips as tidy
+  panels, with quests, professions and gold for every item.
+- **[SaneUI Combat](https://www.curseforge.com/wow/addons/saneui-combat):** unit frames, party and raid frames
+  and nameplates in one clean look.
+- **[SaneUI Social](https://www.curseforge.com/wow/addons/saneui-social):** chat like a messenger, with message
+  bubbles, a conversation per whisper, and friends, guild and groups on one screen.
+- More are on the way.
 
 ## Feedback and bug reports
 

@@ -11,15 +11,15 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Summary | The shared base of every SaneUI addon: one options page, profiles and safe error handling. |
 | Category | Libraries |
 | Avatar | `core-avatar.png` of `saneui makelogos` (400 x 400) |
-| Banner | `core-banner.png`, under the project's Media (not featured) and at the top of the description since 2026-11-18, the description's first line |
+| Banner | `core-banner.png`, under the project's Media (not featured) and at the top of the description since 2026-11-18, the description's first line. Gone from the live description on the evening of 2026-11-18 (the editor and the public page have no picture; the other projects keep theirs): to go in again with the new banner (card #575) |
 | Slug | goes into `~/.config/saneui/curseforge.json` (`projects.Core.slug`): each module names it its dependency |
 | Release type | the highest any module uploaded with it needs (the pipeline sees to it) |
 
 ## Description
 
-The editor set to *Markdown* when the project is made. Changed on 2026-11-18: *SaneUI Tooltips* and *SaneUI
-Combat* in *SaneUI addons*, put in on CurseForge the same day with the summary (both still read *Sane UI*); each
-module that goes up gets its line there.
+The editor set to *Markdown* when the project is made. Changed on 2026-11-18: *SaneUI addons* lists every SaneUI
+project with its link (*SaneUI Social* added), the same list as in each module's description; put in on CurseForge
+the same day. Each module that goes up gets its line there, in every description.
 
 ```markdown
 ![SaneUI Core](https://media.forgecdn.net/attachments/2229/784/core-banner-png.png)
@@ -47,9 +47,16 @@ On its own, Core changes nothing you can see on your screen. It gives the SaneUI
 
 ## SaneUI addons
 
-- **SaneUI Navigation:** your minimap and world map in one window.
-- **SaneUI Tooltips:** the game's tooltips as tidy panels, with quests, professions and gold for every item.
-- **SaneUI Combat:** unit frames, party and raid frames and nameplates in one clean look.
+- **[SaneUI Core](https://www.curseforge.com/wow/addons/saneui-core):** the shared base of every SaneUI addon:
+  one options page, profiles and safe error handling. The CurseForge app installs it with any of them.
+- **[SaneUI Navigation](https://www.curseforge.com/wow/addons/saneui-navigation):** your minimap and world map
+  in one window.
+- **[SaneUI Tooltips](https://www.curseforge.com/wow/addons/saneui-tooltips):** the game's tooltips as tidy
+  panels, with quests, professions and gold for every item.
+- **[SaneUI Combat](https://www.curseforge.com/wow/addons/saneui-combat):** unit frames, party and raid frames
+  and nameplates in one clean look.
+- **[SaneUI Social](https://www.curseforge.com/wow/addons/saneui-social):** chat like a messenger, with message
+  bubbles, a conversation per whisper, and friends, guild and groups on one screen.
 - More are on the way.
 
 ## Feedback and bug reports

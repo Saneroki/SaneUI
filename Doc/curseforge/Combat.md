@@ -23,8 +23,9 @@ when the nameplates became a part of Combat; the project *SaneUI Nameplates*, id
 
 ## Description
 
-The editor set to *Markdown* when the project is made. Changed on 2026-11-18: the unit frames always in sight, or
-only on mouseover (no longer *Out of sight at rest*); put in on CurseForge the same day.
+The editor set to *Markdown* when the project is made. *SaneUI addons* (2026-11-18): every SaneUI project with its
+link, the same list in each description; put in on CurseForge the same day. Changed on 2026-11-18: the unit frames
+always in sight, or only on mouseover (no longer *Out of sight at rest*); put in on CurseForge the same day.
 
 ```markdown
 ![SaneUI Combat](https://media.forgecdn.net/attachments/2229/801/combat-banner-png.png)
@@ -69,6 +70,22 @@ Formerly **SaneUI Nameplates**: the nameplates are now one part of SaneUI Combat
 SaneUI Combat is in alpha: it works, but it is still changing, and you may find bugs. If it ever runs
 into an error, SaneUI gives the frames and plates back to the game's own until your next `/reload`, so your game
 keeps working. `/sane errors` lists what went wrong.
+
+## SaneUI addons
+
+Every SaneUI addon is a download of its own: take the ones you like.
+
+- **[SaneUI Core](https://www.curseforge.com/wow/addons/saneui-core):** the shared base of every SaneUI addon:
+  one options page, profiles and safe error handling. The CurseForge app installs it with any of them.
+- **[SaneUI Navigation](https://www.curseforge.com/wow/addons/saneui-navigation):** your minimap and world map
+  in one window.
+- **[SaneUI Tooltips](https://www.curseforge.com/wow/addons/saneui-tooltips):** the game's tooltips as tidy
+  panels, with quests, professions and gold for every item.
+- **[SaneUI Combat](https://www.curseforge.com/wow/addons/saneui-combat):** unit frames, party and raid frames
+  and nameplates in one clean look.
+- **[SaneUI Social](https://www.curseforge.com/wow/addons/saneui-social):** chat like a messenger, with message
+  bubbles, a conversation per whisper, and friends, guild and groups on one screen.
+- More are on the way.
 
 ## Feedback and bug reports
 
