@@ -946,6 +946,8 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-18 — The chat window at first 686 × 307.5, docked in the lower left corner (`Layout.WIDTH`, `HEIGHT`), as
+  Saneroki has it.
 - 2026-11-18 — Going through the onboarding (Saneroki): a right click on a whisper's or a group's row has *Delete
   conversation*; one on a name or (on the full screen) a message opens the game's menu of that player with *Add Friend*,
   *Pin them on the map* and *Show on map* (`PlayerMenu.lua`, new in the TOC; Core's `Ways.Look`); the smiley works on an

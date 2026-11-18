@@ -4697,22 +4697,11 @@ end)()
         check(not log.buttons._shown and not log.frame._mouse and not box._wheel,
             "no pin, no close button; clicked through, the mouse wheel the game's while its list fits")
         local point = log.frame._points[1]
-        local top = ns.Window.UNDER + ns.QuestLog.BELOW
-        check(log.options.key == "questLogSmallPlace" and point[1] == "TOPRIGHT" and point[3] == "TOPRIGHT" and point[4] == 0
-            and point[5] == -top and log.frame._height == UIParent._height - top - ns.QuestLog.FOOT,
-            "at a place of its own: at first under the minimap at the screen's right edge, where the game's quest tracker "
-            .. "stands, as high as leaves the action bars free (Saneroki, 2026-11-18)")
-        ;(function()
-            -- The minimap measured where it ends (ns.Window.Under: the small map standing small): there anew.
-            local uiTop, mapBottom = UIParent._top, ns.Window.frame._bottom
-            UIParent._top, ns.Window.frame._bottom = UIParent._height, UIParent._height - 250
-            ns.QuestLog.Lay(false)
-            point = log.frame._points[1]
-            check(point[1] == "TOPRIGHT" and point[5] == -(250 + ns.QuestLog.BELOW)
-                and log.frame._height == UIParent._height - 250 - ns.QuestLog.BELOW - ns.QuestLog.FOOT,
-                "the minimap ends lower: the log under it there, never moved")
-            UIParent._top, ns.Window.frame._bottom = uiTop, mapBottom
-        end)()
+        check(log.options.key == "questLogSmallPlace" and point[1] == "TOPLEFT" and point[3] == "TOPLEFT" and point[4] == 0
+            and point[5] == 0 and log.frame._height == math.min(ns.QuestLog.HEIGHT, UIParent._height - ns.QuestLog.FOOT)
+            and log.frame._width == ns.QuestLog.WIDTH,
+            "at a place of its own: at first docked in the screen's top left corner, as Saneroki has it (2026-11-18), as "
+            .. "high as leaves the action bars free")
         rows = box:Draw()
         check(#rows == 4 and rows[1].row.quest == 8 and rows[2].row.turnIn and rows[3].row.quest == 7
             and not rows[4].row.done, "the objectives done left out, a done quest's turn in kept")

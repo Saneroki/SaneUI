@@ -829,6 +829,11 @@ Sunder Armor), as you choose, nothing fixed.
 | `Reminders/Editor.lua` | Edit Tracked conditions, the chosen aura's reminder under Edit tracked's list: where it shows (ticks for the bars, the unit frames, the group frames, the nameplates; a new bar), on whom (you, your target and focus, everyone, a role, Party 1-4, Group 1-40), its conditions; the aura's two marks for the unit frames |
 
 ## History
+- **2026-11-18:** first places as Saneroki has them: your frame, your focus's and your target's side by side over the
+  action bars (`Units.KINDS`: tops at 249.5 from the bottom, you in the middle, focus 240 left, target 240 right), the
+  party and raid frame in the lower right corner (`Group.FIRST`, `groupWidth` 680, `groupHeight` 185). Edit Mode's ticks
+  for the frames ours stand in for are out of sight while they are ours (`Combat.lua`, Core's `EditMode.Replace`: Target
+  and Focus, Pet Frame, Cast Bar, Timer Bars, Party Frames, Raid Frames).
 - **2026-11-18:** the setup's unit frame samples are the frames themselves (`Units.Sample`; Saneroki: the preview "does
   not represent the unit frames at all"), in place of the party frames' faces.
 - **2026-11-18:** each unit frame's width and what it shows in its Edit Mode dialog, and a made-up preview of every

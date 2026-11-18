@@ -9,6 +9,11 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   and the game's, before you start.
 - Every entry in a full screen's *Classic windows* is a tick: ticked, the game's own window is the one its key opens;
   unticked, SaneUI's.
+- A *SaneUI* layout in the game's Edit Mode: the action bars in four rows at the bottom middle, the minimap, chat, micro
+  menu and buffs as SaneUI arranges them. A new character starts with it; a layout of your own stays yours, and SaneUI
+  is in Edit Mode's list to pick.
+- Edit Mode's window no longer offers ticks for the game's frames a SaneUI addon stands in for: the unit frames, party
+  and raid frames, cast bar and timers, the loot window, the vehicle exit and the bars SaneUI hides.
 
 ## 0.3.4 (2026-11-18)
 

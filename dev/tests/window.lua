@@ -3049,5 +3049,86 @@ do
     check(frame._sizing == nil and Shown() == 0 and told[3] and told[3][3] == true, "Edit Mode closed while sizing: let go, the handles gone")
 end
 
+-- The ticks of Edit Mode's window for what a module stands in for (Saneroki, 2026-11-18: "Can you remove them when they
+-- are replaced by our own addons"): out of sight as the game shows them, so its own layout leaves them out.
+do
+    local ticks = {}
+    for _, key in ipairs({ "PartyFrames", "CastBar", "BossFrames" }) do ticks[key] = CreateFrame("Frame") end
+    rawset(_G, "EditModeManagerFrame", { AccountSettings = { settingsCheckButtons = ticks } })
+    local ours = true
+    Core.EditMode.Replace("PartyFrames", function() return ours end)
+    Core.EditMode.Replace("CastBar", function() return false end)
+    ticks.PartyFrames:Show()
+    ticks.CastBar:SetShown(true)
+    ticks.BossFrames:Show()
+    check(not ticks.PartyFrames:IsShown() and ticks.CastBar:IsShown() and ticks.BossFrames:IsShown()
+        and Core.EditMode.Replaced("PartyFrames") and not Core.EditMode.Replaced("CastBar"),
+        "a tick a module stands in for goes as the game shows it; one it does not, and one nobody claims, stay")
+    ours = false
+    ticks.PartyFrames:SetShown(true)
+    check(ticks.PartyFrames:IsShown(), "the module's part switched off: its tick shows again at the game's next layout")
+    rawset(_G, "EditModeManagerFrame", nil)
+end
+
+-- SaneUI's layout of the game's Edit Mode (Saneroki, 2026-11-18, GameLayout.lua): made once for an account over the
+-- game's first preset, by the game's enum words, and in use on a character on a preset.
+do
+    local GameLayout = Core.GameLayout
+    local enum = rawget(_G, "Enum") or {}
+    rawset(_G, "Enum", enum)
+    enum.EditModeLayoutType = { Preset = 0, Account = 1, Character = 2 }
+    enum.EditModeSystem = { ActionBar = 0, ChatFrame = 8 }
+    enum.EditModeActionBarSystemIndices = { MainBar = 1, ExtraBar1 = 6 }
+    enum.EditModeActionBarSetting = { IconSize = 3, NumIcons = 4 }
+    enum.EditModeChatFrameSetting = { WidthHundreds = 0 }
+    local function Preset()
+        return { layoutName = "Modern", layoutType = 0, systems = {
+            { system = 0, systemIndex = 1, isInDefaultPosition = true, anchorInfo = { point = "BOTTOM" },
+              settings = { { setting = 3, value = 9 }, { setting = 4, value = 6 } } },
+            { system = 0, systemIndex = 6, isInDefaultPosition = true, settings = {} },
+            { system = 8, isInDefaultPosition = true, settings = { { setting = 0, value = 3 } } } } }
+    end
+    local manager = { layoutInfo = { activeLayout = 1, layouts = { { layoutName = "Modern", layoutType = 0 },
+                                                                   { layoutName = "Classic", layoutType = 0 } } } }
+    rawset(_G, "EditModeManagerFrame", manager)
+    rawset(_G, "EditModePresetLayoutManager", { GetCopyOfPresetLayouts = function() return { Preset(), Preset() } end })
+    local saved, added, active
+    rawset(_G, "C_EditMode", { GetLayouts = function() return { layouts = {}, activeLayout = 1 } end,
+        SaveLayouts = function(all) saved = all end,
+        OnLayoutAdded = function(index, activate) added = { index, activate } end,
+        SetActiveLayout = function(index) active = index end })
+    local store, char = Core.Store(Core.name), Core.Character(Core.name)
+    store.gameLayoutMade, char.gameLayoutSet = nil, nil
+    check(GameLayout.Make() and saved and #saved.layouts == 1, "made: one layout more in the account's list")
+    local layout = saved.layouts[1]
+    local main, extra, chat = layout.systems[1], layout.systems[2], layout.systems[3]
+    check(layout.layoutName == "SaneUI" and layout.layoutType == 1 and main.isInDefaultPosition == false
+        and main.anchorInfo.point == "BOTTOM" and main.anchorInfo.offsetY == 2 and main.settings[1].value == 5
+        and main.settings[2].value == 12 and extra.anchorInfo.offsetY == 137 and chat.anchorInfo.offsetX == -697
+        and chat.settings[1].value == 4, "an account layout named SaneUI: the game's preset with each system as listed, "
+        .. "by the game's words (the bars' rows, the chat's place and size)")
+    check(added and added[1] == 3 and added[2] == true and store.gameLayoutMade and char.gameLayoutSet,
+        "after the presets, and in use: this character was on a preset")
+    saved, added = nil, nil
+    manager.layoutInfo.layouts[3] = { layoutName = "SaneUI", layoutType = 1 }
+    manager.layoutInfo.activeLayout = 2
+    char.gameLayoutSet = nil
+    check(GameLayout.Make() and saved == nil and active == 3, "there already: not made again; another character on a "
+        .. "preset gets it in use, once")
+    active = nil
+    manager.layoutInfo.activeLayout = 3
+    table.remove(manager.layoutInfo.layouts, 3)
+    manager.layoutInfo.activeLayout = 1
+    check(GameLayout.Make() and saved == nil and active == nil, "taken away by the player: not made again")
+    W.Combat(true)
+    store.gameLayoutMade = nil
+    check(GameLayout.Make() == false and saved == nil, "in a fight it waits for the fight's end")
+    W.Combat(false)
+    check(saved ~= nil, "then it is made")
+    rawset(_G, "EditModeManagerFrame", nil)
+    rawset(_G, "EditModePresetLayoutManager", nil)
+    rawset(_G, "C_EditMode", nil)
+end
+
 print = nil -- the stand-in's print; use the real one for the summary
 io.write(("Windows: all %d checks passed.\n"):format(passed))

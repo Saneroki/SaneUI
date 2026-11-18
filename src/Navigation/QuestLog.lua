@@ -96,10 +96,9 @@ ns.QuestLog = QuestLog
 QuestLog.WIDTH, QuestLog.HEIGHT = 320, 640 -- the window's first size
 QuestLog.LEAST = 220      -- its least width and height
 QuestLog.FIRST = { x = 12, y = -84 } -- its first place, from the screen's top left: under the map's bar
-QuestLog.BELOW = 10       -- on the screen alone, at first: at the screen's right edge, so far under the minimap, where
-                          -- the game's own quest tracker stands (Saneroki, 2026-11-18)
-QuestLog.FOOT = 160       -- and as high as leaves that much of the screen's bottom free (the action bars), QuestLog.HEIGHT
-                          -- at the most
+QuestLog.FOOT = 160       -- on the screen alone, at first: docked in the screen's top left corner (Saneroki,
+                          -- 2026-11-18, his own place), as high as leaves that much of the screen's bottom free (the
+                          -- action bars), QuestLog.HEIGHT at the most
 QuestLog.SORTS = { "proximity", "level", "zone", "type" } -- a click on its title: the next of them, round
 QuestLog.RESORT = 2       -- sorted by proximity: the order looked at again every so many seconds while in sight
 QuestLog.CLOCK = 1        -- the quest timers counted down every so many seconds while they show (The quest timers)
@@ -1552,25 +1551,20 @@ local function NextTip()
 end
 
 -- Its first place in each look (Dress): over the full map from the screen's top left, under the map's bar; on the
--- screen alone at its right edge under the minimap (Small).
+-- screen alone docked in its top left corner (Small: as high as the screen leaves).
 local FIRST = {
     [true] = { point = "TOPLEFT", x = QuestLog.FIRST.x, y = QuestLog.FIRST.y, width = QuestLog.WIDTH, height = QuestLog.HEIGHT },
-    [false] = { point = "TOPRIGHT", x = 0, y = 0, width = QuestLog.WIDTH, height = QuestLog.HEIGHT }, -- y, height: Small
+    [false] = { dock = "TOPLEFT", width = QuestLog.WIDTH, height = QuestLog.HEIGHT }, -- height: Small
 }
 local KEY = { [true] = "questLogPlace", [false] = "questLogSmallPlace" } -- where each look's place is kept
 
--- Its first place on the screen alone, where the game's quest tracker stands: at the screen's right edge, under the
--- minimap as it stands now (ns.Window.Under: the small map, or the game's minimap where it is chosen; one moved into
--- the screen's lower half: where the small map stands at first), as high as leaves the action bars free.
+-- Its first place on the screen alone: docked in the screen's top left corner (Saneroki, 2026-11-18: his own place
+-- made everyone's first), as high as leaves the action bars free.
 local function Small()
     local first = FIRST[false]
     local screen = Core.Plain(UIParent:GetHeight())
     if type(screen) ~= "number" or screen <= 0 then screen = 768 end
-    local top = ns.Window.Under()
-    if type(top) ~= "number" or top > screen / 2 then top = ns.Window.UNDER end
-    top = top + QuestLog.BELOW
-    first.y = -top
-    first.height = math.max(QuestLog.LEAST, math.min(QuestLog.HEIGHT, screen - top - QuestLog.FOOT))
+    first.height = math.max(QuestLog.LEAST, math.min(QuestLog.HEIGHT, screen - QuestLog.FOOT))
 end
 
 -- The window, built at login with the map's (Window.lua); hidden until the full map or its pin shows it.

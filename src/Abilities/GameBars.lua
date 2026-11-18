@@ -43,6 +43,9 @@ ns.GameBars = GameBars
 -- The game's bars put away, each with its switch.
 GameBars.AWAY = { { option = "hideTracking", game = "StatusTrackingBarManager" },
                   { option = "hideStance", game = "StanceBar" } }
+-- Their ticks in Edit Mode's window, out of sight while they are put away (Core's EditMode.lua; Saneroki, 2026-11-18).
+Core.EditMode.Replace("StatusTrackingBar2", function() return not ns.off and (ns.options or {}).hideTracking ~= false end)
+Core.EditMode.Replace("StanceBar", function() return not ns.off and (ns.options or {}).hideStance ~= false end)
 GameBars.FADE = 0.2 -- seconds the menu bar takes to come and go
 GameBars.UNOPENED = { "COLLECTION_UNOPENED_SINGULAR", "COLLECTION_UNOPENED_PLURAL" } -- the alert's words, the game's
 

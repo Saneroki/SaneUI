@@ -279,6 +279,9 @@ local function Command(rest)
     end
 end
 
+-- The game's loot window's tick in Edit Mode's window, out of sight while ours stands in for it (Core's EditMode.lua).
+Core.EditMode.Replace("LootFrame", function() return not ns.off and (ns.options or {}).window ~= false end)
+
 function ns.OnLoad()
     ns.options = Core.Settings(ns.name)
     for _, key in ipairs({ "kept", "seen", "lent" }) do

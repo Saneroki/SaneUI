@@ -465,7 +465,7 @@ function Group.Dragged(width, height, done)
     dragged = { width, height }
     if preview and preview:IsShown() then Preview() end
 end
-Group.FIRST = { point = "BOTTOMLEFT", x = 16, y = 340 }
+Group.FIRST = { point = "BOTTOMRIGHT", x = -8, y = 0 } -- in the screen's lower right corner (Saneroki, 2026-11-18)
 
 -- The game's frames out of sight, or back.
 local function Away()

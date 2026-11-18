@@ -243,6 +243,8 @@ rises over the world, also what was taken at once: that is how you see what you 
 | `Feed.lua` | What you and your group receive, over the world |
 
 ## History
+- 2026-11-18 — Edit Mode's tick for the game's loot window is out of sight while ours stands in for it (`Loot.lua`,
+  Core's `EditMode.Replace`).
 - 2026-11-02 — The rolls' icons nearly as tall as the bar and over the time; the seconds left on it; "when the rolling
   is finished on an item leave it there a few seconds and shows who got the item anchored to the right where the
   buttons have been"; "all the way down to 25% transparent until it shows the result. so I know when i can ignore it"

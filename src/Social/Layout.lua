@@ -14,7 +14,7 @@ local _, ns = ...
 local Layout = {}
 ns.Layout = Layout
 
-Layout.WIDTH, Layout.HEIGHT = 380, 260        -- the window at first
+Layout.WIDTH, Layout.HEIGHT = 686, 307.5      -- the window at first (as Saneroki has it, 2026-11-18)
 Layout.MIN_WIDTH, Layout.MIN_HEIGHT = 180, 130
 Layout.LEVEL = 100                             -- the window's frame level: above the action bars (50 and a few)
 Layout.INPUT_LEVEL = 13                        -- the line to write in drawn so far above the window: over the messages (their bubbles reach 11 there)

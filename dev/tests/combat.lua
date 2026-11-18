@@ -393,7 +393,7 @@ do
         "each group a column to the right of the last, touching it")
     local first, second, third = headers[1][1], headers[1][2], headers[1][3]
     check(first._template == "SecureUnitButtonTemplate" and first:GetAttribute("*type2") == "togglemenu"
-        and first:GetScript("OnEnter") and first._width == 240 and first._height == 28,
+        and first:GetScript("OnEnter") and first._width == 240 and first._height == 185 / 5,
         "its buttons answer as your other frames do, at the size the limits give")
     check(first.face.unit == "player" and second.face.unit == "party1" and second.face.name._text == "Tess Brook"
         and second.face.value._text == "50%", "a face follows its button's unit: the name left, how much health is left right")
@@ -939,6 +939,7 @@ do
         button.face._width, button.face._height = button._width, button._height
         button.face:GetScript("OnSizeChanged")(button.face)
     end
+    Core.Set(ns.name, "groupWidth", 960) -- (wider than at first: eight columns of 120)
     Group.Apply()
     Sized(second)
     check(second._width == 120 and not second.face.bare and second.face.value._text == "50%", "at forty the units are narrow")
@@ -2858,6 +2859,19 @@ do
     check(not both[2].checked() and W.overrides[owner].N == ab.Keys.COMMANDS.talents, "unticked: ours again")
     GetBindingKey = keyOf
     ab.Keys.Bind()
+end
+
+-- The ticks of Edit Mode's window for the game's frames Combat stands in for (Core's EditMode.lua; Saneroki, 2026-11-18):
+-- claimed while its parts are on.
+do
+    local EditMode = Core.EditMode
+    check(EditMode.Replaced("TargetAndFocus") and EditMode.Replaced("PetFrame") and EditMode.Replaced("CastBar")
+        and EditMode.Replaced("TimerBars") and EditMode.Replaced("PartyFrames") and EditMode.Replaced("RaidFrames")
+        and not EditMode.Replaced("BossFrames"), "Edit Mode's ticks for the frames ours stand in for are Combat's: out of sight")
+    Core.Set(ns.name, "group", false)
+    check(not EditMode.Replaced("PartyFrames") and not EditMode.Replaced("RaidFrames") and EditMode.Replaced("CastBar"),
+        "the party and raid frames the game's: their ticks are back")
+    Core.Set(ns.name, "group", true)
 end
 
 -------------------------------------------------------------------------------

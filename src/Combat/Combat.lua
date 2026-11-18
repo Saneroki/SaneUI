@@ -288,8 +288,8 @@ ns.OPTIONS = {
     { key = "groupClass", default = true, text = ns.TEXT.groupClass, tip = ns.TEXT.groupClassTip, parent = "group" },
     { key = "groupBeside", default = true, text = ns.TEXT.groupBeside, tip = ns.TEXT.groupBesideTip, parent = "group" },
     -- Chosen in Edit Mode's dialog (Units/Group.lua).
-    { key = "groupWidth", default = 960, min = 100, max = 2000 },
-    { key = "groupHeight", default = 140, min = 30, max = 800 },
+    { key = "groupWidth", default = 680, min = 100, max = 2000 }, -- as Saneroki has it, 2026-11-18
+    { key = "groupHeight", default = 185, min = 30, max = 800 },
     { key = "groupUnitWidth", default = 240, min = 40, max = 400 },
     { key = "groupPreview", default = 5, min = 0, max = 40 },
     { key = "hideErrors", default = true, text = ns.TEXT.hideErrors, tip = ns.TEXT.hideErrorsTip },
@@ -387,6 +387,24 @@ for index, part in ipairs(PARTS) do
         back = function() Core.Set(ns.name, part.key, true) end }
 end
 Core.Classic.Add(ns.TEXT.title, function() return not ns.off and ns.options and classic or nil end)
+
+-- The ticks of Edit Mode's window for the game's frames ours stand in for, out of sight while they are ours (Core's
+-- EditMode.lua; Saneroki, 2026-11-18: "if someone installs combat we replace those bars"): your target's and focus's
+-- frames, your pet's, your cast bar and timers (your own frame's parts), the party and the raid frames.
+local function Ours(...)
+    local options = ns.options
+    if ns.off or type(options) ~= "table" then return false end
+    for index = 1, select("#", ...) do
+        if options[select(index, ...)] == false then return false end
+    end
+    return true
+end
+Core.EditMode.Replace("TargetAndFocus", function() return Ours("units") and (Ours("unitTarget") or Ours("unitFocus")) end)
+Core.EditMode.Replace("PetFrame", function() return Ours("units", "unitPlayer", "unitPet") end)
+Core.EditMode.Replace("CastBar", function() return Ours("units", "unitPlayer", "unitCast") end)
+Core.EditMode.Replace("TimerBars", function() return Ours("units", "unitPlayer", "unitBreath") end)
+Core.EditMode.Replace("PartyFrames", function() return Ours("group") end)
+Core.EditMode.Replace("RaidFrames", function() return Ours("group") end)
 
 -- Standing down, every part gives back what it stands in for: each step by itself, so one that fails keeps none of
 -- the others from giving back.

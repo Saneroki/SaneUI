@@ -684,6 +684,7 @@ but for a window to try those with (`/sane window`).
 | `Classic.lua` | The game's windows SaneUI's stand for: the dropdown *Classic windows* across modules, the button *SaneUI* on the game's windows |
 | `Views.lua` | A window's views behind the game's tabs |
 | `Selection.lua` | A window chosen in Edit Mode, and its dialog, with the settings a window brings: sliders, fields, ticks, a row of choices; a window with a hot corner also its module's switches of *Expand window* and its key (`options.binding`, the setups' key box) |
+| `GameLayout.lua` | SaneUI's layout of the game's Edit Mode: an account layout named SaneUI, made once over the game's first preset by the game's enum words (Saneroki's own arrangement, 2026-11-18), in use on a character still on a preset |
 | `Arrange.lua` | Where a window goes when let go in Edit Mode: the red guide lines while it is dragged, onto them or Edit Mode's grid, and SaneUI's panel under Edit Mode's window (*Snap to hot corners*, *Snap to grid*) |
 | `HealthMarks.lua` | What every health bar shows besides the health: the barrier, the lost maximum health, what can be dispelled |
 | `AuraLog.lua` | The buffs and debuffs seen on whoever you can attack, kept as a history for a view to show (`Core.AuraLog`) |
@@ -722,6 +723,14 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
+- 2026-11-18 — `GameLayout.lua` (new, in Core's TOC after `Arrange.lua`): SaneUI's layout of the game's Edit Mode (Saneroki:
+  "set those to permanent defaults as a 'SaneUI' edit mode layout"), his own arrangement in WoW: Forever (the action bars
+  in four rows at the bottom middle, the minimap, chat, micro menu, buffs and the rest), `GameLayout.SYSTEMS` by the game's
+  enum words; made once for an account after `EDIT_MODE_LAYOUTS_UPDATED`, out of a fight (`store.gameLayoutMade`), in use
+  on a character on a preset that has not had it (`char.gameLayoutSet`); one of that name there already is left as it is.
+  `EditMode.lua`: `Replace(key, ours)`, `Replaced(key)`, `HookTicks`: Edit Mode's ticks for the game's frames a module
+  stands in for, hidden after their own `Show`/`SetShown` (Saneroki: "Can you remove them when they are replaced by our
+  own addons"); Combat, Abilities, Loot and Navigation claim theirs.
 - 2026-11-18 — `Ways.lua`: `Lookout`, `CanLook`, `Look`, the map's search for another module (Social's *Show on map*).
 - 2026-11-18 — `Arrange.lua` (new, in Core's TOC after `Selection.lua`): red guide lines in Edit Mode as the game's,
   a window let go onto them or the grid (`Window.lua`'s `Snap` takes their offsets), and the panel *Snap to hot

@@ -1029,10 +1029,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 - **QuestLog** (`QuestLog.lua`): a window of Core's of its own (title bar, docks, its grip seen while the mouse is
   on it), in two looks (`Dress`), each with its place and size (`window:Use`): over the full map
   (`store.questLogPlace`) in the layer `DIALOG` with its dark background, the mouse taken, every objective; and
-  on the screen alone (`store.questLogSmallPlace`, at first at the screen's right edge `QuestLog.BELOW` under the
-  minimap, where the game's quest tracker stands: `Small`, by `Window.Under`, the minimap measured as it stands; one
-  moved into the screen's lower half counts as `Window.UNDER`; as high as leaves `QuestLog.FOOT` of the screen's bottom,
-  `QuestLog.HEIGHT` at most; measured anew as it goes onto the screen alone, a place never moved follows) in the layer `LOW` without one (no skin, `barLine = false`), the frame without the mouse
+  on the screen alone (`store.questLogSmallPlace`, at first docked in the screen's top left corner, as Saneroki has it
+  (2026-11-18): `Small`, as high as leaves `QuestLog.FOOT` of the screen's bottom, `QuestLog.HEIGHT` at most) in the layer `LOW` without one (no skin, `barLine = false`), the frame without the mouse
   and each row's hit rect only its words (`Reach`), the mouse wheel
   the game's while the list fits, the objectives done left out, no fold marks. One switch for both, `store.questLog`
   (TopBar's button); no buttons on its low title bar (Core's `bare`, `barHeight`). The game's `ObjectiveTrackerFrame`
@@ -1761,6 +1759,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, first places as Saneroki has them:** the small map 274 × 246 (`Window.WIDTH`, `HEIGHT`), docked top
+  right; the quest log on the screen alone docked in the top left corner (`QuestLog.lua`'s `FIRST[false]`, `Small`), no
+  longer under the minimap. Edit Mode's tick for the game's vehicle leave button is out of sight while *Your trip on
+  screen* stands in for it (`Navigation.lua`, Core's `EditMode.Replace`).
 - **2026-11-18, the map's search for other modules:** `FindBox.lua` serves Core's `Ways.Look(text)` (`Ways.Lookout`): the
   full map searching for those words, as Social's *Show on map* on a player asks it; not while the module stands down.
 - **2026-11-18, the corner and the keys on one page:** the setup's *Into the corner* and *Or a key* became *Into the

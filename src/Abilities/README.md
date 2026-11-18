@@ -836,6 +836,8 @@ spellbook and talents window.
 | `dev/tests/abilities.lua`, `dev/tests/wowstub.lua` | The tests and the stand-in game client |
 
 ## History
+- 2026-11-18 — Edit Mode's ticks for the status tracking bar and the stance bar are out of sight while *Hide the
+  game's experience and reputation bars* and *Hide the game's stance bar* put them away (`GameBars.lua`, Core's `EditMode.Replace`).
 - 2026-11-18 — Each window's keys by its tick in Classic windows (`Keys.SWITCHES`: `spellbookKey`, `talentsKey`, under
   `keys`; `Keys.lua`'s `Ours`), *Spellbook* and *Talents* there kept choices (`Screen.lua`, `Kept`).
 - 2026-11-18 — the full screen at the bottom middle comes to Abilities from Combat (Saneroki: "The macro editor,

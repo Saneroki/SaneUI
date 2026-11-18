@@ -20,6 +20,7 @@ What changed in each version of SaneUI Social, newest first: a version's part is
 - The game's friends list and group finder keys open the full screen with the friends list at that tab. Tick them in
   *Classic windows* to have the game's own windows again.
 - The smiley beside the line works on an empty line too.
+- The chat starts larger: 686 × 307 in the lower left corner.
 
 ## 0.3.1 (2026-11-18)
 

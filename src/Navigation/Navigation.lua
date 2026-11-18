@@ -423,6 +423,10 @@ function ns.GiveBack()
     ns.Safe("giving back", ns.RareTracker.Hide)
 end
 
+-- The game's vehicle leave button's tick in Edit Mode's window, out of sight while Your trip on screen stands in for
+-- it (TripView.lua; Core's EditMode.lua).
+Core.EditMode.Replace("VehicleLeaveButton", function() return not ns.off and (ns.options or {}).tripView ~= false end)
+
 function ns.OnLoad()
     ns.store, ns.options = Core.Store(ns.name), Core.Settings(ns.name)
 end

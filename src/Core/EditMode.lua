@@ -37,6 +37,24 @@ local Core = SaneUI.Core
 --  Blizzard's reads it.
 --
 --      Core.EditMode.Seen(box, seen)      -- a box's frame (its nine-slice) in sight or not
+--
+--  The ticks of what SaneUI stands in for (Saneroki, 2026-11-18: "In the hud
+--  EDit mode main window you have the checkboxes for windows that we replace
+--  with our addons [...] Can you remove them when they are replaced by our own
+--  addons"): Edit Mode's window lists a tick for each of the game's frames to
+--  show while it is open (its account settings: Target and Focus, Party
+--  Frames, Cast Bar, ...). A module that stands in for one of them says so
+--  (Replace: by the tick's key, the game's own, and a function that tells
+--  whether it stands in for it now); that tick is out of sight then. Each tick
+--  is hooked after its own Show and SetShown (hooksecurefunc on the tick, as on
+--  the manager above), and hidden there at once: the game shows the ticks and
+--  then lays its window out, which leaves out the hidden ones, so no gap
+--  stays. Nothing of the manager is written: no field, no call of its own; the
+--  game lays the ticks out at every login and when its options are expanded,
+--  so a module switched on or off counts from then.
+--
+--      Core.EditMode.Replace(key, ours)   -- key: the tick's ("PartyFrames"); ours(): true while ours stands in
+--      Core.EditMode.Replaced(key)        -- whether a module stands in for that one now
 -------------------------------------------------------------------------------
 local EditMode = { active = false, available = false }
 Core.EditMode = EditMode
@@ -109,6 +127,51 @@ EditMode.Watch(function(active)
     if type(systems) ~= "table" then return end
     for _, system in ipairs(systems) do Core.Safe("Edit Mode", Hook, system) end
 end)
+
+-------------------------------------------------------------------------------
+--  The ticks of what SaneUI stands in for
+-------------------------------------------------------------------------------
+local replaced = {} -- [the tick's key] = { function, ... }: each tells whether a module stands in for it now
+
+function EditMode.Replace(key, ours)
+    if type(key) ~= "string" or type(ours) ~= "function" then return end
+    replaced[key] = replaced[key] or {}
+    table.insert(replaced[key], ours)
+    EditMode.HookTicks()
+end
+
+function EditMode.Replaced(key)
+    for _, ours in ipairs(replaced[key] or {}) do
+        if Core.Safe("Edit Mode", ours) == true then return true end
+    end
+    return false
+end
+
+-- A tick the game shows that one of ours stands in for: out of sight again, before the game lays its window out.
+local ticked = setmetatable({}, { __mode = "k" })
+local function Away(tick, key)
+    if EditMode.Replaced(key) then tick:Hide() end
+end
+
+-- The game's ticks hooked (each once): the account settings of Edit Mode's window, by their keys.
+function EditMode.HookTicks()
+    local manager = rawget(_G, "EditModeManagerFrame")
+    local settings = type(manager) == "table" and rawget(manager, "AccountSettings")
+    local ticks = type(settings) == "table" and rawget(settings, "settingsCheckButtons")
+    if type(ticks) ~= "table" then return end
+    for key in pairs(replaced) do
+        local tick = rawget(ticks, key)
+        if type(tick) == "table" and not ticked[tick] and type(tick.Show) == "function" then
+            ticked[tick] = true
+            hooksecurefunc(tick, "Show", Core.Guard("Edit Mode", function(self) Away(self, key) end))
+            hooksecurefunc(tick, "SetShown", Core.Guard("Edit Mode", function(self, shown)
+                if shown then Away(self, key) end
+            end))
+            if Core.Plain(tick:IsShown()) == true then Away(tick, key) end
+        end
+    end
+end
+Core.On("PLAYER_LOGIN", function() EditMode.HookTicks() end)
 
 Core.Command("arrange", "move and size SaneUI's windows, if this game has no Edit Mode (Esc > Edit Mode) to do it in", function()
     if EditMode.available then

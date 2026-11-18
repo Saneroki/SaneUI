@@ -579,9 +579,9 @@ end
 
 -- Layout: what follows from the window's width ------------------------------------------------------
 check(Layout.RowWidth(380.6) == 380 - 2 * Layout.EDGE - Layout.SCROLL, "a row is the window without its edges and the scroll bar, in whole pixels")
-local wide, narrow = Layout.TextWidth(354, "left"), Layout.TextWidth(160, "left")
-check(wide == math.floor((354 - Layout.ICON - Layout.GAP) * Layout.SHARE) - 2 * Layout.PAD_X and narrow < wide, "a bubble takes a share of the row, so a narrow window has narrow bubbles")
-check(Layout.TextWidth(354, "right") == wide and Layout.TextWidth(354, "center") > wide, "yours are as wide as the others'; a note, without an icon beside it, a little wider")
+local wide, narrow = Layout.TextWidth(Layout.RowWidth(Layout.WIDTH), "left"), Layout.TextWidth(160, "left")
+check(wide == math.floor((Layout.RowWidth(Layout.WIDTH) - Layout.ICON - Layout.GAP) * Layout.SHARE) - 2 * Layout.PAD_X and narrow < wide, "a bubble takes a share of the row, so a narrow window has narrow bubbles")
+check(Layout.TextWidth(Layout.RowWidth(Layout.WIDTH), "right") == wide and Layout.TextWidth(Layout.RowWidth(Layout.WIDTH), "center") > wide, "yours are as wide as the others'; a note, without an icon beside it, a little wider")
 check(Layout.TextWidth(10, "left") == Layout.MIN_TEXT and Layout.RowWidth(0) == Layout.MIN_TEXT, "however small the window, a text keeps a width")
 local width, height = Layout.Bubble(100.2, 24)
 check(width == 101 + 2 * Layout.PAD_X and height == 24 + 2 * Layout.PAD_Y, "a bubble is its text and the padding")

@@ -15,6 +15,13 @@ SaneUI 0.3.5 (2026-11-18)
   game's own window is the one its key opens; unticked,
   SaneUI's (the character key, the spellbook's and talents'
   keys each on their own).
+- A SaneUI layout in the game's Edit Mode: the action bars in
+  four rows at the bottom middle, the minimap, chat and the
+  rest as SaneUI arranges them. A new character starts with
+  it; your own layout stays yours.
+- Edit Mode's window no longer offers ticks for the game's
+  frames SaneUI stands in for (unit frames, party and raid
+  frames, cast bar, loot window and the like).
 
 Social 0.3.2 (2026-11-18)
 -------------------------
@@ -89,6 +96,9 @@ Combat 0.3.3 (2026-11-18)
   setup.
 - The setup's unit frame pages show your frames as they
   really look.
+- New places at first: your frame in the middle over the
+  action bars, your focus left of it, your target right; the
+  party and raid frame in the lower right corner.
 
 
 Combat 0.3.2 (2026-11-18)

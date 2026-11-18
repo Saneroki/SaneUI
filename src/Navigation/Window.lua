@@ -39,7 +39,7 @@ local Core = SaneUI.Core
 local Window = {}
 ns.Window = Window
 
-Window.WIDTH, Window.HEIGHT = 200, 200 -- small, about as large as the game's minimap
+Window.WIDTH, Window.HEIGHT = 274, 246 -- small, a little larger than the game's minimap (as Saneroki has it, 2026-11-18)
 Window.UNDER = 230 -- from the screen's top to the minimap's bottom, where nothing tells it (the small map: measured)
 
 local frame, handle, inside, canvas

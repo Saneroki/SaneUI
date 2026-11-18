@@ -17,6 +17,8 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - The party and raid preview no longer changes by itself: pick 5, 10, 20 or 40 in its box in Edit Mode or in the
   setup.
 - The setup's unit frame pages show your frames as they really look, each with the row under it.
+- New places at first: your frame in the middle over the action bars, your focus left of it, your target right; the
+  party and raid frame in the lower right corner, 680 × 185.
 
 ## 0.3.2 (2026-11-18)
 
