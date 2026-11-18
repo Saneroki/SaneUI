@@ -18,8 +18,8 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 
 ## Description
 
-The editor set to *Markdown* when the project is made. Changed with 0.3.2 (2026-11-18): *How to use* says
-tooltips show at once (no longer *Hold Shift*); the project's description on CurseForge takes it by hand.
+The editor set to *Markdown* when the project is made. Changed with 0.3.2 (2026-11-18): *How to use* has the
+setup and says tooltips show at once (no longer *Hold Shift*); put in on CurseForge the same day.
 
 ```markdown
 **SaneUI Tooltips** redraws the game's tooltips as tidy dark panels with round corners, each in the colour
@@ -51,7 +51,9 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
 
 ## How to use
 
-- **Nothing to set up:** point at an item, a spell or a player.
+- **Point at an item, a spell or a player:** that is all it needs.
+- **A short setup** opens the first time (again with `/sane setup tooltips`): when tooltips show, where, the 3D
+  model, and how solid they are, with your own tooltip showing each choice at once.
 - **Tooltips show at once**, as the game's do. *Show tooltips* on the options page, or the setup, keeps them
   hidden until you hold Shift, Ctrl or Alt.
 - **Options:** Esc > Options > AddOns > Sane UI > Tooltips: when tooltips show, tooltips at the mouse cursor,

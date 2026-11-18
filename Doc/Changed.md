@@ -186,7 +186,7 @@ Saneroki: "on the onboarding patges the configure keybinds don't work. When I cl
 Saneroki: "make Tooltips alpha and upload to curseforge".
 - **Promoted:** `saneui promote Tooltips alpha --version 0.3.2` (its tests on `b4111b1b`), tag `Tooltips/0.3.2-alpha`: the setup and tooltips shown at once at first. Before it, the setup's words say SaneUI (`src/Tooltips/Setup.lua`); the TOC's category stays *Sane UI*, as the Core and Combat on CurseForge have it, so the addon list keeps them together.
 - **Uploaded** (`saneui publish alpha Tooltips`): SaneUI Tooltips 0.3.2 (CurseForge file 9682011, project 1809731), SaneUI Core 0.3.3 already there; tag `published/Tooltips/0.3.2-alpha`, not pushed.
-- **`Doc/curseforge/Tooltips.md`:** the uploads; *How to use* changed with 0.3.2, for the project's description on CurseForge by hand.
+- **`Doc/curseforge/Tooltips.md`:** the uploads; *How to use* with the setup and tooltips shown at once (no longer *Hold Shift*), and the description put into the project on CurseForge the same day (its editor's Markdown, the name SaneUI in it).
 
 ### Tooltips: shown at once at first (Saneroki, 2026-11-18)
 Saneroki: "make Always the default for show tooltips". A `/reload` takes it in. Card #506.
