@@ -944,6 +944,14 @@ Own scans only: what members send stays out, as it can be taken out again.
   (taken back and posted anew), and one over the market price (a buyer takes the cheapest first). Units and money fade over a week in
   the line, as the watched seconds do in the house (`Rhythm.Watched`), so a pause changes nothing. Under twelve hours watched: not told.
 - **Across accounts:** the line of the account that took the most samples, as two accounts in one house see the same auctions (`Join`).
+- **Other addons' days (Saneroki, 2026-11-18):** "make the timing forecast work from their daily prices too". The two auction addons
+  SaneUI knows keep each day's lowest price, no hours and no sales, so each of their days is one whole day's sample
+  (`Rhythm.Day`, at the middle of the day): it counts for its weekday as the day's eight stretches would, for no stretch of the day.
+  `Prices:Outlook` folds their days from before the line's first sample into a line of their own and puts it before SaneUI's
+  (`Rhythm.Join`: the usual prices go on from theirs to the line's last sample, the weekdays count the samples of both, the stretches
+  and the sales stay SaneUI's), or reads theirs alone where SaneUI has no line. So a forecast from their days names a day, never a
+  time of day (`allDay`): the trend from five days on, a weekday from three of it, so from about three weeks of days (their keeping
+  is a week or three). Theirs alone tell nothing of selling (`daily` nil: not known, never "none sold"). Only for the house of your side.
 
 `Prices:Outlook` holds what it read per item for the hour, and until a scan is kept. What that is worth after the cut and the post is *Fees*.
 
@@ -990,8 +998,9 @@ Prices:OnChange(fn)   -- fn() on the next frame after prices changed
   saw a thing later than SaneUI did (`Last`: low, how many were on offer, when; market, auctions and sellers 0; a link of a
   kind SaneUI never saw takes theirs of its own kind over SaneUI's cheapest kind), and their days fill a range where SaneUI has
   none (`Range`: each day's lowest of theirs, market 0). Their books are per realm, or realm and side, whichever house was
-  scanned, so they count for no other house (`Within`, the trip to the other house). The forecast (`Outlook`), the offers
-  (`Under`) and the scan's keys (`Scanned`) stay SaneUI's own: they keep no hours, offers or scans. SaneUI's own scan reads
+  scanned, so they count for no other house (`Within`, the trip to the other house). Their days go into the forecast too
+  (`Outlook`, *The forecast*: a day, never a time of day); the offers (`Under`) and the scan's keys (`Scanned`) stay SaneUI's own:
+  they keep no offers or scans. SaneUI's own scan reads
   their full scans and searches anyway (*The full auction scan*): their books add what they scanned before SaneUI was there,
   and everything while the auction data is switched off (the addon *Data: Auction House*), when the house read is one with
   nothing saved. Their histories are taken apart anew when the auction house closes. Nothing of theirs goes into SaneUI's

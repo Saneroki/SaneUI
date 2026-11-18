@@ -1813,6 +1813,23 @@ do -- the materials' prices from an auction addon SaneUI knows alone (Core.Neigh
     Prices.Changed()
     tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
     check(row(panel, disenchant).right == "125c", "the materials' prices kept by an auction addon SaneUI knows count as its own scans' would")
+    -- Three weeks of another's days of the blade itself, dear on one weekday: the advice names that day, no hours
+    local book = Core.Neighbours.KNOWN.auctionPrices
+    local zero = time({ year = 2020 })
+    local day = math.floor((GetServerTime() - zero) / 86400)
+    local dear = date("*t", zero + (day - 2 + 0.5) * 86400).wday
+    local highs = {}
+    for back = 20, 0, -1 do highs[tostring(day - back)] = date("*t", zero + (day - back + 0.5) * 86400).wday == dear and 1500 or 1000 end
+    W.loaded[book.addon] = true
+    rawset(_G, book.saved, { [GetNormalizedRealmName()] = { ["7001"] = { [book.newest] = 1000, [book.high] = highs, [book.low] = {}, [book.offered] = {} } } })
+    Prices.Changed()
+    tip:Fill({ type = TYPE.Item, id = 7001 }, blade)
+    local outlook = Prices:Outlook(7001)
+    local advice = row(panel, count(panel)).left
+    check(outlook and outlook.highAt and advice:find("^Sell " .. date("%a", outlook.highAt) .. " for ") and not advice:find("%d:%d%d"),
+        "the forecast from another addon's days alone: sell on the weekday it fetches most, no time of day: " .. advice)
+    rawset(_G, book.saved, nil)
+    W.loaded[book.addon] = nil
     rawset(_G, known.saved, nil)
     W.loaded[known.addon] = nil
     Prices.Changed()

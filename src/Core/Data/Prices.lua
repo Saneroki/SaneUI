@@ -15,7 +15,8 @@ local Core = SaneUI.Core
 --                              how its price went: { { at, low, market }, ... }, oldest first, from server time from to
 --                              server time to (nil: from the first point, to now). One table used again: read it at once
 --      Prices:Outlook(item)    what the scans tell of its price ahead and of how it sells, for a view to say when to buy and sell:
---                              Rhythm.lua's table, nil before a scan took a sample of it. Read it at once, keep nothing of it
+--                              Rhythm.lua's table, nil before a scan took a sample of it; the known auction addons' days before
+--                              the scans join it (a day, no time of day). Read it at once, keep nothing of it
 --      Prices:Under(item, price)  how many are on offer at that price or less, by the last scan or the game's list of the item's
 --                              offers; nil while neither was seen in this session
 --      Prices:Usual(key)       what an item usually costs, a look at its rhythm's line alone; nil: no line
@@ -51,7 +52,8 @@ local Core = SaneUI.Core
 --  The auction addons SaneUI knows count too (Core.Neighbours.Prices; Saneroki, 2026-11-18: the gold section and the graph
 --  work whichever addon scans the auction house): for the house of your side, the newest point is theirs where they saw the
 --  thing later than SaneUI did (low, how many were on offer, when; no market, auctions or sellers), and their days fill a
---  range where SaneUI has none of its own. They keep a book per realm, or realm and side, whichever house was scanned, so
+--  range where SaneUI has none of its own, and the forecast before SaneUI's scans began (Rhythm.Day, Rhythm.Join: each of
+--  their days a whole day's sample, for its weekday, so their forecast names a day; their sales unknown). They keep a book per realm, or realm and side, whichever house was scanned, so
 --  they count for no other house. With SaneUI's auction data switched off (the addon SaneUI_AuctionData), or before the
 --  game told your side, they are all there is (LONE), with what the game lists meanwhile.
 -------------------------------------------------------------------------------
@@ -401,6 +403,29 @@ local function Theirs(house, key, at)
     return low, units, low and best
 end
 
+-- The known auction addons' days of a key, oldest first: { { at, low, market = 0 }, ... } at the middle of each day, the
+-- lowest of theirs a day (a new table each time). Empty for a house they do not count for.
+local function TheirDays(house, key)
+    local list, byDay = {}, {}
+    local others = Others(house)
+    local item, level, species
+    if others[1] then item, level, species = Named(key) end
+    local function Their(at, low)
+        local day = math.floor(at / DAY)
+        local held = byDay[day]
+        if not held then
+            held = { at = at, low = low, market = 0 }
+            byDay[day] = held
+            list[#list + 1] = held
+        elseif low < held.low then
+            held.low = low
+        end
+    end
+    for _, other in ipairs(item and others or NONE) do other:Days(item, level, species, Their) end
+    table.sort(list, function(a, b) return a.at < b.at end)
+    return list
+end
+
 function Prices:Last(item)
     if not item then return nil end
     local house = Current()
@@ -437,17 +462,31 @@ local function Asked(item)
     return key, book, house
 end
 
+-- The forecast's line of a key with the known auction addons' days before it began (Rhythm.Join), and how long the scans
+-- watched for sales: none for a line of theirs alone, which keeps no sales (unknown, not none sold).
+local function Rhythmic(house, source, key)
+    local line, watched, watchedAt = source.rhythm[key], tonumber(source.watched), tonumber(source.watchedAt)
+    local since, earlier = Rhythm.Since(line), nil
+    for _, point in ipairs(TheirDays(house, key)) do
+        if not since or point.at < since then earlier = Rhythm.Day(earlier, point.at, point.low) end
+    end
+    if not earlier then return line, watched, watchedAt end
+    if not line then return earlier, nil, nil end
+    return Rhythm.Join(line, earlier), watched, watchedAt
+end
+
 function Prices:Outlook(item)
     local key, book, house = Asked(item)
+    if not key and book and Others(house)[1] then key = KeyFor(item) end
     if not key then return nil end
     local source = Watcher(house)
-    local line = source.rhythm[key]
-    if not line then return nil end
+    if not source.rhythm[key] and not Others(house)[1] then return nil end
     local now = Now()
     local hour = math.floor(now / 3600)
     local held = book.outlook[key]
     if not held or held.hour ~= hour then
-        held = Rhythm.Read(line, now, tonumber(source.watched), tonumber(source.watchedAt)) or {}
+        local line, watched, watchedAt = Rhythmic(house, source, key)
+        held = line and Rhythm.Read(line, now, watched, watchedAt) or {}
         held.hour = hour
         if book.outlooks >= HISTORIES then book.outlook, book.outlooks = {}, 0 end
         book.outlook[key], book.outlooks = held, book.outlooks + 1
@@ -582,17 +621,11 @@ local function History(house, book, key)
     Days(shared.days)
     Days(house.days)
     -- The known auction addons' days where SaneUI has none: the lowest of theirs, no market
-    local others, theirs = Others(house), {}
-    local item, level, species
-    if others[1] then item, level, species = Named(key) end
-    local function Their(at, low)
-        local day = math.floor(at / DAY)
-        if not days[day] and (not theirs[day] or low < theirs[day].low) then theirs[day] = { at = at, low = low, market = 0 } end
-    end
-    for _, other in ipairs(item and others or NONE) do other:Days(item, level, species, Their) end
-    for _, point in pairs(theirs) do
-        count = count + 1
-        points[count] = point
+    for _, point in ipairs(TheirDays(house, key)) do
+        if not days[math.floor(point.at / DAY)] then
+            count = count + 1
+            points[count] = point
+        end
     end
     table.sort(points, Earlier)
     if book.held >= HISTORIES then book.history, book.held = {}, 0 end

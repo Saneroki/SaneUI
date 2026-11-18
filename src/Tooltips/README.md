@@ -191,8 +191,10 @@ only read.
   nothing. The shown panels are read anew when prices change. The module keeps none of its own.
   **Scanned with another addon** (Saneroki, 2026-11-18): where you scan with one of the two auction addons SaneUI knows, its
   prices count too, wherever SaneUI saw the thing earlier or never: the values, the advice and the price graph work from them,
-  also with SaneUI's auction data switched off. What only SaneUI's own scans keep (the times of day a thing sells dearer,
-  how many sell, what is on offer under a price) comes from SaneUI's scans alone.
+  also with SaneUI's auction data switched off. Their days also make the forecast: where a thing goes up, or which day of the
+  week it fetches most (*Sell Wed for 14s*, from about three weeks of days), joined with SaneUI's own scans where those began
+  later. What only SaneUI's own scans keep (the time of day a thing sells dearer, how many sell, what is on offer under a
+  price) comes from SaneUI's scans alone.
 - **Quests** (`Quests.lua`): what you must kill the game says in the tooltip's own quest lines. Which
   creature drops a quest item, who gives which quest and who takes it back, the game does not say; SaneUI's
   database has it (Core's data framework, `Doc/guides/data.md`), in two data packs that load soon after the

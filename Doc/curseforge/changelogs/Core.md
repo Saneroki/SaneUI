@@ -10,6 +10,8 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 - Scanned the auction house with another addon? The prices of the two auction addons SaneUI knows count too: the
   tooltips' gold section, its advice and the price graph use them wherever SaneUI's own scans saw an item earlier or
   never, also with *Data: Auction House* switched off.
+- Their daily prices feed the forecast too: from them the gold section tells which day of the week an item sells or buys
+  best (*Sell Wed for 14s*) and where its price is heading, before SaneUI's own scans have seen enough.
 - *Reset all settings* at the top of the options page *SaneUI*: every SaneUI setting back to its default and its
   windows back at their first places, then the setup from its first page. It asks first; the game's own settings,
   your map pins and conversations stay.

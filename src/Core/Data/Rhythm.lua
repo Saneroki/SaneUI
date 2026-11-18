@@ -26,6 +26,13 @@ local Core = SaneUI.Core
 --  and the forecast grows out of what the scans have shown. It never guesses from other items.
 --
 --      Rhythm.Seen(line, at, low)              the line with a sample more
+--      Rhythm.Day(line, at, low)               the line with a whole day's lowest price more (at: the middle of the day),
+--                                              for a book that keeps no hours: its weekday counts it as that day's stretches
+--                                              would, no stretch of the day does
+--      Rhythm.Join(line, earlier)              the line with an earlier one before it (days of another addon's book before
+--                                              SaneUI's scans began): its usual prices go on from the earlier one's, its
+--                                              weekdays count the samples of both, its stretches and sales are its own
+--      Rhythm.Since(line)                      when the line's first sample was; nil for no line
 --      Rhythm.Sold(line, at, units, money)     the line with what sold since the last scan
 --      Rhythm.Watched(house, at, seconds)      the house's scans watched that long: what selling is told against
 --      Rhythm.Stretch(at)                      which stretch of which day at is: a new one takes a new sample
@@ -100,10 +107,11 @@ local function Line(fields)
     return LINE:format(unpack(fields, 1, FIELDS))
 end
 
-local function Slot(fields, index, share, most)
-    local count = math.min(fields[index] + 1, most)
+-- A sample into a mean: weight samples' worth (a day's lowest price: the day's stretches').
+local function Slot(fields, index, share, most, weight)
+    local count = math.min(fields[index] + weight, most)
     fields[index] = count
-    fields[index + 1] = fields[index + 1] + (share - fields[index + 1]) / count
+    fields[index + 1] = fields[index + 1] + (share - fields[index + 1]) * weight / count
 end
 
 -- The first samples are a plain average, then the span takes over.
@@ -111,7 +119,8 @@ local function Toward(value, price, gone, span, seen)
     return value * (price / value) ^ math.max(1 / seen, 1 - math.exp(-gone / span))
 end
 
-function Rhythm.Seen(line, at, low)
+-- A sample: a stretch's (whole false), or a whole day's lowest price, which counts for its weekday as the day's stretches.
+local function Sample(line, at, low, whole)
     local fields = Fields(line)
     if fields[AT] == 0 then
         fields[AT], fields[SINCE], fields[SEEN], fields[FAST], fields[SLOW] = at, at, 1, low, low
@@ -123,14 +132,50 @@ function Rhythm.Seen(line, at, low)
     if fields[SEEN] >= SETTLE then price = math.max(fast / CLIP, math.min(low, fast * CLIP)) end
     local part, weekday = Clock(at)
     local share = price / fast * 1000
-    Slot(fields, PART + 2 * part, share, PART_MOST)
-    Slot(fields, WEEK + 2 * weekday, price / slow * 1000, WEEK_MOST)
+    if not whole then Slot(fields, PART + 2 * part, share, PART_MOST, 1) end
+    Slot(fields, WEEK + 2 * weekday, price / slow * 1000, WEEK_MOST, whole and PARTS or 1)
     local seen = fields[SEEN] + 1
     fields[DEV] = fields[DEV] + (math.abs(share - 1000) - fields[DEV]) / math.min(seen, DEV_MOST)
     local gone = at - fields[AT]
     fields[FAST], fields[SLOW] = Toward(fast, price, gone, FAST_SPAN, seen), Toward(slow, price, gone, SLOW_SPAN, seen)
     fields[AT], fields[SEEN] = at, seen
     return Line(fields)
+end
+
+function Rhythm.Seen(line, at, low)
+    return Sample(line, at, low, false)
+end
+
+function Rhythm.Day(line, at, low)
+    return Sample(line, at, low, true)
+end
+
+function Rhythm.Since(line)
+    local fields = type(line) == "string" and Parse(line)
+    return fields and fields[AT] > 0 and fields[SINCE] or nil
+end
+
+function Rhythm.Join(line, earlier)
+    local late, early = type(line) == "string" and Parse(line), type(earlier) == "string" and Parse(earlier)
+    if not early or early[AT] == 0 then return line end
+    if not late or late[AT] == 0 then return earlier end
+    if early[AT] >= late[SINCE] then return line end -- not before it: the line's own
+    -- The usual prices as if the earlier line's had gone on to the line's last sample, its samples moving them as they came
+    local gone = late[AT] - early[AT]
+    late[FAST] = Toward(early[FAST], late[FAST], gone, FAST_SPAN, math.huge)
+    late[SLOW] = Toward(early[SLOW], late[SLOW], gone, SLOW_SPAN, math.huge)
+    local seen = early[SEEN] + late[SEEN]
+    late[DEV] = (early[DEV] * early[SEEN] + late[DEV] * late[SEEN]) / seen
+    late[SINCE], late[SEEN] = early[SINCE], seen
+    for weekday = 0, WEEKDAYS - 1 do
+        local index = WEEK + 2 * weekday
+        local count = early[index] + late[index]
+        if count > 0 then
+            late[index + 1] = (early[index] * early[index + 1] + late[index] * late[index + 1]) / count
+            late[index] = math.min(count, WEEK_MOST)
+        end
+    end
+    return Line(late)
 end
 
 function Rhythm.Sold(line, at, units, money)

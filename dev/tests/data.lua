@@ -2520,6 +2520,27 @@ do
             "a day SaneUI has stays its own, theirs fill the rest, their newest point last: " .. Points(4247))
         check(Points(4244):find("^460/0"), "the days of a scan of theirs, in whole copper")
 
+        -- The forecast (Prices:Outlook) from their days: three weeks of them, dear on one weekday
+        local dear = date("*t", zero + (day - 2 + 0.5) * 86400).wday -- the weekday two days back: not today
+        local highs = {}
+        for back = 20, 0, -1 do
+            highs[Day(back)] = date("*t", zero + (day - back + 0.5) * 86400).wday == dear and 1500 or 1000
+        end
+        realm["4250"], realm["4251"] = Entry(1000, highs), Entry(1000, highs)
+        Prices.Changed()
+        local outlook = Prices:Outlook(4250)
+        check(outlook and outlook.days > 20 and outlook.allDay and outlook.highAt and outlook.highAt > now
+            and date("*t", outlook.highAt).wday == dear and outlook.high > 1200 and outlook.daily == nil,
+            "a thing only their days know: the day it sells dearest is named, how many sell is not known")
+        local line
+        for step = 8, 1, -1 do line = Data.Rhythm.Seen(line, now - step * 3 * 3600, 1000) end
+        home.rhythm["4251"] = line
+        Prices.Changed()
+        outlook = Prices:Outlook(4251)
+        check(outlook and outlook.days > 20 and outlook.highAt and date("*t", outlook.highAt).wday == dear,
+            "a day of SaneUI's own scans: their days before it join its line, and the day still counts")
+        home.rhythm["4251"] = nil
+
         local side = UnitFactionGroup
         UnitFactionGroup = function() return "Horde" end
         local other = Prices.House("npc")
@@ -3014,6 +3035,48 @@ do
     check(house.watched == 1200 and house.watchedAt == now, "the watch adds up")
     check(Rhythm.Stretch(start + 3600) == Rhythm.Stretch(start + 2 * 3600) and Rhythm.Stretch(start + 3600) ~= Rhythm.Stretch(start + 4 * 3600),
         "three hours are one stretch")
+
+    -- A book that keeps only each day's lowest price (another addon's): a day's sample, at the middle of the day
+    local function Days(days, price, from)
+        local line
+        for day = 0, days - 1 do
+            local at = (from or start) + day * DAY + 12 * 3600
+            line = Rhythm.Day(line, at, price(at, day))
+        end
+        return line, (from or start) + days * DAY + 1800
+    end
+    local function Saturday(at) return (date("*t", at).wday == 7 and 1300 or 1000) * Noise(0.04) end
+    line, now = Days(21, Saturday)
+    local weeks = Rhythm.Read(line, now)
+    check(weeks.highAt and date("*t", weeks.highAt).wday == 7 and weeks.high > 1150 and weeks.allDay and weeks.days > 20,
+        "three weeks of days, dear on Saturdays: the day is named, no time of day: " .. tostring(weeks.high))
+    check(Rhythm.Since(line) == start + 12 * 3600 and Rhythm.Since(nil) == nil, "a line says when it began")
+    local week = Rhythm.Read(select(1, Days(7, Saturday)), start + 7 * DAY + 1800)
+    check(not week.highAt and week.high == week.usual, "one week of days is too few to name a day")
+    line, now = Days(7, function(_, day) return 1000 * (1 + 0.06 * day) end)
+    local climbing = Rhythm.Read(line, now)
+    check(climbing.drift > 0.01 and climbing.high > climbing.usual and climbing.highAt and climbing.highAt > now and climbing.allDay,
+        "a week of days going up: where it is heading, and a later day to sell: " .. tostring(climbing.drift))
+
+    -- SaneUI's own scans after them: the line's stretches and sales its own, the weekdays and the usual prices of both
+    local before = select(1, Days(21, Saturday))
+    local after = start + 21 * DAY
+    local own
+    for step = 0, 2 * 8 - 1 do
+        local at = after + step * HOURS * 3600 + 600
+        own = Rhythm.Seen(own, at, (Hour(at) >= 18 and Hour(at) < 21 and 1400 or 1000) * Noise(0.04))
+    end
+    now = after + 2 * DAY + 1800
+    own = Rhythm.Sold(own, now, 6, 6000)
+    local joined = Rhythm.Join(own, before)
+    local both = Rhythm.Read(joined, now, 2 * DAY, now)
+    check(both.days > 22 and Rhythm.Since(joined) == Rhythm.Since(before) and both.daily == 3,
+        "joined: watched since the earlier line began, the sales SaneUI saw: " .. tostring(both.daily))
+    check(both.high > 1150 and date("*t", both.highAt).wday == 7, "the earlier days' Saturdays still name the day")
+    check(Rhythm.Read(own, now, 2 * DAY, now).high == Rhythm.Read(own, now, 2 * DAY, now).usual, "(the scans alone: two days are too few)")
+    check(math.abs(both.usual / Rhythm.Read(before, now).usual - 1) < 0.1, "the usual price goes on from the earlier one's")
+    check(Rhythm.Join(own, nil) == own and Rhythm.Join(nil, before) == before and Rhythm.Join(before, own) == before,
+        "nothing earlier: the line as it was; no line: the earlier one; an earlier one that is not earlier: the line")
 end
 
 -------------------------------------------------------------------------------

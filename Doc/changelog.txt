@@ -13,7 +13,9 @@ SaneUI 0.3.6 (2026-11-18)
   auction house with one of the two auction addons SaneUI
   knows, the tooltips' gold section, its advice and the price
   graph use its prices too, wherever SaneUI's own scans saw
-  the item earlier or never.
+  the item earlier or never. Its daily prices also feed the
+  forecast: which day of the week to sell or buy on, and
+  where a price is heading.
 - Reset all settings, at the top of the options page SaneUI:
   every setting back to its default, then the setup from its
   first page. Asked first; your map pins and conversations
