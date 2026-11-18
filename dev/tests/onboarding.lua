@@ -57,7 +57,8 @@ Onboarding.Add("Garden", {
         { key = "hedge", title = "The hedge", text = "How tall it is.", settings = { "height" } },
         { key = "path", title = "The path", text = "What you walk on.", settings = { "path", "moss" } },
         { key = "keys", title = "Keys", text = "Keys for it.",
-          settings = { { binding = "SANEUI_GARDEN_WATER", text = "Water the garden" } } },
+          settings = { { binding = "SANEUI_GARDEN_WATER", text = "Water the garden" },
+                       { binding = "SANEUI_GARDEN_LIGHT", text = "Light the lamps" } } },
     },
     Stage = function(stage, step, index) drawn[#drawn + 1] = { stage = stage, key = step.key, index = index } end,
 })
@@ -66,7 +67,7 @@ Onboarding.Add("Nothing", { title = "No steps" })
 check(Onboarding.Guide("Nothing") == nil and Core.errors["onboarding"] ~= nil, "a setup without steps is refused, noted")
 
 -- The game's key bindings: a key bound to one command; saved by SaveBindings.
-bound, saved, shift = {}, 0, false
+bound, saved, shift, alt, ctrl = {}, 0, false, false, false
 GetBindingKey = function(command)
     local keys = {}
     for key, action in pairs(bound) do if action == command then keys[#keys + 1] = key end end
@@ -79,8 +80,8 @@ GetCurrentBindingSet = function() return 2 end
 GetBindingAction = function(key) return bound[key] or "" end
 GetBindingText = function(key) return key end
 IsShiftKeyDown = function() return shift end
-IsAltKeyDown = function() return false end
-IsControlKeyDown = function() return false end
+IsAltKeyDown = function() return alt end
+IsControlKeyDown = function() return ctrl end
 W.Fire("ADDON_LOADED", "SaneUI_Garden")
 W.Fire("PLAYER_LOGIN")
 local options = Core.Settings("Garden")
@@ -153,27 +154,61 @@ check(options.path == "stone" and moss.tick:IsEnabled() ~= false, "Stone chosen:
 parts.forward._scripts.OnClick(parts.forward)
 parts = window.Parts()
 
--- The last: a key, in the game's own key bindings: a click, then the key; Esc keeps it; a right click unbinds it.
-local key = parts.made.Garden[4].rows[1]
+-- The last: two keys, in the game's own key bindings: a click, then the key with the modifiers held; Esc keeps it; a
+-- right click unbinds it. No box takes the keyboard itself: in the game a frame with an OnKeyDown script has it and
+-- passes no key on, so the top box of a step kept every key from the box clicked. The one listener has it while a
+-- box waits, and only then.
+local key, lamps = parts.made.Garden[4].rows[1], parts.made.Garden[4].rows[2]
+local function Listener() return ons.Controls.listener end
+local function Press(name) Listener()._scripts.OnKeyDown(Listener(), name) end
+local function Free() return Listener()._scripts.OnKeyDown == nil and not Listener():IsShown() end
+check(key.box._scripts.OnKeyDown == nil and lamps.box._scripts.OnKeyDown == nil, "no box takes the keyboard")
 check(key.label._text == ons.Controls.TEXT.unbound and key.box ~= nil, "a key without one: Not bound")
 key.box._scripts.OnClick(key.box, "LeftButton")
 check(key.box.listening and key.label._text == ons.Controls.TEXT.press, "clicked: it waits for a key")
-key.box._scripts.OnKeyDown(key.box, "LSHIFT")
+check(Listener() and Listener()._scripts.OnKeyDown ~= nil and Listener():IsShown(), "the listener hears the keys")
+Press("LSHIFT")
 check(key.box.listening, "a modifier alone is no key")
 shift = true
-key.box._scripts.OnKeyDown(key.box, "F")
+Press("F")
 shift = false
 check(not key.box.listening and bound["SHIFT-F"] == "SANEUI_GARDEN_WATER" and saved == 1 and key.label._text == "SHIFT-F",
     "Shift-F: bound to it, the game's bindings saved")
+check(Free(), "bound: the keyboard back to the game")
+key.box._scripts.OnClick(key.box, "LeftButton")
+lamps.box._scripts.OnClick(lamps.box, "LeftButton")
+check(not key.box.listening and key.label._text == "SHIFT-F" and lamps.box.listening, "one box waits at a time")
+Press("LALT")
+Press("LSHIFT")
+alt, shift = true, true
+Press("V")
+alt, shift = false, false
+check(bound["ALT-SHIFT-V"] == "SANEUI_GARDEN_LIGHT" and bound["SHIFT-F"] == "SANEUI_GARDEN_WATER"
+    and lamps.label._text == "ALT-SHIFT-V" and Free(), "Alt-Shift-V: the second box's key, the first one's kept")
+lamps.box._scripts.OnClick(lamps.box, "LeftButton")
+lamps.box._scripts.OnClick(lamps.box, "MiddleButton")
+check(bound.BUTTON3 == "SANEUI_GARDEN_LIGHT" and bound["ALT-SHIFT-V"] == nil and not lamps.box.listening,
+    "the middle mouse button while it waits: BUTTON3")
+lamps.box._scripts.OnClick(lamps.box, "LeftButton")
+ctrl = true
+lamps.box._scripts.OnClick(lamps.box, "Button4")
+ctrl = false
+check(bound["CTRL-BUTTON4"] == "SANEUI_GARDEN_LIGHT" and Free(), "Ctrl and a side button: CTRL-BUTTON4")
+CreateKeyChordStringUsingMetaKeyState = function(pressed) return "META-" .. pressed end
+check(ons.Controls.Chord("V") == "META-V" and ons.Controls.Chord("LMETA") == nil, "the game's own chord, where it has one")
+CreateKeyChordStringUsingMetaKeyState = nil
+lamps.box._scripts.OnClick(lamps.box, "LeftButton")
+lamps.box._scripts.OnHide(lamps.box)
+check(not lamps.box.listening and Free(), "hidden while it waits: the keyboard let go")
 bound.G = "MOVEFORWARD"
 key.box._scripts.OnClick(key.box, "LeftButton")
 W.printed = {}
-key.box._scripts.OnKeyDown(key.box, "G")
+Press("G")
 check(bound.G == "SANEUI_GARDEN_WATER" and bound["SHIFT-F"] == nil and printed("no longer does: MOVEFORWARD"),
     "another key: the old one let go, the key's other command said")
 key.box._scripts.OnClick(key.box, "LeftButton")
-key.box._scripts.OnKeyDown(key.box, "ESCAPE")
-check(not key.box.listening and bound.G == "SANEUI_GARDEN_WATER", "Esc: kept as it was")
+Press("ESCAPE")
+check(not key.box.listening and bound.G == "SANEUI_GARDEN_WATER" and Free(), "Esc: kept as it was")
 key.box._scripts.OnClick(key.box, "RightButton")
 check(bound.G == nil and key.label._text == ons.Controls.TEXT.unbound, "a right click: no key")
 W.combat = true

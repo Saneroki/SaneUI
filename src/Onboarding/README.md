@@ -17,7 +17,8 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 - **In the window:** the sample at the left, in a solid grey box, the step at the right: its head, its words, its switches. Each switch is the module's own,
   as on its options page, with the same words and tips: a tick, a slider with its steppers, or a round button per
   choice (side by side for three or fewer); one under another stands a little in and is greyed out while that one is
-  off. A key: click its box, then press the key (with Shift, Ctrl or Alt if you like); Esc keeps it as it was, a right
+  off. A key: click its box, then press the key, with Shift, Ctrl or Alt held if you like (Alt-Shift-V), or a mouse
+  button past the two main ones (the middle, a side button); Esc keeps it as it was, a right
   click leaves it without one (the game's own key bindings, saved as its key binding window saves them; out of a
   fight). A change shows at once on the sample and in the game. Under them the loading screen's bar, filled as far
   as the steps have come, *Step 2 of 12* in it; *Back* and *Next* (red, with the game's arrows, as Forever's own
@@ -42,7 +43,12 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 - **The controls** (`Controls.lua`) are made from the module's own descriptions (`Core.Described`: `text`, `tip`,
   `choices`, `min`, `max`, `step`, `unit`, `distance`, `parent`, `parentValue`, `hidden`), or for a key from the step's
   own entry (`{ binding = "COMMAND", text, tip }`: `GetBindingKey`, `SetBinding`, `SaveBindings`; the key's other
-  command said in chat), or from a switch the step words its own way (`{ key = "expandClick", text, tip, choices = {
+  command said in chat; the key named as the game's key binding window names it, by its `BindingUtil`:
+  `GetConvertedKeyOrButton`, `IsKeyPressIgnoredForBinding`, `CreateKeyChordStringUsingMetaKeyState`, our own where it
+  lacks them; heard by one listener of its own, `Controls.Wait`, as the game's `KeybindListener` hears it: over the
+  window, its `OnKeyDown` set only while a box waits, since in the game a frame given that script takes the keyboard
+  and passes no key on, so no box holds it, one box waits at a time, and the keyboard goes back to the game after the
+  key, Esc, another box's click or the step hidden), or from a switch the step words its own way (`{ key = "expandClick", text, tip, choices = {
   { value, words }, ... }, column = true }` over the switch's description: a switch as round buttons, one under
   another with `column`; Navigation's hot corner), and set through `Core.Set`,
   as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it.
@@ -67,10 +73,16 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 | --- | --- |
 | `SaneUI_Onboarding.toc` | The addon, load on demand |
 | `Onboarding.lua` | The module's table and words; `Show(name, step)`, which Core calls |
-| `Controls.lua` | A step's controls: the module's switches as ticks, sliders and round buttons, set through `Core.Set` |
+| `Controls.lua` | A step's controls: the module's switches as ticks, sliders and round buttons, set through `Core.Set`; keys in the game's key bindings, heard by one listener |
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — The key boxes hear the key again (Saneroki: "the configure keybinds don't work. When I click it it says
+  press a key but it doesn't register any keypresses. I want it to work with the modifier keys as well so that
+  someone could press like alt shift v"): each box had its `OnKeyDown` from the start, which in the game takes the
+  keyboard and passes nothing on, so on a step of several keys the top box heard every key and dropped it. One
+  listener now hears the key for the box clicked, with the modifiers held and the game's own key names; a mouse
+  button past the two main ones binds too.
 - 2026-11-18 — Tooltips' setup (`src/Tooltips/Setup.lua`: one step, your own tooltip as the sample); each module's
   sample in a frame of its own over the stage, the others' hidden.
 - 2026-11-18 — Navigation's setup, the second (Saneroki: "Can you make a onboarding window for the navigation

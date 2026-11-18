@@ -24,7 +24,8 @@ prints its log.
   - layout: anchors and sizes resolved as the game resolves them, strata, levels, draw layers, clipping and
     scale;
   - scripts and events, timers, the mouse (focus, clicks, dragging, moving and sizing, the wheel, links in
-    text) and the keys.
+    text) and the keys (to the top frame with the keyboard first, on to the next only where it propagates; a frame
+    given an `OnKeyDown` or `OnKeyUp` script takes the keyboard, as in the game).
 - **What the game has but the lab does not do yet** is known from Blizzard's own API documentation
   (the newest export of its interface, `Blizzard_APIDocumentationGenerated`). Such a method, namespace or function
   is still there, as in the game, and calling it puts a "not in the lab" line in the log. The same documentation

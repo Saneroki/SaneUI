@@ -221,6 +221,9 @@ return function(Lab)
             local s = scripts(self)
             s.scripts[name] = fn
             if s.hooks then s.hooks[name] = nil end
+            -- A key script given takes the keyboard, as in the game (its KeybindListener never calls EnableKeyboard):
+            -- a frame with one hears every key first and passes none on unless it propagates.
+            if fn and (name == "OnKeyDown" or name == "OnKeyUp") then s.keyboard = true end
             Lab.Touch()
         end
         function M:GetScript(name)
@@ -233,6 +236,7 @@ return function(Lab)
             local s = scripts(self)
             if not s.scripts[name] then
                 s.scripts[name] = fn
+                if name == "OnKeyDown" or name == "OnKeyUp" then s.keyboard = true end -- as SetScript
                 return
             end
             s.hooks = s.hooks or {}

@@ -7,6 +7,8 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 
 - The auction house's full scan line has a pause and resume button and an X: pause the scans (they stay paused on
   your account, after a logout too, until you resume) or cancel the one running, nothing of it kept.
+- The setups' key boxes take your key again: click a box, then press the key, with Shift, Ctrl or Alt held if you
+  like (Alt-Shift-V), or a mouse button past the two main ones.
 
 ## 0.3.2 (2026-11-15)
 

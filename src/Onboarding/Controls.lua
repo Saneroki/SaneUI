@@ -10,8 +10,10 @@ local _, ns = ...
 --    one of a few       its words, then a round button and the words of each,
 --                       side by side where three or fewer fit on a line
 --    a key              its words, and a box with the keys it is bound to:
---                       a click, then the key to bind it to (Esc: none);
---                       a right click unbinds it (the game's own key
+--                       a click, then the key to bind it to, with Shift,
+--                       Ctrl and Alt as held (Alt-Shift-V), or a mouse
+--                       button past the two main ones (Esc: as it was); a
+--                       right click unbinds it (the game's own key
 --                       bindings, saved as its key binding window saves them)
 --  A step may word one of the module's switches its own way: its entry
 --  { key = "expandClick", text, tip, choices = { { value, words }, ... },
@@ -40,13 +42,18 @@ Controls.RADIO = "Interface\\Buttons\\UI-RadioButton" -- the game's round button
 Controls.DIM = 0.5    -- the words of a control greyed out
 Controls.ACROSS = 3   -- one of a few with at most this many choices: side by side
 Controls.KEY = { 150, 24 } -- a key's box
+Controls.LISTENER = "FULLSCREEN_DIALOG" -- the frame that hears the key: over the window (DIALOG)
+-- Keys no binding takes alone (the game's IsKeyPressIgnoredForBinding where it has none): the modifiers, the two main
+-- mouse buttons.
 Controls.MODIFIERS = { LSHIFT = true, RSHIFT = true, LCTRL = true, RCTRL = true, LALT = true, RALT = true,
-                       LMETA = true, RMETA = true, UNKNOWN = true }
+                       LMETA = true, RMETA = true, ALT = true, CTRL = true, SHIFT = true, META = true,
+                       UNKNOWN = true, BUTTON1 = true, BUTTON2 = true }
+Controls.MOUSE = { LeftButton = "BUTTON1", RightButton = "BUTTON2", MiddleButton = "BUTTON3" } -- the rest: ButtonN
 Controls.TEXT = {
     press = "Press a key",
-    pressTip = "Press the key (with Shift, Ctrl or Alt if you like). Esc: keep it as it was.",
     unbound = Core.Word("NOT_BOUND", "Not bound"),
-    keyTip = "Click, then press the key you want for it. Right click: no key.",
+    keyTip = "Click, then press the key you want for it, with Shift, Ctrl or Alt if you like (Alt-Shift-V). "
+        .. "Esc: keep it as it was. Right click: no key.",
     fight = "Keys can be changed out of a fight only.",
     taken = "%s no longer does: %s.",
 }
@@ -266,15 +273,58 @@ function Controls.Bind(command, key)
     return true
 end
 
--- The key pressed with the modifiers held, in the game's order ("ALT-CTRL-SHIFT-F"); nil for a modifier alone.
+-- The key pressed with the modifiers held, as the game's key binding window makes it (its BindingUtil: a mouse
+-- button "MiddleButton" as "BUTTON3", the modifiers in its order, "ALT-CTRL-SHIFT-V"); nil for a modifier alone, the
+-- two main mouse buttons or a key the game does not know.
+local function Converted(key)
+    local converted = Core.Ask(rawget(_G, "GetConvertedKeyOrButton"), key)
+    if type(converted) == "string" then return converted end
+    if type(key) ~= "string" then return nil end
+    local number = key:match("^Button(%d+)$")
+    return number and ("BUTTON" .. number) or Controls.MOUSE[key] or key
+end
 function Controls.Chord(key)
-    if Controls.MODIFIERS[key] then return nil end
+    key = Converted(key)
+    if type(key) ~= "string" or key == "" or Controls.MODIFIERS[key] then return nil end
+    local ignored = rawget(_G, "IsKeyPressIgnoredForBinding")
+    if ignored and Core.Ask(ignored, key) == true then return nil end
+    local made = Core.Ask(rawget(_G, "CreateKeyChordStringUsingMetaKeyState"), key)
+    if type(made) == "string" and made ~= "" then return made end
     local chord = ""
     if IsAltKeyDown() then chord = chord .. "ALT-" end
     if IsControlKeyDown() then chord = chord .. "CTRL-" end
     if IsShiftKeyDown() then chord = chord .. "SHIFT-" end
     return chord .. key
 end
+
+-- The one frame that hears the key a box waits for, as the game's own key listener (KeybindListener): over the
+-- window, given its OnKeyDown only while a box waits. A frame with that script takes the keyboard and passes no key on,
+-- so a box holding the script all along kept every key from the box clicked (a step of several keys: only the top
+-- one heard any). One box waits at a time; the one waiting before is let go (its Release).
+local listener, waiting
+function Controls.Wait(box)
+    local before = waiting
+    waiting = box
+    if before and before ~= box and before.Release then before.Release() end
+    if not listener then
+        listener = CreateFrame("Frame")
+        listener:SetFrameStrata(Controls.LISTENER)
+        listener.Heard = ns.Guard(function(_, key)
+            if waiting and waiting.Heard then waiting.Heard(key) end
+        end)
+        Controls.listener = listener
+    end
+    if box then
+        listener:Show()
+        listener:SetScript("OnKeyDown", listener.Heard)
+        listener:EnableKeyboard(true)
+    else
+        listener:SetScript("OnKeyDown", nil) -- the keyboard let go: back to the game
+        listener:EnableKeyboard(false)
+        listener:Hide()
+    end
+end
+function Controls.Waiting() return waiting end
 
 -- A key of the game's or a module's (its command): its words and a box with its keys, in the thin golden outline.
 local function Key(host, entry, width)
@@ -284,10 +334,11 @@ local function Key(host, entry, width)
     words:SetPoint("LEFT", row, "LEFT", 2, 0)
     words:SetPoint("RIGHT", row, "RIGHT", -(Controls.KEY[1] + 8), 0)
     words:SetText(entry.text or rawget(_G, "BINDING_NAME_" .. entry.binding) or entry.binding)
+    -- The box never takes the keyboard itself (Controls.Wait hears the key for it).
     local box = CreateFrame("Button", nil, row)
     box:SetSize(Controls.KEY[1], Controls.KEY[2])
     box:SetPoint("RIGHT", row, "RIGHT", 0, 0)
-    box:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    box:RegisterForClicks("AnyUp")
     local outline = Look.Outline(box)
     local label = Words(box, Look.GOLD)
     label:SetPoint("LEFT", box, "LEFT", 6, 0)
@@ -299,7 +350,18 @@ local function Key(host, entry, width)
     end
     local function Stop()
         box.listening = false
-        box:EnableKeyboard(false)
+        if Controls.Waiting() == box then Controls.Wait(nil) end
+        Shown()
+    end
+    box.Release = Stop
+    -- A key (or a mouse button) while it waits: Esc keeps the key as it was, a modifier alone waits on for the rest.
+    function box.Heard(key)
+        if not box.listening then return end
+        if key == "ESCAPE" then return Stop() end
+        local chord = Controls.Chord(key)
+        if not chord then return end
+        Stop()
+        if Controls.Bind(entry.binding, chord) then Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON") end
         Shown()
     end
     box:SetScript("OnClick", ns.Guard(function(_, mouse)
@@ -308,19 +370,10 @@ local function Key(host, entry, width)
             if Controls.Bind(entry.binding, nil) then Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF") end
             return Shown()
         end
+        if box.listening and mouse ~= "LeftButton" then return box.Heard(mouse) end -- the middle or a side button
         if InCombatLockdown() then return Core.Print(Controls.TEXT.fight) end
         box.listening = true
-        box:EnableKeyboard(true)
-        box:SetPropagateKeyboardInput(false)
-        Shown()
-    end))
-    box:SetScript("OnKeyDown", ns.Guard(function(_, key)
-        if not box.listening then return end
-        if key == "ESCAPE" then return Stop() end
-        local chord = Controls.Chord(key)
-        if not chord then return end
-        Stop()
-        if Controls.Bind(entry.binding, chord) then Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON") end
+        Controls.Wait(box)
         Shown()
     end))
     box:SetScript("OnHide", ns.Guard(function() if box.listening then Stop() end end))
