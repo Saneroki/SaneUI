@@ -42,16 +42,15 @@ Layout.INPUT_RIGHT = Layout.GRIP_ROOM + Layout.FACE + 2 -- it ends before the sm
 
 -- The full screen's first layout (Board.lua, Default: Core's board lays out the others): side by side, each as high
 -- as the room, the conversations (Conversations.lua) at the left, whose part beside their list holds the chat chosen
--- there (a conversation, the chat or the second chat), the friends list (Friends.lua, the group finder one of its
--- tabs) beside them, the guild window (Guild.lua) at the right. As wide as SHARES share the room (Saneroki,
--- 2026-11-18: "look at this picture to see what size I like the panels as default"; measured on his full screen:
--- 650, 390 and 889 pixels side by side), each at least as wide as it may be: the conversations TALKS_MIN, the
--- friends list FRIENDS_WIDTH, the guild window GUILD_LEAST of its own width. Where the room lacks that, the guild
--- window is left out, then the friends list; one left out, or not wished, gives its share to the conversations. All
--- within PAD of the screen and of each other. Without the conversations (want.talks) the chat stands in their
--- place, CHAT_MIN wide at least.
+-- there (a conversation, the chat or the second chat), and the friends list (Friends.lua, the group finder one of its
+-- tabs) at the right: two thirds and one third of the room (SHARES; Saneroki, 2026-11-18: "on the social full screen
+-- as default there should only be the conversation window 2/3rd of the fullscreen and one third of the window to the
+-- right is the friendslist window"). The guild window comes only when you put it there (the dropdown Windows, the
+-- setup's tick: beside the friends list). Each at least as wide as it may be: the conversations TALKS_MIN, the
+-- friends list FRIENDS_WIDTH; where the room lacks that, the friends list is left out. All within PAD of the screen
+-- and of each other. Without the conversations (want.talks) the chat stands in their place, CHAT_MIN wide at least.
 Layout.PAD = SaneUI.Core.Board.PAD                -- (Core's board's)
-Layout.SHARES = { talks = 650, friends = 390, guild = 889 } -- the first layout's widths, as shares of the room
+Layout.SHARES = { talks = 2, friends = 1 }     -- the first layout's widths, as shares of the room
 Layout.FRIENDS_WIDTH = 340                     -- the game's friends list is as wide (Blizzard_FriendsFrame)
 Layout.FRIENDS_LOW = 220                       -- the friends list at its lowest
 Layout.GUILD_LEAST = 0.6                       -- the guild window made smaller to this much of its size at most
@@ -129,68 +128,28 @@ end
 
 -- Where each part of the full screen stands, in a room that wide and high (what the window holds, under its
 -- title bar): { left, top, width, height } from the room's top left corner, whole pixels. want: which parts are
--- wished: friends, talks (true), guild ({ width, height }: the guild window's own size, framed), list (the width the
--- conversations' list was dragged to). A part not wished, or without room, is nil; chat is always there: the
--- conversations' part beside their list and under the line with its name, or their place.
+-- wished: friends, talks (true), list (the width the conversations' list was dragged to). A part not wished, or
+-- without room, is nil; chat is always there: the conversations' part beside their list and under the line with its
+-- name, or their place.
 function Layout.Board(width, height, want)
     local pad = Layout.PAD
     local top, high = pad, math.floor(height) - 2 * pad
     local room = math.floor(width) - 2 * pad
     local first = want.talks and "talks" or "chat"
-    local columns = { { key = first, least = want.talks and Layout.TALKS_MIN or Layout.CHAT_MIN } }
-    if want.friends then columns[#columns + 1] = { key = "friends", least = Layout.FRIENDS_WIDTH } end
-    local guild = want.guild
-    if guild and guild[1] > 0 and guild[2] > 0 then
-        columns[#columns + 1] = { key = "guild", least = math.ceil(guild[1] * Layout.GUILD_LEAST) }
-    end
-    -- Too little room for each at its least: the guild window is left out, then the friends list.
-    local function Needed()
-        local sum = pad * (#columns - 1)
-        for _, column in ipairs(columns) do sum = sum + column.least end
-        return sum
-    end
-    while #columns > 1 and Needed() > room do table.remove(columns) end
+    local least = want.talks and Layout.TALKS_MIN or Layout.CHAT_MIN
     local board = {}
-    if #columns == 1 and room < columns[1].least then -- not even the conversations: the chat alone
+    if want.friends and room - pad >= least + Layout.FRIENDS_WIDTH then
+        -- The friends list its share, between its least and what leaves the first its least.
+        local free, S = room - pad, Layout.SHARES
+        local friends = math.floor(free * S.friends / (S.talks + S.friends))
+        friends = math.min(math.max(friends, Layout.FRIENDS_WIDTH), free - least)
+        board[first] = { pad, top, free - friends, high }
+        board.friends = { pad + free - friends + pad, top, friends, high }
+    elseif room >= least then
+        board[first] = { pad, top, room, high }
+    else -- not even the conversations: the chat alone
         board.chat = { pad, top, room, high }
         return board
-    end
-    -- Each its share (one left out gives its share to the first); one below its least takes that, the others share
-    -- the rest anew.
-    local shares, taken = {}, 0
-    for index, column in ipairs(columns) do
-        shares[index] = Layout.SHARES[column.key] or Layout.SHARES.talks
-        taken = taken + shares[index]
-    end
-    local whole = Layout.SHARES.talks + Layout.SHARES.friends + Layout.SHARES.guild
-    shares[1] = shares[1] + math.max(whole - taken, 0)
-    local free, fixed = room - pad * (#columns - 1), {}
-    local rest, total
-    repeat
-        local again = false
-        rest, total = free, 0
-        for index in ipairs(columns) do
-            if fixed[index] then rest = rest - fixed[index] else total = total + shares[index] end
-        end
-        for index, column in ipairs(columns) do
-            if not fixed[index] and math.floor(rest * shares[index] / total) < column.least then
-                fixed[index], again = column.least, true
-            end
-        end
-    until not again or total == 0
-    local x, used, last = pad, 0, nil
-    for index in ipairs(columns) do
-        if not fixed[index] then last = index end
-    end
-    for index, column in ipairs(columns) do
-        local size = fixed[index]
-        if not size then
-            size = index == last and rest - used or math.floor(rest * shares[index] / total)
-            used = used + size
-        end
-        if index == 1 and not last then size = size + rest end -- each at its least: the first takes what is left
-        board[column.key] = { x, top, size, high }
-        x = x + size + pad
     end
     local talks = board.talks
     if talks then

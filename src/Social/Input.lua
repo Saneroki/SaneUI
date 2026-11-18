@@ -208,9 +208,10 @@ local function Dress(editBox)
         if editBox.UpdateHeader then hooksecurefunc(editBox, "UpdateHeader", Changed) end
         if editBox.Deactivate then hooksecurefunc(editBox, "Deactivate", Deactivated) end
     end
-    -- The line reaches past the box by the room around its text: the plate shows it, and a click there is the box's.
+    -- The line reaches past the box by the room around its text: the plate shows it, and a click there is the box's;
+    -- and over the smiley beside it, whose click is the line's, so the line keeps its cursor (Picker.lua).
     local _, above, below = OneLine(editBox)
-    editBox:SetHitRectInsets(0, 0, -above, -below)
+    editBox:SetHitRectInsets(0, -(Layout.INPUT_RIGHT - Layout.GRIP_ROOM), -above, -below)
     plate:ClearAllPoints()
     plate:SetPoint("TOPLEFT", editBox, "TOPLEFT", Layout.INPUT_INSET, above - Layout.INPUT_INSET)
     plate:SetPoint("BOTTOMRIGHT", editBox, "BOTTOMRIGHT", -Layout.INPUT_INSET, Layout.INPUT_INSET - below)

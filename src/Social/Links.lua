@@ -16,7 +16,10 @@ local _, ns = ...
 --  (Doc/guides/addon-standards.md, section 5). So a click on a kind the game
 --  answers with its link tooltip, a menu or a whisper, with no key held or the
 --  one that puts a link into the line; nothing for any other key (the dressing
---  room's) or kind.
+--  room's) or kind. A right click on a player is their menu, opened by
+--  Social with the frame clicked on as its owner (PlayerMenu.lua: the game's
+--  own way owns it by its chat frame, out of sight under our window, and the
+--  menu would close as it opened).
 -------------------------------------------------------------------------------
 local Links = {}
 ns.Links = Links
@@ -47,7 +50,7 @@ local CLICKED = {
     instancelock = true, battlepet = true, battlePetAbil = true,
 }
 
-local function Click(link, text, button)
+local function Click(owner, link, text, button)
     local kind = link:match("^(%a+):")
     if not CLICKED[kind] then return end
     -- The dressing room and an item's own window are panels; on a channel the link key opens the game's list of
@@ -60,9 +63,7 @@ local function Click(link, text, button)
     -- failed"), and the tooltip on the mouse shows the link already.
     if not down and SHOWN[kind] and InCombatLockdown() then return end
     -- A right click on a player: the game's menu of them, with Social's lines under it (PlayerMenu.lua).
-    if button == "RightButton" and ns.PlayerMenu and (kind == "player" or kind == "BNplayer") then
-        return ns.PlayerMenu.With({}, SetItemRef, link, text, button, DEFAULT_CHAT_FRAME)
-    end
+    if button == "RightButton" and not down and ns.PlayerMenu and ns.PlayerMenu.Link(owner, link) then return end
     SetItemRef(link, text, button, DEFAULT_CHAT_FRAME)
 end
 
@@ -72,5 +73,5 @@ function Links.Enable(frame)
     frame:SetScript("OnHyperlinkEnter", function(self, link) ns.Guarded(Enter, self, link) end)
     frame:SetScript("OnHyperlinkLeave", ns.Guard(function() GameTooltip:Hide() end))
     -- A click is a step of its own (Safe): a link the game's handling fails on is noted, the window stays.
-    frame:SetScript("OnHyperlinkClick", function(_, link, text, button) ns.Safe("link", Click, link, text, button) end)
+    frame:SetScript("OnHyperlinkClick", function(self, link, text, button) ns.Safe("link", Click, self, link, text, button) end)
 end

@@ -55,12 +55,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     fitted to your screen until you change it; then it is kept as you left it. *+* makes an empty layout. A
     right click on a tab renames it, resets the first to the arrangement below, or deletes another. The
     layouts are the same on all your characters.
-  - **At first** (the tab *Default*; Saneroki, 2026-11-18: "look at this picture to see what size I like the
-    panels as default"): three windows side by side, each as high as the screen: the conversations at the left (a
-    third of the width), the friends list beside them (a fifth), the guild window at the right (the rest, nearly
-    half). On a smaller screen the conversations and the friends list keep their least width and the guild window
-    is narrower; where it would be too narrow it is left out, and so is the friends list after it. Out of a guild,
-    or with the guild window closed, the conversations take its room.
+  - **At first** (the tab *Default*; Saneroki, 2026-11-18: "on the social full screen as default there should only
+    be the conversation window 2/3rd of the fullscreen and one third of the window to the right is the friendslist
+    window"): two windows side by side, each as high as the screen: the conversations on two thirds at the left,
+    the friends list on the third at the right. On a smaller screen the friends list keeps its least width; where
+    the two lack theirs, the friends list is left out. The guild window comes only when you put it there (the
+    dropdown *Windows*, or the setup's tick: beside the friends list, sharing its room).
   - **Guild window** at the right: the very window the guild key opens, held in its window there and
     working as always: the game's own guild and communities window, or the window of another addon that
     answers the guild key instead. With the module Guild on, Guild's own guild window stands here instead (offered
@@ -132,8 +132,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     wider or narrower (the mouse shows the game's sizing cursor on it); let go, the one chosen takes the rest,
     and the width is kept.
   - A layout without the conversations has no chat in it (the line to write in still opens, at the screen's
-    bottom). On a narrow screen the first layout makes the guild window smaller, then leaves it out, then the
-    friends list. The search in the
+    bottom). On a narrow screen the first layout leaves the friends list out. The search in the
     title bar finds in all of them: messages (in the chat and the chat views), friends (name, where, note),
     groups (leader, activity, comment) and conversations (by name or by their messages). Going back, the
     panels go at once, the guild window with them, and the chat has the whole window.
@@ -187,8 +186,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   game's eight raid marks (star to skull): a click puts one into the line where the cursor is, and once
   sent it shows as its icon in everybody's chat. These are the only icons the game's chat draws from what
   a player writes; it shows none in its public channels (General, Trade, ...), so while you write in one
-  the list says so instead (on an empty line too: the click keeps the line open for a mark; Saneroki, 2026-11-18:
-  "While the input field is empty clicking the smiley will close the input"). Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
+  the list says so instead (on an empty line too: a click on the smiley is the line's, so the line stays open;
+  Saneroki, 2026-11-18: "While the input field is empty clicking the smiley will close the input"). Under them emotes played most (`/hello`, `/wave`, `/bye`, `/thank`,
   `/welcome`, `/cheer`, `/applaud`, `/congratulate`, `/laugh`, `/dance`, `/bow`, `/hug`): a click does it
   at once, at your target if you have one, as typing it would. While chat is locked down (a fight, a
   dungeon) the list offers no emotes and says so: the game refuses them to an addon then.
@@ -402,11 +401,18 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `SANEUI_SOCIAL_FRIENDS` and `SANEUI_SOCIAL_FINDER` (`Bindings.xml`) on the keys of `TOGGLESOCIAL`, `TOGGLEFRIENDSTAB` and
   `TOGGLEGROUPFINDER` while `Keys.Taken` (the switch, the module, `expand`, Edit Mode closed; the finder's not where
   `ns.RetailFinder` or with `boardFinder` off), out of a fight; `Keys.Press(tab)`: `Window.Standing`, `Board.Put`,
-  `Friends.Want` (the tab once the panel is made). The player menu (`PlayerMenu.lua`): `PlayerMenu.With(what, fn, ...)`
-  opens the game's menu with `asked` set, and `Menu.ModifyMenu` on `MENU_UNIT_FRIEND`, `_OFFLINE`, `BN_FRIEND`,
-  `_OFFLINE` adds Social's lines only then (and to that menu made anew: a weak table by its context); from `Links.lua`
-  (a right click on a player link), `Select.lua` (on the full screen, `Let` with the right button: the message under
-  the mouse, `PlayerMenu.Message`, its link's own right click) and `Conversations.lua` (`PlayerMenu.Talk`). *Pin them on
+  `Friends.Want` (the tab once the panel is made). The player menu (`PlayerMenu.lua`): `Open(owner, who, what)` builds
+  the context the game's `FriendsFrame_ShowDropdown` and `FriendsFrame_ShowBNDropdown` build (name, `lineID`,
+  `chatType`, `chatTarget`, `chatFrame` the game's `DEFAULT_CHAT_FRAME`, `bnetIDAccount`, `battleTag`), with
+  `ownerFrame` the part of ours clicked on, and opens it by `UnitPopup_OpenMenu` (`FRIEND` or `BN_FRIEND`): Forever's
+  versions of those make the chat frame the owner, and the game's menu manager closes a menu at once whose owner is
+  out of sight (`ownerRegion:IsVisible()`), as the game's chat is under ours (`Native.lua`). `PlayerMenu.With(what,
+  fn, ...)` opens it with `asked` set, and `Menu.ModifyMenu` on `MENU_UNIT_FRIEND`, `_OFFLINE`, `BN_FRIEND`, `_OFFLINE`
+  adds Social's lines only then (and to that menu made anew: a weak table by its context). `PlayerMenu.Who(link)`
+  reads a player's link (`player:`, `BNplayer:`, not your own account's); `PlayerMenu.Link(owner, link)` from
+  `Links.lua` (a plain right click on a player link, the frame with the link its owner), `PlayerMenu.Message(box,
+  entry)` from `Select.lua` (on the full screen, `Let` with the right button: the message under the mouse, its link)
+  and `PlayerMenu.Talk(row, ...)` from `Conversations.lua`. *Pin them on
   the map*: the game's user waypoint (`C_Map.SetUserWaypoint`, `C_SuperTrack`), only for a member of your group whose
   place `C_Map.GetPlayerMapPosition` tells; *Show on map*: `Core.Ways.Look(name)`, served by Navigation's map search. The
   section *Expand window* is Core's (`Edge.Options`, with its corner switches, `Shape.Options`), put at the
@@ -533,7 +539,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   (`Interface\ChatFrame\UI-ChatIcon-Chat-Up` / `-Down`).
 - **The smiley** (`Picker.lua`) is a child of the window at its lower right, left of the grip
   (`Layout.GRIP_ROOM`, `Layout.FACE`; the line ends before it, `Layout.INPUT_RIGHT`), on the first line's
-  height, shown by `Input` whenever the line is dressed and hidden when it rests, closes or is given back.
+  height, shown by `Input` whenever the line is dressed and hidden when it rests, closes or is given back. It takes
+  only the mouse's coming (`SetMouseMotionEnabled`, not `SetMouseClickEnabled`): its light and tooltip, `hovered`.
+  The line's hit rectangle reaches over it (`Input` `Dress`: right inset `-(INPUT_RIGHT - GRIP_ROOM)`), so a press
+  there is the line's, which keeps its cursor (a press elsewhere takes it, and the game puts an empty line to rest,
+  `ShouldDeactivateChatOnEditFocusLost`); the line's `OnMouseUp` (hooked once per line, `Picker.Show`) over the
+  smiley opens the list (`Picker.Open`). A client without those two ways clicks the smiley itself (`OnClick`).
   Its list is the game's menu (`MenuUtil.CreateContextMenu`): a title, the marks, a divider, a title, the
   emotes. The marks are one line of the menu (`CreateFrame` with an initializer), eight buttons attached
   to it with `MenuTemplates.AttachBasicButton`, each with the game's mark art
@@ -824,9 +835,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **The full screen's windows** (`Board.lua` on Core's board, `Core.Board`, Doc/guides/windows.md section 7, *The
   board*): Social gives Core its windows (`talks`, `friends`, `guild`: each a part's `Build`, `Show`, `Size`,
   `Search` behind `ns.Safe`, and its `least`; the guild window's `present` asks `Guild.Size`) and the first
-  layout (`Default`: the rooms of `Layout.Board`, the guild window's framed with its panel's head and edges, made
-  a layout: the conversations, the friends list and the guild window side by side, shares as large as the
-  rooms). Core lays the layout chosen out, makes and places the panels (`Board.panels` is its table) and gives
+  layout (`Default`: the rooms of `Layout.Board` made a layout: the conversations and the friends list side by
+  side, shares as large as the rooms). Core lays the layout chosen out, makes and places the panels (`Board.panels` is its table) and gives
   back each window's rect; `Board.Show` holds the guild window in its panel's body (`Guild.Hold`) and returns
   the chat's place (`chat`: the conversations' part beside their list and under the line with the name), none
   without the conversations (then `Window`'s `Shows` is nil and the chat is out of sight). A change on the
@@ -834,7 +844,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `store.board`. `Layout.HEADER` and `Layout.PAD` are Core's board's `HEAD` and `PAD`.
 - **The guild window** (`Guild.lua`): not built anew but held. `Board.Show` asks `Guild.Size` for its own size
   (in the full window's units: its seat's `Size`, the size it has when not seated, times `UIParent`'s effective
-  scale over ours) for the first layout, then `Guild.Hold` seats it in its panel's body. Which window: the one open after the guild key's work (`ToggleGuildFrame`,
+  scale over ours): whether there is one to hold (its spec's `present`), then `Guild.Hold` seats it in its panel's body. Which window: the one open after the guild key's work (`ToggleGuildFrame`,
   the game's way, out of a fight once per full screen), found among the windows the game knows by name, those
   Esc closes (`UISpecialFrames`) and its panels (`UIPanelWindows`): the largest that was not open before,
   `Guild.LOOK` (0.2 s) later. So it is the game's `CommunitiesFrame`, or the window another addon shows when it
@@ -946,6 +956,14 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-18 — Going through the onboarding again (Saneroki: "the changes we made during that prompt including the
+  fix to the smiley never worked"): a right click on a name, a message or a whisper's row opens the game's menu of
+  that player owned by Social's part (`PlayerMenu.Open`, by `UnitPopup_OpenMenu`; Forever's game code made its hidden
+  chat frame the owner, and its menu manager closed the menu as it opened); the smiley takes no click, the line
+  reaching over it takes the press and keeps its cursor (`Picker.lua`, `Input.lua`'s hit rectangle). The full
+  screen's first layout: the conversations on two thirds, the friends list on the third at the right
+  (`Layout.SHARES` 2 and 1, `Layout.Board` without the guild window); the guild window only when put there (the
+  dropdown *Windows*, the setup's tick: sharing the friends list's room); the setup's drawn full screen so.
 - 2026-11-18 — The chat window at first 686 × 307.5, docked in the lower left corner (`Layout.WIDTH`, `HEIGHT`), as
   Saneroki has it.
 - 2026-11-18 — Going through the onboarding (Saneroki): a right click on a whisper's or a group's row has *Delete

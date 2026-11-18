@@ -269,7 +269,7 @@ end
 local function Let(box, button)
     if button == "RightButton" then
         local entry = Under(box)
-        if entry and ns.PlayerMenu then ns.PlayerMenu.Message(entry) end
+        if entry and ns.PlayerMenu then ns.PlayerMenu.Message(box, entry) end
         return
     end
     if button ~= "LeftButton" or not held then return end

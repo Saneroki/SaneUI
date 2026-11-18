@@ -75,8 +75,9 @@ is on. The other views say they come later.
   (`Core.Board.Open`), closes it when it shows (`Core.Board.Close`), and falls back to the window of its own
   (`Core.Window.New`, kind `panel`) where no board answers; outside a guild it opens nothing and says so (a window of
   its own still open closes). The switch *On Social's Full Screen* withdraws the offer (`Core.Board.Withdraw`). The
-  spec has no `present`, so a layout that holds it always shows it; out of a guild its `want` gives no room (Social's
-  first layout leaves it out) and the page shows `page.empty` in place of its tabs and views (`Head`). A guild joined
+  spec has no `present`, so a layout that holds it always shows it; out of a guild its `want` gives no room (for a
+  board's first layout that reads it; Social's has no guild window since 2026-11-18) and the page shows `page.empty`
+  in place of its tabs and views (`Head`). A guild joined
   or left lays the board out anew (`PLAYER_GUILD_UPDATE`, only when it really changed; `Core.Board.Told`).
 - **The guild key** (`Keys.lua`, `Bindings.xml`): override bindings on the keys of the game's `TOGGLEGUILDTAB` run our
   `SANEUI_GUILD_TOGGLE` while the player is in a guild, set out of a fight (or after it), again when the bindings

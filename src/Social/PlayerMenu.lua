@@ -25,11 +25,21 @@ local _, ns = ...
 --  A group's conversation has no one player: its row's right click is a menu
 --  of Social's own, its name and Delete conversation.
 --
---  Where it opens: a right click on a name above a bubble (Links.lua, the
---  game's handling of a player link), on a message on the full screen
---  (Select.lua: the list takes the mouse there), and on a whisper's row in the
---  conversations' list (Conversations.lua). The chat at its size lets every
---  click but a link's through into the game, so there the name opens it.
+--  Where it opens: a right click on a name above a bubble (Links.lua), on a
+--  message on the full screen (Select.lua: the list takes the mouse there),
+--  and on a whisper's row in the conversations' list (Conversations.lua). The
+--  chat at its size lets every click but a link's through into the game, so
+--  there the name opens it.
+--
+--  Opened here (Open), not by the game's FriendsFrame_ShowDropdown or its
+--  handling of a player link: those make the chat frame they are given the
+--  menu's owner, and the game closes a menu the moment its owner is out of
+--  sight (its menu manager, ownerRegion:IsVisible). The game's chat is out of
+--  sight under Social's window (Native.lua), so in Forever its menu closed as
+--  it opened (Saneroki, 2026-11-18: "never worked"). So the menu is the game's
+--  very menu of a player (UnitPopup_OpenMenu, with what those give it), its
+--  owner the part of ours clicked on; its chat frame stays the game's, where
+--  Whisper writes (in the line, which is in our window, Input.lua).
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local PlayerMenu = {}
@@ -152,18 +162,65 @@ if Menu and Menu.ModifyMenu then
     for _, which in ipairs(PlayerMenu.MENUS) do Menu.ModifyMenu("MENU_UNIT_" .. which, ns.Guard(Extend)) end
 end
 
+-- The game's menu of a player, owned by owner (a part of ours on show), with Social's lines for what. who: name, and
+-- where they wrote (lineID, chatType); a Battle.net friend's account and battleTag. The context is the very one the
+-- game's FriendsFrame_ShowDropdown and FriendsFrame_ShowBNDropdown make, the owner aside. False where the game has no
+-- such menu.
+local function Open(owner, who, what)
+    local open = rawget(_G, "UnitPopup_OpenMenu")
+    if not open or type(who.name) ~= "string" or who.name == "" then return false end
+    local context = {
+        name = who.name, lineID = who.lineID, chatType = who.chatType, chatTarget = who.name,
+        chatFrame = DEFAULT_CHAT_FRAME, bnetIDAccount = who.account, battleTag = who.battleTag, ownerFrame = owner,
+    }
+    opened[context] = what
+    With(what, open, who.account and "BN_FRIEND" or "FRIEND", context)
+    return true
+end
+PlayerMenu.Open = Open
+
+-- The parts of a link's options, split at its colons (empty ones kept).
+local function Parts(text)
+    local parts = {}
+    for part in (text .. ":"):gmatch("([^:]*):") do parts[#parts + 1] = part end
+    return parts
+end
+
+-- Whom a player's link names ("player:Name-Realm:lineID:chatType", "BNplayer:name:account:lineID:chatType"); nil
+-- for any other link, or a Battle.net link of your own.
+function PlayerMenu.Who(link)
+    if type(link) ~= "string" then return nil end
+    local kind, rest = link:match("^(%a+):(.*)$")
+    if kind == "player" then
+        local name, lineID, chatType = unpack(Parts(rest))
+        return { name = name, lineID = tonumber(lineID), chatType = chatType }
+    elseif kind == "BNplayer" then
+        local name, account, lineID, chatType = unpack(Parts(rest))
+        account = tonumber(account)
+        local isSelf = rawget(_G, "BNIsSelf")
+        if not account or (isSelf and Core.Ask(isSelf, account) == true) then return nil end
+        return { name = name, account = account, lineID = tonumber(lineID), chatType = chatType }
+    end
+    return nil
+end
+
+-- A right click on a player's link in a part of ours (owner): their menu; false where it is none of a player's.
+function PlayerMenu.Link(owner, link)
+    local who = PlayerMenu.Who(link)
+    return who ~= nil and Open(owner, who, {})
+end
+
 -- A whisper's row: the game's menu of the player (a Battle.net friend's for one), with Delete conversation; a group's
 -- row: Social's own, its name and Delete conversation. removed() tells the list once one is gone.
 function PlayerMenu.Talk(owner, talk, removed)
     local what = { talk = talk, removed = removed }
     if talk.kind == "WHISPER" then
-        local show = rawget(_G, "FriendsFrame_ShowDropdown")
-        if show then return With(what, show, talk.with, true, nil, "WHISPER", DEFAULT_CHAT_FRAME) end
+        if Open(owner, { name = talk.with, chatType = "WHISPER" }, what) then return end
     elseif talk.kind == "BN_WHISPER" then
-        local show, account = rawget(_G, "FriendsFrame_ShowBNDropdown"), ns.Talks.Account(talk)
-        if show and account then
-            return With(what, show, talk.name, true, nil, "BN_WHISPER", DEFAULT_CHAT_FRAME, nil, account, nil, nil, nil, nil,
-                talk.with)
+        local account = ns.Talks.Account(talk)
+        if account and Open(owner, { name = talk.name, account = account, chatType = "BN_WHISPER", battleTag = talk.with },
+            what) then
+            return
         end
     end
     MenuUtil.CreateContextMenu(owner, ns.Guard(function(_, root)
@@ -172,12 +229,10 @@ function PlayerMenu.Talk(owner, talk, removed)
     end))
 end
 
--- A message on the full screen: the game's menu of whoever wrote it, as a right click on the name above it opens it
--- (its player link: whisper, report with the very line, ...); nothing for yours, a note or a creature's.
-function PlayerMenu.Message(entry)
+-- A message on the full screen (owner: its list): the game's menu of whoever wrote it, as a right click on the name
+-- above it opens it (whisper, report with the very line, ...); nothing for yours, a note or a creature's.
+function PlayerMenu.Message(owner, entry)
     if type(entry) ~= "table" or entry.side ~= "left" or type(entry.link) ~= "string" then return end
-    if not entry.link:find("^|H[Bb]?N?player") then return end
-    local link, text = entry.link:match("^|H(.-)|h(.-)|h")
-    if not link then return end
-    With({}, SetItemRef, link, text, "RightButton", DEFAULT_CHAT_FRAME)
+    local link = entry.link:match("^|H(.-)|h")
+    if link then PlayerMenu.Link(owner, link) end
 end

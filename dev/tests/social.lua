@@ -165,6 +165,20 @@ C_RecentAllies = { IsSystemEnabled = function() return true end, IsRecentAllyDat
 C_CreatureInfo = { GetClassInfo = function(id) return id == 1 and { className = "Warrior", classFile = "WARRIOR" } or { className = "Shaman", classFile = "SHAMAN" } end,
                    GetRaceInfo = function() return { raceName = "Tauren" } end }
 UnitPopup_OpenMenu = function(which, data) asks[#asks + 1] = "menu " .. which .. " " .. tostring(data.name) end
+-- The game's menu of a player as its menu manager has it (UnitPopupManager:OpenMenu): owned by the context's
+-- ownerFrame (else the screen), made with its tag's hooks (Menu.ModifyMenu), and closed at once where that owner is out
+-- of sight (the manager's OnUpdate: ownerRegion:IsVisible()). (A field: the main chunk is at the game's limit of locals.)
+function W.UnitMenu(which, context)
+    local owner = context.ownerFrame or UIParent
+    local menu = MenuUtil.CreateContextMenu(owner, function(_, root)
+        root:CreateTitle(context.name)
+        local modify = W.menuModifiers and W.menuModifiers["MENU_UNIT_" .. which]
+        if modify then modify(owner, root, context) end
+    end)
+    menu.which, menu.context = which, context
+    if not owner:IsVisible() then menu:Close() end
+    return menu
+end
 -- A raid: you lead group 1 with Thrall, Rexxar is in group 2, offline; saved to one instance.
 local RAID = { { "Tester", 2, 1, 60, "Warrior", "WARRIOR", "Orgrimmar", true, false },
                { "Thrall", 0, 1, 60, "Shaman", "SHAMAN", "Orgrimmar", true, false },
@@ -826,7 +840,17 @@ rawset(_G, "MenuTemplates", { AttachBasicButton = function(parent) return Create
 Menu.GetManager = function() return { CloseMenu = function() closed = closed + 1 end } end
 MenuUtil.HookTooltipScripts = function() end
 function editBox:Insert(text) typed = text end
-smiley._scripts.OnClick(smiley)
+-- A click on the smiley as the game delivers it: the smiley takes only the mouse's coming, the line reaches over it
+-- and takes the press, so the line keeps its cursor; the line's mouse up over the smiley opens the list.
+check(smiley._mouse == false and smiley._motion == true and editBox.hit and editBox.hit[1] == 0
+    and editBox.hit[2] == -(Layout.INPUT_RIGHT - Layout.GRIP_ROOM),
+    "the smiley takes no click, only the mouse's coming; the line reaches over it, so a press there is the line's")
+function W.Smile() -- (a field: the main chunk is at the game's limit of locals)
+    smiley._scripts.OnEnter(smiley)
+    editBox._scripts.OnMouseUp(editBox, "LeftButton")
+    smiley._scripts.OnLeave(smiley)
+end
+W.Smile()
 menu = W.menus[#W.menus]
 check(menu[1].title == "Icons" and menu[2].disabled and menu[2].text:find("public") and menu[3].title == "Emotes" and #menu == 3 + #ns.Picker.EMOTES,
     "writing in the game's public channel (Trade), where the game shows no marks, the list offers none; it has the emotes")
@@ -834,7 +858,7 @@ check(menu[4].text == "/hallo" and menu[5].text == "/wave", "each emote by its c
 menu[4].fn(menu[4].data)
 check(emoted[1] == "HELLO", "a click does the emote, as the game's chat menu does")
 editBox.target = 1
-smiley._scripts.OnClick(smiley)
+W.Smile()
 menu = W.menus[#W.menus]
 local row = CreateFrame("Frame")
 check(menu[2].frame and #menu[2].inits == 1, "anywhere else the marks stand in one row")
@@ -847,29 +871,26 @@ check(typed == "{rt8}" and closed == 1, "a mark goes into the line as the game w
 editBox.target = 2
 ;(function()
     W.locked = true
-    smiley._scripts.OnClick(smiley)
+    W.Smile()
     local list = W.menus[#W.menus]
     W.locked = false
     check(list[3].title == "Emotes" and list[4].disabled and list[4].text:find("locked down") and #list == 4,
         "while chat is locked down the list offers no emotes (the game refuses them to an addon then), and says why")
 end)()
 
--- An empty line: a press on the smiley takes its cursor and the game puts an empty line to rest (Saneroki, 2026-11-18:
--- "While the input field is empty clicking the smiley will close the input").
+-- An empty line: a press anywhere but on the line takes its cursor, and the game puts an empty line to rest
+-- (Saneroki, 2026-11-18: "While the input field is empty clicking the smiley will close the input"). The press on the
+-- smiley is the line's: it keeps its cursor.
 ;(function()
     open()
     editBox:SetText("")
     editBox.target = 1 -- a channel where the marks show
     check(smiley:IsShown() and editBox:HasFocus(), "the line open and empty, the smiley beside it")
-    smiley._mouseOver = true
-    smiley._scripts.OnMouseDown(smiley, "LeftButton")
-    leave()
-    check(smiley:IsShown(), "the line goes to rest as the press takes its cursor: the smiley stays for its click")
-    smiley._scripts.OnClick(smiley)
+    W.Smile()
     local list = W.menus[#W.menus]
     check(list.owner == window and editBox:HasFocus() and editBox:IsShown() and smiley:IsShown(),
-        "its list opens, the window's (not the smiley's, which may go with the line), and the line is open again")
-    leave() -- the click on the list takes the cursor again: the empty line rests
+        "a click on the smiley opens its list, the window's, and the empty line stays open with its cursor")
+    leave() -- the click on the list takes the cursor: the empty line rests
     local marksRow = CreateFrame("Frame")
     list[2].inits[1](marksRow, nil, "the menu")
     local marks = {}
@@ -877,7 +898,10 @@ end)()
     typed = nil
     marks[3]._scripts.OnClick(marks[3])
     check(typed == "{rt3}" and editBox:HasFocus() and editBox:IsShown(), "a mark goes into that line, opened again for it")
-    smiley._mouseOver = false
+    local count = #W.menus
+    editBox._scripts.OnMouseUp(editBox, "LeftButton")
+    editBox._scripts.OnMouseUp(editBox, "RightButton")
+    check(#W.menus == count, "a click elsewhere in the line, or a right click, opens nothing")
     editBox.target = 2
     close()
 end)()
@@ -1416,17 +1440,23 @@ check(clicked[1] == lockbox and clicked[3] == "LeftButton" and clicked[4] == nat
 body(rows[1])._scripts.OnHyperlinkClick(body(rows[1]), "player:Thrall-Stub:1:SAY", "Thrall", "LeftButton")
 check(clicked[1] == "player:Thrall-Stub:1:SAY", "the speaker's name is the game's link to them: a click on it whispers to them, with the realm")
 ;(function() -- a right click on it: the game's menu of them, with Social's lines under it (PlayerMenu.lua)
-    local itemRef, lines = SetItemRef, {}
-    SetItemRef = function(link, shown, button)
-        clicked = { link, shown, button }
-        W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = "Thrall-Stub", chatType = "SAY" })
-    end
-    body(rows[1])._scripts.OnHyperlinkClick(body(rows[1]), "player:Thrall-Stub:1:SAY", "Thrall", "RightButton")
-    SetItemRef = itemRef
+    local open, menu = UnitPopup_OpenMenu, nil
+    UnitPopup_OpenMenu = function(which, context) menu = W.UnitMenu(which, context) end
+    clicked = nil
+    local name = body(rows[1])
+    name._scripts.OnHyperlinkClick(name, "player:Thrall-Stub:1:SAY", "Thrall", "RightButton")
     local pin
-    for _, item in ipairs(lines) do if item.text == ns.PlayerMenu.TEXT.pin then pin = item end end
-    check(clicked[3] == "RightButton" and pin and pin.disabled,
-        "a right click on the name: the game's menu of them, Social's lines under it (Pin them on the map greyed out)")
+    for _, item in ipairs(menu or {}) do if item.text == ns.PlayerMenu.TEXT.pin then pin = item end end
+    check(menu and menu.which == "FRIEND" and not menu.closed and menu.owner == name and name:IsVisible() and clicked == nil
+        and menu.context.name == "Thrall-Stub" and menu.context.lineID == 1 and menu.context.chatType == "SAY"
+        and menu.context.chatFrame == native and not native:IsVisible() and pin and pin.disabled,
+        "a right click on the name: the game's menu of them, owned by the name (the game closes a menu whose owner is out "
+        .. "of sight, and its chat is, under ours), Whisper into the game's chat; Social's lines under it (Pin greyed out)")
+    menu = nil
+    name._scripts.OnHyperlinkClick(name, "BNplayer:|Kq12|k:12:7:BN_WHISPER", "Jaina", "RightButton")
+    check(menu and menu.which == "BN_FRIEND" and not menu.closed and menu.context.bnetIDAccount == 12
+        and menu.context.lineID == 7, "a Battle.net friend's name: the game's menu of a Battle.net friend")
+    UnitPopup_OpenMenu = open
 end)()
 -- Only clicks that open none of the game's panels go to the game: shown from our code, a panel runs its manager tainted.
 ;(function()
@@ -1924,14 +1954,15 @@ do
         ns.Window.Pick("chat")
         -- A right click on someone's message: the game's menu of them, as a right click on their name (PlayerMenu.lua;
         -- Saneroki, 2026-11-18: "Enable right click on peoples chat messages").
-        local itemRef = SetItemRef
-        local asked
-        SetItemRef = function(link, shown, button) asked = { link, shown, button } end
+        local open, asked = UnitPopup_OpenMenu, nil
+        UnitPopup_OpenMenu = function(which, context) asked = W.UnitMenu(which, context) end
         W.cursorX, W.cursorY = 100 + 6, 375 -- on "hello there", Thrall's
         box._scripts.OnMouseUp(box, "RightButton")
-        check(asked and asked[1]:find("^player:Thrall%-Stub") and asked[3] == "RightButton" and not copy:IsShown(),
-            "a right click on someone's message opens the game's menu of them, as one on their name does; nothing is picked")
-        SetItemRef = itemRef
+        check(asked and asked.which == "FRIEND" and asked.context.name == "Thrall-Stub" and asked.owner == box
+            and not asked.closed and not copy:IsShown(),
+            "a right click on someone's message opens the game's menu of them, as one on their name does, owned by the "
+            .. "list; nothing is picked")
+        UnitPopup_OpenMenu = open
         W.cursorX, W.cursorY = mouseX, mouseY
         check(not Core.errors["Social: selection"], "(nothing went wrong in picking)")
     end
@@ -1968,42 +1999,31 @@ do
     for _, widget in ipairs(W.frames) do
         if widget._parent == window and rawget(widget, "box") then coreBar = widget end
     end
-    -- The full screen's parts (Saneroki, 2026-11-18, his picture): side by side and as high as the room, the
-    -- conversations at the left, the friends list (the group finder a tab of it), the guild window at the right, as
-    -- wide as Layout.SHARES share it; the chat chosen in the conversations beside their list.
+    -- The full screen's parts (Saneroki, 2026-11-18: "on the social full screen as default there should only be the
+    -- conversation window 2/3rd of the fullscreen and one third of the window to the right is the friendslist window"):
+    -- side by side and as high as the room, the conversations on two thirds, the friends list (the group finder a tab
+    -- of it) on the third at the right, as Layout.SHARES share it; the chat chosen in the conversations beside their list.
     local tall = 1080 - Core.Window.FULL_BAR
     local board = Layout.Board(1920, tall, { friends = true, talks = true })
     do
     local S = Layout.SHARES
-    local talksWide = math.floor((1920 - 3 * Layout.PAD) * (S.talks + S.guild) / (S.talks + S.friends + S.guild))
+    local free = 1920 - 3 * Layout.PAD
+    local talksWide = free - math.floor(free * S.friends / (S.talks + S.friends))
+    check(S.talks == 2 * S.friends and S.guild == nil, "the conversations two shares, the friends list one; no guild window")
     check(board.friends and board.talks and not board.guild and board.talks[1] == Layout.PAD and board.talks[3] == talksWide
-        and board.friends[1] == 2 * Layout.PAD + talksWide and board.friends[3] == 1920 - 3 * Layout.PAD - talksWide
+        and board.friends[1] == 2 * Layout.PAD + talksWide and board.friends[3] == free - talksWide
         and board.friends[2] == Layout.PAD and board.friends[4] == tall - 2 * Layout.PAD
         and board.talks[4] == tall - 2 * Layout.PAD and board.chat[1] == Layout.PAD + Layout.TALK_LIST + 1
         and board.chat[2] == Layout.PAD + Layout.HEADER + Layout.TALK_HEAD and board.chat[3] == board.talks[3] - Layout.TALK_LIST - 1
         and board.chat[4] == board.talks[4] - Layout.HEADER - Layout.TALK_HEAD,
-        "out of a guild: the conversations at the left with the guild window's share too, the friends list beside them "
-        .. "as wide as in a guild, the chat beside the conversations' list")
-    local guilded = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 814, 426 } })
-    local three, whole = 1920 - 4 * Layout.PAD, S.talks + S.friends + S.guild
-    check(guilded.guild and guilded.talks[3] == math.floor(three * S.talks / whole)
-        and guilded.friends[3] == math.floor(three * S.friends / whole)
-        and guilded.guild[3] == three - guilded.talks[3] - guilded.friends[3]
-        and guilded.friends[1] == guilded.talks[1] + guilded.talks[3] + Layout.PAD
-        and guilded.guild[1] == guilded.friends[1] + guilded.friends[3] + Layout.PAD
-        and guilded.guild[1] + guilded.guild[3] == 1920 - Layout.PAD and guilded.guild[2] == Layout.PAD
-        and guilded.guild[4] == tall - 2 * Layout.PAD and guilded.friends[4] == tall - 2 * Layout.PAD
-        and math.abs(guilded.friends[3] - board.friends[3]) <= 4, -- the friends list as wide in a guild and out of one
-        "in a guild: three columns as high as the room, as wide as Saneroki's picture shares them: the conversations, "
-        .. "the friends list, the guild window")
-    local small = Layout.Board(1365, 700, { friends = true, talks = true, guild = { 814, 426 } })
-    check(small.guild and small.talks[3] == Layout.TALKS_MIN and small.friends[3] == Layout.FRIENDS_WIDTH
-        and small.guild[3] == 1365 - 4 * Layout.PAD - Layout.TALKS_MIN - Layout.FRIENDS_WIDTH,
-        "on a smaller screen the conversations and the friends list keep their least width, the guild window the rest")
-    local tiny = Layout.Board(1200, 600, { friends = true, talks = true, guild = { 814, 426 } })
-    check(not tiny.guild and tiny.friends and tiny.talks,
-        "where the guild window would be narrower than its least it is left out, the friends list stays")
-    check(not Layout.Board(1920, tall, { friends = true, talks = true, guild = { 0, 0 } }).guild, "a guild window of no size is none")
+        "the conversations on two thirds at the left, the friends list on the third at the right, the chat beside the "
+        .. "conversations' list")
+    local smaller = Layout.Board(1000, 700, { friends = true, talks = true })
+    check(smaller.friends[3] == Layout.FRIENDS_WIDTH and smaller.talks[3] == 1000 - 3 * Layout.PAD - Layout.FRIENDS_WIDTH,
+        "on a smaller screen the friends list keeps its least width, the conversations the rest")
+    local tiny = Layout.Board(800, 600, { friends = true, talks = true })
+    check(not tiny.friends and tiny.talks[3] == 800 - 2 * Layout.PAD,
+        "where the conversations and the friends list lack their least the friends list is left out")
     local alone = Layout.Board(1920, tall, { friends = true })
     check(not alone.talks and alone.chat[1] == Layout.PAD and alone.chat[3] == talksWide
         and alone.chat[2] == Layout.PAD, "without the conversations the chat stands in their place")
@@ -2829,10 +2849,11 @@ do
     -- and Delete conversation (PlayerMenu.lua; Saneroki, 2026-11-18). The game makes its menu as it opens it: its
     -- hooks on that menu run then (Menu.ModifyMenu), Core's Set Alias and Set Note, then Social's.
     local menu, lines
-    FriendsFrame_ShowDropdown = function(name, connected, lineID, kind)
-        menu = name .. " " .. tostring(connected) .. " " .. kind
-        lines = {}
-        W.menuModifiers.MENU_UNIT_FRIEND(nil, W.Description(lines), { name = name, chatType = kind, lineID = lineID })
+    local unitMenu = UnitPopup_OpenMenu
+    UnitPopup_OpenMenu = function(which, context)
+        lines = W.UnitMenu(which, context)
+        menu = context.name .. " " .. which .. " " .. context.chatType .. (lines.closed and " closed" or "")
+            .. (lines.owner == context.ownerFrame and " owned" or "")
     end
     local function line(text)
         for _, item in ipairs(lines or {}) do if item.text == text then return item end end
@@ -2845,7 +2866,7 @@ do
     local looked
     Core.Ways.Lookout(function(text) looked = text end)
     click(rowOf(thrall), "RightButton")
-    check(menu == "Thrall-Stub true WHISPER" and line(T.addFriend) and line(T.pin) and line(T.pin).disabled
+    check(menu == "Thrall-Stub FRIEND WHISPER owned" and line(T.addFriend) and line(T.pin) and line(T.pin).disabled
         and line(T.show) and line(T.delete),
         "a right click opens the game's menu of the player, under it Add Friend, Pin them on the map (greyed out: not in "
         .. "your group), Show on map and Delete conversation")
@@ -2875,6 +2896,7 @@ do
     local own = W.menus[#W.menus]
     check(#W.menus == count + 1 and own[1].title == Talks.Name(party) and own[2].text == T.delete and menu == nil,
         "a group's row: a menu of Social's own, its name and Delete conversation")
+    UnitPopup_OpenMenu = unitMenu
     -- An alias: in the list and above the conversation, the whole name and the note in the tooltip.
     W.Fire("CHAT_MSG_WHISPER", "hi there", "Droopy Fairwind", "", "", "", "", 0, 0, "", 0, 9, nil)
     W.Wait(0.1)
@@ -3168,7 +3190,15 @@ do
     check(not Core.errors["Social: conversations"] and not Core.errors["Social: talks"] and not ns.off, "nothing went wrong in the conversations")
     grouped, W.raiding = wasGrouped, wasRaiding
     end)()
-    ;(function() -- the guild window: the one the guild key opens, held at the top right, the friends list under it
+    ;(function() -- the guild window: the one the guild key opens, held in its panel
+    -- The guild window in the layout (the first has none, Saneroki, 2026-11-18): three columns, the conversations, the
+    -- friends list, the guild window at the right, as one may arrange them; where Core's board stands each (laid).
+    local PAD = Core.Board.PAD
+    local THREE = { split = "x", parts = { { key = "talks" }, { key = "friends" }, { key = "guild" } }, shares = { 0.34, 0.2, 0.46 } }
+    local function laid(tree)
+        return (Core.Board.Lay(Core.Board.Without(Core.Board.Copy(tree), "none"), PAD, PAD, 1920 - 2 * PAD, tall - 2 * PAD, PAD))
+    end
+    ns.store.board.tabs[1].tree = Core.Board.Copy(THREE)
     local game = Named("Frame", "CommunitiesFrame", UIParent)
     game._shown, game._width, game._height, game._strata = false, 814, 426, "MEDIUM"
     function game:GetName() return "CommunitiesFrame" end
@@ -3206,15 +3236,15 @@ do
             and math.abs(frame._points[1][5] * own - y) < 1e-6
     end
     anew()
-    local framed = { 814 + 2 * EDGE, 426 + HEAD + 2 * EDGE }
-    local guild = Layout.Board(1920, tall, { friends = true, talks = true, guild = framed })
+    local guild = laid(THREE)
     check(toggles == 1 and game:IsShown() and panels.guild and panels.guild:IsShown() and held(game)
         and game._scale == 1 and game._level == 1 + Layout.GUILD_LEVEL,
         "the full screen opens the guild window by the guild key's work and holds it in its panel at the right, its own size")
     check(panels.guild._points[1][4] == guild.guild[1] and panels.guild._width == guild.guild[3]
         and panels.friends._points[1][4] == guild.friends[1] and panels.friends._points[1][5] == -guild.friends[2]
-        and panels.friends._width == guild.friends[3] and column._width == guild.chat[3] and panels.talks._width == guild.talks[3],
-        "the three columns of the first layout: the conversations, the friends list, the guild window's panel at the right")
+        and panels.friends._width == guild.friends[3] and panels.talks._width == guild.talks[3]
+        and column._width == guild.talks[3] - Layout.TalkList(ns.store.talkList, guild.talks[3]) - 1,
+        "the three columns: the conversations, the friends list, the guild window's panel at the right")
     game:ClearAllPoints()
     game:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 16, -116)
     check(#game._points == 1 and game._points[1][3] == "BOTTOMLEFT", "placed anew by the game, it is put back in its room")
@@ -3229,7 +3259,7 @@ do
     game._width, game._height = 814, 426
     game:Hide()
     W.Wait(0.1)
-    local unguilded = Layout.Board(1920, tall, { friends = true, talks = true })
+    local unguilded = laid(Core.Board.Without(Core.Board.Copy(THREE), "guild"))
     check(game._points[1][3] == "TOPLEFT" and game._points[1][4] == 16 and panels.friends._points[1][5] == -Layout.PAD
         and panels.friends._width == unguilded.friends[3] and panels.talks._width == unguilded.talks[3]
         and not panels.guild:IsShown() and toggles == 1,
@@ -3276,7 +3306,7 @@ do
     ns.store.board.tabs[1].tree = { split = "x", parts = { { key = "talks" }, { key = "friends" } }, shares = { 0.7, 0.3 } }
     anew()
     check(toggles == 0 and not answer:IsShown(), "a layout without the guild window opens none")
-    ns.store.board.tabs[1].tree = nil
+    ns.store.board.tabs[1].tree = Core.Board.Copy(THREE)
     W.combat = true
     anew()
     check(toggles == 0, "in a fight the game opens no panel for an addon: none is asked for")
@@ -3309,22 +3339,30 @@ do
     check(not Core.errors["Social: guild window"] and not ns.off, "nothing went wrong with the guild window")
     ToggleGuildFrame, UIPanelWindows = nil, nil
     ns.Window.Reboard()
-    -- A guild window another module offers: the first layout gives it its column while it wants some, at the right of
-    -- the friends list; out of a guild it wants none, and the conversations have that room too.
+    -- A guild window another module offers: a layout with the guild window gives it its column while it wants some, at
+    -- the right of the friends list; out of a guild it wants none, and the others have that room too.
     local wants = { 900, 500 }
     Core.Board.Offer("Social", { key = "guild", title = "offered", want = function() return wants end })
-    local offered = Layout.Board(1920, tall, { friends = true, talks = true, guild = { 900 + 2 * Layout.EDGE, 500 } })
+    local offered = laid(THREE)
     check(ns.Board.Has("guild") and panels.guild:IsShown() and panels.friends:IsShown()
         and panels.guild._width == offered.guild[3] and panels.friends._width == offered.friends[3]
         and panels.guild._points[1][4] > panels.friends._points[1][4],
-        "the first layout gives an offered guild window its column, at the right of the friends list")
+        "a layout with the guild window gives an offered one its column, at the right of the friends list")
     wants = nil
     Core.Board.Told("Social")
+    check(ns.Board.Has("guild") and panels.guild:IsShown(),
+        "out of a guild, a layout it was put into shows it all the same (its page says why it holds nothing)")
+    ns.store.board.tabs[1].tree = nil -- the first layout again
+    ns.Window.Reboard()
+    W.Wait(0.5)
+    local first = Layout.Board(1920, tall, { friends = true, talks = true, list = ns.store.talkList })
     check(not ns.Board.Has("guild") and not panels.guild:IsShown() and panels.friends:IsShown()
-        and panels.friends._width == unguilded.friends[3] and panels.friends._points[1][5] == -Core.Board.PAD,
-        "out of a guild it has none: the friends list stands at the right, the conversations take its room")
+        and panels.friends._width == first.friends[3] and panels.talks._width == first.talks[3]
+        and panels.friends._points[1][5] == -Core.Board.PAD,
+        "the first layout has none: the conversations on two thirds, the friends list on the third at the right")
     Core.Board.Withdraw("Social", "guild")
     check(not Core.errors.board and not Core.errors["Social: board"] and not ns.off, "nothing went wrong with the offered window")
+    ns.store.board.tabs[1].tree = nil -- the first layout again
     end)()
     end
     ;(function() -- Core's board: the layouts behind tabs, the windows sharing the screen as they are arranged
@@ -3991,17 +4029,26 @@ end)()
     local tree = tabs[1].tree
     check(friends.check() == true and tree.split == "x" and tree.parts[1].key == "talks" and tree.parts[2].key == "friends",
         "ticked again: at the conversations' right")
+    tabs[1].tree = nil
+    check(not guildTick.check(), "the first layout has no guild window")
+    Draw("full")
+    local drawn = Setup.Board("full").parts
+    local talksDrawn = drawn.list:GetWidth() + 4 + drawn.chat:GetWidth()
+    check(drawn.friends:IsShown() and not drawn.guild:IsShown()
+        and math.abs(talksDrawn - 2 * drawn.friends:GetWidth()) <= 6,
+        "drawn so: the conversations on two thirds, the friends list on the third at the right")
     guildTick.set(true)
     tree = tabs[1].tree
     local order = {}
     for index, part in ipairs(tree.parts) do order[index] = part.key or part.split end
     check(guildTick.check() == true and tree.split == "x" and table.concat(order, " ") == "talks friends guild",
-        "the guild window ticked: at the friends list's right, as the first layout has it: " .. table.concat(order, " "))
+        "the guild window ticked: at the friends list's right, sharing its room: " .. table.concat(order, " "))
     Draw("full")
-    local drawn = Setup.Board("full").parts
+    drawn = Setup.Board("full").parts
     check(drawn.guild:IsShown() and drawn.friends:IsShown() and drawn.guild:GetHeight() == drawn.friends:GetHeight()
-        and drawn.guild:GetWidth() > drawn.friends:GetWidth() and drawn.list:GetWidth() + drawn.chat:GetWidth() > drawn.friends:GetWidth(),
-        "both drawn at the right, side by side and as high, in the first layout's shares")
+        and math.abs(drawn.guild:GetWidth() - drawn.friends:GetWidth()) <= 1
+        and drawn.list:GetWidth() + 4 + drawn.chat:GetWidth() == talksDrawn,
+        "both drawn at the right, side by side and as high, sharing the friends list's third")
     guildTick.set(false)
     check(not guildTick.check() and friends.check(), "unticked, it goes; the friends list stays")
     tabs[1].tree = kept

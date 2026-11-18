@@ -22,11 +22,11 @@ local _, ns = ...
 --      view:<id> a chat view (Feed.lua), each one a window of its own: a list of
 --               its own in it, and the list of the chats it shows on its head
 --  The first layout is the arrangement the full screen has at first: side
---  by side and as high as the screen, the conversations at the left, the
---  friends list, the guild window at the right, as wide as Saneroki likes them
---  (2026-11-18, his picture; Layout.Board gives the rooms, Default makes a
---  layout of them), laid out for the screen as it is until you change it. A
---  layout without the conversations has no chat in it.
+--  by side and as high as the screen, the conversations on two thirds at the
+--  left, the friends list on the third at the right (Saneroki, 2026-11-18;
+--  Layout.Board gives the rooms, Default makes a layout of them), laid out for
+--  the screen as it is until you change it; the guild window only once you
+--  put it there. A layout without the conversations has no chat in it.
 --
 --  A panel is Core's (Board.lua: a plate in SaneUI's look, a head with its
 --  title at the left, its buttons and the X at its right, its body under the
@@ -109,23 +109,12 @@ local function Windows()
     return listed
 end
 
--- The guild window's panel as large as the window and its panel's head and edges round it (Body).
-local function Framed(size)
-    if not size then return nil end
-    return { size[1] + 2 * Layout.EDGE, size[2] + Core.Board.HEAD + 2 * Layout.EDGE }
-end
-
 -- The first layout: the rooms the full screen has at first (Layout.Board), side by side, each share as wide as its room:
--- the conversations, the friends list, the guild window.
+-- the conversations and the friends list.
 local function Default(width, height)
-    -- The guild's window: the module Guild's own, offered to this board (Core.Board.Offer), as large as it wants
-    -- to be (out of a guild it wants no room); else the window the guild key opens, as large as it is.
-    local offered = Core.Board.Offered("Social", "guild")
-    local size = offered and offered.want and ns.Safe("board", offered.want, width, height) or (not offered and ns.Guild.Size(inside))
-    local rooms = Layout.Board(width, height, { friends = true, talks = true, guild = Framed(size or nil),
-                                                list = ns.store.talkList })
+    local rooms = Layout.Board(width, height, { friends = true, talks = true, list = ns.store.talkList })
     local parts, shares = {}, {}
-    for _, key in ipairs({ "talks", "friends", "guild" }) do
+    for _, key in ipairs({ "talks", "friends" }) do
         if rooms[key] then parts[#parts + 1], shares[#shares + 1] = { key = key }, rooms[key][3] end
     end
     if #parts < 2 then return parts[1] end

@@ -10,9 +10,10 @@ local _, ns = ...
 --  own (Core.Window.New, a panel: its title bar, moved by it, Esc closes it,
 --  its place and size kept). The page is made once and moves between the two.
 --
---  Out of a guild the first layout has no room for it, the friends list has
---  that; a layout it was put into (its tick in the dropdown Windows, its tab)
---  shows it all the same, and the page says why it holds nothing (Page.lua).
+--  Social's first layout has no room for it (the conversations and the
+--  friends list only; Saneroki, 2026-11-18); a layout it was put into (its
+--  tick in the dropdown Windows, its tab) shows it, in a guild or out of one,
+--  and the page says why it holds nothing then (Page.lua).
 --
 --      Window.Offer()    at the load: offered to Social's board (it lists it whether Social is there or not)
 --      Window.Start()    at the login: a guild joined or left lays the board out anew
@@ -62,7 +63,8 @@ function Window.Rehome()
     if OnSocial() then Core.Board.Offer(BOARD, SPEC) else Core.Board.Withdraw(BOARD, KEY) end
 end
 
--- A guild joined or left: the first layout has its room or not. The game says PLAYER_GUILD_UPDATE for more than that.
+-- A guild joined or left: the board lays out anew (the page fills, or says why it holds nothing; its want, for a
+-- board's first layout that reads it). The game says PLAYER_GUILD_UPDATE for more than that.
 local function GuildChanged()
     if ns.off or InGuild() == guilded then return end
     guilded = InGuild()

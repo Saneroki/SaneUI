@@ -25,10 +25,10 @@ SaneUI 0.3.5 (2026-11-18)
 
 Social 0.3.2 (2026-11-18)
 -------------------------
-- The full screen starts with three windows side by side, as
-  high as the screen: your conversations, the friends list
-  and the guild window. A right click on the tab Default
-  brings it back.
+- The full screen starts with your conversations on two
+  thirds and the friends list on the third at the right, as
+  high as the screen; the guild window when you add it. A
+  right click on the tab Default brings it back.
 - The setup's hot corner and keys are on one page: choose how
   the corner opens the full screen, and set its key under it.
 - Right click someone's name, or their message on the full

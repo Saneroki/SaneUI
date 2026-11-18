@@ -80,7 +80,7 @@ Setup.TEXT = {
     friendsTick = "The friends list on the full screen",
     friendsTip = "Your friends, requests, ignored players, your raid and the group finder, at the full screen's right. Off: the conversations and the chat take its room; the dropdown Windows there brings it back too.",
     guildTick = "The guild window on the full screen",
-    guildTip = "The window the guild key opens (the module Guild's while it is on), at the full screen's top right while you are in a guild. Off: the full screen leaves it out; the guild key opens it as always.",
+    guildTip = "The window the guild key opens (the module Guild's while it is on), on the full screen beside the friends list while you are in a guild. Off (as at first): the full screen leaves it out; the guild key opens it as always.",
     guild = "Guild",
     into = "All the way into the corner",
     click = ", then click",
@@ -497,8 +497,8 @@ function DRAW.keep(board)
     Caption(board, "groups", 30 + 160 + 68, Hued(each and Setup.TEXT.eachGroup or Setup.TEXT.oneGroup))
 end
 
--- A drawn full screen: the conversations in their parts at the left, the chat beside them, and at the right the guild
--- window over the friends list, each as ticked (the layout chosen).
+-- A drawn full screen: the conversations in their parts at the left, the chat beside them, and at the right the friends
+-- list and the guild window, each as ticked (the layout chosen).
 function DRAW.full(board)
     local screen = Screen(board, "screen", 30)
     local list = Part(board, "list", function()
@@ -518,17 +518,25 @@ function DRAW.full(board)
         panel.lines = lines
         return panel
     end)
-    -- As the first layout has them (Layout.SHARES, Saneroki's picture): side by side, as high as the screen, the
-    -- conversations (their list and the chat beside it), the friends list, the guild window; one not ticked gives
-    -- its room to the conversations.
+    -- As the first layout has them (Layout.SHARES): side by side, as high as the screen, the conversations (their
+    -- list and the chat beside it) on two thirds, the friends list on the third at the right; the guild window, ticked,
+    -- shares the friends list's room (the conversations' without it), as the setup puts it there (Board.Put).
     local width, height = Setup.SCREEN[1], Setup.SCREEN[2]
     local friendsOn, guildOn = ns.Board.Holds("friends"), ns.Board.Holds("guild")
     local shares = ns.Layout.SHARES
-    local whole = shares.talks + shares.friends + shares.guild
-    local room = width - 12 - (friendsOn and 4 or 0) - (guildOn and 4 or 0)
-    local friendsWide = friendsOn and math.floor(room * shares.friends / whole) or 0
-    local guildWide = guildOn and math.floor(room * shares.guild / whole) or 0
-    local talksWide = room - friendsWide - guildWide
+    local room = width - 12
+    local talksWide, friendsWide, guildWide = room, 0, 0
+    if friendsOn then
+        talksWide = math.floor((room - 4) * shares.talks / (shares.talks + shares.friends))
+        friendsWide = room - 4 - talksWide
+        if guildOn then
+            guildWide = math.floor((friendsWide - 4) / 2)
+            friendsWide = friendsWide - 4 - guildWide
+        end
+    elseif guildOn then
+        guildWide = math.floor((room - 4) / 2)
+        talksWide = room - 4 - guildWide
+    end
     local listWide = math.floor(talksWide * 0.5)
     list:ClearAllPoints()
     list:SetPoint("TOPLEFT", screen, "TOPLEFT", 6, -6)
