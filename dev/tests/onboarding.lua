@@ -332,12 +332,23 @@ check(Onboarding.Done("Garden") and store.done.Garden.version == 1 and type(stor
     and store.left.Garden == nil and #Onboarding.Due() == 0, "gone through: kept with its version and day")
 check(options.path == "stone" and options.flowers == false, "the choices are the module's settings now")
 
--- Asked for again: /sane setup (the only one there: its name not needed), at the first step; in a fight, after it.
+-- Asked for again (Saneroki: "/sane setup does not restart the onboarding"): /sane setup alone, the whole onboarding
+-- again, its first page and every setup, gone through or not, each from its first step.
 SlashCmdList.SANEUI("setup")
-check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 4", "/sane setup opens it again, at the start")
-check(not window.Parts().note._text:find(ons.TEXT.unfinished, 1, true) and not window.Parts().defaults:IsShown(),
-    "gone through: the note no longer says it comes back, and no Choose defaults")
-check(window.Parts().back:IsEnabled() == false, "opened by hand: no Back on the first step")
+parts = window.Parts()
+check(window.Frame():IsShown() and parts.first and parts.rows[1].label._text == "Garden" and parts.rows[1].button:IsShown()
+    and parts.count._text == ons.TEXT.oneLeft, "/sane setup: the first page again, Garden on it to go through again")
+parts.forward._scripts.OnClick(parts.forward)
+parts = window.Parts()
+check(parts.count._text == "Step 1 of 4" and parts.defaults:IsShown() and parts.back:IsEnabled() ~= false,
+    "Start: from its first step, Choose defaults and Back to the first page there")
+check(not parts.note._text:find(ons.TEXT.unfinished, 1, true) and Onboarding.Done("Garden"),
+    "gone through before, still kept so: the note does not say it comes back")
+window.Close()
+-- Its name: that one alone, at the start, as its options page's button opens it.
+SlashCmdList.SANEUI("setup garden")
+check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 4" and not window.Parts().defaults:IsShown()
+    and window.Parts().back:IsEnabled() == false, "/sane setup garden: alone, at the start, no Choose defaults, no Back")
 window.Parts().forward._scripts.OnClick(window.Parts().forward)
 check(store.left.Garden == nil, "a setup gone through keeps no step")
 window.Close()
@@ -413,10 +424,26 @@ check(parts.forward._text == ons.TEXT.done and not parts.note._text:find("Next:"
 check(parts.note._text:find(ons.TEXT.againTyped:format("shed"), 1, true), "no button on its options page: the command")
 parts.forward._scripts.OnClick(parts.forward)
 check(not window.Frame():IsShown() and Onboarding.Done("Shed") and #Onboarding.Due() == 0, "all gone through")
-check(not Onboarding.Start(true), "nothing to go through: no run")
-W.printed = {}
+check(not Onboarding.Start(true), "nothing to go through: no run at the login")
 SlashCmdList.SANEUI("setup")
-check(not window.Frame():IsShown() and printed("setups: Garden, Orchard, Shed"), "/sane setup: the list, none left")
+parts = window.Parts()
+check(window.Frame():IsShown() and parts.first and parts.rows[1].label._text == "Garden" and parts.rows[2].label._text == "Orchard"
+    and parts.rows[3].label._text == "Shed" and parts.count._text == ons.TEXT.left:format(3),
+    "/sane setup: every setup on its first page again, all gone through before")
+parts.forward._scripts.OnClick(parts.forward)
+check(window.Parts().head._text == "Garden: setup 1 of 3" and window.Parts().count._text == "Step 1 of 4", "Start: the first, from its start")
+for _ = 1, 4 do window.Parts().forward._scripts.OnClick(window.Parts().forward) end
+check(window.Parts().head._text == "Orchard: setup 2 of 3" and window.Parts().count._text == "Step 1 of 2",
+    "Garden done again: Orchard next, though gone through before")
+window.Parts().back._scripts.OnClick(window.Parts().back)
+parts = window.Parts()
+check(parts.first and not parts.rows[1].button:IsShown() and parts.rows[1].state._text == ons.TEXT.goneThrough
+    and parts.rows[2].button:IsShown() and parts.count._text == ons.TEXT.left:format(2),
+    "Back to the first page: Garden set up this time, two to go")
+parts.forward._scripts.OnClick(parts.forward)
+check(window.Parts().head._text == "Orchard: setup 2 of 3", "Start: on where it was")
+window.Close()
+check(not Onboarding.Start(true), "closed: nothing kept as to go through, no run at the next login")
 
 -- A big change: Orchard's setup raises its version, and whoever went through the older one goes through it again,
 -- told what changed on its first step. The settings chosen stay.
@@ -448,9 +475,8 @@ parts = window.Parts()
 check(parts.head._text == "Shed: setup" and parts.forward._text == ons.TEXT.done, "by hand: alone, its last step Done")
 parts.forward._scripts.OnClick(parts.forward)
 check(not window.Frame():IsShown() and Onboarding.Done("Shed") and not Onboarding.Done("Orchard"), "only that one gone through")
-SlashCmdList.SANEUI("setup")
-check(window.Frame():IsShown() and window.Parts().first and window.Parts().rows[1].label._text == "Orchard"
-    and not window.Parts().rows[2]:IsShown(), "/sane setup alone: the first page of those still to go through")
+check(Onboarding.Start(true) and window.Parts().first and window.Parts().rows[1].label._text == "Orchard"
+    and not window.Parts().rows[2]:IsShown(), "the login's first page: only those still to go through")
 window.Close()
 
 -- Choose defaults (Saneroki: "instead of skip it says Choose Defaults on each of the onboardings"): on the first

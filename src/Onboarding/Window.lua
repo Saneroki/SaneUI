@@ -197,7 +197,7 @@ function Window.Go(index)
     holder:Show()
     count:SetText(ns.TEXT.step:format(index, #steps))
     -- Choose defaults for a setup not gone through yet (nor its defaults chosen); the bar reaches to it, else to Back.
-    local open = not Core.Onboarding.Done(current.name)
+    local open = Core.Onboarding.Pending(current.name)
     defaults:SetShown(open)
     progress:SetPoint("RIGHT", open and defaults or back, "LEFT", -16, 0)
     progress:Share(index / #steps)
@@ -221,7 +221,7 @@ local function Listed()
         row.label:SetText(guide and guide.title or name)
         local steps = guide and #guide.steps or 0
         row.steps:SetText(steps == 1 and ns.TEXT.oneStep or ns.TEXT.steps:format(steps))
-        local done = Core.Onboarding.Done(name)
+        local done = not Core.Onboarding.Pending(name)
         if not done then left = left + 1 end
         row.button:SetShown(not done)
         row.state:SetShown(done)

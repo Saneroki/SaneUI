@@ -90,7 +90,9 @@ own purpose."
   addons like the navigation, tooltip and nameplate doesn't have those buttons in it so if only those addons are part
   of the onboarding then it should not show those because that would cause confusion. On addons that do have those
   icons should show them on the onboarding." So the dropdown switches the kept choices (`Core.Classic.KeptMenu`), the
-  red buttons are shown and said, and each part only where a window of an addon that is on has it.
+  red buttons are shown and said, and each part only where a window of an addon that is on has it. Then "/sane
+  setup does not restart the onboarding": `/sane setup` alone starts the whole onboarding again (its first page with
+  every setup, each from its first step), where it had opened only those still to go through.
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.

@@ -32,6 +32,7 @@ Sane UI 0.3.3 (2026-11-17)
   swaps a Sane UI window for the game's classic one, the red
   buttons that take a window off the full screen and back,
   and the Classic windows dropdown, which works there too.
+  /sane setup starts the whole onboarding again.
 
 Navigation 0.3.5 (2026-11-16)
 -----------------------------

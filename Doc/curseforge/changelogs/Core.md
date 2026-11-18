@@ -16,7 +16,8 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   through its setup again; your settings stay. Where your addons have them, the first page also shows the button
   with the circling arrows (the game's classic window instead of Sane UI's, and back), the red buttons beside a full
   screen window's X (a window of its own, and back onto the full screen), and the *Classic windows* dropdown, which
-  picks which one opens by default and works right there.
+  picks which one opens by default and works right there. `/sane setup` starts the whole onboarding again, every
+  addon's setup from its first step.
 
 ## 0.3.2 (2026-11-15)
 

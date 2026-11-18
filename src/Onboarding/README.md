@@ -29,8 +29,10 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
   on to the next. Where some of those switches were already changed, the game's yes or no asks first. The button on
   its options page still opens it.
 - **Open it again** with the button *Set up step by step* at the top of the module's options page (Esc > Options >
-  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`; `/sane setup` alone: those still
-  to go through, else the only one there, else the list of them). A faint note at the foot of every step says where,
+  AddOns > Sane UI > the module), or `/sane setup <module>` (`/sane setup nameplates`). **`/sane setup` alone** starts
+  the whole onboarding again: its first page with every addon's setup, gone through before or not, and *Start* goes
+  through each from its first step (what was kept of each changes only as it is done again; closed early, nothing
+  comes back at the next login that was not to go through before). A faint note at the foot of every step says where,
   and for a setup not gone through yet that it comes back.
 - **In the window:** the sample at the left, in a solid grey box, the step at the right: its head, its words, its switches. Each switch is the module's own,
   as on its options page, with the same words and tips: a tick, a slider with its steppers, or a round button per
@@ -147,6 +149,9 @@ this addon only draws them. Nameplates has the first setup, Navigation the secon
 | `Window.lua` | The window: the stage, the step, Back and Next |
 
 ## History
+- 2026-11-18 — `/sane setup` alone starts the whole onboarding again (Saneroki: "/sane setup does not restart the
+  onboarding": it opened only the setups still to go through, and once all were done it listed them in chat): its
+  first page with every setup of the addons that are on, each from its first step, *Choose defaults* on each.
 - 2026-11-18 — All setups together (Saneroki: "it should remember which onboardings the user went through and which
   onboardings still has to be gone through"): the run of every setup still to go through, kept where each was left
   and as gone through at its end; a setup's `version` to have everyone go through it again after a big change

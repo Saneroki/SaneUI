@@ -16,9 +16,11 @@ local Core = SaneUI.Core
 --      Core.Onboarding.Names()           -- the modules that handed one in, in that order
 --      Core.Onboarding.Done(name)        -- whether this account went through it (or chose its defaults) as it is now
 --      Core.Onboarding.Due()             -- the setups still to go through, in their order
---      Core.Onboarding.Start()           -- the run: its first page, then those still to go through
+--      Core.Onboarding.Start(quiet, all) -- the run: its first page, then those still to go through (all: every
+--                                         -- setup again, from its first step: /sane setup)
 --      Core.Onboarding.Defaults(name, after) -- a setup's switches back to their defaults, kept as done
---      /sane setup <module>              -- the same, typed; /sane setup alone: those still to go through
+--      /sane setup <module>              -- the same, typed; /sane setup alone: the whole onboarding again
+--                                         -- (Saneroki, 2026-11-18: "/sane setup does not restart the onboarding")
 --
 --  All setups together (Saneroki, 2026-11-18: "it should remember which
 --  onboardings the user went through and which onboardings still has to be
@@ -73,7 +75,6 @@ Onboarding.TEXT = {
     later = "the setup opens after the fight.",
     missing = "the setup needs the addon Onboarding: tick it under Sane UI in the addon list.",
     none = "no module that is on has a setup yet.",
-    list = "setups: %s. Type /sane setup and its name.",
     unknown = "no setup called %s. Setups: %s.",
     defaults = "%s: set the choices of its setup back to Sane UI's defaults?",
     defaultsYes = "Choose defaults",
@@ -81,6 +82,7 @@ Onboarding.TEXT = {
 
 local guides, order = {}, {} -- [module name] = its guide; the names in the order they came
 local run                    -- the setups opened by themselves at the login, one after another; nil for none
+local again                  -- a run asked for again (/sane setup): [name] = true once passed in it; nil otherwise
 
 function Onboarding.Add(name, guide)
     if type(name) ~= "string" or type(guide) ~= "table" or type(guide.steps) ~= "table" then
@@ -165,12 +167,19 @@ function Onboarding.Reached(name, step)
     if guides[name] and not Onboarding.Done(name) then Records().left[name] = tonumber(step) end
 end
 
+-- Whether a setup is still to go through: in a run asked for again, not passed in it yet (gone through before or
+-- not); else not gone through as it is now.
+function Onboarding.Pending(name)
+    if again and Onboarding.Place(name) then return not again[name] end
+    return not Onboarding.Done(name)
+end
+
 -- The setup the run goes on to after this one (the next in it still to go through); nil out of a run or at its end.
 function Onboarding.Following(name)
     if not run then return nil end
     local after = false
     for _, other in ipairs(run) do
-        if after and Showable(other) and not Onboarding.Done(other) then return other end
+        if after and Showable(other) and Onboarding.Pending(other) then return other end
         if other == name then after = true end
     end
     return nil
@@ -216,16 +225,24 @@ end
 
 -- Asked for (the options page's button, /sane setup <module>): that setup alone, at that step (the first).
 function Onboarding.Open(name, step, quiet)
-    run = nil
+    run, again = nil, nil
     return Go(name, step, quiet)
 end
 
 -- The setups still to go through, one after another in one window: first the page that lists them, then each at
--- the step where it was left.
-function Onboarding.Start(quiet)
-    local due = Onboarding.Due()
-    if #due == 0 then return false end
-    run = due
+-- the step where it was left. all (/sane setup): the whole onboarding again, every setup of a module that is on,
+-- gone through before or not, each from its first step; what is kept of them changes only as each is done again.
+function Onboarding.Start(quiet, all)
+    local names = {}
+    if all then
+        for _, name in ipairs(order) do
+            if Showable(name) then names[#names + 1] = name end
+        end
+    else
+        names = Onboarding.Due()
+    end
+    if #names == 0 then return false end
+    run, again = names, all and {} or nil
     return Go(nil, nil, quiet)
 end
 
@@ -241,13 +258,17 @@ end
 -- Whether one shows (none left: false).
 function Onboarding.Continue()
     for _, name in ipairs(run or {}) do
-        if Showable(name) and not Onboarding.Done(name) then return Go(name, Records().left[name], true) end
+        if Showable(name) and Onboarding.Pending(name) then
+            return Go(name, not again and Records().left[name] or nil, true)
+        end
     end
     return false
 end
 
--- Kept as gone through (or its defaults chosen, defaults), with its version and the day.
+-- Kept as gone through (or its defaults chosen, defaults), with its version and the day; passed in a run asked for
+-- again.
 local function Mark(name, defaults)
+    if again then again[name] = true end
     local store = Records()
     store.done[name] = { version = Version(name), day = date("%Y-%m-%d"), defaults = defaults and true or nil }
     store.left[name] = nil
@@ -260,7 +281,7 @@ function Onboarding.Finished(name)
     local following = Onboarding.Following(name)
     Mark(name)
     if not following then return false end
-    return Go(following, Records().left[following], true)
+    return Go(following, not again and Records().left[following] or nil, true)
 end
 
 -- Whether two values are the same (tables by their contents).
@@ -346,12 +367,9 @@ Core.Command("setup", Onboarding.TEXT.command, function(rest)
     end
     if #usable == 0 then return Core.Print(Onboarding.TEXT.none) end
     rest = strtrim(rest or "")
-    if rest == "" then
-        -- Those still to go through, one after another; else the only one; else the list.
-        if #Onboarding.Due() > 0 then return Onboarding.Start() end
-        if #usable == 1 then return Onboarding.Open(usable[1]) end
-        return Core.Print(Onboarding.TEXT.list:format(table.concat(usable, ", ")))
-    end
+    -- Alone: the whole onboarding again, its first page and every setup (Saneroki, 2026-11-18: "/sane setup does not
+    -- restart the onboarding": it opened only those still to go through, and listed them once all were done).
+    if rest == "" then return Onboarding.Start(false, true) end
     local name = Named(rest)
     if not name or not Usable(name) then
         return Core.Print(Onboarding.TEXT.unknown:format(rest, table.concat(usable, ", ")))
