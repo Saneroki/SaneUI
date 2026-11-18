@@ -13,7 +13,7 @@ when the nameplates became a part of Combat; the project *SaneUI Nameplates*, id
 | Field | Value |
 | --- | --- |
 | Name | SaneUI Combat |
-| Folder in the game | `SaneUI_Combat` (listed under *Sane UI* as *Combat*; was `SaneUI_Nameplates`, which Combat tells players to delete) |
+| Folder in the game | `SaneUI_Combat` (listed under *SaneUI* as *Combat*; was `SaneUI_Nameplates`, which Combat tells players to delete) |
 | Summary | Clean unit frames, party and raid frames and nameplates in one look, each yours or the game's. |
 | Category | Unit Frames (and Combat) |
 | Avatar | `combat-avatar.png` of `saneui makelogos` (400 x 400) |
@@ -31,7 +31,7 @@ one frame for your party and your raid, and the game's nameplates dressed in the
 corners, everything you need on a single line inside it. Each part is yours or the game's: keep our party and unit
 frames and the game's nameplates, say, with one tick.
 
-Made for **WoW: Forever** (English client). It is part of **Sane UI**, a set of interface addons you can
+Made for **WoW: Forever** (English client). It is part of **SaneUI**, a set of interface addons you can
 take one by one. It needs **SaneUI Core**, which the CurseForge app installs with it.
 
 Formerly **SaneUI Nameplates**: the nameplates are now one part of SaneUI Combat.
@@ -55,7 +55,7 @@ Formerly **SaneUI Nameplates**: the nameplates are now one part of SaneUI Combat
 ## How to use
 
 - **Nothing else to do:** the frames and plates show as soon as Combat is on.
-- **The setup again:** Esc > Options > AddOns > Sane UI > Combat, *Set up step by step*, or `/sane setup combat`
+- **The setup again:** Esc > Options > AddOns > SaneUI > Combat, *Set up step by step*, or `/sane setup combat`
   (`/sane setup nameplates` for the nameplates' pages).
 - **Options:** the same page, the first section which parts are ours. The plates' size, style and which plates show
   stay the game's own options (Options > Gameplay > Nameplates).
@@ -64,7 +64,7 @@ Formerly **SaneUI Nameplates**: the nameplates are now one part of SaneUI Combat
 ## Alpha
 
 SaneUI Combat is in alpha: it works, but it is still changing, and you may find bugs. If it ever runs
-into an error, Sane UI gives the frames and plates back to the game's own until your next `/reload`, so your game
+into an error, SaneUI gives the frames and plates back to the game's own until your next `/reload`, so your game
 keeps working. `/sane errors` lists what went wrong.
 
 ## Feedback and bug reports

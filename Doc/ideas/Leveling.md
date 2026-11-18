@@ -1,6 +1,6 @@
 # Leveling
 
-The plan for Sane UI's own leveling routes: a tool that computes the fastest way from level 1 to 60
+The plan for SaneUI's own leveling routes: a tool that computes the fastest way from level 1 to 60
 from Core's data, and the guide that leads the player along it. Nothing is built yet (2026-10-18); this
 page prepares the work. How the guide is shown (the step, the waypoint, the item button) is Navigation's
 plan (`Doc/ideas/Navigation.md`, *Leveling guide*); the guides are the set *Guides*
@@ -20,7 +20,7 @@ secure ways, and looting a corpse needs the player's press.
 **Decision (Saneroki, 2026-10-25), superseding the known-addon dependency:** Speed Leveling is independent of any
 other addon at runtime. It runs leveling guides itself: the guides you paste as text, and the guides you bought,
 opened for your own account from their import string (`Unlock.lua`; the string is locked to the buyer's account and
-Sane UI opens it only for the account played). Of the leveling guide Sane UI knows it reads only the words of its
+SaneUI opens it only for the account played). Of the leveling guide SaneUI knows it reads only the words of its
 text format and the recipe its bought guides are locked by (`Core.Neighbours.Format`, `Core.Neighbours.Lock`,
 copies), and nothing of the addon is called at runtime. The intended setup has no other leveling addon installed.
 
@@ -37,7 +37,7 @@ copies), and nothing of the addon is called at runtime. The intended setup has n
   NPC; the reward chosen: the biggest upgrade, else the guide's, else the highest vendor or auction house value; new
   upgrades put on (Speed Leveling's switch, not Inventory's: a thing for leveling). Then: Always show upgrades off after all;
   stat weights per class and specialization, Inventory's (`Weights.lua`), decide what an upgrade is; a box in the bags for
-  the whole module; group rolls agreed between the Sane UI of his two characters.
+  the whole module; group rolls agreed between the SaneUI of his two characters.
 - **Decision (Saneroki, 2026-10-30, the second round):** that box is the profile, named Speed Leveling: on, Speedleveling;
   off, the profile used before. Every switch off by default and on in Speedleveling alone; the ones to stay on elsewhere he
   will name. The key E only in Speedleveling. Equip and delete without asking is Inventory's, on everywhere. One of his

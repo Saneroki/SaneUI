@@ -1,4 +1,4 @@
-# Sane UI
+# SaneUI
 
 **Version:** 0.3.0 · **Since:** 2026-10-14 · **Game:** WoW: Forever, English client (officially supported
 there only, for now; Retail is the developers' testing platform; interface 16001, 120105) · **By:** Saneroki
@@ -6,16 +6,16 @@ there only, for now; Retail is the developers' testing platform; interface 16001
 ## TL;DR
 A user interface for World of Warcraft, built in modules. Core (`SaneUI`) is the main addon; every other
 module is an addon of its own (`SaneUI_<Module>`), switched on and off in the game's addon list under
-*Sane UI*. One interface for both games, made for WoW: Forever first and kept compatible with Retail.
+*SaneUI*. One interface for both games, made for WoW: Forever first and kept compatible with Retail.
 
 ## How to use
 - **Install:** `saneui installdev` builds it and puts it into both games (*Building*); by hand, copy the
   folders of `BUILD` into `World of Warcraft/_forever_/Interface/AddOns` and restart the game (Retail needs
   Core's data sets compiled for it, which `saneui installdev` does).
-- **Switch modules on and off:** in the addon list, under *Sane UI*, tick or untick each module by itself.
-  *Sane UI* itself must stay ticked.
+- **Switch modules on and off:** in the addon list, under *SaneUI*, tick or untick each module by itself.
+  *SaneUI* itself must stay ticked.
 - **In the game:** `/sane` says which modules are on and lists their commands. The options are under
-  Esc > Options > AddOns > Sane UI: the page *Sane UI*, under it *Profiles* (its tab *Game settings*: the
+  Esc > Options > AddOns > SaneUI: the page *SaneUI*, under it *Profiles* (its tab *Game settings*: the
   game's own per-character settings your profile keeps), *General* and *Appearance*, then a page per
   module that is switched on.
 - **What changed between versions:** [Doc/changelog.txt](Doc/changelog.txt).
@@ -25,9 +25,9 @@ module is an addon of its own (`SaneUI_<Module>`), switched on and off in the ga
 |---|---|
 | [Core](src/Core/README.md) (`SaneUI`) | The part every module needs: game events, error catching, `/sane`, every module's settings in profiles, the options, and Sync, which keeps the game's own per-character settings in your profile. |
 | [Abilities](src/Abilities/README.md) | Your spellbook also lists the spells you have not learned yet, in grey; drag one onto an action bar button to reserve it until you learn it. A Home page says what your trainer can teach you now. A window at the bottom middle fills the screen with our own spellbook and talents, Sane Macros and the action bars. |
-| [Auction Data](src/AuctionData/README.md) | The auction house's prices and daily history in a file of their own; no code, Core fills and reads it. Switched off, Sane UI neither scans the auction house nor shows prices. |
+| [Auction Data](src/AuctionData/README.md) | The auction house's prices and daily history in a file of their own; no code, Core fills and reads it. Switched off, SaneUI neither scans the auction house nor shows prices. |
 | [Auction Scans](src/AuctionScans/README.md) | Every full scan of the auction house, every auction in it, in a file of its own, read only when the auction house opens. |
-| [Combat](src/Combat/README.md) | Frames of our own for you, your target, focus and pet, in a nameplate's look with power bars and the auras that matter; one frame for your party and raid; the game's nameplates in Sane UI's dress ([Nameplates](src/Combat/Nameplates/README.md)); the auras you track. Each part ours or the game's, as you choose. |
+| [Combat](src/Combat/README.md) | Frames of our own for you, your target, focus and pet, in a nameplate's look with power bars and the auras that matter; one frame for your party and raid; the game's nameplates in SaneUI's dress ([Nameplates](src/Combat/Nameplates/README.md)); the auras you track. Each part ours or the game's, as you choose. |
 | [Economy](src/Economy/README.md) | A tab *Deals* on the auction house: what to buy and what to sell right now, from the prices your full scans gather, each a click away. |
 | [Guild](src/Guild/README.md) | The guild in one window on Social's full screen: the overview (who is where, news, chat), the roster and everybody's gear; the other views come later. |
 | [Inventory](src/Inventory/README.md) | What you carry and wear: push the mouse into the bottom right corner and the screen fills with your character sheet, your bags and your other characters' things. |
@@ -35,7 +35,7 @@ module is an addon of its own (`SaneUI_<Module>`), switched on and off in the ga
 | [Lore](src/Lore/README.md) | Talks with NPCs as a scene: the NPC's 3D face, name and words low on the screen, straight on the world, the interface faded out meanwhile; a quest's rewards read for you. |
 | [Navigation](src/Navigation/README.md) | The minimap and the world map as one window: small in the top right corner, it fills the screen as the map when the mouse pushes into that corner; drawn as *Parchment* or *Scrying*, with pins, the quest log and routes to your map pin on foot, by flight, boat, tram and portal. |
 | [Social](src/Social/README.md) | A chat window in the style of a messenger: every message in a bubble, yours on the right, a line to write in; while open it stands in for the game's chat. |
-| [Speed Leveling](src/SpeedLeveling/README.md) | One key for questing, pressed again and again: it loots, fights, talks, picks up or hearths, whichever is due; and your leveling guide over the world, run by Sane UI's own engine. |
+| [Speed Leveling](src/SpeedLeveling/README.md) | One key for questing, pressed again and again: it loots, fights, talks, picks up or hearths, whichever is due; and your leveling guide over the world, run by SaneUI's own engine. |
 | [Tooltips](src/Tooltips/README.md) | The game's tooltips drawn anew on dark round-cornered panels in the colour of what they are about; an item also shows the quests that need it, which of your characters have it and what it is worth. |
 
 ## Building
@@ -48,7 +48,7 @@ saneui installrelease      # the release into both games: the tag current, or on
 saneui build               # tests and builds into BUILD only (--release TAG: a release, into BUILD/release/TAG)
 saneui test                # every check and test (dev/tests/run)
 saneui installed           # which build each game has
-saneui freshinstall        # a new player's first Sane UI in both games: your WTF and Interface set aside
+saneui freshinstall        # a new player's first SaneUI in both games: your WTF and Interface set aside
 saneui freshinstall navigation inventory   # the same with only those modules and Core
 saneui myinstall           # your own WTF and Interface back, the fresh install's deleted
 saneui update              # pull from GitHub (main, fast-forward only), then installdev
@@ -100,7 +100,7 @@ installed. `WOW_FOREVER` and `WOW_RETAIL` name the folders on another computer. 
 - **Tests** (`dev/tests/run`): a lint (TOCs, syntax, stray globals, the guards) and every offline test, the
   Lua ones against a small stand-in for the client (`dev/tests/wowstub.lua`); no game needed.
 - **Errors handled gracefully:** everything the game calls runs behind a guard; a caught error goes into
-  Sane UI's error log (`saneui showerrors`) and the module gives the game's own part back until the next
+  SaneUI's error log (`saneui showerrors`) and the module gives the game's own part back until the next
   `/reload`.
 - **Blizzard's code** is the ground truth: the project is built against the newest export of the game's
   interface code, Forever's with Retail's beside it, which is not in the repository.

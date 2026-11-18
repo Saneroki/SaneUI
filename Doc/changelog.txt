@@ -1,8 +1,8 @@
-Sane UI: what is new
+SaneUI: what is new
 ====================
 
 The bigger changes of each version, newest first. From now on
-each part names the addon and its version: Sane UI is the core
+each part names the addon and its version: SaneUI is the core
 every module needs, each module (Navigation, ...) a download of
 its own.
 
@@ -37,7 +37,7 @@ Tooltips 0.3.2 (2026-11-18)
 - Tooltips show at once, as the game's do; holding Shift
   for them is a choice in the setup and on the options page.
 
-Sane UI 0.3.3 (2026-11-18)
+SaneUI 0.3.3 (2026-11-18)
 --------------------------
 - The auction house's full scan line has a pause and resume
   button and an X: pause the scans (they stay paused, after a
@@ -45,14 +45,14 @@ Sane UI 0.3.3 (2026-11-18)
 - The setups' key boxes take your key again: click a box,
   then press the key, with Shift, Ctrl or Alt held if you like
   (Alt-Shift-V), or a mouse button.
-- The setups of several Sane UI addons come together in one
+- The setups of several SaneUI addons come together in one
   window after the login: a first page lists them, then one
   after another. Each is remembered once you finish it; one
   closed early comes back where you left it. Choose defaults
-  keeps an addon as Sane UI sets it up. After a big change an
+  keeps an addon as SaneUI sets it up. After a big change an
   addon can ask you through its setup again. Where your
   addons have them, the first page also shows the button that
-  swaps a Sane UI window for the game's classic one, the red
+  swaps a SaneUI window for the game's classic one, the red
   buttons that take a window off the full screen and back,
   and the Classic windows dropdown, which works there too.
   /sane setup starts the whole onboarding again.
@@ -61,8 +61,8 @@ Sane UI 0.3.3 (2026-11-18)
   Mode for you (SaneUI Combat's party and raid frames).
 - The Classic windows dropdown also offers SaneUI Combat's
   unit frames, party and raid frames and nameplates: each the
-  game's own or Sane UI's.
-- An old SaneUI_Nameplates folder stays off, and Sane UI says
+  game's own or SaneUI's.
+- An old SaneUI_Nameplates folder stays off, and SaneUI says
   once to delete it: the nameplates are part of SaneUI Combat.
 
 Navigation 0.3.5 (2026-11-16)
@@ -70,7 +70,7 @@ Navigation 0.3.5 (2026-11-16)
 - A setup, step by step: how to open the map (the corner,
   its click, a key), moving it in Edit Mode, the quest log
   and the map's clicks; a big arrow points into your corner.
-- A key for Sane UI's map; once it has one, the game's map
+- A key for SaneUI's map; once it has one, the game's map
   key opens the game's own map.
 - A right click on the map no longer zooms out: the wheel
   zooms, a right click is for what a thing offers.
@@ -121,14 +121,14 @@ Nameplates 0.3.1 (2026-11-16)
   page (/sane setup nameplates).
 
 
-Sane UI 0.3.2 (2026-11-15)
+SaneUI 0.3.2 (2026-11-15)
 --------------------------
-- Comes with Onboarding: the step-by-step setup of Sane UI's
+- Comes with Onboarding: the step-by-step setup of SaneUI's
   addons, with a sample that shows each choice at once.
 - Full screens open with a left click on their screen edge or
   corner, not when the mouse merely reaches it. Each addon's
   Expand window settings can turn the click off.
-- Sound profiles start on Disabled: Sane UI leaves your game's
+- Sound profiles start on Disabled: SaneUI leaves your game's
   sound settings alone until you choose a profile in the
   minimap's satchel.
 
@@ -147,19 +147,19 @@ Navigation 0.3.3 (2026-11-15)
   scroll bar at the side it is docked to.
 
 
-Sane UI 0.3.1 (2026-11-15)
+SaneUI 0.3.1 (2026-11-15)
 --------------------------
-- First public alpha of Sane UI Core, the base every Sane UI
+- First public alpha of SaneUI Core, the base every SaneUI
   addon needs. On its own it changes nothing you can see.
-- One options page for all Sane UI addons: Esc > Options >
-  AddOns > Sane UI.
+- One options page for all SaneUI addons: Esc > Options >
+  AddOns > SaneUI.
 - Profiles, off at first: turn them on to share your settings
   between your characters.
-- Safe error handling: if a Sane UI addon runs into an error,
+- Safe error handling: if a SaneUI addon runs into an error,
   that part goes back to the game's own until your next /reload,
   with one line in your chat. /sane errors lists them.
-- A new logo for Sane UI and each of its addons.
-- Sane UI's Discord: copy its link from the options page. A
+- A new logo for SaneUI and each of its addons.
+- SaneUI's Discord: copy its link from the options page. A
   bug report, an idea or other feedback written there says which
   Discord channel to paste it into.
 
@@ -175,7 +175,7 @@ Navigation 0.3.2 (2026-11-15)
   tram, orange or red where enemies far above your level roam.
 - The quest log over the map, a search for NPCs, items, quests and
   places, and the maps of every dungeon and raid.
-- Needs Sane UI Core, which the CurseForge app installs with it.
+- Needs SaneUI Core, which the CurseForge app installs with it.
 
 
 0.3.0 (2026-10-14)
@@ -231,7 +231,7 @@ Navigation 0.3.2 (2026-11-15)
   map pin, what drops it, where to get it, who sells it...). The
   list reaches down the screen with a scroll bar. Searches that run
   into a problem say so and never close the map; every search field
-  of Sane UI handles its errors the same way.
+  of SaneUI handles its errors the same way.
 - Share a map sketch or markers with your party, guild or someone:
   type a name, the game suggests players you know.
 - Bags: free slots and the waste bin clear and framed, icons with
@@ -287,7 +287,7 @@ Navigation 0.3.2 (2026-11-15)
   what drops a thing, vendor in Elwynn, a guild member, a quest, a
   zone) and pick a find: its places glow on the map and the map goes
   to the nearest; Shift-Enter puts the map pin there. A key of its
-  own under Sane UI in the key bindings opens it.
+  own under SaneUI in the key bindings opens it.
 - Your own slot among the party and raid frames shows your name and
   your health like every other, with the cog in front of your name.
 - Nameplates stack much closer: as close as their health bar and
@@ -307,7 +307,7 @@ Navigation 0.3.2 (2026-11-15)
   spells of the game's damage meter: your group's damage, healing,
   dispels, interrupts and the foes' spells that hit you.
 - Share casts in a fight with your group: after each fight the
-  Sane UI of your party or raid swaps its players' casts of buffs
+  SaneUI of your party or raid swaps its players' casts of buffs
   and debuffs, so the aura history shows theirs too.
 - At the spirit healer, Return me to life is a big picture over the
   talk, and its last question has a tick Don't ask me again: from
@@ -377,7 +377,7 @@ Navigation 0.3.2 (2026-11-15)
   press Send; the next mail follows the same way. With Speed Leveling
   on it goes by itself; hold Shift to keep it for this visit.
   Unticked, the mailbox is the game's own.
-- At a flight master Sane UI's full map opens in place of the game's
+- At a flight master SaneUI's full map opens in place of the game's
   flight map, its flight points large: click one to fly there, the
   mouse on it shows the way and what it costs. Hold Shift as you
   talk to the flight master for the game's own.
@@ -409,7 +409,7 @@ Navigation 0.3.2 (2026-11-15)
 - A checkbox beside each of Action Bars 2 to 8 (warrior, druid,
   rogue): Page with your stance or form makes the bar paged as the
   game's own Bar 1 is, a row of its own in each stance or form.
-- A save window after you change settings in Sane UI's options, the
+- A save window after you change settings in SaneUI's options, the
   game's own options, key bindings, Edit Mode or the addon list: it
   stands beside them until you answer. Yes saves the changes into
   every profile you tick, No takes them back. The Profiles page has
@@ -518,8 +518,8 @@ Navigation 0.3.2 (2026-11-15)
   you have not learned yet in grey, the weapon skills to learn and the
   Home page of what your trainer teaches now. Drag a grey spell onto an
   action bar button to keep it for that spell.
-- Fixed: WoW: Forever crashed in the Ruins of Lordaeron while Sane UI
-  was on: its profiles set water detail to its finest. Sane UI now
+- Fixed: WoW: Forever crashed in the Ruins of Lordaeron while SaneUI
+  was on: its profiles set water detail to its finest. SaneUI now
   leaves water detail to the game's own graphics menu.
 - Threat and damage meter: Lock window, in its cog and on the page
   Combat, keeps it where it is and at its size. It no longer shows on
@@ -558,9 +558,9 @@ Navigation 0.3.2 (2026-11-15)
   cast alone. In a fight a HoT you cast on someone goes from their frame
   until it runs out, then shows again. The buffs of your class no
   longer show there by themselves.
-- Someone joining your group no longer breaks Sane UI's party frames,
+- Someone joining your group no longer breaks SaneUI's party frames,
   bars and unit frames, which then gave way to the game's own.
-- Quest areas on the small map are Sane UI's alone and lighter: the
+- Quest areas on the small map are SaneUI's alone and lighter: the
   game's minimap no longer draws its own over them, nor the white ring
   that showed round them.
 - Indoor maps now show in Ironforge's halls, the Undercity and the other
@@ -736,14 +736,14 @@ Navigation 0.3.2 (2026-11-15)
 - The map's pins show drop rates: hover a rare, a chest, a herb or
   a vein to see what it gives and how often. A dungeon's enemies
   and its bosses' loot show them too.
-- Discoveries: Sane UI keeps a list of what the game showed that
+- Discoveries: SaneUI keeps a list of what the game showed that
   its data lacked, such as a new quest or a drop nobody listed.
   /sane data found shows it, and General has two chat messages
   for new data, both off at first.
 - Drop counts and discoveries are shared too, with your guild and
   group, every 15 minutes, your own other accounts included.
 - Auction prices are shared by themselves: a full scan reaches
-  every Sane UI player in your guild and group, your own other
+  every SaneUI player in your guild and group, your own other
   accounts too. General, Share data with my guild and group. Odd
   prices wait for a second player, and Forget shared data takes
   out all that others sent.
@@ -755,12 +755,12 @@ Navigation 0.3.2 (2026-11-15)
   at the auction house, over 24 hours, a week, two weeks, a month or
   everything seen so far. Tap Ctrl for the next range. It reads your
   scans and your other accounts', whichever are the most current.
-- Distances are in meters and the time in 24 hours everywhere Sane
-  UI writes them. Yards and 12 hours: General, Units, Imperial.
+- Distances are in meters and the time in 24 hours everywhere
+  SaneUI writes them. Yards and 12 hours: General, Units, Imperial.
 - A new level is told in the middle of the screen: your health,
   mana, stats and talent points it brought and how long you played
   on the level before, in place of the game's lines in the chat.
-- Stats are written short wherever Sane UI shows them: Str, Stam,
+- Stats are written short wherever SaneUI shows them: Str, Stam,
   Agi, Int, Spi, Arm, Crit, Crit dmg, AP, SP and the rest.
 - Your alts: the list of characters is a dropdown, which leaves
   room for the items, and the window now works like your bags:
@@ -841,7 +841,7 @@ Navigation 0.3.2 (2026-11-15)
   is (cloth, leather, mail, plate, a weapon), whether you can use
   it, what it sells for and what it changes against what you
   wear. Space goes on.
-- Loot: a loot window of Sane UI's own at your mouse: each
+- Loot: a loot window of SaneUI's own at your mouse: each
   thing a bar like the nameplates', in its quality's colour (a
   quest's in gold), with what a vendor pays for it and an A to
   take it at once from now on; Link and Close at the foot.
@@ -867,7 +867,7 @@ Navigation 0.3.2 (2026-11-15)
   your Herbalism or Mining is too low for the next zone the
   guide takes you to, so you gather a while first. Open the Guides window
   (/sane guides) to paste a guide you bought - it opens for your
-  own account - or any guide's text; Sane UI runs it by itself as
+  own account - or any guide's text; SaneUI runs it by itself as
   you quest. Pause it or switch it off in the minimap's satchel. Over it, the items to
   use and the NPCs and creatures to target, as icons you click. A
   leather arrow of its own, placed in Edit Mode, points the way:
@@ -883,7 +883,7 @@ Navigation 0.3.2 (2026-11-15)
   with the zone you are in, your time and the realm's, frame
   rate, latency, new mail, the game's calendar, clock (with its
   alarm) and stopwatch; the buttons other addons put round the
-  minimap (and the game's addon menu), round; Sane UI's own
+  minimap (and the game's addon menu), round; SaneUI's own
   switches, such as your leveling guide on, paused or off; every
   kind of pin and what the game's minimap tracks, in large cells
   you switch with a click.
@@ -908,12 +908,12 @@ Navigation 0.3.2 (2026-11-15)
   also takes the place of the game's quest tracker on the normal
   screen: in its own spot (top left at first), clicked through,
   showing only what is still to do.
-- Retail: Sane UI works in the main game too, beside WoW: Forever.
+- Retail: SaneUI works in the main game too, beside WoW: Forever.
   Everything that both games have works in both; what only Forever
   has (its painted Atlas, its data of the world, Combat's own
   spellbook and talents, the trainers' spells in the spellbook)
   stays in Forever for now, and the game's own takes its place.
-  The game's settings Sane UI keeps for you stay with the game
+  The game's settings SaneUI keeps for you stay with the game
   they were made in.
 - Navigation in Retail: the map shows the game's own maps, one
   at a time, as the game's map does: click a zone to go in,
@@ -921,7 +921,7 @@ Navigation 0.3.2 (2026-11-15)
   world, scroll to zoom. WoW: Forever keeps its own map of the
   whole world.
 - Speed Leveling: one key for questing. Give it a key (E, say)
-  under Sane UI in the game's key bindings and press it again and
+  under SaneUI in the game's key bindings and press it again and
   again: it opens the loot of the corpse beside you, picks up the
   quest's plant or chest you stand at, finds what your quests and
   your leveling guide want around you, puts a skull on it, and
@@ -934,15 +934,15 @@ Navigation 0.3.2 (2026-11-15)
   outside your view waits at the edge of the screen, its point
   showing which way to turn. On the minimap the found herbs and ore
   wear the same leather ring, round.
-- Data: Sane UI's database gets better as you play. Every quest you
+- Data: SaneUI's database gets better as you play. Every quest you
   are offered, take, do and hand in is checked against it: its
   giver, objectives, rewards and who takes it back are confirmed, and
-  a quest Sane UI did not know yet is learned as you do it. Loot is
+  a quest SaneUI did not know yet is learned as you do it. Loot is
   counted, so the chances of drops become real numbers over time;
   the places of quest givers, vendors, herbs and ore are narrowed to
   where you stood; creatures, vendors' goods and spells are checked
   too. What your play teaches is kept in your saved files, for the
-  next versions of Sane UI to take in.
+  next versions of SaneUI to take in.
 - Inventory: the Character Stats window is redrawn on the journal's
   page. Your stats are no longer one long narrow list: each category
   is a section written in pencil, and the sections stand side by side
@@ -961,9 +961,9 @@ Navigation 0.3.2 (2026-11-15)
   are larger. A group's categories (The
   Armory, Adventure Prep) are written darker, so they are easier to
   read.
-- Combat text of Sane UI's own: damage, critical hits and heals rise
+- Combat text of SaneUI's own: damage, critical hits and heals rise
   over the nameplate of the creature or player that took them, and
-  over your own character, in Sane UI's handwriting. A miss, dodge,
+  over your own character, in SaneUI's handwriting. A miss, dodge,
   parry, block, evade or immunity shows as a pencil drawing instead of
   a word. It takes the place of the game's own combat text.
 - Nameplates: everything on one line inside the bar, each part only
@@ -983,12 +983,12 @@ Navigation 0.3.2 (2026-11-15)
   the map pin there.
   A click on a quest in the quest log moves the map to it. The box
   Follow me on the full map's bar keeps you in the map's middle.
-- Data you can trust: what Sane UI's data has not had confirmed by
+- Data you can trust: what SaneUI's data has not had confirmed by
   the game says "Unconfirmed Data" until you or somebody of your
   guild or group sees it in play: an NPC at its place, a mailbox
   opened, a boss's loot looted after the kill, its abilities cast.
-  What one player confirms is shared with the others who have Sane
-  UI, slowly and never in a fight or a dungeon. The stats of the items
+  What one player confirms is shared with the others who have
+  SaneUI, slowly and never in a fight or a dungeon. The stats of the items
   you carry are learned and shared too, also of items the game keeps
   hidden.
 - Tooltips: a tooltip too tall for the screen goes on in a second
@@ -1035,7 +1035,7 @@ Navigation 0.3.2 (2026-11-15)
   the lift's own floor, and of the ways a route has worked out the
   quickest is shown.
 - Inventory: the character, the bags, the bank and your alts in
-  Sane UI's own look: an adventurer's journal of cream paper bound in
+  SaneUI's own look: an adventurer's journal of cream paper bound in
   stitched leather, items in pencil-drawn slots, words in a
   hand-printed font. The character stands on a painted doll with your
   gear in two arcs round you, each piece's name, level and stats on a
@@ -1091,7 +1091,7 @@ Navigation 0.3.2 (2026-11-15)
 - Navigation: the dungeon maps show many more bosses, and a boss's
   tooltip lists its abilities and what it drops, with their icons.
   In six dungeons the enemies are marked too.
-- The addon list is tidy again: Sane UI's data is part of Sane UI
+- The addon list is tidy again: SaneUI's data is part of SaneUI
   itself and is read with it, so only the modules you choose are
   listed, and no "Data:" entries any more.
 - Navigation: indoor maps show only inside buildings and caves, no
@@ -1109,7 +1109,7 @@ Navigation 0.3.2 (2026-11-15)
   crosses the seas by whatever way is quickest: the hearthstone home,
   then a ship, or across another continent to Zephras Isle. A pin
   where nobody can walk still gets its line, as near as one walks.
-- A review of the whole of Sane UI, with many fixes: the bags keep
+- A review of the whole of SaneUI, with many fixes: the bags keep
   your category order and Sort By again, the bank's sidebar works with
   several bank tabs, guild professions show and guild lists keep their
   place when you click, tooltips keep their 3D portraits, Ignore and
@@ -1120,7 +1120,7 @@ Navigation 0.3.2 (2026-11-15)
   mouse wheel), each quest has its mark, and a click puts a map pin on
   its objective. Right-click for its details or to show it on the map.
   Herbs and ore found on the minimap can be clicked for a map pin too.
-- Every full screen has a cog in its title bar: Sane UI's options right
+- Every full screen has a cog in its title bar: SaneUI's options right
   there, page by page, as in the game's options. A question mark beside
   it will hold a tour of that screen.
 - Navigation: the travel overlay sits lower, two thirds up the screen,
@@ -1197,14 +1197,14 @@ Navigation 0.3.2 (2026-11-15)
   Combat's options). In a fight it still shows and pages; cast from
   your bars until the fight is over. Your own talents beside it, as the
   game's: the three trees, learning and Apply, Reset, both
-  specializations. A talent planner addon Sane UI knows is a window of
+  specializations. A talent planner addon SaneUI knows is a window of
   its own there.
 - Full screen layouts can all be deleted now (right-click a layout's
   tab), as long as one is left.
 - The dropdown Classic windows lists the game's own windows of every
-  module. And the game's windows Sane UI stands for (friends list,
+  module. And the game's windows SaneUI stands for (friends list,
   group finder, map, minimap, spellbook, character sheet, bags) have a
-  Sane UI button beside their close button that switches to Sane UI's.
+  SaneUI button beside their close button that switches to SaneUI's.
 - Inventory: a tab with an icon for each window of the full screen,
   right of the layouts' tabs: lit while that window is on the screen,
   a click puts it there or takes it off.
@@ -1220,7 +1220,7 @@ Navigation 0.3.2 (2026-11-15)
   mouse against the middle of the bottom edge and your talents and your
   spellbook fill the screen side by side; push there again, or press
   Esc, and they go. The game's talents and spellbook keys bring them
-  there too. With a talent planner addon that Sane UI knows installed,
+  there too. With a talent planner addon that SaneUI knows installed,
   its window is your talents there.
 - Social: every party or raid you join starts a conversation of its
   own, as a whisper does, named by the others in it. It stays in the
@@ -1247,7 +1247,7 @@ Navigation 0.3.2 (2026-11-15)
   words of one or more bubbles, anyone's, and press Ctrl+C.
 - Inventory, a new module: push the mouse into the bottom right corner
   of the screen and it fills with your inventory's windows; push it
-  there again, or press Esc, and they go. First there: Sane UI's own
+  there again, or press Esc, and they go. First there: SaneUI's own
   character sheet, each part a window you move and size as you like:
   your model with your gear round it as on the game's sheet (click,
   drag and link your items there); your stats as the game lists them,
@@ -1257,7 +1257,7 @@ Navigation 0.3.2 (2026-11-15)
   Skills (your ranks, and what a weapon skill means against a raid
   boss), PvP (your season's rank and its next reward), Currency and
   Statistics.
-- Inventory: your bags, Sane UI's own, on the inventory's full screen
+- Inventory: your bags, SaneUI's own, on the inventory's full screen
   in the window Bags. Every item is the game's own button: click,
   drag, right click to use it (in a fight too), sell it or put it into
   the bank. Choose how they show under View: every slot in your bags'
@@ -1281,7 +1281,7 @@ Navigation 0.3.2 (2026-11-15)
   its bags, its bank and its gear on a paper doll as it last had them,
   with the game's tooltips. Type in the search box to find an item
   across them all: each says how many it has.
-- Navigation: Sane UI's minimap and map in one window. Small in the top
+- Navigation: SaneUI's minimap and map in one window. Small in the top
   right corner it is your minimap; move the mouse into the corner and
   the same map fills the screen. Drag it, zoom it with the mouse wheel
   from close up out to the whole world, right click for one map out,
@@ -1302,7 +1302,7 @@ Navigation 0.3.2 (2026-11-15)
   quickest. Leave the line and it finds the way again.
 - Navigation: pins on the map in the game's own looks: your quests,
   flight points, rares and treasures nearby, places, ways into other
-  maps, your party; and from Sane UI's own database, all over the
+  maps, your party; and from SaneUI's own database, all over the
   world: vendors, trainers, innkeepers, bankers and the other services,
   quest givers, rares, herbs, ore, treasure chests, mailboxes, meeting
   stones, spirit healers and the entrances of dungeons and raids, each
@@ -1315,7 +1315,7 @@ Navigation 0.3.2 (2026-11-15)
   to follow it: the map shows where it is and its text. Track, share
   and abandon it there.
 - Navigation: choose the game's own minimap or map in Classic windows
-  and it stays chosen; the top right corner always opens Sane UI's map.
+  and it stays chosen; the top right corner always opens SaneUI's map.
   The minimap now fills its whole window, whatever its shape.
 - Navigation: the Overlay view is gone. The painted map, Atlas, comes
   as a module of its own: switch Atlas on in the addon list and the
@@ -1326,14 +1326,14 @@ Navigation 0.3.2 (2026-11-15)
   own, listed with its last message and how many wait to be read.
   Choose one to read it in bubbles and write in it right there. Kept
   for each character.
-- When something in Sane UI fails, that part steps aside and the game's
+- When something in SaneUI fails, that part steps aside and the game's
   own takes its place (its spellbook, chat or tooltips) until the next
   /reload. No error window pops up: one line in chat says where, and
   /sane errors lists what happened.
 - Aliases and notes: right click a player's name anywhere (a chat, the
   friends list, the guild, the target) and choose Set Alias or Set
   Note. An alias is your own name for that character: give all of a
-  friend's alts the same alias and Sane UI's chat, friends list and
+  friend's alts the same alias and SaneUI's chat, friends list and
   tooltips show it for each. The note shows in their tooltip. Both stay
   on your computer.
 - Tooltips: an item's tooltip shows which of your characters have it,
@@ -1341,8 +1341,8 @@ Navigation 0.3.2 (2026-11-15)
   bags, bank, worn. Every part of a tooltip has its name on its divider
   (Stats, Effects, Quest, Gold, ...). What other addons write into a
   tooltip, wherever they write it, is gathered in one section at the
-  bottom, "Addons", and no longer mixes with Sane UI's lines. The quest
-  information comes from Sane UI's new data packs, which load by
+  bottom, "Addons", and no longer mixes with SaneUI's lines. The quest
+  information comes from SaneUI's new data packs, which load by
   themselves after you log in.
 
 - Tooltips show 3D models in place of the picture: creatures and
@@ -1375,33 +1375,33 @@ Navigation 0.3.2 (2026-11-15)
   search in the title bar finds in all of them.
 
 - Profiles, made simple: with "Accountwide settings" on (as at first),
-  all your characters share one profile, Accountwide: Sane UI's
+  all your characters share one profile, Accountwide: SaneUI's
   settings and the game's own (its options, Edit Mode layout, chat
   windows). Make more profiles and give one to any character, copy one
   from another, reset one to its defaults, or export it as text to share
   and import it again. With Accountwide settings off, each character
-  keeps its own Sane UI settings and the game's settings are left alone.
+  keeps its own SaneUI settings and the game's settings are left alone.
   /sane profile lists your profiles and switches to one.
 
-- Sane UI's windows: Esc closes them as it closes the game's panels, a
+- SaneUI's windows: Esc closes them as it closes the game's panels, a
   click brings a panel to the front, and they have tabs like the game's.
   In Edit Mode a click on a window selects it, with "Reset To Default
   Position", and windows snap to Edit Mode's grid. "Reset window
   positions" (Options > General, or /sane window reset all) puts every
-  window back. Key bindings: a section "Sane UI" with keys for the
+  window back. Key bindings: a section "SaneUI" with keys for the
   options and the chat window. Animations can be switched off for all
-  of Sane UI (Options > Appearance).
+  of SaneUI (Options > Appearance).
 
 - The chat window starts docked in the lower left corner and has no bar
   of its own.
 
-- Sane UI's options: settings you type in, dropdowns where you tick
+- SaneUI's options: settings you type in, dropdowns where you tick
   several, and buttons. A page with tabs (Social) has a search box that
   finds a setting in any tab, and a Defaults button. /sane options
   during a fight opens the options when the fight is over. Tooltips'
   settings come in sections.
 
-- The game settings Sane UI keeps no longer stall the game when a
+- The game settings SaneUI keeps no longer stall the game when a
   character comes into the world, and settings the game does not let
   addons change are left alone. An Edit Mode layout only one character
   has stays that character's choice when another character logs out.
@@ -1418,7 +1418,7 @@ Navigation 0.3.2 (2026-11-15)
 - Abilities: hunters no longer see their pet's abilities as grey spells,
   and a spell that needs another spell first says which one.
 
-- The game settings Sane UI keeps the same on all characters now follow
+- The game settings SaneUI keeps the same on all characters now follow
   the game's own options pages. The game's chat channels are chosen in
   the chat window's channel list.
 
@@ -1426,10 +1426,10 @@ Navigation 0.3.2 (2026-11-15)
   close, and can be kept open. The CVar list lets you edit values in
   place and filter them with the game's filter button.
 
-- The Sane UI page in the game's options (Esc > Options > AddOns >
-  Sane UI) shows where to find Sane UI (Discord, website, GitHub) and
+- The SaneUI page in the game's options (Esc > Options > AddOns >
+  SaneUI) shows where to find SaneUI (Discord, website, GitHub) and
   has buttons to report a bug, suggest a feature or send feedback. Write
-  it there, and Sane UI makes a report to copy and paste on GitHub or
+  it there, and SaneUI makes a report to copy and paste on GitHub or
   Discord. Also /sane feedback.
 
 - Windows get a title bar with their name and their buttons (the game's
@@ -1453,7 +1453,7 @@ Navigation 0.3.2 (2026-11-15)
   maximize and minimize, and close. In Social the first and the last bring
   the game's chat back.
 
-- Sane UI's windows are moved and sized like the game's own frames: only in
+- SaneUI's windows are moved and sized like the game's own frames: only in
   Edit Mode (Esc > Edit Mode). There each shows Edit Mode's blue box with
   its name; drag it, and size it by its grip. Outside Edit Mode there is no
   grip and nothing is dragged by accident.
@@ -1479,7 +1479,7 @@ Navigation 0.3.2 (2026-11-15)
   again): Corner radius, and Don't round corners on screen edges (off:
   every corner is round; at 100 % a square window becomes a circle).
 
-- /sane window: a window to try Sane UI's windows; click it to keep it
+- /sane window: a window to try SaneUI's windows; click it to keep it
   open.
 
 - Tooltips: what you wear stands still beside the item you look at, a small
@@ -1517,7 +1517,7 @@ Navigation 0.3.2 (2026-11-15)
   other opacity slider), Show the game's chat too; the Spellbook's
   Show unlearned spells, Move and resize the spellbook.
 
-- Spellbook: its options page has two sections. "Sane UI lays out the
+- Spellbook: its options page has two sections. "SaneUI lays out the
   spellbook pages" comes first; the four switches that need it are
   greyed out while it is off. The spellbook's own menu has the switches
   about the book too. Deleting a saved layout asks first. Fixed: a
@@ -1537,7 +1537,7 @@ Navigation 0.3.2 (2026-11-15)
 
 - Profiles: Empty, first in the list and what every character has at
   first: your settings as they are kept, loaded at every login and saved
-  at every logout and /reload. SaneUI Defaults now only resets Sane UI's
+  at every logout and /reload. SaneUI Defaults now only resets SaneUI's
   own settings, not the game settings that Sync keeps.
 
 - Sync: the Edit Mode layout you choose is kept, also in your profiles.
@@ -1558,30 +1558,30 @@ Navigation 0.3.2 (2026-11-15)
   channel notices, friends coming online, addon messages. Each kind
   can be shown or hidden in the list on the chat's name.
 
-- Settings and Sync are part of Sane UI itself now, no addons of their
+- Settings and Sync are part of SaneUI itself now, no addons of their
   own. If you installed an earlier 0.3.0, delete the folders
   SaneUI_Settings and SaneUI_Sync from Interface\AddOns.
 
 - Profiles: the profile SaneUI Defaults is always there, with every
-  setting as Sane UI has it at first. Load it to go back to those
+  setting as SaneUI has it at first. Load it to go back to those
   settings, or duplicate it to start a profile of your own. It cannot be
   changed, renamed or deleted.
 
 - Profiles: the line New Characters in the list of characters sets the
   profile, Load at login and Save at logout that a character starts
   with when it first logs in: a new one, or one you have not played
-  since installing Sane UI.
+  since installing SaneUI.
 
 - Windows docked to a screen edge fill the whole screen when you push
   the mouse against that edge (docked in a corner: all the way into
   that corner), and spring back when you push it there again. While a
   window fills the screen, nothing behind it can be clicked. How they
-  move is chosen under Sane UI > Appearance (Animation type). The chat
+  move is chosen under SaneUI > Appearance (Animation type). The chat
   window does it; its section Expand window (Chat >
   Appearance) switches it on or off and sets its own animation type and
   the background's opacity and texture.
 
-- New: Sync, part of Sane UI itself: the settings the game keeps for each character on its
+- New: Sync, part of SaneUI itself: the settings the game keeps for each character on its
   own are the same on all your characters and part of your profiles, in
   parts you tick, from the Edit Mode layout and the chat windows to
   graphics and sound.
@@ -1604,7 +1604,7 @@ Navigation 0.3.2 (2026-11-15)
   does and its default, change it, and tick it to keep it the same on all
   your characters.
 
-- Options: a clearer layout. Sane UI shows its logo; under it are the pages
+- Options: a clearer layout. SaneUI shows its logo; under it are the pages
   Profiles, General and Appearance, then one page per module, called by its
   name (Chat, Spellbook, Tooltips).
 
@@ -1616,8 +1616,8 @@ Navigation 0.3.2 (2026-11-15)
   your characters, give any character a profile to load at login and save
   into at logout: it uses that profile instead of the account's settings.
 
-- Options: every page of Sane UI now has its banner at the top. The
-  general page shows the Sane UI banner above General, and each module's
+- Options: every page of SaneUI now has its banner at the top. The
+  general page shows the SaneUI banner above General, and each module's
   page shows its own (Sane Spellbook, Sane Chat, Sane Tooltips).
 
 - Windows dock to the screen's edges. Drag the chat window near a corner, the
@@ -1683,7 +1683,7 @@ Navigation 0.3.2 (2026-11-15)
   Tooltips in the addon list; untick it and
   the tooltips are the game's own again.
 
-- Fixed: Sane UI's options were missing from Esc > Options > AddOns when no
+- Fixed: SaneUI's options were missing from Esc > Options > AddOns when no
   other addon had options of its own. They are back.
 
 - Chat: in a fight or a dungeon, where the game shows addons no chat, the
@@ -1691,16 +1691,16 @@ Navigation 0.3.2 (2026-11-15)
 
 - Lighter and sturdier everywhere: the spellbook does its heavy work only when
   you open it, the chat does less per message, and a part that fails gives the
-  game's own back without taking the rest of Sane UI with it.
+  game's own back without taking the rest of SaneUI with it.
 
 
 0.2.0 (2026-10-14)
 ------------------
-- Modules you can switch on and off. In the game's addon list, Sane UI now has
+- Modules you can switch on and off. In the game's addon list, SaneUI now has
   its modules under it: Settings and Spellbook. Untick the ones
   you do not want. What a module saved is kept until you switch it on again.
 
-- Options with a page per module. Esc > Options > AddOns > Sane UI is the
+- Options with a page per module. Esc > Options > AddOns > SaneUI is the
   general page; each module that is switched on has its own page under it.
 
 - If you update from 0.1.0: copy all three folders (SaneUI, SaneUI_Settings,
@@ -1709,7 +1709,7 @@ Navigation 0.3.2 (2026-11-15)
 
 0.1.0 (2026-10-14)
 ------------------
-The first version of Sane UI.
+The first version of SaneUI.
 
 - Spells you have not learned yet, in your spellbook. They are listed in grey,
   in the tab where they will end up, with the level or trainer they come from.
@@ -1722,4 +1722,4 @@ The first version of Sane UI.
 
 - Action bar layouts. Save all your bars under a name and load them again later.
 
-- Options in the game's own menu: Esc > Options > AddOns > Sane UI, or type /sane.
+- Options in the game's own menu: Esc > Options > AddOns > SaneUI, or type /sane.

@@ -1,7 +1,7 @@
 # Image generation
 
-How Sane UI's art is made with image models on this computer: one pipeline from a first idea to the
-game's textures, for still parts and for animated ones, so that every set of pictures looks like Sane UI.
+How SaneUI's art is made with image models on this computer: one pipeline from a first idea to the
+game's textures, for still parts and for animated ones, so that every set of pictures looks like SaneUI.
 Whether to draw our own art at all is in [gui-development.md](gui-development.md), *Art*: Blizzard's
 atlases and files come first. What a finished picture becomes (BLP, sizes, `dev/tools/art`) is in
 [images.md](images.md).
@@ -92,7 +92,7 @@ qwen21-turbo-edit-1ref`); `dev/imagegen/workflows/` is looked in first, for work
 
 ### In ComfyUI's window (a hard rule, Saneroki, 2026-10-23)
 
-Every job Sane UI sends to ComfyUI can be seen in ComfyUI's own window, and everything general is there as a
+Every job SaneUI sends to ComfyUI can be seen in ComfyUI's own window, and everything general is there as a
 template or an app, so Saneroki can follow the work and go on with it there himself:
 
 - **Every job is a workflow there.** `dev/tools/imagegen`'s `Server.queue` sends each job's graph in the canvas'
@@ -128,7 +128,7 @@ template or an app, so Saneroki can follow the work and go on with it there hims
 
 ## The house style
 
-The look of Sane UI's own windows is decided in [interface-style.md](interface-style.md); Saneroki's decisions go
+The look of SaneUI's own windows is decided in [interface-style.md](interface-style.md); Saneroki's decisions go
 there. Since 2026-10-30 (*The new direction* there) they are built from WoW: Forever's own images, picked by number
 from the game's art, not painted by a model. The journal look (Saneroki, 2026-10-21), an adventurer's journal of
 parchment and stitched leather, pencil on the paper, stays only for what is built in it until that is rebuilt in
@@ -137,7 +137,7 @@ the journal look in one `style:` line for parts, put after every
 prompt of the recipes that make interface art (`concept`, `concept-free`, `part-new`): flat front view, light
 from the top left, no text, no stains, no sketches (code lays those over). Its picture, the anchor, is
 `assets/Concept art/UI style/edges-and-buttons.png` (its edges, title strap and patch buttons were picked); the
-recipe `concept` gives it as image 1. The parts and views of Sane UI's own windows in the journal look are made by the strict
+recipe `concept` gives it as image 1. The parts and views of SaneUI's own windows in the journal look are made by the strict
 harness in `dev/imagegen/sets/interface/` ([interface-style.md](interface-style.md), *The harness*): each part
 from its crop of a pick, the views laid out in code.
 
@@ -229,7 +229,7 @@ A list is a text file, one line each. `dev/tools/imagegen`'s head says the same.
 | `<name>: <text>` | one prompt: its name (letters, digits, `-`, `_`) and what to make | |
 
 For the whole list, the last line counts; for the prompts after it, a new line replaces it and an empty
-one ends it. Paths are from Sane UI's folder.
+one ends it. Paths are from SaneUI's folder.
 
 ## Running it
 
@@ -484,7 +484,7 @@ the whole texture. The tool writes the sheet, a `.gif` preview at the game's spe
 FlipBook's numbers. The sheet becomes a BLP like any picture: add it to `dev/tools/art`'s `PICTURES` with
 the kind `sheet`, which keeps it whole.
 
-**In the game** (Blizzard's pattern; not tried in Sane UI yet):
+**In the game** (Blizzard's pattern; not tried in SaneUI yet):
 
 ```xml
 <Texture parentKey="StarGlint" file="Interface\AddOns\SaneUI_Module\Art\star-glint" alphaMode="ADD" setAllPoints="true"/>

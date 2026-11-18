@@ -21,7 +21,7 @@ end (`dev/build`, from `assets/data/`).
 | `Profiles.lua` | Where every module's settings live (*Profiles* below): `Core.Profiles.Enabled`/`SetEnabled`/`On`/`Arrive`/`Live`/`InUse`/`List`/`Fixed`/`Create`/`Use`/`Rename`/`Delete`/`CopyFrom`/`Reset`/`Export`/`Import`/`Character`/`Leveling`/`SetLeveling`; `VERSION` 3; `/sane profile [name|on|off]` |
 | `Dock.lua` | Nine snap zones: `Core.Dock.ZONES`, `REACH` 60, pure `Find`/`Rect`/`Of`, `Anchor` (a frame hung on the screen's point of its zone), `Hold`/`Holder` (a zone holds one window), `Watch`/`Drop` (the shape while dragged) |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open: `Core.EditMode.active`, `available`, `Watch(fn)` |
-| `Escape.lua` | `Core.Escape(owner, close)`: one stand-in `SaneUIEscape` in `UISpecialFrames` for all of Sane UI; hidden by Esc, it runs every close and is shown again while any remain |
+| `Escape.lua` | `Core.Escape(owner, close)`: one stand-in `SaneUIEscape` in `UISpecialFrames` for all of SaneUI; hidden by Esc, it runs every close and is shown again while any remain |
 | `Watch.lua` | `Core.Watch(frame, every, fn, label)` (a child frame's OnUpdate, only while out and shown; an error stops it); `Core.Hover(frame, options)` (the mouse on a window: dwell, linger, margin; a held left button counts) |
 | `Fuzzy.lua` | Forgiving search for the windows' search boxes: `Core.Fuzzy.Query`/`Match`/`Rank`/`Highlight`/`Plain`, `Filter` (≤ `AT_ONCE` 200 rows at once, else a `Core.Steps` job) |
 | `Shape.lua` | A window's plate, round corners and trim: `Core.Shape.New`/`Options`/`Round`, `DEFAULTS` (`corners`, `squareEdges`), masks `CIRCLE`/`HOLE`/`CORNER`/`CAP_*` (`dev/tools/shape-art`) |
@@ -29,7 +29,7 @@ end (`dev/build`, from `assets/data/`).
 | `Look.lua` | The kit (WoW: Forever's own parts, `Doc/guides/interface-style.md`, *The kit*): `Core.Look.Frame`/`Plate`/`Line`/`Square`/`Red`/`Search`/`Head`/`Band`/`Inset`/`Box`/`Headline`/`Slot`/`Tab`/`Outline`/`Rule`/`SetFont`/`Dress`/`Inner`/`Outer`, `Atlas` with `STAND_IN` for Retail, `Font`, colours `NAV`/`LINE`/`INK`/`GOLD`/`FAINT`/`SHADE`, `PX`, `HAND` (the loot feed's Kalam Bold) |
 | `Edge.lua` | A docked window fills the screen when the mouse pushes its screen edge: `Core.Edge.New`/`Options` (section *Expand window*, `DEFAULTS`), `CLASSIC` (the dropdown *Classic windows*); `edge:Fill`/`Stop`/`Docked`/`Escapes` |
 | `Window.lua` | Own windows (*Window contracts* below): `Core.Window.New`, `KINDS` (screen, panel, talk), `Mover`/`Sizer`/`Corner`, `CloseOf`/`Beside`, `All`/`ResetAll`/`PlaceAll` |
-| `Classic.lua` | The game's windows ours stand for: `Core.Classic.Menu`/`List`/`Windows`/`Pick`/`Ticked`, `Attach`/`Button` (the button *Sane UI* on the game's window), `Press(what, binding)` (the key of a panel our code may not open) |
+| `Classic.lua` | The game's windows ours stand for: `Core.Classic.Menu`/`List`/`Windows`/`Pick`/`Ticked`, `Attach`/`Button` (the button *SaneUI* on the game's window), `Press(what, binding)` (the key of a panel our code may not open) |
 | `Views.lua` | Views behind the game's tabs (`TabSystemTemplate`) at the top of `window.inside`: `Window.Views(window)`, `TABS`/`TAB_INSET`/`TAB_WIDTHS` (the spellbook's) |
 | `Selection.lua` | A window chosen in Edit Mode and Core's own dialog for it: `Core.Selection.Select`/`Clear`/`Moved`, `LEVEL` 200, `ANCHOR` |
 | `Holder.lua` | The game's window kept out of sight while ours stands for it (`native.hold`): `Core.Holder.Take(window)`, `TINY`; `holder:Native`/`GiveBack` |
@@ -56,7 +56,7 @@ end (`dev/build`, from `assets/data/`).
 | `Data/Trips.lua` | The trip underway (flight, boat, zeppelin, tram): `Data.Trips()` → `Now`, `CanLand`/`Land`, `NearTram`/`TramNext`, `OnChange` |
 | `Data/Teleports.lua` | Where a teleport of *Travel* brought the player, learnt: `Data.Teleports` (`LOOK`, `WAIT`, `LEAP`) |
 | `Data/Characters.lua` | What the account's characters have (`SaneUIData_Characters`): `Data.Characters`/`Character`/`Items`/`Worn`/`Count`, `CharactersStamp`/`OnCharacters`, `Forget` |
-| `Data/Wire.lua` | Sane UI's addon messages, one prefix: `Core.Wire.Listen`/`Send`/`SendBlock`/`ListenBlock`, `Waiting`, `Drop` |
+| `Data/Wire.lua` | SaneUI's addon messages, one prefix: `Core.Wire.Listen`/`Send`/`SendBlock`/`ListenBlock`, `Waiting`, `Drop` |
 | `Data/Guild.lua` | The guild's records (`SaneUIData_Guild`, quiet until `Guild.Start`): `Data.Guild.Roster`/`Member`/`History`/`Record`/`Records`/`Publish`/`Rights`/`Watch`/`Sync`/`OnChange` |
 | `Data/Confirm.lua` | What the game confirmed of unverified data, shared: `Data.Confirm`/`Confirmed`/`ConfirmedParts`/`OnConfirm`/`Share`; `Data.Confirmations` |
 | `Data/Check.lua` | What the game told compared with a set field by field: `Data.Check(set, key, told)`; `Data.Checks` |
@@ -88,7 +88,7 @@ end (`dev/build`, from `assets/data/`).
 | `Settings/Screen.lua` | The options over a full screen (the title bar's cog): `Config.Screen`, `STRATA` DIALOG |
 | `Settings/Profiles.lua` | The page *Profiles*: `Config.BuildProfiles(page)` |
 | `Settings/Synced.lua` | Its tab *Game settings*: `Config.AccountTab` (a box per `Sync.GROUPS` entry) |
-| `Settings/About.lua` | The page *Sane UI*: `Config.About.LINKS`/`KINDS`/`ShowLink`/`Report`/`Open`/`Fill`; `/sane feedback` |
+| `Settings/About.lua` | The page *SaneUI*: `Config.About.LINKS`/`KINDS`/`ShowLink`/`Report`/`Open`/`Fill`; `/sane feedback` |
 | `Settings/Data/CVarLabels.lua` | The CVars' labels, by `dev/tools/cvar-labels` |
 | `Settings/CVars.lua`, `CVars.xml` | The tab *CVars*: `Config.CVarsTab`, `Config.CVars.All`/`Info`/`Shown`/`Set`/`Keep`; `SaneUISettingsCVarsTemplate`, `SaneUISettingsCVarRowTemplate` |
 | `Settings/Banner.xml` | Our list row templates: `SaneUISettingsBannerTemplate`, `SaneUISettingsEntryTemplate` (a box to type into) |
@@ -119,7 +119,7 @@ which (Doc/guides/data.md, *Players*).
   when the CVar `scriptErrors` is on (the `showing` flag stops the echo). `module.On` is `Core.On`: listeners keep
   running after `off`.
 - `Core.Safe(label, fn, ...)`: catches/reports failure (`Core.Report`: one chat line per label, "problem in <label>.
-  Type /sane bug to make a bug report, then copy and paste it into #bug-reports on Sane UI's Discord: discord.gg/…",
+  Type /sane bug to make a bug report, then copy and paste it into #bug-reports on SaneUI's Discord: discord.gg/…",
   the invite `Core.DISCORD` written short; unless *Errors in chat* is off), returns only the first result. Module `Safe`
   prefixes its name. `Listen`/`Fire` are module-local messages, with each listener safe.
 - `module.Guarded(fn, ...)`: on failure, `StandDown` sets `off` once, calls `GiveBack`, reports via
@@ -189,7 +189,7 @@ described module; later modules bind in `Core.Options` (`Arrive`). `PLAYER_LOGIN
 listeners see the right settings in any order. The v1 shape, brought over once (local `First`, run by `Upgrade` below version 2):
 account options (and a parked `account`) → *Accountwide*, `store.version` → each copy's `_version`, a character's
 profile kept only with `autoLoad`, `newCharacters` → `newProfile`, the rest dropped. Profile names unique
-case-insensitively (`MAX_NAME` 32); Export/Import through `Core.Serial` (`{ kind = "Sane UI profile", version, name,
+case-insensitively (`MAX_NAME` 32); Export/Import through `Core.Serial` (`{ kind = "SaneUI profile", version, name,
 settings }`).
 Pages: `Core.pages.top` (logo only), `.Profiles` (canvas: frame `Core.frames.Profiles`, built in its first `OnShow` by
 `Config.BuildProfiles` with tabs from `Panel.lua`), `[Core.name]` (General), `.Appearance`, then `[module]` titled by

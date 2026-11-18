@@ -1,6 +1,6 @@
 # Voice generation
 
-How Sane UI's voice overs are made: the voice database (every text that gets a voice, who says it, and
+How SaneUI's voice overs are made: the voice database (every text that gets a voice, who says it, and
 how), the cast of voices, the analysis of each line's tone and cadence, directing lines with a language
 model, how a line becomes a request to the cloud voice service, and the voice tool that sends it; and how
 the short sounds of windows are made (*Short sounds*). Read this before making, directing or changing

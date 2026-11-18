@@ -1,32 +1,32 @@
 # Sane Sync
 
 Planning notes for **Sane Sync** (the name is Saneroki's, 2026-10-16; *the app* below): a small program
-outside the game, for Windows, Linux and macOS, that keeps Sane UI up to date and, later, carries shared data
+outside the game, for Windows, Linux and macOS, that keeps SaneUI up to date and, later, carries shared data
 beyond the guild. Saneroki's wish (2026-10-16): it downloads new versions, can run in the background and start
 when the player logs in to the computer, and also handles backups, rollbacks, choosing a version and some
 other options. Everything here is a proposal for Saneroki to discuss; nothing is built yet.
 
 Not to be confused with Core's **Sync** (`src/Core/Sync/`), which keeps the game's own per-character
-settings with Sane UI's settings, inside the game.
+settings with SaneUI's settings, inside the game.
 
 ## What it is for
 
-- **Updates:** a new version of Sane UI is installed by itself (or after a yes, as the player chooses).
+- **Updates:** a new version of SaneUI is installed by itself (or after a yes, as the player chooses).
 - **Choosing a version:** the stable or the test channel, or any older version, held there until unpinned.
 - **Rollback:** back to the version before in one click, with the saved settings from before the update.
-- **Backups:** Sane UI's saved files (settings, learned data, the characters' data, the auction history),
+- **Backups:** SaneUI's saved files (settings, learned data, the characters' data, the auction history),
   kept daily and before every update, restored in one click.
 - **In the background:** a tray icon, starting with the login to the computer if the player wants.
-- **Later, beyond the guild:** shared data from every Sane UI player, not only guild members who are online
+- **Later, beyond the guild:** shared data from every SaneUI player, not only guild members who are online
   at the same time (*Beyond the guild*).
 
 ## Words
 
 | Word | Meaning |
 | --- | --- |
-| **Sane UI version** | Sane UI as published, with a number like 0.4.0: all its addon folders (Core, the modules, the data packs). The data plan's *release* (one compile of the packs, `Doc/ideas/Data.md`) is part of one. |
+| **SaneUI version** | SaneUI as published, with a number like 0.4.0: all its addon folders (Core, the modules, the data packs). The data plan's *release* (one compile of the packs, `Doc/ideas/Data.md`) is part of one. |
 | **Channel** | *Stable* (the default) or *Test* (Saneroki's newest, for testers). |
-| **Manifest** | The signed list of one Sane UI version: its number, channel and date; per game (Forever, later retail) the products and versions its build runs on and its interface; per addon folder its file, size and hash. |
+| **Manifest** | The signed list of one SaneUI version: its number, channel and date; per game (Forever, later retail) the products and versions its build runs on and its interface; per addon folder its file, size and hash. |
 | **Installation** | One World of Warcraft folder, with Battle.net's `.build.info` in it. A computer can have several (two drives, two Wine prefixes). |
 | **Game version** | One game in an installation, in its own folder (`_forever_`, `_classic_beta_`), with its own addons and saved files: live, PTR or beta of Forever, later of retail. Battle.net's launcher calls it so too. |
 | **Outbox** | What the addon leaves in its saved variable for the app to send (*Beyond the guild*). |
@@ -38,11 +38,11 @@ settings with Sane UI's settings, inside the game.
   the client or facilitates gameplay; reading and writing an addon's own files stays clear of that, and is
   the usual way addons get data in and out. No Blizzard rule names this case: check the current terms
   before the app goes to anybody else.
-- **Only Sane UI's own files:** the folders `SaneUI` and `SaneUI_*` in
-  `Interface/AddOns`, and Sane UI's own saved files in `WTF`. It is not a manager for other addons, and never
+- **Only SaneUI's own files:** the folders `SaneUI` and `SaneUI_*` in
+  `Interface/AddOns`, and SaneUI's own saved files in `WTF`. It is not a manager for other addons, and never
   touches the game's list of switched-on addons (`AddOns.txt`): what the player switched off stays off.
 - **It installs nothing unsigned** (*Trust*).
-- **Sane UI never needs it.** The addon works the same without the app; the app only saves work.
+- **SaneUI never needs it.** The addon works the same without the app; the app only saves work.
 - **No admin rights.** Everything is in the player's own folders and the game folder.
 
 ## Files are the only way in and out
@@ -52,7 +52,7 @@ An addon cannot reach the network or other programs. The app and the addon talk 
 | Way | How | When the other side sees it |
 | --- | --- | --- |
 | Addon to app | The addon's saved variables, which the game writes at `/reload`, logout and exit. The app reads them as data, never runs them (like the data plan's *Harvest*). | As soon as the game wrote them |
-| App to addon | A file in a Sane UI addon folder, listed in its TOC from the start. The game reads addon files at login and again at every `/reload`; a file newly added to a TOC needs a restart of the game (as `dev/build` says after every install). | At the next `/reload` or login |
+| App to addon | A file in a SaneUI addon folder, listed in its TOC from the start. The game reads addon files at login and again at every `/reload`; a file newly added to a TOC needs a restart of the game (as `dev/build` says after every install). | At the next `/reload` or login |
 
 - **Never into saved variables while the game runs:** the game writes its own copy over them at logout.
 - So data is one session late both ways. For updates, backups and prices that is fine.
@@ -63,8 +63,8 @@ An addon cannot reach the network or other programs. The app and the addon talk 
 
 Saneroki (2026-10-17): Sane Sync finds the game by itself, shows the player what it found and asks whether that
 is the right installation. If it finds none, or the wrong one, the player gives the folder. The player
-chooses which game versions get Sane UI: today only Forever's (live, PTR, beta), later also retail's. Several
-are kept at once: who plays live and the PTR has Sane UI in both, each kept up to date.
+chooses which game versions get SaneUI: today only Forever's (live, PTR, beta), later also retail's. Several
+are kept at once: who plays live and the PTR has SaneUI in both, each kept up to date.
 
 ### What a World of Warcraft folder holds
 
@@ -78,7 +78,7 @@ As found on Saneroki's computer (2026-10-17, Battle.net under Proton):
 | `_classic_beta_/` | Forever's beta: product `wow_classic_beta`, program `WowB.exe`, version `1.60.1.70450` |
 
 - **Every game version has its own addons and saved files** (`Interface/AddOns`, `WTF` in its folder).
-  Sane UI in Forever puts nothing into the beta, and the other way round.
+  SaneUI in Forever puts nothing into the beta, and the other way round.
 - **The game is told by the version, the kind by the product.** A beta or PTR product serves whichever game is
   tested in it: `wow_classic_beta` holds Forever's beta today. So the manifest names, per game, the products and
   the version numbers its build runs on (Forever: `wowf`, and any PTR or beta product on 1.60.x); the product
@@ -86,7 +86,7 @@ As found on Saneroki's computer (2026-10-17, Battle.net under Proton):
   `wow_classic_era` and their `_ptr` and `_beta`. One not known is shown with its folder and version, never
   switched on.
 - **The interface from the version:** 1.60.1 is interface 16001 (major × 10000 + minor × 100 + patch), the
-  number a TOC's `## Interface` carries. When a PTR runs a newer one than the Sane UI version was made for,
+  number a TOC's `## Interface` carries. When a PTR runs a newer one than the SaneUI version was made for,
   Sane Sync says so; the game would show the addon as out of date.
 - **Saved files:** `WTF/Account/<account>/SavedVariables/` and per character
   `WTF/Account/<account>/<realm>/<character>/SavedVariables/` of each game version, for every WoW account
@@ -115,16 +115,16 @@ As found on Saneroki's computer (2026-10-17, Battle.net under Proton):
   path. Picking the installation, a game version's folder or even its `AddOns` folder all work: Sane Sync goes
   up to the installation. A folder without `.build.info` is refused with one line why: *This is not a World
   of Warcraft folder (it has no .build.info).*
-- **Later:** *Add an installation* and *Remove* in the window (removing asks whether Sane UI is taken out of
+- **Later:** *Add an installation* and *Remove* in the window (removing asks whether SaneUI is taken out of
   it too, or left). At every start Sane Sync looks again, and tells the player of a new game version in a
   known installation (a PTR installed since); it never switches one on by itself.
 
-### Which game versions get Sane UI
+### Which game versions get SaneUI
 
 - **The window lists every installation with its game versions:** name (*Forever*, *Forever PTR*, *Forever
-  beta*; later *Retail*, *Retail PTR*), version, folder, and a switch for Sane UI.
-- **Only game versions Sane UI is made for** can be switched on: today Forever's. The others stand greyed:
-  *Sane UI is not made for this game yet.* A retail Sane UI later is a build of its own in the same manifest;
+  beta*; later *Retail*, *Retail PTR*), version, folder, and a switch for SaneUI.
+- **Only game versions SaneUI is made for** can be switched on: today Forever's. The others stand greyed:
+  *SaneUI is not made for this game yet.* A retail SaneUI later is a build of its own in the same manifest;
   Sane Sync gives each game version the build of its game.
 - **Several at once, each on its own:** any number of game versions in any number of installations. Each has
   its own channel and pin (*proposal:* live on *Stable*, PTR and beta on *Test*), installed version, rollback,
@@ -136,7 +136,7 @@ As found on Saneroki's computer (2026-10-17, Battle.net under Proton):
 - **Running, per game version:** a process whose program lies in that game version's folder (under Wine and
   Proton the Windows path in its command line). An update waits only for the game version that runs: the
   PTR is updated while live is played.
-- **Sane UI already there, not put there by Sane Sync** (by hand, or by `dev/build`): Sane Sync asks before it
+- **SaneUI already there, not put there by Sane Sync** (by hand, or by `dev/build`): Sane Sync asks before it
   takes that game version over, and leaves it alone until then. The beta folder that `dev/build` fills on
   Saneroki's computer stays his.
 
@@ -170,10 +170,10 @@ The app puts code into the player's game. A host that is broken into could ship 
 1. **Only while that game version is closed.** If it runs, its update waits for it to close, and says so;
    other game versions are updated meanwhile. (Files swapped while the game runs would be read half old, half
    new at the next `/reload`.)
-2. **A backup first** of Sane UI's saved files (*Backups*).
+2. **A backup first** of SaneUI's saved files (*Backups*).
 3. **Unpacked beside the old folder, then swapped by renaming,** folder by folder, so the game never sees a
    half-written addon. The old version is kept on disk (*Choosing a version*).
-4. **A Sane UI folder that the new version no longer has** (a module renamed or removed) is taken out, as
+4. **A SaneUI folder that the new version no longer has** (a module renamed or removed) is taken out, as
    `dev/build` does. Only folders the app itself installed, which it records.
 5. **In the game,** Core finds the new version at the next login and Onboarding shows *What's new*
    (`Doc/ideas/Onboarding.md`). After a rollback the version last seen is newer than the one installed:
@@ -193,7 +193,7 @@ The app puts code into the player's game. A host that is broken into could ship 
 ### Voice packs
 
 The voices of the Lore module (`SaneUI_Voice_*`, Saneroki 2026-10-16, `Doc/ideas/Lore.md`, *Voice packs*) are
-about 2 GB of sound, so they are no part of a Sane UI version:
+about 2 GB of sound, so they are no part of a SaneUI version:
 
 - **Offered one by one,** each with what it holds and its size, and installed only when the player picks it.
   The app knows the characters' levels from the saved files and puts the packs of their level bands first.
@@ -225,8 +225,8 @@ So that a player knows what the voices sound like before downloading a gigabyte 
 
 ## Backups
 
-- **What:** Sane UI's saved files only: `SaneUI*.lua` in every account's and character's `SavedVariables`,
-  with the game's `.bak` copies. Sync keeps the game's own per-character settings inside Sane UI's saved
+- **What:** SaneUI's saved files only: `SaneUI*.lua` in every account's and character's `SavedVariables`,
+  with the game's `.bak` copies. Sync keeps the game's own per-character settings inside SaneUI's saved
   settings, so they come along.
 - **When:** before every update, and once a day after the game closed (*proposal*: the last 14 days kept,
   and the backups made before the last three updates).
@@ -245,13 +245,13 @@ So that a player knows what the voices sound like before downloading a gigabyte 
 | Start with the computer | on, off (asked at the first start) |
 | Updates | install by themselves, ask first, only when I click |
 | Notices | on, off (an update installed or waiting for the game to close, a backup that failed) |
-| Installations and game versions | which get Sane UI, each with its own channel (*Finding the game*) |
+| Installations and game versions | which get SaneUI, each with its own channel (*Finding the game*) |
 | Backups | how many, where |
 | Check now, open the log, the app's version | |
 
 Later, if wanted:
 
-- **Show Sane UI's error log** (Core keeps it in the saved settings; today `dev/tools/errors`), so a player
+- **Show SaneUI's error log** (Core keeps it in the saved settings; today `dev/tools/errors`), so a player
   can copy it into a bug report. Nothing is sent by itself.
 - **Move settings to another computer or WoW account:** a backup taken here, restored there.
 
@@ -377,7 +377,7 @@ their own.
 
 ### 2. A realm channel, no server
 
-The game's addon messages also go over a custom chat channel. A hidden channel that every Sane UI player on
+The game's addon messages also go over a custom chat channel. A hidden channel that every SaneUI player on
 the realm joins would reach past the guild with no server and no app. Against it: anybody can join a channel,
 so the first layer of the data plan's *Poisoning* (only the guild) falls away and the others carry it all;
 players still have to be online at the same time; and whether an addon may still join a channel by itself
@@ -424,7 +424,7 @@ the code and the data themselves under the project's `LICENSE`. For Sane Sync th
   reaches players once Saneroki has taken it in and published a version. Publishing stays on Saneroki's
   computer, where the key is.
 - **A fork gives out its own versions** with its own app: its own key, its own host, and its own name. The
-  `LICENSE` keeps the names *Sane UI* and *Sane Sync* to Saneroki (section 2; Saneroki, 2026-10-16), so a
+  `LICENSE` keeps the names *SaneUI* and *Sane Sync* to Saneroki (section 2; Saneroki, 2026-10-16), so a
   fork's addon and app carry other names.
 - **Blizzard's addon policy** (free, readable code) fits open source as it is.
 
@@ -445,7 +445,7 @@ rule above (*Choosing a version*).
 
 ## Open questions
 
-- Decided (Saneroki, 2026-10-16): the name **Sane Sync**, in the `LICENSE`'s name section with *Sane UI*; the
+- Decided (Saneroki, 2026-10-16): the name **Sane Sync**, in the `LICENSE`'s name section with *SaneUI*; the
   repository is public and fully open source.
 - Saneroki to decide (2026-10-16):
   - **Where it lives:** the app is a program of its own, neither an addon (`src/` holds addons, one TOC each)

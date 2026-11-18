@@ -1,6 +1,6 @@
 # Data
 
-How Sane UI keeps its own databases: the master in the repository, the tools that check and compile it,
+How SaneUI keeps its own databases: the master in the repository, the tools that check and compile it,
 the set files Core carries into the game, and what a module reads. Read this before adding data, writing a tool that makes
 data, or changing the framework. Why it is built this way, and what is still to come, is in the plan
 [Doc/ideas/Data.md](../ideas/Data.md); the order of the work in [Data-build.md](../ideas/Data-build.md).
@@ -60,7 +60,7 @@ player's own, which never leaves the computer but into the player's own backups 
 | Kind | What | Kept in | Goes |
 | --- | --- | --- | --- |
 | **Game facts** | The same for every player of a game version: items, quests, NPCs, objects, places, drops, vendors, trainers, travel; the markets per auction house | The master and Core's set files; learned ones in `learned` and the series | Into the set files; learned ones by sharing and the harvest |
-| **Guild records** (Saneroki, 2026-10-20) | What a player shares about its own characters with its own guild (who they are, what they wear, their professions: the card; more kinds as the module Guild grows), the guild's roster and its history | Core's saved variable `SaneUIData_Guild`, per guild | To the guild's Sane UI only (`Data.Guild`, below), never into the set files, the harvest or any service |
+| **Guild records** (Saneroki, 2026-10-20) | What a player shares about its own characters with its own guild (who they are, what they wear, their professions: the card; more kinds as the module Guild grows), the guild's roster and its history | Core's saved variable `SaneUIData_Guild`, per guild | To the guild's SaneUI only (`Data.Guild`, below), never into the set files, the harvest or any service |
 | **Personal** | The account's characters (their bags, bank, money, gear, level, progress), the auction log and own auctions, mail, settings, profiles, layouts, notes and aliases of players (Core.People), players' names (sellers, senders, friends, guilds) | `SaneUIDB`, `SaneUICharDB`, `SaneUIData_Characters`, a module's own saved parts | Nowhere: shown to the player only |
 
 - **A set holds game facts only:** no field for a character, an account, a guild, a GUID or a player's name,
@@ -839,8 +839,8 @@ game in the background, and it reads a full scan another addon asked for just th
 - **The file:** the auction data is a file of its own, apart from the settings (Saneroki, 2026-10-30): the addon
   `SaneUI_AuctionData` (`src/AuctionData/`, *Data: Auction House*) holds no code, only the saved variable
   `SaneUIData_Market`, so the game writes it to `WTF/Account/<account>/SavedVariables/SaneUI_AuctionData.lua`. It is
-  read in the loading screen, like any saved file, so a login and a `/reload` take longer as it grows. Switched off, Sane
-  UI neither scans nor shows prices.
+  read in the loading screen, like any saved file, so a login and a `/reload` take longer as it grows. Switched off,
+  SaneUI neither scans nor shows prices.
 - **The whole scans' file:** the addon `SaneUI_AuctionScans` (`src/AuctionScans/`, *Data: Auction Scans*, Forever's) holds only
   `SaneUIData_Scans`, each account's own. Core loads it when the auction house opens, so a login never reads it; opening the
   house for the first time in a session takes longer as it grows, and the game writes it at the logout of such a session.
@@ -1011,7 +1011,7 @@ writer of its own files, and what the accounts share is the `AddOns` folder:
 
 ### Scans shared *(Saneroki, 2026-10-30; Data-build 1f.2)*
 
-A full scan reaches every Sane UI member of the guild and the group by itself (`src/Core/Data/Relay.lua`, kind `A` on `Core.Wire`;
+A full scan reaches every SaneUI member of the guild and the group by itself (`src/Core/Data/Relay.lua`, kind `A` on `Core.Wire`;
 the plan: `Doc/ideas/Data.md`, *Scans*). A running game reads no file, so this is also the only way to another running account.
 
 - **`have`:** a scan was kept: one message on the guild and on the raid or else the party: house, time. A member who scans within
@@ -1113,7 +1113,7 @@ folders and `SaneUI.lua` files players sent (`--from`, each game version they ho
   (*Core's TOC*). There is no loading later and nothing in the addon list to switch.
 - **A set is refused** when its format is not 1, its game version is not the client's, or the client's game
   version cannot be told: reported once (`Core.Report`: one line in chat); the last two once for all sets
-  (`data: game`: then every set is so, a copy of Sane UI made for another game folder). A set Core does not hold at all
+  (`data: game`: then every set is so, a copy of SaneUI made for another game folder). A set Core does not hold at all
   is noted once in the error log, quietly, when it is first asked for (`Core.NoteError`); not at all in a game version
   whose world's data is not made yet, which holds only the sets every game version gets (`Data.EVERY`: Icons and
   PatchNotes, Retail's two). The modules fall back.
@@ -1243,7 +1243,7 @@ SaneUIData_Characters["forever"] = {
 | `Data.Characters()` | Every character of the account, by name: `{ key, name, realm, class, race, level, side, seen, money, bankSeen }`. nil before the login. |
 | `Data.Character(key)` | One of them, or nil. |
 | `Data.Items(key, place)` | What one of them keeps in a place (`bags`, `bank`, `worn`; the key `account` with `bank`: the account's bank), item by item in the order kept (by item ID): `{ { item = 4500, count = 12 }, ... }`. nil: no such character or place, or not loaded yet. |
-| `Data.Worn(key)` | What one of them wears, slot by slot, by the game's inventory slot IDs: `{ [1] = 16854, [16] = 2139, ... }` (the gear, the ammo, the bags' slots), for a paper doll. nil: no such character, not loaded yet, or its slots not read yet (it has not logged in since Sane UI keeps them). |
+| `Data.Worn(key)` | What one of them wears, slot by slot, by the game's inventory slot IDs: `{ [1] = 16854, [16] = 2139, ... }` (the gear, the ammo, the bags' slots), for a paper doll. nil: no such character, not loaded yet, or its slots not read yet (it has not logged in since SaneUI keeps them). |
 | `Data.Count(item)` | `{ total = 40, [key] = { bags = 12, bank = 8, worn = 1 } }`, the key `account` for the account's bank (`{ bank = 5 }`); nil: none of them has it, or not counted yet. |
 | `Data.CharactersStamp()`, `Data.OnCharacters(fn)` | A number that moves when any of it changes (the gold and the day the bank was seen too), and `fn()` called on a later frame, once for what changed together (never inside the job): a view redraws then. |
 | `Data.Forget(key)` | Forgets one of the account's characters (a deleted one, one moved to another account: `Profiles.Forget` calls it): its entry in the saved file and every answer made from it, and those who listen are told. Never the one played; asked before the login, done then. true when there is one to forget. |
@@ -1286,7 +1286,7 @@ sender, more and it is not heard for ten minutes; at most 1,000 waiting in the i
 
 - **Prefix `SaneUI`;** the guild, party and raid channels only (decision 9).
 - **Another addon's prefix** *(Saneroki, 2026-11-16)*: `Wire.Hear(prefix, fn)` and `Wire.Say(prefix, text, channel,
-  target)` for an addon Sane UI knows (`Core.Neighbours`), in its own words: its messages through the same inbox (the
+  target)` for an addon SaneUI knows (`Core.Neighbours`), in its own words: its messages through the same inbox (the
   player's own left out; `Wire.OTHERS_PER_MINUTE` from a sender, counted apart from ours), ours on it through the same
   queue and budget. Today a dungeon map addon's drawings, Navigation's sketches both ways (`Exchange.lua`).
 - **Auction scans** *(Saneroki, 2026-10-30)*: kind `A` (`have`, `want`, `ask`, each with house and time) and its blocks: *Scans shared*.
@@ -1367,7 +1367,7 @@ SaneUIData_Guild["forever"] = { format = 1, guildFormat = 1, guilds = { ["The Or
   cut by commas), professions (`name:rank:most`, from the game's skill lines of the professions and secondary
   skills), cut by `\031`. Made again 3 seconds after the gear or the level change and a minute after the skills (they
   rise in runs), and published when it differs.
-- **The wire's kind G** (*Messages*): `h` (a hello: a fresh flag, Sane UI's version, `kind=stamp` of each record
+- **The wire's kind G** (*Messages*): `h` (a hello: a fresh flag, SaneUI's version, `kind=stamp` of each record
   this character shares), `a` (asking its owner for a record, by a whisper); a record goes as a block of kind G
   (`kind\031stamp\031text`): to the guild when it changes, whispered to the one who asked (to each member each kind
   once a minute at most; a newer one at once). A hello to the guild at login (a quarter minute after, fresh) and
@@ -1433,7 +1433,7 @@ unique on its realm (`Thrall-Draenor`).
 | `dev/tools/data show <set> <key> [--game <game version>]` | An entry: every version as its line says it (build, patch, day, sources, what changed) with its fix, then the entry as the set files carry it. |
 | `dev/tools/data diff <set> [--patch 1.60.2] [--game <game version>]` | What a patch changed (the game version's newest when none is named): every entry new, changed (field from → to), gone or back at one of its builds. |
 | `dev/tools/data stats` | Per game version and set: entries, versions, entries that changed, gone ones, its own lines, its file's size; then all of them together. |
-| `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of Sane UI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
+| `dev/tools/data harvest [--wow <folder>] [--from <path> ...] [--ledger <file>] [--out <file>]` | *The harvest*: every game folder's saved files of SaneUI (`WTF/Account/*/SavedVariables/SaneUI.lua`), or those players sent (`--from`), read as data (a small reader of the Lua the game writes, never run), each folder's own game version's part only (`.flavor.info`; a file sent: every one it holds): learned rows as the game's facts at their build and day (only the fields the game told), whole confirmations as `confirmed`, the counts added up in the ledger and staged once enough agree (Drops, Spawns, areas), into `dev/data/staging/harvest.jsonl`; a build `builds.toml` lacks added with the patch the game said and its first day. Then `import --apply`. |
 | `dev/tools/cvar-labels --staging` | The CVar labels as staging for the set *CVarLabels*. |
 | `dev/tools/icon-data` | The game's icons as staging for the set *Icons*, both games (*The icons*): `icons-forever.jsonl`, `icons-retail.jsonl`. |
 | `dev/tools/game-data <game version> <build> <client tables> [<hotfixes> <day>]` | The game's own facts from a build's client tables (and a beta's hotfixes; the beta is gone, so they and `base` are history) as staging for Items, ItemSets, Spells, Auras, SkillLines, Professions, Talents, Legacy, Currencies, QuestAreas, Achievements, Mounts, TransmogSets, Enchantments, Holidays, Factions, FactionTemplates, Encounters, Races, Racials, Classes, Maps, Areas and Instances; `base <batch>` stages for live what only the beta holds (decision 27). What it leaves out and why: `dev/data/staging/game-<game version>-left.csv`. |

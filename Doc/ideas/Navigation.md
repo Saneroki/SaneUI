@@ -42,7 +42,7 @@ The native minimap and the native map/quest log window are **hidden by default**
 takes their place. The module's settings page has one toggle for each (*Minimap*, *Map*) to show them
 again, for players who want the originals next to ours.
 
-Like every Sane UI module, when a part of Navigation errors or breaks, that part falls back to the
+Like every SaneUI module, when a part of Navigation errors or breaks, that part falls back to the
 Blizzard default (CLAUDE.md, *Resilience*): if our window cannot be shown, the native minimap and map
 come back.
 
@@ -51,7 +51,7 @@ come back.
 One window on Core's window system, behaving like the Social module's chat window:
 
 - **Docked in the top right corner** of the screen by default (Core's zone `TOPRIGHT`), arranged and
-  sized in Blizzard's Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`).
+  sized in Blizzard's Edit Mode like every SaneUI window (`Doc/ideas/Windows.md`).
 - **Fills the whole screen from its corner:** a left click into the top right corner of the screen (or
   only the mouse coming there, with *Click required to expand window* not ticked), and again to come
   back; Esc brings it back too. The small window is the minimap, the full screen is the map with the
@@ -65,7 +65,7 @@ one world to roam freely, without right clicks. **Retail** shows its maps as the
 one map at a time (a zone, its continent, Azeroth, the Cosmic map of every world), each with its own art and its
 layers; a click goes into the map under the mouse, a right click up to the map over it, the wheel zooms within the
 map shown. Retail's world (some 2,000 maps, continents at different scales on Azeroth, worlds beside it, zones in
-several versions) is the game's to keep up with every patch; Sane UI makes no map data of its own for it. Saneroki
+several versions) is the game's to keep up with every patch; SaneUI makes no map data of its own for it. Saneroki
 chose our own window for it (option 1 of two): our window, pins and look, Retail's maps and layers as the game has
 them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Navigation/Camera.Retail.lua`).
 
@@ -93,9 +93,9 @@ them, not the game's own map frame seated in ours. Built 2026-10-25 (`src/Naviga
   Save, Load, New and Delete for the profile in use. Choosing a profile sets it at once; each client remembers its
   last one and sets it again at its login. At first: *All sound on*, *Music off*, *Music and Ambience off*; in use at
   first **Disabled** (Saneroki, 2026-11-16: "a preset called disabled that just don't interfere with the audio at all
-  ... that should be the default"), no profile: Sane UI sets none of the game's sounds until a profile is chosen. Built:
+  ... that should be the default"), no profile: SaneUI sets none of the game's sounds until a profile is chosen. Built:
   Core's `Audio.lua` (per game account; Sync leaves its CVars alone), the line `AudioLine.lua`, first in the section
-  *Sane UI*; the flyout is the game's own menu under the cogwheel, as the pin filter's sliders are.
+  *SaneUI*; the flyout is the game's own menu under the cogwheel, as the pin filter's sliders are.
 
 ## One map, two views
 
@@ -379,7 +379,7 @@ When the window fills the screen:
 - **Our own database of map icons,** in Core's database system: quests, NPCs and objects, services,
   travel, places, rares, treasures and books. Shown on both views. The pin types and their data: *Pin
   catalogue*.
-- **Our own pin icons, to come (Saneroki, 2026-10-21):** the pins' icons get redesigns of our own in Sane UI's
+- **Our own pin icons, to come (Saneroki, 2026-10-21):** the pins' icons get redesigns of our own in SaneUI's
   style (`Doc/guides/interface-style.md`, *To redesign*): coloured renders of our own pins, developed soon. Until
   they come, the game's icons below stay.
 - **A travel pin's ways, to come (Saneroki, 2026-10-21):** the mouse over a flight point, a boat's or zeppelin's
@@ -435,7 +435,7 @@ When the window fills the screen:
 - **A rare's 3D model with Alt (Saneroki, 2026-10-21):** Alt held over a rare enemy's map pin shows its 3D model
   beside the tooltip, as the tooltips show your character beside a piece of gear.
 - **Every pin is clicked for the map pin, the minimap's too (Saneroki, 2026-10-21):** on the small map and on the
-  game's own minimap the icons Sane UI draws, the gathering nodes found around the player among them, take a
+  game's own minimap the icons SaneUI draws, the gathering nodes found around the player among them, take a
   click and put the game's map pin there. (The game's own minimap dots take no clicks of an addon.)
 - **A double click for the map pin (Saneroki, 2026-10-23; built):** a double click on a pin, on the map or on a quest
   in the quest log puts the game's map pin there, in place of Ctrl and a click (which still works, as on the game's
@@ -462,7 +462,7 @@ When the window fills the screen:
 
 ## Our own data
 
-**Decision (Saneroki, 2026-10-16):** the map system works fully on its own: Sane UI's own database and art,
+**Decision (Saneroki, 2026-10-16):** the map system works fully on its own: SaneUI's own database and art,
 the game's own art and the game's own API.
 
 - **Data in Core (Saneroki, 2026-10-16):** pin locations, spawn places, patrol paths, travel, places and
@@ -475,7 +475,7 @@ the game's own art and the game's own API.
 - **Art:** the game's own art first, loaded by path, atlas or file ID: its map legend's atlases for quests,
   rares and travel, its vignette atlases, its tracking icons, until our own pin icons replace them (*Map pins*,
   Saneroki, 2026-10-21). A picture of our own only where the game has
-  none (a dungeon without a map, perhaps the meeting stone), drawn for Sane UI, kept in the module's own
+  none (a dungeon without a map, perhaps the meeting stone), drawn for SaneUI, kept in the module's own
   `Art/` folder and converted as `Doc/guides/images.md` says.
 - **Living alongside:** other addons a player has installed keep working, and we leave their frames alone.
   Their own pins on Blizzard's world map simply are not seen, since that window stays closed.
@@ -516,8 +516,8 @@ the game's own art and the game's own API.
   it that a straight walk gets to over the walking data (never through a wall, into water only while swimming; where
   no walking data lies round the player, the farthest), and the line is drawn from there. Built (`Planner.lua`'s
   `Join`, `Walk.Straight`, `Route.lua`; card #550).
-- **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in Sane
-  UI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
+- **Leather stitches, to come (Saneroki, 2026-10-21):** the route line is to look like leather stitches, in
+  SaneUI's style (`Doc/guides/interface-style.md`, *To redesign*), and replaces the golden line.
 - **A way for the guide's arrow (Saneroki, 2026-10-31; replaced 2026-11-07):** the guide's arrow followed the routing
   to the guide's next goal: the planner finds a second way, not drawn, for whoever asks through Core (`Core.Ways`);
   where the pin stands on that place the pin's way is the one. Since 2026-11-07 the arrow points straight at its
@@ -1129,7 +1129,7 @@ hidden but what the small view needs.
   me to activate menues and helpers to drop pins and draw on the map and save those drawings and map pins together so
   they can be shared or grouped together. This will be especially helpful in instance maps". A pencil square on the full
   map's bar opens a palette: marker, pen, line, arrow, circle and eraser in eight colours and three widths, words in
-  four sizes (2026-11-16, as the dungeon map addon Sane UI knows has them); while a tool is on the left button draws and a
+  four sizes (2026-11-16, as the dungeon map addon SaneUI knows has them); while a tool is on the left button draws and a
   right-drag moves the map. Markers and drawings go into the plan chosen; a plan shows
   or hides as one and is shared whole with the party, raid or guild (asked before kept, replaced when shared again).
   The same on a dungeon's floor, its things on the floor's own map.
@@ -2174,7 +2174,7 @@ battlemaster, spirit healer, meeting stone.
     (`Found.Ring`, `Found.RING`, `Found.Round` shared by `Found.lua` and `Glints.lua`).
   - **Rough, never the map pin (Saneroki, 2026-10-25):** *"It doesn't have to be super precise"*; the map pin and the
     game's navigation marker (`C_Navigation`, which needs the hidden setting `showInGameNavigation`) are not used.
-    The game tells no addon where its camera looks, so Sane UI takes it as it usually is: behind the player at the
+    The game tells no addon where its camera looks, so SaneUI takes it as it usually is: behind the player at the
     zoom the game tells (`GetCameraZoom`), looking the way the player faces (`GetPlayerFacing`), tilted 12° down
     about a point 2 yards over the feet, through the angle of the setting `cameraFov` taken across a 16:9 screen (the
     height's angle kept on other screens). A place lies at the player's height (the game tells no height), and the
@@ -2293,7 +2293,7 @@ What a dungeon map shows:
 | | Dungeon map |
 | --- | --- |
 | Which | every dungeon and raid of this client, with its floors, Forever's own among them |
-| Art | Blizzard's own dungeon maps where the client has them (`C_Map.GetMapArtLayerTextures`); a picture of our own, made for Sane UI (`Doc/guides/images.md`), only where the client has none |
+| Art | Blizzard's own dungeon maps where the client has them (`C_Map.GetMapArtLayerTextures`); a picture of our own, made for SaneUI (`Doc/guides/images.md`), only where the client has none |
 | On the map | bosses (the game's boss mark and the boss's 3D model, built), enemies (their fixed places: to come), entrances, floor links, quest items; never the player or the party (*Instance maps keep rules of their own*) |
 | Floors | a menu that follows the player's floor; clickable floor links |
 

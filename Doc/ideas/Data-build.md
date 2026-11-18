@@ -61,7 +61,7 @@ holds the budget of values for all of them.
     `Interface` and `Version`.
   - Tests: the same master compiled twice gives the same bytes; a live pack holds no line of another game
     version; a beta pack is the live files with the beta's on top; sample masters.
-  - *In the game:* the addon list shows *Data: Game* under Sane UI, not loaded.
+  - *In the game:* the addon list shows *Data: Game* under SaneUI, not loaded.
 - [x] **1a.4 The scheduler.**
   - `src/Core/Data/Steps.lua`, in `SaneUI.toc`.
   - `wowstub.lua` gains `debugprofilestop`, `GetFramerate`, `C_RestrictedActions` and its event.

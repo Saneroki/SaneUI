@@ -1,4 +1,4 @@
-# Sane UI: the project map
+# SaneUI: the project map
 
 The compact map for a new chat: what is where, what to read for a task, where Blizzard's code is. The source wins
 over every note here; `CLAUDE.md` holds the rules. Read as little as needed: this page, the row for the task, then
@@ -55,7 +55,7 @@ folder, which is gone). Look a name up before using it:
 | --- | --- |
 | A symbol's code in both games, with the diff | `dev/tools/blizzard show <Name> [--retail]` |
 | What differs between Forever and Retail (globals, `C_X.Function`, enums, events, art) | `dev/tools/blizzard games` (the lookup's `symbols.tsv`, `files.tsv`, `addons.tsv`, `art.tsv`); `dev/tests/games.lua` takes Forever's extras away in a test (`W.Play("retail")`) |
-| What Sane UI takes from Blizzard's code | `dev/tools/blizzard uses [--list] [--unknown]` |
+| What SaneUI takes from Blizzard's code | `dev/tools/blizzard uses [--list] [--unknown]` |
 | API signatures, enums, events, which widget methods take a secret value | `Interface/AddOns/Blizzard_APIDocumentationGenerated/` in the export (`rg -n 'Name = "X"'`) |
 | The game's own spellbook, its frame, search, tabs, pager | `Blizzard_PlayerSpells`, `Blizzard_PagedContent` |
 | Chat edit boxes, slash and secure flow, docking | `Blizzard_ChatFrame` |
@@ -64,7 +64,7 @@ folder, which is gone). Look a name up before using it:
 | The options framework | `Blizzard_Settings_Shared` (its README), `Blizzard_SettingsDefinitions_*` |
 | Scroll boxes, fonts, templates, pools, secure templates | `Blizzard_SharedXML`, `Blizzard_SharedXMLBase`, `Blizzard_Fonts_Shared`, `Blizzard_FrameXML` (`SecureTemplates.lua`) |
 | Edit Mode, unit frames, nameplates, action bars, auction house, the panel manager | `Blizzard_EditMode`, `Blizzard_UnitFrame`, `Blizzard_NamePlates`, `Blizzard_ActionBar`, `Blizzard_AuctionHouseUI`, `Blizzard_UIParentPanelManager` |
-| The game's art by path or atlas name | the export's art folder (look a known path up; never list it all); `saneui showgameart` for the numbered pieces Sane UI's look is picked from |
+| The game's art by path or atlas name | the export's art folder (look a known path up; never list it all); `saneui showgameart` for the numbered pieces SaneUI's look is picked from |
 
 Restrict every search in the export to an addon folder and a name; check the flavour folders (`Mainline`, `Classic`,
 `Camelot`, `Shared`) and the TOC conditions before assuming a file loads in a game. After a new build of either game:

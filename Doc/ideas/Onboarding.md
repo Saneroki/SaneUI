@@ -4,7 +4,7 @@ Planning notes for the **Onboarding** module (`SaneUI_Onboarding`; the name, San
 not a spec yet: it holds what Saneroki asked for (2026-10-16, 2026-11-15, 2026-11-16) and proposals for him to discuss.
 Built so far: the setup, step by step, and Nameplates' (*Built*, below); Welcome, What's new and the ? not yet.
 
-It is for **later**: Sane UI is not given to other players yet, so nobody has an old version to update
+It is for **later**: SaneUI is not given to other players yet, so nobody has an old version to update
 from. It is worth building once others play it, and its first real use is the first version they get.
 
 ## What it is (Saneroki, 2026-10-16)
@@ -12,18 +12,18 @@ from. It is worth building once others play it, and its first real use is the fi
 - **A module of its own**, an addon like every other (`SaneUI_Onboarding`), depending on Core only.
 - **Shipped with Core** (Saneroki, 2026-11-16: "I think we should package onboarding together with Core. So
   both onboarding and core always ships together and lives in the same curseforge project."): its folder goes
-  in Core's download, the CurseForge project *SaneUI Core*, beside Sane UI; never a project, a download or a
-  stage of its own. So every player of any Sane UI addon has it, as Core is every module's required
+  in Core's download, the CurseForge project *SaneUI Core*, beside SaneUI; never a project, a download or a
+  stage of its own. So every player of any SaneUI addon has it, as Core is every module's required
   dependency. A change to it is a change to Core: a new SaneUI Core, its words in Core's CurseForge changelog
   (`Doc/curseforge/changelogs/Core.md`).
-- **Loaded on demand:** its files are read only when a **new version** of Sane UI is found, never at a
+- **Loaded on demand:** its files are read only when a **new version** of SaneUI is found, never at a
   login where nothing is new.
-- **It helps players understand Sane UI's features**: a welcome the first time, and what is new after an
+- **It helps players understand SaneUI's features**: a welcome the first time, and what is new after an
   update.
 - **After an update, What's new opens by itself** (Saneroki, 2026-10-16), unless the player switched that off
   on the module's own settings page (*Its settings page* below).
-- **A ? in the title bar** (Saneroki, 2026-10-16) of Sane UI's windows, next to the button to the game's own
-  window, for help with that window. Only on our window (the Sane UI view), never on the game's own
+- **A ? in the title bar** (Saneroki, 2026-10-16) of SaneUI's windows, next to the button to the game's own
+  window, for help with that window. Only on our window (the SaneUI view), never on the game's own
   window (the classic view) (*The ? in the title bar* below).
 
 ## Built (2026-11-16)
@@ -58,7 +58,7 @@ own purpose."
 - **Navigation's setup (Saneroki, 2026-11-18):** "Can you make a onboarding window for the navigation module" —
   `src/Navigation/Setup.lua`, six pages: what the map is; the hot corner (the mouse into it, or a left click in it,
   the switch `expandClick` as round buttons: a step may word a switch its own way), with a very big arrow of the
-  game's on the screen pointing into the player's own hot corner (Core's `edge:Spot()`); the keys for Sane UI's map
+  game's on the screen pointing into the player's own hot corner (Core's `edge:Spot()`); the keys for SaneUI's map
   and the game's map (once ours has a key, the game's map key opens the game's map) and the search, all of them
   together; Edit Mode moving the hot corner with the map; the quest log's click and double click; the map's double
   click and right click.
@@ -83,10 +83,10 @@ own purpose."
   where all the onboardings that still need to go through is listed and instead of skip it says Choose Defaults on
   each of the onboardings. On the first page it says that please go through this to configure your addons to your
   needs. The configure steps are found underer /sane setup or in the addon settings." So the run opens on a first
-  page (Sane UI's logo, those words, a row per setup with *Choose defaults*, *Start*), and *Choose defaults* stands
+  page (SaneUI's logo, those words, a row per setup with *Choose defaults*, *Start*), and *Choose defaults* stands
   beside *Back* in each setup: its switches back to their defaults (asked first where some were changed; key bindings
   stay), kept as done (`done[name].defaults`), so it no longer opens by itself until a new version. Then: "use a plain
-  Sane UI logo instead of the Core banner and show very clearly that the small button with the circle arrow means to
+  SaneUI logo instead of the Core banner and show very clearly that the small button with the circle arrow means to
   show the classic windows instead and also in fullscreen you have the dropdown selectors to choose which one is the
   default one": the plain logo (`dev/tools/logo-art saneui`), and under it the button itself and the dropdown
   *Classic windows* itself, each with what it does. Then: "make the dropdown on the first page actually work and also
@@ -105,15 +105,15 @@ own purpose."
 
 The module is called **Onboarding** and stays load on demand. It has three parts:
 
-- **Setup:** a guided tour through setting up and configuring Sane UI to the player's liking. It could
+- **Setup:** a guided tour through setting up and configuring SaneUI to the player's liking. It could
   grow out of the Welcome below (proposal). What it asks (Saneroki, 2026-11-15: "The tooltips, Character
   setup and other things need to be part of the onboarding"): the choices of taste a new player makes once,
   in place of a default picked for them: when tooltips show (always, or while a key is held), the character
   setup (whether characters share one setup or each keeps its own; the bars and keys), and the others the
   public release leaves to the player (chat channels, what is done for the player at vendors, bags and loot).
   Customizing itself stays on the parts: a right click on them, Edit Mode.
-- **What's new:** what is new in Sane UI since the version last seen (*What's new: the words* below).
-- **Tutorials:** learn about the different parts of Sane UI, one tutorial per feature: the map, the bags
+- **What's new:** what is new in SaneUI since the version last seen (*What's new: the words* below).
+- **Tutorials:** learn about the different parts of SaneUI, one tutorial per feature: the map, the bags
   and so on.
 
 Loaded on demand still means read only when needed: when a new version is found, and when the player opens
@@ -123,9 +123,9 @@ Setup or a tutorial. How Setup and the Tutorials look, and where they are opened
 
 | Moment | How Core knows | What the player sees |
 | --- | --- | --- |
-| **First time** | No version of Sane UI seen on this account | **Welcome:** what Sane UI is, then one card per module that is switched on |
+| **First time** | No version of SaneUI seen on this account | **Welcome:** what SaneUI is, then one card per module that is switched on |
 | **Update** | Core or a module has a newer version than the one last seen, and *Show what's new after an update* is on | **What's new** in that version (and in the versions skipped since) |
-| **A module switched on for the first time** | Sane UI was seen, this module never | Welcome, with only that module's card |
+| **A module switched on for the first time** | SaneUI was seen, this module never | Welcome, with only that module's card |
 | **Asked for** | `/sane new` (also `/sane welcome`); a button on the module's settings page | What's new of the current version; Welcome from a button in its window |
 | **The ? of a window** | A click on it | The help of that window, over it |
 
@@ -162,7 +162,7 @@ Onboarding cannot see that it is needed while it is not loaded, so Core does tha
 ## The module (proposal)
 
 - `src/Onboarding/SaneUI_Onboarding.toc` with `## LoadOnDemand: 1`, `## Dependencies: SaneUI`, category
-  and group like the others, so it stands in the addon list under Sane UI and can be switched off there.
+  and group like the others, so it stands in the addon list under SaneUI and can be switched off there.
 - It registers with `Core.NewModule` as every module does; one that arrives after login gets its
   `OnLoad` and `OnLogin` at once (Core already does this).
 - **Stores no game data** (CLAUDE.md, *Backend and views*): `seen` is a setting, kept by Core.
@@ -185,7 +185,7 @@ Onboarding cannot see that it is needed while it is not loaded, so Core does tha
 
 ### Its settings page (Saneroki, 2026-10-16: the switch is on it; how, a proposal)
 
-- **A page of its own,** under Sane UI, titled by the module's name, like every module's: the switch
+- **A page of its own,** under SaneUI, titled by the module's name, like every module's: the switch
   **Show what's new after an update** (on), and buttons *What's new* and *Welcome* to open them now.
 - **Put up by Core:** pages are put up at login, empty, before a load-on-demand addon is there, and a page
   put up later is lost for the session (`src/Core/Settings/Settings.lua`, `PutUpPages`;
@@ -212,7 +212,7 @@ alone; each module's stand in its own `Onboarding.lua`, in the same shape.
 
 ## What's new: the words (proposal)
 
-`Doc/changelog.txt` is already *Sane UI: what is new*, the bigger changes of each version in plain
+`Doc/changelog.txt` is already *SaneUI: what is new*, the bigger changes of each version in plain
 words. `News.lua` takes its features, shorter, and adds what a window needs and a text file does not
 have: the module, a picture, and what *Show me* does.
 
@@ -223,7 +223,7 @@ ns.News["0.3.0"] = {
       text = "A smiley at the end of the line you write in: raid marks and the emotes played most.",
       picture = "Smiley", show = { window = "Social", help = "smiley" } },
     { module = "Core", title = "Round corners",
-      text = "Sane UI's windows have round corners and a bronze trim.",
+      text = "SaneUI's windows have round corners and a bronze trim.",
       show = { options = "Appearance" } },
 }
 ```
@@ -236,7 +236,7 @@ ns.News["0.3.0"] = {
 
 ## The window (proposal)
 
-- **A Sane UI window** (`Core.Window.New`, `Doc/guides/windows.md`): skinned, in the middle (`CENTER`),
+- **A SaneUI window** (`Core.Window.New`, `Doc/guides/windows.md`): skinned, in the middle (`CENTER`),
   with a title bar (*What's new*, *Welcome*), Esc closes it (`escape = "close"`). It stands for no game
   window. It never blocks the game: the player can move and play while it is open.
 - **Laid out like Blizzard's own What's new** (`SplashFrame`,
@@ -261,9 +261,9 @@ first meeting with a window.
 
 - **Where:** at the right end of the title bar, left of the button to the game's own window:
   **[?] [the game's own window] [full screen / back] [X close]**. A window that stands for no game window
-  has it left of its full screen button. The title bar is Core's, so every Sane UI window gets it the same
+  has it left of its full screen button. The title bar is Core's, so every SaneUI window gets it the same
   way: Core makes it with the other buttons (`Buttons` in `src/Core/Window.lua`).
-- **Only in the Sane UI view:** on our window, small or full screen. Not on the game's own window, where
+- **Only in the SaneUI view:** on our window, small or full screen. Not on the game's own window, where
   only the button back to ours stands (`window:Attach()`). Not in Edit Mode, where the title bar has no
   buttons.
 - **Only where there is help:** a window shows it when it has help (a new window option, `help = "<key>"`,
@@ -329,7 +329,7 @@ on our window small and full, not on the game's window, not in Edit Mode; the ne
 4. **Per account** (proposal) **or per character:** should an alt see Welcome again?
 
 Answered (Saneroki, 2026-10-16): after an update the window opens by itself unless its switch is off (was
-question 2); help comes from a ? in the title bar, in the Sane UI view only, instead of tips at the first
+question 2); help comes from a ? in the title bar, in the SaneUI view only, instead of tips at the first
 meeting (was question 4). Answered (Saneroki, 2026-11-15): the module is called *Onboarding* (was question 1).
 Decided (Saneroki, 2026-11-16): Onboarding ships with Core, in Core's CurseForge project (*What it is*); each module
 keeps its own words (*The module*).

@@ -57,7 +57,7 @@ minimap, members on the world map, the guild's lines in item and player tooltips
 
 | Part (Core) | What |
 | --- | --- |
-| **The wire** (`Data/Wire.lua`) | Sane UI's addon messages: the prefix `SaneUI`, messages and blocks (*Messages*, `Doc/guides/data.md`), a queue that keeps to the game's budget, nothing sent in a fight or a lockdown, every sender by its key |
+| **The wire** (`Data/Wire.lua`) | SaneUI's addon messages: the prefix `SaneUI`, messages and blocks (*Messages*, `Doc/guides/data.md`), a queue that keeps to the game's budget, nothing sent in a fight or a lockdown, every sender by its key |
 | **The guild** (`Data/Guild.lua`, the pack *Guild*'s saved variable) | the game's roster read and its history kept (who joined, left, went up or down a rank, reached a level); every member's records, newest by its stamp; this character's own, published to the guild |
 | **Records** | per member and kind: `card` (class, race, level, gear, item level, talents, professions, played), and more kinds as the views come (requests, runs, wishes, awards, plans, notes) |
 

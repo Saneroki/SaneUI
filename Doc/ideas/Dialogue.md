@@ -28,7 +28,7 @@ The game's windows stay where they are and come back at once whenever ours steps
   column of their own right of the words; a quest's objectives and rewards under the words, lifting the box (the
   column's foot stays put). Moving it in Edit Mode is still to come.
 - **The face:** the NPC's own 3D model (`PlayerModel:SetUnit` of `questnpc`, else `npc`), with no frame or
-  background (see-through, Sane UI's own look: `Doc/guides/interface-style.md`, *The talk over the world*). It
+  background (see-through, SaneUI's own look: `Doc/guides/interface-style.md`, *The talk over the world*). It
   plays its talk animation while a paragraph is new and stands at rest otherwise. A thing with no face (a board,
   a chest) shows the game's quest book.
 - **Name and title:** in the game's fancy gold font. Beside them, the friendship or reputation bar
@@ -133,7 +133,7 @@ The game's windows stay where they are and come back at once whenever ours steps
     alone.
 - **The way back:**
   - The switch *Talks as a scene* gives the game's windows back (built); a *Classic* button on our box for
-    one talk, and a *Sane UI* button on the game's window, are not built.
+    one talk, and a *SaneUI* button on the game's window, are not built.
   - If our code fails (`module.Guarded`), the game's window is given back at once (built).
   - A talk the game shows in its window while ours does not show it (one of the kinds below, or one ours does
     not know) is given back into sight at once (built: `Native.Check`).
@@ -215,7 +215,7 @@ On Lore's page, section *Talks*; account-wide (built 2026-10-28, `src/Lore/READM
 | Straight to the service (an NPC's only service at once; Shift: the talk) | on |
 | Ask at the spirit healer (off: Don't ask me again, it resurrects you at once) | on |
 
-- **Moving the talk:** in Edit Mode like every Sane UI window (`Doc/ideas/Windows.md`): still to come.
+- **Moving the talk:** in Edit Mode like every SaneUI window (`Doc/ideas/Windows.md`): still to come.
 
 ## Decided
 

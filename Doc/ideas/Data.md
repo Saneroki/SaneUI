@@ -1,13 +1,13 @@
 # Data
 
-Planning notes for **Core's data framework** (`Core.Data`): how Sane UI gathers, keeps, ships and reads its
+Planning notes for **Core's data framework** (`Core.Data`): how SaneUI gathers, keeps, ships and reads its
 own databases. Everything here is a proposal for Saneroki to discuss (2026-10-16); nothing is built yet.
 Today's data files are not the model: they move into this framework, and their old ways go (*What moves
 over*).
 
 ## What it is for
 
-Sane UI knows more and more that the game does not tell an addon: which NPC gives which quest, what a
+SaneUI knows more and more that the game does not tell an addon: which NPC gives which quest, what a
 class trainer teaches at which level, where a rare can spawn, what an item fetches at the auction house.
 That data comes from several places (the game's own files and API, our own scans and crawls in the game,
 what players share with each other, and what we write by hand), and it changes when Blizzard changes the
@@ -24,7 +24,7 @@ framework gives that data one home in Core, so that:
 - **a failure stays small:** a missing or broken database leaves its modules on their fallback (the
   Blizzard default), never the game broken;
 - **updating is routine:** a tool takes in new staging, shows what changed, and the build ships it;
-- **players share:** guild members who use Sane UI pass fresh auction prices and whatever their game
+- **players share:** guild members who use SaneUI pass fresh auction prices and whatever their game
   discovers to each other in the game, unless they switch it off (*Sharing in the game*);
 - **modules only read:** checks, writes, sharing and chat messages about changes are the database's job;
   a module asks for an entry, its history or its last versions (*Discoveries and notices*).
@@ -37,7 +37,7 @@ framework gives that data one home in Core, so that:
 | **Entry** | One thing in a set: the item 16801. |
 | **Version** | An entry's facts from one game build on. An entry has one or more; the newest one the running client has reached is the *current* one. |
 | **Build** | The game's build number (`GetBuildInfo`): the clock versions are measured by. A small table names each build's patch (*1.60.2*) and date. |
-| **Game version** | One game as one kind of client plays it, in its own folder (Sane Sync's word): Forever live (`forever`), its PTR (`forever-ptr`), its beta (`forever-beta`), and Retail's (`retail`, `retail-ptr`, `retail-beta`; Saneroki, 2026-10-25: Sane UI runs in Retail, whose data comes later, into a package per game). Not to be mixed up with an entry's *Version*. Their data never meet (*Game versions kept apart*). |
+| **Game version** | One game as one kind of client plays it, in its own folder (Sane Sync's word): Forever live (`forever`), its PTR (`forever-ptr`), its beta (`forever-beta`), and Retail's (`retail`, `retail-ptr`, `retail-beta`; Saneroki, 2026-10-25: SaneUI runs in Retail, whose data comes later, into a package per game). Not to be mixed up with an entry's *Version*. Their data never meet (*Game versions kept apart*). |
 | **Source** | Where a fact came from: the game, a hand fix, or a numbered batch of staging from one of our tools. |
 | **Master** | The sets as kept in the repository: plain text, every version, every source. The truth. |
 | **Pack** | What the game loads: one or more sets compiled from the master into a small load-on-demand addon. |
@@ -119,7 +119,7 @@ the rest.
   Dungeons, Saneroki, 2026-11-15) are in World.
 - Packs are Core's own addons, not modules: no settings page, only their data and the code that reads it
   (Saneroki, decision 24: `Quests.lua` comes with the Quests pack, `Scan.lua` with Market, ...), `## Dependencies:
-  SaneUI`, `## Group: SaneUI`, `## LoadOnDemand: 1`. In the addon list they stand under Sane UI, titled
+  SaneUI`, `## Group: SaneUI`, `## LoadOnDemand: 1`. In the addon list they stand under SaneUI, titled
   *Data: Items*, *Data: Quests*, ... so they sort together.
 - A module never depends on a pack. A module that is switched off loads no data; a pack that is switched
   off leaves its sets missing, and the modules that ask for them fall back.
@@ -181,7 +181,7 @@ A tooltip could then say *Changed in 1.60.2: armour 40 → 36*.
 
 ## Game versions kept apart
 
-Saneroki (2026-10-17): Sane UI can be in several game versions at once: Forever live, its PTR and its beta,
+Saneroki (2026-10-17): SaneUI can be in several game versions at once: Forever live, its PTR and its beta,
 later retail's (Sane Sync, *Finding the game*). Their data never mix. Forever live uses only what Forever
 live showed, never a discovery of the PTR or the beta.
 
@@ -688,7 +688,7 @@ two differ, the difference is learned for the next release.
 
 ### The patch check: a new build at login
 
-Saneroki (2026-10-16): when Sane UI loads, it compares the client's build with the last one it saw; on a newer
+Saneroki (2026-10-16): when SaneUI loads, it compares the client's build with the last one it saw; on a newer
 build it looks for what changed, during the loading.
 
 - **The game cannot rewrite an addon's files;** an addon writes only its saved variables. So what the check
@@ -827,10 +827,10 @@ daily points through local links (*Across accounts* in the guide); the harvest i
 
 Saneroki (2026-10-16): what the auction house gave during the beta is no market of the released game. On
 1 November 2026 the auction history from before that day is pruned once, as a development step done with a
-prompt: in the repository's master and in Sane UI's own saved files in the game's `WTF` folder. It is no
+prompt: in the repository's master and in SaneUI's own saved files in the game's `WTF` folder. It is no
 function of the addon, so nothing in the game or the tools checks the date.
 
-Done on 2026-11-03, the day before launch, by Saneroki's prompt: Forever's `WTF` held Sane UI's auction
+Done on 2026-11-03, the day before launch, by Saneroki's prompt: Forever's `WTF` held SaneUI's auction
 history only in the first account's `SaneUI.lua` (Tooltips' old `prices` and `seen`, 2,184 items each),
 removed from it and from the game's `.bak` copy; no account had `SaneUI_AuctionData` or
 `SaneUI_AuctionScans` files, and the master holds no auction data. Other addons' saved files and Retail's
@@ -838,7 +838,7 @@ history were left alone.
 
 ## Characters
 
-Saneroki (2026-10-16): Sane UI keeps what each of the player's characters has: bank and bags, and what they
+Saneroki (2026-10-16): SaneUI keeps what each of the player's characters has: bank and bags, and what they
 posted at the auction house and when, so that every character can see its alts' things.
 
 ### What is kept, per character
@@ -916,7 +916,7 @@ below. The patch check's own discoveries (an entry gone, a chance a build change
 - **Only when switched on** (*The switches*: *Chat message for new data changes*, *Chat message for new
   auction house data*, both off by default), and **only when data was accepted and changed something**.
 - Made by the database for every module's data; no module prints anything about data.
-- **One line, summed up:** *Sane UI data: 3 new quests, 12 changed items (1.60.2), drop chances of 40
+- **One line, summed up:** *SaneUI data: 3 new quests, 12 changed items (1.60.2), drop chances of 40
   creatures updated. [Details]*. The first change is told at once; after that at most one line every 15
   minutes per kind, with everything accepted since. Never in combat (held until after).
 - *[Details]* prints what `/sane data` shows (an addon link, `|Haddon:SaneUI:data|h`, which the client hands
@@ -1339,7 +1339,7 @@ Map:Near(map, x, y, kinds)     -- what is near a point, nearest first
 
 ## Sharing in the game
 
-Saneroki (2026-10-16): players who use Sane UI share general game knowledge, so that everybody's database
+Saneroki (2026-10-16): players who use SaneUI share general game knowledge, so that everybody's database
 stays up to date: auction prices, discoveries (a new quest with its objectives, rewards, giver and place; a
 changed item) and drop and gathering counts. A switch lets anybody opt out.
 
@@ -1404,7 +1404,7 @@ game's fact, not the player's story.
 two of them hears a transfer once, as a later copy changes nothing. Only what moved in a scan is sent, so a member who missed
 one catches up at its login's question; the whole scan stays with the one who scanned.*
 
-One prefix, `SaneUI`, for everything Sane UI sends. Every message starts with its kind and the protocol
+One prefix, `SaneUI`, for everything SaneUI sends. Every message starts with its kind and the protocol
 number; a kind or number we do not know is ignored.
 
 1. **Have:** a player finishes a scan and tells the guild in one message: *I have the prices of this auction
@@ -1463,7 +1463,7 @@ messages, so the guild's traffic does not grow with the guild.
 | Bundles taken from one sender | one in 15 minutes; more is a strike |
 | Messages taken from one sender | 90 a minute (an honest sender sends 10 at once, then one a second: about 70 in its first minute); more and it is ignored for 10 minutes |
 | Shared counts kept per sender (*Poisoning*, 6) | the current build period only, *proposal* 5,000 cells a sender and 100,000 in all; at a new build they are checked, summed into one count and the senders' parts dropped |
-| The guild busy (Sane UI messages heard in the last 10 seconds) | above 4 a second, a member holds its own bundle |
+| The guild busy (SaneUI messages heard in the last 10 seconds) | above 4 a second, a member holds its own bundle |
 | Transfers at a time in the guild | one |
 | The inbox | 1,000 messages; more is dropped (what matters comes again) |
 | Facts waiting for a check (*Poisoning*) | 2,000; per sender 200 |
@@ -1561,7 +1561,7 @@ module's data, so no module has switches of its own for this.
 | **Chat message for new data changes** | off | One line when accepted data changed the database (*Chat messages*). |
 | **Chat message for new auction house data** | off | One line when an accepted scan, own or shared, changed prices. |
 
-- Tooltip of the first: *Sane UI players in your guild swap general game knowledge (auction prices, new
+- Tooltip of the first: *SaneUI players in your guild swap general game knowledge (auction prices, new
   quests, changes after a patch, drop chances), so everybody's is up to date. Nothing about you or your
   characters is sent, and it does not slow the game.*
 - Below them the button **Forget shared data** (*Poisoning*).
@@ -1971,7 +1971,7 @@ What is not answered by then is built as proposed. Every decision below is answe
 open ones on 2026-10-17).
 
 1. Answered (Saneroki, 2026-10-17): as proposed, packs. **Packs as load-on-demand addons** in the addon list
-   (under Sane UI, *Data: Items*), or all data inside Core? Inside Core is simpler, but all of it is always
+   (under SaneUI, *Data: Items*), or all data inside Core? Inside Core is simpler, but all of it is always
    in memory and every login slower as it grows. *Proposal:* packs.
 2. Answered (Saneroki, 2026-10-17): as proposed, yes. **Saved variables declared by the packs** for live data
    and characters, beside `SaneUIDB`? *Proposal:* yes.
@@ -2009,7 +2009,7 @@ open ones on 2026-10-17).
 15. Answered (Saneroki, 2026-10-17): as proposed, 10 a second and 250 ms, both start values to measure in
     the game. **The crawl's pace** for what the server must send (items): 10 a second (*proposal*), or
     slower? And the patch check's step during the loading screen: at most 250 ms (*proposal*)?
-16. ~~If Sane UI is ever handed out~~ Answered (CLAUDE.md, *Licensing*): not a question for this plan.
+16. ~~If SaneUI is ever handed out~~ Answered (CLAUDE.md, *Licensing*): not a question for this plan.
 17. Answered (Saneroki, 2026-10-17): as proposed, cells and 3 %. **Quest areas as cells** of 1 % of the map
     (*proposal*), or as outlines (smoother to draw, but hard to merge and to test a point against)? And the
     margin around spawn points: 3 % (*proposal*)?

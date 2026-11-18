@@ -2,7 +2,7 @@
 
 Planning notes for the **Lore** module (`SaneUI_Lore`, title *Lore*). Saneroki, 2026-10-16: *just an idea for
 now*. A module that handles **voice overs**, a **library** about the world and its lore, and **lore
-tidbits** in tooltips and other places of Sane UI. **Built first (Saneroki, 2026-10-28: "make that a lore
+tidbits** in tooltips and other places of SaneUI. **Built first (Saneroki, 2026-10-28: "make that a lore
 module"):** the talk with an NPC as a scene (Dialogue, `Doc/ideas/Dialogue.md`, `src/Lore/README.md`); the
 voices, the library and the tidbits are still ideas.
 
@@ -33,7 +33,7 @@ Core and its data are the backend, the modules are views (CLAUDE.md, *Backend an
 | What the player has met and read: zones, NPCs, kills, quests done, books and letters, the game's texts | Core's watchers and character data (*Characters* in `Data.md`) | Gathered by Core whether Lore is on or not |
 | The library, the voice and its bar, the line of a completed tale, the line when a zone is entered | Lore | Its own views |
 | A tidbit in a tooltip, in a talk, on the map | The module whose view it is: Tooltips, Lore's talk (Dialogue), Navigation | A module draws only its own frames; none calls into another |
-| The voices: the sound files, and the index of their own lines | Voice packs (`SaneUI_Voice_*`), Sane UI downloads of their own (Saneroki, 2026-10-16) | Too big to come with Sane UI; on disk only, never in memory until played |
+| The voices: the sound files, and the index of their own lines | Voice packs (`SaneUI_Voice_*`), SaneUI downloads of their own (Saneroki, 2026-10-16) | Too big to come with SaneUI; on disk only, never in memory until played |
 
 - **Lore waits for the data framework** (`Doc/ideas/Data-build.md`). Only the game's text to speech needs no
   data and could come first.
@@ -98,7 +98,7 @@ watchers (*Collecting*), put in order by Core's quest and zone data, with short 
 
 ### The window
 
-- **A Sane UI window** (`Doc/guides/windows.md`): the chapters and entries at the left, the page at the
+- **A SaneUI window** (`Doc/guides/windows.md`): the chapters and entries at the left, the page at the
   right; Blizzard's parchment (the book window's papers, `ItemTextGetMaterial`), the game's fonts
   (`ITEM_TEXT_FONTS`, the fancy one for titles).
 - **Search** in the title bar (*Title bars* in `Doc/ideas/Windows.md`), over the words of every entry the
@@ -289,12 +289,12 @@ From the service's own pages, 2026-10-16 (prices change: check before buying):
 
 ### Voice packs
 
-**Saneroki (2026-10-16): the voices are so big that they are Sane UI packages of their own, downloaded
+**Saneroki (2026-10-16): the voices are so big that they are SaneUI packages of their own, downloaded
 separately. Lore plays a voice only when it finds its package installed.**
 
-- **Sane UI without them** is the same as with them, only silent (or read aloud by the game's text to
+- **SaneUI without them** is the same as with them, only silent (or read aloud by the game's text to
   speech, if switched on). Nothing asks the player to download them.
-- **Addons of their own,** under Sane UI in the addon list, titled *Voices: Lands 1–20*, *Voices: Halls*,
+- **Addons of their own,** under SaneUI in the addon list, titled *Voices: Lands 1–20*, *Voices: Halls*,
   ... so they sort together, as the data packs do (*Data: Items*). `## LoadOnDemand: 1`,
   `## Dependencies: SaneUI`.
 - **Each holds the sound files and the index of its own lines,** so the two always match, whatever version of
@@ -344,7 +344,7 @@ separately. Lore plays a voice only when it finds its package installed.**
   before choosing to download them.
 - **Updated line by line:** a pack's manifest lists every sound file with its hash, so new or changed voices
   are a small download, not the whole pack again.
-- **Their own version:** a voice pack can be newer or older than Sane UI; the hash of every line keeps them
+- **Their own version:** a voice pack can be newer or older than SaneUI; the hash of every line keeps them
   right, and the format says whether this Lore can read the index at all.
 
 #### Where they are kept

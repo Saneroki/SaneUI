@@ -1,6 +1,6 @@
 # The window system
 
-How Sane UI's windows are built: the one system every window uses, its parts, the states a window goes
+How SaneUI's windows are built: the one system every window uses, its parts, the states a window goes
 through, what is kept, the rules that keep it fast, safe from taint and never stuck, and the recipe for a
 module's window. Read this before building or changing any window.
 
@@ -15,16 +15,16 @@ Blizzard's code is the ground truth, its newest export (`dev/tools/blizzard wher
 
 ## 1. One system for every window
 
-- **Every window of Sane UI is a `Core.Window.New`:** the chat, the spellbook, a vendor's window, later the
+- **Every window of SaneUI is a `Core.Window.New`:** the chat, the spellbook, a vendor's window, later the
   minimap. A module never builds moving, sizing, docking, full screen, the title bar, the search, Esc or the
   kept place again. When a window needs something Core does not have, Core gets it, once, for all.
 - **Ours or the game's, never both** (Saneroki, 2026-10-16). A window that stands for one of the game's own
   (its `native`) does not replace it: the window is set to one of the two, the choice is kept, and the
-  player sees only that one. Set to Sane UI, what opens the game's window (its key, a micro menu button, a
+  player sees only that one. Set to SaneUI, what opens the game's window (its key, a micro menu button, a
   slash command, a link, an NPC) opens ours, as the player last left it (`window:Open()`). Set to the
-  game's, ours is hidden and the game's works as always, with one Sane UI button on its title bar to switch
+  game's, ours is hidden and the game's works as always, with one SaneUI button on its title bar to switch
   back. Core sees to it for every window, one way (section 7, *The holder*).
-- **The game's own window is left as it is.** Sane UI does not restyle, move or resize Blizzard's windows
+- **The game's own window is left as it is.** SaneUI does not restyle, move or resize Blizzard's windows
   (the spellbook is being moved off that today). While ours is chosen, the game's is only kept out of sight.
 
 ## 2. Kinds of window
@@ -58,10 +58,10 @@ in the rest.
 | `Window.lua` | The window: its place and size kept and restored (its first zone, standing clear of a zone another holds), the title bar (title, `SetTitle`, search box, Core's buttons and the module's; on the full screen the options' cog and the question mark), `window.inside` (where what it holds stands), dragging by the title bar, Edit Mode's box or, on a window without a title bar, a part of its own (`DragBy`; snapping to Edit Mode's grid), sizing by the grip, to the front (`toplevel`), the combat lock, what it was left as (`Remember`, `Recall`, `Native`, `Open`), the button on the game's window (`Attach`), every window (`All`, `ResetAll`). |
 | `EditMode.lua` | Whether Blizzard's Edit Mode is open (its event registry); `/sane arrange` where there is none. |
 | `Selection.lua` | A window chosen in Edit Mode by a click on its box, and Core's dialog in Edit Mode's look (*Reset To Default Position*). |
-| `Escape.lua` | Esc: one stand-in in the game's `UISpecialFrames` for everything of Sane UI's that Esc closes (`Core.Escape`). |
+| `Escape.lua` | Esc: one stand-in in the game's `UISpecialFrames` for everything of SaneUI's that Esc closes (`Core.Escape`). |
 | `Watch.lua` | `Core.Watch` (a look a few times a second, only while out and shown) and `Core.Hover` (the mouse on a window: its coming by `OnEnter`, a watch until it has gone). |
 | `Edge.lua` | Full screen: the trigger at the screen edge, the motion there and back, the background, the dropdown *Classic windows*, the section *Expand window* (its changes followed by Core). The switch *Hotcorner requires leftclick* there (`expandClick`, on at first in every module since 2026-11-16) makes the edge strip take the left button; off, the mouse's coming is enough. |
-| `Classic.lua` | The game's windows ours stand for (`classic`): the dropdown *Classic windows* with every module's, each under its name; the button *Sane UI* on each game window (a secure one clicking the game's close button on its panels), ours instead, full where the entry says. |
+| `Classic.lua` | The game's windows ours stand for (`classic`): the dropdown *Classic windows* with every module's, each under its name; the button *SaneUI* on each game window (a secure one clicking the game's close button on its panels), ours instead, full where the entry says. |
 | `Views.lua` | A window's views behind the game's tabs (`tabs`), the tab last chosen kept. |
 | `Holder.lua` | The game's window kept out of sight while ours is chosen, and the game's own opening and closing of it followed (section 7, *The holder*). |
 | `Motion.lua` | The kinds of motion (Glide, Swing, Even, Instant), each a time and one of the game's easing curves (`EasingUtil`), a clock that runs only while something moves, a region's fade and slide (`Motion.Fade`, `Motion.Slide`). |
@@ -143,7 +143,7 @@ and while it is away (Edge).
 
 1. **Make the frame when it is first needed** (`CreateFrame("Frame", nil, UIParent)`), not at login.
 2. **`Core.Window.New(frame, options)`** with its `kind` (section 2) and what its kind does not give. A
-   frame Esc may close needs nothing more: Core keeps one stand-in for all of Sane UI in `UISpecialFrames`
+   frame Esc may close needs nothing more: Core keeps one stand-in for all of SaneUI in `UISpecialFrames`
    (`SaneUIEscape`). Anything else of a module's that Esc should close (a small window that is no
    `Core.Window`) takes `Core.Escape(owner, close)` while it is shown and `Core.Escape(owner, nil)` when it
    hides; never an entry of its own in that list.
@@ -152,7 +152,7 @@ and while it is away (Edge).
    down it starts. Name the part that fades while the size moves (`content`). Several views: `tabs`, each
    built in the frame its tab gives when first chosen. Buttons of the module's own in the title bar:
    `buttons = { { atlas, tip, text, click } }`, left of Core's. Full, Core adds two left of them: the game's
-   cog (Sane UI's options over the full screen, `Settings/Screen.lua`) and a question mark, the full screen's
+   cog (SaneUI's options over the full screen, `Settings/Screen.lua`) and a question mark, the full screen's
    tour: `help = function()` (without, it does nothing yet).
 4. **Lay out in `docked(zone)`,** which comes once the window stands (placed, or full screen reached), not in
    `OnSizeChanged` while `window.edge.away` (every step of a motion is a new size).
@@ -213,7 +213,7 @@ matters; out of one it runs, but what it writes is tainted for Blizzard's own co
 - **Load on demand:** the spellbook's addon (`Blizzard_PlayerSpells`) loads when the game first opens it.
   Our code never loads it; it waits (`EventUtil.ContinueOnAddOnLoaded`) to attach its button.
 - **Try it in the game with the taint log:** `/console taintLog 1`, `/reload`, the test, then the game
-  folder's `Logs/taint.log`: no line where Sane UI's code touched a Blizzard frame or value.
+  folder's `Logs/taint.log`: no line where SaneUI's code touched a Blizzard frame or value.
 
 ### The holder: ours or the game's (`Holder.lua`)
 
@@ -221,7 +221,7 @@ One way for every window, from Economy's plan (`Doc/ideas/Economy.md`, *Hidden, 
 Core's: a frame of ours that is never shown, and the game's windows held in it while ours is chosen
 (`native.hold = true`; `window.holder`).
 
-- **Held while closed.** Set to Sane UI, the game's window gets the holder as its parent (lent,
+- **Held while closed.** Set to SaneUI, the game's window gets the holder as its parent (lent,
   `Core.Lend`: its parent and layer noted and put back exactly, the parent only if it is still ours), only
   while it is not open: at once, once its addon has loaded (`native.addon`, `EventUtil.ContinueOnAddOnLoaded`),
   and again each time it closes. The game then opens and closes it as always, by its own code: it counts as
@@ -237,7 +237,7 @@ Core's: a frame of ours that is never shown, and the game's windows held in it w
   tainted) or the map (it does an emote, an API with restrictions): with `native.unseen` the held window
   is closed unseen first and given back, and the game's opens at its key's next press. The secure switch
   that opens it at once is still to come (section 8).
-- **To ours** (the Sane UI button on the game's window, while it is in sight): the game's window is not
+- **To ours** (the SaneUI button on the game's window, while it is in sight): the game's window is not
   hidden (its `OnHide` would end a talk, or touch the action bars) but made tiny and clear (`SetScale`
   `Holder.TINY`, alpha 0: its buttons shrink to a point and take no clicks; the game's panel layout counts
   its scale) until the game closes it; then it is held again. Ours opens at once. Ours closed while the
@@ -253,7 +253,7 @@ Core's: a frame of ours that is never shown, and the game's windows held in it w
 ### Seated: a window not ours on a full screen (`Seat.lua`)
 
 A full window may hold windows that are not ours as panels (Combat: the game's talents and spellbook, a talent
-planner Sane UI knows). The rules:
+planner SaneUI knows). The rules:
 
 - **Placed, never shown or hidden.** Only its place, scale and layer are lent (`Core.Lend`); its parent stays
   its own, so its `OnShow` and `OnHide` run from its own code only. The game's panels are opened by the game:
@@ -480,7 +480,7 @@ where`), checked 2026-10-16.
 | A mask is stretched whole (no slice margins); a texture takes at most three masks | Tooltips' and Social's experience (`src/Tooltips/Panel.lua`, Social's bubbles) | round corners are a masked piece per corner (`Shape.lua`, Social's bubbles on it too) |
 | `EasingUtil` (`InQuadratic` ... `OutBack`), loaded in every flavour (2026-10-17) | `Blizzard_SharedXML/EasingUtil.lua`; `Blizzard_SharedXML.toc` 33 | `Motion.lua`'s curves, by name; a client without it moves straight |
 | Camelot's experience bar: `UI-HUD-ExperienceBar-Background`, `-Fill-Experience`, `-Fill-Prediction` (rested, under the fill), `-Frame-Pip` (hidden within 1 % of an end), `ui-hud-experiencebar-divider`, the flare flipbook (7 x 4, 28 pictures, 32.5 x 10); `STATUS_BAR_NUM_SEGMENTS` 20 (2026-10-17) | `Blizzard_StatusTrackingBar/Mainline/ExpBar.xml`, `StatusTrackingBarTemplate.xml`, `ExpBarOverrides.lua`, `Shared/ExpBar.lua` 130-160, `Camelot/StatusTrackingBarConstants.lua`; `Blizzard_FrameXMLBase/GradualAnimatedStatusBar.xml` | `Bar.lua`'s art, sizes and dividers |
-| Esc hides every shown frame whose global name is in `UISpecialFrames` (`_G[value]`) | `Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua` 1106-1116 (2026-10-17) | one named stand-in of ours (`SaneUIEscape`) for all of Sane UI (`Escape.lua`) |
+| Esc hides every shown frame whose global name is in `UISpecialFrames` (`_G[value]`) | `Blizzard_UIParentPanelManager/Shared/UIParentPanelManager.lua` 1106-1116 (2026-10-17) | one named stand-in of ours (`SaneUIEscape`) for all of SaneUI (`Escape.lua`) |
 | The game's panels are `toplevel="true"`: a click raises them | `Blizzard_UIPanels_Game/Camelot/CharacterFrame.xml` 403 (2026-10-17) | the panel and talk kinds' `toplevel` (`SetToplevel`) |
 | `TabSystemTemplate` with `TabSystemTopButtonTemplate` tabs (the housing dashboard); the spellbook's tabs 100 to 150 wide, 22 from its left; the template's sound `IG_CHARACTER_INFO_TAB` | `Blizzard_SharedXML/Shared/TabSystem/TabSystemTemplates.xml` 132-160; `Blizzard_PlayerSpells/Camelot/Blizzard_PlayerSpellsFrame.xml` 23-30; `Blizzard_HousingDashboard/Blizzard_HousingDashboardHouseInfoContent.xml` 81-85 (2026-10-17) | `Views.lua` |
 | Edit Mode's dialog: `DialogBorderTranslucentTemplate`, strata `DIALOG` level 200; its button *Reset To Default Position* (`HUD_EDIT_MODE_RESET_POSITION`) | `Blizzard_EditMode/Shared/EditModeDialogs.xml` 254-273; `EditModeSystemTemplates.lua` 542 (2026-10-17) | `Selection.lua`'s dialog, in that look, our own frame |

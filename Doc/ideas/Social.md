@@ -51,7 +51,7 @@ Done 2026-10-16:
   the settings page.
 - Saved settings move from `modules.Chat` to `modules.Social` once, so players keep their settings.
 - The old `SaneUI_Chat` folder is deleted: `dev/build` removed it from the game's AddOns folder, and it is
-  gone from `src/` and `BUILD/`. Sane UI is not given out yet, so no player has an old copy to handle.
+  gone from `src/` and `BUILD/`. SaneUI is not given out yet, so no player has an old copy to handle.
 - Docs that named Chat (now `Doc/agent/social.md`, the READMEs, CLAUDE.md's examples) follow.
 - `/sane chat` still works next to `/sane social`.
 - Open: the banner is still the drawing that reads *Sane Chat*; a new one is to be drawn.
@@ -59,7 +59,7 @@ Done 2026-10-16:
 ## Open questions
 
 - Saneroki to decide (2026-10-16): a new banner for *Social* (today's still reads *Sane Chat*); whether the
-  smiley stays Sane UI's drawn one (`dev/tools/smiley-art`) or gets a drawing by hand; whether the bubbles
+  smiley stays SaneUI's drawn one (`dev/tools/smiley-art`) or gets a drawing by hand; whether the bubbles
   keep their wrapping when the window fills the screen (today they are wrapped for the full width once it
   stands); what a player's old `SaneUI_Chat` folder gets (today: nothing; both would load).
 - Saneroki to decide (2026-10-16, from the window work): *Chat* in *Classic windows*, and the window's

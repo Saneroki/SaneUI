@@ -1,6 +1,6 @@
 # Interface style
 
-Sane UI's own look for windows, panels and full screens: what each part is made of, how it looks, and what is
+SaneUI's own look for windows, panels and full screens: what each part is made of, how it looks, and what is
 painted by image models versus made in code. Saneroki decides the look by picking from concept art; every decision
 is written here, with the picture it came from, the moment it is taken. The harness that makes the parts and
 views (`dev/imagegen/sets/interface/`, *The harness* below) and the house style's words (`dev/imagegen/style.txt`)
@@ -18,9 +18,9 @@ cutting tool, outside the project.
 sections stay as its record. Where this section and the rest disagree, this section wins. Saneroki's decisions:
 
 - **Windows look like WoW: Forever's own style**, built from the game's own images instead of the leather and the
-  paper. The layouts stay Sane UI's own.
+  paper. The layouts stay SaneUI's own.
 - **The pencil drawing icons stay.**
-- **The game's default fonts** instead of the hand-drawn font (Kalam). Since 2026-11-15 Sane UI's main font is the
+- **The game's default fonts** instead of the hand-drawn font (Kalam). Since 2026-11-15 SaneUI's main font is the
   game's own Friz Quadrata (`Fonts\FRIZQT__.TTF`), the font of the login screen (*The kit*).
 - **Buttons:** natural buttons with golden or silver, beaten-up metal borders. Red buttons were out on 2026-10-30;
   since 2026-11-15 Forever's red button is the important button, as in a yes or no prompt (*The kit*, 4).
@@ -98,7 +98,7 @@ the catalogue's cards: nothing said, the same file; *Retail: own look*; *Forever
    a part. The slots, the top tabs and the plate *Forever only*; the rest *Retail: own look*.
 
 How each part is laid out comes from the newest export's templates (named in `dev/tools/game_art_kit.py` at each
-part); a Sane UI part uses the same atlas names, sizes and slices, so each game draws its own picture under the name.
+part); a SaneUI part uses the same atlas names, sizes and slices, so each game draws its own picture under the name.
 
 **Saneroki's word on what was built (2026-11-15):** the title bar of a full screen bare: "On the titlebar, remove the
 elements you have for it, like the golden line and the golden gradient. I don't like them there. The tabs should be in
@@ -122,7 +122,7 @@ Kalam Bold (`Look.HAND`) by Saneroki's word ("Leave it", 2026-11-02). Nothing is
 the sections on it below are its record.
 
 **Icons (Saneroki, 2026-11-15), a rule:** "avoid black backgrounds of icons, have round corners of icons or angled /
-cornered borders around them." Every icon Sane UI shows has round corners (the game's own icon mask,
+cornered borders around them." Every icon SaneUI shows has round corners (the game's own icon mask,
 `Interface\Common\common-iconmask`, as Forever's item buttons round theirs) or stands in a border with angled or
 cornered edges (a quality border, a slot frame); never a square of black behind it. A drawing that stands for
 something (a category's empty slot, an empty bag slot, the waste bin) is the symbol alone, grey, its dark ground gone.
@@ -144,10 +144,10 @@ that size it. Core's icon chooser (`Core.Icons`) picks an own category's icon am
 
 ## Scope
 
-Sane UI is a complete redesign (Saneroki, 2026-10-21): every window and view Sane UI makes or recreates gets its
+SaneUI is a complete redesign (Saneroki, 2026-10-21): every window and view SaneUI makes or recreates gets its
 own layout and style, not Blizzard's; since 2026-10-30 its images and fonts are the game's own (*The new direction*).
 The journal look below, its harness (*The harness*) and `dev/imagegen/style.txt` serve only what is built in the
-journal look until that is rebuilt in Forever's look. The game's native windows that Sane UI leaves in
+journal look until that is rebuilt in Forever's look. The game's native windows that SaneUI leaves in
 place stay in their own style, mostly untouched. How the game works (its API, secure frames, scaling) stays as
 Blizzard's code has it ([gui-development.md](gui-development.md)).
 
@@ -602,11 +602,11 @@ Combat's unit frames and the game's action bars (`src/Combat/Units/`, `ActionBar
 Parts that still show the game's art and get a redesign of our own in this style (Saneroki, 2026-10-21). Each
 moves to its own heading here once it is decided, with its picture.
 
-- **Map pins:** our own icons for every pin Sane UI draws on the map and the minimap, in place of the game's.
+- **Map pins:** our own icons for every pin SaneUI draws on the map and the minimap, in place of the game's.
   They are coloured renders, not pencil, and are being developed soon (`Doc/ideas/Navigation.md`, *Map pins*).
 - **The route line:** leather stitches across the map, in place of today's golden line (`Doc/ideas/Navigation.md`,
   *Waypoint and route*).
-- **Raid markers:** the eight markers in our own style, wherever Sane UI shows them (the nameplates, the marks in
+- **Raid markers:** the eight markers in our own style, wherever SaneUI shows them (the nameplates, the marks in
   the chat's picker).
 
 ### A new level over the world
@@ -639,7 +639,7 @@ right so it doesn't cover the arrow"), so the guide's arrow in the middle stays 
 
 ## High resolution
 
-Sane UI is drawn for 4K screens too (Saneroki, 2026-10-21: "clean high quality renders" of every part the code
+SaneUI is drawn for 4K screens too (Saneroki, 2026-10-21: "clean high quality renders" of every part the code
 needs, for responsive, flexible designs).
 
 - **Scale:** every painted part exists at twice the size it was picked at. The picks were painted for windows of

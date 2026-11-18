@@ -34,7 +34,7 @@ an aura or a spell (`Core.AuraMarks`), the spell search (`Core.SpellSearch`).
 
 Decided (Saneroki, 2026-10-16):
 
-- **Our own windows, on Core's window system.** Every part's frames are Sane UI windows (`Core.Window`):
+- **Our own windows, on Core's window system.** Every part's frames are SaneUI windows (`Core.Window`):
   docked, moved and sized in Edit Mode like every other module's; the game's own frame is put out of
   sight. Unit frames and buff frames are windows without a title bar (`Doc/ideas/Windows.md`,
   *Title bars*).
@@ -43,7 +43,7 @@ Decided (Saneroki, 2026-10-16):
   on demand way that is developed further (*On demand* below).
 - **Its window at the bottom middle** (Saneroki, 2026-10-20; built, `src/Combat/README.md`): docked in the
   screen's bottom middle; the mouse pushed against the middle half of the bottom edge fills the screen, and
-  full it holds the talents and the spellbook as panels. With a talent planner Sane UI knows installed (the
+  full it holds the talents and the spellbook as panels. With a talent planner SaneUI knows installed (the
   known addons, Core's `Neighbours.lua`), the planner's window is the Talents panel. What the window shows
   while small (the action bars, a unit frame) is open.
 - **Its full screen on Core's board** (Saneroki, 2026-10-20; built): the talents and the spellbook are windows
@@ -70,7 +70,7 @@ Decided (Saneroki, 2026-10-16):
     secondary specialization), drawn by the game's shared talent frame (`Blizzard_SharedTalentUI`) in our
     window; buying, undoing, resetting and applying are not protected, so they work as in the game's window
     (out of a fight, as the game allows).
-  - **The talent planner** Sane UI knows becomes a window of its own on the board (in the dropdown Windows),
+  - **The talent planner** SaneUI knows becomes a window of its own on the board (in the dropdown Windows),
     no longer the Talents panel.
 - **In Retail the game's own window on the full screen** (Saneroki, 2026-11-02; built): "the fullscreen does still
   open but it just shows its native spell window, talent windows etc on it instead but keeps the functionality of
@@ -118,7 +118,7 @@ Decided (Saneroki, 2026-10-16):
   party plates the druids manabar is visible. When they have the energy or Rage bar, show the mana bar at the bottom of
   the healthbar like it does now and put the other, rage or energy bar when they have it, ontop." Then: "Yes, let my
   druid send its mana to the party. On unit frame the bars should be like it was before. Put them below the mana bar on
-  unit frames." The game tells a druid's mana in a form to that druid alone, and sending it between Sane UIs never
+  unit frames." The game tells a druid's mana in a form to that druid alone, and sending it between SaneUIs never
   came through: "It doesn't show on the party members [...] revert back to how it was with only one class bar". So
   only your own frames show your mana beside the form's power (`Core.FormPower`, for yourself alone): your unit frame
   (and your target's or focus's while it is you, a slot for each) the mana first under the health bar and the form's
@@ -138,7 +138,7 @@ Decided (Saneroki, 2026-10-16):
   party." Under each of the three switches its own, off by default (`rest:InGroup`): a group then counts for nothing.
 - **The game's other bars** (Saneroki, 2026-10-31; built): its experience and stance bars gone, its menu bar on
   mouseover (`GameBars.lua`). Around the mouse, only while they run, rings for the global cooldown and your cast, centred on
-  the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). Sane UI's own experience and stance bars are still to come; the game's stance keys and
+  the cursor's picture and not on its tip (`MouseRings.lua`, built 2026-11-01). SaneUI's own experience and stance bars are still to come; the game's stance keys and
   your action bars change stances meanwhile.
 - **Auras above a unit frame** (Saneroki, 2026-10-31; built): buffs on the left, crowd control in the middle, debuffs
   on the right.
@@ -168,7 +168,7 @@ Decided (Saneroki, 2026-10-16):
   fight by itself. So (Saneroki, 2026-11-11: "Yess add them") your own casts in a fight of a spell that puts an aura
   on come in as they happen, and after each fight the spells of the game's damage meter of it (damage, healing,
   damage taken, dispels, interrupts, per member; `C_DamageMeter` is plain once the fight is over). And each member's
-  Sane UI sends its player's casts of the fight to the party or raid once it is over (Core's wire; Saneroki,
+  SaneUI sends its player's casts of the fight to the party or raid once it is over (Core's wire; Saneroki,
   2026-11-11: "Can we use the guild and party sharing ..."), behind the switch *Share casts in a fight with your
   group*, on at first.
 

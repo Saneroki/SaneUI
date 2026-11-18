@@ -7,7 +7,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Field | Value |
 | --- | --- |
 | Name | SaneUI Tooltips |
-| Folder in the game | `SaneUI_Tooltips` (listed under *Sane UI* as *Tooltips*) |
+| Folder in the game | `SaneUI_Tooltips` (listed under *SaneUI* as *Tooltips*) |
 | Summary | The game's tooltips redrawn as tidy panels: quests, professions and gold for every item, at a glance. |
 | Category | Tooltip |
 | Avatar | `tooltips-avatar.png` of `saneui makelogos` (400 x 400) |
@@ -26,7 +26,7 @@ setup and says tooltips show at once (no longer *Hold Shift*); put in on CurseFo
 of what it shows: an item's quality, a player's class, a spell's school. Every kind of tooltip has a layout
 of its own, and an item's panel tells you what it is for and what it is worth.
 
-Made for **WoW: Forever** (English client). It is part of **Sane UI**, a set of interface addons you can
+Made for **WoW: Forever** (English client). It is part of **SaneUI**, a set of interface addons you can
 take one by one. It needs **SaneUI Core**, which the CurseForge app installs with it.
 
 ## What it does
@@ -56,14 +56,14 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
   model, and how solid they are, with your own tooltip showing each choice at once.
 - **Tooltips show at once**, as the game's do. *Show tooltips* on the options page, or the setup, keeps them
   hidden until you hold Shift, Ctrl or Alt.
-- **Options:** Esc > Options > AddOns > Sane UI > Tooltips: when tooltips show, tooltips at the mouse cursor,
+- **Options:** Esc > Options > AddOns > SaneUI > Tooltips: when tooltips show, tooltips at the mouse cursor,
   text size, opacity, class colours, icons and 3D models.
 - Switched off, the tooltips are the game's own again.
 
 ## Alpha
 
 SaneUI Tooltips is in alpha: it works, but it is still changing, and you may find bugs. If a part of it ever
-runs into an error, Sane UI gives that kind of tooltip back to the game until your next `/reload`, so your
+runs into an error, SaneUI gives that kind of tooltip back to the game until your next `/reload`, so your
 game keeps working. `/sane errors` lists what went wrong.
 
 ## Feedback and bug reports

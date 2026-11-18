@@ -1,15 +1,15 @@
 # Blizzard updates
 
 What to do when the game gets a new build: extract Blizzard's interface code and art of that build, compare the
-code with the build before it, and get a todo list of what in Sane UI has to change. Read this before taking a new
+code with the build before it, and get a todo list of what in SaneUI has to change. Read this before taking a new
 build's code in, or before changing `dev/tools/blizzard`.
 
 The tool is a development tool only: Python in `dev/blizzard/`, run by `dev/tools/blizzard`, tested by
 `dev/tests/blizzard.py`. Nothing of it ships with the addon.
 
-## Sane UI's base: the newest export, a hard rule
+## SaneUI's base: the newest export, a hard rule
 
-Blizzard's code and art that Sane UI is built on, and that its tools read (the lab, the made files, the art tools),
+Blizzard's code and art that SaneUI is built on, and that its tools read (the lab, the made files, the art tools),
 are the **newest export**: of Forever's exports this computer keeps, the one with the highest version number.
 Retail's exports stand beside them and are read only when asked for (*Forever and Retail*). Never `references/`:
 that is an old in-game export, kept only to compare with (`git:<revision>`).
@@ -26,7 +26,7 @@ that is an old in-game export, kept only to compare with (`git:<revision>`).
 
 ## Forever and Retail
 
-Saneroki (2026-10-25): Sane UI is made for WoW: Forever and Retail, English clients only. Forever's client is
+Saneroki (2026-10-25): SaneUI is made for WoW: Forever and Retail, English clients only. Forever's client is
 Retail's (the family Mainline) with a layer of its own: the game type `camelot`, its `Camelot/` folders and
 `*Overrides.lua`; Retail's game type is `standard`. Both share most of Blizzard's code, the API and its
 restrictions; they differ in each game's own systems (Forever: Classic's mechanics such as spell ranks, ammo,
@@ -42,11 +42,11 @@ quests, NPCs, routes).
 - **Where they differ:** `dev/tools/blizzard games [--out FOLDER]` compares Forever's newest export with Retail's
   and writes lookup tables: `symbols.tsv` (every symbol that differs: forever-only, retail-only, calls-differ,
   code-differs), `files.tsv`, `addons.tsv` (whether each client loads an addon), `art.tsv` and `art-folders.tsv`
-  (pictures by content key), a `README.md` of counts, and `uses.md`, the todo list of what of Sane UI's own uses
+  (pictures by content key), a `README.md` of counts, and `uses.md`, the todo list of what of SaneUI's own uses
   Retail lacks or calls differently. Without `--out` they go to `dev/blizzard/reports/` (not committed). It also
   writes `dev/tests/games.lua`, what Retail lacks of Forever's as a module reaches it (globals, `C_X.Function`,
   `Enum` and `Constants` entries, events), which the tests' stand-in takes away when it plays Retail
-  (`W.Play("retail")`): committed with Sane UI.
+  (`W.Play("retail")`): committed with SaneUI.
 - **One symbol in both games:** `dev/tools/blizzard show <name> --retail`; `check --retail` writes the todo list
   alone.
 - **One addon folder for both:** a TOC can name both Interface numbers (`## Interface: 16001, 120105`); a file
@@ -67,10 +67,10 @@ and for that game:
    words: Blizzard's addons, the API by namespace, events, widgets, enums, structures, CVars, templates,
    Blizzard's Lua, the code files per addon, the art per folder), the tables of every change (`symbols.tsv`,
    `files.tsv`, `addons.tsv`, `art.tsv`, `art-folders.tsv`, sides old and new), and `todo.md` and `todo.json`,
-   what of it reaches Sane UI (the check's todo list below).
+   what of it reaches SaneUI (the check's todo list below).
 3. **Makes the Forever-Retail lookup anew** for the two games' newest exports, and the tests' list of what Retail
    lacks (`dev/tests/games.lua`: commit it with the fixes).
-4. **Prepares the session that fixes Sane UI:** `session.md`, its brief (the steps, the rules for both games,
+4. **Prepares the session that fixes SaneUI:** `session.md`, its brief (the steps, the rules for both games,
    the todo list's head), and a card on the board for it (`--no-card` leaves it out).
 
 Then `saneui fixpatch` starts Claude Code in the project on the newest brief (`--print` gives its prompt to
@@ -161,13 +161,13 @@ the report and gives the TOCs' Interface number (1.60.2 is 16002).
 
 | Section | Means | What to do |
 | --- | --- | --- |
-| Broken | Sane UI uses something the new export no longer has: a function, an API, an event, a template, an addon; or a name Blizzard's code mentions nowhere any more (a parentKey, a menu's tag, a callback's name, a mixin's method). *Maybe now* names where it may have gone: the same name elsewhere, a close new name. | Change Sane UI. |
+| Broken | SaneUI uses something the new export no longer has: a function, an API, an event, a template, an addon; or a name Blizzard's code mentions nowhere any more (a parentKey, a menu's tag, a callback's name, a mixin's method). *Maybe now* names where it may have gone: the same name elsewhere, a close new name. | Change SaneUI. |
 | Deprecated | It lives on only in one of Blizzard's deprecated addons, which a later build removes. The hint is what the stand-in calls: its replacement, as a rule. | Move to the replacement now. |
 | Changed | It is called differently: parameters, the API's arguments and returns, its flags (protected, secret values, restrictions), an event's payload, a structure an API returns, a template's parents, mixin or keys, an enum's values. | Check each call and handler. |
-| Review | Sane UI hooks it and its code changed (the diff is in the list), or Sane UI builds on a Blizzard function or template whose code changed, or an atlas or file Blizzard's code no longer names. | Read the diff; change Sane UI if its hook or its use no longer fits. |
+| Review | SaneUI hooks it and its code changed (the diff is in the list), or SaneUI builds on a Blizzard function or template whose code changed, or an atlas or file Blizzard's code no longer names. | Read the diff; change SaneUI if its hook or its use no longer fits. |
 | Housekeeping | The TOCs' `## Interface` number, files made from Blizzard's code that would change, notes in `src/` and `Doc/` that cite a Blizzard file that changed, and last the adopt. | Do them. |
 
-Only what Sane UI uses is listed. *For information* at the end lists the API new in the namespaces Sane UI calls.
+Only what SaneUI uses is listed. *For information* at the end lists the API new in the namespaces SaneUI calls.
 
 ## How it reads an export
 
@@ -193,18 +193,18 @@ Every definition becomes a symbol with an id, a signature and a hash:
 The signature is what a caller depends on; the hash covers the whole definition, its tokens without comments
 and spaces, so a change of words or layout alone is no change. A symbol whose hash changed and whose
 signature did not is called the same way but works differently inside. Besides the symbols, every name and
-name-like string an export mentions is kept, so a name Sane UI uses that the new code no longer mentions at all
+name-like string an export mentions is kept, so a name SaneUI uses that the new code no longer mentions at all
 is found even where no symbol defines it.
 
-## How it reads Sane UI
+## How it reads SaneUI
 
 From `src/`: the globals each file reads (by `luac5.1`'s listing, so a local with a Blizzard name is no use of
 Blizzard's), with what is reached through them (`C_Spell.GetSpellInfo`, `GameTooltip:AddLine`,
 `Enum.SpellBookSpellBank.Player`); every string, with the call it is given to; what `hooksecurefunc` hooks;
-methods called and keys read by name; attributes of the XML. The names Sane UI defines itself (`function A:Name`,
+methods called and keys read by name; attributes of the XML. The names SaneUI defines itself (`function A:Name`,
 `A.Name =`, a table's keys, XML `parentKey`) are its own: a method or key of such a name is not taken as
-Blizzard's. `dev/tools/blizzard uses` counts what Sane UI takes from the newest export; `--list` names it all;
-`--unknown` names the globals Sane UI reads that Blizzard's code never mentions (the client's own functions the
+Blizzard's. `dev/tools/blizzard uses` counts what SaneUI takes from the newest export; `--list` names it all;
+`--unknown` names the globals SaneUI reads that Blizzard's code never mentions (the client's own functions the
 documentation leaves out, or functions an older client had).
 
 **Cite Blizzard's files so the tool can follow them:** `Blizzard_ChatFrameBase/Shared/ChatFrame.lua 120-140`
@@ -222,4 +222,4 @@ lines changed, and when they only moved, where they are now; without lines, when
   name that changed; one with few is shown with each diff.
 - Names made at run time (`_G["ChatFrame" .. i]`) are not followed. Atlases and textures are compared as names
   Blizzard's code mentions; whether the game still has one is only known in the game.
-- An empty list is no proof that Sane UI works with the new build. It is tried in the game as always.
+- An empty list is no proof that SaneUI works with the new build. It is tried in the game as always.

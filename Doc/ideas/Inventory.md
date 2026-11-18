@@ -11,11 +11,11 @@ The bags worked; the sheet did not: opened by our code, the game's window manage
 own code failed on the player's secret health (`src/Inventory/README.md`, *History*;
 `Doc/guides/addon-standards.md`, *Known traps*). So, decided (Saneroki, 2026-10-20):
 
-- **Our own character sheet,** in Sane UI's window system: a window that holds everything the game's character
+- **Our own character sheet,** in SaneUI's window system: a window that holds everything the game's character
   sheet holds and does, built from Blizzard's own code for it (`references/BlizzardInterfaceCode`, Camelot's
   `CharacterFrame`, `PaperDollFrame`, `PaperDollFrameStats`, `ReputationFrame`, `SkillsFrame`,
   `PVPRankFrame`), as close to it as the game lets an addon be.
-- **Our own bags,** a window of Sane UI's that shows and handles the player's bags: a bag view of its own,
+- **Our own bags,** a window of SaneUI's that shows and handles the player's bags: a bag view of its own,
   with views and tools of its own (below).
 - **Snapshots of the other characters:** windows that show what the account's other characters have (their
   bags, bank and what they wear, their gold), from Core's data (`Core.Data.Characters`).
@@ -70,7 +70,7 @@ Everything the game's (Camelot) character window has, in our panel:
 - **Windows of their own (Saneroki, 2026-10-20):** not one sheet with side tabs, but each part a window on the
   module's board, moved and sized there like every other: the paper doll (scaled to fit), the stats, the gear sets,
   the titles, and each of the game's tabs; what is in a window follows its size.
-- **Sane UI's own look (Saneroki, 2026-10-22):** the character, the bags, the bank and the alts in the new art and
+- **SaneUI's own look (Saneroki, 2026-10-22):** the character, the bags, the bank and the alts in the new art and
   style (`Doc/guides/interface-style.md`), still sized on the board by dragging the lines between windows. Built
   the same day: the character on the doll (its own leather and paper; slots in arcs, strips with each item's
   words, the live model on the doll's ground), the bags, the bank and the alts on the journal's page (Core's
@@ -91,10 +91,10 @@ Everything the game's (Camelot) character window has, in our panel:
 
 ## The bags
 
-Sane UI's own bag view of the player's bags (and the bank, while it is open): one window with every slot,
+SaneUI's own bag view of the player's bags (and the bank, while it is open): one window with every slot,
 the items as the game's own item buttons (`ContainerFrameItemButtonTemplate`, which keeps its bag in a secure
 attribute, so using an item from our window is the game's own click, in a fight too), with views and tools
-designed for Sane UI: a grid of all slots, items sorted and grouped into categories, a list, a compact view,
+designed for SaneUI: a grid of all slots, items sorted and grouped into categories, a list, a compact view,
 the search box of the full window, the free slots, the gold. Designed on its own terms (CLAUDE.md, *Our own
 shape*): our layout, names, words and numbers; Blizzard's art and colours where it has them.
 
@@ -283,7 +283,7 @@ keeps an item once a place), the upgrade arrow (it is for the character played),
    search; then pins, the player's own groups and junk marks; next, the steps under *The bags*.
 4. **The other characters** (built 2026-10-20): the snapshot window from `Core.Data.Characters`, an alt's gear
    on a paper doll.
-5. **Sane UI's own look** (built 2026-10-22): the character, the bags, the bank and the alts in the journal's
+5. **SaneUI's own look** (built 2026-10-22): the character, the bags, the bank and the alts in the journal's
    look; the stats on 2026-10-23 (columns that follow the window's width); next the windows of the game's tabs.
 6. **The game's keys:** whether C and B open ours (Core's holder, `Holder.lua`, keeps the game's window out
    of sight while ours is chosen), and *Classic windows* in the full window's dropdown for the game's own.

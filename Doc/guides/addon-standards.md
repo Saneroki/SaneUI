@@ -42,13 +42,13 @@ compute decisions from it ([principle 12](blizzard-design-principles.md)).
 - **Several addons that belong together:** the addon list shows an addon under another one when its
   `Group` is that addon's folder name (the client sets it by itself for similar names with a dependency;
   `Blizzard_AddOnList/AddonList.lua`). An addon whose dependency is switched off does not load.
-- In Sane UI a module's `Title` is its plain name (*Abilities*, not *Sane UI Abilities*): it stands under
-  *Sane UI* in the addon list already.
+- In SaneUI a module's `Title` is its plain name (*Abilities*, not *SaneUI Abilities*): it stands under
+  *SaneUI* in the addon list already.
 - Several game versions: prefer a comma-separated `Interface` and per-line conditions
-  (`[AllowLoadGameType ...]`) over several TOC files. Sane UI's TOCs name Forever's and Retail's numbers
+  (`[AllowLoadGameType ...]`) over several TOC files. SaneUI's TOCs name Forever's and Retail's numbers
   (`## Interface: 16001, 120105`) and use per-line conditions only as section 13 says.
 - Media files are not listed. Only Lua and XML are.
-- In Sane UI every module is an addon of its own with its TOC in its folder (`src/Core/SaneUI.toc`,
+- In SaneUI every module is an addon of its own with its TOC in its folder (`src/Core/SaneUI.toc`,
   `src/Abilities/SaneUI_Abilities.toc`). A module's TOC says `## Dependencies: SaneUI` and
   `## Group: SaneUI`, and the TOCs share `Interface` and `Version`. A file that is not in its module's TOC
   is never loaded. `dev/tests/lint` checks all of this.
@@ -70,7 +70,7 @@ compute decisions from it ([principle 12](blizzard-design-principles.md)).
   start-up signal at all.
 - A load-on-demand addon can arrive at any time: never assume the order above for somebody else's addon.
 - **Do the work late.** Build a window when it is first opened, not at login. Ask the game for an event
-  only once something listens. In Sane UI, Core does both (`OnLoad`, `OnLogin`, `Core.On`); see
+  only once something listens. In SaneUI, Core does both (`OnLoad`, `OnLogin`, `Core.On`); see
   [src/Core/README.md](../../src/Core/README.md).
 
 ## 4. Names and globals
@@ -78,15 +78,15 @@ compute decisions from it ([principle 12](blizzard-design-principles.md)).
 - **Everything is `local`.** Globals are slower, collide with other addons and can taint Blizzard's code
   (the classic case: an addon writing a global named like one of Blizzard's).
 - Share between files through the addon's private table: `local ADDON, ns = ...`. Not through globals.
-  Between addons there is no such table: Sane UI's addons share one global table, `SaneUI`, and nothing else.
+  Between addons there is no such table: SaneUI's addons share one global table, `SaneUI`, and nothing else.
 - A global is only allowed where the client demands one (slash commands `SLASH_...`, key binding names
   `BINDING_...`, saved variables, the compartment function, named frames and font objects, a mixin an
-  XML template names). Prefix every one with the addon's name. In Sane UI the lint fails on any other
+  XML template names). Prefix every one with the addon's name. In SaneUI the lint fails on any other
   global write.
 - **A local stands only after its own statement** (a `local function`, after its `end`). Code written above it, a
   frame's script or a hook too, that names it reads the global of that name: nil in the game, an error when it runs.
   Write the local first, or name it above its first use (`local Hold -- (below)`, later `function Hold(...) end`
-  without `local`). In Sane UI the lint fails on a name read as a global where the same function, or the file,
+  without `local`). In SaneUI the lint fails on a name read as a global where the same function, or the file,
   makes a local of it further down (`local X = X`, the game's kept, passes).
 - **Frame names:** give a frame a global name only when something needs it (Esc-to-close, a Blizzard
   template that looks up `$parentChild`, debugging). Prefix it: `SaneUI...`.
@@ -149,7 +149,7 @@ Since patch 12.0 the client hands some combat values (health, auras, cooldowns) 
 - A widget that was given a secret returns secrets from its getters afterwards, and frames anchored to
   it can become secret in position and size.
 - Test with `issecretvalue(v)` / `canaccessvalue(v)` before computing with anything read from the game.
-  In Sane UI everything read from the game goes through `Core.Plain(value)`, which gives `nil` for a
+  In SaneUI everything read from the game goes through `Core.Plain(value)`, which gives `nil` for a
   hidden value; `Core.Ask(fn, ...)` calls a game function that may be missing or fail and gives its
   answers plain.
 
@@ -164,7 +164,7 @@ CPU matters more than memory: everything an addon does happens between two frame
   filters by unit.
 - **Burst events** (`BAG_UPDATE`, `ZONE_CHANGED`, aura and spell updates) fire many times in a row.
   Prefer the delayed variant where one exists (`BAG_UPDATE_DELAYED`), or mark "dirty" and do the work
-  once on the next frame. In Sane UI: `Core.Later(fn, delay)` gives a function that runs `fn` once, on
+  once on the next frame. In SaneUI: `Core.Later(fn, delay)` gives a function that runs `fn` once, on
   the next frame or `delay` seconds later, however often it is called before then.
 - **Do nothing while hidden.** A window updates when it is shown and on events while shown.
 - **Do nothing heavy in combat.** Rebuilds, scans and sorting wait until combat ends.
@@ -188,7 +188,7 @@ CPU matters more than memory: everything an addon does happens between two frame
 - Save plain data only (numbers, strings, booleans, tables). Never a secret value, a frame or a
   function.
 - Account-wide by default; per character only what really differs per character.
-- In Sane UI a module does not declare its own saved variables: it uses Core's (`Core.Store`,
+- In SaneUI a module does not declare its own saved variables: it uses Core's (`Core.Store`,
   `Core.Options`; [src/Core/README.md](../../src/Core/README.md)). They stay when the module is switched off.
 
 ## 9. Text and languages
@@ -204,7 +204,7 @@ CPU matters more than memory: everything an addon does happens between two frame
 
 ## 10. Errors and resilience
 
-**A hard rule:** an error in Sane UI's code never breaks the game's own UI and never leaves the player with
+**A hard rule:** an error in SaneUI's code never breaks the game's own UI and never leaves the player with
 a broken part of it. The part that failed steps aside, the Blizzard default takes its place, and the
 problem is kept and told once. Core holds the guards
 ([src/Core/README.md](../../src/Core/README.md), *Errors are handled, always*); every piece of our code
@@ -275,13 +275,13 @@ And so:
   `dev/tools/errors`), and told once in chat (unless *Errors in chat* is off). The game's own error window
   shows the errors caught at a door only when it shows Lua errors at all (`/console scriptErrors 1`), as it
   does every addon's: turn it on during development to see them at once. Players, who leave it off, get no
-  pop-up from Sane UI.
+  pop-up from SaneUI.
 
 ## 11. Living next to other addons
 
 - Change as little of the shared UI as possible, and only through hooks.
 - Never assume to be the only addon that hooks a function or moves a frame.
-- Sane UI embeds no third-party libraries: everything it needs is its own code or the game's.
+- SaneUI embeds no third-party libraries: everything it needs is its own code or the game's.
 - No output to chat unless the player asked for it or something failed.
 - One slash command with sub-commands, not many commands.
 
@@ -295,7 +295,7 @@ And so:
 
 ## 13. Forever and Retail
 
-Sane UI is one code for two games (Saneroki, 2026-10-25): WoW: Forever and Retail, English clients only.
+SaneUI is one code for two games (Saneroki, 2026-10-25): WoW: Forever and Retail, English clients only.
 Development is aimed at Forever; Retail stays compatible, and its data comes later. Forever's client is
 Retail's (the family Mainline) with a layer of its own, so most of the API, the widgets, the frameworks
 (Settings, Menu, ScrollBox, Edit Mode) and the secret-value restrictions are the same in both. What differs:

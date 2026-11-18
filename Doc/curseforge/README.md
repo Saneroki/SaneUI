@@ -1,4 +1,4 @@
-# Sane UI on CurseForge
+# SaneUI on CurseForge
 
 Each module is a CurseForge project of its own, and so is Core (*SaneUI Core*), which every module's
 upload names its required dependency, so the CurseForge app installs Core with any module (Saneroki,
@@ -26,7 +26,7 @@ Onboarding's (`onboarding-*`) belong to Core's project, which ships it (Core.md,
    too).
 3. Into `~/.config/saneui/curseforge.json` (only on this computer, readable by its owner alone): the API token
    (authors.curseforge.com, Settings, API Tokens), each project's id, Core's slug, the files' names:
-   `{"token": "...", "gameVersions": [...], "projects": {"Core": {"id": ..., "slug": "...", "name": "Sane UI
+   `{"token": "...", "gameVersions": [...], "projects": {"Core": {"id": ..., "slug": "...", "name": "SaneUI
    Core"}, "Navigation": {"id": ..., "name": "SaneUI Navigation"}}}`.
 4. `saneui checkcurseforge`: the token tried, CurseForge's game versions listed (put Forever's into
    `gameVersions`), what is still missing said. Nothing is uploaded.
@@ -48,7 +48,7 @@ Onboarding's (`onboarding-*`) belong to Core's project, which ships it (Core.md,
 ## CurseForge's moderation policies
 
 From CurseForge's support article *Moderation Policies* (read 2026-11-15; it has no section of its own for
-World of Warcraft, so its general rules apply), and how Sane UI meets them:
+World of Warcraft, so its general rules apply), and how SaneUI meets them:
 
 | Rule | How |
 | --- | --- |

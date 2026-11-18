@@ -9,7 +9,7 @@ yet. Checked on 2026-10-16 against Core's code, Blizzard's code (`references/`) 
 
 Economy is the module for trading with the game: the **auction house**, the **vendor**, the **trainer** and
 the **bank**. It helps the player buy, sell and post at the right price, and shows the market and its
-history, all from Sane UI's own database.
+history, all from SaneUI's own database.
 
 Two parts:
 
@@ -47,18 +47,18 @@ the modern one (`C_AuctionHouse`, commodities and items).
   Blizzard's.
 - **A button *Classic* on every one of our windows,** always, whatever the setting: our window goes away and
   Blizzard's own window is shown. The player always has a way back to the game's window.
-- **A button *Sane UI* on every Blizzard window that one of ours stands for,** next to its close button: Blizzard's window
+- **A button *SaneUI* on every Blizzard window that one of ours stands for,** next to its close button: Blizzard's window
   goes away and ours comes back.
 - **Remembered, also across sessions:** after *Classic*, that trade window opens as Blizzard's every time,
-  after a `/reload` and the next login too, until its *Sane UI* button is pressed. Kept per window (auction
+  after a `/reload` and the next login too, until its *SaneUI* button is pressed. Kept per window (auction
   house, vendor, trainer, bank) in Economy's settings.
 - With a window's *Hide Blizzard's window* not ticked, *Classic* puts ours away (remembered the same way) and Blizzard's
-  stands alone; *Sane UI* brings ours back beside it.
+  stands alone; *SaneUI* brings ours back beside it.
 - **Core has the buttons and the memory** (done in Core, `src/Core/Window.lua`; `Doc/ideas/Windows.md`, *The
   middle, and windows not docked* and *The game's own triggers*): a window with a title bar (`titleBar`) has
   the buttons [the game's window] [full screen / back] [close] at its right end. With `native = { frame,
   show, back }` the first swaps to Blizzard's window (tip *Classic window*), and `window:Attach()` puts the
-  same button on Blizzard's window, beside its close button, to come back (tip *Sane UI window*). Both call
+  same button on Blizzard's window, beside its close button, to come back (tip *SaneUI window*). Both call
   `window:Native(on)`, which keeps the choice with the window's place (`window:Remember("native", on)`, in
   the store Economy hands over) and then calls Economy's `show` or `back`. When the player talks to the NPC,
   Economy calls `window:Open()`: it calls `show` if Blizzard's was chosen last, else shows ours, full screen
@@ -81,7 +81,7 @@ But a frame that never comes into sight never runs `OnShow` or `OnHide`. That gi
 to prove at the vendor first, *Order of work*):
 
 1. **A holder, set between talks.** While the player has ours for a window (*Hide Blizzard's window* on,
-   *Sane UI* chosen), Blizzard's window is made a child of a hidden frame of ours (`SetParent`, at UIParent's
+   *SaneUI* chosen), Blizzard's window is made a child of a hidden frame of ours (`SetParent`, at UIParent's
    scale), and only while no talk is open: at login for the windows always loaded, once its addon is loaded
    for the others (`EventUtil.ContinueOnAddOnLoaded`), and again at the end of each talk. The game then shows
    it as always (`ShowUIPanel` sets it shown), but it never comes into sight: its `OnShow` and `OnHide` do
@@ -89,7 +89,7 @@ to prove at the vendor first, *Order of work*):
    and it takes no mouse. When the talk ends the game hides it, unseen. To check in the game: whether a
    window loaded on demand at the first talk gets its holder before the game shows it (if `ADDON_LOADED`
    comes inside the load, it does; if not, that first talk uses step 2).
-2. **In the middle of a talk,** when Blizzard's window is already in sight (*Sane UI* pressed after
+2. **In the middle of a talk,** when Blizzard's window is already in sight (*SaneUI* pressed after
    *Classic*): a hidden parent would end the talk, so Blizzard's window is made tiny and clear instead
    (`SetScale` very small, alpha 0), until the talk ends; then step 1 again. Its buttons and lists shrink to
    a point and take no clicks (alpha 0 alone would leave them taking the mouse), and the game's panel
@@ -233,7 +233,7 @@ window is the one in use, a bar under it (`Data/ScanBar.lua`; `Doc/guides/data.m
 - **Idle logout: not prevented (2026-10-30).** The newest export has no call that resets the game's idle time. The one
   handle near it, `CancelLogout` on `PLAYER_CAMPING`, only stops the 20 seconds of a logout outside a rest area, and most
   auction houses stand in rest areas, where a logout has no such wait. Working around the game's idle logout would also
-  put accounts at risk under the game's rules, so Sane UI does not try. What was read stays safe: the game writes
+  put accounts at risk under the game's rules, so SaneUI does not try. What was read stays safe: the game writes
   the saved file at every logout, the idle one too.
 
 **What a row becomes** (*proposal*, for the database's scan):
@@ -329,7 +329,7 @@ Wished from the database for Economy's views, **not yet in `Data.md`:**
 
 Economy's own reckoning over the database's numbers (the logic is the module's, the data Core's):
 
-- **Market value:** what an item really fetches now, built on what Sane UI alone can see: *sold between two
+- **Market value:** what an item really fetches now, built on what SaneUI alone can see: *sold between two
   scans*. *Proposal*, its shape fixed here, its window and limits set on real data (no number before that):
   - **What sold first:** where auctions of the item were seen selling, the value is the median of the
     prices they sold at, each unit counted once, over a recent window of server days (as `Data.md` counts
@@ -436,7 +436,7 @@ names (`AUCTION_HOUSE_BUY_TAB`, `AUCTION_HOUSE_SELL_TAB`, `AUCTION_HOUSE_AUCTION
 ## More windows (Saneroki)
 
 The mailbox, the guild bank and the player's own bags get windows of their own too, built the same way:
-Core's window, *Classic* and *Sane UI* remembered, *Hide Blizzard's window* for each. Their content is a
+Core's window, *Classic* and *SaneUI* remembered, *Hide Blizzard's window* for each. Their content is a
 *proposal*.
 
 - **Mailbox** (`MailFrame`, `Blizzard_MailFrame`, not loaded on demand; the interaction type *MailInfo*; the talk
@@ -511,7 +511,7 @@ the three ways of *Hidden, not closed*.
 | Between talks, ours chosen, the switch on | closed | Blizzard's window held (step 1) | closed |
 | The talk begins (its event: `MERCHANT_SHOW`, ...); the game shows its window, unseen if held | closed | `window:Open()`: Core calls `show` if Blizzard's was chosen last, else shows ours (full screen if left so); bags opened for a held window | ours or classic |
 | *Classic* (`native.show`) | ours | ours hidden, **the talk goes on**; Blizzard's back to UIParent, in sight | classic |
-| *Sane UI* (`native.back`) | classic | ours shown; Blizzard's made tiny (step 2) while the switch is on | ours |
+| *SaneUI* (`native.back`) | classic | ours shown; Blizzard's made tiny (step 2) while the switch is on | ours |
 | Ours closed (its close button; Esc through Core's option) | ours | the window's `close`: the game's close call (`CloseMerchant`, ...), which ends the talk; the game hides its window on its own path | closed (by the event) |
 | The talk ends (its close event: walked away, Blizzard's closed, the server, `/reload`) | ours, classic | ours hidden; Blizzard's scale and alpha back; held again if ours is the choice | closed |
 | Our window fails (`module.Guarded` stands down) | ours | Blizzard's back to UIParent, in sight, at once; ours hidden; the talk goes on | classic, not remembered |
@@ -543,7 +543,7 @@ the three ways of *Hidden, not closed*.
 | The last scan whole, sold between scans (*The history*) | database work: wishes |
 
 **The Esc option** (`escape = "close"` in `Window.New`, as Core is getting it): while such a window is
-shown, a named stand-in of Core's (`SaneUIEscape`, `Core.Escape`, one for all of Sane UI) stands in
+shown, a named stand-in of Core's (`SaneUIEscape`, `Core.Escape`, one for all of SaneUI) stands in
 `UISpecialFrames`; when the game hides it (Esc: `CloseAllWindows`, after the game's own panels), Core runs
 the window's `close`, as its close button does, and leaves such a window full (not made small first), so
 `full` stays kept and the next talk opens it full again. Economy's `close` is the game's close call, so Esc
@@ -592,7 +592,7 @@ trade windows and their close calls:
   most once per talk; *Classic* never ends the talk; the holder never set on a window in sight (the stub's
   `OnHide` would end the talk, and the test fails if it does); Blizzard's window put back exactly as it
   was, after an error too; a failing view leaves Blizzard's in sight.
-- **Remembered:** *Classic*, then a new talk, opens Blizzard's; *Sane UI* brings ours back; full screen
+- **Remembered:** *Classic*, then a new talk, opens Blizzard's; *SaneUI* brings ours back; full screen
   left full opens full; Esc on a full window closes it and keeps `full`.
 - **The switch per window:** off, both shown and nothing held; on, Blizzard's held; each window's own;
   changed during a talk, it holds from the talk's end.
@@ -611,7 +611,7 @@ The scan itself is tested with the database (`dev/tests/data.lua`, `Doc/ideas/Da
 src/Economy/
   SaneUI_Economy.toc
   Economy.lua      module, options, which window for which talk
-  Native.lua       a window's life: Blizzard's window out of sight and back (Classic, Sane UI, failure)
+  Native.lua       a window's life: Blizzard's window out of sight and back (Classic, SaneUI, failure)
   Prices.lua       market value, sells per day, days of stock, price to post (plain functions over Core.Data)
   Window.lua       what Economy's windows share: Core's window, buttons, progress, the kept view
   Auction/         Buy.lua, Sell.lua, Auctions.lua, Movement.lua, Sales.lua
@@ -632,9 +632,9 @@ The scan and the history are Core's (`Data/Scan.lua`, series *Prices*), not Econ
    `dev/tests/window.lua`. The window guide asks to decide first whether windows animate, as Blizzard's
    panels do not; for Economy Saneroki has decided it (*The window*: they appear with Core's motion).
 3. **The vendor window first, then the auction house:** the vendor is the simplest talk and proves the
-   window's life (hiding, *Classic*, *Sane UI*, Esc, walking away) before the auction house's views are
+   window's life (hiding, *Classic*, *SaneUI*, Esc, walking away) before the auction house's views are
    built on it. Done when: every row of *A window's life* works in the game, `/console taintLog 1` shows no
-   Sane UI line after a talk, and the tests pass.
+   SaneUI line after a talk, and the tests pass.
 4. **Auction house window:** Buy, Sell, Auctions. Done when: a purchase, a post and a cancel work with one
    click each, and the throttle never shows the game's *too many requests* error.
 5. **Bank and trainer windows.**

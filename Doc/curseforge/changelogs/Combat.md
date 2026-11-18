@@ -17,7 +17,7 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 - SaneUI Nameplates is now **SaneUI Combat**: the nameplates, your unit frames, one frame for your party and raid,
   and the auras you track, in one addon. Each part is yours or the game's, one tick each (the options' first section,
   the setup, or Classic windows on a full screen).
-- After the update, delete the old folder `SaneUI_Nameplates` if it is still in Interface\AddOns: Sane UI keeps it
+- After the update, delete the old folder `SaneUI_Nameplates` if it is still in Interface\AddOns: SaneUI keeps it
   off and tells you once. The nameplates' settings start at their defaults on the page Combat.
 - A setup that walks you through it all, with your party and raid at 5, 10, 20 and 40 players and a button that
   opens Edit Mode to place and size them by their corners and sides. `/sane setup combat`, or `/sane setup nameplates`

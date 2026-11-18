@@ -1,15 +1,15 @@
 # GUI development
 
-How to build windows, lists, menus and other widgets so they behave like Blizzard's and look like Sane UI's
+How to build windows, lists, menus and other widgets so they behave like Blizzard's and look like SaneUI's
 own ([interface-style.md](interface-style.md)). Read this before creating or changing anything the player
 sees. For what a feature should show, read
 [blizzard-design-principles.md](blizzard-design-principles.md). For code rules (taint, combat, events),
 read [addon-standards.md](addon-standards.md).
 
-## Sane UI's own look
+## SaneUI's own look
 
-Sane UI redesigns every window and view it makes or recreates (Saneroki, 2026-10-30, replacing the journal look of
-2026-10-21): the layout stays Sane UI's own, but it is built from WoW: Forever's own images in the game's default
+SaneUI redesigns every window and view it makes or recreates (Saneroki, 2026-10-30, replacing the journal look of
+2026-10-21): the layout stays SaneUI's own, but it is built from WoW: Forever's own images in the game's default
 fonts, Friz Quadrata the main one; the pencil drawing icons stay; natural buttons with golden or silver, beaten-up
 metal borders, and Forever's red button for the important ones, as in a yes or no prompt (Saneroki, 2026-11-15). The
 main elements are the login screen's own (*The kit* in [interface-style.md](interface-style.md): the top bar, the
@@ -17,20 +17,20 @@ character list's frame and search box, the square and the red buttons, the angle
 title bar, the loading bar, the character window); further parts are picked by number from the catalogue (`saneui
 showgameart`); the picks and how Retail is served stand in [interface-style.md](interface-style.md), *The new
 direction*. What is built in the journal look (parchment,
-leather, Kalam, Sane UI's own painted art) keeps it until it is rebuilt from the picks. The game's
-native windows that Sane UI does not recreate stay as the game draws them, mostly untouched.
+leather, Kalam, SaneUI's own painted art) keeps it until it is rebuilt from the picks. The game's
+native windows that SaneUI does not recreate stay as the game draws them, mostly untouched.
 
 What stays from Blizzard for our own windows too: how the game works, found in Blizzard's code as below
 (its API, events, secure templates and taint, scaling, Esc and the window manager, languages), and the
 design principles of what a view shows and how it behaves
 ([blizzard-design-principles.md](blizzard-design-principles.md)). Where this guide below says to use
 Blizzard's art or fonts for the look, that holds for our own windows too (the images and fonts are the game's,
-the layout ours); its templates' looks hold for the native windows Sane UI changes in place.
+the layout ours); its templates' looks hold for the native windows SaneUI changes in place.
 
 ## The one rule
 
 **Look it up in Blizzard's code first (its newest export, `dev/tools/blizzard where`), then build with Blizzard's own parts** (for how it works; the look of
-our own windows is Sane UI's, above). Blizzard's interface is
+our own windows is SaneUI's, above). Blizzard's interface is
 written in the same Lua and XML an addon uses, and its templates, fonts, colours, textures and sounds
 are all available to us. Something built from them looks right, follows the client's scaling and
 languages, and changes with the game. Something drawn by hand does none of that.
@@ -67,20 +67,20 @@ this guide was found in the export of 2026-10-14; check again in the newest expo
 | Money, big numbers | `GetMoneyString`, `FormatLargeNumber` | `Blizzard_SharedXML/FormattingUtil.lua` |
 | Icon inside text | `CreateAtlasMarkup`, `CreateTextureMarkup` | `Blizzard_SharedXMLBase/TextureUtil.lua` |
 
-In Sane UI the options pages are filled by Core's options (`src/Core/Settings/`), not by a module directly: a
-module describes its switches to Core and gets a page of its own under *Sane UI*
+In SaneUI the options pages are filled by Core's options (`src/Core/Settings/`), not by a module directly: a
+module describes its switches to Core and gets a page of its own under *SaneUI*
 ([src/Core/Settings/README.md](../../src/Core/Settings/README.md)).
 
 An addon's category must be registered before the options window first opens: `SettingsPanelMixin:OnShow`
 hides the *Game* and *AddOns* tabs for the whole session when no addon category exists at that moment, and
 nothing shows them again. A page registered later (from a load-on-demand addon) is then unreachable. Core
-registers Sane UI's pages at login for that reason; only their controls wait until the options first open.
+registers SaneUI's pages at login for that reason; only their controls wait until the options first open.
 
 ## Windows
 
 - A window of ours is `Core.Window.New` with `skin = true`: Core's skin (the game's dark dialog tile and a thin trim in
-  Sane UI's bronze, with round corners that are square on the screen's edges, as set: Core's `Shape.lua`)
-  is the look of Sane UI's windows until each is rebuilt from Forever's own images in its own layout
+  SaneUI's bronze, with round corners that are square on the screen's edges, as set: Core's `Shape.lua`)
+  is the look of SaneUI's windows until each is rebuilt from Forever's own images in its own layout
   ([interface-style.md](interface-style.md), *The new direction*). A dialog that should look like one of the game's starts from a
   Blizzard frame template (`ButtonFrameTemplate`), which brings border, title bar, close button and the
   right sizes. Neither rebuilds a border from single textures: the game has no border whose corners take
@@ -95,7 +95,7 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
   `src/`), which `dev/build` puts into the addon's `Sounds/`, played with
   `PlaySoundFile(path, "SFX")`.
 - A movable window is clamped to the screen (`SetClampedToScreen(true)`), remembers its place, and has
-  a way back to the default place. In Sane UI that is Core's work, never a module's own code:
+  a way back to the default place. In SaneUI that is Core's work, never a module's own code:
   `Core.Window.New` for a window of ours (arranged in Blizzard's Edit Mode, as the game's own frames:
   Edit Mode's box to drag it by and a grip, there only; a title bar for a kind of window that has one,
   with its name, a fuzzy search and the buttons [the game's own window] [full screen] [close], by which it
@@ -127,11 +127,11 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
   files. Second choice is a file path into the client (`Interface\...`), found in
   the newest export's art. Icons by file ID from the API.
 - Blizzard's art is used from the client, never copied into the addon (policy and licence).
-- Sane UI's own windows are built from WoW: Forever's own images (above: atlas first), picked by number from
+- SaneUI's own windows are built from WoW: Forever's own images (above: atlas first), picked by number from
   the catalogue (`saneui showgameart`) and written into [interface-style.md](interface-style.md), *The new
-  direction*, in Sane UI's own layouts; the pencil drawing icons stay. The parts still in the journal look
+  direction*, in SaneUI's own layouts; the pencil drawing icons stay. The parts still in the journal look
   (painted parts in `assets/`, stretched and tiled by code, with text, stains and sketches laid over them by
-  code) keep it until they are rebuilt from the picks. Blizzard's art (above) for the native windows Sane UI
+  code) keep it until they are rebuilt from the picks. Blizzard's art (above) for the native windows SaneUI
   changes in place, and for the game's icons.
 - Own pictures: format, size for 4K, encoder and how to draw them are decided in
   [images.md](images.md) (BLP2, DXT5 with mipmaps, made by `dev/tools/art`; the game's own filter).
@@ -148,10 +148,10 @@ registers Sane UI's pages at login for that reason; only their controls wait unt
 - **Distances and the time of day follow the setting Units** (Saneroki, 2026-10-30; Metric at first): the code keeps yards,
   what a player reads comes from `Core.Distance`, `Core.DistanceText`, `Core.Clock` and `Core.ClockAt`
   (`src/Core/Units.lua`), never a written `"%d yd"` or `date("%H:%M")`. A slider of yards: `distance = true`.
-- **Sane UI's own windows:** the game's default fonts, by their font objects as below (Saneroki, 2026-10-30;
+- **SaneUI's own windows:** the game's default fonts, by their font objects as below (Saneroki, 2026-10-30;
   [interface-style.md](interface-style.md), *The new direction*). The parts still in the journal look keep its
   text until they are rebuilt: Kalam in pencil grey with the paper's grain on paper, pressed into the leather
-  on leather, both made in code (*Text* there), Sane UI's own font file behind a font object of our own that
+  on leather, both made in code (*Text* there), SaneUI's own font file behind a font object of our own that
   falls back to the game's font for a language Kalam lacks.
 - **Native windows: font objects (`SetFontObject`), never a font file of our own.** The client's font objects switch
   fonts per language and follow its text settings. To change only the size, take file and flags from

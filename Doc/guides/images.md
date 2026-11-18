@@ -4,7 +4,7 @@ How a picture becomes a texture the game draws sharply and cheaply. Read this be
 any picture the addon ships (banners, icons, logos, backgrounds). Whether to draw own art at all is in
 [gui-development.md](gui-development.md), *Art*: Blizzard's atlases and files come first.
 
-The choices below were measured on 2026-10-14 on Sane UI's banners and icons (numbers in each section,
+The choices below were measured on 2026-10-14 on SaneUI's banners and icons (numbers in each section,
 the experiments under [Tried and rejected](#tried-and-rejected)); `dev/tools/art-measure` repeats the
 measurements. Use it as it stands: the format, the sizes, the encoder and the filter are decided. Measure
 again only if the client changes how it draws, or for a picture unlike ours (fine lines, only text, a
@@ -25,7 +25,7 @@ of its options page) and `Art/icon.blp` (its icon in the addon list, the TOC's `
 Interface\AddOns\<addon>\Art\icon`) ([Doc/curseforge/README.md](../curseforge/README.md)). Tooltips (a panel
 and the mouse's arrow, teal), Nameplates (a health bar under the target's arrow, rose) and Onboarding (steps and a
 flag, silver) joined on 2026-11-16; Onboarding has no options page, so only its icon is in the game. The plain
-Sane UI logo (Saneroki, 2026-11-18: "use a plain Sane UI logo instead of the Core banner"): Core's badge and SANE UI
+SaneUI logo (Saneroki, 2026-11-18: "use a plain SaneUI logo instead of the Core banner"): Core's badge and SANEUI
 beside it, no addon's word and no plate, on a clear ground, 3 : 1 (`dev/tools/logo-art saneui`,
 `assets/Logos/saneui-banner.png`), shipped as Onboarding's `Art/logo.blp` (kind banner, drawn 300 x 100) for the
 setups' first page.
@@ -43,7 +43,7 @@ setups' first page.
    for what ships), and prints the texture's size, the `SetTexCoord` numbers and a check of the written file.
 5. Draw it as in [Drawing it](#drawing-it): the drawn size, the printed texture coordinates, the game's
    own filter, and a fall-back when `SetTexture` reports the file missing.
-6. List the file in the module's README (*Files*): what it is, that it is original art of Sane UI (the
+6. List the file in the module's README (*Files*): what it is, that it is original art of SaneUI (the
    project's `LICENSE`, point 3), made by `dev/tools/art` from which PNG.
 7. `saneui installdev` (`dev/installdev`), then **restart** the game: the client only finds files that were there when it started.
    A changed file needs only `/reload`.
@@ -91,7 +91,7 @@ texture (the same texels per unit both ways); the rest of the texture stays clea
 | 512 | 182 units | 214 units |
 | 1024 | 364 units | 428 units |
 
-What Sane UI has now:
+What SaneUI has now:
 
 | Kind | Drawn (units) | Texture | Used part, `SetTexCoord` | Of 4K's sharpness | File |
 | --- | --- | --- | --- | --- | --- |

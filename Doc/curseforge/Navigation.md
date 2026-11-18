@@ -7,7 +7,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Field | Value |
 | --- | --- |
 | Name | SaneUI Navigation |
-| Folder in the game | `SaneUI_Navigation` (listed under *Sane UI* as *Navigation*) |
+| Folder in the game | `SaneUI_Navigation` (listed under *SaneUI* as *Navigation*) |
 | Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. |
 | Category | Map & Minimap (and Quests & Leveling) |
 | Avatar | `maps-avatar.png` of `saneui makelogos` (400 x 400) |
@@ -24,7 +24,7 @@ The editor set to *Markdown* when the project is made.
 corner of the screen, it is your minimap. Left-click that corner and it fills the screen as the
 world map: the same map, handled the same way, only bigger.
 
-Made for **WoW: Forever** (English client). It is part of **Sane UI**, a set of interface addons you can
+Made for **WoW: Forever** (English client). It is part of **SaneUI**, a set of interface addons you can
 take one by one. It needs **SaneUI Core**, which the CurseForge app installs with it.
 
 ## What it does
@@ -57,14 +57,14 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
 
 - **The map:** left-click the screen's top right corner.
 - **Zoom:** the mouse wheel. **One map out:** right click. **Map pin:** double click.
-- **Options:** Esc > Options > AddOns > Sane UI > Navigation.
+- **Options:** Esc > Options > AddOns > SaneUI > Navigation.
 - **Size:** drag the small map's free corner.
 - The game's own minimap and map are still there: *Classic windows* on the full map's bar.
 
 ## Alpha
 
 SaneUI Navigation is in alpha: it works, but it is still changing, and you may find bugs. If a part of it ever
-runs into an error, Sane UI gives that part back to the game's own map until your next `/reload`, so your
+runs into an error, SaneUI gives that part back to the game's own map until your next `/reload`, so your
 game keeps working. `/sane errors` lists what went wrong.
 
 ## Feedback and bug reports

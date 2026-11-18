@@ -1,6 +1,6 @@
 # The interface lab
 
-A local website that runs Sane UI's Lua as the game runs it and draws what it makes, so windows can be built and
+A local website that runs SaneUI's Lua as the game runs it and draws what it makes, so windows can be built and
 refined in the browser with the same code that then goes into the game. The texts that would come from the
 server (who is online, chat, items) come from a fake server.
 
@@ -51,12 +51,12 @@ prints its log.
   `UICheckButtonTemplate`, `InputBoxTemplate`, `WowStyle1DropdownTemplate`, `BackdropTemplate`, ...) are
   Blizzard's, and `Settings` with its panel is the game's own. A file of theirs that stops in the lab (it needs
   what the lab does not have) is a line under "the lab" in the log, and the rest goes on.
-- **The client's own state** the lab keeps as the game's documentation describes it, where Sane UI needs it: CVars
+- **The client's own state** the lab keeps as the game's documentation describes it, where SaneUI needs it: CVars
   (`C_CVar`), the addons (`C_AddOns`), saved variables, Edit Mode's layouts (`C_EditMode`, sent again as
   `EDIT_MODE_LAYOUTS_UPDATED` at the login and on every change), the chat windows' settings, the settings panel's
   opening (`C_SettingsUtil`). Blizzard's `print` writes to the log.
-- **Sane UI's caught errors:** Core's guards keep what fails in its error log; the lab shows each one of the run
-  as an error ("Sane UI caught").
+- **SaneUI's caught errors:** Core's guards keep what fails in its error log; the lab shows each one of the run
+  as an error ("SaneUI caught").
 - **Drawing:** the host sends the page every region that is seen, in the game's order, in the screen's pixels;
   the page draws them and sends back the mouse and the keys. Texts are broken into lines and measured by the
   host with the font files' own widths, so the page draws each line where the game would.
