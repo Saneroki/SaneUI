@@ -486,6 +486,7 @@
 {"key":9952,"since":70245,"src":["game"],"skill":164,"creates":7928,"count":1,"reagents":[{"item":3860,"count":12},{"item":6037,"count":1},{"item":4304,"count":6}],"learnAt":1,"yellow":220,"grey":240,"recipe":7985,"toolKinds":[162]}
 {"key":9954,"since":70245,"src":["game"],"skill":164,"creates":7938,"count":1,"reagents":[{"item":3860,"count":10},{"item":6037,"count":8},{"item":7909,"count":3},{"item":3864,"count":3},{"item":5966,"count":1},{"item":7966,"count":2}],"learnAt":1,"yellow":220,"grey":240,"toolKinds":[162]}
 {"key":9957,"since":70245,"src":["game"],"skill":164,"creates":7929,"count":1,"reagents":[{"item":3860,"count":12},{"item":7067,"count":1}],"learnAt":1,"yellow":225,"grey":245,"toolKinds":[162]}
+{"key":9957,"since":70959,"day":"2026-11-18","src":["game"],"recipe":7994}
 {"key":9959,"since":70245,"src":["game"],"skill":164,"creates":7930,"count":1,"reagents":[{"item":3860,"count":16}],"learnAt":1,"yellow":225,"grey":245,"toolKinds":[162]}
 {"key":9961,"since":70245,"src":["game"],"skill":164,"creates":7931,"count":1,"reagents":[{"item":3860,"count":10},{"item":4338,"count":6}],"learnAt":1,"yellow":225,"grey":245,"toolKinds":[162]}
 {"key":9964,"since":70245,"src":["game"],"skill":164,"creates":7969,"count":1,"reagents":[{"item":3860,"count":4},{"item":7966,"count":3}],"learnAt":1,"yellow":230,"grey":250,"recipe":7989,"toolKinds":[162]}

@@ -2545,6 +2545,7 @@
 {"key":15275,"since":70245,"src":["game"],"name":"Improved Shadow Word: Pain","icon":136207,"effects":[{"index":0,"effect":6,"aura":107,"points":6000.0,"misc":1}]}
 {"key":15286,"since":70245,"src":["game"],"name":"Vampiric Embrace","icon":136230,"cost":[{"power":0,"amount":40}],"cooldown":60000,"maxRange":30.0,"effects":[{"index":0,"effect":6,"aura":4,"points":20.0,"coefficient":1.0}],"attack":"magic"}
 {"key":15286,"since":70707,"day":"2026-10-31","src":["game"],"cooldown":30000}
+{"key":15286,"since":70959,"day":"2026-11-18","src":["game"],"effects":[{"index":0,"effect":6,"aura":4,"points":10.0,"coefficient":1.0},{"index":1,"effect":6,"aura":4,"points":100.0,"coefficient":1.0}]}
 {"key":15292,"since":70245,"src":["game"],"name":"Dark Iron Pulverizer","icon":136192,"castTime":45000,"effects":[{"index":0,"effect":24,"points":1.0}],"interrupts":15}
 {"key":15293,"since":70245,"src":["game"],"name":"Dark Iron Mail","icon":136192,"castTime":45000,"effects":[{"index":0,"effect":24,"points":1.0}],"interrupts":15}
 {"key":15294,"since":70245,"src":["game"],"name":"Dark Iron Sunderer","icon":136192,"castTime":45000,"effects":[{"index":0,"effect":24,"points":1.0}],"interrupts":15}

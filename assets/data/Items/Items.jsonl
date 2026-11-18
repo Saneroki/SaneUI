@@ -1469,6 +1469,7 @@
 {"key":2847,"since":70245,"src":["game",20],"name":"Copper Shortsword","quality":2,"itemLevel":10,"minLevel":4,"class":2,"subclass":7,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":135327,"sell":110,"damageMin":9,"damageMax":18,"speed":2.5,"statTypes":[4]}
 {"key":2848,"since":70245,"src":["game",20],"name":"Bronze Mace","quality":2,"itemLevel":22,"minLevel":17,"class":2,"subclass":4,"slot":"INVTYPE_WEAPON","stack":1,"icon":133483,"sell":1119,"damageMin":20,"damageMax":38,"speed":2.6,"statTypes":[7]}
 {"key":2848,"since":70707,"day":"2026-10-31","src":["game"],"sell":898}
+{"key":2848,"since":70959,"day":"2026-11-18","src":["game"],"bind":2}
 {"key":2849,"since":70245,"src":["game",20],"name":"Bronze Axe","quality":2,"itemLevel":23,"minLevel":18,"class":2,"subclass":0,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":132408,"sell":1269,"damageMin":20,"damageMax":38,"speed":2.5,"statTypes":[4]}
 {"key":2849,"since":70707,"day":"2026-10-31","src":["game"],"sell":917}
 {"key":2850,"since":70245,"src":["game",20],"name":"Bronze Shortsword","quality":2,"itemLevel":24,"minLevel":19,"class":2,"subclass":7,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":135274,"sell":1439,"damageMin":21,"damageMax":40,"speed":2.5,"statTypes":[3]}
@@ -5586,6 +5587,7 @@
 {"key":7991,"since":70245,"src":["game"],"name":"Plans: Mithril Plate Shoulders","quality":3,"itemLevel":47,"class":9,"subclass":4,"stack":1,"icon":134939,"sell":2500,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":9966}],"description":"Teaches you how to make Mithril Plate Shoulders."}
 {"key":7992,"since":70245,"src":["game"],"name":"Plans: Blue Glittering Axe","quality":2,"itemLevel":44,"class":9,"subclass":4,"stack":1,"icon":134942,"sell":2000,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":9995}],"description":"Teaches you how to make a Blue Glittering Axe."}
 {"key":7993,"since":70245,"src":["game"],"name":"Plans: Dazzling Mithril Rapier","quality":2,"itemLevel":48,"class":9,"subclass":4,"stack":1,"icon":134942,"sell":2500,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":10005}],"description":"Teaches you how to make a Dazzling Mithril Rapier."}
+{"key":7994,"since":70959,"day":"2026-11-18","src":["game"],"name":"Plans: Orcish War Leggings","quality":2,"itemLevel":46,"class":9,"subclass":4,"stack":1,"bind":1,"icon":134942,"sell":100,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":9957}],"description":"Teaches you how to make Orcish War Leggings."}
 {"key":7995,"since":70245,"src":["game"],"name":"Plans: Mithril Plate Bracers","quality":1,"itemLevel":43,"class":9,"subclass":4,"stack":1,"bind":1,"icon":134939,"sell":1500,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":9937}],"description":"Teaches you how to make Mithril Plate Bracers."}
 {"key":7996,"since":70245,"src":["game"],"name":"Worn Fishing Hat","quality":1,"itemLevel":20,"minLevel":15,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"icon":133133,"sell":244,"statTypes":[117]}
 {"key":7997,"since":70245,"src":["game"],"name":"Red Defias Mask","quality":0,"itemLevel":15,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133694,"sell":81,"classes":[4]}
@@ -9898,6 +9900,7 @@
 {"key":14554,"since":70938,"day":"2026-11-15","src":["game"],"name":"Cloudkeeper Legplates","quality":4,"itemLevel":62,"minLevel":57,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":2,"icon":134584,"sell":29900,"effects":[{"trigger":"use","spell":18787}],"statTypes":[7,4,3]}
 {"key":14555,"since":70938,"day":"2026-11-15","src":["game"],"name":"Alcor's Sunrazor","quality":4,"itemLevel":63,"minLevel":58,"class":2,"subclass":15,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":135344,"sell":78772,"speed":1.3,"effects":[{"trigger":"hit","spell":18833}],"statTypes":[51]}
 {"key":14557,"since":70938,"day":"2026-11-15","src":["game"],"name":"The Lion Horn of Stormwind","quality":4,"itemLevel":63,"minLevel":58,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":2,"icon":134229,"sell":17880,"effects":[{"trigger":"equip","spell":20847}],"statTypes":[12]}
+{"key":14558,"since":70959,"day":"2026-11-18","src":["game"],"name":"Lady Maye's Pendant","quality":4,"itemLevel":64,"minLevel":59,"class":4,"subclass":0,"slot":"INVTYPE_NECK","stack":1,"bind":2,"icon":133295,"sell":10500,"statTypes":[5,45,7]}
 {"key":14559,"since":0,"src":[7,"game"],"name":"Prospector's Sash","quality":2,"itemLevel":18,"minLevel":13,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"icon":132515,"sell":279,"statTypes":[7,6]}
 {"key":14560,"since":0,"src":[7,"game"],"name":"Prospector's Boots","quality":2,"itemLevel":19,"minLevel":14,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":2,"icon":132539,"sell":484,"statTypes":[6,7]}
 {"key":14561,"since":0,"src":[7,"game"],"name":"Prospector's Cuffs","quality":2,"itemLevel":17,"minLevel":12,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":2,"icon":132606,"sell":245,"statTypes":[3,7]}
@@ -12279,6 +12282,7 @@
 {"key":18404,"since":70245,"src":["game"],"name":"Onyxia Tooth Pendant","quality":4,"itemLevel":65,"class":4,"subclass":0,"slot":"INVTYPE_NECK","stack":1,"bind":1,"icon":133296,"sell":6714,"statTypes":[3,7,51,31,32]}
 {"key":18405,"since":70245,"src":["game"],"name":"Belt of the Archmage","quality":4,"itemLevel":62,"minLevel":57,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"icon":132520,"sell":14744,"statTypes":[5,7,45,32]}
 {"key":18406,"since":70245,"src":["game"],"name":"Onyxia Blood Talisman","quality":4,"itemLevel":65,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":136168,"sell":46030,"effects":[{"trigger":"use","spell":1287808}],"statTypes":[51,46]}
+{"key":18406,"since":70959,"day":"2026-11-18","src":["game"],"statTypes":[51,12,14,46]}
 {"key":18407,"since":70245,"src":["game"],"name":"Felcloth Gloves","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":2,"icon":132953,"sell":11139,"statTypes":[7,88]}
 {"key":18408,"since":70245,"src":["game"],"name":"Inferno Gloves","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":2,"icon":132953,"sell":11178,"statTypes":[5,85]}
 {"key":18409,"since":70245,"src":["game"],"name":"Mooncloth Gloves","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":2,"icon":132951,"sell":11219,"statTypes":[5,41,42,7]}
@@ -12488,7 +12492,9 @@
 {"key":18665,"since":70245,"src":["game"],"name":"The Eye of Shadow","quality":4,"itemLevel":71,"minLevel":60,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":2,"icon":136224,"description":"Seething darkness engulfs the eye.","unique":1}
 {"key":18670,"since":70245,"src":["game"],"name":"Xorothian Glyphs","quality":1,"itemLevel":1,"class":12,"subclass":0,"stack":1,"bind":1,"icon":134937,"effects":[{"trigger":"use","spell":23152,"text":"Summon a Xorothian Dreadsteed within an empowered Circle of Dark Summoning."}],"unique":1}
 {"key":18671,"since":0,"src":[7],"name":"Baron Charr's Sceptre","quality":3,"itemLevel":60,"minLevel":55,"class":2,"subclass":4,"slot":"INVTYPE_WEAPONMAINHAND","stack":1,"bind":2,"icon":133483,"sell":45184,"speed":2.6,"effects":[{"trigger":"hit","spell":13442}]}
+{"key":18671,"since":70959,"day":"2026-11-18","src":["game"],"statTypes":[4]}
 {"key":18672,"since":70938,"day":"2026-11-15","src":["game"],"name":"Elemental Ember","quality":2,"itemLevel":60,"minLevel":55,"class":4,"subclass":0,"slot":"INVTYPE_HOLDABLE","stack":1,"bind":2,"icon":134337,"sell":17855,"statTypes":[7,85]}
+{"key":18674,"since":70959,"day":"2026-11-18","src":["game"],"name":"Hardened Stone Band","quality":2,"itemLevel":60,"minLevel":55,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":2,"icon":133356,"sell":22003,"statTypes":[4,7,12]}
 {"key":18675,"since":70245,"src":["game"],"name":"Military Ranks of the Horde & Alliance","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":1,"icon":133742,"sell":25}
 {"key":18676,"since":70938,"day":"2026-11-15","src":["game"],"name":"Sash of the Windreaver","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"icon":132520,"sell":16080,"statTypes":[5,6,7,86]}
 {"key":18677,"since":70938,"day":"2026-11-15","src":["game"],"name":"Zephyr Cloak","quality":2,"itemLevel":62,"minLevel":57,"class":4,"subclass":1,"slot":"INVTYPE_CLOAK","stack":1,"bind":2,"icon":133765,"sell":12487,"statTypes":[55]}
@@ -12808,6 +12814,7 @@
 {"key":19100,"since":70245,"src":["game",20],"name":"Electrified Dagger","quality":3,"itemLevel":65,"minLevel":60,"class":2,"subclass":15,"slot":"INVTYPE_WEAPON","stack":1,"bind":1,"icon":135651,"sell":63300,"damageMin":53,"damageMax":100,"speed":1.8,"effects":[{"trigger":"hit","spell":23592}],"unique":1,"statTypes":[3]}
 {"key":19101,"since":70245,"src":["game",20],"name":"Whiteout Staff","quality":3,"itemLevel":65,"minLevel":60,"class":2,"subclass":10,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":135167,"sell":79411,"damageMin":102,"damageMax":154,"speed":3.1,"unique":1,"statTypes":[5,7]}
 {"key":19102,"since":70245,"src":["game",20],"name":"Crackling Staff","quality":3,"itemLevel":65,"minLevel":60,"class":2,"subclass":10,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":135157,"sell":79705,"damageMin":102,"damageMax":154,"speed":3.1,"unique":1,"statTypes":[5,45]}
+{"key":19102,"since":70959,"day":"2026-11-18","src":["game"],"statTypes":[5,7]}
 {"key":19103,"since":70245,"src":["game",20],"name":"Frostbite","quality":3,"itemLevel":65,"minLevel":60,"class":2,"subclass":0,"slot":"INVTYPE_WEAPON","stack":1,"bind":1,"icon":132416,"sell":63999,"damageMin":80,"damageMax":150,"speed":2.7,"unique":1,"statTypes":[4]}
 {"key":19104,"since":70245,"src":["game",20],"name":"Stormstrike Hammer","quality":3,"itemLevel":65,"minLevel":60,"class":2,"subclass":4,"slot":"INVTYPE_WEAPON","stack":1,"bind":1,"icon":133058,"sell":64227,"damageMin":80,"damageMax":150,"speed":2.7,"unique":1,"statTypes":[4]}
 {"key":19106,"since":70245,"src":["game",20],"name":"Ice Barbed Spear","quality":3,"itemLevel":63,"class":2,"subclass":6,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":135127,"sell":73353,"damageMin":155,"damageMax":233,"speed":3.6,"statTypes":[3,4,7]}
@@ -12939,9 +12946,13 @@
 {"key":19283,"since":70245,"src":["game"],"name":"Seven of Portals","quality":3,"itemLevel":1,"class":12,"subclass":0,"stack":1,"icon":134492,"sell":12500,"effects":[{"trigger":"use","spell":23680,"text":"Combine the Ace through Eight of Portals to complete the set."}]}
 {"key":19284,"since":70245,"src":["game"],"name":"Eight of Portals","quality":3,"itemLevel":1,"class":12,"subclass":0,"stack":1,"icon":134492,"sell":12500,"effects":[{"trigger":"use","spell":23680,"text":"Combine the Ace through Eight of Portals to complete the set."}]}
 {"key":19287,"since":70245,"src":["game"],"name":"Darkmoon Card: Heroism","quality":4,"itemLevel":66,"minLevel":60,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":134488,"sell":100000,"effects":[{"trigger":"equip","spell":23689}],"unique":1}
+{"key":19287,"since":70959,"day":"2026-11-18","src":["game"],"itemLevel":65}
 {"key":19288,"since":70245,"src":["game"],"name":"Darkmoon Card: Blue Dragon","quality":4,"itemLevel":66,"minLevel":60,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":134484,"sell":100000,"effects":[{"trigger":"equip","spell":23688}],"unique":1}
+{"key":19288,"since":70959,"day":"2026-11-18","src":["game"],"itemLevel":65}
 {"key":19289,"since":70245,"src":["game"],"name":"Darkmoon Card: Maelstrom","quality":4,"itemLevel":66,"minLevel":60,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":134491,"sell":100000,"effects":[{"trigger":"equip","spell":23686}],"unique":1}
+{"key":19289,"since":70959,"day":"2026-11-18","src":["game"],"itemLevel":65}
 {"key":19290,"since":70245,"src":["game"],"name":"Darkmoon Card: Twisting Nether","quality":4,"itemLevel":66,"minLevel":60,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":134495,"sell":100000,"effects":[{"trigger":"equip","spell":23701}],"unique":1}
+{"key":19290,"since":70959,"day":"2026-11-18","src":["game"],"itemLevel":65}
 {"key":19291,"since":70245,"src":["game"],"name":"Darkmoon Storage Box","quality":1,"itemLevel":45,"class":1,"subclass":0,"slot":"INVTYPE_BAG","stack":1,"icon":132597,"sell":25000,"unique":1}
 {"key":19292,"since":70245,"src":["game",20],"name":"Last Month's Mutton","quality":1,"itemLevel":34,"minLevel":29,"class":2,"subclass":4,"slot":"INVTYPE_WEAPON","stack":1,"icon":133974,"sell":4022,"damageMin":29,"damageMax":54,"speed":2.5}
 {"key":19293,"since":70245,"src":["game",20],"name":"Last Year's Mutton","quality":1,"itemLevel":55,"minLevel":50,"class":2,"subclass":4,"slot":"INVTYPE_WEAPON","stack":1,"icon":133974,"sell":19376,"damageMin":44,"damageMax":82,"speed":2.0}
@@ -14861,23 +14872,35 @@
 {"key":22311,"since":70938,"day":"2026-11-15","src":["game"],"name":"Ironweave Boots","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132562,"sell":14944,"set":520,"classes":[5,8,9],"statTypes":[7,5,50,31]}
 {"key":22312,"since":70245,"src":["game"],"name":"Pattern: Satchel of Cenarius","quality":1,"itemLevel":65,"class":9,"subclass":2,"stack":1,"bind":1,"icon":134939,"sell":12500,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":27725}],"description":"Teaches you how to sew a Satchel of Cenarius."}
 {"key":22313,"since":70938,"day":"2026-11-15","src":["game"],"name":"Ironweave Bracers","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132612,"sell":9963,"set":520,"classes":[5,8,9],"statTypes":[7,5,50,31]}
+{"key":22314,"since":70959,"day":"2026-11-18","src":["game"],"name":"Huntsman's Harpoon","quality":3,"itemLevel":61,"minLevel":56,"class":2,"subclass":6,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":135129,"sell":64398,"speed":3.6,"statTypes":[3,131]}
+{"key":22315,"since":70959,"day":"2026-11-18","src":["game"],"name":"Hammer of Revitalization","quality":3,"itemLevel":61,"minLevel":56,"class":2,"subclass":4,"slot":"INVTYPE_WEAPONMAINHAND","stack":1,"bind":1,"icon":133039,"sell":49816,"speed":2.7,"statTypes":[7,43]}
 {"key":22317,"since":70938,"day":"2026-11-15","src":["game"],"name":"Lefty's Brass Knuckle","quality":3,"itemLevel":61,"minLevel":56,"class":2,"subclass":13,"slot":"INVTYPE_WEAPON","stack":1,"bind":1,"icon":132945,"sell":52093,"speed":1.5,"statTypes":[4,3]}
 {"key":22318,"since":70938,"day":"2026-11-15","src":["game"],"name":"Malgen's Long Bow","quality":3,"itemLevel":61,"minLevel":56,"class":2,"subclass":2,"slot":"INVTYPE_RANGED","stack":1,"bind":1,"icon":135500,"sell":37362,"speed":2.9,"statTypes":[7,38]}
+{"key":22319,"since":70959,"day":"2026-11-18","src":["game"],"name":"Tome of Divine Right","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":0,"slot":"INVTYPE_HOLDABLE","stack":1,"bind":1,"icon":133739,"sell":38664,"statTypes":[5,7,41,43,42]}
 {"key":22320,"since":70245,"src":["game"],"name":"Mux's Quality Goods","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":133645,"sell":12}
 {"key":22321,"since":70938,"day":"2026-11-15","src":["game"],"name":"Heart of Wyrmthalak","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":134084,"sell":10539,"effects":[{"trigger":"equip","spell":27656}],"statTypes":[51]}
 {"key":22322,"since":70938,"day":"2026-11-15","src":["game"],"name":"The Jaw Breaker","quality":3,"itemLevel":61,"minLevel":56,"class":2,"subclass":4,"slot":"INVTYPE_WEAPON","stack":1,"bind":1,"icon":133490,"sell":53054,"speed":1.6,"description":"Not edible","statTypes":[32,125,38]}
 {"key":22324,"since":70245,"src":["game"],"name":"Winter Kimchi","quality":1,"itemLevel":55,"minLevel":45,"class":0,"subclass":5,"stack":20,"icon":134019,"sell":200,"effects":[{"trigger":"use","spell":1131}]}
 {"key":22325,"since":70938,"day":"2026-11-15","src":["game"],"name":"Belt of the Trickster","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132515,"sell":12446,"statTypes":[3,7]}
+{"key":22326,"since":70959,"day":"2026-11-18","src":["game"],"name":"Amalgam's Band","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":1,"icon":133361,"sell":15282,"statTypes":[5,7,32,43]}
 {"key":22327,"since":70938,"day":"2026-11-15","src":["game"],"name":"Amulet of the Redeemed","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":0,"slot":"INVTYPE_NECK","stack":1,"bind":1,"icon":133295,"sell":2535,"statTypes":[5,7,6,41,42]}
 {"key":22328,"since":70938,"day":"2026-11-15","src":["game"],"name":"Legplates of Vigilance","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":22208,"statTypes":[7,12,31]}
 {"key":22329,"since":70938,"day":"2026-11-15","src":["game"],"name":"Scepter of Interminable Focus","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":0,"slot":"INVTYPE_HOLDABLE","stack":1,"bind":1,"icon":135469,"sell":34450,"statTypes":[5,31,32,6]}
 {"key":22330,"since":70938,"day":"2026-11-15","src":["game"],"name":"Shroud of Arcane Mastery","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":1,"slot":"INVTYPE_CLOAK","stack":1,"bind":1,"icon":133768,"sell":15223,"statTypes":[7,5,47]}
+{"key":22331,"since":70959,"day":"2026-11-18","src":["game"],"name":"Band of the Steadfast Hero","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":1,"icon":133375,"sell":36253,"statTypes":[4,7,12]}
 {"key":22332,"since":70938,"day":"2026-11-15","src":["game"],"name":"Blade of Necromancy","quality":3,"itemLevel":62,"minLevel":57,"class":2,"subclass":7,"slot":"INVTYPE_WEAPONMAINHAND","stack":1,"bind":1,"icon":135326,"sell":53683,"speed":1.5,"effects":[{"trigger":"equip","spell":1302108}]}
+{"key":22333,"since":70959,"day":"2026-11-18","src":["game"],"name":"Hammer of Divine Might","quality":3,"itemLevel":62,"minLevel":57,"class":2,"subclass":5,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":133041,"sell":65383,"speed":2.1,"statTypes":[5,7]}
 {"key":22334,"since":70938,"day":"2026-11-15","src":["game"],"name":"Band of Mending","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":1,"icon":133347,"sell":13782,"statTypes":[7,5,6,41,42]}
 {"key":22335,"since":70938,"day":"2026-11-15","src":["game"],"name":"Lord Valthalak's Staff of Command","quality":3,"itemLevel":63,"minLevel":58,"class":2,"subclass":10,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":135144,"sell":71251,"speed":2.1,"statTypes":[7,5,31]}
+{"key":22336,"since":70959,"day":"2026-11-18","src":["game"],"name":"Draconian Aegis of the Legion","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":6,"slot":"INVTYPE_SHIELD","stack":1,"bind":1,"icon":134948,"sell":35150,"statTypes":[7,45,137]}
+{"key":22337,"since":70959,"day":"2026-11-18","src":["game"],"name":"Shroud of Domination","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":1,"slot":"INVTYPE_CLOAK","stack":1,"bind":1,"icon":133771,"sell":16476,"statTypes":[7,4]}
 {"key":22338,"since":70245,"src":["game"],"name":"Volcanic Ash","quality":1,"itemLevel":1,"class":12,"subclass":0,"stack":30,"bind":4,"icon":133849}
 {"key":22339,"since":70938,"day":"2026-11-15","src":["game"],"name":"Rune Band of Wizardry","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":1,"icon":133377,"sell":15282,"statTypes":[7,31,45,56]}
+{"key":22340,"since":70959,"day":"2026-11-18","src":["game"],"name":"Pendant of Celerity","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":0,"slot":"INVTYPE_NECK","stack":1,"bind":1,"icon":133291,"sell":65328,"statTypes":[3,31,52]}
+{"key":22342,"since":70959,"day":"2026-11-18","src":["game"],"name":"Leggings of Torment","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134589,"sell":21968,"statTypes":[7,5,88]}
+{"key":22343,"since":70959,"day":"2026-11-18","src":["game"],"name":"Handguards of Savagery","quality":3,"itemLevel":63,"minLevel":58,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132945,"sell":16476,"statTypes":[7,5,38]}
 {"key":22344,"since":70245,"src":["game"],"name":"Brazier of Invocation: User's Manual","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":133741,"description":"Where to find Haunted Loci"}
+{"key":22345,"since":70959,"day":"2026-11-18","src":["game"],"name":"Totem of Tides","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":9,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134920,"sell":15680,"effects":[{"trigger":"equip","spell":27797}]}
 {"key":22347,"since":70245,"src":["game",20],"name":"Fahrad's Reloading Repeater","quality":3,"itemLevel":65,"class":2,"subclass":18,"slot":"INVTYPE_RANGEDRIGHT","stack":1,"bind":1,"icon":135533,"sell":45728,"damageMin":85,"damageMax":128,"speed":3.2,"statTypes":[3,31]}
 {"key":22348,"since":70245,"src":["game",20],"name":"Doomulus Prime","quality":3,"itemLevel":65,"class":2,"subclass":5,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":133047,"sell":76507,"damageMin":169,"damageMax":254,"speed":3.8,"statTypes":[7,4,31]}
 {"key":22349,"since":70245,"src":["game"],"name":"Desecrated Breastplate","quality":4,"itemLevel":60,"minLevel":60,"class":15,"subclass":0,"stack":1,"bind":1,"icon":133831,"classes":[1,4]}
@@ -14928,8 +14951,10 @@
 {"key":22395,"since":70938,"day":"2026-11-15","src":["game"],"name":"Totem of Rage","quality":3,"itemLevel":57,"minLevel":52,"class":4,"subclass":9,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134919,"sell":12973,"effects":[{"trigger":"equip","spell":27859}]}
 {"key":22396,"since":70245,"src":["game"],"name":"Totem of Life","quality":4,"itemLevel":78,"minLevel":60,"class":4,"subclass":9,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134918,"sell":48827,"effects":[{"trigger":"equip","spell":27855}],"unique":1}
 {"key":22397,"since":70938,"day":"2026-11-15","src":["game"],"name":"Idol of Ferocity","quality":3,"itemLevel":57,"minLevel":52,"class":4,"subclass":8,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134912,"sell":13067,"effects":[{"trigger":"equip","spell":27851}]}
+{"key":22398,"since":70959,"day":"2026-11-18","src":["game"],"name":"Idol of Rejuvenation","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":8,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134914,"sell":16898,"effects":[{"trigger":"equip","spell":27853}]}
 {"key":22399,"since":70245,"src":["game"],"name":"Idol of Health","quality":4,"itemLevel":78,"minLevel":60,"class":4,"subclass":8,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134913,"sell":49354,"effects":[{"trigger":"equip","spell":27846,"text":"Reduces the casting time of your Healing Touch spell by 0.15 sec."}],"unique":1}
 {"key":22400,"since":70938,"day":"2026-11-15","src":["game"],"name":"Libram of Truth","quality":3,"itemLevel":57,"minLevel":52,"class":4,"subclass":7,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134917,"sell":13208,"effects":[{"trigger":"equip","spell":27850}]}
+{"key":22401,"since":70959,"day":"2026-11-18","src":["game"],"name":"Libram of Hope","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":7,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134916,"sell":17078,"effects":[{"trigger":"equip","spell":27848}]}
 {"key":22402,"since":70245,"src":["game"],"name":"Libram of Grace","quality":4,"itemLevel":78,"minLevel":60,"class":4,"subclass":7,"slot":"INVTYPE_RELIC","stack":1,"bind":1,"icon":134915,"sell":49885,"effects":[{"trigger":"equip","spell":27847}],"unique":1}
 {"key":22403,"since":70938,"day":"2026-11-15","src":["game"],"name":"Nacreous Shell Necklace","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":0,"slot":"INVTYPE_NECK","stack":1,"bind":1,"icon":133297,"sell":41953,"statTypes":[7,5,31,45]}
 {"key":22404,"since":70938,"day":"2026-11-15","src":["game"],"name":"Willey's Back Scratcher","quality":3,"itemLevel":61,"minLevel":56,"class":2,"subclass":13,"slot":"INVTYPE_WEAPONMAINHAND","stack":1,"bind":1,"icon":135652,"sell":54793,"speed":2.6,"statTypes":[7,38]}
@@ -14979,6 +15004,7 @@
 {"key":22469,"since":70245,"src":["game"],"name":"Earthshatter Handguards","quality":4,"itemLevel":88,"minLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132959,"sell":77491,"set":527,"statTypes":[7,5,41,43]}
 {"key":22470,"since":70245,"src":["game"],"name":"Earthshatter Girdle","quality":4,"itemLevel":88,"minLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132511,"sell":79846,"set":527,"statTypes":[5,7,43,41]}
 {"key":22471,"since":70245,"src":["game"],"name":"Earthshatter Wristguards","quality":4,"itemLevel":88,"minLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132601,"sell":80127,"set":527,"statTypes":[7,5,41,43]}
+{"key":22472,"since":70959,"day":"2026-11-18","src":["game"],"name":"Boots of Ferocity","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":20193,"statTypes":[3,7,4,12]}
 {"key":22476,"since":70245,"src":["game"],"name":"Bonescythe Breastplate","quality":4,"itemLevel":92,"minLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132737,"sell":165232,"set":524,"statTypes":[7,32,38,31]}
 {"key":22477,"since":70245,"src":["game"],"name":"Bonescythe Legplates","quality":4,"itemLevel":88,"minLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134681,"sell":136418,"set":524,"statTypes":[3,7,4,32,31]}
 {"key":22478,"since":70245,"src":["game"],"name":"Bonescythe Helmet","quality":4,"itemLevel":88,"minLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133160,"sell":92905,"set":524,"statTypes":[3,7,4,31,32]}
@@ -16262,6 +16288,7 @@
 {"key":217736,"since":70245,"src":["game"],"name":"Rune of the Coterie","quality":2,"itemLevel":50,"minLevel":1,"class":0,"subclass":8,"stack":1,"bind":1,"icon":134419,"effects":[{"trigger":"learn","spell":432295},{"trigger":"use","spell":402265}],"description":"Teaches you a new Engraving ability.","classes":[4],"unique":1}
 {"key":217737,"since":70245,"src":["game"],"name":"Modified Talisman","quality":1,"itemLevel":45,"minLevel":1,"class":12,"subclass":0,"stack":1,"bind":4,"icon":133313,"unique":1}
 {"key":219147,"since":70245,"src":["game"],"name":"Rune of Grace","quality":2,"itemLevel":50,"minLevel":1,"class":0,"subclass":8,"stack":1,"bind":1,"icon":134419,"effects":[{"trigger":"learn","spell":429242},{"trigger":"use","spell":402265}],"description":"Teaches you a new Engraving ability.","classes":[2],"unique":1}
+{"key":219343,"since":70959,"day":"2026-11-18","src":["game"],"name":"Filcher's Cowl","quality":3,"itemLevel":50,"minLevel":50,"class":4,"subclass":1,"slot":"INVTYPE_CLOAK","stack":1,"bind":1,"icon":133754,"effects":[{"trigger":"equip","spell":443632}],"statTypes":[3,6]}
 {"key":219345,"since":70245,"src":["game"],"name":"Infernal Lasso","quality":3,"itemLevel":50,"minLevel":50,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":136091,"effects":[{"trigger":"use","spell":443265}],"statTypes":[45]}
 {"key":219399,"since":70245,"src":["game"],"name":"Nightmare Moss","quality":1,"itemLevel":25,"class":15,"subclass":0,"stack":20,"icon":133852,"sell":25,"description":"Ephemeral and unstable."}
 {"key":219401,"since":70245,"src":["game"],"name":"Cold Iron Ore","quality":1,"itemLevel":25,"class":15,"subclass":0,"stack":20,"icon":134575,"sell":150,"description":"Ephemeral and unstable."}
@@ -16863,150 +16890,366 @@
 {"key":226698,"since":70245,"src":["game"],"name":"Vertically Composited Patch Hampler","quality":1,"itemLevel":60,"class":12,"subclass":0,"stack":20,"bind":4,"icon":133010}
 {"key":226699,"since":70245,"src":["game"],"name":"Brass-fitted Flam-Tamp Flange","quality":1,"itemLevel":60,"class":12,"subclass":0,"stack":20,"bind":4,"icon":237291}
 {"key":226772,"since":0,"src":[7,"game"],"name":"Feralheart Sash","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132504,"sell":15524,"classes":[11],"statTypes":[5,7,45,32]}
+{"key":226772,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226773,"since":0,"src":[7],"name":"Feralheart Cowl","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133129,"sell":24291,"classes":[11]}
+{"key":226773,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[5,7,32,45,6]}
 {"key":226774,"since":0,"src":[7,"game"],"name":"Feralheart Galoshes","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":24383,"classes":[11],"statTypes":[6,7,5,45]}
+{"key":226774,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226775,"since":0,"src":[7,"game"],"name":"Feralheart Wraps","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132608,"sell":15700,"classes":[11],"statTypes":[5,6,45,7]}
+{"key":226775,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226776,"since":0,"src":[7],"name":"Feralheart Vest","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132741,"sell":32667,"classes":[11]}
+{"key":226776,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[5,7,45,47]}
 {"key":226777,"since":0,"src":[7,"game"],"name":"Feralheart Hands","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":12585,"classes":[11],"statTypes":[5,7,45,6]}
+{"key":226777,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226778,"since":0,"src":[7,"game"],"name":"Feralheart Spaulders","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135032,"sell":23691,"classes":[11],"statTypes":[5,7,31,45]}
+{"key":226778,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226779,"since":0,"src":[7,"game"],"name":"Feralheart Kilt","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":33199,"classes":[11],"statTypes":[7,5,6,45]}
+{"key":226779,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226780,"since":0,"src":[7,"game"],"name":"Feralheart Cord","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132504,"sell":15994,"classes":[11],"statTypes":[5,6,7,41,42,43]}
+{"key":226780,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226781,"since":0,"src":[7,"game"],"name":"Feralheart Sandals","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":25024,"classes":[11],"statTypes":[6,7,5,41,42,43]}
+{"key":226781,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226782,"since":0,"src":[7,"game"],"name":"Feralheart Bindings","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132608,"sell":16113,"classes":[11],"statTypes":[5,6,7,41,42]}
+{"key":226782,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226783,"since":0,"src":[7],"name":"Feralheart Embrace","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132741,"sell":33519,"classes":[11]}
+{"key":226783,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[5,6,7,41,42,50]}
 {"key":226784,"since":0,"src":[7,"game"],"name":"Feralheart Gauntlets","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":12912,"classes":[11],"statTypes":[6,5,7,41,42]}
+{"key":226784,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226785,"since":0,"src":[7,"game"],"name":"Feralheart Mantle","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135032,"sell":24304,"classes":[11],"statTypes":[5,6,7,41,42]}
+{"key":226785,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226786,"since":0,"src":[7],"name":"Feralheart Headdress","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133129,"sell":25481,"classes":[11]}
+{"key":226786,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[5,7,6,32,41,42]}
 {"key":226787,"since":0,"src":[7,"game"],"name":"Feralheart Pants","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":31726,"classes":[11],"statTypes":[7,5,6,41,42]}
+{"key":226787,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226788,"since":0,"src":[7,"game"],"name":"Feralheart Bands","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132608,"sell":15287,"classes":[11],"statTypes":[4,7,5,3]}
+{"key":226788,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226789,"since":0,"src":[7,"game"],"name":"Feralheart Girdle","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132504,"sell":15346,"classes":[11],"statTypes":[4,5,7,3,31]}
+{"key":226789,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226790,"since":0,"src":[7,"game"],"name":"Feralheart Epaulets","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135032,"sell":22984,"classes":[11],"statTypes":[7,5,4,3,32]}
+{"key":226790,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226791,"since":0,"src":[7,"game"],"name":"Feralheart Trousers","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":32216,"classes":[11],"statTypes":[4,7,5,3,6]}
+{"key":226791,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226792,"since":0,"src":[7],"name":"Feralheart Cap","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133129,"sell":24196,"classes":[11]}
+{"key":226792,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[4,7,5,3,32]}
 {"key":226793,"since":0,"src":[7,"game"],"name":"Feralheart Fists","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":12397,"classes":[11],"statTypes":[4,5,7,3,6]}
+{"key":226793,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226794,"since":0,"src":[7,"game"],"name":"Feralheart Walkers","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":24378,"classes":[11],"statTypes":[4,7,5,3,6]}
+{"key":226794,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226795,"since":0,"src":[7],"name":"Feralheart Tunic","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132741,"sell":32541,"classes":[11]}
+{"key":226795,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[7,5,4,32,3,6]}
 {"key":226796,"since":0,"src":[7,"game"],"name":"Feralheart Wristguards","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132608,"sell":15758,"classes":[11],"statTypes":[7,4,3,12]}
+{"key":226796,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226797,"since":0,"src":[7,"game"],"name":"Feralheart Waistguard","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132504,"sell":15817,"classes":[11],"statTypes":[4,3,7,12]}
+{"key":226797,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226798,"since":0,"src":[7,"game"],"name":"Feralheart Pauldrons","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135032,"sell":23686,"classes":[11],"statTypes":[7,4,3,12,50]}
+{"key":226798,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226799,"since":0,"src":[7,"game"],"name":"Feralheart Legguards","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":33196,"classes":[11],"statTypes":[7,4,12,3]}
+{"key":226799,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226801,"since":0,"src":[7],"name":"Feralheart Faceguard","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133129,"sell":25019,"classes":[11]}
+{"key":226801,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[7,4,3,50,12]}
 {"key":226802,"since":0,"src":[7,"game"],"name":"Feralheart Grips","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":12817,"classes":[11],"statTypes":[7,4,3,12,13]}
+{"key":226802,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226803,"since":0,"src":[7,"game"],"name":"Feralheart Treads","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":25865,"classes":[11],"statTypes":[7,4,3,12]}
+{"key":226803,"since":70959,"day":"2026-11-18","src":["game"],"set":1667}
 {"key":226804,"since":0,"src":[7],"name":"Feralheart Armor","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132741,"sell":34517,"classes":[11]}
+{"key":226804,"since":70959,"day":"2026-11-18","src":["game"],"set":1667,"statTypes":[7,4,50,12,3]}
+{"key":226815,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Wrists","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132608,"sell":50000,"set":1667,"classes":[11],"statTypes":[5,4,3,7,6,45]}
+{"key":226816,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Waist","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132504,"sell":50000,"set":1667,"classes":[11],"statTypes":[5,6,7,4,3,45]}
+{"key":226817,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135032,"sell":50000,"set":1667,"classes":[11],"statTypes":[5,7,6,4,3,45,43]}
+{"key":226818,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Legs","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":100000,"set":1667,"classes":[11],"statTypes":[5,6,7,4,3,45]}
+{"key":226819,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Helm","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133129,"sell":200000,"set":1667,"classes":[11],"statTypes":[5,6,7,4,3,45]}
+{"key":226820,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Gloves","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":100000,"set":1667,"classes":[11],"statTypes":[6,5,3,7,4,45]}
+{"key":226821,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Boots","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":100000,"set":1667,"classes":[11],"statTypes":[6,7,5,4,3,45,43]}
+{"key":226822,"since":70959,"day":"2026-11-18","src":["game"],"name":"Feralheart Chest","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132741,"sell":200000,"set":1667,"classes":[11],"statTypes":[5,6,7,4,3,45,43]}
 {"key":226825,"since":0,"src":[7],"name":"Darkmantle Tunic","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132722,"sell":34633,"classes":[4]}
+{"key":226825,"since":70959,"day":"2026-11-18","src":["game"],"set":1676,"statTypes":[3,7,31,6]}
 {"key":226826,"since":0,"src":[7,"game"],"name":"Darkmantle Spaulders","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135038,"sell":25018,"classes":[4],"statTypes":[3,7,31]}
+{"key":226826,"since":70959,"day":"2026-11-18","src":["game"],"set":1676}
 {"key":226827,"since":0,"src":[7,"game"],"name":"Darkmantle Pants","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134582,"sell":31719,"classes":[4],"statTypes":[3,7,6,31]}
+{"key":226827,"since":70959,"day":"2026-11-18","src":["game"],"set":1676}
 {"key":226828,"since":0,"src":[7,"game"],"name":"Darkmantle Grips","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132958,"sell":12159,"classes":[4],"statTypes":[3,4,7,6]}
+{"key":226828,"since":70959,"day":"2026-11-18","src":["game"],"set":1676}
 {"key":226829,"since":0,"src":[7],"name":"Darkmantle Cap","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133143,"sell":23915,"effects":[{"trigger":"equip","spell":27037}],"classes":[4]}
+{"key":226829,"since":70959,"day":"2026-11-18","src":["game"],"set":1676,"statTypes":[3,7,6,32]}
 {"key":226830,"since":0,"src":[7,"game"],"name":"Darkmantle Bracers","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132606,"sell":15401,"classes":[4],"statTypes":[3,7,83,6]}
+{"key":226830,"since":70959,"day":"2026-11-18","src":["game"],"set":1676}
 {"key":226831,"since":0,"src":[7,"game"],"name":"Darkmantle Footpads","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":24099,"effects":[{"trigger":"equip","spell":1293068}],"classes":[4],"statTypes":[3,7,31]}
+{"key":226831,"since":70959,"day":"2026-11-18","src":["game"],"set":1676}
 {"key":226832,"since":0,"src":[7,"game"],"name":"Darkmantle Belt","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132492,"sell":15518,"classes":[4],"statTypes":[3,7,4,6]}
+{"key":226832,"since":70959,"day":"2026-11-18","src":["game"],"set":1676}
+{"key":226845,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Wrists","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132606,"sell":50000,"set":1676,"classes":[4],"statTypes":[3,7,4]}
+{"key":226846,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Waist","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132492,"sell":50000,"set":1676,"classes":[4],"statTypes":[3,7,4]}
+{"key":226847,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":2,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135038,"sell":50000,"set":1676,"classes":[4],"statTypes":[3,7]}
+{"key":226848,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Legs","quality":3,"itemLevel":66,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134582,"sell":100000,"set":1676,"classes":[4],"statTypes":[3,7,4]}
+{"key":226849,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Helm","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133143,"sell":200000,"set":1676,"classes":[4],"statTypes":[3,7,4,32]}
+{"key":226850,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Gloves","quality":4,"itemLevel":55,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132958,"sell":100000,"set":1676,"classes":[4],"statTypes":[3,4,7]}
+{"key":226851,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Boots","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132542,"sell":100000,"effects":[{"trigger":"equip","spell":27037}],"set":1676,"classes":[4],"statTypes":[3,7]}
+{"key":226852,"since":70959,"day":"2026-11-18","src":["game"],"name":"Darkmantle Chest","quality":4,"itemLevel":60,"class":4,"subclass":2,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132722,"sell":200000,"set":1676,"classes":[4],"statTypes":[3,7,31]}
 {"key":226856,"since":70245,"src":["game"],"name":"Guided Buoyancy Accelerant","quality":1,"itemLevel":53,"minLevel":53,"class":12,"subclass":0,"stack":1,"bind":1,"icon":134731,"sell":35,"effects":[{"trigger":"use","spell":459613}],"description":"Property of D.E.L.T.A  Deepsea Exploration and Liquefaction Technologies Alliance","unique":1}
 {"key":226857,"since":0,"src":[7,"game"],"name":"Battleboots of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":35267,"classes":[1],"statTypes":[7,4,31]}
+{"key":226857,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226858,"since":0,"src":[7,"game"],"name":"Spaulders of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135061,"sell":33877,"classes":[1],"statTypes":[7,4,3]}
+{"key":226858,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226859,"since":0,"src":[7,"game"],"name":"Legplates of Heroism","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":47692,"classes":[1],"statTypes":[4,7,3]}
+{"key":226859,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226860,"since":0,"src":[7,"game"],"name":"Crown of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133070,"sell":35649,"classes":[1],"statTypes":[7,4,32]}
+{"key":226860,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226861,"since":0,"src":[7,"game"],"name":"Gauntlets of Heroism","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132960,"sell":18303,"classes":[1],"statTypes":[4,7,32]}
+{"key":226861,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226862,"since":0,"src":[7,"game"],"name":"Breastplate of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":47962,"classes":[1],"statTypes":[7,4,3,31]}
+{"key":226862,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226863,"since":0,"src":[7,"game"],"name":"Bracers of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132617,"sell":23168,"classes":[1],"statTypes":[7,4,3,46]}
+{"key":226863,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226864,"since":0,"src":[7,"game"],"name":"Belt of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132523,"sell":23251,"classes":[1],"statTypes":[4,7,3,46]}
+{"key":226864,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226865,"since":0,"src":[7,"game"],"name":"Wristguards of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132617,"sell":23332,"classes":[1],"statTypes":[7,4,3,12]}
+{"key":226865,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226866,"since":0,"src":[7,"game"],"name":"Waistguard of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132523,"sell":23414,"classes":[1],"statTypes":[4,7,12,3]}
+{"key":226866,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226867,"since":0,"src":[7,"game"],"name":"Pauldrons of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135061,"sell":50000,"classes":[1],"statTypes":[7,4,3,12]}
+{"key":226867,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226868,"since":0,"src":[7,"game"],"name":"Legguards of Heroism","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":45802,"classes":[1],"statTypes":[7,4,12,48,6]}
+{"key":226868,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226869,"since":0,"src":[7,"game"],"name":"Faceguard of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133070,"sell":34238,"classes":[1],"statTypes":[7,4,12]}
+{"key":226869,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226870,"since":0,"src":[7,"game"],"name":"Handguards of Heroism","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132960,"sell":17581,"classes":[1],"statTypes":[7,4,13,12]}
+{"key":226870,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226871,"since":0,"src":[7,"game"],"name":"Sabatons of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":34496,"classes":[1],"statTypes":[7,4,31,12]}
+{"key":226871,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
 {"key":226872,"since":0,"src":[7,"game"],"name":"Chestguard of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":46254,"classes":[1],"statTypes":[7,3,4,12]}
+{"key":226872,"since":70959,"day":"2026-11-18","src":["game"],"set":1778}
+{"key":226873,"since":70959,"day":"2026-11-18","src":["game"],"name":"Wrists of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132617,"sell":50000,"set":1778,"classes":[1],"statTypes":[7,4,3,12]}
+{"key":226874,"since":70959,"day":"2026-11-18","src":["game"],"name":"Waist of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132523,"sell":50000,"set":1778,"classes":[1],"statTypes":[4,7,3,12]}
+{"key":226875,"since":70959,"day":"2026-11-18","src":["game"],"name":"Shoulders of Heroism","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135061,"sell":50000,"set":1778,"classes":[1],"statTypes":[7,4,3]}
+{"key":226876,"since":70959,"day":"2026-11-18","src":["game"],"name":"Legs of Heroism","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":100000,"set":1778,"classes":[1],"statTypes":[4,7,3,12]}
+{"key":226877,"since":70959,"day":"2026-11-18","src":["game"],"name":"Helm of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133070,"sell":200000,"set":1778,"classes":[1],"statTypes":[7,4,32]}
+{"key":226878,"since":70959,"day":"2026-11-18","src":["game"],"name":"Gloves of Heroism","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132960,"sell":100000,"set":1778,"classes":[1],"statTypes":[4,7,32]}
+{"key":226879,"since":70959,"day":"2026-11-18","src":["game"],"name":"Boots of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":100000,"set":1778,"classes":[1],"statTypes":[7,4,31]}
+{"key":226880,"since":70959,"day":"2026-11-18","src":["game"],"name":"Chest of Heroism","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":200000,"set":1778,"classes":[1],"statTypes":[7,4,3,31]}
 {"key":226881,"since":0,"src":[7,"game"],"name":"Beastmaster's Treads","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132588,"sell":30856,"effects":[{"trigger":"equip","spell":27206,"text":"Increases damage dealt by your pet by 3%."}],"classes":[3],"statTypes":[3,7,5]}
+{"key":226881,"since":70959,"day":"2026-11-18","src":["game"],"set":1669}
 {"key":226882,"since":0,"src":[7,"game"],"name":"Beastmaster's Pants","quality":3,"itemLevel":66,"class":4,"subclass":3,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134583,"sell":41315,"classes":[3],"statTypes":[3,7,5]}
+{"key":226882,"since":70959,"day":"2026-11-18","src":["game"],"set":1669}
 {"key":226883,"since":0,"src":[7,"game"],"name":"Beastmaster's Gauntlets","quality":4,"itemLevel":55,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132944,"sell":14593,"effects":[{"trigger":"equip","spell":27043,"text":"Increases your pet's critical strike chance by 2%."}],"classes":[3],"statTypes":[3,7,5]}
+{"key":226883,"since":70959,"day":"2026-11-18","src":["game"],"set":1669}
 {"key":226884,"since":0,"src":[7,"game"],"name":"Beastmaster's Mantle","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135041,"sell":27739,"classes":[3],"statTypes":[7,3,5]}
+{"key":226884,"since":70959,"day":"2026-11-18","src":["game"],"set":1669}
 {"key":226885,"since":0,"src":[7,"game"],"name":"Beastmaster's Bindings","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132616,"sell":18481,"classes":[3],"statTypes":[3,5,7,6]}
+{"key":226885,"since":70959,"day":"2026-11-18","src":["game"],"set":1669}
 {"key":226886,"since":0,"src":[7],"name":"Beastmaster's Tunic","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132625,"sell":38763,"effects":[{"trigger":"equip","spell":27225,"text":"Increases your pet's armor by 10%."}],"classes":[3]}
+{"key":226886,"since":70959,"day":"2026-11-18","src":["game"],"set":1669,"statTypes":[3,7,5,32]}
 {"key":226887,"since":0,"src":[7],"name":"Beastmaster's Cap","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133126,"sell":29312,"effects":[{"trigger":"equip","spell":27038,"text":"Increases your pet's maximum health by 3%."}],"classes":[3]}
+{"key":226887,"since":70959,"day":"2026-11-18","src":["game"],"set":1669,"statTypes":[3,7,5,31]}
 {"key":226888,"since":0,"src":[7,"game"],"name":"Beastmaster's Belt","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132517,"sell":18691,"classes":[3],"statTypes":[3,7,5]}
+{"key":226888,"since":70959,"day":"2026-11-18","src":["game"],"set":1669}
+{"key":226897,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Wrists","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132616,"sell":50000,"set":1669,"classes":[3],"statTypes":[3,7,5]}
+{"key":226898,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Waist","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132517,"sell":50000,"set":1669,"classes":[3],"statTypes":[3,7,5]}
+{"key":226899,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135041,"sell":50000,"set":1669,"classes":[3],"statTypes":[7,3,5]}
+{"key":226900,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Legs","quality":3,"itemLevel":66,"class":4,"subclass":3,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134583,"sell":100000,"set":1669,"classes":[3],"statTypes":[3,7,5]}
+{"key":226901,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Helm","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133126,"sell":200000,"effects":[{"trigger":"equip","spell":27038,"text":"Increases your pet's maximum health by 3%."}],"set":1669,"classes":[3],"statTypes":[3,7,5,31]}
+{"key":226902,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Gloves","quality":4,"itemLevel":55,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132944,"sell":100000,"effects":[{"trigger":"equip","spell":27043,"text":"Increases your pet's critical strike chance by 2%."}],"set":1669,"classes":[3],"statTypes":[3,7,5]}
+{"key":226903,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Boots","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132588,"sell":100000,"effects":[{"trigger":"equip","spell":27206,"text":"Increases damage dealt by your pet by 3%."}],"set":1669,"classes":[3],"statTypes":[3,7]}
+{"key":226904,"since":70959,"day":"2026-11-18","src":["game"],"name":"Beastmaster's Chest","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132625,"sell":200000,"effects":[{"trigger":"equip","spell":27225,"text":"Increases your pet's armor by 10%."}],"set":1669,"classes":[3],"statTypes":[3,7,5,32]}
 {"key":226905,"since":0,"src":[7,"game"],"name":"Deathmist Belt","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132501,"sell":12319,"classes":[9],"statTypes":[5,7,6,45,47]}
+{"key":226905,"since":70959,"day":"2026-11-18","src":["game"],"set":1681}
 {"key":226906,"since":0,"src":[7],"name":"Deathmist Robe","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132690,"sell":25839,"classes":[9]}
+{"key":226906,"since":70959,"day":"2026-11-18","src":["game"],"set":1681,"statTypes":[5,7,6,45,47]}
 {"key":226907,"since":0,"src":[7,"game"],"name":"Deathmist Bracers","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132612,"sell":12412,"classes":[9],"statTypes":[5,7,45,47]}
+{"key":226907,"since":70959,"day":"2026-11-18","src":["game"],"set":1681}
 {"key":226908,"since":0,"src":[7,"game"],"name":"Deathmist Sandals","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132539,"sell":19524,"classes":[9],"statTypes":[7,5,6,45]}
+{"key":226908,"since":70959,"day":"2026-11-18","src":["game"],"set":1681}
 {"key":226909,"since":0,"src":[7],"name":"Deathmist Mask","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133131,"sell":19598,"classes":[9]}
+{"key":226909,"since":70959,"day":"2026-11-18","src":["game"],"set":1681,"statTypes":[5,7,31,45]}
 {"key":226910,"since":0,"src":[7,"game"],"name":"Deathmist Leggings","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":26362,"classes":[9],"statTypes":[5,7,45,31]}
+{"key":226910,"since":70959,"day":"2026-11-18","src":["game"],"set":1681}
 {"key":226911,"since":0,"src":[7,"game"],"name":"Deathmist Wraps","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132966,"sell":10024,"classes":[9],"statTypes":[7,5,31,45]}
+{"key":226911,"since":70959,"day":"2026-11-18","src":["game"],"set":1681}
 {"key":226912,"since":0,"src":[7,"game"],"name":"Deathmist Mantle","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":133732,"sell":18969,"classes":[9],"statTypes":[5,7,45,47]}
+{"key":226912,"since":70959,"day":"2026-11-18","src":["game"],"set":1681}
+{"key":226921,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Wrists","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132612,"sell":50000,"set":1681,"classes":[9],"statTypes":[5,7,45]}
+{"key":226922,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Waist","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132501,"sell":50000,"set":1681,"classes":[9],"statTypes":[5,7,45]}
+{"key":226923,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":133732,"sell":50000,"set":1681,"classes":[9],"statTypes":[5,7,45]}
+{"key":226924,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Legs","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":100000,"set":1681,"classes":[9],"statTypes":[5,7,45]}
+{"key":226925,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Helm","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133131,"sell":200000,"set":1681,"classes":[9],"statTypes":[5,7,45,31]}
+{"key":226926,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Gloves","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132966,"sell":100000,"set":1681,"classes":[9],"statTypes":[7,5,45,31]}
+{"key":226927,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Boots","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132539,"sell":100000,"set":1681,"classes":[9],"statTypes":[7,5,45]}
+{"key":226928,"since":70959,"day":"2026-11-18","src":["game"],"name":"Deathmist Chest","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132690,"sell":200000,"set":1681,"classes":[9],"statTypes":[5,7,45,32]}
 {"key":226929,"since":0,"src":[7,"game"],"name":"Sorcerer's Bindings","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":133365,"sell":12503,"classes":[8],"statTypes":[5,7,45,47]}
+{"key":226929,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226930,"since":0,"src":[7,"game"],"name":"Sorcerer's Gauntlets","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":9985,"classes":[8],"statTypes":[45,5,7,31,6]}
+{"key":226930,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226931,"since":0,"src":[7,"game"],"name":"Sorcerer's Sandals","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132536,"sell":20268,"classes":[8],"statTypes":[7,5,6,45]}
+{"key":226931,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226932,"since":0,"src":[7,"game"],"name":"Sorcerer's Robes","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132666,"sell":27123,"classes":[8],"statTypes":[5,7,6,47,45]}
+{"key":226932,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226933,"since":0,"src":[7,"game"],"name":"Sorcerer's Leggings","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134586,"sell":27356,"classes":[8],"statTypes":[45,5,7,31,6]}
+{"key":226933,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226934,"since":0,"src":[7,"game"],"name":"Sorcerer's Belt","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132497,"sell":13073,"classes":[8],"statTypes":[5,7,47,45]}
+{"key":226934,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226935,"since":0,"src":[7,"game"],"name":"Sorcerer's Crown","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":132768,"sell":20561,"classes":[8],"statTypes":[5,32,7,45,47]}
+{"key":226935,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
 {"key":226936,"since":0,"src":[7,"game"],"name":"Sorcerer's Mantle","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135054,"sell":19751,"classes":[8],"statTypes":[5,32,7,45]}
+{"key":226936,"since":70959,"day":"2026-11-18","src":["game"],"set":1671}
+{"key":226937,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Wrists","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":133365,"sell":50000,"set":1671,"classes":[8],"statTypes":[5,6,7,45]}
+{"key":226938,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Waist","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132497,"sell":50000,"set":1671,"classes":[8],"statTypes":[5,6,7,45]}
+{"key":226939,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135054,"sell":50000,"set":1671,"classes":[8],"statTypes":[5,6,7,45]}
+{"key":226940,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Legs","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134586,"sell":100000,"set":1671,"classes":[8],"statTypes":[6,5,7,45]}
+{"key":226941,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Helm","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":132768,"sell":200000,"set":1671,"classes":[8],"statTypes":[5,6,7,45,32]}
+{"key":226942,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Gloves","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132951,"sell":100000,"set":1671,"classes":[8],"statTypes":[6,5,7,45,31]}
+{"key":226943,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Boots","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132536,"sell":100000,"set":1671,"classes":[8],"statTypes":[6,5,7,45]}
+{"key":226944,"since":70959,"day":"2026-11-18","src":["game"],"name":"Sorcerer's Chest","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132666,"sell":200000,"set":1671,"classes":[8],"statTypes":[5,6,7,45,47]}
 {"key":226945,"since":0,"src":[7],"name":"Virtuous Robe","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132652,"sell":25733,"classes":[5]}
+{"key":226945,"since":70959,"day":"2026-11-18","src":["game"],"set":1675,"statTypes":[5,6,7,41,42,32]}
 {"key":226946,"since":0,"src":[7,"game"],"name":"Virtuous Skirt","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":25962,"classes":[5],"statTypes":[7,5,6,41,42]}
+{"key":226946,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226947,"since":0,"src":[7],"name":"Virtuous Crown","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":132767,"sell":19974,"classes":[5]}
+{"key":226947,"since":70959,"day":"2026-11-18","src":["game"],"set":1675,"statTypes":[5,7,6,32,41,42]}
 {"key":226948,"since":0,"src":[7,"game"],"name":"Virtuous Belt","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132499,"sell":12792,"classes":[5],"statTypes":[5,6,7,41,42,43]}
+{"key":226948,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226949,"since":0,"src":[7,"game"],"name":"Virtuous Bracers","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132520,"sell":12839,"classes":[5],"statTypes":[5,6,7,41,42]}
+{"key":226949,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226950,"since":0,"src":[7,"game"],"name":"Virtuous Mitts","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132948,"sell":10252,"classes":[5],"statTypes":[6,5,7,41,42]}
+{"key":226950,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226951,"since":0,"src":[7,"game"],"name":"Virtuous Mantle","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135033,"sell":19399,"classes":[5],"statTypes":[5,6,7,41,42]}
+{"key":226951,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226952,"since":0,"src":[7,"game"],"name":"Virtuous Sandals","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132539,"sell":20338,"classes":[5],"statTypes":[6,5,7,41,42,43]}
+{"key":226952,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226953,"since":0,"src":[7,"game"],"name":"Virtuous Wraps","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132520,"sell":13025,"classes":[5],"statTypes":[5,7,45,6]}
+{"key":226953,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226954,"since":0,"src":[7,"game"],"name":"Virtuous Cord","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132499,"sell":13072,"classes":[5],"statTypes":[5,7,45,6]}
+{"key":226954,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226955,"since":0,"src":[7,"game"],"name":"Virtuous Epaulets","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135033,"sell":19679,"classes":[5],"statTypes":[5,7,31,45]}
+{"key":226955,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226956,"since":0,"src":[7,"game"],"name":"Virtuous Leggings","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":27647,"classes":[5],"statTypes":[7,5,6,45]}
+{"key":226956,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226957,"since":0,"src":[7],"name":"Virtuous Cowl","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":132767,"sell":20704,"classes":[5]}
+{"key":226957,"since":70959,"day":"2026-11-18","src":["game"],"set":1675,"statTypes":[5,7,32,45,6]}
 {"key":226958,"since":0,"src":[7,"game"],"name":"Virtuous Hands","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132948,"sell":10549,"classes":[5],"statTypes":[5,7,45,6]}
+{"key":226958,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226959,"since":0,"src":[7,"game"],"name":"Virtuous Slippers","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132539,"sell":20851,"classes":[5],"statTypes":[6,5,7,45]}
+{"key":226959,"since":70959,"day":"2026-11-18","src":["game"],"set":1675}
 {"key":226960,"since":0,"src":[7],"name":"Virtuous Gown","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132652,"sell":25242,"classes":[5]}
+{"key":226960,"since":70959,"day":"2026-11-18","src":["game"],"set":1675,"statTypes":[5,7,45,6]}
+{"key":226961,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Wrists","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132520,"sell":50000,"set":1675,"classes":[5],"statTypes":[5,6,7,45,43]}
+{"key":226962,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Waist","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132499,"sell":50000,"set":1675,"classes":[5],"statTypes":[5,6,7,45]}
+{"key":226963,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135033,"sell":50000,"set":1675,"classes":[5],"statTypes":[5,6,7,45]}
+{"key":226964,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Legs","quality":3,"itemLevel":66,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":100000,"set":1675,"classes":[5],"statTypes":[7,5,6,45,43]}
+{"key":226965,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Helm","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":132767,"sell":200000,"set":1675,"classes":[5],"statTypes":[5,7,6,45,43,32]}
+{"key":226966,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Gloves","quality":4,"itemLevel":55,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132948,"sell":100000,"set":1675,"classes":[5],"statTypes":[6,5,7,45]}
+{"key":226967,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Boots","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132539,"sell":100000,"set":1675,"classes":[5],"statTypes":[6,5,7,45,43]}
+{"key":226968,"since":70959,"day":"2026-11-18","src":["game"],"name":"Virtuous Chest","quality":4,"itemLevel":60,"class":4,"subclass":1,"slot":"INVTYPE_ROBE","stack":1,"bind":1,"icon":132652,"sell":200000,"set":1675,"classes":[5],"statTypes":[5,6,7,45,43]}
 {"key":226969,"since":0,"src":[7,"game"],"name":"Soulforge Spaulders","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135041,"sell":33635,"classes":[2],"statTypes":[7,5,4,37,45]}
+{"key":226969,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226970,"since":0,"src":[7,"game"],"name":"Soulforge Bracers","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132613,"sell":22677,"classes":[2],"statTypes":[7,5,4,45]}
+{"key":226970,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226971,"since":0,"src":[7,"game"],"name":"Soulforge Belt","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132500,"sell":22757,"classes":[2],"statTypes":[4,5,7,31,45]}
+{"key":226971,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226972,"since":0,"src":[7,"game"],"name":"Soulforge Legplates","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":47692,"classes":[2],"statTypes":[4,7,5,45]}
+{"key":226972,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226973,"since":0,"src":[7],"name":"Soulforge Breastplate","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":47623,"classes":[2]}
+{"key":226973,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,4,32,45]}
 {"key":226974,"since":0,"src":[7,"game"],"name":"Soulforge Warboots","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":35778,"classes":[2],"statTypes":[4,7,5,45,43]}
+{"key":226974,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226975,"since":0,"src":[7,"game"],"name":"Soulforge Gauntlets","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132953,"sell":18367,"classes":[2],"statTypes":[5,4,7,32,45]}
+{"key":226975,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226976,"since":0,"src":[7],"name":"Soulforge Greathelm","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133076,"sell":36032,"classes":[2]}
+{"key":226976,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[4,7,5,32,45,43]}
 {"key":226977,"since":0,"src":[7,"game"],"name":"Soulforge Bindings","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132613,"sell":23251,"classes":[2],"statTypes":[5,6,7,41,42]}
+{"key":226977,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226978,"since":0,"src":[7,"game"],"name":"Soulforge Cord","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132500,"sell":23332,"classes":[2],"statTypes":[5,6,7,41,42,32]}
+{"key":226978,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226979,"since":0,"src":[7,"game"],"name":"Soulforge Epaulets","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135041,"sell":32407,"classes":[2],"statTypes":[5,6,7,41,42]}
+{"key":226979,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226980,"since":0,"src":[7,"game"],"name":"Soulforge Leggings","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":45630,"classes":[2],"statTypes":[7,5,6,41,42]}
+{"key":226980,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226981,"since":0,"src":[7],"name":"Soulforge Crown","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133076,"sell":34113,"classes":[2]}
+{"key":226981,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[5,7,6,32,41,42]}
 {"key":226982,"since":0,"src":[7,"game"],"name":"Soulforge Fists","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132953,"sell":17516,"classes":[2],"statTypes":[6,5,7,41,42]}
+{"key":226982,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226983,"since":0,"src":[7,"game"],"name":"Soulforge Treads","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":34367,"classes":[2],"statTypes":[7,5,6,41,42,43]}
+{"key":226983,"since":70959,"day":"2026-11-18","src":["game"],"set":1673}
 {"key":226984,"since":0,"src":[7],"name":"Soulforge Embrace","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":46082,"classes":[2]}
+{"key":226984,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,6,41,42]}
 {"key":226985,"since":0,"src":[7,"game"],"name":"Soulforge Wristguards","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132613,"sell":22263,"classes":[2],"statTypes":[7,4,5,12]}
+{"key":226985,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,45,12]}
 {"key":226986,"since":0,"src":[7,"game"],"name":"Soulforge Waistguard","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132500,"sell":22344,"classes":[2],"statTypes":[4,5,7,12]}
+{"key":226986,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[5,45,7,12]}
 {"key":226987,"since":0,"src":[7,"game"],"name":"Soulforge Pauldrons","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135041,"sell":33385,"classes":[2],"statTypes":[7,4,12,5,15]}
+{"key":226987,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,12,45,15]}
 {"key":226988,"since":0,"src":[7,"game"],"name":"Soulforge Legguards","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":47002,"classes":[2],"statTypes":[7,4,12,5,48]}
+{"key":226988,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,12,45,48]}
 {"key":226989,"since":0,"src":[7],"name":"Soulforge Faceguard","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133076,"sell":35135,"classes":[2]}
+{"key":226989,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,45,12]}
 {"key":226990,"since":0,"src":[7,"game"],"name":"Soulforge Handguards","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132953,"sell":18038,"classes":[2],"statTypes":[7,4,5,12,14]}
+{"key":226990,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,45,12,14]}
 {"key":226991,"since":0,"src":[7,"game"],"name":"Soulforge Sabatons","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":35389,"classes":[2],"statTypes":[7,4,5,12]}
+{"key":226991,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,45,12]}
 {"key":226992,"since":0,"src":[7],"name":"Soulforge Chestguards","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":47447,"classes":[2]}
+{"key":226992,"since":70959,"day":"2026-11-18","src":["game"],"set":1673,"statTypes":[7,5,45,12,37]}
+{"key":226993,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Wrists","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132613,"sell":50000,"set":1673,"classes":[2],"statTypes":[7,5,4,45]}
+{"key":226994,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Waist","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132500,"sell":50000,"set":1673,"classes":[2],"statTypes":[5,4,7,45,43]}
+{"key":226995,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Shoulders","quality":3,"itemLevel":65,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135041,"sell":50000,"set":1673,"classes":[2],"statTypes":[7,5,4,45,43]}
+{"key":226996,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Legs","quality":3,"itemLevel":66,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134584,"sell":100000,"set":1673,"classes":[2],"statTypes":[4,7,5,6,45]}
+{"key":226997,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Helm","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133076,"sell":200000,"set":1673,"classes":[2],"statTypes":[7,4,5,6,45,32]}
+{"key":226998,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Gloves","quality":4,"itemLevel":55,"class":4,"subclass":4,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132953,"sell":100000,"set":1673,"classes":[2],"statTypes":[5,4,7,45,32]}
+{"key":226999,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Boots","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132584,"sell":100000,"set":1673,"classes":[2],"statTypes":[7,5,4,6,45,43]}
+{"key":227000,"since":70959,"day":"2026-11-18","src":["game"],"name":"Soulforge Chest","quality":4,"itemLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132738,"sell":200000,"set":1673,"classes":[2],"statTypes":[7,5,4,6,45,32]}
 {"key":227001,"since":0,"src":[7,"game"],"name":"Bindings of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132601,"sell":18691,"classes":[7],"statTypes":[5,47,7,45]}
+{"key":227001,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227002,"since":0,"src":[7],"name":"Coif of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133072,"sell":29531,"classes":[7]}
+{"key":227002,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[5,32,7,45,47]}
 {"key":227003,"since":0,"src":[7],"name":"Pauldrons of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135060,"sell":28373,"classes":[7]}
+{"key":227003,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[5,7,31,45]}
 {"key":227004,"since":0,"src":[7],"name":"Vest of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132633,"sell":39495,"classes":[7]}
+{"key":227004,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[5,7,6,47,45]}
 {"key":227005,"since":0,"src":[7],"name":"Kilt of The Five Thunders","quality":3,"itemLevel":66,"class":4,"subclass":3,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134583,"sell":39839,"classes":[7]}
+{"key":227005,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[45,5,7,31,6]}
 {"key":227006,"since":0,"src":[7,"game"],"name":"Gauntlets of The Five Thunders","quality":4,"itemLevel":55,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132945,"sell":15149,"classes":[7],"statTypes":[45,5,7,31,6]}
+{"key":227006,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227007,"since":0,"src":[7],"name":"Slippers of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132592,"sell":30082,"classes":[7]}
+{"key":227007,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[45,7,5,6]}
 {"key":227008,"since":0,"src":[7,"game"],"name":"Cord of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132505,"sell":19182,"classes":[7],"statTypes":[5,7,45,32]}
+{"key":227008,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227009,"since":0,"src":[7,"game"],"name":"Bracers of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132601,"sell":19251,"classes":[7],"statTypes":[5,6,7,41,42]}
+{"key":227009,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227010,"since":0,"src":[7,"game"],"name":"Sash of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132505,"sell":19321,"classes":[7],"statTypes":[5,6,7,41,42,32]}
+{"key":227010,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227011,"since":0,"src":[7],"name":"Mantle of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135060,"sell":29217,"classes":[7]}
+{"key":227011,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[5,6,7,41,42]}
 {"key":227012,"since":0,"src":[7],"name":"Leggings of The Five Thunders","quality":3,"itemLevel":66,"class":4,"subclass":3,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134583,"sell":41927,"classes":[7]}
+{"key":227012,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[7,5,6,41,42]}
 {"key":227013,"since":0,"src":[7],"name":"Crown of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133072,"sell":28536,"classes":[7]}
+{"key":227013,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[5,7,6,32,41,42]}
 {"key":227014,"since":0,"src":[7,"game"],"name":"Grasp of The Five Thunders","quality":4,"itemLevel":55,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132945,"sell":14479,"classes":[7],"statTypes":[6,5,7,41,42]}
+{"key":227014,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227015,"since":0,"src":[7],"name":"Greaves of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132592,"sell":28757,"classes":[7]}
+{"key":227015,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[7,5,6,41,42,43]}
 {"key":227016,"since":0,"src":[7],"name":"Tunic of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132633,"sell":38317,"classes":[7]}
+{"key":227016,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[7,5,6,41,42,32]}
 {"key":227017,"since":0,"src":[7,"game"],"name":"Bands of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132601,"sell":18409,"classes":[7],"statTypes":[7,5,4,45]}
+{"key":227017,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227018,"since":0,"src":[7,"game"],"name":"Girdle of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132505,"sell":18479,"classes":[7],"statTypes":[4,5,7,31,45]}
+{"key":227018,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227019,"since":0,"src":[7],"name":"Spaulders of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135060,"sell":27948,"classes":[7]}
+{"key":227019,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[7,5,4,37,45]}
 {"key":227020,"since":0,"src":[7],"name":"Legplates of The Five Thunders","quality":3,"itemLevel":66,"class":4,"subclass":3,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134583,"sell":39099,"classes":[7]}
+{"key":227020,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[4,7,5,45]}
 {"key":227021,"since":0,"src":[7],"name":"Face of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133072,"sell":29417,"classes":[7]}
+{"key":227021,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[4,7,5,32,45,43]}
 {"key":227022,"since":0,"src":[7,"game"],"name":"Fists of The Five Thunders","quality":4,"itemLevel":55,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132945,"sell":14925,"classes":[7],"statTypes":[5,4,7,32,45]}
+{"key":227022,"since":70959,"day":"2026-11-18","src":["game"],"set":1679}
 {"key":227023,"since":0,"src":[7],"name":"Treads of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132592,"sell":29639,"classes":[7]}
+{"key":227023,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[4,7,5,45,43]}
 {"key":227024,"since":0,"src":[7],"name":"Chain of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132633,"sell":39487,"classes":[7]}
+{"key":227024,"since":70959,"day":"2026-11-18","src":["game"],"set":1679,"statTypes":[7,5,4,32,45]}
+{"key":227033,"since":70959,"day":"2026-11-18","src":["game"],"name":"Wrists of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WRIST","stack":1,"bind":1,"icon":132601,"sell":50000,"set":1679,"classes":[7],"statTypes":[5,6,7,45]}
+{"key":227034,"since":70959,"day":"2026-11-18","src":["game"],"name":"Waist of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_WAIST","stack":1,"bind":1,"icon":132505,"sell":50000,"set":1679,"classes":[7],"statTypes":[5,4,7,45,43]}
+{"key":227035,"since":70959,"day":"2026-11-18","src":["game"],"name":"Shoulders of The Five Thunders","quality":3,"itemLevel":65,"class":4,"subclass":3,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135060,"sell":50000,"set":1679,"classes":[7],"statTypes":[5,7,6,4,45]}
+{"key":227036,"since":70959,"day":"2026-11-18","src":["game"],"name":"Legs of The Five Thunders","quality":3,"itemLevel":66,"class":4,"subclass":3,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134583,"sell":100000,"set":1679,"classes":[7],"statTypes":[6,5,4,7,45]}
+{"key":227037,"since":70959,"day":"2026-11-18","src":["game"],"name":"Helm of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133072,"sell":200000,"set":1679,"classes":[7],"statTypes":[5,7,6,45,32]}
+{"key":227038,"since":70959,"day":"2026-11-18","src":["game"],"name":"Gloves of The Five Thunders","quality":4,"itemLevel":55,"class":4,"subclass":3,"slot":"INVTYPE_HAND","stack":1,"bind":1,"icon":132945,"sell":100000,"set":1679,"classes":[7],"statTypes":[4,5,7,43,45]}
+{"key":227039,"since":70959,"day":"2026-11-18","src":["game"],"name":"Boots of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_FEET","stack":1,"bind":1,"icon":132592,"sell":100000,"set":1679,"classes":[7],"statTypes":[4,7,5,6,45,43]}
+{"key":227040,"since":70959,"day":"2026-11-18","src":["game"],"name":"Chest of The Five Thunders","quality":4,"itemLevel":60,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132633,"sell":200000,"set":1679,"classes":[7],"statTypes":[5,6,7,4,32,45]}
 {"key":227041,"since":70245,"src":["game"],"name":"Scourge Shadow Scalpel","quality":1,"itemLevel":1,"class":12,"subclass":0,"stack":5,"bind":4,"icon":135482,"description":"This device channels and directs foul necrotic energies to dissolve flesh, metal, or any other material mundane or magical. This may be able to disrupt the shield protecting Arkonos."}
 {"key":227042,"since":0,"src":[7],"name":"Champion's Plate Shoulders","quality":3,"itemLevel":71,"minLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135042,"sell":13158,"set":1761,"classes":[1]}
 {"key":227043,"since":0,"src":[7],"name":"Champion's Plate Helm","quality":3,"itemLevel":71,"minLevel":60,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"icon":133077,"sell":13205,"set":1761,"classes":[1]}
@@ -23964,6 +24207,7 @@
 {"key":282021,"since":70938,"day":"2026-11-15","src":["game"],"name":"Dreadscorn's Spaulders","quality":2,"itemLevel":59,"minLevel":54,"class":4,"subclass":4,"slot":"INVTYPE_SHOULDER","stack":1,"bind":2,"icon":135054,"sell":12247,"statTypes":[7,51,4]}
 {"key":282023,"since":0,"src":[7,20,"game"],"name":"Clack's Claw","quality":2,"itemLevel":55,"minLevel":50,"class":2,"subclass":13,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":135663,"sell":1647,"damageMin":57,"damageMax":107,"speed":2.5,"statTypes":[4,6]}
 {"key":282026,"since":70245,"src":["game"],"name":"Unyielding Battle Signet","quality":2,"itemLevel":58,"minLevel":53,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":2,"icon":133358,"sell":1875,"statTypes":[4,6,7]}
+{"key":282027,"since":70959,"day":"2026-11-18","src":["game"],"name":"Scales of the Devourer","quality":3,"itemLevel":62,"minLevel":57,"class":4,"subclass":3,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"icon":132628,"sell":1001,"statTypes":[4,7,3,45]}
 {"key":282028,"since":70245,"src":["game"],"name":"Broken Frond of Celastrus","quality":1,"itemLevel":1,"class":12,"subclass":0,"stack":20,"bind":4,"icon":237426}
 {"key":282029,"since":0,"src":[7,20,"game"],"name":"Reaver's Repeater","quality":2,"itemLevel":58,"minLevel":53,"class":2,"subclass":3,"slot":"INVTYPE_RANGEDRIGHT","stack":1,"bind":2,"icon":135616,"sell":1179,"damageMin":51,"damageMax":95,"speed":2.7,"statTypes":[39,7]}
 {"key":282046,"since":70245,"src":["game"],"name":"Gnome Skull","quality":0,"itemLevel":1,"class":15,"subclass":0,"stack":5,"icon":133728,"sell":250,"description":"That explains how the beast became so large."}
@@ -24026,11 +24270,13 @@
 {"key":282655,"since":0,"src":[7,"game"],"name":"Bog Pickers","quality":2,"itemLevel":27,"minLevel":22,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":2,"sell":171,"statTypes":[7,112]}
 {"key":282658,"since":0,"src":[7,"game"],"name":"Dragonmaw Battle Shroud","quality":2,"itemLevel":32,"minLevel":27,"class":4,"subclass":1,"slot":"INVTYPE_CLOAK","stack":1,"bind":2,"sell":292,"statTypes":[4,6]}
 {"key":282699,"since":70938,"day":"2026-11-15","src":["game"],"name":"Cleansed Water Globe","quality":2,"itemLevel":1,"minLevel":1,"class":15,"subclass":4,"stack":1,"bind":1,"icon":134333,"description":"The last remnant of the ancient elemental defender of a Highborne city.","unique":1}
+{"key":282700,"since":70959,"day":"2026-11-18","src":["game"],"name":"Shadow Scalper","quality":2,"itemLevel":42,"minLevel":37,"class":2,"subclass":0,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":132392,"sell":3,"speed":2.6,"effects":[{"trigger":"hit","spell":1314274}]}
 {"key":282702,"since":0,"src":[7,"game"],"name":"Molok's Masher","quality":2,"itemLevel":41,"minLevel":36,"class":2,"subclass":5,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":2,"icon":133046,"sell":1408,"speed":3.7,"statTypes":[7]}
 {"key":282703,"since":0,"src":[7,20,"game"],"name":"Needletooth's Needletooth","quality":2,"itemLevel":37,"minLevel":32,"class":2,"subclass":15,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":134298,"sell":703,"damageMin":23,"damageMax":44,"speed":1.7,"effects":[{"trigger":"hit","spell":1314305}]}
 {"key":282704,"since":0,"src":[7,"game"],"name":"Shadow Council Apprentice's Mantle","quality":3,"itemLevel":41,"minLevel":36,"class":4,"subclass":1,"slot":"INVTYPE_SHOULDER","stack":1,"bind":1,"icon":135036,"sell":2223,"statTypes":[5,31]}
 {"key":282705,"since":70938,"day":"2026-11-15","src":["game"],"name":"Ruul's Secondstone","quality":3,"itemLevel":41,"minLevel":36,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":1,"icon":133351,"sell":837,"statTypes":[6,42]}
 {"key":282706,"since":0,"src":[7,"game"],"name":"Rotting Meat","quality":3,"itemLevel":44,"minLevel":39,"class":4,"subclass":0,"slot":"INVTYPE_HOLDABLE","stack":1,"bind":1,"icon":133974,"sell":4538,"description":"There's no questioning how Foulbelly earned that name.","statTypes":[55,7,42]}
+{"key":282707,"since":70959,"day":"2026-11-18","src":["game"],"name":"Arcanum of Binding","quality":2,"itemLevel":50,"class":12,"subclass":0,"stack":1,"bind":1,"icon":134072}
 {"key":282710,"since":0,"src":[7,"game"],"name":"Dun Garok Rifle","quality":3,"itemLevel":30,"minLevel":25,"class":2,"subclass":3,"slot":"INVTYPE_RANGEDRIGHT","stack":1,"bind":1,"icon":135612,"sell":356,"speed":2.6,"statTypes":[6,3]}
 {"key":282711,"since":0,"src":[7,"game"],"name":"Naga Maiden's Gown","quality":2,"itemLevel":35,"minLevel":30,"class":4,"subclass":1,"slot":"INVTYPE_CHEST","stack":1,"bind":2,"sell":333,"statTypes":[5,7]}
 {"key":282712,"since":70938,"day":"2026-11-15","src":["game"],"name":"Libram of Binding","quality":2,"itemLevel":50,"minLevel":50,"class":9,"subclass":0,"stack":1,"icon":133739,"sell":10000,"description":"Dark runes skitter across the surface.","unique":1}
@@ -24045,6 +24291,7 @@
 {"key":283255,"since":0,"src":[7,20,"game"],"name":"Syndicate Executioner's Slicer","quality":2,"itemLevel":38,"minLevel":33,"class":2,"subclass":7,"slot":"INVTYPE_WEAPONMAINHAND","stack":1,"bind":2,"icon":135325,"sell":481,"damageMin":37,"damageMax":70,"speed":2.6,"statTypes":[3,4]}
 {"key":283259,"since":0,"src":[7,"game"],"name":"Bearhide Vicegrips","quality":2,"itemLevel":16,"minLevel":11,"class":4,"subclass":2,"slot":"INVTYPE_HAND","stack":1,"bind":2,"icon":132939,"sell":171,"statTypes":[4]}
 {"key":283361,"since":0,"src":[7,"game"],"name":"Gorefang's Runners","quality":2,"itemLevel":16,"minLevel":11,"class":4,"subclass":2,"slot":"INVTYPE_FEET","stack":1,"bind":2,"icon":132542,"sell":797,"statTypes":[3,7]}
+{"key":283387,"since":70959,"day":"2026-11-18","src":["game"],"name":"Scrawled Note","quality":1,"itemLevel":1,"minLevel":1,"class":15,"subclass":4,"stack":1,"bind":1,"icon":134331}
 {"key":283389,"since":70245,"src":["game"],"name":"Skonk's List","quality":1,"itemLevel":1,"class":12,"subclass":0,"stack":1,"icon":134327,"unique":1}
 {"key":283460,"since":0,"src":[7,"game"],"name":"Decaying Flesh Belt","quality":2,"itemLevel":12,"minLevel":7,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"icon":132492,"sell":523,"statTypes":[5]}
 {"key":283462,"since":0,"src":[7,20,"game"],"name":"Bayne's Bite","quality":2,"itemLevel":12,"minLevel":7,"class":2,"subclass":15,"slot":"INVTYPE_WEAPON","stack":1,"bind":2,"icon":135640,"sell":1203,"damageMin":7,"damageMax":14,"speed":1.6,"statTypes":[4]}
@@ -24109,8 +24356,10 @@
 {"key":284257,"since":0,"src":[7,20,"game"],"name":"Icesworn Decapitator","quality":3,"itemLevel":59,"minLevel":54,"class":2,"subclass":1,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":132456,"sell":2,"damageMin":145,"damageMax":219,"speed":3.6,"statTypes":[7,4,52,45]}
 {"key":284261,"since":0,"src":[7,"game"],"name":"Magically Fortified Legguards","quality":3,"itemLevel":61,"minLevel":56,"class":4,"subclass":4,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134588,"sell":6909,"statTypes":[7,12,45]}
 {"key":284262,"since":0,"src":[7,"game"],"name":"Howling Hide","quality":2,"itemLevel":57,"minLevel":52,"class":4,"subclass":1,"slot":"INVTYPE_CLOAK","stack":1,"bind":2,"icon":133770,"sell":9815,"effects":[{"trigger":"hit","spell":1315767}],"statTypes":[4]}
+{"key":284262,"since":70959,"day":"2026-11-18","src":["game"],"effects":[{"trigger":"equip","spell":1330916}]}
 {"key":284266,"since":0,"src":[7,"game"],"name":"Wintersaber Hide Lined Gloves","quality":2,"itemLevel":59,"minLevel":54,"class":4,"subclass":1,"slot":"INVTYPE_HAND","stack":1,"bind":2,"icon":132961,"sell":505,"effects":[{"trigger":"equip","spell":1315778}],"statTypes":[7]}
 {"key":284268,"since":0,"src":[7,"game"],"name":"Furbolg Shaman's Girdle","quality":2,"itemLevel":61,"minLevel":56,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"sell":1732,"statTypes":[4,43]}
+{"key":284270,"since":70959,"day":"2026-11-18","src":["game"],"name":"Ancient Giant's Gaze","quality":3,"itemLevel":56,"minLevel":51,"class":4,"subclass":4,"slot":"INVTYPE_HEAD","stack":1,"bind":1,"sell":14087,"statTypes":[4,7,50]}
 {"key":284271,"since":70245,"src":["game"],"name":"Emergency Cache","quality":1,"itemLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":132594,"sell":12}
 {"key":284272,"since":0,"src":[7,"game"],"name":"Chimaera Hide Legs","quality":2,"itemLevel":50,"minLevel":45,"class":4,"subclass":2,"slot":"INVTYPE_LEGS","stack":1,"bind":2,"icon":134586,"sell":8040,"statTypes":[55,51]}
 {"key":284282,"since":0,"src":[7,"game"],"name":"Queen Guard's Royal Seal","quality":3,"itemLevel":50,"minLevel":45,"class":4,"subclass":0,"slot":"INVTYPE_FINGER","stack":1,"bind":2,"icon":133351,"sell":8963,"description":"Azshara's most faithful bore a signet signifying their undying loyalty.","statTypes":[4,7,3]}
@@ -24388,6 +24637,9 @@
 {"key":286619,"since":70938,"day":"2026-11-15","src":["game"],"name":"Big Basher's Belt","quality":2,"itemLevel":54,"minLevel":49,"class":4,"subclass":2,"slot":"INVTYPE_WAIST","stack":1,"bind":2,"icon":132515,"sell":1068,"statTypes":[4,98]}
 {"key":286639,"since":0,"src":[7,"game"],"name":"Ambassador's Bloodrobes","quality":3,"itemLevel":38,"minLevel":33,"class":4,"subclass":1,"slot":"INVTYPE_CHEST","stack":1,"bind":1,"sell":648,"statTypes":[7,6,47]}
 {"key":286640,"since":0,"src":[7],"name":"High Priestess's Kilt","quality":3,"itemLevel":59,"minLevel":54,"class":4,"subclass":1,"slot":"INVTYPE_LEGS","stack":1,"bind":1,"icon":134600,"sell":7568}
+{"key":286641,"since":70959,"day":"2026-11-18","src":["game"],"name":"Cannibal's Cleaver","quality":3,"itemLevel":50,"minLevel":45,"class":2,"subclass":1,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":132395,"sell":2,"speed":3.6,"statTypes":[7,93,38,125]}
+{"key":286644,"since":70959,"day":"2026-11-18","src":["game"],"name":"Shattered Atal'ai Spear","quality":3,"itemLevel":50,"minLevel":45,"class":7,"subclass":11,"stack":1,"bind":1,"icon":135131,"sell":15000,"effects":[{"trigger":"use","spell":1320864,"text":"The spear must be reforged before it can be used. Reforging the spear requires 40 Mithril Bars, 10 Truesilver Bars, 8 Aquamarine, 4 Solid Grinding Stone, and 2 Elemental Fire."}]}
+{"key":286645,"since":70959,"day":"2026-11-18","src":["game"],"name":"Reforged Atal'ai Spear","quality":3,"itemLevel":50,"minLevel":45,"class":2,"subclass":6,"slot":"INVTYPE_2HWEAPON","stack":1,"bind":1,"icon":135131,"sell":2,"speed":3.8,"description":"Countless entered, few left.","statTypes":[4,7,32]}
 {"key":286646,"since":70938,"day":"2026-11-15","src":["game"],"name":"Gill's Gills","quality":3,"itemLevel":40,"minLevel":35,"class":4,"subclass":0,"slot":"INVTYPE_TRINKET","stack":1,"bind":1,"icon":133966,"sell":1625,"effects":[{"trigger":"equip","spell":11789}],"statTypes":[52,38]}
 {"key":286647,"since":70245,"src":["game"],"name":"Depleted Crystal Heart","quality":1,"itemLevel":1,"minLevel":1,"class":12,"subclass":0,"stack":1,"bind":4,"icon":134131}
 {"key":286648,"since":70245,"src":["game"],"name":"Depleted Crystal Heart","quality":1,"itemLevel":1,"minLevel":1,"class":12,"subclass":0,"stack":1,"bind":4,"icon":134131,"effects":[{"trigger":"use","spell":1320898,"text":"Throw into an Unstable Mana Rift."}]}
@@ -24590,4 +24842,6 @@
 {"key":289439,"since":70755,"day":"2026-11-03","src":["game"],"name":"Pouch of Violet Dust","quality":3,"itemLevel":1,"minLevel":1,"class":15,"subclass":0,"stack":1,"bind":1,"icon":5931149,"effects":[{"trigger":"use","spell":1328348,"text":"Throw a handful into the campfire, transforming its flames.\r\n|cFFffffffRequires WoW: Forever Launch Celebration |r"}],"description":"Many gathered. Many watched.","toy":true}
 {"key":289559,"since":70707,"day":"2026-10-31","src":["game"],"name":"Enchant Boots - Speed","quality":1,"itemLevel":1,"minLevel":1,"class":0,"subclass":6,"stack":20,"icon":463531,"effects":[{"trigger":"use","spell":1328948}]}
 {"key":289560,"since":70707,"day":"2026-10-31","src":["game"],"name":"Formula: Enchant Boots - Speed","quality":2,"itemLevel":50,"class":9,"subclass":8,"stack":1,"icon":134327,"sell":1550,"effects":[{"trigger":"use","spell":402265},{"trigger":"learn","spell":1328948}],"description":"Teaches you how to permanently enchant boots to increase movement speed by 8%."}
+{"key":289560,"since":70959,"day":"2026-11-18","src":["game"],"bind":1}
 {"key":290333,"since":70938,"day":"2026-11-15","src":["game"],"name":"Berdun's Trusty Rifle","quality":2,"itemLevel":48,"class":2,"subclass":3,"slot":"INVTYPE_RANGEDRIGHT","stack":1,"bind":1,"sell":11026,"speed":3.0,"statTypes":[4]}
+{"key":291005,"since":70959,"day":"2026-11-18","src":["game"],"name":"Camper's Lure","quality":1,"itemLevel":20,"class":0,"subclass":14,"stack":20,"bind":1,"icon":134895,"effects":[{"trigger":"use","spell":1331725}],"unique":5}

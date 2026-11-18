@@ -63,7 +63,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 MASTER = ROOT / "assets" / "data" / "Walking" / "Walking.jsonl"
 STAGING = ROOT / "dev" / "data" / "staging" / "walking-gates.jsonl"
-BUILD = 70938          # the client build of the walking data (dev/tools/walk-data's)
+BUILD = 70959          # the client build of the walking data (dev/tools/walk-data's)
 FORMAT = 2             # the field's format, as Navigation's Gates.lua reads it (2: with the ways down a drop)
 FALL = 54              # yards: the highest drop a way down takes (Navigation's Walk.FALL; dev/tests/walk.py checks)
 DROP = 1               # each yard fallen costs so many yards more on land (Navigation's Search.DROP)

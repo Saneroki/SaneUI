@@ -122,7 +122,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 STAGING = ROOT / "dev" / "data" / "staging" / "walking.jsonl"
 TRAVEL = ROOT / "assets" / "data" / "Travel" / "Travel.jsonl"  # the master's set Travel: its lifts
-BUILD = 70938          # the client build the game files are of (the set Tiles' build)
+BUILD = 70959          # the client build the game files are of (the set Tiles' build)
 PROCESSES = 3          # workers: a full run with 10 reached the memory the app's cgroup may hold (24 GB) and the kernel
                        # killed the run and the app; one map at a time with 3 peaked near 20 GB (--processes)
 MEMORY = 22            # GB the run's cgroup may hold (--memory; from a session: the app's whole scope): past it the run stops
