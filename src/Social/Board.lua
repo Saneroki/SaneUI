@@ -178,8 +178,9 @@ end
 -- of one height (its scrolling list and scroll bar) between the head and a foot of buttons
 -- (UIPanelButtonTemplate). init(row, element) draws a row, made by the list; the list is returned.
 -- holder: a panel, or a part of one (holder.body, the frame to fill; holder.label, its name in the error
--- log); top: how far down the body the list starts (EDGE at first).
-function Board.List(holder, init, top)
+-- log); top: how far down the body the list starts (EDGE at first); extent(element): a list whose rows are not all
+-- of one height (the conversations' heads), each element's height (ROW, if it fails).
+function Board.List(holder, init, top, extent)
     local box = CreateFrame("Frame", nil, holder.body, "WowScrollBoxList")
     box:SetPoint("TOPLEFT", Layout.EDGE, -(top or Layout.EDGE))
     box:SetPoint("BOTTOMRIGHT", -Layout.EDGE - Layout.SCROLL, Layout.FOOT + Layout.EDGE)
@@ -187,10 +188,14 @@ function Board.List(holder, init, top)
     scroll:SetPoint("TOPLEFT", box, "TOPRIGHT", 4, -2)
     scroll:SetPoint("BOTTOMLEFT", box, "BOTTOMRIGHT", 4, 2)
     local view = CreateScrollBoxListLinearView(0, 0, 0, 0, 0)
-    view:SetElementExtent(Layout.ROW)
     -- The list draws its rows outside our own guard: nothing but the guard there (the name for the error log made
     -- here, once: a holder's name stays).
     local label = Board.Label(holder)
+    if extent then
+        view:SetElementExtentCalculator(function(_, element) return ns.Safe(label, extent, element) or Layout.ROW end)
+    else
+        view:SetElementExtent(Layout.ROW)
+    end
     view:SetElementInitializer("Button", function(row, element) ns.Safe(label, init, row, element) end)
     ScrollUtil.InitScrollBoxListWithScrollBar(box, scroll, view)
     box.provider = CreateDataProvider()

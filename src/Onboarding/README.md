@@ -87,7 +87,11 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   gone at `PLAYER_REGEN_DISABLED`, before the game locks it, back after it; following the row while the window is
   dragged (the row's `OnUpdate`); `done` after it (`PostClick`); without `SLASH_<command>1` the click says `missing`;
   Combat's *Place and size in Edit Mode*), and set through `Core.Set`,
-  as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it.
+  as a menu or a command does: the module's `changed` is told, its options page shows it, its profile keeps it. A
+  choice's value may be a table of several switches (`{ expand = true, expandCorner = false }`: Social's hot corner, not
+  at all, a left click or the mouse; Saneroki, 2026-11-18): lit while each of them is so, set all together, each one
+  counted by *Choose defaults*. A tick the module answers itself (`{ check = function() end, set = function(on) end,
+  text, tip }`: what is no switch, Social's second chat on the screen), asked and set in `ns.Safe("setup tick", ...)`.
   Switches without words (kept values), buttons, colours, typed entries and multiple choices have no control in a
   step. A slider shown anew (`Refresh`) does not set its value again.
 - **The window** (`Window.lua`): a frame of its own on `UIParent` in the bronze (`Look.Dress`), 860 x 600, strata

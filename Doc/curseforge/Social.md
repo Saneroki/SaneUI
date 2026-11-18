@@ -49,9 +49,11 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
   fills the screen. Its windows share the screen and never overlap; drag them to arrange
   them, and keep several layouts behind tabs.
 - **Conversations.** Every whisper, and the chat of every party or raid you join, is a conversation of its
-  own, like a messenger's, newest first, with what you have not read yet counted. They are kept over a
-  logout.
+  own, like a messenger's, newest first, with what you have not read yet counted. Whispers and groups stand
+  apart, each part under a head that folds it away. They are kept over a logout.
 - **Chat views.** As many as you like, each with its own chats: Trade alone, guild and officers, any mix.
+- **More chat windows.** Put any chat view on the screen as a chat window of its own beside the chat, with
+  its own chats; move and size each in Edit Mode.
 - **Friends list and group finder.** Battle.net friends and characters with where they are and what they
   play, friend requests, ignored players, your raid, and the group finder's listings. Send a message or
   invite with one click.
@@ -64,7 +66,10 @@ take one by one. It needs **SaneUI Core**, which the CurseForge app installs wit
 - **Move and size it** in Edit Mode (Esc > Edit Mode), like the game's own frames. Let it go near a corner
   or an edge of the screen and it docks there. At first it is docked in the lower left corner.
 - **The full screen:** left-click the screen's very edge where the chat is docked; click it again to go
-  back. With *Hotcorner requires leftclick* off (Appearance), pushing the mouse there is enough.
+  back. With *Hotcorner requires leftclick* off (Appearance), pushing the mouse there is enough; with
+  *Hotcorner* off, the edge does nothing and a key of your choice opens it (Keybindings > SaneUI).
+- **A setup** shows it all the first time, a step at a time: the hot corner (not at all, a left click or
+  the mouse), a key for the full screen, and which chat windows you want. Again: `/sane setup social`.
 - **The game's chat** is out of sight while Social is open, but keeps every line. `/sane social`, a key of
   your choice (Keybindings > SaneUI) or *Classic windows* on the full screen switches between the two. In a
   fight or a dungeon, while the game gives addons no chat, the game's own chat comes back by itself.

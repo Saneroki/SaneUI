@@ -19,7 +19,12 @@ local _, ns = ...
 --                player gave, Core.People), the last message, its time, and how
 --                many messages wait to be read; the panel's title counts them all.
 --                A row with messages not seen yet is lit with the glow the game's
---                chat tabs have for a new message, in its chat's colour
+--                chat tabs have for a new message, in its chat's colour. The
+--                conversations stand in two parts, not mixed (Saneroki, 2026-11-18):
+--                the whispers, then the groups' (party, raid, instance), each under
+--                a head with the game's +/- (its quest log's): a click folds the
+--                part away, and shows it again (kept: store.talkFolds); folded, the
+--                head counts what waits in it and is lit as a row is
 --      foot      New chat view (one more view, showing nothing until its chats
 --                are ticked), then Whisper (the game's line opens with /w, to name
 --                whom: its name completion helps) and Remove (the one chosen, a
@@ -33,8 +38,8 @@ local _, ns = ...
 --
 --  A click chooses a conversation: its messages are read. A right click on a
 --  whisper opens the game's own menu of that player, as the friends list's does
---  (whisper, invite, ignore, Set Alias, Set Note); on a chat view, Rename and
---  Remove. A conversation you begin
+--  (whisper, invite, ignore, Set Alias, Set Note); on a chat view, Rename,
+--  Remove and Its own window on the screen (ChatWindows.lua). A conversation you begin
 --  yourself (from anywhere: the chat's line, a name's menu) is chosen as soon
 --  as your first message comes back. A group you are in is listed though
 --  nobody spoke there yet, to write in.
@@ -82,6 +87,16 @@ local GLOW = "Interface\\ChatFrame\\ChatFrameTab-NewMessage"   -- the game's cha
 local rows = {}                                                -- [view] = its row in the list, made once
 local BNET = "Interface\\FriendsFrame\\Battlenet-Portrait"    -- the game's portrait of Battle.net
 local UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"     -- a character whose class is not known yet
+local FOLDED = "Interface\\Buttons\\UI-PlusButton-Up"         -- a part folded away: the game's +, as its quest log's
+local UNFOLDED = "Interface\\Buttons\\UI-MinusButton-Up"      -- a part shown: its -
+local FOLD = 14                                               -- the +/- that large
+-- The parts of the list, in their order: whom a conversation is with decides (Part). kind: the chat whose colour lights
+-- a folded part's head for what waits in it.
+local PARTS = {
+    { key = "whispers", text = ns.TEXT.whispers, kind = "WHISPER" },
+    { key = "groups", text = ns.TEXT.groups, kind = "PARTY" },
+}
+local heads = {}                                              -- [key] = the head of that part in the list, made once
 
 local panel, side, box, remove     -- the panel; the list's part ({ body, label }), its list, the button Remove
 local start, add                    -- the buttons Whisper and New chat view
@@ -224,22 +239,71 @@ local function Row(view)
     return rows[view]
 end
 
+-- What a row of this list has beyond Board.Row's, made once: the list hands its rows from a conversation to a
+-- head and back. The icon round; how many wait, the glow, a head's +/- (not the icon: that is cut round).
+local function Parts(row)
+    Board.Row(row)
+    if row.count then return end
+    Core.Shape.Round(row.icon)
+    row.count = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    row.glow = row:CreateTexture(nil, "BORDER")
+    row.glow:SetTexture(GLOW)
+    row.glow:SetBlendMode("ADD")
+    row.glow:SetPoint("TOPLEFT", 0, -1)
+    row.glow:SetPoint("BOTTOMRIGHT", 0, 1)
+    row.fold = row:CreateTexture(nil, "ARTWORK")
+    row.fold:SetSize(FOLD, FOLD)
+    row.fold:SetPoint("LEFT", 6, 0)
+end
+
+-- The glow on a row with messages not seen yet, in that colour; none on the one chosen.
+local function Glow(row, lit, colour)
+    row.glow:SetShown(lit)
+    if lit then row.glow:SetVertexColor(colour[1], colour[2], colour[3]) end
+end
+
+local function Count(waiting)
+    return waiting > 0 and (waiting > 99 and "99+" or tostring(waiting)) or ""
+end
+
+-- A part's head (Head): the game's - or + before its name, in the game's gold; folded, how many messages wait in it
+-- at its right, lit as a row with messages not seen yet.
+local function DrawHead(row, head)
+    Parts(row)
+    row.talk = head
+    row:EnableMouse(true)
+    row.back:Hide()
+    row.icon:Hide()
+    row.side:Hide()
+    if row.invite then row.invite:Hide() end
+    row.fold:Show()
+    row.fold:SetTexture(head.folded and FOLDED or UNFOLDED)
+    row.top:ClearAllPoints()
+    row.top:SetPoint("LEFT", row.fold, "RIGHT", 5, 0)
+    row.top:SetPoint("RIGHT", -44, 0)
+    row.top:SetText(head.part.text)
+    row.top:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+    row.bottom:SetText("")
+    row.right:SetText("")
+    local waiting = head.folded and head.unread or 0
+    row.count:ClearAllPoints()
+    row.count:SetPoint("RIGHT", -6, 0)
+    row.count:SetText(Count(waiting))
+    local info = ChatTypeInfo and ChatTypeInfo[head.part.kind]
+    Glow(row, waiting > 0, info and info.r and { info.r, info.g, info.b } or { NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b })
+    row:UnlockHighlight()
+end
+
 -- A row of the list (Board.Row, the friends list's look): icon, name, the last message; at its right the time
 -- and how many wait to be read. The one chosen keeps its highlight; one with messages not seen yet is lit.
 local function Draw(row, talk)
-    Board.Row(row)
+    if talk.head then return DrawHead(row, talk) end
+    Parts(row)
     Contacts.Entry(row)
     row.talk = talk
-    if not row.count then
-        Core.Shape.Round(row.icon)
-        row.count = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        row.count:SetPoint("BOTTOMRIGHT", -6, 5)
-        row.glow = row:CreateTexture(nil, "BORDER")
-        row.glow:SetTexture(GLOW)
-        row.glow:SetBlendMode("ADD")
-        row.glow:SetPoint("TOPLEFT", 0, -1)
-        row.glow:SetPoint("BOTTOMRIGHT", 0, 1)
-    end
+    row.fold:Hide()
+    row.count:ClearAllPoints()
+    row.count:SetPoint("BOTTOMRIGHT", -6, 5)
     if row.invite then row.invite:Hide() end
     row.side:Hide()
     local back = Contacts.BACKS[talk.kind == "BN_WHISPER" and "bnet" or talk.kind == "WHISPER" and "wow" or "offline"]
@@ -267,20 +331,21 @@ local function Draw(row, talk)
     row.right:SetPoint("TOPRIGHT", -6, -5)
     row.right:SetText(Time(talk))
     row.right:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
-    row.count:SetText(unread and (waiting > 99 and "99+" or tostring(waiting)) or "")
-    local lit = unread and talk ~= open
-    row.glow:SetShown(lit)
-    if lit then
-        local glow = tint or colour
-        row.glow:SetVertexColor(glow[1], glow[2], glow[3])
-    end
+    row.count:SetText(Count(waiting))
+    Glow(row, unread and talk ~= open, tint or colour)
     if talk == open then row:LockHighlight() else row:UnlockHighlight() end
+end
+
+-- How high an element of the list is: a part's head lower than a row.
+local function RowHeight(element)
+    return element.head and Layout.TALK_PART or Layout.ROW
 end
 
 -- Who a whisper is with, as the friends list's tooltip names them: their name, the whole name or BattleTag
 -- under it, the note about them.
 local function Tip(row)
     local talk = row.talk
+    if talk and talk.head then return Core.ShowTip(row, talk.part.text, ns.TEXT.partTip) end
     if not talk or talk.pinned or Talks.GROUPS[talk.kind] then return end
     local tip, shown = GameTooltip, Talks.Name(talk)
     tip:SetOwner(row, "ANCHOR_RIGHT", 4, 0)
@@ -445,9 +510,49 @@ Removable = function(talk)
     return talk.view ~= nil or #talk.messages > 0
 end
 
--- The list anew: the chat (unless it has a window of its own), the chat views, the conversations found, the groups
--- you are in though nobody spoke there yet. One of them is chosen while there are any: the one chosen before, if it
--- is still listed, else the first.
+-------------------------------------------------------------------------------
+--  The parts of the list
+-------------------------------------------------------------------------------
+-- The part a conversation stands in: a group's, else the whispers' (a character's, a Battle.net friend's).
+local function Part(talk)
+    return Talks.GROUPS[talk.kind] and "groups" or "whispers"
+end
+
+-- The parts folded away, as kept (saved data comes from older versions and from hand edits).
+local function Folds()
+    local folds = ns.store.talkFolds
+    if type(folds) ~= "table" then
+        folds = {}
+        ns.store.talkFolds = folds
+    end
+    return folds
+end
+
+local function Folded(key)
+    return Folds()[key] == true
+end
+
+-- The head of a part in the list, the same table always: part, and as the list was made last, folded and how many
+-- messages wait in it.
+local function Head(part)
+    heads[part.key] = heads[part.key] or { head = true, part = part, unread = 0 }
+    return heads[part.key]
+end
+
+-- The part of a conversation chosen by itself (your first whisper to somebody, a reply) shown, if it was folded away:
+-- true then.
+local function Unfold(talk)
+    if not talk or talk.pinned or talk.head then return false end
+    local folds, key = Folds(), Part(talk)
+    if not folds[key] then return false end
+    folds[key] = nil
+    return true
+end
+
+-- The list anew: the chat (unless it has a window of its own), the chat views, then the conversations found and the
+-- groups you are in though nobody spoke there yet, each in its part under that part's head (a part with none has no
+-- head); a part folded away shows only its head, while nothing is searched for. One of them is chosen while there are
+-- any: the one chosen before, if it is still there (also in a part folded away), else the first that is no head.
 local function Update()
     if not shown then return end
     Talks.Groups()
@@ -460,14 +565,36 @@ local function Update()
         elements[#elements + 1] = element
         listed = listed or element == open
     end
+    local parts = {}
     for _, talk in ipairs(Talks.list) do
         if (#talk.messages > 0 or Talks.Writable(talk)) and Listed(talk) then
-            elements[#elements + 1] = talk
+            local key = Part(talk)
+            parts[key] = parts[key] or {}
+            parts[key][#parts[key] + 1] = talk
             listed = listed or talk == open
         end
     end
+    for _, part in ipairs(PARTS) do
+        local talks = parts[part.key]
+        if talks then
+            local head = Head(part)
+            head.folded = not query and Folded(part.key)
+            head.unread = 0
+            elements[#elements + 1] = head
+            for _, talk in ipairs(talks) do
+                head.unread = head.unread + (talk.unread or 0)
+                if not head.folded then elements[#elements + 1] = talk end
+            end
+        end
+    end
     Board.Fill(box, elements)
-    if not listed then return Choose(elements[1]) end
+    if not listed then
+        local first
+        for _, element in ipairs(elements) do
+            if not element.head then first = element break end
+        end
+        return Choose(first)
+    end
     Title()
     Heading()
     Line()
@@ -491,6 +618,7 @@ end)
 Choose = function(talk)
     open = talk
     ns.Select.Clear()
+    if Unfold(talk) then Update() end -- (open is the one chosen already: Update chooses none)
     local pinned = talk and talk.pinned
     Talks.Read(not pinned and talk or nil)
     mine:SetShown(not pinned)
@@ -533,12 +661,23 @@ local function ViewMenu(owner, talk)
             end, 32)
         end))
         root:CreateButton(Core.Word("REMOVE", "Remove"), ns.Guard(function() Forget(talk) end))
+        -- On the screen as a chat window of its own beside the chat, once the full screen goes (ChatWindows.lua).
+        root:CreateCheckbox(ns.TEXT.onScreen, ns.Guard(function() return talk.view.screen == true end),
+            ns.Guard(function() ns.ChatWindows.Flip(talk.view) end))
     end))
+end
+
+-- A head clicked: its part folded away, or shown again.
+local function Fold(head)
+    local folds = Folds()
+    folds[head.part.key] = not folds[head.part.key] or nil
+    Update()
 end
 
 local function Click(row, button)
     local talk = row.talk
     if not talk then return end
+    if talk.head then return Fold(talk) end
     if button == "RightButton" then
         if talk.view then return ViewMenu(row, talk) end
         return Menu(talk)
@@ -726,7 +865,7 @@ function Conversations.Build(holder)
         row:SetScript("OnClick", function(self, button) ns.Safe("conversations", Click, self, button) end)
         row:SetScript("OnEnter", function(self) ns.Safe("conversations", Tip, self) end)
         row:SetScript("OnLeave", GameTooltip_Hide) -- unguarded: the game's own
-    end)
+    end, nil, RowHeight) -- a part's head lower than a row
     start = Board.Button(side, Core.Word("WHISPER", "Whisper"), 1, Start)
     remove = Board.Button(side, Core.Word("REMOVE", "Remove"), 1, Remove, start)
     add = Board.Button(side, ns.TEXT.newViewButton, 1, NewView)

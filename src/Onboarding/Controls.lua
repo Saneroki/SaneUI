@@ -28,6 +28,12 @@ local _, ns = ...
 --  around = true the choices are places round a bar (Controls.PLACES); with
 --  beside = true a control stands at the right of the one before it, without
 --  words of its own, that one narrower (Nameplates' place beside each count).
+--  A choice's value may be a table of several switches' values ({ expand =
+--  true, expandCorner = false }): chosen while each of them is so, set all
+--  together (Social's hot corner: not at all, a left click, the mouse). A tick
+--  the module answers itself ({ check = function() end, set = function(on)
+--  end, text, tip }): what is no switch of its own (Social's second chat on the
+--  screen, a chat view's), asked and set in the module's ns.Safe.
 --  Each shows the value in use (Core.Settings) and sets it through Core.Set,
 --  as a menu or a command does: the module is told and follows it, its options
 --  page shows it, its profile keeps it. One under another (parent) stands a
@@ -120,7 +126,29 @@ local function Dim(words, open, colour)
     words:SetTextColor(colour[1] * share, colour[2] * share, colour[3] * share)
 end
 
+-- A choice is the one in use: the switch is set to its value, or each switch of its table is.
+local function Chosen(options, key, value)
+    if type(value) ~= "table" then return options[key] == value end
+    for each, wanted in pairs(value) do
+        if options[each] ~= wanted then return false end
+    end
+    return true
+end
+
+-- A choice made: the switch set to its value, or each switch of its table; told once.
+local function Choose(name, key, value)
+    if type(value) ~= "table" then return ns.Window.Set(name, key, value) end
+    for each, wanted in pairs(value) do Core.Set(name, each, wanted) end
+    ns.Window.Changed()
+end
+
 -- A switch: a tick and its words, its tip on both.
+-- What a tick the module answers itself shows (its check), and setting it (its set): in ns.Safe, so its error is noted.
+local function Checked(option, options)
+    if option.check then return ns.Safe("setup tick", option.check) == true end
+    return options[option.key] ~= false
+end
+
 local function Tick(host, name, option, width)
     local row = CreateFrame("Frame", nil, host)
     row:SetSize(width, Controls.TICK)
@@ -135,11 +163,13 @@ local function Tick(host, name, option, width)
     tick:SetScript("OnClick", ns.Guard(function(self)
         local on = self:GetChecked() == true
         Core.Sound(on and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF")
-        ns.Window.Set(name, option.key, on)
+        if not option.set then return ns.Window.Set(name, option.key, on) end
+        ns.Safe("setup tick", option.set, on)
+        ns.Window.Changed()
     end))
     Core.Tip(tick, option.text, option.tip)
     function row.Refresh(_, options, open)
-        tick:SetChecked(options[option.key] ~= false)
+        tick:SetChecked(Checked(option, options))
         tick:SetEnabled(open)
         Dim(words, open)
     end
@@ -255,14 +285,14 @@ local function Around(host, name, option, width)
         button:SetPoint("TOPLEFT", row, "TOPLEFT", columns[at[2]], -(top + (at[1] - 1) * step))
         button:SetScript("OnClick", ns.Guard(function()
             Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
-            ns.Window.Set(name, option.key, choice[1])
+            Choose(name, option.key, choice[1])
         end))
         Core.Tip(button, choice[2], option.text)
         rounds[index] = { button = button, value = choice[1] }
     end
     function row.Refresh(_, options, open)
         for _, entry in ipairs(rounds) do
-            entry.button:SetChecked(options[option.key] == entry.value)
+            entry.button:SetChecked(Chosen(options, option.key, entry.value))
             entry.button:SetEnabled(open)
         end
         bar:SetAlpha(open and 1 or Controls.DIM)
@@ -296,14 +326,14 @@ local function Choice(host, name, option, width)
         label:SetText(choice[2])
         round:SetScript("OnClick", ns.Guard(function()
             Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
-            ns.Window.Set(name, option.key, choice[1])
+            Choose(name, option.key, choice[1])
         end))
         Core.Tip(round, option.text, option.tip)
         rounds[index] = { button = round, label = label, value = choice[1] }
     end
     function row.Refresh(_, options, open)
         for _, entry in ipairs(rounds) do
-            entry.button:SetChecked(options[option.key] == entry.value)
+            entry.button:SetChecked(Chosen(options, option.key, entry.value))
             entry.button:SetEnabled(open)
             Dim(entry.label, open)
         end
@@ -602,7 +632,9 @@ function Controls.Build(parent, name, keys, width)
         -- its own way ({ key = "...", text, choices }).
         local binding = type(key) == "table" and type(key.binding) == "string" and key
         local command = type(key) == "table" and type(key.macro) == "string" and key
-        local option = not (binding or command) and (type(key) == "table" and Worded(name, key) or Core.Described(name, key))
+        local check = type(key) == "table" and type(key.check) == "function" and key
+        local option = not (binding or command or check)
+            and (type(key) == "table" and Worded(name, key) or Core.Described(name, key))
         local hidden = option and type(option.hidden) == "function" and ns.Safe("hidden", option.hidden, options)
         local inset = option and option.parent and Controls.UNDER or 0
         local row
@@ -613,6 +645,9 @@ function Controls.Build(parent, name, keys, width)
         elseif command then
             row = Command(holder, command, room)
             option = { key = command.macro }
+        elseif check then
+            row = Tick(holder, name, check, room)
+            option = check
         else
             row = option and option.text and not hidden and Make(holder, name, option, room)
         end

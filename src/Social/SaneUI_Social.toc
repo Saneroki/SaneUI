@@ -43,6 +43,8 @@ Board.lua
 Guild.lua
 # The second chat of the full screen, in the conversations' list, with its own choice of chats
 Feed.lua
+# A chat view on the screen as a chat window of its own, beside the chat
+ChatWindows.lua
 # The friends list's panel of the full screen: what its lists share, you on Battle.net, then each list
 Contacts\Contacts.lua
 Contacts\Account.lua
@@ -59,3 +61,5 @@ Friends.lua
 Conversations.lua
 # The window: moved, sized, scrolled
 Window.lua
+# Its setup, step by step: the hot corner, the keys, the windows (the addon Onboarding's window draws it)
+Setup.lua

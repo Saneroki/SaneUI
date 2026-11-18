@@ -28,7 +28,7 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   are shown, found as a quick finder finds them (the letters in their order, *gld* finds *Guild*), in the
   message, the speaker's name or the chat's name. Esc empties it and every message is back.
 - **Full screen:** docked, left-click that screen edge (the game window's very edge, where the
-  chat window touches it; with *Hotcorner requires leftclick* off, the mouse pushed there is enough; docked in a corner, all the way into that corner): the window springs open to fill the whole screen, above the game's bars, on a
+  chat window touches it; with *Hotcorner requires leftclick* off, the mouse pushed there is enough; docked in a corner, all the way into that corner; with *Hotcorner* off, the edge does nothing and the key *Social's full screen (and back)* is the way in): the window springs open to fill the whole screen, above the game's bars, on a
   background that hides the game as much as set, every message there to read: while it stands full, none
   fades, wherever the mouse is. Nothing behind it takes the
   mouse: no click, no turn of the camera. On the way its corners start round, with a thin bronze trim, and
@@ -88,14 +88,20 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     you join, each a conversation of its own, the newest message first. Every party or raid you join (and
     every instance group) starts a new one, as a whisper does, named by the others in it (*Party: Thrall,
     Jaina +2*; a party that becomes a raid stays one conversation); only that group's chat goes there. When
-    you leave the group it stays in the list to read, and the line says you left it. The one
+    you leave the group it stays in the list to read, and the line says you left it. They stand in two
+    parts, not mixed (Saneroki, 2026-11-18): **Whispers** (characters and Battle.net friends), then **Groups**
+    (party, raid, instance), each under a head with the game's − before its name (its quest log's): a click
+    folds that part away (+), another shows it again, kept. Folded, its head counts the messages waiting in it
+    and is lit as a row is; a search finds in a folded part all the same, and a conversation chosen by itself
+    (your first whisper to somebody, a reply) shows its part again. The one
     chosen stands beside the list: the chat with its line to write in, as the window has it small; a chat
     view, the same bubbles but only the chats ticked for it, whatever the chat shows, every message in it to
     read; or a conversation. The chat's and a chat view's name line has *Chats*, the list of the chats each
     shows (the chat's are the same ticks as in the list on its line's name). **New chat view** (above
     *Whisper*) makes one more, as many as you like, showing nothing until you tick its chats: one for a
     channel (Trade, a channel of your own), one for your guild and officers, any mix. A right click on a chat
-    view renames or removes it. Each chat view is a window for the layouts too (the dropdown *Windows*), with
+    view renames or removes it, or puts it on the screen as a chat window of its own (*Its own window on the
+    screen*, below). Each chat view is a window for the layouts too (the dropdown *Windows*), with
     its own *Chats* on its head; the first, the **second chat**, shows your whispers, party, raid, instance,
     guild and officer chat at first. A row with messages you have not seen yet is lit with the game's own
     new-message glow of its chat tabs, in that chat's colour, and counts them: a conversation's waiting to be
@@ -139,6 +145,18 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **Click a speaker's name** to whisper to them, right click it for their menu, as in the game's chat.
   Its *Set Alias* (Core's) gives the character a name of your own: their messages, and the friends list,
   show it in place of theirs (a click still whispers to the character), and the search finds it.
+- **More chat windows on the screen** (Saneroki, 2026-11-18: "the option to have more then one chat window on the
+  screen if people want that"): the list behind the chat button (or the chat's name in the line) has a last column,
+  *Chat windows*: a tick for each chat view (the second chat first: your whispers, groups and guild) puts it on the
+  screen as a chat window of its own beside the chat; *New Window* makes one more and opens its list, to tick what it
+  shows. The same as a chat view's right click on the full screen. Each looks and fades as the chat does: no
+  background, a click goes through but on a link or a name, the newest at the bottom, the wheel brings every message
+  back, the settings of *Animations*. Moved, sized and docked in Edit Mode, its name on its box there, its place kept
+  per profile. The mouse over it shows its name at its top and its button at its lower left: a click there opens its
+  list, *Rename Window*, *Close Window* (off the screen; the chat view stays, on the full screen) and the chats it
+  shows. Showing nothing, its name, its button and what to do stand there, so it is never lost unseen. You write in
+  the chat's line (Enter). While the chat fills the screen they are out of sight (the views are on the full screen),
+  and while the chat is put away.
 - **Write:** press Enter or `/` as always, or click the chat button in the window's lower left corner
   (there with the mouse over the window, as high as the line to write in, which opens right of it).
   The line to write in opens at the bottom of the window and the messages move up above it. It is the
@@ -165,6 +183,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **A message cut by the window's top edge is not shown** until it fits whole.
 - **The ring around a class icon** says what the speaker is to you: yellow a friend, green a guild
   member, purple somebody of your raid, blue of your party (the first that holds). White: a stranger.
+- **Set up step by step** (Saneroki, 2026-11-18): the button at the top of the options page, or `/sane setup social`
+  (`/sane setup chat`), and by itself once after the login with the other setups (the addon Onboarding's window): what
+  the chat is; the hot corner, one choice of three: *Not at all: only by a key*, *With a left click in it*, *When the
+  mouse goes into it*, the tutorial arrow pointing into the corner the chat is docked in; the keys (*Social's full
+  screen*, *The chat window*); the windows (*Chat window*, *Show the game's chat too*, *The second chat on the screen*,
+  *Group finder*); the full screen (the conversations' parts, chat views, the dropdown *Windows*).
 - **Settings** (Esc > Options > AddOns > SaneUI > Social), in two tabs:
   - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (off), *Save chat history* (on) with *Messages kept* (slider
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
@@ -178,6 +202,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
     | Line | At first |
     | --- | --- |
     | [x] Can expand to fullscreen (off: the screen edge does nothing; all below greyed out) | on |
+    | [x] Hotcorner (off: the screen edge does nothing; the full screen opens by its key) | on |
+    | [x] Hotcorner requires leftclick (off: the mouse pushed there is enough; greyed out with Hotcorner off) | on |
     | Animation type: Use global type (SaneUI > Appearance), Glide, Swing, Even, Instant | Use global type |
     | Background opacity, slider 0 to 100 % (100: the game is hidden) | 50 % |
     | Background texture: Solid black, or one of the game's own, as for the bubbles: Marble, Rock, Slate, Iron, Night | Solid black |
@@ -256,7 +282,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 - **The game's own chat is out of sight while this window is open** (its windows, tabs and buttons). The setting
   *Show the game's chat too* keeps it on show next to this window.
   `/sane social` (or `/sane chat`, its word from before) switches between the two: our window, or the game's chat as it was. So does a key
-  of your choice (Esc > Options > Keybindings, section *SaneUI*: *Show or hide the chat window*). The game's chat goes
+  of your choice (Esc > Options > Keybindings, section *SaneUI*: *Show or hide the chat window*); another there,
+  *Social's full screen (and back)*, fills the screen and brings it back (the chat window first, if it was put away),
+  as the hot corner does. The game's chat goes
   on collecting every line meanwhile, so nothing is missing when it comes back.
 - **In a fight or a dungeon** the game may give addons no chat at all (*chat lockdown*). For that time
   the game's own chat is on show, whatever the setting; afterwards it goes out of sight again.
@@ -706,6 +734,50 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   and the last one's colour in a table made once for each view, `tints`, both by view); a list of it
   shown clears that (`Conversations.Said` redraws the rows). The chat's own unseen are counted by the window
   (`Window.Unread`: its messages that come while it stands out of sight on the full screen).
+- **Chat windows** (`ChatWindows.lua`): a chat view on the screen as a window of its own, `view.screen = true` (kept with
+  the views, account-wide; `Feed.Views` keeps it true or nothing). Made the first time it is wanted: a frame on
+  `UIParent` (`MEDIUM`, `Layout.LEVEL`, as the chat), Core's window of the kind `screen` with `edge = false` (it never
+  fills the screen), `key = "view:<id>"` (its place in the profile's places, `Social:view:<id>`), `title` its name (its
+  box in Edit Mode; `Feed.Rename` → `ChatWindows.Retitle`), its first place above the chat's first, each new one a
+  `Core.Window.CASCADE` step aside. Its list is the game's `WowScrollBoxList` and `MinimalScrollBar` as the chat's, its
+  name over it (`NAME` 18), and it is a list of its view as Feed's are (`Feed.Join`: `Added`, `Refill`, `Rewrap`,
+  `Point(nil)` when the view is removed); shown, its view's unseen are cleared (`Feed.Saw`). Newest at the bottom
+  (`Settle`), cut rows hidden (`Trim`, again a frame later), a new message slides the others up (`Core.Motion.Slide`).
+  Its fading goes by a message's age alone (`entry.at`, the chat's settings: in over *Fade-in time*, out after *Fade
+  messages after* over *Fade-out time* to the opacity set), not by the fade kept on the message (`Fade.lua`, the
+  chat's): the same message stands in both, revealed in one and not the other. The wheel lifts all (`lift`, a table
+  `Fade.To` moves, so it fades in and out as a message does); the mouse leaving at the newest, or the list back there
+  with the mouse away, lets them fade again. An `OnUpdate` only while a row in view or the lift moves, then one timer
+  (`C_Timer.After`) for the next row in view to begin fading (`dueAt`: an older timer does nothing). The mouse's coming
+  only (`Core.Hover`): its name and the button (the game's chat button art) while it is over the window, its list is
+  open or it shows nothing (then a word on what to do, `windowPick` / `windowQuiet`); the button's list
+  (`MenuUtil.CreateContextMenu`, `ns.Menu.Button`): its name, *Rename Window* (`RENAME_CHAT_WINDOW`, `Core.AskText`),
+  *Close Window* (`CLOSE_CHAT_WINDOW`), the chats it shows (`Feed.Flip`). On the screen while the chat stands at its
+  size (`ChatWindows.Stand`: `Window.Show`, `Window.Hide`, `Filled`); `Window.Animate` tells them (`Animate`). The
+  chat's list has the column *Chat windows* (`Menu.lua`: a tick per view, `ChatWindows.Flip`; *New Window*,
+  `NEW_CHAT_WINDOW`, `ChatWindows.Make`: a view named `newWindow`, on the screen, its list opened a frame later).
+  Every step in `ns.Safe("chat windows", ...)`: a failure is noted, the chat goes on.
+- **The conversations' parts** (`Conversations.lua`): after the chat and the chat views the list holds a head per part
+  with conversations in it (`PARTS`: `whispers`, then `groups` by `Talks.GROUPS`; `heads[key]`, the same table always:
+  `head`, `part`, `folded`, `unread`), lower than a row (`Layout.TALK_PART`, 24: `Board.List`'s new `extent`). A head:
+  the game's `UI-MinusButton-Up` / `UI-PlusButton-Up` on a texture of its own (the row's icon is cut round), its name
+  in gold, folded the sum of its `unread` at its right and the new-message glow in its chat's colour (`WHISPER`,
+  `PARTY`). A click folds or shows (`store.talkFolds[key] = true`, mended when it is not a table); while the search
+  has words nothing is folded. The one chosen stays chosen in a folded part; one chosen by itself (`Choose` from
+  `Added` or `Opened`) shows its part again (`Unfold`). The first chosen when the one before is gone is the first that
+  is no head.
+- **The setup** (`Setup.lua`, `Core.Onboarding.Add`; the addon Onboarding's window draws it): steps `intro`, `corner`,
+  `keys`, `windows`, `full`. The corner's choice is one control over three switches (Onboarding's choice of a table,
+  `parent = false` so it is never greyed out): `{ expand = true, expandCorner = false }` (not at all),
+  `{ expand, expandCorner, expandClick = true }` (a left click), `{ expand, expandCorner, expandClick = false }` (the
+  mouse). `expandCorner`, *Hotcorner*, is Social's own switch right under *Can expand to fullscreen*, read by Core's
+  edge (`Edge.lua`: off, no strip and no square; the full screen still fills by `Window.Full`, the key
+  `SANEUI_SOCIAL_FULL` in `Bindings.xml`, `ns.Full`, behind `ns.Safe`); *Hotcorner requires leftclick* stands under
+  both. The keys' step binds `SANEUI_SOCIAL_FULL` and `SANEUI_SOCIAL`; the windows' step has `window`, `showNative`, a
+  tick the module answers (`check`/`set`: the first view's `screen`, `ChatWindows.Put`) and `boardFinder`. Each step a
+  board on the stage: a drawn screen with the chat where it is docked (`Window.Zone`), the game's tutorial arrow
+  (`NPE_ArrowRight`, its glow) into that corner as the choice says, the keys bound now, the windows ticked, a drawn
+  full screen with the parts.
 - **The full screen's windows** (`Board.lua` on Core's board, `Core.Board`, Doc/guides/windows.md section 7, *The
   board*): Social gives Core its windows (`talks`, `friends`, `guild`: each a part's `Build`, `Show`, `Size`,
   `Search` behind `ns.Safe`, and its `least`; the guild window's `present` asks `Guild.Size`) and the first
@@ -776,7 +848,12 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   game's channels and their wishes (the list, once a zone, only where offered, not in lockdown, a profile's
   wishes, with the window closed), the switch *Chat window*, Core's window and the game's chat agreeing
   whichever way it changed, the key, the full screen's panels and the conversations' list dragged to its
-  width, words picked to copy (lit while dragged, waiting for Ctrl+C, let go by the next press or key), and
+  width, words picked to copy (lit while dragged, waiting for Ctrl+C, let go by the next press or key), the
+  conversations' parts (their heads, folded and kept, counted and lit, found in a search, shown again for one chosen by
+  itself), the chat windows (made from the chat's list and a view's right click, Core's window and its key, fading by
+  age, the wheel, their button's list, New Window, out of sight with the chat, messages not seen, a view removed), both
+  keys (the full screen's also with the hot corner off), the setup (its steps, the corner's three choices, the second
+  chat's tick, every board drawn), and
   Retail (`W.Play`: the group finder's tab and switch away, the game's own finder opened, its unblock, raid locks).
   They cannot judge the look.
 
@@ -801,6 +878,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
 | `Board.lua` | The full screen's windows on Core's board, its first layout, the guild window held in its panel, the search to all; the list, row and buttons the friends list's tabs share |
 | `Guild.lua` | The guild window on the full screen: the one the guild key opens (the game's, or the one that answers the key instead), held at its top right |
 | `Feed.lua` | The chat views: as many as you make, each its own ticks, rows of the conversations' list and windows of the layouts, a list of its own wherever one stands, their messages not seen counted |
+| `ChatWindows.lua` | A chat view on the screen as a chat window of its own beside the chat: Core's window, moved and sized in Edit Mode, fading by age, its button's list (rename, close, what it shows), New Window |
+| `Setup.lua` | Social's setup, step by step, for the addon Onboarding's window: the hot corner (not at all, a left click, the mouse), the keys, the windows, the full screen; a drawn board for each |
 | `Talks.lua` | The conversations: whispers, and each group you join (its chat apart, named by its members, ended when you leave), kept per character. Knows no frames |
 | `Conversations.lua` | The conversations' panel at the full screen's left: the chat, the chat views and the conversations in a list (rows with messages not seen lit), the one chosen beside it, a conversation's line to write in, *New chat view* |
 | `Friends.lua` | The friends list's panel: you on Battle.net at its head, its tabs, the search box and the filter, the list of the tab chosen |
@@ -822,6 +901,11 @@ a group, a close button, a sign besides colour for what a speaker is to you. The
 style in place of the game's (Saneroki, 2026-10-21; `Doc/guides/interface-style.md`, *To redesign*).
 
 ## History
+- 2026-11-18 — More than one chat window on the screen (Saneroki): a chat view stands on the screen as a chat window of
+  its own (`ChatWindows.lua`, new in the TOC; the chat's list's column *Chat windows*, *New Window*, a view's right
+  click, its own button). The conversations in two parts, Whispers and Groups, under heads that fold. Social's setup
+  (`Setup.lua`, new in the TOC): the hot corner not at all, by a left click or by the mouse (the switch *Hotcorner*,
+  `expandCorner`, read by Core's edge), a key of its own for the full screen (`SANEUI_SOCIAL_FULL`), the windows.
 - 2026-11-07 — Discord's messages on the left, as a speaker's (Saneroki): the guild's Discord stream is read
   from its event (`CHAT_MSG_GUILD_DISCORD`), not taken as a note in the middle; one from Discord in the guild's
   chat is never yours.

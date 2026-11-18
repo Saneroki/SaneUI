@@ -51,6 +51,9 @@ ns.TEXT = {
     reset = "the chat window is back at its first place and size.",
     about = "shows or hides the chat window (/sane social reset: first place and size)",
     binding = "Show or hide the chat window", -- its key, in the game's key bindings under SaneUI (Bindings.xml)
+    setup = "Set up step by step",
+    setupTip = "A window that walks you through Social, a page at a time: the hot corner (not at all, a click, the mouse), a key for the full screen, and which chat windows you want. Also /sane setup social.",
+    bindingFull = "Social's full screen (and back)", -- the full screen's key, beside it
     unread = "a chat message could not be read",
     solid = "Solid colour", -- what the bubbles stand on, the first of the choices (Core.Skin.Choices)
     -- The dropdown Classic windows while the window fills the screen: the game's own windows it stands for.
@@ -68,6 +71,15 @@ ns.TEXT = {
     viewRemove = "Remove the chat view %s?",
     rename = "Rename",
     feedFilter = "Chats",
+    -- A chat view on the screen as a chat window of its own (ChatWindows.lua): the column of the chat's list, a new
+    -- one's name, the line on a view's right click, its button's tip, what it says while it shows nothing.
+    windows = "Chat windows",
+    newWindow = "Chat window %d",
+    onScreen = "Its own window on the screen",
+    windowRename = "Name of the chat window:",
+    windowTip = "Click for its list: rename or close this window, and tick what it shows. Move and size it in Edit Mode. You write in the chat's line (Enter).",
+    windowPick = "Nothing to show yet: click the button in the lower left corner and tick what this window shows.",
+    windowQuiet = "Nothing said here yet.",
     friends = Core.Word("FRIENDS", "Friends"),
     online = "%d / %d online",
     noFriends = "No friends yet. Add Friend adds one.",
@@ -112,6 +124,10 @@ ns.TEXT = {
     talkLocked = "while chat is locked down (a fight, a dungeon), only the game's own chat line can send. The message is still in the line.",
     talkRemove = "Remove the conversation with %s and all its messages?",
     groupOver = "You left this group.",
+    -- The parts of the conversations' list, each under a head that folds it away (Conversations.lua).
+    whispers = "Whispers",
+    groups = "Groups",
+    partTip = "Click to fold this part of the list away, or to show it again. Its messages waiting to be read are counted on its head.",
     alliesWaiting = "The game has not read your recent allies yet. Its own friends list does, on its Recent Allies tab (Classic windows: Friends list).",
     today = "Today",
     yesterday = "Yesterday",
@@ -142,6 +158,9 @@ for _, key in pairs(ns.SHOWS) do SHOWN[key] = true end
 -- The page Chat has two tabs: General (the switches that name no tab) and Appearance.
 local LOOK = "Appearance"
 local OPTIONS = {
+    -- The setup, step by step (Setup.lua, the window of the addon Onboarding).
+    { key = "setup", text = ns.TEXT.setup, tip = ns.TEXT.setupTip,
+      button = function() Core.Onboarding.Open(ns.name) end },
     { key = "window", default = true, text = "Chat window", header = "Chat window",
       headerTip = "This window next to the game's chat, and what it keeps between sessions.",
       tip = "This window, in place of or next to the game's chat. Off: only the game's chat, as it was." },
@@ -218,6 +237,19 @@ for index, option in ipairs(OPTIONS) do
     if option.tab == LOOK then last = index end
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
+-- The hot corner on or off apart from the full screen (Saneroki, 2026-11-18: "not at all or with left click or with just
+-- moving their mouse there"; Core's edge reads it): off, the screen edge does nothing, and the full screen still opens
+-- by its key (Bindings.xml). Right under Can expand to fullscreen; Hotcorner requires leftclick under it.
+for index, option in ipairs(OPTIONS) do
+    if option.key == "expand" then
+        table.insert(OPTIONS, index + 1, { key = "expandCorner", default = true, text = "Hotcorner", tab = LOOK, parent = "expand",
+            tip = "The screen edge or corner the window is docked to fills the screen and brings it back. Off: it does nothing; the full screen opens by its key (Esc > Options > Keybindings, SaneUI)." })
+        break
+    end
+end
+for _, option in ipairs(OPTIONS) do
+    if option.key == "expandClick" then option.parent = { "expand", "expandCorner" } end
+end
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }
@@ -457,6 +489,15 @@ function ns.Toggle()
     Choose(not ns.options.window)
 end
 BINDING_NAME_SANEUI_SOCIAL = ns.TEXT.binding
+
+-- Social's full screen and back, by a key of its own (Bindings.xml): the chat window first, if it was put away. As the
+-- hot corner, only while Can expand to fullscreen is on.
+function ns.Full()
+    if ns.off then return ns.Print(ns.TEXT.stopped) end
+    if not ns.options.window then Choose(true) end
+    ns.Window.Full()
+end
+BINDING_NAME_SANEUI_SOCIAL_FULL = ns.TEXT.bindingFull
 
 Core.Command("social", ns.TEXT.about, function(rest)
     if ns.off then

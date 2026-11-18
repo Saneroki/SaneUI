@@ -338,6 +338,7 @@ function Window.Animate()
     slide:SetTime(options.slideTime)
     if not slides then slide:Stop() end
     Window.Refade(not all) -- all off: what fades now is where it goes at once
+    ns.Safe("chat windows", ns.ChatWindows.Animate) -- the chat views on the screen fade and slide as the chat
 end
 
 -- Every message anew: in if it is to be seen, out if not, each from where it is now. instantly: no
@@ -528,6 +529,8 @@ local function Filled(full)
         ns.Board.Hide()
         Seat()
     end
+    -- The chat views on the screen as windows of their own stand with the chat at its size; full, they are on the full screen.
+    ns.Safe("chat windows", ns.ChatWindows.Stand, not full and frame:IsShown())
 end
 
 -- How it fills the screen: as its own setting says, or the general one; all animations off, at once.
@@ -562,6 +565,19 @@ end
 local function Sized()
     ns.Guarded(Resettle)
     ns.Guarded(ns.Input.Grow)
+end
+
+-- The full screen and back, by its key (Social.lua, ns.Full): as the hot corner does, only while it may fill the screen
+-- (Can expand to fullscreen; Core's edge refuses it otherwise, and in Edit Mode).
+function Window.Full()
+    if not frame or not frame:IsShown() or not handle.edge then return end
+    handle.edge:Fill(not handle.edge.full)
+end
+
+-- The zone the chat is docked to now ("BOTTOMLEFT" at first), or nil while it stands free or is not made yet: its hot
+-- corner's place (Setup.lua).
+function Window.Zone()
+    return handle and handle.zone or nil
 end
 
 -- Its first place and size (/sane social reset).
@@ -666,6 +682,7 @@ function Window.Show()
     Window.Refade(true) -- what came or ran out meanwhile is as it is now, at once
     Window.Native()
     ns.Input.Take(frame, Room, column)
+    ns.Safe("chat windows", ns.ChatWindows.Stand, not (handle.edge and handle.edge.full))
 end
 
 -- Hidden, the game's chat is back as it was.
@@ -683,6 +700,7 @@ function Window.Hide()
     ns.Input.Release()
     ns.Native.Show()
     Back(true)
+    ns.Safe("chat windows", ns.ChatWindows.Stand, false)
 end
 
 -- Put away (the switch Chat window off, also at login): the window is made, out of sight, so the game's chat

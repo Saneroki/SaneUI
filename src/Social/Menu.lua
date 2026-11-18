@@ -6,7 +6,9 @@ local _, ns = ...
 --  chat button), in columns: the chats you can write in right now, the one you
 --  write in marked (Channels.lua); everything the window can show, each with a
 --  tick; the game's own channels, each ticked while you are in it, on every
---  character (Join.lua). It is the game's menu (MenuUtil), in its grid.
+--  character (Join.lua); the chat windows: each chat view ticked while it stands
+--  on the screen as a window of its own, and New Window (ChatWindows.lua). It
+--  is the game's menu (MenuUtil), in its grid.
 --
 --  It stays open while you choose: no choice closes it, and nor does the mouse
 --  leaving the window, though the window's button goes out of sight then. Only
@@ -17,6 +19,7 @@ local _, ns = ...
 --  does for a whisper. That is our code changing the game's edit box: see the
 --  README on taint.
 -------------------------------------------------------------------------------
+local Core = SaneUI.Core
 local Menu = {}
 ns.Menu = Menu
 
@@ -49,6 +52,10 @@ local function Switch(chat) ns.Guarded(ns.Channels.Flip, chat.group) end
 -- The game's channels are apart from the window: a failure there is noted, the window stays.
 local function IsIn(name) return ns.Safe("channels", ns.Join.In, name) end
 local function Flip(name) ns.Safe("channels", ns.Join.Flip, name) end
+-- The chat windows are apart from the chat too.
+local function IsApart(view) return ns.Safe("chat windows", ns.ChatWindows.Shown, view) end
+local function Apart(view) ns.Safe("chat windows", ns.ChatWindows.Flip, view) end
+local function NewWindow() ns.Safe("chat windows", ns.ChatWindows.Make) end
 
 -- The game closes a menu when one of its radio lines is chosen; its check boxes leave it open by themselves.
 local function WriteLine(root, channel)
@@ -76,15 +83,25 @@ local Gone = ns.Guard(function(menu)
     if menu == open then open = nil end
 end)
 
+local function WindowLine(root, view)
+    root:CreateCheckbox(view.name, IsApart, Apart, view)
+end
+
 local function Fill(_, root)
     local writes, shows = ns.Channels.List(), ns.Channels.Showable()
     local channels = ns.Safe("channels", ns.Join.List) or {}
-    local rows = math.max(#writes, #shows, #channels)
-    root:SetGridMode(MenuConstants.VerticalGridDirection, #channels > 0 and 3 or 2, GAP)
+    local views = ns.Feed.Views()
+    local rows = math.max(#writes, #shows, #channels, #views + 1) -- the chat windows' column ends with New Window
+    root:SetGridMode(MenuConstants.VerticalGridDirection, #channels > 0 and 4 or 3, GAP)
     root:AddMenuReleasedCallback(Gone)
     Column(root, ns.TEXT.writeIn, writes, rows, WriteLine)
     Column(root, ns.TEXT.showing, shows, rows, ShowLine)
     if #channels > 0 then Column(root, ns.TEXT.everywhere, channels, rows, ChannelLine) end
+    -- The chat windows: each chat view, ticked while it stands on the screen as a window of its own; one more.
+    root:CreateTitle(ns.TEXT.windows)
+    for _, view in ipairs(views) do WindowLine(root, view) end
+    root:CreateButton(Core.Word("NEW_CHAT_WINDOW", "New Window"), NewWindow)
+    for _ = #views + 2, rows do root:CreateSpacer() end
 end
 
 -- Closes the list; true if it was open.

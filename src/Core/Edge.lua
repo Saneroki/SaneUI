@@ -106,6 +106,12 @@ local Core = SaneUI.Core
 --  click in the strip or the square fills the screen, and another there brings
 --  the window back. The strips take the left clicks then (nothing under them
 --  gets them). Switched off, the mouse's coming is enough, as above.
+--
+--  A module may describe the switch Hotcorner too (expandCorner, on unless it is
+--  false; Social's, Saneroki, 2026-11-18: the hot corner "not at all or with
+--  left click or with just moving their mouse there"): off, the window has no
+--  strip and no square, the edge does nothing, and it still fills the screen by
+--  its key or its full screen button, as Can expand to fullscreen allows.
 -------------------------------------------------------------------------------
 local Edge = {}
 Core.Edge = Edge
@@ -130,8 +136,9 @@ Edge.SOLID = "Solid black"
 local BLACK = { 0, 0, 0 }
 
 -- The section's switches, as a window without settings of its own has them (edge = true).
-Edge.DEFAULTS = { expand = true, expandClick = true, motion = Core.Motion.GLOBAL, expandOpacity = 50, expandTexture = "solid" }
-Edge.KEYS = { expand = true, expandClick = true, motion = true, expandOpacity = true, expandTexture = true }
+Edge.DEFAULTS = { expand = true, expandCorner = true, expandClick = true, motion = Core.Motion.GLOBAL, expandOpacity = 50,
+                  expandTexture = "solid" }
+Edge.KEYS = { expand = true, expandCorner = true, expandClick = true, motion = true, expandOpacity = true, expandTexture = true }
 for key, value in pairs(Core.Shape.DEFAULTS) do
     Edge.DEFAULTS[key], Edge.KEYS[key] = value, true
 end
@@ -577,7 +584,8 @@ local function Strips(edge)
     for _, strip in pairs(edge.strips) do
         if strip.SetMouseClickEnabled then strip:SetMouseClickEnabled(clicks) end
     end
-    local zone = edge.zone and edge.settings.expand and Core.Dock.ZONES[edge.zone]
+    local hot = edge.settings.expand and edge.settings.expandCorner ~= false -- the edge fills the screen at all
+    local zone = edge.zone and hot and Core.Dock.ZONES[edge.zone]
     local corner = zone and (zone.left or zone.right) and (zone.top or zone.bottom) and zone[1] -- TOPLEFT, ...
     local width = zone and Pixels(edge.frame, corner and Edge.CORNER or Edge.PIXELS)
     for side in pairs(SIDES) do

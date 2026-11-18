@@ -307,6 +307,12 @@ local function Switches(name)
             local key = type(entry) == "string" and entry or type(entry) == "table" and type(entry.key) == "string"
                 and entry.key
             if key then keys[key] = true end
+            -- A choice that sets several switches together (Social's hot corner): each of them is the setup's too.
+            for _, choice in ipairs(type(entry) == "table" and type(entry.choices) == "table" and entry.choices or {}) do
+                if type(choice[1]) == "table" then
+                    for each in pairs(choice[1]) do keys[each] = true end
+                end
+            end
         end
     end
     return keys

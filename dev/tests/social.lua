@@ -777,9 +777,13 @@ check(editBox.kind == "GUILD" and editBox.sticky == "GUILD" and editBox.active a
 menu[8].fn(menu[8].data)
 check(editBox.kind == "CHANNEL" and editBox.target == 2 and menu[8].checked(menu[8].data) and not menu[7].checked(menu[7].data), "a channel is chosen by its number")
 ;(function() -- the list in columns, open until a click outside it or on its button
-    check(menu.grid[1] == MenuConstants.VerticalGridDirection and menu.grid[2] == 2 and menu.grid[3] > 0 and #menu % 2 == 0
-        and menu[#menu / 2 + 1].title == "Show in the window" and menu[#menu / 2].spacer,
+    check(menu.grid[1] == MenuConstants.VerticalGridDirection and menu.grid[2] == 3 and menu.grid[3] > 0 and #menu % 3 == 0
+        and menu[#menu / 3 + 1].title == "Show in the window" and menu[#menu / 3].spacer,
         "the chats to write in and what the window shows stand in columns of their own, the shorter filled up to the longest")
+    local windows = 2 * #menu / 3 + 1
+    check(menu[windows].title == "Chat windows" and menu[windows + 1].text == "Second chat"
+        and not menu[windows + 1].checked(menu[windows + 1].data) and menu[windows + 2].text == "New Window" and menu[#menu].spacer,
+        "the last column: each chat view, unticked while it is no window of its own on the screen, then New Window")
     check(menu[5].response == MenuResponse.Refresh, "choosing a chat leaves the list open, as the ticks do by themselves")
     check(menu.owner == window, "it belongs to the window: the game closes a menu with its owner, and the chat button goes with the mouse")
     check(label:HandlesGlobalMouseEvent("LeftButton", "GLOBAL_MOUSE_DOWN") and not label:HandlesGlobalMouseEvent("RightButton", "GLOBAL_MOUSE_DOWN"),
@@ -1432,6 +1436,15 @@ names.setting:SetValue(true)
 check(meta(rows[1])._text == "|cffffffffS|r  <" .. Log.list[1].time .. ">", "and in short again")
 
 -- What the window shows: the ticks in the list
+-- The lines of a column of the list, under its title and up to the next column's, the spacers left out. (Kept on the
+-- stand-in, not a local: the main chunk is at Lua's 200 locals.)
+function W.Column(list, title)
+    local lines, under = {}, false
+    for _, item in ipairs(list) do
+        if item.title then under = item.title == title elseif under and not item.spacer then lines[#lines + 1] = item end
+    end
+    return lines
+end
 open()
 label._scripts.OnClick(label)
 menu = W.menus[#W.menus]
@@ -1445,7 +1458,7 @@ end
 check(table.concat(shows, ", ") == "Say, Yell, Emote, Whisper, Party, Raid, Instance, Guild, Officer, Creature messages, Pings, Loot, money and experience, Battlegrounds, Pet battles, Channel joins and leaves, System messages, Addon messages, 1. General, 2. Trade, 3. Muted",
     "beside the chats to write in, the list has every kind of chat and every channel you are in")
 ns.Menu.Close()
-local saying, shownBefore = menu[#menu / 2 + 2], #box.provider.list
+local saying, shownBefore = W.Column(menu, "Show in the window")[1], #box.provider.list
 check(saying.checked(saying.data) and shownBefore == #Log.list, "all of them ticked at first: everything is shown")
 saying.fn(saying.data)
 local said = 0
@@ -1458,7 +1471,7 @@ W.Fire("CHAT_MSG_GUILD", "shown", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 1,
 check(#box.provider.list == shownBefore - said + 1, "one of another chat is")
 saying.fn(saying.data)
 check(saying.checked(saying.data) and Core.Store("Social").options.mute.SAY == nil and #box.provider.list == #Log.list, "ticked again, they are all back")
-local trade = menu[#menu - 1]
+local trade = W.Column(menu, "Show in the window")[#W.Column(menu, "Show in the window") - 1]
 check(trade.text == "2. Trade" and trade.data.group == "CHANNEL:Trade", "a channel is known by its own word, not its number")
 do -- The game's own word, whatever the number it has now and the name it shows
     local function Said(number, name)
@@ -1494,8 +1507,7 @@ local function count(group)
     return found
 end
 local everything, works = #box.provider.list, 0
-for index = #menu / 2 + 2, #menu do
-    local tick = menu[index]
+for _, tick in ipairs(W.Column(menu, "Show in the window")) do
     local group, had = tick.data.group, count(tick.data.group)
     local wasOn = tick.checked(tick.data)
     if not wasOn then tick.fn(tick.data) had = count(group) end
@@ -1507,7 +1519,7 @@ for index = #menu / 2 + 2, #menu do
     if not wasOn then tick.fn(tick.data) end
     if off and on then works = works + 1 end
 end
-check(works == #menu / 2 - 1 and #box.provider.list == everything, "every tick in the list hides its messages, and only those, and brings them back")
+check(works == #W.Column(menu, "Show in the window") and #box.provider.list == everything, "every tick in the list hides its messages, and only those, and brings them back")
 close()
 
 -- A few kinds of messages have a switch of their own in the settings, the same as their tick in the list
@@ -2566,9 +2578,12 @@ do
     W.Wait(0.1) -- the list anew a frame later
     local thrall = Talks.by["W:Thrall-Stub"]
     check(thrall and thrall.kind == "WHISPER" and thrall.with == "Thrall-Stub" and thrall.class == "SHAMAN" and thrall.unread == 1
-        and #rows.provider.list == 3 and rows.provider.list[3] == thrall and rows.rows[3].top._text == "Thrall"
-        and rows.rows[3].bottom._text == "are you coming?" and rows.rows[3].icon._atlas == "classicon-shaman",
+        and #rows.provider.list == 4 and rows.provider.list[4] == thrall and rows.rows[4].top._text == "Thrall"
+        and rows.rows[4].bottom._text == "are you coming?" and rows.rows[4].icon._atlas == "classicon-shaman",
         "a whisper starts a conversation with its sender, under the chats: their class icon, their name, what they said")
+    check(rows.provider.list[3].head and rows.rows[3].top._text == "Whispers" and rows.rows[3].fold:IsShown()
+        and rows.rows[3].fold._texture:find("MinusButton") and not rows.rows[3].icon:IsShown() and not rows.rows[4].fold:IsShown(),
+        "the whispers stand in a part of their own, under its head: the game's - before its name")
     click(rowOf(thrall))
     check(thrall.unread == 0 and not column:IsVisible() and messages:IsVisible() and edit:IsVisible() and not filter:IsShown(),
         "chosen, it is read, beside the list in the chat's place")
@@ -2588,7 +2603,7 @@ do
     edit.focus = false
     open()
     W.Wait(0.1)
-    check(not editBox:IsShown() and edit:HasFocus() and rows.provider.list[3] == thrall and not column:IsVisible(),
+    check(not editBox:IsShown() and edit:HasFocus() and rows.provider.list[4] == thrall and not column:IsVisible(),
         "Enter while a conversation is chosen: the game's line closes again, the conversation's own has the cursor")
     edit.focus = false
     open()
@@ -2603,8 +2618,8 @@ do
     W.Wait(0.1)
     local jaina = Talks.by["B:Jaina#1234"]
     check(jaina and jaina.kind == "BN_WHISPER" and jaina.name == "|Kq7|k" and jaina.unread == 1
-        and rows.provider.list[3] == jaina and rows.rows[3].icon._texture == "Interface\\FriendsFrame\\Battlenet-Portrait"
-        and rows.rows[3].count._text == "1" and talks.title._text == "Conversations (1)" and messages.provider.list[2].text == "are you coming?",
+        and rows.provider.list[4] == jaina and rows.rows[4].icon._texture == "Interface\\FriendsFrame\\Battlenet-Portrait"
+        and rows.rows[4].count._text == "1" and talks.title._text == "Conversations (1)" and messages.provider.list[2].text == "are you coming?",
         "a Battle.net friend's whisper: their own conversation, first, its count waiting, the title counting all; the one chosen stays")
     click(rowOf(jaina))
     check(jaina.unread == 0 and talks.title._text == "Conversations" and texts(messages) == "Today | raid at 8?",
@@ -2632,12 +2647,26 @@ do
     W.Fire("GROUP_ROSTER_UPDATE")
     W.Wait(0.1)
     local party = Talks.by["G:Party-1"]
-    check(party and party.kind == "PARTY" and rows.provider.list[5] == party and rows.rows[5].top._text == "Party: Thrall, Jaina"
+    check(party and party.kind == "PARTY" and rows.provider.list[7] == party and rows.rows[7].top._text == "Party: Thrall, Jaina"
         and #party.messages == 0, "a party joined: a conversation of its own, named by the others in it, to write in though nobody spoke yet")
     W.Fire("CHAT_MSG_PARTY", "pull now", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 8, THRALL)
     W.Wait(0.1)
-    check(rows.provider.list[3] == party and rows.rows[3].bottom._text == "Thrall: pull now" and party.unread == 1,
+    check(rows.provider.list[7] == party and rows.rows[7].bottom._text == "Thrall: pull now" and party.unread == 1,
         "the party's chat comes into its conversation, the speaker named in the list")
+    local groups = rows.provider.list[6]
+    check(groups.head and rows.rows[6].top._text == "Groups" and rows.provider.list[4] == jaina,
+        "the groups' conversations stand in a part of their own after the whispers, not mixed with them, though the party spoke last")
+    click(rows.rows[6])
+    check(#rows.provider.list == 6 and rows.provider.list[6] == groups and ns.store.talkFolds.groups == true
+        and rows.rows[6].fold._texture:find("PlusButton") and rows.rows[6].count._text == "1" and rows.rows[6].glow:IsShown()
+        and not rows.rows[6].back:IsShown(),
+        "a click on its head folds the part away, kept: the game's + before its name, how many wait in it, lit")
+    W.Wait(0.1)
+    check(#rows.provider.list == 6 and Talks.reading ~= party, "folded, it stays folded; nothing in it is read")
+    click(rows.rows[6])
+    check(#rows.provider.list == 7 and rows.provider.list[7] == party and ns.store.talkFolds.groups == nil
+        and rows.rows[6].count._text == "" and not rows.rows[6].glow:IsShown() and rows.rows[7].back:IsShown(),
+        "clicked again, its conversations are back under it")
     click(rowOf(party))
     write("ok")
     check(sent[#sent] == "PARTY nil ok" and messages.provider.list[2].label == "Party", "written in the party's chat; a group's bubbles keep its chat's name")
@@ -2653,7 +2682,7 @@ do
     grouped = false
     W.Fire("GROUP_LEFT", LE_PARTY_CATEGORY_HOME, "Party-1")
     W.Wait(0.1)
-    check(not edit:IsEnabled() and party.ended and rows.provider.list[3] == party, "the group left, its conversation stays to read, not to write in")
+    check(not edit:IsEnabled() and party.ended and rows.provider.list[7] == party, "the group left, its conversation stays to read, not to write in")
     local hint
     for _, widget in ipairs(W.frames) do
         if widget._kind == "FontString" and widget._parent == edit then hint = widget end
@@ -2690,13 +2719,16 @@ do
     -- Whisper: the game's line opens, to name whom; your first message to them chooses their conversation, whole,
     -- also while the chat is the one chosen.
     click(rows.rows[1])
+    click(rowOf(rows.provider.list[3])) -- the whispers folded away
+    check(ns.store.talkFolds.whispers == true and not rowOf(jaina), "(the whispers folded away)")
     click(foot(talks, "Whisper"))
     check(opened == "/w ", "Whisper opens the game's line with /w")
     ChatFrameUtil.OpenChat = openChat
     W.Fire("CHAT_MSG_WHISPER_INFORM", "hey", "Rexxar-Stub", "", "", "", "", 0, 0, "", 0, 9, nil)
     local rexxar = Talks.by["W:Rexxar-Stub"]
-    check(rexxar and rows.provider.list[3] == rexxar and texts(messages) == "Today | hey" and rows.rows[3].icon._texture:find("QuestionMark"),
+    check(rexxar and rows.provider.list[4] == rexxar and texts(messages) == "Today | hey" and rows.rows[4].icon._texture:find("QuestionMark"),
         "a conversation you began is chosen; whose class is not known yet shows the game's question mark")
+    check(ns.store.talkFolds.whispers == nil and rowOf(jaina), "its part folded away is shown again, to see it chosen")
     check(messages:IsVisible() and edit:IsVisible() and not column:IsVisible() and Talks.reading == rexxar,
         "begun while the chat was chosen, it is chosen whole: its messages and its line beside the list, the chat out of sight")
     -- A right click: the game's own menu of that player, as the friends list opens it.
@@ -2749,14 +2781,18 @@ do
         and rows.provider.list[2].view ~= nil, "the full window's search finds a conversation by its messages; the chats stay, to find in")
     click(rowOf(jaina))
     check(texts(messages) == "Today | raid at 8?", "and shows them")
+    ns.store.talkFolds.groups = true -- folded away: what is found in it is listed all the same
     ns.Window.Search("thrall")
     W.Wait(0.5)
     hits = found()
     check(hits[party] and hits[again] and hits[thrall] and not hits[jaina] and not hits[rexxar],
-        "by its name, or a speaker's in a group")
+        "by its name, or a speaker's in a group; found in a part folded away too")
     ns.Window.Search("")
     W.Wait(0.5)
-    local all = 2
+    check(not found()[party], "the search emptied, the part is folded away again")
+    ns.store.talkFolds.groups = nil
+    ns.Conversations.Relist()
+    local all = 2 + 2 -- the chat, the second chat, the heads of the whispers and the groups
     for _, talk in ipairs(Talks.list) do
         if #talk.messages > 0 then all = all + 1 end
     end
@@ -2839,11 +2875,11 @@ do
     Talks.list, Talks.by = saved, {}
     for _, talk in ipairs(saved) do Talks.by[talk.key] = talk end
     -- Remove: the one chosen and its messages, once confirmed; the chat cannot be.
-    click(rows.rows[3])
-    local chosen, listed = rows.provider.list[3], #rows.provider.list
+    click(rows.rows[4])
+    local chosen, listed = rows.provider.list[4], #rows.provider.list
     click(foot(talks, "Remove"))
     W.popups[#W.popups].data.callback()
-    check(Talks.by[chosen.key] == nil and #rows.provider.list == listed - 1 and rows.provider.list[3] ~= chosen
+    check(Talks.by[chosen.key] == nil and #rows.provider.list == listed - 1 and rows.provider.list[4] ~= chosen
         and rows.provider.list[1].pinned == "chat" and column:IsVisible(),
         "Remove takes the conversation chosen away, once confirmed, and the chat is chosen")
     check(not foot(talks, "Remove"):IsEnabled(), "the chat cannot be removed")
@@ -2864,6 +2900,135 @@ do
     ns.Window.Reboard()
     check(rows.provider.list[1].pinned == "chat" and not own:IsShown(), "the first layout again: the chat is among the conversations")
     click(rows.rows[1])
+    ;(function() -- More than one chat window on the screen: a chat view as a chat window of its own (ChatWindows.lua)
+        local Windows, second, was = ns.ChatWindows, ns.Feed.Views()[1], options.animations
+        options.animations = true
+        Windows.Stand(true) -- as when the chat stands at its size
+        check(Windows.Of(second) == nil and second.screen == nil, "a chat view is no window of its own on the screen at first")
+        ns.Menu.Toggle(W.NewWidget("Frame"), nil)
+        local list = W.menus[#W.menus]
+        local tick = W.Column(list, "Chat windows")[1]
+        check(tick.text == "Second chat" and not tick.checked(tick.data) and W.Column(list, "Chat windows")[2].text == "New Window",
+            "the chat's list has a column Chat windows: a tick for each chat view, then New Window")
+        tick.fn(tick.data)
+        ns.Menu.Close()
+        local win = Windows.Of(second)
+        check(second.screen == true and win and win.frame:IsShown() and tick.checked(tick.data) and win.frame._strata == "MEDIUM",
+            "ticked, the second chat stands on the screen as a chat window of its own, above the action bars as the chat")
+        local made
+        for _, each in ipairs(Core.Window.All()) do if each.frame == win.frame then made = each end end
+        check(made and made.options.kind == "screen" and made.options.key == "view:1" and made.options.title == "Second chat"
+            and not made.edge and made.options.sizable and made.options.store == ns.store,
+            "a window of Core's of the kind screen, its place kept by its view, its name on its box in Edit Mode; it fills no screen")
+        local shows = 0
+        for _, entry in ipairs(Log.list) do if ns.Feed.Shows(second, entry.group) then shows = shows + 1 end end
+        check(shows > 0 and #win.provider.list == shows and not win.hint:IsShown(), "it shows what the chat view shows")
+        check(not win.button:IsShown() and not win.name:IsShown(), "its button and name only while the mouse is over it")
+        win.hover.options.enter()
+        check(win.button:IsShown() and win.name:IsShown() and win.name._text == "Second chat", "the mouse over it: its name and its button")
+        -- A new message: at its newest, fading in, there, fading out after its time, as the chat's.
+        local function wait(seconds)
+            W.Wait(seconds)
+            local update = win.frame._scripts.OnUpdate
+            if update then update(win.frame, seconds) end
+        end
+        W.Fire("CHAT_MSG_GUILD", "window too", "Thrall-Stub", "", "", "", "", 0, 0, "", 0, 50, THRALL)
+        local count = #win.provider.list
+        local row = win.box.rows[count]
+        check(win.provider.list[count].text == "window too" and row._alpha == 0 and win.frame._scripts.OnUpdate ~= nil,
+            "a message it shows comes in at its newest, from nothing, painted every frame while it fades in")
+        wait(options.fadeInTime / 2)
+        check(row._alpha > 0 and row._alpha < 1, "half way in, half there")
+        wait(options.fadeInTime)
+        check(row._alpha == 1 and win.frame._scripts.OnUpdate == nil and win.dueAt ~= nil,
+            "there: nothing painted any more, a timer waits for its time to run out")
+        local due = win.provider.list[count].at + options.fadeAfter
+        check(win.dueAt <= due + 0.001, "(the timer for the next in view to fade: this one's time, or an older one's sooner)")
+        wait(due - W.clock + 0.02)
+        wait(options.fadeOutTime / 2)
+        check(row._alpha > 0 and row._alpha < 1, "its time over, it fades out")
+        wait(options.fadeOutTime)
+        check(row._alpha == 0 and win.frame._scripts.OnUpdate == nil, "and is gone, as the chat's")
+        win.box._scripts.OnMouseWheel(win.box, 1)
+        wait(0.1)
+        check(row._alpha > 0 and row._alpha < 1 and win.revealed, "a turn of the wheel brings every message back, gently")
+        wait(2)
+        check(row._alpha == 1, "all of them there to read")
+        win.hover.options.leave()
+        wait(0.1)
+        check(row._alpha > 0 and row._alpha < 1 and not win.revealed and not win.button:IsShown(), "the mouse gone at the newest, they fade again")
+        wait(2)
+        check(row._alpha == 0 and win.frame._scripts.OnUpdate == nil, "out of sight as before")
+        -- Its button: its list, Rename Window, Close Window, the chats it shows.
+        win.hover.options.enter()
+        win.button._scripts.OnClick(win.button)
+        local menu = W.menus[#W.menus]
+        check(menu.owner == win.frame and menu[1].title == "Second chat" and menu[2].text == "Rename Window"
+            and menu[3].text == "Close Window" and W.Column(menu, "Show in the window")[1].text == "Say",
+            "a click on its button opens its list: rename it, close it, and what it shows, ticked")
+        check(win.button:HandlesGlobalMouseEvent("LeftButton", "GLOBAL_MOUSE_DOWN"), "a press on its button is no click outside its list")
+        menu[2].fn()
+        W.popups[#W.popups].data.callback("Party and guild")
+        check(second.name == "Party and guild" and win.name._text == "Party and guild" and made.options.title == "Party and guild",
+            "renamed: its name, its box's in Edit Mode, and the chat view's")
+        ns.Feed.Rename(second, "Second chat")
+        win.hover.options.leave()
+        menu:Close()
+        win.button._scripts.OnClick(win.button)
+        W.menus[#W.menus][3].fn()
+        check(second.screen == nil and not win.frame:IsShown() and not tick.checked(tick.data),
+            "Close Window: off the screen; the chat view stays, on the full screen")
+        -- A chat view's right click on the full screen puts it there too.
+        click(rows.rows[2], "RightButton")
+        local line
+        for _, item in ipairs(W.menus[#W.menus]) do if item.text == "Its own window on the screen" then line = item end end
+        check(line and not line.checked(), "a chat view's right click on the full screen: Its own window on the screen")
+        line.fn()
+        check(second.screen == true and win.frame:IsShown(), "ticked, it stands on the screen")
+        line.fn()
+        check(second.screen == nil and not win.frame:IsShown(), "unticked, it leaves it")
+        -- New Window: one more chat view on the screen, its list open to tick what it shows.
+        ns.Menu.Toggle(W.NewWidget("Frame"), nil)
+        list = W.menus[#W.menus]
+        local menus = #W.menus
+        W.Column(list, "Chat windows")[2].fn()
+        ns.Menu.Close()
+        local views = ns.Feed.Views()
+        local view = views[#views]
+        local new = Windows.Of(view)
+        check(view ~= second and view.screen == true and view.name == "Chat window " .. view.id and new and new.frame:IsShown()
+            and next(view.shows) == nil and #new.provider.list == 0,
+            "New Window: a chat view of its own name, on the screen at once, showing nothing yet")
+        check(new.button:IsShown() and new.name:IsShown() and new.hint:IsShown() and new.hint._text:find("tick what this window shows"),
+            "showing nothing, its name, its button and what to do stand there, so it is never lost unseen")
+        W.Wait(0.1)
+        menu = W.menus[#W.menus]
+        check(#W.menus == menus + 1 and menu.owner == new.frame and not menu.closed, "a moment later its list is open, to tick what it shows")
+        local sayTick = W.Column(menu, "Show in the window")[1]
+        sayTick.fn(sayTick.data)
+        menu:Close()
+        say("in a window of its own")
+        check(view.shows.SAY and new.provider.list[#new.provider.list].text == "in a window of its own" and not new.hint:IsShown(),
+            "ticked, what is said nearby comes into it")
+        check(ns.Feed.Unread(view) == 0, "on the screen, its messages are seen")
+        Windows.Stand(false) -- the chat fills the screen, or is put away
+        check(not new.frame:IsShown(), "the chat at its size no more, the chat windows go out of sight with it")
+        say("while away")
+        check(ns.Feed.Unread(view) == 1 and new.stale, "what came meanwhile is not seen yet")
+        Windows.Stand(true)
+        check(new.frame:IsShown() and ns.Feed.Unread(view) == 0 and new.provider.list[#new.provider.list].text == "while away",
+            "back, it is there and seen")
+        ns.Feed.Remove(view)
+        ns.Conversations.Relist()
+        Windows.Follow()
+        check(not new.frame:IsShown() and new.view == nil, "its chat view removed, the window is gone for good")
+        second.screen = "yes" -- a hand edit
+        ns.Feed.Views()
+        check(second.screen == nil, "a saved view's screen is true or nothing")
+        Windows.Stand(false)
+        options.animations = was
+        check(not Core.errors["Social: chat windows"], "nothing went wrong in the chat windows")
+    end)()
     check(not Core.errors["Social: conversations"] and not Core.errors["Social: talks"] and not ns.off, "nothing went wrong in the conversations")
     grouped, W.raiding = wasGrouped, wasRaiding
     end)()
@@ -3235,12 +3400,34 @@ do
         check(category == "BINDING_HEADER_SANEUI" and type(_G[category]) == "string" and type(_G["BINDING_NAME_" .. name]) == "string",
             "Social's key is in SaneUI's section of the game's key bindings, named in the game's way")
         local press = assert(loadstring(body))
-        press()
-        check(not window:IsShown() and options.window == false and native:IsShown(), "pressed, it puts our window away as /sane social does")
-        press()
-        check(window:IsShown() and options.window == true and window._width == Layout.WIDTH, "pressed again, it is back")
+        if name == "SANEUI_SOCIAL" then
+            press()
+            check(not window:IsShown() and options.window == false and native:IsShown(), "pressed, it puts our window away as /sane social does")
+            press()
+            check(window:IsShown() and options.window == true and window._width == Layout.WIDTH, "pressed again, it is back")
+        else (function() -- (in a function of its own: the main chunk is at Lua's 200 locals)
+            -- The full screen's own key: in and out, as the hot corner; also with the corner off (Setup.lua).
+            local edge
+            for _, made in ipairs(Core.Window.All()) do if made.frame == window then edge = made.edge end end
+            check(name == "SANEUI_SOCIAL_FULL" and edge and not edge.full, "(the full screen's key)")
+            Core.Set("Social", "expandCorner", false)
+            check(edge:Spot() == nil, "the hot corner off: its strip at the screen's edge is gone, the edge does nothing")
+            press()
+            check(edge.full, "the full screen's key fills the screen all the same")
+            press()
+            check(not edge.full, "pressed again, it goes back")
+            W.Wait(2) -- (its way back)
+            Core.Set("Social", "expandCorner", true)
+            check(edge:Spot() ~= nil, "the hot corner on again: its strip is back")
+            ns.Toggle()
+            check(not window:IsShown(), "(the chat window put away)")
+            press()
+            check(window:IsShown() and options.window == true and edge.full, "the window put away, the key brings it back, full")
+            press()
+            check(not edge.full and not Core.errors["Social: full screen key"], "and back to its size")
+        end)() end
     end
-    check(keys == 1, "Social has one key")
+    check(keys == 2, "Social has two keys: the chat window, its full screen")
     local kept = Core.Store("Social")
     W.Wait(1)
     strip:GetScript("OnMouseDown")(strip, "LeftButton")
@@ -3469,9 +3656,9 @@ end
 local general = entries.General
 check(titled and general and general.checked(general.data) and #general.inits == 0 and not general.sub
     and not entries.LookingForGroup.checked(entries.LookingForGroup.data),
-    "last in the list on the chat's name, each of the game's channels has a tick of its own, on while the character is in it")
-check(menu.grid[2] == 3 and #menu % 3 == 0 and menu[2 * #menu / 3 + 1].title == "Joined on every character",
-    "the game's channels stand in a third column")
+    "in the list on the chat's name, each of the game's channels has a tick of its own, on while the character is in it")
+check(menu.grid[2] == 4 and #menu % 4 == 0 and menu[2 * #menu / 4 + 1].title == "Joined on every character"
+    and menu[3 * #menu / 4 + 1].title == "Chat windows", "the game's channels stand in a third column, the chat windows last")
 ns.Menu.Close()
 general.fn(general.data)
 check(calls[1] == "Leave General" and options.presence.General == false and not general.checked(general.data),
@@ -3531,6 +3718,80 @@ check(calls[1] == "Leave LocalDefense" and not Core.errors["Social: channels"], 
     check(Called("Leave Newcomer Chat") and options.presence["Newcomer Chat"] == false, "a click on its own tick does: the player asked")
     ns.Menu.Close()
     options.presence["Newcomer Chat"], options.presence.Services, joined["Newcomer Chat"] = nil, nil, nil
+end)()
+
+-- Social's setup, step by step (Setup.lua): the hot corner (not at all, a left click, the mouse), the keys, the windows.
+;(function()
+    local guide, Setup = Core.Onboarding.Guide(ns.name), ns.Setup
+    local keys = {}
+    for index, step in ipairs(guide and guide.steps or {}) do keys[index] = step.key end
+    check(guide and guide.title == "Social" and table.concat(keys, " ") == "intro corner keys windows full",
+        "Social's setup: what it is, the hot corner, the keys, the windows, the full screen: " .. table.concat(keys, " "))
+    check(Core.Described(ns.name, "setup") and Core.Described(ns.name, "setup").button, "its options page opens it: Set up step by step")
+    local named, short = true, true
+    for _, step in ipairs(guide.steps) do
+        for line in (step.text .. "\n"):gmatch("([^\n]*)\n") do
+            local plain = line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            short = short and line:find("|cff", 1, true) == 1 and #plain <= 110
+        end
+        for _, entry in ipairs(step.settings) do
+            if type(entry) == "table" and (entry.binding or entry.check) then
+                named = named and type(entry.text) == "string"
+            else
+                local option = Core.Described(ns.name, type(entry) == "table" and entry.key or entry)
+                named = named and option ~= nil and type(type(entry) == "table" and entry.text or option.text) == "string"
+            end
+        end
+    end
+    check(short and named, "each page a few short lines starting with gold words; its switches the module's, keys and ticks named")
+    local corner = guide.steps[2].settings[1]
+    local off, click, mouse = corner.choices[1][1], corner.choices[2][1], corner.choices[3][1]
+    check(corner.key == "expandCorner" and corner.parent == false and off.expand and off.expandCorner == false
+        and click.expand and click.expandCorner and click.expandClick == true and mouse.expandCorner and mouse.expandClick == false,
+        "the hot corner, one choice of three: not at all (the full screen still by its key), a left click, the mouse alone")
+    local hot = Core.Described(ns.name, "expandCorner")
+    check(hot and hot.default == true and hot.parent == "expand" and Core.Described(ns.name, "expandClick").parent[2] == "expandCorner",
+        "the switch Hotcorner, under Can expand to fullscreen, Hotcorner requires leftclick under both")
+    local bindings = guide.steps[3].settings
+    check(bindings[1].binding == "SANEUI_SOCIAL_FULL" and bindings[2].binding == "SANEUI_SOCIAL",
+        "the keys: Social's full screen, the chat window")
+    local windows = guide.steps[4].settings
+    local second = ns.Feed.Views()[1]
+    check(windows[1] == "window" and windows[2] == "showNative" and windows[3].check and windows[4] == "boardFinder",
+        "the windows: the chat window, the game's chat beside it, the second chat on the screen, the group finder")
+    second.screen = nil
+    check(windows[3].check() == false, "the second chat's tick: off while it is no window of its own")
+    windows[3].set(true)
+    check(second.screen == true and windows[3].check() == true, "ticked, it stands on the screen")
+    windows[3].set(false)
+    check(second.screen == nil, "unticked, it does not")
+    local stage = CreateFrame("Frame", nil, UIParent)
+    stage._width, stage._height = 420, 500
+    local function Draw(key)
+        for index, step in ipairs(guide.steps) do
+            if step.key == key then guide.Stage(stage, step, index) end
+        end
+        return Setup.Board(key)
+    end
+    for _, step in ipairs(guide.steps) do
+        check(Draw(step.key) and Setup.Board(step.key):IsShown(), "the page " .. step.key .. " draws its board")
+    end
+    check(not Setup.Board("intro"):IsShown() and Setup.Board("full"):IsShown(), "only the page's own board shows")
+    local was = { expandCorner = options.expandCorner, expandClick = options.expandClick }
+    options.expandCorner, options.expandClick = true, true
+    Draw("corner")
+    local board = Setup.Board("corner")
+    check(board.parts.arrow:IsShown() and board.parts.words._text:find("then click", 1, true), "into the corner, then click")
+    options.expandClick = false
+    Draw("corner")
+    check(board.parts.arrow:IsShown() and not board.parts.words._text:find("click", 1, true), "the mouse alone: no click said")
+    options.expandCorner = false
+    Draw("corner")
+    check(not board.parts.arrow:IsShown() and board.parts.words._text:find("use the key", 1, true), "not at all: no arrow, the key said")
+    options.expandCorner, options.expandClick = was.expandCorner, was.expandClick
+    local errors = 0
+    for label in pairs(Core.errors) do if tostring(label):find("setup sample", 1, true) then errors = errors + 1 end end
+    check(errors == 0, "every page's board drawn without an error")
 end)()
 
 -- The game's friends list from the dropdown Classic windows, in a fight and out of one

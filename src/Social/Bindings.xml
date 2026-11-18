@@ -4,4 +4,8 @@
 	<Binding name="SANEUI_SOCIAL" category="BINDING_HEADER_SANEUI">
 		SaneUI.Social.Toggle()
 	</Binding>
+	<!-- Social's full screen and back, by a key: with the hot corner off, the way in (Social.lua, ns.Full). -->
+	<Binding name="SANEUI_SOCIAL_FULL" category="BINDING_HEADER_SANEUI">
+		SaneUI.Social.Safe("full screen key", SaneUI.Social.Full)
+	</Binding>
 </Bindings>

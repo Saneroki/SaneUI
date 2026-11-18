@@ -376,6 +376,39 @@ check(grows.rounds[2].button:GetChecked() == true, "the one in use lit (Flowers 
 grows.rounds[1].button._scripts.OnClick(grows.rounds[1].button)
 check(options.flowers == true, "a click sets the switch")
 
+-- A choice over several switches at once (Social's hot corner: not at all, a left click, the mouse), and a tick the
+-- module answers itself (Social's second chat on the screen: a chat view's, no switch).
+do
+    local lit, was = false, { path = options.path, moss = options.moss, flowers = options.flowers }
+    local several = ons.Controls.Build(UIParent, "Garden", {
+        { key = "path", text = "The look", parent = false, column = true,
+          choices = { { { path = "gravel", flowers = true }, "Gravel and flowers" }, { { path = "stone", moss = true }, "Mossy stone" } } },
+        { check = function() return lit end, set = function(on) lit = on end, text = "Lamps lit", tip = "At night." } }, 300)
+    local look, lamps = several.rows[1], several.rows[2]
+    check(#several.rows == 2 and #look.rounds == 2 and lamps.tick and lamps.option.text == "Lamps lit",
+        "a choice of several switches as round buttons, a tick the module answers")
+    look.rounds[2].button._scripts.OnClick(look.rounds[2].button)
+    ons.Controls.Refresh(several, "Garden")
+    check(options.path == "stone" and options.moss == true and look.rounds[2].button:GetChecked() == true
+        and look.rounds[1].button:GetChecked() == false, "a choice sets each of its switches, and is lit while each is so")
+    Core.Set("Garden", "moss", false)
+    ons.Controls.Refresh(several, "Garden")
+    check(not look.rounds[2].button:GetChecked() and not look.rounds[1].button:GetChecked(),
+        "one of them set otherwise elsewhere: none of the choices is lit")
+    check(lamps.tick:GetChecked() == false, "the tick shows what the module answers")
+    lamps.tick._checked = true
+    lamps.tick._scripts.OnClick(lamps.tick)
+    check(lit == true, "a click tells the module")
+    lit = false
+    ons.Controls.Refresh(several, "Garden")
+    check(lamps.tick:GetChecked() == false, "and shows its answer anew")
+    local broken = ons.Controls.Build(UIParent, "Garden", { { check = function() error("broken") end, set = function() end, text = "Broken" } }, 300)
+    ons.Controls.Refresh(broken, "Garden")
+    check(broken.rows[1].tick:GetChecked() == false and Core.errors["Onboarding: setup tick"], "a module's answer that fails is noted: unticked")
+    Core.errors["Onboarding: setup tick"] = nil
+    for key, value in pairs(was) do Core.Set("Garden", key, value) end
+end
+
 -- A command of the game's (Combat's Place and size in Edit Mode, Saneroki, 2026-11-18): a plain button, and over it on
 -- UIParent the game's secure button running its macro, there while the row shows and out of a fight; done after it.
 do

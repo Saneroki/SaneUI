@@ -18,7 +18,7 @@ local _, ns = ...
 --  message), so a second list of a width costs no measuring of its own.
 --
 --  Kept in the module's store, account-wide as the layouts that name them:
---      store.views = { next = 3, list = { { id = 1, name = "Second chat", shows = { WHISPER = true, ... } }, ... } }
+--      store.views = { next = 3, list = { { id = 1, name = "Second chat", shows = { WHISPER = true, ... }, screen = true }, ... } }
 --  At first one, the second chat, showing whispers, your groups and guild.
 --
 --  Messages that came while none of a view's lists was on show are counted,
@@ -26,6 +26,10 @@ local _, ns = ...
 --  colour in a table of the view's own, made once: tints): its row in the
 --  conversations' list is lit as the game's chat tabs light a new message,
 --  until a list of it is shown.
+--
+--  A view can stand on the screen too, as a chat window of its own beside the
+--  chat (ChatWindows.lua; view.screen, kept with it): that window is a list of
+--  the view as these are (Feed.Join), fed and told the same.
 --
 --  Built from the game's parts, as the chat: its scrolling list and scroll bar.
 -------------------------------------------------------------------------------
@@ -61,6 +65,7 @@ local function Kept()
         else
             if type(view.name) ~= "string" then view.name = ns.TEXT.newView:format(view.id) end
             if type(view.shows) ~= "table" then view.shows = {} end
+            if view.screen ~= true then view.screen = nil end
             last = math.max(last, view.id)
         end
     end
@@ -104,6 +109,7 @@ function Feed.Rename(view, name)
     if name == "" then return end
     view.name = name
     ns.Board.Retitle("view:" .. view.id, name)
+    ns.ChatWindows.Retitle(view)
 end
 
 -- A view is no more: out of the list, its lists out of sight, out of every layout.
@@ -162,6 +168,19 @@ end
 -- A view's new messages not seen, and the chat colour of the last; 0 once a list of it is on show.
 function Feed.Unread(view)
     return unseen[view] or 0, tints[view]
+end
+
+-- A list of a view made elsewhere (a chat window of its own on the screen, ChatWindows.lua): fed and told as the
+-- lists here are. It has view and shown, Added(entry), Refill(), Rewrap() and Point(view) (nil: its view is gone).
+function Feed.Join(list)
+    lists[#lists + 1] = list
+end
+
+-- A list of the view is on show now (one joined): what came meanwhile is seen.
+function Feed.Saw(view)
+    if not unseen[view] then return end
+    unseen[view] = nil
+    ns.Conversations.Said()
 end
 
 -------------------------------------------------------------------------------

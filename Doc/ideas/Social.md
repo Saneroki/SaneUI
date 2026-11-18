@@ -16,7 +16,10 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
   (which chats and channels it shows). Today's window has one filter, the ticks in its list of chats
   (`Channels.Shown`); every view would get its own set of ticks. A chat view can be **a window of its
   own and a tab** of the small (not expanded) Social window, like the game's chat windows, which stand
-  alone or sit as tabs in the general chat, each with its own choice of chats and channels.
+  alone or sit as tabs in the general chat, each with its own choice of chats and channels. *A window of its own
+  built 2026-11-18* (Saneroki: "the option to have more then one chat window on the screen if people want that"):
+  `ChatWindows.lua`, put on the screen from the chat's list (*Chat windows*, *New Window*) or a view's right click;
+  the tab of the small window is still to come (board #325).
 - **Dialogue** (Saneroki, 2026-10-16): talking to an NPC, and reading a book or a letter, as a scene in
   the middle of the screen instead of the game's gossip, quest and book windows (`Doc/ideas/Dialogue.md`).
 - **Guild:** the guild (Blizzard: Communities and guild, `Blizzard_Communities`). *Held 2026-10-20*
@@ -34,7 +37,9 @@ by default and fills the screen from there (`Doc/ideas/Windows.md`).
   conversation of its own, listed by the last message; the one chosen in the chat's bubbles with a line to
   write in it; kept per character. Since 2026-10-20 (Saneroki) the chat and the second chat are the first
   two rows of its list and stand beside it when chosen; the panel takes all the room left of the guild
-  window and the friends list.
+  window and the friends list. Since 2026-11-18 (Saneroki: "group conversations into whispers, party
+  conversations so they are not mixed") the conversations stand in two parts, Whispers and Groups, under heads
+  that fold; folders by hand and a folder read as one conversation are board #324.
 - **A second chat with its own filter** *built 2026-10-17* on the full screen (`Feed.lua`), above the chat
   until 2026-10-20, a row of the conversations' list since. The small window's tabs of chat views are still
   to come.
@@ -55,6 +60,10 @@ Done 2026-10-16:
 - Docs that named Chat (now `Doc/agent/social.md`, the READMEs, CLAUDE.md's examples) follow.
 - `/sane chat` still works next to `/sane social`.
 - Open: the banner is still the drawing that reads *Sane Chat*; a new one is to be drawn.
+
+- **Its setup** (Saneroki, 2026-11-18; `Setup.lua`, the addon Onboarding's window): the hot corner taught again and
+  chosen (not at all, a left click, the mouse alone: the switch *Hotcorner* beside *Hotcorner requires leftclick*),
+  a key for the full screen if wanted (`SANEUI_SOCIAL_FULL`), ticks for the windows.
 
 ## Open questions
 
