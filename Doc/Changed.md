@@ -6,6 +6,13 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Social's setup: the friends list and the guild window ticked (Saneroki, 2026-11-18)
+Saneroki: "Add the friends list and guild window to the setup too". Card #578. A `/reload` takes it in.
+- **`src/Core/Board.lua`:** `board:Holds(key)` and `board:Put(key, on, target, side)`: the layout chosen read and changed whether the full screen stands or not (the first tab without a tree of its own is the module's `default`, laid out for the room it had last, else the screen under the full window's title bar); kept as the dropdown *Windows* keeps a tick.
+- **`src/Social/Board.lua`:** `Board.Holds`, `Board.Put` (the friends list at the conversations' right, the guild window over it, `BESIDE`). **`Setup.lua`:** the full screen's page ticks *The friends list on the full screen* and *The guild window on the full screen*; its drawn full screen shows them as ticked.
+- **Tests:** `dev/tests/social.lua` (775 checks: both ticks, in and out of the first layout while the full screen is away, where they go, the drawing).
+- **Docs:** `src/Social/README.md`, `src/Core/README.md`, `Doc/agent/social.md`.
+
 ### Hotcorner in every module's Expand window (Saneroki, 2026-11-18)
 Asked whether the other full screens (map, bags, Combat) should have the switch *Hotcorner* too: "Yes, all modules". Card #578. A `/reload` takes it in.
 - **`src/Core/Edge.lua`:** *Hotcorner* (`expandCorner`, on) is a switch of the section *Expand window* (`Edge.Options`), under *Can expand to fullscreen*; *Hotcorner requires leftclick* stands under both (`parent = { "expand", "expandCorner" }`; a module's `under` adds to a parent list now). Off, no strip and no square; each full screen still opens by its key (the map's, the bags', the spellbook's, Social's) or its button. **`src/Social/Social.lua`:** its own copy of the switch is gone.

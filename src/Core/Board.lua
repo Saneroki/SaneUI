@@ -99,6 +99,9 @@ local Core = SaneUI.Core
 --      board:Hide()                       -- the window starts back
 --      board:Search(text)                 -- what is typed into the search box
 --      board:Has(key)                     -- in the layout laid out last
+--      board:Holds(key)                   -- in the layout chosen, the full screen standing or not (a setup's tick)
+--      board:Put(key, on, target, side)   -- into the layout chosen beside target at side (or along that side of
+--                                         -- the whole), or off it (on false), the full screen standing or not
 --      board:Forget(key)                  -- a window that is no more (a chat view removed): out of every layout
 --      board:Occasion(name)               -- a talk began (its name in options.occasions) or ended (nil)
 --      board:Talking()                    -- the talk whose layout stands now, or nil
@@ -1677,6 +1680,41 @@ function methods:Toggle(key)
     end
     local rect = largest and self.rects[largest]
     Keep(self, Board.Beside(Copy(self.tree), key, largest, rect and (rect[3] >= rect[4] and "right" or "bottom") or "right"))
+end
+
+-- The layout chosen as it stands, or, while the full screen is away, as it is kept: the first tab without a tree of
+-- its own the module's default, laid out for the room the full screen had last (else the screen under the full
+-- window's title bar). A copy, to change.
+local function Current(board)
+    if board.standing then return Copy(board.tree) end
+    local tab, index = Chosen(board)
+    local tree = tab.tree
+    if tree == nil and index == 1 then
+        local width = board.width or math.floor(UIParent:GetWidth())
+        local height = board.height or math.floor(UIParent:GetHeight() - Core.Window.FULL_BAR)
+        tree = Core.Safe(Label(board), board.options.default, width, height)
+    end
+    return Tidy(Copy(tree))
+end
+
+-- Whether the layout chosen holds a window, the full screen standing or not (a module's setup ticks it).
+function methods:Holds(key)
+    return Board.Holds(Current(self), key)
+end
+
+-- A window into the layout chosen (on: beside target, at side; target not in it, or none: a strip along that side of
+-- the whole) or off it, the full screen standing or not: kept, as the dropdown's tick keeps it, and laid out anew
+-- where it stands. Nothing changes where it is so already.
+function methods:Put(key, on, target, side)
+    local tree = Current(self)
+    if Board.Holds(tree, key) == (on and true or false) then return end
+    if on then
+        if target and not Board.Holds(tree, target) then target = nil end
+        tree = Board.Beside(tree, key, target, side or "right")
+    else
+        tree = Board.Without(tree, key)
+    end
+    Keep(self, tree)
 end
 
 -- A talk began (name: one of options.occasions; an unknown one counts as none) or ended (nil): its layout stands while

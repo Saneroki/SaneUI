@@ -3789,9 +3789,39 @@ end)()
     Draw("corner")
     check(not board.parts.arrow:IsShown() and board.parts.words._text:find("use the key", 1, true), "not at all: no arrow, the key said")
     options.expandCorner, options.expandClick = was.expandCorner, was.expandClick
+    -- The full screen's page: the friends list and the guild window ticked into the layout chosen, or out of it, while
+    -- the full screen is away (Board.Put, Core's board:Put).
+    local full = guide.steps[5].settings
+    local friends, guildTick = full[1], full[2]
+    check(friends.check and friends.text == Setup.TEXT.friendsTick and guildTick.check and guildTick.text == Setup.TEXT.guildTick,
+        "the full screen's page: a tick for the friends list and one for the guild window")
+    local tabs = ns.store.board.tabs
+    local kept = tabs[1].tree
+    tabs[1].tree = nil -- the first layout, as at first
+    check(friends.check() == true and not ns.Board.Has("nothing"), "at first the friends list is in the first layout")
+    friends.set(false)
+    check(friends.check() == false and type(tabs[1].tree) == "table" and not Core.Board.Holds(tabs[1].tree, "friends")
+        and Core.Board.Holds(tabs[1].tree, "talks"), "unticked: out of the layout chosen, kept, the conversations stay")
+    Draw("full")
+    check(not Setup.Board("full").parts.friends:IsShown(), "the drawn full screen without it")
+    friends.set(true)
+    local tree = tabs[1].tree
+    check(friends.check() == true and tree.split == "x" and tree.parts[1].key == "talks" and tree.parts[2].key == "friends",
+        "ticked again: at the conversations' right")
+    guildTick.set(true)
+    tree = tabs[1].tree
+    local right = tree.parts[2]
+    check(guildTick.check() == true and right.split == "y" and right.parts[1].key == "guild" and right.parts[2].key == "friends",
+        "the guild window ticked: over the friends list, as the first layout has it")
+    Draw("full")
+    check(Setup.Board("full").parts.guild:IsShown() and Setup.Board("full").parts.friends:IsShown(), "both drawn at the right")
+    guildTick.set(false)
+    check(not guildTick.check() and friends.check(), "unticked, it goes; the friends list stays")
+    tabs[1].tree = kept
     local errors = 0
     for label in pairs(Core.errors) do if tostring(label):find("setup sample", 1, true) then errors = errors + 1 end end
-    check(errors == 0, "every page's board drawn without an error")
+    check(errors == 0 and not Core.errors["Onboarding: setup tick"] and not Core.errors["Social: board"],
+        "every page's board drawn without an error")
 end)()
 
 -- The game's friends list from the dropdown Classic windows, in a fight and out of one

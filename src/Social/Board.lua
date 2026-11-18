@@ -159,6 +159,24 @@ function Board.Has(key)
     return layouts ~= nil and layouts:Has(key)
 end
 
+-- Whether the layout chosen holds a window, the full screen standing or not (the setup's ticks, Setup.lua).
+function Board.Holds(key)
+    return layouts ~= nil and layouts:Holds(key) or false
+end
+
+-- Where the setup puts a window it ticks: the friends list at the right of the conversations, the guild window over
+-- the friends list (at the conversations' right without it), as the first layout has them.
+local BESIDE = { friends = { "talks", "right" }, guild = { "friends", "top" } }
+
+-- A window of the full screen into the layout chosen, or off it (the setup's ticks): kept, laid out anew if it stands.
+function Board.Put(key, on)
+    if not layouts then return end
+    local beside = BESIDE[key] or {}
+    local target, side = beside[1], beside[2]
+    if key == "guild" and not layouts:Holds("friends") then target, side = "talks", "right" end
+    layouts:Put(key, on, target, side)
+end
+
 -- A chat view renamed: its window's head says so.
 function Board.Retitle(key, title)
     for _, spec in pairs(views) do

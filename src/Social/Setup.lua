@@ -26,8 +26,10 @@ local _, ns = ...
 --             the second chat as a window of its own on the screen (a chat view:
 --             no switch, its own tick, ChatWindows.lua), the group finder's tab
 --    full     the full screen: the conversations in parts (whispers, groups),
---             a head folds its part; chat views; the dropdown Windows; Edit Mode
---             moves the chat and its corner with it
+--             a head folds its part; chat views; the friends list and the guild
+--             window ticked into its layout or out of it (Saneroki, 2026-11-18:
+--             "Add the friends list and guild window to the setup too"; the
+--             layout chosen, also while the full screen is away: Board.Put)
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Look = Core.Look
@@ -61,6 +63,11 @@ Setup.TEXT = {
     keyChatTip = "SaneUI's chat window shown or hidden: the game's own chat in its place, and back.",
     second = "The second chat on the screen",
     secondTip = "Your whispers, party, raid, instance and guild chat in a chat window of their own beside the chat. Its button (the mouse over it) ticks what it shows; Edit Mode moves it.",
+    friendsTick = "The friends list on the full screen",
+    friendsTip = "Your friends, requests, ignored players, your raid and the group finder, at the full screen's right. Off: the conversations and the chat take its room; the dropdown Windows there brings it back too.",
+    guildTick = "The guild window on the full screen",
+    guildTip = "The window the guild key opens (the module Guild's while it is on), at the full screen's top right while you are in a guild. Off: the full screen leaves it out; the guild key opens it as always.",
+    guild = "Guild",
     into = "All the way into the corner",
     click = ", then click",
     off = "The corner does nothing: use the key",
@@ -142,9 +149,13 @@ Setup.STEPS = {
       text = Lines({ "Conversations", "every whisper and every group you join, each its own, kept to read." },
           { "In parts", "the whispers, then the groups: a click on a part's head folds it away." },
           { "Chat views", "New chat view: its own choice of chats; a right click puts it on the screen." },
-          { "Windows", "the dropdown Windows ticks what stands there; drag a head to arrange them." },
+          { "Windows", "tick the friends list and the guild window here, or in the dropdown Windows there." },
+          { "Arrange", "drag a window's head onto another, or the line between two." },
           { "Done", "your chat is set." }),
-      settings = {} },
+      settings = { { check = function() return ns.Board.Holds("friends") end, set = function(on) ns.Board.Put("friends", on) end,
+                     text = Setup.TEXT.friendsTick, tip = Setup.TEXT.friendsTip },
+                   { check = function() return ns.Board.Holds("guild") end, set = function(on) ns.Board.Put("guild", on) end,
+                     text = Setup.TEXT.guildTick, tip = Setup.TEXT.guildTip } } },
 }
 
 -------------------------------------------------------------------------------
@@ -359,7 +370,8 @@ function DRAW.windows(board)
     Caption(board, "words", 40 + Setup.SCREEN[2] + 16, Hued("On the screen") .. " as ticked at the right.")
 end
 
--- A drawn full screen: the conversations in their parts at the left, the friends at the right.
+-- A drawn full screen: the conversations in their parts at the left, the chat beside them, and at the right the guild
+-- window over the friends list, each as ticked (the layout chosen).
 function DRAW.full(board)
     local screen = Screen(board, "screen", 30)
     local list = Part(board, "list", function()
@@ -376,21 +388,29 @@ function DRAW.full(board)
         panel.lines = lines
         return panel
     end)
+    local width, height = Setup.SCREEN[1], Setup.SCREEN[2]
+    local friendsOn, guildOn = ns.Board.Holds("friends"), ns.Board.Holds("guild")
+    local column = (friendsOn or guildOn) and math.floor(width * 0.28) or 0
     list:ClearAllPoints()
     list:SetPoint("TOPLEFT", screen, "TOPLEFT", 6, -6)
     list:SetPoint("BOTTOMLEFT", screen, "BOTTOMLEFT", 6, 6)
-    list:SetWidth(Setup.SCREEN[1] * 0.4)
+    list:SetWidth(math.floor(width * 0.34))
     local chat = Part(board, "chat", function() return Chat(screen, Setup.TEXT.chat, Setup.FULL) end)
     chat:ClearAllPoints()
     chat:SetPoint("TOPLEFT", list, "TOPRIGHT", 4, 0)
-    chat:SetPoint("BOTTOMLEFT", list, "BOTTOMRIGHT", 4, 0)
-    chat:SetWidth(Setup.SCREEN[1] * 0.32)
+    chat:SetPoint("BOTTOMRIGHT", screen, "BOTTOMRIGHT", -(6 + (column > 0 and column + 4 or 0)), 6)
+    local guild = Part(board, "guild", function() return Chat(screen, Setup.TEXT.guild, Setup.FULL) end)
     local friends = Part(board, "friends", function() return Chat(screen, Setup.TEXT.friends, Setup.FULL) end)
+    guild:ClearAllPoints()
+    guild:SetPoint("TOPRIGHT", screen, "TOPRIGHT", -6, -6)
+    guild:SetSize(math.max(column, 1), friendsOn and math.floor((height - 16) * 0.45) or height - 12)
+    guild:SetShown(guildOn)
     friends:ClearAllPoints()
-    friends:SetPoint("TOPLEFT", chat, "TOPRIGHT", 4, 0)
     friends:SetPoint("BOTTOMRIGHT", screen, "BOTTOMRIGHT", -6, 6)
-    Caption(board, "words", 30 + Setup.SCREEN[2] + 12, Hued("Full screen") .. ": the conversations in their parts, "
-        .. "the chat beside them, your friends at the right.")
+    friends:SetSize(math.max(column, 1), guildOn and height - 16 - math.floor((height - 16) * 0.45) or height - 12)
+    friends:SetShown(friendsOn)
+    Caption(board, "words", 30 + height + 12, Hued("Full screen") .. ": the conversations in their parts, the chat beside "
+        .. "them" .. ((friendsOn or guildOn) and ", at the right what you ticked." or "."))
 end
 
 -- The step's board on the stage, the others out of sight; drawn anew as the settings in use say.

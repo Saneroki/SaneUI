@@ -188,7 +188,9 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   the chat is; the hot corner, one choice of three: *Not at all: only by a key*, *With a left click in it*, *When the
   mouse goes into it*, the tutorial arrow pointing into the corner the chat is docked in; the keys (*Social's full
   screen*, *The chat window*); the windows (*Chat window*, *Show the game's chat too*, *The second chat on the screen*,
-  *Group finder*); the full screen (the conversations' parts, chat views, the dropdown *Windows*).
+  *Group finder*); the full screen (the conversations' parts, chat views, and ticks for *The friends list on the full
+  screen* and *The guild window on the full screen*, in or out of the layout chosen, as the dropdown *Windows* there
+  puts them; Saneroki, 2026-11-18: "Add the friends list and guild window to the setup too").
 - **Settings** (Esc > Options > AddOns > SaneUI > Social), in two tabs:
   - *General:* *Chat window*: *Chat window* (on: the window itself), *Show the game's chat too* (off), *Save chat history* (on) with *Messages kept* (slider
     0 to 500, at first 100). *Messages to show*: *System messages*, *Creature messages*, *Addon messages*
@@ -774,7 +776,10 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   *Can expand to fullscreen* (`Edge.lua`: off, no strip and no square; the full screen still fills by `Window.Full`, the key
   `SANEUI_SOCIAL_FULL` in `Bindings.xml`, `ns.Full`, behind `ns.Safe`); *Hotcorner requires leftclick* stands under
   both. The keys' step binds `SANEUI_SOCIAL_FULL` and `SANEUI_SOCIAL`; the windows' step has `window`, `showNative`, a
-  tick the module answers (`check`/`set`: the first view's `screen`, `ChatWindows.Put`) and `boardFinder`. Each step a
+  tick the module answers (`check`/`set`: the first view's `screen`, `ChatWindows.Put`) and `boardFinder`; the full
+  screen's step two such ticks, the friends list and the guild window in the layout chosen (`Board.Holds`, `Board.Put`:
+  Core's `board:Holds`, `board:Put`, also while the full screen is away; the friends list at the conversations' right,
+  the guild window over it, `BESIDE`). Each step a
   board on the stage: a drawn screen with the chat where it is docked (`Window.Zone`), the game's tutorial arrow
   (`NPE_ArrowRight`, its glow) into that corner as the choice says, the keys bound now, the windows ticked, a drawn
   full screen with the parts.
