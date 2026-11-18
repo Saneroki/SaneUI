@@ -314,11 +314,12 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   stays, as its button says); unticked, ours again. **In Edit Mode** only that one is there to be placed: ours with its
   box, the game's quest tracker and its box out of sight, or the other way round (Saneroki, 2026-11-18). The Sane Rare
   tracker's notices, under the minimap too, draw over it while one shows.
-  There it rests out of sight as your unit frames and action bars do (*Hide the quest log at rest*, off at first:
-  Saneroki, 2026-11-15): it
-  shows with the mouse on its words, title bar or items, while your health or resource is not full, in a fight and in a
-  group (`Core.Rest`, the tray of its items with it); with *In a group too* under it (off at first) it rests in a
-  group as well. Over the full map it always shows.
+  There it is always in sight at first (Saneroki, 2026-11-18: "the default is set to always visible"). *Show only on
+  mouseover* (`questLogMouseover`) rests it out of sight until the mouse is on its words, title bar or items
+  (`Core.Rest`, the tray of its items with it); under it *Always show in combat* (`questLogFight`: a fight, your health
+  or resource not full after it, death; `rest:Fight`) and *Always show in a group* (`questLogGroup`: a party or raid;
+  `rest:InGroup`), both on at first. The three are in its Edit Mode dialog (its window's `settings`) and on the setup's
+  quest log page, not on the options page. Over the full map it always shows.
   **A timed quest's time left stands at its top,** under its title bar and over the list, a line for each, the soonest
   first: *2:05  Wolves Across the Border*, counting down, red in its last minute. It stays in sight while the rest of
   the log rests out of sight, is folded or switched off, so you always know a timer runs (the game's own timers go with
@@ -1419,7 +1420,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   plateau no lift reaches; all in one look, `Walk.NearestOf`). What lies off the walking data is drawn straight and costs `Search.STRAIGHT` times its yards,
   so the line runs from the start to the end itself; the search tells those yards at the end, and `"off"` where no
   floor lies near the start or the end at all (nothing to search). Then the line pulled straight through the openings (a funnel,
-  each opening drawn in from its ends); the heap keeps each node's f as it was put in. In two steps over the coarse
+  each opening drawn in from its ends); the heap keeps each node's f as it was put in, and the nodes' tables are kept a
+  part per tile (`Run`'s `parts`, the gates and the end in part 0; `Of` reads them): Lua makes a full table twice as
+  large at once, and one table per value keyed by every node did so for all of them together in the longest walks. In two steps over the coarse
   layer: first the price (`Search.Price`), rectangle by rectangle only on the tiles the walk starts and ends on, across
   every other by its gates (a gate reached where an opening crosses its stretch, from its middle held within the
   opening; across a tile to its part's other gates at their cost); where the start's tiles and the end's lie apart,
@@ -1761,7 +1764,9 @@ Tests: `dev/tests/navigation.lua`.
   in one look (`Walk.NearestOf`, `Goals`); the coarse layer's tile, parts and edges, the first plan's landings and the
   lifts' rings with the frame given back between them. The same routes; the largest piece a median 3.6 ms (30), 3 of
   500 routes over 16.7 ms; the first route after a login a fifth less work; a route shows a little later, kept to the
-  scheduler's share (a median 0.7 s at 60 fps, 0.4). Card #574.
+  scheduler's share (a median 0.7 s at 60 fps, 0.4). Then the search's tables a part per tile (`Run`'s `parts`): in
+  the longest walks 14 tables keyed by node had grown twice as large together past some 130,000 nodes (20 to 80 ms in
+  one frame). Card #574.
 - **2026-11-18, guild members where they are, when searched:** Saneroki: "Guild members exact placement on the map
   should not be default but should be visible when someone searches for that guild member in the map searchbar, so
   for example if someone writes "Guild" in the search bar all the guild members precise location is shown on the map
