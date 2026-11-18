@@ -5,6 +5,8 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 
 ## 0.3.6 (2026-11-18)
 
+- The map and the tooltips know 193 more quests of Forever, more of the quests' givers and takers and the quests
+  they need first, 186 more creatures, and the places of many creatures brought up to date.
 - Scanned the auction house with another addon? The prices of the two auction addons SaneUI knows count too: the
   tooltips' gold section, its advice and the price graph use them wherever SaneUI's own scans saw an item earlier or
   never, also with *Data: Auction House* switched off.

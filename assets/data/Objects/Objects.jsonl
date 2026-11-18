@@ -1,59 +1,59 @@
-{"key":31,"since":0,"src":[5,17,24],"name":"Old Lion Statue","kind":"quest"}
-{"key":32,"since":0,"src":[5,17,24],"name":"Sunken Chest","kind":"quest"}
-{"key":33,"since":0,"src":[5,17,24],"name":"Locked Chest","kind":"quest"}
-{"key":34,"since":0,"src":[5,17,24],"name":"Old Jug","kind":"quest"}
-{"key":35,"since":0,"src":[5,17,24],"name":"Captain's Footlocker","kind":"quest"}
-{"key":36,"since":0,"src":[5,17,24],"name":"Broken Barrel","kind":"quest"}
-{"key":47,"since":0,"src":[5,17,24],"name":"Wanted: Lieutenant Fangore","kind":"quest"}
-{"key":52,"since":0,"src":[5,17,24],"name":"Fall of Gurubashi","kind":"quest"}
-{"key":54,"since":0,"src":[5,17,24],"name":"The Emperor's Tomb","kind":"quest"}
-{"key":55,"since":0,"src":[5,17,24],"name":"A half-eaten body","kind":"quest"}
-{"key":56,"since":0,"src":[5,17,24],"name":"Rolf's corpse","kind":"quest"}
-{"key":57,"since":0,"src":[5,17,24],"name":"Moon Over the Vale","kind":"quest"}
-{"key":58,"since":0,"src":[5,17,24],"name":"Gri'lek the Wanderer","kind":"quest"}
-{"key":59,"since":0,"src":[5,17,24],"name":"Mound of loose dirt","kind":"quest"}
-{"key":60,"since":0,"src":[5,17,24],"name":"Wanted: Gath'Ilzogg","kind":"quest"}
-{"key":61,"since":0,"src":[5,17,24],"name":"A Weathered Grave","kind":"quest"}
-{"key":68,"since":0,"src":[5,17,24],"name":"Wanted Poster","kind":"quest"}
-{"key":76,"since":0,"src":[5,17,24],"name":"An Empty Jar","kind":"quest"}
-{"key":119,"since":0,"src":[5,17,24],"name":"Abercrombie's Crate","kind":"quest"}
-{"key":167,"since":0,"src":[5,17,24],"name":"Abercrombie's Crate","kind":"quest"}
-{"key":256,"since":0,"src":[5,17,24],"name":"WANTED","kind":"quest"}
-{"key":257,"since":0,"src":[5,17,24],"name":"Suspicious Barrel","kind":"quest"}
-{"key":259,"since":0,"src":[5,17,24],"name":"Half-buried Barrel","kind":"quest"}
-{"key":261,"since":0,"src":[5,17,24],"name":"Damaged Crate","kind":"quest"}
-{"key":263,"since":0,"src":[5,17,24],"name":"Kurzen Supplies","kind":"quest"}
-{"key":264,"since":0,"src":[5,17,24],"name":"Kurzen Supplies","kind":"quest"}
-{"key":269,"since":0,"src":[5,17,24],"name":"Guarded Thunder Ale Barrel","kind":"quest"}
-{"key":270,"since":0,"src":[5,17,24],"name":"Unguarded Thunder Ale Barrel","kind":"quest"}
-{"key":271,"since":0,"src":[5,17,24],"name":"Miners' League Crates","kind":"quest"}
-{"key":272,"since":0,"src":[5,17,24],"name":"MacGrann's Meat Locker","kind":"quest"}
-{"key":276,"since":0,"src":[5,17,24],"name":"Shimmerweed Basket","kind":"quest"}
-{"key":287,"since":0,"src":[5,17,24],"name":"Bookie Herod's Records","kind":"quest"}
-{"key":288,"since":0,"src":[5,17,24],"name":"Bookie Herod's Strongbox","kind":"quest"}
-{"key":290,"since":0,"src":[5,17,24],"name":"Furlbrow's Wardrobe","kind":"quest"}
-{"key":321,"since":0,"src":[5,17,24],"name":"Tear of Tilloa","kind":"quest"}
+{"key":31,"since":0,"src":[5,17,24,27],"name":"Old Lion Statue","kind":"quest"}
+{"key":32,"since":0,"src":[5,17,24,27],"name":"Sunken Chest","kind":"quest"}
+{"key":33,"since":0,"src":[5,17,24,27],"name":"Locked Chest","kind":"quest"}
+{"key":34,"since":0,"src":[5,17,24,27],"name":"Old Jug","kind":"quest"}
+{"key":35,"since":0,"src":[5,17,24,27],"name":"Captain's Footlocker","kind":"quest"}
+{"key":36,"since":0,"src":[5,17,24,27],"name":"Broken Barrel","kind":"quest"}
+{"key":47,"since":0,"src":[5,17,24,27],"name":"Wanted: Lieutenant Fangore","kind":"quest"}
+{"key":52,"since":0,"src":[5,17,24,27],"name":"Fall of Gurubashi","kind":"quest"}
+{"key":54,"since":0,"src":[5,17,24,27],"name":"The Emperor's Tomb","kind":"quest"}
+{"key":55,"since":0,"src":[5,17,24,27],"name":"A half-eaten body","kind":"quest"}
+{"key":56,"since":0,"src":[5,17,24,27],"name":"Rolf's corpse","kind":"quest"}
+{"key":57,"since":0,"src":[5,17,24,27],"name":"Moon Over the Vale","kind":"quest"}
+{"key":58,"since":0,"src":[5,17,24,27],"name":"Gri'lek the Wanderer","kind":"quest"}
+{"key":59,"since":0,"src":[5,17,24,27],"name":"Mound of loose dirt","kind":"quest"}
+{"key":60,"since":0,"src":[5,17,24,27],"name":"Wanted: Gath'Ilzogg","kind":"quest"}
+{"key":61,"since":0,"src":[5,17,24,27],"name":"A Weathered Grave","kind":"quest"}
+{"key":68,"since":0,"src":[5,17,24,27],"name":"Wanted Poster","kind":"quest"}
+{"key":76,"since":0,"src":[5,17,24,27],"name":"An Empty Jar","kind":"quest"}
+{"key":119,"since":0,"src":[5,17,24,27],"name":"Abercrombie's Crate","kind":"quest"}
+{"key":167,"since":0,"src":[5,17,24,27],"name":"Abercrombie's Crate","kind":"quest"}
+{"key":256,"since":0,"src":[5,17,24,27],"name":"WANTED","kind":"quest"}
+{"key":257,"since":0,"src":[5,17,24,27],"name":"Suspicious Barrel","kind":"quest"}
+{"key":259,"since":0,"src":[5,17,24,27],"name":"Half-buried Barrel","kind":"quest"}
+{"key":261,"since":0,"src":[5,17,24,27],"name":"Damaged Crate","kind":"quest"}
+{"key":263,"since":0,"src":[5,17,24,27],"name":"Kurzen Supplies","kind":"quest"}
+{"key":264,"since":0,"src":[5,17,24,27],"name":"Kurzen Supplies","kind":"quest"}
+{"key":269,"since":0,"src":[5,17,24,27],"name":"Guarded Thunder Ale Barrel","kind":"quest"}
+{"key":270,"since":0,"src":[5,17,24,27],"name":"Unguarded Thunder Ale Barrel","kind":"quest"}
+{"key":271,"since":0,"src":[5,17,24,27],"name":"Miners' League Crates","kind":"quest"}
+{"key":272,"since":0,"src":[5,17,24,27],"name":"MacGrann's Meat Locker","kind":"quest"}
+{"key":276,"since":0,"src":[5,17,24,27],"name":"Shimmerweed Basket","kind":"quest"}
+{"key":287,"since":0,"src":[5,17,24,27],"name":"Bookie Herod's Records","kind":"quest"}
+{"key":288,"since":0,"src":[5,17,24,27],"name":"Bookie Herod's Strongbox","kind":"quest"}
+{"key":290,"since":0,"src":[5,17,24,27],"name":"Furlbrow's Wardrobe","kind":"quest"}
+{"key":321,"since":0,"src":[5,17,24,27],"name":"Tear of Tilloa","kind":"quest"}
 {"key":324,"since":0,"src":[1],"name":"Small Thorium Vein","kind":"ore","skill":186,"skillLevel":245,"yellowAt":270,"greyAt":345}
-{"key":331,"since":0,"src":[5,17,24],"name":"Loose Soil","kind":"quest"}
-{"key":333,"since":0,"src":[5,17,24],"name":"Ancient Relic","kind":"quest"}
-{"key":334,"since":0,"src":[5,17,24],"name":"Ancient Relic","kind":"quest"}
-{"key":337,"since":0,"src":[5,17,24],"name":"Water Pitcher","kind":"quest"}
-{"key":375,"since":0,"src":[5,17,24],"name":"Tirisfal Pumpkin","kind":"quest"}
-{"key":711,"since":0,"src":[5,17,24],"name":"Wanted!","kind":"quest"}
-{"key":759,"since":0,"src":[5,17,24],"name":"The Holy Spring","kind":"quest"}
-{"key":1165,"since":0,"src":[5,17,24],"name":"Gunther's Books","kind":"quest"}
-{"key":1166,"since":0,"src":[5,17,24],"name":"Alexston's Chest","kind":"quest"}
-{"key":1557,"since":0,"src":[5,17,24],"name":"Lillith's Dinner Table","kind":"quest"}
-{"key":1560,"since":0,"src":[5,17,24],"name":"Storage Chest","kind":"quest"}
-{"key":1561,"since":0,"src":[5,17,24],"name":"Sealed Crate","kind":"quest"}
-{"key":1562,"since":0,"src":[5,17,24],"name":"Marshal Haggard's Chest","kind":"quest"}
-{"key":1571,"since":0,"src":[5,17,24],"name":"Dusty Spellbooks","kind":"quest"}
-{"key":1585,"since":0,"src":[5,17,24],"name":"Explosive Charge","kind":"quest"}
-{"key":1586,"since":0,"src":[5,17,24],"name":"Crate of Candles","kind":"quest"}
-{"key":1593,"since":0,"src":[5,17,24],"name":"Corpse Laden Boat","kind":"quest"}
-{"key":1594,"since":0,"src":[5,17,24],"name":"Berard's Bookshelf","kind":"quest"}
-{"key":1599,"since":0,"src":[5,17,24],"name":"Shallow Grave","kind":"quest"}
-{"key":1609,"since":0,"src":[5,17,24],"name":"Dragonmaw Catapult","kind":"quest"}
+{"key":331,"since":0,"src":[5,17,24,27],"name":"Loose Soil","kind":"quest"}
+{"key":333,"since":0,"src":[5,17,24,27],"name":"Ancient Relic","kind":"quest"}
+{"key":334,"since":0,"src":[5,17,24,27],"name":"Ancient Relic","kind":"quest"}
+{"key":337,"since":0,"src":[5,17,24,27],"name":"Water Pitcher","kind":"quest"}
+{"key":375,"since":0,"src":[5,17,24,27],"name":"Tirisfal Pumpkin","kind":"quest"}
+{"key":711,"since":0,"src":[5,17,24,27],"name":"Wanted!","kind":"quest"}
+{"key":759,"since":0,"src":[5,17,24,27],"name":"The Holy Spring","kind":"quest"}
+{"key":1165,"since":0,"src":[5,17,24,27],"name":"Gunther's Books","kind":"quest"}
+{"key":1166,"since":0,"src":[5,17,24,27],"name":"Alexston's Chest","kind":"quest"}
+{"key":1557,"since":0,"src":[5,17,24,27],"name":"Lillith's Dinner Table","kind":"quest"}
+{"key":1560,"since":0,"src":[5,17,24,27],"name":"Storage Chest","kind":"quest"}
+{"key":1561,"since":0,"src":[5,17,24,27],"name":"Sealed Crate","kind":"quest"}
+{"key":1562,"since":0,"src":[5,17,24,27],"name":"Marshal Haggard's Chest","kind":"quest"}
+{"key":1571,"since":0,"src":[5,17,24,27],"name":"Dusty Spellbooks","kind":"quest"}
+{"key":1585,"since":0,"src":[5,17,24,27],"name":"Explosive Charge","kind":"quest"}
+{"key":1586,"since":0,"src":[5,17,24,27],"name":"Crate of Candles","kind":"quest"}
+{"key":1593,"since":0,"src":[5,17,24,27],"name":"Corpse Laden Boat","kind":"quest"}
+{"key":1594,"since":0,"src":[5,17,24,27],"name":"Berard's Bookshelf","kind":"quest"}
+{"key":1599,"since":0,"src":[5,17,24,27],"name":"Shallow Grave","kind":"quest"}
+{"key":1609,"since":0,"src":[5,17,24,27],"name":"Dragonmaw Catapult","kind":"quest"}
 {"key":1610,"since":0,"src":[1],"name":"Incendicite Mineral Vein","kind":"ore","skill":186,"skillLevel":65,"yellowAt":90,"greyAt":165}
 {"key":1617,"since":0,"src":[1],"name":"Silverleaf","kind":"herb","skill":182,"skillLevel":1,"yellowAt":25,"greyAt":100}
 {"key":1618,"since":0,"src":[1],"name":"Peacebloom","kind":"herb","skill":182,"skillLevel":1,"yellowAt":25,"greyAt":100}
@@ -63,34 +63,34 @@
 {"key":1622,"since":0,"src":[1],"name":"Bruiseweed","kind":"herb","skill":182,"skillLevel":100,"yellowAt":125,"greyAt":200}
 {"key":1623,"since":0,"src":[1],"name":"Wild Steelbloom","kind":"herb","skill":182,"skillLevel":115,"yellowAt":140,"greyAt":215}
 {"key":1624,"since":0,"src":[1],"name":"Kingsblood","kind":"herb","skill":182,"skillLevel":125,"yellowAt":150,"greyAt":225}
-{"key":1627,"since":0,"src":[5,17,24],"name":"Dalaran Crate","kind":"quest"}
+{"key":1627,"since":0,"src":[5,17,24,27],"name":"Dalaran Crate","kind":"quest"}
 {"key":1628,"since":0,"src":[1],"name":"Grave Moss","kind":"herb","skill":182,"skillLevel":120,"yellowAt":145,"greyAt":220}
-{"key":1673,"since":0,"src":[5,17,24],"name":"Fel Cone","kind":"quest"}
-{"key":1721,"since":0,"src":[5,17,24],"name":"Locked ball and chain","kind":"quest"}
-{"key":1722,"since":0,"src":[5,17,24],"name":"Locked ball and chain","kind":"quest"}
-{"key":1723,"since":0,"src":[5,17,24],"name":"Mudsnout Blossom","kind":"quest"}
-{"key":1727,"since":0,"src":[5,17,24],"name":"Keg of Shindigger Stout","kind":"quest"}
-{"key":1728,"since":0,"src":[5,17,24],"name":"Dusty Rug","kind":"quest"}
+{"key":1673,"since":0,"src":[5,17,24,27],"name":"Fel Cone","kind":"quest"}
+{"key":1721,"since":0,"src":[5,17,24,27],"name":"Locked ball and chain","kind":"quest"}
+{"key":1722,"since":0,"src":[5,17,24,27],"name":"Locked ball and chain","kind":"quest"}
+{"key":1723,"since":0,"src":[5,17,24,27],"name":"Mudsnout Blossom","kind":"quest"}
+{"key":1727,"since":0,"src":[5,17,24,27],"name":"Keg of Shindigger Stout","kind":"quest"}
+{"key":1728,"since":0,"src":[5,17,24,27],"name":"Dusty Rug","kind":"quest"}
 {"key":1731,"since":0,"src":[1],"name":"Copper Vein","kind":"ore","skill":186,"skillLevel":1,"yellowAt":25,"greyAt":100}
 {"key":1732,"since":0,"src":[1],"name":"Tin Vein","kind":"ore","skill":186,"skillLevel":65,"yellowAt":90,"greyAt":165}
 {"key":1733,"since":0,"src":[1],"name":"Silver Vein","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
 {"key":1734,"since":0,"src":[1],"name":"Gold Vein","kind":"ore","skill":186,"skillLevel":155,"yellowAt":180,"greyAt":255}
 {"key":1735,"since":0,"src":[1],"name":"Iron Deposit","kind":"ore","skill":186,"skillLevel":125,"yellowAt":150,"greyAt":225}
-{"key":1736,"since":0,"src":[5,17,24],"name":"Shipment of Iron","kind":"quest"}
-{"key":1738,"since":0,"src":[5,17,24],"name":"Syndicate Documents","kind":"quest"}
-{"key":1739,"since":0,"src":[5,17,24],"name":"Syndicate Documents","kind":"quest"}
-{"key":1740,"since":0,"src":[5,17,24],"name":"Syndicate Documents","kind":"quest"}
-{"key":1759,"since":0,"src":[5,17,24],"name":"Hillsbrad Town Registry","kind":"quest"}
-{"key":1760,"since":0,"src":[5,17,24],"name":"Weathered Bookcase","kind":"quest"}
-{"key":1761,"since":0,"src":[5,17,24],"name":"Hillsbrad Proclamation","kind":"quest"}
-{"key":1763,"since":0,"src":[5,17,24],"name":"WANTED","kind":"quest"}
-{"key":1765,"since":0,"src":[5,17,24],"name":"Worn Wooden Chest","kind":"quest"}
-{"key":1767,"since":0,"src":[5,17,24],"name":"Helcular's Grave","kind":"quest"}
-{"key":1768,"since":0,"src":[5,17,24],"name":"Flame of Azel","kind":"quest"}
-{"key":1769,"since":0,"src":[5,17,24],"name":"Flame of Veraz","kind":"quest"}
-{"key":1770,"since":0,"src":[5,17,24],"name":"Flame of Uzel","kind":"quest"}
-{"key":2008,"since":0,"src":[5,17,24],"name":"Dangerous!","kind":"quest"}
-{"key":2039,"since":0,"src":[5,17,24],"name":"Hidden Strongbox","kind":"quest"}
+{"key":1736,"since":0,"src":[5,17,24,27],"name":"Shipment of Iron","kind":"quest"}
+{"key":1738,"since":0,"src":[5,17,24,27],"name":"Syndicate Documents","kind":"quest"}
+{"key":1739,"since":0,"src":[5,17,24,27],"name":"Syndicate Documents","kind":"quest"}
+{"key":1740,"since":0,"src":[5,17,24,27],"name":"Syndicate Documents","kind":"quest"}
+{"key":1759,"since":0,"src":[5,17,24,27],"name":"Hillsbrad Town Registry","kind":"quest"}
+{"key":1760,"since":0,"src":[5,17,24,27],"name":"Weathered Bookcase","kind":"quest"}
+{"key":1761,"since":0,"src":[5,17,24,27],"name":"Hillsbrad Proclamation","kind":"quest"}
+{"key":1763,"since":0,"src":[5,17,24,27],"name":"WANTED","kind":"quest"}
+{"key":1765,"since":0,"src":[5,17,24,27],"name":"Worn Wooden Chest","kind":"quest"}
+{"key":1767,"since":0,"src":[5,17,24,27],"name":"Helcular's Grave","kind":"quest"}
+{"key":1768,"since":0,"src":[5,17,24,27],"name":"Flame of Azel","kind":"quest"}
+{"key":1769,"since":0,"src":[5,17,24,27],"name":"Flame of Veraz","kind":"quest"}
+{"key":1770,"since":0,"src":[5,17,24,27],"name":"Flame of Uzel","kind":"quest"}
+{"key":2008,"since":0,"src":[5,17,24,27],"name":"Dangerous!","kind":"quest"}
+{"key":2039,"since":0,"src":[5,17,24,27],"name":"Hidden Strongbox","kind":"quest"}
 {"key":2040,"since":0,"src":[1],"name":"Mithril Deposit","kind":"ore","skill":186,"skillLevel":175,"yellowAt":200,"greyAt":275}
 {"key":2041,"since":0,"src":[1],"name":"Liferoot","kind":"herb","skill":182,"skillLevel":150,"yellowAt":175,"greyAt":250}
 {"key":2042,"since":0,"src":[1],"name":"Fadeleaf","kind":"herb","skill":182,"skillLevel":160,"yellowAt":185,"greyAt":260}
@@ -99,923 +99,939 @@
 {"key":2045,"since":0,"src":[1],"name":"Stranglekelp","kind":"herb","skill":182,"skillLevel":85,"yellowAt":110,"greyAt":185}
 {"key":2046,"since":0,"src":[1],"name":"Goldthorn","kind":"herb","skill":182,"skillLevel":170,"yellowAt":195,"greyAt":270}
 {"key":2047,"since":0,"src":[1],"name":"Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
-{"key":2059,"since":0,"src":[5,17,24],"name":"A Dwarven Corpse","kind":"quest"}
-{"key":2068,"since":0,"src":[5,17,24],"name":"Pupellyverbos Port","kind":"quest"}
-{"key":2076,"since":0,"src":[5,17,24],"name":"Bubbling Cauldron","kind":"quest"}
-{"key":2083,"since":0,"src":[5,17,24],"name":"Bloodsail Correspondence","kind":"quest"}
-{"key":2084,"since":0,"src":[5,17,24],"name":"Musquash Root","kind":"quest"}
-{"key":2086,"since":0,"src":[5,17,24],"name":"Bloodsail Charts","kind":"quest"}
-{"key":2087,"since":0,"src":[5,17,24],"name":"Bloodsail Orders","kind":"quest"}
-{"key":2289,"since":0,"src":[5,17,24],"name":"Ruined Lifeboat","kind":"quest"}
-{"key":2553,"since":0,"src":[5,17,24],"name":"A Soggy Scroll","kind":"quest"}
-{"key":2554,"since":0,"src":[5,17,24],"name":"Cortello's Riddle","kind":"quest"}
-{"key":2555,"since":0,"src":[5,17,24],"name":"Musty Scroll","kind":"quest"}
-{"key":2556,"since":0,"src":[5,17,24],"name":"Cortello's Treasure","kind":"quest"}
-{"key":2560,"since":0,"src":[5,17,24],"name":"Half-Buried Bottle","kind":"quest"}
-{"key":2652,"since":0,"src":[5,17,24],"name":"Ebenezer Rustlocke's Corpse","kind":"quest"}
+{"key":2059,"since":0,"src":[5,17,24,27],"name":"A Dwarven Corpse","kind":"quest"}
+{"key":2068,"since":0,"src":[5,17,24,27],"name":"Pupellyverbos Port","kind":"quest"}
+{"key":2076,"since":0,"src":[5,17,24,27],"name":"Bubbling Cauldron","kind":"quest"}
+{"key":2083,"since":0,"src":[5,17,24,27],"name":"Bloodsail Correspondence","kind":"quest"}
+{"key":2084,"since":0,"src":[5,17,24,27],"name":"Musquash Root","kind":"quest"}
+{"key":2086,"since":0,"src":[5,17,24,27],"name":"Bloodsail Charts","kind":"quest"}
+{"key":2087,"since":0,"src":[5,17,24,27],"name":"Bloodsail Orders","kind":"quest"}
+{"key":2289,"since":0,"src":[5,17,24,27],"name":"Ruined Lifeboat","kind":"quest"}
+{"key":2553,"since":0,"src":[5,17,24,27],"name":"A Soggy Scroll","kind":"quest"}
+{"key":2554,"since":0,"src":[5,17,24,27],"name":"Cortello's Riddle","kind":"quest"}
+{"key":2555,"since":0,"src":[5,17,24,27],"name":"Musty Scroll","kind":"quest"}
+{"key":2556,"since":0,"src":[5,17,24,27],"name":"Cortello's Treasure","kind":"quest"}
+{"key":2560,"since":0,"src":[5,17,24,27],"name":"Half-Buried Bottle","kind":"quest"}
+{"key":2652,"since":0,"src":[5,17,24,27],"name":"Ebenezer Rustlocke's Corpse","kind":"quest"}
 {"key":2653,"since":0,"src":[1],"name":"Lesser Bloodstone Deposit","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
-{"key":2656,"since":0,"src":[5,17,24],"name":"Waterlogged Letter","kind":"quest"}
-{"key":2688,"since":0,"src":[5,17,24],"name":"Keystone","kind":"quest"}
-{"key":2689,"since":0,"src":[5,17,24],"name":"Stone of West Binding","kind":"quest"}
-{"key":2690,"since":0,"src":[5,17,24],"name":"Stone of Outer Binding","kind":"quest"}
-{"key":2691,"since":0,"src":[5,17,24],"name":"Stone of East Binding","kind":"quest"}
-{"key":2701,"since":0,"src":[5,17,24],"name":"Iridescent Shards","kind":"quest"}
-{"key":2702,"since":0,"src":[5,17,24],"name":"Stone of Inner Binding","kind":"quest"}
-{"key":2703,"since":0,"src":[5,17,24],"name":"Trollbane's Tomb","kind":"quest"}
-{"key":2704,"since":0,"src":[5,17,24],"name":"Cache of Explosives","kind":"quest"}
-{"key":2707,"since":0,"src":[5,17,24],"name":"Maiden's Folly Charts","kind":"quest"}
-{"key":2708,"since":0,"src":[5,17,24],"name":"Spirit of Silverpine Charts","kind":"quest"}
-{"key":2709,"since":0,"src":[5,17,24],"name":"Maiden's Folly Log","kind":"quest"}
-{"key":2710,"since":0,"src":[5,17,24],"name":"Spirit of Silverpine Log","kind":"quest"}
-{"key":2712,"since":0,"src":[5,17,24],"name":"Calcified Elven Gem","kind":"quest"}
-{"key":2713,"since":0,"src":[5,17,24],"name":"Wanted Board","kind":"quest"}
-{"key":2714,"since":0,"src":[5,17,24],"name":"Alterac Granite","kind":"quest"}
-{"key":2716,"since":0,"src":[5,17,24],"name":"Trelane's Chest","kind":"quest"}
-{"key":2717,"since":0,"src":[5,17,24],"name":"Trelane's Footlocker","kind":"quest"}
-{"key":2718,"since":0,"src":[5,17,24],"name":"Trelane's Lockbox","kind":"quest"}
-{"key":2724,"since":0,"src":[5,17,24],"name":"Sack of Oats","kind":"quest"}
-{"key":2734,"since":0,"src":[5,17,24],"name":"Waterlogged Chest","kind":"quest"}
-{"key":2739,"since":0,"src":[5,17,24],"name":"Chest of the Black Feather","kind":"quest"}
-{"key":2740,"since":0,"src":[5,17,24],"name":"Chest of the Raven Claw","kind":"quest"}
-{"key":2741,"since":0,"src":[5,17,24],"name":"Chest of the Sky","kind":"quest"}
-{"key":2742,"since":0,"src":[5,17,24],"name":"Chest of Nesting","kind":"quest"}
-{"key":2743,"since":0,"src":[5,17,24],"name":"Carved Stone Urn","kind":"quest"}
-{"key":2744,"since":0,"src":[5,17,24],"name":"Giant Clam","kind":"quest"}
-{"key":2842,"since":0,"src":[5,17,24],"name":"Pillar of Diamond","kind":"quest"}
-{"key":2843,"since":0,"src":[4,5,17,24],"name":"Battered Chest","kind":"chest"}
-{"key":2844,"since":0,"src":[5,17,24],"name":"Battered Chest","kind":"quest"}
-{"key":2845,"since":0,"src":[5,17,24],"name":"Tattered Chest","kind":"quest"}
-{"key":2847,"since":0,"src":[5,17,24],"name":"Tattered Chest","kind":"quest"}
-{"key":2848,"since":0,"src":[5,17,24],"name":"Pillar of Opal","kind":"quest"}
-{"key":2849,"since":0,"src":[4,5,17,24],"name":"Battered Chest","kind":"chest"}
-{"key":2850,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":2852,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":2855,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":2857,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":2858,"since":0,"src":[5,17,24],"name":"Pillar of Amethyst","kind":"quest"}
+{"key":2656,"since":0,"src":[5,17,24,27],"name":"Waterlogged Letter","kind":"quest"}
+{"key":2688,"since":0,"src":[5,17,24,27],"name":"Keystone","kind":"quest"}
+{"key":2689,"since":0,"src":[5,17,24,27],"name":"Stone of West Binding","kind":"quest"}
+{"key":2690,"since":0,"src":[5,17,24,27],"name":"Stone of Outer Binding","kind":"quest"}
+{"key":2691,"since":0,"src":[5,17,24,27],"name":"Stone of East Binding","kind":"quest"}
+{"key":2701,"since":0,"src":[5,17,24,27],"name":"Iridescent Shards","kind":"quest"}
+{"key":2702,"since":0,"src":[5,17,24,27],"name":"Stone of Inner Binding","kind":"quest"}
+{"key":2703,"since":0,"src":[5,17,24,27],"name":"Trollbane's Tomb","kind":"quest"}
+{"key":2704,"since":0,"src":[5,17,24,27],"name":"Cache of Explosives","kind":"quest"}
+{"key":2707,"since":0,"src":[5,17,24,27],"name":"Maiden's Folly Charts","kind":"quest"}
+{"key":2708,"since":0,"src":[5,17,24,27],"name":"Spirit of Silverpine Charts","kind":"quest"}
+{"key":2709,"since":0,"src":[5,17,24,27],"name":"Maiden's Folly Log","kind":"quest"}
+{"key":2710,"since":0,"src":[5,17,24,27],"name":"Spirit of Silverpine Log","kind":"quest"}
+{"key":2712,"since":0,"src":[5,17,24,27],"name":"Calcified Elven Gem","kind":"quest"}
+{"key":2713,"since":0,"src":[5,17,24,27],"name":"Wanted Board","kind":"quest"}
+{"key":2714,"since":0,"src":[5,17,24,27],"name":"Alterac Granite","kind":"quest"}
+{"key":2716,"since":0,"src":[5,17,24,27],"name":"Trelane's Chest","kind":"quest"}
+{"key":2717,"since":0,"src":[5,17,24,27],"name":"Trelane's Footlocker","kind":"quest"}
+{"key":2718,"since":0,"src":[5,17,24,27],"name":"Trelane's Lockbox","kind":"quest"}
+{"key":2724,"since":0,"src":[5,17,24,27],"name":"Sack of Oats","kind":"quest"}
+{"key":2734,"since":0,"src":[5,17,24,27],"name":"Waterlogged Chest","kind":"quest"}
+{"key":2739,"since":0,"src":[5,17,24,27],"name":"Chest of the Black Feather","kind":"quest"}
+{"key":2740,"since":0,"src":[5,17,24,27],"name":"Chest of the Raven Claw","kind":"quest"}
+{"key":2741,"since":0,"src":[5,17,24,27],"name":"Chest of the Sky","kind":"quest"}
+{"key":2742,"since":0,"src":[5,17,24,27],"name":"Chest of Nesting","kind":"quest"}
+{"key":2743,"since":0,"src":[5,17,24,27],"name":"Carved Stone Urn","kind":"quest"}
+{"key":2744,"since":0,"src":[5,17,24,27],"name":"Giant Clam","kind":"quest"}
+{"key":2842,"since":0,"src":[5,17,24,27],"name":"Pillar of Diamond","kind":"quest"}
+{"key":2843,"since":0,"src":[4,5,17,24,27],"name":"Battered Chest","kind":"chest"}
+{"key":2844,"since":0,"src":[5,17,24,27],"name":"Battered Chest","kind":"quest"}
+{"key":2845,"since":0,"src":[5,17,24,27],"name":"Tattered Chest","kind":"quest"}
+{"key":2847,"since":0,"src":[5,17,24,27],"name":"Tattered Chest","kind":"quest"}
+{"key":2848,"since":0,"src":[5,17,24,27],"name":"Pillar of Opal","kind":"quest"}
+{"key":2849,"since":0,"src":[4,5,17,24,27],"name":"Battered Chest","kind":"chest"}
+{"key":2850,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":2852,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":2855,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":2857,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":2858,"since":0,"src":[5,17,24,27],"name":"Pillar of Amethyst","kind":"quest"}
 {"key":2866,"since":0,"src":[1],"name":"Firebloom","kind":"herb","skill":182,"skillLevel":205,"yellowAt":230,"greyAt":305}
-{"key":2867,"since":0,"src":[5,17,24],"name":"Excavation Supply Crate","kind":"quest"}
-{"key":2868,"since":0,"src":[5,17,24],"name":"Crumpled Map","kind":"quest"}
-{"key":2875,"since":0,"src":[5,17,24],"name":"Battered Dwarven Skeleton","kind":"quest"}
-{"key":2891,"since":0,"src":[5,17,24],"name":"Balia'mah Trophy Skulls","kind":"quest"}
-{"key":2892,"since":0,"src":[5,17,24],"name":"Ziata'jai Trophy Skulls","kind":"quest"}
-{"key":2893,"since":0,"src":[5,17,24],"name":"Zul'Mamwe Trophy Skulls","kind":"quest"}
-{"key":2907,"since":0,"src":[5,17,24],"name":"Water Pitcher","kind":"quest"}
-{"key":2908,"since":0,"src":[5,17,24],"name":"Sealed Supply Crate","kind":"quest"}
-{"key":2910,"since":0,"src":[5,17,24],"name":"Well Stone","kind":"quest"}
-{"key":2912,"since":0,"src":[5,17,24],"name":"Ambercorn","kind":"quest"}
-{"key":2933,"since":0,"src":[5,17,24],"name":"Seal of the Earth","kind":"quest"}
-{"key":3076,"since":0,"src":[5,17,24],"name":"Dirt-stained Map","kind":"quest"}
-{"key":3189,"since":0,"src":[5,17,24],"name":"Attack Plan: Valley of Trials","kind":"quest"}
-{"key":3190,"since":0,"src":[5,17,24],"name":"Attack Plan: Sen'jin Village","kind":"quest"}
-{"key":3192,"since":0,"src":[5,17,24],"name":"Attack Plan: Orgrimmar","kind":"quest"}
-{"key":3236,"since":0,"src":[5,17,24],"name":"Gnomish Toolbox","kind":"quest"}
-{"key":3237,"since":0,"src":[5,17,24],"name":"Imprisoned Darkspear","kind":"quest"}
-{"key":3238,"since":0,"src":[5,17,24],"name":"Chen's Empty Keg","kind":"quest"}
-{"key":3239,"since":0,"src":[5,17,24],"name":"Benedict's Chest","kind":"quest"}
-{"key":3240,"since":0,"src":[5,17,24],"name":"Taillasher Eggs","kind":"quest"}
-{"key":3290,"since":0,"src":[5,17,24],"name":"Stolen Supply Sack","kind":"quest"}
-{"key":3525,"since":0,"src":[5,17,24],"name":"The Altar of Fire","kind":"quest"}
-{"key":3640,"since":0,"src":[5,17,24],"name":"Laden Mushroom","kind":"quest"}
-{"key":3642,"since":0,"src":[5,17,24],"name":"Kolkars' Booty","kind":"quest"}
-{"key":3643,"since":0,"src":[5,17,24],"name":"Old Footlocker","kind":"quest"}
-{"key":3644,"since":0,"src":[5,17,24],"name":"Bael Modan Flying Machine","kind":"quest"}
-{"key":3646,"since":0,"src":[5,17,24],"name":"General Twinbraid's Strongbox","kind":"quest"}
-{"key":3660,"since":0,"src":[4,5,17,24],"name":"Armor Crate","kind":"chest"}
-{"key":3661,"since":0,"src":[4,5,17,24],"name":"Weapon Crate","kind":"chest"}
-{"key":3685,"since":0,"src":[5,17,24],"name":"Silithid Mound","kind":"quest"}
-{"key":3689,"since":0,"src":[4,5,17,24],"name":"Weapon Crate","kind":"chest"}
-{"key":3702,"since":0,"src":[4,5,17,24],"name":"Armor Crate","kind":"chest"}
-{"key":3703,"since":0,"src":[5,17,24],"name":"Armor Crate","kind":"quest"}
-{"key":3705,"since":0,"src":[5,17,24],"name":"Barrel of Milk","kind":"quest"}
-{"key":3714,"since":0,"src":[5,17,24],"name":"Alliance Strongbox","kind":"quest"}
-{"key":3715,"since":0,"src":[4,5,17,24],"name":"Alliance Chest","kind":"chest"}
-{"key":3719,"since":0,"src":[5,17,24],"name":"Food Crate","kind":"quest"}
-{"key":3737,"since":0,"src":[5,17,24],"name":"Bubbling Fissure","kind":"quest"}
+{"key":2867,"since":0,"src":[5,17,24,27],"name":"Excavation Supply Crate","kind":"quest"}
+{"key":2868,"since":0,"src":[5,17,24,27],"name":"Crumpled Map","kind":"quest"}
+{"key":2875,"since":0,"src":[5,17,24,27],"name":"Battered Dwarven Skeleton","kind":"quest"}
+{"key":2891,"since":0,"src":[5,17,24,27],"name":"Balia'mah Trophy Skulls","kind":"quest"}
+{"key":2892,"since":0,"src":[5,17,24,27],"name":"Ziata'jai Trophy Skulls","kind":"quest"}
+{"key":2893,"since":0,"src":[5,17,24,27],"name":"Zul'Mamwe Trophy Skulls","kind":"quest"}
+{"key":2907,"since":0,"src":[5,17,24,27],"name":"Water Pitcher","kind":"quest"}
+{"key":2908,"since":0,"src":[5,17,24,27],"name":"Sealed Supply Crate","kind":"quest"}
+{"key":2910,"since":0,"src":[5,17,24,27],"name":"Well Stone","kind":"quest"}
+{"key":2912,"since":0,"src":[5,17,24,27],"name":"Ambercorn","kind":"quest"}
+{"key":2933,"since":0,"src":[5,17,24,27],"name":"Seal of the Earth","kind":"quest"}
+{"key":3076,"since":0,"src":[5,17,24,27],"name":"Dirt-stained Map","kind":"quest"}
+{"key":3189,"since":0,"src":[5,17,24,27],"name":"Attack Plan: Valley of Trials","kind":"quest"}
+{"key":3190,"since":0,"src":[5,17,24,27],"name":"Attack Plan: Sen'jin Village","kind":"quest"}
+{"key":3192,"since":0,"src":[5,17,24,27],"name":"Attack Plan: Orgrimmar","kind":"quest"}
+{"key":3236,"since":0,"src":[5,17,24,27],"name":"Gnomish Toolbox","kind":"quest"}
+{"key":3237,"since":0,"src":[5,17,24,27],"name":"Imprisoned Darkspear","kind":"quest"}
+{"key":3238,"since":0,"src":[5,17,24,27],"name":"Chen's Empty Keg","kind":"quest"}
+{"key":3239,"since":0,"src":[5,17,24,27],"name":"Benedict's Chest","kind":"quest"}
+{"key":3240,"since":0,"src":[5,17,24,27],"name":"Taillasher Eggs","kind":"quest"}
+{"key":3290,"since":0,"src":[5,17,24,27],"name":"Stolen Supply Sack","kind":"quest"}
+{"key":3525,"since":0,"src":[5,17,24,27],"name":"The Altar of Fire","kind":"quest"}
+{"key":3640,"since":0,"src":[5,17,24,27],"name":"Laden Mushroom","kind":"quest"}
+{"key":3642,"since":0,"src":[5,17,24,27],"name":"Kolkars' Booty","kind":"quest"}
+{"key":3643,"since":0,"src":[5,17,24,27],"name":"Old Footlocker","kind":"quest"}
+{"key":3644,"since":0,"src":[5,17,24,27],"name":"Bael Modan Flying Machine","kind":"quest"}
+{"key":3646,"since":0,"src":[5,17,24,27],"name":"General Twinbraid's Strongbox","kind":"quest"}
+{"key":3660,"since":0,"src":[4,5,17,24,27],"name":"Armor Crate","kind":"chest"}
+{"key":3661,"since":0,"src":[4,5,17,24,27],"name":"Weapon Crate","kind":"chest"}
+{"key":3685,"since":0,"src":[5,17,24,27],"name":"Silithid Mound","kind":"quest"}
+{"key":3689,"since":0,"src":[4,5,17,24,27],"name":"Weapon Crate","kind":"chest"}
+{"key":3702,"since":0,"src":[4,5,17,24,27],"name":"Armor Crate","kind":"chest"}
+{"key":3703,"since":0,"src":[5,17,24,27],"name":"Armor Crate","kind":"quest"}
+{"key":3705,"since":0,"src":[5,17,24,27],"name":"Barrel of Milk","kind":"quest"}
+{"key":3714,"since":0,"src":[5,17,24,27],"name":"Alliance Strongbox","kind":"quest"}
+{"key":3715,"since":0,"src":[4,5,17,24,27],"name":"Alliance Chest","kind":"chest"}
+{"key":3719,"since":0,"src":[5,17,24,27],"name":"Food Crate","kind":"quest"}
+{"key":3737,"since":0,"src":[5,17,24,27],"name":"Bubbling Fissure","kind":"quest"}
 {"key":3743,"since":0,"src":[4],"name":"Fissure Plant","kind":"chest"}
-{"key":3767,"since":0,"src":[5,17,24],"name":"Drizzlik's Emporium","kind":"quest"}
-{"key":3768,"since":0,"src":[5,17,24],"name":"Fragile - Do Not Drop","kind":"quest"}
-{"key":3972,"since":0,"src":[5,17,24],"name":"WANTED","kind":"quest"}
-{"key":4004,"since":0,"src":[5,17,24],"name":"Fire Plume Ridge Lava Lake","kind":"quest"}
-{"key":4072,"since":0,"src":[5,17,24],"name":"Main Control Valve","kind":"quest"}
-{"key":4095,"since":0,"src":[5,17,24],"name":"Alliance Strongbox","kind":"quest"}
-{"key":4096,"since":0,"src":[4,5,17,24],"name":"Alliance Chest","kind":"chest"}
-{"key":4141,"since":0,"src":[5,17,24],"name":"Control Console","kind":"quest"}
-{"key":4149,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":4406,"since":0,"src":[5,17,24],"name":"Webwood Eggs","kind":"quest"}
-{"key":4608,"since":0,"src":[5,17,24],"name":"Timberling Sprout","kind":"quest"}
-{"key":5619,"since":0,"src":[5,17,24],"name":"Flawed Power Stone","kind":"quest"}
-{"key":5620,"since":0,"src":[5,17,24],"name":"Flawed Power Stones","kind":"quest"}
-{"key":5621,"since":0,"src":[5,17,24],"name":"Flawed Power Stones","kind":"quest"}
-{"key":6751,"since":0,"src":[5,17,24],"name":"Strange Fruited Plant","kind":"quest"}
-{"key":6752,"since":0,"src":[5,17,24],"name":"Strange Fronded Plant","kind":"quest"}
-{"key":6906,"since":0,"src":[5,17,24],"name":"Red Raptor Nest","kind":"quest"}
-{"key":6907,"since":0,"src":[5,17,24],"name":"Blue Raptor Nest","kind":"quest"}
-{"key":6908,"since":0,"src":[5,17,24],"name":"Yellow Raptor Nest","kind":"quest"}
-{"key":7510,"since":0,"src":[5,17,24],"name":"Sprouted Frond","kind":"quest"}
-{"key":7923,"since":0,"src":[5,17,24],"name":"Denalan's Planter","kind":"quest"}
-{"key":9630,"since":0,"src":[5,17,24],"name":"Flagongut's Fossil","kind":"quest"}
-{"key":10076,"since":0,"src":[5,17,24],"name":"Scrying Bowl","kind":"quest"}
-{"key":11713,"since":0,"src":[5,17,24],"name":"Death Cap","kind":"quest"}
-{"key":11714,"since":0,"src":[5,17,24],"name":"Scaber Stalk","kind":"quest"}
-{"key":12654,"since":0,"src":[4,5,17,24],"name":"Mathystra Relic","kind":"chest"}
-{"key":12666,"since":0,"src":[5,17,24],"name":"Twilight Tome","kind":"quest"}
+{"key":3767,"since":0,"src":[5,17,24,27],"name":"Drizzlik's Emporium","kind":"quest"}
+{"key":3768,"since":0,"src":[5,17,24,27],"name":"Fragile - Do Not Drop","kind":"quest"}
+{"key":3972,"since":0,"src":[5,17,24,27],"name":"WANTED","kind":"quest"}
+{"key":4004,"since":0,"src":[5,17,24,27],"name":"Fire Plume Ridge Lava Lake","kind":"quest"}
+{"key":4072,"since":0,"src":[5,17,24,27],"name":"Main Control Valve","kind":"quest"}
+{"key":4095,"since":0,"src":[5,17,24,27],"name":"Alliance Strongbox","kind":"quest"}
+{"key":4096,"since":0,"src":[4,5,17,24,27],"name":"Alliance Chest","kind":"chest"}
+{"key":4141,"since":0,"src":[5,17,24,27],"name":"Control Console","kind":"quest"}
+{"key":4149,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":4406,"since":0,"src":[5,17,24,27],"name":"Webwood Eggs","kind":"quest"}
+{"key":4608,"since":0,"src":[5,17,24,27],"name":"Timberling Sprout","kind":"quest"}
+{"key":5619,"since":0,"src":[5,17,24,27],"name":"Flawed Power Stone","kind":"quest"}
+{"key":5620,"since":0,"src":[5,17,24,27],"name":"Flawed Power Stones","kind":"quest"}
+{"key":5621,"since":0,"src":[5,17,24,27],"name":"Flawed Power Stones","kind":"quest"}
+{"key":6751,"since":0,"src":[5,17,24,27],"name":"Strange Fruited Plant","kind":"quest"}
+{"key":6752,"since":0,"src":[5,17,24,27],"name":"Strange Fronded Plant","kind":"quest"}
+{"key":6906,"since":0,"src":[5,17,24,27],"name":"Red Raptor Nest","kind":"quest"}
+{"key":6907,"since":0,"src":[5,17,24,27],"name":"Blue Raptor Nest","kind":"quest"}
+{"key":6908,"since":0,"src":[5,17,24,27],"name":"Yellow Raptor Nest","kind":"quest"}
+{"key":7510,"since":0,"src":[5,17,24,27],"name":"Sprouted Frond","kind":"quest"}
+{"key":7923,"since":0,"src":[5,17,24,27],"name":"Denalan's Planter","kind":"quest"}
+{"key":9630,"since":0,"src":[5,17,24,27],"name":"Flagongut's Fossil","kind":"quest"}
+{"key":10076,"since":0,"src":[5,17,24,27],"name":"Scrying Bowl","kind":"quest"}
+{"key":11713,"since":0,"src":[5,17,24,27],"name":"Death Cap","kind":"quest"}
+{"key":11714,"since":0,"src":[5,17,24,27],"name":"Scaber Stalk","kind":"quest"}
+{"key":12654,"since":0,"src":[4,5,17,24,27],"name":"Mathystra Relic","kind":"chest"}
+{"key":12666,"since":0,"src":[5,17,24,27],"name":"Twilight Tome","kind":"quest"}
 {"key":13359,"since":0,"src":[4],"name":"Cat Figurine","kind":"chest"}
-{"key":13360,"since":0,"src":[4,5,17,24],"name":"Mathystra Relic","kind":"chest"}
-{"key":13872,"since":0,"src":[4,5,17,24],"name":"Mathystra Relic","kind":"chest"}
-{"key":13891,"since":0,"src":[5,17,24],"name":"Serpentbloom","kind":"quest"}
-{"key":13949,"since":0,"src":[5,17,24],"name":"Pitted Iron Chest","kind":"quest"}
-{"key":15885,"since":0,"src":[5,17,24],"name":"Shrine Of Remulos","kind":"quest"}
-{"key":16393,"since":0,"src":[5,17,24],"name":"Ancient Flame","kind":"quest"}
-{"key":17182,"since":0,"src":[5,17,24],"name":"Buzzbox 827","kind":"quest"}
-{"key":17183,"since":0,"src":[5,17,24],"name":"Buzzbox 411","kind":"quest"}
-{"key":17184,"since":0,"src":[5,17,24],"name":"Buzzbox 323","kind":"quest"}
-{"key":17185,"since":0,"src":[5,17,24],"name":"Buzzbox 525","kind":"quest"}
-{"key":17188,"since":0,"src":[5,17,24],"name":"The Lay of Ameth'Aran","kind":"quest"}
-{"key":17189,"since":0,"src":[5,17,24],"name":"The Fall of Ameth'Aran","kind":"quest"}
-{"key":17190,"since":0,"src":[5,17,24],"name":"Forge","kind":"quest"}
-{"key":17282,"since":0,"src":[5,17,24],"name":"Plant Bundle","kind":"quest"}
-{"key":17783,"since":0,"src":[5,17,24],"name":"Ancient Statuette","kind":"quest"}
-{"key":18036,"since":0,"src":[5,17,24],"name":"Bottle of Disease","kind":"quest"}
-{"key":19015,"since":0,"src":[5,17,24],"name":"Elune's Tear","kind":"quest"}
-{"key":19016,"since":0,"src":[5,17,24],"name":"Stardust Covered Bush","kind":"quest"}
+{"key":13360,"since":0,"src":[4,5,17,24,27],"name":"Mathystra Relic","kind":"chest"}
+{"key":13872,"since":0,"src":[4,5,17,24,27],"name":"Mathystra Relic","kind":"chest"}
+{"key":13891,"since":0,"src":[5,17,24,27],"name":"Serpentbloom","kind":"quest"}
+{"key":13949,"since":0,"src":[5,17,24,27],"name":"Pitted Iron Chest","kind":"quest"}
+{"key":15885,"since":0,"src":[5,17,24,27],"name":"Shrine Of Remulos","kind":"quest"}
+{"key":16393,"since":0,"src":[5,17,24,27],"name":"Ancient Flame","kind":"quest"}
+{"key":17182,"since":0,"src":[5,17,24,27],"name":"Buzzbox 827","kind":"quest"}
+{"key":17183,"since":0,"src":[5,17,24,27],"name":"Buzzbox 411","kind":"quest"}
+{"key":17184,"since":0,"src":[5,17,24,27],"name":"Buzzbox 323","kind":"quest"}
+{"key":17185,"since":0,"src":[5,17,24,27],"name":"Buzzbox 525","kind":"quest"}
+{"key":17188,"since":0,"src":[5,17,24,27],"name":"The Lay of Ameth'Aran","kind":"quest"}
+{"key":17189,"since":0,"src":[5,17,24,27],"name":"The Fall of Ameth'Aran","kind":"quest"}
+{"key":17190,"since":0,"src":[5,17,24,27],"name":"Forge","kind":"quest"}
+{"key":17282,"since":0,"src":[5,17,24,27],"name":"Plant Bundle","kind":"quest"}
+{"key":17783,"since":0,"src":[5,17,24,27],"name":"Ancient Statuette","kind":"quest"}
+{"key":18036,"since":0,"src":[5,17,24,27],"name":"Bottle of Disease","kind":"quest"}
+{"key":19015,"since":0,"src":[5,17,24,27],"name":"Elune's Tear","kind":"quest"}
+{"key":19016,"since":0,"src":[5,17,24,27],"name":"Stardust Covered Bush","kind":"quest"}
 {"key":19017,"since":0,"src":[4],"name":"Giant Clam","kind":"chest"}
 {"key":19018,"since":0,"src":[4],"name":"Giant Clam","kind":"chest"}
-{"key":19019,"since":0,"src":[4,5,17,24],"name":"Box of Assorted Parts","kind":"chest"}
-{"key":19020,"since":0,"src":[4,5,17,24],"name":"Box of Assorted Parts","kind":"chest"}
-{"key":19021,"since":0,"src":[5,17,24],"name":"Rusty Chest","kind":"quest"}
-{"key":19022,"since":0,"src":[5,17,24],"name":"Worn Chest","kind":"quest"}
-{"key":19024,"since":0,"src":[5,17,24],"name":"Hidden Shrine","kind":"quest"}
-{"key":19027,"since":0,"src":[5,17,24],"name":"Tome of Mel'Thandris","kind":"quest"}
-{"key":19030,"since":0,"src":[5,17,24],"name":"Mound of Dirt","kind":"quest"}
-{"key":19283,"since":0,"src":[5,17,24],"name":"Compendium of the Fallen","kind":"quest"}
-{"key":19284,"since":0,"src":[5,17,24],"name":"Mythology of the Titans","kind":"quest"}
-{"key":19463,"since":0,"src":[5,17,24],"name":"Cliffspring Falls Cave Mouth","kind":"quest"}
-{"key":19464,"since":0,"src":[5,17,24],"name":"Dreadmist Peak Pool","kind":"quest"}
-{"key":19541,"since":0,"src":[5,17,24],"name":"Deepmoss Eggs","kind":"quest"}
-{"key":19549,"since":0,"src":[5,17,24],"name":"Shadowglen Moonwell","kind":"quest"}
-{"key":19550,"since":0,"src":[5,17,24],"name":"Starbreeze Moonwell","kind":"quest"}
-{"key":19551,"since":0,"src":[5,17,24],"name":"Pools of Arlithrien Moonwell","kind":"quest"}
-{"key":19552,"since":0,"src":[5,17,24],"name":"Oracle Glade Moonwell","kind":"quest"}
-{"key":19594,"since":0,"src":[24],"name":"Venture Co. Copter Pad","kind":"quest"}
-{"key":19596,"since":0,"src":[5,17,24],"name":"Sleepers' Cache","kind":"quest"}
-{"key":19597,"since":0,"src":[5,17,24],"name":"Druids' Cache","kind":"quest"}
-{"key":19598,"since":0,"src":[5,17,24],"name":"Barrow Cache","kind":"quest"}
-{"key":19599,"since":0,"src":[5,17,24],"name":"Talon Den Hoard","kind":"quest"}
-{"key":19602,"since":0,"src":[4,5,17,24],"name":"Venture Co. Engineering Plans","kind":"chest"}
-{"key":19603,"since":0,"src":[4,5,17,24],"name":"Venture Co. Documents","kind":"chest"}
-{"key":19861,"since":0,"src":[5,17,24],"name":"Henrig Lonebrow's Journal","kind":"quest"}
-{"key":19868,"since":0,"src":[5,17,24],"name":"Rocket Car Rubble","kind":"quest"}
-{"key":19869,"since":0,"src":[5,17,24],"name":"Rocket Car Rubble","kind":"quest"}
-{"key":19870,"since":0,"src":[5,17,24],"name":"Rocket Car Rubble","kind":"quest"}
-{"key":19871,"since":0,"src":[5,17,24],"name":"Rocket Car Rubble","kind":"quest"}
-{"key":19872,"since":0,"src":[5,17,24],"name":"Rocket Car Rubble","kind":"quest"}
-{"key":19873,"since":0,"src":[5,17,24],"name":"Rocket Car Rubble","kind":"quest"}
-{"key":19877,"since":0,"src":[5,17,24],"name":"Velinde's Locker","kind":"quest"}
-{"key":19901,"since":0,"src":[5,17,24],"name":"Circle of Imprisonment","kind":"quest"}
+{"key":19019,"since":0,"src":[4,5,17,24,27],"name":"Box of Assorted Parts","kind":"chest"}
+{"key":19020,"since":0,"src":[4,5,17,24,27],"name":"Box of Assorted Parts","kind":"chest"}
+{"key":19021,"since":0,"src":[5,17,24,27],"name":"Rusty Chest","kind":"quest"}
+{"key":19022,"since":0,"src":[5,17,24,27],"name":"Worn Chest","kind":"quest"}
+{"key":19024,"since":0,"src":[5,17,24,27],"name":"Hidden Shrine","kind":"quest"}
+{"key":19027,"since":0,"src":[5,17,24,27],"name":"Tome of Mel'Thandris","kind":"quest"}
+{"key":19030,"since":0,"src":[5,17,24,27],"name":"Mound of Dirt","kind":"quest"}
+{"key":19283,"since":0,"src":[5,17,24,27],"name":"Compendium of the Fallen","kind":"quest"}
+{"key":19284,"since":0,"src":[5,17,24,27],"name":"Mythology of the Titans","kind":"quest"}
+{"key":19463,"since":0,"src":[5,17,24,27],"name":"Cliffspring Falls Cave Mouth","kind":"quest"}
+{"key":19464,"since":0,"src":[5,17,24,27],"name":"Dreadmist Peak Pool","kind":"quest"}
+{"key":19541,"since":0,"src":[5,17,24,27],"name":"Deepmoss Eggs","kind":"quest"}
+{"key":19549,"since":0,"src":[5,17,24,27],"name":"Shadowglen Moonwell","kind":"quest"}
+{"key":19550,"since":0,"src":[5,17,24,27],"name":"Starbreeze Moonwell","kind":"quest"}
+{"key":19551,"since":0,"src":[5,17,24,27],"name":"Pools of Arlithrien Moonwell","kind":"quest"}
+{"key":19552,"since":0,"src":[5,17,24,27],"name":"Oracle Glade Moonwell","kind":"quest"}
+{"key":19594,"since":0,"src":[24,27],"name":"Venture Co. Copter Pad","kind":"quest"}
+{"key":19596,"since":0,"src":[5,17,24,27],"name":"Sleepers' Cache","kind":"quest"}
+{"key":19597,"since":0,"src":[5,17,24,27],"name":"Druids' Cache","kind":"quest"}
+{"key":19598,"since":0,"src":[5,17,24,27],"name":"Barrow Cache","kind":"quest"}
+{"key":19599,"since":0,"src":[5,17,24,27],"name":"Talon Den Hoard","kind":"quest"}
+{"key":19602,"since":0,"src":[4,5,17,24,27],"name":"Venture Co. Engineering Plans","kind":"chest"}
+{"key":19603,"since":0,"src":[4,5,17,24,27],"name":"Venture Co. Documents","kind":"chest"}
+{"key":19861,"since":0,"src":[5,17,24,27],"name":"Henrig Lonebrow's Journal","kind":"quest"}
+{"key":19868,"since":0,"src":[5,17,24,27],"name":"Rocket Car Rubble","kind":"quest"}
+{"key":19869,"since":0,"src":[5,17,24,27],"name":"Rocket Car Rubble","kind":"quest"}
+{"key":19870,"since":0,"src":[5,17,24,27],"name":"Rocket Car Rubble","kind":"quest"}
+{"key":19871,"since":0,"src":[5,17,24,27],"name":"Rocket Car Rubble","kind":"quest"}
+{"key":19872,"since":0,"src":[5,17,24,27],"name":"Rocket Car Rubble","kind":"quest"}
+{"key":19873,"since":0,"src":[5,17,24,27],"name":"Rocket Car Rubble","kind":"quest"}
+{"key":19877,"since":0,"src":[5,17,24,27],"name":"Velinde's Locker","kind":"quest"}
+{"key":19901,"since":0,"src":[5,17,24,27],"name":"Circle of Imprisonment","kind":"quest"}
 {"key":19903,"since":0,"src":[1],"name":"Indurium Mineral Vein","kind":"ore","skill":186,"skillLevel":150,"yellowAt":175,"greyAt":250}
-{"key":19904,"since":0,"src":[5,17,24],"name":"Mok'Morokk's Snuff","kind":"quest"}
-{"key":19905,"since":0,"src":[5,17,24],"name":"Mok'Morokk's Grog","kind":"quest"}
-{"key":19906,"since":0,"src":[5,17,24],"name":"Mok'Morokk's Strongbox","kind":"quest"}
-{"key":20352,"since":0,"src":[5,17,24],"name":"Circle of Imprisonment","kind":"quest"}
-{"key":20359,"since":0,"src":[5,17,24],"name":"Egg of Onyxia","kind":"quest"}
-{"key":20691,"since":0,"src":[5,17,24],"name":"Cozzle's Footlocker","kind":"quest"}
-{"key":20725,"since":0,"src":[4,5,17,24],"name":"The Legacy of the Aspects","kind":"chest"}
-{"key":20726,"since":0,"src":[5,17,24],"name":"Beginnings of the Undead Threat","kind":"quest"}
-{"key":20727,"since":0,"src":[5,17,24],"name":"Gizmorium Shipping Crate","kind":"quest"}
-{"key":20805,"since":0,"src":[5,17,24],"name":"Rizzle's Unguarded Plans","kind":"quest"}
-{"key":20806,"since":0,"src":[5,17,24],"name":"Ashenvale Moonwell","kind":"quest"}
-{"key":20807,"since":0,"src":[5,17,24],"name":"Ancient Brazier","kind":"quest"}
-{"key":20920,"since":0,"src":[5,17,24],"name":"Blueleaf Tuber","kind":"quest"}
-{"key":20925,"since":0,"src":[5,17,24],"name":"Captain's Footlocker","kind":"quest"}
-{"key":20985,"since":0,"src":[5,17,24],"name":"Loose Dirt","kind":"quest"}
-{"key":20992,"since":0,"src":[5,17,24],"name":"Black Shield","kind":"quest"}
-{"key":21015,"since":0,"src":[5,17,24],"name":"Hoofprints","kind":"quest"}
-{"key":21016,"since":0,"src":[5,17,24],"name":"Hoofprints","kind":"quest"}
-{"key":21042,"since":0,"src":[5,17,24],"name":"Theramore Guard Badge","kind":"quest"}
-{"key":21052,"since":0,"src":[5,17,24],"name":"Defias Strongbox","kind":"quest"}
-{"key":21277,"since":0,"src":[5,17,24],"name":"Crate with Holes","kind":"quest"}
-{"key":21530,"since":0,"src":[5,17,24],"name":"Snufflenose Owner's Manual","kind":"quest"}
-{"key":22245,"since":0,"src":[5,17,24],"name":"Sack of Meat","kind":"quest"}
-{"key":22246,"since":0,"src":[5,17,24],"name":"Tear of Theradras","kind":"quest"}
-{"key":22550,"since":0,"src":[5,17,24],"name":"Draenethyst Crystals","kind":"quest"}
-{"key":24776,"since":0,"src":[5,17,24],"name":"Yuriv's Tombstone","kind":"quest"}
-{"key":24798,"since":0,"src":[5,17,24],"name":"Sundried Driftwood","kind":"quest"}
-{"key":28024,"since":0,"src":[5,17,24],"name":"Caravan Chest","kind":"quest"}
-{"key":28604,"since":0,"src":[5,17,24],"name":"Scattered Crate","kind":"quest"}
-{"key":30854,"since":0,"src":[4,5,17,24],"name":"Atal'ai Artifact","kind":"chest"}
-{"key":30855,"since":0,"src":[4,5,17,24],"name":"Atal'ai Artifact","kind":"chest"}
-{"key":30856,"since":0,"src":[4,5,17,24],"name":"Atal'ai Artifact","kind":"chest"}
-{"key":32569,"since":0,"src":[5,17,24],"name":"Galen's Strongbox","kind":"quest"}
-{"key":35251,"since":0,"src":[5,17,24],"name":"Karnitol's Chest","kind":"quest"}
-{"key":35252,"since":0,"src":[5,17,24],"name":"Ancient Relic","kind":"quest"}
-{"key":36738,"since":0,"src":[5,17,24],"name":"The Book of Ur","kind":"quest"}
-{"key":37098,"since":0,"src":[5,17,24],"name":"Perrine's Chest","kind":"quest"}
-{"key":37099,"since":0,"src":[5,17,24],"name":"Atal'ai Tablet","kind":"quest"}
-{"key":50935,"since":0,"src":[5,17,24],"name":"Sack of Corn","kind":"quest"}
-{"key":50936,"since":0,"src":[5,17,24],"name":"Sack of Barley","kind":"quest"}
-{"key":50937,"since":0,"src":[5,17,24],"name":"Sack of Rye","kind":"quest"}
-{"key":50961,"since":0,"src":[5,17,24],"name":"Malem Chest","kind":"quest"}
-{"key":50982,"since":0,"src":[5,17,24],"name":"The Charred Oak","kind":"quest"}
-{"key":51708,"since":0,"src":[5,17,24],"name":"Eliza's Grave Dirt","kind":"quest"}
-{"key":58369,"since":0,"src":[5,17,24],"name":"Stolen Iron Chest","kind":"quest"}
-{"key":58595,"since":0,"src":[5,17,24],"name":"Burning Blade Stash","kind":"quest"}
-{"key":61934,"since":0,"src":[5,17,24],"name":"Brazier of the Dormant Flame","kind":"quest"}
-{"key":61935,"since":0,"src":[5,17,24],"name":"Regulator Valve","kind":"quest"}
-{"key":61936,"since":0,"src":[5,17,24],"name":"Fuel Control Valve","kind":"quest"}
-{"key":68865,"since":0,"src":[5,17,24],"name":"Snufflenose Command Sticks","kind":"quest"}
-{"key":73939,"since":0,"src":[5,17,24],"name":"Ooze Covered Iron Deposit","kind":"quest"}
+{"key":19904,"since":0,"src":[5,17,24,27],"name":"Mok'Morokk's Snuff","kind":"quest"}
+{"key":19905,"since":0,"src":[5,17,24,27],"name":"Mok'Morokk's Grog","kind":"quest"}
+{"key":19906,"since":0,"src":[5,17,24,27],"name":"Mok'Morokk's Strongbox","kind":"quest"}
+{"key":20352,"since":0,"src":[5,17,24,27],"name":"Circle of Imprisonment","kind":"quest"}
+{"key":20359,"since":0,"src":[5,17,24,27],"name":"Egg of Onyxia","kind":"quest"}
+{"key":20691,"since":0,"src":[5,17,24,27],"name":"Cozzle's Footlocker","kind":"quest"}
+{"key":20725,"since":0,"src":[4,5,17,24,27],"name":"The Legacy of the Aspects","kind":"chest"}
+{"key":20726,"since":0,"src":[5,17,24,27],"name":"Beginnings of the Undead Threat","kind":"quest"}
+{"key":20727,"since":0,"src":[5,17,24,27],"name":"Gizmorium Shipping Crate","kind":"quest"}
+{"key":20805,"since":0,"src":[5,17,24,27],"name":"Rizzle's Unguarded Plans","kind":"quest"}
+{"key":20806,"since":0,"src":[5,17,24,27],"name":"Ashenvale Moonwell","kind":"quest"}
+{"key":20807,"since":0,"src":[5,17,24,27],"name":"Ancient Brazier","kind":"quest"}
+{"key":20920,"since":0,"src":[5,17,24,27],"name":"Blueleaf Tuber","kind":"quest"}
+{"key":20925,"since":0,"src":[5,17,24,27],"name":"Captain's Footlocker","kind":"quest"}
+{"key":20985,"since":0,"src":[5,17,24,27],"name":"Loose Dirt","kind":"quest"}
+{"key":20992,"since":0,"src":[5,17,24,27],"name":"Black Shield","kind":"quest"}
+{"key":21015,"since":0,"src":[5,17,24,27],"name":"Hoofprints","kind":"quest"}
+{"key":21016,"since":0,"src":[5,17,24,27],"name":"Hoofprints","kind":"quest"}
+{"key":21042,"since":0,"src":[5,17,24,27],"name":"Theramore Guard Badge","kind":"quest"}
+{"key":21052,"since":0,"src":[5,17,24,27],"name":"Defias Strongbox","kind":"quest"}
+{"key":21277,"since":0,"src":[5,17,24,27],"name":"Crate with Holes","kind":"quest"}
+{"key":21530,"since":0,"src":[5,17,24,27],"name":"Snufflenose Owner's Manual","kind":"quest"}
+{"key":22245,"since":0,"src":[5,17,24,27],"name":"Sack of Meat","kind":"quest"}
+{"key":22246,"since":0,"src":[5,17,24,27],"name":"Tear of Theradras","kind":"quest"}
+{"key":22550,"since":0,"src":[5,17,24,27],"name":"Draenethyst Crystals","kind":"quest"}
+{"key":24776,"since":0,"src":[5,17,24,27],"name":"Yuriv's Tombstone","kind":"quest"}
+{"key":24798,"since":0,"src":[5,17,24,27],"name":"Sundried Driftwood","kind":"quest"}
+{"key":28024,"since":0,"src":[5,17,24,27],"name":"Caravan Chest","kind":"quest"}
+{"key":28604,"since":0,"src":[5,17,24,27],"name":"Scattered Crate","kind":"quest"}
+{"key":30854,"since":0,"src":[4,5,17,24,27],"name":"Atal'ai Artifact","kind":"chest"}
+{"key":30855,"since":0,"src":[4,5,17,24,27],"name":"Atal'ai Artifact","kind":"chest"}
+{"key":30856,"since":0,"src":[4,5,17,24,27],"name":"Atal'ai Artifact","kind":"chest"}
+{"key":32569,"since":0,"src":[5,17,24,27],"name":"Galen's Strongbox","kind":"quest"}
+{"key":35251,"since":0,"src":[5,17,24,27],"name":"Karnitol's Chest","kind":"quest"}
+{"key":35252,"since":0,"src":[5,17,24,27],"name":"Ancient Relic","kind":"quest"}
+{"key":36738,"since":0,"src":[5,17,24,27],"name":"The Book of Ur","kind":"quest"}
+{"key":37098,"since":0,"src":[5,17,24,27],"name":"Perrine's Chest","kind":"quest"}
+{"key":37099,"since":0,"src":[5,17,24,27],"name":"Atal'ai Tablet","kind":"quest"}
+{"key":50935,"since":0,"src":[5,17,24,27],"name":"Sack of Corn","kind":"quest"}
+{"key":50936,"since":0,"src":[5,17,24,27],"name":"Sack of Barley","kind":"quest"}
+{"key":50937,"since":0,"src":[5,17,24,27],"name":"Sack of Rye","kind":"quest"}
+{"key":50961,"since":0,"src":[5,17,24,27],"name":"Malem Chest","kind":"quest"}
+{"key":50982,"since":0,"src":[5,17,24,27],"name":"The Charred Oak","kind":"quest"}
+{"key":51708,"since":0,"src":[5,17,24,27],"name":"Eliza's Grave Dirt","kind":"quest"}
+{"key":58369,"since":0,"src":[5,17,24,27],"name":"Stolen Iron Chest","kind":"quest"}
+{"key":58595,"since":0,"src":[5,17,24,27],"name":"Burning Blade Stash","kind":"quest"}
+{"key":61934,"since":0,"src":[5,17,24,27],"name":"Brazier of the Dormant Flame","kind":"quest"}
+{"key":61935,"since":0,"src":[5,17,24,27],"name":"Regulator Valve","kind":"quest"}
+{"key":61936,"since":0,"src":[5,17,24,27],"name":"Fuel Control Valve","kind":"quest"}
+{"key":68865,"since":0,"src":[5,17,24,27],"name":"Snufflenose Command Sticks","kind":"quest"}
+{"key":73939,"since":0,"src":[5,17,24,27],"name":"Ooze Covered Iron Deposit","kind":"quest"}
 {"key":73940,"since":0,"src":[1],"name":"Ooze Covered Silver Vein","kind":"ore","skill":186,"skillLevel":75,"yellowAt":100,"greyAt":175}
 {"key":73941,"since":0,"src":[1],"name":"Ooze Covered Gold Vein","kind":"ore","skill":186,"skillLevel":155,"yellowAt":180,"greyAt":255}
-{"key":74447,"since":0,"src":[5,17,24],"name":"Large Iron Bound Chest","kind":"quest"}
-{"key":74448,"since":0,"src":[5,17,24],"name":"Large Solid Chest","kind":"quest"}
-{"key":74731,"since":0,"src":[5,17,24],"name":"Noggle's Satchel","kind":"quest"}
-{"key":75293,"since":0,"src":[5,17,24],"name":"Large Battered Chest","kind":"quest"}
-{"key":75295,"since":0,"src":[5,17,24],"name":"Large Iron Bound Chest","kind":"quest"}
-{"key":75296,"since":0,"src":[5,17,24],"name":"Large Iron Bound Chest","kind":"quest"}
-{"key":75297,"since":0,"src":[5,17,24],"name":"Large Iron Bound Chest","kind":"quest"}
-{"key":75298,"since":0,"src":[5,17,24],"name":"Large Solid Chest","kind":"quest"}
-{"key":75299,"since":0,"src":[5,17,24],"name":"Large Solid Chest","kind":"quest"}
-{"key":75300,"since":0,"src":[5,17,24],"name":"Large Solid Chest","kind":"quest"}
-{"key":83763,"since":0,"src":[5,17,24],"name":"Stolen Books","kind":"quest"}
-{"key":85562,"since":0,"src":[5,17,24],"name":"Ironband's Strongbox","kind":"quest"}
-{"key":85563,"since":0,"src":[5,17,24],"name":"Dead-tooth's Strongbox","kind":"quest"}
-{"key":86492,"since":0,"src":[5,17,24],"name":"Crate of Elunite","kind":"quest"}
-{"key":89634,"since":0,"src":[5,17,24],"name":"Iron Coral","kind":"quest"}
-{"key":89635,"since":0,"src":[5,17,24],"name":"Sunscorched Shell","kind":"quest"}
-{"key":89931,"since":0,"src":[5,17,24],"name":"Bath'rah's Cauldron","kind":"quest"}
-{"key":91138,"since":0,"src":[5,17,24],"name":"Jordan's Hammer","kind":"quest"}
-{"key":92013,"since":0,"src":[5,17,24],"name":"Tome of the Cabal","kind":"quest"}
-{"key":92420,"since":0,"src":[5,17,24],"name":"Bailor's Ore","kind":"quest"}
-{"key":92423,"since":0,"src":[5,17,24],"name":"Damaged Chest","kind":"quest"}
-{"key":93192,"since":0,"src":[5,17,24],"name":"Heartswood","kind":"quest"}
-{"key":102984,"since":0,"src":[5,17,24],"name":"Bink's Toolbox","kind":"quest"}
-{"key":102985,"since":0,"src":[5,17,24],"name":"Balnir Snapdragons","kind":"quest"}
-{"key":102986,"since":0,"src":[5,17,24],"name":"Ju-Ju Heap","kind":"quest"}
-{"key":103574,"since":0,"src":[5,17,24],"name":"Filled Containment Coffer","kind":"quest"}
-{"key":103600,"since":0,"src":[5,17,24],"name":"Andron's Bookshelf","kind":"quest"}
-{"key":103628,"since":0,"src":[5,17,24],"name":"Ur's Treatise on Shadow Magic","kind":"quest"}
-{"key":103662,"since":0,"src":[5,17,24],"name":"Bolt Charged Bramble","kind":"quest"}
-{"key":103664,"since":0,"src":[5,17,24],"name":"Rituals of Power","kind":"quest"}
-{"key":103815,"since":0,"src":[4,5,17,24],"name":"Ambermill Strongbox","kind":"chest"}
-{"key":104564,"since":0,"src":[5,17,24],"name":"Bingles's Toolbucket","kind":"quest"}
-{"key":104569,"since":0,"src":[5,17,24],"name":"Bingles's Toolbucket","kind":"quest"}
-{"key":104574,"since":0,"src":[5,17,24],"name":"Bingles's Toolbucket","kind":"quest"}
-{"key":104575,"since":0,"src":[5,17,24],"name":"Bingles's Blastencapper","kind":"quest"}
-{"key":105169,"since":0,"src":[5,17,24],"name":"Agamand Weapon Rack","kind":"quest"}
-{"key":105170,"since":0,"src":[5,17,24],"name":"Agamand Weapon Rack","kind":"quest"}
-{"key":105171,"since":0,"src":[5,17,24],"name":"Agamand Weapon Rack","kind":"quest"}
-{"key":105172,"since":0,"src":[5,17,24],"name":"Agamand Weapon Rack","kind":"quest"}
-{"key":105174,"since":0,"src":[5,17,24],"name":"Chest of Containment Coffers","kind":"quest"}
-{"key":105175,"since":0,"src":[5,17,24],"name":"Cantation of Manifestation","kind":"quest"}
+{"key":74447,"since":0,"src":[5,17,24,27],"name":"Large Iron Bound Chest","kind":"quest"}
+{"key":74448,"since":0,"src":[5,17,24,27],"name":"Large Solid Chest","kind":"quest"}
+{"key":74731,"since":0,"src":[5,17,24,27],"name":"Noggle's Satchel","kind":"quest"}
+{"key":75293,"since":0,"src":[5,17,24,27],"name":"Large Battered Chest","kind":"quest"}
+{"key":75295,"since":0,"src":[5,17,24,27],"name":"Large Iron Bound Chest","kind":"quest"}
+{"key":75296,"since":0,"src":[5,17,24,27],"name":"Large Iron Bound Chest","kind":"quest"}
+{"key":75297,"since":0,"src":[5,17,24,27],"name":"Large Iron Bound Chest","kind":"quest"}
+{"key":75298,"since":0,"src":[5,17,24,27],"name":"Large Solid Chest","kind":"quest"}
+{"key":75299,"since":0,"src":[5,17,24,27],"name":"Large Solid Chest","kind":"quest"}
+{"key":75300,"since":0,"src":[5,17,24,27],"name":"Large Solid Chest","kind":"quest"}
+{"key":83763,"since":0,"src":[5,17,24,27],"name":"Stolen Books","kind":"quest"}
+{"key":85562,"since":0,"src":[5,17,24,27],"name":"Ironband's Strongbox","kind":"quest"}
+{"key":85563,"since":0,"src":[5,17,24,27],"name":"Dead-tooth's Strongbox","kind":"quest"}
+{"key":86492,"since":0,"src":[5,17,24,27],"name":"Crate of Elunite","kind":"quest"}
+{"key":89634,"since":0,"src":[5,17,24,27],"name":"Iron Coral","kind":"quest"}
+{"key":89635,"since":0,"src":[5,17,24,27],"name":"Sunscorched Shell","kind":"quest"}
+{"key":89931,"since":0,"src":[5,17,24,27],"name":"Bath'rah's Cauldron","kind":"quest"}
+{"key":91138,"since":0,"src":[5,17,24,27],"name":"Jordan's Hammer","kind":"quest"}
+{"key":92013,"since":0,"src":[5,17,24,27],"name":"Tome of the Cabal","kind":"quest"}
+{"key":92420,"since":0,"src":[5,17,24,27],"name":"Bailor's Ore","kind":"quest"}
+{"key":92423,"since":0,"src":[5,17,24,27],"name":"Damaged Chest","kind":"quest"}
+{"key":93192,"since":0,"src":[5,17,24,27],"name":"Heartswood","kind":"quest"}
+{"key":102984,"since":0,"src":[5,17,24,27],"name":"Bink's Toolbox","kind":"quest"}
+{"key":102985,"since":0,"src":[5,17,24,27],"name":"Balnir Snapdragons","kind":"quest"}
+{"key":102986,"since":0,"src":[5,17,24,27],"name":"Ju-Ju Heap","kind":"quest"}
+{"key":103574,"since":0,"src":[5,17,24,27],"name":"Filled Containment Coffer","kind":"quest"}
+{"key":103600,"since":0,"src":[5,17,24,27],"name":"Andron's Bookshelf","kind":"quest"}
+{"key":103628,"since":0,"src":[5,17,24,27],"name":"Ur's Treatise on Shadow Magic","kind":"quest"}
+{"key":103662,"since":0,"src":[5,17,24,27],"name":"Bolt Charged Bramble","kind":"quest"}
+{"key":103664,"since":0,"src":[5,17,24,27],"name":"Rituals of Power","kind":"quest"}
+{"key":103815,"since":0,"src":[4,5,17,24,27],"name":"Ambermill Strongbox","kind":"chest"}
+{"key":104564,"since":0,"src":[5,17,24,27],"name":"Bingles's Toolbucket","kind":"quest"}
+{"key":104569,"since":0,"src":[5,17,24,27],"name":"Bingles's Toolbucket","kind":"quest"}
+{"key":104574,"since":0,"src":[5,17,24,27],"name":"Bingles's Toolbucket","kind":"quest"}
+{"key":104575,"since":0,"src":[5,17,24,27],"name":"Bingles's Blastencapper","kind":"quest"}
+{"key":105169,"since":0,"src":[5,17,24,27],"name":"Agamand Weapon Rack","kind":"quest"}
+{"key":105170,"since":0,"src":[5,17,24,27],"name":"Agamand Weapon Rack","kind":"quest"}
+{"key":105171,"since":0,"src":[5,17,24,27],"name":"Agamand Weapon Rack","kind":"quest"}
+{"key":105172,"since":0,"src":[5,17,24,27],"name":"Agamand Weapon Rack","kind":"quest"}
+{"key":105174,"since":0,"src":[5,17,24,27],"name":"Chest of Containment Coffers","kind":"quest"}
+{"key":105175,"since":0,"src":[5,17,24,27],"name":"Cantation of Manifestation","kind":"quest"}
 {"key":105176,"since":0,"src":[4],"name":"Venture Co. Strongbox","kind":"chest"}
-{"key":105570,"since":0,"src":[4,5,17,24],"name":"Alliance Strongbox","kind":"chest"}
-{"key":105578,"since":0,"src":[4,5,17,24],"name":"Horde Chest","kind":"chest"}
-{"key":105579,"since":0,"src":[4,5,17,24],"name":"Alliance Chest","kind":"chest"}
-{"key":105581,"since":0,"src":[4,5,17,24],"name":"Alliance Chest","kind":"chest"}
-{"key":106318,"since":0,"src":[4,5,17,24],"name":"Battered Chest","kind":"chest"}
-{"key":106319,"since":0,"src":[4,5,17,24],"name":"Battered Chest","kind":"chest"}
-{"key":107045,"since":0,"src":[5,17,24],"name":"Spring Well","kind":"quest"}
-{"key":107046,"since":0,"src":[5,17,24],"name":"Quilboar Watering Hole","kind":"quest"}
-{"key":107047,"since":0,"src":[5,17,24],"name":"Ruins of Stardust Fountain","kind":"quest"}
-{"key":111095,"since":0,"src":[4,5,17,24],"name":"Alliance Chest","kind":"chest"}
-{"key":112877,"since":0,"src":[5,17,24],"name":"Talvash's Scrying Bowl","kind":"quest"}
-{"key":112888,"since":0,"src":[5,17,24],"name":"Dusty Shelf","kind":"quest"}
-{"key":112948,"since":0,"src":[5,17,24],"name":"Intrepid's Locked Strongbox","kind":"quest"}
-{"key":113757,"since":0,"src":[5,17,24],"name":"Shadowforge Cache","kind":"quest"}
-{"key":113791,"since":0,"src":[5,17,24],"name":"Brazier of Everfount","kind":"quest"}
-{"key":121264,"since":0,"src":[4,5,17,24],"name":"Lucius's Lockbox","kind":"chest"}
-{"key":123214,"since":0,"src":[4,5,17,24],"name":"Duskwood Chest","kind":"chest"}
+{"key":105570,"since":0,"src":[4,5,17,24,27],"name":"Alliance Strongbox","kind":"chest"}
+{"key":105578,"since":0,"src":[4,5,17,24,27],"name":"Horde Chest","kind":"chest"}
+{"key":105579,"since":0,"src":[4,5,17,24,27],"name":"Alliance Chest","kind":"chest"}
+{"key":105581,"since":0,"src":[4,5,17,24,27],"name":"Alliance Chest","kind":"chest"}
+{"key":106318,"since":0,"src":[4,5,17,24,27],"name":"Battered Chest","kind":"chest"}
+{"key":106319,"since":0,"src":[4,5,17,24,27],"name":"Battered Chest","kind":"chest"}
+{"key":107045,"since":0,"src":[5,17,24,27],"name":"Spring Well","kind":"quest"}
+{"key":107046,"since":0,"src":[5,17,24,27],"name":"Quilboar Watering Hole","kind":"quest"}
+{"key":107047,"since":0,"src":[5,17,24,27],"name":"Ruins of Stardust Fountain","kind":"quest"}
+{"key":111095,"since":0,"src":[4,5,17,24,27],"name":"Alliance Chest","kind":"chest"}
+{"key":112877,"since":0,"src":[5,17,24,27],"name":"Talvash's Scrying Bowl","kind":"quest"}
+{"key":112888,"since":0,"src":[5,17,24,27],"name":"Dusty Shelf","kind":"quest"}
+{"key":112948,"since":0,"src":[5,17,24,27],"name":"Intrepid's Locked Strongbox","kind":"quest"}
+{"key":113757,"since":0,"src":[5,17,24,27],"name":"Shadowforge Cache","kind":"quest"}
+{"key":113791,"since":0,"src":[5,17,24,27],"name":"Brazier of Everfount","kind":"quest"}
+{"key":121264,"since":0,"src":[4,5,17,24,27],"name":"Lucius's Lockbox","kind":"chest"}
+{"key":123214,"since":0,"src":[4,5,17,24,27],"name":"Duskwood Chest","kind":"chest"}
 {"key":123309,"since":0,"src":[1],"name":"Ooze Covered Truesilver Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
 {"key":123310,"since":0,"src":[1],"name":"Ooze Covered Mithril Deposit","kind":"ore","skill":186,"skillLevel":175,"yellowAt":200,"greyAt":275}
 {"key":123330,"since":0,"src":[4],"name":"Buccaneer's Strongbox","kind":"chest"}
 {"key":123331,"since":0,"src":[4],"name":"Buccaneer's Strongbox","kind":"chest"}
 {"key":123333,"since":0,"src":[4],"name":"Buccaneer's Strongbox","kind":"chest"}
 {"key":123848,"since":0,"src":[1],"name":"Ooze Covered Thorium Vein","kind":"ore","skill":186,"skillLevel":245,"yellowAt":270,"greyAt":345}
-{"key":124388,"since":0,"src":[5,17,24],"name":"Garrett Family Chest","kind":"quest"}
-{"key":124389,"since":0,"src":[5,17,24],"name":"Krom Stoutarm's Chest","kind":"quest"}
-{"key":125477,"since":0,"src":[5,17,24],"name":"Conspicuous Urn","kind":"quest"}
-{"key":126049,"since":0,"src":[5,17,24],"name":"Magenta Cap Clusters","kind":"quest"}
-{"key":126158,"since":0,"src":[5,17,24],"name":"Tallonkai's Dresser","kind":"quest"}
-{"key":126260,"since":0,"src":[5,17,24],"name":"Ancient Chest","kind":"quest"}
-{"key":128293,"since":0,"src":[5,17,24],"name":"Magenta Cap Clusters","kind":"quest"}
-{"key":128308,"since":0,"src":[5,17,24],"name":"Shallow Grave","kind":"quest"}
-{"key":128403,"since":0,"src":[5,17,24],"name":"Shallow Grave","kind":"quest"}
-{"key":129127,"since":0,"src":[4,5,17,24],"name":"Gallywix's Lockbox","kind":"chest"}
-{"key":131474,"since":0,"src":[5,17,24],"name":"The Discs of Norgannon","kind":"quest"}
-{"key":131978,"since":0,"src":[5,17,24],"name":"Large Mithril Bound Chest","kind":"quest"}
-{"key":131979,"since":0,"src":[5,17,24],"name":"Large Darkwood Chest","kind":"quest"}
-{"key":138492,"since":0,"src":[5,17,24],"name":"Shards of Myzrael","kind":"quest"}
-{"key":138498,"since":0,"src":[5,17,24],"name":"Temple of the Moon Fountain","kind":"quest"}
-{"key":140911,"since":0,"src":[5,17,24],"name":"Spool of Light Chartreuse Silk Thread","kind":"quest"}
-{"key":140971,"since":0,"src":[5,17,24],"name":"Gahz'ridian","kind":"quest"}
-{"key":141596,"since":0,"src":[5,17,24],"name":"Witch Doctor's Chest","kind":"quest"}
-{"key":141853,"since":0,"src":[5,17,24],"name":"Violet Tragan","kind":"quest"}
-{"key":141931,"since":0,"src":[5,17,24],"name":"Hippogryph Egg","kind":"quest"}
-{"key":141979,"since":0,"src":[5,17,24],"name":"Ancient Treasure","kind":"quest"}
-{"key":141980,"since":0,"src":[5,17,24],"name":"Spectral Lockbox","kind":"quest"}
-{"key":142071,"since":0,"src":[5,17,24],"name":"Egg-O-Matic","kind":"quest"}
-{"key":142076,"since":0,"src":[5,17,24],"name":"Clara's Fresh Apples","kind":"quest"}
-{"key":142088,"since":0,"src":[5,17,24],"name":"Tablet of Will","kind":"quest"}
-{"key":142122,"since":0,"src":[5,17,24],"name":"Wanted Poster","kind":"quest"}
-{"key":142127,"since":0,"src":[5,17,24],"name":"Rin'ji's Secret","kind":"quest"}
+{"key":124388,"since":0,"src":[5,17,24,27],"name":"Garrett Family Chest","kind":"quest"}
+{"key":124389,"since":0,"src":[5,17,24,27],"name":"Krom Stoutarm's Chest","kind":"quest"}
+{"key":125477,"since":0,"src":[5,17,24,27],"name":"Conspicuous Urn","kind":"quest"}
+{"key":126049,"since":0,"src":[5,17,24,27],"name":"Magenta Cap Clusters","kind":"quest"}
+{"key":126158,"since":0,"src":[5,17,24,27],"name":"Tallonkai's Dresser","kind":"quest"}
+{"key":126260,"since":0,"src":[5,17,24,27],"name":"Ancient Chest","kind":"quest"}
+{"key":128293,"since":0,"src":[5,17,24,27],"name":"Magenta Cap Clusters","kind":"quest"}
+{"key":128308,"since":0,"src":[5,17,24,27],"name":"Shallow Grave","kind":"quest"}
+{"key":128403,"since":0,"src":[5,17,24,27],"name":"Shallow Grave","kind":"quest"}
+{"key":129127,"since":0,"src":[4,5,17,24,27],"name":"Gallywix's Lockbox","kind":"chest"}
+{"key":131474,"since":0,"src":[5,17,24,27],"name":"The Discs of Norgannon","kind":"quest"}
+{"key":131978,"since":0,"src":[5,17,24,27],"name":"Large Mithril Bound Chest","kind":"quest"}
+{"key":131979,"since":0,"src":[5,17,24,27],"name":"Large Darkwood Chest","kind":"quest"}
+{"key":138492,"since":0,"src":[5,17,24,27],"name":"Shards of Myzrael","kind":"quest"}
+{"key":138498,"since":0,"src":[5,17,24,27],"name":"Temple of the Moon Fountain","kind":"quest"}
+{"key":140911,"since":0,"src":[5,17,24,27],"name":"Spool of Light Chartreuse Silk Thread","kind":"quest"}
+{"key":140971,"since":0,"src":[5,17,24,27],"name":"Gahz'ridian","kind":"quest"}
+{"key":141596,"since":0,"src":[5,17,24,27],"name":"Witch Doctor's Chest","kind":"quest"}
+{"key":141853,"since":0,"src":[5,17,24,27],"name":"Violet Tragan","kind":"quest"}
+{"key":141931,"since":0,"src":[5,17,24,27],"name":"Hippogryph Egg","kind":"quest"}
+{"key":141979,"since":0,"src":[5,17,24,27],"name":"Ancient Treasure","kind":"quest"}
+{"key":141980,"since":0,"src":[5,17,24,27],"name":"Spectral Lockbox","kind":"quest"}
+{"key":142071,"since":0,"src":[5,17,24,27],"name":"Egg-O-Matic","kind":"quest"}
+{"key":142076,"since":0,"src":[5,17,24,27],"name":"Clara's Fresh Apples","kind":"quest"}
+{"key":142088,"since":0,"src":[5,17,24,27],"name":"Tablet of Will","kind":"quest"}
+{"key":142122,"since":0,"src":[5,17,24,27],"name":"Wanted Poster","kind":"quest"}
+{"key":142127,"since":0,"src":[5,17,24,27],"name":"Rin'ji's Secret","kind":"quest"}
 {"key":142140,"since":0,"src":[1],"name":"Purple Lotus","kind":"herb","skill":182,"skillLevel":210,"yellowAt":235,"greyAt":310}
 {"key":142141,"since":0,"src":[1],"name":"Arthas' Tears","kind":"herb","skill":182,"skillLevel":220,"yellowAt":245,"greyAt":320}
 {"key":142142,"since":0,"src":[1],"name":"Sungrass","kind":"herb","skill":182,"skillLevel":230,"yellowAt":255,"greyAt":330}
 {"key":142143,"since":0,"src":[1],"name":"Blindweed","kind":"herb","skill":182,"skillLevel":235,"yellowAt":260,"greyAt":335}
 {"key":142144,"since":0,"src":[1],"name":"Ghost Mushroom","kind":"herb","skill":182,"skillLevel":245,"yellowAt":270,"greyAt":345}
 {"key":142145,"since":0,"src":[1],"name":"Gromsblood","kind":"herb","skill":182,"skillLevel":250,"yellowAt":275,"greyAt":350}
-{"key":142151,"since":0,"src":[5,17,24],"name":"Sealed Barrel","kind":"quest"}
-{"key":142179,"since":0,"src":[5,17,24],"name":"Solarsal Gazebo","kind":"quest"}
-{"key":142181,"since":0,"src":[5,17,24],"name":"Stolen Cargo","kind":"quest"}
-{"key":142184,"since":0,"src":[5,17,24],"name":"Captain's Chest","kind":"quest"}
-{"key":142191,"since":0,"src":[4,5,17,24],"name":"Horde Supply Crate","kind":"chest"}
-{"key":142194,"since":0,"src":[5,17,24],"name":"Pirate's Treasure!","kind":"quest"}
-{"key":142195,"since":0,"src":[5,17,24],"name":"Woodpaw Battle Map","kind":"quest"}
-{"key":142343,"since":0,"src":[5,17,24],"name":"Uldum Pedestal","kind":"quest"}
-{"key":142344,"since":0,"src":[5,17,24],"name":"Artificial Extrapolator","kind":"quest"}
-{"key":142477,"since":0,"src":[5,17,24],"name":"Thermaplugg's Safe","kind":"quest"}
-{"key":142487,"since":0,"src":[5,17,24],"name":"The Sparklematic 5200","kind":"quest"}
-{"key":142696,"since":0,"src":[5,17,24],"name":"Matrix Punchograph 3005-D","kind":"quest"}
-{"key":142702,"since":0,"src":[5,17,24],"name":"Venom Bottle","kind":"quest"}
-{"key":142958,"since":0,"src":[5,17,24],"name":"Feralas: A History","kind":"quest"}
-{"key":143980,"since":0,"src":[4,5,17,24],"name":"Gordunni Scroll","kind":"chest"}
-{"key":144052,"since":0,"src":[5,17,24],"name":"Sandsorrow Watch Water Hole","kind":"quest"}
-{"key":144053,"since":0,"src":[5,17,24],"name":"Scrimshank's Surveying Gear","kind":"quest"}
-{"key":144054,"since":0,"src":[5,17,24],"name":"Shay's Chest","kind":"quest"}
-{"key":144063,"since":0,"src":[5,17,24],"name":"Equinex Monolith","kind":"quest"}
-{"key":144064,"since":0,"src":[5,17,24],"name":"Gordunni Dirt Mound","kind":"quest"}
-{"key":144066,"since":0,"src":[5,17,24],"name":"First Witherbark Cage","kind":"quest"}
-{"key":144067,"since":0,"src":[5,17,24],"name":"Second Witherbark Cage","kind":"quest"}
-{"key":144068,"since":0,"src":[5,17,24],"name":"Third Witherbark Cage","kind":"quest"}
-{"key":144070,"since":0,"src":[5,17,24],"name":"Sharpbeak's Cage","kind":"quest"}
-{"key":144071,"since":0,"src":[5,17,24],"name":"Highvale Records","kind":"quest"}
-{"key":144072,"since":0,"src":[5,17,24],"name":"Highvale Notes","kind":"quest"}
-{"key":144073,"since":0,"src":[5,17,24],"name":"Highvale Report","kind":"quest"}
-{"key":147557,"since":0,"src":[5,17,24],"name":"Stolen Silver","kind":"quest"}
-{"key":148498,"since":0,"src":[5,17,24],"name":"Altar of Suntara","kind":"quest"}
-{"key":148499,"since":0,"src":[5,17,24],"name":"Felix's Box","kind":"quest"}
-{"key":148503,"since":0,"src":[5,17,24],"name":"Fire Plume Ridge Hot Spot","kind":"quest"}
-{"key":148504,"since":0,"src":[5,17,24],"name":"A Conspicuous Gravestone","kind":"quest"}
-{"key":148506,"since":0,"src":[5,17,24],"name":"Twilight Artifact","kind":"quest"}
-{"key":148512,"since":0,"src":[5,17,24],"name":"Essence Font","kind":"quest"}
-{"key":148513,"since":0,"src":[5,17,24],"name":"Tablet of Jin'yael","kind":"quest"}
-{"key":148514,"since":0,"src":[5,17,24],"name":"Tablet of Markri","kind":"quest"}
-{"key":148515,"since":0,"src":[5,17,24],"name":"Tablet of Sael'hai","kind":"quest"}
-{"key":148516,"since":0,"src":[5,17,24],"name":"Tablet of Beth'Amara","kind":"quest"}
-{"key":148836,"since":0,"src":[5,17,24],"name":"Altar of Hakkar","kind":"quest"}
-{"key":148838,"since":0,"src":[5,17,24],"name":"Idol of Hakkar","kind":"quest"}
-{"key":149025,"since":0,"src":[5,17,24],"name":"Sentry Brazier","kind":"quest"}
-{"key":149030,"since":0,"src":[5,17,24],"name":"Sentry Brazier","kind":"quest"}
-{"key":149031,"since":0,"src":[5,17,24],"name":"Sentry Brazier","kind":"quest"}
-{"key":149032,"since":0,"src":[5,17,24],"name":"Sentry Brazier","kind":"quest"}
-{"key":149036,"since":0,"src":[5,17,24],"name":"Marvon's Chest","kind":"quest"}
-{"key":149047,"since":0,"src":[5,17,24],"name":"Torch of Retribution","kind":"quest"}
-{"key":149480,"since":0,"src":[5,17,24],"name":"Rune of Jin'yael","kind":"quest"}
-{"key":149481,"since":0,"src":[5,17,24],"name":"Rune of Beth'Amara","kind":"quest"}
-{"key":149482,"since":0,"src":[5,17,24],"name":"Rune of Markri","kind":"quest"}
-{"key":149483,"since":0,"src":[5,17,24],"name":"Rune of Sael'hai","kind":"quest"}
-{"key":149502,"since":0,"src":[5,17,24],"name":"Hoard of the Black Dragonflight","kind":"quest"}
-{"key":150075,"since":0,"src":[5,17,24],"name":"Wanted Poster","kind":"quest"}
-{"key":151286,"since":0,"src":[5,17,24],"name":"Kaldorei Tome of Summoning","kind":"quest"}
-{"key":152094,"since":0,"src":[5,17,24],"name":"Hyacinth Mushroom","kind":"quest"}
-{"key":152095,"since":0,"src":[5,17,24],"name":"Moonpetal Lily","kind":"quest"}
-{"key":152097,"since":0,"src":[5,17,24],"name":"Belnistrasz's Brazier","kind":"quest"}
-{"key":152598,"since":0,"src":[5,17,24],"name":"the First Tide Pool","kind":"quest"}
-{"key":152604,"since":0,"src":[5,17,24],"name":"the Second Tide Pool","kind":"quest"}
-{"key":152605,"since":0,"src":[5,17,24],"name":"the Third Tide Pool","kind":"quest"}
-{"key":152606,"since":0,"src":[5,17,24],"name":"the Fourth Tide Pool","kind":"quest"}
-{"key":152608,"since":0,"src":[5,17,24],"name":"Kolkar's Booty","kind":"quest"}
-{"key":152618,"since":0,"src":[5,17,24],"name":"Kolkar's Booty","kind":"quest"}
-{"key":152620,"since":0,"src":[5,17,24],"name":"Azsharite Formation","kind":"quest"}
-{"key":152621,"since":0,"src":[5,17,24],"name":"Azsharite Formation","kind":"quest"}
-{"key":152622,"since":0,"src":[5,17,24],"name":"Azsharite Formation","kind":"quest"}
-{"key":152631,"since":0,"src":[5,17,24],"name":"Azsharite Formation","kind":"quest"}
-{"key":153123,"since":0,"src":[5,17,24],"name":"Kim'jael's Equipment","kind":"quest"}
-{"key":153239,"since":0,"src":[5,17,24],"name":"Wildkin Feather","kind":"quest"}
-{"key":153451,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":153453,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":153454,"since":0,"src":[4,5,17,24],"name":"Solid Chest","kind":"chest"}
-{"key":153462,"since":0,"src":[5,17,24],"name":"Large Solid Chest","kind":"quest"}
-{"key":153463,"since":0,"src":[4,5,17,24],"name":"Large Solid Chest","kind":"chest"}
-{"key":153464,"since":0,"src":[5,17,24],"name":"Large Solid Chest","kind":"quest"}
-{"key":153468,"since":0,"src":[4,5,17,24],"name":"Large Mithril Bound Chest","kind":"chest"}
-{"key":153469,"since":0,"src":[5,17,24],"name":"Large Mithril Bound Chest","kind":"quest"}
-{"key":153470,"since":0,"src":[5,17,24],"name":"Food Crate","kind":"quest"}
-{"key":153471,"since":0,"src":[5,17,24],"name":"Food Crate","kind":"quest"}
-{"key":153556,"since":0,"src":[5,17,24],"name":"Thaurissan Relic","kind":"quest"}
-{"key":154357,"since":0,"src":[5,17,24],"name":"Glinting Mud","kind":"quest"}
-{"key":156561,"since":0,"src":[5,17,24],"name":"Wanted Poster","kind":"quest"}
-{"key":157936,"since":0,"src":[5,17,24],"name":"Un'Goro Dirt Pile","kind":"quest"}
-{"key":160840,"since":0,"src":[5,17,24],"name":"Soft Dirt Mound","kind":"quest"}
-{"key":160845,"since":0,"src":[5,17,24],"name":"Dark Coffer","kind":"quest"}
-{"key":161504,"since":0,"src":[5,17,24],"name":"A Small Pack","kind":"quest"}
-{"key":161505,"since":0,"src":[5,17,24],"name":"A Wrecked Raft","kind":"quest"}
-{"key":161521,"since":0,"src":[5,17,24],"name":"Research Equipment","kind":"quest"}
-{"key":161526,"since":0,"src":[5,17,24],"name":"Crate of Foodstuffs","kind":"quest"}
-{"key":161527,"since":0,"src":[5,17,24],"name":"Dinosaur Bone","kind":"quest"}
-{"key":161557,"since":0,"src":[5,17,24],"name":"Milly's Harvest","kind":"quest"}
-{"key":161752,"since":0,"src":[5,17,24],"name":"Tool Bucket","kind":"quest"}
-{"key":164658,"since":0,"src":[5,17,24],"name":"Blue Power Crystal","kind":"quest"}
-{"key":164659,"since":0,"src":[5,17,24],"name":"Green Power Crystal","kind":"quest"}
-{"key":164660,"since":0,"src":[5,17,24],"name":"Red Power Crystal","kind":"quest"}
-{"key":164661,"since":0,"src":[5,17,24],"name":"Yellow Power Crystal","kind":"quest"}
-{"key":164662,"since":0,"src":[4,5,17,24],"name":"Equipment Boxes","kind":"chest"}
-{"key":164689,"since":0,"src":[5,17,24],"name":"Monument of Franclorn Forgewright","kind":"quest"}
-{"key":164690,"since":0,"src":[5,17,24],"name":"Krom'zar's Banner","kind":"quest"}
-{"key":164778,"since":0,"src":[5,17,24],"name":"Blue Power Crystal","kind":"quest"}
-{"key":164779,"since":0,"src":[5,17,24],"name":"Green Power Crystal","kind":"quest"}
-{"key":164780,"since":0,"src":[5,17,24],"name":"Red Power Crystal","kind":"quest"}
-{"key":164781,"since":0,"src":[5,17,24],"name":"Yellow Power Crystal","kind":"quest"}
-{"key":164798,"since":0,"src":[5,17,24],"name":"Evoroot","kind":"quest"}
-{"key":164867,"since":0,"src":[5,17,24],"name":"WANTED","kind":"quest"}
-{"key":164868,"since":0,"src":[5,17,24],"name":"KILL ON SIGHT","kind":"quest"}
-{"key":164869,"since":0,"src":[5,17,24],"name":"Spectral Chalice","kind":"quest"}
-{"key":164885,"since":0,"src":[5,17,24],"name":"Corrupted Night Dragon","kind":"quest"}
-{"key":164886,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":164887,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":164888,"since":0,"src":[5,17,24],"name":"Corrupted Whipper Root","kind":"quest"}
-{"key":164909,"since":0,"src":[5,17,24],"name":"Wrecked Row Boat","kind":"quest"}
-{"key":164910,"since":0,"src":[5,17,24],"name":"Ornate Chest","kind":"quest"}
-{"key":164953,"since":0,"src":[5,17,24],"name":"Large Leather Backpacks","kind":"quest"}
-{"key":164954,"since":0,"src":[5,17,24],"name":"Zukk'ash Pod","kind":"quest"}
-{"key":164955,"since":0,"src":[5,17,24],"name":"Northern Crystal Pylon","kind":"quest"}
-{"key":164956,"since":0,"src":[5,17,24],"name":"Western Crystal Pylon","kind":"quest"}
-{"key":164957,"since":0,"src":[5,17,24],"name":"Eastern Crystal Pylon","kind":"quest"}
-{"key":164958,"since":0,"src":[5,17,24],"name":"Bloodpetal Sprout","kind":"quest"}
-{"key":165554,"since":0,"src":[5,17,24],"name":"Heart of the Mountain","kind":"quest"}
+{"key":142151,"since":0,"src":[5,17,24,27],"name":"Sealed Barrel","kind":"quest"}
+{"key":142179,"since":0,"src":[5,17,24,27],"name":"Solarsal Gazebo","kind":"quest"}
+{"key":142181,"since":0,"src":[5,17,24,27],"name":"Stolen Cargo","kind":"quest"}
+{"key":142184,"since":0,"src":[5,17,24,27],"name":"Captain's Chest","kind":"quest"}
+{"key":142191,"since":0,"src":[4,5,17,24,27],"name":"Horde Supply Crate","kind":"chest"}
+{"key":142194,"since":0,"src":[5,17,24,27],"name":"Pirate's Treasure!","kind":"quest"}
+{"key":142195,"since":0,"src":[5,17,24,27],"name":"Woodpaw Battle Map","kind":"quest"}
+{"key":142343,"since":0,"src":[5,17,24,27],"name":"Uldum Pedestal","kind":"quest"}
+{"key":142344,"since":0,"src":[5,17,24,27],"name":"Artificial Extrapolator","kind":"quest"}
+{"key":142477,"since":0,"src":[5,17,24,27],"name":"Thermaplugg's Safe","kind":"quest"}
+{"key":142487,"since":0,"src":[5,17,24,27],"name":"The Sparklematic 5200","kind":"quest"}
+{"key":142696,"since":0,"src":[5,17,24,27],"name":"Matrix Punchograph 3005-D","kind":"quest"}
+{"key":142702,"since":0,"src":[5,17,24,27],"name":"Venom Bottle","kind":"quest"}
+{"key":142958,"since":0,"src":[5,17,24,27],"name":"Feralas: A History","kind":"quest"}
+{"key":143980,"since":0,"src":[4,5,17,24,27],"name":"Gordunni Scroll","kind":"chest"}
+{"key":144052,"since":0,"src":[5,17,24,27],"name":"Sandsorrow Watch Water Hole","kind":"quest"}
+{"key":144053,"since":0,"src":[5,17,24,27],"name":"Scrimshank's Surveying Gear","kind":"quest"}
+{"key":144054,"since":0,"src":[5,17,24,27],"name":"Shay's Chest","kind":"quest"}
+{"key":144063,"since":0,"src":[5,17,24,27],"name":"Equinex Monolith","kind":"quest"}
+{"key":144064,"since":0,"src":[5,17,24,27],"name":"Gordunni Dirt Mound","kind":"quest"}
+{"key":144066,"since":0,"src":[5,17,24,27],"name":"First Witherbark Cage","kind":"quest"}
+{"key":144067,"since":0,"src":[5,17,24,27],"name":"Second Witherbark Cage","kind":"quest"}
+{"key":144068,"since":0,"src":[5,17,24,27],"name":"Third Witherbark Cage","kind":"quest"}
+{"key":144070,"since":0,"src":[5,17,24,27],"name":"Sharpbeak's Cage","kind":"quest"}
+{"key":144071,"since":0,"src":[5,17,24,27],"name":"Highvale Records","kind":"quest"}
+{"key":144072,"since":0,"src":[5,17,24,27],"name":"Highvale Notes","kind":"quest"}
+{"key":144073,"since":0,"src":[5,17,24,27],"name":"Highvale Report","kind":"quest"}
+{"key":147557,"since":0,"src":[5,17,24,27],"name":"Stolen Silver","kind":"quest"}
+{"key":148498,"since":0,"src":[5,17,24,27],"name":"Altar of Suntara","kind":"quest"}
+{"key":148499,"since":0,"src":[5,17,24,27],"name":"Felix's Box","kind":"quest"}
+{"key":148503,"since":0,"src":[5,17,24,27],"name":"Fire Plume Ridge Hot Spot","kind":"quest"}
+{"key":148504,"since":0,"src":[5,17,24,27],"name":"A Conspicuous Gravestone","kind":"quest"}
+{"key":148506,"since":0,"src":[5,17,24,27],"name":"Twilight Artifact","kind":"quest"}
+{"key":148512,"since":0,"src":[5,17,24,27],"name":"Essence Font","kind":"quest"}
+{"key":148513,"since":0,"src":[5,17,24,27],"name":"Tablet of Jin'yael","kind":"quest"}
+{"key":148514,"since":0,"src":[5,17,24,27],"name":"Tablet of Markri","kind":"quest"}
+{"key":148515,"since":0,"src":[5,17,24,27],"name":"Tablet of Sael'hai","kind":"quest"}
+{"key":148516,"since":0,"src":[5,17,24,27],"name":"Tablet of Beth'Amara","kind":"quest"}
+{"key":148836,"since":0,"src":[5,17,24,27],"name":"Altar of Hakkar","kind":"quest"}
+{"key":148838,"since":0,"src":[5,17,24,27],"name":"Idol of Hakkar","kind":"quest"}
+{"key":149025,"since":0,"src":[5,17,24,27],"name":"Sentry Brazier","kind":"quest"}
+{"key":149030,"since":0,"src":[5,17,24,27],"name":"Sentry Brazier","kind":"quest"}
+{"key":149031,"since":0,"src":[5,17,24,27],"name":"Sentry Brazier","kind":"quest"}
+{"key":149032,"since":0,"src":[5,17,24,27],"name":"Sentry Brazier","kind":"quest"}
+{"key":149036,"since":0,"src":[5,17,24,27],"name":"Marvon's Chest","kind":"quest"}
+{"key":149047,"since":0,"src":[5,17,24,27],"name":"Torch of Retribution","kind":"quest"}
+{"key":149480,"since":0,"src":[5,17,24,27],"name":"Rune of Jin'yael","kind":"quest"}
+{"key":149481,"since":0,"src":[5,17,24,27],"name":"Rune of Beth'Amara","kind":"quest"}
+{"key":149482,"since":0,"src":[5,17,24,27],"name":"Rune of Markri","kind":"quest"}
+{"key":149483,"since":0,"src":[5,17,24,27],"name":"Rune of Sael'hai","kind":"quest"}
+{"key":149502,"since":0,"src":[5,17,24,27],"name":"Hoard of the Black Dragonflight","kind":"quest"}
+{"key":150075,"since":0,"src":[5,17,24,27],"name":"Wanted Poster","kind":"quest"}
+{"key":151286,"since":0,"src":[5,17,24,27],"name":"Kaldorei Tome of Summoning","kind":"quest"}
+{"key":152094,"since":0,"src":[5,17,24,27],"name":"Hyacinth Mushroom","kind":"quest"}
+{"key":152095,"since":0,"src":[5,17,24,27],"name":"Moonpetal Lily","kind":"quest"}
+{"key":152097,"since":0,"src":[5,17,24,27],"name":"Belnistrasz's Brazier","kind":"quest"}
+{"key":152598,"since":0,"src":[5,17,24,27],"name":"the First Tide Pool","kind":"quest"}
+{"key":152604,"since":0,"src":[5,17,24,27],"name":"the Second Tide Pool","kind":"quest"}
+{"key":152605,"since":0,"src":[5,17,24,27],"name":"the Third Tide Pool","kind":"quest"}
+{"key":152606,"since":0,"src":[5,17,24,27],"name":"the Fourth Tide Pool","kind":"quest"}
+{"key":152608,"since":0,"src":[5,17,24,27],"name":"Kolkar's Booty","kind":"quest"}
+{"key":152618,"since":0,"src":[5,17,24,27],"name":"Kolkar's Booty","kind":"quest"}
+{"key":152620,"since":0,"src":[5,17,24,27],"name":"Azsharite Formation","kind":"quest"}
+{"key":152621,"since":0,"src":[5,17,24,27],"name":"Azsharite Formation","kind":"quest"}
+{"key":152622,"since":0,"src":[5,17,24,27],"name":"Azsharite Formation","kind":"quest"}
+{"key":152631,"since":0,"src":[5,17,24,27],"name":"Azsharite Formation","kind":"quest"}
+{"key":153123,"since":0,"src":[5,17,24,27],"name":"Kim'jael's Equipment","kind":"quest"}
+{"key":153239,"since":0,"src":[5,17,24,27],"name":"Wildkin Feather","kind":"quest"}
+{"key":153451,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":153453,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":153454,"since":0,"src":[4,5,17,24,27],"name":"Solid Chest","kind":"chest"}
+{"key":153462,"since":0,"src":[5,17,24,27],"name":"Large Solid Chest","kind":"quest"}
+{"key":153463,"since":0,"src":[4,5,17,24,27],"name":"Large Solid Chest","kind":"chest"}
+{"key":153464,"since":0,"src":[5,17,24,27],"name":"Large Solid Chest","kind":"quest"}
+{"key":153468,"since":0,"src":[4,5,17,24,27],"name":"Large Mithril Bound Chest","kind":"chest"}
+{"key":153469,"since":0,"src":[5,17,24,27],"name":"Large Mithril Bound Chest","kind":"quest"}
+{"key":153470,"since":0,"src":[5,17,24,27],"name":"Food Crate","kind":"quest"}
+{"key":153471,"since":0,"src":[5,17,24,27],"name":"Food Crate","kind":"quest"}
+{"key":153556,"since":0,"src":[5,17,24,27],"name":"Thaurissan Relic","kind":"quest"}
+{"key":154357,"since":0,"src":[5,17,24,27],"name":"Glinting Mud","kind":"quest"}
+{"key":156561,"since":0,"src":[5,17,24,27],"name":"Wanted Poster","kind":"quest"}
+{"key":157936,"since":0,"src":[5,17,24,27],"name":"Un'Goro Dirt Pile","kind":"quest"}
+{"key":160840,"since":0,"src":[5,17,24,27],"name":"Soft Dirt Mound","kind":"quest"}
+{"key":160845,"since":0,"src":[5,17,24,27],"name":"Dark Coffer","kind":"quest"}
+{"key":161504,"since":0,"src":[5,17,24,27],"name":"A Small Pack","kind":"quest"}
+{"key":161505,"since":0,"src":[5,17,24,27],"name":"A Wrecked Raft","kind":"quest"}
+{"key":161521,"since":0,"src":[5,17,24,27],"name":"Research Equipment","kind":"quest"}
+{"key":161526,"since":0,"src":[5,17,24,27],"name":"Crate of Foodstuffs","kind":"quest"}
+{"key":161527,"since":0,"src":[5,17,24,27],"name":"Dinosaur Bone","kind":"quest"}
+{"key":161557,"since":0,"src":[5,17,24,27],"name":"Milly's Harvest","kind":"quest"}
+{"key":161752,"since":0,"src":[5,17,24,27],"name":"Tool Bucket","kind":"quest"}
+{"key":164658,"since":0,"src":[5,17,24,27],"name":"Blue Power Crystal","kind":"quest"}
+{"key":164659,"since":0,"src":[5,17,24,27],"name":"Green Power Crystal","kind":"quest"}
+{"key":164660,"since":0,"src":[5,17,24,27],"name":"Red Power Crystal","kind":"quest"}
+{"key":164661,"since":0,"src":[5,17,24,27],"name":"Yellow Power Crystal","kind":"quest"}
+{"key":164662,"since":0,"src":[4,5,17,24,27],"name":"Equipment Boxes","kind":"chest"}
+{"key":164689,"since":0,"src":[5,17,24,27],"name":"Monument of Franclorn Forgewright","kind":"quest"}
+{"key":164690,"since":0,"src":[5,17,24,27],"name":"Krom'zar's Banner","kind":"quest"}
+{"key":164778,"since":0,"src":[5,17,24,27],"name":"Blue Power Crystal","kind":"quest"}
+{"key":164779,"since":0,"src":[5,17,24,27],"name":"Green Power Crystal","kind":"quest"}
+{"key":164780,"since":0,"src":[5,17,24,27],"name":"Red Power Crystal","kind":"quest"}
+{"key":164781,"since":0,"src":[5,17,24,27],"name":"Yellow Power Crystal","kind":"quest"}
+{"key":164798,"since":0,"src":[5,17,24,27],"name":"Evoroot","kind":"quest"}
+{"key":164867,"since":0,"src":[5,17,24,27],"name":"WANTED","kind":"quest"}
+{"key":164868,"since":0,"src":[5,17,24,27],"name":"KILL ON SIGHT","kind":"quest"}
+{"key":164869,"since":0,"src":[5,17,24,27],"name":"Spectral Chalice","kind":"quest"}
+{"key":164885,"since":0,"src":[5,17,24,27],"name":"Corrupted Night Dragon","kind":"quest"}
+{"key":164886,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":164887,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":164888,"since":0,"src":[5,17,24,27],"name":"Corrupted Whipper Root","kind":"quest"}
+{"key":164909,"since":0,"src":[5,17,24,27],"name":"Wrecked Row Boat","kind":"quest"}
+{"key":164910,"since":0,"src":[5,17,24,27],"name":"Ornate Chest","kind":"quest"}
+{"key":164953,"since":0,"src":[5,17,24,27],"name":"Large Leather Backpacks","kind":"quest"}
+{"key":164954,"since":0,"src":[5,17,24,27],"name":"Zukk'ash Pod","kind":"quest"}
+{"key":164955,"since":0,"src":[5,17,24,27],"name":"Northern Crystal Pylon","kind":"quest"}
+{"key":164956,"since":0,"src":[5,17,24,27],"name":"Western Crystal Pylon","kind":"quest"}
+{"key":164957,"since":0,"src":[5,17,24,27],"name":"Eastern Crystal Pylon","kind":"quest"}
+{"key":164958,"since":0,"src":[5,17,24,27],"name":"Bloodpetal Sprout","kind":"quest"}
+{"key":165554,"since":0,"src":[5,17,24,27],"name":"Heart of the Mountain","kind":"quest"}
 {"key":165658,"since":0,"src":[1],"name":"Dark Iron Deposit","kind":"ore","skill":186,"skillLevel":230,"yellowAt":255,"greyAt":330}
-{"key":165678,"since":0,"src":[5,17,24],"name":"Golakka Crater","kind":"quest"}
-{"key":165738,"since":0,"src":[5,17,24],"name":"Dark Iron Ale Mug","kind":"quest"}
-{"key":165739,"since":0,"src":[5,17,24],"name":"Grim Guzzler Boar","kind":"quest"}
-{"key":166863,"since":0,"src":[5,17,24],"name":"Fresh Threshadon Carcass","kind":"quest"}
-{"key":169294,"since":0,"src":[5,17,24],"name":"Tablet of the Seven","kind":"quest"}
-{"key":171938,"since":0,"src":[5,17,24],"name":"Cactus Apple","kind":"quest"}
-{"key":171939,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":171942,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":173265,"since":0,"src":[5,17,24],"name":"Wooden Outhouse","kind":"quest"}
-{"key":173266,"since":0,"src":[5,17,24],"name":"Goodsteel Ledger","kind":"quest"}
-{"key":173284,"since":0,"src":[5,17,24],"name":"Corrupted Whipper Root","kind":"quest"}
-{"key":173324,"since":0,"src":[5,17,24],"name":"Corrupted Night Dragon","kind":"quest"}
-{"key":173327,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174594,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174595,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174596,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174597,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174598,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174599,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174600,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174601,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174602,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174603,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174604,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174605,"since":0,"src":[5,17,24],"name":"Corrupted Whipper Root","kind":"quest"}
-{"key":174606,"since":0,"src":[5,17,24],"name":"Corrupted Whipper Root","kind":"quest"}
-{"key":174607,"since":0,"src":[5,17,24],"name":"Corrupted Whipper Root","kind":"quest"}
-{"key":174608,"since":0,"src":[5,17,24],"name":"Corrupted Night Dragon","kind":"quest"}
-{"key":174682,"since":0,"src":[5,17,24],"name":"Beware of Pterrordax","kind":"quest"}
-{"key":174684,"since":0,"src":[5,17,24],"name":"Corrupted Night Dragon","kind":"quest"}
-{"key":174686,"since":0,"src":[5,17,24],"name":"Corrupted Whipper Root","kind":"quest"}
-{"key":174708,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174709,"since":0,"src":[5,17,24],"name":"Corrupted Windblossom","kind":"quest"}
-{"key":174712,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174713,"since":0,"src":[5,17,24],"name":"Corrupted Songflower","kind":"quest"}
-{"key":174728,"since":0,"src":[5,17,24],"name":"Damaged Crate","kind":"quest"}
-{"key":174793,"since":0,"src":[5,17,24],"name":"Gorishi Hive Hatchery","kind":"quest"}
-{"key":174794,"since":0,"src":[5,17,24],"name":"Mirror Lake Waterwall","kind":"quest"}
-{"key":174795,"since":0,"src":[5,17,24],"name":"Auberdine Moonwell","kind":"quest"}
-{"key":174797,"since":0,"src":[5,17,24],"name":"Xavian Waterfall","kind":"quest"}
-{"key":174848,"since":0,"src":[5,17,24],"name":"Testing Equipment","kind":"quest"}
-{"key":175084,"since":0,"src":[5,17,24],"name":"The Sparklematic 5200","kind":"quest"}
-{"key":175085,"since":0,"src":[5,17,24],"name":"The Sparklematic 5200","kind":"quest"}
-{"key":175124,"since":0,"src":[5,17,24],"name":"Rookery Egg","kind":"quest"}
-{"key":175165,"since":0,"src":[5,17,24],"name":"Silver Dawning's Lockbox","kind":"quest"}
-{"key":175166,"since":0,"src":[5,17,24],"name":"Mist Veil's Lockbox","kind":"quest"}
-{"key":175207,"since":0,"src":[5,17,24],"name":"Beached Sea Creature","kind":"quest"}
-{"key":175226,"since":0,"src":[5,17,24],"name":"Beached Sea Creature","kind":"quest"}
-{"key":175227,"since":0,"src":[5,17,24],"name":"Beached Sea Creature","kind":"quest"}
-{"key":175230,"since":0,"src":[5,17,24],"name":"Beached Sea Creature","kind":"quest"}
-{"key":175233,"since":0,"src":[5,17,24],"name":"Beached Sea Creature","kind":"quest"}
-{"key":175264,"since":0,"src":[5,17,24],"name":"Broodling Essence","kind":"quest"}
-{"key":175265,"since":0,"src":[5,17,24],"name":"Testing Equipment","kind":"quest"}
-{"key":175320,"since":0,"src":[5,17,24],"name":"WANTED: Murkdeep!","kind":"quest"}
-{"key":175322,"since":0,"src":[5,17,24],"name":"Forged Seal of Ascension","kind":"quest"}
-{"key":175324,"since":0,"src":[5,17,24],"name":"Frostmaul Shards","kind":"quest"}
-{"key":175334,"since":0,"src":[5,17,24],"name":"Bijou's Belongings","kind":"quest"}
-{"key":175371,"since":0,"src":[5,17,24],"name":"Cliffspring River Waterfall","kind":"quest"}
-{"key":175382,"since":0,"src":[5,17,24],"name":"Doomrigger's Coffer","kind":"quest"}
-{"key":175384,"since":0,"src":[5,17,24],"name":"Highperch Wyvern Egg","kind":"quest"}
-{"key":175385,"since":0,"src":[5,17,24],"name":"Darkstone Tablet","kind":"quest"}
+{"key":165678,"since":0,"src":[5,17,24,27],"name":"Golakka Crater","kind":"quest"}
+{"key":165738,"since":0,"src":[5,17,24,27],"name":"Dark Iron Ale Mug","kind":"quest"}
+{"key":165739,"since":0,"src":[5,17,24,27],"name":"Grim Guzzler Boar","kind":"quest"}
+{"key":166863,"since":0,"src":[5,17,24,27],"name":"Fresh Threshadon Carcass","kind":"quest"}
+{"key":169294,"since":0,"src":[5,17,24,27],"name":"Tablet of the Seven","kind":"quest"}
+{"key":171938,"since":0,"src":[5,17,24,27],"name":"Cactus Apple","kind":"quest"}
+{"key":171939,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":171942,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":173265,"since":0,"src":[5,17,24,27],"name":"Wooden Outhouse","kind":"quest"}
+{"key":173266,"since":0,"src":[5,17,24,27],"name":"Goodsteel Ledger","kind":"quest"}
+{"key":173284,"since":0,"src":[5,17,24,27],"name":"Corrupted Whipper Root","kind":"quest"}
+{"key":173324,"since":0,"src":[5,17,24,27],"name":"Corrupted Night Dragon","kind":"quest"}
+{"key":173327,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174594,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174595,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174596,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174597,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174598,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174599,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174600,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174601,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174602,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174603,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174604,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174605,"since":0,"src":[5,17,24,27],"name":"Corrupted Whipper Root","kind":"quest"}
+{"key":174606,"since":0,"src":[5,17,24,27],"name":"Corrupted Whipper Root","kind":"quest"}
+{"key":174607,"since":0,"src":[5,17,24,27],"name":"Corrupted Whipper Root","kind":"quest"}
+{"key":174608,"since":0,"src":[5,17,24,27],"name":"Corrupted Night Dragon","kind":"quest"}
+{"key":174682,"since":0,"src":[5,17,24,27],"name":"Beware of Pterrordax","kind":"quest"}
+{"key":174684,"since":0,"src":[5,17,24,27],"name":"Corrupted Night Dragon","kind":"quest"}
+{"key":174686,"since":0,"src":[5,17,24,27],"name":"Corrupted Whipper Root","kind":"quest"}
+{"key":174708,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174709,"since":0,"src":[5,17,24,27],"name":"Corrupted Windblossom","kind":"quest"}
+{"key":174712,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174713,"since":0,"src":[5,17,24,27],"name":"Corrupted Songflower","kind":"quest"}
+{"key":174728,"since":0,"src":[5,17,24,27],"name":"Damaged Crate","kind":"quest"}
+{"key":174793,"since":0,"src":[5,17,24,27],"name":"Gorishi Hive Hatchery","kind":"quest"}
+{"key":174794,"since":0,"src":[5,17,24,27],"name":"Mirror Lake Waterwall","kind":"quest"}
+{"key":174795,"since":0,"src":[5,17,24,27],"name":"Auberdine Moonwell","kind":"quest"}
+{"key":174797,"since":0,"src":[5,17,24,27],"name":"Xavian Waterfall","kind":"quest"}
+{"key":174848,"since":0,"src":[5,17,24,27],"name":"Testing Equipment","kind":"quest"}
+{"key":175084,"since":0,"src":[5,17,24,27],"name":"The Sparklematic 5200","kind":"quest"}
+{"key":175085,"since":0,"src":[5,17,24,27],"name":"The Sparklematic 5200","kind":"quest"}
+{"key":175124,"since":0,"src":[5,17,24,27],"name":"Rookery Egg","kind":"quest"}
+{"key":175165,"since":0,"src":[5,17,24,27],"name":"Silver Dawning's Lockbox","kind":"quest"}
+{"key":175166,"since":0,"src":[5,17,24,27],"name":"Mist Veil's Lockbox","kind":"quest"}
+{"key":175207,"since":0,"src":[5,17,24,27],"name":"Beached Sea Creature","kind":"quest"}
+{"key":175226,"since":0,"src":[5,17,24,27],"name":"Beached Sea Creature","kind":"quest"}
+{"key":175227,"since":0,"src":[5,17,24,27],"name":"Beached Sea Creature","kind":"quest"}
+{"key":175230,"since":0,"src":[5,17,24,27],"name":"Beached Sea Creature","kind":"quest"}
+{"key":175233,"since":0,"src":[5,17,24,27],"name":"Beached Sea Creature","kind":"quest"}
+{"key":175264,"since":0,"src":[5,17,24,27],"name":"Broodling Essence","kind":"quest"}
+{"key":175265,"since":0,"src":[5,17,24,27],"name":"Testing Equipment","kind":"quest"}
+{"key":175320,"since":0,"src":[5,17,24,27],"name":"WANTED: Murkdeep!","kind":"quest"}
+{"key":175322,"since":0,"src":[5,17,24,27],"name":"Forged Seal of Ascension","kind":"quest"}
+{"key":175324,"since":0,"src":[5,17,24,27],"name":"Frostmaul Shards","kind":"quest"}
+{"key":175334,"since":0,"src":[5,17,24,27],"name":"Bijou's Belongings","kind":"quest"}
+{"key":175371,"since":0,"src":[5,17,24,27],"name":"Cliffspring River Waterfall","kind":"quest"}
+{"key":175382,"since":0,"src":[5,17,24,27],"name":"Doomrigger's Coffer","kind":"quest"}
+{"key":175384,"since":0,"src":[5,17,24,27],"name":"Highperch Wyvern Egg","kind":"quest"}
+{"key":175385,"since":0,"src":[5,17,24,27],"name":"Darkstone Tablet","kind":"quest"}
 {"key":175404,"since":0,"src":[1],"name":"Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
-{"key":175407,"since":0,"src":[5,17,24],"name":"Moontouched Feather","kind":"quest"}
-{"key":175487,"since":0,"src":[5,17,24],"name":"Third Mosh'aru Tablet","kind":"quest"}
-{"key":175488,"since":0,"src":[5,17,24],"name":"Fourth Mosh'aru Tablet","kind":"quest"}
-{"key":175524,"since":0,"src":[5,17,24],"name":"Mysterious Red Crystal","kind":"quest"}
-{"key":175565,"since":0,"src":[5,17,24],"name":"Alien Egg","kind":"quest"}
-{"key":175566,"since":0,"src":[5,17,24],"name":"Gloom Weed","kind":"quest"}
-{"key":175586,"since":0,"src":[5,17,24],"name":"Jaron's Wagon","kind":"quest"}
-{"key":175587,"since":0,"src":[5,17,24],"name":"Damaged Crate","kind":"quest"}
-{"key":175588,"since":0,"src":[5,17,24],"name":"Spire Spider Egg","kind":"quest"}
-{"key":175606,"since":0,"src":[5,17,24],"name":"Spire Spider Egg","kind":"quest"}
-{"key":175628,"since":0,"src":[5,17,24],"name":"Jaron's Supplies","kind":"quest"}
-{"key":175629,"since":0,"src":[5,17,24],"name":"Jaron's Supplies","kind":"quest"}
-{"key":175704,"since":0,"src":[5,17,24],"name":"Singed Letter","kind":"quest"}
-{"key":175708,"since":0,"src":[5,17,24],"name":"Crossroads' Supply Crates","kind":"quest"}
-{"key":175785,"since":0,"src":[5,17,24],"name":"Inconspicuous Documents","kind":"quest"}
-{"key":175802,"since":0,"src":[5,17,24],"name":"Small Lockbox","kind":"quest"}
-{"key":175888,"since":0,"src":[5,17,24],"name":"Highborne Relic Fragment","kind":"quest"}
-{"key":175889,"since":0,"src":[5,17,24],"name":"Ancient Egg","kind":"quest"}
-{"key":175891,"since":0,"src":[5,17,24],"name":"Highborne Relic Fragment","kind":"quest"}
-{"key":175892,"since":0,"src":[5,17,24],"name":"Highborne Relic Fragment","kind":"quest"}
-{"key":175893,"since":0,"src":[5,17,24],"name":"Highborne Relic Fragment","kind":"quest"}
-{"key":175894,"since":0,"src":[5,17,24],"name":"Janice's Parcel","kind":"quest"}
-{"key":175924,"since":0,"src":[5,17,24],"name":"Locked Cabinet","kind":"quest"}
-{"key":175925,"since":0,"src":[5,17,24],"name":"Outhouse","kind":"quest"}
-{"key":175926,"since":0,"src":[5,17,24],"name":"Mrs. Dalson's Diary","kind":"quest"}
-{"key":175927,"since":0,"src":[5,17,24],"name":"Malyfous's Catalogue","kind":"quest"}
-{"key":175928,"since":0,"src":[5,17,24],"name":"Incendia Agave","kind":"quest"}
-{"key":175944,"since":0,"src":[5,17,24],"name":"Sacred Fire of Life","kind":"quest"}
-{"key":175949,"since":0,"src":[5,17,24],"name":"Fifth Mosh'aru Tablet","kind":"quest"}
-{"key":175950,"since":0,"src":[5,17,24],"name":"Sixth Mosh'aru Tablet","kind":"quest"}
-{"key":175964,"since":0,"src":[5,17,24],"name":"Skin of Shadow","kind":"quest"}
-{"key":175965,"since":0,"src":[5,17,24],"name":"Frostwhisper's Embalming Fluid","kind":"quest"}
-{"key":175966,"since":0,"src":[5,17,24],"name":"Enchanted Scarlet Thread","kind":"quest"}
-{"key":175970,"since":0,"src":[5,17,24],"name":"Unforged Runic Breastplate","kind":"quest"}
-{"key":176089,"since":0,"src":[5,17,24],"name":"Unfired Plate Gauntlets","kind":"quest"}
-{"key":176090,"since":0,"src":[5,17,24],"name":"Human Remains","kind":"quest"}
-{"key":176091,"since":0,"src":[5,17,24],"name":"Deadwood Cauldron","kind":"quest"}
-{"key":176112,"since":0,"src":[5,17,24],"name":"Malor's Strongbox","kind":"quest"}
-{"key":176115,"since":0,"src":[5,17,24],"name":"Wanted Poster - Arnak Grimtotem","kind":"quest"}
-{"key":176145,"since":0,"src":[5,17,24],"name":"Joseph Redpath's Monument","kind":"quest"}
-{"key":176150,"since":0,"src":[5,17,24],"name":"Musty Tome","kind":"quest"}
-{"key":176158,"since":0,"src":[5,17,24],"name":"Brazier of Pain","kind":"quest"}
-{"key":176159,"since":0,"src":[5,17,24],"name":"Brazier of Malice","kind":"quest"}
-{"key":176160,"since":0,"src":[5,17,24],"name":"Brazier of Suffering","kind":"quest"}
-{"key":176161,"since":0,"src":[5,17,24],"name":"Brazier of Hatred","kind":"quest"}
-{"key":176184,"since":0,"src":[5,17,24],"name":"the Corrupt Jaedenar Moon Well","kind":"quest"}
+{"key":175407,"since":0,"src":[5,17,24,27],"name":"Moontouched Feather","kind":"quest"}
+{"key":175487,"since":0,"src":[5,17,24,27],"name":"Third Mosh'aru Tablet","kind":"quest"}
+{"key":175488,"since":0,"src":[5,17,24,27],"name":"Fourth Mosh'aru Tablet","kind":"quest"}
+{"key":175524,"since":0,"src":[5,17,24,27],"name":"Mysterious Red Crystal","kind":"quest"}
+{"key":175565,"since":0,"src":[5,17,24,27],"name":"Alien Egg","kind":"quest"}
+{"key":175566,"since":0,"src":[5,17,24,27],"name":"Gloom Weed","kind":"quest"}
+{"key":175586,"since":0,"src":[5,17,24,27],"name":"Jaron's Wagon","kind":"quest"}
+{"key":175587,"since":0,"src":[5,17,24,27],"name":"Damaged Crate","kind":"quest"}
+{"key":175588,"since":0,"src":[5,17,24,27],"name":"Spire Spider Egg","kind":"quest"}
+{"key":175606,"since":0,"src":[5,17,24,27],"name":"Spire Spider Egg","kind":"quest"}
+{"key":175628,"since":0,"src":[5,17,24,27],"name":"Jaron's Supplies","kind":"quest"}
+{"key":175629,"since":0,"src":[5,17,24,27],"name":"Jaron's Supplies","kind":"quest"}
+{"key":175704,"since":0,"src":[5,17,24,27],"name":"Singed Letter","kind":"quest"}
+{"key":175708,"since":0,"src":[5,17,24,27],"name":"Crossroads' Supply Crates","kind":"quest"}
+{"key":175785,"since":0,"src":[5,17,24,27],"name":"Inconspicuous Documents","kind":"quest"}
+{"key":175802,"since":0,"src":[5,17,24,27],"name":"Small Lockbox","kind":"quest"}
+{"key":175888,"since":0,"src":[5,17,24,27],"name":"Highborne Relic Fragment","kind":"quest"}
+{"key":175889,"since":0,"src":[5,17,24,27],"name":"Ancient Egg","kind":"quest"}
+{"key":175891,"since":0,"src":[5,17,24,27],"name":"Highborne Relic Fragment","kind":"quest"}
+{"key":175892,"since":0,"src":[5,17,24,27],"name":"Highborne Relic Fragment","kind":"quest"}
+{"key":175893,"since":0,"src":[5,17,24,27],"name":"Highborne Relic Fragment","kind":"quest"}
+{"key":175894,"since":0,"src":[5,17,24,27],"name":"Janice's Parcel","kind":"quest"}
+{"key":175924,"since":0,"src":[5,17,24,27],"name":"Locked Cabinet","kind":"quest"}
+{"key":175925,"since":0,"src":[5,17,24,27],"name":"Outhouse","kind":"quest"}
+{"key":175926,"since":0,"src":[5,17,24,27],"name":"Mrs. Dalson's Diary","kind":"quest"}
+{"key":175927,"since":0,"src":[5,17,24,27],"name":"Malyfous's Catalogue","kind":"quest"}
+{"key":175928,"since":0,"src":[5,17,24,27],"name":"Incendia Agave","kind":"quest"}
+{"key":175944,"since":0,"src":[5,17,24,27],"name":"Sacred Fire of Life","kind":"quest"}
+{"key":175949,"since":0,"src":[5,17,24,27],"name":"Fifth Mosh'aru Tablet","kind":"quest"}
+{"key":175950,"since":0,"src":[5,17,24,27],"name":"Sixth Mosh'aru Tablet","kind":"quest"}
+{"key":175964,"since":0,"src":[5,17,24,27],"name":"Skin of Shadow","kind":"quest"}
+{"key":175965,"since":0,"src":[5,17,24,27],"name":"Frostwhisper's Embalming Fluid","kind":"quest"}
+{"key":175966,"since":0,"src":[5,17,24,27],"name":"Enchanted Scarlet Thread","kind":"quest"}
+{"key":175970,"since":0,"src":[5,17,24,27],"name":"Unforged Runic Breastplate","kind":"quest"}
+{"key":176089,"since":0,"src":[5,17,24,27],"name":"Unfired Plate Gauntlets","kind":"quest"}
+{"key":176090,"since":0,"src":[5,17,24,27],"name":"Human Remains","kind":"quest"}
+{"key":176091,"since":0,"src":[5,17,24,27],"name":"Deadwood Cauldron","kind":"quest"}
+{"key":176112,"since":0,"src":[5,17,24,27],"name":"Malor's Strongbox","kind":"quest"}
+{"key":176115,"since":0,"src":[5,17,24,27],"name":"Wanted Poster - Arnak Grimtotem","kind":"quest"}
+{"key":176145,"since":0,"src":[5,17,24,27],"name":"Joseph Redpath's Monument","kind":"quest"}
+{"key":176150,"since":0,"src":[5,17,24,27],"name":"Musty Tome","kind":"quest"}
+{"key":176158,"since":0,"src":[5,17,24,27],"name":"Brazier of Pain","kind":"quest"}
+{"key":176159,"since":0,"src":[5,17,24,27],"name":"Brazier of Malice","kind":"quest"}
+{"key":176160,"since":0,"src":[5,17,24,27],"name":"Brazier of Suffering","kind":"quest"}
+{"key":176161,"since":0,"src":[5,17,24,27],"name":"Brazier of Hatred","kind":"quest"}
+{"key":176184,"since":0,"src":[5,17,24,27],"name":"the Corrupt Jaedenar Moon Well","kind":"quest"}
 {"key":176188,"since":0,"src":[4],"name":"Ritual Candle","kind":"chest"}
-{"key":176189,"since":0,"src":[5,17,24],"name":"Skeletal Sea Turtle","kind":"quest"}
-{"key":176190,"since":0,"src":[5,17,24],"name":"Beached Sea Turtle","kind":"quest"}
-{"key":176191,"since":0,"src":[5,17,24],"name":"Beached Sea Turtle","kind":"quest"}
-{"key":176192,"since":0,"src":[5,17,24],"name":"Catalogue of the Wayward","kind":"quest"}
-{"key":176196,"since":0,"src":[5,17,24],"name":"Beached Sea Turtle","kind":"quest"}
-{"key":176197,"since":0,"src":[5,17,24],"name":"Beached Sea Turtle","kind":"quest"}
-{"key":176198,"since":0,"src":[5,17,24],"name":"Beached Sea Turtle","kind":"quest"}
-{"key":176206,"since":0,"src":[5,17,24],"name":"Davil's Libram","kind":"quest"}
-{"key":176207,"since":0,"src":[5,17,24],"name":"Redpath's Shield","kind":"quest"}
-{"key":176208,"since":0,"src":[5,17,24],"name":"Horgus' Skull","kind":"quest"}
-{"key":176209,"since":0,"src":[5,17,24],"name":"Shattered Sword of Marduk","kind":"quest"}
-{"key":176213,"since":0,"src":[5,17,24],"name":"Blood of Heroes","kind":"quest"}
-{"key":176224,"since":0,"src":[5,17,24],"name":"Supply Crate","kind":"quest"}
-{"key":176245,"since":0,"src":[5,17,24],"name":"Scarlet Archive","kind":"quest"}
-{"key":176249,"since":0,"src":[5,17,24],"name":"Scourge Data","kind":"quest"}
-{"key":176317,"since":0,"src":[5,17,24],"name":"The Argent Hold","kind":"quest"}
-{"key":176344,"since":0,"src":[5,17,24],"name":"Document Chest","kind":"quest"}
-{"key":176356,"since":0,"src":[5,17,24],"name":"Sacred Highborne Writings","kind":"quest"}
-{"key":176361,"since":0,"src":[5,17,24],"name":"Scourge Cauldron","kind":"quest"}
-{"key":176392,"since":0,"src":[5,17,24],"name":"Scourge Cauldron","kind":"quest"}
-{"key":176393,"since":0,"src":[5,17,24],"name":"Scourge Cauldron","kind":"quest"}
-{"key":176484,"since":0,"src":[5,17,24],"name":"The Deed to Brill","kind":"quest"}
-{"key":176485,"since":0,"src":[5,17,24],"name":"The Deed to Caer Darrow","kind":"quest"}
-{"key":176486,"since":0,"src":[5,17,24],"name":"The Deed to Southshore","kind":"quest"}
-{"key":176487,"since":0,"src":[5,17,24],"name":"The Deed to Tarren Mill","kind":"quest"}
-{"key":176544,"since":0,"src":[5,17,24],"name":"Remains of Eva Sarkhoff","kind":"quest"}
-{"key":176545,"since":0,"src":[5,17,24],"name":"Remains of Lucien Sarkhoff","kind":"quest"}
-{"key":176582,"since":0,"src":[5,17,24],"name":"Shellfish Trap","kind":"quest"}
+{"key":176189,"since":0,"src":[5,17,24,27],"name":"Skeletal Sea Turtle","kind":"quest"}
+{"key":176190,"since":0,"src":[5,17,24,27],"name":"Beached Sea Turtle","kind":"quest"}
+{"key":176191,"since":0,"src":[5,17,24,27],"name":"Beached Sea Turtle","kind":"quest"}
+{"key":176192,"since":0,"src":[5,17,24,27],"name":"Catalogue of the Wayward","kind":"quest"}
+{"key":176196,"since":0,"src":[5,17,24,27],"name":"Beached Sea Turtle","kind":"quest"}
+{"key":176197,"since":0,"src":[5,17,24,27],"name":"Beached Sea Turtle","kind":"quest"}
+{"key":176198,"since":0,"src":[5,17,24,27],"name":"Beached Sea Turtle","kind":"quest"}
+{"key":176206,"since":0,"src":[5,17,24,27],"name":"Davil's Libram","kind":"quest"}
+{"key":176207,"since":0,"src":[5,17,24,27],"name":"Redpath's Shield","kind":"quest"}
+{"key":176208,"since":0,"src":[5,17,24,27],"name":"Horgus' Skull","kind":"quest"}
+{"key":176209,"since":0,"src":[5,17,24,27],"name":"Shattered Sword of Marduk","kind":"quest"}
+{"key":176213,"since":0,"src":[5,17,24,27],"name":"Blood of Heroes","kind":"quest"}
+{"key":176224,"since":0,"src":[5,17,24,27],"name":"Supply Crate","kind":"quest"}
+{"key":176245,"since":0,"src":[5,17,24,27],"name":"Scarlet Archive","kind":"quest"}
+{"key":176249,"since":0,"src":[5,17,24,27],"name":"Scourge Data","kind":"quest"}
+{"key":176317,"since":0,"src":[5,17,24,27],"name":"The Argent Hold","kind":"quest"}
+{"key":176344,"since":0,"src":[5,17,24,27],"name":"Document Chest","kind":"quest"}
+{"key":176356,"since":0,"src":[5,17,24,27],"name":"Sacred Highborne Writings","kind":"quest"}
+{"key":176361,"since":0,"src":[5,17,24,27],"name":"Scourge Cauldron","kind":"quest"}
+{"key":176392,"since":0,"src":[5,17,24,27],"name":"Scourge Cauldron","kind":"quest"}
+{"key":176393,"since":0,"src":[5,17,24,27],"name":"Scourge Cauldron","kind":"quest"}
+{"key":176484,"since":0,"src":[5,17,24,27],"name":"The Deed to Brill","kind":"quest"}
+{"key":176485,"since":0,"src":[5,17,24,27],"name":"The Deed to Caer Darrow","kind":"quest"}
+{"key":176486,"since":0,"src":[5,17,24,27],"name":"The Deed to Southshore","kind":"quest"}
+{"key":176487,"since":0,"src":[5,17,24,27],"name":"The Deed to Tarren Mill","kind":"quest"}
+{"key":176544,"since":0,"src":[5,17,24,27],"name":"Remains of Eva Sarkhoff","kind":"quest"}
+{"key":176545,"since":0,"src":[5,17,24,27],"name":"Remains of Lucien Sarkhoff","kind":"quest"}
+{"key":176582,"since":0,"src":[5,17,24,27],"name":"Shellfish Trap","kind":"quest"}
 {"key":176583,"since":0,"src":[1],"name":"Golden Sansam","kind":"herb","skill":182,"skillLevel":260,"yellowAt":285,"greyAt":360}
 {"key":176584,"since":0,"src":[1],"name":"Dreamfoil","kind":"herb","skill":182,"skillLevel":270,"yellowAt":295,"greyAt":370}
 {"key":176586,"since":0,"src":[1],"name":"Mountain Silversage","kind":"herb","skill":182,"skillLevel":280,"yellowAt":305,"greyAt":380}
 {"key":176587,"since":0,"src":[1],"name":"Plaguebloom","kind":"herb","skill":182,"skillLevel":285,"yellowAt":310,"greyAt":385}
 {"key":176588,"since":0,"src":[1],"name":"Icecap","kind":"herb","skill":182,"skillLevel":290,"yellowAt":315,"greyAt":390}
 {"key":176589,"since":0,"src":[1],"name":"Black Lotus","kind":"herb","skill":182,"skillLevel":300,"yellowAt":325,"greyAt":400}
-{"key":176630,"since":0,"src":[5,17,24],"name":"Keepsake of Remembrance","kind":"quest"}
-{"key":176631,"since":0,"src":[5,17,24],"name":"Menethil's Gift","kind":"quest"}
-{"key":176634,"since":0,"src":[5,17,24],"name":"Kerlonian's Chest","kind":"quest"}
-{"key":176751,"since":0,"src":[5,17,24],"name":"Kodo Bones","kind":"quest"}
-{"key":176752,"since":0,"src":[5,17,24],"name":"Kodo Bones","kind":"quest"}
-{"key":176753,"since":0,"src":[5,17,24],"name":"Doom Weed","kind":"quest"}
-{"key":176785,"since":0,"src":[5,17,24],"name":"Ammo Crate","kind":"quest"}
-{"key":176793,"since":0,"src":[5,17,24],"name":"Bundle of Wood","kind":"quest"}
-{"key":177241,"since":0,"src":[5,17,24],"name":"Araj's Phylactery","kind":"quest"}
-{"key":177264,"since":0,"src":[5,17,24],"name":"Symbol of Lost Honor","kind":"quest"}
-{"key":177287,"since":0,"src":[5,17,24],"name":"Unfinished Painting","kind":"quest"}
-{"key":177289,"since":0,"src":[5,17,24],"name":"Scourge Cauldron","kind":"quest"}
+{"key":176630,"since":0,"src":[5,17,24,27],"name":"Keepsake of Remembrance","kind":"quest"}
+{"key":176631,"since":0,"src":[5,17,24,27],"name":"Menethil's Gift","kind":"quest"}
+{"key":176634,"since":0,"src":[5,17,24,27],"name":"Kerlonian's Chest","kind":"quest"}
+{"key":176751,"since":0,"src":[5,17,24,27],"name":"Kodo Bones","kind":"quest"}
+{"key":176752,"since":0,"src":[5,17,24,27],"name":"Kodo Bones","kind":"quest"}
+{"key":176753,"since":0,"src":[5,17,24,27],"name":"Doom Weed","kind":"quest"}
+{"key":176785,"since":0,"src":[5,17,24,27],"name":"Ammo Crate","kind":"quest"}
+{"key":176793,"since":0,"src":[5,17,24,27],"name":"Bundle of Wood","kind":"quest"}
+{"key":177241,"since":0,"src":[5,17,24,27],"name":"Araj's Phylactery","kind":"quest"}
+{"key":177264,"since":0,"src":[5,17,24,27],"name":"Symbol of Lost Honor","kind":"quest"}
+{"key":177287,"since":0,"src":[5,17,24,27],"name":"Unfinished Painting","kind":"quest"}
+{"key":177289,"since":0,"src":[5,17,24,27],"name":"Scourge Cauldron","kind":"quest"}
 {"key":177388,"since":0,"src":[1],"name":"Ooze Covered Rich Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
-{"key":177464,"since":0,"src":[5,17,24],"name":"Large Termite Mound","kind":"quest"}
-{"key":177491,"since":0,"src":[5,17,24],"name":"Termite Barrel","kind":"quest"}
-{"key":177544,"since":0,"src":[5,17,24],"name":"Joseph's Chest","kind":"quest"}
-{"key":177624,"since":0,"src":[5,17,24],"name":"Xabraxxis' Demon Bag","kind":"quest"}
-{"key":177667,"since":0,"src":[5,17,24],"name":"Torn Scroll","kind":"quest"}
-{"key":177675,"since":0,"src":[5,17,24],"name":"Mound of Dirt","kind":"quest"}
-{"key":177747,"since":0,"src":[5,17,24],"name":"Quel'Thalas Registry","kind":"quest"}
-{"key":177750,"since":0,"src":[5,17,24],"name":"Lunar Fungal Bloom","kind":"quest"}
-{"key":177784,"since":0,"src":[5,17,24],"name":"Giant Softshell Clam","kind":"quest"}
-{"key":177786,"since":0,"src":[5,17,24],"name":"Rackmore's Chest","kind":"quest"}
-{"key":177787,"since":0,"src":[5,17,24],"name":"Rackmore's Log","kind":"quest"}
-{"key":177789,"since":0,"src":[5,17,24],"name":"Augustus' Receipt Book","kind":"quest"}
-{"key":177804,"since":0,"src":[5,17,24],"name":"Mangled Human Remains","kind":"quest"}
-{"key":177805,"since":0,"src":[5,17,24],"name":"Mangled Human Remains","kind":"quest"}
-{"key":177806,"since":0,"src":[5,17,24],"name":"Mangled Human Remains","kind":"quest"}
-{"key":177904,"since":0,"src":[5,17,24],"name":"Wanted Poster: Besseleth","kind":"quest"}
-{"key":177926,"since":0,"src":[5,17,24],"name":"Gaea Seed","kind":"quest"}
-{"key":177929,"since":0,"src":[5,17,24],"name":"Gaea Dirt Mound","kind":"quest"}
-{"key":177964,"since":0,"src":[5,17,24],"name":"Fathom Stone","kind":"quest"}
-{"key":178084,"since":0,"src":[5,17,24],"name":"Felix's Chest","kind":"quest"}
-{"key":178085,"since":0,"src":[5,17,24],"name":"Felix's Bucket of Bolts","kind":"quest"}
-{"key":178087,"since":0,"src":[5,17,24],"name":"Thazz'ril's Pick","kind":"quest"}
-{"key":178090,"since":0,"src":[5,17,24],"name":"Marla's Grave","kind":"quest"}
-{"key":178104,"since":0,"src":[5,17,24],"name":"Resonite Crystal","kind":"quest"}
-{"key":178105,"since":0,"src":[5,17,24],"name":"Resonite Crystal","kind":"quest"}
-{"key":178106,"since":0,"src":[5,17,24],"name":"Resonite Crystal","kind":"quest"}
-{"key":178144,"since":0,"src":[5,17,24],"name":"Troll Chest","kind":"quest"}
-{"key":178184,"since":0,"src":[5,17,24],"name":"Sapphire of Aku'Mai","kind":"quest"}
-{"key":178185,"since":0,"src":[5,17,24],"name":"Sapphire of Aku'Mai","kind":"quest"}
-{"key":178186,"since":0,"src":[5,17,24],"name":"Sapphire of Aku'Mai","kind":"quest"}
-{"key":178195,"since":0,"src":[5,17,24],"name":"Warsong Oil","kind":"quest"}
-{"key":178204,"since":0,"src":[5,17,24],"name":"Warsong Axe Shipment","kind":"quest"}
-{"key":178224,"since":0,"src":[5,17,24],"name":"Dire Pool","kind":"quest"}
-{"key":178227,"since":0,"src":[5,17,24],"name":"Murgut's Totem Basket","kind":"quest"}
+{"key":177464,"since":0,"src":[5,17,24,27],"name":"Large Termite Mound","kind":"quest"}
+{"key":177491,"since":0,"src":[5,17,24,27],"name":"Termite Barrel","kind":"quest"}
+{"key":177544,"since":0,"src":[5,17,24,27],"name":"Joseph's Chest","kind":"quest"}
+{"key":177624,"since":0,"src":[5,17,24,27],"name":"Xabraxxis' Demon Bag","kind":"quest"}
+{"key":177667,"since":0,"src":[5,17,24,27],"name":"Torn Scroll","kind":"quest"}
+{"key":177675,"since":0,"src":[5,17,24,27],"name":"Mound of Dirt","kind":"quest"}
+{"key":177747,"since":0,"src":[5,17,24,27],"name":"Quel'Thalas Registry","kind":"quest"}
+{"key":177750,"since":0,"src":[5,17,24,27],"name":"Lunar Fungal Bloom","kind":"quest"}
+{"key":177784,"since":0,"src":[5,17,24,27],"name":"Giant Softshell Clam","kind":"quest"}
+{"key":177786,"since":0,"src":[5,17,24,27],"name":"Rackmore's Chest","kind":"quest"}
+{"key":177787,"since":0,"src":[5,17,24,27],"name":"Rackmore's Log","kind":"quest"}
+{"key":177789,"since":0,"src":[5,17,24,27],"name":"Augustus' Receipt Book","kind":"quest"}
+{"key":177804,"since":0,"src":[5,17,24,27],"name":"Mangled Human Remains","kind":"quest"}
+{"key":177805,"since":0,"src":[5,17,24,27],"name":"Mangled Human Remains","kind":"quest"}
+{"key":177806,"since":0,"src":[5,17,24,27],"name":"Mangled Human Remains","kind":"quest"}
+{"key":177904,"since":0,"src":[5,17,24,27],"name":"Wanted Poster: Besseleth","kind":"quest"}
+{"key":177926,"since":0,"src":[5,17,24,27],"name":"Gaea Seed","kind":"quest"}
+{"key":177929,"since":0,"src":[5,17,24,27],"name":"Gaea Dirt Mound","kind":"quest"}
+{"key":177964,"since":0,"src":[5,17,24,27],"name":"Fathom Stone","kind":"quest"}
+{"key":178084,"since":0,"src":[5,17,24,27],"name":"Felix's Chest","kind":"quest"}
+{"key":178085,"since":0,"src":[5,17,24,27],"name":"Felix's Bucket of Bolts","kind":"quest"}
+{"key":178087,"since":0,"src":[5,17,24,27],"name":"Thazz'ril's Pick","kind":"quest"}
+{"key":178090,"since":0,"src":[5,17,24,27],"name":"Marla's Grave","kind":"quest"}
+{"key":178104,"since":0,"src":[5,17,24,27],"name":"Resonite Crystal","kind":"quest"}
+{"key":178105,"since":0,"src":[5,17,24,27],"name":"Resonite Crystal","kind":"quest"}
+{"key":178106,"since":0,"src":[5,17,24,27],"name":"Resonite Crystal","kind":"quest"}
+{"key":178144,"since":0,"src":[5,17,24,27],"name":"Troll Chest","kind":"quest"}
+{"key":178184,"since":0,"src":[5,17,24,27],"name":"Sapphire of Aku'Mai","kind":"quest"}
+{"key":178185,"since":0,"src":[5,17,24,27],"name":"Sapphire of Aku'Mai","kind":"quest"}
+{"key":178186,"since":0,"src":[5,17,24,27],"name":"Sapphire of Aku'Mai","kind":"quest"}
+{"key":178195,"since":0,"src":[5,17,24,27],"name":"Warsong Oil","kind":"quest"}
+{"key":178204,"since":0,"src":[5,17,24,27],"name":"Warsong Axe Shipment","kind":"quest"}
+{"key":178224,"since":0,"src":[5,17,24,27],"name":"Dire Pool","kind":"quest"}
+{"key":178227,"since":0,"src":[5,17,24,27],"name":"Murgut's Totem Basket","kind":"quest"}
 {"key":178244,"since":0,"src":[4],"name":"Practice Lockbox","kind":"chest"}
 {"key":178246,"since":0,"src":[4],"name":"Practice Lockbox","kind":"chest"}
-{"key":178784,"since":0,"src":[5,17,24],"name":"Coldtooth Supplies","kind":"quest"}
-{"key":178785,"since":0,"src":[5,17,24],"name":"Irondeep Supplies","kind":"quest"}
-{"key":178907,"since":0,"src":[5,17,24],"name":"Maraudon Orange Pool Spell Focus","kind":"quest"}
-{"key":178965,"since":0,"src":[5,17,24],"name":"Incantation of Celebras","kind":"quest"}
-{"key":179024,"since":0,"src":[5,17,24],"name":"Stormpike Banner","kind":"quest"}
-{"key":179025,"since":0,"src":[5,17,24],"name":"Frostwolf Banner","kind":"quest"}
-{"key":179426,"since":0,"src":[5,17,24],"name":"Gri'lek the Wanderer","kind":"quest"}
-{"key":179437,"since":0,"src":[5,17,24],"name":"Wanted: ORCS!","kind":"quest"}
-{"key":179438,"since":0,"src":[5,17,24],"name":"Wanted: DWARVES!","kind":"quest"}
-{"key":179485,"since":0,"src":[5,17,24],"name":"Broken Trap","kind":"quest"}
-{"key":179486,"since":0,"src":[4,5,17,24],"name":"Battered Footlocker","kind":"chest"}
-{"key":179487,"since":0,"src":[4,5,17,24],"name":"Waterlogged Footlocker","kind":"chest"}
-{"key":179488,"since":0,"src":[4,5,17,24],"name":"Battered Footlocker","kind":"chest"}
-{"key":179489,"since":0,"src":[4,5,17,24],"name":"Waterlogged Footlocker","kind":"chest"}
-{"key":179490,"since":0,"src":[4,5,17,24],"name":"Battered Footlocker","kind":"chest"}
-{"key":179491,"since":0,"src":[4,5,17,24],"name":"Waterlogged Footlocker","kind":"chest"}
-{"key":179492,"since":0,"src":[4,5,17,24],"name":"Dented Footlocker","kind":"chest"}
-{"key":179493,"since":0,"src":[4,5,17,24],"name":"Mossy Footlocker","kind":"chest"}
-{"key":179494,"since":0,"src":[4,5,17,24],"name":"Dented Footlocker","kind":"chest"}
-{"key":179496,"since":0,"src":[4,5,17,24],"name":"Dented Footlocker","kind":"chest"}
-{"key":179497,"since":0,"src":[4,5,17,24],"name":"Mossy Footlocker","kind":"chest"}
-{"key":179498,"since":0,"src":[4,5,17,24],"name":"Scarlet Footlocker","kind":"chest"}
-{"key":179499,"since":0,"src":[5,17,24],"name":"Ogre Tannin Basket","kind":"quest"}
-{"key":179501,"since":0,"src":[5,17,24],"name":"Knot Thimblejack's Cache","kind":"quest"}
-{"key":179517,"since":0,"src":[5,17,24],"name":"Treasure of the Shen'dralar","kind":"quest"}
-{"key":179544,"since":0,"src":[5,17,24],"name":"Skeletal Remains of Kariel Winthalus","kind":"quest"}
-{"key":179545,"since":0,"src":[5,17,24],"name":"The Prince's Chest","kind":"quest"}
-{"key":179547,"since":0,"src":[5,17,24],"name":"A Dusty Tome","kind":"quest"}
-{"key":179548,"since":0,"src":[5,17,24],"name":"A Dusty Tome","kind":"quest"}
-{"key":179551,"since":0,"src":[5,17,24],"name":"Hydraxis' Coffer","kind":"quest"}
-{"key":179553,"since":0,"src":[5,17,24],"name":"Core Fragment","kind":"quest"}
-{"key":179565,"since":0,"src":[5,17,24],"name":"Dusty Reliquary","kind":"quest"}
-{"key":179644,"since":0,"src":[5,17,24],"name":"Imprisoned Doomguard","kind":"quest"}
-{"key":179697,"since":0,"src":[5,17,24],"name":"Arena Treasure Chest","kind":"quest"}
-{"key":179703,"since":0,"src":[5,17,24],"name":"Cache of the Firelord","kind":"quest"}
-{"key":179826,"since":0,"src":[5,17,24],"name":"Secret Plans: Fiery Flux","kind":"quest"}
-{"key":179827,"since":0,"src":[5,17,24],"name":"Wanted/Missing/Lost & Found","kind":"quest"}
-{"key":179832,"since":0,"src":[5,17,24],"name":"Pillaclencher's Ornate Pillow","kind":"quest"}
-{"key":179880,"since":0,"src":[5,17,24],"name":"Drakkisath's Brand","kind":"quest"}
-{"key":179888,"since":0,"src":[5,17,24],"name":"Rizzle's Guarded Plans","kind":"quest"}
-{"key":179908,"since":0,"src":[5,17,24],"name":"Slagtree's Lost Tools","kind":"quest"}
-{"key":179910,"since":0,"src":[5,17,24],"name":"Lard's Picnic Basket","kind":"quest"}
-{"key":179913,"since":0,"src":[5,17,24],"name":"Call to Arms!","kind":"quest"}
-{"key":179914,"since":0,"src":[5,17,24],"name":"Pile of Bones","kind":"quest"}
-{"key":179915,"since":0,"src":[5,17,24],"name":"Pile of Skulls","kind":"quest"}
-{"key":179922,"since":0,"src":[5,17,24],"name":"Vessel of Tainted Blood","kind":"quest"}
-{"key":180024,"since":0,"src":[5,17,24],"name":"Mysterious Deadmines Chest","kind":"quest"}
-{"key":180025,"since":0,"src":[5,17,24],"name":"Mysterious Eastvale Haystack","kind":"quest"}
-{"key":180055,"since":0,"src":[5,17,24],"name":"Mysterious Wailing Caverns Chest","kind":"quest"}
-{"key":180056,"since":0,"src":[5,17,24],"name":"Mysterious Tree Stump","kind":"quest"}
+{"key":178784,"since":0,"src":[5,17,24,27],"name":"Coldtooth Supplies","kind":"quest"}
+{"key":178785,"since":0,"src":[5,17,24,27],"name":"Irondeep Supplies","kind":"quest"}
+{"key":178907,"since":0,"src":[5,17,24,27],"name":"Maraudon Orange Pool Spell Focus","kind":"quest"}
+{"key":178965,"since":0,"src":[5,17,24,27],"name":"Incantation of Celebras","kind":"quest"}
+{"key":179024,"since":0,"src":[5,17,24,27],"name":"Stormpike Banner","kind":"quest"}
+{"key":179025,"since":0,"src":[5,17,24,27],"name":"Frostwolf Banner","kind":"quest"}
+{"key":179426,"since":0,"src":[5,17,24,27],"name":"Gri'lek the Wanderer","kind":"quest"}
+{"key":179437,"since":0,"src":[5,17,24,27],"name":"Wanted: ORCS!","kind":"quest"}
+{"key":179438,"since":0,"src":[5,17,24,27],"name":"Wanted: DWARVES!","kind":"quest"}
+{"key":179485,"since":0,"src":[5,17,24,27],"name":"Broken Trap","kind":"quest"}
+{"key":179486,"since":0,"src":[4,5,17,24,27],"name":"Battered Footlocker","kind":"chest"}
+{"key":179487,"since":0,"src":[4,5,17,24,27],"name":"Waterlogged Footlocker","kind":"chest"}
+{"key":179488,"since":0,"src":[4,5,17,24,27],"name":"Battered Footlocker","kind":"chest"}
+{"key":179489,"since":0,"src":[4,5,17,24,27],"name":"Waterlogged Footlocker","kind":"chest"}
+{"key":179490,"since":0,"src":[4,5,17,24,27],"name":"Battered Footlocker","kind":"chest"}
+{"key":179491,"since":0,"src":[4,5,17,24,27],"name":"Waterlogged Footlocker","kind":"chest"}
+{"key":179492,"since":0,"src":[4,5,17,24,27],"name":"Dented Footlocker","kind":"chest"}
+{"key":179493,"since":0,"src":[4,5,17,24,27],"name":"Mossy Footlocker","kind":"chest"}
+{"key":179494,"since":0,"src":[4,5,17,24,27],"name":"Dented Footlocker","kind":"chest"}
+{"key":179496,"since":0,"src":[4,5,17,24,27],"name":"Dented Footlocker","kind":"chest"}
+{"key":179497,"since":0,"src":[4,5,17,24,27],"name":"Mossy Footlocker","kind":"chest"}
+{"key":179498,"since":0,"src":[4,5,17,24,27],"name":"Scarlet Footlocker","kind":"chest"}
+{"key":179499,"since":0,"src":[5,17,24,27],"name":"Ogre Tannin Basket","kind":"quest"}
+{"key":179501,"since":0,"src":[5,17,24,27],"name":"Knot Thimblejack's Cache","kind":"quest"}
+{"key":179517,"since":0,"src":[5,17,24,27],"name":"Treasure of the Shen'dralar","kind":"quest"}
+{"key":179544,"since":0,"src":[5,17,24,27],"name":"Skeletal Remains of Kariel Winthalus","kind":"quest"}
+{"key":179545,"since":0,"src":[5,17,24,27],"name":"The Prince's Chest","kind":"quest"}
+{"key":179547,"since":0,"src":[5,17,24,27],"name":"A Dusty Tome","kind":"quest"}
+{"key":179548,"since":0,"src":[5,17,24,27],"name":"A Dusty Tome","kind":"quest"}
+{"key":179551,"since":0,"src":[5,17,24,27],"name":"Hydraxis' Coffer","kind":"quest"}
+{"key":179553,"since":0,"src":[5,17,24,27],"name":"Core Fragment","kind":"quest"}
+{"key":179565,"since":0,"src":[5,17,24,27],"name":"Dusty Reliquary","kind":"quest"}
+{"key":179644,"since":0,"src":[5,17,24,27],"name":"Imprisoned Doomguard","kind":"quest"}
+{"key":179697,"since":0,"src":[5,17,24,27],"name":"Arena Treasure Chest","kind":"quest"}
+{"key":179703,"since":0,"src":[5,17,24,27],"name":"Cache of the Firelord","kind":"quest"}
+{"key":179826,"since":0,"src":[5,17,24,27],"name":"Secret Plans: Fiery Flux","kind":"quest"}
+{"key":179827,"since":0,"src":[5,17,24,27],"name":"Wanted/Missing/Lost & Found","kind":"quest"}
+{"key":179832,"since":0,"src":[5,17,24,27],"name":"Pillaclencher's Ornate Pillow","kind":"quest"}
+{"key":179880,"since":0,"src":[5,17,24,27],"name":"Drakkisath's Brand","kind":"quest"}
+{"key":179888,"since":0,"src":[5,17,24,27],"name":"Rizzle's Guarded Plans","kind":"quest"}
+{"key":179908,"since":0,"src":[5,17,24,27],"name":"Slagtree's Lost Tools","kind":"quest"}
+{"key":179910,"since":0,"src":[5,17,24,27],"name":"Lard's Picnic Basket","kind":"quest"}
+{"key":179913,"since":0,"src":[5,17,24,27],"name":"Call to Arms!","kind":"quest"}
+{"key":179914,"since":0,"src":[5,17,24,27],"name":"Pile of Bones","kind":"quest"}
+{"key":179915,"since":0,"src":[5,17,24,27],"name":"Pile of Skulls","kind":"quest"}
+{"key":179922,"since":0,"src":[5,17,24,27],"name":"Vessel of Tainted Blood","kind":"quest"}
+{"key":180024,"since":0,"src":[5,17,24,27],"name":"Mysterious Deadmines Chest","kind":"quest"}
+{"key":180025,"since":0,"src":[5,17,24,27],"name":"Mysterious Eastvale Haystack","kind":"quest"}
+{"key":180055,"since":0,"src":[5,17,24,27],"name":"Mysterious Wailing Caverns Chest","kind":"quest"}
+{"key":180056,"since":0,"src":[5,17,24,27],"name":"Mysterious Tree Stump","kind":"quest"}
 {"key":180215,"since":0,"src":[1],"name":"Hakkari Thorium Vein","kind":"ore","skill":186,"skillLevel":275,"yellowAt":300,"greyAt":375}
-{"key":180366,"since":0,"src":[5,17,24],"name":"Battered Tackle Box","kind":"quest"}
-{"key":180435,"since":0,"src":[5,17,24],"name":"Noggle's Satchel","kind":"quest"}
-{"key":180436,"since":0,"src":[5,17,24],"name":"Twilight Tablet Fragment","kind":"quest"}
-{"key":180448,"since":0,"src":[5,17,24],"name":"Wanted Poster: Deathclasp","kind":"quest"}
-{"key":180449,"since":0,"src":[5,17,24],"name":"Forsaken Stink Bomb","kind":"quest"}
-{"key":180453,"since":0,"src":[5,17,24],"name":"Hive'Regal Glyphed Crystal","kind":"quest"}
-{"key":180454,"since":0,"src":[5,17,24],"name":"Hive'Ashi Glyphed Crystal","kind":"quest"}
-{"key":180455,"since":0,"src":[5,17,24],"name":"Hive'Zora Glyphed Crystal","kind":"quest"}
-{"key":180501,"since":0,"src":[5,17,24],"name":"Twilight Tablet Fragment","kind":"quest"}
-{"key":180503,"since":0,"src":[5,17,24],"name":"Sandy Cookbook","kind":"quest"}
-{"key":180570,"since":0,"src":[5,17,24],"name":"Keg","kind":"quest"}
-{"key":180633,"since":0,"src":[5,17,24],"name":"Crystalline Tear","kind":"quest"}
-{"key":180642,"since":0,"src":[5,17,24],"name":"Inconspicuous Crate","kind":"quest"}
-{"key":180652,"since":0,"src":[5,17,24],"name":"Freshly Dug Dirt","kind":"quest"}
-{"key":180671,"since":0,"src":[5,17,24],"name":"Xandivious' Demon Bag","kind":"quest"}
-{"key":180690,"since":0,"src":[5,17,24],"name":"Large Scarab Coffer","kind":"quest"}
-{"key":180691,"since":0,"src":[5,17,24],"name":"Scarab Coffer","kind":"quest"}
-{"key":180715,"since":0,"src":[5,17,24],"name":"Holly Preserver","kind":"quest"}
-{"key":180717,"since":0,"src":[5,17,24],"name":"The Scarab Gong","kind":"quest"}
-{"key":180743,"since":0,"src":[5,17,24],"name":"Carefully Wrapped Present","kind":"quest"}
-{"key":180746,"since":0,"src":[5,17,24],"name":"Gently Shaken Gift","kind":"quest"}
-{"key":180747,"since":0,"src":[5,17,24],"name":"Gaily Wrapped Present","kind":"quest"}
-{"key":180748,"since":0,"src":[5,17,24],"name":"Ticking Present","kind":"quest"}
-{"key":180771,"since":0,"src":[5,17,24],"name":"Firework Launcher","kind":"quest"}
-{"key":180772,"since":0,"src":[5,17,24],"name":"Cluster Launcher","kind":"quest"}
-{"key":180793,"since":0,"src":[5,17,24],"name":"Festive Gift","kind":"quest"}
-{"key":181053,"since":0,"src":[5,17,24],"name":"Basket of Bloodkelp","kind":"quest"}
+{"key":180366,"since":0,"src":[5,17,24,27],"name":"Battered Tackle Box","kind":"quest"}
+{"key":180435,"since":0,"src":[5,17,24,27],"name":"Noggle's Satchel","kind":"quest"}
+{"key":180436,"since":0,"src":[5,17,24,27],"name":"Twilight Tablet Fragment","kind":"quest"}
+{"key":180448,"since":0,"src":[5,17,24,27],"name":"Wanted Poster: Deathclasp","kind":"quest"}
+{"key":180449,"since":0,"src":[5,17,24,27],"name":"Forsaken Stink Bomb","kind":"quest"}
+{"key":180453,"since":0,"src":[5,17,24,27],"name":"Hive'Regal Glyphed Crystal","kind":"quest"}
+{"key":180454,"since":0,"src":[5,17,24,27],"name":"Hive'Ashi Glyphed Crystal","kind":"quest"}
+{"key":180455,"since":0,"src":[5,17,24,27],"name":"Hive'Zora Glyphed Crystal","kind":"quest"}
+{"key":180501,"since":0,"src":[5,17,24,27],"name":"Twilight Tablet Fragment","kind":"quest"}
+{"key":180503,"since":0,"src":[5,17,24,27],"name":"Sandy Cookbook","kind":"quest"}
+{"key":180570,"since":0,"src":[5,17,24,27],"name":"Keg","kind":"quest"}
+{"key":180633,"since":0,"src":[5,17,24,27],"name":"Crystalline Tear","kind":"quest"}
+{"key":180642,"since":0,"src":[5,17,24,27],"name":"Inconspicuous Crate","kind":"quest"}
+{"key":180652,"since":0,"src":[5,17,24,27],"name":"Freshly Dug Dirt","kind":"quest"}
+{"key":180671,"since":0,"src":[5,17,24,27],"name":"Xandivious' Demon Bag","kind":"quest"}
+{"key":180690,"since":0,"src":[5,17,24,27],"name":"Large Scarab Coffer","kind":"quest"}
+{"key":180691,"since":0,"src":[5,17,24,27],"name":"Scarab Coffer","kind":"quest"}
+{"key":180715,"since":0,"src":[5,17,24,27],"name":"Holly Preserver","kind":"quest"}
+{"key":180717,"since":0,"src":[5,17,24,27],"name":"The Scarab Gong","kind":"quest"}
+{"key":180743,"since":0,"src":[5,17,24,27],"name":"Carefully Wrapped Present","kind":"quest"}
+{"key":180746,"since":0,"src":[5,17,24,27],"name":"Gently Shaken Gift","kind":"quest"}
+{"key":180747,"since":0,"src":[5,17,24,27],"name":"Gaily Wrapped Present","kind":"quest"}
+{"key":180748,"since":0,"src":[5,17,24,27],"name":"Ticking Present","kind":"quest"}
+{"key":180771,"since":0,"src":[5,17,24,27],"name":"Firework Launcher","kind":"quest"}
+{"key":180772,"since":0,"src":[5,17,24,27],"name":"Cluster Launcher","kind":"quest"}
+{"key":180793,"since":0,"src":[5,17,24,27],"name":"Festive Gift","kind":"quest"}
+{"key":181053,"since":0,"src":[5,17,24,27],"name":"Basket of Bloodkelp","kind":"quest"}
 {"key":181068,"since":0,"src":[1],"name":"Small Obsidian Chunk","kind":"ore","skill":186,"skillLevel":305,"yellowAt":330,"greyAt":405}
 {"key":181069,"since":0,"src":[1],"name":"Large Obsidian Chunk","kind":"ore","skill":186,"skillLevel":305,"yellowAt":330,"greyAt":405}
-{"key":181073,"since":0,"src":[5,17,24],"name":"Fragrant Cauldron","kind":"quest"}
-{"key":181085,"since":0,"src":[5,17,24],"name":"Stratholme Supply Crate","kind":"quest"}
-{"key":181098,"since":0,"src":[5,17,24],"name":"Volcanic Ash","kind":"quest"}
-{"key":181287,"since":0,"src":[5,17,24],"name":"Frozen Rune","kind":"quest"}
-{"key":181332,"since":0,"src":[5,17,24],"name":"Flame of Stormwind","kind":"quest"}
-{"key":181333,"since":0,"src":[5,17,24],"name":"Flame of Ironforge","kind":"quest"}
-{"key":181334,"since":0,"src":[5,17,24],"name":"Flame of Darnassus","kind":"quest"}
-{"key":181335,"since":0,"src":[5,17,24],"name":"Flame of the Undercity","kind":"quest"}
-{"key":181336,"since":0,"src":[5,17,24],"name":"Flame of Orgrimmar","kind":"quest"}
-{"key":181337,"since":0,"src":[5,17,24],"name":"Flame of Thunder Bluff","kind":"quest"}
-{"key":181338,"since":0,"src":[5,17,24],"name":"Flame of the Plaguelands","kind":"quest"}
-{"key":181339,"since":0,"src":[5,17,24],"name":"Flame of Silithus","kind":"quest"}
-{"key":181340,"since":0,"src":[5,17,24],"name":"Flame of Winterspring","kind":"quest"}
-{"key":181341,"since":0,"src":[5,17,24],"name":"Flame of Searing Gorge","kind":"quest"}
-{"key":181342,"since":0,"src":[5,17,24],"name":"Flame of Azshara","kind":"quest"}
-{"key":181343,"since":0,"src":[5,17,24],"name":"Flame of Un'Goro","kind":"quest"}
-{"key":181344,"since":0,"src":[5,17,24],"name":"Flame of the Blasted Lands","kind":"quest"}
-{"key":181345,"since":0,"src":[5,17,24],"name":"Flame of the Hinterlands","kind":"quest"}
-{"key":181346,"since":0,"src":[5,17,24],"name":"Flame of Dire Maul","kind":"quest"}
-{"key":181347,"since":0,"src":[5,17,24],"name":"Flame of Blackrock Spire","kind":"quest"}
-{"key":181348,"since":0,"src":[5,17,24],"name":"Flame of Stratholme","kind":"quest"}
-{"key":181349,"since":0,"src":[5,17,24],"name":"Flame of the Scholomance","kind":"quest"}
-{"key":181560,"since":0,"src":[5,17,24],"name":"Flame of the Barrens","kind":"quest"}
-{"key":181561,"since":0,"src":[5,17,24],"name":"Flame of Ashenvale","kind":"quest"}
-{"key":181562,"since":0,"src":[5,17,24],"name":"Flame of Stonetalon","kind":"quest"}
-{"key":181563,"since":0,"src":[5,17,24],"name":"Flame of Darkshore","kind":"quest"}
-{"key":181564,"since":0,"src":[5,17,24],"name":"Flame of Silverpine","kind":"quest"}
-{"key":181565,"since":0,"src":[5,17,24],"name":"Flame of Westfall","kind":"quest"}
-{"key":181566,"since":0,"src":[5,17,24],"name":"Flame of Hillsbrad","kind":"quest"}
-{"key":181567,"since":0,"src":[5,17,24],"name":"Flame of the Wetlands","kind":"quest"}
-{"key":181665,"since":0,"src":[5,17,24],"name":"Burial Chest","kind":"quest"}
-{"key":181798,"since":0,"src":[5,17,24],"name":"Fel Iron Chest","kind":"quest"}
-{"key":181800,"since":0,"src":[5,17,24],"name":"Heavy Fel Iron Chest","kind":"quest"}
-{"key":181802,"since":0,"src":[5,17,24],"name":"Adamantite Bound Chest","kind":"quest"}
-{"key":181804,"since":0,"src":[5,17,24],"name":"Felsteel Chest","kind":"quest"}
-{"key":184930,"since":0,"src":[5,17,24],"name":"Solid Fel Iron Chest","kind":"quest"}
-{"key":184933,"since":0,"src":[5,17,24],"name":"Solid Fel Iron Chest","kind":"quest"}
-{"key":184935,"since":0,"src":[5,17,24],"name":"Solid Fel Iron Chest","kind":"quest"}
-{"key":186419,"since":0,"src":[5,17,24],"name":"Wrecked Row Boat","kind":"quest"}
-{"key":190483,"since":0,"src":[5,17,24],"name":"Document Chest","kind":"quest"}
-{"key":190484,"since":0,"src":[5,17,24],"name":"Document Chest","kind":"quest"}
-{"key":386691,"since":0,"src":[17,24],"name":"Library Book","kind":"quest"}
-{"key":386759,"since":0,"src":[17,24],"name":"Library Book","kind":"quest"}
-{"key":403041,"since":0,"src":[17,24],"name":"Blasting Supplies","kind":"quest"}
-{"key":405149,"since":0,"src":[17,24],"name":"Mural of Ta'zo","kind":"quest"}
-{"key":405879,"since":0,"src":[17,24],"name":"Apothecary Society Primer","kind":"quest"}
-{"key":406918,"since":0,"src":[5,17,24],"name":"Messenger Bag","kind":"quest"}
-{"key":407566,"since":0,"src":[17,24],"name":"Goblin Tome","kind":"quest"}
-{"key":408014,"since":0,"src":[17,24],"name":"Gnomish Tome","kind":"quest"}
-{"key":409289,"since":0,"src":[24],"name":"Strange Orb","kind":"quest"}
-{"key":409311,"since":0,"src":[5,17,24],"name":"Spear of Mannoroth","kind":"quest"}
-{"key":409315,"since":0,"src":[5,17,24],"name":"Shattered Orb","kind":"quest"}
-{"key":409496,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":409501,"since":0,"src":[17,24],"name":"Dalaran Digest","kind":"quest"}
-{"key":409562,"since":0,"src":[17,24],"name":"Spellbook","kind":"quest"}
-{"key":409692,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":409700,"since":0,"src":[17,24],"name":"Manual","kind":"quest"}
-{"key":409711,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":409717,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":409731,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":409735,"since":0,"src":[17,24],"name":"Spellbook","kind":"quest"}
-{"key":410299,"since":0,"src":[17,24],"name":"Arcane Secrets","kind":"quest"}
-{"key":410369,"since":0,"src":[5,17,24],"name":"Dead Drop","kind":"quest"}
-{"key":415106,"since":0,"src":[5,17,24],"name":"Burned-Out Remains","kind":"quest"}
-{"key":415107,"since":0,"src":[5,17,24],"name":"Burned-Out Remains","kind":"quest"}
-{"key":417072,"since":0,"src":[5,17,24],"name":"Nailed Plank","kind":"quest"}
-{"key":417353,"since":0,"src":[24],"name":"Extinguished Campfire","kind":"quest"}
-{"key":418855,"since":0,"src":[24],"name":"Illari's Loot Cache","kind":"quest"}
-{"key":421526,"since":0,"src":[17,24],"name":"Research Notes","kind":"quest"}
-{"key":423703,"since":0,"src":[24],"name":"Broken Warhammer","kind":"quest"}
-{"key":423895,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":423896,"since":0,"src":[17,24],"name":"Manual","kind":"quest"}
-{"key":423897,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":423898,"since":0,"src":[17,24],"name":"Mysterious Book","kind":"quest"}
-{"key":423899,"since":0,"src":[17,24],"name":"Scrolls","kind":"quest"}
-{"key":423900,"since":0,"src":[17,24],"name":"Waterlogged Book","kind":"quest"}
-{"key":423901,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":424005,"since":0,"src":[5,17,24],"name":"Pocket Litter","kind":"quest"}
-{"key":424006,"since":0,"src":[5,17,24],"name":"Hastily Rolled-Up Satchel","kind":"quest"}
-{"key":424007,"since":0,"src":[5,17,24],"name":"Carved Figurine","kind":"quest"}
-{"key":424010,"since":0,"src":[5,17,24],"name":"Nailed Plank","kind":"quest"}
-{"key":424012,"since":0,"src":[5,17,24],"name":"Mound of Dirt","kind":"quest"}
-{"key":441061,"since":0,"src":[24],"name":"Weathered Etching","kind":"quest"}
-{"key":441247,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441248,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441249,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441250,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441251,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441252,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441253,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":441254,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463206,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463207,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463208,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463209,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463211,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463212,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463213,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":463214,"since":0,"src":[17,24],"name":"Book","kind":"quest"}
-{"key":527828,"since":0,"src":[24],"name":"Saria's Knapsack","kind":"quest"}
-{"key":554626,"since":0,"src":[5,17,24],"name":"Lumber Pile","kind":"quest"}
-{"key":556628,"since":0,"src":[24],"name":"Syndicate Documents","kind":"quest"}
+{"key":181073,"since":0,"src":[5,17,24,27],"name":"Fragrant Cauldron","kind":"quest"}
+{"key":181085,"since":0,"src":[5,17,24,27],"name":"Stratholme Supply Crate","kind":"quest"}
+{"key":181098,"since":0,"src":[5,17,24,27],"name":"Volcanic Ash","kind":"quest"}
+{"key":181287,"since":0,"src":[5,17,24,27],"name":"Frozen Rune","kind":"quest"}
+{"key":181332,"since":0,"src":[5,17,24,27],"name":"Flame of Stormwind","kind":"quest"}
+{"key":181333,"since":0,"src":[5,17,24,27],"name":"Flame of Ironforge","kind":"quest"}
+{"key":181334,"since":0,"src":[5,17,24,27],"name":"Flame of Darnassus","kind":"quest"}
+{"key":181335,"since":0,"src":[5,17,24,27],"name":"Flame of the Undercity","kind":"quest"}
+{"key":181336,"since":0,"src":[5,17,24,27],"name":"Flame of Orgrimmar","kind":"quest"}
+{"key":181337,"since":0,"src":[5,17,24,27],"name":"Flame of Thunder Bluff","kind":"quest"}
+{"key":181338,"since":0,"src":[5,17,24,27],"name":"Flame of the Plaguelands","kind":"quest"}
+{"key":181339,"since":0,"src":[5,17,24,27],"name":"Flame of Silithus","kind":"quest"}
+{"key":181340,"since":0,"src":[5,17,24,27],"name":"Flame of Winterspring","kind":"quest"}
+{"key":181341,"since":0,"src":[5,17,24,27],"name":"Flame of Searing Gorge","kind":"quest"}
+{"key":181342,"since":0,"src":[5,17,24,27],"name":"Flame of Azshara","kind":"quest"}
+{"key":181343,"since":0,"src":[5,17,24,27],"name":"Flame of Un'Goro","kind":"quest"}
+{"key":181344,"since":0,"src":[5,17,24,27],"name":"Flame of the Blasted Lands","kind":"quest"}
+{"key":181345,"since":0,"src":[5,17,24,27],"name":"Flame of the Hinterlands","kind":"quest"}
+{"key":181346,"since":0,"src":[5,17,24,27],"name":"Flame of Dire Maul","kind":"quest"}
+{"key":181347,"since":0,"src":[5,17,24,27],"name":"Flame of Blackrock Spire","kind":"quest"}
+{"key":181348,"since":0,"src":[5,17,24,27],"name":"Flame of Stratholme","kind":"quest"}
+{"key":181349,"since":0,"src":[5,17,24,27],"name":"Flame of the Scholomance","kind":"quest"}
+{"key":181560,"since":0,"src":[5,17,24,27],"name":"Flame of the Barrens","kind":"quest"}
+{"key":181561,"since":0,"src":[5,17,24,27],"name":"Flame of Ashenvale","kind":"quest"}
+{"key":181562,"since":0,"src":[5,17,24,27],"name":"Flame of Stonetalon","kind":"quest"}
+{"key":181563,"since":0,"src":[5,17,24,27],"name":"Flame of Darkshore","kind":"quest"}
+{"key":181564,"since":0,"src":[5,17,24,27],"name":"Flame of Silverpine","kind":"quest"}
+{"key":181565,"since":0,"src":[5,17,24,27],"name":"Flame of Westfall","kind":"quest"}
+{"key":181566,"since":0,"src":[5,17,24,27],"name":"Flame of Hillsbrad","kind":"quest"}
+{"key":181567,"since":0,"src":[5,17,24,27],"name":"Flame of the Wetlands","kind":"quest"}
+{"key":181665,"since":0,"src":[5,17,24,27],"name":"Burial Chest","kind":"quest"}
+{"key":181798,"since":0,"src":[5,17,24,27],"name":"Fel Iron Chest","kind":"quest"}
+{"key":181800,"since":0,"src":[5,17,24,27],"name":"Heavy Fel Iron Chest","kind":"quest"}
+{"key":181802,"since":0,"src":[5,17,24,27],"name":"Adamantite Bound Chest","kind":"quest"}
+{"key":181804,"since":0,"src":[5,17,24,27],"name":"Felsteel Chest","kind":"quest"}
+{"key":184930,"since":0,"src":[5,17,24,27],"name":"Solid Fel Iron Chest","kind":"quest"}
+{"key":184933,"since":0,"src":[5,17,24,27],"name":"Solid Fel Iron Chest","kind":"quest"}
+{"key":184935,"since":0,"src":[5,17,24,27],"name":"Solid Fel Iron Chest","kind":"quest"}
+{"key":186419,"since":0,"src":[5,17,24,27],"name":"Wrecked Row Boat","kind":"quest"}
+{"key":190483,"since":0,"src":[5,17,24,27],"name":"Document Chest","kind":"quest"}
+{"key":190484,"since":0,"src":[5,17,24,27],"name":"Document Chest","kind":"quest"}
+{"key":386691,"since":0,"src":[17,24,27],"name":"Library Book","kind":"quest"}
+{"key":386759,"since":0,"src":[17,24,27],"name":"Library Book","kind":"quest"}
+{"key":403041,"since":0,"src":[17,24,27],"name":"Blasting Supplies","kind":"quest"}
+{"key":405149,"since":0,"src":[17,24,27],"name":"Mural of Ta'zo","kind":"quest"}
+{"key":405879,"since":0,"src":[17,24,27],"name":"Apothecary Society Primer","kind":"quest"}
+{"key":406918,"since":0,"src":[5,17,24,27],"name":"Messenger Bag","kind":"quest"}
+{"key":407566,"since":0,"src":[17,24,27],"name":"Goblin Tome","kind":"quest"}
+{"key":408014,"since":0,"src":[17,24,27],"name":"Gnomish Tome","kind":"quest"}
+{"key":409289,"since":0,"src":[24,27],"name":"Strange Orb","kind":"quest"}
+{"key":409311,"since":0,"src":[5,17,24,27],"name":"Spear of Mannoroth","kind":"quest"}
+{"key":409315,"since":0,"src":[5,17,24,27],"name":"Shattered Orb","kind":"quest"}
+{"key":409496,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":409501,"since":0,"src":[17,24,27],"name":"Dalaran Digest","kind":"quest"}
+{"key":409562,"since":0,"src":[17,24,27],"name":"Spellbook","kind":"quest"}
+{"key":409692,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":409700,"since":0,"src":[17,24,27],"name":"Manual","kind":"quest"}
+{"key":409711,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":409717,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":409731,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":409735,"since":0,"src":[17,24,27],"name":"Spellbook","kind":"quest"}
+{"key":410299,"since":0,"src":[17,24,27],"name":"Arcane Secrets","kind":"quest"}
+{"key":410369,"since":0,"src":[5,17,24,27],"name":"Dead Drop","kind":"quest"}
+{"key":415106,"since":0,"src":[5,17,24,27],"name":"Burned-Out Remains","kind":"quest"}
+{"key":415107,"since":0,"src":[5,17,24,27],"name":"Burned-Out Remains","kind":"quest"}
+{"key":417072,"since":0,"src":[5,17,24,27],"name":"Nailed Plank","kind":"quest"}
+{"key":417353,"since":0,"src":[24,27],"name":"Extinguished Campfire","kind":"quest"}
+{"key":418855,"since":0,"src":[24,27],"name":"Illari's Loot Cache","kind":"quest"}
+{"key":421526,"since":0,"src":[17,24,27],"name":"Research Notes","kind":"quest"}
+{"key":423703,"since":0,"src":[24,27],"name":"Broken Warhammer","kind":"quest"}
+{"key":423895,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":423896,"since":0,"src":[17,24,27],"name":"Manual","kind":"quest"}
+{"key":423897,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":423898,"since":0,"src":[17,24,27],"name":"Mysterious Book","kind":"quest"}
+{"key":423899,"since":0,"src":[17,24,27],"name":"Scrolls","kind":"quest"}
+{"key":423900,"since":0,"src":[17,24,27],"name":"Waterlogged Book","kind":"quest"}
+{"key":423901,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":424005,"since":0,"src":[5,17,24,27],"name":"Pocket Litter","kind":"quest"}
+{"key":424006,"since":0,"src":[5,17,24,27],"name":"Hastily Rolled-Up Satchel","kind":"quest"}
+{"key":424007,"since":0,"src":[5,17,24,27],"name":"Carved Figurine","kind":"quest"}
+{"key":424010,"since":0,"src":[5,17,24,27],"name":"Nailed Plank","kind":"quest"}
+{"key":424012,"since":0,"src":[5,17,24,27],"name":"Mound of Dirt","kind":"quest"}
+{"key":441061,"since":0,"src":[24,27],"name":"Weathered Etching","kind":"quest"}
+{"key":441247,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441248,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441249,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441250,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441251,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441252,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441253,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":441254,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":456682,"since":0,"src":[27],"name":"Half-Buried Mech","kind":"quest"}
+{"key":456685,"since":0,"src":[27],"name":"Access Hatch","kind":"quest"}
+{"key":462236,"since":0,"src":[27],"name":"Mysterious Chest","kind":"quest"}
+{"key":463206,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463207,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463208,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463209,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463211,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463212,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463213,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":463214,"since":0,"src":[17,24,27],"name":"Book","kind":"quest"}
+{"key":506307,"since":0,"src":[27],"name":"Legashi Cauldron","kind":"quest"}
+{"key":527828,"since":0,"src":[24,27],"name":"Saria's Knapsack","kind":"quest"}
+{"key":554626,"since":0,"src":[5,17,24,27],"name":"Lumber Pile","kind":"quest"}
+{"key":556628,"since":0,"src":[24,27],"name":"Syndicate Documents","kind":"quest"}
 {"key":556641,"since":0,"src":[24],"name":"Dusty Shelf","kind":"quest"}
-{"key":556669,"since":0,"src":[5,17,24],"name":"Dangerous!","kind":"quest"}
-{"key":556670,"since":0,"src":[5,17,24],"name":"WANTED","kind":"quest"}
-{"key":556683,"since":0,"src":[24],"name":"Shallow Grave","kind":"quest"}
+{"key":556669,"since":0,"src":[5,17,24,27],"name":"Dangerous!","kind":"quest"}
+{"key":556670,"since":0,"src":[5,17,24,27],"name":"WANTED","kind":"quest"}
+{"key":556683,"since":0,"src":[24,27],"name":"Shallow Grave","kind":"quest"}
 {"key":562111,"since":0,"src":[1],"name":"Poor Copper Vein","kind":"ore","skill":186,"skillLevel":1,"yellowAt":10,"greyAt":20}
-{"key":563442,"since":0,"src":[5,17,24],"name":"Kobold Tracks","kind":"quest"}
-{"key":566037,"since":0,"src":[5,17,24],"name":"Charred Remains","kind":"quest"}
-{"key":576179,"since":0,"src":[5,17,24],"name":"Supply Cache","kind":"quest"}
-{"key":577959,"since":0,"src":[24],"name":"Shen'dralar Pylon","kind":"quest"}
-{"key":578937,"since":0,"src":[5,17,24],"name":"Ripe Stormapple","kind":"quest"}
-{"key":578959,"since":0,"src":[5,17,24],"name":"Flutterfly Dust","kind":"quest"}
-{"key":581792,"since":0,"src":[17,24],"name":"Detonator","kind":"quest"}
-{"key":581820,"since":0,"src":[5,17,24],"name":"Dusty Bedroll","kind":"quest"}
-{"key":581822,"since":0,"src":[5,17,24],"name":"Bloodstained Satchel","kind":"quest"}
-{"key":581918,"since":0,"src":[24],"name":"WANTED!","kind":"quest"}
-{"key":610954,"since":0,"src":[5,17,24],"name":"Bounty Available: Vulgara the Insatiable!","kind":"quest"}
-{"key":611086,"since":0,"src":[24],"name":"Connery's Trunk","kind":"quest"}
-{"key":613238,"since":0,"src":[5,17,24],"name":"Zephyrseed Cone","kind":"quest"}
-{"key":614679,"since":0,"src":[24],"name":"Crest of Lordaeron","kind":"quest"}
-{"key":616466,"since":0,"src":[3,5,17,24],"name":"Construct Parts","kind":"chest"}
-{"key":616467,"since":0,"src":[3,5,17,24],"name":"Construct Parts","kind":"chest"}
-{"key":616468,"since":0,"src":[3,5,17,24],"name":"Construct Parts","kind":"chest"}
-{"key":617674,"since":0,"src":[5,17,24],"name":"Arvensus Shadowsong","kind":"quest"}
-{"key":617675,"since":0,"src":[5,17,24],"name":"Raani Windgazer","kind":"quest"}
-{"key":617704,"since":0,"src":[5,17,24],"name":"Bloody Note","kind":"quest"}
-{"key":617839,"since":0,"src":[5,17,24],"name":"Hippogryph Down","kind":"quest"}
-{"key":619450,"since":0,"src":[5,17,24],"name":"Lady's Tear Moss","kind":"quest"}
-{"key":619896,"since":0,"src":[5,17,24],"name":"Forgotten Shrine","kind":"quest"}
-{"key":623295,"since":0,"src":[5,17,24],"name":"Abandoned Belongings","kind":"quest"}
-{"key":625582,"since":0,"src":[24],"name":"Fuzzle's Treasure","kind":"quest"}
+{"key":563442,"since":0,"src":[5,17,24,27],"name":"Kobold Tracks","kind":"quest"}
+{"key":566037,"since":0,"src":[5,17,24,27],"name":"Charred Remains","kind":"quest"}
+{"key":576179,"since":0,"src":[5,17,24,27],"name":"Supply Cache","kind":"quest"}
+{"key":577959,"since":0,"src":[24,27],"name":"Shen'dralar Pylon","kind":"quest"}
+{"key":578937,"since":0,"src":[5,17,24,27],"name":"Ripe Stormapple","kind":"quest"}
+{"key":578959,"since":0,"src":[5,17,24,27],"name":"Flutterfly Dust","kind":"quest"}
+{"key":581792,"since":0,"src":[17,24,27],"name":"Detonator","kind":"quest"}
+{"key":581820,"since":0,"src":[5,17,24,27],"name":"Dusty Bedroll","kind":"quest"}
+{"key":581822,"since":0,"src":[5,17,24,27],"name":"Bloodstained Satchel","kind":"quest"}
+{"key":581918,"since":0,"src":[24,27],"name":"WANTED!","kind":"quest"}
+{"key":610954,"since":0,"src":[5,17,24,27],"name":"Bounty Available: Vulgara the Insatiable!","kind":"quest"}
+{"key":611086,"since":0,"src":[24,27],"name":"Connery's Trunk","kind":"quest"}
+{"key":613238,"since":0,"src":[5,17,24,27],"name":"Zephyrseed Cone","kind":"quest"}
+{"key":613848,"since":0,"src":[27],"name":"Battle Cache","kind":"quest"}
+{"key":614679,"since":0,"src":[24,27],"name":"Crest of Lordaeron","kind":"quest"}
+{"key":616466,"since":0,"src":[3,5,17,24,27],"name":"Construct Parts","kind":"chest"}
+{"key":616467,"since":0,"src":[3,5,17,24,27],"name":"Construct Parts","kind":"chest"}
+{"key":616468,"since":0,"src":[3,5,17,24,27],"name":"Construct Parts","kind":"chest"}
+{"key":617674,"since":0,"src":[5,17,24,27],"name":"Arvensus Shadowsong","kind":"quest"}
+{"key":617675,"since":0,"src":[5,17,24,27],"name":"Raani Windgazer","kind":"quest"}
+{"key":617704,"since":0,"src":[5,17,24,27],"name":"Bloody Note","kind":"quest"}
+{"key":617839,"since":0,"src":[5,17,24,27],"name":"Hippogryph Down","kind":"quest"}
+{"key":619450,"since":0,"src":[5,17,24,27],"name":"Lady's Tear Moss","kind":"quest"}
+{"key":619896,"since":0,"src":[5,17,24,27],"name":"Forgotten Shrine","kind":"quest"}
+{"key":623295,"since":0,"src":[5,17,24,27],"name":"Abandoned Belongings","kind":"quest"}
+{"key":625582,"since":0,"src":[24,27],"name":"Fuzzle's Treasure","kind":"quest"}
 {"key":626718,"since":0,"src":[3],"name":"Dented Chest","kind":"chest"}
-{"key":626752,"since":0,"src":[3,5,17,24],"name":"Dented Chest","kind":"chest"}
-{"key":628948,"since":0,"src":[24],"name":"WANTED!","kind":"quest"}
-{"key":629596,"since":0,"src":[5,17,24],"name":"Snowdrift","kind":"quest"}
-{"key":629761,"since":0,"src":[24],"name":"Painted Hide","kind":"quest"}
-{"key":630696,"since":0,"src":[5,17,24],"name":"Dragonmaw Catapult","kind":"quest"}
-{"key":630871,"since":0,"src":[5,17,24],"name":"Bottle","kind":"quest"}
-{"key":630885,"since":0,"src":[5,17,24],"name":"Bottle","kind":"quest"}
-{"key":630887,"since":0,"src":[24],"name":"Venture Co. Ledger","kind":"quest"}
-{"key":631299,"since":0,"src":[5,17,24],"name":"Skyborne Portal to Stormwind","kind":"quest"}
-{"key":642320,"since":0,"src":[24],"name":"Battered Trunk","kind":"quest"}
-{"key":645153,"since":0,"src":[5,17,24],"name":"Offering Stone","kind":"quest"}
-{"key":645164,"since":0,"src":[24],"name":"WANTED!","kind":"quest"}
-{"key":645166,"since":0,"src":[24],"name":"WANTED!","kind":"quest"}
-{"key":649051,"since":0,"src":[5,17,24],"name":"Wanted: Incinerator Gar'im","kind":"quest"}
-{"key":650234,"since":0,"src":[24],"name":"Loose Cog","kind":"quest"}
-{"key":652227,"since":0,"src":[5,17,24],"name":"Dwarven Heirloom","kind":"quest"}
-{"key":652228,"since":0,"src":[5,17,24],"name":"Dwarven Heirloom","kind":"quest"}
-{"key":654846,"since":0,"src":[5,17,24],"name":"Lost Journal","kind":"quest"}
-{"key":654925,"since":0,"src":[5,17,24],"name":"Lost Journal","kind":"quest"}
-{"key":656157,"since":0,"src":[5,17,24],"name":"Syndicate Footlocker","kind":"quest"}
+{"key":626752,"since":0,"src":[3,5,17,24,27],"name":"Dented Chest","kind":"chest"}
+{"key":628948,"since":0,"src":[24,27],"name":"WANTED!","kind":"quest"}
+{"key":629596,"since":0,"src":[5,17,24,27],"name":"Snowdrift","kind":"quest"}
+{"key":629761,"since":0,"src":[24,27],"name":"Painted Hide","kind":"quest"}
+{"key":630696,"since":0,"src":[5,17,24,27],"name":"Dragonmaw Catapult","kind":"quest"}
+{"key":630871,"since":0,"src":[5,17,24,27],"name":"Bottle","kind":"quest"}
+{"key":630885,"since":0,"src":[5,17,24,27],"name":"Bottle","kind":"quest"}
+{"key":630887,"since":0,"src":[24,27],"name":"Venture Co. Ledger","kind":"quest"}
+{"key":631299,"since":0,"src":[5,17,24,27],"name":"Skyborne Portal to Stormwind","kind":"quest"}
+{"key":642320,"since":0,"src":[24,27],"name":"Battered Trunk","kind":"quest"}
+{"key":642451,"since":0,"src":[27],"name":"Old Chest","kind":"quest"}
+{"key":645153,"since":0,"src":[5,17,24,27],"name":"Offering Stone","kind":"quest"}
+{"key":645164,"since":0,"src":[24,27],"name":"WANTED!","kind":"quest"}
+{"key":645166,"since":0,"src":[24,27],"name":"WANTED!","kind":"quest"}
+{"key":649051,"since":0,"src":[5,17,24,27],"name":"Wanted: Incinerator Gar'im","kind":"quest"}
+{"key":650234,"since":0,"src":[24,27],"name":"Loose Cog","kind":"quest"}
+{"key":651262,"since":0,"src":[27],"name":"Unmarked Grave","kind":"quest"}
+{"key":651409,"since":0,"src":[27],"name":"Corrupted Growth","kind":"quest"}
+{"key":652227,"since":0,"src":[5,17,24,27],"name":"Dwarven Heirloom","kind":"quest"}
+{"key":652228,"since":0,"src":[5,17,24,27],"name":"Dwarven Heirloom","kind":"quest"}
+{"key":652438,"since":0,"src":[27],"name":"Carving","kind":"quest"}
+{"key":652449,"since":0,"src":[27],"name":"Bone Pile","kind":"quest"}
+{"key":654121,"since":0,"src":[27],"name":"Embroidered Scabbard","kind":"quest"}
+{"key":654126,"since":0,"src":[27],"name":"Weathered Anchor","kind":"quest"}
+{"key":654150,"since":0,"src":[27],"name":"Broken Fishing Basket","kind":"quest"}
+{"key":654846,"since":0,"src":[5,17,24,27],"name":"Lost Journal","kind":"quest"}
+{"key":654925,"since":0,"src":[5,17,24,27],"name":"Lost Journal","kind":"quest"}
+{"key":656157,"since":0,"src":[5,17,24,27],"name":"Syndicate Footlocker","kind":"quest"}
 {"key":656160,"since":0,"src":[1],"name":"Wilted Peacebloom","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}
 {"key":656161,"since":0,"src":[1],"name":"Stunted Silverleaf","kind":"herb","skill":182,"skillLevel":1,"yellowAt":10,"greyAt":20}
-{"key":656177,"since":0,"src":[5,17,24],"name":"Prickly Pear Fruit","kind":"quest"}
+{"key":656177,"since":0,"src":[5,17,24,27],"name":"Prickly Pear Fruit","kind":"quest"}
 {"key":656332,"since":0,"src":[15],"name":"Chunk of Amber","kind":"ore","skill":186,"skillLevel":1}
 {"key":656333,"since":0,"src":[15],"name":"Large Chunk of Amber","kind":"ore","skill":186,"skillLevel":1,"yellowAt":25,"greyAt":100}
-{"key":656366,"since":0,"src":[5,17,24],"name":"Naxxramas Crystal Fragment","kind":"quest"}
-{"key":656789,"since":0,"src":[24],"name":"Lost Shipping Crate","kind":"quest"}
-{"key":658115,"since":0,"src":[24],"name":"Lost Shipping Crate","kind":"quest"}
-{"key":658116,"since":0,"src":[24],"name":"Lost Shipping Crate","kind":"quest"}
-{"key":658117,"since":0,"src":[24],"name":"Lost Shipping Crate","kind":"quest"}
+{"key":656366,"since":0,"src":[5,17,24,27],"name":"Naxxramas Crystal Fragment","kind":"quest"}
+{"key":656786,"since":0,"src":[27],"name":"Troll Remains","kind":"quest"}
+{"key":656789,"since":0,"src":[24,27],"name":"Lost Shipping Crate","kind":"quest"}
+{"key":656815,"since":0,"src":[27],"name":"Old Wardrobe","kind":"quest"}
+{"key":658115,"since":0,"src":[24,27],"name":"Lost Shipping Crate","kind":"quest"}
+{"key":658116,"since":0,"src":[24,27],"name":"Lost Shipping Crate","kind":"quest"}
+{"key":658117,"since":0,"src":[24,27],"name":"Lost Shipping Crate","kind":"quest"}
 {"key":659159,"since":0,"src":[5],"name":"Mailbox","kind":"quest"}
-{"key":660729,"since":0,"src":[5,17,24],"name":"The Forsaken Ally","kind":"quest"}
-{"key":660730,"since":0,"src":[5,17,24],"name":"Trollbane Conquests","kind":"quest"}
-{"key":660731,"since":0,"src":[5,17,24],"name":"Field Accounts of Horde Razings","kind":"quest"}
-{"key":660732,"since":0,"src":[5,17,24],"name":"Cycles of Morality","kind":"quest"}
-{"key":660739,"since":0,"src":[5,17,24],"name":"Ritual Fire","kind":"quest"}
-{"key":660964,"since":0,"src":[5,17,24],"name":"Misplaced Packages","kind":"quest"}
-{"key":661092,"since":0,"src":[5,17,24],"name":"Speargrass","kind":"quest"}
-{"key":661093,"since":0,"src":[5,17,24],"name":"Cattail","kind":"quest"}
-{"key":661446,"since":0,"src":[5,17,24],"name":"Smooth Boulder","kind":"quest"}
-{"key":661448,"since":0,"src":[5,17,24],"name":"Smooth Boulder","kind":"quest"}
-{"key":661449,"since":0,"src":[5,17,24],"name":"Smooth Boulder","kind":"quest"}
-{"key":661516,"since":0,"src":[5,17,24],"name":"Thoroughly Scavenged Supplies","kind":"quest"}
-{"key":661778,"since":0,"src":[24],"name":"Statue of Malorne","kind":"quest"}
-{"key":664122,"since":0,"src":[5,17,24],"name":"Gozwin's Mechanic's Log","kind":"quest"}
-{"key":665289,"since":0,"src":[5,17,24],"name":"Discarded Fishing Toolbox","kind":"quest"}
-{"key":665373,"since":0,"src":[5,17,24],"name":"Incense Burner","kind":"quest"}
-{"key":667362,"since":0,"src":[5,17,24],"name":"Mirkweed","kind":"quest"}
-{"key":667364,"since":0,"src":[5,17,24],"name":"Dried Mirkweed Pile","kind":"quest"}
-{"key":668482,"since":0,"src":[5,17,24],"name":"Gnarlpine Totem","kind":"quest"}
-{"key":668493,"since":0,"src":[5,17,24],"name":"Gnarlpine Totem","kind":"quest"}
-{"key":669176,"since":0,"src":[5,17,24],"name":"Gleaming Crescent Pendant","kind":"quest"}
-{"key":671154,"since":0,"src":[5,17,24],"name":"Dry Branch","kind":"quest"}
-{"key":671518,"since":0,"src":[5,17,24],"name":"Tattered Spellbook","kind":"quest"}
-{"key":672330,"since":0,"src":[5,17,24],"name":"Dragonmaw Armaments","kind":"quest"}
-{"key":672508,"since":0,"src":[5,17,24],"name":"Flintfire's Shipment","kind":"quest"}
-{"key":673101,"since":0,"src":[17,24],"name":"Tarantula Egg","kind":"quest"}
-{"key":673378,"since":0,"src":[5,17,24],"name":"Oracle Tree Bark","kind":"quest"}
-{"key":673474,"since":0,"src":[5,17,24],"name":"Treaty of Understanding","kind":"quest"}
-{"key":673476,"since":0,"src":[5,17,24],"name":"Abandoned Training Weapon","kind":"quest"}
-{"key":673933,"since":0,"src":[5,17,24],"name":"Blisterweed","kind":"quest"}
-{"key":694732,"since":0,"src":[5,17,24],"name":"Tomb Weed","kind":"quest"}
-{"key":694772,"since":0,"src":[5,17,24],"name":"Fishing Trap","kind":"quest"}
-{"key":694895,"since":0,"src":[5,17,24],"name":"Glowing Crystal Fragment","kind":"quest"}
-{"key":694934,"since":0,"src":[5,17,24],"name":"Fallen Log","kind":"quest"}
+{"key":660729,"since":0,"src":[5,17,24,27],"name":"The Forsaken Ally","kind":"quest"}
+{"key":660730,"since":0,"src":[5,17,24,27],"name":"Trollbane Conquests","kind":"quest"}
+{"key":660731,"since":0,"src":[5,17,24,27],"name":"Field Accounts of Horde Razings","kind":"quest"}
+{"key":660732,"since":0,"src":[5,17,24,27],"name":"Cycles of Morality","kind":"quest"}
+{"key":660739,"since":0,"src":[5,17,24,27],"name":"Ritual Fire","kind":"quest"}
+{"key":660964,"since":0,"src":[5,17,24,27],"name":"Misplaced Packages","kind":"quest"}
+{"key":661092,"since":0,"src":[5,17,24,27],"name":"Speargrass","kind":"quest"}
+{"key":661093,"since":0,"src":[5,17,24,27],"name":"Cattail","kind":"quest"}
+{"key":661446,"since":0,"src":[5,17,24,27],"name":"Smooth Boulder","kind":"quest"}
+{"key":661448,"since":0,"src":[5,17,24,27],"name":"Smooth Boulder","kind":"quest"}
+{"key":661449,"since":0,"src":[5,17,24,27],"name":"Smooth Boulder","kind":"quest"}
+{"key":661516,"since":0,"src":[5,17,24,27],"name":"Thoroughly Scavenged Supplies","kind":"quest"}
+{"key":661778,"since":0,"src":[24,27],"name":"Statue of Malorne","kind":"quest"}
+{"key":664122,"since":0,"src":[5,17,24,27],"name":"Gozwin's Mechanic's Log","kind":"quest"}
+{"key":665289,"since":0,"src":[5,17,24,27],"name":"Discarded Fishing Toolbox","kind":"quest"}
+{"key":665373,"since":0,"src":[5,17,24,27],"name":"Incense Burner","kind":"quest"}
+{"key":667362,"since":0,"src":[5,17,24,27],"name":"Mirkweed","kind":"quest"}
+{"key":667364,"since":0,"src":[5,17,24,27],"name":"Dried Mirkweed Pile","kind":"quest"}
+{"key":668482,"since":0,"src":[5,17,24,27],"name":"Gnarlpine Totem","kind":"quest"}
+{"key":668493,"since":0,"src":[5,17,24,27],"name":"Gnarlpine Totem","kind":"quest"}
+{"key":669176,"since":0,"src":[5,17,24,27],"name":"Gleaming Crescent Pendant","kind":"quest"}
+{"key":671154,"since":0,"src":[5,17,24,27],"name":"Dry Branch","kind":"quest"}
+{"key":671518,"since":0,"src":[5,17,24,27],"name":"Tattered Spellbook","kind":"quest"}
+{"key":672330,"since":0,"src":[5,17,24,27],"name":"Dragonmaw Armaments","kind":"quest"}
+{"key":672508,"since":0,"src":[5,17,24,27],"name":"Flintfire's Shipment","kind":"quest"}
+{"key":673101,"since":0,"src":[17,24,27],"name":"Tarantula Egg","kind":"quest"}
+{"key":673378,"since":0,"src":[5,17,24,27],"name":"Oracle Tree Bark","kind":"quest"}
+{"key":673474,"since":0,"src":[5,17,24,27],"name":"Treaty of Understanding","kind":"quest"}
+{"key":673476,"since":0,"src":[5,17,24,27],"name":"Abandoned Training Weapon","kind":"quest"}
+{"key":673933,"since":0,"src":[5,17,24,27],"name":"Blisterweed","kind":"quest"}
+{"key":694732,"since":0,"src":[5,17,24,27],"name":"Tomb Weed","kind":"quest"}
+{"key":694772,"since":0,"src":[5,17,24,27],"name":"Fishing Trap","kind":"quest"}
+{"key":694895,"since":0,"src":[5,17,24,27],"name":"Glowing Crystal Fragment","kind":"quest"}
+{"key":694934,"since":0,"src":[5,17,24,27],"name":"Fallen Log","kind":"quest"}
 {"key":696264,"since":0,"src":[5],"name":"Mailbox","kind":"quest"}
-{"key":697118,"since":0,"src":[5,17,24],"name":"Windstone Formation","kind":"quest"}
-{"key":707245,"since":0,"src":[24],"name":"Wanted","kind":"quest"}
-{"key":707249,"since":0,"src":[24],"name":"Wanted","kind":"quest"}
+{"key":697118,"since":0,"src":[5,17,24,27],"name":"Windstone Formation","kind":"quest"}
+{"key":707245,"since":0,"src":[24,27],"name":"Wanted","kind":"quest"}
+{"key":707249,"since":0,"src":[24,27],"name":"Wanted","kind":"quest"}
+{"key":710894,"since":0,"src":[27],"name":"Bookshelf","kind":"quest"}

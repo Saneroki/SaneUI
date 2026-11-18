@@ -160,3 +160,8 @@ kind = "batch"
 game = "forever"
 build = 70938
 about = "Blizzard's article on Forever's new dungeons, read 2026-11-15: the zones of the entrances the game itself gives no place for, City of Dalaran in Alterac Mountains (entered through the sewers, after an attunement) and The Hall of Thanes beneath Ironforge. Unverified until the game or our own sightings give the entrances' places."
+
+[27]
+kind = "batch"
+game = "forever"
+about = "Quests, NPCs and places for Forever's client as our tool picked them, 2026-11-18, a newer reading of what batches 5, 17 and 24 read, checked against Forever's client 70959: the same fields on the same terms, and where the newer reading says otherwise than the one before did, it corrects what the master took from that (never a fact of the game, of its servers or of a person). Unverified: the game's word or our own sightings replace it entry by entry."
