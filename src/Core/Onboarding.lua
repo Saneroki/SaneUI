@@ -14,7 +14,7 @@ local Core = SaneUI.Core
 --      Core.Onboarding.Open(name, step)  -- its window at that step (the first); after the fight in one
 --      Core.Onboarding.Guide(name)       -- the setup a module handed in; nil for none
 --      Core.Onboarding.Names()           -- the modules that handed one in, in that order
---      Core.Onboarding.Done(name)        -- whether this account went through it as it is now
+--      Core.Onboarding.Done(name)        -- whether this account went through it (or skipped it) as it is now
 --      Core.Onboarding.Due()             -- the setups still to go through, in their order
 --      /sane setup <module>              -- the same, typed; /sane setup alone: those still to go through
 --
@@ -26,18 +26,21 @@ local Core = SaneUI.Core
 --  (Navigation's, then Tooltips' when both are new; "setup 1 of 2"). A setup
 --  is gone through once its last step is done; closed before that it stays to
 --  go through and opens again at the next login, at the step where it was
---  left, the others after it. Kept in the module Onboarding's store, for the
---  account and outside the profiles (SaneUIDB.modules.Onboarding: done[name] =
---  { version, day }, left[name] = the step): a profile loaded never brings
---  one back by itself; /sane setup and the button Set up step by step on the
---  module's options page (key setup, the window's words point there) do.
+--  left, the others after it. Skipped (Saneroki, 2026-11-18: "Add a Skip"), it
+--  no longer opens by itself, as if gone through, and the run goes on to the
+--  next. Kept in the module Onboarding's store, for the account and outside
+--  the profiles (SaneUIDB.modules.Onboarding: done[name] = { version, day,
+--  skipped }, left[name] = the step): a profile loaded never brings one back
+--  by itself; /sane setup and the button Set up step by step on the module's
+--  options page (key setup, the window's words point there) do.
 --
 --  Its version (Saneroki, 2026-11-18: "a way to invalidate the old settings
 --  so when we make big changes the user can go through the onboarding again
 --  to setup its new settings"): a module that changes its setup a lot raises
---  the guide's version, and every account that went through an older one
---  goes through it again at its next login, told what changed (changed). The
---  settings the player chose stay: the setup shows the values in use.
+--  the guide's version, and every account that went through (or skipped) an
+--  older one goes through it again at its next login, told what changed
+--  (changed). The settings the player chose stay: the setup shows the values
+--  in use.
 --
 --  A guide:
 --      { title = "Nameplates",            -- the window's title
@@ -117,15 +120,22 @@ local function Records()
     return store
 end
 
--- Whether this account went through a module's setup as it is now (its version, or a newer one).
+-- Whether this account went through a module's setup as it is now (its version, or a newer one), or skipped it: it
+-- no longer opens by itself.
 function Onboarding.Done(name)
     local record = Records().done[name]
     return type(record) == "table" and (tonumber(record.version) or 0) >= Version(name)
 end
 
--- Whether it went through an older version of it: the setup changed since (the window says what, guide.changed).
+-- Whether it went through (or skipped) an older version of it: the setup changed since (the window says what,
+-- guide.changed).
 function Onboarding.Changed(name)
     return type(Records().done[name]) == "table" and not Onboarding.Done(name)
+end
+
+-- Whether it skipped the setup as it is now, and has not gone through it since.
+function Onboarding.Skipped(name)
+    return Onboarding.Done(name) and Records().done[name].skipped == true
 end
 
 -- Whether a module's setup has something to show: usable, with steps.
@@ -208,13 +218,13 @@ function Onboarding.Start(quiet)
     return Go(due[1], Records().left[due[1]], quiet)
 end
 
--- The window tells Core a setup was gone through to its end: kept with its version, and the run goes on to the
--- next one in the same window. Whether one follows (the window closes otherwise).
-function Onboarding.Finished(name)
+-- The window tells Core a setup was gone through to its end, or skipped (skipped): kept with its version, and the run
+-- goes on to the next one in the same window. Whether one follows (the window closes otherwise).
+function Onboarding.Finished(name, skipped)
     if not guides[name] then return false end
     local following = Onboarding.Following(name)
     local store = Records()
-    store.done[name] = { version = Version(name), day = date("%Y-%m-%d") }
+    store.done[name] = { version = Version(name), day = date("%Y-%m-%d"), skipped = skipped and true or nil }
     store.left[name] = nil
     if not following then return false end
     return Go(following, Records().left[following], true)

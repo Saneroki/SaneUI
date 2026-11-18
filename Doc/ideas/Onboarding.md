@@ -75,7 +75,8 @@ own purpose."
   *Set up step by step*; else `/sane setup <module>`), so the setups' own *Later* lines went. "And we need a way to
   invalidate the old settings so when we make big changes the user can go through the onboarding again to setup its
   new settings": a guide's `version`, raised by its module after a big change, and `changed`, what changed, said in
-  gold on its first step; the settings chosen stay.
+  gold on its first step; the settings chosen stay. Then "Add a Skip": *Skip setup* beside *Back* while a setup is not
+  gone through; skipped, it no longer opens by itself until a new version (`done[name].skipped`), and the run goes on.
 - **Still to come:** the Welcome (one card per module), What's new after an update, the ? in the title bar and its
   help plates, the module's own options page with *Show what's new after an update*; Setup's Core questions (the
   character setup) and the other modules' setups.

@@ -116,6 +116,7 @@ check(not Onboarding.Done("Garden") and Onboarding.Due()[1] == "Garden", "still 
 local window = ons.Window
 local parts = window.Parts()
 check(parts.head._text == "Garden: setup", "a run of one: no count in the head")
+check(parts.skip:IsShown(), "Skip setup, for a setup not gone through yet")
 check(parts.note._text:find(ons.TEXT.unfinished, 1, true)
     and parts.note._text:find(ons.TEXT.again:format("Garden"), 1, true),
     "the note: closed before its end it comes back; where to start it again (the options page's button)")
@@ -251,7 +252,8 @@ check(options.path == "stone" and options.flowers == false, "the choices are the
 -- Asked for again: /sane setup (the only one there: its name not needed), at the first step; in a fight, after it.
 SlashCmdList.SANEUI("setup")
 check(window.Frame():IsShown() and window.Parts().count._text == "Step 1 of 4", "/sane setup opens it again, at the start")
-check(not window.Parts().note._text:find(ons.TEXT.unfinished, 1, true), "gone through: the note no longer says it comes back")
+check(not window.Parts().note._text:find(ons.TEXT.unfinished, 1, true) and not window.Parts().skip:IsShown(),
+    "gone through: the note no longer says it comes back, and no Skip")
 window.Parts().forward._scripts.OnClick(window.Parts().forward)
 check(store.left.Garden == nil, "a setup gone through keeps no step")
 window.Close()
@@ -289,7 +291,8 @@ local ORCHARD = { title = "Orchard", steps = { { key = "a", title = "Apples", te
 Onboarding.Add("Orchard", ORCHARD)
 local shed = Core.NewModule("SaneUI_Shed", "Shed", {})
 Core.Options("Shed", { { key = "tools", default = true, text = "Tools" } })
-Onboarding.Add("Shed", { title = "Shed", steps = { { key = "t", title = "Tools", text = "Kept dry.", settings = { "tools" } } } })
+local SHED = { title = "Shed", steps = { { key = "t", title = "Tools", text = "Kept dry.", settings = { "tools" } } } }
+Onboarding.Add("Shed", SHED)
 W.Fire("ADDON_LOADED", "SaneUI_Orchard")
 W.Fire("ADDON_LOADED", "SaneUI_Shed")
 local due = Onboarding.Due()
@@ -354,7 +357,43 @@ SlashCmdList.SANEUI("setup")
 check(window.Frame():IsShown() and window.Parts().head._text == "Orchard: setup", "/sane setup alone: those still to go through")
 window.Close()
 
+-- Skip setup (Saneroki: "Add a Skip"): a setup not gone through yet no longer opens by itself, kept as if gone
+-- through with its version; in a run the next one follows. Skipped, opened by hand: no Skip. A new version brings it
+-- back; gone through after all, it is no longer skipped.
+SHED.version = 2
+due = Onboarding.Due()
+check(#due == 2 and due[1] == "Orchard" and due[2] == "Shed", "both to go through")
+Onboarding.Start(true)
+parts = window.Parts()
+check(parts.skip:IsShown() and parts.head._text == "Orchard: setup 1 of 2", "the run's first: Skip setup")
+parts.skip._scripts.OnClick(parts.skip)
+parts = window.Parts()
+check(Onboarding.Skipped("Orchard") and Onboarding.Done("Orchard") and store.done.Orchard.skipped == true
+    and store.done.Orchard.version == 3 and store.left.Orchard == nil, "skipped: kept with its version, as if gone through")
+check(window.Frame():IsShown() and parts.head._text == "Shed: setup 2 of 2", "the run goes on to the next")
+parts.skip._scripts.OnClick(parts.skip)
+check(not window.Frame():IsShown() and Onboarding.Skipped("Shed") and #Onboarding.Due() == 0 and not Onboarding.Start(true),
+    "the run's last skipped: the window closes, nothing left to go through")
+Onboarding.Open("Orchard")
+parts = window.Parts()
+check(window.Frame():IsShown() and not parts.skip:IsShown() and not parts.note._text:find(ons.TEXT.unfinished, 1, true),
+    "skipped, opened by hand: no Skip, and it does not come back")
+window.Close()
+check(Onboarding.Skipped("Orchard"), "closed: still skipped")
+ORCHARD.version = 4
+check(Onboarding.Due()[1] == "Orchard" and Onboarding.Changed("Orchard") and not Onboarding.Skipped("Orchard"),
+    "a new version: a skipped setup to go through again")
+Onboarding.Start(true)
+check(window.Parts().words._text:find(ons.TEXT.changedAny, 1, true) and window.Parts().skip:IsShown(),
+    "told it changed since it was last seen, Skip there again")
+window.Close()
+Onboarding.Open("Shed")
+window.Parts().forward._scripts.OnClick(window.Parts().forward)
+check(Onboarding.Done("Shed") and not Onboarding.Skipped("Shed") and store.done.Shed.skipped == nil,
+    "gone through after all: no longer skipped")
+
 -- The store of before (shown: the day a setup first opened) counts as gone through, at version 1.
+SHED.version = nil
 store.done.Shed, store.shown = nil, { Shed = "2026-11-16" }
 check(Onboarding.Done("Shed") and store.shown == nil and store.done.Shed.version == 1 and store.done.Shed.day == "2026-11-16",
     "shown of before: gone through at version 1")

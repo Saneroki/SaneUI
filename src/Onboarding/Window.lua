@@ -24,7 +24,10 @@ local _, ns = ...
 --            come, "Step 2 of 9" in it (Saneroki, 2026-11-16), and the
 --            buttons Back and Next (Done on the last step; Next setup there
 --            while the run has one more), red with the game's arrows, as
---            Forever's own steps of the character creation have them
+--            Forever's own steps of the character creation have them; before
+--            them, for a setup not gone through yet, Skip setup in the words
+--            of Forever's top bar (Saneroki, 2026-11-18: "Add a Skip"): it no
+--            longer opens by itself, and the run goes on to the next
 --
 --  Changes are made as they are clicked (Core.Set), so closing the window at
 --  any step keeps what was chosen; nothing to save or undo here. Each step
@@ -49,8 +52,9 @@ Window.BAR = 28      -- the loading screen's bar's height
 Window.FILL = "Interface\\Glues\\LoadingBar\\Loading-BarFill" -- its fill
 Window.FILL_IN = { 0.9, 0.3 } -- the fill this far in from the bar's ends and edges, shares of its height
 Window.NOTE = 12     -- the faint note at the step's foot (every setup's steps leave it room: over 100 units)
+Window.SKIP = 14     -- Skip setup's words
 
-local frame, look, stage, side, title, words, count, back, forward, progress, note
+local frame, look, stage, side, title, words, count, back, forward, progress, note, skip
 local current   -- { name, guide, index } while a setup shows
 local made = {} -- [module name] = { [step index] = its controls' frame }, made the first time each shows
 local own = {}  -- [module name] = its own frame over the stage, which it draws into; the other modules' hidden
@@ -158,6 +162,10 @@ function Window.Go(index)
     holder:SetPoint("TOPLEFT", words, "BOTTOMLEFT", 0, -16)
     holder:Show()
     count:SetText(ns.TEXT.step:format(index, #steps))
+    -- Skip for a setup not gone through yet (nor skipped); the bar reaches to it, else to Back.
+    local skippable = not Core.Onboarding.Done(current.name)
+    skip:SetShown(skippable)
+    progress:SetPoint("RIGHT", skippable and skip or back, "LEFT", -16, 0)
     progress:Share(index / #steps)
     back:SetEnabled(index > 1)
     local last = index == #steps
@@ -176,6 +184,35 @@ local function Turn(by)
     end
     Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_ON")
     Window.Go(index)
+end
+
+-- Skipped: kept as if gone through (Core), the run's next setup here, else the window closes.
+local function Skip()
+    if not current then return end
+    Core.Sound("IG_MAINMENU_OPTION_CHECKBOX_OFF")
+    if not Core.Onboarding.Finished(current.name, true) then Window.Close() end
+end
+
+-- Skip setup: words alone in the colours of Forever's top bar (Look.NAV, lit under the mouse), not a red button:
+-- red is for what matters (Back and Next stand beside it).
+local function SkipButton(content)
+    local button = CreateFrame("Button", nil, content)
+    local label = button:CreateFontString(nil, "ARTWORK")
+    Look.SetFont(label, Window.SKIP, false, Look.NAV)
+    label:SetPoint("CENTER", button, "CENTER", 0, 0)
+    label:SetText(ns.TEXT.skip)
+    local width = label:GetStringWidth()
+    button:SetSize(math.max(type(width) == "number" and width or 0, 60) + 12, Window.BUTTON[2])
+    local function Lit(lit)
+        local colour = lit and Look.NAV_LIT or Look.NAV
+        label:SetTextColor(colour[1], colour[2], colour[3])
+    end
+    button:SetScript("OnEnter", ns.Guard(function() Lit(true) end))
+    button:SetScript("OnLeave", ns.Guard(function() Lit(false) end))
+    button:SetScript("OnClick", ns.Guard(Skip))
+    Core.Tip(button, ns.TEXT.skip, ns.TEXT.skipTip)
+    button.label = label
+    return button
 end
 
 -- The loading screen's bar (Look.Headline) with its fill as far as the steps have come and the count in its middle.
@@ -257,6 +294,8 @@ local function Build()
     back = Look.Red(content, Arrowed(ns.TEXT.back, Window.ARROWS.back, true), Window.BUTTON[1], Window.BUTTON[2])
     back:SetPoint("RIGHT", forward, "LEFT", -10, 0)
     back:SetScript("OnClick", ns.Guard(function() Turn(-1) end))
+    skip = SkipButton(content)
+    skip:SetPoint("RIGHT", back, "LEFT", -10, 0)
     progress = Progress(content)
     progress:SetPoint("LEFT", content, "BOTTOMLEFT", 0, 2 + Window.BUTTON[2] / 2)
     progress:SetPoint("RIGHT", back, "LEFT", -16, 0)
@@ -287,5 +326,5 @@ end
 function Window.Frame() return frame end
 function Window.Parts()
     return { stage = stage, title = title, words = words, count = count, back = back, forward = forward, made = made,
-             current = current, progress = progress, own = own, note = note, head = look and look.title }
+             current = current, progress = progress, own = own, note = note, head = look and look.title, skip = skip }
 end
