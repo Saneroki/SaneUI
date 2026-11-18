@@ -18,12 +18,13 @@ when the nameplates became a part of Combat; the project *SaneUI Nameplates*, id
 | Category | Unit Frames (and Combat) |
 | Avatar | `combat-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `combat-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Combat](<address>)`) |
-| Relations | SaneUI Core: Required Dependency (each upload sends it too) |
+| Relations | SaneUI Core: Required Dependency, under Default Relations (set 2026-11-18; each upload sends it too) |
 | Release type | Alpha, by the module's stage (since 0.3.2, 2026-11-18) |
 
 ## Description
 
-The editor set to *Markdown* when the project is made.
+The editor set to *Markdown* when the project is made. Changed on 2026-11-18: the unit frames always in sight, or
+only on mouseover (no longer *Out of sight at rest*); put in on CurseForge the same day.
 
 ```markdown
 **SaneUI Combat** gives you clean frames for the fight in one look: your own frame, your target's and your focus's,
@@ -39,7 +40,7 @@ Formerly **SaneUI Nameplates**: the nameplates are now one part of SaneUI Combat
 ## What it does
 
 - **Unit frames.** You, your target and your focus in a nameplate's look: level, name, health on one line, your
-  pet and their targets in rows under them, casts and your breath part of the frame. Out of sight at rest.
+  pet and their targets in rows under them, casts and your breath part of the frame. Always in sight, or only on mouseover: each frame's choice in Edit Mode.
 - **Party and raid frames.** One frame for both, up to forty, each player's health in their class colour, roles,
   ready checks, dispellable debuffs and aggro at a glance. Place and size it in Edit Mode by its corners and sides.
 - **Nameplates.** One line inside the bar (quest progress, level, raid marker, item level, threat, name, health), a

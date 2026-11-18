@@ -8,16 +8,17 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | --- | --- |
 | Name | SaneUI Navigation |
 | Folder in the game | `SaneUI_Navigation` (listed under *SaneUI* as *Navigation*) |
-| Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. |
+| Summary | Your minimap and world map in one window, with quest pins, a search and routes to your map pin. (On CurseForge 2026-11-18: "Rebuild minimap and world map in one window, with quest pins, a search and routes to your map pin.") |
 | Category | Map & Minimap (and Quests & Leveling) |
 | Avatar | `maps-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `maps-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Navigation](<address>)`) |
-| Relations | SaneUI Core: Required Dependency (each upload sends it too) |
+| Relations | SaneUI Core: Required Dependency, under Default Relations (set 2026-11-18; each upload sends it too) |
 | Release type | Alpha, by the module's stage |
 
 ## Description
 
-The editor set to *Markdown* when the project is made.
+The editor set to *Markdown* when the project is made. Put in on CurseForge on 2026-11-18 (it still read *Sane UI
+Maps* there).
 
 ```markdown
 **SaneUI Navigation** puts your minimap and your world map into one window. Small, in the top right

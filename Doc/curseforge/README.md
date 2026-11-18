@@ -23,8 +23,8 @@ Onboarding's (`onboarding-*`) belong to Core's project, which ships it (Core.md,
 
 1. On authors.curseforge.com, make the project *SaneUI Core* (category Libraries) and the project of each
    module to release (*SaneUI Navigation*), with the summary, description and avatar of its file here.
-2. On the module's project, under Relations, add *SaneUI Core* as a Required Dependency (each upload names it
-   too).
+2. On the module's project, under Default Relations, add *SaneUI Core* as a Required Dependency (each upload names
+   it too). Core is unlisted, so the search there finds it only by its id, 1808480.
 3. Into `~/.config/saneui/curseforge.json` (only on this computer, readable by its owner alone): the API token
    (authors.curseforge.com, Settings, API Tokens), each project's id, Core's slug, the files' names:
    `{"token": "...", "gameVersions": [...], "projects": {"Core": {"id": ..., "slug": "...", "name": "SaneUI
@@ -45,6 +45,14 @@ Onboarding's (`onboarding-*`) belong to Core's project, which ships it (Core.md,
    on 2026-11-16, so a module's first upload goes through at once now; its project's own review follows.
 8. An older version of a module goes up only if its own tests pass with today's Core: Navigation 0.3.3 failed
    them on 2026-11-16 (Core's options header had changed), so its first alpha on CurseForge is 0.3.4.
+
+## The API and the website
+
+The API token uploads files (`upload-file`) and changes an uploaded file's metadata (`update-file`: its
+changelog, relations, release type, game versions). A project's description, summary, avatar and Default
+Relations have no API: they are edited on authors.curseforge.com (Saneroki's sign-in), by hand or by a session
+in his browser. Its Markdown editor turns every line break into a hard one, so a description goes in with each
+paragraph and each list item on one line (the files here wrap them for reading).
 
 ## CurseForge's moderation policies
 

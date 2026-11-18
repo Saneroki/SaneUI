@@ -8,11 +8,11 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | --- | --- |
 | Name | SaneUI Tooltips |
 | Folder in the game | `SaneUI_Tooltips` (listed under *SaneUI* as *Tooltips*) |
-| Summary | The game's tooltips redrawn as tidy panels: quests, professions and gold for every item, at a glance. |
+| Summary | The game's tooltips redrawn as tidy panels: quests, professions and gold for every item, at a glance. (On CurseForge 2026-11-18: "The game's tooltips redrawn as tidy panels at a glance".) |
 | Category | Tooltip |
 | Avatar | `tooltips-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `tooltips-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Tooltips](<address>)`) |
-| Relations | SaneUI Core: Required Dependency (each upload sends it too) |
+| Relations | SaneUI Core: Required Dependency, under Default Relations (set 2026-11-18; each upload sends it too) |
 | Release type | Alpha, by the module's stage (since 0.3.1, 2026-11-16) |
 | Uploads | 0.3.1 alpha (2026-11-16); 0.3.2 alpha (2026-11-18, with SaneUI Core 0.3.3), file 9682011 |
 

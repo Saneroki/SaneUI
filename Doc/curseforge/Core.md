@@ -18,7 +18,8 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 ## Description
 
 The editor set to *Markdown* when the project is made. Changed on 2026-11-18: *SaneUI Tooltips* and *SaneUI
-Combat* in *SaneUI addons*, to be put in on CurseForge; each module that goes up gets its line there.
+Combat* in *SaneUI addons*, put in on CurseForge the same day with the summary (both still read *Sane UI*); each
+module that goes up gets its line there.
 
 ```markdown
 **SaneUI Core** is what every SaneUI addon shares. SaneUI is a set of interface addons for
