@@ -2044,9 +2044,23 @@ do
         check(not face.cast._shown and not face.breath._shown and Spot(face) == spot and not ns.off, "and all of it going")
     end
 
+    player.GetEffectiveScale = function(self) return self:GetScale() end -- on the screen its own scale (UIParent at 1)
+    local holder = PlayerBottomManagedFrameContainer
     Core.Set(ns.name, "unitSize", 150)
     check(player._scale == 1.5 and target._scale == 1.5 and PlayerFrame._mouse == false, "Unit frame size: all three larger")
+    check(near(holder:GetScale(), 1.5), "and the game's totems under yours as large as it")
+    PlayerFrame:SetScale(1.25) -- the game's own frame at another size in Edit Mode
+    Units.Apply()
+    check(near(holder:GetScale(), 1.2) and near(holder:GetScale() * PlayerFrame:GetScale(), player:GetScale()),
+        "whatever size the game's own frame has: on the screen as large as yours")
     Core.Set(ns.name, "unitSize", 100)
+    check(near(holder:GetScale() * PlayerFrame:GetScale(), 1), "smaller again with yours")
+    Core.Set(ns.name, "unitPlayer", false)
+    check(holder:GetScale() == 1 and select(2, holder:GetPoint(1)) == PlayerFrame, "your frame off: their size and place the game's")
+    Core.Set(ns.name, "unitPlayer", true)
+    PlayerFrame:SetScale(1)
+    Units.Apply()
+    check(near(holder:GetScale(), 1) and select(2, holder:GetPoint(1)) == player, "on again: under yours, as large")
     -- In a fight secure frames are not changed (the stand-in refuses a touch of one while W.Combat is on): what is
     -- asked for waits for its end.
     W.Combat(true)

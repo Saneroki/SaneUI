@@ -300,6 +300,8 @@ function Client.Install(W)
     -- under it, and the totems in it, which take clicks.
     PlayerBottomManagedFrameContainer = W.NewWidget("Frame", "PlayerBottomManagedFrameContainer", PlayerFrame)
     PlayerBottomManagedFrameContainer:SetPoint("TOP", PlayerFrame, "BOTTOM", 30, 25)
+    -- The game's frame at the size Edit Mode gives it: on the screen its own scale (UIParent's is 1 here).
+    PlayerFrame.GetEffectiveScale = function(self) return self:GetScale() end
     TotemFrame = W.NewWidget("Frame", "TotemFrame", PlayerBottomManagedFrameContainer)
     TotemFrame._mouse = true
     -- The game's bars that go (GameBars.lua), the menu bar with a button of it.

@@ -359,10 +359,11 @@ local function Unbox(game, Lend)
 end
 
 -- What the game hangs under your own frame (its totems, a class's resource bar: each laid out by the game in its
--- holder there, PlayerBottomManagedFrameContainer) under ours instead, by the holder's anchor alone; what it holds
--- stays the game's, its clicks too. The game anchors it under its own frame again (PlayerFrame_ToPlayerArt at each
--- loading screen, a vehicle's art): under ours again at once (Moved), or once the fight is over where the holder is
--- protected then (with the game's pet frame in it).
+-- holder there, PlayerBottomManagedFrameContainer) under ours instead, by the holder's anchor and its scale alone:
+-- as large as ours (the setting Unit frame size; Saneroki, 2026-11-18), whatever size the game's own frame has
+-- (Size). What it holds stays the game's, its clicks too. The game anchors it under its own frame again
+-- (PlayerFrame_ToPlayerArt at each loading screen, a vehicle's art): under ours again at once (Moved), or once the
+-- fight is over where the holder is protected then (with the game's pet frame in it).
 Units.UNDER = "PlayerBottomManagedFrameContainer"
 local under, beneath, hooked -- the holder's lend while ours stands in, our button it hangs under, its hook made
 
@@ -378,11 +379,25 @@ local function Moved()
     if not under:SetPoints(Under) then Core.AfterCombat("unit frame totems", Moved) end
 end
 
+-- The holder's scale in its parent's (the game's frame, at the size Edit Mode gives it): ours on the screen.
+local function Size()
+    if not under then return end
+    local holder = under.frame
+    local parent = holder:GetParent()
+    local ours = tonumber(Core.Plain(beneath:GetEffectiveScale()))
+    local theirs = parent and tonumber(Core.Plain(parent:GetEffectiveScale()))
+    if not ours or not theirs or theirs <= 0 then return end
+    local scale = ours / theirs
+    if math.abs((tonumber(Core.Plain(holder:GetScale())) or 1) - scale) < 0.001 then return end
+    if not under:SetScale(scale) then Core.AfterCombat("unit frame totems size", Size) end
+end
+
 local function Hang(kind, Lend)
     local holder = rawget(_G, Units.UNDER)
     if type(holder) ~= "table" or not holder.SetPoint or not kind.button then return end
     beneath = kind.button
     under = Lend(holder, "SetPoints", Under)
+    Size()
     if not hooked then
         hooked = true
         hooksecurefunc(holder, "SetPoint", ns.Guard(Moved))
@@ -491,6 +506,7 @@ local function Kind(kind)
     face.alternate = Alternate(kind)
     Slots(face)
     Away(kind)
+    if kind.away == "parts" then Size() end -- the totems as large as your frame, also when its size changes
     Watch(button)
     if ns.options[row.option] ~= false then
         Away(row)

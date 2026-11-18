@@ -148,9 +148,9 @@ Sunder Armor), as you choose, nothing fixed.
   - With the game's target and focus frames go what hangs on them: their auras, their cast bars and their own
     target's frames (Forever's combo points show on your target's nameplate). The game's pet frame goes while your
     pet's row is on. Of the game's own frame only its picture, bars and texts go: its totems and a class's
-    resource bar stay the game's and follow your frame, right under it (Saneroki, 2026-11-18). Edit Mode shows
-    only ours to place: the game's boxes *Player Frame* and *Pet Frame* are gone while ours stand in for them
-    (Saneroki, 2026-11-18), and the totems move with yours.
+    resource bar stay the game's and follow your frame, right under it and as large as it (*Unit frame size*;
+    Saneroki, 2026-11-18). Edit Mode shows only ours to place: the game's boxes *Player Frame* and *Pet Frame*
+    are gone while ours stand in for them (Saneroki, 2026-11-18), and the totems move with yours.
 - **Settings:** *Sane UI > Combat*: the section *Unit frames* (*Your
   frame*, *Your cast bar*, *Your breath bar*, *Your pet*, *Your target's frame*, *Your target's target*, *Your
   focus's frame*, *Your focus's target*, each off for the game's own, *Unit frame size*, *Hide the unit frames at
@@ -526,7 +526,8 @@ Sunder Armor), as you choose, nothing fixed.
   - The game's frames (`Away`, `Back`, `Core.Lend`): `TargetFrame` and `FocusFrame` get a hidden frame of ours as
     parent; of `PlayerFrame` its `PlayerFrameContainer` and `PlayerFrameContent` alpha 0 and its mouse off, so
     `TotemFrame` and the class bars stay the game's: they lie in its `PlayerBottomManagedFrameContainer`, laid out by
-    the game, whose anchor alone is lent, its `TOP` to our button's `BOTTOM` (`Hang`, `Units.UNDER`); the game
+    the game, whose anchor and scale alone are lent, its `TOP` to our button's `BOTTOM` (`Hang`, `Units.UNDER`), its
+    scale our button's effective scale over its parent's, set anew at each `Units.Apply` (`Size`); the game
     anchors it to its own frame again (`PlayerFrame_ToPlayerArt` at each loading screen, `PlayerFrame_ToVehicleArt`):
     a hook of its `SetPoint` puts it under ours again (`Moved`), after the fight where it is protected (the game's
     `PetFrame` in it). `PetFrame` (which the game's layout re-parents) alpha 0 and its mouse off while the pet's row
