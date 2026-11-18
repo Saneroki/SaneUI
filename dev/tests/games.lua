@@ -1,6 +1,6 @@
 -- What Retail lacks of Forever's interface, for the tests' stand-in (wowstub.lua, W.Play): globals,
 -- Table.Field, Enum.X.Y, Constants.X.Y and events (event:NAME), from the newest exports of the two games
--- (Forever 1.60.1.70938, Retail 12.1.5.70783). Made by dev/tools/blizzard games; do not edit by hand.
+-- (Forever 1.60.1.70959, Retail 12.1.5.70783). Made by dev/tools/blizzard games; do not edit by hand.
 return {
     retail = [[
 ACTION_BARS_RELATIVE_TO_BASE_POSITIONING
@@ -124,6 +124,7 @@ C_LFGListRoles.GetRoles
 C_LFGListRoles.GetSavedRoles
 C_LFGListRoles.SetRoles
 C_LootFrame.TryAutoLoot
+C_Mail.IsCODEnabled
 C_MajorFactions.GetMajorFactionProgressionInfo
 C_MajorFactions.GetTotalReputationForRenownLevel
 C_MountJournal.HasDisplayableMount
@@ -314,6 +315,7 @@ Constants.CurrencyConsts.CURRENCY_ID_RENOWN_LEGACY
 Constants.CurrencyConsts.CURRENCY_ID_RENOWN_PVP_RANK
 Constants.DeathRecapConsts.SWING_DAMAGE_SPELL_ID
 Constants.EditModeLayoutConsts_Mainline.EditModeDefaultLayout
+Constants.EncodingLimits.EncodingDeserializeSizeLimit
 Constants.GamepadActionBarConstants.GAMEPAD_ACTION_BAR_PAGE_UNIT_SPECIAL_PAGE_INDEX
 Constants.GamepadActionBarConstants.NUM_GAMEPAD_STANCE_ACTION_BARS
 Constants.GamepadActionBarConstants.NUM_GROUPS_PER_GAMEPAD_ACTION_BAR
@@ -1031,6 +1033,7 @@ GetRangedAttackPowerForStat
 GetRangedHitModifier
 GetSecureTradeRMTWarningString
 GetSpellCritChanceFromStat
+GetTalentMicroButton
 GetTexCoordsForRoleSmall
 GetTexCoordsForRoleSmallCircle
 GroupFinderVanillaStyle_LoadUI
@@ -1092,6 +1095,7 @@ InterfaceOverrides.HasSwingTimer
 InterfaceOverrides.RegisterOutlineSettings
 InterfaceOverrides.SetupToastSettings
 IsCursorVisible
+IsStarterTalentTutorialEnabled
 ItemButtonUtil.ClearPendingItemSelectionSource
 ItemButtonUtil.ConsumePendingItemSelectionSource
 ItemButtonUtil.GetPendingItemSelectionSource
@@ -1300,6 +1304,7 @@ MainActionBar_InitializeGamepad
 MainActionBar_InitializeMKB
 MainActionBar_UnInitializeMKB
 MainMenuBarEndCapMixin
+MainMenuMicroButton_GetPlayerSpellsAlertButtons
 MapLegendPinDefinitions
 MapLegendPinDefinitions.BonusObjective
 MapLegendPinDefinitions.BonusObjective.Atlas
@@ -1809,6 +1814,7 @@ STATUS_BAR_SIZE_ADJUSTMENT
 SearchBagsForFirstItem
 SecureTransferDialogMixin
 SendMailButtonMixin
+SendMailCODButtonMixin
 SendMailMixin
 SendMailScrollChildMixin
 SendMailScrollFrameGamepadFocusAreaMixin
