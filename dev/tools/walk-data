@@ -60,13 +60,23 @@ the regions allow is always there without one), those off one side into one rect
 heights lie within BAND. Navigation takes those up to its Walk.FALL (dev/tools/walk-gates' FALL alike), so another
 height is a walk-gates run, not one of this tool.
 
+A hop is a way over a step or a short steep stretch between two floors on the ground, both ways (Saneroki, 2026-11-18:
+"I can go over the right side of undercity from south to north by climbing up the mountain and then jump down the
+cliff"): a sample's middle lies between two of its cell's four triangles and the samples stand for the west and east
+ones alone, so a mountain's trail, zigzagging up over the north and south ones and steep a few yards at a time, falls
+apart into pockets. From every floor on the ground to the first floors on the ground within HOP samples along each
+side that the samples do not join (one beside it more than CLIMB higher or lower; one past a sample with no floor),
+where the game's triangles of the cells round both make a way with none steeper than STEEPEST and at most CROSSED
+steeper than SLOPE (hopped over), and no building or doodad stands there (its walls the triangles do not know). A hop
+joins regions as an opening does; on its own tile only.
+
   dev/data/staging/walking.jsonl    one line per tile with ground: set Walking, key the tile's key in the set Tiles
                                     (continent * 4096 + row * 64 + column), fields map (the continent), links (the
                                     tiles around it that have ground) and block (below)
 
 A block is CBOR (the game reads it with C_EncodingUtil.DeserializeCBOR), deflated (DecompressString) and in base64
-(DecodeBase64): an array of the format's number (FORMAT), the surfaces, the rectangles, the openings and the drops,
-each a flat array of whole numbers:
+(DecodeBase64): an array of the format's number (FORMAT), the surfaces, the rectangles, the openings, the drops and
+the hops, each a flat array of whole numbers:
 
   surfaces     per surface (its rectangles come one after the other, in this order) 3 numbers: how many rectangles
                it has, its kind (1 land, 2 water, 3 a building's floor) and its region
@@ -82,6 +92,7 @@ each a flat array of whole numbers:
                once, from the north or west of the two; into the next tile, from both.
   drops        6 numbers each, from the rectangle it leaves alone (one way): that rectangle's index, its side, the first
                and last sample along it, the rectangle it lands on (as an opening's neighbour) and its height in yards
+  hops         6 numbers each as a drop's, from each of its two ends (both ways): its rise in yards (down: below 0)
 
 The input, for every map with terrain files (the continents, the isle), as the game's files are extracted:
   game files    a folder with adt/ (the root terrain files, <tile key>.adt), adt-obj0/ (the object files: where
@@ -95,7 +106,10 @@ edges), for the pictures and the report alone: no staging, since a region's numb
 run and a few tiles' numbers cannot agree with the master's (regions), --pictures <folder> a picture of each tile's
 rectangles, --processes N (default PROCESSES: a full run with many workers reached the memory the app's cgroup may
 hold, and the kernel killed it and the app), --memory GB the memory its cgroup may hold (default MEMORY; the app's scope when started from a session, the other sessions counted too): past it the
-run stops, its workers ended, with no staging written, to be run one map at a time.
+run stops, its workers ended, with no staging written, to be run one map at a time; --build N the build the lines are
+staged at (default BUILD): a rerun of the tool on a world that did not move since the master's newest version takes
+that version's build, so the import corrects it in place (--take) and the master keeps one version a world, not one a
+run (Walking.jsonl is a plain file in git, near its host's limit of 100 MB).
 
 Needs Python with NumPy (and Pillow for the pictures). About the game's build of the set Tiles (BUILD).
 
@@ -103,7 +117,7 @@ Once a run is taken in (dev/tools/data import dev/data/staging/walking.jsonl --a
 made anew from the master's blocks: dev/tools/walk-gates, its staging taken in the same way (dev/tests/walk.py fails on a
 layer not made from the blocks as they are).
 
-Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N] [--memory GB]
+Usage:  dev/tools/walk-data <game files> <client tables> [--maps maps] [--only keys] [--pictures folder] [--processes N] [--memory GB] [--build N]
 """
 import base64
 import json
@@ -114,6 +128,7 @@ import sys
 import zlib
 from importlib.machinery import SourceFileLoader
 from importlib.util import module_from_spec, spec_from_loader
+from collections import deque
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -159,6 +174,10 @@ FALL = 70              # yards: the highest drop kept, more than a route takes (
                        # so another height is a dev/tools/walk-gates run and Walk.FALL alone, no run of this tool)
 RUN = 24               # samples a drop may cross before it lands (50 yards): steep ground falling away, or air
 BAND = 4               # yards: drops side by side off one rectangle into another are one while their heights lie within
+HOP = 2                # samples: two ground floors this near that the samples do not join (a step over CLIMB, steep
+                       # ground between) are one way, a hop, where the game's own triangles round them make a way
+STEEPEST = 60          # degrees: steeper ground no hop crosses (Saneroki's climb east of the Undercity crosses 57)
+CROSSED = 2            # triangles steeper than SLOPE a hop may cross (a walker hops over them, up or down)
 # A square of the ground (outside buildings) may take this share of steep samples at its edges, by its side: the
 # edges of walkable ground, ragged at two yards, make no crowd of small rectangles.
 TAKEN = {2: 0.5, 4: 0.75, 8: 0.85, 16: 0.9, 32: 0.95}
@@ -168,7 +187,7 @@ STEEP = math.tan(math.radians(SLOPE)) * SAMPLE  # height over one sample past wh
 YARDS = np.array([SAMPLE, SAMPLE, 1.0])          # the samples' space (columns, rows, height) in yards
 LAND, WATER, BUILT = 1, 2, 3  # a floor's kind: the ground, a water's surface, a building's or a doodad's floor
 SKY, COVERED, BURIED = 1, 0, -1  # what is over a floor: the sky, something, a building DEPTH yards or more (the ground)
-FORMAT = 2             # the blocks' format, as Navigation's Walk.lua reads it (2: with the drops)
+FORMAT = 3             # the blocks' format, as Navigation's Walk.lua reads it (2: with the drops; 3: and the hops)
 
 
 def art():
@@ -231,6 +250,7 @@ def ground(path, waters, liquids):
                 break
     height = ART.ground(outer, inner)
     steep = steepness(outer, inner)
+    tri = np.where(hole[..., None], 90.0, triangles(outer, inner))
     hole = np.repeat(np.repeat(hole, ART.SAMPLES, 0), ART.SAMPLES, 1)
     water = np.full(height.shape, -np.inf, np.float32)
     closed = np.full(height.shape, -np.inf, np.float32)
@@ -266,7 +286,25 @@ def ground(path, waters, liquids):
                 target = water if kind in waters else closed
                 region = target[y0:y0 + high * ART.SAMPLES, x0:x0 + wide * ART.SAMPLES]
                 np.maximum(region, level, out=region)
-    return height, hole, water, closed, steep
+    return height, hole, water, closed, steep, tri
+
+
+def triangles(outer, inner):
+    """The slope in degrees of each of a cell's four triangles (cells x cells x 4: north, east, south, west), as the
+    game draws them meeting at the cell's inner height: what a hop is judged by (reach)."""
+    side = TILE / (ART.CHUNKS * ART.CELLS)
+    a, b, c, d, m = outer[:-1, :-1], outer[:-1, 1:], outer[1:, :-1], outer[1:, 1:], inner
+
+    def slope(p, q, r):
+        (px, py, pz), (qx, qy, qz), (rx, ry, rz) = p, q, r
+        ux, uy, uz, vx, vy, vz = qx - px, qy - py, qz - pz, rx - px, ry - py, rz - pz
+        nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
+        return np.degrees(np.arccos(np.clip(np.abs(nz) / np.sqrt(nx * nx + ny * ny + nz * nz), 0, 1)))
+
+    corners = (0, 0, a), (side, 0, b), (0, side, c), (side, side, d)
+    middle = (side / 2, side / 2, m)
+    return np.stack([slope(corners[0], corners[1], middle), slope(corners[1], corners[3], middle),
+                     slope(corners[2], corners[3], middle), slope(corners[0], corners[2], middle)], axis=-1)
 
 
 def steepness(outer, inner):
@@ -1226,7 +1264,7 @@ def across_drops(tiles):
     """The drops whose way runs over a tile's edge, gone on over the next tile's samples there (strips): each kept
     on its tile beside the others, the rectangle landed on as the openings into the next tile name it (its index +
     65536 x (1 + the side))."""
-    for key, (rects, links, borders, opened, buried, found, pending, _) in tiles.items():
+    for key, (rects, links, borders, opened, buried, found, _, pending, _) in tiles.items():
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
         for number, side, position, a, crossed, before in pending:
@@ -1234,7 +1272,7 @@ def across_drops(tiles):
             other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
             if other not in tiles or not (0 <= row + dr < GRID and 0 <= column + dc < GRID):
                 continue
-            z, rect, over, ground = tiles[other][7][opposite]
+            z, rect, over, ground = tiles[other][8][opposite]
             cells = ((float(z[d, position]), int(rect[d, position]), float(over[d, position]),
                       float(ground[d, position])) for d in range(RUN + 1 - crossed))
             way = onward(cells, a, crossed, before)
@@ -1259,6 +1297,83 @@ def runs(found):
 
 
 # -------------------------------------------------------------------------------------------------
+#  Hops: over a step or a short steep stretch, either way
+# -------------------------------------------------------------------------------------------------
+NEIGHBOURS = {0: ((0, 0, 1), (0, 0, 3), (-1, 0, 2)), 1: ((0, 0, 0), (0, 0, 2), (0, 1, 3)),
+              2: ((0, 0, 1), (0, 0, 3), (1, 0, 0)), 3: ((0, 0, 0), (0, 0, 2), (0, -1, 1))}  # a triangle's three sides
+
+
+def touching(row, column):
+    """The two triangles a sample's middle lies between (a cell's four meet at its inner height; its samples lie on
+    the diagonals): (cell row, cell column, triangle), the triangles 0 north, 1 east, 2 south, 3 west."""
+    cy, cx = row // ART.SAMPLES, column // ART.SAMPLES
+    return ((cy, cx, 0 if row % 2 == 0 else 2), (cy, cx, 3 if column % 2 == 0 else 1))
+
+
+def reach(tri, p, q):
+    """Whether a walker gets from sample p to sample q over the game's own triangles (tri: triangles' slopes) of the
+    cells round both: none steeper than STEEPEST, at most CROSSED steeper than SLOPE (hopped over), the fewest such
+    first (a search of 0 and 1)."""
+    cells = tri.shape[0]
+    y0, y1 = max(min(p[0], q[0]) // ART.SAMPLES - 1, 0), min(max(p[0], q[0]) // ART.SAMPLES + 1, cells - 1)
+    x0, x1 = max(min(p[1], q[1]) // ART.SAMPLES - 1, 0), min(max(p[1], q[1]) // ART.SAMPLES + 1, cells - 1)
+    goal = set(touching(*q))
+    best, line = {}, deque()
+    for t in touching(*p):
+        if tri[t] <= STEEPEST:
+            steep = int(tri[t] > SLOPE)
+            best[t] = steep
+            (line.appendleft if steep == 0 else line.append)((steep, t))
+    while line:
+        steep, t = line.popleft()
+        if steep > best.get(t, CROSSED + 1):
+            continue
+        if t in goal:
+            return True
+        y, x, side = t
+        for dy, dx, other in NEIGHBOURS[side]:
+            u = (y + dy, x + dx, other)
+            if not (y0 <= u[0] <= y1 and x0 <= u[1] <= x1) or tri[u] > STEEPEST:
+                continue
+            more = steep + int(tri[u] > SLOPE)
+            if more <= CROSSED and more < best.get(u, CROSSED + 1):
+                best[u] = more
+                (line.appendleft if more == steep else line.append)((more, u))
+    return False
+
+
+def hops(here, owner, tri, built):
+    """The hops on a tile: from every floor on the ground to the first floors on the ground along each side within
+    HOP samples that the samples do not join (one beside it more than CLIMB higher or lower; one past a sample with
+    no floor there one way with it), where the game's triangles round both make a way (reach): a mountain's trail
+    zigzags over triangles the samples split, steep a few yards at a time; a walker climbs it hopping up and comes
+    down it. None where a building or a doodad stands (built: its walls the triangles do not know). Both ways (each
+    found from either end). {rect: [(side, position along the side, rect hopped to, rise)]} on the tile."""
+    columns = here[0]
+    found = {}
+    for (r, c, i), number in owner.items():
+        a, kind, _ = columns[r][c][i]
+        if kind != LAND or built[r, c]:
+            continue
+        for side, dr, dc in SIDES:
+            for k in range(1, HOP + 1):
+                nr, nc = r + dr * k, c + dc * k
+                if not (0 <= nr < SIDE and 0 <= nc < SIDE) or built[nr, nc]:
+                    break
+                there = columns[nr][nc]
+                if not there:
+                    continue  # steep ground or air between: on to the next sample
+                for j, (b, other_kind, _) in enumerate(there):
+                    other = owner.get((nr, nc, j))
+                    if (other is None or other == number or other_kind != LAND or (k == 1 and abs(b - a) <= CLIMB)
+                            or not reach(tri, (r, c), (nr, nc))):
+                        continue
+                    found.setdefault(number, []).append((side, c if side in (0, 2) else r, other, b - a))
+                break
+    return found
+
+
+# -------------------------------------------------------------------------------------------------
 #  A tile
 # -------------------------------------------------------------------------------------------------
 def sunken(triangles, height, hole):
@@ -1271,13 +1386,14 @@ def sunken(triangles, height, hole):
 
 def tile(job):
     """Everything of one tile: (key, rects, openings, borders, open: the rectangles with the sky over some of their
-    floors, buried: {rectangle: how many of its floors are buried}, its drops and those that run off its edge
-    (drops), what a drop from the next tile finds along its edges (strips)), or (key, None, ...) without ground."""
+    floors, buried: {rectangle: how many of its floors are buried}, its drops, its hops, the drops that run off its
+    edge (drops, hops), what a drop from the next tile finds along its edges (strips)), or (key, None, ...) without
+    ground."""
     key, folder, waters, liquids, near_places = job
     path = folder / "adt" / f"{key}.adt"
     if not path.exists():
-        return (key,) + (None,) * 8
-    height, hole, water, closed, steep = ground(path, waters, liquids)
+        return (key,) + (None,) * 9
+    height, hole, water, closed, steep, tri = ground(path, waters, liquids)
     row0, col0 = key % (GRID * GRID) // GRID, key % GRID
     north0, west0 = HALF - row0 * TILE, HALF - col0 * TILE
     spans, walls = {}, {}
@@ -1307,7 +1423,7 @@ def tile(job):
     alone, found, specks, built = floors(height, hole, water, closed, spans, walls, steep)
     rects, owner, columns, links, borders = plan(alone, found, specks, built, walls)
     if not rects:
-        return (key,) + (None,) * 8
+        return (key,) + (None,) * 9
     opened, buried = set(), {}
     for (r, c, i), number in owner.items():
         if columns[r][c][i][2] == SKY:
@@ -1316,7 +1432,7 @@ def tile(job):
             buried[number] = buried.get(number, 0) + 1
     here = (columns, owner, spans, walls, hole, smooth(height.astype(np.float64)))
     falls, pending = drops(here, owner)
-    return key, rects, links, borders, opened, buried, falls, pending, strips(here)
+    return key, rects, links, borders, opened, buried, falls, hops(here, owner, tri, built), pending, strips(here)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -1406,9 +1522,9 @@ def regions(tiles, keep=()):
             node = parent[node]
         return node
 
-    for key, (rects, links, *_) in tiles.items():
-        continent, rest = divmod(key, GRID * GRID)
-        row, column = divmod(rest, GRID)
+    for key, (rects, links, *rest) in tiles.items():
+        continent, row_column = divmod(key, GRID * GRID)
+        row, column = divmod(row_column, GRID)
         for number, list_ in links.items():
             for _, _, _, target in list_:
                 where, index = divmod(target, 65536)
@@ -1419,8 +1535,13 @@ def regions(tiles, keep=()):
                 a, b = find((key, number)), find((other, index))
                 if a != b:
                     parent[a] = b
+        for number, list_ in (rest[4] if len(rest) > 4 and rest[4] else {}).items():  # the hops: both ways
+            for _, _, target, _ in list_:
+                a, b = find((key, number)), find((key, target))
+                if a != b:
+                    parent[a] = b
     area, sky, deep = {}, set(), {}
-    for key, (rects, _, _, *rest) in tiles.items():
+    for key, (rects, _, _, *rest) in tiles.items():  # rest: opened, buried (made-up tiles: neither)
         opened = rest[0] if rest else range(len(rects))  # made-up tiles: all open, none buried
         for number, rect in enumerate(rects):
             root = find((key, number))
@@ -1446,9 +1567,9 @@ def regions(tiles, keep=()):
 
 
 def kept(tiles, region_of):
-    """Each tile's rectangles of the regions kept, numbered anew, their openings and drops pointing at the new numbers:
-    (rects, links, drops). A drop is kept only into a rectangle of its own region (drops), joined with those beside
-    it (runs)."""
+    """Each tile's rectangles of the regions kept, numbered anew, their openings, drops and hops pointing at the new
+    numbers: (rects, links, drops, hops). A drop is kept only into a rectangle of its own region (drops); drops and
+    hops beside each other joined (runs)."""
     renumber = {}
     for key, (rects, *_) in tiles.items():
         count = 0
@@ -1459,6 +1580,7 @@ def kept(tiles, region_of):
     out = {}
     for key, (rects, links, *rest) in tiles.items():
         falls = rest[3] if len(rest) > 3 and rest[3] else {}  # made-up tiles: none
+        leaps = rest[4] if len(rest) > 4 and rest[4] else {}
         continent, row_column = divmod(key, GRID * GRID)
         row, column = divmod(row_column, GRID)
 
@@ -1470,7 +1592,7 @@ def kept(tiles, region_of):
                 other = continent * GRID * GRID + (row + dr) * GRID + (column + dc)
             return where, (other, other_index)
 
-        new_rects, new_links, new_drops = [], {}, {}
+        new_rects, new_links, new_drops, new_hops = [], {}, {}, {}
         for number, rect in enumerate(rects):
             if (key, number) not in region_of:
                 continue
@@ -1490,8 +1612,12 @@ def kept(tiles, region_of):
                     down.append((side, position, where * 65536 + renumber[other], height))
             if down:
                 new_drops[index] = runs(down)
+            over = [(side, position, renumber[(key, target)], rise) for side, position, target, rise in leaps.get(number, ())
+                    if (key, target) in renumber]
+            if over:
+                new_hops[index] = runs(over)
         if new_rects:
-            out[key] = (new_rects, new_links, new_drops)
+            out[key] = (new_rects, new_links, new_drops, new_hops)
     return out
 
 
@@ -1555,8 +1681,8 @@ def shared(a, b, side, dr, dc):
     return (first, last) if first <= last else None
 
 
-def block(rects, links, key, tiles, falls=None):
-    """A tile's block: [FORMAT, surfaces, rectangles, openings, drops]. Its rectangles come surface by surface; a
+def block(rects, links, key, tiles, falls=None, leaps=None):
+    """A tile's block: [FORMAT, surfaces, rectangles, openings, drops, hops]. Its rectangles come surface by surface; a
     surface is written as how many rectangles it has, its kind and its region; a rectangle as its column, row,
     width, height and z. Two rectangles of one surface that share an edge are one way along all of it, as the
     game works out from the rectangles themselves; every other opening is written: along the whole edge two
@@ -1565,8 +1691,9 @@ def block(rects, links, key, tiles, falls=None):
     direction). On its own tile an opening is written once, on the north or west side of the two (the game
     adds the other way when it unpacks the tile); into the next tile, from both. A drop (falls: {rect: runs}) is
     written only from the rectangle it leaves, one way: that rectangle's index, its side, the first and last sample
-    along it, the rectangle it lands on (as an opening's neighbour) and its height in whole yards."""
-    flat_surfaces, flat_rects, flat_links, flat_drops = [], [], [], []
+    along it, the rectangle it lands on (as an opening's neighbour) and its height in whole yards. A hop (leaps: {rect:
+    runs}) alike, from each of its ends (both ways), its rise in whole yards (down: below 0)."""
+    flat_surfaces, flat_rects, flat_links, flat_drops, flat_hops = [], [], [], [], []
     for number, rect in enumerate(rects):
         column, row, width, height, z, kind, surface, region = rect
         if number == 0 or rects[number - 1][6] != surface:
@@ -1593,8 +1720,11 @@ def block(rects, links, key, tiles, falls=None):
         for side, first, last, target, height in (falls or {}).get(number, ()):
             where, index = divmod(target, 65536)
             flat_drops.extend([number, side, first, last, index * 5 + where, height])
+        for side, first, last, target, rise in (leaps or {}).get(number, ()):
+            flat_hops.extend([number, side, first, last, target * 5, rise])
     packed = zlib.compressobj(9, zlib.DEFLATED, -15)
-    data = packed.compress(cbor([FORMAT, flat_surfaces, flat_rects, flat_links, flat_drops])) + packed.flush()
+    data = (packed.compress(cbor([FORMAT, flat_surfaces, flat_rects, flat_links, flat_drops, flat_hops]))
+            + packed.flush())
     return base64.b64encode(data).decode("ascii")
 
 
@@ -1618,13 +1748,13 @@ def picture(folder, key, rects, links):
 
 # -------------------------------------------------------------------------------------------------
 def options(args):
-    """The command line taken apart: {folder, tables, only, maps, pictures, processes, memory}, or None when it is
-    not the usage's."""
-    found = {"only": None, "maps": None, "pictures": None, "processes": PROCESSES, "memory": MEMORY}
+    """The command line taken apart: {folder, tables, only, maps, pictures, processes, memory, build}, or None when it
+    is not the usage's."""
+    found = {"only": None, "maps": None, "pictures": None, "processes": PROCESSES, "memory": MEMORY, "build": BUILD}
     args = list(args)
     for name, read in (("only", lambda text: {int(key) for key in text.split(",")}),
                        ("maps", lambda text: {int(map_id) for map_id in text.split(",")}),
-                       ("pictures", Path), ("processes", int), ("memory", float)):
+                       ("pictures", Path), ("processes", int), ("memory", float), ("build", int)):
         if f"--{name}" in args:
             at = args.index(f"--{name}")
             found[name] = read(args[at + 1])
@@ -1726,33 +1856,34 @@ def main():
     across(tiles)
     across_drops(tiles)
     for key, value in tiles.items():
-        tiles[key] = value[:7]  # what the next tiles' drops found along its edges, no longer needed
+        tiles[key] = value[:7]  # the drops off its edge and what the next tiles' drops found there, no longer needed
     tiles = kept(tiles, regions(tiles, landings(tiles, ends())))
-    lines, total, count, fallen = [], 0, 0, 0
+    lines, total, count, fallen, hopped = [], 0, 0, 0, 0
     for key in sorted(tiles):
         if only and key not in only:
             continue
-        rects, links, falls = tiles[key]
+        rects, links, falls, leaps = tiles[key]
         if pictures:
             picture(pictures, key, rects, links)
         if only:
             continue  # no staging of a few tiles: their region numbers cannot agree with the master's (regions)
-        text = block(rects, links, key, tiles, falls)
+        text = block(rects, links, key, tiles, falls, leaps)
         total += len(text)
         count += len(rects)
         fallen += sum(len(list_) for list_ in falls.values())
+        hopped += sum(len(list_) for list_ in leaps.values())
         continent, rest = divmod(key, GRID * GRID)
         row, column = divmod(rest, GRID)
         around = [continent * GRID * GRID + (row + dr) * GRID + (column + dc)
                   for dr, dc, _ in NEXT.values() if (continent * GRID * GRID + (row + dr) * GRID + (column + dc)) in tiles]
-        lines.append({"set": "Walking", "key": key, "game": "forever", "build": BUILD, "src": "game",
+        lines.append({"set": "Walking", "key": key, "game": "forever", "build": given["build"], "src": "game",
                       "fields": {"map": continent, "links": sorted(around), "block": text}})
     if only:
         print(f"Read {len(only & set(tiles))} of {len(only)} tiles (--only)" + (f", their pictures in {pictures}" if pictures else "")
               + ": no staging written, a few tiles' region numbers cannot agree with the master's.")
         return 0
     held = save(STAGING, lines, maps)
-    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} tiles, {count} rectangles, {fallen} drops, {total // 1024} KB of blocks"
+    print(f"Wrote {STAGING.relative_to(ROOT)}: {len(lines)} tiles, {count} rectangles, {fallen} drops, {hopped} hops, {total // 1024} KB of blocks"
           + (f"; {held - len(lines)} tiles of other maps kept." if maps else "."))
     return 0
 

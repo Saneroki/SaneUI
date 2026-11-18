@@ -752,31 +752,33 @@ local routesFolder = io.popen("mktemp -d -t saneui-routes-XXXXXX"):read("*l") --
 local routesPath = routesFolder .. "/Routes"
 os.execute(("mkdir -p '%s'"):format(routesPath))
 local walkBlocks = {
-    [3104] = { 2,
+    [3104] = { 3,
         { 3, 1, 1,   1, 2, 1,   1, 1, 7 },
         { 0, 0, 128, 256, 160,   128, 100, 32, 20, 160,   160, 0, 96, 240, 160,   128, 200, 32, 10, 160,   240, 248, 8, 8, 160 },
-        { 0,   0,   2, 15, 2,   1, 0,   0 }, {} },
-    [3105] = { 2, { 1, 1, 1 }, { 0, 0, 64, 256, 160 }, { 1, 14 }, {} },
-    [6176] = { 2,
+        { 0,   0,   2, 15, 2,   1, 0,   0 }, {}, {} },
+    [3105] = { 3, { 1, 1, 1 }, { 0, 0, 64, 256, 160 }, { 1, 14 }, {}, {} },
+    [6176] = { 3,
         { 1, 1, 1,   1, 1, 1,   2, 1, 1,   1, 1, 2 },
         { 0, 0, 64, 128, 40,   64, 0, 64, 128, 20,   64, 0, 64, 128, 160,   128, 0, 128, 128, 40,   160, 32, 32, 32, 320 },
-        { 8, -2, 60, 67, 5, -2, 0, 7, 10,   0,   0,   0,   0 }, {} },
-    [6177] = { 2,
+        { 8, -2, 60, 67, 5, -2, 0, 7, 10,   0,   0,   0,   0 }, {}, {} },
+    [6177] = { 3,
         { 2, 1, 3,   1, 1, 4,   1, 1, 5 },
         { 0, 0, 128, 256, 40,   128, 128, 128, 128, 40,   128, 0, 128, 128, 320,   144, 144, 96, 96, -80 },
-        { 0, 0, 0, 0 }, {} },
-    [6178] = { 2, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 }, {} },
-    [6179] = { 2, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
-               { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 }, {} },
-    [2340] = { 2, { 1, 1, 11,   1, 3, 11 }, { 0, 0, 256, 256, 240,   0, 112, 240, 32, -160 }, { 0, 0 }, {} },
-    [2592] = { 2, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 2 }, {} },
-    [2593] = { 2, { 2, 1, 20,   1, 1, 20 }, { 0, 0, 128, 256, 40,   144, 0, 112, 256, 40,   128, 0, 16, 16, 40 },
-               { 5, -2, 0, 15, 10, 4,   1, 2,   4, -2, 0, 15, 5 }, {} },
-    [2594] = { 2, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 2, 9, 2 }, {} },
-    [2595] = { 2, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 4 }, {} },
-    [2600] = { 2, { 1, 1, 21 }, { 0, 0, 256, 256, 40 }, { 0 }, {} },
-    [2720] = { 2, { 1, 1, 30,   1, 1, 30,   1, 1, 30 }, { 0, 0, 128, 256, 120,   136, 0, 120, 256, 40,   112, 0, 8, 8, 360 },
-               { 0, 0, 0 }, { 0, 1, 0, 255, 5, 20,   2, 1, 0, 7, 0, 60 } },
+        { 0, 0, 0, 0 }, {}, {} },
+    [6178] = { 3, { 1, 1, 6,   1, 1, 6 }, { 0, 0, 256, 128, 40,   64, 32, 128, 64, -80 }, { 0, 0 }, {}, {} },
+    [6179] = { 3, { 1, 1, 7,   1, 3, 8,   1, 3, 9,   1, 3, 10 },
+               { 0, 0, 256, 256, 40,   0, 0, 64, 64, 200,   16, 16, 32, 32, 260,   52, 16, 8, 32, 236 }, { 0, 0, 0, 0 }, {}, {} },
+    [2340] = { 3, { 1, 1, 11,   1, 3, 11 }, { 0, 0, 256, 256, 240,   0, 112, 240, 32, -160 }, { 0, 0 }, {}, {} },
+    [2592] = { 3, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 2 }, {}, {} },
+    [2593] = { 3, { 2, 1, 20,   1, 1, 20 }, { 0, 0, 128, 256, 40,   144, 0, 112, 256, 40,   128, 0, 16, 16, 40 },
+               { 5, -2, 0, 15, 10, 4,   1, 2,   4, -2, 0, 15, 5 }, {}, {} },
+    [2594] = { 3, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 2, 9, 2 }, {}, {} },
+    [2595] = { 3, { 1, 1, 20 }, { 0, 0, 256, 256, 40 }, { 1, 4 }, {}, {} },
+    [2600] = { 3, { 1, 1, 21 }, { 0, 0, 256, 256, 40 }, { 0 }, {}, {} },
+    [2720] = { 3, { 1, 1, 30,   1, 1, 30,   1, 1, 30 }, { 0, 0, 128, 256, 120,   136, 0, 120, 256, 40,   112, 0, 8, 8, 360 },
+               { 0, 0, 0 }, { 0, 1, 0, 255, 5, 20,   2, 1, 0, 7, 0, 60 }, {} },
+    [2784] = { 3, { 1, 1, 31,   1, 1, 31 }, { 0, 0, 128, 256, 40,   128, 0, 128, 256, 52 }, { 0, 0 }, {},
+               { 0, 1, 0, 255, 5, 3,   1, 3, 0, 255, 0, -3 } },
 }
 -- Their gates (dev/tools/walk-gates' field): one along each border between two of them; through 2593 by its door 718
 -- yards from its west gate's middle to its east one's, across 2594 533. 2600's way between its two gates 400 yards,
@@ -796,7 +798,7 @@ Set(routesPath .. "/Walking.lua", "Walking", "00000008", "int", '"map", "links",
     .. 'R[2340] = "70245\t\t0\t\tblock:2340"\n'
     .. 'R[2592] = "70245\t\t0\t2593\tblock:2592\tgates:2592"\nR[2593] = "70245\t\t0\t2592\0302594\tblock:2593\tgates:2593"\n'
     .. 'R[2594] = "70245\t\t0\t2593\0302595\tblock:2594\tgates:2594"\nR[2595] = "70245\t\t0\t2594\tblock:2595\tgates:2595"\n'
-    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\nR[2720] = "70245\t\t0\t\tblock:2720"\n')
+    .. 'R[2600] = "70245\t\t0\t\tblock:2600\tgates:2600"\nR[2720] = "70245\t\t0\t\tblock:2720"\nR[2784] = "70245\t\t0\t\tblock:2784"\n')
 W.AddSets(routesPath)
 C_EncodingUtil = { DecodeBase64 = function(text) return text end, DecompressString = function(text) return text end,
                    DeserializeCBOR = function(text)
@@ -5818,6 +5820,22 @@ end)()
     Gates.Forget()
     check(east and math.abs(east - (1784.33 - 418)) < 0.5 and west and math.abs(west - 1784.33) < 0.5,
         "across a tile by its gates: down its way down the way it goes, the walk the other way")
+end)()
+-- A hop (tile 2784): over the step both ways, up at the climb's price; the two fields one part of the coarse layer.
+;(function()
+    local top = -11 * Coords.TILE
+    local tile = Walk.Tile(2784)
+    local side, first, last, next, other, rise, hop = Walk.Drop(tile, 1, 1)
+    local back = select(7, Walk.Drop(tile, 2, 1))
+    check(tile and side == 1 and other == 2 and rise == 3 and hop and back and select(6, Walk.Drop(tile, 2, 1)) == -3,
+        "a hop read with the drops: up the step with its rise, and back down, both marked")
+    local wu, wv, eu, ev = 60 * s, top - 128 * s, 200 * s, top - 128 * s
+    local _, up = Search.Walk(1415, wu, wv, eu, ev)
+    local _, down = Search.Walk(1415, eu, ev, wu, wv)
+    check(up and down and math.abs(up - (140 * s + 3 * Search.CLIMB)) < 0.5 and math.abs(down - 140 * s) < 0.5,
+        "over the hop both ways: up at its climb's price, down at its yards alone")
+    local parts = ns.Gates.Parts(tile)
+    check(parts[1] == parts[2], "a hop joins two surfaces into one part, as an opening does")
 end)()
 -- The journey: the pin far away (Elwynn's south west, 1750 yards), a flight point near the player and one near
 -- the pin, both known: walk, fly, walk.

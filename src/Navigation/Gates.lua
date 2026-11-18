@@ -215,8 +215,8 @@ function Gates.Down(foot, ride, water)
     return cost
 end
 
--- Each rectangle's part on a walking tile: the rectangles one can walk between on the tile, numbered by the lowest
--- of their surfaces (as dev/tools/walk-gates numbers them). Worked out once a tile.
+-- Each rectangle's part on a walking tile: the rectangles one can walk between on the tile (its openings and hops),
+-- numbered by the lowest of their surfaces (as dev/tools/walk-gates numbers them). Worked out once a tile.
 function Gates.Parts(tile)
     local parts = tile.parts
     if parts then return parts end
@@ -232,10 +232,11 @@ function Gates.Parts(tile)
         return root
     end
     for index = 1, tile.count do
-        local list, a = opens[index], surface[index]
-        for n = 1, #list do
-            local o = list[n]
-            if o[4] == 0 and surface[o[5]] ~= a then
+        local list, a, leaps = opens[index], surface[index], Walk.Drops(tile, index)
+        for n = 1, #list + #leaps do
+            local o = n <= #list and list[n] or leaps[n - #list]
+            -- An opening on the tile, or a hop (both ways, as an opening; never a drop: one way)
+            if o[4] == 0 and surface[o[5]] ~= a and (n <= #list or o[7]) then
                 local ra, rb = Find(a), Find(surface[o[5]])
                 if ra < rb then parent[rb] = ra elseif rb < ra then parent[ra] = rb end
             end

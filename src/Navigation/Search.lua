@@ -10,10 +10,11 @@ local _, ns = ...
 --  points; a yard swum the water's price, Search.WATER or the planner's; and
 --  Search.CLIMB times what it climbs); down the drops too, one way (off a ledge or
 --  a cliff, Walk.FALL high at most: the way across and Search.DROP times each yard
---  fallen); then the line pulled straight through the openings it passes (a
---  funnel: corners only where something is in the way; a drop's way off and where it
---  lands), the openings drawn in a little from their ends so the line does not
---  graze a wall. Knows no frames.
+--  fallen), and over the hops both ways (up a mountain's trail: the way across and
+--  the climb); then the line pulled straight through the openings it passes (a
+--  funnel: corners only where something is in the way; a drop's or a hop's way off
+--  and where it lands), the openings drawn in a little from their ends so the line
+--  does not graze a wall. Knows no frames.
 --
 --  In two steps, over the coarse layer (Gates.lua): first the price (Search.Price),
 --  rectangle by rectangle only on the tiles where the walk starts and ends, across
@@ -443,13 +444,14 @@ local function Run(sources, goals, u2, v2, check, water, opts)
                         end
                     end
                 end
-                -- Down its drops, one way: to where the line on to the aim crosses the way off, across to where it
-                -- lands, each yard fallen Search.DROP more. Into another tile only where that one is searched
-                -- rectangle by rectangle (no gate crosses a border down a drop).
+                -- Down its drops, one way, and over its hops: to where the line on to the aim crosses the way off,
+                -- across to where it lands, each yard fallen Search.DROP more, each yard a hop climbs Search.CLIMB
+                -- more. Into another tile only where that one is searched rectangle by rectangle (no gate crosses a
+                -- border down a drop).
                 local drops = Walk.Drops(tile, index)
                 for n = 1, #drops do
-                    if drops[n][6] <= Walk.FALL then
-                        local side, low, high, next, other, height = Walk.Drop(tile, index, n)
+                    if drops[n][7] or drops[n][6] <= Walk.FALL then
+                        local side, low, high, next, other, height, hop = Walk.Drop(tile, index, n)
                         local nid = side and next.key * 65536 + other
                         if nid and not closed[nid] and (not within or within[next.key])
                             and not (next ~= tile and gates and not near[next.key] and Gates.Tile(next.key)) then
@@ -457,7 +459,12 @@ local function Run(sources, goals, u2, v2, check, water, opts)
                             local pu, pv = Through(fu, fv, au, av, bu, bv, tu, tv)
                             local qu, qv = pu + cu - au, pv + cv - av
                             local cost = here + sqrt((pu - fu) ^ 2 + (pv - fv) ^ 2) * weight
-                                + sqrt((qu - pu) ^ 2 + (qv - pv) ^ 2) + height * Search.DROP
+                                + sqrt((qu - pu) ^ 2 + (qv - pv) ^ 2)
+                            if not hop then
+                                cost = cost + height * Search.DROP
+                            elseif height > 0 then
+                                cost = cost + height * Search.CLIMB
+                            end
                             if Reach(nid, cost, id, qu, qv, Onward(m, tile, next)) then
                                 viaSide[nid], viaFirst[nid], viaLast[nid], viaDrop[nid] = side, low, high, true
                                 tiles[nid], indexes[nid] = next, other

@@ -1853,6 +1853,31 @@ samples, *The ground as the game draws it*, below).
     median journey 1.1 %, at most 25 %), 173 ms a route (149); the 29 fixed journeys all from the player to the pin
     with their legs. A walk's line crosses a drop's steep ground over no floor (by design: the walker slides or
     falls there).
+- **Built (2026-11-18): hops, up a mountain's trail.** Saneroki: "I know I can go over the right side of undercity from
+  south to north by climbing up the mountain and then jump down the cliff but the route does not show that route."
+  - **Why it did not:** the ridge east of the Undercity's ruins (130 to 218 yards high) was a region of its own, so its
+    drops north were left out. Over the game's own triangles the gentlest way up from the lake's shore (27 yards) to its
+    top is about 480 yards, walkable but for 8 triangles (one stretch of 4 at 53 to 57 degrees, 8 yards, 5 up; four
+    single ones); the steepest of any way onto it 57 degrees, from both sides. The walking data lost it twice: a
+    sample's middle lies on the diagonal between two of its cell's four triangles and the samples stand for the west
+    and east ones alone (the trail zigzags over the north and south ones), and the steep bits, a few yards wide, split
+    it into pockets the samples cannot join (steps of 3 to 4 yards between neighbours).
+  - **Hops** (`dev/tools/walk-data`, format 3): from every floor on the ground to the first floors on the ground within
+    `HOP` (2) samples along each side that the samples do not join, where the triangles of the cells round both make a
+    way (a search over them: none steeper than `STEEPEST`, 60 degrees, at most `CROSSED`, 2, steeper than 50: hopped
+    over) and nothing built stands there (a building's walls the triangles do not know: Stormwind's basin stays shut).
+    Both ways, joining regions as openings do: the ridge is the main region's, and its drops are kept. On its own tile
+    only. Walkable triangles alone (no steep one) did not join it; one of up to 60 degrees did.
+  - **Taken:** `Walk.lua` lists them with the drops, marked; the search both ways at their yards and the climb's price;
+    the coarse layer's parts and the costs between gates as openings (`dev/tools/walk-gates`, `Gates.Parts`); the
+    floor's following.
+  - **The master's size:** `Walking.jsonl` is a plain file in git, 80 MB with a version a build; its host refuses files
+    over 100 MB. A rerun on a world that did not move corrects that build's version in place (`--build`).
+  - **Measured:** 401,238 hops, 999,359 drops (more within one region now), 3.18 million rectangles (pockets kept),
+    36.0 MB of blocks (31.0), the master 86.9 MB (card #567). That route: 1,001 yards (2,316 round the ridge's east end),
+    up along the ruins' east wall to about 110 yards and down a drop of 47. Offline (200 journeys): none failing, 2
+    walks drawn straight (3), 164 ms a route, 1 % fewer yards walked; two journeys walk over the mountains where they
+    flew.
 - **Not yet:** an instance's portal or a closed
   gate is no collision (the walking data goes through Zul'Gurub's gate); a doodad the game shows only at times (a
   door, a gate) is a wall all the time; the giant trees' roots are walls where they lie on steep ground; diving (a

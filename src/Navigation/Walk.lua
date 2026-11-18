@@ -20,7 +20,7 @@ local _, ns = ...
 --      Walk.Nearest(continent, u, v, reach, region, kind)  the nearest rectangle within reach yards
 --      Walk.Regions(continent, u, v, reach)   the regions of the floors under a point and around it
 --      Walk.Opening(tile, index, n), Walk.Openings(tile, index, fn)   a rectangle's openings
---      Walk.Drops(tile, index), Walk.Drop(tile, index, n)   its drops: one way down off a ledge or a cliff
+--      Walk.Drops(tile, index), Walk.Drop(tile, index, n)   its drops (one way down off a ledge or a cliff) and hops
 --      Walk.Fall(tile, index, side, first, last, next, other)   a drop's way off and where it lands, in the plane
 --      Walk.Follow(continent, u, v, key, index, fromU, fromV)   the floor a walker has come to from the one before
 --      Walk.Straight(tile, index, u1, v1, u2, v2, dry)   whether a walker on a floor gets to a place going straight
@@ -43,14 +43,17 @@ local _, ns = ...
 --  a ledge, a cliff or a mountainside too steep to walk, the ground falling away
 --  over at most 24 samples between; with its height in whole yards. The search
 --  takes those up to Walk.FALL, never back up; the floor's following takes any
---  (the walker fell).
+--  (the walker fell). A hop: over a step or a short steep stretch of a mountain's
+--  trail between two floors, both ways (found from each end), with its rise; the
+--  game's own triangles make a way there that the samples split. Listed with the
+--  drops, marked.
 -------------------------------------------------------------------------------
 local Core = SaneUI.Core
 local Coords = ns.Coords
 local Walk = {}
 ns.Walk = Walk
 
-Walk.FORMAT = 2                    -- the blocks' format (dev/tools/walk-data's FORMAT; 2: with the drops)
+Walk.FORMAT = 3                    -- the blocks' format (dev/tools/walk-data's FORMAT; 3: with the drops and hops)
 Walk.FALL = 54                     -- yards: the highest drop a walk takes (49 metres; Saneroki, 2026-11-18: "A fall of
                                    -- 50 meters is safe", measured with /sane falls). dev/tools/walk-gates' FALL alike
 Walk.SIDE = 256                    -- samples along a tile's side
@@ -140,7 +143,8 @@ end
 -- openings only once they are needed (Walk.Links): they take most of an unpacking's time and memory.
 local function Read(tile, block)
     local surfaces, rects = block[2], block[3]
-    tile.rects, tile.kind, tile.region, tile.surface, tile.links, tile.falls = rects, {}, {}, {}, block[4], block[5]
+    tile.rects, tile.kind, tile.region, tile.surface, tile.links = rects, {}, {}, {}, block[4]
+    tile.falls, tile.leaps = block[5], block[6]
     tile.count = #rects / 5
     local index, number = 0, 0
     for s = 1, #surfaces, 3 do
@@ -153,8 +157,9 @@ local function Read(tile, block)
 end
 
 -- A tile's openings (tile.opens[index]: a rectangle's), worked out the first time they are needed: those of one
--- surface that touch (Touching), and those the block writes, once on their tile, with their other way. Its drops too
--- (tile.drops[index]: { side, first, last, where, index, height } each, only of the rectangles that have any).
+-- surface that touch (Touching), and those the block writes, once on their tile, with their other way. Its drops and
+-- hops too (tile.drops[index]: { side, first, last, where, index, height } each, a hop's with its rise and true
+-- after it; only of the rectangles that have any).
 function Walk.Links(tile)
     local opens = tile.opens
     if opens then return opens end
@@ -168,7 +173,14 @@ function Walk.Links(tile)
         table.insert(drops[rect], { falls[at + 1], falls[at + 2], falls[at + 3], target % 5, math.floor(target / 5) + 1,
                                     falls[at + 5] })
     end
-    tile.falls = nil
+    local leaps = tile.leaps
+    for at = 1, #leaps, 6 do
+        local rect, target = leaps[at] + 1, leaps[at + 4]
+        drops[rect] = drops[rect] or {}
+        table.insert(drops[rect], { leaps[at + 1], leaps[at + 2], leaps[at + 3], target % 5, math.floor(target / 5) + 1,
+                                    leaps[at + 5], true })
+    end
+    tile.falls, tile.leaps = nil, nil
     for index = 1, tile.count do opens[index] = {} end
     local surface, first = tile.surface, 1
     for index = 1, tile.count do
@@ -235,7 +247,7 @@ function Walk.Tile(key)
     local text = Walking:Get(key, "block")
     local block = text and Walk.Unpack(text)
     if type(block) ~= "table" or block[1] ~= Walk.FORMAT or type(block[2]) ~= "table" or type(block[3]) ~= "table"
-        or type(block[4]) ~= "table" or type(block[5]) ~= "table" then
+        or type(block[4]) ~= "table" or type(block[5]) ~= "table" or type(block[6]) ~= "table" then
         open[key] = false
         return nil
     end
@@ -415,22 +427,23 @@ function Walk.Openings(tile, index, fn)
     end
 end
 
--- A rectangle's drops: { { side, first, last, where, index, height }, ... } (none: an empty list, not to be changed).
+-- A rectangle's drops and hops: { { side, first, last, where, index, height (a hop's rise), hop }, ... } (none: an
+-- empty list, not to be changed).
 local NONE = {}
 function Walk.Drops(tile, index)
     if not tile.opens then Walk.Links(tile) end
     return tile.drops[index] or NONE
 end
 
--- A rectangle's drop n (1 to #Walk.Drops(tile, index)): its side, the first and last sample along it (on the
--- rectangle's own tile), the tile (unpacked) and index of the rectangle it lands on, and its height in yards; nil for one
--- into a tile that is not there.
+-- A rectangle's drop or hop n (1 to #Walk.Drops(tile, index)): its side, the first and last sample along it (on the
+-- rectangle's own tile), the tile (unpacked) and index of the rectangle it lands on, its height in yards (a hop's
+-- rise) and whether it is a hop; nil for one into a tile that is not there.
 function Walk.Drop(tile, index, n)
     local drop = Walk.Drops(tile, index)[n]
     local next = tile
     if drop[4] > 0 then next = Walk.Tile(tile.key + STEP[drop[4] - 1]) end
     if not next or drop[5] > next.count then return nil end
-    return drop[1], drop[2], drop[3], next, drop[5], drop[6]
+    return drop[1], drop[2], drop[3], next, drop[5], drop[6], drop[7] == true
 end
 
 -- A drop in the plane: the way off (u1, v1, u2, v2: its stretch of the rectangle's side, as Walk.Portal gives it), then

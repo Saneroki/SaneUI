@@ -474,7 +474,8 @@ def blocked(rects, links):
 
 rects, owner, columns, links, _ = shore
 data = blocked(rects, links)
-check("a block: its format, surfaces, rectangles, openings, drops", (data[0], len(data), data[4]), (walk.FORMAT, 5, []))
+check("a block: its format, surfaces, rectangles, openings, drops, hops", (data[0], len(data), data[4], data[5]),
+      (walk.FORMAT, 6, [], []))
 check("each rectangle five numbers", len(data[2]), 5 * len(rects))
 check("the surfaces add up to the rectangles", sum(data[1][0::3]), len(rects))
 written = []
@@ -689,8 +690,8 @@ alone[:, :4] = np.nan
 specks[:, :4] = level[:, :4]
 east_rects, east_owner, east_here = fallen(alone, found, specks, built, level)
 falls_east, pending_east = walk.drops(east_here, east_owner)
-tiles = {middle: (west_rects, {}, {}, set(), {}, falls_west, pending_west, walk.strips(west_here)),
-         middle + 1: (east_rects, {}, {}, set(), {}, falls_east, pending_east, walk.strips(east_here))}
+tiles = {middle: (west_rects, {}, {}, set(), {}, falls_west, {}, pending_west, walk.strips(west_here)),
+         middle + 1: (east_rects, {}, {}, set(), {}, falls_east, {}, pending_east, walk.strips(east_here))}
 walk.across_drops(tiles)
 crossing = [(side, target // 65536, east_rects[target % 65536][0], round(height, 1))
             for list_ in falls_west.values() for side, _, target, height in list_]
@@ -710,6 +711,54 @@ data = decode(zlib.decompress(base64.b64decode(walk.block(kept_tiles[0][0], kept
                                                             kept_tiles[0][2])), -15))[0]
 check("the block's drops: off which rectangle, its side, its first and last sample, onto which (index x 5 + where), "
       "its height", data[4], [0, 1, 0, 63, 5, 20])
+
+# --- Hops ------------------------------------------------------------------------------------------
+# The game's triangles of a tile, made up: flat (10 degrees) but a band of cells (columns 50 and 51) of another slope.
+def mesh(band):
+    tri = np.full((SIDE // 2, SIDE // 2, 4), 10.0)
+    tri[:, 50:52, :] = band
+    return tri
+
+
+check("a sample's middle lies between two triangles of its cell: the north or south one and the west or east one",
+      (walk.touching(0, 0), walk.touching(1, 1), walk.touching(5, 2)), (((0, 0, 0), (0, 0, 3)), ((0, 0, 2), (0, 0, 1)),
+                                                                        ((2, 1, 2), (2, 1, 3))))
+check("a way over the triangles round two samples: walkable ones, none too steep, a few steep ones hopped over",
+      [walk.reach(mesh(band), (40, 99), (40, 104)) for band in (30.0, 55.0, 65.0)], [True, False, False])
+hoppable = mesh(30.0)
+hoppable[:, 50, 1] = hoppable[:, 50, 3] = 55.0  # a cell's west and east triangles of 55 degrees, its north and south not
+check("across a cell over its west and east triangles, steep (two crossed: CROSSED), its north one between; over two "
+      "steep cells side by side two triangles at their meeting; through a whole steep cell (three), not",
+      (walk.reach(hoppable, (40, 99), (40, 104)), walk.reach(mesh(55.0), (40, 101), (40, 102)),
+       walk.reach(mesh(55.0), (40, 99), (40, 104))), (True, True, False))
+# A step of 3 yards between two fields (columns 0 to 127 at 10 yards, 128 to 255 at 13): too high for the samples to
+# join (CLIMB), a hop where the triangles between make a way, none where a building stands there or the step is sheer.
+alone, found, specks, built = ground()
+alone[:, 128:] = 13.0
+level = alone.copy()
+rects, owner, here = fallen(alone, found, specks, built, level)
+west_field, east_field = owner[(5, 127, 0)], owner[(5, 128, 0)]
+tri = np.full((SIDE // 2, SIDE // 2, 4), 10.0)
+tri[:, 63:65, :] = 54.0
+tri[:, 64, :] = 20.0
+leaps = walk.hops(here, owner, tri, built)
+check("a step too high for the samples, a way over the game's triangles: a hop, both ways, with its rise",
+      (sorted({(side, rects[target][0] >= 128, round(rise)) for list_ in leaps.values() for side, _, target, rise in list_}),
+       sum(len(list_) for list_ in leaps.values())), ([(1, True, 3), (3, False, -3)], 2 * SIDE))
+tall = tri.copy()
+tall[:, 63:65, :] = 70.0
+walled_off = built.copy()
+walled_off[:, 120:136] = True
+check("none over a sheer step, nor where a building stands", (walk.hops(here, owner, tall, built),
+                                                              walk.hops(here, owner, tri, walled_off)), ({}, {}))
+links = walk.openings(rects, owner, here[0], {})
+regions = walk.regions({0: (rects, links, {}, set(range(len(rects))), {}, {}, leaps)})
+check("a hop joins two regions (both ways)", regions[(0, west_field)] == regions[(0, east_field)], True)
+kept_tiles = walk.kept({0: (rects, links, {}, set(), {}, {}, leaps)}, regions)
+data = decode(zlib.decompress(base64.b64decode(walk.block(kept_tiles[0][0], kept_tiles[0][1], 0, kept_tiles,
+                                                            kept_tiles[0][2], kept_tiles[0][3])), -15))[0]
+check("the block's hops: six numbers each as a drop's, its rise, from both ends",
+      (len(data[5]) % 6, sorted({value for value in data[5][5::6]})), (0, [-3, 3]))
 
 # --- Regions ---------------------------------------------------------------------------------------
 small = [[0, 0, 4, 4, 40, LAND, 0], [10, 10, 64, 64, 40, LAND, 1]]
@@ -945,9 +994,11 @@ given = walk.options(["files", "tables"])
 check("options: the folders, three workers unless asked (a full run with ten reached the app's memory cap), MEMORY GB",
       (given["folder"], given["tables"], given["processes"], given["memory"], walk.PROCESSES),
       (Path("files"), Path("tables"), 3, walk.MEMORY, 3))
-given = walk.options(["files", "tables", "--processes", "5", "--memory", "10", "--maps", "1,2991", "--only", "4100"])
-check("options: --processes, --memory, --maps and --only read",
-      (given["processes"], given["memory"], given["maps"], given["only"]), (5, 10.0, {1, 2991}, {4100}))
+given = walk.options(["files", "tables", "--processes", "5", "--memory", "10", "--maps", "1,2991", "--only", "4100",
+                      "--build", "70938"])
+check("options: --processes, --memory, --maps, --only and --build read (the build BUILD unless asked)",
+      (given["processes"], given["memory"], given["maps"], given["only"], given["build"], walk.options(["a", "b"])["build"]),
+      (5, 10.0, {1, 2991}, {4100}, 70938, walk.BUILD))
 check("options: not the usage's", walk.options(["files"]), None)
 
 # --- The coarse layer (dev/tools/walk-gates) ----------------------------------------------------------
@@ -968,7 +1019,7 @@ def layer(blocks):
 def made(texts, tiles, borders, key):
     """A tile's field as the tool makes it, read back: [format, check, rects, north, east, south, west, costs, ways
     down]."""
-    job = (key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "drops", "part", "key")},
+    job = (key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "drops", "hops", "part", "key")},
            gates.sides(tiles, borders, key), gates.check_of(texts, key))
     return gates.unpack(gates.field(job)[1])
 
@@ -1062,6 +1113,15 @@ kept_down = {(a, b) for a, b, *_ in (lambda f: [f[at:at + 4] for at in range(0, 
 check("one part: a way down kept where it costs less than the walk, not where the walk is cheaper, never back up",
       ((8, 4) in kept_down, (5, 1) in kept_down, tiles[2900]["part"], all(a > 4 >= b for a, b in kept_down)),
       (True, False, [1, 1, 1], True))
+# The cliff tile with a hop (both ways) between the plateau and the field at its north end: one part, its gates' walks
+# both ways over the hop, priced the same each way but for the climb.
+hopped = dict(cliff)
+hopped[2800] = [3, [1, 1, 20, 1, 1, 20], [0, 0, 128, 256, 120, 136, 0, 120, 256, 40], [1, 4, 1, 2], [0, 1, 0, 255, 5, 20],
+                [0, 1, 0, 15, 5, -20, 1, 3, 0, 15, 0, 20]]
+texts, tiles, borders = layer(hopped)
+both_ways = made(texts, tiles, borders, 2800)
+check("a hop joins two parts as an opening does: one part, a walk between each two gates both ways",
+      (tiles[2800]["part"], both_ways[7][0]), ([1, 1], 8))
 lua = {name: (ROOT / "src" / "Navigation" / f"{name}.lua").read_text(encoding="utf-8") for name in ("Walk", "Search", "Gates")}
 check("walk-data's FORMAT is Walk.lua's, walk-gates' Gates.lua's; walk-gates' FALL Walk.FALL, its DROP Search.DROP",
       [re.search(pattern, lua[name]).group(1) for name, pattern in (

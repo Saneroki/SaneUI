@@ -1345,6 +1345,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   mountainside too steep to walk, with its height in whole yards (`Walk.Drops`, `Walk.Drop`; in the plane its way off
   and where it lands, `Walk.Fall`). A walk takes those up to `Walk.FALL` (54 yards, 49 metres: Saneroki measured a fall
   of 50 metres safe with `/sane falls`); the floor's following takes any (the walker fell); a straight walk none.
+  **Hops** (format 3, 2026-11-18): over a step or a short steep stretch of a mountain's trail between two floors on
+  the ground, both ways, with its rise: listed with the drops, marked (`Walk.Drop`'s seventh answer); a walk takes them
+  at their yards and the climb's price, the coarse layer's parts and costs as openings.
 - **Gates** (`Gates.lua`, no frames): the walking data's coarse layer, the set *Walking*'s field `gates`, made by
   `dev/tools/walk-gates` from its blocks: per terrain tile its gates, where one walks across its border into the next
   tile (the openings between a part of the tile and a part of the next, joined along the border and cut into pieces of
@@ -1710,6 +1713,17 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-18, hops: up a mountain's trail.** Saneroki: "it does not work. I know I can go over the right side of
+  undercity from south to north by climbing up the mountain and then jump down the cliff but the route does not show
+  that route." The ridge east of the Undercity's ruins was a region of its own (no walk up it in the walking data), so
+  its drops were left out (a drop only within one region). On the game's own terrain the gentlest way up from the lake's
+  shore is walkable all along but for eight triangles (the steepest 57 degrees, a few yards each); the walking data lost
+  it twice: a sample stands for its cell's west or east triangle alone (the trail zigzags over the north and south
+  ones), and steep bits a few yards wide split it into pockets. Now `dev/tools/walk-data` adds hops (format 3): between
+  two ground floors up to 2 samples apart that the samples do not join, where the triangles of the cells round them
+  make a way with at most 2 over 50 degrees, none over 60, nothing built there; both ways, joining regions as openings
+  do. The search, the coarse layer and the floor's following take them. The walking data rebuilt as a correction of
+  the day's version (`--build`: the master is a plain file near its host's 100 MB): 401,238 hops, 999,359 drops, 36.0 MB of blocks. That route now: 1,001 yards (2,316), up the valley along the ruins' east wall to about 110 yards, down a drop of 47.
 - **2026-11-18, the setup step by step; no right click zoom:** Saneroki: "Can you make a onboarding window for the
   navigation module", with the hot corner one of the first pages (the mouse into it, or a click in it, or a key;
   "Remind people that it is possible to use a combination of things"), "a very big clear arror during the onbarding

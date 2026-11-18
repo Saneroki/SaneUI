@@ -5,7 +5,7 @@ field gates (Doc/ideas/Navigation.md, *The coarse layer*). A route's walk crosse
 end's by their gates first, then is searched rectangle by rectangle along that way (src/Navigation/Gates.lua, Search.lua).
 
   a part      the rectangles of a tile one can walk between without leaving it: its surfaces, joined by the openings
-              between them on the tile; numbered by its lowest surface (from 1, in the block's order)
+              and the hops between them on the tile; numbered by its lowest surface (from 1, in the block's order)
   a gate      where a part of a tile meets a part of the next tile across their border: the openings between the two,
               joined where they touch along the border, cut into even pieces of at most PIECE samples; its point is
               the middle of its stretch, on the border. Listed on both tiles alike, in order along the border (first
@@ -13,10 +13,10 @@ end's by their gates first, then is searched rectangle by rectangle along that w
   a cost      of the walk between two gates of one part: the shortest way over the part's rectangles from one gate's
               point to the other's (Dijkstra, each step from where a rectangle was entered to the nearest point of the
               next opening, a yard swum at WATERS[0] yards on land), measured along the line pulled straight through
-              the openings it passes: its yards on land, the yards it swims, the yards it climbs and those it goes
-              down (the search counts each yard up a little more, Search.CLIMB). Where the way swims it is chosen again
-              with a yard swum at WATERS[1] (a rider's price) and kept too where that takes another way. Never down a
-              drop: each cost holds both ways
+              the openings and the hops it passes (a hop as a drop is: its way off and where it lands): its yards on
+              land, the yards it swims, the yards it climbs and those it goes down (the search counts each yard up a
+              little more, Search.CLIMB). Where the way swims it is chosen again with a yard swum at WATERS[1] (a
+              rider's price) and kept too where that takes another way. Never down a drop: each cost holds both ways
   a way down  from a gate to another of the tile (of its part or another), down the tile's drops (FALL high at most,
               one way: dev/tools/walk-data's drops; across a border none), where it costs SAVES yards less than the walk
               or the walk has none: as a cost, each yard fallen DROP yards more on land (Search.DROP), the climb its
@@ -44,7 +44,7 @@ north, east, south and west side, the costs and the ways down a drop:
                    a cost's but one way: the yards it climbs from the first to the second, the fall's price in its
                    yards on land
 
-Usage:  dev/tools/walk-gates [walking.jsonl] [--only key[,key...]] [--processes N]
+Usage:  dev/tools/walk-gates [walking.jsonl] [--only key[,key...]] [--processes N] [--build N]
         walking.jsonl: the set's lines (default the master's assets/data/Walking/Walking.jsonl, an entry's newest
         version); --only: those tiles' lines alone (their neighbours read too)
 """
@@ -108,9 +108,10 @@ def read(text):
     """A tile's block: its rectangles (column, row, width, height, z in quarter yards), each one's kind and surface
     (from 1), its openings [side, first, last, where, other] as Walk.lua finds them: those written (on the tile
     once, the other way added) and those between rectangles of one surface that touch (side None: along the whole
-    edge two rectangles share; where 0 on the tile, else 1 + the next tile's side; other from 0); and its drops per
-    rectangle, one way: (side, first, last, other, height), those on the tile up to FALL high alone."""
-    _, surfaces, flat, links, falls = unpack(text)
+    edge two rectangles share; where 0 on the tile, else 1 + the next tile's side; other from 0); its drops per
+    rectangle, one way: (side, first, last, other, height), those on the tile up to FALL high alone; and its hops per
+    rectangle (side, first, last, other, rise), both ways, as the openings."""
+    _, surfaces, flat, links, falls, *rest = unpack(text)
     count = len(flat) // 5
     rects = [tuple(flat[at * 5:at * 5 + 5]) for at in range(count)]
     kind, surface = [0] * count, [0] * count
@@ -125,6 +126,11 @@ def read(text):
         rect, side, first, last, target, height = falls[at:at + 6]
         if target % 5 == 0 and height <= FALL:
             drops[rect].append((side, first, last, target // 5, height))
+    hops = [[] for _ in range(count)]
+    leaps = rest[0] if rest else []
+    for at in range(0, len(leaps), 6):
+        rect, side, first, last, target, rise = leaps[at:at + 6]
+        hops[rect].append((side, first, last, target // 5, rise))
     at = 0
     for rect in range(count):
         stop = at + links[at]
@@ -162,7 +168,7 @@ def read(text):
                 if a <= b:
                     opens[rect].append([2, a, b, 0, other])
                     opens[other].append([0, a, b, 0, rect])
-    return {"rects": rects, "kind": kind, "surface": surface, "opens": opens, "drops": drops}
+    return {"rects": rects, "kind": kind, "surface": surface, "opens": opens, "drops": drops, "hops": hops}
 
 
 def side_of(a, b):
@@ -229,6 +235,11 @@ def parts(tile, key):
                 a, b = find(tile["surface"][rect]), find(tile["surface"][other])
                 if a != b:
                     parent[max(a, b)] = min(a, b)
+    for rect, list_ in enumerate(tile.get("hops") or ()):  # a hop joins as an opening does: both ways
+        for *_, other, _ in list_:
+            a, b = find(tile["surface"][rect]), find(tile["surface"][other])
+            if a != b:
+                parent[max(a, b)] = min(a, b)
     return [find(s) for s in tile["surface"]]
 
 
@@ -428,14 +439,18 @@ def ways(tile, gates, members, start, targets, water, down=False):
             if other not in cost or new < cost[other]:
                 cost[other], entry[other], parent[other] = new, (qu, qv), (rect, side, first, last)
                 heapq.heappush(heap, (new, other))
-        for side, first, last, other, height in tile["drops"][rect] if down else ():
+        # The hops both ways (a hop's way off, across and where it lands, as a drop's, no fall priced), and with down
+        # the drops.
+        gaps = [(side, first, last, other, 0) for side, first, last, other, _ in tile["hops"][rect]]
+        for side, first, last, other, height in gaps + (tile["drops"][rect] if down else []):
             if other in done:
                 continue
             seg = segment(rects[rect], side, first, last)
             qu, qv = held(fu, fv, seg)
             du, dv = landing(rects[rect], rects[other], side, seg)
+            rise = (rects[other][4] - rects[rect][4]) / 4
             new = (here + math.hypot(qu - fu, qv - fv) * SAMPLE * weight + math.hypot(du, dv) * SAMPLE
-                   + height * DROP)
+                   + height * DROP + (rise * CLIMB if rise > 0 else 0.0))
             if other not in cost or new < cost[other]:
                 cost[other], entry[other] = new, (qu + du, qv + dv)
                 parent[other] = (rect, side, first, last, (du, dv), height)
@@ -598,6 +613,11 @@ def main():
         at = args.index("--processes")
         processes = int(args[at + 1])
         del args[at:at + 2]
+    build = BUILD
+    if "--build" in args:  # as dev/tools/walk-data's: the build the lines are staged at
+        at = args.index("--build")
+        build = int(args[at + 1])
+        del args[at:at + 2]
     if len(args) > 1:
         print(__doc__.strip().splitlines()[-3], file=sys.stderr)
         return 2
@@ -614,7 +634,7 @@ def main():
     for key, tile in tiles.items():
         tile["part"] = parts(tile, key)
     borders = {(key, side): border(tiles, key, side) for key in tiles for side in (1, 2)}
-    jobs = [(key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "drops", "part", "key")},
+    jobs = [(key, {name: tiles[key][name] for name in ("rects", "kind", "opens", "drops", "hops", "part", "key")},
              sides(tiles, borders, key), check_of(blocks, key))
             for key in keys if not only or key in only]
     STAGING.parent.mkdir(parents=True, exist_ok=True)
@@ -628,7 +648,7 @@ def main():
                 print(f"{done} of {len(jobs)} tiles", file=sys.stderr, flush=True)
     with open(STAGING, "w", encoding="utf-8") as out:
         for key in sorted(made):
-            line = {"set": "Walking", "key": key, "game": "forever", "build": BUILD, "src": "game",
+            line = {"set": "Walking", "key": key, "game": "forever", "build": build, "src": "game",
                     "fields": {"gates": made[key]}}
             out.write(json.dumps(line, separators=(",", ":")) + "\n")
     print(f"Wrote {STAGING.relative_to(ROOT)}: {len(made)} tiles, {gates_count // 2} gates, {pairs_count} pairs of "
