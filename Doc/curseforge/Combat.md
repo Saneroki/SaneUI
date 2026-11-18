@@ -5,10 +5,10 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 [changelogs/Combat.md](changelogs/Combat.md).
 
 **The project was *SaneUI Nameplates*** (0.3.1 alpha, 2026-11-16) until the nameplates became a part of Combat
-(Saneroki, 2026-11-18: "Rename it SaneUI Combat"). On CurseForge, rename it (Name, Summary, Description, Avatar,
-Banner below; its id stays, so players who have it get Combat's next upload), and in `~/.config/saneui/curseforge.json`
-the project's key `Nameplates` becomes `Combat` with the name *SaneUI Combat*. Its first upload as Combat comes when
-Combat is promoted to alpha (`saneui promote Combat alpha`), at a version above 0.3.1.
+(Saneroki, 2026-11-18: "Rename it SaneUI Combat"). Its first upload as Combat: 0.3.2 alpha, 2026-11-18 (with
+SaneUI Core 0.3.3), to the same project id, so players who had SaneUI Nameplates get it; in
+`~/.config/saneui/curseforge.json` its key is `Combat`, named *SaneUI Combat*. On CurseForge the project itself is
+renamed by hand: Name, Summary, Description, Avatar, Banner below.
 
 | Field | Value |
 | --- | --- |
@@ -19,7 +19,7 @@ Combat is promoted to alpha (`saneui promote Combat alpha`), at a version above 
 | Avatar | `combat-avatar.png` of `saneui makelogos` (400 x 400) |
 | Banner | `combat-banner.png`, at the top of the description: after the project is made, uploaded under its Images and put in by its address (Markdown: `![SaneUI Combat](<address>)`) |
 | Relations | SaneUI Core: Required Dependency (each upload sends it too) |
-| Release type | By the module's stage (Combat is dev until promoted) |
+| Release type | Alpha, by the module's stage (since 0.3.2, 2026-11-18) |
 
 ## Description
 
