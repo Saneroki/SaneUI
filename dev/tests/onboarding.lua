@@ -402,12 +402,14 @@ do
     local holder = ons.Controls.Build(UIParent, "Garden", { { macro = "/editmode", command = "EDITMODE",
         text = "Place it in Edit Mode", tip = "Opens Edit Mode.", done = function() ran = ran + 1 end } }, 300)
     local row, cover = holder.rows[1], Cover("/editmode")
-    check(row and row.button._template == "UIPanelButtonTemplate" and cover and cover._parent == UIParent
+    check(row and row.button.outline and row.button.label._text == "Place it in Edit Mode" and cover and cover._parent == UIParent
         and cover._attributes.type == "macro" and cover._strata == ons.Controls.COVER and not cover:IsShown(),
         "the button seen a plain one; the game's secure button on UIParent, out of sight until the row shows")
     row.button._left, row.button._top = 500, 400
     row._scripts.OnShow(row)
     check(cover:IsShown() and cover._points[1][4] == 500 and cover._points[1][5] == 400, "the row shown: the secure button over it")
+    cover._scripts.OnEnter(cover) -- its outline lit and its tooltip, as the key boxes have them
+    cover._scripts.OnLeave(cover)
     row.button._left = 520
     row._scripts.OnUpdate(row, 0.016)
     check(cover._points[1][4] == 520, "it follows the row as the window is dragged")

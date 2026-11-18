@@ -80,7 +80,8 @@ first, 2026-11-16), Navigation's the second (`src/Navigation/Setup.lua`).
   (`Controls.PLACES`: top left ... bottom right) as a small bar with a round button at each place, the choice's
   words its tooltip; with `beside = true`, at the right of the control before it, without words of its own, that one
   narrower: the nameplates' places beside their counts), or a command of the game's (`{ macro = "/editmode", command =
-  "EDITMODE", text, tip, done, missing }`: a plain `UIPanelButtonTemplate` button with its words, and over it on
+  "EDITMODE", text, tip, done, missing }`: a plain button with its words in the look of the key boxes (the kit's thin gold outline; red is for a yes or
+  no alone), and over it on
   `UIParent` in its place the game's `SecureActionButtonTemplate` of that macro text, so the game runs its own slash
   command (Edit Mode opens as from its menu, nothing of ours in its way); there while the row shows and out of a fight,
   gone at `PLAYER_REGEN_DISABLED`, before the game locks it, back after it; following the row while the window is

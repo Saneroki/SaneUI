@@ -504,14 +504,14 @@ local function Cover(row, entry)
         if entry.done then ns.Safe("command", entry.done) end
     end))
     cover:SetScript("OnEnter", ns.Guard(function()
-        row.button:LockHighlight()
+        row.button.outline:SetStrong(true)
         GameTooltip:SetOwner(cover, "ANCHOR_RIGHT")
         GameTooltip:SetText(entry.text)
         if entry.tip then GameTooltip:AddLine(entry.tip, 1, 1, 1, true) end
         GameTooltip:Show()
     end))
     cover:SetScript("OnLeave", ns.Guard(function()
-        row.button:UnlockHighlight()
+        row.button.outline:SetStrong(false)
         GameTooltip:Hide()
     end))
     cover:Hide()
@@ -521,10 +521,20 @@ end
 local function Command(host, entry, width)
     local row = CreateFrame("Frame", nil, host)
     row:SetSize(width, Controls.TICK + 8)
-    local button = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+    -- In the look of the step's key boxes (the kit's thin gold outline, its words gold): red buttons are for a yes or
+    -- no alone (Doc/guides/interface-style.md).
+    local button = CreateFrame("Button", nil, row)
     button:SetSize(math.min(width, Controls.COMMAND), Controls.TICK + 2)
     button:SetPoint("LEFT", row, "LEFT", 0, 0)
-    button:SetText(entry.text)
+    button.outline = Look.Outline(button)
+    local label = Words(button, Look.GOLD)
+    label:SetPoint("LEFT", button, "LEFT", 8, 0)
+    label:SetPoint("RIGHT", button, "RIGHT", -8, 0)
+    label:SetJustifyH("CENTER")
+    label:SetText(entry.text)
+    button.label = label
+    button:HookScript("OnEnter", ns.Guard(function() button.outline:SetStrong(true) end))
+    button:HookScript("OnLeave", ns.Guard(function() button.outline:SetStrong(false) end))
     row.button = button
     local known = type(entry.command) == "string" and rawget(_G, "SLASH_" .. entry.command .. "1") ~= nil
     -- The plain button's own click: the command where the game has none for us (words), or in a fight.
