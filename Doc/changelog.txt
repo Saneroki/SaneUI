@@ -13,6 +13,9 @@ SaneUI 0.3.4 (2026-11-18)
   SaneUI's frames and the game's alike, so you see your
   interface as it looks; the frame you picked keeps its
   yellow box.
+- Every full screen's hot corner can be switched off
+  (Hotcorner, under Expand window): the corner does nothing,
+  and the window's key still opens the full screen.
 
 
 Combat 0.3.3 (2026-11-18)
@@ -82,6 +85,7 @@ Navigation 0.3.5 (2026-11-16)
 - A setup, step by step: how to open the map (the corner,
   its click, a key), moving it in Edit Mode, the quest log
   and the map's clicks; a big arrow points into your corner.
+  The hot corner can be off too: then the map's key opens it.
 - A key for SaneUI's map; once it has one, the game's map
   key opens the game's own map.
 - A right click on the map no longer zooms out: the wheel

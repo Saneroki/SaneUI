@@ -9,6 +9,8 @@ DRAFT: rewrite these lines for players (short, the bigger changes), then delete 
 
 - Edit Mode shows its blue boxes only under the mouse, on SaneUI's frames and the game's alike, so you see your
   interface as it looks; the frame you picked keeps its yellow box.
+- Every full screen's hot corner can be switched off (*Hotcorner*, in the section *Expand window* of each addon's
+  options): the corner does nothing, and the window's key still opens the full screen.
 
 ## 0.3.3 (2026-11-18)
 

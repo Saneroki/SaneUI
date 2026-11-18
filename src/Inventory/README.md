@@ -13,7 +13,8 @@ opens it as before. The plan is in `Doc/ideas/Inventory.md`.
 - **Switch it on or off:** tick or untick *Inventory* under *SaneUI* in the game's addon list.
 - **The full screen:** left-click all the way in the bottom right corner. Click there again, or press
   Esc, to go back. Not in Edit Mode, and not with *Can expand to fullscreen* off (*SaneUI > Inventory >
-  Expand window*); with *Hotcorner requires leftclick* off there, the mouse pushed into the corner is enough. In
+  Expand window*); with *Hotcorner requires leftclick* off there, the mouse pushed into the corner is enough; with
+  *Hotcorner* off, the corner does nothing and the bags' keys open the full screen. In
   Edit Mode the window can be docked in another corner; the hot corner goes with it.
 - **Your bag keys** (the backpack's, *Open All Bags*, each bag's, the reagent bag's, whatever keys you gave them)
   open the full screen with your bags on it; pressed again, it goes back. The game's bag bar is gone from the

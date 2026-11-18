@@ -25,7 +25,7 @@ local Core = SaneUI.Core
 --  way.
 --
 --  Each window has a section Expand window in its options (Edge.Options):
---  whether it fills the screen at all, whether its edge wants a left click, its kind of motion, the background's
+--  whether it fills the screen at all, whether its edge does it (Hotcorner) and wants a left click, its kind of motion, the background's
 --  opacity and texture, and how round its corners are (Corner radius, Don't
 --  round corners on screen edges; Shape.Options).
 --
@@ -107,11 +107,12 @@ local Core = SaneUI.Core
 --  the window back. The strips take the left clicks then (nothing under them
 --  gets them). Switched off, the mouse's coming is enough, as above.
 --
---  A module may describe the switch Hotcorner too (expandCorner, on unless it is
---  false; Social's, Saneroki, 2026-11-18: the hot corner "not at all or with
---  left click or with just moving their mouse there"): off, the window has no
---  strip and no square, the edge does nothing, and it still fills the screen by
---  its key or its full screen button, as Can expand to fullscreen allows.
+--  With Hotcorner off (the section's expandCorner, on at first; Saneroki,
+--  2026-11-18: the hot corner "not at all or with left click or with just
+--  moving their mouse there", then for every module) the window has no strip
+--  and no square: the edge does nothing, and it still fills the screen by its
+--  key (the map's, the bags', the spellbook's, Social's) or its full screen
+--  button, as Can expand to fullscreen allows.
 -------------------------------------------------------------------------------
 local Edge = {}
 Core.Edge = Edge
@@ -174,7 +175,9 @@ function Edge.Options(list, at, tab, under)
         { key = "expand", default = Edge.DEFAULTS.expand, text = "Can expand to fullscreen", header = "Expand window",
           headerTip = "Docked to a screen edge, the window can fill the whole screen and go back.",
           tip = "Left-click the screen edge or corner the window is docked to and it fills the screen. Left-click there again and it goes back. Off: the edge does nothing." },
-        { key = "expandClick", default = Edge.DEFAULTS.expandClick, text = "Hotcorner requires leftclick", parent = "expand",
+        { key = "expandCorner", default = Edge.DEFAULTS.expandCorner, text = "Hotcorner", parent = "expand",
+          tip = "The screen edge or corner the window is docked to fills the screen and brings it back. Off: it does nothing; the window's key (Esc > Options > Keybindings, SaneUI) or its full screen button still does." },
+        { key = "expandClick", default = Edge.DEFAULTS.expandClick, text = "Hotcorner requires leftclick", parent = { "expand", "expandCorner" },
           tip = "The mouse at the screen edge or corner the window is docked to is not enough: left-click there and it fills the screen, left-click there again and it goes back. Off: the mouse pushed there is enough." },
         { key = "motion", default = Edge.DEFAULTS.motion, text = "Animation type", parent = "expand", choices = Core.Motion.Choices(true),
           tip = "Glide is quick and settles softly, Swing goes a little past and comes back, Even starts and ends gently, Instant does not move at all. Use global type: as set under SaneUI > Appearance." },
@@ -187,7 +190,7 @@ function Edge.Options(list, at, tab, under)
         option.tab = tab
         local more = under and under[option.key]
         if more then
-            local parents = { option.parent }
+            local parents = type(option.parent) == "table" and { unpack(option.parent) } or { option.parent }
             for _, key in ipairs(type(more) == "table" and more or { more }) do parents[#parents + 1] = key end
             option.parent = parents
         end

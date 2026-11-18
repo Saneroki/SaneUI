@@ -16,9 +16,11 @@ local _, ns = ...
 --    corner   the hot corner, one of the first (Saneroki: "people should move
 --             their mouse into the corner of the minimap to open the map full
 --             screen and closing it the same way. The other way would be to
---             do the same but requires a click in the corner"): the mouse
---             into it, or a click in it (expandClick, as round buttons); the
---             big arrow points into the real corner meanwhile (below)
+--             do the same but requires a click in the corner"): not at all,
+--             a click in it, or the mouse into it (2026-11-18, as Social's: one
+--             choice over Can expand to fullscreen, Hotcorner and Hotcorner
+--             requires leftclick, as round buttons); the big arrow points into
+--             the real corner meanwhile (below), none with the corner off
 --    keys     "The 3rd would be to use the keybind": SaneUI's map, the
 --             game's map (Native.lua: once ours has a key, the game's map key
 --             opens the game's), the map's search; "Remind people that it is
@@ -93,9 +95,10 @@ Setup.TEXT = {
     keyFind = "Search the map",
     keyFindTip = "The full map, the cursor in its search: type a name, a place, an item.",
     cornerSwitch = "The corner opens the map",
+    cornerOff = "Not at all: only by a key",
     cornerHover = "When the mouse goes into it",
     cornerClick = "With a left click in it",
-    cornerTip = "The mouse in the screen's corner where the map stands fills the screen with the map, and brings it back. With a left click: only when you click there, so nothing opens by mistake.",
+    cornerTip = "The mouse in the screen's corner where the map stands fills the screen with the map, and brings it back. With a left click: only when you click there, so nothing opens by mistake. Not at all: the corner does nothing, a key opens the map.",
     questMouseover = "The quest log: show only on mouseover",
     questMouseoverTip = "The quest log on the screen alone is out of sight until the mouse is on it: its words, title bar or items, which still take the mouse. Edit Mode shows it too; over the full map it always shows. Off: always in sight.",
     questFight = "Always show in combat",
@@ -133,9 +136,12 @@ Setup.STEPS = {
       text = Lines({ "The hot corner", "the screen's corner your map stands in: the big arrow points at it." },
           { "The mouse", "all the way into it: the map fills the screen. Again: it goes back." },
           { "Or a click", "the mouse in the corner, then a left click: nothing opens by mistake." },
+          { "Not at all", "the corner does nothing: a key opens the map." },
           { "Or a key", "the next page. They all work together." }),
-      settings = { { key = "expandClick", text = Setup.TEXT.cornerSwitch, tip = Setup.TEXT.cornerTip, column = true,
-                     choices = { { false, Setup.TEXT.cornerHover }, { true, Setup.TEXT.cornerClick } } } } },
+      settings = { { key = "expandCorner", text = Setup.TEXT.cornerSwitch, tip = Setup.TEXT.cornerTip, column = true, parent = false,
+                     choices = { { { expand = true, expandCorner = false }, Setup.TEXT.cornerOff },
+                                 { { expand = true, expandCorner = true, expandClick = true }, Setup.TEXT.cornerClick },
+                                 { { expand = true, expandCorner = true, expandClick = false }, Setup.TEXT.cornerHover } } } } },
     { key = "keys", title = "Or a key",
       text = Lines({ "SaneUI's map", "full screen and back by a key of its own." },
           { "The game's map", "its key opens SaneUI's map until that has a key: then the game's map." },
@@ -477,7 +483,9 @@ function DRAW.corner(board)
     mouse:SetPoint("TOP", screen, "BOTTOM", 0, -10)
     mouse:SetShown(at ~= nil and Clicks())
     local words
-    if not at then
+    if ns.options.expandCorner == false then
+        words = Hued("The corner does nothing") .. ": open the map by a key (the next page)."
+    elseif not at then
         words = "Your map is not docked to the screen's edge, so it has no hot corner: dock it in Edit Mode (two pages "
             .. "on), or use a key (the next page)."
     elseif Clicks() then

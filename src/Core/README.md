@@ -566,8 +566,8 @@ but for a window to try those with (`/sane window`).
   - **Filling the screen** (`Edge.lua`): docked along a screen edge, along that side, inside the window, lies
     a strip two of the screen's own pixels wide (`GetPhysicalScreenSize`); docked in a corner, only a square
     of `Edge.CORNER` (4) pixels in that corner, so a corner's two edges do not set it off (`edge:Spot()`: the one
-    in sight now, its side or corner, for a part that points at it: Navigation's setup); none while the module's
-    *Hotcorner* (`expandCorner`, where it describes one: Social) is off, and the full screen comes by its key. Strata `DIALOG`,
+    in sight now, its side or corner, for a part that points at it: Navigation's setup); none while *Hotcorner*
+    (`expandCorner`) is off, and the full screen comes by its key or button. Strata `DIALOG`,
     fixed, it only takes the mouse's
     coming (`SetMouseMotionEnabled`): its `OnEnter` is the push. Not within `Edge.QUIET` (0.25 s) after the
     window was placed (a window let go at the edge, under the mouse), not while a button is held with nothing
@@ -618,7 +618,8 @@ but for a window to try those with (`/sane window`).
     says its key instead (`Classic.Press(what, binding)`). What the window holds should start
     `Window.BAR` below its top while full, under the title bar.
   - **The section *Expand window*:** `Edge.Options(list, at, tab, under)` puts it into a module's switches
-    (`Core.Options`) at that place: *Can expand to fullscreen* (on; off: no strips), *Hotcorner requires leftclick* (on, in
+    (`Core.Options`) at that place: *Can expand to fullscreen* (on; off: no strips), *Hotcorner* (on; off: no strips, the
+    full screen by its key or button, Saneroki 2026-11-18), *Hotcorner requires leftclick* (on, in
     every module, Saneroki 2026-11-16: the strips take a left click instead of the mouse's coming, each click one
     change; off: the mouse's coming is enough), *Animation type* (Use
     global type), *Background opacity* (0 to 100 %, 50), *Background texture* (Solid black, or one of
@@ -704,10 +705,11 @@ but for a window to try those with (`/sane window`).
 | `Art/cap-left.blp`, `Art/cap-right.blp` | A bar's two ends (`Shape.CAP_LEFT`, `CAP_RIGHT`; Nameplates' health bar): white but for the two corners on the outer side, cut round with a radius as wide as the end; a quarter as wide as high (64 × 256, DXT5 with mipmaps), laid over a quarter of the bar's height at each end with `CLAMPTOWHITE`. Made by `dev/tools/shape-art`, drawn by code |
 
 ## History
-- 2026-11-18 — `Edge.lua`: a module may describe the switch *Hotcorner* (`expandCorner`, Social's; Saneroki: the hot corner
-  "not at all or with left click or with just moving their mouse there"): off, the window has no strip and no square,
-  and still fills the screen by its key or full screen button. `Onboarding.lua`: a choice that sets several switches
-  counts each of them for *Choose defaults*.
+- 2026-11-18 — `Edge.lua`: the section *Expand window* has *Hotcorner* (`expandCorner`, on; Saneroki: the hot corner "not
+  at all or with left click or with just moving their mouse there", then "Yes, all modules"), under *Can expand to
+  fullscreen*, *Hotcorner requires leftclick* under both: off, the window has no strip and no square, and still fills the
+  screen by its key or full screen button. `Onboarding.lua`: a choice that sets several switches counts each of them
+  for *Choose defaults*.
 - 2026-11-18 — `Selection.lua`: a window's settings in its Edit Mode dialog may be ticks (`check`, under another `parent`), for
   Combat's unit frames' choices of what each shows.
 - 2026-11-18 — The nameplates part of Combat: `Core.RETIRED` keeps the old addon `SaneUI_Nameplates` off where it is

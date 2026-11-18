@@ -886,15 +886,17 @@ end
 -- The section Expand window: a module's own settings ------------------------------------------------
 local described = { { key = "first", default = true, text = "First" }, { key = "last", default = true, text = "Last" } }
 Edge.Options(described, 2, "Appearance")
-check(#described == 9 and described[1].key == "first" and described[2].key == "expand" and described[2].header == "Expand window"
-    and described[3].key == "expandClick" and described[3].parent == "expand" and described[3].default == true
-    and described[3].text == "Hotcorner requires leftclick"
-    and table.remove(described, 3)
+check(#described == 10 and described[1].key == "first" and described[2].key == "expand" and described[2].header == "Expand window"
+    and described[3].key == "expandCorner" and described[3].parent == "expand" and described[3].default == true
+    and described[3].text == "Hotcorner"
+    and described[4].key == "expandClick" and described[4].parent[1] == "expand" and described[4].parent[2] == "expandCorner"
+    and described[4].default == true and described[4].text == "Hotcorner requires leftclick"
+    and table.remove(described, 3) and table.remove(described, 3)
     and described[3].key == "motion" and described[4].key == "expandOpacity" and described[5].key == "expandTexture"
     and described[6].key == "corners" and described[7].key == "squareEdges" and described[8].key == "last"
     and described[7].tab == "Appearance" and described[3].parent == "expand" and described[7].parent == nil
     and described[6].header == "Window corners",
-    "a module puts the section Expand window where it wants it: whether it fills the screen, whether its edge wants a click, how it moves, its background; then its corners, a section of their own")
+    "a module puts the section Expand window where it wants it: whether it fills the screen, whether its edge does (Hotcorner) and wants a click, how it moves, its background; then its corners, a section of their own")
 check(described[6].min == 0 and described[6].max == 100 and described[6].unit == "%" and described[6].default == 10
     and described[6].text == "Corner radius" and described[7].default == true and described[7].text == "Don't round corners on screen edges",
     "the corner radius is a share, a tenth at first; the corners on the screen's edges are square at first")
@@ -907,8 +909,9 @@ do -- A module's section, followed by itself
     Edge.Options(list, 2, nil, { motion = "animations" })
     local heard = {}
     Core.Options("EdgeTest", list, function(key) heard[#heard + 1] = key end)
-    check(list[4].key == "motion" and list[4].parent[1] == "expand" and list[4].parent[2] == "animations" and list[2].parent == nil
-        and list[3].parent == "expand" and list[5].parent == "expand", "a module can put some of the section under switches of its own too")
+    check(list[5].key == "motion" and list[5].parent[1] == "expand" and list[5].parent[2] == "animations" and list[2].parent == nil
+        and list[3].parent == "expand" and list[4].parent[2] == "expandCorner" and list[6].parent == "expand",
+        "a module can put some of the section under switches of its own too")
     W.Fire("ADDON_LOADED", "SaneUI_EdgeTest")
     local own = CreateFrame("Frame", nil, UIParent)
     local ownWindow = Window.New(own, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOM" } }, sizable = true,
@@ -951,6 +954,31 @@ do -- Hotcorner requires leftclick: the edge fills the screen by a left click on
     check(not clickEdge.full, "and a click there does nothing")
     clickWindow:Place()
     click:Hide()
+end
+
+do -- Hotcorner off (Saneroki, 2026-11-18: the hot corner "not at all", for every module): the edge does nothing, a key still fills
+    local quiet = CreateFrame("Frame", nil, UIParent)
+    local settings = { expand = true, expandCorner = true, expandClick = false, motion = "off", expandOpacity = 50, expandTexture = "solid" }
+    local quietWindow = Window.New(quiet, { store = { place = { x = 0, y = 0, width = 200, height = 100, dock = "BOTTOMLEFT" } },
+        sizable = true, dock = true, edge = settings, first = { point = "CENTER", x = 0, y = 0, width = 200, height = 100 } })
+    local quietEdge = quietWindow.edge
+    quietWindow:Place()
+    W.Wait(1)
+    at(quiet, 0, 0)
+    check(quietEdge.strips.corner and quietEdge.strips.corner:IsShown() and quietEdge:Spot() ~= nil, "(docked in a corner: its square there)")
+    settings.expandCorner = false
+    quietEdge:Update()
+    check(not quietEdge.strips.corner:IsShown() and quietEdge:Spot() == nil, "Hotcorner off: no square, the corner does nothing")
+    quietEdge:Fill(true)
+    check(quietEdge.full, "its key or its button still fills the screen")
+    quietEdge:Fill(false)
+    quietWindow:Place()
+    check(not quietEdge.full and not quietEdge.strips.corner:IsShown(), "back, still no hot corner")
+    settings.expandCorner = true
+    quietEdge:Update()
+    check(quietEdge.strips.corner:IsShown(), "on again: the square is back")
+    check(Edge.DEFAULTS.expandCorner == true and Edge.KEYS.expandCorner, "Hotcorner is on by default, a switch of the section")
+    quiet:Hide()
 end
 
 do -- Every module's at first (Saneroki, 2026-11-16: "Make on all modules the hotcorner require a left click")

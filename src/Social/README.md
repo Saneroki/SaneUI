@@ -770,8 +770,8 @@ the game's chat: that one is out of sight, and you write in a line at the bottom
   `keys`, `windows`, `full`. The corner's choice is one control over three switches (Onboarding's choice of a table,
   `parent = false` so it is never greyed out): `{ expand = true, expandCorner = false }` (not at all),
   `{ expand, expandCorner, expandClick = true }` (a left click), `{ expand, expandCorner, expandClick = false }` (the
-  mouse). `expandCorner`, *Hotcorner*, is Social's own switch right under *Can expand to fullscreen*, read by Core's
-  edge (`Edge.lua`: off, no strip and no square; the full screen still fills by `Window.Full`, the key
+  mouse). `expandCorner`, *Hotcorner*, is a switch of Core's section *Expand window* (every module's), right under
+  *Can expand to fullscreen* (`Edge.lua`: off, no strip and no square; the full screen still fills by `Window.Full`, the key
   `SANEUI_SOCIAL_FULL` in `Bindings.xml`, `ns.Full`, behind `ns.Safe`); *Hotcorner requires leftclick* stands under
   both. The keys' step binds `SANEUI_SOCIAL_FULL` and `SANEUI_SOCIAL`; the windows' step has `window`, `showNative`, a
   tick the module answers (`check`/`set`: the first view's `screen`, `ChatWindows.Put`) and `boardFinder`. Each step a

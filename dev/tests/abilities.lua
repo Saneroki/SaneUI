@@ -1259,7 +1259,7 @@ local function box(text)
 end
 -- The full screen's sections first (Expand window, Window corners), then the spellbook and the action bars, the full
 -- screen's trainers (the keys' switch only where our spellbook is: not in this stand-in client), Sane Macros, the aura history.
-check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "SaneUI" and #page.items == 36
+check(#W.options.pages == 5 and page.name == "Abilities" and page.parent.name == "SaneUI" and #page.items == 37
     and W.options.opened == page.parent.id, "/sane options fills them: a page for the module under SaneUI, called Abilities, with its switches under seven headers")
 check(box("Show unlearned spells"):GetValue() == true and box("Show reservations on the action bars") and box("Say in chat when a reserved button is filled"), "the same ones as the spellbook's menu")
 box("Show unlearned spells"):SetValue(false)

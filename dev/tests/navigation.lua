@@ -10994,8 +10994,10 @@ end)()
         and Core.Described(ns.name, sight[2].key).parent == "questLogMouseover" and sight[3].key == "questLogGroup",
         "late, on the quest log's page: when it shows on the screen, Show only on mouseover and the two under it")
     local corner = guide.steps[2].settings[1]
-    check(corner.key == "expandClick" and corner.choices[1][1] == false and corner.choices[2][1] == true,
-        "the hot corner: the mouse into it, or a left click in it (the switch Hotcorner requires leftclick)")
+    local off, click, mouse = corner.choices[1][1], corner.choices[2][1], corner.choices[3][1]
+    check(corner.key == "expandCorner" and corner.parent == false and off.expand and off.expandCorner == false
+        and click.expandCorner and click.expandClick == true and mouse.expandCorner and mouse.expandClick == false,
+        "the hot corner, one choice of three: not at all (the map still by its key), a left click in it, the mouse into it")
     local bindings = guide.steps[3].settings
     check(bindings[1].binding == "SANEUI_MAP" and bindings[2].binding == "TOGGLEWORLDMAP"
         and bindings[3].binding == "SANEUI_MAP_FIND", "the keys: SaneUI's map, the game's map, the map's search")
@@ -11044,6 +11046,17 @@ end)()
     Window.Toggle()
     Window.frame._group:Run(1)
     Core.Set(ns.name, "expandClick", true)
+    Core.Set(ns.name, "expandCorner", false)
+    Draw("corner")
+    pointer._scripts.OnUpdate(pointer, 1)
+    check(Setup.Spot() == nil and not pointer.arrow:IsShown() and Setup.Board("corner").parts.words._text:find("does nothing", 1, true),
+        "Hotcorner off: no spot, no big arrow, the page says a key opens the map")
+    Window.Toggle()
+    Window.frame._group:Run(1)
+    check(Window.handle.edge.full, "and the map's key still fills the screen")
+    Window.Toggle()
+    Window.frame._group:Run(1)
+    Core.Set(ns.name, "expandCorner", true)
     if wasFull then
         Window.Toggle()
         Window.frame._group:Run(1)

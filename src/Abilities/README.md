@@ -157,7 +157,8 @@ spellbook and talents window.
 - **The full screen:** left-click the bottom edge of the screen anywhere in its middle half
   (a quarter of the screen's width either side of the middle). Click there again, or press Esc, to go back.
   Not in Edit Mode, and not with *Can expand to fullscreen* off (*SaneUI > Abilities > Expand window*); with
-  *Hotcorner requires leftclick* off there, the mouse pushed against the edge is enough.
+  *Hotcorner requires leftclick* off there, the mouse pushed against the edge is enough; with *Hotcorner* off, the edge
+  does nothing and the keys open it.
 - **Your keys:** the keys you gave the game's spellbook (P), pet spellbook and talents (N) open the full
   screen with that window on it (the pet's: the spellbook at the pet's tab; without a pet, as the game's, it does
   nothing), and close it again, as they do the game's windows. Your key bindings stay as they are; *Your spellbook and talents keys open ours* off,

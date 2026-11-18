@@ -237,19 +237,6 @@ for index, option in ipairs(OPTIONS) do
     if option.tab == LOOK then last = index end
 end
 Core.Edge.Options(OPTIONS, (last or #OPTIONS) + 1, LOOK, { motion = "animations" })
--- The hot corner on or off apart from the full screen (Saneroki, 2026-11-18: "not at all or with left click or with just
--- moving their mouse there"; Core's edge reads it): off, the screen edge does nothing, and the full screen still opens
--- by its key (Bindings.xml). Right under Can expand to fullscreen; Hotcorner requires leftclick under it.
-for index, option in ipairs(OPTIONS) do
-    if option.key == "expand" then
-        table.insert(OPTIONS, index + 1, { key = "expandCorner", default = true, text = "Hotcorner", tab = LOOK, parent = "expand",
-            tip = "The screen edge or corner the window is docked to fills the screen and brings it back. Off: it does nothing; the full screen opens by its key (Esc > Options > Keybindings, SaneUI)." })
-        break
-    end
-end
-for _, option in ipairs(OPTIONS) do
-    if option.key == "expandClick" then option.parent = { "expand", "expandCorner" } end
-end
 -- The switches of fading and sliding: a change of one sets every fade and slide anew (Window.Animate).
 local MOVES = { animations = true, fadeInOn = true, fadeInTime = true, fadeOutTime = true, slide = true, slideTime = true,
                 fadeFloorOn = true, fadeFloor = true, fade = true, fadeAfter = true }

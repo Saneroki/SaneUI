@@ -23,7 +23,8 @@ and shows them on the map or puts the map pin there. The plan is in
 
 ## How to use
 - **The map:** move the mouse all the way into the screen's top right corner and click there (at first; or only the
-  mouse, as the setup's page *Into the corner* or the switch *Hotcorner requires leftclick* sets it); the corner again
+  mouse, as the setup's page *Into the corner* or the switch *Hotcorner requires leftclick* sets it; with *Hotcorner* off,
+  not at all: the map's key opens it); the corner again
   (move away from it first), Esc or the close button on its title bar brings it back. On the way the map grows and
   zooms with the window, from the small view to the full one. The game's map key (M) and quest log key (L), `/sane
   map`, and every other way to the game's map (the quest log button, a click on a quest, a chat link) open it too.
@@ -1614,7 +1615,9 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   SaneUI's for it.
 - **The setup** (`Setup.lua`): the module's own steps, words and boards handed to Core (`Core.Onboarding.Add`,
   title *Map*); the window, its controls and keys are the addon Onboarding's (`src/Onboarding/README.md`). The hot
-  corner's page words the Edge section's switch `expandClick` as two round buttons (a step's own entry `{ key, text,
+  corner's page words the Edge section's switches as three round buttons (since 2026-11-18: not at all, a left click, the
+  mouse; one choice over `expand`, `expandCorner` and `expandClick`, Onboarding's choice of a table; before, `expandClick`
+  alone as two) (a step's own entry `{ key, text,
   choices, column }`, `Controls.lua`); the keys' page binds `SANEUI_MAP`, the game's `TOGGLEWORLDMAP` and
   `SANEUI_MAP_FIND`. Each board is drawn on the window's grey box from the game's art (the tutorial arrows
   `NPE_ArrowRight` and its glow, turned by `SetRotation`; the cursor `Interface\CURSOR\Point`; the minimap's arrow;
