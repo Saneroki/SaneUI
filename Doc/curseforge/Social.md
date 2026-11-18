@@ -17,7 +17,7 @@ What goes into the project's fields on CurseForge (authors.curseforge.com). The 
 | Category | Chat & Communication |
 | Avatar | `social-avatar.png` of `saneui makelogos` (400 x 400: two speech bubbles, the purple ring) |
 | Banner | `social-banner.png`, at the top of the description: after the project is made, uploaded under its Media (not featured) and put in by its address as the description's first line, `![SaneUI Social](<address>)` (README, *The API and the website*) |
-| Relations | SaneUI Core: Required Dependency (each upload sends it too) |
+| Relations | SaneUI Core: Required Dependency, in the project's Default Relations (checked 2026-11-18, after the first upload); each upload sends it too |
 | Release type | By the module's stage: alpha since 2026-11-18 |
 
 ## Description
