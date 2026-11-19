@@ -112,18 +112,24 @@ local function Narrow(told, record)
     if side and record.side and record.side ~= side then told.side = NONE end
     local done = Log().IsQuestFlaggedCompleted
     if type(record.requires) ~= "table" or not done then return end
-    local kept, wrong, anyOne, oneDone = {}, false, false, false
+    local kept, wrong, anyOne, oneDone, anyLog, oneHeld = {}, false, false, false, false, false
+    local held = Log().GetLogIndexForQuestID
     for _, rule in ipairs(record.requires) do
         if rule.kind == "one" and (not rule.side or rule.side == side) then
             anyOne = true
             if Core.Ask(done, rule.quest) then oneDone = true end
+        end
+        -- (of several quests to have in the log, one is enough)
+        if rule.kind == "log" and (not rule.side or rule.side == side) then
+            anyLog = true
+            if (tonumber(Core.Ask(held, rule.quest)) or 0) > 0 then oneHeld = true end
         end
     end
     for _, rule in ipairs(record.requires) do
         local mine = not rule.side or rule.side == side
         local finished = mine and Core.Ask(done, rule.quest) == true
         if mine and ((rule.kind == "done" and not finished) or (rule.kind == "closed" and finished)
-            or (rule.kind == "one" and anyOne and not oneDone)) then
+            or (rule.kind == "one" and anyOne and not oneDone) or (rule.kind == "log" and anyLog and not oneHeld)) then
             wrong = true
         else
             kept[#kept + 1] = rule

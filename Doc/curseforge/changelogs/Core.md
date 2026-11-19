@@ -3,6 +3,11 @@
 What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.8 (2026-11-19)
+
+- Quests know when they are offered: the holiday or world event a quest belongs to, and the quests that must be in
+  your log first; SaneUI reads the game's calendar for the holidays running now. Navigation's quest offers use it.
+
 ## 0.3.7 (2026-11-19)
 
 - What Forever's servers say about its quests and creatures, up to the newest build: the experience, money and

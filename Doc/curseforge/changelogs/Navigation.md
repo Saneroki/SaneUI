@@ -3,6 +3,18 @@
 What changed in each version of SaneUI Navigation, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.7 (2026-11-19)
+
+- Quest offers on the map are only quests you can really take right now: no more exclamation marks all year for
+  holiday quests (Hallow's End at every innkeeper, Winter Veil, the Darkmoon Faire, Lunar Festival and the others show
+  only while the game's calendar says the holiday runs), none for world events such as the war effort, and none for a
+  profession you have not learnt, a breadcrumb to a quest you already have or one closed by a quest in your log.
+- Quests for later (the red question mark) also wait for a reputation, a profession's skill or a quest you must have
+  in your log; the tooltip names everything a quest still asks. Click it on the full map: the quest log shows every
+  requirement in red and the chain of quests to do first, numbered, with who gives the first one.
+- A quest giver shows as the first kind of quest the pin filter has ticked, and its tooltip names only those: with
+  only Quests for later ticked, a giver of an offer and a later quest shows its red question mark.
+
 ## 0.3.6 (2026-11-19)
 
 - Zephras Isle is on the map: zoomed out, the Skyborne's floating island lies over the sea north of the Maelstrom,

@@ -525,6 +525,12 @@ local Items = Data.Set("Items")     -- a handle: cheap, never nil; one per name
   stops at the first, so a list that may hold one is walked with `pairs`.
 - **The game first:** where the client tells (an item's name, a quest's title), a module asks the client;
   the data fills in what the client does not say.
+- **A holiday's quests** (the set *Quests*' `holiday`, a key of *Holidays*): offered only while
+  `Data.Holidays.Running(key)` says the game's calendar has it running now; `Data.Holidays.OnChange(fn)` tells when
+  that changes. A quest with `event` (a world event no calendar tells: a war effort, an invasion) is offered never as
+  far as the views know. `requires` of kind `log`: a quest that must be in the log while it is taken (of several,
+  one); `closed`: closed once the other is done or in the log (`src/Core/Data/Holidays.lua`, Navigation's
+  `Pins.Standing`).
 
 ### What a map shows (`Data.Map`)
 

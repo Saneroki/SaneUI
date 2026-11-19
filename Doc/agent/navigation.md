@@ -49,6 +49,10 @@ by day is `src/Navigation/README.md`, section *History* (line 880). Read first: 
    (`Data.Map():On`: Spawns, Places, Travel; the sets Quests, NPCs, Objects), one per thing, the game's word wins;
    filtered by the setting `pins` (multi) and the pin filter. The kind `goal` (`Goals.lua`): the exact spawns of the
    open objectives of the quests in the log, from Core's data; the mouse on a quest in the log makes its pins glow.
+   A quest giver's quests by `Pins.Standing` (offered, low, later with every need, never: side, race, class, a holiday
+   not running by Core's `Data.Holidays`, a world event, a profession not learnt, a breadcrumb or closing quest done
+   or held), its kind the first the filter shows (`GiverKind`); `Pins.Chain` the quests before one (the quest log's
+   ghost of a quest for later; 2026-11-19, card #590).
 5. The map pin and the route (`Planner.lua`, `Search.lua`, `Walk.lua`, `Gates.lua`, `Lifts.lua`; `Route.lua` draws the
    golden pulsing line, always from the player): on foot over Core's set *Walking*, by the flights the character knows,
    boats, zeppelins, the tram, lifts, portals, the hearthstone and the teleports it has (Core's set *Travel*,

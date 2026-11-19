@@ -6,6 +6,45 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation and Core: quest pins only for what you can take (Saneroki, 2026-11-19)
+Saneroki: "when People have selected Quest Offers to be on, only quests that can be picked up by the player right now
+should be shown. For me for some reason way to many exclamationmarks show up that don't represent a quest that are
+available ingame." And: "When the red questionmark is clicked it should show which requirement is needed to pick it
+up, like what quest chain is needed or what level."
+- **The cause:** replayed on the master for a Night Elf warrior at 20 with nothing done, 127 of the 366 quests the
+  map offered were a holiday's or a world event's, shown all year: the set *Quests* had no mark for either (the
+  innkeepers' Hallow's End quests, the Darkmoon Faire's, Winter Veil's, Lunar Festival's elders, the fishing contest,
+  the war effort's, the Scourge invasion's). `Pins.Standing` also never read the `skill` and `reputation` the set has,
+  nor a breadcrumb's `breadcrumbTo`, and the set had no way to say a quest wants another in the log (Chapter I to IV,
+  the innkeepers' candy quests).
+- **The data:** `assets/data/Quests/schema.toml`: the fields `holiday` (a key of *Holidays*: offered only while it
+  runs) and `event` (a world event no calendar tells), the kind `log` of `requires` (in the log while it is taken; of
+  several, one), `closed` now done or in the log. Batch 32 (`sources.toml`): the 1.12 records' holidays, world events
+  and quests in the log, only where both have the quest and agree (a record that only sorts it seasonal agrees with
+  the other's holiday): 193 holidays, 119 events, 30 quests with one in the log; batch 33: the quests' sorts
+  for Forever's client as our tool picked them (the Darkmoon Faire, Lunar Festival, Midsummer, the war effort, the invasions; the plain seasonal
+  sort an event unless batch 32 names the holiday) where batch 32 has nothing or agrees, and its parent quests (6);
+  53 contradictions left out of both. Both unverified.
+- **`src/Core/Data/Holidays.lua`** (new, in Core's TOC): `Data.Holidays.Running(key)`, `OnChange(fn)`: today's
+  holiday events of the game's calendar running now (asked at the login and on a new day, read when it answers and
+  every `Holidays.AGAIN` seconds), by the event's ID or title. `src/Core/Data/Quests.lua`: an offer narrows a `log`
+  rule it proves wrong.
+- **`src/Navigation/Pins.lua`:** `Pins.Standing` says never for a world event, a holiday not running, a profession not
+  learnt, a closing quest or a breadcrumb's target done or in the log; for later a quest's level, quests first, one of
+  them, one in the log, a reputation (`ITEM_REQ_REPUTATION`), a skill (`ITEM_REQ_SKILL`), every need as a third answer;
+  `Pins.Chain(id)` the quests before one, the first to take first. A giver's kind by the filter (`GiverKind`: the first
+  of offers, low, later, done the filter shows), its tooltip only those kinds, every need under a quest for later, a
+  red ? saying what its click shows (`Pins.TEXT.previewLater`). The givers' pins made anew when the filter's quest kinds
+  change, a holiday begins or ends (`LIVE` "holidays") or a reputation or skill a pin asked changes (`LIVE` "standing",
+  `Live.lua`: `UPDATE_FACTION`, `SKILL_LINES_CHANGED`).
+- **`src/Navigation/QuestLog.lua`:** a ghost's text: every need in red, *The quests before it*, numbered, the ones you
+  can take now with their givers, one in your log said so.
+- **Tests:** `dev/tests/navigation.lua` (2321 checks): a holiday by a made-up calendar (on, past its end, a player's
+  event no holiday), a world event, a profession unlearnt, too low and enough, a reputation, a breadcrumb and a closed
+  one with their quest in the log, a quest wanted in the log of two, every need with the level first, the chain (in
+  the log, done, one of two), a giver of an offer and a quest for later under four filters.
+- A game restart takes it in (a new file in Core's TOC). Card #590.
+
 ### Core: no error when the mouse is over a creature of a map above 2143 (Saneroki, 2026-11-19)
 Saneroki: "there is an error in the logs about mouseover". The error log: `UPDATE_MOUSEOVER_UNIT`, "integer overflow
 attempting to store 2526470184" in `string.format` (`src/Core/Data/Watchers.lua:85`), six times since 2026-11-16, on

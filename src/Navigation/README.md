@@ -143,9 +143,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   search nor in a route);
   rares (a skull; hold Alt over one and its 3D model stands beside the tooltip) and treasures (a chest) nearby; the
   game's points and ways into other maps), and what Core's data
-  knows: quest givers with a quest you can take (the yellow !), with a quest too low to give you experience (a grey
-  !) or one you cannot take yet (its level, a quest first: a red ?), or with quests you have done only (grey, off
-  at first); services, each its
+  knows: quest givers with a quest you can take right now (the yellow !), with one you can take that is too low to
+  give you experience (a grey !) or one you can take once you meet what it asks (a red ?: its level, quests first, a
+  quest in your log, a reputation, a profession's skill), or with quests you have done only (grey, off at first). A
+  quest not for you is no pin at all: another side, race or class, past its level, a profession you have not
+  learnt, closed by a quest you did or have, a breadcrumb to a quest you have, a holiday's while the game's calendar
+  says it does not run, a world event's (the war effort, an invasion). A giver shows as the first of its kinds the
+  pin filter has ticked, its tooltip naming only the quests of those; services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those, of trade goods the
   vendor's bag of the game's gossip window, the auctioneer the golden hammer of its crafting orders; no NPC a gold
@@ -157,8 +161,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   own thing, a quest it offers, each of a gathered pin's), until the game confirms it in play: you or somebody of your guild or group sees
   the NPC at its place, talks to it, opens the mailbox there (Core's watchers), and the note goes. A tooltip says what it is: an NPC by what it is, never by its own name (Saneroki,
   2026-10-23): its title (*Warrior Trainer*, *Bowyer*, *Expert Blacksmith*), else its service (*Innkeeper*), else
-  *Quest giver*; only a rare keeps its name; then its quests with their levels, and why a grey one is not for you
-  yet. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
+  *Quest giver*; only a rare keeps its name; then its quests with their levels, and under one for later every
+  thing it still asks. One pin per thing at each place it stands: the game's word hides the data's. Pins that would cover each other
   stand side by side, a cloud round their middle, each in the direction it lies: they lose a little of their place,
   pushed aside, and stand each at its own place again as you zoom in. Pins of one icon close together (trainers,
   vendors, portals; several spawns of one herb or creature) are one marker in that icon, its tooltip naming what is
@@ -358,8 +362,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   the map shows its text too. **A click on a quest giver's exclamation mark on the map adds its quests as ghosts:** on
   top, under *Not in your log*, each between a red exclamation mark and a red X, which say so; the rest of it as any
   quest. That X or the right button takes one out at once, the red X over them all of them, and one you take from its
-  giver goes by itself. Below a ghost what the data knows of it: why it is not for you yet,
-  its level, who gives and takes it, its objectives and rewards, as big icons too. A click on one moves the map to its giver, a double
+  giver goes by itself. Below a ghost what the data knows of it: in red everything it still asks (a red ? says so:
+  *Click on the full map: what they ask first*), its level, who gives and takes it, under *The quests before it* the
+  chain to do first, numbered, the first one first (one you can take now with who gives it, one in your log said so),
+  its objectives and rewards, as big icons too. A click on one moves the map to its giver, a double
   click puts the map pin there.
   They stay until the next `/reload`.
 - **The search** (Saneroki, 2026-11-15): the large field in the middle of the full map's title bar. Click into it (or
@@ -786,8 +792,11 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   quests on the map and the next way of the quest the arrow leads to, flight points of the player's side (one the
   character has not found red, `Pins.RED` over its colour taken out: `Planner.Knows`), its vignettes, area points,
   map links, dungeon entrances where it has them) and from Core's data
-  (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Offered`: not done,
-  not in the log, level, side, race, class, the quests before) is a quest giver, else a rare, else its service in
+  (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Standing`: not done,
+  not in the log, side, race, class, past its level, a holiday running by Core's `Data.Holidays`, no world event,
+  a breadcrumb's or a closing quest neither done nor in the log; for later its level, quests done first, one in the
+  log, a reputation, a profession's skill, every need in words; `Pins.Chain` the quests before it) is a quest giver
+  as the filter shows its kinds (`GiverKind`), else a rare, else its service in
   the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
   (Core's set *Travel*, its `docks`) its own pin, its tooltip first when its ship next comes there and leaves, as the
   dock watch words it (`DockWatch.Timer`, white once known, grey while only how often; drawn again as its second
@@ -800,7 +809,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   the same thing (a vignette's GUID names its creature). Kept per map until the game says it changed (the message
   `LIVE`; the arrow's quest: the game's alone), Core's in parts: the quest givers' read again when the quests in the
   log are others (one taken, abandoned or handed in: `Goals.Log`, which counts `QUEST_TURNED_IN` too, for the log may
-  list a quest handed in a moment longer) or the level changed, never at a kill that only counts on; the other NPCs'
+  list a quest handed in a moment longer), the level changed, the filter's quest kinds changed, a holiday began or
+  ended (`LIVE` "holidays"), or a reputation or a skill changed where a giver's quest asks one (`LIVE` "standing"), never at a kill that only counts on; the other NPCs'
   (`steady`), the objects', places' and ways' when Core's places change; at a zone's level every zone in view (on
   Zephras Isle the isle itself), further out the continent and its zones for travel and places only (only the
   places' and ways' part read). A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
@@ -1761,6 +1771,13 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-19, quest pins only for what you can take:** Saneroki: "For me for some reason way to many exclamationmarks
+  show up that don't represent a quest that are available ingame." A third of the quests the map offered were a
+  holiday's or a world event's, shown all year (the innkeepers' Hallow's End quests, the Darkmoon Faire, Winter Veil,
+  the war effort); professions, reputations, breadcrumbs and quests wanted in the log were not looked at. Core's set
+  *Quests* now marks holidays and world events (`holiday`, `event`, batches 32 and 33) and quests wanted in the log
+  (`requires` kind `log`); Core's `Data.Holidays` reads the game's calendar; `Pins.Standing` checks all of it, says
+  every need, `Pins.Chain` the quests before one, and a giver's pin follows the filter's quest kinds.
 - **2026-11-19, Zephras Isle on the map at last:** Saneroki: "The skyborn zephrys island is not showing up correctly."
   It was on neither map: Forever's world map has no row, no link and no art for the isle, so `C_Map.GetMapRectOnMap`
   answers nothing, `Coords.PlaneOf` never made it a plane, and the routes lost its airships too; the tests' made-up

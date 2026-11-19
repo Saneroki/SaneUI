@@ -136,7 +136,12 @@ Pins.TEXT = {
     needsLevel = Core.Word("ITEM_MIN_LEVEL", "Requires Level %d"),
     needsFirst = "First: %s",
     needsOne = "First one of: %s",
+    needsLog = "With %s in your quest log",
+    needsLogOne = "With one of %s in your quest log",
+    needsRep = Core.Word("ITEM_REQ_REPUTATION", "Requires %s - %s"), -- (the faction, its standing)
+    needsSkill = Core.Word("ITEM_REQ_SKILL", "Requires %s (%d)"),
     preview = "Click on the full map: its quests in the quest log",
+    previewLater = "Click on the full map: what they ask first, in the quest log",
     undiscovered = "Not discovered yet",
     open = "Click on the full map: the quest in the quest log",
     openMap = "Shift-click: open its map",
@@ -327,12 +332,13 @@ end
 -------------------------------------------------------------------------------
 --  Core's data, per map
 -------------------------------------------------------------------------------
-local me -- { level, side, race, class }: asked at each layout's first question
+local me -- { level, side, race, class, reps, skills }: asked at each layout's first question
+local asked = false -- a quest giver's pin asked your reputation or a profession's skill (Pins.Changed "standing")
 
 local function Me()
     local side = Core.Plain(UnitFactionGroup("player"))
     me = { level = Core.Plain(UnitLevel("player")) or 1, side = side and side:lower(),
-           race = select(3, UnitRace("player")), class = select(3, UnitClass("player")) }
+           race = select(3, UnitRace("player")), class = select(3, UnitClass("player")), reps = {}, skills = {} }
 end
 
 local QUESTS = Core.Data.Set("Quests")
@@ -340,6 +346,8 @@ local QUESTS = Core.Data.Set("Quests")
 local SPAWNS, NPC_FACTS, OBJECT_FACTS = Core.Data.Set("Spawns"), Core.Data.Set("NPCs"), Core.Data.Set("Objects")
 local CREATURES = Core.Data.Set("CreatureSpawns")
 local PLACE_FACTS, WAYS_SET = Core.Data.Set("Places"), Core.Data.Set("Travel")
+-- The names of what a quest asks for (Standing)
+local FACTIONS, SKILLS = Core.Data.Set("Factions"), Core.Data.Set("SkillLines")
 local function QuestName(id)
     return QUESTS:Get(id, "name") or ("#" .. tostring(id))
 end
@@ -348,6 +356,59 @@ local function Has(list, value)
     if not list then return true end
     for _, entry in ipairs(list) do if entry == value then return true end end
     return false
+end
+
+-- Whether this character did a quest, and whether it is in its log.
+local function Done(id)
+    return Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, id) and true or false
+end
+local function Held(id)
+    return (tonumber(Core.Ask(C_QuestLog.GetLogIndexForQuestID, id)) or 0) > 0
+end
+
+-- Your reputation with a faction, in the game's points (0 where Neutral begins); 0 with one you have not met.
+local function Reputation(faction)
+    local known = me.reps[faction]
+    if known == nil then
+        local reputation = rawget(_G, "C_Reputation")
+        local info = reputation and Core.Ask(reputation.GetFactionDataByID, faction)
+        known = type(info) == "table" and tonumber(Core.Plain(info.currentStanding)) or 0
+        me.reps[faction] = known
+    end
+    return known
+end
+
+-- Your rank in a skill line (a profession): a number, false where you have not learnt it; nil in a game that tells
+-- no skill lines (a quest's skill then asks nothing).
+local function Skill(line)
+    local known = me.skills[line]
+    if known == nil then
+        local info = rawget(_G, "C_SkillInfo")
+        if not (info and info.GetSkillLineInfoByID) then return nil end
+        local data = Core.Ask(info.GetSkillLineInfoByID, line)
+        local rank = type(data) == "table" and tonumber(Core.Plain(data.rank)) or 0
+        known = rank > 0 and rank or false
+        me.skills[line] = known
+    end
+    return known
+end
+
+-- Where each standing of a reputation begins, Hated to Exalted, in the game's points; its word the game's
+-- (FACTION_STANDING_LABEL1 to 8).
+Pins.STANDINGS = { -42000, -6000, -3000, 0, 3000, 9000, 21000, 42000 }
+local STANDING_WORDS = { "Hated", "Hostile", "Unfriendly", "Neutral", "Friendly", "Honored", "Revered", "Exalted" }
+local function StandingWord(points)
+    local step = 1
+    for index, from in ipairs(Pins.STANDINGS) do
+        if points >= from then step = index end
+    end
+    return Core.Word("FACTION_STANDING_LABEL" .. step, STANDING_WORDS[step])
+end
+
+local function Names(quests)
+    local names = {}
+    for index, quest in ipairs(quests) do names[index] = QuestName(quest) end
+    return table.concat(names, ", ")
 end
 
 -- Whether a quest is too low to give this character experience: the game's quest colour grey (its level more than
@@ -362,34 +423,81 @@ local function Trivial(quest)
     return me.level - level > range
 end
 
--- Where a quest of Core's data stands for this character, and why: "offered" (it may take it now), "low" (it may,
--- but it gives no experience), "later" (once it meets what it asks: its level, a quest first; the reason in words),
--- "log" (in its log), "done", or "never" (not for its side, race or class, past its level, retired, closed).
+-- Whether a holiday of the game runs now (Core's Data.Holidays, by the game's calendar).
+local function Running(holiday)
+    local holidays = Core.Data.Holidays
+    return holidays ~= nil and holidays.Running(holiday) == true
+end
+
+-- Where a quest of Core's data stands for this character, and why (Saneroki, 2026-11-19: "Quest offer and low level
+-- quests only should show quests that the player can pickup right this moment ... Quests for later are only quests
+-- that can be picked up after fullfilling its requirement"):
+--   "offered"  it may take it now;
+--   "low"      it may, but it gives no experience (Pins.TEXT.low);
+--   "later"    once it meets what it asks: its level, quests done first (all, or one of them), a quest in its log
+--              (of several, one), a reputation, a profession's skill; the first in words, then all of them (Needs);
+--   "log"      in its log; "done";
+--   "never"    not for it: another side, race or class, past its level, a profession it has not learnt, closed by a
+--              quest it did or has, a breadcrumb to a quest it did or has, retired, a holiday that does not run now
+--              (holiday), a world event no calendar tells (event).
 function Pins.Standing(quest, id)
     if not me then Me() end
-    if type(quest) ~= "table" or quest.retired then return "never" end
-    if Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, id) then return "done" end
-    local index = Core.Ask(C_QuestLog.GetLogIndexForQuestID, id)
-    if index and index > 0 then return "log" end
+    if type(quest) ~= "table" or quest.retired or quest.event then return "never" end
+    if Done(id) then return "done" end
+    if Held(id) then return "log" end
     if quest.side and quest.side ~= me.side then return "never" end
     if not Has(quest.races, me.race) or not Has(quest.classes, me.class) then return "never" end
     if quest.maxLevel and quest.maxLevel > 0 and me.level > quest.maxLevel then return "never" end
-    local missing, ones, oneDone
+    if quest.holiday and not Running(quest.holiday) then return "never" end
+    local crumb = quest.breadcrumbTo
+    if crumb and (Done(crumb) or Held(crumb)) then return "never" end
+    local missing, ones, oneDone, logs, oneHeld = {}, nil, false, nil, false
     for _, need in ipairs(quest.requires or {}) do
         if not need.side or need.side == me.side then
-            local done = Core.Ask(C_QuestLog.IsQuestFlaggedCompleted, need.quest) and true or false
-            if need.kind == "closed" and done then return "never" end
-            if need.kind == "done" and not done then missing = missing or need.quest end
-            if need.kind == "one" then
+            local kind, other = need.kind, need.quest
+            if kind == "closed" then
+                if Done(other) or Held(other) then return "never" end
+            elseif kind == "done" then
+                if not Done(other) then missing[#missing + 1] = other end
+            elseif kind == "one" then
                 ones = ones or {}
-                ones[#ones + 1] = QuestName(need.quest)
-                oneDone = oneDone or done
+                ones[#ones + 1] = other
+                oneDone = oneDone or Done(other)
+            elseif kind == "log" then
+                logs = logs or {}
+                logs[#logs + 1] = other
+                oneHeld = oneHeld or Held(other)
             end
         end
     end
-    if (quest.minLevel or 0) > me.level then return "later", Pins.TEXT.needsLevel:format(quest.minLevel) end
-    if missing then return "later", Pins.TEXT.needsFirst:format(QuestName(missing)) end
-    if ones and not oneDone then return "later", Pins.TEXT.needsOne:format(table.concat(ones, ", ")) end
+    local needs = {}
+    local skill = quest.skill
+    if type(skill) == "table" and skill.line then
+        asked = true
+        local rank = Skill(skill.line)
+        if rank == false then return "never" end
+        if rank and rank < (skill.level or 0) then
+            needs[#needs + 1] = Pins.TEXT.needsSkill:format(SKILLS:Get(skill.line, "name") or ("#" .. skill.line), skill.level)
+        end
+    end
+    if (quest.minLevel or 0) > me.level then
+        table.insert(needs, 1, Pins.TEXT.needsLevel:format(quest.minLevel))
+    end
+    if #missing > 0 then needs[#needs + 1] = Pins.TEXT.needsFirst:format(Names(missing)) end
+    if ones and not oneDone then needs[#needs + 1] = Pins.TEXT.needsOne:format(Names(ones)) end
+    if logs and not oneHeld then
+        needs[#needs + 1] = (#logs > 1 and Pins.TEXT.needsLogOne or Pins.TEXT.needsLog):format(Names(logs))
+    end
+    local reputation = quest.reputation
+    if type(reputation) == "table" and reputation.faction then
+        asked = true
+        local standing = reputation.standing or 0
+        if Reputation(reputation.faction) < standing then
+            local name = FACTIONS:Get(reputation.faction, "name") or ("#" .. reputation.faction)
+            needs[#needs + 1] = Pins.TEXT.needsRep:format(name, StandingWord(standing))
+        end
+    end
+    if #needs > 0 then return "later", needs[1], needs end
     if Trivial(quest) then return "low", Pins.TEXT.low end
     return "offered"
 end
@@ -397,6 +505,54 @@ end
 -- Whether this character can take a quest of Core's data now, and it gives experience.
 function Pins.Offered(quest, id)
     return Pins.Standing(quest, id) == "offered"
+end
+
+-- The quests to do before one, in the order to do them, its first one first (Saneroki, 2026-11-19: "When the red
+-- questionmark is clicked it should show which requirement is needed to pick it up, like what quest chain is needed
+-- or what level"): those it asks done first, then theirs before them, back to the first; of the ones only one of
+-- which is needed, and of those to have in the log, the first that is for this character. Neither done ones nor
+-- those this character can never take go in; one in the log does, and so does nothing before it. At most
+-- Pins.CHAIN quests.
+Pins.CHAIN = 20
+function Pins.Chain(id)
+    if not me then Me() end
+    local chain, seen = {}, { [id] = true }
+    local function Walk(key, depth)
+        local record = QUESTS:Get(key)
+        if type(record) ~= "table" or depth > Pins.CHAIN then return end
+        local before, alternatives = {}, {}
+        for _, need in ipairs(record.requires or {}) do
+            if (not need.side or need.side == me.side) and not seen[need.quest] then
+                if need.kind == "done" then
+                    before[#before + 1] = need.quest
+                elseif need.kind == "one" or need.kind == "log" then
+                    alternatives[need.kind] = alternatives[need.kind] or {}
+                    table.insert(alternatives[need.kind], need.quest)
+                end
+            end
+        end
+        -- Of alternatives: none to do where one is done (or, for the log, held); else the first one for you
+        for kind, list in pairs(alternatives) do
+            local met, pick = false, nil
+            for _, other in ipairs(list) do
+                if Done(other) or (kind == "log" and Held(other)) then met = true end
+                if not pick and Pins.Standing(QUESTS:Get(other), other) ~= "never" then pick = other end
+            end
+            if not met and pick then before[#before + 1] = pick end
+        end
+        for _, other in ipairs(before) do
+            if not seen[other] and #chain < Pins.CHAIN then
+                seen[other] = true
+                local standing = Pins.Standing(QUESTS:Get(other), other)
+                if standing ~= "done" and standing ~= "never" then
+                    if standing ~= "log" then Walk(other, depth + 1) end
+                    chain[#chain + 1] = other
+                end
+            end
+        end
+    end
+    Walk(id, 1)
+    return chain
 end
 
 -- Where a dock's boat or zeppelin goes, in the game's words: the area there, and its zone where that is another.
@@ -477,15 +633,18 @@ function Pins.PlaceLook(kind)
     return look and look[2] or "poi-town"
 end
 
--- A quest's lines in a pin's tooltip: its name and level, and why it is grey (tables: words and their colour).
+-- A quest's lines in a pin's tooltip: its name and level, and why it is grey (tables: words and their colour): its
+-- reason, or every need of one for later (Pins.Standing), each on a line of its own.
 -- A quest not yet confirmed by the game has the red ! before its name (Core.UNCONFIRMED_MARK); true then.
-local function QuestLines(lines, id, reason, grey)
+local function QuestLines(lines, id, reason, grey, needs)
     local level = QUESTS:Get(id, "level")
     local name = level and Pins.TEXT.quest:format(QuestName(id), level) or QuestName(id)
     local doubt = QUESTS:Unverified(id)
     if doubt then name = Core.UNCONFIRMED_MARK .. name end
     lines[#lines + 1] = grey and { name, 0.6, 0.6, 0.6 } or { name, 1, 0.82, 0 }
-    if reason then lines[#lines + 1] = { "  " .. reason, 0.6, 0.6, 0.6 } end
+    for _, words in ipairs(needs or (reason and { reason }) or {}) do
+        lines[#lines + 1] = { "  " .. words, 0.6, 0.6, 0.6 }
+    end
     return doubt
 end
 
@@ -503,6 +662,19 @@ local function Unverified(place)
 end
 Pins.Unverified = Unverified
 
+-- The kind of a quest giver's pin, by what the filter shows (Saneroki, 2026-11-19: quest offers and low-level quests
+-- only what you can take right now, quests for later only what you can once you meet what they ask): the first of its
+-- offers, its low ones, those for later and those you did that the filter shows; else the first it has (a pin the
+-- filter hides). Its tooltip names only the quests of the kinds shown, and of its own (FromData).
+local function GiverKind(offers, lows, laters, done)
+    local Shows = Pins.Shows
+    if offers and Shows("quest") then return "quest" end
+    if lows and Shows("low") then return "low" end
+    if laters and Shows("later") then return "later" end
+    if done and Shows("done") then return "done" end
+    return offers and "quest" or lows and "low" or laters and "later" or done and "done" or nil
+end
+
 -- A place of Core's data as a pin: what it is says its kind and its look; nil for what the map does not show.
 local function FromData(place)
     local what, kind = place.what, place.kind
@@ -511,20 +683,22 @@ local function FromData(place)
     local doubt = Unverified(place) or nil
     local pin = { key = place.key, name = place.name, unverified = doubt, doubt = doubt }
     if kind == "npc" then
-        -- Its quests by where they stand for this character: offered, too low or for later (its pin red while one
-        -- is for later), done.
-        local offers, greys, done, grey = {}, {}, {}, nil
+        -- Its quests by where they stand for this character: offered, too low, for later, done.
+        local offers, lows, laters, done = {}, {}, {}, {}
         for _, quest in ipairs(type(what) == "table" and what.quests or {}) do
-            local standing, reason = Pins.Standing(QUESTS:Get(quest), quest)
+            local standing, reason, needs = Pins.Standing(QUESTS:Get(quest), quest)
             if standing == "offered" then
                 offers[#offers + 1] = quest
-            elseif standing == "low" or standing == "later" then
-                greys[#greys + 1] = { quest, reason }
-                grey = (grey == "later" or standing == "later") and "later" or "low"
+            elseif standing == "low" then
+                lows[#lows + 1] = { quest, reason }
+            elseif standing == "later" then
+                laters[#laters + 1] = { quest, reason, needs }
             elseif standing == "done" then
                 done[#done + 1] = quest
             end
         end
+        local Shows = Pins.Shows
+        local giver = GiverKind(#offers > 0, #lows > 0, #laters > 0, #done > 0)
         local services = what.services or {}
         local service
         for _, each in ipairs(services) do
@@ -539,7 +713,7 @@ local function FromData(place)
             end
         end
         local lines = {}
-        if #offers > 0 then
+        if giver == "quest" and Shows("quest") then
             pin.kind, pin.atlas, pin.offer = "quest", Pins.ICONS.offer, true
         elseif what.rare then
             pin.kind, pin.atlas = "rare", Pins.ICONS.rare
@@ -562,11 +736,14 @@ local function FromData(place)
                 end
             end
             if #words > 0 then lines[#lines + 1] = table.concat(words, ", ") end
-        elseif grey == "later" then
-            pin.kind, pin.atlas, pin.tint = "later", Pins.ICONS.later, Pins.RED
-        elseif grey then
+        elseif giver == "quest" then
+            -- (offers the filter hides: the pin does not show)
+            pin.kind, pin.atlas, pin.offer = "quest", Pins.ICONS.offer, true
+        elseif giver == "low" then
             pin.kind, pin.atlas, pin.grey = "low", Pins.ICONS.grey, true
-        elseif #done > 0 then
+        elseif giver == "later" then
+            pin.kind, pin.atlas, pin.tint = "later", Pins.ICONS.later, Pins.RED
+        elseif giver == "done" then
             -- Only quests this character has done: a pin of the kind Done quests (off at first), grey.
             pin.kind, pin.atlas, pin.grey = "done", Pins.ICONS.done, true
             lines[#lines + 1] = Pins.TEXT.done
@@ -576,19 +753,30 @@ local function FromData(place)
         else
             return nil
         end
-        -- What it offers, and what it will offer: a click shows them in the quest log.
+        -- What it offers, and what it will offer, of the kinds shown: a click shows them in the quest log.
         pin.quests = {}
-        for _, quest in ipairs(offers) do
-            if QuestLines(lines, quest, nil, false) then pin.unverified = true end
-            pin.quests[#pin.quests + 1] = quest
+        local kindOf = pin.kind
+        if kindOf == "quest" or Shows("quest") then
+            for _, quest in ipairs(offers) do
+                if QuestLines(lines, quest, nil, false) then pin.unverified = true end
+                pin.quests[#pin.quests + 1] = quest
+            end
         end
-        for _, entry in ipairs(greys) do
-            if QuestLines(lines, entry[1], entry[2], true) then pin.unverified = true end
-            pin.quests[#pin.quests + 1] = entry[1]
+        if kindOf == "low" or Shows("low") then
+            for _, entry in ipairs(lows) do
+                if QuestLines(lines, entry[1], entry[2], true) then pin.unverified = true end
+                pin.quests[#pin.quests + 1] = entry[1]
+            end
+        end
+        if kindOf == "later" or Shows("later") then
+            for _, entry in ipairs(laters) do
+                if QuestLines(lines, entry[1], entry[2], true, entry[3]) then pin.unverified = true end
+                pin.quests[#pin.quests + 1] = entry[1]
+            end
         end
         if #pin.quests > 0 then
             pin.click = "preview"
-            lines[#lines + 1] = { Pins.TEXT.preview, 0.5, 0.5, 0.5 }
+            lines[#lines + 1] = { kindOf == "later" and Pins.TEXT.previewLater or Pins.TEXT.preview, 0.5, 0.5, 0.5 }
         end
         pin.lines = #lines > 0 and lines or nil
         pin.roles = services
@@ -689,6 +877,7 @@ end
 -- changes at each kill of a quest's creature (QUEST_LOG_UPDATE), and Elwynn's 428 NPCs have 65 quest givers.
 local steady = {} -- [map] = { places = Core's list of that map, [index] = the pin of its NPC there, false for none }
 local givenFor   -- the log's quests the quest givers' pins were made for (Goals.Log): accepted, abandoned, handed in
+local givenShown -- the filter's quest kinds they were made for (For)
 
 -- Whether a place of Core's data is an NPC that gives quests: its pin goes by where they stand for you (FromData).
 local function GivesQuests(place)
@@ -874,9 +1063,12 @@ function Pins.For(view, small, pu, pv)
     rode = 0
     Me()
     if ns.Goals.Read() then wipe(data.goal) end
-    -- The quest givers' pins anew only once the quests in the log are others, not at each kill (QUEST_LOG_UPDATE)
-    if ns.Goals.Log() ~= givenFor then
-        givenFor = ns.Goals.Log()
+    -- The quest givers' pins anew only once the quests in the log are others, not at each kill (QUEST_LOG_UPDATE), and
+    -- once the filter shows other kinds of quests (their kind and tooltip follow it: GiverKind)
+    local filter = (Shows("quest") and "q" or "") .. (Shows("low") and "l" or "") .. (Shows("later") and "r" or "")
+        .. (Shows("done") and "d" or "")
+    if ns.Goals.Log() ~= givenFor or filter ~= givenShown then
+        givenFor, givenShown = ns.Goals.Log(), filter
         wipe(data.npc)
     end
     local continentLevel = view.level ~= "zone"
@@ -1187,6 +1379,14 @@ local LIVE = { quests = "quests", waypoint = "quests", flights = "flights", vign
 -- changed, the NPCs' of Core's data too (what this character can take follows its quests and level), and what the
 -- quests ask for is looked at again, not its objects', places' and ways'.
 function Pins.Changed(what)
+    -- A holiday began or ended (Core's Data.Holidays), or your reputation or a skill changed where a quest giver's pin
+    -- asked it (Standing): the quest givers' pins anew, nothing else.
+    if what == "holidays" or what == "standing" then
+        if what == "standing" and not asked then return false end
+        asked = false
+        wipe(data.npc)
+        return true
+    end
     local part = what == nil and true or LIVE[what]
     if not part then return false end
     if part == true then
@@ -1213,6 +1413,11 @@ function Pins.DataChanged()
     for _, part in pairs(data) do wipe(part) end
     wipe(steady)
     ns.Goals.Forget()
+end
+
+-- The holidays running are others: told as what the game tells (LIVE), so every view of the pins follows.
+if Core.Data.Holidays then
+    Core.Data.Holidays.OnChange(ns.Guard(function() ns.Fire("LIVE", "holidays") end))
 end
 
 Map:OnChange(function()

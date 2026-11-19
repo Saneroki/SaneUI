@@ -123,6 +123,8 @@ Data\Found.lua
 Data\Watchers.lua
 # The quest watchers: offered, taken, worked on, handed in, compared with the set Quests (Data.QuestWatch)
 Data\Quests.lua
+# Which holidays run now, by the game's calendar: a holiday's quests are offered only then (Data.Holidays)
+Data\Holidays.lua
 # Every loot window counted: corpses, skinning, pockets, nodes, fishing, quest items, where (Data.Loot)
 Data\Loot.lua
 # Creatures, their services, vendors' goods, spells and the tooltips' items, compared with the sets (Data.Facts)

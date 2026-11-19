@@ -669,14 +669,15 @@ Set(spawnsPath .. "/Spawns.lua", "Spawns", "00000007", "text", '"points", "middl
     .. 'R["npc:73"] = "70245\t\t1429\03185\03115\t"\n'
     .. 'R["npc:74"] = "70245\t\t1429\03150\03185\t"\n'
     .. 'R["npc:75"] = "70245\t\t1429\03140\03160\t"\n')
--- The quests they give: one this character can take (100), one it has done (5, doneQuests below).
+-- The quests they give: one this character can take (100), one it has done (5, doneQuests below); the giver of 100
+-- also one for later (102: the pin filter's quest kinds below).
 local questsPath = folder .. "/Quests"
 os.execute(("mkdir -p '%s'"):format(questsPath))
 Set(questsPath .. "/Quests.lua", "Quests", "00000009", "int", '"name", "minLevel", "startNPCs", "level"',
     '"text", "int", "list int", "int"',
     'R[100] = "70245\t\tA Quest to Take\t1\t72\t5"\nR[5] = "70245\t\tAn Old Quest\t1\t73\t"\n'
-    .. 'R[101] = "70245\t\tA Quest for Later\t60\t74\t30"\n'
-    .. 'I.byStartNPC = {}\nI.byStartNPC[72] = "100"\nI.byStartNPC[73] = "5"\nI.byStartNPC[74] = "101"\n')
+    .. 'R[101] = "70245\t\tA Quest for Later\t60\t74\t30"\nR[102] = "70245\t\tA Second Quest\t60\t72\t40"\n'
+    .. 'I.byStartNPC = {}\nI.byStartNPC[72] = "100\030102"\nI.byStartNPC[73] = "5"\nI.byStartNPC[74] = "101"\n')
 LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Warrior", MAGE = "Mage" }
 GetQuestGreenRange = function() return 5 end
 W.AddSets(questsPath)
@@ -2994,6 +2995,156 @@ do
     W.Wait(0)
     Canvas.Layout()
 end
+-- What a quest asks before it is offered (Saneroki, 2026-11-19: "only quests that can be picked up by the player right
+-- now should be shown ... which quests are only for specific races, or classes or factions, what quests require other
+-- quests or levels, what are old season quests"): a holiday only while the game's calendar says it runs, a world event
+-- never, a profession you have not learnt never and too low for later, a reputation, a quest in the log (of several,
+-- one), closed by a quest you have, a breadcrumb to a quest you have; every need in words, the chain before it.
+;(function()
+    local Quests = Core.Data.Set("Quests")
+    local get, done, index = Quests.Get, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLog.GetLogIndexForQuestID
+    local records = {
+        [900] = { name = "Treats", level = 6, holiday = 324 },
+        [901] = { name = "Copper Bars", level = 6, event = true },
+        [902] = { name = "Herb Lore", level = 6, skill = { line = 182, level = 50 } },
+        [903] = { name = "Friends Only", level = 6, reputation = { faction = 69, standing = 3000 } },
+        [904] = { name = "To the Camp", level = 6, breadcrumbTo = 905 },
+        [905] = { name = "The Camp", level = 6 },
+        [906] = { name = "Shut", level = 6, requires = { { kind = "closed", quest = 905 } } },
+        [907] = { name = "Chapter", level = 6, requires = { { kind = "log", quest = 905 }, { kind = "log", quest = 908 } } },
+        [910] = { name = "First", level = 3 },
+        [911] = { name = "Second", level = 4, requires = { { kind = "done", quest = 910 } } },
+        [912] = { name = "Third", level = 8, minLevel = 8, requires = { { kind = "done", quest = 911 } } },
+        [913] = { name = "Horde Way", level = 4, side = "horde" },
+        [914] = { name = "Either", level = 9, requires = { { kind = "one", quest = 913 }, { kind = "one", quest = 911 } } },
+    }
+    Quests.Get = function(self, id, field)
+        local record = records[id]
+        if record then
+            if field then return record[field] end
+            return record
+        end
+        return get(self, id, field)
+    end
+    local held, did = {}, {}
+    C_QuestLog.IsQuestFlaggedCompleted = function(quest) return did[quest] or done(quest) end
+    C_QuestLog.GetLogIndexForQuestID = function(quest) if held[quest] then return 3 end return index(quest) end
+    local function Stand(id) return Pins.Standing(records[id], id) end
+    check(Stand(900) == "never", "a holiday's quest while the game's calendar tells of no holiday: not shown")
+    local calendar, clock = rawget(_G, "C_Calendar"), rawget(_G, "C_DateAndTime")
+    local now = { year = 2026, month = 10, monthDay = 25, hour = 12, minute = 0 }
+    local events = { { eventID = 324, title = "Hallow's End", calendarType = "HOLIDAY",
+                       startTime = { year = 2026, month = 10, monthDay = 18, hour = 10, minute = 0 },
+                       endTime = { year = 2026, month = 11, monthDay = 1, hour = 10, minute = 0 } },
+                     { eventID = 7, title = "A Raid", calendarType = "PLAYER", startTime = now, endTime = now } }
+    local opened = 0
+    C_Calendar = { OpenCalendar = function() opened = opened + 1 end,
+                   GetMonthInfo = function() return { month = 10, year = 2026 } end,
+                   GetNumDayEvents = function(offset, day) return offset == 0 and day == 25 and #events or 0 end,
+                   GetDayEvent = function(_, _, i) return events[i] end }
+    C_DateAndTime = { GetCurrentCalendarTime = function() return now end }
+    local told = 0
+    Core.Data.Holidays.OnChange(function() told = told + 1 end)
+    W.Fire("CALENDAR_UPDATE_EVENT_LIST")
+    check(Core.Data.Holidays.Running(324) and not Core.Data.Holidays.Running(7) and told == 1 and Stand(900) == "offered",
+        "the calendar tells of Hallow's End today: its quest offered, the change told once; a player's event is no holiday")
+    now = { year = 2026, month = 11, monthDay = 1, hour = 11, minute = 0 }
+    events[1].endTime = { year = 2026, month = 11, monthDay = 1, hour = 10, minute = 0 }
+    C_Calendar.GetMonthInfo = function() return { month = 11, year = 2026 } end
+    C_Calendar.GetNumDayEvents = function() return 1 end
+    W.Fire("CALENDAR_UPDATE_EVENT_LIST")
+    check(not Core.Data.Holidays.Running(324) and told == 2 and Stand(900) == "never" and opened == 1,
+        "past its end that day: no more (the calendar asked for the new day's)")
+    C_Calendar, C_DateAndTime = calendar, clock
+    W.Fire("CALENDAR_UPDATE_EVENT_LIST")
+    check(Stand(901) == "never", "a world event no calendar tells: never offered")
+    local skills = rawget(_G, "C_SkillInfo")
+    local ranks = {}
+    C_SkillInfo = { GetSkillLineInfoByID = function(line) return ranks[line] and { rank = ranks[line] } or nil end }
+    Pins.Changed("standing")
+    Canvas.Layout()
+    check(Stand(902) == "never", "a profession's quest you have not learnt: not shown")
+    ranks[182] = 20
+    Canvas.Layout()
+    local standing, reason, needs = Stand(902)
+    check(standing == "later" and reason == Pins.TEXT.needsSkill:format("#182", 50) and #needs == 1,
+        "learnt but too low: for later, the skill it asks in words")
+    ranks[182] = 75
+    Canvas.Layout()
+    check(Stand(902) == "offered", "your skill high enough: offered")
+    C_SkillInfo = skills
+    local reputation = rawget(_G, "C_Reputation")
+    C_Reputation = { GetFactionDataByID = function(faction) return faction == 69 and { currentStanding = 1500 } or nil end }
+    Canvas.Layout()
+    standing, reason = Stand(903)
+    check(standing == "later" and reason == Pins.TEXT.needsRep:format("#69", Core.Word("FACTION_STANDING_LABEL5", "Friendly")),
+        "a reputation below what it asks: for later, the faction and the standing in words")
+    C_Reputation = { GetFactionDataByID = function() return { currentStanding = 3000 } end }
+    Canvas.Layout()
+    check(Stand(903) == "offered", "the reputation reached: offered")
+    C_Reputation = reputation
+    check(Stand(904) == "offered" and Stand(906) == "offered", "a breadcrumb, and one closed by another, while that is not yours")
+    held[905] = true
+    check(Stand(904) == "never" and Stand(906) == "never" and Stand(907) == "offered",
+        "the quest they lead to in your log: the breadcrumb and the closed one gone; one that wants it in the log offered")
+    held[905] = nil
+    standing, reason = Stand(907)
+    check(standing == "later" and reason == Pins.TEXT.needsLogOne:format("The Camp, #908"),
+        "one that wants a quest in the log, of two: for later, with one of them")
+    UnitLevel = function() return 5 end
+    W.Fire("PLAYER_LEVEL_UP")
+    W.Wait(0)
+    Canvas.Layout()
+    standing, reason, needs = Stand(912)
+    check(standing == "later" and reason == Pins.TEXT.needsLevel:format(8) and needs[2] == Pins.TEXT.needsFirst:format("Second"),
+        "every need in words, the level first")
+    local chain = Pins.Chain(912)
+    check(#chain == 2 and chain[1] == 910 and chain[2] == 911, "the quests before it, the first to take first")
+    held[910] = true
+    chain = Pins.Chain(912)
+    check(#chain == 2 and chain[1] == 910, "one of them in your log: still in the chain, nothing before it")
+    held[910], did[910] = nil, true
+    chain = Pins.Chain(912)
+    check(#chain == 1 and chain[1] == 911, "one done: out of the chain")
+    did[910] = nil
+    chain = Pins.Chain(914)
+    check(#chain == 2 and chain[1] == 910 and chain[2] == 911, "of quests one of which is needed: the first that is for you")
+    UnitLevel = function() return 6 end
+    W.Fire("PLAYER_LEVEL_UP")
+    W.Wait(0)
+    Canvas.Layout()
+    Quests.Get = get
+    C_QuestLog.IsQuestFlaggedCompleted, C_QuestLog.GetLogIndexForQuestID = done, index
+end)()
+-- The quest giver's pin by what the filter shows: its offer (100) and one for later (102) at one giver.
+;(function()
+    local chosen = Core.Copy(ns.options.pins)
+    local function Filter(kinds)
+        local set = Core.Copy(chosen)
+        for kind, on in pairs(kinds) do set[kind] = on or nil end
+        Core.Set(ns.name, "pins", set)
+        Canvas.Layout()
+        return Drawn()["npc:72"]
+    end
+    local giver = Filter({ quest = true, low = true, later = true })
+    local named = {}
+    for _, line in ipairs(giver and giver.pin.lines or {}) do named[#named + 1] = type(line) == "table" and line[1] or line end
+    check(giver and giver.pin.kind == "quest" and named[1] == "A Quest to Take (level 5)" and named[2] == "A Second Quest (level 40)"
+        and named[3] == "  " .. Pins.TEXT.needsLevel:format(60),
+        "a giver of an offer and one for later: the yellow exclamation mark, both named, the later one with what it asks")
+    giver = Filter({ quest = true, later = false })
+    check(giver and giver.pin.kind == "quest" and #giver.pin.quests == 1 and giver.pin.lines[2][1] ~= "A Second Quest (level 40)",
+        "quests for later off: only the offer in its tooltip")
+    giver = Filter({ quest = false, later = true })
+    check(giver and giver.pin.kind == "later" and giver.pin.tint == Pins.RED and #giver.pin.quests == 1
+        and giver.pin.quests[1] == 102 and giver.pin.lines[1][1] == "A Second Quest (level 40)"
+        and giver.pin.lines[#giver.pin.lines][1] == Pins.TEXT.previewLater,
+        "quest offers off, for later on: the red question mark of the one for later alone, its click told")
+    giver = Filter({ quest = false, later = false })
+    check(not giver, "both off: no pin")
+    Core.Set(ns.name, "pins", chosen)
+    Canvas.Layout()
+end)()
 check(pins["quest:7"] and pins["quest:7"].pin.name == "Wolves Across the Border" and not pins["quest:7"].pin.complete
     and pins["quest:7"].pin.kind == "log" and pins["quest:7"].icon._atlas == Pins.ICONS.inProgress
     and Pins.ICONS.inProgress ~= Pins.ICONS.log,

@@ -157,6 +157,12 @@ QuestLog.TEXT = {
     level = "Level %d",
     givenBy = "Given by: %s",
     takenBy = "Turned in to: %s",
+    -- A preview of a quest for later: the quests before it, in the order to do them (Pins.Chain)
+    chain = "The quests before it",
+    chainStep = "%d. %s",
+    chainNow = "%d. %s: you can take it now, from %s",
+    chainHeld = "%d. %s: in your quest log",
+    named = "%s (level %d)",
     rewards = Core.Word("QUEST_REWARDS", "Rewards"),
     choices = Core.Word("REWARD_CHOICES", "You will be able to choose one of these rewards:"),
     experience = "%s experience",
@@ -993,21 +999,49 @@ local function Cells(things, entries)
     end
 end
 
--- What Core's data knows of a quest not in the log, as the log's words: why it is not for this character yet, its
--- level, who gives and takes it, what it asks first, its objectives and its rewards.
+-- Who gives a quest of Core's data: its NPCs' names, else its objects'.
+local function Givers(record)
+    return Names(record.startNPCs, "npc", NPCS) or Names(record.startObjects, "object", OBJECTS)
+end
+
+-- The quests to do before a quest for later, in the order to do them (Pins.Chain), one a line: its name and level,
+-- and whether you can take it now (from whom) or have it in your log.
+local function Chain(quest)
+    local steps = {}
+    for number, before in ipairs(ns.Pins.Chain(quest)) do
+        local record = QUESTS:Get(before) or {}
+        local name = record.name or ("#" .. before)
+        if record.level then name = QuestLog.TEXT.named:format(name, record.level) end
+        local standing = ns.Pins.Standing(record, before)
+        local givers = Givers(record)
+        if standing == "log" then
+            steps[number] = QuestLog.TEXT.chainHeld:format(number, name)
+        elseif (standing == "offered" or standing == "low") and givers then
+            steps[number] = QuestLog.TEXT.chainNow:format(number, name, givers)
+        else
+            steps[number] = QuestLog.TEXT.chainStep:format(number, name)
+        end
+    end
+    return table.concat(steps, "\n")
+end
+
+-- What Core's data knows of a quest not in the log, as the log's words: why it is not for this character yet (every
+-- need of one for later, Pins.Standing), its level, who gives and takes it, the quests before it, its objectives and
+-- its rewards.
 local function Preview(quest)
     local record = QUESTS:Get(quest) or {}
     local parts = {}
-    local standing, reason = ns.Pins.Standing(record, quest)
-    if reason then Words(parts, "|cffff4040" .. reason .. "|r")
+    local standing, reason, needs = ns.Pins.Standing(record, quest)
+    if reason then Words(parts, "|cffff4040" .. table.concat(needs or { reason }, "\n") .. "|r")
     elseif standing == "offered" then Words(parts, "|cff20ff20" .. QuestLog.TEXT.offered .. "|r") end
     local facts = {}
     if record.level then facts[#facts + 1] = QuestLog.TEXT.level:format(record.level) end
-    local givers = Names(record.startNPCs, "npc", NPCS) or Names(record.startObjects, "object", OBJECTS)
+    local givers = Givers(record)
     if givers then facts[#facts + 1] = QuestLog.TEXT.givenBy:format(givers) end
     local takers = Names(record.finishNPCs, "npc", NPCS) or Names(record.finishObjects, "object", OBJECTS)
     if takers then facts[#facts + 1] = QuestLog.TEXT.takenBy:format(takers) end
     Words(parts, table.concat(facts, "\n"))
+    if standing == "later" then Section(parts, QuestLog.TEXT.chain, Chain(quest)) end
     local objectives = {}
     for _, objective in ipairs(record.objectives or {}) do
         local words = Listed(objective)

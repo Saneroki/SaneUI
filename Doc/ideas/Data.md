@@ -1114,6 +1114,13 @@ objectives are found.
   before is done. Each objective carries its stage; a quest of one step has all its objectives at stage 1.
 - **A breadcrumb** sends the player to another quest's giver, and is usually closed once that quest is
   taken; `breadcrumbTo` says which quest.
+- **When it is offered (Saneroki, 2026-11-19, card #590):** a holiday's quest only while the game's calendar says the
+  holiday runs (`holiday`, a key of *Holidays*; `Data.Holidays`), a world event's no calendar tells never as far as the
+  views know (`event`: the war effort, the invasions, a season not placed); a quest that wants another in the log
+  while it is taken (`requires` kind `log`, of several one); `closed` by a quest done or in the log. From the 1.12
+  records where both agree (batch 32) and the quests' sorts and parent quests for Forever's client as our tool picked them (batch 33), both
+  unverified; the game's word replaces them as play shows the offers (`Data/Quests.lua` narrows a rule an offer
+  proves wrong).
 
 ```lua
 local Quests = Data.Set("Quests")

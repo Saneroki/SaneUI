@@ -185,3 +185,13 @@ about = "What was counted in play in Forever up to 2026-11-18 (builds up to 7095
 kind = "batch"
 game = "forever"
 about = "What players' records of Forever itself show, 2026-11-18, a newer reading of what batch 19 read, only what the master lacked: what bosses were seen to drop, without chances. Unverified: the game's word or our own sightings replace it entry by entry."
+
+[32]
+kind = "batch"
+game = "forever"
+about = "The original game's quests (patch 1.12) offered only in a holiday or a world event, and those that ask for another quest in the log, only where both records have the quest and agree (a record that only sorts it as seasonal agrees with the other's holiday): the holiday by its name in Forever's client, any other event as one no calendar tells. Unverified: Forever's own word replaces it."
+
+[33]
+kind = "batch"
+game = "forever"
+about = "Quests for Forever's client as our tool picked them, 2026-11-19, on the terms of batch 5: the holiday or world event a quest is offered in alone, by its sort (where batch 32 has nothing or says the same; a contradiction left out of both), and the quest it asks for in the log. Unverified: the game's word or our own sightings replace it entry by entry."
