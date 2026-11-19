@@ -14,6 +14,10 @@ Navigation 0.3.7 (2026-11-19)
   world events, professions you lack or breadcrumbs you are
   past. A red question mark names everything a quest still
   asks; a click shows the chain of quests to do first.
+- Fewer false exclamation marks in the cities (librarians'
+  books, promotion quests at innkeepers, other classes'
+  quests), and a giver's pin follows what it offered you when
+  you last talked to it.
 
 
 SaneUI 0.3.8 (2026-11-19)
@@ -21,6 +25,8 @@ SaneUI 0.3.8 (2026-11-19)
 - Quests know their holidays and world events, and which
   quests must be in your log first; the game's calendar tells
   which holidays run now.
+- Fixed: handing in a chain's quest no longer makes SaneUI
+  forget what the next quest needs.
 
 
 SaneUI 0.3.7 (2026-11-19)

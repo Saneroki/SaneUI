@@ -66,7 +66,7 @@ end (`dev/build`, from `assets/data/`).
 | `Data/Drops.lua` | How often things come, for every view: `Data.Drops()` → `Of`, `Rare`, `Chance`, `From`, … |
 | `Data/Found.lua` | The discoveries and their chat line: `Data.Discovered`, `Data.Found(fromDay)`, `Data.Discoveries.Prices` |
 | `Data/Watchers.lua` | Core's watchers: creatures, things, mailboxes, crossings, bosses' loot and casts, items' stats: `Data.Watchers` |
-| `Data/Quests.lua` | The quest watchers (offered, taken, worked on, handed in): `Data.QuestWatch`, `Looted`, `Wanting` |
+| `Data/Quests.lua` | The quest watchers (offered, taken, worked on, handed in): `Data.QuestWatch`, `Looted`, `Wanting`; what a giver lists per character (`Listed`, `OnListed`), a quest's trusted needs (`Requires`) |
 | `Data/Holidays.lua` | Which holidays run now, by the game's calendar: `Data.Holidays.Running(key)`, `OnChange(fn)` (a holiday's quests offered only then) |
 | `Data/Loot.lua` | Every loot window counted (corpses, skinning, pockets, nodes, fishing, where): `Data.Loot` |
 | `Data/Facts.lua` | Creatures, services, vendors' goods, spells, tooltips' items compared: `Data.Facts` |

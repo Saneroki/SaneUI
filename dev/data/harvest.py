@@ -338,6 +338,23 @@ def harvest(master, files, ledger=None):
     return lines, report
 
 
+def firsts_kept(master, game, key, fields):
+    """A learned quest's fields with its requires keeping the master's quests to do first (done, one): an offer the
+    moment the quest before was handed in looked to Core 0.3.7 and older as if that one were not done, and its watcher
+    took the need away (card #590). A quest to do first leaves the master only by a person's fix; Core's
+    QuestWatch.Requires and Navigation's map trust the shipped ones alike."""
+    versions = master.view("Quests", game).get(key)
+    shipped = versions[-1].fields.get("requires") if versions and not versions[-1].gone else None
+    if not shipped:
+        return fields
+    staged = fields.get("requires") or []
+    have = {rule.get("quest") for rule in staged}
+    kept = list(staged) + [rule for rule in shipped if rule.get("kind") in ("done", "one") and rule.get("quest") not in have]
+    fields = dict(fields)
+    fields["requires"] = kept or None
+    return fields
+
+
 def _harvest_part(master, game, part, ledger, report, newest):
     lines = []
     patches = part.get("builds") if isinstance(part.get("builds"), dict) else {}
@@ -379,6 +396,8 @@ def _harvest_part(master, game, part, ledger, report, newest):
                 if not fields:
                     report["parts"] += 1
                     continue
+            if set_name == "Quests" and "requires" in fields:
+                fields = firsts_kept(master, game, key, fields)
             line = {"set": set_name, "key": key, "game": game, "build": build, "src": "game", "fields": fields}
             if day:
                 line["day"] = day

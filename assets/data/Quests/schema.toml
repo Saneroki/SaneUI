@@ -21,7 +21,7 @@ side           = { type = "enum", values = ["alliance", "horde"] }  # none: both
 races          = { type = "list", of = "int" }  # the game's race IDs; none: every race of its side
 classes        = { type = "list", of = "int" }  # the game's class IDs; none: every class
 requires       = { type = "list", of = "tuple", parts = [
-    { name = "kind", type = "enum", values = ["done", "one", "closed", "log"] },  # all done first, one of them done, closed once had (done or in the log), in the log while it is taken (of several, one)
+    { name = "kind", type = "enum", values = ["done", "one", "closed", "log", "notlog"] },  # all done first, one of them done, closed once had (done or in the log), in the log while it is taken (of several, one), closed while that one is in the log
     { name = "quest", type = "int" },        # the game's quest ID, also of a quest this set does not hold: the game tells whether it is done
     { name = "side", type = "enum", values = ["alliance", "horde"] },
 ] }
@@ -84,6 +84,11 @@ groupSize      = { type = "int", min = 2 }
 retired        = { type = "bool" }           # not offered any more
 holiday        = { type = "ref", set = "Holidays" }  # offered only while this holiday of the game runs (its calendar)
 event          = { type = "bool" }           # offered only in a world event no calendar tells (a war effort, an invasion, a season not placed)
+reputationMax  = { type = "tuple", parts = [
+    { name = "faction", type = "int" },
+    { name = "standing", type = "int" },
+] }                                          # offered only below this standing with the faction (the game's points)
+spell          = { type = "int" }            # a spell the character must know first; below 0: one it must not know yet
 
 [index]
 byStartNPC     = "startNPCs.npc"

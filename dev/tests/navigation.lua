@@ -3017,6 +3017,10 @@ end
         [912] = { name = "Third", level = 8, minLevel = 8, requires = { { kind = "done", quest = 911 } } },
         [913] = { name = "Horde Way", level = 4, side = "horde" },
         [914] = { name = "Either", level = 9, requires = { { kind = "one", quest = 913 }, { kind = "one", quest = 911 } } },
+        [915] = { name = "A Book", level = 6, carry = 5000 },
+        [916] = { name = "Not Now", level = 6, requires = { { kind = "notlog", quest = 905 } } },
+        [917] = { name = "Strangers Only", level = 6, reputationMax = { faction = 69, standing = 3000 } },
+        [918] = { name = "Camping 101", level = 6, spell = -777 },
     }
     Quests.Get = function(self, id, field)
         local record = records[id]
@@ -3084,9 +3088,26 @@ end
     check(Stand(903) == "offered", "the reputation reached: offered")
     C_Reputation = reputation
     check(Stand(904) == "offered" and Stand(906) == "offered", "a breadcrumb, and one closed by another, while that is not yours")
+    local items, book = rawget(_G, "C_Item"), rawget(_G, "C_SpellBook")
+    local carried, known = 0, false
+    C_Item = { GetItemCount = function(item) return item == 5000 and carried or 0 end }
+    C_SpellBook = { IsSpellKnown = function(spell) return spell == 777 and known end }
+    check(Stand(915) == "never" and Stand(918) == "offered", "a librarian's book quest without the book: not shown; a camp piece not learnt: offered")
+    carried, known = 1, true
+    check(Stand(915) == "offered" and Stand(918) == "never", "the book carried: offered; the camp piece learnt: no more")
+    C_Item, C_SpellBook = items, book
+    C_Reputation = { GetFactionDataByID = function() return { currentStanding = 1000 } end }
+    Canvas.Layout()
+    check(Stand(917) == "offered", "a reputation it must stay under, not reached: offered")
+    C_Reputation = { GetFactionDataByID = function() return { currentStanding = 3000 } end }
+    Canvas.Layout()
+    check(Stand(917) == "never", "reached: no more")
+    C_Reputation = reputation
+    Canvas.Layout()
+    check(Stand(916) == "offered", "one a quest closes while in the log: offered while that is not")
     held[905] = true
-    check(Stand(904) == "never" and Stand(906) == "never" and Stand(907) == "offered",
-        "the quest they lead to in your log: the breadcrumb and the closed one gone; one that wants it in the log offered")
+    check(Stand(904) == "never" and Stand(906) == "never" and Stand(907) == "offered" and Stand(916) == "never",
+        "the quest they lead to in your log: the breadcrumb and the closed ones gone; one that wants it in the log offered")
     held[905] = nil
     standing, reason = Stand(907)
     check(standing == "later" and reason == Pins.TEXT.needsLogOne:format("The Camp, #908"),
@@ -3142,6 +3163,26 @@ end)()
         "quest offers off, for later on: the red question mark of the one for later alone, its click told")
     giver = Filter({ quest = false, later = false })
     check(not giver, "both off: no pin")
+    -- What the game listed when you talked to the giver wins (Core's QuestWatch.Listed): the offer it withheld goes, the
+    -- quest for later it listed is offered
+    SaneUICharDB = SaneUICharDB or {}
+    local day = math.floor(GetServerTime() / 86400)
+    SaneUICharDB.offers = { ["npc:72"] = ("6\031%d\031\031100"):format(day) }
+    Pins.Changed("givers")
+    giver = Filter({ quest = true, low = true, later = true })
+    check(giver and giver.pin.kind == "later" and #giver.pin.quests == 1 and giver.pin.quests[1] == 102,
+        "the giver did not list its offer when you talked to it: no exclamation mark, only the quest for later")
+    SaneUICharDB.offers = { ["npc:72"] = ("6\031%d\031102\031100"):format(day) }
+    Pins.Changed("givers")
+    giver = Filter({ quest = true, low = true, later = true })
+    check(giver and giver.pin.kind == "quest" and giver.pin.quests[1] == 102 and #giver.pin.quests == 1,
+        "the giver listed the quest the data had for later: offered, as the game says")
+    SaneUICharDB.offers = { ["npc:72"] = ("5\031%d\031\031100"):format(day) }
+    Pins.Changed("givers")
+    giver = Filter({ quest = true, low = true, later = true })
+    check(giver and giver.pin.kind == "quest" and giver.pin.quests[1] == 100, "told at another level: the data's word again")
+    SaneUICharDB.offers = nil
+    Pins.Changed("givers")
     Core.Set(ns.name, "pins", chosen)
     Canvas.Layout()
 end)()

@@ -6,6 +6,51 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation and Core: quest offers checked in the cities; a giver's own list (Saneroki, 2026-11-19)
+Saneroki: "do #591 and #592 as well and do other checks. See if you can make the quest offers more relyable, not only
+to a level 20 character but also to a level 40 or level 50 character in different cities like stormwind, ironforge,
+undercity and ogrimmar or bootybay etc. People have complained that there are lot of exclamaitionmarks on the map but
+when they go there there are not quest offers there. Also quests taht you have already done etc should not be shown
+either".
+- **The checks:** characters of 40 and 50 of both sides replayed in the six capitals and Booty Bay, every offer set
+  against the 1.12 records, Forever's servers' answers and what Saneroki's own play confirmed. False offers found: the
+  two librarians' sixteen book quests each (in the game a librarian lists one only to who carries that book), Jennea
+  Cannon's and Oran Snakewrithe's eight more; *Your Reward has Arrived!* at every capital's innkeeper and *A Special
+  Gift* at Landro (names alone, no level, nothing to do or given, no source but the imports); *To Serve Kum'isha*,
+  replaced by Forever's own; eight versions of *An Earnest Proposition* (and of *Just Compensation*, *Anthion's Parting
+  Words*) for every class; and chain steps whose quest before was gone from the needs.
+- **The watcher's bug (`src/Core/Data/Quests.lua`):** the next quest of a chain is offered the moment the one before
+  is handed in, before the game flags that one done, and `Narrow` took the need away (Tiger Mastery, The Night Watch,
+  The Legend of Stalvan, Zombie Juice: learned rows in Saneroki's saved files, laid over the set, so their givers
+  showed offers to his alts). Now a quest handed in since the login counts as done (`turnedIn`). The views trust a
+  quest's needs as `QuestWatch.Requires` gives them: a row learned in play, or a member's, never takes away a quest to
+  do first the shipped row has (so rows older Cores saved, here and at members', do no harm); the harvest keeps those
+  alike (`dev/data/harvest.py`, `firsts_kept`).
+- **A giver's own list (card #592):** `QuestWatch.Listed(thing)`: what the game listed when the character talked to a
+  giver (the gossip window, the greeting, a quest opened at once, a quest to hand in opened at once), and the quests the
+  data let it take that the game did not list (withheld), kept per character in `SaneUICharDB.offers` (at most
+  `QuestWatch.GIVERS`), valid while its level and the server's day are the talk's; a quest the data had for later is
+  never withheld, so one taken possible by a hand-in elsewhere shows. `Pins.AtGiver`: a listed quest offered, a
+  withheld one gone; `LIVE` "givers" makes the givers' pins anew. Low-level quests are never withheld (the server may
+  leave them out of the list).
+- **The rest of when a quest is offered (card #591):** `assets/data/Quests/schema.toml`: `reputationMax`, `spell`, the
+  kind `notlog`; batch 33 (`sources.toml`) also from the quest database for Forever's client: a reputation to stay under
+  (41), a spell not to know yet (80, Forever's Camping 101), a quest that closes one while in the log (17) or once done
+  (22); and from the master's own facts: the book a book quest wants carried (39, `carry`), classes by rewards (28,
+  where the 1.12 records lack the quest), retired (3). `Pins.Standing` reads them all; Core's `Takeable` mirrors the
+  rules a list is judged by. Not taken (few quests): `availableStartingWith`, `requiredSpecialization`.
+- **The harvest of Saneroki's play:** the quest rows the game told in two saved files (679), their needs left out:
+  331 versions of the game's word (givers, objectives, rewards), 28 conflicts with batch 29's versions at the same
+  build left for a person's look (objective texts, chain links). `builds.toml`: four builds seen in play.
+- **Tests:** `dev/tests/data.lua` (687 checks): the chain's need kept after a hand-in, a giver's list (listed,
+  withheld, not the one for later, another level, a quest opened at once, a quest to hand in at once), the trusted
+  needs; `dev/tests/navigation.lua` (2329): the book carried or not, a camp piece known, a reputation under its top, a
+  quest closed while in the log, a giver's withheld offer gone and its listed quest for later offered, another level;
+  `dev/tests/data/tools.py` (248): the harvest keeps a quest's needs to do first.
+- **Measured:** world-wide, a character of 40 or 50 with nothing done sees 37 to 41 percent fewer givers with an
+  exclamation mark than before card #590 (a human warrior of 40: 334 to 207), before any giver's list corrects more.
+- A game restart takes it in (card #590's new file in Core's TOC). Cards #591, #592.
+
 ### Navigation and Core: quest pins only for what you can take (Saneroki, 2026-11-19)
 Saneroki: "when People have selected Quest Offers to be on, only quests that can be picked up by the player right now
 should be shown. For me for some reason way to many exclamationmarks show up that don't represent a quest that are

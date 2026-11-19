@@ -140,6 +140,7 @@ Pins.TEXT = {
     needsLogOne = "With one of %s in your quest log",
     needsRep = Core.Word("ITEM_REQ_REPUTATION", "Requires %s - %s"), -- (the faction, its standing)
     needsSkill = Core.Word("ITEM_REQ_SKILL", "Requires %s (%d)"),
+    needsSpell = "Requires %s",
     preview = "Click on the full map: its quests in the quest log",
     previewLater = "Click on the full map: what they ask first, in the quest log",
     undiscovered = "Not discovered yet",
@@ -347,7 +348,7 @@ local SPAWNS, NPC_FACTS, OBJECT_FACTS = Core.Data.Set("Spawns"), Core.Data.Set("
 local CREATURES = Core.Data.Set("CreatureSpawns")
 local PLACE_FACTS, WAYS_SET = Core.Data.Set("Places"), Core.Data.Set("Travel")
 -- The names of what a quest asks for (Standing)
-local FACTIONS, SKILLS = Core.Data.Set("Factions"), Core.Data.Set("SkillLines")
+local FACTIONS, SKILLS, SPELLS = Core.Data.Set("Factions"), Core.Data.Set("SkillLines"), Core.Data.Set("Spells")
 local function QuestName(id)
     return QUESTS:Get(id, "name") or ("#" .. tostring(id))
 end
@@ -423,6 +424,26 @@ local function Trivial(quest)
     return me.level - level > range
 end
 
+-- A quest's needs as the map trusts them (Core's QuestWatch.Requires: what play told may take a closing rule away, never
+-- a quest to do first); the quest's own where Core has no such word.
+local function Requires(quest, id)
+    local watch = Core.Data.QuestWatch
+    if watch and watch.Requires then return watch.Requires(quest, id) end
+    return quest.requires
+end
+
+-- Whether this character carries an item (its bags), and whether it knows a spell.
+local function Carries(item)
+    local items = rawget(_G, "C_Item")
+    local count = Core.Ask(items and items.GetItemCount or rawget(_G, "GetItemCount"), item)
+    return (tonumber(count) or 0) > 0
+end
+local function Knows(spell)
+    local book = rawget(_G, "C_SpellBook")
+    if book and book.IsSpellKnown and Core.Ask(book.IsSpellKnown, spell) == true then return true end
+    return Core.Ask(rawget(_G, "IsPlayerSpell"), spell) == true or Core.Ask(rawget(_G, "IsSpellKnown"), spell) == true
+end
+
 -- Whether a holiday of the game runs now (Core's Data.Holidays, by the game's calendar).
 local function Running(holiday)
     local holidays = Core.Data.Holidays
@@ -438,8 +459,9 @@ end
 --              (of several, one), a reputation, a profession's skill; the first in words, then all of them (Needs);
 --   "log"      in its log; "done";
 --   "never"    not for it: another side, race or class, past its level, a profession it has not learnt, closed by a
---              quest it did or has, a breadcrumb to a quest it did or has, retired, a holiday that does not run now
---              (holiday), a world event no calendar tells (event).
+--              quest it did or has (or, notlog, has), a breadcrumb to a quest it did or has, retired, a holiday that does
+--              not run now (holiday), a world event no calendar tells (event), a book it does not carry (carry), a
+--              reputation past what it allows (reputationMax), a spell it knows already (spell below 0).
 function Pins.Standing(quest, id)
     if not me then Me() end
     if type(quest) ~= "table" or quest.retired or quest.event then return "never" end
@@ -451,12 +473,24 @@ function Pins.Standing(quest, id)
     if quest.holiday and not Running(quest.holiday) then return "never" end
     local crumb = quest.breadcrumbTo
     if crumb and (Done(crumb) or Held(crumb)) then return "never" end
+    -- A librarian's book quest: offered only to one who carries the book (it starts it itself where it lies)
+    if quest.carry and not Carries(quest.carry) then return "never" end
+    -- A spell known already (below 0: Forever's Camping 101, offered until that camp piece is learnt)
+    local spell = quest.spell
+    if spell and spell < 0 and Knows(-spell) then return "never" end
+    local top = quest.reputationMax
+    if type(top) == "table" and top.faction then
+        asked = true
+        if Reputation(top.faction) >= (top.standing or 0) then return "never" end
+    end
     local missing, ones, oneDone, logs, oneHeld = {}, nil, false, nil, false
-    for _, need in ipairs(quest.requires or {}) do
+    for _, need in ipairs(Requires(quest, id) or {}) do
         if not need.side or need.side == me.side then
             local kind, other = need.kind, need.quest
             if kind == "closed" then
                 if Done(other) or Held(other) then return "never" end
+            elseif kind == "notlog" then
+                if Held(other) then return "never" end
             elseif kind == "done" then
                 if not Done(other) then missing[#missing + 1] = other end
             elseif kind == "one" then
@@ -488,6 +522,9 @@ function Pins.Standing(quest, id)
     if logs and not oneHeld then
         needs[#needs + 1] = (#logs > 1 and Pins.TEXT.needsLogOne or Pins.TEXT.needsLog):format(Names(logs))
     end
+    if spell and spell > 0 and not Knows(spell) then
+        needs[#needs + 1] = Pins.TEXT.needsSpell:format(SPELLS:Get(spell, "name") or ("#" .. spell))
+    end
     local reputation = quest.reputation
     if type(reputation) == "table" and reputation.faction then
         asked = true
@@ -500,6 +537,23 @@ function Pins.Standing(quest, id)
     if #needs > 0 then return "later", needs[1], needs end
     if Trivial(quest) then return "low", Pins.TEXT.low end
     return "offered"
+end
+
+-- What the game listed at a giver wins over the data (Core's QuestWatch.Listed, while the character's level and the
+-- server's day are the talk's; Saneroki, 2026-11-19: "a lot of exclamaitionmarks on the map but when they go there there
+-- are not quest offers there"): a quest it listed is offered (too low where it gives no experience), one the data let
+-- this character take that it did not list is not; the rest as the data says (one for later keeps what it asks).
+function Pins.AtGiver(thing, quest, id, standing, reason, needs)
+    local watch = Core.Data.QuestWatch
+    local listed, withheld
+    if watch and watch.Listed and thing then listed, withheld = watch.Listed(thing) end
+    if not listed then return standing, reason, needs end
+    if listed[id] and standing ~= "done" and standing ~= "log" then
+        if Trivial(quest) then return "low", Pins.TEXT.low end
+        return "offered"
+    end
+    if withheld[id] and standing == "offered" then return "never" end
+    return standing, reason, needs
 end
 
 -- Whether this character can take a quest of Core's data now, and it gives experience.
@@ -521,7 +575,7 @@ function Pins.Chain(id)
         local record = QUESTS:Get(key)
         if type(record) ~= "table" or depth > Pins.CHAIN then return end
         local before, alternatives = {}, {}
-        for _, need in ipairs(record.requires or {}) do
+        for _, need in ipairs(Requires(record, key) or {}) do
             if (not need.side or need.side == me.side) and not seen[need.quest] then
                 if need.kind == "done" then
                     before[#before + 1] = need.quest
@@ -686,7 +740,8 @@ local function FromData(place)
         -- Its quests by where they stand for this character: offered, too low, for later, done.
         local offers, lows, laters, done = {}, {}, {}, {}
         for _, quest in ipairs(type(what) == "table" and what.quests or {}) do
-            local standing, reason, needs = Pins.Standing(QUESTS:Get(quest), quest)
+            local record = QUESTS:Get(quest)
+            local standing, reason, needs = Pins.AtGiver(place.key, record, quest, Pins.Standing(record, quest))
             if standing == "offered" then
                 offers[#offers + 1] = quest
             elseif standing == "low" then
@@ -1379,9 +1434,10 @@ local LIVE = { quests = "quests", waypoint = "quests", flights = "flights", vign
 -- changed, the NPCs' of Core's data too (what this character can take follows its quests and level), and what the
 -- quests ask for is looked at again, not its objects', places' and ways'.
 function Pins.Changed(what)
-    -- A holiday began or ended (Core's Data.Holidays), or your reputation or a skill changed where a quest giver's pin
-    -- asked it (Standing): the quest givers' pins anew, nothing else.
-    if what == "holidays" or what == "standing" then
+    -- A holiday began or ended (Core's Data.Holidays), a giver listed other quests than it had (QuestWatch.Listed), or
+    -- your reputation or a skill changed where a quest giver's pin asked it (Standing): the quest givers' pins anew,
+    -- nothing else.
+    if what == "holidays" or what == "standing" or what == "givers" then
         if what == "standing" and not asked then return false end
         asked = false
         wipe(data.npc)
@@ -1418,6 +1474,10 @@ end
 -- The holidays running are others: told as what the game tells (LIVE), so every view of the pins follows.
 if Core.Data.Holidays then
     Core.Data.Holidays.OnChange(ns.Guard(function() ns.Fire("LIVE", "holidays") end))
+end
+-- A giver listed other quests than it had: likewise.
+if Core.Data.QuestWatch and Core.Data.QuestWatch.OnListed then
+    Core.Data.QuestWatch.OnListed(ns.Guard(function() ns.Fire("LIVE", "givers") end))
 end
 
 Map:OnChange(function()

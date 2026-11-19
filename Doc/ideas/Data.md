@@ -1120,7 +1120,10 @@ objectives are found.
   while it is taken (`requires` kind `log`, of several one); `closed` by a quest done or in the log. From the 1.12
   records where both agree (batch 32) and the quests' sorts and parent quests for Forever's client as our tool picked them (batch 33), both
   unverified; the game's word replaces them as play shows the offers (`Data/Quests.lua` narrows a rule an offer
-  proves wrong).
+  proves wrong). Then (cards #591, #592): a reputation to stay under, a spell known or not, a quest closing one while
+  in the log, the book a book quest wants carried, classes by rewards, retired quests; the views trust the shipped
+  quests to do first over a narrowed row; and what a giver listed to a character wins for it at that level that day.
+  Later: what givers withheld for every character, harvested, could retire a quest Forever no longer has.
 
 ```lua
 local Quests = Data.Set("Quests")

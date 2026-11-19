@@ -529,8 +529,17 @@ local Items = Data.Set("Items")     -- a handle: cheap, never nil; one per name
   `Data.Holidays.Running(key)` says the game's calendar has it running now; `Data.Holidays.OnChange(fn)` tells when
   that changes. A quest with `event` (a world event no calendar tells: a war effort, an invasion) is offered never as
   far as the views know. `requires` of kind `log`: a quest that must be in the log while it is taken (of several,
-  one); `closed`: closed once the other is done or in the log (`src/Core/Data/Holidays.lua`, Navigation's
+  one); `closed`: closed once the other is done or in the log; `notlog`: closed while the other is in the log.
+  `carry`: offered only to one who carries that item (a librarian's book quest); `reputationMax`: only below that
+  standing; `spell`: a spell to know first, below 0 one not to know yet (`src/Core/Data/Holidays.lua`, Navigation's
   `Pins.Standing`).
+- **A quest's needs as the views trust them:** `Data.QuestWatch.Requires(record, quest)`: a row learned in play (or
+  a member's) may take a closing rule away, never a quest to do first; the harvest keeps those alike
+  (`harvest.firsts_kept`). Core 0.3.7 and older took a chain's quest before away when the next was offered the moment
+  it was handed in (the game flags it done a moment later).
+- **What a giver offers this character:** `Data.QuestWatch.Listed(thing)`: the quests the game listed when the
+  character talked to it, and those the data let it take that the game did not list, while its level and the server's
+  day are the talk's; personal data, per character (`SaneUICharDB.offers`), never shared or harvested.
 
 ### What a map shows (`Data.Map`)
 

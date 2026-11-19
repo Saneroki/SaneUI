@@ -21,7 +21,8 @@ local _, ns = ...
 --  When something changes the game says so by an event; a burst of them is told
 --  once on the next frame, as the message LIVE with what changed ("waypoint", also for the quest the
 --  game's arrow leads to; "explored", "quests", "group", "vignettes", "points", "flights", "zone", "level",
---  "standing": a reputation or a skill; and from Pins.lua "holidays", a holiday began or ended):
+--  "standing": a reputation or a skill; and from Pins.lua "holidays", a holiday began or ended, "givers", a quest giver
+--  listed other quests than it had):
 --      ns.Listen("LIVE", function(what) ... end)
 --  The views ask again then; nothing here asks the game on its own. The player is
 --  asked by the canvas every frame while a view follows (two questions to the

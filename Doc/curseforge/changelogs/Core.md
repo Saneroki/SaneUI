@@ -7,6 +7,10 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
 
 - Quests know when they are offered: the holiday or world event a quest belongs to, and the quests that must be in
   your log first; SaneUI reads the game's calendar for the holidays running now. Navigation's quest offers use it.
+- Fixed: the next quest of a chain, offered the moment you hand in the one before, made SaneUI forget that it needs
+  the one before, so its giver showed an offer to characters who had not done it. Also: the book a librarian's quest
+  wants, reputations a quest must stay under, Forever's camping quests, class quests with no class, and what each
+  quest giver offered your character when you last talked to it.
 
 ## 0.3.7 (2026-11-19)
 

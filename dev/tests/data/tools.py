@@ -656,6 +656,16 @@ with Copy() as copy:
     check("harvest: a build the master does not know, with its patch and first day",
           report["builds"], {"forever-beta": {66500: ("1.61.1", "2026-10-24")}})
     check("harvest: added to builds.toml", harvests.add_builds(master, report["builds"]), 1)
+
+    class Shipped:  # a master whose quest 7 needs 5 done first and is closed by 6
+        def view(self, set_name, game):
+            return {7: [masters.Version(0, None, False, {"requires": [{"kind": "done", "quest": 5},
+                                                                       {"kind": "closed", "quest": 6}]}, None)]}
+    kept = harvests.firsts_kept(Shipped(), "forever", 7, {"requires": [{"kind": "closed", "quest": 6}], "name": "x"})
+    check("harvest: a learned quest keeps the master's quests to do first (an offer right after a hand-in, Core 0.3.7)",
+          kept["requires"], [{"kind": "closed", "quest": 6}, {"kind": "done", "quest": 5}])
+    check("harvest: a learned quest may still lose a closing rule",
+          harvests.firsts_kept(Shipped(), "forever", 7, {"requires": None})["requires"], [{"kind": "done", "quest": 5}])
     check("harvest: a patch number", [harvests.is_patch(v) for v in ("1.61.1", "1.61.1 beta", "x", 3, None)],
           [True, False, False, False, False])
     check("harvest: a patch that is no patch number is not written; builds.toml whole, nothing beside it",

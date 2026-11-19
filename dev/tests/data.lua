@@ -1540,7 +1540,12 @@ do
                          requires = "done\03150\030closed\03151" }),
             [80] = Row({ name = "Hides", level = "7", startNPCs = "69", finishNPCs = "69", rewardXP = "200",
                          objectives = "1\031loot\0312001\0314\031Wolf Hide" }),
-        }, "77\03079\03080"),
+            -- A giver's chain and its other quests (card #592): one, the next after it, one besides, one for later
+            [95] = Row({ name = "Chain One", level = "3", side = "alliance", startNPCs = "73", finishNPCs = "73" }),
+            [96] = Row({ name = "Chain Two", level = "4", side = "alliance", requires = "done\03195", startNPCs = "73" }),
+            [97] = Row({ name = "Besides", level = "4", side = "alliance", startNPCs = "73" }),
+            [98] = Row({ name = "Not Yet", level = "4", side = "alliance", requires = "done\03199", startNPCs = "73" }),
+        }, "77\03079\03080") .. 'S.index.byStartNPC = { [73] = "95\03096\03097\03098" }\n',
         ["Vendors.lua"] = SetText("Vendors", "00000031", { "goods" }, { "list tuple(item:int,price:int)" }, { "goods.item" },
             { [69] = "2010\03150" }, "69"),
         ["Spells.lua"] = SetText("Spells", "00000032", { "name", "rank", "icon" }, { "text", "text", "int" }, { "name", "rank", "icon" },
@@ -1675,6 +1680,58 @@ do
     W.Fire("GOSSIP_SHOW")
     Offer(92, "Other", Npc(71))
     check(Quests:Get(91).next == nil, "a quest offered after the NPC's list: no chain")
+
+    -- The next of a chain offered the moment the one before is handed in, the game not yet flagging that one done: its
+    -- need of it stays (Core 0.3.7 took it away, and its giver showed an offer to those who had not done the first)
+    local QuestWatch = Data.QuestWatch
+    SaneUICharDB = SaneUICharDB or {}
+    local gossip = {}
+    C_GossipInfo = { GetAvailableQuests = function() return gossip end }
+    W.Wait(5)
+    window = { quest = 95 }
+    guids.npc = Npc(73)
+    W.Fire("QUEST_COMPLETE")
+    W.Fire("QUEST_TURNED_IN", 95, 0, 0)
+    Offer(96, "Chain Two", Npc(73))
+    local two = Quests:Get(96)
+    check(two.requires and two.requires[1].kind == "done" and two.requires[1].quest == 95,
+        "the next of a chain offered right after the hand-in: the quest before stays its need")
+    check(QuestWatch.Listed("npc:73") == nil, "a quest offered right after a hand-in says nothing of what the giver offers")
+    -- The giver's list: what it offers this character now; what the data let it take but the game did not list, withheld
+    W.Wait(5)
+    gossip = { { questID = 97 } }
+    local heard = 0
+    QuestWatch.OnListed(function(thing) if thing == "npc:73" then heard = heard + 1 end end)
+    W.Fire("GOSSIP_SHOW")
+    local listed, withheld = QuestWatch.Listed("npc:73")
+    check(listed and listed[97] and not listed[96] and withheld[96] and not withheld[98] and not withheld[95] and heard == 1,
+        "the giver's list kept: the quest it lists, the one the data let you take that it did not list withheld; not the one "
+        .. "for later, nor the one done")
+    W.Fire("GOSSIP_SHOW")
+    check(heard == 1, "the same list again: nothing told")
+    W.level = 5
+    check(QuestWatch.Listed("npc:73") == nil, "at another level: no word of the giver's any more")
+    W.level = 4
+    check(QuestWatch.Listed("npc:73") ~= nil, "back at that level the same day: its word again")
+    -- A quest opened at once, with no list just before: all the giver offers; a quest to hand in opened at once: none
+    W.Wait(5)
+    Offer(97, "Besides", Npc(73))
+    listed, withheld = QuestWatch.Listed("npc:73")
+    check(listed[97] and withheld[96] and heard == 1, "a quest opened at once: the list it was already")
+    W.Wait(5)
+    window = { quest = 96 }
+    guids.npc = Npc(73)
+    W.Fire("QUEST_PROGRESS")
+    listed, withheld = QuestWatch.Listed("npc:73")
+    check(listed and not listed[97] and withheld[97] and heard == 2,
+        "a quest to hand in opened at once: the giver offers nothing, every quest the data let you take withheld")
+    gossip = {}
+    SaneUICharDB.offers = nil
+    -- The needs the views trust: a quest's row narrowed in play keeps the quests to do first the shipped row has
+    local trusted = QuestWatch.Requires(Quests:Get(79), 79)
+    local first
+    for _, rule in ipairs(trusted or {}) do if rule.kind == "done" and rule.quest == 50 then first = true end end
+    check(#Quests:Get(79).requires == 1 and first, "a row the game narrowed: the quest to do first as the shipped data has it")
 
     -- Loot: each corpse once, from the game's source per slot; a quest's item counted for those on it
     local slots, fishing = {}, false -- { item, name, count, sources = { guid, count, ... } }

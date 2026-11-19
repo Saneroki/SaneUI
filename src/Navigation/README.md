@@ -148,7 +148,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   quest in your log, a reputation, a profession's skill), or with quests you have done only (grey, off at first). A
   quest not for you is no pin at all: another side, race or class, past its level, a profession you have not
   learnt, closed by a quest you did or have, a breadcrumb to a quest you have, a holiday's while the game's calendar
-  says it does not run, a world event's (the war effort, an invasion). A giver shows as the first of its kinds the
+  says it does not run, a world event's (the war effort, an invasion), a librarian's book you do not carry, a
+  reputation past what it allows, a camp piece you know already. Once you talked to a giver, what the game listed
+  there wins for you at that level that day: a quest it did not list though the data let you take it goes, a quest it
+  listed is offered whatever the data says (Core's `QuestWatch.Listed`). A giver shows as the first of its kinds the
   pin filter has ticked, its tooltip naming only the quests of those; services, each its
   own (the innkeeper's mug, the banker's bags, a class trainer's book, a profession trainer's scroll, a merchant
   the game's anvil, one of food, reagents, poisons or ammunition the game's icon for those, of trade goods the
@@ -794,8 +797,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   map links, dungeon entrances where it has them) and from Core's data
   (`Data.Map():On`, `Core/Data/Map.lua`): an NPC with quests this character can take (`Pins.Standing`: not done,
   not in the log, side, race, class, past its level, a holiday running by Core's `Data.Holidays`, no world event,
-  a breadcrumb's or a closing quest neither done nor in the log; for later its level, quests done first, one in the
-  log, a reputation, a profession's skill, every need in words; `Pins.Chain` the quests before it) is a quest giver
+  a breadcrumb's or a closing quest neither done nor in the log, a book carried, a reputation under its top, a spell
+  not known yet; for later its level, quests done first, one in the log, a reputation, a profession's skill, every
+  need in words; its needs as Core's `QuestWatch.Requires` trusts them; `Pins.Chain` the quests before it), and
+  then what the game listed at that giver (`Pins.AtGiver`), is a quest giver
   as the filter shows its kinds (`GiverKind`), else a rare, else its service in
   the game's town tracking atlas; objects, places and ways in the game's atlases; a boat's or zeppelin's dock
   (Core's set *Travel*, its `docks`) its own pin, its tooltip first when its ship next comes there and leaves, as the
@@ -810,7 +815,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   `LIVE`; the arrow's quest: the game's alone), Core's in parts: the quest givers' read again when the quests in the
   log are others (one taken, abandoned or handed in: `Goals.Log`, which counts `QUEST_TURNED_IN` too, for the log may
   list a quest handed in a moment longer), the level changed, the filter's quest kinds changed, a holiday began or
-  ended (`LIVE` "holidays"), or a reputation or a skill changed where a giver's quest asks one (`LIVE` "standing"), never at a kill that only counts on; the other NPCs'
+  ended (`LIVE` "holidays"), a giver listed other quests than it had (`LIVE` "givers"), or a reputation or a skill
+  changed where a giver's quest asks one (`LIVE` "standing"), never at a kill that only counts on; the other NPCs'
   (`steady`), the objects', places' and ways' when Core's places change; at a zone's level every zone in view (on
   Zephras Isle the isle itself), further out the continent and its zones for travel and places only (only the
   places' and ways' part read). A pin's place is in its map's plane (`Coords.PlaneOf`: a continent's,
@@ -1778,6 +1784,16 @@ Tests: `dev/tests/navigation.lua`.
   *Quests* now marks holidays and world events (`holiday`, `event`, batches 32 and 33) and quests wanted in the log
   (`requires` kind `log`); Core's `Data.Holidays` reads the game's calendar; `Pins.Standing` checks all of it, says
   every need, `Pins.Chain` the quests before one, and a giver's pin follows the filter's quest kinds.
+- **2026-11-19, quest offers checked in the cities (cards #591, #592):** Saneroki: "People have complained that there
+  are lot of exclamaitionmarks on the map but when they go there there are not quest offers there." Replayed for
+  characters of 40 and 50 in the capitals and Booty Bay: the librarians' sixteen book quests each, the capitals'
+  innkeepers' *Your Reward has Arrived!* (a name alone), Forever's replaced *To Serve Kum'isha*, eight versions of *An
+  Earnest Proposition* with no class, and chain steps whose quest before Core's watcher had taken away (an offer the
+  moment the one before was handed in). Now: the book carried, a reputation under its top, a spell not yet known, a
+  quest that closes one while in the log; classes and retired quests from the master's own facts (batch 33); the needs
+  the map trusts keep the shipped quests to do first; and what the game listed at a giver wins for that character
+  (`Pins.AtGiver`). World-wide, a character of 40 or 50 with nothing done sees 37 to 41 percent fewer givers with an
+  exclamation mark.
 - **2026-11-19, Zephras Isle on the map at last:** Saneroki: "The skyborn zephrys island is not showing up correctly."
   It was on neither map: Forever's world map has no row, no link and no art for the isle, so `C_Map.GetMapRectOnMap`
   answers nothing, `Coords.PlaneOf` never made it a plane, and the routes lost its airships too; the tests' made-up

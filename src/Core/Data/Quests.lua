@@ -15,6 +15,9 @@ local Core = SaneUI.Core
 --                   creature it was (the dead target its text names) or item (looted, its name in the text: Loot.lua)
 --      handed in    QUEST_COMPLETE: who takes it back; QUEST_TURNED_IN: the experience and money it gave; a quest
 --                   offered by the same NPC right after it, with no list in between, is the next of its chain
+--      a giver's    what the game lists when the player talks to a giver (the gossip window, the older greeting; a
+--      list         quest offered at once by one with nothing else; a quest handed in at once by one that offers none):
+--                   kept per character, QuestWatch.Listed(thing) while its level and the server's day are the talk's
 --
 --  Texts (the title, an objective's) only on an English client: the set's are English. Experience only below the
 --  highest level and at most QuestWatch.XP levels over the quest's (it is cut beyond), money only below the highest
@@ -29,6 +32,7 @@ local QuestWatch = {}
 Data.QuestWatch = QuestWatch
 QuestWatch.XP = 5     -- levels over a quest's at which its experience is still whole
 QuestWatch.NEXT = 3   -- seconds after a hand-in within which the quest the same NPC offers is the next of its chain
+QuestWatch.GIVERS = 500 -- givers whose list a character keeps at most (the oldest making room)
 
 local Quests = Data.Set("Quests")
 local ENGLISH = { enUS = true, enGB = true }
@@ -40,6 +44,11 @@ local progress = {} -- [quest] = { [objective] = count fulfilled }, the quests i
 local noted = {}    -- what an objective's count going up left to look at: { quest, map, x, y, creature, name }
 local handedIn      -- the last quest handed in: { quest, giver, at }
 local listed = 0    -- GetTime() of the last list of an NPC's quests (gossip, greeting)
+local listedBy      -- the giver of that list ("npc:69", Watchers.Thing)
+-- The quests handed in since the login: the game flags one done a moment after it was handed in, and the next quest of
+-- its chain is offered at once, so an offer must not prove that one's need wrong (Narrow; Saneroki, 2026-11-19: Core
+-- 0.3.7 had taken Tiger Mastery's quest before off the data, and its giver showed an offer to those without it).
+local turnedIn = {}
 
 local function English()
     return ENGLISH[Core.Ask(rawget(_G, "GetLocale")) or ""] == true
@@ -92,6 +101,11 @@ local function Items(kind, count)
     return list
 end
 
+-- Whether this character did a quest: the game's flag, or handed in since the login (turnedIn).
+local function Did(done, quest)
+    return turnedIn[quest] == true or Core.Ask(done, quest) == true
+end
+
 -- What an offer proves of a quest's requirements: the fields it narrows, put into told.
 local function Narrow(told, record)
     if not record then return end
@@ -117,7 +131,7 @@ local function Narrow(told, record)
     for _, rule in ipairs(record.requires) do
         if rule.kind == "one" and (not rule.side or rule.side == side) then
             anyOne = true
-            if Core.Ask(done, rule.quest) then oneDone = true end
+            if Did(done, rule.quest) then oneDone = true end
         end
         -- (of several quests to have in the log, one is enough)
         if rule.kind == "log" and (not rule.side or rule.side == side) then
@@ -127,7 +141,7 @@ local function Narrow(told, record)
     end
     for _, rule in ipairs(record.requires) do
         local mine = not rule.side or rule.side == side
-        local finished = mine and Core.Ask(done, rule.quest) == true
+        local finished = mine and Did(done, rule.quest)
         if mine and ((rule.kind == "done" and not finished) or (rule.kind == "closed" and finished)
             or (rule.kind == "one" and anyOne and not oneDone) or (rule.kind == "log" and anyLog and not oneHeld)) then
             wrong = true
@@ -152,8 +166,195 @@ end
 -------------------------------------------------------------------------------
 --  Offered
 -------------------------------------------------------------------------------
-Core.On("GOSSIP_SHOW", function() listed = GetTime() end)
-Core.On("QUEST_GREETING", function() listed = GetTime() end)
+-------------------------------------------------------------------------------
+--  A giver's list: what it offers this character
+-------------------------------------------------------------------------------
+-- SaneUICharDB.offers[thing] = "level\031day\031listed\031withheld", each "quest\030quest...": the quests the game listed
+-- at that giver for this character at that level on that server day, and those of the set's it did not list though the
+-- data's own rules let this character take them then (Takeable): withheld for a reason the data does not know. A quest
+-- the data had for later is none of them, so one the character may take since (a quest handed in elsewhere) shows.
+-- Personal data: never shared, never harvested.
+local function Offers()
+    local char = rawget(_G, "SaneUICharDB")
+    if type(char) ~= "table" then return nil end
+    if type(char.offers) ~= "table" then char.offers = {} end
+    return char.offers
+end
+
+local function Day()
+    local now = Core.Plain(Core.Ask(rawget(_G, "GetServerTime"))) or Core.Ask(rawget(_G, "time")) or 0
+    return math.floor(now / 86400)
+end
+
+local decoded = {} -- [thing] = { row = the saved row, listed = { [quest] = true }, withheld = { ... } }: read once per row
+local listeners = {}
+
+-- A quest's needs as the views trust them (QuestWatch.Requires): a row the game told in play (Core's learned, or a
+-- member's) may take a closing rule or one for the log away, but the quests to do first stay as the shipped data has
+-- them. An offer right after the quest before was handed in looked as if that one were not done (Core 0.3.7 and older,
+-- before turnedIn), and such rows stand in saved files and come from members; the harvest decides them for a release.
+local trusted = setmetatable({}, { __mode = "k" }) -- [a record] = its needs so merged
+function QuestWatch.Requires(record, quest)
+    if type(record) ~= "table" then return nil end
+    local known = trusted[record]
+    if known ~= nil then return known or nil end
+    local rules = record.requires
+    if Data.Learned("Quests", quest) or (Data.Taken and Data.Taken("Quests", quest)) then
+        local history = Quests:History(quest)
+        local shipped = type(history) == "table" and #history > 1 and history[#history - 1] or nil
+        local have, merged = {}, {}
+        for _, rule in ipairs(type(rules) == "table" and rules or {}) do
+            have[rule.quest] = true
+            merged[#merged + 1] = rule
+        end
+        for _, rule in ipairs(type(shipped) == "table" and type(shipped.requires) == "table" and shipped.requires or {}) do
+            if (rule.kind == "done" or rule.kind == "one") and not have[rule.quest] then merged[#merged + 1] = rule end
+        end
+        rules = merged
+    end
+    rules = type(rules) == "table" and #rules > 0 and rules or nil
+    trusted[record] = rules or false
+    return rules
+end
+
+local function Held(quest)
+    return (tonumber(Core.Ask(Log().GetLogIndexForQuestID, quest)) or 0) > 0
+end
+
+-- Whether the data's own rules let this character take a quest now: not done nor in the log, a holiday running, a book
+-- carried, its side, race, class and levels, the quests before it (all, one of them), one in the log, none that closes
+-- it. A reputation, a skill or a spell it asks the views ask of it themselves (Navigation's Pins.Standing): a quest
+-- withheld for one of those shows again once the level or the day is another.
+local function Takeable(quest, level, race, class, side)
+    local record = Quests:Get(quest)
+    if type(record) ~= "table" or record.retired or record.event then return false end
+    local done = Log().IsQuestFlaggedCompleted
+    if Did(done, quest) or Held(quest) then return false end
+    local holidays = Data.Holidays
+    if record.holiday and not (holidays and holidays.Running(record.holiday)) then return false end
+    local items = rawget(_G, "C_Item")
+    if record.carry and (tonumber(Core.Ask(items and items.GetItemCount or rawget(_G, "GetItemCount"), record.carry)) or 0) <= 0 then
+        return false
+    end
+    if record.side and record.side ~= side then return false end
+    if (record.races and not Contains(record.races, race)) or (record.classes and not Contains(record.classes, class)) then
+        return false
+    end
+    if (record.minLevel or 0) > level or (record.maxLevel and record.maxLevel > 0 and level > record.maxLevel) then
+        return false
+    end
+    local ones, oneDone, logs, oneHeld = false, false, false, false
+    for _, rule in ipairs(QuestWatch.Requires(record, quest) or {}) do
+        if not rule.side or rule.side == side then
+            if rule.kind == "done" and not Did(done, rule.quest) then return false end
+            if rule.kind == "closed" and (Did(done, rule.quest) or Held(rule.quest)) then return false end
+            if rule.kind == "notlog" and Held(rule.quest) then return false end
+            if rule.kind == "one" then ones, oneDone = true, oneDone or Did(done, rule.quest) end
+            if rule.kind == "log" then logs, oneHeld = true, oneHeld or Held(rule.quest) end
+        end
+    end
+    return not (ones and not oneDone) and not (logs and not oneHeld)
+end
+
+-- Keeps what a giver listed (quests: an array of IDs) and what it withheld, the oldest giver making room past
+-- QuestWatch.GIVERS; tells the listeners when it differs from what was kept.
+local function Keep(thing, quests)
+    local offers = Offers()
+    local level, _, race, class, side = Player()
+    if not (offers and thing and type(level) == "number" and Quests:Ready()) then return end
+    local shown, withheld = {}, {}
+    for _, quest in ipairs(quests) do shown[quest] = true end
+    local kind, id = thing:match("^(%a+):(%d+)$")
+    for _, quest in ipairs(Quests:Keys(kind == "object" and "byStartObject" or "byStartNPC", tonumber(id))) do
+        if not shown[quest] and Takeable(quest, level, race, class, side) then withheld[#withheld + 1] = quest end
+    end
+    table.sort(quests)
+    table.sort(withheld)
+    local row = level .. "\031" .. Day() .. "\031" .. table.concat(quests, "\030") .. "\031" .. table.concat(withheld, "\030")
+    if offers[thing] == row then return end
+    if offers[thing] == nil then
+        local count, oldest, oldestDay = 0, nil, nil
+        for key, kept in pairs(offers) do
+            count = count + 1
+            local day = tonumber(type(kept) == "string" and kept:match("^%d+\031(%d+)") or 0) or 0
+            if not oldestDay or day < oldestDay then oldest, oldestDay = key, day end
+        end
+        if count >= QuestWatch.GIVERS and oldest then offers[oldest] = nil end
+    end
+    offers[thing] = row
+    for _, fn in ipairs(listeners) do fn(thing) end
+end
+
+-- What the game listed at a giver ("npc:69") for this character, while its level and the server's day are those of the
+-- talk: the quests it listed and those it withheld, as sets; nil where it was not talked to so (its offers may be others
+-- by then).
+function QuestWatch.Listed(thing)
+    local offers = Offers()
+    local row = offers and offers[thing]
+    if type(row) ~= "string" then return nil end
+    local level, day, list, held = row:match("^(%d+)\031(%d+)\031([^\031]*)\031?(.*)$")
+    if tonumber(level) ~= Core.Ask(rawget(_G, "UnitLevel"), "player") or tonumber(day) ~= Day() then return nil end
+    local known = decoded[thing]
+    if not (known and known.row == row) then
+        known = { row = row, listed = {}, withheld = {} }
+        for quest in (list or ""):gmatch("%d+") do known.listed[tonumber(quest)] = true end
+        for quest in (held or ""):gmatch("%d+") do known.withheld[tonumber(quest)] = true end
+        decoded[thing] = known
+    end
+    return known.listed, known.withheld
+end
+
+-- fn(thing) once a giver's list differs from the one kept (a view shows its offers anew).
+function QuestWatch.OnListed(fn)
+    listeners[#listeners + 1] = fn
+end
+
+-- The giver talked to ("npc:69", "object:1617"); nil for a player (a shared quest) or none.
+local function Giver()
+    local kind, id = Other()
+    if kind and id then return kind .. ":" .. id end
+    return nil
+end
+
+-- The gossip window: its quests to take (C_GossipInfo), each by its ID.
+Core.On("GOSSIP_SHOW", function()
+    listed, listedBy = GetTime(), Giver()
+    local gossip = rawget(_G, "C_GossipInfo")
+    local available = gossip and Core.Ask(gossip.GetAvailableQuests)
+    if not (listedBy and type(available) == "table") then return end
+    local quests = {}
+    for _, info in ipairs(available) do
+        local quest = type(info) == "table" and Core.Plain(info.questID)
+        if type(quest) == "number" then quests[#quests + 1] = quest end
+    end
+    Keep(listedBy, quests)
+end)
+
+-- The older greeting of a giver with several quests: its quests to take by their numbers (GetAvailableQuestInfo's
+-- fifth answer the quest's ID); a list with one it cannot name is not kept (it would not be whole).
+Core.On("QUEST_GREETING", function()
+    listed, listedBy = GetTime(), Giver()
+    local info = rawget(_G, "GetAvailableQuestInfo")
+    local count = tonumber(Core.Ask(rawget(_G, "GetNumAvailableQuests"))) or 0
+    if not (listedBy and info) then return end
+    local quests = {}
+    for index = 1, count do
+        local answers = { pcall(info, index) }
+        local quest = answers[1] and Core.Plain(answers[6]) or nil
+        if type(quest) ~= "number" then return end
+        quests[#quests + 1] = quest
+    end
+    Keep(listedBy, quests)
+end)
+
+-- A giver that opened a quest at once, with no list of its own just before: that quest is all it offers now (QUEST_DETAIL;
+-- not the next quest of a chain offered right after a hand-in there, nor one an item starts); one that opened a quest to
+-- hand in at once offers none (QUEST_PROGRESS, QUEST_COMPLETE).
+local function Alone(quest)
+    local giver = Giver()
+    if not giver or (listedBy == giver and GetTime() - listed <= QuestWatch.NEXT) then return end
+    Keep(giver, quest and { quest } or {})
+end
 
 Core.On("QUEST_DETAIL", function(startItem)
     local quest = Core.Ask(rawget(_G, "GetQuestID"))
@@ -186,10 +387,12 @@ Core.On("QUEST_DETAIL", function(startItem)
     if kind or told.startItems then Narrow(told, record) end
     -- Right after a hand-in, offered by the same NPC with no list in between: the next quest of that one's chain
     local before = handedIn
-    if before and kind == "npc" and before.giver == id and before.quest ~= quest and GetTime() - before.at <= QuestWatch.NEXT
-        and listed < before.at then
+    local following = before and kind == "npc" and before.giver == id and before.quest ~= quest
+        and GetTime() - before.at <= QuestWatch.NEXT
+    if following and listed < before.at then
         Data.Check("Quests", before.quest, { next = quest })
     end
+    if not following and not told.startItems and kind then Alone(quest) end
     handedIn = nil
     Data.Check("Quests", quest, told)
 end)
@@ -409,9 +612,11 @@ Core.On("PLAYER_ENTERING_WORLD", function() Scan() end)
 -------------------------------------------------------------------------------
 --  Handed in
 -------------------------------------------------------------------------------
-local function Taker()
+local function Taker(event)
     local quest = Core.Ask(rawget(_G, "GetQuestID"))
     if type(quest) ~= "number" or quest <= 0 then return end
+    -- (opened at once: the giver has nothing to take; after its list, or the window's next page, it was that list's)
+    if event == "QUEST_PROGRESS" then Alone(nil) end
     local kind, id = Other()
     if kind == "npc" then
         Data.Check("Quests", quest, { finishNPCs = { npc = id } })
@@ -419,14 +624,15 @@ local function Taker()
         Data.Check("Quests", quest, { finishObjects = { object = id } })
     end
 end
-Core.On("QUEST_COMPLETE", Taker)
-Core.On("QUEST_PROGRESS", Taker)
+Core.On("QUEST_COMPLETE", function() Taker() end)
+Core.On("QUEST_PROGRESS", function() Taker("QUEST_PROGRESS") end)
 
 Core.On("QUEST_TURNED_IN", function(quest, xp, money)
     quest, xp, money = Core.Plain(quest), Core.Plain(xp), Core.Plain(money)
     if type(quest) ~= "number" then return end
     local kind, id = Other()
     handedIn = kind == "npc" and { quest = quest, giver = id, at = GetTime() } or nil
+    turnedIn[quest] = true
     progress[quest] = nil
     local record = Quests:Ready() and Quests:Get(quest)
     if record and record.level then

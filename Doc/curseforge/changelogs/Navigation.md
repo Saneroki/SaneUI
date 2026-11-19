@@ -14,6 +14,11 @@ What changed in each version of SaneUI Navigation, newest first: a version's par
   requirement in red and the chain of quests to do first, numbered, with who gives the first one.
 - A quest giver shows as the first kind of quest the pin filter has ticked, and its tooltip names only those: with
   only Quests for later ticked, a giver of an offer and a later quest shows its red question mark.
+- Checked in the capitals and Booty Bay at levels 40 and 50: no more exclamation marks at the librarians for books you
+  don't carry, at every innkeeper for a promotion quest, or for another class's version of a class quest; Forever's
+  camping quests leave once you know that camp piece, and quests a reputation is too high for no longer show.
+- Once you talk to a quest giver, its pin follows what the game listed there: a quest it didn't offer you leaves its
+  pin, a quest it did offer shows, for your level that day.
 
 ## 0.3.6 (2026-11-19)
 
