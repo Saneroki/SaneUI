@@ -80,9 +80,10 @@ local function Near(points, yards)
 end
 
 -- A spawn point as a part of its entry: "p" and a number made of its map and place to a tenth of a percent (the
--- harvest makes the same: dev/data/harvest.py).
+-- harvest makes the same: dev/data/harvest.py). Written by %.0f: the game's %d refuses a number past 2^31 ("integer
+-- overflow"), which every map above 2143 makes; %.0f gives the same digits for any whole number.
 local function Code(point)
-    return ("p%d"):format((point.map * 1001 + floor(point.x * 10 + 0.5)) * 1001 + floor(point.y * 10 + 0.5))
+    return ("p%.0f"):format((point.map * 1001 + floor(point.x * 10 + 0.5)) * 1001 + floor(point.y * 10 + 0.5))
 end
 Watchers.Code = Code
 

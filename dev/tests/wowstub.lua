@@ -28,6 +28,8 @@
 --     the test and, as in the game, every frame such a frame stands under (IsProtected answers both: protected,
 --     explicitly so); a test that only sets W.combat = true gets the same, a frame that is not protected is never
 --     blocked, and W.AsGame(fn) runs fn as the game's own secure code, the block lifted and W.combat kept;
+--   string.format (and the global format) as the game's: %d or %i of a number past a signed 32-bit integer errors
+--     ("integer overflow attempting to store"), where plain Lua 5.1 writes it;
 --   W.SelfCheck(): the stand-in's own doors tried; Core.Plain and Core.Ask on a secret too when Core is loaded.
 
 local W = {}
@@ -713,6 +715,31 @@ function W.Install(env)
     end }
     env.date = function(format, at) return os.date(format, at) end
 
+    -- The game's string.format refuses %d and %i of a number past a signed 32-bit integer ("integer overflow
+    -- attempting to store 2526470184"), which plain Lua 5.1 writes; the same here, for ("%d"):format too (the string
+    -- table is the process's). WoW's positional %1$d counted. Not modelled: what the game does with %x past it.
+    if not W.plainFormat then
+        local plainFormat = string.format
+        W.plainFormat = plainFormat
+        string.format = function(text, ...)
+            if type(text) == "string" and text:find("%", 1, true) then
+                local args, next = { ... }, 0
+                for place, kind in text:gmatch("%%(%d*%$?)[-+ #0]*%d*%.?%d*([%a%%])") do
+                    if kind ~= "%" then
+                        local at = place:match("^(%d+)%$$")
+                        if at then at = tonumber(at) else next = next + 1; at = next end
+                        local value = (kind == "d" or kind == "i") and tonumber(args[at])
+                        if value and (value > 2147483647 or value < -2147483648) then
+                            error(plainFormat("integer overflow attempting to store %.0f", value), 2)
+                        end
+                    end
+                end
+            end
+            return plainFormat(text, ...)
+        end
+    end
+    env.format = string.format
+
     -- The game's xpcall hands further arguments on to the function; plain Lua 5.1's does not.
     local plain = xpcall
     env.xpcall = function(fn, handler, ...)
@@ -1336,6 +1363,9 @@ function W.SelfCheck(env)
         and not pcall(function() secret() end), "a secret errors in arithmetic, a comparison, #, indexing, a call")
     local ok, joined = pcall(function() return "hp " .. secret end)
     assert(ok and env.issecretvalue(joined), "concatenated: another secret")
+    assert(not pcall(string.format, "p%d", 2526470184) and not pcall(string.format, "%2$i", 1, -2147483649)
+        and ("p%d"):format(2147483647) == "p2147483647" and ("%.0f"):format(2526470184) == "2526470184"
+        and ("%d%%"):format(5) == "5%", "the game's format: %d past 32 bits errors, %.0f writes it")
     local ticks = 0
     local ticker = env.C_Timer.NewTicker(1, function(t) ticks = ticks + 1; if ticks == 2 then t:Cancel() end end)
     local once = 0

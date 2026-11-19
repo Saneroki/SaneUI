@@ -6,6 +6,20 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core: no error when the mouse is over a creature of a map above 2143 (Saneroki, 2026-11-19)
+Saneroki: "there is an error in the logs about mouseover". The error log: `UPDATE_MOUSEOVER_UNIT`, "integer overflow
+attempting to store 2526470184" in `string.format` (`src/Core/Data/Watchers.lua:85`), six times since 2026-11-16, on
+Zephras Isle (map 2521) and map 2652.
+- **The cause:** `Watchers.Code` wrote a spawn point's part, `(map * 1001 + x) * 1001 + y`, by `%d`; the game's `%d`
+  refuses a number past a signed 32-bit integer, which every map above 2143 makes. The creature watcher stopped there
+  for that creature (the sighting not counted); plain Lua 5.1 writes it, so the tests never saw it.
+- **`src/Core/Data/Watchers.lua`:** the part written by `%.0f`: the same digits as the harvest's
+  (`dev/data/harvest.py`), for any map.
+- **Tests:** `dev/tests/wowstub.lua`: `string.format` (and the global `format`) as the game's: `%d` or `%i` past 32
+  bits errors, for every test, with its self check; `dev/tests/data.lua` (678 checks): map 2521's code whole, as the
+  harvest makes it. Every other test passes under it.
+- Card #589.
+
 ### Navigation: Zephras Isle on the map at last (Saneroki, 2026-11-19)
 Saneroki: "The skyborn zephrys island is not showing up correctly", then: not there at all, on both maps.
 - **The cause:** Forever's world map (947) has no placement row, no link and no art for the isle (uiMap 2521, map

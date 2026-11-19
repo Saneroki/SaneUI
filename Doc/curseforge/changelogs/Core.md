@@ -20,6 +20,8 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   windows back at their first places, then the setup from its first page. It asks first; the game's own settings,
   your map pins and conversations stay.
 - The options page *SaneUI* links SaneUI's code on GitHub; the empty *Website* row is gone.
+- No more error in SaneUI's log when the mouse is over a creature on Zephras Isle or another of Forever's newest
+  maps; those creatures are counted again.
 
 ## 0.3.5 (2026-11-18)
 

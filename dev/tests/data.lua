@@ -1910,6 +1910,8 @@ do
     W.Fire("UPDATE_MOUSEOVER_UNIT")
     local first, second = Watchers.Code({ map = 1431, x = 10, y = 10 }), Watchers.Code({ map = 1431, x = 80, y = 80 })
     check(first == "p1433963631", "a spawn point's part: its map and place to a tenth (the harvest makes the same)")
+    local okHigh, high = pcall(Watchers.Code, { map = 2521, x = 42.5, y = 23.8 })
+    check(okHigh and high == "p2526470184", "a map above 2143: its code past 32 bits, written whole (the game's %d refuses it)")
     check(not Spawns:Unverified("npc:71", first) and Spawns:Unverified("npc:71", second) and Spawns:Unverified("npc:71"),
         "a creature of two spawn points seen at one: that point confirmed, not the other, nor the whole")
     here = { map = 1431, x = 0.80, y = 0.805 }
