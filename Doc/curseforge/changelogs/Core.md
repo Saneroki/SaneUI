@@ -3,14 +3,19 @@
 What changed in each version of SaneUI Core, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
-## 0.3.6 (2026-11-18)
+## 0.3.7 (2026-11-19)
 
-- The map and the tooltips know 193 more quests of Forever, more of the quests' givers and takers and the quests
-  they need first, 186 more creatures, and the places of many creatures brought up to date.
 - What Forever's servers say about its quests and creatures, up to the newest build: the experience, money and
   rewards of some 2,000 quests more, the right counts of their objectives, the quests filed under dungeons and raids
   as the game files them, and the drop chances of about 800 creatures and nodes counted again from three weeks of
   play.
+- No more error in SaneUI's log when the mouse is over a creature on Zephras Isle or another of Forever's newest
+  maps; those creatures are counted again.
+
+## 0.3.6 (2026-11-18)
+
+- The map and the tooltips know 193 more quests of Forever, more of the quests' givers and takers and the quests
+  they need first, 186 more creatures, and the places of many creatures brought up to date.
 - Scanned the auction house with another addon? The prices of the two auction addons SaneUI knows count too: the
   tooltips' gold section, its advice and the price graph use them wherever SaneUI's own scans saw an item earlier or
   never, also with *Data: Auction House* switched off.
@@ -20,8 +25,6 @@ What changed in each version of SaneUI Core, newest first: a version's part is i
   windows back at their first places, then the setup from its first page. It asks first; the game's own settings,
   your map pins and conversations stay.
 - The options page *SaneUI* links SaneUI's code on GitHub; the empty *Website* row is gone.
-- No more error in SaneUI's log when the mouse is over a creature on Zephras Isle or another of Forever's newest
-  maps; those creatures are counted again.
 
 ## 0.3.5 (2026-11-18)
 

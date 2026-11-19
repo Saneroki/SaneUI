@@ -7,6 +7,14 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+SaneUI 0.3.7 (2026-11-19)
+--------------------------
+- Quests and creatures up to Forever's newest build: the
+  experience, money and rewards of some 2,000 more quests,
+  the right counts of their objectives, and drop chances
+  counted again from three weeks of play.
+
+
 Navigation 0.3.6 (2026-11-19)
 -----------------------------
 - Zephras Isle is on the map: zoomed out, the Skyborne's
