@@ -1107,6 +1107,39 @@ do
     check(isleMap == 2521 and near(onU, 0) and near(onV, 0), "on the isle: its plane and the point in it, as on a continent")
     player.map, player.x, player.y = 1429, 0.75, 0.3
 end
+-- Forever's world map gives the isle no place (no row, no link, no art: C_Map.GetMapRectOnMap answers nothing), so it
+-- was on neither map. SaneUI's own place (Coords.AFLOAT): around its middle, at the continents' scale; a fresh Coords
+-- each time, as at a login (it asks once a session).
+do
+    local rectOnMap = C_Map.GetMapRectOnMap
+    C_Map.GetMapRectOnMap = function(map, top) if map ~= 2521 then return rectOnMap(map, top) end end
+    local function Fresh(afloat)
+        local fresh = {}
+        assert(loadfile(root .. "/src/Navigation/Coords.lua"))("SaneUI_Navigation", fresh)
+        fresh.Coords.AFLOAT = afloat
+        return fresh.Coords
+    end
+    local none = Fresh({})
+    check(none.PlaneOf(2521) == nil and #none.Planes() == 2,
+        "the game giving the isle no place on the world map, and none of ours: no plane, on neither map (the fault)")
+    -- Over the made-up world's sea, north between its continents. Its box is 2000 x 2500 yards; the first continent's
+    -- 8000 x 20000 yards fill 0.32 x 0.64 of the world map: the isle 0.08 across and down.
+    local afloat = Fresh({ [2521] = { 0.58, 0.1 } })
+    local x0, y0 = afloat.ToWorldMap(2521, -1000, 1000)
+    local x1, y1 = afloat.ToWorldMap(2521, 1000, -1500)
+    check(afloat.PlaneOf(2521) == 2521 and #afloat.Planes() == 3 and afloat.Planes()[3] == 2521 and near(x0, 0.54)
+        and near(y0, 0.06) and near(x1, 0.62) and near(y1, 0.14) and afloat.Link(2521, 1415) and afloat.Link(1414, 2521),
+        "no place of the game's: the isle a plane at SaneUI's, around its middle at the continents' scale, linked to them")
+    local overU, overV = afloat.FromWorldMap(1415, 0.6, 0.12)
+    local info = afloat.InfoAt(947, 0.6, 0.12)
+    check(afloat.PlaneAt(1415, overU, overV) == 2521 and afloat.PlaneAt(1415, afloat.FromWorldMap(1415, 0.58, 0.3)) == nil
+        and info and info.mapID == 2521 and info.name == "Zephras Isle" and afloat.InfoAt(947, 0.58, 0.3) == nil
+        and afloat.AfloatAt(0.6, 0.12) == 2521 and afloat.AfloatAt(0.58, 0.3) == nil,
+        "on the world map over SaneUI's place: the isle (the wheel and a click come in there, its name); the sea beside it none")
+    C_Map.GetMapRectOnMap = rectOnMap
+    check(Coords.AFLOAT[2521] and Coords.AfloatAt(0.57, 0.42) == 2521,
+        "the game's own place wins where it gives one (the made-up world places the isle)")
+end
 -- A battleground's map: hung under a zone of the continent by the game's map tree, its box in a world of its own.
 ;(function()
     MAPS[1459] = { kind = 6, parent = 1429, continent = 30, top = 500, bottom = -500, left = 400, right = -400 }
@@ -2714,6 +2747,11 @@ check(Overviews(shown, 0) > 0 and Overviews(shown, 1) > 0 and Count(shown, 94701
     for _, widget in ipairs(W.frames) do lit = lit or widget._texture == 4343 end
     check(view.level == "world" and named == 947 and not lit and not light._shown,
         "at the world the continent under the mouse is named, nothing lights up")
+    -- The isle: the game has no highlight there; named all the same (Coords.AFLOAT, Label.Show over the world map).
+    named = nil
+    C_Map.GetMapHighlightInfoAtPosition = highlight
+    ns.Art.Light(view, world.u + 0.57 * world.width, world.v - 0.42 * world.height)
+    check(named == 947 and not light._shown, "at the world the isle under the mouse is named too, nothing lights up")
     C_Map.GetMapHighlightInfoAtPosition, ns.Label.Show = highlight, label
     ns.Art.Unlight()
 end)()
@@ -5091,6 +5129,9 @@ end)()
     Creatures.Each, Facts.Get = each, get
     ns.Label.Show(1415, 0.9, 0.1)
     check(not name._parent._shown, "over no zone: no label")
+    ns.Label.Show(947, 0.57, 0.42)
+    check(name._parent._shown and name._text == "Zephras Isle",
+        "at the world over the isle: its name from the game's map info (Coords.InfoAt), its place on the world map ours")
     ns.Label.Show(1415, 0.5, 0.65)
     Canvas.camera = Window.small
     ns.Label.Show(1415, 0.5, 0.65)

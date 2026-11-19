@@ -563,9 +563,10 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   Thaurissan) show their map art in every view. The Wailing Caverns the other way round: its map art is older than
   the caverns Forever rebuilt east of it, so it shows its ground in every view, *Parchment* too. The bosses, the
   enemies, your drawings and markers stand where they stood.
-- **Zephras Isle** is on the map as a continent is, a zone of its own: the map follows you there, its pins and the
-  map pin stand on it, a click on it at the world opens it, and the wheel out goes on to the world (there is
-  no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
+- **Zephras Isle** is on the map as a continent is, a zone of its own: zoomed out it floats over the sea north of
+  the Maelstrom, between the two continents (the game's world map has no place for it, so SaneUI gives it one), named
+  under the mouse there; the map follows you there, its pins and the map pin stand on it, a click on it at the world
+  opens it, and the wheel out goes on to the world (there is no continent between). *Parchment* shows the isle's own map and its stitched map, *Scrying* its terrain, the open
   sky around it cut away as the sea is, and routes there walk around what cannot be walked, as on the continents.
 - **Routes:** put the game's map pin (a double click, on a quest in the quest log too, or Ctrl and a click; Speed Leveling's guide puts it on its places by itself) and a golden line leads you there from where you stand,
   pulsing towards it: around what cannot be walked (mountains, walls, deep water is swum), through gates and doors,
@@ -702,7 +703,8 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
   map tree is found at run time: the world map, its continents, their zones; a continent's rectangle on the
   world map puts the other continents and the world map itself into its plane, so one view zooms from a zone
   out to the whole world. A map straight on the world map that is no continent but has a box and a place there
-  (Zephras Isle, a zone of the world map) is a plane of its own, linked alike (`Coords.PlaneOf`,
+  (Zephras Isle, a zone of the world map; Forever's world map gives it no place, so SaneUI's own, `Coords.AFLOAT`: its
+  middle there, its size the continents' scale) is a plane of its own, linked alike (`Coords.PlaneOf`,
   `Coords.Planes`), for the routes, the views and the pins alike; the map there is a zone, its own one
   (`Coords.Alone`, `Coords.ZoneAt`, `Coords.Zones`), and `Coords.PlaneAt` finds a continent or the isle under a
   point of the world map.
@@ -1759,6 +1761,12 @@ a quest in progress, three yellow dots; the quest the arrow leads to glowing; fl
 Tests: `dev/tests/navigation.lua`.
 
 ## History
+- **2026-11-19, Zephras Isle on the map at last:** Saneroki: "The skyborn zephrys island is not showing up correctly."
+  It was on neither map: Forever's world map has no row, no link and no art for the isle, so `C_Map.GetMapRectOnMap`
+  answers nothing, `Coords.PlaneOf` never made it a plane, and the routes lost its airships too; the tests' made-up
+  world had given it a place. Now SaneUI places it where the game does not (`Coords.AFLOAT`: over the open sea north
+  of the Maelstrom, at the continents' scale), and the map under a point of the world map knows it (`Coords.AfloatAt`,
+  `Coords.InfoAt`): the wheel and a click come in there, and its name shows under the mouse (`Art.Light`, `Label.Show`).
 - **2026-11-18, first places as Saneroki has them:** the small map 274 × 246 (`Window.WIDTH`, `HEIGHT`), docked top
   right; the quest log on the screen alone docked in the top left corner (`QuestLog.lua`'s `FIRST[false]`, `Small`), no
   longer under the minimap. Edit Mode's tick for the game's vehicle leave button is out of sight while *Your trip on

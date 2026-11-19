@@ -1320,7 +1320,10 @@ All of them end in `ShowUIPanel(WorldMapFrame)`.
     (`Coords.PlaneOf`: a map's continent, else such a map; `Coords.Planes`: the continents, then those maps). The
     planner's pin, docks and player use these planes, so the two zeppelins to the isle (from the Eastern Kingdoms
     and from Kalimdor) are in the journey, and the map pin's mark shows there. The walking data covers the isle
-    too (below, *The isle's terrain*).
+    too (below, *The isle's terrain*). **Its place (2026-11-19):** Forever's world map gives it none (no row, no link,
+    no art; `C_Map.GetMapRectOnMap` answers nothing), so it was on neither map until SaneUI gave it its own
+    (`Coords.AFLOAT`): over the open sea north of the Maelstrom, between the continents, at their scale; the game's
+    place wins should it ever give one.
   - **The map on Zephras Isle (built 2026-10-20):** the canvas uses the planes too, so its views work on the isle
     as on a continent: they follow the player there (`Coords.Player` gives the isle's plane), come in over it from
     the world (`Coords.PlaneAt`, a continent or such a map under a point of the world map) and open it by a

@@ -7,6 +7,16 @@ every module needs, each module (Navigation, ...) a download of
 its own.
 
 
+Navigation 0.3.6 (2026-11-19)
+-----------------------------
+- Zephras Isle is on the map: zoomed out, the Skyborne's
+  floating island lies over the sea north of the Maelstrom,
+  between the two continents (the game's own world map has no
+  place for it). Hover it for its name, click it or zoom in
+  to open it. On the isle both maps follow you, with its pins
+  and your party, and routes reach it by its airships.
+
+
 SaneUI 0.3.6 (2026-11-18)
 --------------------------
 - Auction prices from another auction addon: if you scan the

@@ -6,6 +6,26 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Navigation: Zephras Isle on the map at last (Saneroki, 2026-11-19)
+Saneroki: "The skyborn zephrys island is not showing up correctly", then: not there at all, on both maps.
+- **The cause:** Forever's world map (947) has no placement row, no link and no art for the isle (uiMap 2521, map
+  2991; the same in every build since 70245), so `C_Map.GetMapRectOnMap(2521, 947)` answers nothing and
+  `Coords.PlaneOf` never made the isle a plane: no terrain, pins or party there on either map, no zone in the list,
+  and the planner without its two airships. The tests' made-up world had given it a place, so they never saw it.
+- **`src/Navigation/Coords.lua`:** `Coords.AFLOAT`, SaneUI's place for a map straight on the world map that the game
+  places nowhere: the isle's middle at 0.47, 0.19 of the world map (open sea north of the Maelstrom, between the
+  continents), its box at the continents' scale (`Afloat`, from the first continent the game places: 0.124 of the
+  world map across and down); the game's own place wins (`GameRect` first). `Coords.AfloatAt(x, y)`, and the map
+  under a point of the world map (`At`, now `Coords.InfoAt`) asks it first, so `Coords.PlaneAt` finds the isle there:
+  the wheel and a click at the world come in over it.
+- **`src/Navigation/Art.lua`, `src/Navigation/Label.lua`:** at the world the isle under the mouse is named, as a
+  continent is (the game has no highlight there); `Label.Show` reads the map under the mouse by `Coords.InfoAt`.
+- **Tests:** `dev/tests/navigation.lua` (2300 checks, 29 in Retail): a fresh `Coords` with the game giving the isle
+  no place: none of ours, no plane (the fault); ours, a plane around its middle at the continents' scale, linked, found
+  under the world map's point with its name, the sea beside it none; the game's own place winning; at the world the
+  isle named under the mouse, nothing lit.
+- **Docs:** `src/Navigation/README.md`, `Doc/ideas/Navigation.md`, the changelogs; card #588.
+
 ### The database: Forever's servers' answers and three weeks of play counted, places and boss loot (Saneroki, 2026-11-18)
 Saneroki: "Yes, take them in" (the newer copies of the open records of Forever's servers and play, of the labelled records of Forever itself, and of the node places).
 - **`assets/data/` (batches 28 to 31, `sources.toml`, unverified; a `/reload` takes it in):**

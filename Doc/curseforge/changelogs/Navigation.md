@@ -3,6 +3,12 @@
 What changed in each version of SaneUI Navigation, newest first: a version's part is its file's changelog on CurseForge.
 `saneui makechangelog` drafts a part from the commits; a person writes it for players.
 
+## 0.3.6 (2026-11-19)
+
+- Zephras Isle is on the map: zoomed out, the Skyborne's floating island lies over the sea north of the Maelstrom,
+  between the two continents (the game's own world map has no place for it). Hover it for its name, click it or zoom
+  in to open it. On the isle both maps follow you, with its pins and your party, and routes reach it by its airships.
+
 ## 0.3.5 (2026-11-18)
 
 - A setup, step by step, the first time (again with `/sane setup navigation`): how to open the map (the mouse into

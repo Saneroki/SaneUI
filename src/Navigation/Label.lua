@@ -189,7 +189,7 @@ function Label.Show(map, x, y)
     if ns.Canvas.camera ~= ns.Window.full or not Build() then return Label.Hide() end
     asked = asked or {}
     asked[1], asked[2], asked[3] = map, x, y
-    local info = Core.Ask(C_Map.GetMapInfoAtPosition, map, x, y)
+    local info = ns.Coords.InfoAt(map, x, y) -- (an isle the game's world map has no place for too)
     local zone = type(info) == "table" and Core.Plain(info.mapID)
     if not zone or zone == map or type(info.name) ~= "string" then return Label.Hide() end
     if zone ~= shown then

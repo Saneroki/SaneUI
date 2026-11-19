@@ -299,6 +299,11 @@ function Art.Light(view, u, v)
     if not map or not box then return Art.Unlight() end
     local x, y = Coords.ToMap(box, u, v)
     if x < 0 or x > 1 or y < 0 or y > 1 then return Art.Unlight() end
+    -- An isle SaneUI puts on the world map (Coords.AFLOAT): the game has nothing there to light; named, as a continent.
+    if map == Coords.WorldMap() and Coords.AfloatAt(x, y) then
+        light:Hide()
+        return ns.Safe("label", ns.Label.Show, map, x, y)
+    end
     -- Eight answers: Core.Ask hands on three.
     local ok, file, atlas, partX, partY, wide, high, left, top = pcall(C_Map.GetMapHighlightInfoAtPosition, map, x, y)
     if not ok or type(wide) ~= "number" or type(high) ~= "number" or type(left) ~= "number" or type(top) ~= "number" then

@@ -20,7 +20,8 @@ local _, ns = ...
 --  continent, and the world map itself, into any continent's plane (Link,
 --  WorldBox), so the map zooms from a zone out to the whole world in one space.
 --  A map straight on the world map that is no continent but has a box and a
---  place there (Zephras Isle) is a plane of its own, linked alike (PlaneOf,
+--  place there (Zephras Isle: the game gives it none, so SaneUI's own, AFLOAT)
+--  is a plane of its own, linked alike (PlaneOf,
 --  Planes), and the map drawn there is a zone (Alone): it is its own zone, with
 --  no continent's level between it and the world. Where the world map has a map
 --  over it (Retail's Cosmic), the continents beside the world map there (Outland,
@@ -36,6 +37,13 @@ ns.Coords = Coords
 
 Coords.TILE = 1600 / 3 -- a terrain tile's side in yards
 Coords.GRID = 64       -- tiles a continent's grid has along each side, its middle at 32
+
+-- Where SaneUI puts a map straight on the world map that the game places nowhere on it: its middle on the world map
+-- (0 to 1 from the top left), as large as the continents' scale makes it (Afloat). Forever's Zephras Isle (uiMap
+-- 2521): its world map has no row, no link and no art for the isle, so C_Map.GetMapRectOnMap answers nothing and the
+-- isle was on neither map (Saneroki, 2026-11-19: "The skyborn zephrys island is not showing up correctly"). It floats
+-- over the open sea north of the Maelstrom, between the two continents; the game's own place wins should it give one.
+Coords.AFLOAT = { [2521] = { 0.47, 0.19 } }
 local MIDDLE = Coords.GRID / 2
 local floor = math.floor
 
@@ -172,21 +180,43 @@ function Coords.Zones(plane)
     return list
 end
 
--- A continent's rectangle on the world map (0 to 1), or nil.
-local function OnWorld(continent)
-    local rect = onWorld[continent]
-    if rect == nil then
-        rect = false
-        local root = Coords.WorldMap()
-        if root and root ~= continent then
-            -- Four answers: Core.Ask hands on three.
-            local ok, x0, x1, y0, y1 = pcall(C_Map.GetMapRectOnMap, continent, root)
-            if ok and type(x0) == "number" and type(x1) == "number" and type(y0) == "number" and type(y1) == "number"
-                and x1 > x0 and y1 > y0 then
-                rect = { x0, x1, y0, y1 }
-            end
+-- A map's rectangle on the world map as the game gives it (0 to 1: x0, x1, y0, y1), or nil.
+local function GameRect(map)
+    local root = Coords.WorldMap()
+    if not root or root == map then return nil end
+    -- Four answers: Core.Ask hands on three.
+    local ok, x0, x1, y0, y1 = pcall(C_Map.GetMapRectOnMap, map, root)
+    if ok and type(x0) == "number" and type(x1) == "number" and type(y0) == "number" and type(y1) == "number"
+        and x1 > x0 and y1 > y0 then
+        return { x0, x1, y0, y1 }
+    end
+    return nil
+end
+
+-- The rectangle SaneUI gives a map the game places nowhere on the world map (Coords.AFLOAT): around its middle
+-- there, its box at the scale of the first continent the game places (yards to a share of the world map, across and
+-- down); nil for any other map, or while no continent is placed.
+local function Afloat(map)
+    local middle, box = Coords.AFLOAT[map], Coords.Box(map)
+    if not middle or not box then return nil end
+    for _, continent in ipairs(Coords.Continents()) do
+        local own, rect = Coords.Box(continent), GameRect(continent)
+        if own and rect then
+            local across = box.width / own.width * (rect[2] - rect[1]) / 2
+            local down = box.height / own.height * (rect[4] - rect[3]) / 2
+            return { middle[1] - across, middle[1] + across, middle[2] - down, middle[2] + down }
         end
-        onWorld[continent] = rect
+    end
+    return nil
+end
+
+-- A continent's rectangle on the world map (0 to 1), or a plane of its own's: the game's, else SaneUI's (Afloat);
+-- nil where neither is.
+local function OnWorld(map)
+    local rect = onWorld[map]
+    if rect == nil then
+        rect = GameRect(map) or Afloat(map) or false
+        onWorld[map] = rect
     end
     return rect or nil
 end
@@ -321,15 +351,28 @@ function Coords.Alone(map)
     return map ~= nil and Coords.PlaneOf(map) == map and Coords.ContinentOf(map) ~= map
 end
 
--- The map under a point of a plane, as the game's maps say: the plane under it on the world map (a continent, or a
--- plane of its own), or the zone under it on the plane's map (a plane of its own is its own zone where no other
--- is). nil when none is.
+-- The map SaneUI puts afloat (Coords.AFLOAT) under a point of the world map (0 to 1), where it is a plane; nil when
+-- none is.
+function Coords.AfloatAt(x, y)
+    if not x or not y then return nil end
+    for map in pairs(Coords.AFLOAT) do
+        local rect = Coords.PlaneOf(map) == map and OnWorld(map)
+        if rect and x >= rect[1] and x <= rect[2] and y >= rect[3] and y <= rect[4] then return map end
+    end
+    return nil
+end
+
+-- The map under a point of a map (0 to 1), as the game's maps say: on the world map a map afloat first (the game's
+-- world map knows nothing there), else the plane under it (a continent, or a plane of its own); on a plane's map the
+-- zone under it (a plane of its own is its own zone where no other is). The game's map info, or nil when none is.
 local function At(map, x, y)
-    if not x or x < 0 or x > 1 or y < 0 or y > 1 then return nil end
-    local info = Core.Ask(C_Map.GetMapInfoAtPosition, map, x, y)
+    if not x or not y or x < 0 or x > 1 or y < 0 or y > 1 then return nil end
+    local afloat = map == Coords.WorldMap() and Coords.AfloatAt(x, y)
+    local info = afloat and Core.Ask(C_Map.GetMapInfo, afloat) or Core.Ask(C_Map.GetMapInfoAtPosition, map, x, y)
     if type(info) == "table" and info.mapID ~= map then return info end
     return nil
 end
+Coords.InfoAt = At -- (Label.lua: the zone under the mouse named, an isle afloat too)
 
 function Coords.PlaneAt(plane, u, v)
     local root = Coords.WorldMap()
