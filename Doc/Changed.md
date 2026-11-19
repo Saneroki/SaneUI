@@ -6,6 +6,24 @@ Every change, newest first. The short version for users is [changelog.txt](chang
 Tests: lint, 399 checks (Core, with its options and profiles), 609 (Abilities), 496 (Tooltips), 626 (Social), 110 (Sync), 440 (windows), 269 (data in the game), 792 (Navigation), 346 (Inventory), 128 (sheet), 425 (bags), 124 and 10 in Retail (Combat), 43 (spellbook), 66 (talents), 247 (Nameplates), 190 (Loot), 180 and 162 (Speed Leveling, its guide), 152 (Lore), 111 (Guild), 159 (walking data), 24 (map data), 235 (data tools), 95 (Blizzard's code).
 A game restart takes it in (new addons, Navigation, Atlas, Inventory, Nameplates, Guild, Speed Leveling, Loot and Lore; new files in Navigation's, Economy's, Core's, Social's, Combat's, Inventory's, Nameplates', Speed Leveling's, Tooltips', Abilities' and Lore's TOCs, key bindings; Core's data sets, now Core's own files; the `SaneUI_Data_*` folders leave the game).
 
+### Core and the harvest: quests a giver does not offer, counted in play (Saneroki, 2026-11-19)
+Saneroki: "do #594 as well." A giver's list (card #592) is personal and stays with the character; what it says of a
+quest is counted for everyone without the character.
+- **`src/Core/Data/Tally.lua`:** `Tally.Offers(key, agree, withheld, early)`, the tally kind `offers` (records per giver:
+  quest, listed as the data has it, withheld though the data let the character take it, listed against the data's
+  rules; at most `Tally.RECORDS.offers` quests a giver). **`src/Core/Data/Quests.lua`:** the giver's list counted when it
+  is kept anew (once per character, level and server day).
+- **`dev/data/play.py`:** the ledger's `offers` (game, giver, quest: the three counts, added up per block as the others);
+  `offers()` stages a giver out of a quest's `startNPCs` (`startObjects`) once it withheld it `Play.WITHHELD` (3) times
+  and never listed it (the game's word; one offered there again is learned back by the watcher). The harvest's report
+  (`dev/tools/data harvest`): of the data's offers at givers players talked to, how many the game listed, and the
+  quests offered against the data's rules (a rule of the data is wrong: for a person to look at).
+- **Tests:** `dev/tests/data.lua` (689): a list counted once, the withheld one counted; `dev/tests/data/tools.py` (251):
+  the ledger takes what grew, a quest withheld three times leaves its giver and one listed stays, the report.
+- Measured before this: of the 1.12 records' 1,969 quests to do first for quests with a giver, 34 still missing (most
+  breadcrumbs the records tie to their target); a quest's `next` is no need (the 1.12 records disagree in 62 of 68
+  cases), so it is not read as one. Card #594.
+
 ### Navigation and Core: quest offers checked in the cities; a giver's own list (Saneroki, 2026-11-19)
 Saneroki: "do #591 and #592 as well and do other checks. See if you can make the quest offers more relyable, not only
 to a level 20 character but also to a level 40 or level 50 character in different cities like stormwind, ironforge,

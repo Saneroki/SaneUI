@@ -196,6 +196,13 @@ def run_harvest(args):
         print(f"Items our data lists that play would have seen by now, left out: {report['dropped']}.")
     for key, build, item, before, after in report["changes"]:
         print(f"Changed with build {build}: item {item} from {key}, {before} % -> {after} %.")
+    listed, withheld = report.get("offers", (0, 0))
+    if listed or withheld:
+        share = 100 * listed / (listed + withheld)
+        print(f"Quest offers checked in play: of {listed + withheld} the map's data offered at givers players talked to, "
+              f"the game listed {listed} ({share:.1f} %), withheld {withheld}.")
+    for key, quest, times in report.get("early", [])[:40]:
+        print(f"Offered against the data's rules: quest {quest} at {key}, {times} times (a rule of the data is wrong).")
     print(f"Ledger: {ledger.path}.")
     print(f"Staged: {out} (dev/tools/data import {out} --apply takes it in).")
     return 0

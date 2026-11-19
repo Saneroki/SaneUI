@@ -664,6 +664,27 @@ with Copy() as copy:
     kept = harvests.firsts_kept(Shipped(), "forever", 7, {"requires": [{"kind": "closed", "quest": 6}], "name": "x"})
     check("harvest: a learned quest keeps the master's quests to do first (an offer right after a hand-in, Core 0.3.7)",
           kept["requires"], [{"kind": "closed", "quest": 6}, {"kind": "done", "quest": 5}])
+    # What givers listed, added up (card #594): a quest a giver withheld often and never listed leaves it
+    import collections
+    import play as plays
+    class Givers:
+        schemas = {"Quests": True}
+
+        def view(self, set_name, game):
+            return {5: [masters.Version(0, None, False, {"startNPCs": [{"npc": 7}, {"npc": 8}]}, None)],
+                    6: [masters.Version(0, None, False, {"startNPCs": [{"npc": 7}]}, None)]}
+    book = plays.Ledger(None)
+    said = {"broken": 0, "counted": 0, "staged": collections.Counter()}
+    P_, L_ = plays.PART, plays.LIST
+    book.take_block("forever", 70959, {"id": "a1", "offers": {"npc:7": f"5{P_}0{P_}2{P_}0{L_}6{P_}1{P_}0{P_}0{L_}9{P_}0{P_}0{P_}1"}}, said)
+    book.take_block("forever", 70959, {"id": "a1", "offers": {"npc:7": f"5{P_}0{P_}3{P_}0{L_}6{P_}1{P_}0{P_}0{L_}9{P_}0{P_}0{P_}1"}}, said)
+    staged = plays.offers(Givers(), book, "forever", 70959, "2026-11-19", said)
+    check("harvest: a giver's lists added up once per block, what grew since",
+          book.offers["forever"]["npc:7"], {"5": [0, 3, 0], "6": [1, 0, 0], "9": [0, 0, 1]})
+    check("harvest: a quest withheld three times, never listed, leaves that giver; one listed stays",
+          [(line["key"], line["fields"]) for line in staged], [(5, {"startNPCs": [{"npc": 8}]})])
+    check("harvest: one listed against the data told; how often the data's offers were right",
+          (said["early"], said["offers"]), ([("npc:7", 9, 1)], (1, 3)))
     check("harvest: a learned quest may still lose a closing rule",
           harvests.firsts_kept(Shipped(), "forever", 7, {"requires": None})["requires"], [{"kind": "done", "quest": 5}])
     check("harvest: a patch number", [harvests.is_patch(v) for v in ("1.61.1", "1.61.1 beta", "x", 3, None)],

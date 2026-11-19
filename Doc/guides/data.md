@@ -764,9 +764,16 @@ Tally.Drop("npc:69", "loot", 769, 0, 2) -- an item it gave, and how many
 Tally.Visit("object:1617", "gather")   -- a node come to: the gathers since are one visit's
 Tally.Point("npc:69", map, x, y)       -- seen from up close: merged into a place within Tally.MERGE yards, one visit
 Tally.Cell("npc:69", map, x, y)        -- looted here: a cell of the map
+Tally.Offers("npc:69", agree, withheld, early) -- a giver's list (QuestWatch): listed as the data has it, withheld though
+                                       -- the data let the character take it, listed against the data's rules
 ```
 
-- **Kept** in `SaneUIData_Learned[game].tally[build] = { id, drops, points, cells, fresh }`: one block per build (the build
+- **Offers** (card #594): counted once per list a character was given (at most once a level and a server day, as
+  `QuestWatch.Listed` keeps it), per giver and quest; no character in it. The harvest adds every player's up: a quest
+  a giver withheld `Play.WITHHELD` times and never listed leaves that giver (`startNPCs`, `startObjects`, the game's
+  word: one offered there again is learned back); one listed against the data's rules is told for a person to look
+  at; and it tells how often the data's offers were right.
+- **Kept** in `SaneUIData_Learned[game].tally[build] = { id, drops, points, cells, offers, fresh }`: one block per build (the build
   period), each with a random id, a packed row per key; at most `Tally.BUILDS` blocks, the maps' sizes in yards beside
   them (`maps`). `fresh` holds the keys counted since the last bundle. No time finer than the build, no name, no trail.
   A row's records: `c how quest n` (loots), `d how item quest times units` (an item), `v how n` (visits);
@@ -1140,6 +1147,10 @@ folders and `SaneUI.lua` files players sent (`--from`, each game version they ho
     `Play.NEAR` yards), new ones added; only once every point of ours was seen. Unchanged within a yard: confirmed.
   - **Areas:** cells counted `Play.CELLS` times or more, where our data has no area: a creature's (*Spawns*, else
     *CreatureSpawns*), a quest objective's (*QuestAreas*, `from = "play"`).
+  - **Offers:** a giver that withheld a quest `Play.WITHHELD` times or more and never listed it, that giver out of the
+    quest's `startNPCs` (`startObjects`); the quests offered against the data's rules, and the share of the data's
+    offers the game listed, in the report.
+  - **Learned quests' needs:** a learned row's `requires` keeps the master's quests to do first (`firsts_kept`).
 - The ledger keeps visits beside the loots (`v`); they are not staged yet, the set *Drops* has no field for them.
 - Then `dev/tools/data import <staging> --apply`, and a release ships it.
 

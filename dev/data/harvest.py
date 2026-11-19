@@ -316,7 +316,8 @@ def harvest(master, files, ledger=None):
     ledger = ledger or plays.Ledger(None)
     lines = []
     report = {"learned": 0, "confirmed": 0, "parts": 0, "skipped": 0, "broken": 0, "builds": {}, "counted": 0,
-              "staged": collections.Counter(), "waiting": collections.Counter(), "changes": [], "dropped": 0}
+              "staged": collections.Counter(), "waiting": collections.Counter(), "changes": [], "dropped": 0,
+              "early": [], "offers": (0, 0)}
     newest = {}  # game -> the newest build its saved files were of
     for wanted, path in files:
         try:
@@ -333,7 +334,7 @@ def harvest(master, files, ledger=None):
                 lines += _harvest_part(master, game, part, ledger, report, newest)
     day = plays.today()
     for game, build in sorted(newest.items()):
-        for stage in (plays.drops, plays.spawns, plays.areas):
+        for stage in (plays.drops, plays.spawns, plays.areas, plays.offers):
             lines += stage(master, ledger, game, build, day, report)
     return lines, report
 

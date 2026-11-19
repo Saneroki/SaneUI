@@ -17,6 +17,11 @@ what the game told of entries field by field (Check.lua's parts), until enough i
   areas       cells where a creature was looted, or an objective's count went up, twice or more: the area of a
               creature (Spawns or CreatureSpawns) or of a quest's objective (QuestAreas) where our data has none.
   confirmed   an entry whose every field the play list names (the schema's play) the game told, over all files.
+  offers      what givers listed when players talked to them (Tally.Offers, card #594): a quest a giver withheld
+              Play.WITHHELD times or more (the data's rules let the character take it, the game did not list it) and
+              never listed leaves that giver (startNPCs, startObjects: the game's word; one offered there again is
+              learned back); one listed against the data's rules is told for a person to look at (report["early"]);
+              and how often the data's offers were right (report["offers"]: listed, withheld).
 
 The ledger holds game facts only: random ids, counts, places. Nothing of who played, nor when finer than the day.
 """
@@ -40,6 +45,7 @@ class Play:
     NEAR = 30         # yards within which a place is one of our data's points (Watchers.NEAR)
     VISITS = 2        # visits before a place counts
     CELLS = 2         # loots or counts in a cell before it is part of an area
+    WITHHELD = 3      # lists a giver withheld a quest in, never listing it, before it is no giver of it
 
 
 def number(text):
@@ -74,13 +80,14 @@ class Ledger:
         self.maps = data.get("maps", {})        # game -> map -> [width, height] in yards
         self.told = data.get("told", {})        # game -> set -> key -> {"parts": [...], "day", "build"}
         self.staged = data.get("staged", {})    # game -> key -> loots when its chances were last staged
+        self.offers = data.get("offers", {})    # game -> giver -> quest -> [listed as the data has it, withheld, listed against it]
 
     def save(self):
         if not self.path:
             return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         data = {"format": FORMAT, "taken": self.taken, "drops": self.drops, "points": self.points, "cells": self.cells,
-                "maps": self.maps, "told": self.told, "staged": self.staged}
+                "maps": self.maps, "told": self.told, "staged": self.staged, "offers": self.offers}
         self.path.write_text(json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n",
                              encoding="utf-8")
 
@@ -101,7 +108,7 @@ class Ledger:
             return
         before = self.taken.setdefault(game, {}).get(block_id, {})
         kept = {"build": build}
-        for kind in ("drops", "points", "cells"):
+        for kind in ("drops", "points", "cells", "offers"):
             rows = block.get(kind) if isinstance(block.get(kind), dict) else {}
             old = before.get(kind, {})
             for key, row in rows.items():
@@ -176,6 +183,19 @@ class Ledger:
             if grew:
                 name = f"{record[0]}|{record[1]}"
                 mine[name] = mine.get(name, 0) + grew
+
+    def _offers(self, game, build, key, now, old):
+        mine = self.offers.setdefault(game, {}).setdefault(key, {})
+        was = {r[0]: r for r in old if len(r) >= 4}
+        for record in now:
+            if len(record) < 4:
+                continue
+            before = was.get(record[0], [record[0], 0, 0, 0])
+            grew = [max(0, record[at] - before[at]) for at in (1, 2, 3)]
+            if any(grew):
+                counted = mine.setdefault(str(record[0]), [0, 0, 0])
+                for at in range(3):
+                    counted[at] += grew[at]
 
     def take_told(self, game, set_name, key, parts, day, build):
         entry = self.told.setdefault(game, {}).setdefault(set_name, {}).setdefault(str(key), {"parts": [], "day": day, "build": build})
@@ -340,6 +360,41 @@ def spawns(master, ledger, game, build, day, report):
             lines.append({"set": "Spawns", "key": key, "game": game, "build": build, "day": day, "src": "game",
                           "fields": {"points": points}})
         report["staged"]["Spawns"] += 1
+    return lines
+
+
+def offers(master, ledger, game, build, day, report):
+    """Staging lines of the set Quests from what givers listed: see the module's words."""
+    lines = []
+    report.setdefault("early", [])
+    listed = withheld = 0
+    gone = {}  # quest -> {(kind, id)}: the givers that withheld it, never listing it
+    for key, quests in sorted(ledger.offers.get(game, {}).items()):
+        kind, _, thing = key.partition(":")
+        for quest, (agree, held, early) in sorted(quests.items()):
+            listed, withheld = listed + agree, withheld + held
+            if early:
+                report["early"].append((key, int(quest), early))
+            if held >= Play.WITHHELD and not agree and not early and thing.isdigit():
+                gone.setdefault(int(quest), set()).add((kind, int(thing)))
+    report["offers"] = (listed, withheld)
+    if "Quests" not in master.schemas or not gone:
+        return lines
+    view = master.view("Quests", game)
+    for quest, givers in sorted(gone.items()):
+        versions = view.get(quest)
+        if not versions or versions[-1].gone:
+            continue
+        fields = {}
+        for kind, field, part in (("npc", "startNPCs", "npc"), ("object", "startObjects", "object")):
+            own = versions[-1].fields.get(field) or []
+            keep = [each for each in own if (kind, each.get(part)) not in givers]
+            if len(keep) < len(own):
+                fields[field] = keep or None
+        if fields:
+            lines.append({"set": "Quests", "key": quest, "game": game, "build": build, "day": day, "src": "game",
+                          "fields": fields})
+            report["staged"]["Quests"] += 1
     return lines
 
 

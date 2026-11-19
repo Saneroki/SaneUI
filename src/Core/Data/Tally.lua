@@ -13,11 +13,14 @@ local Core = SaneUI.Core
 --      Tally.Visit("object:1617", "gather")              a node come to: its gathers since are one visit's
 --      Tally.Point("npc:69", map, x, y)                  seen from up close (talked to, gathered): merged by yards
 --      Tally.Cell("npc:69", map, x, y)                   looted here: a cell of the map (100 by 100)
+--      Tally.Offers("npc:69", agree, withheld, early)    what a giver's list said of its quests (arrays of quest IDs):
+--                                                        listed as the data has it, withheld though the data let the
+--                                                        character take it, listed though the data did not (QuestWatch)
 --      Tally.Here()                                      the player's map and place (percent), or nil
 --      Tally.Counts("object:1617")                       what the kept builds counted of a key (Drops.lua reads it)
 --      Tally.Bundle(room)                                rows to tell the guild and the group (Bundle.lua)
 --
---  Kept in SaneUIData_Learned[game].tally[build] = { id = random, drops = {}, points = {}, cells = {} }, a packed row
+--  Kept in SaneUIData_Learned[game].tally[build] = { id = random, drops = {}, points = {}, cells = {}, offers = {} }, a packed row
 --  per key, one block per build (the build period), at most Tally.BUILDS: the harvest reads the blocks, and takes of
 --  each only what it did not take before (by the block's random id: the same saved file read twice counts once). The
 --  maps' sizes in yards beside them (maps[map]), so the harvest can measure. Nothing in it is about a player: no time
@@ -33,7 +36,7 @@ Tally.MERGE = 8        -- yards within which a sighting is a place seen before (
 Tally.VISIT = 900      -- seconds within which a place seen again is the same visit
 Tally.BUILDS = 4       -- build periods kept; the oldest dropped first
 Tally.KEYS = 20000     -- keys of a kind in one build period at most
-Tally.RECORDS = { drops = 400, points = 60, cells = 500 } -- records of one key at most
+Tally.RECORDS = { drops = 400, points = 60, cells = 500, offers = 100 } -- records of one key at most
 Tally.stamp = 0        -- grows with every count (Drops.lua's answers are made anew)
 
 local LIST, PART = "\030", "\031"
@@ -41,8 +44,8 @@ local floor, sqrt = math.floor, math.sqrt
 
 local part      -- this client's part of SaneUIData_Learned, once Core's saved variables are read
 local block     -- the build's block
-local rows = { drops = {}, points = {}, cells = {} } -- [kind][key] = the key's records, taken apart (this build's)
-local counts = { drops = 0, points = 0, cells = 0 }  -- keys of each kind in the block
+local rows = { drops = {}, points = {}, cells = {}, offers = {} } -- [kind][key] = the key's records, taken apart (this build's)
+local counts = { drops = 0, points = 0, cells = 0, offers = 0 }  -- keys of each kind in the block
 local visited = {} -- [key .. "\031" .. record] = GetTime() of the last visit counted
 local turn         -- the key the last bundle's older rows ended at
 local index        -- [item] = { [key] = true }: who gives what; made when first asked for, kept up after that
@@ -72,7 +75,7 @@ local function Block()
         Data.NoteBuild()
     end
     if type(found.fresh) ~= "table" then found.fresh = {} end
-    for _, kind in ipairs({ "drops", "points", "cells" }) do
+    for _, kind in ipairs({ "drops", "points", "cells", "offers" }) do
         if type(found[kind]) ~= "table" then found[kind] = {} end
         local n = 0
         for _ in pairs(found[kind]) do n = n + 1 end
@@ -189,6 +192,38 @@ function Tally.Visit(key, how)
     list[#list + 1] = { "v", how, 1 }
     Keep("drops", key, list)
     return true
+end
+
+-- What a giver's list said of its quests, once per list a character was given (QuestWatch: at most once a level and a
+-- server day): each quest of agree (listed, as the data's rules have it), withheld (not listed, though they let the
+-- character take it) and early (listed, though they did not) one count more. Nothing of the character: the harvest
+-- adds every player's counts up, and a quest a giver withheld often and never listed leaves that giver in the master
+-- (play.py), one listed against the data is told for a person to look at.
+local OFFER_AT = { agree = 2, withheld = 3, early = 4 }
+function Tally.Offers(key, agree, withheld, early)
+    if not Valid(key) then return false end
+    local list = Records("offers", key)
+    if not list then return false end
+    local changed = false
+    for name, quests in pairs({ agree = agree, withheld = withheld, early = early }) do
+        for _, quest in ipairs(type(quests) == "table" and quests or {}) do
+            local found
+            for _, record in ipairs(list) do
+                if record[1] == quest then found = record break end
+            end
+            if not found and #list < Tally.RECORDS.offers then
+                found = { quest, 0, 0, 0 }
+                list[#list + 1] = found
+            end
+            if found then
+                local at = OFFER_AT[name]
+                found[at] = (tonumber(found[at]) or 0) + 1
+                changed = true
+            end
+        end
+    end
+    if changed then Keep("offers", key, list) end
+    return changed
 end
 
 -- A map's size in yards, noted once for the harvest; nil where the game does not tell.

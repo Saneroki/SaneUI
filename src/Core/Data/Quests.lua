@@ -262,11 +262,18 @@ local function Keep(thing, quests)
     local offers = Offers()
     local level, _, race, class, side = Player()
     if not (offers and thing and type(level) == "number" and Quests:Ready()) then return end
-    local shown, withheld = {}, {}
+    local shown, withheld, agree, early = {}, {}, {}, {}
     for _, quest in ipairs(quests) do shown[quest] = true end
     local kind, id = thing:match("^(%a+):(%d+)$")
     for _, quest in ipairs(Quests:Keys(kind == "object" and "byStartObject" or "byStartNPC", tonumber(id))) do
         if not shown[quest] and Takeable(quest, level, race, class, side) then withheld[#withheld + 1] = quest end
+    end
+    -- (what the data said of the listed ones: as it has them, or against its rules; one the set lacks is learned when
+    -- it is offered, not counted here)
+    for _, quest in ipairs(quests) do
+        if Quests:Get(quest) then
+            if Takeable(quest, level, race, class, side) then agree[#agree + 1] = quest else early[#early + 1] = quest end
+        end
     end
     table.sort(quests)
     table.sort(withheld)
@@ -282,6 +289,9 @@ local function Keep(thing, quests)
         if count >= QuestWatch.GIVERS and oldest then offers[oldest] = nil end
     end
     offers[thing] = row
+    -- Counted for the harvest, once per list a character was given (Tally.Offers): what gives the master its word on
+    -- quests a giver does not offer (card #594)
+    Tally.Offers(thing, agree, withheld, early)
     for _, fn in ipairs(listeners) do fn(thing) end
 end
 

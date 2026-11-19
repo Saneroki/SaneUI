@@ -740,6 +740,10 @@ but for a window to try those with (`/sane window`).
   fields `reputationMax` and `spell`, the kind `notlog`; batch 33 also the book a book quest wants carried, classes by
   rewards, retired quests; the harvested quest rows the game told (the needs left out) taken in. `dev/data/harvest.py`:
   a learned quest's needs keep the master's quests to do first (`firsts_kept`). Cards #591, #592.
+- 2026-11-19 — `Data/Tally.lua`: `Tally.Offers(key, agree, withheld, early)`, a tally kind of its own (`offers`), counted
+  by the quest watcher once per giver's list; `dev/data/play.py`: the ledger adds it up and stages a giver out of a
+  quest it withheld `Play.WITHHELD` times and never listed, and the harvest tells how often the data's offers were
+  right and which quests were offered against its rules (card #594).
 - 2026-11-18 — `Core.GITHUB` (Core.lua): SaneUI's code on GitHub, a link on the page *SaneUI*. `Unsaved.Settle()` and
   `Onboarding.Forget()` for *Reset all settings* there (`Settings/About.lua`, `About.StartOver`).
 - 2026-11-18 — `GameLayout.lua` (new, in Core's TOC after `Arrange.lua`): SaneUI's layout of the game's Edit Mode (Saneroki:

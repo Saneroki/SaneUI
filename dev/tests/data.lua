@@ -1707,8 +1707,17 @@ do
     check(listed and listed[97] and not listed[96] and withheld[96] and not withheld[98] and not withheld[95] and heard == 1,
         "the giver's list kept: the quest it lists, the one the data let you take that it did not list withheld; not the one "
         .. "for later, nor the one done")
+    local function Offers(quest)
+        for _, record in ipairs(Tally.Of("offers", "npc:73") or {}) do
+            if record[1] == quest then return record[2], record[3], record[4] end
+        end
+        return 0, 0, 0
+    end
+    local agreed = Offers(97)
+    local _, held = Offers(96)
+    check(agreed == 1 and held == 1, "counted for the harvest (no character in it): 97 listed as the data has it, 96 withheld")
     W.Fire("GOSSIP_SHOW")
-    check(heard == 1, "the same list again: nothing told")
+    check(heard == 1 and Offers(97) == 1, "the same list again: nothing told, nothing counted twice")
     W.level = 5
     check(QuestWatch.Listed("npc:73") == nil, "at another level: no word of the giver's any more")
     W.level = 4
@@ -1725,6 +1734,8 @@ do
     listed, withheld = QuestWatch.Listed("npc:73")
     check(listed and not listed[97] and withheld[97] and heard == 2,
         "a quest to hand in opened at once: the giver offers nothing, every quest the data let you take withheld")
+    local _, heldNow = Offers(97)
+    check(heldNow == 1, "and 97 counted withheld once")
     gossip = {}
     SaneUICharDB.offers = nil
     -- The needs the views trust: a quest's row narrowed in play keeps the quests to do first the shipped row has
